@@ -30,6 +30,7 @@ export function ActivitySection() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [visibleActivities, setVisibleActivities] = useState<number[]>([]);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -58,6 +59,19 @@ export function ActivitySection() {
       });
     }
   }, [isVisible]);
+
+  useEffect(() => {
+    if (!isVisible || isPaused) return;
+
+    const interval = setInterval(() => {
+      setVisibleActivities((prev) => {
+        if (prev.length === activities.length) return prev;
+        return [...prev, prev.length];
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isVisible, isPaused]);
 
   return (
     <section
@@ -120,7 +134,12 @@ export function ActivitySection() {
 
           {/* Right: Activity Feed */}
           <div className="lg:col-span-2">
-            <div className="space-y-3">
+            <div
+              className="space-y-3"
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
+              aria-live="polite"
+            >
               {activities.map((activity, i) => (
                 <div
                   key={activity.id}
@@ -155,7 +174,7 @@ export function ActivitySection() {
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <span className="text-sm text-[#A7ACB8]/70 font-mono">{activity.time}</span>
                     <div 
-                      className="w-2 h-2 rounded-full animate-pulse"
+                      className={`w-2 h-2 rounded-full ${isPaused ? '' : 'animate-pulse'}`}
                       style={{ backgroundColor: activity.color }}
                     />
                   </div>
@@ -165,8 +184,10 @@ export function ActivitySection() {
 
             {/* Live Indicator */}
             <div className="mt-6 flex items-center justify-center gap-2 text-sm text-[#A7ACB8]">
-              <div className="w-2 h-2 bg-[#61FF7B] rounded-full animate-pulse" />
-              <span className="font-mono">Live updates from the network</span>
+              <div className={`w-2 h-2 bg-[#61FF7B] rounded-full ${isPaused ? '' : 'animate-pulse'}`} />
+              <span className="font-mono">
+                {isPaused ? 'Live feed paused while you inspect entries' : 'Live updates from the network'}
+              </span>
             </div>
           </div>
         </div>

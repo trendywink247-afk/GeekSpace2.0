@@ -18,6 +18,8 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
     message: '',
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; message?: string }>({});
+  const [charCount, setCharCount] = useState(0);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -38,6 +40,21 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const nextErrors: { email?: string; message?: string } = {};
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      nextErrors.email = 'Please enter a valid work email.';
+    }
+    if (formData.message.trim().length < 20) {
+      nextErrors.message = 'Please share at least 20 characters so we can help better.';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setErrors({});
     setIsSubmitted(true);
     setTimeout(() => setIsSubmitted(false), 3000);
   };
@@ -164,9 +181,17 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
                         placeholder="john@company.com"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onBlur={() => {
+                          if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+                            setErrors((prev) => ({ ...prev, email: 'Please enter a valid work email.' }));
+                          } else {
+                            setErrors((prev) => ({ ...prev, email: undefined }));
+                          }
+                        }}
                         className="bg-[#0B0B10] border-[#7B61FF]/30 rounded-xl text-[#F4F6FF] placeholder:text-[#A7ACB8]/50 focus:border-[#7B61FF] focus:ring-[#7B61FF]/20"
                         required
                       />
+                      {errors.email && <p className="mt-2 text-xs text-[#FF6161]">{errors.email}</p>}
                     </div>
                   </div>
 
@@ -185,10 +210,20 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
                     <Textarea
                       placeholder="Tell us about your use case..."
                       value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, message: e.target.value });
+                        setCharCount(e.target.value.length);
+                      }}
                       className="bg-[#0B0B10] border-[#7B61FF]/30 rounded-xl text-[#F4F6FF] placeholder:text-[#A7ACB8]/50 focus:border-[#7B61FF] focus:ring-[#7B61FF]/20 min-h-[120px] resize-none"
                       rows={4}
                     />
+                    <div className="mt-2 flex items-center justify-between text-xs">
+                      <span className={`${charCount < 20 ? 'text-[#FFD761]' : 'text-[#61FF7B]'}`}>
+                        {charCount < 20 ? 'Add a bit more context for a faster reply.' : 'Great context — this is actionable.'}
+                      </span>
+                      <span className="text-[#A7ACB8]/70">{charCount} chars</span>
+                    </div>
+                    {errors.message && <p className="mt-1 text-xs text-[#FF6161]">{errors.message}</p>}
                   </div>
 
                   <Button
@@ -202,6 +237,10 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
 
                   <p className="text-center text-sm text-[#A7ACB8]/70">
                     We typically reply within 24 hours.
+                  </p>
+
+                  <p className="text-center text-xs text-[#A7ACB8]/60">
+                    By submitting, you agree to receive onboarding emails related to your request.
                   </p>
                 </form>
               )}
