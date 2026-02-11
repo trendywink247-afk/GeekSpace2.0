@@ -1,34 +1,37 @@
 import { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  Link2, 
-  Bot, 
-  Bell, 
-  Terminal, 
-  Settings, 
-  User, 
+import { useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Link2,
+  Bot,
+  Bell,
+  Terminal,
+  Settings,
+  User,
   LogOut,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  DollarSign,
+  Compass
 } from 'lucide-react';
-// DashboardApp - Main layout for GeekSpace Dashboard
 import { OverviewPage } from './pages/OverviewPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
 import { AgentSettingsPage } from './pages/AgentSettingsPage';
 import { RemindersPage } from './pages/RemindersPage';
 import { TerminalPage } from './pages/TerminalPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { useAuthStore } from '@/stores/authStore';
+import { useDashboardStore } from '@/stores/dashboardStore';
 
 type PageType = 'overview' | 'connections' | 'agent' | 'reminders' | 'terminal' | 'settings';
 
-interface DashboardAppProps {
-  onBackToLanding: () => void;
-  onViewPortfolio: (username: string) => void;
-}
-
-export function DashboardApp({ onBackToLanding, onViewPortfolio }: DashboardAppProps) {
+export function DashboardApp() {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState<PageType>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const usage = useDashboardStore((s) => s.usage);
 
   const menuItems = [
     { id: 'overview' as PageType, label: 'Overview', icon: LayoutDashboard },
@@ -39,10 +42,15 @@ export function DashboardApp({ onBackToLanding, onViewPortfolio }: DashboardAppP
     { id: 'settings' as PageType, label: 'Settings', icon: Settings },
   ];
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case 'overview':
-        return <OverviewPage onViewPortfolio={onViewPortfolio} />;
+        return <OverviewPage onViewPortfolio={(u) => navigate(`/portfolio/${u}`)} />;
       case 'connections':
         return <ConnectionsPage />;
       case 'agent':
@@ -54,14 +62,14 @@ export function DashboardApp({ onBackToLanding, onViewPortfolio }: DashboardAppP
       case 'settings':
         return <SettingsPage />;
       default:
-        return <OverviewPage onViewPortfolio={onViewPortfolio} />;
+        return <OverviewPage onViewPortfolio={(u) => navigate(`/portfolio/${u}`)} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-[#05050A] flex">
       {/* Sidebar */}
-      <aside 
+      <aside
         className={`fixed left-0 top-0 h-full bg-[#0B0B10] border-r border-[#7B61FF]/20 transition-all duration-300 z-50 ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         }`}
@@ -96,22 +104,51 @@ export function DashboardApp({ onBackToLanding, onViewPortfolio }: DashboardAppP
               {!sidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
             </button>
           ))}
+
+          {/* Explore link */}
+          <button
+            onClick={() => navigate('/explore')}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[#A7ACB8] hover:bg-[#7B61FF]/10 hover:text-[#F4F6FF] transition-all duration-300"
+          >
+            <Compass className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Explore</span>}
+          </button>
         </nav>
+
+        {/* Spend indicator */}
+        {!sidebarCollapsed && (
+          <div className="mx-3 mt-4 p-3 rounded-xl bg-[#05050A] border border-[#7B61FF]/20">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="w-4 h-4 text-[#61FF7B]" />
+              <span className="text-xs text-[#A7ACB8]">This month</span>
+            </div>
+            <div className="text-lg font-bold text-[#F4F6FF] font-mono">${usage.totalCostUSD.toFixed(2)}</div>
+            <div className="text-xs text-[#A7ACB8]">
+              Forecast: <span className="text-[#FFD761]">${usage.forecastUSD.toFixed(2)}</span>
+            </div>
+            <div className="mt-2 h-1.5 bg-[#0B0B10] rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#7B61FF] to-[#61FF7B]"
+                style={{ width: `${Math.min((usage.totalCostUSD / 5) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Bottom Actions */}
         <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-[#7B61FF]/20">
           <button
-            onClick={onBackToLanding}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[#A7ACB8] hover:bg-[#7B61FF]/10 hover:text-[#F4F6FF] transition-all duration-300"
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">Exit</span>}
+            {!sidebarCollapsed && <span className="text-sm font-medium">Sign Out</span>}
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main 
+      <main
         className={`flex-1 transition-all duration-300 ${
           sidebarCollapsed ? 'ml-16' : 'ml-64'
         }`}
@@ -123,14 +160,14 @@ export function DashboardApp({ onBackToLanding, onViewPortfolio }: DashboardAppP
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors"
             >
-              <ChevronRight 
+              <ChevronRight
                 className={`w-5 h-5 text-[#A7ACB8] transition-transform duration-300 ${
                   sidebarCollapsed ? '' : 'rotate-180'
-                }`} 
+                }`}
               />
             </button>
             <div className="text-sm text-[#A7ACB8]">
-              Welcome back, <span className="text-[#F4F6FF] font-medium">alex</span>
+              Welcome back, <span className="text-[#F4F6FF] font-medium">{user?.name || 'alex'}</span>
             </div>
           </div>
 
@@ -141,7 +178,10 @@ export function DashboardApp({ onBackToLanding, onViewPortfolio }: DashboardAppP
             </div>
 
             {/* User Avatar */}
-            <button className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-[#7B61FF]/10 transition-colors">
+            <button
+              onClick={() => setCurrentPage('settings')}
+              className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-[#7B61FF]/10 transition-colors"
+            >
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
