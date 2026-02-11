@@ -1,26 +1,23 @@
 import { useState } from 'react';
-import { 
-  Sparkles, 
-  MessageSquare, 
-  Github, 
-  Twitter, 
-  Linkedin, 
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  Sparkles,
+  MessageSquare,
+  Github,
+  Twitter,
+  Linkedin,
   Globe,
   Mail,
   ArrowLeft,
   Send,
   Bot,
   MapPin,
-  Briefcase
+  Briefcase,
+  Award
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-interface PortfolioViewProps {
-  username: string;
-  onBack: () => void;
-  onEnterDashboard: () => void;
-}
+import { Badge } from '@/components/ui/badge';
 
 const portfolioData: Record<string, {
   name: string;
@@ -31,7 +28,8 @@ const portfolioData: Record<string, {
   role: string;
   company: string;
   skills: string[];
-  projects: { name: string; description: string; url: string }[];
+  projects: { name: string; description: string; url: string; tags?: string[]; aiGenerated?: boolean }[];
+  milestones: { date: string; title: string; description: string }[];
   social: { github?: string; twitter?: string; linkedin?: string; website?: string; email?: string };
   agentEnabled: boolean;
 }> = {
@@ -45,9 +43,14 @@ const portfolioData: Record<string, {
     company: 'TechCorp',
     skills: ['React', 'TypeScript', 'Node.js', 'Python', 'AI/ML', 'OpenClaw'],
     projects: [
-      { name: 'AutoTask', description: 'AI-powered task automation', url: '#' },
-      { name: 'CodeSync', description: 'Real-time code collaboration', url: '#' },
-      { name: 'NeuralChat', description: 'Conversational AI interface', url: '#' },
+      { name: 'AutoTask', description: 'AI-powered task automation', url: '#', tags: ['AI', 'Automation'], aiGenerated: false },
+      { name: 'CodeSync', description: 'Real-time code collaboration', url: '#', tags: ['Collaboration', 'WebRTC'] },
+      { name: 'NeuralChat', description: 'Conversational AI interface', url: '#', tags: ['AI', 'Chat'], aiGenerated: true },
+    ],
+    milestones: [
+      { date: 'Jan 2026', title: 'Joined GeekSpace', description: 'Started the AI OS journey' },
+      { date: 'Jan 2026', title: 'Connected Telegram', description: 'First integration active' },
+      { date: 'Feb 2026', title: 'First Automation', description: 'Created portfolio update automation' },
     ],
     social: {
       github: 'github.com/alexchen',
@@ -68,9 +71,10 @@ const portfolioData: Record<string, {
     company: 'DesignStudio',
     skills: ['UI/UX', 'Figma', 'Design Systems', 'React', 'Motion Design'],
     projects: [
-      { name: 'DesignKit', description: 'Component library for startups', url: '#' },
-      { name: 'FlowMap', description: 'User journey visualization tool', url: '#' },
+      { name: 'DesignKit', description: 'Component library for startups', url: '#', tags: ['Design', 'Library'] },
+      { name: 'FlowMap', description: 'User journey visualization tool', url: '#', tags: ['UX', 'Visualization'] },
     ],
+    milestones: [],
     social: {
       github: 'github.com/sarahkim',
       twitter: 'twitter.com/sarahkim',
@@ -89,9 +93,10 @@ const portfolioData: Record<string, {
     company: 'ConsultX',
     skills: ['Strategy', 'Fundraising', 'Product', 'Leadership', 'Growth'],
     projects: [
-      { name: 'StartupOS', description: 'Founder operating system', url: '#' },
-      { name: 'VentureMap', description: 'Investor relationship tracker', url: '#' },
+      { name: 'StartupOS', description: 'Founder operating system', url: '#', tags: ['Startup', 'SaaS'] },
+      { name: 'VentureMap', description: 'Investor relationship tracker', url: '#', tags: ['VC', 'CRM'] },
     ],
+    milestones: [],
     social: {
       twitter: 'twitter.com/marcuswright',
       linkedin: 'linkedin.com/in/marcuswright',
@@ -102,32 +107,39 @@ const portfolioData: Record<string, {
   },
 };
 
-export function PortfolioView({ username, onBack, onEnterDashboard }: PortfolioViewProps) {
+export function PortfolioView() {
+  const navigate = useNavigate();
+  const { username } = useParams<{ username: string }>();
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState<{role: 'user' | 'agent', message: string}[]>([
-    { role: 'agent', message: 'Hi! I\'m Alex\'s AI assistant. Ask me anything about their work, schedule, or just say hello!' },
-  ]);
+  const [chatHistory, setChatHistory] = useState<{role: 'user' | 'agent', message: string}[]>([]);
 
-  const data = portfolioData[username] || portfolioData.alex;
+  const data = portfolioData[username || 'alex'] || portfolioData.alex;
+
+  // Initialize chat history with agent greeting
+  useState(() => {
+    setChatHistory([
+      { role: 'agent', message: `Hi! I'm ${data.name.split(' ')[0]}'s AI assistant. Ask me anything about their work, schedule, or just say hello!` },
+    ]);
+  });
 
   const handleSendMessage = () => {
     if (!chatMessage.trim()) return;
-    
+
     setChatHistory([...chatHistory, { role: 'user', message: chatMessage }]);
-    
+
     // Simulate agent response
     setTimeout(() => {
       const responses = [
-        "Alex is currently working on some exciting AI projects. They'd be happy to chat more about it!",
-        "Alex's schedule is pretty flexible this week. Want me to pass along a message?",
-        "That's a great question! Alex has experience with React, TypeScript, and AI automation.",
-        "Alex loves connecting with fellow developers. Feel free to reach out via email!",
+        `${data.name.split(' ')[0]} is currently working on some exciting projects. They'd be happy to chat more about it!`,
+        `${data.name.split(' ')[0]}'s schedule is flexible this week. Want me to pass along a message?`,
+        `That's a great question! ${data.name.split(' ')[0]} specializes in ${data.skills.slice(0, 3).join(', ')}.`,
+        `${data.name.split(' ')[0]} loves connecting with fellow professionals. Feel free to reach out via email!`,
       ];
       const randomResponse = responses[Math.floor(Math.random() * responses.length)];
       setChatHistory(prev => [...prev, { role: 'agent', message: randomResponse }]);
     }, 1000);
-    
+
     setChatMessage('');
   };
 
@@ -137,8 +149,8 @@ export function PortfolioView({ username, onBack, onEnterDashboard }: PortfolioV
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#05050A]/80 backdrop-blur-xl border-b border-[#7B61FF]/20">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
-              onClick={onBack}
+            <button
+              onClick={() => navigate(-1)}
               className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-[#A7ACB8]" />
@@ -150,8 +162,8 @@ export function PortfolioView({ username, onBack, onEnterDashboard }: PortfolioV
               </span>
             </div>
           </div>
-          <Button 
-            onClick={onEnterDashboard}
+          <Button
+            onClick={() => navigate('/login')}
             className="bg-[#7B61FF] hover:bg-[#6B51EF]"
           >
             Get Your Own
@@ -164,18 +176,15 @@ export function PortfolioView({ username, onBack, onEnterDashboard }: PortfolioV
         <div className="max-w-4xl mx-auto">
           {/* Profile Header */}
           <div className="text-center mb-12">
-            {/* Avatar */}
             <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center text-3xl font-bold">
               {data.avatar}
             </div>
-            
-            {/* Name & Tagline */}
+
             <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {data.name}
             </h1>
             <p className="text-xl text-[#7B61FF] mb-4">{data.tagline}</p>
-            
-            {/* Meta */}
+
             <div className="flex items-center justify-center gap-4 text-sm text-[#A7ACB8]">
               <span className="flex items-center gap-1">
                 <Briefcase className="w-4 h-4" />
@@ -190,7 +199,7 @@ export function PortfolioView({ username, onBack, onEnterDashboard }: PortfolioV
             {/* Social Links */}
             <div className="flex items-center justify-center gap-3 mt-6">
               {data.social.github && (
-                <a href={`https://${data.social.github}`} target="_blank" rel="noopener noreferrer" 
+                <a href={`https://${data.social.github}`} target="_blank" rel="noopener noreferrer"
                    className="p-2 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-colors">
                   <Github className="w-5 h-5 text-[#A7ACB8]" />
                 </a>
@@ -233,7 +242,7 @@ export function PortfolioView({ username, onBack, onEnterDashboard }: PortfolioV
             <h2 className="text-lg font-semibold mb-4">Skills</h2>
             <div className="flex flex-wrap gap-2">
               {data.skills.map((skill, i) => (
-                <span 
+                <span
                   key={i}
                   className="px-4 py-2 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30 text-[#7B61FF]"
                 >
@@ -248,21 +257,62 @@ export function PortfolioView({ username, onBack, onEnterDashboard }: PortfolioV
             <h2 className="text-lg font-semibold mb-4">Projects</h2>
             <div className="grid md:grid-cols-2 gap-4">
               {data.projects.map((project, i) => (
-                <a 
+                <a
                   key={i}
                   href={project.url}
                   className="p-5 rounded-xl bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all group"
                 >
-                  <h3 className="font-semibold text-[#F4F6FF] group-hover:text-[#7B61FF] transition-colors">
-                    {project.name}
-                  </h3>
+                  <div className="flex items-start justify-between">
+                    <h3 className="font-semibold text-[#F4F6FF] group-hover:text-[#7B61FF] transition-colors">
+                      {project.name}
+                    </h3>
+                    {project.aiGenerated && (
+                      <Badge variant="outline" className="border-[#7B61FF]/30 text-[#7B61FF] text-xs">
+                        AI Generated
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-[#A7ACB8] mt-1">{project.description}</p>
+                  {project.tags && (
+                    <div className="flex gap-1 mt-3">
+                      {project.tags.map((tag) => (
+                        <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#05050A] text-[#A7ACB8]">{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Ask My Agent CTA */}
+          {/* Milestones Timeline */}
+          {data.milestones.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Award className="w-5 h-5 text-[#7B61FF]" />
+                Milestones
+              </h2>
+              <div className="space-y-4">
+                {data.milestones.map((milestone, i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-[#7B61FF]" />
+                      {i < data.milestones.length - 1 && (
+                        <div className="w-0.5 h-full bg-[#7B61FF]/20" />
+                      )}
+                    </div>
+                    <div className="pb-4">
+                      <div className="text-xs text-[#7B61FF] font-mono mb-1">{milestone.date}</div>
+                      <div className="font-medium text-[#F4F6FF]">{milestone.title}</div>
+                      <div className="text-sm text-[#A7ACB8]">{milestone.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Ask My Agent */}
           {data.agentEnabled && (
             <div className="p-6 rounded-2xl bg-gradient-to-br from-[#7B61FF]/20 to-[#0B0B10] border border-[#7B61FF]/30">
               <div className="flex items-center gap-4 mb-4">
@@ -274,9 +324,9 @@ export function PortfolioView({ username, onBack, onEnterDashboard }: PortfolioV
                   <p className="text-sm text-[#A7ACB8]">Have questions? My AI assistant can help!</p>
                 </div>
               </div>
-              
+
               {!chatOpen ? (
-                <Button 
+                <Button
                   onClick={() => setChatOpen(true)}
                   className="w-full bg-[#7B61FF] hover:bg-[#6B51EF]"
                 >
@@ -285,17 +335,16 @@ export function PortfolioView({ username, onBack, onEnterDashboard }: PortfolioV
                 </Button>
               ) : (
                 <div className="bg-[#05050A] rounded-xl border border-[#7B61FF]/20 overflow-hidden">
-                  {/* Chat Messages */}
                   <div className="h-48 overflow-y-auto p-4 space-y-3">
                     {chatHistory.map((msg, i) => (
-                      <div 
-                        key={i} 
+                      <div
+                        key={i}
                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div 
+                        <div
                           className={`max-w-[80%] p-3 rounded-xl text-sm ${
-                            msg.role === 'user' 
-                              ? 'bg-[#7B61FF] text-white' 
+                            msg.role === 'user'
+                              ? 'bg-[#7B61FF] text-white'
                               : 'bg-[#0B0B10] text-[#F4F6FF] border border-[#7B61FF]/20'
                           }`}
                         >
@@ -304,8 +353,7 @@ export function PortfolioView({ username, onBack, onEnterDashboard }: PortfolioV
                       </div>
                     ))}
                   </div>
-                  
-                  {/* Chat Input */}
+
                   <div className="p-3 border-t border-[#7B61FF]/20 flex gap-2">
                     <Input
                       value={chatMessage}
@@ -314,7 +362,7 @@ export function PortfolioView({ username, onBack, onEnterDashboard }: PortfolioV
                       placeholder="Ask anything..."
                       className="flex-1 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF]"
                     />
-                    <Button 
+                    <Button
                       onClick={handleSendMessage}
                       className="bg-[#7B61FF] hover:bg-[#6B51EF]"
                     >

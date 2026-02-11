@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { NeuralBackground } from '../components/NeuralBackground';
 import { Navigation } from '../components/Navigation';
 import { HeroSection } from '../sections/HeroSection';
@@ -9,12 +10,8 @@ import { EngineSection } from '../sections/EngineSection';
 import { SecuritySection } from '../sections/SecuritySection';
 import { ContactSection } from '../sections/ContactSection';
 
-interface LandingPageProps {
-  onEnterDashboard: () => void;
-  onViewPortfolio: (username: string) => void;
-}
-
-export function LandingPage({ onEnterDashboard, onViewPortfolio }: LandingPageProps) {
+export function LandingPage() {
+  const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
@@ -25,11 +22,14 @@ export function LandingPage({ onEnterDashboard, onViewPortfolio }: LandingPagePr
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const onEnterDashboard = () => navigate('/login');
+  const onViewPortfolio = (username: string) => navigate(`/portfolio/${username}`);
+
   return (
     <div className="relative min-h-screen">
       <NeuralBackground />
       <Navigation scrollY={scrollY} onEnterDashboard={onEnterDashboard} />
-      
+
       <main className="relative z-10">
         <HeroSection onEnterDashboard={onEnterDashboard} />
         <ConstellationSection onViewPortfolio={onViewPortfolio} />
