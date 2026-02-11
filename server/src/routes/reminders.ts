@@ -1,38 +1,53 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { db } from '../db/index.js';
 
 export const remindersRouter = Router();
 
-const reminders = [
-  { id: '1', userId: 'demo-1', text: 'Call mom', datetime: '2026-02-12T09:00', channel: 'telegram', category: 'personal', completed: false, createdBy: 'user', createdAt: '2026-02-10T00:00:00Z' },
-  { id: '2', userId: 'demo-1', text: 'Submit project report', datetime: '2026-02-12T17:00', channel: 'email', recurring: 'weekly', category: 'work', completed: false, createdBy: 'user', createdAt: '2026-02-10T00:00:00Z' },
-  { id: '3', userId: 'demo-1', text: 'Team standup', datetime: '2026-02-12T10:00', channel: 'push', recurring: 'daily', category: 'work', completed: true, createdBy: 'agent', createdAt: '2026-02-10T00:00:00Z' },
-  { id: '4', userId: 'demo-1', text: 'Pay rent', datetime: '2026-02-15T09:00', channel: 'telegram', recurring: 'monthly', category: 'personal', completed: false, createdBy: 'user', createdAt: '2026-02-10T00:00:00Z' },
-  { id: '5', userId: 'demo-1', text: 'Gym workout', datetime: '2026-02-12T07:00', channel: 'push', category: 'health', completed: false, createdBy: 'automation', createdAt: '2026-02-10T00:00:00Z' },
-  { id: '6', userId: 'demo-1', text: 'Review pull requests', datetime: '2026-02-12T14:00', channel: 'email', category: 'work', completed: false, createdBy: 'user', createdAt: '2026-02-10T00:00:00Z' },
-];
-
-remindersRouter.get('/', requireAuth, (_req, res) => {
+remindersRouter.get('/', requireAuth, (req: AuthRequest, res) => {
+  const reminders = db.prepare('SELECT * FROM reminders WHERE user_id = ? ORDER BY datetime ASC').all(req.userId!);
   res.json(reminders);
 });
 
-remindersRouter.post('/', requireAuth, (req, res) => {
-  const reminder = { id: uuid(), userId: 'demo-1', createdBy: 'user', createdAt: new Date().toISOString(), ...req.body };
-  reminders.push(reminder);
+remindersRouter.post('/', requireAuth, (req: AuthRequest, res) => {
+  const { text, datetime, channel, category, recurring } = req.body;
+  if (!text) { res.status(400).json({ error: 'Text is required' }); return; }
+
+  const id = uuid();
+  db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+    id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', 'user'
+  );
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`).run(uuid(), req.userId, text);
+
+  const reminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(id);
   res.status(201).json(reminder);
 });
 
-remindersRouter.patch('/:id', requireAuth, (req, res) => {
-  const reminder = reminders.find((r) => r.id === req.params.id);
-  if (!reminder) { res.status(404).json({ error: 'Not found' }); return; }
-  Object.assign(reminder, req.body);
+remindersRouter.patch('/:id', requireAuth, (req: AuthRequest, res) => {
+  const existing = db.prepare('SELECT * FROM reminders WHERE id = ? AND user_id = ?').get(req.params.id, req.userId);
+  if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const updates = req.body;
+  const fields: string[] = [];
+  const values: unknown[] = [];
+  for (const key of ['text', 'datetime', 'channel', 'category', 'recurring', 'completed']) {
+    if (updates[key] !== undefined) {
+      fields.push(`${key} = ?`);
+      values.push(typeof updates[key] === 'boolean' ? (updates[key] ? 1 : 0) : updates[key]);
+    }
+  }
+  if (fields.length) {
+    values.push(req.params.id, req.userId);
+    db.prepare(`UPDATE reminders SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`).run(...values);
+  }
+
+  const reminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(req.params.id);
   res.json(reminder);
 });
 
-remindersRouter.delete('/:id', requireAuth, (req, res) => {
-  const index = reminders.findIndex((r) => r.id === req.params.id);
-  if (index === -1) { res.status(404).json({ error: 'Not found' }); return; }
-  reminders.splice(index, 1);
+remindersRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
+  const result = db.prepare('DELETE FROM reminders WHERE id = ? AND user_id = ?').run(req.params.id, req.userId);
+  if (result.changes === 0) { res.status(404).json({ error: 'Not found' }); return; }
   res.json({ success: true });
 });
