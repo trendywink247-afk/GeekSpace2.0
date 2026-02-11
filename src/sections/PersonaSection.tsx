@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Mic, MessageSquare, Image, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -9,7 +10,12 @@ const personaFeatures = [
   { icon: Settings, label: 'Knowledge', description: 'Domain expertise' },
 ];
 
-export function PersonaSection() {
+interface PersonaSectionProps {
+  onDesignAssistant?: () => void;
+}
+
+export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
+  const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -158,6 +164,7 @@ export function PersonaSection() {
 
             <Button
               size="lg"
+              onClick={() => onDesignAssistant ? onDesignAssistant() : navigate('/login?redirect=design')}
               className="bg-[#7B61FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#7B61FF]/30 group"
             >
               Design Your Assistant

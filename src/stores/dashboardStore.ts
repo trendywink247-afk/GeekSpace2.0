@@ -10,73 +10,45 @@ import type {
   ReminderChannel,
   ReminderCategory,
 } from '@/types';
+import {
+  dashboardService,
+  usageService,
+  agentService,
+  integrationService,
+  reminderService,
+  automationService,
+  featureService,
+} from '@/services/api';
 
-// ----- Mock data used when backend is unavailable ------------
+// ----- Fallback data used when backend is unavailable --------
 
-const mockStats: DashboardStats = {
-  messagesSent: 1247,
-  messagesChange: 12,
-  remindersActive: 23,
-  remindersChange: 3,
-  apiCalls: 8400,
-  apiCallsChange: 24,
-  responseTimeMs: 1200,
-  responseTimeChange: -8,
-  agentStatus: 'online',
-  agentModel: 'OpenClaw v2.1',
-  agentUptime: '99.99%',
+const fallbackStats: DashboardStats = {
+  messagesSent: 0, messagesChange: 0, remindersActive: 0, remindersChange: 0,
+  apiCalls: 0, apiCallsChange: 0, responseTimeMs: 0, responseTimeChange: 0,
+  agentStatus: 'offline', agentModel: 'none', agentUptime: '0%',
 };
 
-const mockUsage: UsageSummary = {
-  totalCostUSD: 3.2,
-  totalTokensIn: 520000,
-  totalTokensOut: 180000,
-  totalMessages: 1247,
-  totalToolCalls: 340,
-  byProvider: { openai: 1.8, qwen: 0.9, anthropic: 0.5 },
-  byChannel: { web: 480, telegram: 320, terminal: 280, 'portfolio-chat': 167 },
-  byTool: { 'reminders.create': 0.8, 'ai.chat': 1.1, 'portfolio.update': 0.6, 'usage.summary': 0.2, 'schedule.get': 0.5 },
-  forecastUSD: 4.1,
+const fallbackUsage: UsageSummary = {
+  totalCostUSD: 0, totalTokensIn: 0, totalTokensOut: 0, totalMessages: 0,
+  totalToolCalls: 0, byProvider: {}, byChannel: {}, byTool: {}, forecastUSD: 0,
 };
 
-const mockAgent: AgentConfig = {
-  id: 'agent-1',
-  userId: 'demo-1',
-  name: 'Geek',
-  displayName: "Alex's AI",
-  mode: 'builder',
-  voice: 'friendly',
-  systemPrompt: "You are Alex's personal AI assistant. You help with coding, reminders, and daily tasks. Be helpful, concise, and proactive. When uncertain, ask for clarification.",
-  primaryModel: 'geekspace-default',
-  fallbackModel: 'ollama-qwen2.5',
-  creativity: 70,
-  formality: 50,
-  monthlyBudgetUSD: 5,
-  status: 'online',
+const fallbackAgent: AgentConfig = {
+  id: '', userId: '', name: 'Geek', displayName: 'Your AI',
+  mode: 'builder', voice: 'friendly',
+  systemPrompt: 'You are a helpful personal AI assistant.',
+  primaryModel: 'geekspace-default', fallbackModel: 'ollama-qwen2.5',
+  creativity: 70, formality: 50, monthlyBudgetUSD: 5, status: 'offline',
 };
 
-const mockReminders: Reminder[] = [
-  { id: '1', userId: 'demo-1', text: 'Call mom', datetime: '2026-02-12T09:00', channel: 'telegram', category: 'personal', completed: false, createdBy: 'user', createdAt: '2026-02-10T00:00:00Z' },
-  { id: '2', userId: 'demo-1', text: 'Submit project report', datetime: '2026-02-12T17:00', channel: 'email', recurring: 'weekly', category: 'work', completed: false, createdBy: 'user', createdAt: '2026-02-10T00:00:00Z' },
-  { id: '3', userId: 'demo-1', text: 'Team standup', datetime: '2026-02-12T10:00', channel: 'push', recurring: 'daily', category: 'work', completed: true, createdBy: 'agent', createdAt: '2026-02-10T00:00:00Z' },
-  { id: '4', userId: 'demo-1', text: 'Pay rent', datetime: '2026-02-15T09:00', channel: 'telegram', recurring: 'monthly', category: 'personal', completed: false, createdBy: 'user', createdAt: '2026-02-10T00:00:00Z' },
-  { id: '5', userId: 'demo-1', text: 'Gym workout', datetime: '2026-02-12T07:00', channel: 'push', category: 'health', completed: false, createdBy: 'automation', createdAt: '2026-02-10T00:00:00Z' },
-  { id: '6', userId: 'demo-1', text: 'Review pull requests', datetime: '2026-02-12T14:00', channel: 'email', category: 'work', completed: false, createdBy: 'user', createdAt: '2026-02-10T00:00:00Z' },
-];
-
-const mockFeatures: FeatureToggles = {
-  socialDiscovery: true,
-  portfolioChat: true,
-  automationBuilder: true,
-  websiteBuilder: false,
-  n8nIntegration: true,
-  manyChatIntegration: false,
+const fallbackFeatures: FeatureToggles = {
+  socialDiscovery: true, portfolioChat: true, automationBuilder: true,
+  websiteBuilder: false, n8nIntegration: true, manyChatIntegration: false,
 };
 
 // ----- Store -------------------------------------------------
 
 interface DashboardStore {
-  // state
   stats: DashboardStats;
   usage: UsageSummary;
   agent: AgentConfig;
@@ -85,89 +57,164 @@ interface DashboardStore {
   automations: Automation[];
   features: FeatureToggles;
   isLoading: boolean;
+  error: string | null;
 
-  // actions
   loadDashboard: () => Promise<void>;
-  updateAgent: (data: Partial<AgentConfig>) => void;
-  addReminder: (data: { text: string; datetime: string; channel: ReminderChannel; recurring?: string; category: ReminderCategory }) => void;
-  toggleReminder: (id: string) => void;
-  deleteReminder: (id: string) => void;
-  connectIntegration: (id: string) => void;
-  disconnectIntegration: (id: string) => void;
-  toggleFeature: (key: keyof FeatureToggles) => void;
-  setUsageRange: (range: 'day' | 'week' | 'month') => void;
+  updateAgent: (data: Partial<AgentConfig>) => Promise<void>;
+  addReminder: (data: { text: string; datetime: string; channel: ReminderChannel; recurring?: string; category: ReminderCategory }) => Promise<void>;
+  toggleReminder: (id: string) => Promise<void>;
+  deleteReminder: (id: string) => Promise<void>;
+  connectIntegration: (type: string) => Promise<void>;
+  disconnectIntegration: (id: string) => Promise<void>;
+  toggleFeature: (key: keyof FeatureToggles) => Promise<void>;
+  setUsageRange: (range: 'day' | 'week' | 'month') => Promise<void>;
 }
 
-export const useDashboardStore = create<DashboardStore>((set, _get) => ({
-  stats: mockStats,
-  usage: mockUsage,
-  agent: mockAgent,
+export const useDashboardStore = create<DashboardStore>((set, get) => ({
+  stats: fallbackStats,
+  usage: fallbackUsage,
+  agent: fallbackAgent,
   integrations: [],
-  reminders: mockReminders,
+  reminders: [],
   automations: [],
-  features: mockFeatures,
+  features: fallbackFeatures,
   isLoading: false,
+  error: null,
 
   loadDashboard: async () => {
-    set({ isLoading: true });
-    // In production, each of these would be an API call.
-    // For now we use mock data that's already set as defaults.
-    // try { const { data } = await dashboardService.stats(); ... }
-    set({ isLoading: false });
+    set({ isLoading: true, error: null });
+    try {
+      // Fire all API calls in parallel
+      const [statsRes, usageRes, agentRes, intRes, remRes, autoRes, featRes] = await Promise.allSettled([
+        dashboardService.stats(),
+        usageService.summary('month'),
+        agentService.getConfig(),
+        integrationService.list(),
+        reminderService.list(),
+        automationService.list(),
+        featureService.get(),
+      ]);
+
+      set({
+        stats: statsRes.status === 'fulfilled' ? statsRes.value.data : fallbackStats,
+        usage: usageRes.status === 'fulfilled' ? usageRes.value.data : fallbackUsage,
+        agent: agentRes.status === 'fulfilled' ? agentRes.value.data : fallbackAgent,
+        integrations: intRes.status === 'fulfilled' ? intRes.value.data : [],
+        reminders: remRes.status === 'fulfilled' ? remRes.value.data : [],
+        automations: autoRes.status === 'fulfilled' ? autoRes.value.data : [],
+        features: featRes.status === 'fulfilled' ? featRes.value.data : fallbackFeatures,
+        isLoading: false,
+      });
+    } catch {
+      set({ isLoading: false, error: 'Failed to load dashboard data' });
+    }
   },
 
-  updateAgent: (data) =>
-    set((s) => ({ agent: { ...s.agent, ...data } })),
+  updateAgent: async (data) => {
+    // Optimistic update
+    set((s) => ({ agent: { ...s.agent, ...data } }));
+    try {
+      const { data: updated } = await agentService.updateConfig(data);
+      set({ agent: updated });
+    } catch {
+      // Revert on failure would require storing previous state
+    }
+  },
 
-  addReminder: (data) =>
-    set((s) => ({
-      reminders: [
-        ...s.reminders,
-        {
-          id: Date.now().toString(),
-          userId: 'demo-1',
-          text: data.text,
-          datetime: data.datetime,
-          channel: data.channel,
+  addReminder: async (data) => {
+    try {
+      const { data: created } = await reminderService.create({
+        text: data.text,
+        datetime: data.datetime,
+        channel: data.channel,
+        recurring: data.recurring as Reminder['recurring'],
+        category: data.category,
+        completed: false,
+      });
+      set((s) => ({ reminders: [...s.reminders, created] }));
+    } catch {
+      // Fallback: add locally
+      set((s) => ({
+        reminders: [...s.reminders, {
+          id: Date.now().toString(), userId: '', text: data.text,
+          datetime: data.datetime, channel: data.channel,
           recurring: data.recurring as Reminder['recurring'],
-          completed: false,
-          category: data.category,
-          createdBy: 'user' as const,
-          createdAt: new Date().toISOString(),
-        },
-      ],
-    })),
+          completed: false, category: data.category,
+          createdBy: 'user' as const, createdAt: new Date().toISOString(),
+        }],
+      }));
+    }
+  },
 
-  toggleReminder: (id) =>
+  toggleReminder: async (id) => {
+    const reminder = get().reminders.find((r) => r.id === id);
+    if (!reminder) return;
+
+    // Optimistic update
     set((s) => ({
-      reminders: s.reminders.map((r) =>
-        r.id === id ? { ...r, completed: !r.completed } : r,
-      ),
-    })),
+      reminders: s.reminders.map((r) => r.id === id ? { ...r, completed: !r.completed } : r),
+    }));
+    try {
+      await reminderService.update(id, { completed: !reminder.completed });
+    } catch { /* keep optimistic update */ }
+  },
 
-  deleteReminder: (id) =>
-    set((s) => ({ reminders: s.reminders.filter((r) => r.id !== id) })),
+  deleteReminder: async (id) => {
+    const prev = get().reminders;
+    set((s) => ({ reminders: s.reminders.filter((r) => r.id !== id) }));
+    try {
+      await reminderService.delete(id);
+    } catch {
+      set({ reminders: prev }); // Revert
+    }
+  },
 
-  connectIntegration: (id) =>
-    set((s) => ({
-      integrations: s.integrations.map((i) =>
-        i.id === id ? { ...i, status: 'connected' as const, health: 100, lastSync: 'Just now' } : i,
-      ),
-    })),
+  connectIntegration: async (type) => {
+    try {
+      const { data } = await integrationService.connect(type);
+      set((s) => ({
+        integrations: s.integrations.map((i) =>
+          i.id === data.id || i.type === type ? data : i
+        ),
+      }));
+    } catch {
+      // Optimistic fallback
+      set((s) => ({
+        integrations: s.integrations.map((i) =>
+          i.type === type ? { ...i, status: 'connected' as const, health: 100, lastSync: 'Just now' } : i
+        ),
+      }));
+    }
+  },
 
-  disconnectIntegration: (id) =>
-    set((s) => ({
-      integrations: s.integrations.map((i) =>
-        i.id === id ? { ...i, status: 'disconnected' as const, health: 0, lastSync: undefined } : i,
-      ),
-    })),
+  disconnectIntegration: async (id) => {
+    try {
+      const { data } = await integrationService.disconnect(id);
+      set((s) => ({
+        integrations: s.integrations.map((i) => i.id === id ? data : i),
+      }));
+    } catch {
+      set((s) => ({
+        integrations: s.integrations.map((i) =>
+          i.id === id ? { ...i, status: 'disconnected' as const, health: 0 } : i
+        ),
+      }));
+    }
+  },
 
-  toggleFeature: (key) =>
-    set((s) => ({
-      features: { ...s.features, [key]: !s.features[key] },
-    })),
+  toggleFeature: async (key) => {
+    const current = get().features[key];
+    // Optimistic update
+    set((s) => ({ features: { ...s.features, [key]: !current } }));
+    try {
+      await featureService.update({ [key]: !current });
+    } catch { /* keep optimistic update */ }
+  },
 
-  setUsageRange: (_range) => {
-    // Would re-fetch usage with different range; using mock for now.
+  setUsageRange: async (range) => {
+    try {
+      const { data } = await usageService.summary(range);
+      set({ usage: data });
+    } catch { /* keep existing data */ }
   },
 }));

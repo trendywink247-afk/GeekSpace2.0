@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Mail, Send, CheckCircle, Sparkles } from 'lucide-react';
+import { Mail, Send, CheckCircle, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { contactService } from '@/services/api';
 
 interface ContactSectionProps {
   onEnterDashboard?: () => void;
@@ -18,6 +19,8 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
     message: '',
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -36,10 +39,33 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
     return () => observer.disconnect();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    setTimeout(() => setIsSubmitted(false), 3000);
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const { data } = await contactService.submit({
+        name: formData.name,
+        email: formData.email,
+        company: formData.company || undefined,
+        message: formData.message,
+      });
+
+      if (data.success) {
+        setIsSubmitted(true);
+        setFormData({ name: '', email: '', company: '', message: '' });
+      } else {
+        setErrorMessage(data.message || 'Something went wrong. Please try again.');
+      }
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setErrorMessage(
+        axiosErr.response?.data?.message || 'Network error. Please try again later.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -191,13 +217,30 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
                     />
                   </div>
 
+                  {errorMessage && (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      {errorMessage}
+                    </div>
+                  )}
+
                   <Button
                     type="submit"
-                    className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] text-white py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#7B61FF]/25 group"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] text-white py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#7B61FF]/25 group disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <Sparkles className="mr-2 w-5 h-5" />
-                    Request Access
-                    <Send className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 w-5 h-5 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 w-5 h-5" />
+                        Request Access
+                        <Send className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                      </>
+                    )}
                   </Button>
 
                   <p className="text-center text-sm text-[#A7ACB8]/70">
@@ -220,10 +263,10 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
             </div>
             
             <div className="flex items-center gap-6 text-sm text-[#A7ACB8]">
-              <a href="#" className="hover:text-[#F4F6FF] transition-colors">Privacy</a>
-              <a href="#" className="hover:text-[#F4F6FF] transition-colors">Terms</a>
-              <a href="#" className="hover:text-[#F4F6FF] transition-colors">Docs</a>
-              <a href="#" className="hover:text-[#F4F6FF] transition-colors">Status</a>
+              <a href="/privacy" className="hover:text-[#F4F6FF] transition-colors">Privacy</a>
+              <a href="/terms" className="hover:text-[#F4F6FF] transition-colors">Terms</a>
+              <a href="/docs" target="_blank" rel="noopener noreferrer" className="hover:text-[#F4F6FF] transition-colors">Docs</a>
+              <a href="/status" className="hover:text-[#F4F6FF] transition-colors">Status</a>
             </div>
             
             <div className="text-sm text-[#A7ACB8]/60">

@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Play, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface HeroSectionProps {
   onEnterDashboard?: () => void;
+  onWatchDemo?: () => void;
 }
 
-export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
+export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps) {
+  const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -127,6 +130,7 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
           <Button
             size="lg"
             variant="outline"
+            onClick={() => onWatchDemo ? onWatchDemo() : navigate('/login?demo=true')}
             className="border-[#7B61FF]/50 text-[#F4F6FF] hover:bg-[#7B61FF]/10 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
           >
             <Play className="mr-2 w-5 h-5 text-[#7B61FF]" />

@@ -1,61 +1,86 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { db } from '../db/index.js';
 
 export const usageRouter = Router();
 
-usageRouter.get('/summary', requireAuth, (req, res) => {
-  const range = req.query.range || 'month';
-  const multiplier = range === 'day' ? 0.1 : range === 'week' ? 0.35 : 1;
+usageRouter.get('/summary', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const range = (req.query.range as string) || 'month';
+
+  const dateFilter = range === 'day'
+    ? "AND created_at >= datetime('now', '-1 day')"
+    : range === 'week'
+    ? "AND created_at >= datetime('now', '-7 days')"
+    : "AND created_at >= datetime('now', '-30 days')";
+
+  const totals = db.prepare(`
+    SELECT COALESCE(SUM(cost_usd), 0) as totalCost, COALESCE(SUM(tokens_in), 0) as totalIn,
+           COALESCE(SUM(tokens_out), 0) as totalOut, COUNT(*) as totalMessages,
+           COUNT(CASE WHEN tool != 'ai.chat' AND tool != '' THEN 1 END) as totalToolCalls
+    FROM usage_events WHERE user_id = ? ${dateFilter}
+  `).get(userId) as Record<string, unknown>;
+
+  const byProvider = db.prepare(`
+    SELECT provider, COALESCE(SUM(cost_usd), 0) as cost FROM usage_events WHERE user_id = ? ${dateFilter} GROUP BY provider
+  `).all(userId) as Record<string, unknown>[];
+
+  const byChannel = db.prepare(`
+    SELECT channel, COUNT(*) as count FROM usage_events WHERE user_id = ? ${dateFilter} GROUP BY channel
+  `).all(userId) as Record<string, unknown>[];
+
+  const byTool = db.prepare(`
+    SELECT tool, COALESCE(SUM(cost_usd), 0) as cost FROM usage_events WHERE user_id = ? ${dateFilter} AND tool != '' GROUP BY tool
+  `).all(userId) as Record<string, unknown>[];
+
+  const daysUsed = range === 'day' ? 1 : range === 'week' ? 7 : 30;
+  const dailyCost = ((totals.totalCost as number) || 0) / daysUsed;
+  const forecastUSD = +(dailyCost * 30).toFixed(2);
 
   res.json({
-    totalCostUSD: +(3.2 * multiplier).toFixed(2),
-    totalTokensIn: Math.round(520000 * multiplier),
-    totalTokensOut: Math.round(180000 * multiplier),
-    totalMessages: Math.round(1247 * multiplier),
-    totalToolCalls: Math.round(340 * multiplier),
-    byProvider: {
-      openai: +(1.8 * multiplier).toFixed(2),
-      qwen: +(0.9 * multiplier).toFixed(2),
-      anthropic: +(0.5 * multiplier).toFixed(2),
-    },
-    byChannel: {
-      web: Math.round(480 * multiplier),
-      telegram: Math.round(320 * multiplier),
-      terminal: Math.round(280 * multiplier),
-      'portfolio-chat': Math.round(167 * multiplier),
-    },
-    byTool: {
-      'reminders.create': +(0.8 * multiplier).toFixed(2),
-      'ai.chat': +(1.1 * multiplier).toFixed(2),
-      'portfolio.update': +(0.6 * multiplier).toFixed(2),
-      'usage.summary': +(0.2 * multiplier).toFixed(2),
-      'schedule.get': +(0.5 * multiplier).toFixed(2),
-    },
-    forecastUSD: 4.1,
+    totalCostUSD: +((totals.totalCost as number) || 0).toFixed(2),
+    totalTokensIn: (totals.totalIn as number) || 0,
+    totalTokensOut: (totals.totalOut as number) || 0,
+    totalMessages: (totals.totalMessages as number) || 0,
+    totalToolCalls: (totals.totalToolCalls as number) || 0,
+    byProvider: Object.fromEntries(byProvider.map(r => [r.provider, +((r.cost as number) || 0).toFixed(2)])),
+    byChannel: Object.fromEntries(byChannel.map(r => [r.channel, r.count])),
+    byTool: Object.fromEntries(byTool.map(r => [r.tool, +((r.cost as number) || 0).toFixed(2)])),
+    forecastUSD,
   });
 });
 
-usageRouter.get('/billing', requireAuth, (_req, res) => {
+usageRouter.get('/billing', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const user = db.prepare('SELECT plan, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown>;
+  const monthUsage = db.prepare(`
+    SELECT COALESCE(SUM(cost_usd), 0) as cost, COALESCE(SUM(tokens_in), 0) as tin,
+           COALESCE(SUM(tokens_out), 0) as tout, COUNT(*) as messages
+    FROM usage_events WHERE user_id = ? AND created_at >= datetime('now', '-30 days')
+  `).get(userId) as Record<string, unknown>;
+
   res.json({
-    plan: 'pro',
-    pricePerYear: 50,
-    credits: 12450,
-    monthlyAllowance: 15000,
-    resetDate: '2026-03-01',
+    plan: user?.plan || 'free',
+    pricePerYear: user?.plan === 'pro' ? 50 : 0,
+    credits: user?.credits || 0,
+    monthlyAllowance: user?.plan === 'pro' ? 15000 : 5000,
+    resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().split('T')[0],
     usageThisMonth: {
-      totalCostUSD: 3.2,
-      totalTokensIn: 520000,
-      totalTokensOut: 180000,
-      totalMessages: 1247,
-      totalToolCalls: 340,
-      byProvider: { openai: 1.8, qwen: 0.9, anthropic: 0.5 },
-      byChannel: { web: 480, telegram: 320, terminal: 280, 'portfolio-chat': 167 },
-      byTool: {},
-      forecastUSD: 4.1,
+      totalCostUSD: +((monthUsage.cost as number) || 0).toFixed(2),
+      totalTokensIn: (monthUsage.tin as number) || 0,
+      totalTokensOut: (monthUsage.tout as number) || 0,
+      totalMessages: (monthUsage.messages as number) || 0,
     },
   });
 });
 
-usageRouter.get('/events', requireAuth, (_req, res) => {
-  res.json({ events: [], total: 0 });
+usageRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+  const offset = parseInt(req.query.offset as string) || 0;
+
+  const events = db.prepare('SELECT * FROM usage_events WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?').all(userId, limit, offset);
+  const total = db.prepare('SELECT COUNT(*) as count FROM usage_events WHERE user_id = ?').get(userId) as Record<string, unknown>;
+
+  res.json({ events, total: (total.count as number) || 0 });
 });

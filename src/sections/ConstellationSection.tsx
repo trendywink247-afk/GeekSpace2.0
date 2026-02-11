@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, ArrowRight, Building2, Cpu, Palette, LineChart, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,12 +17,26 @@ const companies = [
 
 interface ConstellationSectionProps {
   onViewPortfolio?: (username: string) => void;
+  onBrowseDirectory?: () => void;
 }
 
-export function ConstellationSection({ onViewPortfolio }: ConstellationSectionProps) {
+export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: ConstellationSectionProps) {
+  const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [activeDot, setActiveDot] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredCompanies = useMemo(() => {
+    if (!searchQuery.trim()) return companies.slice(0, 8);
+    const q = searchQuery.toLowerCase();
+    return companies.filter(
+      (c) =>
+        c.displayName.toLowerCase().includes(q) ||
+        c.category.toLowerCase().includes(q) ||
+        c.name.toLowerCase().includes(q),
+    ).slice(0, 8);
+  }, [searchQuery]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -145,13 +160,15 @@ export function ConstellationSection({ onViewPortfolio }: ConstellationSectionPr
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A7ACB8]" />
             <Input
               placeholder="Find a company..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 py-6 bg-[#0B0B10] border-[#7B61FF]/30 rounded-xl text-[#F4F6FF] placeholder:text-[#A7ACB8]/60 focus:border-[#7B61FF] focus:ring-[#7B61FF]/20"
             />
           </div>
 
           {/* Company Preview Grid */}
           <div className="grid grid-cols-4 gap-3 mb-6">
-            {companies.slice(0, 8).map((company, i) => (
+            {filteredCompanies.map((company, i) => (
               <button
                 key={i}
                 onClick={() => onViewPortfolio?.(company.name)}
@@ -168,6 +185,7 @@ export function ConstellationSection({ onViewPortfolio }: ConstellationSectionPr
 
           {/* CTA */}
           <Button
+            onClick={() => onBrowseDirectory ? onBrowseDirectory() : navigate('/explore')}
             className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] text-white py-6 rounded-xl font-medium transition-all duration-300 hover:shadow-lg hover:shadow-[#7B61FF]/25 group"
           >
             Browse Directory

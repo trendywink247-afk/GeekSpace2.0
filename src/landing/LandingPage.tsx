@@ -24,6 +24,11 @@ export function LandingPage() {
 
   const onEnterDashboard = () => navigate('/login');
   const onViewPortfolio = (username: string) => navigate(`/portfolio/${username}`);
+  const onWatchDemo = () => navigate('/login?demo=true');
+  const onBrowseDirectory = () => navigate('/explore');
+  const onDesignAssistant = () => navigate('/login?redirect=design');
+  const onBuildWorkflow = () => navigate('/login?redirect=automations');
+  const onReviewSecurity = () => navigate('/docs');
 
   return (
     <div className="relative min-h-screen">
@@ -31,12 +36,12 @@ export function LandingPage() {
       <Navigation scrollY={scrollY} onEnterDashboard={onEnterDashboard} />
 
       <main className="relative z-10">
-        <HeroSection onEnterDashboard={onEnterDashboard} />
-        <ConstellationSection onViewPortfolio={onViewPortfolio} />
-        <PersonaSection />
+        <HeroSection onEnterDashboard={onEnterDashboard} onWatchDemo={onWatchDemo} />
+        <ConstellationSection onViewPortfolio={onViewPortfolio} onBrowseDirectory={onBrowseDirectory} />
+        <PersonaSection onDesignAssistant={onDesignAssistant} />
         <ActivitySection />
-        <EngineSection />
-        <SecuritySection />
+        <EngineSection onBuildWorkflow={onBuildWorkflow} />
+        <SecuritySection onReviewSecurity={onReviewSecurity} />
         <ContactSection onEnterDashboard={onEnterDashboard} />
       </main>
     </div>

@@ -1,10 +1,14 @@
 // ============================================================
-// GeekSpace Core API — entry point
+// GeekSpace Core API — Express + SQLite + JWT
 // ============================================================
 
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
+
+dotenv.config();
+
 import { authRouter } from './routes/auth.js';
 import { usersRouter } from './routes/users.js';
 import { agentRouter } from './routes/agent.js';
@@ -21,15 +25,19 @@ import { featuresRouter } from './routes/features.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }));
+app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:4173'], credentials: true }));
 app.use(express.json());
+
+// Rate limiting
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
+app.use('/api/', limiter);
 
 // Health check
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', version: '1.0.0', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '2.0.0' });
 });
 
-// Mount routers
+// Mount routes
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/agent', agentRouter);

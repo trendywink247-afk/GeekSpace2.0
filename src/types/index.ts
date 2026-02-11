@@ -14,9 +14,12 @@ export interface User {
   bio: string;
   location?: string;
   website?: string;
+  role?: string;
+  company?: string;
   tags: string[];
   theme: ThemePreference;
   plan: Plan;
+  credits?: number;
   createdAt: string;
 }
 

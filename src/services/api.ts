@@ -209,4 +209,18 @@ export const featureService = {
     api.patch<FeatureToggles>('/features', data),
 };
 
+// ----- Contact -----------------------------------------------
+
+export const contactService = {
+  submit: (data: { name: string; email: string; company?: string; message: string }) =>
+    api.post<{ success: boolean; message: string }>('/dashboard/contact', data),
+};
+
+// ----- Public Agent Chat -------------------------------------
+
+export const publicAgentService = {
+  chat: (username: string, message: string) =>
+    api.post<{ reply: string; agentName: string; ownerName: string }>(`/agent/chat/public/${username}`, { message }),
+};
+
 export default api;
