@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield, Lock, Eye, AlertTriangle, Server } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -9,7 +10,12 @@ const securityFeatures = [
   { icon: Server, label: 'Encryption', description: 'End-to-end secure' },
 ];
 
-export function SecuritySection() {
+interface SecuritySectionProps {
+  onReviewSecurity?: () => void;
+}
+
+export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
+  const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -182,6 +188,13 @@ export function SecuritySection() {
 
             <Button
               size="lg"
+              onClick={() => {
+                if (onReviewSecurity) {
+                  onReviewSecurity();
+                } else {
+                  navigate('/docs');
+                }
+              }}
               className="bg-[#7B61FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#7B61FF]/30 group"
             >
               Review Security

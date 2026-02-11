@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Zap, Webhook, Database, Bot, Workflow } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -9,7 +10,12 @@ const engineFeatures = [
   { icon: Workflow, label: 'Workflows', description: 'Visual automation builder' },
 ];
 
-export function EngineSection() {
+interface EngineSectionProps {
+  onBuildWorkflow?: () => void;
+}
+
+export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
+  const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -106,6 +112,7 @@ export function EngineSection() {
 
             <Button
               size="lg"
+              onClick={() => onBuildWorkflow ? onBuildWorkflow() : navigate('/login?redirect=automations')}
               className="bg-[#7B61FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#7B61FF]/30 group"
             >
               Build a Workflow
