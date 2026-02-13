@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { agentService } from '@/services/api';
 
 interface ChatMessage {
   id: string;
@@ -18,17 +19,6 @@ interface AgentChatPanelProps {
   /** Optional: agent belongs to another user (portfolio chat mode) */
   agentOwner?: string;
 }
-
-const agentResponses = [
-  "I can help with that! Let me look into it.",
-  "Great question! Based on your projects, I'd suggest starting with a prototype.",
-  "I've checked your schedule — you have a free slot tomorrow at 2 PM.",
-  "Here's what I found: your API usage is trending 12% higher this week.",
-  "Done! I've added that to your reminders for tomorrow morning.",
-  "I can set up an automation for that. Want me to connect it to your Telegram?",
-  "Your portfolio has been getting great engagement — 24 views this week!",
-  "I'd recommend using TypeScript for that project. Want me to scaffold it?",
-];
 
 const suggestedPrompts = [
   "What's on my schedule today?",
@@ -87,18 +77,28 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const response = agentResponses[Math.floor(Math.random() * agentResponses.length)];
-      const agentMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'agent',
-        content: response,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, agentMsg]);
-      setIsTyping(false);
-    }, 800 + Math.random() * 1200);
+    // Call real backend API
+    (async () => {
+      try {
+        const { data } = await agentService.chat(content);
+        const agentMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'agent',
+          content: data.reply,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, agentMsg]);
+      } catch {
+        setMessages((prev) => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'agent',
+          content: "Sorry, I couldn't process that right now. Please try again.",
+          timestamp: new Date(),
+        }]);
+      } finally {
+        setIsTyping(false);
+      }
+    })();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

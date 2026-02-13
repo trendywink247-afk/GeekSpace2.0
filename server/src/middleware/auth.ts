@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'geekspace-dev-secret';
+import { config } from '../config.js';
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -15,14 +14,15 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
 
   try {
-    const payload = jwt.verify(header.slice(7), JWT_SECRET) as { sub: string };
+    const payload = jwt.verify(header.slice(7), config.jwtSecret) as { sub: string };
     req.userId = payload.sub;
     next();
-  } catch {
-    res.status(401).json({ error: 'Invalid token' });
+  } catch (err) {
+    const message = err instanceof jwt.TokenExpiredError ? 'Token expired' : 'Invalid token';
+    res.status(401).json({ error: message });
   }
 }
 
 export function signToken(userId: string): string {
-  return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '30d' });
+  return jwt.sign({ sub: userId }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
 }

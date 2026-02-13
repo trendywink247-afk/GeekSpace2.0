@@ -66,6 +66,10 @@ interface DashboardStore {
   deleteReminder: (id: string) => Promise<void>;
   connectIntegration: (type: string) => Promise<void>;
   disconnectIntegration: (id: string) => Promise<void>;
+  addAutomation: (data: Omit<Automation, 'id' | 'userId' | 'lastRun' | 'runCount' | 'createdAt'>) => Promise<void>;
+  updateAutomation: (id: string, data: Partial<Automation>) => Promise<void>;
+  deleteAutomation: (id: string) => Promise<void>;
+  triggerAutomation: (id: string) => Promise<void>;
   toggleFeature: (key: keyof FeatureToggles) => Promise<void>;
   setUsageRange: (range: 'day' | 'week' | 'month') => Promise<void>;
 }
@@ -200,6 +204,58 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         ),
       }));
     }
+  },
+
+  addAutomation: async (data) => {
+    try {
+      const { data: created } = await automationService.create(data);
+      set((s) => ({ automations: [created, ...s.automations] }));
+    } catch {
+      // Fallback: add locally
+      set((s) => ({
+        automations: [{
+          id: Date.now().toString(), userId: '', ...data,
+          lastRun: undefined, runCount: 0, createdAt: new Date().toISOString(),
+        }, ...s.automations],
+      }));
+    }
+  },
+
+  updateAutomation: async (id, data) => {
+    // Optimistic update
+    set((s) => ({
+      automations: s.automations.map((a) => a.id === id ? { ...a, ...data } : a),
+    }));
+    try {
+      const { data: updated } = await automationService.update(id, data);
+      set((s) => ({
+        automations: s.automations.map((a) => a.id === id ? updated : a),
+      }));
+    } catch { /* keep optimistic update */ }
+  },
+
+  deleteAutomation: async (id) => {
+    const prev = get().automations;
+    set((s) => ({ automations: s.automations.filter((a) => a.id !== id) }));
+    try {
+      await automationService.delete(id);
+    } catch {
+      set({ automations: prev }); // Revert
+    }
+  },
+
+  triggerAutomation: async (id) => {
+    try {
+      const { data } = await automationService.trigger(id);
+      if (data.success) {
+        const auto = get().automations.find((a) => a.id === id);
+        set((s) => ({
+          automations: s.automations.map((a) =>
+            a.id === id ? { ...a, lastRun: new Date().toISOString(), runCount: (auto?.runCount ?? 0) + 1 } : a
+          ),
+        }));
+      }
+    } catch { /* ignore trigger failures */ }
   },
 
   toggleFeature: async (key) => {

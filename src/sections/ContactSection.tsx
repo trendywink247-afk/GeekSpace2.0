@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Mail, Send, CheckCircle, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -263,10 +264,10 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
             </div>
             
             <div className="flex items-center gap-6 text-sm text-[#A7ACB8]">
-              <a href="/privacy" className="hover:text-[#F4F6FF] transition-colors">Privacy</a>
-              <a href="/terms" className="hover:text-[#F4F6FF] transition-colors">Terms</a>
-              <a href="/docs" target="_blank" rel="noopener noreferrer" className="hover:text-[#F4F6FF] transition-colors">Docs</a>
-              <a href="/status" className="hover:text-[#F4F6FF] transition-colors">Status</a>
+              <Link to="/privacy" className="hover:text-[#F4F6FF] transition-colors">Privacy</Link>
+              <Link to="/terms" className="hover:text-[#F4F6FF] transition-colors">Terms</Link>
+              <Link to="/docs" className="hover:text-[#F4F6FF] transition-colors">Docs</Link>
+              <Link to="/status" className="hover:text-[#F4F6FF] transition-colors">Status</Link>
             </div>
             
             <div className="text-sm text-[#A7ACB8]/60">

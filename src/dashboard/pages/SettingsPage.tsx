@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   User,
   Bell,
@@ -28,6 +28,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
+import { userService, apiKeyService } from '@/services/api';
 import type { ApiProvider } from '@/types';
 
 export function SettingsPage() {
@@ -67,20 +68,43 @@ export function SettingsPage() {
   const [newKeyValue, setNewKeyValue] = useState('');
   const [showAddKey, setShowAddKey] = useState(false);
 
-  const handleSave = () => {
+  // Load API keys from backend on mount
+  useEffect(() => {
+    apiKeyService.list().then(({ data }) => {
+      setApiKeys(data.map(k => ({ id: k.id, provider: k.provider, label: k.label, maskedKey: k.maskedKey })));
+    }).catch(() => {});
+  }, []);
+
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => setIsSaving(false), 1500);
+    try {
+      await userService.updateProfile(profile);
+    } catch {
+      // keep local state on error
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleAddKey = () => {
+  const handleAddKey = async () => {
     if (!newKeyValue) return;
-    const masked = newKeyValue.slice(0, 3) + '...' + newKeyValue.slice(-4);
-    setApiKeys([...apiKeys, {
-      id: Date.now().toString(),
-      provider: newKeyProvider,
-      label: newKeyProvider.charAt(0).toUpperCase() + newKeyProvider.slice(1),
-      maskedKey: masked,
-    }]);
+    try {
+      const { data } = await apiKeyService.create({
+        provider: newKeyProvider,
+        label: newKeyProvider.charAt(0).toUpperCase() + newKeyProvider.slice(1),
+        key: newKeyValue,
+      });
+      setApiKeys([...apiKeys, { id: data.id, provider: data.provider, label: data.label, maskedKey: data.maskedKey }]);
+    } catch {
+      // Fallback: add locally
+      const masked = newKeyValue.slice(0, 3) + '...' + newKeyValue.slice(-4);
+      setApiKeys([...apiKeys, {
+        id: Date.now().toString(),
+        provider: newKeyProvider,
+        label: newKeyProvider.charAt(0).toUpperCase() + newKeyProvider.slice(1),
+        maskedKey: masked,
+      }]);
+    }
     setNewKeyValue('');
     setShowAddKey(false);
   };

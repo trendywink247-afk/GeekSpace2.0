@@ -1,25 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, Sparkles, MapPin, Bot, ArrowLeft, Filter, MessageSquare, Eye, Users
+  Search, Sparkles, MapPin, Bot, ArrowLeft, Filter, MessageSquare, Eye, Users, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
+import { directoryService } from '@/services/api';
 import type { DirectoryProfile } from '@/types';
-
-// Static directory data (would come from API in production)
-const allProfiles: DirectoryProfile[] = [
-  { username: 'alex', name: 'Alex Chen', avatar: 'AC', tagline: 'Full-stack Developer & AI Enthusiast', tags: ['AI Engineer', 'Full-stack', 'Open Source'], location: 'San Francisco, CA', skills: ['React', 'TypeScript', 'Node.js', 'Python', 'AI/ML', 'OpenClaw'], agentEnabled: true },
-  { username: 'sarah', name: 'Sarah Kim', avatar: 'SK', tagline: 'Product Designer & Creative Technologist', tags: ['Designer', 'Creative Tech', 'UX'], location: 'New York, NY', skills: ['UI/UX', 'Figma', 'Design Systems', 'React', 'Motion Design'], agentEnabled: true },
-  { username: 'marcus', name: 'Marcus Wright', avatar: 'MW', tagline: 'Founder & Startup Advisor', tags: ['Founder', 'Advisor', 'Strategy'], location: 'Austin, TX', skills: ['Strategy', 'Fundraising', 'Product', 'Leadership', 'Growth'], agentEnabled: true },
-  { username: 'jordan', name: 'Jordan Lee', avatar: 'JL', tagline: 'ML Engineer & Data Scientist', tags: ['ML', 'Data Science', 'Python'], location: 'Seattle, WA', skills: ['Python', 'PyTorch', 'TensorFlow', 'Data Science', 'NLP'], agentEnabled: true },
-  { username: 'taylor', name: 'Taylor Brooks', avatar: 'TB', tagline: 'DevOps & Cloud Architect', tags: ['DevOps', 'Cloud', 'Infrastructure'], location: 'Denver, CO', skills: ['AWS', 'Kubernetes', 'Terraform', 'Docker', 'CI/CD'], agentEnabled: true },
-  { username: 'casey', name: 'Casey Rivera', avatar: 'CR', tagline: 'No-Code Automation Expert', tags: ['No-Code', 'Automation', 'Marketing'], location: 'Miami, FL', skills: ['n8n', 'ManyChat', 'Zapier', 'Marketing', 'Growth'], agentEnabled: true },
-  { username: 'morgan', name: 'Morgan Patel', avatar: 'MP', tagline: 'AI Storyteller & Content Creator', tags: ['Content', 'AI Writing', 'Storytelling'], location: 'London, UK', skills: ['Content Strategy', 'AI Writing', 'Video', 'Podcasting'], agentEnabled: false },
-  { username: 'riley', name: 'Riley Zhang', avatar: 'RZ', tagline: 'Blockchain & Web3 Developer', tags: ['Web3', 'Blockchain', 'Solidity'], location: 'Singapore', skills: ['Solidity', 'Ethereum', 'React', 'Rust', 'Smart Contracts'], agentEnabled: true },
-];
 
 const allTags = ['All', 'AI Engineer', 'Designer', 'Founder', 'DevOps', 'No-Code', 'Content', 'Web3', 'ML', 'Data Science'];
 
@@ -40,27 +29,28 @@ export function ExplorePage() {
   const [activeTag, setActiveTag] = useState('All');
   const [chatOpen, setChatOpen] = useState(false);
   const [chatOwner, setChatOwner] = useState('');
+  const [profiles, setProfiles] = useState<DirectoryProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    let profiles = allProfiles;
-    if (activeTag !== 'All') {
-      profiles = profiles.filter((p) =>
-        p.tags.some((t) => t.toLowerCase().includes(activeTag.toLowerCase())) ||
-        p.skills.some((s) => s.toLowerCase().includes(activeTag.toLowerCase())),
-      );
+  const fetchProfiles = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data } = await directoryService.list({
+        search: search || undefined,
+        tags: activeTag !== 'All' ? [activeTag] : undefined,
+      });
+      setProfiles(data.profiles);
+    } catch {
+      // keep existing profiles on error
+    } finally {
+      setIsLoading(false);
     }
-    if (search) {
-      const q = search.toLowerCase();
-      profiles = profiles.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.tagline.toLowerCase().includes(q) ||
-          p.skills.some((s) => s.toLowerCase().includes(q)) ||
-          p.tags.some((t) => t.toLowerCase().includes(q)),
-      );
-    }
-    return profiles;
   }, [search, activeTag]);
+
+  useEffect(() => {
+    const timer = setTimeout(fetchProfiles, 300);
+    return () => clearTimeout(timer);
+  }, [fetchProfiles]);
 
   const handleChat = (e: React.MouseEvent, profile: DirectoryProfile) => {
     e.stopPropagation();
@@ -132,85 +122,99 @@ export function ExplorePage() {
         {/* Results count */}
         <div className="flex items-center gap-2 text-sm text-[#A7ACB8] mb-4">
           <Users className="w-4 h-4" />
-          {filtered.length} {filtered.length === 1 ? 'person' : 'people'} found
+          {isLoading ? (
+            <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" />Loading...</span>
+          ) : (
+            <>{profiles.length} {profiles.length === 1 ? 'person' : 'people'} found</>
+          )}
         </div>
+
+        {/* Loading state */}
+        {isLoading && profiles.length === 0 && (
+          <div className="text-center py-20">
+            <Loader2 className="w-12 h-12 text-[#7B61FF] mx-auto mb-4 animate-spin" />
+            <p className="text-[#A7ACB8]">Loading profiles...</p>
+          </div>
+        )}
 
         {/* Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((profile, i) => (
-            <div
-              key={profile.username}
-              className="p-6 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-all group relative overflow-hidden"
-            >
-              {/* Subtle gradient overlay on hover */}
-              <div className="absolute inset-0 bg-gradient-to-b from-[#7B61FF]/0 to-[#7B61FF]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+        {!isLoading && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {profiles.map((profile, i) => (
+              <div
+                key={profile.username}
+                className="p-6 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-all group relative overflow-hidden"
+              >
+                {/* Subtle gradient overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#7B61FF]/0 to-[#7B61FF]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
-              {/* Avatar + status */}
-              <div className="relative mb-4">
-                <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${avatarGradients[i % avatarGradients.length]} flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform`}>
-                  {profile.avatar}
+                {/* Avatar + status */}
+                <div className="relative mb-4">
+                  <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${avatarGradients[i % avatarGradients.length]} flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform`}>
+                    {profile.avatar}
+                  </div>
+                  {profile.agentEnabled && (
+                    <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-[#61FF7B] border-2 border-[#0B0B10] flex items-center justify-center">
+                      <Bot className="w-3 h-3 text-[#0B0B10]" />
+                    </div>
+                  )}
                 </div>
-                {profile.agentEnabled && (
-                  <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-[#61FF7B] border-2 border-[#0B0B10] flex items-center justify-center">
-                    <Bot className="w-3 h-3 text-[#0B0B10]" />
+
+                {/* Info */}
+                <h3 className="font-semibold text-[#F4F6FF] text-lg group-hover:text-[#7B61FF] transition-colors">
+                  {profile.name}
+                </h3>
+                <p className="text-sm text-[#A7ACB8] mt-1 line-clamp-2">{profile.tagline}</p>
+
+                {/* Location */}
+                {profile.location && (
+                  <div className="flex items-center gap-1 mt-2 text-xs text-[#A7ACB8]">
+                    <MapPin className="w-3 h-3" />
+                    {profile.location}
                   </div>
                 )}
-              </div>
 
-              {/* Info */}
-              <h3 className="font-semibold text-[#F4F6FF] text-lg group-hover:text-[#7B61FF] transition-colors">
-                {profile.name}
-              </h3>
-              <p className="text-sm text-[#A7ACB8] mt-1 line-clamp-2">{profile.tagline}</p>
-
-              {/* Location */}
-              {profile.location && (
-                <div className="flex items-center gap-1 mt-2 text-xs text-[#A7ACB8]">
-                  <MapPin className="w-3 h-3" />
-                  {profile.location}
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1 mt-3">
+                  {profile.tags.slice(0, 3).map((tag) => (
+                    <Badge key={tag} variant="outline" className="border-[#7B61FF]/20 text-[#A7ACB8] text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
                 </div>
-              )}
 
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1 mt-3">
-                {profile.tags.slice(0, 3).map((tag) => (
-                  <Badge key={tag} variant="outline" className="border-[#7B61FF]/20 text-[#A7ACB8] text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
+                {/* Skills */}
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {profile.skills.slice(0, 4).map((skill) => (
+                    <span key={skill} className="text-xs text-[#7B61FF]/60">{skill}</span>
+                  ))}
+                </div>
 
-              {/* Skills */}
-              <div className="flex flex-wrap gap-1 mt-2">
-                {profile.skills.slice(0, 4).map((skill) => (
-                  <span key={skill} className="text-xs text-[#7B61FF]/60">{skill}</span>
-                ))}
-              </div>
-
-              {/* Action buttons */}
-              <div className="mt-4 pt-3 border-t border-[#7B61FF]/10 flex gap-2">
-                {profile.agentEnabled && (
+                {/* Action buttons */}
+                <div className="mt-4 pt-3 border-t border-[#7B61FF]/10 flex gap-2">
+                  {profile.agentEnabled && (
+                    <button
+                      onClick={(e) => handleChat(e, profile)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#7B61FF]/10 border border-[#7B61FF]/20 text-xs text-[#7B61FF] hover:bg-[#7B61FF]/20 transition-colors"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Chat
+                    </button>
+                  )}
                   <button
-                    onClick={(e) => handleChat(e, profile)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#7B61FF]/10 border border-[#7B61FF]/20 text-xs text-[#7B61FF] hover:bg-[#7B61FF]/20 transition-colors"
+                    onClick={() => navigate(`/portfolio/${profile.username}`)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#05050A] border border-[#7B61FF]/20 text-xs text-[#A7ACB8] hover:text-[#F4F6FF] hover:border-[#7B61FF]/40 transition-colors"
                   >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    Chat
+                    <Eye className="w-3.5 h-3.5" />
+                    View
                   </button>
-                )}
-                <button
-                  onClick={() => navigate(`/portfolio/${profile.username}`)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#05050A] border border-[#7B61FF]/20 text-xs text-[#A7ACB8] hover:text-[#F4F6FF] hover:border-[#7B61FF]/40 transition-colors"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  View
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {filtered.length === 0 && (
+        {!isLoading && profiles.length === 0 && (
           <div className="text-center py-20">
             <Search className="w-12 h-12 text-[#7B61FF]/30 mx-auto mb-4" />
             <p className="text-[#A7ACB8]">No people found matching your search</p>

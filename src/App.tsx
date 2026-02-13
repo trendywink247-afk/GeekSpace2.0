@@ -5,6 +5,10 @@ import { PortfolioView } from './portfolio/PortfolioView';
 import { OnboardingPage } from './onboarding/OnboardingPage';
 import { ExplorePage } from './explore/ExplorePage';
 import { LoginPage } from './onboarding/LoginPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { TermsPage } from './pages/TermsPage';
+import { StatusPage } from './pages/StatusPage';
+import { DocsPage } from './pages/DocsPage';
 import { useAuthStore } from './stores/authStore';
 
 function App() {
@@ -20,6 +24,10 @@ function App() {
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/portfolio/:username" element={<PortfolioView />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/status" element={<StatusPage />} />
+          <Route path="/docs" element={<DocsPage />} />
 
           {/* Onboarding — only show if logged in but not completed */}
           <Route

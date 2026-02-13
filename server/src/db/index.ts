@@ -196,6 +196,14 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_usage_events_date ON usage_events(created_at);
   CREATE INDEX IF NOT EXISTS idx_activity_log_user ON activity_log(user_id);
   CREATE INDEX IF NOT EXISTS idx_portfolios_username ON portfolios(username);
+
+  -- Additional indices for production performance
+  CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+  CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+  CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
+  CREATE INDEX IF NOT EXISTS idx_automations_user ON automations(user_id);
+  CREATE INDEX IF NOT EXISTS idx_agent_configs_user ON agent_configs(user_id);
+  CREATE INDEX IF NOT EXISTS idx_usage_events_user_date ON usage_events(user_id, created_at);
 `);
 
 // ── Seed demo data ──────────────────────────────────────────
@@ -388,6 +396,10 @@ function seedDemoData() {
   console.log('Demo data seeded successfully');
 }
 
-seedDemoData();
+// Only seed demo data when enabled (non-production by default)
+const shouldSeed = process.env.NODE_ENV !== 'production' && (process.env.SEED_DEMO_DATA ?? 'true') === 'true';
+if (shouldSeed) {
+  seedDemoData();
+}
 
 export { db };

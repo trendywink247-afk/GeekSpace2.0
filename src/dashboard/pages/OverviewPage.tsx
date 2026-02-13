@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react';
-import { 
-  MessageSquare, 
-  Calendar, 
-  Bell, 
-  Terminal, 
+import {
+  MessageSquare,
+  Calendar,
+  Bell,
+  Terminal,
   ExternalLink,
   Zap,
   CheckCircle,
-  AlertCircle,
   TrendingUp,
   Clock,
   Activity,
   ArrowUpRight,
   ArrowDownRight,
-  RefreshCw
+  RefreshCw,
+  MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,35 +32,35 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { useAuthStore } from '@/stores/authStore';
+import { useDashboardStore } from '@/stores/dashboardStore';
 
 interface OverviewPageProps {
   onViewPortfolio: (username: string) => void;
+  onNavigate?: (page: string) => void;
+  onRefresh?: () => void;
+  onOpenChat?: () => void;
 }
 
-const recentActivity = [
-  { id: 1, action: 'Reminder sent', detail: 'Call mom tomorrow 9am', time: '2m ago', status: 'success', icon: Bell },
-  { id: 2, action: 'Calendar synced', detail: '3 events imported', time: '15m ago', status: 'success', icon: Calendar },
-  { id: 3, action: 'Telegram message', detail: 'Replied to @sarah', time: '1h ago', status: 'success', icon: MessageSquare },
-  { id: 4, action: 'Agent query', detail: 'What\'s my schedule?', time: '2h ago', status: 'success', icon: Zap },
-  { id: 5, action: 'API call', detail: 'Weather data fetched', time: '3h ago', status: 'success', icon: Terminal },
-  { id: 6, action: 'System alert', detail: 'Low credits warning', time: '5h ago', status: 'warning', icon: AlertCircle },
-];
+const integrationIcons: Record<string, typeof MessageSquare> = {
+  telegram: MessageSquare,
+  'google-calendar': Calendar,
+  location: MapPin,
+  github: Terminal,
+  twitter: Zap,
+  linkedin: Zap,
+};
 
-const quickStats = [
-  { label: 'Messages Sent', value: '1,247', icon: MessageSquare, change: '+12%', trend: 'up', color: '#7B61FF' },
-  { label: 'Reminders Active', value: '23', icon: Bell, change: '+3', trend: 'up', color: '#61FF7B' },
-  { label: 'API Calls', value: '8.4K', icon: Terminal, change: '+24%', trend: 'up', color: '#FFD761' },
-  { label: 'Response Time', value: '1.2s', icon: Clock, change: '-8%', trend: 'down', color: '#FF61DC' },
-];
+const integrationColors: Record<string, string> = {
+  telegram: '#0088cc',
+  'google-calendar': '#4285f4',
+  location: '#61FF7B',
+  github: '#f0f6fc',
+  twitter: '#1da1f2',
+  linkedin: '#0a66c2',
+};
 
-const connectedServices = [
-  { name: 'Telegram', status: 'connected', icon: MessageSquare, lastSync: '2m ago', color: '#0088cc' },
-  { name: 'Google Calendar', status: 'connected', icon: Calendar, lastSync: '15m ago', color: '#4285f4' },
-  { name: 'Location', status: 'paused', icon: Zap, lastSync: '2h ago', color: '#61FF7B' },
-  { name: 'GitHub', status: 'error', icon: Terminal, lastSync: '1d ago', color: '#f0f6fc' },
-];
-
-// Chart data
+// Chart data (demo — could be wired to usage_events aggregation later)
 const messageData = [
   { name: 'Mon', messages: 120, api: 80 },
   { name: 'Tue', messages: 150, api: 95 },
@@ -86,11 +86,14 @@ const hourlyActivity = [
   { hour: '20:00', activity: 42 },
 ];
 
-export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
+export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenChat }: OverviewPageProps) {
   const [greeting, setGreeting] = useState('Good evening');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  const user = useAuthStore((s) => s.user);
+  const { stats, integrations, agent, reminders } = useDashboardStore();
 
   useEffect(() => {
     setMounted(true);
@@ -105,8 +108,82 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
+    if (onRefresh) onRefresh();
     setTimeout(() => setIsRefreshing(false), 1500);
   };
+
+  // Derive quick stats from store
+  const quickStats = [
+    {
+      label: 'Messages Sent',
+      value: stats.messagesSent.toLocaleString(),
+      icon: MessageSquare,
+      change: `${stats.messagesChange > 0 ? '+' : ''}${stats.messagesChange}%`,
+      trend: stats.messagesChange >= 0 ? 'up' as const : 'down' as const,
+      color: '#7B61FF',
+    },
+    {
+      label: 'Reminders Active',
+      value: String(reminders.filter(r => !r.completed).length || stats.remindersActive),
+      icon: Bell,
+      change: `${stats.remindersChange > 0 ? '+' : ''}${stats.remindersChange}`,
+      trend: stats.remindersChange >= 0 ? 'up' as const : 'down' as const,
+      color: '#61FF7B',
+    },
+    {
+      label: 'API Calls',
+      value: stats.apiCalls >= 1000 ? `${(stats.apiCalls / 1000).toFixed(1)}K` : String(stats.apiCalls),
+      icon: Terminal,
+      change: `${stats.apiCallsChange > 0 ? '+' : ''}${stats.apiCallsChange}%`,
+      trend: stats.apiCallsChange >= 0 ? 'up' as const : 'down' as const,
+      color: '#FFD761',
+    },
+    {
+      label: 'Response Time',
+      value: stats.responseTimeMs > 0 ? `${(stats.responseTimeMs / 1000).toFixed(1)}s` : '—',
+      icon: Clock,
+      change: `${stats.responseTimeChange}%`,
+      trend: stats.responseTimeChange <= 0 ? 'up' as const : 'down' as const,
+      color: '#FF61DC',
+    },
+  ];
+
+  // Derive connected services from store integrations
+  const connectedServices = integrations.slice(0, 4).map((integration) => ({
+    name: integration.name,
+    status: integration.status,
+    icon: integrationIcons[integration.type] || Zap,
+    lastSync: integration.lastSync || 'Never',
+    color: integrationColors[integration.type] || '#7B61FF',
+  }));
+
+  // Recent activity from reminders + integrations
+  const recentActivity = [
+    ...reminders.slice(0, 3).map((r) => ({
+      id: r.id,
+      action: r.completed ? 'Reminder completed' : 'Reminder active',
+      detail: r.text,
+      time: new Date(r.datetime).toLocaleDateString(),
+      status: r.completed ? 'success' as const : 'warning' as const,
+      icon: Bell,
+    })),
+    ...integrations.filter(i => i.status === 'connected').slice(0, 3).map((i) => ({
+      id: i.id,
+      action: `${i.name} synced`,
+      detail: `${i.requestsToday} requests today`,
+      time: i.lastSync || 'Recently',
+      status: 'success' as const,
+      icon: integrationIcons[i.type] || Zap,
+    })),
+  ].slice(0, 6);
+
+  // Quick actions wired to navigation
+  const quickActions = [
+    { label: 'Set a reminder', icon: Bell, color: '#7B61FF', action: () => onNavigate?.('reminders') },
+    { label: 'Check schedule', icon: Calendar, color: '#61FF7B', action: () => onNavigate?.('reminders') },
+    { label: 'Send message', icon: MessageSquare, color: '#FFD761', action: () => onOpenChat?.() },
+    { label: 'Open terminal', icon: Terminal, color: '#FF61DC', action: () => onNavigate?.('terminal') },
+  ];
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -114,16 +191,16 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {greeting}, <span className="text-gradient">Alex</span>
+            {greeting}, <span className="text-gradient">{user?.name?.split(' ')[0] || 'there'}</span>
           </h1>
           <p className="text-[#A7ACB8]">
-            Your agent has handled <span className="text-[#7B61FF] font-medium">47 tasks</span> today
+            Your agent has handled <span className="text-[#7B61FF] font-medium">{stats.messagesSent || 0} messages</span> this period
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleRefresh}
             className="border-[#7B61FF]/30 text-[#A7ACB8] hover:text-[#F4F6FF]"
           >
@@ -144,14 +221,14 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
       {/* Quick Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {quickStats.map((stat, i) => (
-          <Card 
-            key={i} 
+          <Card
+            key={i}
             className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all duration-300 group"
             style={{ animationDelay: `${i * 100}ms` }}
           >
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <div 
+                <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center"
                   style={{ backgroundColor: `${stat.color}15` }}
                 >
@@ -202,7 +279,7 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
                     <CartesianGrid strokeDasharray="3 3" stroke="#7B61FF10" />
                     <XAxis dataKey="name" stroke="#A7ACB8" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#A7ACB8" fontSize={12} tickLine={false} axisLine={false} />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ backgroundColor: '#0B0B10', border: '1px solid rgba(123, 97, 255, 0.3)', borderRadius: '8px' }}
                       itemStyle={{ color: '#F4F6FF' }}
                     />
@@ -241,7 +318,7 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ backgroundColor: '#0B0B10', border: '1px solid rgba(123, 97, 255, 0.3)', borderRadius: '8px' }}
                     />
                   </PieChart>
@@ -261,7 +338,7 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left Column - Activity & Services */}
+        {/* Left Column - Activity & Charts */}
         <div className="lg:col-span-2 space-y-6">
           {/* Recent Activity */}
           <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
@@ -271,27 +348,27 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
                   <Clock className="w-5 h-5 text-[#7B61FF]" />
                   Recent Activity
                 </CardTitle>
-                <Button variant="ghost" size="sm" className="text-[#7B61FF]">
+                <Button variant="ghost" size="sm" className="text-[#7B61FF]" onClick={() => onNavigate?.('terminal')}>
                   View All
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {recentActivity.map((activity, i) => (
-                  <div 
-                    key={activity.id} 
+                {recentActivity.length > 0 ? recentActivity.map((activity, i) => (
+                  <div
+                    key={activity.id}
                     className="flex items-center gap-4 p-3 rounded-xl bg-[#05050A] hover:bg-[#7B61FF]/5 transition-all duration-300 group"
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
-                    <div 
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors`}
-                      style={{ 
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
+                      style={{
                         backgroundColor: activity.status === 'success' ? '#61FF7B15' : '#FFD76115'
                       }}
                     >
-                      <activity.icon 
-                        className="w-5 h-5" 
+                      <activity.icon
+                        className="w-5 h-5"
                         style={{ color: activity.status === 'success' ? '#61FF7B' : '#FFD761' }}
                       />
                     </div>
@@ -301,7 +378,9 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
                     </div>
                     <div className="text-xs text-[#A7ACB8] font-mono">{activity.time}</div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-8 text-[#A7ACB8] text-sm">No recent activity yet</div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -322,7 +401,7 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
                       <CartesianGrid strokeDasharray="3 3" stroke="#7B61FF10" vertical={false} />
                       <XAxis dataKey="hour" stroke="#A7ACB8" fontSize={11} tickLine={false} axisLine={false} />
                       <YAxis stroke="#A7ACB8" fontSize={11} tickLine={false} axisLine={false} />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ backgroundColor: '#0B0B10', border: '1px solid rgba(123, 97, 255, 0.3)', borderRadius: '8px' }}
                         cursor={{ fill: 'rgba(123, 97, 255, 0.1)' }}
                       />
@@ -342,19 +421,19 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-semibold">Connected Services</CardTitle>
-                <Button variant="ghost" size="sm" className="text-[#7B61FF]">
+                <Button variant="ghost" size="sm" className="text-[#7B61FF]" onClick={() => onNavigate?.('connections')}>
                   Manage
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {connectedServices.map((service, i) => (
-                  <div 
-                    key={i} 
+                {connectedServices.length > 0 ? connectedServices.map((service, i) => (
+                  <div
+                    key={i}
                     className="flex items-center gap-3 p-3 rounded-xl bg-[#05050A] border border-[#7B61FF]/10 hover:border-[#7B61FF]/30 transition-all duration-300 group"
                   >
-                    <div 
+                    <div
                       className="w-10 h-10 rounded-lg flex items-center justify-center"
                       style={{ backgroundColor: `${service.color}15` }}
                     >
@@ -365,11 +444,18 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
                       <div className="text-xs text-[#A7ACB8]">Synced {service.lastSync}</div>
                     </div>
                     <div className={`w-2 h-2 rounded-full ${
-                      service.status === 'connected' ? 'bg-[#61FF7B]' : 
+                      service.status === 'connected' ? 'bg-[#61FF7B]' :
                       service.status === 'paused' ? 'bg-[#FFD761]' : 'bg-[#FF6161]'
                     }`} />
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-6 text-[#A7ACB8] text-sm">
+                    No services connected yet.
+                    <Button variant="ghost" size="sm" className="text-[#7B61FF] ml-1" onClick={() => onNavigate?.('connections')}>
+                      Connect one
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -381,17 +467,13 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {[
-                  { label: 'Set a reminder', icon: Bell, color: '#7B61FF' },
-                  { label: 'Check schedule', icon: Calendar, color: '#61FF7B' },
-                  { label: 'Send message', icon: MessageSquare, color: '#FFD761' },
-                  { label: 'Open terminal', icon: Terminal, color: '#FF61DC' },
-                ].map((action, i) => (
+                {quickActions.map((action, i) => (
                   <button
                     key={i}
+                    onClick={action.action}
                     className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#05050A] hover:bg-[#7B61FF]/10 transition-all duration-300 text-left group"
                   >
-                    <div 
+                    <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center"
                       style={{ backgroundColor: `${action.color}15` }}
                     >
@@ -413,21 +495,21 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold">Public Portfolio</h2>
-                  <p className="text-xs text-[#A7ACB8]">alex.geekspace.space</p>
+                  <p className="text-xs text-[#A7ACB8]">{user?.username || 'alex'}.geekspace.space</p>
                 </div>
               </div>
               <p className="text-sm text-[#A7ACB8] mb-4">
                 Your public profile where others can learn about you and ask your agent questions.
               </p>
               <div className="flex gap-2">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   className="flex-1 bg-[#7B61FF] hover:bg-[#6B51EF]"
-                  onClick={() => onViewPortfolio('alex')}
+                  onClick={() => onViewPortfolio(user?.username || 'alex')}
                 >
                   View Live
                 </Button>
-                <Button size="sm" variant="outline" className="border-[#7B61FF]/50 hover:bg-[#7B61FF]/10">
+                <Button size="sm" variant="outline" className="border-[#7B61FF]/50 hover:bg-[#7B61FF]/10" onClick={() => onNavigate?.('settings')}>
                   Edit
                 </Button>
               </div>
@@ -440,18 +522,20 @@ export function OverviewPage({ onViewPortfolio }: OverviewPageProps) {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-semibold">Agent Status</CardTitle>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-[#61FF7B] rounded-full animate-pulse" />
-                  <span className="text-xs text-[#61FF7B]">Online</span>
+                  <div className={`w-2 h-2 rounded-full ${agent.status === 'online' ? 'bg-[#61FF7B] animate-pulse' : agent.status === 'error' ? 'bg-[#FF6161]' : 'bg-[#A7ACB8]'}`} />
+                  <span className={`text-xs ${agent.status === 'online' ? 'text-[#61FF7B]' : agent.status === 'error' ? 'text-[#FF6161]' : 'text-[#A7ACB8]'}`}>
+                    {agent.status === 'online' ? 'Online' : agent.status === 'error' ? 'Error' : 'Offline'}
+                  </span>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {[
-                  { label: 'Model', value: 'OpenClaw v2.1' },
-                  { label: 'Style', value: 'Builder' },
-                  { label: 'Response Time', value: '~1.2s' },
-                  { label: 'Uptime', value: '99.99%' },
+                  { label: 'Model', value: agent.primaryModel || 'OpenClaw v2.1' },
+                  { label: 'Style', value: agent.mode ? agent.mode.charAt(0).toUpperCase() + agent.mode.slice(1) : 'Builder' },
+                  { label: 'Response Time', value: stats.responseTimeMs > 0 ? `~${(stats.responseTimeMs / 1000).toFixed(1)}s` : '~1.2s' },
+                  { label: 'Uptime', value: stats.agentUptime || '99.99%' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
                     <span className="text-[#A7ACB8]">{item.label}</span>

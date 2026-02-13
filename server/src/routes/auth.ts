@@ -3,15 +3,12 @@ import { v4 as uuid } from 'uuid';
 import bcrypt from 'bcryptjs';
 import { signToken, requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { db } from '../db/index.js';
+import { validateBody, signupSchema, loginSchema } from '../middleware/validate.js';
 
 export const authRouter = Router();
 
-authRouter.post('/signup', (req, res) => {
+authRouter.post('/signup', validateBody(signupSchema), (req, res) => {
   const { email, password, username, name } = req.body;
-  if (!email || !password || !username) {
-    res.status(400).json({ error: 'Missing fields' });
-    return;
-  }
 
   const existing = db.prepare('SELECT id FROM users WHERE email = ? OR username = ?').get(email, username);
   if (existing) {
@@ -60,7 +57,7 @@ authRouter.post('/signup', (req, res) => {
   });
 });
 
-authRouter.post('/login', (req, res) => {
+authRouter.post('/login', validateBody(loginSchema), (req, res) => {
   const { email, password } = req.body;
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as Record<string, unknown> | undefined;
 

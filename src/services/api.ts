@@ -196,8 +196,13 @@ export const dashboardService = {
 // ----- Explore / Directory -----------------------------------
 
 export const directoryService = {
-  list: (params?: { tags?: string[]; search?: string; page?: number }) =>
-    api.get<{ profiles: DirectoryProfile[]; total: number }>('/directory', { params }),
+  list: (params?: { tags?: string[]; search?: string; page?: number }) => {
+    const query: Record<string, string> = {};
+    if (params?.search) query.search = params.search;
+    if (params?.tags?.length) query.tag = params.tags[0];
+    if (params?.page) query.page = String(params.page);
+    return api.get<{ profiles: DirectoryProfile[]; total: number }>('/directory', { params: query });
+  },
 };
 
 // ----- Feature Toggles ---------------------------------------
