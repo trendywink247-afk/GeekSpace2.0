@@ -67,27 +67,63 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/signup', authLimiter);
 
-// ---- Health check with component status ----
-app.get('/api/health', (_req, res) => {
+// ---- Health check with live component probing ----
+app.get('/api/health', async (_req, res) => {
   let dbOk = false;
   try {
     const row = db.prepare('SELECT 1 as ok').get() as { ok: number } | undefined;
     dbOk = row?.ok === 1;
   } catch { /* db not ready */ }
 
-  const status = dbOk ? 'ok' : 'degraded';
-  const code = dbOk ? 200 : 503;
+  // Live probe: Ollama
+  let ollamaOk = false;
+  if (config.ollamaBaseUrl) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 3000);
+      const r = await fetch(`${config.ollamaBaseUrl}/api/tags`, { signal: ctrl.signal });
+      clearTimeout(timer);
+      ollamaOk = r.ok;
+    } catch { /* unreachable */ }
+  }
+
+  // Live probe: EDITH / OpenClaw
+  let edithOk = false;
+  if (config.edithGatewayUrl) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 3000);
+      const r = await fetch(`${config.edithGatewayUrl.replace(/\/+$/, '')}/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      // Any response (even 401/422) means the host is alive
+      edithOk = true;
+      // But if it returns HTML, it's probably a UI page not the API
+      const ct = r.headers.get('content-type') || '';
+      if (ct.includes('text/html') && r.status === 200) edithOk = false;
+    } catch { /* unreachable */ }
+  }
+
+  const allOk = dbOk;  // core requirement
+  const code = allOk ? 200 : 503;
 
   res.status(code).json({
-    status,
+    ok: allOk,
+    status: allOk ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
-    version: '2.1.0',
+    version: '2.2.0',
     uptime: Math.floor(process.uptime()),
+    edith: edithOk,
+    ollama: ollamaOk,
     components: {
       database: dbOk ? 'ok' : 'down',
-      ollama: config.ollamaBaseUrl ? 'configured' : 'not_configured',
+      ollama: ollamaOk ? 'reachable' : (config.ollamaBaseUrl ? 'unreachable' : 'not_configured'),
       openrouter: config.openrouterApiKey ? 'configured' : 'not_configured',
-      edith: config.edithGatewayUrl ? 'configured' : 'not_configured',
+      edith: edithOk ? 'reachable' : (config.edithGatewayUrl ? 'unreachable' : 'not_configured'),
     },
   });
 });

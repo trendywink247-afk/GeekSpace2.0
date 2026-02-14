@@ -34,7 +34,7 @@ export function validateQuery<T extends z.ZodType>(schema: T) {
       res.status(400).json({ error: 'Invalid query parameters', details: errors });
       return;
     }
-    req.query = result.data;
+    req.query = result.data as any;
     next();
   };
 }
@@ -42,14 +42,14 @@ export function validateQuery<T extends z.ZodType>(schema: T) {
 // ---- Common schemas ----
 
 export const signupSchema = z.object({
-  email: z.email().max(255),
+  email: z.string().email().max(255),
   password: z.string().min(8, 'Password must be at least 8 characters').max(128),
   username: z.string().min(2).max(30).regex(/^[a-zA-Z0-9_-]+$/, 'Username: letters, numbers, _ and - only'),
   name: z.string().max(100).optional(),
 });
 
 export const loginSchema = z.object({
-  email: z.email().max(255),
+  email: z.string().email().max(255),
   password: z.string().min(1).max(128),
 });
 
@@ -75,7 +75,7 @@ export const automationCreateSchema = z.object({
   description: z.string().max(1000).optional().default(''),
   triggerType: z.enum(['time', 'event', 'webhook']),
   actionType: z.enum(['n8n-webhook', 'telegram-message', 'portfolio-update', 'manychat-broadcast']),
-  config: z.record(z.unknown()).optional().default({}),
+  config: z.record(z.string(), z.unknown()).optional().default({}),
   enabled: z.boolean().optional().default(true),
 });
 
@@ -88,7 +88,7 @@ export const apiKeyCreateSchema = z.object({
 
 export const contactSchema = z.object({
   name: z.string().min(1).max(200),
-  email: z.email().max(255),
+  email: z.string().email().max(255),
   company: z.string().max(200).optional().default(''),
   message: z.string().min(1).max(5000),
 });
