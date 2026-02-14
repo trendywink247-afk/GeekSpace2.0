@@ -1,21 +1,21 @@
 version: "3.9"
 
 services:
-  # ---- GeekSpace API + frontend ----
+  # ---- GeekSpace API + built frontend (served by Express) ----
   geekspace:
     build: .
     container_name: geekspace-app
     restart: unless-stopped
     env_file: .env
+    ports:
+      - "${PORT:-3001}:3001"          # Caddy on VPS proxies to this
     environment:
       - NODE_ENV=production
       - PORT=3001
       - DB_PATH=/app/data/geekspace.db
       - REDIS_URL=redis://redis:6379
-      # Ollama — reach via host (internal port, not exposed publicly)
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:1.5b}
-      # EDITH / OpenClaw — via edith-bridge (WS-RPC→HTTP)
       - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://edith-bridge:8787}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
     extra_hosts:
@@ -27,8 +27,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      edith-bridge:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
       interval: 30s
@@ -36,11 +34,13 @@ services:
       start_period: 15s
       retries: 3
 
-  # ---- EDITH Bridge (WebSocket→HTTP for OpenClaw) ----
+  # ---- EDITH Bridge (WS-RPC → OpenAI-compatible HTTP) ----
+  # Start with: docker compose --profile edith up -d
   edith-bridge:
     build: ./bridge/edith-bridge
     container_name: geekspace-edith-bridge
     restart: unless-stopped
+    profiles: ["edith"]
     environment:
       - EDITH_OPENCLAW_WS=${EDITH_OPENCLAW_WS:-ws://host.docker.internal:18789}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
@@ -75,24 +75,6 @@ services:
       timeout: 3s
       retries: 5
 
-  # ---- Nginx reverse proxy ----
-  nginx:
-    image: nginx:alpine
-    container_name: geekspace-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      # Uncomment for SSL:
-      # - ./nginx/certs:/etc/nginx/certs:ro
-    networks:
-      - geekspace-net
-    depends_on:
-      geekspace:
-        condition: service_healthy
-
 volumes:
   geekspace-data:
     driver: local
@@ -102,10 +84,3 @@ volumes:
 networks:
   geekspace-net:
     driver: bridge
-  # To also connect to the OpenClaw docker network (optional, for direct container-name resolution):
-  #   1. Uncomment the block below
-  #   2. Add "- openclaw-net" to the geekspace service networks
-  #   3. Ensure the OpenClaw compose stack is running first
-  # openclaw-net:
-  #   external: true
-  #   name: openclaw-gtzk_default

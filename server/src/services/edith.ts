@@ -1,13 +1,13 @@
 // ============================================================
 // EDITH / OpenClaw — calls the edith-bridge service
 //
-// The bridge (http://edith-bridge:8787) handles the WebSocket
+// The bridge (http://edith-bridge:8787) handles the WebSocket-RPC
 // connection to OpenClaw and exposes an OpenAI-compatible HTTP
-// endpoint. This module simply makes standard chat-completion
+// endpoint.  This module simply makes standard chat-completion
 // requests to that bridge.
 //
 // 120s timeout (LLM inference can be slow), 1 retry on transient
-// failures. If EDITH_GATEWAY_URL or EDITH_TOKEN is missing, all
+// failures.  If EDITH_GATEWAY_URL or EDITH_TOKEN is missing, all
 // calls throw / probe returns false — the LLM router falls back
 // to OpenRouter or Ollama.
 // ============================================================
@@ -39,7 +39,7 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
 }
 
 /**
- * Make a single chat-completions call to the given URL.
+ * Make a single chat-completions call to the bridge.
  * Returns the parsed response or throws on any failure.
  */
 async function tryEndpoint(
@@ -56,12 +56,11 @@ async function tryEndpoint(
     body: JSON.stringify({
       model: 'openclaw',
       messages,
-      max_tokens: 512,
-      temperature: 0.2,
+      max_tokens: 4096,
+      temperature: 0.7,
     }),
   }, TIMEOUT_MS);
 
-  // If HTML comes back (UI page) or 404, throw so we try the next endpoint
   const contentType = res.headers.get('content-type') || '';
   if (!res.ok || contentType.includes('text/html')) {
     const snippet = await res.text().catch(() => '');
@@ -71,12 +70,10 @@ async function tryEndpoint(
   const data = await res.json() as {
     choices?: Array<{ message?: { content: string } }>;
     usage?: { prompt_tokens: number; completion_tokens: number };
-    // Some gateways return flat content
     content?: string;
     response?: string;
   };
 
-  // Support both OpenAI-format and flat-response gateways
   const content =
     data.choices?.[0]?.message?.content ||
     data.content ||
@@ -93,10 +90,8 @@ async function tryEndpoint(
 }
 
 /**
- * Primary export — send a chat message through EDITH/OpenClaw.
- *
- * Makes a standard OpenAI-compatible POST to the bridge. Retries once on
- * transient errors (timeout / 5xx).
+ * Send a chat message through EDITH/OpenClaw via the bridge.
+ * Single endpoint, 1 retry on transient failure.
  */
 export async function edithChat(
   message: string,
@@ -118,60 +113,26 @@ export async function edithChat(
   const start = Date.now();
   let lastError: Error | null = null;
 
-  for (const path of ENDPOINT_PATHS) {
-    const url = `${baseUrl}${path}`;
-
-    // Try with 1 retry on the primary endpoint
-    const maxAttempts = path === ENDPOINT_PATHS[0] ? 2 : 1;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        const result = await tryEndpoint(url, messages);
-        const latencyMs = Date.now() - start;
-
-        logger.info({ provider: 'edith', url, latencyMs, attempt }, 'EDITH response OK');
-
-        return {
-          text: result.content,
-          provider: 'edith',
-          route: 'edith',
-          latencyMs,
-          tokensIn: result.tokensIn,
-          tokensOut: result.tokensOut,
-          debug: { endpointUsed: url, status: result.status },
-          raw: result.raw,
-        };
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err));
-        logger.warn({ url, attempt, error: lastError.message }, 'EDITH endpoint failed');
-
-        // Small delay before retry
-        if (attempt < maxAttempts) {
-          await new Promise((r) => setTimeout(r, 500));
-        }
-      }
-
-      const data = await res.json() as {
-        choices?: Array<{ message?: { content: string } }>;
-        usage?: { prompt_tokens: number; completion_tokens: number };
-      };
-
-      const content = data.choices?.[0]?.message?.content || '';
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const result = await tryEndpoint(url, messages);
       const latencyMs = Date.now() - start;
 
-      logger.info({ provider: 'edith', latencyMs, attempt }, 'EDITH response OK');
+      logger.info({ provider: 'edith', url, latencyMs, attempt }, 'EDITH response OK');
 
       return {
-        text: content,
+        text: result.content,
         provider: 'edith',
+        route: 'edith',
         latencyMs,
-        tokensIn: data.usage?.prompt_tokens || 0,
-        tokensOut: data.usage?.completion_tokens || 0,
-        raw: data,
+        tokensIn: result.tokensIn,
+        tokensOut: result.tokensOut,
+        debug: { endpointUsed: url, status: result.status },
+        raw: result.raw,
       };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      logger.warn({ attempt, error: lastError.message }, 'EDITH request failed');
+      logger.warn({ url, attempt, error: lastError.message }, 'EDITH request failed');
       if (attempt < 2) await new Promise((r) => setTimeout(r, 500));
     }
   }
@@ -181,7 +142,7 @@ export async function edithChat(
 
 /**
  * Lightweight probe — can we reach the bridge?
- * Returns true if the bridge health endpoint responds with JSON.
+ * Returns true if the bridge health endpoint responds with ws_connected: true.
  */
 export async function edithProbe(): Promise<boolean> {
   if (!config.edithGatewayUrl) return false;
