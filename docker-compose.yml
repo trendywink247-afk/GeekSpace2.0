@@ -1,29 +1,28 @@
 version: "3.9"
 
 services:
-  # ---- GeekSpace API + built frontend (served by Express) ----
+  # ---- GeekSpace API + Frontend ----
   geekspace:
     build: .
     container_name: geekspace-app
     restart: unless-stopped
     env_file: .env
     ports:
-      - "${PORT:-3001}:3001"          # Caddy on VPS proxies to this
+      - "${PORT:-3001}:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
       - DB_PATH=/app/data/geekspace.db
       - REDIS_URL=redis://redis:6379
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:1.5b}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:7b}
       - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://edith-bridge:8787}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - geekspace-data:/app/data
     networks:
       - geekspace-net
+      - geekspace-shared
     depends_on:
       redis:
         condition: service_healthy
@@ -31,35 +30,33 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 10s
-      start_period: 15s
+      start_period: 30s
       retries: 3
 
-  # ---- EDITH Bridge (WS-RPC → OpenAI-compatible HTTP) ----
-  # Start with: docker compose --profile edith up -d
+  # ---- EDITH Bridge (WS-RPC → HTTP for OpenClaw) ----
   edith-bridge:
     build: ./bridge/edith-bridge
     container_name: geekspace-edith-bridge
     restart: unless-stopped
     profiles: ["edith"]
     environment:
-      - EDITH_OPENCLAW_WS=${EDITH_OPENCLAW_WS:-ws://host.docker.internal:18789}
+      - EDITH_OPENCLAW_WS=${EDITH_OPENCLAW_WS:-ws://openclaw-1xzv-openclaw-1:55550}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
       - OPENCLAW_CHAT_METHOD=${OPENCLAW_CHAT_METHOD:-chat.completions}
       - BRIDGE_PORT=8787
       - REQUEST_TIMEOUT_MS=120000
       - LOG_LEVEL=${LOG_LEVEL:-info}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       - geekspace-net
+      - geekspace-shared
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
       interval: 15s
       timeout: 5s
-      start_period: 5s
+      start_period: 10s
       retries: 3
 
-  # ---- Redis (job queue + cache) ----
+  # ---- Redis ----
   redis:
     image: redis:7-alpine
     container_name: geekspace-redis
@@ -84,3 +81,5 @@ volumes:
 networks:
   geekspace-net:
     driver: bridge
+  geekspace-shared:
+    external: true
