@@ -27,11 +27,35 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      edith-bridge:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 10s
       start_period: 15s
+      retries: 3
+
+  # ---- EDITH Bridge (WebSocket→HTTP for OpenClaw) ----
+  edith-bridge:
+    build: ./bridge/edith-bridge
+    container_name: geekspace-edith-bridge
+    restart: unless-stopped
+    environment:
+      - EDITH_OPENCLAW_WS=${EDITH_OPENCLAW_WS:-ws://host.docker.internal:18789}
+      - EDITH_TOKEN=${EDITH_TOKEN:-}
+      - BRIDGE_PORT=8787
+      - REQUEST_TIMEOUT_MS=120000
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - geekspace-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 5s
       retries: 3
 
   # ---- Redis (job queue + cache) ----

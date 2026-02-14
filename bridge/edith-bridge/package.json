@@ -1,0 +1,14 @@
+{
+  "name": "edith-bridge",
+  "version": "1.0.0",
+  "description": "WebSocket-to-HTTP bridge: OpenClaw WS ↔ OpenAI-compatible HTTP",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "ws": "^8.18.0"
+  }
+}

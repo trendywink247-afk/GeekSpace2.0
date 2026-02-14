@@ -3,7 +3,7 @@
 //
 // Brain 1: Ollama (local) — fast/cheap, handles simple tasks
 // Brain 2: OpenRouter (global) — handles complex/coding/planning
-// Brain 3: EDITH/OpenClaw (future) — heavy reasoning + tool execution
+// Brain 3: EDITH/OpenClaw (via edith-bridge) — heavy reasoning
 //
 // Flow: Intent classify → Route → Call → Log usage
 // ============================================================
@@ -185,7 +185,7 @@ async function callOpenRouter(messages: ChatMessage[]): Promise<{ content: strin
   };
 }
 
-// ---- EDITH / OpenClaw Call (future) ----
+// ---- EDITH / OpenClaw Call (via edith-bridge) ----
 
 async function callEdith(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
   const response = await fetch(`${config.edithGatewayUrl}/v1/chat/completions`, {

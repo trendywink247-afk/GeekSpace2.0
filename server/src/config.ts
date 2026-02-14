@@ -58,7 +58,7 @@ export const config = {
   openrouterBaseUrl: optional('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
   openrouterModel: optional('OPENROUTER_MODEL', 'anthropic/claude-sonnet-4-5-20250929'),
 
-  // EDITH / OpenClaw gateway (future)
+  // EDITH / OpenClaw — via edith-bridge (WS→HTTP bridge)
   edithGatewayUrl: process.env.EDITH_GATEWAY_URL || '',
   edithToken: process.env.EDITH_TOKEN || '',
 
