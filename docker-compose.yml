@@ -15,8 +15,8 @@ services:
       # Ollama — reach via host (internal port, not exposed publicly)
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:1.5b}
-      # EDITH / OpenClaw — reach via host-mapped port
-      - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://host.docker.internal:59259}
+      # EDITH / OpenClaw — via edith-bridge (WS-RPC→HTTP)
+      - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://edith-bridge:8787}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
