@@ -1,6 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
-import { sign, verify, TokenExpiredError, type SignOptions } from 'jsonwebtoken';
+import jwtPkg from 'jsonwebtoken';
+import type { SignOptions } from 'jsonwebtoken';
 import { config } from '../config.js';
+
+const { sign, verify, TokenExpiredError } = jwtPkg as any;
 
 export interface AuthRequest extends Request {
   userId?: string;
