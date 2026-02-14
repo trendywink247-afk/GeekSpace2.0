@@ -14,6 +14,7 @@ services:
       - REDIS_URL=redis://redis:6379
       # Ollama — reach via host (internal port, not exposed publicly)
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:1.5b}
       # EDITH / OpenClaw — reach via host-mapped port
       - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://host.docker.internal:59259}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
@@ -23,7 +24,6 @@ services:
       - geekspace-data:/app/data
     networks:
       - geekspace-net
-      - openclaw-net
     depends_on:
       redis:
         condition: service_healthy
@@ -77,8 +77,10 @@ volumes:
 networks:
   geekspace-net:
     driver: bridge
-  # Join the OpenClaw compose stack's network so we can resolve its container by name
-  # If this network doesn't exist yet, docker compose will warn — safe to ignore until OpenClaw is running
-  openclaw-net:
-    external: true
-    name: openclaw-gtzk_default
+  # To also connect to the OpenClaw docker network (optional, for direct container-name resolution):
+  #   1. Uncomment the block below
+  #   2. Add "- openclaw-net" to the geekspace service networks
+  #   3. Ensure the OpenClaw compose stack is running first
+  # openclaw-net:
+  #   external: true
+  #   name: openclaw-gtzk_default

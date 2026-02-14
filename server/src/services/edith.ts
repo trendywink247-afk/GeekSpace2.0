@@ -12,9 +12,11 @@ import { logger } from '../logger.js';
 export interface EdithResponse {
   text: string;
   provider: 'edith';
+  route: 'edith';
   latencyMs: number;
   tokensIn: number;
   tokensOut: number;
+  debug?: { endpointUsed: string; status: number };
   raw?: unknown;
 }
 
@@ -44,12 +46,13 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
 async function tryEndpoint(
   url: string,
   messages: Array<{ role: string; content: string }>,
-): Promise<{ content: string; tokensIn: number; tokensOut: number; raw: unknown }> {
+): Promise<{ content: string; tokensIn: number; tokensOut: number; status: number; raw: unknown }> {
   const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(config.edithToken ? { Authorization: `Bearer ${config.edithToken}` } : {}),
+      'x-openclaw-agent-id': 'main',
     },
     body: JSON.stringify({
       model: 'openclaw',
@@ -85,6 +88,7 @@ async function tryEndpoint(
     content,
     tokensIn: data.usage?.prompt_tokens || 0,
     tokensOut: data.usage?.completion_tokens || 0,
+    status: res.status,
     raw: data,
   };
 }
@@ -99,6 +103,8 @@ async function tryEndpoint(
 export async function edithChat(
   message: string,
   systemPrompt?: string,
+  _userId?: string,
+  _agentId?: string,
 ): Promise<EdithResponse> {
   if (!config.edithGatewayUrl) {
     throw new Error('EDITH_GATEWAY_URL is not configured');
@@ -129,9 +135,11 @@ export async function edithChat(
         return {
           text: result.content,
           provider: 'edith',
+          route: 'edith',
           latencyMs,
           tokensIn: result.tokensIn,
           tokensOut: result.tokensOut,
+          debug: { endpointUsed: url, status: result.status },
           raw: result.raw,
         };
       } catch (err) {

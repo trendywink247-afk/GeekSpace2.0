@@ -13,6 +13,7 @@ import { logger, requestLogger } from './logger.js';
 import { errorHandler } from './middleware/errors.js';
 import { db } from './db/index.js';
 
+import { edithProbe } from './services/edith.js';
 import { authRouter } from './routes/auth.js';
 import { usersRouter } from './routes/users.js';
 import { agentRouter } from './routes/agent.js';
@@ -87,26 +88,9 @@ app.get('/api/health', async (_req, res) => {
     } catch { /* unreachable */ }
   }
 
-  // Live probe: EDITH / OpenClaw
-  let edithOk = false;
-  if (config.edithGatewayUrl) {
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 3000);
-      const r = await fetch(`${config.edithGatewayUrl.replace(/\/+$/, '')}/v1/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-        signal: ctrl.signal,
-      });
-      clearTimeout(timer);
-      // Any response (even 401/422) means the host is alive
-      edithOk = true;
-      // But if it returns HTML, it's probably a UI page not the API
-      const ct = r.headers.get('content-type') || '';
-      if (ct.includes('text/html') && r.status === 200) edithOk = false;
-    } catch { /* unreachable */ }
-  }
+  // Live probe: EDITH / OpenClaw — uses the shared edithProbe() which
+  // correctly rejects HTML responses and handles 401/403/405 as "reachable"
+  const edithOk = await edithProbe();
 
   const allOk = dbOk;  // core requirement
   const code = allOk ? 200 : 503;
