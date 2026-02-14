@@ -13,6 +13,7 @@ import { logger, requestLogger } from './logger.js';
 import { errorHandler } from './middleware/errors.js';
 import { db } from './db/index.js';
 
+import { edithProbe } from './services/edith.js';
 import { authRouter } from './routes/auth.js';
 import { usersRouter } from './routes/users.js';
 import { agentRouter } from './routes/agent.js';
@@ -87,22 +88,9 @@ app.get('/api/health', async (_req, res) => {
     } catch { /* unreachable */ }
   }
 
-  // Live probe: EDITH bridge → checks bridge health + WS connection to OpenClaw
-  let edithOk = false;
-  if (config.edithGatewayUrl) {
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 3000);
-      const r = await fetch(`${config.edithGatewayUrl.replace(/\/+$/, '')}/health`, {
-        signal: ctrl.signal,
-      });
-      clearTimeout(timer);
-      if (r.ok) {
-        const data = await r.json() as { ws_connected?: boolean };
-        edithOk = data.ws_connected === true;
-      }
-    } catch { /* unreachable */ }
-  }
+  // Live probe: EDITH / OpenClaw — uses the shared edithProbe() which
+  // correctly rejects HTML responses and handles 401/403/405 as "reachable"
+  const edithOk = await edithProbe();
 
   const allOk = dbOk;  // core requirement
   const code = allOk ? 200 : 503;

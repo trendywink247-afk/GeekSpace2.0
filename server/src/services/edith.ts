@@ -18,9 +18,11 @@ import { logger } from '../logger.js';
 export interface EdithResponse {
   text: string;
   provider: 'edith';
+  route: 'edith';
   latencyMs: number;
   tokensIn: number;
   tokensOut: number;
+  debug?: { endpointUsed: string; status: number };
   raw?: unknown;
 }
 
@@ -37,7 +39,61 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
 }
 
 /**
- * Primary export — send a chat message through EDITH/OpenClaw via the bridge.
+ * Make a single chat-completions call to the given URL.
+ * Returns the parsed response or throws on any failure.
+ */
+async function tryEndpoint(
+  url: string,
+  messages: Array<{ role: string; content: string }>,
+): Promise<{ content: string; tokensIn: number; tokensOut: number; status: number; raw: unknown }> {
+  const res = await fetchWithTimeout(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(config.edithToken ? { Authorization: `Bearer ${config.edithToken}` } : {}),
+      'x-openclaw-agent-id': 'main',
+    },
+    body: JSON.stringify({
+      model: 'openclaw',
+      messages,
+      max_tokens: 512,
+      temperature: 0.2,
+    }),
+  }, TIMEOUT_MS);
+
+  // If HTML comes back (UI page) or 404, throw so we try the next endpoint
+  const contentType = res.headers.get('content-type') || '';
+  if (!res.ok || contentType.includes('text/html')) {
+    const snippet = await res.text().catch(() => '');
+    throw new Error(`EDITH ${url} returned ${res.status} (${contentType}): ${snippet.slice(0, 200)}`);
+  }
+
+  const data = await res.json() as {
+    choices?: Array<{ message?: { content: string } }>;
+    usage?: { prompt_tokens: number; completion_tokens: number };
+    // Some gateways return flat content
+    content?: string;
+    response?: string;
+  };
+
+  // Support both OpenAI-format and flat-response gateways
+  const content =
+    data.choices?.[0]?.message?.content ||
+    data.content ||
+    data.response ||
+    '';
+
+  return {
+    content,
+    tokensIn: data.usage?.prompt_tokens || 0,
+    tokensOut: data.usage?.completion_tokens || 0,
+    status: res.status,
+    raw: data,
+  };
+}
+
+/**
+ * Primary export — send a chat message through EDITH/OpenClaw.
  *
  * Makes a standard OpenAI-compatible POST to the bridge. Retries once on
  * transient errors (timeout / 5xx).
@@ -45,6 +101,8 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
 export async function edithChat(
   message: string,
   systemPrompt?: string,
+  _userId?: string,
+  _agentId?: string,
 ): Promise<EdithResponse> {
   if (!config.edithGatewayUrl) {
     throw new Error('EDITH_GATEWAY_URL is not configured');
@@ -60,25 +118,37 @@ export async function edithChat(
   const start = Date.now();
   let lastError: Error | null = null;
 
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const res = await fetchWithTimeout(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config.edithToken ? { Authorization: `Bearer ${config.edithToken}` } : {}),
-        },
-        body: JSON.stringify({
-          model: 'openclaw',
-          messages,
-          max_tokens: 4096,
-          temperature: 0.7,
-        }),
-      }, TIMEOUT_MS);
+  for (const path of ENDPOINT_PATHS) {
+    const url = `${baseUrl}${path}`;
 
-      if (!res.ok) {
-        const snippet = await res.text().catch(() => '');
-        throw new Error(`EDITH bridge returned ${res.status}: ${snippet.slice(0, 200)}`);
+    // Try with 1 retry on the primary endpoint
+    const maxAttempts = path === ENDPOINT_PATHS[0] ? 2 : 1;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const result = await tryEndpoint(url, messages);
+        const latencyMs = Date.now() - start;
+
+        logger.info({ provider: 'edith', url, latencyMs, attempt }, 'EDITH response OK');
+
+        return {
+          text: result.content,
+          provider: 'edith',
+          route: 'edith',
+          latencyMs,
+          tokensIn: result.tokensIn,
+          tokensOut: result.tokensOut,
+          debug: { endpointUsed: url, status: result.status },
+          raw: result.raw,
+        };
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        logger.warn({ url, attempt, error: lastError.message }, 'EDITH endpoint failed');
+
+        // Small delay before retry
+        if (attempt < maxAttempts) {
+          await new Promise((r) => setTimeout(r, 500));
+        }
       }
 
       const data = await res.json() as {
