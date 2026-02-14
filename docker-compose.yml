@@ -14,8 +14,8 @@ services:
       - REDIS_URL=redis://redis:6379
       # Ollama — reach via host (internal port, not exposed publicly)
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      # EDITH / OpenClaw — reach via host-mapped port
-      - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://host.docker.internal:59259}
+      # EDITH / OpenClaw — via edith-bridge (WS→HTTP)
+      - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://edith-bridge:8787}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -23,15 +23,38 @@ services:
       - geekspace-data:/app/data
     networks:
       - geekspace-net
-      - openclaw-net
     depends_on:
       redis:
+        condition: service_healthy
+      edith-bridge:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 10s
       start_period: 15s
+      retries: 3
+
+  # ---- EDITH Bridge (WebSocket→HTTP for OpenClaw) ----
+  edith-bridge:
+    build: ./bridge/edith-bridge
+    container_name: geekspace-edith-bridge
+    restart: unless-stopped
+    environment:
+      - EDITH_OPENCLAW_WS=${EDITH_OPENCLAW_WS:-ws://host.docker.internal:18789}
+      - EDITH_TOKEN=${EDITH_TOKEN:-}
+      - BRIDGE_PORT=8787
+      - REQUEST_TIMEOUT_MS=120000
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - geekspace-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 5s
       retries: 3
 
   # ---- Redis (job queue + cache) ----
@@ -77,8 +100,3 @@ volumes:
 networks:
   geekspace-net:
     driver: bridge
-  # Join the OpenClaw compose stack's network so we can resolve its container by name
-  # If this network doesn't exist yet, docker compose will warn — safe to ignore until OpenClaw is running
-  openclaw-net:
-    external: true
-    name: openclaw-gtzk_default

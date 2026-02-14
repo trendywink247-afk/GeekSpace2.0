@@ -87,24 +87,20 @@ app.get('/api/health', async (_req, res) => {
     } catch { /* unreachable */ }
   }
 
-  // Live probe: EDITH / OpenClaw
+  // Live probe: EDITH bridge → checks bridge health + WS connection to OpenClaw
   let edithOk = false;
   if (config.edithGatewayUrl) {
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 3000);
-      const r = await fetch(`${config.edithGatewayUrl.replace(/\/+$/, '')}/v1/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
+      const r = await fetch(`${config.edithGatewayUrl.replace(/\/+$/, '')}/health`, {
         signal: ctrl.signal,
       });
       clearTimeout(timer);
-      // Any response (even 401/422) means the host is alive
-      edithOk = true;
-      // But if it returns HTML, it's probably a UI page not the API
-      const ct = r.headers.get('content-type') || '';
-      if (ct.includes('text/html') && r.status === 200) edithOk = false;
+      if (r.ok) {
+        const data = await r.json() as { ws_connected?: boolean };
+        edithOk = data.ws_connected === true;
+      }
     } catch { /* unreachable */ }
   }
 
