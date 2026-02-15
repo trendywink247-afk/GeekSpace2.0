@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   User, LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
-  X, Menu, Clock
+  X, Menu, Clock, BarChart3
 } from 'lucide-react';
 import { AlexButton } from '@/components/AlexButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
@@ -21,8 +21,9 @@ const TerminalPage = lazy(() => import('./pages/TerminalPage').then(m => ({ defa
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const AutomationsPage = lazy(() => import('./pages/AutomationsPage').then(m => ({ default: m.AutomationsPage })));
 const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
+const UsageAnalyticsPage = lazy(() => import('./pages/UsageAnalyticsPage').then(m => ({ default: m.UsageAnalyticsPage })));
 
-type PageType = 'overview' | 'portfolio' | 'connections' | 'agent' | 'reminders' | 'automations' | 'terminal' | 'settings';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'connections' | 'agent' | 'reminders' | 'automations' | 'terminal' | 'settings';
 
 // Bottom tabs for mobile (5 max for thumb reach)
 const mobileTabs: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
@@ -66,6 +67,7 @@ export function DashboardApp() {
   const menuItems: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'portfolio', label: 'Portfolio', icon: Palette },
+    { id: 'usage', label: 'Usage', icon: BarChart3 },
     { id: 'connections', label: 'Connections', icon: Link2 },
     { id: 'agent', label: 'Agent Settings', icon: Bot },
     { id: 'reminders', label: 'Reminders', icon: Bell },
@@ -92,6 +94,8 @@ export function DashboardApp() {
         return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => setCurrentPage(page as PageType)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
       case 'portfolio':
         return <PortfolioPage />;
+      case 'usage':
+        return <UsageAnalyticsPage />;
       case 'connections':
         return <ConnectionsPage />;
       case 'agent':
