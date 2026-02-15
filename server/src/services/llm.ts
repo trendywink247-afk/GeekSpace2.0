@@ -16,7 +16,7 @@ import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
 // ---- Types ----
 
 export type Intent = 'simple' | 'planning' | 'coding' | 'automation' | 'complex';
-export type Provider = 'ollama' | 'openrouter' | 'edith' | 'picoclaw' | 'builtin';
+export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'edith' | 'picoclaw' | 'builtin';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -214,7 +214,10 @@ async function callOllama(messages: ChatMessage[]): Promise<{ content: string; t
 
 // ---- OpenRouter Call (OpenAI-compatible) ----
 
-async function callOpenRouter(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+async function callOpenRouterWithModel(
+  messages: ChatMessage[],
+  model: string,
+): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
   const response = await fetch(`${config.openrouterBaseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -224,7 +227,7 @@ async function callOpenRouter(messages: ChatMessage[]): Promise<{ content: strin
       'X-Title': 'GeekSpace AI OS',
     },
     body: JSON.stringify({
-      model: config.openrouterModel,
+      model,
       messages,
       max_tokens: config.openrouterMaxTokens,
     }),
@@ -247,6 +250,18 @@ async function callOpenRouter(messages: ChatMessage[]): Promise<{ content: strin
     tokensIn: data.usage?.prompt_tokens || 0,
     tokensOut: data.usage?.completion_tokens || 0,
   };
+}
+
+async function callOpenRouter(messages: ChatMessage[]) {
+  return callOpenRouterWithModel(messages, config.openrouterModel);
+}
+
+async function callOpenRouterFree(messages: ChatMessage[]) {
+  return callOpenRouterWithModel(messages, config.openrouterFreeModel);
+}
+
+function isOpenRouterFreeAvailable(): boolean {
+  return !!config.openrouterApiKey && !!config.openrouterFreeModel;
 }
 
 // ---- Moonshot Reasoning Call (direct HTTP — replaces broken EDITH/WS bridge) ----
@@ -301,11 +316,12 @@ async function callMoonshotReasoning(messages: ChatMessage[]): Promise<{ content
 // Minimum per premium call: 10 credits (prevents zero-cost micro-queries).
 
 const CREDIT_RATES: Record<Provider, number> = {
-  ollama:     0,
-  openrouter: 5,   // kimi-k2.5 — standard cloud
-  edith:      10,  // kimi-k2-thinking — heavy reasoning
-  picoclaw:   0,   // lightweight sidecar — free
-  builtin:    0,
+  ollama:              0,
+  'openrouter-free':   0,   // free cloud models (Llama 3.3 70B etc.)
+  openrouter:          5,   // kimi-k2.5 — standard cloud
+  edith:               10,  // kimi-k2-thinking — heavy reasoning
+  picoclaw:            0,   // lightweight sidecar — free
+  builtin:             0,
 };
 
 const MIN_PREMIUM_CREDITS = 10;
@@ -322,6 +338,7 @@ export function computeCreditCost(provider: Provider, tokensIn: number, tokensOu
 function estimateCost(provider: Provider, tokensIn: number, tokensOut: number): number {
   switch (provider) {
     case 'ollama': return 0;
+    case 'openrouter-free': return 0;
     case 'openrouter': return (tokensIn * 0.0000006) + (tokensOut * 0.000002);
     case 'edith': return (tokensIn * 0.0000012) + (tokensOut * 0.000004);
     case 'picoclaw': return 0;
@@ -360,26 +377,32 @@ export async function routeChat(
   if (!opts?.forceProvider) {
     const ollamaOk = await isOllamaAvailable();
     const picoOk = await isPicoClawAvailable();
+    const hasCredits = opts?.userCredits === undefined || opts.userCredits > 0;
 
-    // Route automation intents to PicoClaw when available
     if (picoOk && intent === 'automation') {
       provider = 'picoclaw';
-    } else if (ollamaOk) {
-      // Ollama is up — always use it (free tier)
+    } else if (intent === 'simple' && ollamaOk) {
+      // Simple queries → always local (fast, free)
       provider = 'ollama';
-    } else if (picoOk) {
-      // PicoClaw available as fallback when Ollama is down
-      provider = 'picoclaw';
-    } else {
-      // Both local engines down — fall back to cloud if user has credits
-      const hasCredits = opts?.userCredits === undefined || opts.userCredits > 0;
-      if (hasCredits && isEdithAvailable()) {
+    } else if (intent === 'coding' || intent === 'planning' || intent === 'complex') {
+      // Complex queries → try free cloud first, then paid, then local fallback
+      if (isOpenRouterFreeAvailable()) {
+        provider = 'openrouter-free';
+      } else if (hasCredits && isEdithAvailable() && intent === 'complex') {
         provider = 'edith';
       } else if (hasCredits && isOpenRouterAvailable()) {
         provider = 'openrouter';
+      } else if (ollamaOk) {
+        provider = 'ollama';
       } else {
         provider = 'builtin';
       }
+    } else if (ollamaOk) {
+      provider = 'ollama';
+    } else if (picoOk) {
+      provider = 'picoclaw';
+    } else {
+      provider = 'builtin';
     }
   }
 
@@ -405,6 +428,14 @@ export async function routeChat(
         tokensIn = result.tokensIn;
         tokensOut = result.tokensOut;
         model = config.openrouterModel;
+        break;
+      }
+      case 'openrouter-free': {
+        const result = await callOpenRouterFree(fullMessages);
+        reply = result.content;
+        tokensIn = result.tokensIn;
+        tokensOut = result.tokensOut;
+        model = config.openrouterFreeModel;
         break;
       }
       case 'edith': {
@@ -439,8 +470,8 @@ export async function routeChat(
     const errorMsg = err instanceof Error ? err.message : String(err);
     logger.warn({ provider, intent, error: errorMsg }, 'LLM call failed, attempting fallback');
 
-    // Fallback chain: ollama → openrouter → builtin
-    if (provider === 'edith' || provider === 'openrouter') {
+    // Fallback chain: cloud → ollama → builtin
+    if (provider === 'edith' || provider === 'openrouter' || provider === 'openrouter-free') {
       const ollamaOk = await isOllamaAvailable();
       if (ollamaOk) {
         try {

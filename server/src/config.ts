@@ -60,6 +60,7 @@ export const config = {
   openrouterModel: optional('OPENROUTER_MODEL', 'anthropic/claude-sonnet-4-5-20250929'),
   openrouterTimeout: optionalInt('OPENROUTER_TIMEOUT_MS', 90000),
   openrouterMaxTokens: optionalInt('OPENROUTER_MAX_TOKENS', 4096),
+  openrouterFreeModel: optional('OPENROUTER_FREE_MODEL', 'meta-llama/llama-3.3-70b-instruct:free'),
 
   // EDITH / OpenClaw — via edith-bridge (WS→HTTP bridge) [legacy, unused]
   edithGatewayUrl: process.env.EDITH_GATEWAY_URL || '',

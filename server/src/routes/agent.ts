@@ -9,7 +9,7 @@ import { logger } from '../logger.js';
 import { config } from '../config.js';
 import { OPENCLAW_IDENTITY } from '../prompts/openclaw-system.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
-import { buildMemoryContext, logConversation, extractMemories } from '../services/memory.js';
+import { buildMemoryContext, logConversation, extractMemories, getConversationContext } from '../services/memory.js';
 
 export const agentRouter = Router();
 
@@ -161,7 +161,8 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     checkKeywordTriggers(userId, message).catch(() => {});
 
     // ---- Default: local-first router (Ollama → cloud fallback if Ollama down) ----
-    const messages: ChatMessage[] = [{ role: 'user', content: message }];
+    const history = getConversationContext(userId);
+    const messages: ChatMessage[] = [...history, { role: 'user', content: message }];
     const intent = classifyIntent(message);
 
     const result = await routeChat(messages, {
@@ -172,7 +173,7 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     });
 
     // Determine tier from actual provider used
-    const tier = (result.provider === 'ollama' || result.provider === 'builtin') ? 'local' : 'premium';
+    const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';
 
     // Log usage
     db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
@@ -356,8 +357,9 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown>;
 
     try {
+      const termHistory = getConversationContext(userId);
       const result = await routeChat(
-        [{ role: 'user', content: query }],
+        [...termHistory, { role: 'user', content: query }],
         {
           systemPrompt: buildSystemPrompt(agentConfig, user, userId),
           agentName: (agentConfig?.name as string) || 'Geek',
@@ -414,8 +416,10 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
     const systemPrompt = buildSystemPrompt(agentConfig, user, userId);
 
+    const history = getConversationContext(userId);
     const fullMessages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
+      ...history,
       { role: 'user', content: message },
     ];
 
@@ -433,13 +437,13 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     if (!fullReply.trim()) {
       logger.warn({ userId, latencyMs }, 'Stream produced empty reply, falling back to routeChat');
       const result = await routeChat(
-        [{ role: 'user', content: message }],
+        [...history, { role: 'user', content: message }],
         { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0 },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
       res.write(`data: ${JSON.stringify({
         text: '', done: true, provider: result.provider, model: result.model,
-        latencyMs: result.latencyMs, tier: result.provider === 'ollama' ? 'local' : 'premium', creditsUsed: result.creditCost,
+        latencyMs: result.latencyMs, tier: (result.provider === 'ollama' || result.provider === 'openrouter-free') ? 'local' : 'premium', creditsUsed: result.creditCost,
       })}\n\n`);
     } else {
       // Log usage
@@ -460,8 +464,9 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     try {
       const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
       const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
+      const fallbackHistory = getConversationContext(userId);
       const result = await routeChat(
-        [{ role: 'user', content: message }],
+        [...fallbackHistory, { role: 'user', content: message }],
         { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0 },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);

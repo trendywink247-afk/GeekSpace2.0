@@ -134,6 +134,20 @@ export function getRecentConversations(userId: string, limit = 10): Conversation
   ).all(userId, limit) as ConversationEntry[];
 }
 
+export function getConversationContext(userId: string, maxChars = 8192): Array<{ role: 'user' | 'assistant'; content: string }> {
+  const rows = getRecentConversations(userId, 20);
+  const messages = rows.reverse().map(r => ({
+    role: r.role as 'user' | 'assistant',
+    content: r.content,
+  }));
+  let totalChars = messages.reduce((sum, m) => sum + m.content.length, 0);
+  while (totalChars > maxChars && messages.length > 0) {
+    totalChars -= messages[0].content.length;
+    messages.shift();
+  }
+  return messages;
+}
+
 // ---- Memory Extraction (lightweight — runs after each chat) ----
 // This parses the user message for obvious facts/preferences.
 // A full LLM-powered extraction can be layered on later.
