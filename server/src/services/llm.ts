@@ -162,7 +162,6 @@ async function callOpenRouter(messages: ChatMessage[]): Promise<{ content: strin
       model: config.openrouterModel,
       messages,
       max_tokens: 2048,
-      temperature: 0.7,
     }),
     signal: AbortSignal.timeout(config.ollamaTimeout),
   });

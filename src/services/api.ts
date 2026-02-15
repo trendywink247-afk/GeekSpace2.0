@@ -94,7 +94,7 @@ export const agentService = {
     api.patch<AgentConfig>('/agent/config', data),
 
   chat: (message: string, channel: string = 'web') =>
-    api.post<{ reply: string; toolsUsed: string[] }>('/agent/chat', { message, channel }),
+    api.post<{ text: string; route: string; latencyMs: number; provider: string }>('/agent/chat', { message, channel }),
 
   executeCommand: (command: string) =>
     api.post<{ output: string; isError: boolean }>('/agent/command', { command }),

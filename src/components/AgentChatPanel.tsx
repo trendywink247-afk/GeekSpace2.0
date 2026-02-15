@@ -84,7 +84,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         const agentMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'agent',
-          content: data.reply,
+          content: data.text,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, agentMsg]);
