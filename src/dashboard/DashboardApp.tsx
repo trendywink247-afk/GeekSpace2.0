@@ -20,14 +20,15 @@ const RemindersPage = lazy(() => import('./pages/RemindersPage').then(m => ({ de
 const TerminalPage = lazy(() => import('./pages/TerminalPage').then(m => ({ default: m.TerminalPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const AutomationsPage = lazy(() => import('./pages/AutomationsPage').then(m => ({ default: m.AutomationsPage })));
+const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
 
-type PageType = 'overview' | 'connections' | 'agent' | 'reminders' | 'automations' | 'terminal' | 'settings';
+type PageType = 'overview' | 'portfolio' | 'connections' | 'agent' | 'reminders' | 'automations' | 'terminal' | 'settings';
 
 // Bottom tabs for mobile (5 max for thumb reach)
 const mobileTabs: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Home', icon: LayoutDashboard },
+  { id: 'portfolio', label: 'Portfolio', icon: Palette },
   { id: 'terminal', label: 'Terminal', icon: Terminal },
-  { id: 'reminders', label: 'Reminders', icon: Bell },
   { id: 'agent', label: 'Agent', icon: Bot },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -64,6 +65,7 @@ export function DashboardApp() {
 
   const menuItems: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'portfolio', label: 'Portfolio', icon: Palette },
     { id: 'connections', label: 'Connections', icon: Link2 },
     { id: 'agent', label: 'Agent Settings', icon: Bot },
     { id: 'reminders', label: 'Reminders', icon: Bell },
@@ -88,6 +90,8 @@ export function DashboardApp() {
     switch (currentPage) {
       case 'overview':
         return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => setCurrentPage(page as PageType)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
+      case 'portfolio':
+        return <PortfolioPage />;
       case 'connections':
         return <ConnectionsPage />;
       case 'agent':
