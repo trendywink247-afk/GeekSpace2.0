@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { 
-  Bot, 
-  MessageSquare, 
-  Code, 
+import { useState, useEffect } from 'react';
+import {
+  Bot,
+  MessageSquare,
+  Code,
   Briefcase,
   Check,
   Sparkles,
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { useDashboardStore } from '@/stores/dashboardStore';
 
 type AgentStyle = 'minimal' | 'builder' | 'operator';
 
@@ -61,19 +62,51 @@ const voiceOptions = [
 ];
 
 export function AgentSettingsPage() {
-  const [selectedStyle, setSelectedStyle] = useState<AgentStyle>('builder');
-  const [selectedVoice, setSelectedVoice] = useState('friendly');
-  const [creativity, setCreativity] = useState([70]);
-  const [formality, setFormality] = useState([50]);
-  const [systemPrompt, setSystemPrompt] = useState(
-    `You are Alex's personal AI assistant. You help with coding, reminders, and daily tasks. Be helpful, concise, and proactive. When uncertain, ask for clarification.`
-  );
-  const [agentName, setAgentName] = useState('Geek');
-  const [isSaving, setIsSaving] = useState(false);
+  const { agent, updateAgent } = useDashboardStore();
 
-  const handleSave = () => {
+  // Initialize from store
+  const [selectedStyle, setSelectedStyle] = useState<AgentStyle>(agent.mode || 'builder');
+  const [selectedVoice, setSelectedVoice] = useState(agent.voice || 'friendly');
+  const [creativity, setCreativity] = useState([agent.creativity ?? 70]);
+  const [formality, setFormality] = useState([agent.formality ?? 50]);
+  const [systemPrompt, setSystemPrompt] = useState(
+    agent.systemPrompt || `You are a helpful personal AI assistant. Be helpful, concise, and proactive. When uncertain, ask for clarification.`
+  );
+  const [agentName, setAgentName] = useState(agent.name || 'Geek');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Sync from store when agent data loads/changes
+  useEffect(() => {
+    if (agent.id) {
+      setSelectedStyle(agent.mode || 'builder');
+      setSelectedVoice(agent.voice || 'friendly');
+      setCreativity([agent.creativity ?? 70]);
+      setFormality([agent.formality ?? 50]);
+      setSystemPrompt(agent.systemPrompt || '');
+      setAgentName(agent.name || 'Geek');
+    }
+  }, [agent.id, agent.mode, agent.voice, agent.creativity, agent.formality, agent.systemPrompt, agent.name]);
+
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => setIsSaving(false), 1500);
+    setSaveSuccess(false);
+    try {
+      await updateAgent({
+        name: agentName,
+        mode: selectedStyle,
+        voice: selectedVoice as 'professional' | 'friendly' | 'witty',
+        creativity: creativity[0],
+        formality: formality[0],
+        systemPrompt,
+      });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch {
+      // keep local state on error
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -107,7 +140,7 @@ export function AgentSettingsPage() {
           <div>
             <label className="text-sm text-[#A7ACB8] mb-2 block">Public Display Name</label>
             <Input
-              value="Alex's AI"
+              value={agent.displayName || `${agentName}'s AI`}
               disabled
               className="bg-[#05050A] border-[#7B61FF]/20 text-[#A7ACB8]"
             />
@@ -133,7 +166,7 @@ export function AgentSettingsPage() {
               }`}
             >
               <div className="flex items-center justify-between mb-3">
-                <div 
+                <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center"
                   style={{ backgroundColor: `${style.color}20` }}
                 >
@@ -149,7 +182,7 @@ export function AgentSettingsPage() {
               <p className="text-sm text-[#A7ACB8] mb-3">{style.description}</p>
               <div className="flex flex-wrap gap-1">
                 {style.features.map((feature, i) => (
-                  <span 
+                  <span
                     key={i}
                     className="px-2 py-0.5 text-xs rounded-full bg-[#0B0B10] text-[#A7ACB8]"
                   >
@@ -174,7 +207,7 @@ export function AgentSettingsPage() {
             {voiceOptions.map((voice) => (
               <button
                 key={voice.id}
-                onClick={() => setSelectedVoice(voice.id)}
+                onClick={() => setSelectedVoice(voice.id as 'professional' | 'friendly' | 'witty')}
                 className={`w-full p-4 rounded-xl border transition-all duration-300 flex items-center justify-between ${
                   selectedVoice === voice.id
                     ? 'border-[#7B61FF] bg-[#7B61FF]/10'
@@ -201,7 +234,7 @@ export function AgentSettingsPage() {
             <Brain className="w-5 h-5 text-[#7B61FF]" />
             Behavior
           </h2>
-          
+
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm text-[#A7ACB8]">Creativity</label>
@@ -258,7 +291,12 @@ export function AgentSettingsPage() {
       </div>
 
       {/* Save Button */}
-      <div className="flex justify-end">
+      <div className="flex justify-end items-center gap-3">
+        {saveSuccess && (
+          <span className="text-sm text-[#61FF7B] flex items-center gap-1">
+            <Check className="w-4 h-4" /> Saved
+          </span>
+        )}
         <Button
           size="lg"
           onClick={handleSave}

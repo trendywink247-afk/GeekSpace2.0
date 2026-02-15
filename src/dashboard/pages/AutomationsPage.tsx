@@ -444,6 +444,9 @@ export function AutomationsPage() {
                   <option value="time">Scheduled (Time)</option>
                   <option value="event">Event-based</option>
                   <option value="webhook">Webhook</option>
+                  <option value="manual">Manual</option>
+                  <option value="keyword">Keyword Match</option>
+                  <option value="health_down">Health Check</option>
                 </select>
               </div>
               <div>
@@ -457,6 +460,9 @@ export function AutomationsPage() {
                   <option value="n8n-webhook">n8n Webhook</option>
                   <option value="portfolio-update">Portfolio Update</option>
                   <option value="manychat-broadcast">ManyChat Broadcast</option>
+                  <option value="call_api">API Call</option>
+                  <option value="create_reminder">Create Reminder</option>
+                  <option value="log">Log</option>
                 </select>
               </div>
             </div>

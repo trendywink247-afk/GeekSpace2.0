@@ -115,7 +115,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         { name: 'Overdue', value: 0, color: '#FF6161' },
       ];
 
-  const credits = (stats as unknown as Record<string, unknown>).credits as number ?? 0;
+  const credits = Number((stats as unknown as Record<string, unknown>).credits) || 0;
 
   useEffect(() => {
     setMounted(true);

@@ -10,7 +10,6 @@ import {
   Key,
   Save,
   Check,
-  AlertTriangle,
   Upload,
   Eye,
   Palette,
@@ -299,15 +298,12 @@ export function SettingsPage() {
                 </div>
               </div>
               <div className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/20">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 text-[#FFD761]" />
-                    <div>
-                      <div className="font-medium text-[#F4F6FF]">Active Sessions</div>
-                      <div className="text-sm text-[#A7ACB8]">2 active sessions</div>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-[#61FF7B]" />
+                  <div>
+                    <div className="font-medium text-[#F4F6FF]">Active Sessions</div>
+                    <div className="text-sm text-[#A7ACB8]">Current session active</div>
                   </div>
-                  <Button variant="outline" size="sm" className="border-[#7B61FF]/30">View All</Button>
                 </div>
               </div>
             </CardContent>

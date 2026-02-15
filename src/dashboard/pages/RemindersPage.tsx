@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { 
-  Bell, 
-  Plus, 
-  Calendar, 
-  Clock, 
+import {
+  Bell,
+  Plus,
+  Calendar,
+  Clock,
   MessageSquare,
   Trash2,
   Check,
@@ -20,25 +20,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-interface Reminder {
-  id: string;
-  text: string;
-  datetime: string;
-  channel: 'telegram' | 'email' | 'push';
-  recurring?: string;
-  completed: boolean;
-  category: 'personal' | 'work' | 'health' | 'other';
-}
-
-const initialReminders: Reminder[] = [
-  { id: '1', text: 'Call mom', datetime: '2026-02-12T09:00', channel: 'telegram', category: 'personal', completed: false },
-  { id: '2', text: 'Submit project report', datetime: '2026-02-12T17:00', channel: 'email', recurring: 'weekly', category: 'work', completed: false },
-  { id: '3', text: 'Team standup', datetime: '2026-02-12T10:00', channel: 'push', recurring: 'daily', category: 'work', completed: true },
-  { id: '4', text: 'Pay rent', datetime: '2026-02-15T09:00', channel: 'telegram', recurring: 'monthly', category: 'personal', completed: false },
-  { id: '5', text: 'Gym workout', datetime: '2026-02-12T07:00', channel: 'push', category: 'health', completed: false },
-  { id: '6', text: 'Review pull requests', datetime: '2026-02-12T14:00', channel: 'email', category: 'work', completed: false },
-];
+import { useDashboardStore } from '@/stores/dashboardStore';
+import type { ReminderChannel, ReminderCategory } from '@/types';
 
 const categoryColors: Record<string, string> = {
   personal: '#7B61FF',
@@ -48,7 +31,7 @@ const categoryColors: Record<string, string> = {
 };
 
 export function RemindersPage() {
-  const [reminders, setReminders] = useState<Reminder[]>(initialReminders);
+  const { reminders, addReminder, toggleReminder, deleteReminder } = useDashboardStore();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,9 +39,9 @@ export function RemindersPage() {
   const [newReminder, setNewReminder] = useState<{
     text: string;
     datetime: string;
-    channel: 'telegram' | 'email' | 'push';
+    channel: ReminderChannel;
     recurring: string;
-    category: 'personal' | 'work' | 'health' | 'other';
+    category: ReminderCategory;
   }>({
     text: '',
     datetime: '',
@@ -67,28 +50,25 @@ export function RemindersPage() {
     category: 'personal',
   });
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newReminder.text || !newReminder.datetime) return;
-    const reminder: Reminder = {
-      id: Date.now().toString(),
+    await addReminder({
       text: newReminder.text,
       datetime: newReminder.datetime,
       channel: newReminder.channel,
       recurring: newReminder.recurring || undefined,
-      completed: false,
       category: newReminder.category,
-    };
-    setReminders([...reminders, reminder]);
+    });
     setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal' });
     setIsAddDialogOpen(false);
   };
 
-  const handleComplete = (id: string) => {
-    setReminders(reminders.map(r => r.id === id ? { ...r, completed: !r.completed } : r));
+  const handleComplete = async (id: string) => {
+    await toggleReminder(id);
   };
 
-  const handleDelete = (id: string) => {
-    setReminders(reminders.filter(r => r.id !== id));
+  const handleDelete = async (id: string) => {
+    await deleteReminder(id);
   };
 
   const filteredReminders = reminders.filter(r => {
@@ -122,8 +102,8 @@ export function RemindersPage() {
   const getRemindersForDay = (day: number) => {
     return reminders.filter(r => {
       const date = new Date(r.datetime);
-      return date.getDate() === day && 
-             date.getMonth() === currentMonth.getMonth() && 
+      return date.getDate() === day &&
+             date.getMonth() === currentMonth.getMonth() &&
              date.getFullYear() === currentMonth.getFullYear();
     });
   };
@@ -185,8 +165,8 @@ export function RemindersPage() {
             filteredReminders.map((reminder) => {
               const { date, time } = formatDateTime(reminder.datetime);
               return (
-                <Card 
-                  key={reminder.id} 
+                <Card
+                  key={reminder.id}
                   className={`bg-[#0B0B10] border-[#7B61FF]/20 transition-all duration-300 hover:border-[#7B61FF]/40 ${reminder.completed ? 'opacity-60' : ''}`}
                 >
                   <CardContent className="p-4">
@@ -215,8 +195,8 @@ export function RemindersPage() {
                               <Repeat className="w-3 h-3 mr-1" />{reminder.recurring}
                             </Badge>
                           )}
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             style={{ borderColor: `${categoryColors[reminder.category]}40`, color: categoryColors[reminder.category] }}
                           >
                             {reminder.category}
@@ -224,15 +204,15 @@ export function RemindersPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div 
+                        <div
                           className="w-8 h-8 rounded-lg flex items-center justify-center"
-                          style={{ 
-                            backgroundColor: reminder.channel === 'telegram' ? '#0088cc15' : 
+                          style={{
+                            backgroundColor: reminder.channel === 'telegram' ? '#0088cc15' :
                                            reminder.channel === 'email' ? '#4285f415' : '#7B61FF15'
                           }}
                         >
-                          <MessageSquare className="w-4 h-4" style={{ 
-                            color: reminder.channel === 'telegram' ? '#0088cc' : 
+                          <MessageSquare className="w-4 h-4" style={{
+                            color: reminder.channel === 'telegram' ? '#0088cc' :
                                    reminder.channel === 'email' ? '#4285f4' : '#7B61FF'
                           }} />
                         </div>
@@ -288,12 +268,12 @@ export function RemindersPage() {
               {emptyDays.map(i => <div key={`empty-${i}`} className="aspect-square" />)}
               {calendarDays.map(day => {
                 const dayReminders = getRemindersForDay(day);
-                const isToday = day === today.getDate() && 
-                               currentMonth.getMonth() === today.getMonth() && 
+                const isToday = day === today.getDate() &&
+                               currentMonth.getMonth() === today.getMonth() &&
                                currentMonth.getFullYear() === today.getFullYear();
                 return (
-                  <div 
-                    key={day} 
+                  <div
+                    key={day}
                     className={`aspect-square p-1 md:p-2 rounded-lg border transition-all cursor-pointer hover:border-[#7B61FF]/50 ${
                       isToday ? 'bg-[#7B61FF]/20 border-[#7B61FF]/50' : 'border-[#7B61FF]/10 bg-[#05050A]'
                     }`}
@@ -358,7 +338,7 @@ export function RemindersPage() {
                 <label className="text-sm text-[#A7ACB8] mb-2 block">Category</label>
                 <select
                   value={newReminder.category}
-                  onChange={(e) => setNewReminder({ ...newReminder, category: e.target.value as any })}
+                  onChange={(e) => setNewReminder({ ...newReminder, category: e.target.value as ReminderCategory })}
                   className="w-full p-2 rounded-lg bg-[#05050A] border border-[#7B61FF]/30 text-[#F4F6FF]"
                 >
                   <option value="personal">Personal</option>
@@ -384,7 +364,7 @@ export function RemindersPage() {
             <div>
               <label className="text-sm text-[#A7ACB8] mb-2 block">Channel</label>
               <div className="flex gap-2">
-                {(['telegram', 'email', 'push'] as const).map((channel) => (
+                {(['telegram', 'email', 'push', 'whatsapp'] as ReminderChannel[]).map((channel) => (
                   <button
                     key={channel}
                     onClick={() => setNewReminder({ ...newReminder, channel })}
@@ -403,8 +383,8 @@ export function RemindersPage() {
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="flex-1 border-[#7B61FF]/30">
                 Cancel
               </Button>
-              <Button 
-                onClick={handleAdd} 
+              <Button
+                onClick={handleAdd}
                 disabled={!newReminder.text || !newReminder.datetime}
                 className="flex-1 bg-[#7B61FF] hover:bg-[#6B51EF]"
               >

@@ -3,6 +3,7 @@ import { Terminal as TerminalIcon, Copy, Check, Trash2, Bot, Sparkles } from 'lu
 import { Button } from '@/components/ui/button';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useAuthStore } from '@/stores/authStore';
+import { agentService } from '@/services/api';
 
 interface Command {
   id: string;
@@ -39,7 +40,7 @@ const helpText = `Available commands:
 
 export function TerminalPage() {
   const user = useAuthStore((s) => s.user);
-  const { usage, reminders, agent } = useDashboardStore();
+  const { usage, reminders, agent, addReminder } = useDashboardStore();
   const [commands, setCommands] = useState<Command[]>([
     { id: 'welcome', input: '', output: welcomeMessage, timestamp: new Date() },
   ]);
@@ -61,58 +62,46 @@ export function TerminalPage() {
   }, []);
 
   const getResponses = (): Record<string, string | (() => string)> => ({
-    'gs me': `Name: ${user?.name || 'Alex Chen'}
-Username: ${user?.username || 'alex'}
-Email: ${user?.email || 'alex@example.com'}
-Plan: ${user?.plan || 'Pro'} ($50/year)
-Credits: 12,450
+    'gs me': `Name: ${user?.name || 'User'}
+Username: ${user?.username || 'user'}
+Email: ${user?.email || '—'}
+Plan: ${user?.plan || 'free'}
+Credits: ${(user?.credits ?? 0).toLocaleString()}
 Agent: ${agent.name} (${agent.mode} mode)
-Joined: ${user?.createdAt?.slice(0, 10) || '2026-01-15'}`,
+Joined: ${user?.createdAt?.slice(0, 10) || '—'}`,
 
     'gs reminders list': () => {
       const active = reminders.filter((r) => !r.completed);
       if (active.length === 0) return 'No active reminders. Use "gs reminders add" to create one.';
       const header = 'ID  | Reminder                    | Channel    | Status\n--- | --------------------------- | ---------- | ------';
-      const rows = active.map((r) => `${r.id.padEnd(4)}| ${r.text.padEnd(28)}| ${r.channel.padEnd(11)}| ${r.createdBy}`);
+      const rows = active.map((r) => `${r.id.slice(0, 4).padEnd(4)}| ${r.text.padEnd(28)}| ${r.channel.padEnd(11)}| ${r.createdBy}`);
       return header + '\n' + rows.join('\n');
     },
 
     'gs schedule today': `Today's Schedule (${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}):
 
-10:00 AM - Team Standup
-02:00 PM - Client Meeting
-04:00 PM - Code Review
-
-Reminders:
-${reminders.filter((r) => !r.completed).slice(0, 3).map((r) => `  - ${r.text} (${r.channel})`).join('\n')}`,
+${reminders.filter((r) => !r.completed).slice(0, 5).map((r) => `  - ${r.text} (${r.channel})`).join('\n') || '  No items scheduled'}`,
 
     'gs schedule tomorrow': `Tomorrow's Schedule:
 
-09:00 AM - Product Planning
-10:00 AM - Design Review
-02:00 PM - Sprint Retrospective
-05:00 PM - Submit project report`,
+  No items scheduled yet.
+  Use "gs reminders add" to add tasks.`,
 
     'gs portfolio': `Opening portfolio...
-URL: https://${user?.username || 'alex'}.geekspace.space
-Status: Published
-Last updated: 2 hours ago`,
+URL: https://${user?.username || 'user'}.geekspace.space
+Status: Published`,
 
-    'gs status': `Agent Status: ${agent.status === 'online' ? '\x1b[32mOnline\x1b[0m' : 'Offline'}
+    'gs status': `Agent Status: ${agent.status === 'online' ? 'Online' : agent.status === 'error' ? 'Error' : 'Offline'}
 Name: ${agent.name}
 Mode: ${agent.mode}
 Voice: ${agent.voice}
 Model: ${agent.primaryModel}
-Creativity: ${agent.creativity}%
-Uptime: 99.99%
-Last Activity: 2 minutes ago`,
+Creativity: ${agent.creativity}%`,
 
-    'gs credits': `Credit Balance: 12,450
-Monthly Allowance: 15,000
-Resets: Mar 1, 2026
+    'gs credits': `Credit Balance: ${(user?.credits ?? 0).toLocaleString()}
 
 Usage this month:
-  API calls: ${usage.totalMessages.toLocaleString()}
+  Messages: ${usage.totalMessages.toLocaleString()}
   Cost: $${usage.totalCostUSD.toFixed(2)}
   Forecast: $${usage.forecastUSD.toFixed(2)}`,
 
@@ -123,7 +112,7 @@ Usage this month:
   Cost: $${(usage.totalCostUSD / 30).toFixed(3)}
 
 By Provider:
-${Object.entries(usage.byProvider).map(([k, v]) => `  ${k}: $${(v as number / 30).toFixed(3)}`).join('\n')}`,
+${Object.entries(usage.byProvider).map(([k, v]) => `  ${k}: $${(v as number / 30).toFixed(3)}`).join('\n') || '  No data'}`,
 
     'gs usage month': `Monthly Usage Report:
   Total Messages: ${usage.totalMessages.toLocaleString()}
@@ -134,33 +123,42 @@ ${Object.entries(usage.byProvider).map(([k, v]) => `  ${k}: $${(v as number / 30
   Forecast: $${usage.forecastUSD.toFixed(2)}
 
 By Provider:
-${Object.entries(usage.byProvider).map(([k, v]) => `  ${k}: $${(v as number).toFixed(2)}`).join('\n')}
+${Object.entries(usage.byProvider).map(([k, v]) => `  ${k}: $${(v as number).toFixed(2)}`).join('\n') || '  No data'}
 
 Top Tools:
-${Object.entries(usage.byTool).map(([k, v]) => `  ${k}: $${(v as number).toFixed(2)}`).join('\n')}`,
+${Object.entries(usage.byTool).map(([k, v]) => `  ${k}: $${(v as number).toFixed(2)}`).join('\n') || '  No data'}`,
 
-    'gs integrations': `Connected Integrations:
-  Telegram     - Connected (webhook active)
-  GitHub       - Connected (repo sync)
-  Google Cal   - Pending setup
+    'gs integrations': () => {
+      const integrations = useDashboardStore.getState().integrations;
+      if (integrations.length === 0) return 'No integrations configured.\nUse the Connections page to set up services.';
+      const connected = integrations.filter(i => i.status === 'connected');
+      const disconnected = integrations.filter(i => i.status !== 'connected');
+      let out = 'Connected Integrations:\n';
+      if (connected.length > 0) {
+        out += connected.map(i => `  ${i.name.padEnd(15)} - ${i.status} (${i.requestsToday} req today)`).join('\n');
+      } else {
+        out += '  None';
+      }
+      if (disconnected.length > 0) {
+        out += '\n\nAvailable:\n';
+        out += disconnected.map(i => `  ${i.name}`).join(', ');
+      }
+      return out;
+    },
 
-Available:
-  Twitter, LinkedIn, Figma, Notion, n8n, ManyChat
-  Use "gs connect <service>" to set up`,
-
-    'gs automations': `Active Automations:
-  1. Portfolio auto-update (daily)
-  2. Morning briefing (weekdays 8am)
-  3. GitHub commit summary (on push)
-
-Use "gs automations create" to add new`,
+    'gs automations': () => {
+      const automations = useDashboardStore.getState().automations;
+      if (automations.length === 0) return 'No automations configured.\nUse the Automations page to create one.';
+      const lines = automations.map((a, i) => `  ${i + 1}. ${a.name} (${a.triggerType} → ${a.actionType}) ${a.enabled ? '[active]' : '[disabled]'}`);
+      return `Automations:\n${lines.join('\n')}`;
+    },
 
     'gs deploy': `Deploying portfolio changes...
 Building... done (2.1s)
 Optimizing assets... done
 Publishing to CDN... done
 
-Portfolio live at: https://${user?.username || 'alex'}.geekspace.space
+Portfolio live at: https://${user?.username || 'user'}.geekspace.space
 Deploy ID: dep_${Date.now().toString(36)}`,
 
     'help': helpText,
@@ -186,7 +184,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
 
     const responses = getResponses();
 
-    // Handle AI prompts
+    // Handle AI prompts — call real agent API
     if (trimmedCmd.startsWith('ai ')) {
       const prompt = cmd.trim().slice(3).replace(/^["']|["']$/g, '');
       const loadingCmd: Command = {
@@ -201,27 +199,62 @@ Deploy ID: dep_${Date.now().toString(36)}`,
       setHistoryIndex(-1);
       setInput('');
 
-      // Simulate AI response
-      setTimeout(() => {
-        const aiResponses = [
-          `Based on my analysis, here's what I think about "${prompt}":\n\nThis is an interesting question. Let me break it down for you. The key factors to consider are context, scalability, and user experience. I'd recommend starting with a prototype and iterating from there.`,
-          `Great question! Here's my take on "${prompt}":\n\nI've considered multiple approaches and the most efficient solution would involve leveraging your existing infrastructure. Would you like me to elaborate on any specific aspect?`,
-          `Regarding "${prompt}":\n\nI've processed this through the knowledge base. Here are the top insights:\n1. Consider the edge cases first\n2. Optimize for the 80% use case\n3. Keep the architecture simple\n\nWant me to go deeper on any of these?`,
-        ];
-        const response = aiResponses[Math.floor(Math.random() * aiResponses.length)];
-        setCommands((prev) =>
-          prev.map((c) =>
-            c.id === loadingCmd.id ? { ...c, output: response, isLoading: false } : c
-          )
-        );
-      }, 1500);
+      agentService.chat(prompt, 'terminal')
+        .then(({ data }) => {
+          setCommands((prev) =>
+            prev.map((c) =>
+              c.id === loadingCmd.id
+                ? { ...c, output: `${data.text}\n\n[${data.provider} · ${data.latencyMs}ms]`, isLoading: false }
+                : c
+            )
+          );
+        })
+        .catch((err) => {
+          setCommands((prev) =>
+            prev.map((c) =>
+              c.id === loadingCmd.id
+                ? { ...c, output: `Error: ${err.response?.data?.error || err.message || 'Failed to reach AI agent'}`, isLoading: false, isError: true }
+                : c
+            )
+          );
+        });
       return;
     }
 
+    // Handle gs reminders add — call real store
     if (trimmedCmd.startsWith('gs reminders add')) {
       const text = cmd.match(/"([^"]+)"/)?.[1] || 'New reminder';
-      output = `Reminder added successfully!\n  ID: ${Date.now().toString().slice(-4)}\n  Text: "${text}"\n  Channel: push`;
-    } else if (responses[trimmedCmd]) {
+      const datetime = new Date(Date.now() + 3600000).toISOString();
+      const loadingCmd: Command = {
+        id: Date.now().toString(),
+        input: cmd,
+        output: '',
+        timestamp: new Date(),
+        isLoading: true,
+      };
+      setCommands((prev) => [...prev, loadingCmd]);
+      setHistory([...history, cmd]);
+      setHistoryIndex(-1);
+      setInput('');
+
+      addReminder({
+        text,
+        datetime,
+        channel: 'push',
+        category: 'other',
+      }).then(() => {
+        setCommands((prev) =>
+          prev.map((c) =>
+            c.id === loadingCmd.id
+              ? { ...c, output: `Reminder added!\n  Text: "${text}"\n  Channel: push\n  Due: ${new Date(datetime).toLocaleString()}`, isLoading: false }
+              : c
+          )
+        );
+      });
+      return;
+    }
+
+    if (responses[trimmedCmd]) {
       const resp = responses[trimmedCmd];
       output = typeof resp === 'function' ? resp() : resp;
     } else {
@@ -313,7 +346,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
           <div className="w-3 h-3 rounded-full bg-[#FFD761]" />
           <div className="w-3 h-3 rounded-full bg-[#61FF7B]" />
           <div className="flex-1 text-center">
-            <span className="text-xs text-[#A7ACB8] font-mono">{user?.username || 'alex'}@geekspace ~ terminal</span>
+            <span className="text-xs text-[#A7ACB8] font-mono">{user?.username || 'user'}@geekspace ~ terminal</span>
           </div>
           <TerminalIcon className="w-4 h-4 text-[#A7ACB8]" />
         </div>

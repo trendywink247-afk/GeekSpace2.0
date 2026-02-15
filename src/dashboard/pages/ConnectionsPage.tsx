@@ -5,7 +5,6 @@ import {
   Github,
   Twitter,
   Linkedin,
-  ExternalLink,
   RefreshCw,
   Shield,
   Plug,
@@ -98,7 +97,7 @@ export function ConnectionsPage() {
             <Shield className="w-4 h-4 mr-2" />
             End-to-end encrypted
           </Badge>
-          <Button className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+          <Button onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
             <Plus className="w-4 h-4 mr-2" />
             Add New
           </Button>
@@ -162,7 +161,7 @@ export function ConnectionsPage() {
       </div>
 
       {/* Connection Grid */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <div id="integration-grid" className="grid md:grid-cols-2 gap-4">
         {integrations.map((connection) => {
           const Icon = getIcon(connection.type);
           const color = getColor(connection.type);
@@ -255,9 +254,7 @@ export function ConnectionsPage() {
                   )}
 
                   {connection.status === 'connected' && (
-                    <Button variant="ghost" size="sm" className="text-[#7B61FF] hover:text-[#7B61FF] h-auto p-0">
-                      Configure <ExternalLink className="w-3 h-3 ml-1" />
-                    </Button>
+                    <span className="text-xs text-[#A7ACB8]">{connection.requestsToday} req today</span>
                   )}
                 </div>
               </CardContent>
@@ -274,7 +271,7 @@ export function ConnectionsPage() {
           </div>
           <h3 className="font-semibold text-[#F4F6FF] mb-2">Add New Connection</h3>
           <p className="text-sm text-[#A7ACB8] mb-4">Connect more services to enhance your agent</p>
-          <Button variant="outline" className="border-[#7B61FF]/30 hover:bg-[#7B61FF]/10">
+          <Button onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })} variant="outline" className="border-[#7B61FF]/30 hover:bg-[#7B61FF]/10">
             Browse Integrations
           </Button>
         </CardContent>
