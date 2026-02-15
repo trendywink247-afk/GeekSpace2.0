@@ -417,46 +417,74 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     const systemPrompt = buildSystemPrompt(agentConfig, user, userId);
 
     const history = getConversationContext(userId);
-    const fullMessages: ChatMessage[] = [
-      { role: 'system', content: systemPrompt },
-      ...history,
-      { role: 'user', content: message },
-    ];
+    const intent = classifyIntent(message);
+    const userCredits = (user?.credits as number) || 0;
+    const agentName = (agentConfig?.name as string) || 'Geek';
 
-    const start = Date.now();
-    let fullReply = '';
-
-    const { tokensIn, tokensOut } = await streamOllama(fullMessages, (chunk) => {
-      fullReply += chunk;
-      res.write(`data: ${JSON.stringify({ text: chunk, done: false })}\n\n`);
-    });
-
-    const latencyMs = Date.now() - start;
-
-    // If streaming produced empty content, fall back to non-streaming call
-    if (!fullReply.trim()) {
-      logger.warn({ userId, latencyMs }, 'Stream produced empty reply, falling back to routeChat');
+    // For complex/coding/planning intents, skip slow Ollama stream and use routeChat
+    if (intent === 'coding' || intent === 'planning' || intent === 'complex') {
       const result = await routeChat(
         [...history, { role: 'user', content: message }],
-        { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0 },
+        { systemPrompt, agentName, userCredits },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
+      const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';
+      if (result.creditCost > 0) {
+        db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(result.creditCost, userId);
+      }
+      db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'web', 'ai.chat.stream')`).run(
+        uuid(), userId, result.provider, result.model, result.tokensIn, result.tokensOut, result.creditCost,
+      );
+      logConversation(userId, 'assistant', result.reply, result.provider, result.model);
       res.write(`data: ${JSON.stringify({
         text: '', done: true, provider: result.provider, model: result.model,
-        latencyMs: result.latencyMs, tier: (result.provider === 'ollama' || result.provider === 'openrouter-free') ? 'local' : 'premium', creditsUsed: result.creditCost,
+        latencyMs: result.latencyMs, tier, creditsUsed: result.creditCost,
       })}\n\n`);
     } else {
-      // Log usage
-      db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
-        VALUES (?, ?, 'ollama', ?, ?, ?, 0, 'web', 'ai.chat.stream')`).run(
-        uuid(), userId, config.ollamaModel, tokensIn, tokensOut,
-      );
+      // Simple/automation intents → stream via Ollama (fast, free)
+      const fullMessages: ChatMessage[] = [
+        { role: 'system', content: systemPrompt },
+        ...history,
+        { role: 'user', content: message },
+      ];
 
-      // Send final event
-      res.write(`data: ${JSON.stringify({
-        text: '', done: true, provider: 'ollama', model: config.ollamaModel,
-        latencyMs, tier: 'local', creditsUsed: 0,
-      })}\n\n`);
+      const start = Date.now();
+      let fullReply = '';
+
+      const { tokensIn, tokensOut } = await streamOllama(fullMessages, (chunk) => {
+        fullReply += chunk;
+        res.write(`data: ${JSON.stringify({ text: chunk, done: false })}\n\n`);
+      });
+
+      const latencyMs = Date.now() - start;
+
+      // If streaming produced empty content, fall back to non-streaming call
+      if (!fullReply.trim()) {
+        logger.warn({ userId, latencyMs }, 'Stream produced empty reply, falling back to routeChat');
+        const result = await routeChat(
+          [...history, { role: 'user', content: message }],
+          { systemPrompt, agentName, userCredits },
+        );
+        res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
+        res.write(`data: ${JSON.stringify({
+          text: '', done: true, provider: result.provider, model: result.model,
+          latencyMs: result.latencyMs, tier: (result.provider === 'ollama' || result.provider === 'openrouter-free') ? 'local' : 'premium', creditsUsed: result.creditCost,
+        })}\n\n`);
+      } else {
+        // Log usage
+        db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
+          VALUES (?, ?, 'ollama', ?, ?, ?, 0, 'web', 'ai.chat.stream')`).run(
+          uuid(), userId, config.ollamaModel, tokensIn, tokensOut,
+        );
+        logConversation(userId, 'assistant', fullReply, 'ollama', config.ollamaModel);
+
+        // Send final event
+        res.write(`data: ${JSON.stringify({
+          text: '', done: true, provider: 'ollama', model: config.ollamaModel,
+          latencyMs, tier: 'local', creditsUsed: 0,
+        })}\n\n`);
+      }
     }
   } catch (err) {
     logger.error({ err, userId }, 'Stream chat error');
