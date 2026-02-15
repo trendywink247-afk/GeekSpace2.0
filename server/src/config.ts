@@ -64,8 +64,8 @@ export const config = {
   openrouterFreeBaseUrl: optional('OPENROUTER_FREE_BASE_URL', 'https://openrouter.ai/api/v1'),
   openrouterFreeApiKey: process.env.OPENROUTER_FREE_API_KEY || '',
 
-  // EDITH / OpenClaw — via edith-bridge (WS→HTTP bridge) [legacy, unused]
-  edithGatewayUrl: process.env.EDITH_GATEWAY_URL || '',
+  // EDITH / OpenClaw — via edith-bridge (HTTP ↔ WebSocket-RPC)
+  edithGatewayUrl: optional('EDITH_GATEWAY_URL', 'http://edith-bridge:8787'),
   edithToken: process.env.EDITH_TOKEN || '',
 
   // Moonshot reasoning model (heavy tasks — uses same API key as openrouter)
@@ -73,7 +73,7 @@ export const config = {
   moonshotTimeout: optionalInt('MOONSHOT_TIMEOUT_MS', 120000),
   moonshotMaxTokens: optionalInt('MOONSHOT_MAX_TOKENS', 8192),
 
-  // PicoClaw (lightweight sidecar — Brain 4)
+  // PicoClaw (lightweight automation sidecar)
   picoClawUrl: optional('PICOCLAW_URL', 'http://localhost:8080'),
   picoClawEnabled: optional('PICOCLAW_ENABLED', 'false') === 'true',
   picoClawTimeout: optionalInt('PICOCLAW_TIMEOUT_MS', 5000),

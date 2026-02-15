@@ -1,264 +1,114 @@
-# GeekSpace 2.0 — Handoff Prompt
+# GeekSpace 2.0 -- Handoff Prompt
 
 > Use this file to onboard another AI or human engineer onto this repo.
-> Last updated: 2026-02-14
+> Last updated: 2026-02-15
 
 ---
 
 ## What Changed (this session)
 
-### 1. Fixed broken `edith.ts` (CRITICAL)
-- **Problem**: Bad merge left references to deleted `ENDPOINT_PATHS` constant, orphaned `res.json()` call on line 154, mismatched braces. File would not compile.
-- **Fix**: Clean rewrite — single endpoint (`/v1/chat/completions` via bridge), 120s timeout, 1 retry. Keeps `EdithResponse` interface with `route: 'edith'` and `debug` fields. `edithProbe()` checks bridge `/health` endpoint for `ws_connected: true`.
+### 1. Three-Agent Architecture (replaces Two-Tier / Tri-Brain)
+- **Before**: "Two-Tier" (Ollama free + Moonshot premium) or "Tri-Brain" (Ollama/OpenRouter/EDITH) -- naming was inconsistent
+- **After**: Three named agents with distinct personalities:
+  - **Edith** (premium) -- OpenClaw via bridge, Moonshot fallback. Complex reasoning, architecture, deep analysis.
+  - **Jarvis** (cloud) -- OpenRouter free-tier models. Daily tasks, writing, planning, coding.
+  - **Weebo** (local) -- Ollama. Quick answers, brainstorming, casual chat.
+- Intent classifier routes messages to the best agent automatically
+- Force-routing: `/edith`, `/jarvis`, `/weebo`, `/premium`, `/local`
 
-### 2. Removed nginx from docker-compose.yml
-- **Problem**: nginx service in compose bound ports 80/443, conflicting with Caddy already running on the VPS.
-- **Fix**: Removed nginx service entirely. GeekSpace now exposes port 3001 directly via `ports: ["${PORT:-3001}:3001"]`. Caddy on VPS reverse-proxies to it.
-- **Note**: `nginx/default.conf` file still exists in repo (harmless reference), but nothing uses it.
+### 2. Rewrote `server/src/services/edith.ts`
+- Routes through EDITH Bridge (HTTP) first, with Moonshot direct as fallback
+- `edithProbe()` checks bridge `/health` endpoint with 15s TTL cache
+- 2 retries on transient failure, then Moonshot fallback as last resort
 
-### 3. Made edith-bridge optional via Docker profiles
-- **Problem**: `depends_on: edith-bridge: condition: service_healthy` blocked GeekSpace startup if EDITH wasn't wanted.
-- **Fix**: Added `profiles: ["edith"]` to edith-bridge. Start with `docker compose --profile edith up -d` to include it, or plain `docker compose up -d` without it.
+### 3. Rewrote `server/src/services/llm.ts`
+- New types: `AgentName = 'edith' | 'jarvis' | 'weebo'`
+- `resolveAgent(intent, forceAgent)` maps intents to agents
+- `routeChat()` dispatches to provider based on agent
+- `attemptFallback()` with proper chains: Edith->Jarvis->Weebo, Jarvis->Weebo, Weebo->Jarvis
+- All responses sanitized via `sanitizeResponse()` -- strips internal terms
+- Credit rates: openclaw=10, openrouter=5, ollama/picoclaw=0 (labeled "included in plan")
 
-### 4. Fixed env var mismatch
-- **Problem**: `config.ts` defaulted Ollama model to `qwen2.5:1.5b` but compose and `.env.example` used `qwen2.5-coder:1.5b`.
-- **Fix**: config.ts default updated to `qwen2.5-coder:1.5b`.
+### 4. Rewrote `server/src/prompts/openclaw-system.ts`
+- Three built-in personas: EDITH_PERSONA, JARVIS_PERSONA, WEEBO_PERSONA
+- `getPersonaPrompt(agentName, voice)` resolver
+- `buildPortfolioPersona(agentName, ownerName, ownerData)` with rich owner data (bio, skills, projects, social)
+- `sanitizeResponse(text)` strips OpenClaw, Brain, Ollama, OpenRouter, Moonshot, PicoClaw from output
+- `FORMATTING_RULES` constant appended to all prompts
 
-### 5. Added operational scripts
-- `scripts/dev.sh` — starts Redis + server (tsx watch) + frontend (vite) for local dev
-- `scripts/prod.sh` — builds and deploys via Docker, supports `--edith` flag
-- `scripts/healthcheck.sh` — checks all components (API, bridge, Ollama, containers)
+### 5. Rewrote `server/src/routes/agent.ts`
+- `parseRoutePrefix()` supports /edith, /jarvis, /weebo, /premium, /local
+- Chat response includes `agent` field
+- Tier labeled "included" (never "free")
+- Portfolio chat routes to Jarvis with 512 max tokens and rich owner context
+- Streaming endpoint supports `forceAgent`
+- Terminal `gs credits` shows "Credits Used" not dollar amounts
 
-### 6. Added/updated docs
-- `docs/DEPLOYMENT.md` — rewritten for Caddy (not nginx), profiles, Ollama port mappings
-- `docs/ENV_VARS.md` — complete reference of every env var
-- `docs/TROUBLESHOOTING.md` — 10 common issues with exact diagnostic commands
+### 6. Frontend -- persona-aware chat + settings
+- **AgentChatPanel.tsx**: Per-persona greetings, suggested prompts, typing indicator with agent name, agent badges on responses, "GeekSpace AI" footer
+- **AgentSettingsPage.tsx**: New persona picker (Edith/Jarvis/Weebo cards with colors), kept style/voice/behavior settings
+- **PortfolioView.tsx**: Uses `agentName` from API, dynamic chat header, DRY'd desktop/mobile rendering
+- **TerminalPage.tsx**: "GeekSpace AI Engine" (was "OpenClaw"), plan shows "Starter" (was "free")
 
----
+### 7. Dead code cleanup
+- Removed `nginx/` directory (Caddy is the reverse proxy)
+- Removed 37 unused shadcn/ui components (kept 16 actually used)
+- Removed orphaned `use-mobile.ts` hook
+- Fixed "Brain 1-4" references in server comments and .env.example
 
-## Final Folder Tree (key files)
-
-```
-GeekSpace2.0/
-├── bridge/edith-bridge/          # WS-RPC → HTTP bridge for OpenClaw
-│   ├── Dockerfile
-│   ├── index.js                  # 409 lines — Express + WS JSON-RPC client
-│   ├── package.json
-│   └── package-lock.json
-├── docker-compose.yml            # geekspace + redis + edith-bridge (profile)
-├── Dockerfile                    # Multi-stage: vite build + tsc → node:20-alpine
-├── .env.example
-├── scripts/
-│   ├── dev.sh
-│   ├── prod.sh
-│   └── healthcheck.sh
-├── docs/
-│   ├── DEPLOYMENT.md
-│   ├── ENV_VARS.md
-│   ├── TROUBLESHOOTING.md
-│   ├── API.md
-│   └── ARCHITECTURE.md
-├── nginx/default.conf            # UNUSED — kept as reference only
-├── server/src/
-│   ├── config.ts                 # All env vars with defaults
-│   ├── index.ts                  # Express app + health check
-│   ├── services/
-│   │   ├── edith.ts              # EDITH client (calls bridge)
-│   │   └── llm.ts                # Tri-Brain router (Ollama/OpenRouter/EDITH)
-│   └── ...
-└── src/                          # React frontend (Vite)
-```
+### 8. Updated all documentation
+- README.md -- three-agent architecture, new routing table, updated project structure
+- OPENCLAW.md -- internal dev reference, three-agent context
+- HANDOFF.md -- this file
+- RELEASE_NOTES.md -- v2.2.0 entry
+- docs/* -- updated for new terminology
 
 ---
 
-## Final docker-compose.yml
+## Key Files Modified
 
-```yaml
-version: "3.9"
-
-services:
-  geekspace:
-    build: .
-    container_name: geekspace-app
-    restart: unless-stopped
-    env_file: .env
-    ports:
-      - "${PORT:-3001}:3001"          # Caddy proxies to this
-    environment:
-      - NODE_ENV=production
-      - PORT=3001
-      - DB_PATH=/app/data/geekspace.db
-      - REDIS_URL=redis://redis:6379
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:1.5b}
-      - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://edith-bridge:8787}
-      - EDITH_TOKEN=${EDITH_TOKEN:-}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - geekspace-data:/app/data
-    networks:
-      - geekspace-net
-    depends_on:
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
-      interval: 30s
-      timeout: 10s
-      start_period: 15s
-      retries: 3
-
-  edith-bridge:
-    build: ./bridge/edith-bridge
-    container_name: geekspace-edith-bridge
-    restart: unless-stopped
-    profiles: ["edith"]
-    environment:
-      - EDITH_OPENCLAW_WS=${EDITH_OPENCLAW_WS:-ws://host.docker.internal:18789}
-      - EDITH_TOKEN=${EDITH_TOKEN:-}
-      - OPENCLAW_CHAT_METHOD=${OPENCLAW_CHAT_METHOD:-chat.completions}
-      - BRIDGE_PORT=8787
-      - REQUEST_TIMEOUT_MS=120000
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - geekspace-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
-      interval: 15s
-      timeout: 5s
-      start_period: 5s
-      retries: 3
-
-  redis:
-    image: redis:7-alpine
-    container_name: geekspace-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis-data:/data
-    networks:
-      - geekspace-net
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-
-volumes:
-  geekspace-data:
-  redis-data:
-
-networks:
-  geekspace-net:
-    driver: bridge
+```
+server/src/services/edith.ts          # EDITH bridge client + Moonshot fallback
+server/src/services/llm.ts            # Three-agent LLM router
+server/src/prompts/openclaw-system.ts # Persona system (Edith/Jarvis/Weebo)
+server/src/routes/agent.ts            # Chat routing, streaming, portfolio
+server/src/config.ts                  # EDITH gateway default updated
+server/src/index.ts                   # Comment cleanup
+server/src/services/picoclaw.ts       # Comment cleanup
+src/components/AgentChatPanel.tsx      # Persona-aware chat UI
+src/dashboard/pages/AgentSettingsPage.tsx  # Persona picker
+src/portfolio/PortfolioView.tsx        # Agent name from API
+src/dashboard/pages/TerminalPage.tsx   # Branding cleanup
+.env.example                          # Comment cleanup
 ```
 
 ---
 
-## Exact VPS Deploy Commands
+## Known Issues
 
-### Fresh deploy
+| Issue | Status | Notes |
+|-------|--------|-------|
+| OpenClaw container crash-loops on restart | Known | Race condition: proxy connects before gateway ready. Recovers after 1-2 restarts. |
+| EDITH bridge auth rejection | Partial fix | OpenClaw `trustedProxies` needs `172.20.0.0/16` (geekspace-shared network) added |
+| OpenClaw must be connected to `geekspace-shared` network | Manual step | Run `docker network connect geekspace-shared openclaw-1xzv-openclaw-1` after container recreation |
+
+---
+
+## Verification After Deploy
 
 ```bash
-# 1. Clone
-git clone <repo-url> ~/GeekSpace2.0 && cd ~/GeekSpace2.0
-
-# 2. Configure
-cp .env.example .env
-echo "JWT_SECRET=$(openssl rand -hex 64)" >> .env
-echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
-
-# 3. Set Ollama URL (check your port mapping first)
-docker ps | grep ollama                           # find the mapped port
-# If 0.0.0.0:32768->11434:
-sed -i 's|OLLAMA_BASE_URL=.*|OLLAMA_BASE_URL=http://host.docker.internal:32768|' .env
-
-# 4. Set EDITH token
-TOKEN=$(cat /data/.openclaw/openclaw.json | jq -r .token)
-sed -i "s|EDITH_TOKEN=|EDITH_TOKEN=$TOKEN|" .env
-
-# 5. Deploy with EDITH
-./scripts/prod.sh --edith
-
-# 6. Verify
-./scripts/healthcheck.sh
-```
-
-### Update existing deploy
-
-```bash
-cd ~/GeekSpace2.0
-git pull
-./scripts/prod.sh --edith     # rebuilds only changed layers
-```
-
----
-
-## What to Verify After Deploy
-
-```bash
-# 1. GeekSpace health — must show "ok"
+# 1. Health check
 curl -s http://localhost:3001/api/health | jq .
-# Expected: {"ok":true,"status":"ok","components":{"database":"ok","ollama":"reachable","edith":"reachable",...}}
 
-# 2. EDITH bridge — must show ws_connected + rpc_ok
+# 2. EDITH bridge
 curl -s http://localhost:8787/health | jq .
-# Expected: {"status":"ok","ws_connected":true,"rpc_ok":true,...}
 
-# 3. Chat through bridge
-curl -s -X POST http://localhost:8787/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"What is 2+2?"}]}' | jq .choices[0].message.content
-# Expected: a string answer from OpenClaw
-
-# 4. Full end-to-end via GeekSpace API
+# 3. End-to-end chat
 TOKEN=$(curl -s -X POST http://localhost:3001/api/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"alex@example.com","password":"demo123"}' | jq -r .token)
 curl -s -X POST http://localhost:3001/api/agent/chat \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
-  -d '{"message":"Explain what GeekSpace is"}' | jq .
+  -d '{"message":"/edith Explain what GeekSpace is"}' | jq .
 ```
-
----
-
-## Known Pitfalls
-
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| `host.docker.internal` not resolving | Old Docker or missing `extra_hosts` | Ensure compose has `extra_hosts: ["host.docker.internal:host-gateway"]` |
-| Ollama "unreachable" | Port mapping mismatch | Check `docker ps \| grep ollama` for actual mapped port |
-| EDITH "unreachable" but bridge running | `ws_connected: false` — token wrong or OpenClaw not on :18789 | Check `cat /data/.openclaw/openclaw.json`, verify `ss -tlnp \| grep 18789` |
-| Bridge `rpc_ok: false` | Wrong `OPENCLAW_CHAT_METHOD` | Try `chat.completions`, `chat.complete`, or `llm.chat` |
-| Port 80/443 conflict | Nginx remnant in old compose | This is now removed. If still present, `docker compose down` old stack first |
-| `EDITH_GATEWAY_URL` points to `:59259` | Old config — that's the OpenClaw UI (returns HTML) | Must point to `http://edith-bridge:8787` |
-| GeekSpace won't start without bridge | Old compose had `depends_on: edith-bridge: service_healthy` | Now uses profiles — bridge is optional |
-
----
-
-## EDITH Bridge Protocol Reference
-
-The bridge translates OpenAI HTTP → OpenClaw WS JSON-RPC:
-
-```
-HTTP Request                           WS Frame Sent
-POST /v1/chat/completions    →    {"id":"<uuid>","method":"chat.completions",
-{                                  "params":{"messages":[...],"max_tokens":4096}}
-  "messages": [...],
-  "max_tokens": 4096          WS Frame Received
-}                             ←    {"id":"<uuid>","ok":true,"result":{...}}
-
-HTTP Response                     Returned to caller
-{                                 (OpenAI-compatible JSON)
-  "choices": [{
-    "message": {"content": "..."}
-  }],
-  "usage": {...}
-}
-```
-
-Health probe: Bridge calls `skills.status` RPC (1.5s timeout) to verify OpenClaw is responsive.

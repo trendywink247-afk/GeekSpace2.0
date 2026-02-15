@@ -4,8 +4,8 @@
 
 - VPS with Docker and Docker Compose v2 installed
 - Caddy (or any reverse proxy) for HTTPS termination
-- Ollama running on the host (optional but recommended)
-- OpenClaw running on the host (optional — for EDITH Brain 3)
+- Ollama running on the host (optional but recommended for Weebo)
+- OpenClaw running on the host (optional — for Edith premium reasoning)
 
 ## Quick Deploy
 
@@ -46,7 +46,7 @@ Internet → Caddy (:443) → GeekSpace (:3001) → Redis (:6379)
 |---------|----------|------|---------|
 | `geekspace` | Yes | 3001 (exposed) | API + frontend |
 | `redis` | Yes | 6379 (internal) | Job queue + cache |
-| `edith-bridge` | No | 8787 (internal) | WS-RPC→HTTP bridge for OpenClaw |
+| `edith-bridge` | No | 8787 (internal) | WS-RPC→HTTP bridge for OpenClaw (Edith) |
 
 ## Caddy Configuration
 
@@ -66,14 +66,14 @@ The EDITH bridge is **optional** and gated behind a Docker Compose profile:
 # Core only (geekspace + redis)
 docker compose up -d
 
-# With EDITH bridge
+# With EDITH bridge (enables Edith premium agent)
 docker compose --profile edith up -d
 
 # Rebuild after code changes
 docker compose --profile edith up -d --build
 ```
 
-## Ollama Setup
+## Ollama Setup (Weebo agent)
 
 ### Host-mapped port
 
@@ -96,7 +96,7 @@ ollama pull qwen2.5-coder:1.5b
 curl http://localhost:11434/api/tags   # verify
 ```
 
-## EDITH / OpenClaw Setup
+## EDITH / OpenClaw Setup (Edith agent)
 
 1. Get your token:
 ```bash

@@ -15,7 +15,7 @@ No auth required. Live-probes Ollama and EDITH.
 {
   "ok": true,
   "status": "ok | degraded",
-  "timestamp": "2026-02-14T12:00:00.000Z",
+  "timestamp": "2026-02-15T12:00:00.000Z",
   "version": "2.2.0",
   "uptime": 3600,
   "edith": true,
@@ -58,7 +58,7 @@ Rate limited: 10/15min.
     "email": "user@example.com",
     "username": "username",
     "name": "Display Name",
-    "plan": "free",
+    "plan": "starter",
     "credits": 15000
   }
 }
@@ -122,7 +122,7 @@ Update agent personality. Send only fields to change.
 **Body (partial):**
 ```json
 {
-  "name": "EDITH",
+  "name": "Edith",
   "mode": "operator",
   "voice": "professional",
   "creativity": 85
@@ -133,7 +133,7 @@ Allowed fields: name, displayName, mode, voice, systemPrompt, primaryModel, fall
 
 ### `POST /api/agent/chat`
 
-The primary AI chat endpoint. Tri-brain routed with EDITH prefix support.
+The primary AI chat endpoint. Three-agent routed with force-routing support.
 
 **Body:**
 ```json
@@ -144,38 +144,52 @@ The primary AI chat endpoint. Tri-brain routed with EDITH prefix support.
 
 Message max: 4000 characters.
 
-**Prefix routing:**
-- `"/edith analyze this code..."` — Forces EDITH/OpenClaw
-- `"/local what time is it?"` — Forces Ollama
+**Force-routing prefixes:**
+- `"/edith analyze this code..."` — Forces Edith (premium reasoning)
+- `"/premium analyze this code..."` — Alias for /edith
+- `"/jarvis help me plan..."` — Forces Jarvis (cloud assistant)
+- `"/weebo what time is it?"` — Forces Weebo (local)
+- `"/local what time is it?"` — Alias for /weebo
 - No prefix — Auto-routes based on intent classification
 
 **Response:**
 ```json
 {
   "text": "The AI response text...",
-  "route": "edith",
+  "agent": "edith",
+  "tier": "premium",
+  "route": "premium",
+  "provider": "openclaw",
+  "model": "openclaw",
   "latencyMs": 1250,
-  "provider": "edith"
+  "creditsUsed": 45,
+  "creditsRemaining": 14955
 }
 ```
 
-With `LOG_LEVEL=debug`:
+**Agent values:** `edith`, `jarvis`, `weebo`
+**Provider values:** `openclaw`, `moonshot`, `openrouter`, `ollama`, `builtin`
+**Route values:** `premium` (Edith), `cloud` (Jarvis), `local` (Weebo)
+
+### `POST /api/agent/chat/stream`
+
+SSE streaming chat. Same routing as `/api/agent/chat`.
+
+**Body:**
 ```json
 {
-  "text": "...",
-  "route": "edith",
-  "latencyMs": 1250,
-  "provider": "edith",
-  "debug": {
-    "intent": "complex",
-    "forceRoute": null,
-    "edithKeywordHit": true
-  }
+  "message": "Write a React component",
+  "forceAgent": "jarvis"
 }
 ```
 
-**Provider values:** `edith`, `ollama`, `openrouter`, `builtin`
-**Route values:** `edith` (served by EDITH gateway), `local` (served by Ollama/OpenRouter/builtin)
+**SSE events:**
+```
+data: {"token": "Here", "agent": "jarvis"}
+data: {"token": " is", "agent": "jarvis"}
+data: {"token": " the", "agent": "jarvis"}
+data: [DONE]
+```
 
 ### `POST /api/agent/command`
 
@@ -229,7 +243,7 @@ Public portfolio chat. No auth required.
 }
 ```
 
-Always routed to Ollama (local) to keep costs free for visitors.
+Routes to Jarvis (cloud) with 512 max tokens. Enriched with the portfolio owner's bio, skills, projects, and social links.
 
 ---
 
@@ -327,13 +341,17 @@ Update portfolio. Accepts: headline, about, skills (JSON array), projects (JSON 
 
 ## Usage
 
-### `GET /api/usage`
+### `GET /api/usage/summary`
 
 Get usage statistics for the authenticated user.
 
 **Query params:** `period` (today | week | month | all)
 
 Returns token counts, costs, and breakdown by provider/channel.
+
+### `GET /api/usage/billing`
+
+Get credit balance and billing information.
 
 ---
 
@@ -363,7 +381,7 @@ List stored API keys (returns masked versions only).
 }
 ```
 
-Keys are AES-encrypted at rest.
+Keys are AES-256-GCM encrypted at rest.
 
 ### `DELETE /api/api-keys/:id`
 

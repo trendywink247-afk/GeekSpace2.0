@@ -25,7 +25,7 @@ All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
 | `PUBLIC_URL` | `http://localhost:5173` | Public-facing URL (used in OpenRouter headers) |
 | `API_URL` | `http://localhost:3001` | API base URL |
 
-## Brain 1 — Ollama (local)
+## Weebo — Ollama (local agent)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -37,22 +37,23 @@ All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
 > **VPS note**: If Ollama maps port `32768→11434`, set `OLLAMA_BASE_URL=http://host.docker.internal:32768`
 > or use the internal port directly from the host.
 
-## Brain 2 — OpenRouter (cloud)
+## Jarvis — OpenRouter (cloud agent)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OPENROUTER_API_KEY` | (empty) | API key from [openrouter.ai/keys](https://openrouter.ai/keys) |
 | `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | API base URL |
 | `OPENROUTER_MODEL` | `anthropic/claude-sonnet-4-5-20250929` | Model identifier |
+| `OPENROUTER_FREE_MODEL` | `meta-llama/llama-3.3-70b-instruct:free` | Free-tier model for Jarvis |
 
-## Brain 3 — EDITH / OpenClaw (via bridge)
+## Edith — OpenClaw / Moonshot (premium agent)
 
 ### GeekSpace side
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `EDITH_GATEWAY_URL` | `http://edith-bridge:8787` | Bridge HTTP endpoint (GeekSpace calls this) |
-| `EDITH_TOKEN` | (empty) | Auth token. Without this, EDITH is disabled |
+| `EDITH_TOKEN` | (empty) | Auth token. Without this, Edith routes to Moonshot fallback |
 
 ### Bridge side (only when using `--profile edith`)
 
@@ -63,6 +64,15 @@ All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
 | `OPENCLAW_CHAT_METHOD` | `chat.completions` | RPC method name for chat requests |
 | `BRIDGE_PORT` | `8787` | Bridge HTTP listen port |
 | `REQUEST_TIMEOUT_MS` | `120000` | Per-request timeout for RPC calls |
+
+### Moonshot fallback
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MOONSHOT_API_KEY` | (empty) | Moonshot API key (direct fallback for Edith) |
+| `MOONSHOT_REASONING_MODEL` | `kimi-k2-thinking` | Premium reasoning model |
+| `MOONSHOT_TIMEOUT_MS` | `120000` | Request timeout |
+| `MOONSHOT_MAX_TOKENS` | `8192` | Max tokens for reasoning responses |
 
 ## Redis
 

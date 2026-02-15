@@ -121,7 +121,7 @@ app.get('/api/health', async (_req, res) => {
   // correctly rejects HTML responses and handles 401/403/405 as "reachable"
   const edithOk = await edithProbe();
 
-  // Live probe: PicoClaw (Brain 4 sidecar)
+  // Live probe: PicoClaw (lightweight automation sidecar)
   const picoOk = config.picoClawEnabled ? await picoClawProbe() : false;
 
   const allOk = dbOk;  // core requirement
