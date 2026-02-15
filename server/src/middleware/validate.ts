@@ -215,3 +215,20 @@ export const featuresUpdateSchema = z.object({
   n8nIntegration: z.boolean().optional(),
   manyChatIntegration: z.boolean().optional(),
 });
+
+// ---- Memory schemas ----
+
+export const memoryCreateSchema = z.object({
+  category: z.string().min(1).max(50),
+  key: z.string().min(1).max(200),
+  value: z.string().min(1).max(2000),
+  confidence: z.number().min(0).max(1).optional().default(1.0),
+  source: z.string().max(50).optional().default('manual'),
+});
+
+export const memoryUpdateSchema = z.object({
+  category: z.string().min(1).max(50).optional(),
+  key: z.string().min(1).max(200).optional(),
+  value: z.string().min(1).max(2000).optional(),
+  confidence: z.number().min(0).max(1).optional(),
+});

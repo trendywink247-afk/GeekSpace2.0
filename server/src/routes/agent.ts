@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema } from '../middleware/validate.js';
+import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema, memoryCreateSchema, memoryUpdateSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { routeChat, classifyIntent, computeCreditCost, streamOllama, type ChatMessage, type Provider } from '../services/llm.js';
 import { edithChat } from '../services/edith.js';
@@ -9,7 +9,7 @@ import { logger } from '../logger.js';
 import { config } from '../config.js';
 import { OPENCLAW_IDENTITY } from '../prompts/openclaw-system.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
-import { buildMemoryContext, logConversation, extractMemories, getConversationContext } from '../services/memory.js';
+import { buildMemoryContext, logConversation, extractMemories, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory } from '../services/memory.js';
 
 export const agentRouter = Router();
 
@@ -512,14 +512,56 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
 // ---- Memory Management ----
 
 agentRouter.get('/memory', requireAuth, (req: AuthRequest, res) => {
-  const { getMemories } = require('../services/memory.js');
   const category = req.query.category as string | undefined;
-  const memories = getMemories(req.userId!, category);
+  const search = req.query.search as string | undefined;
+  const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+
+  if (search) {
+    const memories = getRelevantMemories(req.userId!, search, limit);
+    res.json(memories);
+    return;
+  }
+  const memories = getMemories(req.userId!, category, limit);
   res.json(memories);
 });
 
+agentRouter.post('/memory', requireAuth, validateBody(memoryCreateSchema), (req: AuthRequest, res) => {
+  const { category, key, value, confidence, source } = req.body;
+  upsertMemory(req.userId!, category, key, value, confidence, source);
+
+  // Return the newly created/updated memory
+  const memory = db.prepare(
+    'SELECT * FROM agent_memory WHERE user_id = ? AND category = ? AND key = ?'
+  ).get(req.userId!, category, key);
+  res.status(201).json(memory);
+});
+
+agentRouter.put('/memory/:id', requireAuth, validateBody(memoryUpdateSchema), (req: AuthRequest, res) => {
+  const existing = db.prepare(
+    'SELECT * FROM agent_memory WHERE id = ? AND user_id = ?'
+  ).get(req.params.id, req.userId!) as Record<string, unknown> | undefined;
+
+  if (!existing) { res.status(404).json({ error: 'Memory not found' }); return; }
+
+  const category = req.body.category ?? existing.category;
+  const key = req.body.key ?? existing.key;
+  const value = req.body.value ?? existing.value;
+  const confidence = req.body.confidence ?? existing.confidence;
+
+  // Delete old entry if category or key changed (unique constraint)
+  if (category !== existing.category || key !== existing.key) {
+    db.prepare('DELETE FROM agent_memory WHERE id = ?').run(req.params.id);
+  }
+
+  upsertMemory(req.userId!, category as string, key as string, value as string, confidence as number, existing.source as string);
+
+  const updated = db.prepare(
+    'SELECT * FROM agent_memory WHERE user_id = ? AND category = ? AND key = ?'
+  ).get(req.userId!, category, key);
+  res.json(updated);
+});
+
 agentRouter.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
-  const { deleteMemory } = require('../services/memory.js');
   const deleted = deleteMemory(req.userId!, req.params.id);
   if (!deleted) { res.status(404).json({ error: 'Memory not found' }); return; }
   res.json({ success: true });

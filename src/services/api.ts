@@ -255,8 +255,16 @@ export const contactService = {
 // ----- Memory ------------------------------------------------
 
 export const memoryService = {
-  list: (category?: string) =>
-    api.get<MemoryEntry[]>('/agent/memory', { params: category ? { category } : undefined }),
+  list: (category?: string, search?: string) =>
+    api.get<MemoryEntry[]>('/agent/memory', {
+      params: { ...(category ? { category } : {}), ...(search ? { search } : {}) },
+    }),
+
+  create: (data: { category: string; key: string; value: string; confidence?: number }) =>
+    api.post<MemoryEntry>('/agent/memory', data),
+
+  update: (id: string, data: { category?: string; key?: string; value?: string; confidence?: number }) =>
+    api.put<MemoryEntry>(`/agent/memory/${id}`, data),
 
   delete: (memoryId: string) =>
     api.delete(`/agent/memory/${memoryId}`),
