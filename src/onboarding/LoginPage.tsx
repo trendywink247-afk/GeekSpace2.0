@@ -40,13 +40,13 @@ export function LoginPage() {
       }
     } catch {
       // If backend is not running, fall back to demo mode
-      loginDemo();
+      await loginDemo();
       navigate('/dashboard');
     }
   };
 
-  const handleDemo = () => {
-    loginDemo();
+  const handleDemo = async () => {
+    await loginDemo();
     navigate('/dashboard');
   };
 

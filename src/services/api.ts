@@ -62,6 +62,9 @@ export const authService = {
 
   me: () => api.get<User>('/auth/me'),
 
+  loginDemo: () =>
+    api.post<{ user: User; token: string }>('/auth/demo'),
+
   logout: () => {
     localStorage.removeItem('gs_token');
   },

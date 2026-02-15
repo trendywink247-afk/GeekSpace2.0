@@ -402,4 +402,4 @@ if (shouldSeed) {
   seedDemoData();
 }
 
-export { db };
+export { db, seedDemoData };

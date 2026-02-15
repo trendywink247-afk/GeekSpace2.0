@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import bcrypt from 'bcryptjs';
 import { signToken, requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { db } from '../db/index.js';
+import { db, seedDemoData } from '../db/index.js';
 import { validateBody, signupSchema, loginSchema, onboardingSchema } from '../middleware/validate.js';
 
 export const authRouter = Router();
@@ -70,6 +70,42 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
 
   // Log activity
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Logged in', 'Session started', 'log-in')`).run(uuid(), user.id);
+
+  res.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      name: user.name,
+      avatar: user.avatar,
+      bio: user.bio,
+      location: user.location,
+      website: user.website,
+      role: user.role,
+      company: user.company,
+      tags: JSON.parse(user.tags as string || '[]'),
+      theme: { mode: user.theme_mode, accentColor: user.theme_accent },
+      plan: user.plan,
+      credits: user.credits,
+      createdAt: user.created_at,
+    },
+    token,
+  });
+});
+
+authRouter.post('/demo', (req, res) => {
+  // Ensure demo data exists regardless of SEED_DEMO_DATA env
+  seedDemoData();
+
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get('demo-1') as Record<string, unknown> | undefined;
+  if (!user) {
+    res.status(500).json({ error: 'Failed to create demo account' });
+    return;
+  }
+
+  const token = signToken(user.id as string);
+
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Demo login', 'Demo session started', 'log-in')`).run(uuid(), user.id);
 
   res.json({
     user: {

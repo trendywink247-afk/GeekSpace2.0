@@ -20,8 +20,8 @@ interface AuthStore {
   updateOnboarding: (data: Partial<OnboardingState>) => void;
   completeOnboarding: () => Promise<void>;
 
-  // demo mode — use mock data when no backend is available
-  loginDemo: () => void;
+  // demo mode
+  loginDemo: () => Promise<void>;
 }
 
 const defaultOnboarding: OnboardingState = {
@@ -116,15 +116,29 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      // Demo mode: bypass real API
-      loginDemo: () => {
-        set({
-          user: demoUser,
-          token: 'demo-token',
-          isAuthenticated: true,
-          isLoading: false,
-          onboarding: { ...defaultOnboarding, completed: true },
-        });
+      // Demo mode: call real API, fallback to mock if backend unreachable
+      loginDemo: async () => {
+        set({ isLoading: true });
+        try {
+          const { data } = await authService.loginDemo();
+          localStorage.setItem('gs_token', data.token);
+          set({
+            user: data.user,
+            token: data.token,
+            isAuthenticated: true,
+            isLoading: false,
+            onboarding: { ...defaultOnboarding, completed: true },
+          });
+        } catch {
+          // Fallback to local mock when backend is unreachable
+          set({
+            user: demoUser,
+            token: 'demo-token',
+            isAuthenticated: true,
+            isLoading: false,
+            onboarding: { ...defaultOnboarding, completed: true },
+          });
+        }
       },
     }),
     {
