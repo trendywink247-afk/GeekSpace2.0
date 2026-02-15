@@ -3,17 +3,17 @@ import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema, memoryCreateSchema, memoryUpdateSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
-import { routeChat, classifyIntent, computeCreditCost, streamOllama, type ChatMessage, type Provider } from '../services/llm.js';
+import { routeChat, classifyIntent, computeCreditCost, streamOllama, type ChatMessage, type Provider, type AgentName } from '../services/llm.js';
 import { edithChat } from '../services/edith.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
-import { OPENCLAW_IDENTITY } from '../prompts/openclaw-system.js';
+import { getPersonaPrompt, FORMATTING_RULES, buildPortfolioPersona, sanitizeResponse } from '../prompts/openclaw-system.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
 import { buildMemoryContext, logConversation, extractMemories, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory } from '../services/memory.js';
 
 export const agentRouter = Router();
 
-// ---- Helper: Build system prompt with user context ----
+// ---- Helper: Build system prompt with persona + user context ----
 
 function buildSystemPrompt(
   agentConfig: Record<string, unknown> | undefined,
@@ -21,24 +21,45 @@ function buildSystemPrompt(
   userId: string,
   userMessage?: string,
 ): string {
-  const agentName = (agentConfig?.name as string) || 'Geek';
+  const agentName = (agentConfig?.name as string) || 'Assistant';
   const voice = (agentConfig?.voice as string) || 'friendly';
-  const mode = (agentConfig?.mode as string) || 'builder';
   const customPrompt = (agentConfig?.system_prompt as string) || '';
   const userName = (user?.name as string) || 'there';
 
   const reminderCount = (db.prepare('SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 0').get(userId) as { c: number })?.c || 0;
   const connectedCount = (db.prepare("SELECT COUNT(*) as c FROM integrations WHERE user_id = ? AND status = 'connected'").get(userId) as { c: number })?.c || 0;
 
-  // Inject memory context
+  const persona = getPersonaPrompt(agentName, voice);
   const memoryBlock = buildMemoryContext(userId, userMessage);
 
-  return `${OPENCLAW_IDENTITY}
+  return `${persona}
+${FORMATTING_RULES}
 
---- USER SESSION ---
-Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
-${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
-Active reminders: ${reminderCount}. Connected integrations: ${connectedCount}.${memoryBlock}`;
+--- USER CONTEXT ---
+User: ${userName}.
+Active reminders: ${reminderCount}. Connected integrations: ${connectedCount}.
+${customPrompt ? `Custom instructions: ${customPrompt}` : ''}${memoryBlock}`;
+}
+
+// ---- Helper: Parse force-route prefix ----
+
+function parseRoutePrefix(message: string): { forceAgent: AgentName | null; cleanMessage: string } {
+  if (message.startsWith('/edith ')) {
+    return { forceAgent: 'edith', cleanMessage: message.slice(7).trim() };
+  }
+  if (message.startsWith('/jarvis ')) {
+    return { forceAgent: 'jarvis', cleanMessage: message.slice(8).trim() };
+  }
+  if (message.startsWith('/weebo ')) {
+    return { forceAgent: 'weebo', cleanMessage: message.slice(7).trim() };
+  }
+  if (message.startsWith('/premium ')) {
+    return { forceAgent: 'edith', cleanMessage: message.slice(9).trim() };
+  }
+  if (message.startsWith('/local ')) {
+    return { forceAgent: 'weebo', cleanMessage: message.slice(7).trim() };
+  }
+  return { forceAgent: null, cleanMessage: message };
 }
 
 // ---- Agent Config CRUD ----
@@ -70,16 +91,11 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
 
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Updated agent config', ?, 'bot')`).run(uuid(), req.userId, `Changed: ${Object.keys(updates).join(', ')}`);
 
-  const config = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(req.userId!);
-  res.json(config);
+  const agentCfg = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(req.userId!);
+  res.json(agentCfg);
 });
 
-// ---- Two-Tier Agent Chat ----
-//
-// Tier 1 (free):    Ollama local — handles all queries by default
-// Tier 2 (premium): Moonshot cloud — explicit /premium or /edith prefix, costs credits
-//
-// Auto-fallback: if Ollama is down, routes to cloud only when user has credits
+// ---- Three-Agent Chat ----
 
 agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
   let { message } = req.body as { message: string };
@@ -88,35 +104,26 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
   try {
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
-    const systemPrompt = buildSystemPrompt(agentConfig, user, userId, message);
     const userCredits = (user?.credits as number) || 0;
 
     // Log user message + extract memories (non-blocking)
     logConversation(userId, 'user', message);
     extractMemories(userId, message);
 
-    // ---- Parse route prefix: /premium, /edith, /local, /pico, or auto ----
-    let forceRoute: 'premium' | 'local' | 'pico' | null = null;
+    // Parse force-route prefix
+    const { forceAgent, cleanMessage } = parseRoutePrefix(message);
+    message = cleanMessage;
 
-    if (message.startsWith('/premium ') || message.startsWith('/edith ')) {
-      forceRoute = 'premium';
-      const prefixLen = message.startsWith('/premium ') ? 9 : 7;
-      message = message.slice(prefixLen).trim();
-    } else if (message.startsWith('/local ')) {
-      forceRoute = 'local';
-      message = message.slice(7).trim();
-    } else if (message.startsWith('/pico ')) {
-      forceRoute = 'pico';
-      message = message.slice(6).trim();
-    }
+    const systemPrompt = buildSystemPrompt(agentConfig, user, userId, message);
 
-    // ---- Premium route: explicit opt-in via prefix ----
-    if (forceRoute === 'premium') {
+    // Premium route: explicit /edith
+    if (forceAgent === 'edith') {
       if (userCredits <= 0) {
         res.json({
-          text: 'You don\'t have enough credits to use the premium model. Use the free local model by default, or check your balance with `gs credits`.',
+          text: "You've used your premium credits for now. Try again next billing cycle, or I can help with your other agents.",
           route: 'error',
           tier: 'premium',
+          agent: 'edith',
           provider: 'builtin',
           latencyMs: 0,
         });
@@ -125,86 +132,75 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
 
       try {
         const edithResult = await edithChat(message, systemPrompt);
+        const creditCost = computeCreditCost('openclaw', edithResult.tokensIn, edithResult.tokensOut);
 
-        // Compute credit cost
-        const creditCost = computeCreditCost('edith', edithResult.tokensIn, edithResult.tokensOut);
-
-        // Log usage
         db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
           VALUES (?, ?, ?, ?, ?, ?, ?, 'web', 'ai.chat')`).run(
-          uuid(), userId, 'edith', config.moonshotReasoningModel,
+          uuid(), userId, 'edith', edithResult.debug?.model || 'openclaw',
           edithResult.tokensIn, edithResult.tokensOut, creditCost,
         );
 
-        // Deduct credits
         db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(creditCost, userId);
         const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? 0;
 
         res.json({
-          text: edithResult.text,
+          text: sanitizeResponse(edithResult.text),
           route: 'premium',
           tier: 'premium',
+          agent: 'edith',
           latencyMs: edithResult.latencyMs,
           provider: 'edith',
-          model: config.moonshotReasoningModel,
+          model: edithResult.debug?.model || 'openclaw',
           creditsUsed: creditCost,
           creditsRemaining: updatedCredits,
         });
         return;
       } catch (err) {
-        logger.warn({ err, userId }, 'Premium (Moonshot) call failed, falling back to local');
-        // Fall through to local router
+        logger.warn({ err, userId }, 'Edith call failed, falling back to router');
       }
     }
 
     // Fire keyword-based automation triggers (non-blocking)
     checkKeywordTriggers(userId, message).catch(() => {});
 
-    // ---- Default: local-first router (Ollama → cloud fallback if Ollama down) ----
+    // Route through three-agent system
     const history = getConversationContext(userId);
     const messages: ChatMessage[] = [...history, { role: 'user', content: message }];
-    const intent = classifyIntent(message);
 
     const result = await routeChat(messages, {
       systemPrompt,
-      agentName: (agentConfig?.name as string) || 'Geek',
+      agentName: (agentConfig?.name as string) || 'Assistant',
       userCredits,
-      forceProvider: forceRoute === 'local' ? 'ollama' : forceRoute === 'pico' ? 'picoclaw' : undefined,
+      forceAgent: forceAgent || undefined,
     });
 
-    // Determine tier from actual provider used
-    const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';
+    const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free' || result.provider === 'picoclaw') ? 'included' : 'premium';
 
-    // Log usage
     db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
       VALUES (?, ?, ?, ?, ?, ?, ?, 'web', 'ai.chat')`).run(
       uuid(), userId, result.provider, result.model,
       result.tokensIn, result.tokensOut, result.creditCost,
     );
 
-    // Deduct credits for premium tier
     if (result.creditCost > 0) {
       db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(result.creditCost, userId);
     }
 
     const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? userCredits;
 
-    // Log assistant response
     logConversation(userId, 'assistant', result.reply, result.provider, result.model);
 
     const response: Record<string, unknown> = {
       text: result.reply,
       route: tier,
       tier,
+      agent: result.agent,
       latencyMs: result.latencyMs,
       provider: result.provider,
       model: result.model,
       creditsUsed: result.creditCost,
       creditsRemaining: updatedCredits,
     };
-    if (config.logLevel === 'debug') {
-      response.debug = { intent, forceRoute, tokensUsed: result.tokensIn + result.tokensOut };
-    }
 
     res.json(response);
   } catch (err) {
@@ -250,21 +246,21 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
   if (cmd === 'gs credits') {
     const user = db.prepare('SELECT credits, plan FROM users WHERE id = ?').get(userId) as Record<string, unknown>;
     const usage = db.prepare('SELECT COUNT(*) as calls, SUM(cost_usd) as cost FROM usage_events WHERE user_id = ?').get(userId) as Record<string, unknown>;
-    res.json({ output: `Credit Balance: ${user?.credits || 0}\nPlan: ${user?.plan || 'free'}\n\nUsage:\n- API Calls: ${usage?.calls || 0}\n- Total Cost: $${((usage?.cost as number) || 0).toFixed(2)}`, isError: false });
+    res.json({ output: `Credit Balance: ${user?.credits || 0}\nPlan: ${user?.plan || 'starter'}\n\nUsage:\n- API Calls: ${usage?.calls || 0}\n- Credits Used: ${((usage?.cost as number) || 0).toFixed(0)}`, isError: false });
     return;
   }
 
   if (cmd === 'gs usage today') {
     const usage = db.prepare("SELECT COUNT(*) as calls, SUM(tokens_in) as tin, SUM(tokens_out) as tout, SUM(cost_usd) as cost FROM usage_events WHERE user_id = ? AND date(created_at) = date('now')").get(userId) as Record<string, unknown>;
-    res.json({ output: `Today's Usage:\n  API Calls: ${usage?.calls || 0}\n  Tokens: ${usage?.tin || 0} in / ${usage?.tout || 0} out\n  Cost: $${((usage?.cost as number) || 0).toFixed(4)}`, isError: false });
+    res.json({ output: `Today's Usage:\n  API Calls: ${usage?.calls || 0}\n  Tokens: ${usage?.tin || 0} in / ${usage?.tout || 0} out\n  Credits Used: ${((usage?.cost as number) || 0).toFixed(0)}`, isError: false });
     return;
   }
 
   if (cmd === 'gs usage month') {
     const usage = db.prepare("SELECT provider, COUNT(*) as calls, SUM(cost_usd) as cost FROM usage_events WHERE user_id = ? AND created_at >= datetime('now', '-30 days') GROUP BY provider").all(userId) as Record<string, unknown>[];
     const total = db.prepare("SELECT SUM(cost_usd) as cost FROM usage_events WHERE user_id = ? AND created_at >= datetime('now', '-30 days')").get(userId) as Record<string, unknown>;
-    const lines = ['This Month:', `  Total Cost: $${((total?.cost as number) || 0).toFixed(2)}`, '  By Provider:'];
-    for (const row of usage) lines.push(`    ${row.provider}: $${((row.cost as number) || 0).toFixed(2)} (${row.calls} calls)`);
+    const lines = ['This Month:', `  Credits Used: ${((total?.cost as number) || 0).toFixed(0)}`, '  By Agent:'];
+    for (const row of usage) lines.push(`    ${row.provider}: ${((row.cost as number) || 0).toFixed(0)} credits (${row.calls} calls)`);
     res.json({ output: lines.join('\n'), isError: false });
     return;
   }
@@ -286,7 +282,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
 
   if (cmd === 'gs status') {
     const agent = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown>;
-    res.json({ output: `Agent Status: ${agent?.status || 'unknown'}\nName: ${agent?.name || 'Geek'}\nMode: ${agent?.mode || 'builder'}\nVoice: ${agent?.voice || 'friendly'}\nModel: ${agent?.primary_model || 'default'}`, isError: false });
+    res.json({ output: `Agent Status: ${agent?.status || 'unknown'}\nName: ${agent?.name || 'Assistant'}\nMode: ${agent?.mode || 'builder'}\nVoice: ${agent?.voice || 'friendly'}`, isError: false });
     return;
   }
 
@@ -350,7 +346,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
     return;
   }
 
-  // ---- AI command — routed through tri-brain ----
+  // AI command — routed through three-agent system
   if (cmd.startsWith('ai ')) {
     const query = command.slice(3).replace(/^["']|["']$/g, '');
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown>;
@@ -362,7 +358,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
         [...termHistory, { role: 'user', content: query }],
         {
           systemPrompt: buildSystemPrompt(agentConfig, user, userId),
-          agentName: (agentConfig?.name as string) || 'Geek',
+          agentName: (agentConfig?.name as string) || 'Assistant',
           userCredits: (user?.credits as number) || 0,
         },
       );
@@ -378,18 +374,18 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
       }
 
       res.json({
-        output: `[${agentConfig?.name || 'Geek'}] ${result.reply}`,
+        output: `[${agentConfig?.name || 'Assistant'}] ${result.reply}`,
         isError: false,
-        meta: { provider: result.provider, model: result.model, latencyMs: result.latencyMs, creditsUsed: result.creditCost },
+        meta: { provider: result.provider, agent: result.agent, model: result.model, latencyMs: result.latencyMs, creditsUsed: result.creditCost },
       });
     } catch {
-      res.json({ output: `[${agentConfig?.name || 'Geek'}] Sorry, I couldn't process that request right now. Try again shortly.`, isError: true });
+      res.json({ output: `[${agentConfig?.name || 'Assistant'}] Sorry, I couldn't process that right now. Try again shortly.`, isError: true });
     }
     return;
   }
 
   if (cmd === 'help') {
-    res.json({ output: `GeekSpace Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs credits                Check credit balance\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  ai "prompt"               Ask your AI agent (real LLM)\n  clear                     Clear terminal\n  help                      Show this help`, isError: false });
+    res.json({ output: `GeekSpace Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs credits                Check credit balance\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  ai "prompt"               Ask your AI agent\n  clear                     Clear terminal\n  help                      Show this help`, isError: false });
     return;
   }
 
@@ -401,10 +397,9 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
 // ---- SSE Streaming Chat ----
 
 agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
-  const { message } = req.body as { message: string };
+  let { message } = req.body as { message: string };
   const userId = req.userId!;
 
-  // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -414,21 +409,24 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
   try {
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
-    const systemPrompt = buildSystemPrompt(agentConfig, user, userId);
 
+    const { forceAgent, cleanMessage } = parseRoutePrefix(message);
+    message = cleanMessage;
+
+    const systemPrompt = buildSystemPrompt(agentConfig, user, userId);
     const history = getConversationContext(userId);
     const intent = classifyIntent(message);
     const userCredits = (user?.credits as number) || 0;
-    const agentName = (agentConfig?.name as string) || 'Geek';
+    const agentName = (agentConfig?.name as string) || 'Assistant';
 
-    // For complex/coding/planning intents, skip slow Ollama stream and use routeChat
-    if (intent === 'coding' || intent === 'planning' || intent === 'complex') {
+    // For complex/coding/planning intents or forced agents, use routeChat (non-streaming)
+    if (intent === 'coding' || intent === 'planning' || intent === 'complex' || forceAgent) {
       const result = await routeChat(
         [...history, { role: 'user', content: message }],
-        { systemPrompt, agentName, userCredits },
+        { systemPrompt, agentName, userCredits, forceAgent: forceAgent || undefined },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
-      const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';
+      const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'included' : 'premium';
       if (result.creditCost > 0) {
         db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(result.creditCost, userId);
       }
@@ -438,11 +436,11 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
       );
       logConversation(userId, 'assistant', result.reply, result.provider, result.model);
       res.write(`data: ${JSON.stringify({
-        text: '', done: true, provider: result.provider, model: result.model,
+        text: '', done: true, agent: result.agent, provider: result.provider, model: result.model,
         latencyMs: result.latencyMs, tier, creditsUsed: result.creditCost,
       })}\n\n`);
     } else {
-      // Simple/automation intents → stream via Ollama (fast, free)
+      // Simple/automation intents → stream via Ollama
       const fullMessages: ChatMessage[] = [
         { role: 'system', content: systemPrompt },
         ...history,
@@ -459,7 +457,6 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
 
       const latencyMs = Date.now() - start;
 
-      // If streaming produced empty content, fall back to non-streaming call
       if (!fullReply.trim()) {
         logger.warn({ userId, latencyMs }, 'Stream produced empty reply, falling back to routeChat');
         const result = await routeChat(
@@ -468,39 +465,35 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
         );
         res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
         res.write(`data: ${JSON.stringify({
-          text: '', done: true, provider: result.provider, model: result.model,
-          latencyMs: result.latencyMs, tier: (result.provider === 'ollama' || result.provider === 'openrouter-free') ? 'local' : 'premium', creditsUsed: result.creditCost,
+          text: '', done: true, agent: result.agent, provider: result.provider, model: result.model,
+          latencyMs: result.latencyMs, tier: 'included', creditsUsed: result.creditCost,
         })}\n\n`);
       } else {
-        // Log usage
+        fullReply = sanitizeResponse(fullReply);
         db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
           VALUES (?, ?, 'ollama', ?, ?, ?, 0, 'web', 'ai.chat.stream')`).run(
           uuid(), userId, config.ollamaModel, tokensIn, tokensOut,
         );
         logConversation(userId, 'assistant', fullReply, 'ollama', config.ollamaModel);
-
-        // Send final event
         res.write(`data: ${JSON.stringify({
-          text: '', done: true, provider: 'ollama', model: config.ollamaModel,
-          latencyMs, tier: 'local', creditsUsed: 0,
+          text: '', done: true, agent: 'weebo' as AgentName, provider: 'ollama', model: config.ollamaModel,
+          latencyMs, tier: 'included', creditsUsed: 0,
         })}\n\n`);
       }
     }
   } catch (err) {
     logger.error({ err, userId }, 'Stream chat error');
-    // Try non-streaming fallback even on stream error
     try {
       const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
       const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
       const fallbackHistory = getConversationContext(userId);
       const result = await routeChat(
         [...fallbackHistory, { role: 'user', content: message }],
-        { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0 },
+        { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Assistant', userCredits: (user?.credits as number) || 0 },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
-      res.write(`data: ${JSON.stringify({ text: '', done: true, provider: result.provider, model: result.model })}\n\n`);
-    } catch (fallbackErr) {
-      logger.error({ fallbackErr, userId }, 'Stream fallback also failed');
+      res.write(`data: ${JSON.stringify({ text: '', done: true, agent: result.agent, provider: result.provider, model: result.model })}\n\n`);
+    } catch {
       res.write(`data: ${JSON.stringify({ text: 'Sorry, I had trouble processing that. Please try again.', done: false })}\n\n`);
       res.write(`data: ${JSON.stringify({ text: '', done: true, error: 'Stream failed' })}\n\n`);
     }
@@ -529,7 +522,6 @@ agentRouter.post('/memory', requireAuth, validateBody(memoryCreateSchema), (req:
   const { category, key, value, confidence, source } = req.body;
   upsertMemory(req.userId!, category, key, value, confidence, source);
 
-  // Return the newly created/updated memory
   const memory = db.prepare(
     'SELECT * FROM agent_memory WHERE user_id = ? AND category = ? AND key = ?'
   ).get(req.userId!, category, key);
@@ -548,7 +540,6 @@ agentRouter.put('/memory/:id', requireAuth, validateBody(memoryUpdateSchema), (r
   const value = req.body.value ?? existing.value;
   const confidence = req.body.confidence ?? existing.confidence;
 
-  // Delete old entry if category or key changed (unique constraint)
   if (category !== existing.category || key !== existing.key) {
     db.prepare('DELETE FROM agent_memory WHERE id = ?').run(req.params.id);
   }
@@ -576,13 +567,14 @@ agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
   res.json(conversations);
 });
 
-// ---- Public Portfolio Chat (real LLM-powered) ----
+// ---- Public Portfolio Chat (Jarvis-powered, with rich context) ----
 
 agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req, res) => {
   const { message } = req.body;
   const { username } = req.params;
 
-  const user = db.prepare('SELECT id, name FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
+  // Fetch rich user data
+  const user = db.prepare('SELECT id, name, bio, role, company, location FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
   const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(user.id as string) as Record<string, unknown> | undefined;
@@ -590,26 +582,32 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
 
   const skills = JSON.parse(portfolio?.skills as string || '[]');
   const projects = JSON.parse(portfolio?.projects as string || '[]');
+  const social = JSON.parse(portfolio?.social as string || '{}');
   const ownerName = user.name as string;
   const agentName = (agentConfig?.name || 'Assistant') as string;
 
-  const systemPrompt = `You are ${agentName}, the AI assistant for ${ownerName}'s portfolio on GeekSpace.
-Your role: Help visitors learn about ${ownerName}'s work, skills, and how to get in touch.
-Be friendly, professional, and concise. Keep responses under 150 words.
-
-${ownerName}'s skills: ${skills.join(', ') || 'Not specified'}
-${ownerName}'s projects: ${projects.map((p: Record<string, unknown>) => p.name).join(', ') || 'None published'}
-Portfolio about: ${portfolio?.about || 'No bio'}`;
+  const systemPrompt = buildPortfolioPersona(agentName, ownerName, {
+    headline: portfolio?.headline as string,
+    role: user.role as string,
+    company: user.company as string,
+    location: user.location as string || portfolio?.location as string,
+    about: portfolio?.about as string || user.bio as string,
+    skills,
+    projects,
+    social,
+    voice: agentConfig?.voice as string,
+  });
 
   try {
+    // Route to Jarvis (free cloud) for better portfolio answers, fallback to Weebo
     const result = await routeChat(
       [{ role: 'user', content: message }],
-      { systemPrompt, agentName, forceProvider: 'ollama' },
+      { systemPrompt, agentName, forceAgent: 'jarvis', maxTokensOverride: 512 },
     );
-    res.json({ reply: result.reply, agentName, ownerName });
+    res.json({ reply: sanitizeResponse(result.reply), agentName, ownerName, agent: result.agent });
   } catch {
     res.json({
-      reply: `Hi! I'm ${agentName}, ${ownerName}'s AI assistant. I'm having trouble connecting right now, but you can learn more from the portfolio above.`,
+      reply: `Hi! I'm ${agentName}, ${ownerName}'s assistant. I'm having trouble connecting right now, but you can learn more from the portfolio above.`,
       agentName,
       ownerName,
     });
