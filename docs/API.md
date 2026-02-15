@@ -203,7 +203,7 @@ For `ai` commands:
   "isError": false,
   "meta": {
     "provider": "ollama",
-    "model": "qwen2.5:1.5b",
+    "model": "qwen2.5-coder:1.5b",
     "latencyMs": 800
   }
 }

@@ -62,7 +62,7 @@ User message → Intent Classifier → Route to brain
 └─────────────────────────────────────────────────┘
 ```
 
-**Brain 1 — Ollama (Local)**: Small model (qwen2.5:1.5b) running on the user's machine. Free, fast, handles simple tasks. Your little sibling.
+**Brain 1 — Ollama (Local)**: Small model (qwen2.5-coder:1.5b) running on the user's machine. Free, fast, handles simple tasks. Your little sibling.
 
 **Brain 2 — OpenRouter (Global)**: Cloud models (Claude Sonnet, GPT-4, etc.) via OpenRouter API. Costs credits. The hired gun.
 

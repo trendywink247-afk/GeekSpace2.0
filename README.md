@@ -305,7 +305,7 @@ See [`.env.example`](.env.example) for the complete list. Key variables:
 | `JWT_SECRET` | Prod | JWT signing secret |
 | `ENCRYPTION_KEY` | Prod | AES key for API key encryption |
 | `OLLAMA_BASE_URL` | No | Ollama endpoint (default: `localhost:11434`) |
-| `OLLAMA_MODEL` | No | Model name (default: `qwen2.5:1.5b`) |
+| `OLLAMA_MODEL` | No | Model name (default: `qwen2.5-coder:1.5b`) |
 | `OPENROUTER_API_KEY` | No | OpenRouter API key for cloud fallback |
 | `EDITH_GATEWAY_URL` | No | OpenClaw gateway URL |
 | `EDITH_TOKEN` | No | OpenClaw bearer token |

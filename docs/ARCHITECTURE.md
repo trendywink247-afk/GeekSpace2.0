@@ -10,10 +10,10 @@ GeekSpace is a **Personal AI Operating System** — a self-hosted platform where
 User (Browser)
     |
     v
-[Nginx :80/:443] ── static SPA (React)
+[Caddy :443] ── reverse proxy + auto HTTPS
     |
     v
-[Express API :3001]
+[Express API :3001] ── serves built SPA + API
     |
     +-- JWT auth
     +-- Zod validation
@@ -31,8 +31,8 @@ User (Browser)
 
 ## 2. Request Lifecycle
 
-1. Browser sends request to Nginx (:80)
-2. Nginx routes `/api/*` to Express (:3001), everything else serves the React SPA
+1. Browser sends request to Caddy (:443, auto-HTTPS)
+2. Caddy reverse-proxies all traffic to Express (:3001), which serves the React SPA and API
 3. Express middleware chain: helmet -> CORS -> body parser -> request logger -> rate limiter
 4. Route handler authenticates via JWT (`Authorization: Bearer <token>`)
 5. Zod schema validates request body/query
@@ -84,9 +84,9 @@ else:
 
 | Provider | URL | Timeout | Auth | Model |
 |----------|-----|---------|------|-------|
-| Ollama | `OLLAMA_BASE_URL/api/chat` | 30s | None | `OLLAMA_MODEL` (default: qwen2.5:1.5b) |
-| OpenRouter | `OPENROUTER_BASE_URL/chat/completions` | 60s | Bearer `OPENROUTER_API_KEY` | `OPENROUTER_MODEL` |
-| EDITH | `EDITH_GATEWAY_URL/v1/chat/completions` | 120s (llm.ts) / 10s (edith.ts) | Bearer `EDITH_TOKEN` | `openclaw` |
+| Ollama | `OLLAMA_BASE_URL/api/chat` | 120s (configurable via `OLLAMA_TIMEOUT_MS`) | None | `OLLAMA_MODEL` (default: qwen2.5-coder:1.5b) |
+| OpenRouter | `OPENROUTER_BASE_URL/chat/completions` | 120s (shares `OLLAMA_TIMEOUT_MS`) | Bearer `OPENROUTER_API_KEY` | `OPENROUTER_MODEL` |
+| EDITH | `EDITH_GATEWAY_URL/v1/chat/completions` | 120s | Bearer `EDITH_TOKEN` | `openclaw` |
 | Builtin | N/A | N/A | N/A | Static fallback message |
 
 ### 3.4 EDITH Direct Service
@@ -95,10 +95,10 @@ else:
 
 Separate from the tri-brain's `callEdith()`, this dedicated service is used for `/edith` prefix routing and the enhanced chat handler:
 
-- Tries endpoints in order: `/v1/chat/completions` -> `/api/v1/chat/completions` -> `/api/chat`
-- 10-second timeout per call
-- 1 automatic retry on the primary endpoint
-- HTML detection (skips if the response is a web UI page, not an API)
+- Single endpoint: `/v1/chat/completions` via edith-bridge
+- 120-second timeout per call
+- 1 automatic retry on transient failure
+- HTML detection (rejects if the response is a web UI page, not an API)
 - Supports OpenAI-format responses AND flat `{ content, response }` formats
 
 ### 3.5 Fallback Chain
@@ -283,7 +283,7 @@ Live probing of all components:
 - `ok` = true only if database is healthy (core requirement)
 - `edith` / `ollama` booleans for quick checks
 - Ollama probed via `GET /api/tags` (3s timeout)
-- EDITH probed via `POST /v1/chat/completions` with empty body (3s timeout)
+- EDITH probed via `GET /health` on the bridge (3s timeout), checks `ws_connected: true`
 
 ## 11. Docker Architecture
 
@@ -291,19 +291,19 @@ Live probing of all components:
 
 | Container | Image | Port | Network |
 |-----------|-------|------|---------|
-| `geekspace-app` | Custom (multi-stage Node 20) | 3001 (internal) | geekspace-net, openclaw-net |
+| `geekspace-app` | Custom (multi-stage Node 20) | 3001 (exposed) | geekspace-net, geekspace-shared |
 | `geekspace-redis` | redis:7-alpine | 6379 (internal) | geekspace-net |
-| `geekspace-nginx` | nginx:alpine | 80, 443 | geekspace-net |
+| `geekspace-edith-bridge` | Custom (Node 20, profile: edith) | 8787 (internal) | geekspace-net, geekspace-shared |
 
 ### Networks
 
 - **`geekspace-net`** — Internal bridge. All GeekSpace containers.
-- **`openclaw-net`** — External, maps to `openclaw-gtzk_default`. Allows direct DNS resolution of OpenClaw container.
+- **`geekspace-shared`** — External. Allows DNS resolution of Ollama and OpenClaw containers on the same Docker host.
 
 ### Reaching External Services
 
-- **Ollama:** `host.docker.internal:11434` (via `extra_hosts` on Linux)
-- **EDITH/OpenClaw:** `host.docker.internal:59259` (default) OR direct container name via shared network
+- **Ollama:** Via container name on shared network (e.g. `ollama-qtzz-ollama-1:11434`) or `host.docker.internal:11434`
+- **EDITH/OpenClaw:** Via `edith-bridge:8787` (bridge handles WS connection to OpenClaw)
 
 ### Volumes
 

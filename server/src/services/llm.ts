@@ -119,7 +119,7 @@ async function callOllama(messages: ChatMessage[]): Promise<{ content: string; t
       stream: false,
       options: {
         temperature: 0.7,
-        num_predict: 1024,
+        num_predict: config.ollamaMaxTokens,
       },
     }),
     signal: AbortSignal.timeout(config.ollamaTimeout),
@@ -164,7 +164,7 @@ async function callOpenRouter(messages: ChatMessage[]): Promise<{ content: strin
       max_tokens: 2048,
       temperature: 0.7,
     }),
-    signal: AbortSignal.timeout(60000),
+    signal: AbortSignal.timeout(config.ollamaTimeout),
   });
 
   if (!response.ok) {

@@ -51,7 +51,8 @@ export const config = {
   // Ollama (local brain)
   ollamaBaseUrl: optional('OLLAMA_BASE_URL', 'http://localhost:11434'),
   ollamaModel: optional('OLLAMA_MODEL', 'qwen2.5-coder:1.5b'),
-  ollamaTimeout: optionalInt('OLLAMA_TIMEOUT_MS', 30000),
+  ollamaTimeout: optionalInt('OLLAMA_TIMEOUT_MS', 120000),
+  ollamaMaxTokens: optionalInt('OLLAMA_MAX_TOKENS', 1024),
 
   // OpenRouter / OpenAI-compatible fallback (global brain)
   openrouterApiKey: process.env.OPENROUTER_API_KEY || '',

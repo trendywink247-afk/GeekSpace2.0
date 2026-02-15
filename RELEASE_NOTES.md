@@ -71,7 +71,7 @@
 
 ## Migration from v2.0
 
-1. Install Ollama and pull a model: `ollama pull qwen2.5:1.5b`
+1. Install Ollama and pull a model: `ollama pull qwen2.5-coder:1.5b`
 2. Copy `.env.example` to `.env` and generate secrets
 3. Run `docker compose up -d --build`
 4. Existing users will need to log in again (JWT secret changed)

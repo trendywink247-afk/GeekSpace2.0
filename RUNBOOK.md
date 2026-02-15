@@ -45,7 +45,7 @@ curl http://localhost/api/health
 curl -fsSL https://ollama.ai/install.sh | sh
 
 # Pull the default model
-ollama pull qwen2.5:1.5b
+ollama pull qwen2.5-coder:1.5b
 
 # Verify it's running
 curl http://localhost:11434/api/tags

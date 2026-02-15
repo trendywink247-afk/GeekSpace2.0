@@ -31,7 +31,8 @@ All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
 |----------|---------|-------------|
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API endpoint. In Docker: `http://host.docker.internal:11434` |
 | `OLLAMA_MODEL` | `qwen2.5-coder:1.5b` | Model name to use |
-| `OLLAMA_TIMEOUT_MS` | `30000` | Request timeout in milliseconds |
+| `OLLAMA_TIMEOUT_MS` | `120000` | Request timeout in milliseconds. 7B models on CPU need 90-120s |
+| `OLLAMA_MAX_TOKENS` | `1024` | Max tokens for Ollama to generate (`num_predict`) |
 
 > **VPS note**: If Ollama maps port `32768→11434`, set `OLLAMA_BASE_URL=http://host.docker.internal:32768`
 > or use the internal port directly from the host.
