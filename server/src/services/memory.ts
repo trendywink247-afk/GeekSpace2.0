@@ -134,8 +134,8 @@ export function getRecentConversations(userId: string, limit = 10): Conversation
   ).all(userId, limit) as ConversationEntry[];
 }
 
-export function getConversationContext(userId: string, maxChars = 8192): Array<{ role: 'user' | 'assistant'; content: string }> {
-  const rows = getRecentConversations(userId, 20);
+export function getConversationContext(userId: string, maxChars = 4096): Array<{ role: 'user' | 'assistant'; content: string }> {
+  const rows = getRecentConversations(userId, 10);
   const messages = rows.reverse().map(r => ({
     role: r.role as 'user' | 'assistant',
     content: r.content,

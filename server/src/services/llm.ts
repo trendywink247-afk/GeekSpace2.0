@@ -256,12 +256,46 @@ async function callOpenRouter(messages: ChatMessage[]) {
   return callOpenRouterWithModel(messages, config.openrouterModel);
 }
 
-async function callOpenRouterFree(messages: ChatMessage[]) {
-  return callOpenRouterWithModel(messages, config.openrouterFreeModel);
+async function callOpenRouterFree(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+  const baseUrl = config.openrouterFreeBaseUrl;
+  const apiKey = config.openrouterFreeApiKey;
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': config.publicUrl,
+      'X-Title': 'GeekSpace AI OS',
+    },
+    body: JSON.stringify({
+      model: config.openrouterFreeModel,
+      messages,
+      max_tokens: config.openrouterMaxTokens,
+    }),
+    signal: AbortSignal.timeout(config.openrouterTimeout),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`OpenRouter Free returned ${response.status}: ${text}`);
+  }
+
+  const data = await response.json() as {
+    choices?: Array<{ message?: { content: string } }>;
+    usage?: { prompt_tokens: number; completion_tokens: number };
+  };
+
+  const content = data.choices?.[0]?.message?.content || '';
+  return {
+    content,
+    tokensIn: data.usage?.prompt_tokens || 0,
+    tokensOut: data.usage?.completion_tokens || 0,
+  };
 }
 
 function isOpenRouterFreeAvailable(): boolean {
-  return !!config.openrouterApiKey && !!config.openrouterFreeModel;
+  return !!config.openrouterFreeApiKey && !!config.openrouterFreeModel;
 }
 
 // ---- Moonshot Reasoning Call (direct HTTP — replaces broken EDITH/WS bridge) ----
