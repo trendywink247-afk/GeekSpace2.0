@@ -310,7 +310,7 @@ function seedDemoData() {
   insertPortfolio.run('demo-1', 'alex', 'Full-stack Developer & AI Enthusiast',
     "Building tools that make life easier. I love coding, automation, and helping others learn. My agent can answer questions about my work, schedule, or just chat!",
     'AC', 'San Francisco, CA', 'Senior Developer', 'TechCorp',
-    '["React","TypeScript","Node.js","Python","AI/ML","OpenClaw"]',
+    '["React","TypeScript","Node.js","Python","AI/ML","Docker"]',
     JSON.stringify([
       { name: 'AutoTask', description: 'AI-powered task automation', url: '#', tags: ['AI', 'Automation'], aiGenerated: false },
       { name: 'CodeSync', description: 'Real-time code collaboration', url: '#', tags: ['Collaboration', 'WebRTC'], aiGenerated: false },
