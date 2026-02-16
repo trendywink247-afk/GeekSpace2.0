@@ -190,6 +190,16 @@ export const integrationService = {
 
   updatePermissions: (id: string, permissions: string[]) =>
     api.patch<Integration>(`/integrations/${id}/permissions`, { permissions }),
+
+  // Telegram linking
+  linkTelegram: () =>
+    api.post<{ linked: boolean; code?: string; deepLink?: string | null; botUsername?: string | null; expiresIn?: number; message: string }>('/integrations/telegram/link'),
+
+  checkTelegramLink: () =>
+    api.get<{ linked: boolean; externalId?: string; username?: string; linkedAt?: string; lastMessageAt?: string | null }>('/integrations/telegram/status'),
+
+  unlinkTelegram: () =>
+    api.delete('/integrations/telegram/link'),
 };
 
 // ----- Reminders ---------------------------------------------

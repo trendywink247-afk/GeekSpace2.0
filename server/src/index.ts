@@ -30,6 +30,8 @@ import { directoryRouter } from './routes/directory.js';
 import { apiKeysRouter } from './routes/apiKeys.js';
 import { featuresRouter } from './routes/features.js';
 import { billingRouter } from './routes/billing.js';
+import { webhooksRouter } from './routes/webhooks.js';
+import { initTelegramBot } from './services/telegram.js';
 
 const app = express();
 
@@ -143,6 +145,8 @@ app.get('/api/health', async (_req, res) => {
       openrouter: config.openrouterApiKey ? 'configured' : 'not_configured',
       edith: edithOk ? 'reachable' : (config.edithGatewayUrl ? 'unreachable' : 'not_configured'),
       picoclaw: picoOk ? 'reachable' : (config.picoClawEnabled ? 'unreachable' : 'not_configured'),
+      telegram: config.telegramBotToken ? 'configured' : 'not_configured',
+      n8n: config.n8nBaseUrl ? 'configured' : 'not_configured',
     },
   });
 });
@@ -161,6 +165,7 @@ app.use('/api/directory', directoryRouter);
 app.use('/api/api-keys', apiKeysRouter);
 app.use('/api/features', featuresRouter);
 app.use('/api/billing', billingRouter);
+app.use('/api/webhooks', webhooksRouter);
 
 // ---- Global error handler (MUST be last) ----
 app.use(errorHandler);
@@ -186,4 +191,5 @@ app.listen(config.port, () => {
   // Initialize subsystems
   initMemoryTables();
   initAutomationsEngine();
+  initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)'));
 });

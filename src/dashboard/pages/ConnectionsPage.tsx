@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import {
   MessageSquare,
   Calendar,
@@ -13,17 +14,23 @@ import {
   WifiOff,
   AlertTriangle,
   Plus,
-  Zap
+  Zap,
+  ExternalLink,
+  Copy,
+  Check,
+  X,
+  Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { integrationService } from '@/services/api';
 import type { IntegrationType } from '@/types';
 
 const iconMap: Record<string, typeof MessageSquare> = {
-  telegram: MessageSquare,
+  telegram: Send,
   'google-calendar': Calendar,
   location: MapPin,
   github: Github,
@@ -47,16 +54,79 @@ const colorMap: Record<string, string> = {
 export function ConnectionsPage() {
   const { integrations, connectIntegration, disconnectIntegration, isLoading } = useDashboardStore();
 
+  const [telegramDialog, setTelegramDialog] = useState(false);
+  const [telegramLink, setTelegramLink] = useState<{
+    code?: string;
+    deepLink?: string | null;
+    botUsername?: string | null;
+    message?: string;
+    linked?: boolean;
+  } | null>(null);
+  const [telegramLoading, setTelegramLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [polling, setPolling] = useState(false);
+
   const connectedCount = integrations.filter(c => c.status === 'connected').length;
   const totalRequests = integrations.reduce((acc, c) => acc + c.requestsToday, 0);
   const avgHealth = Math.round(integrations.filter(c => c.status === 'connected').reduce((acc, c) => acc + c.health, 0) / (connectedCount || 1));
 
-  const handleConnect = (type: IntegrationType) => {
+  // Poll for Telegram link status
+  const pollTelegramStatus = useCallback(async () => {
+    try {
+      const res = await integrationService.checkTelegramLink();
+      if (res.data.linked) {
+        setTelegramLink({ linked: true, message: 'Telegram linked!' });
+        setPolling(false);
+        // Refresh integrations list
+        window.location.reload();
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    if (!polling) return;
+    const interval = setInterval(pollTelegramStatus, 3000);
+    return () => clearInterval(interval);
+  }, [polling, pollTelegramStatus]);
+
+  const handleConnect = async (type: IntegrationType) => {
+    if (type === 'telegram') {
+      setTelegramDialog(true);
+      setTelegramLoading(true);
+      try {
+        const res = await integrationService.linkTelegram();
+        setTelegramLink(res.data);
+        if (!res.data.linked) {
+          setPolling(true);
+        }
+      } catch {
+        setTelegramLink({ message: 'Failed to generate link. Is the Telegram bot configured?' });
+      } finally {
+        setTelegramLoading(false);
+      }
+      return;
+    }
+
     connectIntegration(type);
   };
 
   const handleDisconnect = (id: string) => {
     disconnectIntegration(id);
+  };
+
+  const handleCopyCode = () => {
+    if (telegramLink?.code) {
+      navigator.clipboard.writeText(`/start link_${telegramLink.code}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const closeTelegramDialog = () => {
+    setTelegramDialog(false);
+    setTelegramLink(null);
+    setPolling(false);
+    setCopied(false);
   };
 
   const getStatusIcon = (status: string) => {
@@ -159,6 +229,86 @@ export function ConnectionsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Telegram Link Dialog */}
+      {telegramDialog && (
+        <Card className="bg-[#0B0B10] border-[#0088cc]/40 relative">
+          <CardContent className="p-6">
+            <button onClick={closeTelegramDialog} className="absolute top-4 right-4 text-[#A7ACB8] hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#0088cc]/20 flex items-center justify-center">
+                <Send className="w-5 h-5 text-[#0088cc]" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-[#F4F6FF]">Link Telegram</h3>
+                <p className="text-xs text-[#A7ACB8]">Connect your Telegram account to chat with your AI agent</p>
+              </div>
+            </div>
+
+            {telegramLoading && (
+              <div className="flex items-center gap-2 text-[#A7ACB8]">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Generating link...</span>
+              </div>
+            )}
+
+            {telegramLink?.linked && (
+              <div className="flex items-center gap-2 text-[#61FF7B]">
+                <Check className="w-5 h-5" />
+                <span className="font-medium">Telegram is linked!</span>
+              </div>
+            )}
+
+            {telegramLink && !telegramLink.linked && !telegramLoading && (
+              <div className="space-y-4">
+                {telegramLink.deepLink && (
+                  <a
+                    href={telegramLink.deepLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#0088cc] hover:bg-[#0077b5] text-white font-medium transition-colors"
+                  >
+                    <Send className="w-4 h-4" />
+                    Open in Telegram
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+
+                <div className="text-center text-xs text-[#A7ACB8]">or copy the command and send it to the bot manually</div>
+
+                {telegramLink.code && (
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 bg-[#05050A] border border-[#7B61FF]/20 rounded-lg px-4 py-2.5 text-sm text-[#F4F6FF] font-mono">
+                      /start link_{telegramLink.code}
+                    </code>
+                    <Button size="sm" variant="outline" onClick={handleCopyCode} className="border-[#7B61FF]/30">
+                      {copied ? <Check className="w-4 h-4 text-[#61FF7B]" /> : <Copy className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                )}
+
+                {polling && (
+                  <div className="flex items-center gap-2 text-[#A7ACB8] text-sm">
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                    Waiting for link confirmation...
+                  </div>
+                )}
+
+                <p className="text-xs text-[#A7ACB8]">
+                  Code expires in 10 minutes. After linking, you can chat with your AI agent directly in Telegram.
+                </p>
+              </div>
+            )}
+
+            {telegramLink && !telegramLink.deepLink && !telegramLink.linked && !telegramLink.code && (
+              <p className="text-sm text-[#FF6161]">{telegramLink.message}</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Connection Grid */}
       <div id="integration-grid" className="grid md:grid-cols-2 gap-4">

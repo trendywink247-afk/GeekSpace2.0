@@ -294,10 +294,45 @@ export interface Portfolio {
   };
 }
 
+// ----- Channel Links (Telegram/WhatsApp user mapping) --------
+
+export type MessageChannel = 'whatsapp' | 'telegram' | 'web' | 'terminal' | 'portfolio-chat';
+
+export interface ChannelLink {
+  id: string;
+  userId: string;
+  channel: MessageChannel;
+  externalId: string;
+  externalUsername: string;
+  linkedAt: string;
+  lastMessageAt?: string;
+  isVerified: boolean;
+  metadata: Record<string, unknown>;
+}
+
+export interface NormalizedMessage {
+  channel: MessageChannel;
+  externalId: string;
+  userId?: string;
+  text: string;
+  messageId?: string;
+  replyToMessageId?: string;
+  senderName?: string;
+  timestamp: string;
+  rawPayload?: unknown;
+}
+
+export interface ChannelResponse {
+  channel: MessageChannel;
+  externalId: string;
+  text: string;
+  replyToMessageId?: string;
+}
+
 // ----- Automations -------------------------------------------
 
 export type AutomationTrigger = 'time' | 'event' | 'webhook' | 'keyword' | 'health_down' | 'manual';
-export type AutomationAction = 'n8n-webhook' | 'telegram-message' | 'portfolio-update' | 'manychat-broadcast' | 'call_api' | 'create_reminder' | 'log';
+export type AutomationAction = 'n8n-webhook' | 'telegram-message' | 'whatsapp-message' | 'portfolio-update' | 'manychat-broadcast' | 'call_api' | 'create_reminder' | 'log';
 
 export interface Automation {
   id: string;
