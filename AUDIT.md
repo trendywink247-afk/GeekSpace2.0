@@ -141,7 +141,7 @@ contact_submissions (no FK)
 7. Missing DB indices
 8. Health endpoint with component checks
 
-**Day 2-3: Tri-Brain Router + Real Ollama**
+**Day 2-3: Multi-Engine Router + Real Ollama**
 1. POST /api/agent/chat → intent classifier → router
 2. Ollama integration (real LLM calls via HTTP to local container)
 3. Usage logging (tokens, model, provider, latency, cost)
@@ -172,5 +172,5 @@ contact_submissions (no FK)
 
 ### Phase 3 (Future — OpenClaw gateway)
 - EDITH/OpenClaw routing for heavy reasoning
-- PicoClaw edge brain option
+- PicoClaw automation engine option
 - Advanced automation execution

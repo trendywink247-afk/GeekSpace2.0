@@ -25,7 +25,7 @@ All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
 | `PUBLIC_URL` | `http://localhost:5173` | Public-facing URL (used in OpenRouter headers) |
 | `API_URL` | `http://localhost:3001` | API base URL |
 
-## Brain 1 — Ollama (local)
+## Local Engine — Ollama
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -37,7 +37,7 @@ All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
 > **VPS note**: If Ollama maps port `32768→11434`, set `OLLAMA_BASE_URL=http://host.docker.internal:32768`
 > or use the internal port directly from the host.
 
-## Brain 2 — OpenRouter (cloud)
+## Cloud Engine — OpenRouter
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -45,7 +45,7 @@ All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
 | `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | API base URL |
 | `OPENROUTER_MODEL` | `anthropic/claude-sonnet-4-5-20250929` | Model identifier |
 
-## Brain 3 — EDITH / OpenClaw (via bridge)
+## Premium Engine — Moonshot Reasoning (via bridge)
 
 ### GeekSpace side
 

@@ -366,7 +366,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
     return;
   }
 
-  // ---- AI command — routed through tri-brain ----
+  // ---- AI command — routed through LLM router ----
   if (cmd.startsWith('ai ')) {
     const query = command.slice(3).replace(/^["']|["']$/g, '');
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown>;

@@ -20,11 +20,11 @@ User (Browser)
     +-- Rate limiting
     +-- SQLite (better-sqlite3, WAL mode)
     |
-    +-- Tri-Brain LLM Router
+    +-- Multi-Engine LLM Router
     |       |
-    |       +-- Brain 1: Ollama (local, free)
-    |       +-- Brain 2: OpenRouter (cloud, paid)
-    |       +-- Brain 3: EDITH/OpenClaw (gateway, self-hosted)
+    |       +-- Local Engine: Ollama (local, free)
+    |       +-- Cloud Engine: OpenRouter (cloud, paid)
+    |       +-- Premium Engine: Moonshot Reasoning (gateway, self-hosted)
     |
     +-- Redis (job queue, cache)
 ```
@@ -40,7 +40,7 @@ User (Browser)
 7. Response returned as JSON
 8. Global error handler catches any unhandled errors
 
-## 3. Tri-Brain LLM Router
+## 3. Multi-Engine LLM Router
 
 **Source:** `server/src/services/llm.ts`
 
@@ -93,7 +93,7 @@ else:
 
 **Source:** `server/src/services/edith.ts`
 
-Separate from the tri-brain's `callEdith()`, this dedicated service is used for `/edith` prefix routing and the enhanced chat handler:
+Separate from the router's `callEdith()`, this dedicated service is used for `/edith` prefix routing and the enhanced chat handler:
 
 - Single endpoint: `/v1/chat/completions` via edith-bridge
 - 120-second timeout per call
@@ -118,13 +118,13 @@ The chat handler supports three routing modes:
 
 ### 4.1 Prefix Commands
 - **`/edith <message>`** — Strip prefix, force route to EDITH direct service
-- **`/local <message>`** — Strip prefix, force route to Ollama via tri-brain
+- **`/local <message>`** — Strip prefix, force route to Ollama via LLM router
 
 ### 4.2 Auto-Routing (no prefix)
 1. Classify intent via `classifyIntent()`
 2. Check EDITH keyword heuristic (code, debug, analyze, plan, complex, refactor, architecture, explain, compare, design, implement, strategy, deep dive, trade-off, algorithm)
 3. If intent is `complex`, `coding`, or `planning`, OR keyword match -> try EDITH first
-4. If EDITH fails or is not configured -> fall through to tri-brain router
+4. If EDITH fails or is not configured -> fall through to LLM router
 
 ### 4.3 Response Format
 
@@ -160,7 +160,7 @@ When `LOG_LEVEL=debug`:
 
 The master system prompt (~800 tokens) defines:
 - **Identity:** OpenClaw / EDITH — personal AI, not a generic chatbot
-- **Role:** Brain 3 of the Tri-Brain (premium reasoning engine)
+- **Role:** Premium Engine (reasoning engine)
 - **GeekSpace context:** Dashboard, Agent Chat, Terminal, Reminders, Automations, Integrations, Portfolio, Settings
 - **Agent modes:** minimal (Q&A), builder (code/APIs), operator (planning/routines)
 - **Capabilities:** answer, plan, code, debug, analyze, draft, automate, reference user context
@@ -254,7 +254,7 @@ Server-side command execution (not a real shell). Commands:
 | `gs deploy` | Sets portfolio to public |
 | `gs profile set <f> <v>` | Updates user profile field |
 | `gs export` | Dumps all user data as JSON |
-| `ai "prompt"` | Routes through tri-brain, returns AI response |
+| `ai "prompt"` | Routes through LLM router, returns AI response |
 
 ## 10. Health Check
 

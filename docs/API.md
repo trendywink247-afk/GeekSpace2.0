@@ -133,7 +133,7 @@ Allowed fields: name, displayName, mode, voice, systemPrompt, primaryModel, fall
 
 ### `POST /api/agent/chat`
 
-The primary AI chat endpoint. Tri-brain routed with EDITH prefix support.
+The primary AI chat endpoint. Multi-engine routed with EDITH prefix support.
 
 **Body:**
 ```json

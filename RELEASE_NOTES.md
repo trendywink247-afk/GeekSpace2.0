@@ -20,7 +20,7 @@
 - 6 missing database indices added (users email/username, foreign keys)
 - Demo seed data gated behind `NODE_ENV !== 'production'`
 
-### Tri-Brain LLM Router
+### Multi-Engine LLM Router
 - **Real AI responses** — agent chat no longer uses canned keyword matching
 - Intent classifier routes messages to the optimal provider:
   - `simple` → Ollama (free, local)

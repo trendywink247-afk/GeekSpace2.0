@@ -1,10 +1,10 @@
 // ============================================================
-// Quad-Brain LLM Router
+// GeekSpace LLM Router
 //
-// Brain 1: Ollama (local) — fast/cheap, handles simple tasks
-// Brain 2: OpenRouter (global) — handles complex/coding/planning
-// Brain 3: EDITH/OpenClaw (Moonshot) — heavy reasoning
-// Brain 4: PicoClaw (sidecar) — lightweight automation tasks
+// Local Engine: Ollama — fast/cheap, handles simple tasks
+// Cloud Engine: OpenRouter — handles complex/coding/planning
+// Premium Engine: Moonshot Reasoning — heavy reasoning
+// Automation Engine: PicoClaw — lightweight automation tasks
 //
 // Flow: Intent classify → Route → Call → Log usage
 // ============================================================

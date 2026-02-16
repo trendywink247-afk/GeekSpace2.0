@@ -64,7 +64,7 @@ GeekSpace2.0/
 │   ├── index.ts                  # Express app + health check
 │   ├── services/
 │   │   ├── edith.ts              # EDITH client (calls bridge)
-│   │   └── llm.ts                # Tri-Brain router (Ollama/OpenRouter/EDITH)
+│   │   └── llm.ts                # Multi-engine LLM router (Ollama/OpenRouter/Moonshot)
 │   └── ...
 └── src/                          # React frontend (Vite)
 ```

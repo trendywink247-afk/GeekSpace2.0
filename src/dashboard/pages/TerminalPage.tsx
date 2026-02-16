@@ -15,7 +15,7 @@ interface Command {
 }
 
 const welcomeMessage = `GeekSpace Terminal v2.0.0
-Powered by OpenClaw AI Engine
+Powered by GeekSpace AI Engine
 Type 'help' to see available commands.
 `;
 

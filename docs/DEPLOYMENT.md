@@ -5,7 +5,7 @@
 - VPS with Docker and Docker Compose v2 installed
 - Caddy (or any reverse proxy) for HTTPS termination
 - Ollama running on the host (optional but recommended)
-- OpenClaw running on the host (optional — for EDITH Brain 3)
+- OpenClaw running on the host (optional — for Premium Engine)
 
 ## Quick Deploy
 

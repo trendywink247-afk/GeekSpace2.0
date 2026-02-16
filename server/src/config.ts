@@ -48,13 +48,13 @@ export const config = {
   publicUrl: optional('PUBLIC_URL', 'http://localhost:5173'),
   apiUrl: optional('API_URL', 'http://localhost:3001'),
 
-  // Ollama (local brain)
+  // Ollama (local engine)
   ollamaBaseUrl: optional('OLLAMA_BASE_URL', 'http://localhost:11434'),
   ollamaModel: optional('OLLAMA_MODEL', 'qwen2.5-coder:1.5b'),
   ollamaTimeout: optionalInt('OLLAMA_TIMEOUT_MS', 120000),
   ollamaMaxTokens: optionalInt('OLLAMA_MAX_TOKENS', 512),
 
-  // OpenRouter / OpenAI-compatible fallback (global brain)
+  // OpenRouter / OpenAI-compatible fallback (cloud engine)
   openrouterApiKey: process.env.OPENROUTER_API_KEY || '',
   openrouterBaseUrl: optional('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
   openrouterModel: optional('OPENROUTER_MODEL', 'anthropic/claude-sonnet-4-5-20250929'),
@@ -73,7 +73,7 @@ export const config = {
   moonshotTimeout: optionalInt('MOONSHOT_TIMEOUT_MS', 120000),
   moonshotMaxTokens: optionalInt('MOONSHOT_MAX_TOKENS', 8192),
 
-  // PicoClaw (lightweight sidecar — Brain 4)
+  // PicoClaw (lightweight automation engine)
   picoClawUrl: optional('PICOCLAW_URL', 'http://localhost:8080'),
   picoClawEnabled: optional('PICOCLAW_ENABLED', 'false') === 'true',
   picoClawTimeout: optionalInt('PICOCLAW_TIMEOUT_MS', 5000),

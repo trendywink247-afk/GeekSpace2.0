@@ -1,4 +1,4 @@
-# NOTE: Ollama and OpenClaw containers are managed externally by Hostinger.
+# NOTE: Ollama and Moonshot containers are managed externally by Hostinger.
 # They are NOT part of this compose file. GeekSpace connects to them via
 # the geekspace-shared network using their container names.
 
@@ -40,14 +40,14 @@ services:
         limits:
           memory: 512M
 
-  # ---- EDITH Bridge (WS-RPC → HTTP for OpenClaw) ----
+  # ---- EDITH Bridge (WS-RPC → HTTP for Moonshot) ----
   edith-bridge:
     build: ./bridge/edith-bridge
     container_name: geekspace-edith-bridge
     restart: unless-stopped
     profiles: ["edith"]
     environment:
-      # Set to your actual OpenClaw container name/address
+      # Set to your actual Moonshot container name/address
       - EDITH_OPENCLAW_WS=${EDITH_OPENCLAW_WS:-ws://openclaw:55550}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
       - OPENCLAW_CHAT_METHOD=${OPENCLAW_CHAT_METHOD:-chat.completions}
