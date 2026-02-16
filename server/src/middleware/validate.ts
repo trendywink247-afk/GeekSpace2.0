@@ -124,6 +124,7 @@ export const agentConfigUpdateSchema = z.object({
   accentColor: z.string().max(20).optional(),
   bubbleStyle: z.string().max(20).optional(),
   status: z.enum(['online', 'offline', 'busy']).optional(),
+  personality: z.enum(['edith', 'jarvis', 'weebo']).optional(),
 }).strict();
 
 export const userUpdateSchema = z.object({

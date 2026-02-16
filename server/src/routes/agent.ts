@@ -8,6 +8,7 @@ import { edithChat } from '../services/edith.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
 import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openclaw-system.js';
+import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
 import { buildMemoryContext, logConversation, extractMemories, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory } from '../services/memory.js';
 
@@ -21,7 +22,10 @@ function buildSystemPrompt(
   userId: string,
   userMessage?: string,
 ): string {
-  const agentName = (agentConfig?.name as string) || 'Geek';
+  const personalityId = (agentConfig?.personality as string) || 'jarvis';
+  const personality = getPersonality(personalityId);
+  const personalityPrompt = getPersonalityPrompt(personalityId);
+  const agentName = (agentConfig?.name as string) || personality.name;
   const voice = (agentConfig?.voice as string) || 'friendly';
   const mode = (agentConfig?.mode as string) || 'builder';
   const customPrompt = (agentConfig?.system_prompt as string) || '';
@@ -34,6 +38,9 @@ function buildSystemPrompt(
   const memoryBlock = buildMemoryContext(userId, userMessage);
 
   return `${OPENCLAW_IDENTITY}
+
+--- PERSONALITY ---
+${personalityPrompt}
 
 --- USER SESSION ---
 Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
@@ -62,6 +69,7 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     creativity: 'creativity', formality: 'formality', responseSpeed: 'response_speed',
     monthlyBudgetUSD: 'monthly_budget_usd', avatarEmoji: 'avatar_emoji',
     accentColor: 'accent_color', bubbleStyle: 'bubble_style', status: 'status',
+    personality: 'personality',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {
@@ -74,6 +82,12 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
 
   const config = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(req.userId!);
   res.json(config);
+});
+
+// ---- Personalities ----
+
+agentRouter.get('/personalities', (_req, res) => {
+  res.json(PERSONALITIES);
 });
 
 // ---- Two-Tier Agent Chat ----

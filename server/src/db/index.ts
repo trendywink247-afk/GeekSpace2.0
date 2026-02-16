@@ -212,6 +212,10 @@ try {
   db.exec(`ALTER TABLE users ADD COLUMN last_active TEXT DEFAULT (datetime('now'))`);
 } catch { /* column already exists — ignore */ }
 
+try {
+  db.exec(`ALTER TABLE agent_configs ADD COLUMN personality TEXT DEFAULT 'jarvis'`);
+} catch { /* column already exists — ignore */ }
+
 // ── Seed demo data ──────────────────────────────────────────
 
 function seedDemoData() {
