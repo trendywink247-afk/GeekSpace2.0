@@ -291,7 +291,7 @@ export const automationLogService = {
 
 export const publicAgentService = {
   chat: (username: string, message: string) =>
-    api.post<{ reply: string; agentName: string; ownerName: string }>(`/agent/chat/public/${username}`, { message }),
+    api.post<{ reply: string; agentName: string; ownerName: string; personality: string; personalityEmoji: string }>(`/agent/chat/public/${username}`, { message }),
 };
 
 export default api;

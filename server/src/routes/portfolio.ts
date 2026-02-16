@@ -50,6 +50,7 @@ portfolioRouter.get('/:username', (req, res) => {
   if (!portfolio) { res.status(404).json({ error: 'Portfolio not found' }); return; }
 
   const user = db.prepare('SELECT name, avatar, bio FROM users WHERE id = ?').get(portfolio.user_id as string) as Record<string, unknown> | undefined;
+  const agentConfig = db.prepare('SELECT personality FROM agent_configs WHERE user_id = ?').get(portfolio.user_id as string) as Record<string, unknown> | undefined;
 
   res.json({
     userId: portfolio.user_id, username: portfolio.username, headline: portfolio.headline,
@@ -61,6 +62,7 @@ portfolioRouter.get('/:username', (req, res) => {
     social: JSON.parse(portfolio.social as string || '{}'),
     layout: portfolio.layout, agentEnabled: !!portfolio.agent_enabled,
     visibility: JSON.parse(portfolio.visibility as string || '{}'),
+    personality: (agentConfig?.personality as string) || 'jarvis',
   });
 });
 

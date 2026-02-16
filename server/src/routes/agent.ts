@@ -604,12 +604,15 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
   const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(user.id as string) as Record<string, unknown> | undefined;
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(user.id as string) as Record<string, unknown> | undefined;
 
+  const personalityId = (agentConfig?.personality as string) || 'jarvis';
+  const personality = getPersonality(personalityId);
+
   const skills: string[] = JSON.parse(portfolio?.skills as string || '[]');
   const projects: Array<{ name: string; description?: string }> = JSON.parse(portfolio?.projects as string || '[]');
   const ownerName = user.name as string;
-  const agentName = (agentConfig?.name || 'Assistant') as string;
+  const agentName = (agentConfig?.name || personality.name) as string;
 
-  const systemPrompt = buildPortfolioVisitorPrompt({
+  const basePrompt = buildPortfolioVisitorPrompt({
     ownerName,
     agentName,
     skills,
@@ -620,17 +623,21 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
     company: (user.company as string) || undefined,
   });
 
+  const systemPrompt = `${basePrompt}\n\n--- PERSONALITY ---\n${personality.promptAddition}`;
+
   try {
     const result = await routeChat(
       [{ role: 'user', content: message }],
       { systemPrompt, agentName, forceProvider: 'ollama' },
     );
-    res.json({ reply: result.reply, agentName, ownerName });
+    res.json({ reply: result.reply, agentName, ownerName, personality: personalityId, personalityEmoji: personality.emoji });
   } catch {
     res.json({
       reply: `Hi! I'm ${agentName}, ${ownerName}'s AI assistant. I'm having trouble connecting right now, but you can learn more from the portfolio above.`,
       agentName,
       ownerName,
+      personality: personalityId,
+      personalityEmoji: personality.emoji,
     });
   }
 });

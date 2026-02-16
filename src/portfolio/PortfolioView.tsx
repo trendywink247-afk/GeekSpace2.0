@@ -13,14 +13,32 @@ import type { Portfolio } from '@/types';
 interface PortfolioData extends Portfolio {
   name?: string;
   username?: string;
+  personality?: string;
 }
 
-const suggestedQuestions = [
-  "What's their tech stack?",
-  "Are they available for freelance?",
-  "Tell me about their projects",
-  "What are they working on?",
-];
+type PersonalityKey = 'edith' | 'jarvis' | 'weebo';
+
+const personalityMeta: Record<PersonalityKey, {
+  emoji: string;
+  greeting: (firstName: string) => string;
+  questions: string[];
+}> = {
+  edith: {
+    emoji: '🔷',
+    greeting: (fn) => `Welcome. I'm Edith, ${fn}'s AI. What would you like to know?`,
+    questions: ["Show me their tech stack.", "What have they built?", "Availability?", "Contact info."],
+  },
+  jarvis: {
+    emoji: '🤖',
+    greeting: (fn) => `Good day! I'm Jarvis, here to help you learn about ${fn}'s work.`,
+    questions: ["What are their key projects?", "Tell me about their skills", "Are they available for work?", "How can I reach them?"],
+  },
+  weebo: {
+    emoji: '✨',
+    greeting: (fn) => `Hiii! Welcome to ${fn}'s portfolio! I'm Weebo~ Ask me anything! ✨`,
+    questions: ["What cool stuff do they work on? ✨", "Tell me about their skills!", "Are they taking on new projects?", "How do I reach them?"],
+  },
+};
 
 export function PortfolioView() {
   const navigate = useNavigate();
@@ -46,13 +64,16 @@ export function PortfolioView() {
   const displayName = portfolio?.name || username || 'User';
   const firstName = displayName.split(' ')[0];
 
-  // Initialize chat with greeting
+  const pKey = ((portfolio?.personality as string) || 'jarvis') as PersonalityKey;
+  const pMeta = personalityMeta[pKey] || personalityMeta.jarvis;
+
+  // Initialize chat with personality-specific greeting
   useEffect(() => {
     if (!portfolio) return;
     setChatHistory([
-      { role: 'agent', message: `Hi! I'm ${firstName}'s AI assistant. Ask me anything about their work, schedule, or just say hello!` },
+      { role: 'agent', message: pMeta.greeting(firstName) },
     ]);
-  }, [portfolio, firstName]);
+  }, [portfolio, firstName, pKey]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -262,7 +283,7 @@ export function PortfolioView() {
                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#61FF7B] border-2 border-[#05050A]" />
                   </div>
                   <div>
-                    <div className="font-semibold text-sm">{firstName}'s Agent</div>
+                    <div className="font-semibold text-sm">{pMeta.emoji} {firstName}'s Agent</div>
                     <div className="text-xs text-[#61FF7B]">Online</div>
                   </div>
                 </div>
@@ -308,7 +329,7 @@ export function PortfolioView() {
                 {chatHistory.length <= 1 && !isTyping && (
                   <div className="space-y-1.5 pt-1">
                     <p className="text-[10px] text-[#A7ACB8] uppercase tracking-wider">Try asking</p>
-                    {suggestedQuestions.map((q) => (
+                    {pMeta.questions.map((q) => (
                       <button key={q} onClick={() => handleSendMessage(q)} className="block w-full text-left px-3 py-2 rounded-lg bg-[#05050A] border border-[#7B61FF]/20 text-xs text-[#A7ACB8] hover:text-[#F4F6FF] hover:border-[#7B61FF]/40 transition-colors">
                         {q}
                       </button>
@@ -358,7 +379,7 @@ export function PortfolioView() {
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#61FF7B] border-2 border-[#05050A]" />
               </div>
               <div>
-                <div className="font-semibold text-sm">{firstName}'s Agent</div>
+                <div className="font-semibold text-sm">{pMeta.emoji} {firstName}'s Agent</div>
                 <div className="text-xs text-[#61FF7B]">Online</div>
               </div>
             </div>
@@ -404,7 +425,7 @@ export function PortfolioView() {
             {chatHistory.length <= 1 && !isTyping && (
               <div className="space-y-1.5 pt-1">
                 <p className="text-[10px] text-[#A7ACB8] uppercase tracking-wider">Try asking</p>
-                {suggestedQuestions.map((q) => (
+                {pMeta.questions.map((q) => (
                   <button key={q} onClick={() => handleSendMessage(q)} className="block w-full text-left px-3 py-2.5 min-h-[44px] rounded-lg bg-[#05050A] border border-[#7B61FF]/20 text-sm text-[#A7ACB8] hover:text-[#F4F6FF] hover:border-[#7B61FF]/40 transition-colors">
                     {q}
                   </button>
