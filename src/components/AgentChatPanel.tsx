@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Bot, Sparkles, Mic, Paperclip, RotateCcw, Zap } from 'lucide-react';
+import { X, Send, Sparkles, Mic, Paperclip, RotateCcw, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { agentService } from '@/services/api';
 import type { AgentPersonality } from '@/types';
@@ -36,8 +35,7 @@ const suggestedPrompts = [
   "Help me with a code review",
 ];
 
-export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelProps) {
-  const user = useAuthStore((s) => s.user);
+export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
   const agent = useDashboardStore((s) => s.agent);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -45,7 +43,6 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const ownerName = agentOwner || user?.name?.split(' ')[0] || 'Alex';
   const pMeta = personalityMeta[(agent.personality as AgentPersonality) || 'jarvis'] || personalityMeta.jarvis;
 
   // Initialize with greeting
