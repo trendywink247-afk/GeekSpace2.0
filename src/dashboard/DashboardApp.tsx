@@ -11,6 +11,13 @@ import { AgentDesignWizard } from '@/components/AgentDesignWizard';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
+import type { AgentPersonality } from '@/types';
+
+const personalityEmojis: Record<AgentPersonality, string> = {
+  edith: '🔷',
+  jarvis: '🟣',
+  weebo: '💚',
+};
 
 // ---- Lazy loaded pages for code splitting ----
 const OverviewPage = lazy(() => import('./pages/OverviewPage').then(m => ({ default: m.OverviewPage })));
@@ -181,7 +188,7 @@ export function DashboardApp() {
               <span className="text-xs font-medium text-[#F4F6FF]">Design Assistant</span>
             </div>
             <p className="text-[10px] text-[#A7ACB8] mt-1 text-left">
-              {agent.name} &middot; {agent.mode} &middot; {agent.voice}
+              {personalityEmojis[(agent.personality as AgentPersonality) || 'jarvis'] || '🟣'} {agent.name} &middot; {agent.mode} &middot; {agent.voice}
             </p>
           </button>
         </div>

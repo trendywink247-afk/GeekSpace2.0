@@ -58,6 +58,8 @@ export interface Membership {
 export type AgentMode = 'minimal' | 'builder' | 'operator';
 export type AgentVoice = 'professional' | 'friendly' | 'witty';
 
+export type AgentPersonality = 'edith' | 'jarvis' | 'weebo';
+
 export interface AgentConfig {
   id: string;
   userId: string;
@@ -65,6 +67,7 @@ export interface AgentConfig {
   displayName: string;
   mode: AgentMode;
   voice: AgentVoice;
+  personality?: AgentPersonality;
   systemPrompt: string;
   primaryModel: string;
   fallbackModel?: string;
@@ -72,6 +75,15 @@ export interface AgentConfig {
   formality: number;    // 0–100
   monthlyBudgetUSD: number;
   status: 'online' | 'offline' | 'error';
+}
+
+export interface Personality {
+  id: string;
+  name: string;
+  description: string;
+  emoji: string;
+  greeting: string;
+  signoff: string;
 }
 
 // ----- API Keys ----------------------------------------------

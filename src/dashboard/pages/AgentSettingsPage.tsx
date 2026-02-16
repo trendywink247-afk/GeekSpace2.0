@@ -9,13 +9,16 @@ import {
   Volume2,
   Image,
   Brain,
-  Save
+  Save,
+  Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { agentService } from '@/services/api';
+import type { Personality, AgentPersonality } from '@/types';
 
 type AgentStyle = 'minimal' | 'builder' | 'operator';
 
@@ -73,8 +76,16 @@ export function AgentSettingsPage() {
     agent.systemPrompt || `You are a helpful personal AI assistant. Be helpful, concise, and proactive. When uncertain, ask for clarification.`
   );
   const [agentName, setAgentName] = useState(agent.name || 'Geek');
+  const [selectedPersonality, setSelectedPersonality] = useState<AgentPersonality>(agent.personality || 'jarvis');
+  const [personalities, setPersonalities] = useState<Record<string, Personality>>({});
+  const [personalityToast, setPersonalityToast] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Fetch personalities on mount
+  useEffect(() => {
+    agentService.getPersonalities().then(({ data }) => setPersonalities(data)).catch(() => {});
+  }, []);
 
   // Sync from store when agent data loads/changes
   useEffect(() => {
@@ -85,8 +96,21 @@ export function AgentSettingsPage() {
       setFormality([agent.formality ?? 50]);
       setSystemPrompt(agent.systemPrompt || '');
       setAgentName(agent.name || 'Geek');
+      setSelectedPersonality(agent.personality || 'jarvis');
     }
-  }, [agent.id, agent.mode, agent.voice, agent.creativity, agent.formality, agent.systemPrompt, agent.name]);
+  }, [agent.id, agent.mode, agent.voice, agent.creativity, agent.formality, agent.systemPrompt, agent.name, agent.personality]);
+
+  const handlePersonalitySwitch = async (id: AgentPersonality) => {
+    setSelectedPersonality(id);
+    const p = personalities[id];
+    try {
+      await updateAgent({ personality: id });
+      if (p) {
+        setPersonalityToast(`Switched to ${p.name}! ${p.greeting}`);
+        setTimeout(() => setPersonalityToast(''), 3000);
+      }
+    } catch { /* keep local state */ }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -147,6 +171,44 @@ export function AgentSettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Personality */}
+      {Object.keys(personalities).length > 0 && (
+        <div className="p-6 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/20">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-[#7B61FF]" />
+            Choose Your AI Personality
+          </h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            {Object.values(personalities).map((p) => (
+              <button
+                key={p.id}
+                onClick={() => handlePersonalitySwitch(p.id as AgentPersonality)}
+                className={`p-5 rounded-xl border-2 transition-all duration-300 text-center ${
+                  selectedPersonality === p.id
+                    ? 'border-[#7B61FF] bg-[#7B61FF]/10 shadow-[0_0_20px_rgba(123,97,255,0.15)]'
+                    : 'border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40'
+                }`}
+              >
+                <div className="text-4xl mb-3">{p.emoji}</div>
+                <h3 className="font-semibold text-[#F4F6FF] mb-1">{p.name}</h3>
+                <p className="text-sm text-[#A7ACB8]">{p.description}</p>
+                {selectedPersonality === p.id && (
+                  <div className="mt-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#7B61FF]/20 text-[#7B61FF] text-xs">
+                    <Check className="w-3 h-3" /> Active
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+          {personalityToast && (
+            <div className="mt-4 px-4 py-2.5 rounded-xl bg-[#7B61FF]/10 border border-[#7B61FF]/30 text-sm text-[#F4F6FF] flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#7B61FF]" />
+              {personalityToast}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Agent Style Selection */}
       <div className="p-6 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/20">

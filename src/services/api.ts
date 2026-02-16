@@ -25,6 +25,7 @@ import type {
   ChartDataPoint,
   ProviderBreakdown,
   HourlyActivity,
+  Personality,
 } from '@/types';
 
 // ----- Axios instance ----------------------------------------
@@ -118,6 +119,9 @@ export const agentService = {
 
   executeCommand: (command: string) =>
     api.post<{ output: string; isError: boolean }>('/agent/command', { command }),
+
+  getPersonalities: () =>
+    api.get<Record<string, Personality>>('/agent/personalities'),
 };
 
 // ----- API Keys ----------------------------------------------
