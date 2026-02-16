@@ -79,7 +79,7 @@ export const config = {
   picoClawTimeout: optionalInt('PICOCLAW_TIMEOUT_MS', 5000),
 
   // Pico-Kimi Bridge (orchestration layer)
-  bridgeEnabled: optional('BRIDGE_ENABLED', 'true') === 'true',
+  bridgeEnabled: optional('BRIDGE_ENABLED', 'false') === 'true',
   bridgeMaxWorkflowSteps: optionalInt('BRIDGE_MAX_WORKFLOW_STEPS', 6),
   bridgeAutoEscalate: optional('BRIDGE_AUTO_ESCALATE', 'true') === 'true', // Auto-detect complex requests
 

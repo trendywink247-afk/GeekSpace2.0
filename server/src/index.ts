@@ -34,6 +34,8 @@ import { billingRouter } from './routes/billing.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { initTelegramBot } from './services/telegram.js';
 
+const APP_VERSION = '2.4.0';
+
 const app = express();
 
 // ---- Trust proxy (Caddy/nginx reverse proxy) ----
@@ -138,7 +140,7 @@ app.get('/api/health', async (_req, res) => {
     ok: allOk,
     status: allOk ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
-    version: '2.4.0',
+    version: APP_VERSION,
     uptime: Math.floor(process.uptime()),
     edith: edithOk,
     ollama: ollamaOk,
@@ -192,7 +194,7 @@ app.listen(config.port, () => {
     env: config.env,
     corsOrigins: config.corsOrigins,
     ollamaUrl: config.ollamaBaseUrl,
-  }, `GeekSpace API v2.3.0 running on :${config.port}`);
+  }, `GeekSpace API v${APP_VERSION} running on :${config.port}`);
 
   // Initialize subsystems
   initMemoryTables();

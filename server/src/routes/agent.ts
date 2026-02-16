@@ -14,7 +14,7 @@ import { buildMemoryContext, logConversation, extractMemories, getConversationCo
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
 import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeRequest } from '../services/pico-kimi-bridge.js';
 import { getUserWorkflows, getWorkflowStatus, getWorkflowAnalytics } from '../services/workflow-engine.js';
-import { getAllAgentDefinitions, selectAgents, type AgentRole } from '../services/agent-registry.js';
+import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } from '../services/agent-registry.js';
 
 export const agentRouter = Router();
 
@@ -153,8 +153,17 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
       forceRoute = 'bridge';
       const match = message.match(/^\/agent:(\w+)\s+(.+)$/s);
       if (match) {
-        forceAgent = match[1] as AgentRole;
-        message = match[2].trim();
+        const requestedRole = match[1];
+        const validRoles = getAgentRoles();
+        if (validRoles.includes(requestedRole as AgentRole)) {
+          forceAgent = requestedRole as AgentRole;
+          message = match[2].trim();
+        } else {
+          res.status(400).json({
+            error: `Unknown agent role: "${requestedRole}". Valid roles: ${validRoles.join(', ')}`,
+          });
+          return;
+        }
       }
     }
 
@@ -216,7 +225,7 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
           systemPrompt,
           conversationHistory: history,
           forceAgent,
-          forceWorkflow: message.length > 100, // Long messages suggest workflow
+          forceWorkflow: forceAgent ? false : (message.length > 100),
           userCredits,
         };
 

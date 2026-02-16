@@ -27,9 +27,14 @@ export const webhooksRouter = Router();
 // ================================================================
 
 webhooksRouter.post('/telegram', async (req, res) => {
-  // Verify secret token
+  // Verify secret token — reject if secret not configured (secure by default)
+  if (!config.telegramWebhookSecret) {
+    logger.warn('Telegram webhook: no secret configured, rejecting');
+    res.sendStatus(401);
+    return;
+  }
   const secretToken = req.headers['x-telegram-bot-api-secret-token'] as string;
-  if (config.telegramWebhookSecret && !verifyTelegramWebhook(secretToken)) {
+  if (!verifyTelegramWebhook(secretToken)) {
     logger.warn('Telegram webhook: invalid secret token');
     res.sendStatus(403);
     return;
@@ -95,48 +100,20 @@ async function handleTelegramCommand(
           `1. Go to your GeekSpace dashboard → Connections\n` +
           `2. Click "Connect" on Telegram\n` +
           `3. Follow the instructions\n\n` +
-          `Or use /link <your-email> to start linking.`
+          `Or use /link for instructions.`
         );
       }
       break;
     }
 
     case '/link': {
-      if (!cmd.args) {
-        await sendTelegramMessage(chatId, 'Usage: /link your@email.com');
-        return;
-      }
-
-      const email = cmd.args.trim().toLowerCase();
-      const user = db.prepare('SELECT id, name FROM users WHERE LOWER(email) = ?').get(email) as { id: string; name: string } | undefined;
-
-      if (!user) {
-        await sendTelegramMessage(chatId, 'No GeekSpace account found with that email. Please sign up first at your GeekSpace instance.');
-        return;
-      }
-
-      // Check if already linked
-      const existing = db.prepare(
-        "SELECT id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
-      ).get(String(chatId));
-
-      if (existing) {
-        await sendTelegramMessage(chatId, 'This Telegram account is already linked! Just type a message to chat.');
-        return;
-      }
-
-      // Create link directly (for simplicity in v1)
-      db.prepare(
-        'INSERT INTO channel_links (id, user_id, channel, external_id, external_username) VALUES (?, ?, ?, ?, ?)'
-      ).run(uuid(), user.id, 'telegram', String(chatId), fromUsername);
-
-      // Update integrations table if it exists
-      db.prepare(
-        "UPDATE integrations SET status = 'connected', health = 100, last_sync = ? WHERE user_id = ? AND type = 'telegram'"
-      ).run(new Date().toISOString(), user.id);
-
+      // Direct email linking removed for security — use link code flow instead
       await sendTelegramMessage(chatId,
-        `Account linked successfully! Welcome, ${user.name}.\n\nYou can now chat with your AI agent right here. Just type a message!`
+        'To link your account:\n' +
+        '1. Go to your GeekSpace dashboard → Connections\n' +
+        '2. Click "Connect" on Telegram\n' +
+        '3. Click the link code to open this bot\n\n' +
+        'This generates a secure one-time code that expires in 10 minutes.'
       );
       break;
     }
@@ -208,7 +185,7 @@ async function handleTelegramCommand(
       await sendTelegramMessage(chatId,
         `GeekSpace Bot Commands:\n\n` +
         `/start — Get started\n` +
-        `/link <email> — Link your GeekSpace account\n` +
+        `/link — Link your GeekSpace account\n` +
         `/unlink — Unlink your account\n` +
         `/credits — Check credit balance\n` +
         `/status — Connection status\n` +
@@ -284,6 +261,16 @@ async function handleLinkCode(
 // ================================================================
 
 webhooksRouter.post('/n8n/callback', async (req, res) => {
+  // Verify n8n webhook secret if configured
+  if (config.n8nWebhookSecret) {
+    const secret = req.headers['x-n8n-secret'] as string;
+    if (secret !== config.n8nWebhookSecret) {
+      logger.warn('n8n webhook: invalid or missing secret');
+      res.sendStatus(401);
+      return;
+    }
+  }
+
   const { userId, channel, externalId, message } = req.body;
 
   if (!userId || !channel || !externalId || !message) {

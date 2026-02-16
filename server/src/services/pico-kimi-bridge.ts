@@ -135,6 +135,9 @@ export function shouldEscalateToKimi(
   complexity: TaskComplexity,
   picoAvailable: boolean,
 ): boolean {
+  // If auto-escalation is disabled, never auto-escalate — only explicit /bridge triggers it
+  if (!config.bridgeAutoEscalate) return false;
+
   // Multi-step and complex always go to Kimi
   if (complexity === 'multi-step' || complexity === 'complex') return true;
 
@@ -378,8 +381,8 @@ async function executeMultiAgentWorkflow(
     { agent: 'planner', output: planResult.output },
   ];
 
-  // Step 3: Execute delegated tasks (up to 4 to control costs)
-  const maxDelegates = Math.min(delegates.length, 4);
+  // Step 3: Execute delegated tasks (capped by config)
+  const maxDelegates = Math.min(delegates.length, config.bridgeMaxWorkflowSteps);
   for (let i = 0; i < maxDelegates; i++) {
     const delegate = delegates[i];
 

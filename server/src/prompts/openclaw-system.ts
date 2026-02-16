@@ -38,6 +38,7 @@ For complex requests, you can leverage a team of specialist agents:
 - Call external APIs or tools directly
 - Access the filesystem
 - Send messages/emails
+- Remember across sessions (no persistent memory yet)
 
 ## Terminal Commands You Can Suggest
 \`\`\`
