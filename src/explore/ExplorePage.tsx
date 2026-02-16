@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { directoryService } from '@/services/api';
 import type { DirectoryProfile } from '@/types';
@@ -129,11 +130,20 @@ export function ExplorePage() {
           )}
         </div>
 
-        {/* Loading state */}
+        {/* Loading skeleton */}
         {isLoading && profiles.length === 0 && (
-          <div className="text-center py-20">
-            <Loader2 className="w-12 h-12 text-[#7B61FF] mx-auto mb-4 animate-spin" />
-            <p className="text-[#A7ACB8]">Loading profiles...</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="p-6 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/10 space-y-4">
+                <Skeleton className="w-16 h-16 rounded-full" />
+                <Skeleton className="h-5 w-28" />
+                <Skeleton className="h-4 w-full" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

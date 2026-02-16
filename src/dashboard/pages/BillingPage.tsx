@@ -3,6 +3,8 @@ import { CreditCard, Check, ArrowUpRight, Calendar, Zap, TrendingUp } from 'luci
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PageProgress } from '@/components/ui/page-progress';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -70,8 +72,29 @@ export function BillingPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-[#7B61FF] border-t-transparent rounded-full animate-spin" />
+      <div className="space-y-6">
+        <PageProgress loading />
+        {/* Header skeleton */}
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-32" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-10 w-36 rounded-lg" />
+        </div>
+        {/* Current plan card skeleton */}
+        <Skeleton className="h-64 w-full rounded-xl" />
+        {/* Plan cards grid skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="p-6 rounded-xl border border-[#7B61FF]/10 space-y-4">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-9 w-full rounded-md" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
