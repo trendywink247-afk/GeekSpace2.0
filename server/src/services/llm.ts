@@ -185,6 +185,8 @@ async function callOllama(messages: ChatMessage[]): Promise<{ content: string; t
       options: {
         temperature: 0.7,
         num_predict: config.ollamaMaxTokens,
+        top_p: 0.9,
+        repeat_penalty: 1.1,
       },
     }),
     signal: AbortSignal.timeout(config.ollamaTimeout),

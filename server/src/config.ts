@@ -52,14 +52,14 @@ export const config = {
   ollamaBaseUrl: optional('OLLAMA_BASE_URL', 'http://localhost:11434'),
   ollamaModel: optional('OLLAMA_MODEL', 'qwen2.5-coder:1.5b'),
   ollamaTimeout: optionalInt('OLLAMA_TIMEOUT_MS', 120000),
-  ollamaMaxTokens: optionalInt('OLLAMA_MAX_TOKENS', 1024),
+  ollamaMaxTokens: optionalInt('OLLAMA_MAX_TOKENS', 512),
 
   // OpenRouter / OpenAI-compatible fallback (global brain)
   openrouterApiKey: process.env.OPENROUTER_API_KEY || '',
   openrouterBaseUrl: optional('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
   openrouterModel: optional('OPENROUTER_MODEL', 'anthropic/claude-sonnet-4-5-20250929'),
   openrouterTimeout: optionalInt('OPENROUTER_TIMEOUT_MS', 90000),
-  openrouterMaxTokens: optionalInt('OPENROUTER_MAX_TOKENS', 4096),
+  openrouterMaxTokens: optionalInt('OPENROUTER_MAX_TOKENS', 1024),
   openrouterFreeModel: optional('OPENROUTER_FREE_MODEL', 'meta-llama/llama-3.3-70b-instruct:free'),
   openrouterFreeBaseUrl: optional('OPENROUTER_FREE_BASE_URL', 'https://openrouter.ai/api/v1'),
   openrouterFreeApiKey: process.env.OPENROUTER_FREE_API_KEY || '',

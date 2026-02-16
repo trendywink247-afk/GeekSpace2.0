@@ -38,7 +38,9 @@ function buildSystemPrompt(
 --- USER SESSION ---
 Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
 ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
-Active reminders: ${reminderCount}. Connected integrations: ${connectedCount}.${memoryBlock}`;
+Active reminders: ${reminderCount}. Connected integrations: ${connectedCount}.${memoryBlock}
+
+IMPORTANT: Keep responses SHORT. 1-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain conversational text only.`;
 }
 
 // ---- Agent Config CRUD ----
