@@ -7,7 +7,7 @@ import { routeChat, classifyIntent, computeCreditCost, streamOllama, type ChatMe
 import { edithChat } from '../services/edith.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
-import { OPENCLAW_IDENTITY } from '../prompts/openclaw-system.js';
+import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openclaw-system.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
 import { buildMemoryContext, logConversation, extractMemories, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory } from '../services/memory.js';
 
@@ -582,24 +582,27 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
   const { message } = req.body;
   const { username } = req.params;
 
-  const user = db.prepare('SELECT id, name FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
+  const user = db.prepare('SELECT id, name, location, role, company FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
   const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(user.id as string) as Record<string, unknown> | undefined;
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(user.id as string) as Record<string, unknown> | undefined;
 
-  const skills = JSON.parse(portfolio?.skills as string || '[]');
-  const projects = JSON.parse(portfolio?.projects as string || '[]');
+  const skills: string[] = JSON.parse(portfolio?.skills as string || '[]');
+  const projects: Array<{ name: string; description?: string }> = JSON.parse(portfolio?.projects as string || '[]');
   const ownerName = user.name as string;
   const agentName = (agentConfig?.name || 'Assistant') as string;
 
-  const systemPrompt = `You are ${agentName}, the AI assistant for ${ownerName}'s portfolio on GeekSpace.
-Your role: Help visitors learn about ${ownerName}'s work, skills, and how to get in touch.
-Be friendly, professional, and concise. Keep responses under 150 words.
-
-${ownerName}'s skills: ${skills.join(', ') || 'Not specified'}
-${ownerName}'s projects: ${projects.map((p: Record<string, unknown>) => p.name).join(', ') || 'None published'}
-Portfolio about: ${portfolio?.about || 'No bio'}`;
+  const systemPrompt = buildPortfolioVisitorPrompt({
+    ownerName,
+    agentName,
+    skills,
+    projects,
+    about: (portfolio?.about as string) || '',
+    location: (user.location as string) || undefined,
+    role: (user.role as string) || undefined,
+    company: (user.company as string) || undefined,
+  });
 
   try {
     const result = await routeChat(
