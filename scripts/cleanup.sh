@@ -17,4 +17,4 @@ docker system df
 echo ""
 echo "=== Network connectivity test ==="
 docker exec geekspace-app curl -sf http://ollama-qtzz-ollama-1:11434/api/tags > /dev/null 2>&1 && echo "✅ Ollama: reachable" || echo "❌ Ollama: not reachable"
-docker exec geekspace-app curl -sf http://geekspace-redis:6379 > /dev/null 2>&1 || docker exec geekspace-app redis-cli -h redis ping 2>/dev/null | grep -q PONG && echo "✅ Redis: reachable" || echo "❌ Redis: not reachable"
+docker exec geekspace-redis redis-cli ping 2>/dev/null | grep -q PONG && echo "✅ Redis: reachable" || echo "❌ Redis: not reachable"
