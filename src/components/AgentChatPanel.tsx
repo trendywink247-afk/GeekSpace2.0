@@ -86,10 +86,11 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
       setDeployTask('');
       // Add personality intro message
       if (data.message) {
+        const introContent = data.message;
         setMessages((prev) => [...prev, {
           id: `deploy-intro-${Date.now()}`,
           role: 'agent',
-          content: data.message,
+          content: introContent,
           timestamp: new Date(),
         }, {
           id: `deploy-system-${Date.now()}`,
