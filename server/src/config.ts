@@ -64,9 +64,9 @@ export const config = {
   openrouterFreeBaseUrl: optional('OPENROUTER_FREE_BASE_URL', 'https://openrouter.ai/api/v1'),
   openrouterFreeApiKey: process.env.OPENROUTER_FREE_API_KEY || '',
 
-  // EDITH / OpenClaw — via edith-bridge (WS→HTTP bridge) [legacy, unused]
-  edithGatewayUrl: process.env.EDITH_GATEWAY_URL || '',
-  edithToken: process.env.EDITH_TOKEN || '',
+  // [DEPRECATED] EDITH / OpenClaw — via edith-bridge (WS→HTTP bridge), replaced by direct Moonshot API
+  edithGatewayUrl: process.env.EDITH_GATEWAY_URL || '', // [DEPRECATED]
+  edithToken: process.env.EDITH_TOKEN || '', // [DEPRECATED]
 
   // Moonshot reasoning model (heavy tasks — uses same API key as openrouter)
   moonshotReasoningModel: optional('MOONSHOT_REASONING_MODEL', 'kimi-k2-thinking'),

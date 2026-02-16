@@ -5,7 +5,7 @@ import {
   User, LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard
 } from 'lucide-react';
-import { AlexButton } from '@/components/AlexButton';
+import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentDesignWizard } from '@/components/AgentDesignWizard';
 import { useAuthStore } from '@/stores/authStore';
@@ -364,7 +364,7 @@ export function DashboardApp() {
 
       {/* Floating Alex orb — higher on mobile to clear bottom tabs */}
       <div className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-40">
-        <AlexButton context="dashboard" onOpenChat={() => setChatOpen(true)} />
+        <AgentChatButton context="dashboard" onOpenChat={() => setChatOpen(true)} />
       </div>
 
       {/* Slide-out agent chat */}

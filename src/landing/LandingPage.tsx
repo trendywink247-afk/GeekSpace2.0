@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NeuralBackground } from '../components/NeuralBackground';
-import { Navigation } from '../components/Navigation';
-import { HeroSection } from '../sections/HeroSection';
-import { ConstellationSection } from '../sections/ConstellationSection';
-import { PersonaSection } from '../sections/PersonaSection';
-import { ActivitySection } from '../sections/ActivitySection';
-import { EngineSection } from '../sections/EngineSection';
-import { SecuritySection } from '../sections/SecuritySection';
-import { ContactSection } from '../sections/ContactSection';
+import { NeuralBackground } from '@/components/NeuralBackground';
+import { Navigation } from '@/components/Navigation';
+import { HeroSection } from './sections/HeroSection';
+import { ConstellationSection } from './sections/ConstellationSection';
+import { PersonaSection } from './sections/PersonaSection';
+import { ActivitySection } from './sections/ActivitySection';
+import { EngineSection } from './sections/EngineSection';
+import { SecuritySection } from './sections/SecuritySection';
+import { ContactSection } from './sections/ContactSection';
 
 export function LandingPage() {
   const navigate = useNavigate();

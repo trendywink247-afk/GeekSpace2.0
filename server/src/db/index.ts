@@ -13,6 +13,7 @@ const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../data/geekspac
 
 // Ensure data directory exists
 import fs from 'fs';
+import { logger } from '../logger.js';
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 const db = new Database(DB_PATH);
@@ -497,7 +498,7 @@ function seedDemoData() {
     insertActivity.run(uuid(), 'demo-1', act.action, act.details, act.icon, d.toISOString());
   }
 
-  console.log('Demo data seeded successfully');
+  logger.info('Demo data seeded successfully');
 }
 
 // Only seed demo data when enabled (non-production by default)

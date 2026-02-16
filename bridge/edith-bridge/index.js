@@ -1,3 +1,4 @@
+// LEGACY — This bridge is deprecated. GeekSpace now uses direct API calls. Kept for reference.
 // ============================================================
 // EDITH Bridge — WebSocket-RPC ↔ HTTP bridge for OpenClaw
 //

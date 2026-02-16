@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bot } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 
-interface AlexButtonProps {
+interface AgentChatButtonProps {
   context: 'landing' | 'dashboard' | 'portfolio';
   onOpenChat?: () => void;
 }
@@ -25,7 +25,7 @@ function VoiceWave({ isActive }: { isActive: boolean }) {
   );
 }
 
-export function AlexButton({ context, onOpenChat }: AlexButtonProps) {
+export function AgentChatButton({ context, onOpenChat }: AgentChatButtonProps) {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [isHovered, setIsHovered] = useState(false);
@@ -52,7 +52,7 @@ export function AlexButton({ context, onOpenChat }: AlexButtonProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className="alex-orb group"
-      aria-label="Talk to Alex AI"
+      aria-label="Talk to AI Agent"
     >
       {/* Pulse ring */}
       <span className="absolute inset-0 rounded-full bg-[#7B61FF]/20 animate-[alex-ping_2s_ease-in-out_infinite]" />
@@ -68,7 +68,7 @@ export function AlexButton({ context, onOpenChat }: AlexButtonProps) {
 
       {/* Label tooltip */}
       <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/30 text-xs text-[#F4F6FF] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-        Talk to Alex
+        Talk to Agent
       </span>
     </button>
   );

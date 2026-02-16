@@ -1,0 +1,38 @@
+# GeekSpace 2.0 — Caddy reverse proxy configuration
+# VPS deployment: Hostinger VPS running Caddy (not Nginx) on ports 80/443.
+# Deploy: sudo cp Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
+#
+# Caddy auto-provisions TLS via Let's Encrypt.
+# Frontend is served from /var/www/geekspace/ (static files built by Vite).
+# API runs on localhost:3001 (Node/Express).
+
+{
+	email admin@geekspace.space
+}
+
+ai.geekspace.space {
+	# API — proxy to Express server
+	handle /api/* {
+		reverse_proxy localhost:3001
+	}
+
+	# Static assets — immutable cache (Vite hashed filenames)
+	handle /assets/* {
+		root * /var/www/geekspace
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# SPA fallback — serve index.html for all other routes
+	handle {
+		root * /var/www/geekspace
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+edith.geekspace.space {
+	# [LEGACY] OpenClaw/EDITH direct proxy — deprecated, kept for DNS compatibility
+	reverse_proxy localhost:55550
+}

@@ -1,29 +1,127 @@
 #!/usr/bin/env bash
 # ============================================================
-# GeekSpace 2.0 — health check all components
+# GeekSpace 2.0 — System health check
+# Usage: ./scripts/healthcheck.sh
 # ============================================================
 set -euo pipefail
 
-PORT="${PORT:-3001}"
-BRIDGE_PORT="${BRIDGE_PORT:-8787}"
-OLLAMA_PORT="${OLLAMA_PORT:-11434}"
+PASS=0
+FAIL=0
+WARN=0
 
-echo "=== GeekSpace API (port $PORT) ==="
-curl -sf "http://localhost:$PORT/api/health" 2>/dev/null | python3 -m json.tool 2>/dev/null || echo "  UNREACHABLE"
+pass() { echo "  [PASS] $1"; PASS=$((PASS + 1)); }
+fail() { echo "  [FAIL] $1"; FAIL=$((FAIL + 1)); }
+warn() { echo "  [WARN] $1"; WARN=$((WARN + 1)); }
 
+echo "========================================"
+echo " GeekSpace Health Check"
+echo "========================================"
 echo ""
-echo "=== EDITH Bridge (port $BRIDGE_PORT) ==="
-curl -sf "http://localhost:$BRIDGE_PORT/health" 2>/dev/null | python3 -m json.tool 2>/dev/null || echo "  NOT RUNNING (start with: docker compose --profile edith up -d)"
 
-echo ""
-echo "=== Ollama (port $OLLAMA_PORT) ==="
-MODELS=$(curl -sf "http://localhost:$OLLAMA_PORT/api/tags" 2>/dev/null)
-if [ -n "$MODELS" ]; then
-  echo "$MODELS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'  Models: {len(d.get(\"models\",[]))}'); [print(f'    - {m[\"name\"]}') for m in d.get('models',[])]" 2>/dev/null || echo "  REACHABLE (could not parse models)"
+# ── 1. GeekSpace API ──────────────────────
+echo "-- API --"
+if response=$(curl -sf --max-time 5 http://localhost:3001/api/health 2>/dev/null); then
+    pass "GeekSpace API (localhost:3001)"
+    # Show API health details if jq or python3 available
+    if command -v python3 &>/dev/null; then
+        echo "$response" | python3 -m json.tool 2>/dev/null | sed 's/^/       /'
+    fi
 else
-  echo "  UNREACHABLE"
+    fail "GeekSpace API (localhost:3001) — not responding"
 fi
 
+# ── 2. Redis ──────────────────────────────
+echo "-- Redis --"
+if command -v redis-cli &>/dev/null; then
+    if redis-cli ping 2>/dev/null | grep -q PONG; then
+        pass "Redis (local)"
+    else
+        fail "Redis — not responding to PING"
+    fi
+elif docker exec geekspace-redis redis-cli ping 2>/dev/null | grep -q PONG; then
+    pass "Redis (via Docker)"
+else
+    fail "Redis — not reachable"
+fi
+
+# ── 3. Ollama ─────────────────────────────
+echo "-- Ollama --"
+OLLAMA_URL="${OLLAMA_BASE_URL:-http://localhost:32778}"
+if curl -sf -o /dev/null --max-time 5 "$OLLAMA_URL" 2>/dev/null; then
+    # Count available models
+    model_count=$(curl -sf --max-time 5 "$OLLAMA_URL/api/tags" 2>/dev/null \
+        | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('models',[])))" 2>/dev/null || echo "?")
+    pass "Ollama ($OLLAMA_URL) — $model_count model(s) loaded"
+elif curl -sf -o /dev/null --max-time 5 http://localhost:11434 2>/dev/null; then
+    pass "Ollama (localhost:11434, fallback port)"
+else
+    warn "Ollama — not reachable at $OLLAMA_URL"
+fi
+
+# ── 4. Docker containers ─────────────────
+echo "-- Docker --"
+if command -v docker &>/dev/null; then
+    for container in geekspace-app geekspace-redis; do
+        status=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null || echo "not_found")
+        if [ "$status" = "running" ]; then
+            health=$(docker inspect -f '{{.State.Health.Status}}' "$container" 2>/dev/null || echo "none")
+            if [ "$health" = "healthy" ]; then
+                pass "Container $container (healthy)"
+            elif [ "$health" = "none" ]; then
+                pass "Container $container (running)"
+            else
+                warn "Container $container (running, health: $health)"
+            fi
+        elif [ "$status" = "not_found" ]; then
+            warn "Container $container — not found (may run outside Docker)"
+        else
+            fail "Container $container — status: $status"
+        fi
+    done
+else
+    warn "Docker CLI not available"
+fi
+
+# ── 5. Caddy ─────────────────────────────
+echo "-- Caddy --"
+if systemctl is-active --quiet caddy 2>/dev/null; then
+    pass "Caddy reverse proxy"
+else
+    warn "Caddy — not running (or not managed by systemd)"
+fi
+
+# ── 6. Disk usage ────────────────────────
+echo "-- Disk --"
+disk_pct=$(df / --output=pcent 2>/dev/null | tail -1 | tr -d ' %')
+if [ -n "$disk_pct" ]; then
+    disk_info=$(df -h / --output=used,size 2>/dev/null | tail -1 | xargs)
+    if [ "$disk_pct" -lt 85 ]; then
+        pass "Disk: ${disk_pct}% ($disk_info)"
+    elif [ "$disk_pct" -lt 95 ]; then
+        warn "Disk: ${disk_pct}% ($disk_info) — getting full"
+    else
+        fail "Disk: ${disk_pct}% ($disk_info) — critical"
+    fi
+fi
+
+# ── 7. Memory usage ─────────────────────
+echo "-- Memory --"
+if command -v free &>/dev/null; then
+    mem_info=$(free -m | awk '/^Mem:/ {printf "%dMB / %dMB (%.0f%%)", $3, $2, $3/$2*100}')
+    mem_pct=$(free | awk '/^Mem:/ {printf "%.0f", $3/$2*100}')
+    if [ "$mem_pct" -lt 85 ]; then
+        pass "Memory: $mem_info"
+    elif [ "$mem_pct" -lt 95 ]; then
+        warn "Memory: $mem_info — high"
+    else
+        fail "Memory: $mem_info — critical"
+    fi
+fi
+
+# ── Summary ──────────────────────────────
 echo ""
-echo "=== Docker Containers ==="
-docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -i geekspace
+echo "========================================"
+echo " Results: $PASS passed, $FAIL failed, $WARN warnings"
+echo "========================================"
+
+[ "$FAIL" -eq 0 ] && exit 0 || exit 1

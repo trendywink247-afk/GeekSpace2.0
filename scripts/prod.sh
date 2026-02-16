@@ -1,34 +1,61 @@
 #!/usr/bin/env bash
 # ============================================================
-# GeekSpace 2.0 — production deploy
-#
-# Usage:
-#   ./scripts/prod.sh              # core only (geekspace + redis)
-#   ./scripts/prod.sh --edith      # core + edith-bridge
+# GeekSpace 2.0 — Production deployment
+# Usage: ./scripts/prod.sh
 # ============================================================
 set -euo pipefail
-cd "$(dirname "$0")/.."
 
-PROFILE_FLAG=""
-if [[ "${1:-}" == "--edith" ]]; then
-  PROFILE_FLAG="--profile edith"
-  echo "▸ EDITH bridge enabled"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_DIR"
+
+echo "========================================"
+echo " GeekSpace Production Deploy"
+echo "========================================"
+echo ""
+
+# ── 1. Pull latest code ──────────────────
+echo ">> Pulling latest code..."
+git pull --ff-only
+echo ""
+
+# ── 2. Build Docker images ───────────────
+echo ">> Building Docker images..."
+docker compose build
+echo ""
+
+# ── 3. Deploy ────────────────────────────
+echo ">> Starting containers..."
+docker compose up -d
+echo ""
+
+# ── 4. Wait for startup ─────────────────
+echo ">> Waiting for services to start..."
+for i in $(seq 1 30); do
+    if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
+        echo "   API ready after ${i}s"
+        break
+    fi
+    if [ "$i" -eq 30 ]; then
+        echo "   API not ready after 30s — continuing with healthcheck"
+    fi
+    sleep 1
+done
+echo ""
+
+# ── 5. Health check ──────────────────────
+echo ">> Running health check..."
+echo ""
+if bash "$SCRIPT_DIR/healthcheck.sh"; then
+    echo ""
+    echo "Deploy successful."
+else
+    echo ""
+    echo "Deploy completed with issues."
+    echo "Check logs: docker compose logs --tail=50"
 fi
 
-echo "▸ Building and starting services..."
-docker compose $PROFILE_FLAG up -d --build
-
-echo "▸ Waiting for health check (up to 30s)..."
-for i in $(seq 1 30); do
-  if curl -sf http://localhost:${PORT:-3001}/api/health > /dev/null 2>&1; then
-    echo "▸ GeekSpace is healthy!"
-    curl -s http://localhost:${PORT:-3001}/api/health | python3 -m json.tool 2>/dev/null || \
-      curl -s http://localhost:${PORT:-3001}/api/health
-    exit 0
-  fi
-  sleep 1
-done
-
-echo "✗ Health check failed after 30s"
-docker compose logs --tail=20 geekspace
-exit 1
+# ── 6. Container status ─────────────────
+echo ""
+echo "-- Container Status --"
+docker compose ps
