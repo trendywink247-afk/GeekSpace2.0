@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema, memoryCreateSchema, memoryUpdateSchema, deployPremiumSchema, premiumChatSchema } from '../middleware/validate.js';
+import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema, memoryCreateSchema, memoryUpdateSchema, deployPremiumSchema, premiumChatSchema, workflowQuerySchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { routeChat, classifyIntent, computeCreditCost, deductSubscriptionCredits, streamOllama, type ChatMessage, type Provider } from '../services/llm.js';
 import { edithChat } from '../services/edith.js';
@@ -12,6 +12,9 @@ import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/
 import { checkKeywordTriggers } from '../services/automations-engine.js';
 import { buildMemoryContext, logConversation, extractMemories, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory } from '../services/memory.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
+import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeRequest } from '../services/pico-kimi-bridge.js';
+import { getUserWorkflows, getWorkflowStatus, getWorkflowAnalytics } from '../services/workflow-engine.js';
+import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } from '../services/agent-registry.js';
 
 export const agentRouter = Router();
 
@@ -127,8 +130,9 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     logConversation(userId, 'user', message);
     extractMemories(userId, message);
 
-    // ---- Parse route prefix: /premium, /edith, /local, /pico, or auto ----
-    let forceRoute: 'premium' | 'local' | 'pico' | null = null;
+    // ---- Parse route prefix: /premium, /edith, /local, /pico, /bridge, or auto ----
+    let forceRoute: 'premium' | 'local' | 'pico' | 'bridge' | null = null;
+    let forceAgent: AgentRole | undefined;
 
     if (message.startsWith('/premium ') || message.startsWith('/edith ')) {
       forceRoute = 'premium';
@@ -140,6 +144,27 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     } else if (message.startsWith('/pico ')) {
       forceRoute = 'pico';
       message = message.slice(6).trim();
+    } else if (message.startsWith('/bridge ') || message.startsWith('/workflow ')) {
+      forceRoute = 'bridge';
+      const prefixLen = message.startsWith('/bridge ') ? 8 : 10;
+      message = message.slice(prefixLen).trim();
+    } else if (message.startsWith('/agent:')) {
+      // Force a specific agent: /agent:coder, /agent:planner, etc.
+      forceRoute = 'bridge';
+      const match = message.match(/^\/agent:(\w+)\s+(.+)$/s);
+      if (match) {
+        const requestedRole = match[1];
+        const validRoles = getAgentRoles();
+        if (validRoles.includes(requestedRole as AgentRole)) {
+          forceAgent = requestedRole as AgentRole;
+          message = match[2].trim();
+        } else {
+          res.status(400).json({
+            error: `Unknown agent role: "${requestedRole}". Valid roles: ${validRoles.join(', ')}`,
+          });
+          return;
+        }
+      }
     }
 
     // ---- Premium route: explicit opt-in via prefix ----
@@ -187,6 +212,65 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
       } catch (err) {
         logger.warn({ err, userId }, 'Premium (Moonshot) call failed, falling back to local');
         // Fall through to local router
+      }
+    }
+
+    // ---- Bridge route: Pico-Kimi orchestration (multi-agent workflows) ----
+    if (forceRoute === 'bridge') {
+      try {
+        const history = getConversationContext(userId);
+        const bridgeReq: BridgeRequest = {
+          userId,
+          message,
+          systemPrompt,
+          conversationHistory: history,
+          forceAgent,
+          forceWorkflow: forceAgent ? false : (message.length > 100),
+          userCredits,
+        };
+
+        const bridgeResult = await bridgeChat(bridgeReq);
+
+        // Log usage
+        db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 'web', 'ai.bridge')`).run(
+          uuid(), userId, bridgeResult.provider, bridgeResult.model,
+          bridgeResult.tokensIn, bridgeResult.tokensOut, bridgeResult.creditCost,
+        );
+
+        // Deduct credits
+        if (bridgeResult.creditCost > 0) {
+          db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(bridgeResult.creditCost, userId);
+          deductSubscriptionCredits(userId, bridgeResult.creditCost);
+        }
+
+        const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? userCredits;
+
+        // Log assistant response
+        logConversation(userId, 'assistant', bridgeResult.text, bridgeResult.provider, bridgeResult.model);
+
+        const response: Record<string, unknown> = {
+          text: bridgeResult.text,
+          route: bridgeResult.route,
+          tier: bridgeResult.route === 'pico-direct' ? 'local' : 'premium',
+          latencyMs: bridgeResult.latencyMs,
+          provider: bridgeResult.provider,
+          model: bridgeResult.model,
+          creditsUsed: bridgeResult.creditCost,
+          creditsRemaining: updatedCredits,
+          complexity: bridgeResult.complexity,
+          agentsUsed: bridgeResult.agentsUsed,
+          workflowId: bridgeResult.workflowId,
+        };
+        if (bridgeResult.steps) {
+          response.steps = bridgeResult.steps;
+        }
+
+        res.json(response);
+        return;
+      } catch (err) {
+        logger.warn({ err, userId }, 'Bridge route failed, falling back to standard router');
+        // Fall through to standard local router
       }
     }
 
@@ -423,7 +507,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
   }
 
   if (cmd === 'help') {
-    res.json({ output: `GeekSpace Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs credits                Check credit balance\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  ai "prompt"               Ask your AI agent (real LLM)\n  clear                     Clear terminal\n  help                      Show this help`, isError: false });
+    res.json({ output: `GeekSpace Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs credits                Check credit balance\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  ai "prompt"               Ask your AI agent (real LLM)\n  clear                     Clear terminal\n  help                      Show this help\n\nChat Prefixes:\n  /bridge <msg>             Multi-agent orchestration\n  /workflow <msg>           Alias for /bridge\n  /agent:<role> <msg>       Force specific agent (coder, planner, analyst, etc.)\n  /premium <msg>            Force Kimi premium reasoning\n  /local <msg>              Force local Ollama\n  /pico <msg>               Force PicoClaw`, isError: false });
     return;
   }
 
@@ -772,4 +856,75 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
       personalityEmoji: personality.emoji,
     });
   }
+});
+
+// ============================================================
+// Pico-Kimi Bridge — Workflow & Agent Orchestration Endpoints
+// ============================================================
+
+// ---- Agent Registry (public) ----
+
+agentRouter.get('/agents', (_req, res) => {
+  const agents = getAllAgentDefinitions().map(a => ({
+    role: a.role,
+    name: a.name,
+    description: a.description,
+    capabilities: a.capabilities,
+    costMultiplier: a.costMultiplier,
+  }));
+  res.json(agents);
+});
+
+// ---- Workflow History ----
+
+agentRouter.get('/workflows', requireAuth, (req: AuthRequest, res) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+  const workflows = getUserWorkflows(req.userId!, limit);
+  res.json(workflows);
+});
+
+// ---- Workflow Status ----
+
+agentRouter.get('/workflows/:workflowId', requireAuth, (req: AuthRequest, res) => {
+  const status = getWorkflowStatus(req.params.workflowId, req.userId!);
+  if (!status) {
+    res.status(404).json({ error: 'Workflow not found' });
+    return;
+  }
+  res.json(status);
+});
+
+// ---- Workflow Analytics ----
+
+agentRouter.get('/workflows-analytics', requireAuth, (req: AuthRequest, res) => {
+  const analytics = getWorkflowAnalytics(req.userId!);
+  res.json(analytics);
+});
+
+// ---- Bridge Events (debugging/analytics) ----
+
+agentRouter.get('/bridge-events', requireAuth, (req: AuthRequest, res) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+  const events = getRecentBridgeEvents(req.userId!, limit);
+  res.json(events);
+});
+
+// ---- Complexity Preview (dry run — shows what the bridge would do) ----
+
+agentRouter.post('/bridge-preview', requireAuth, validateBody(chatSchema), (req: AuthRequest, res) => {
+  const { message } = req.body as { message: string };
+  const complexity = classifyComplexity(message);
+
+  const selectedAgents = selectAgents(message, 3);
+
+  res.json({
+    complexity,
+    selectedAgents,
+    wouldUseWorkflow: complexity === 'complex' || complexity === 'multi-step',
+    estimatedCreditRange: complexity === 'trivial' ? '1'
+      : complexity === 'simple' ? '1-5'
+      : complexity === 'moderate' ? '5-20'
+      : complexity === 'complex' ? '20-80'
+      : '50-200',
+  });
 });

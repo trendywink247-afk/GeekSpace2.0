@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
+import crypto from 'crypto';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, permissionsUpdateSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
+import { getBotUsername } from '../services/telegram.js';
+import { config } from '../config.js';
 
 export const integrationsRouter = Router();
 
@@ -50,4 +53,104 @@ integrationsRouter.patch('/:id/permissions', requireAuth, validateBody(permissio
   db.prepare('UPDATE integrations SET permissions = ? WHERE id = ?').run(JSON.stringify(req.body.permissions || []), req.params.id);
   const updated = db.prepare('SELECT * FROM integrations WHERE id = ?').get(req.params.id) as Record<string, unknown>;
   res.json(parseIntegration(updated));
+});
+
+// ================================================================
+// Telegram Account Linking
+// ================================================================
+
+// Generate a link code and return a Telegram deep link
+integrationsRouter.post('/telegram/link', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  if (!config.telegramBotToken) {
+    res.status(503).json({ error: 'Telegram bot is not configured on this server.' });
+    return;
+  }
+
+  // Check if already linked
+  const existing = db.prepare(
+    "SELECT id, external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram'"
+  ).get(userId) as { id: string; external_id: string } | undefined;
+
+  if (existing) {
+    res.json({
+      linked: true,
+      externalId: existing.external_id,
+      message: 'Telegram is already linked.',
+    });
+    return;
+  }
+
+  // Generate a 6-character code
+  const code = crypto.randomBytes(3).toString('hex').toUpperCase();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min
+
+  // Clean up old codes for this user
+  db.prepare("DELETE FROM link_codes WHERE user_id = ? AND channel = 'telegram'").run(userId);
+
+  // Insert new code
+  db.prepare('INSERT INTO link_codes (code, user_id, channel, expires_at) VALUES (?, ?, ?, ?)')
+    .run(code, userId, 'telegram', expiresAt);
+
+  const botName = getBotUsername();
+  const deepLink = botName
+    ? `https://t.me/${botName}?start=link_${code}`
+    : null;
+
+  res.json({
+    linked: false,
+    code,
+    deepLink,
+    botUsername: botName || null,
+    expiresIn: 600, // seconds
+    message: deepLink
+      ? `Open the link or send "LINK ${code}" to the bot.`
+      : `Send "/start link_${code}" to the Telegram bot.`,
+  });
+});
+
+// Check Telegram link status
+integrationsRouter.get('/telegram/status', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  const link = db.prepare(
+    "SELECT external_id, external_username, linked_at, last_message_at FROM channel_links WHERE user_id = ? AND channel = 'telegram'"
+  ).get(userId) as { external_id: string; external_username: string; linked_at: string; last_message_at: string | null } | undefined;
+
+  if (link) {
+    res.json({
+      linked: true,
+      externalId: link.external_id,
+      username: link.external_username,
+      linkedAt: link.linked_at,
+      lastMessageAt: link.last_message_at,
+    });
+  } else {
+    res.json({ linked: false });
+  }
+});
+
+// Unlink Telegram
+integrationsRouter.delete('/telegram/link', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  const link = db.prepare(
+    "SELECT id FROM channel_links WHERE user_id = ? AND channel = 'telegram'"
+  ).get(userId) as { id: string } | undefined;
+
+  if (!link) {
+    res.status(404).json({ error: 'No Telegram link found.' });
+    return;
+  }
+
+  db.prepare('DELETE FROM channel_links WHERE id = ?').run(link.id);
+  db.prepare(
+    "UPDATE integrations SET status = 'disconnected', health = 0 WHERE user_id = ? AND type = 'telegram'"
+  ).run(userId);
+
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Unlinked Telegram', 'Telegram bot disconnected', 'unlink')`)
+    .run(uuid(), userId);
+
+  res.json({ success: true });
 });

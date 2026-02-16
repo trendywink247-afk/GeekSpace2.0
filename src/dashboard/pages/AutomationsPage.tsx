@@ -62,6 +62,7 @@ const triggerColors: Record<AutomationTrigger, string> = {
 const actionIcons: Record<AutomationAction, typeof Send> = {
   'n8n-webhook': Globe,
   'telegram-message': Send,
+  'whatsapp-message': Send,
   'portfolio-update': RefreshCw,
   'manychat-broadcast': MessageSquare,
   'call_api': Phone,
@@ -72,6 +73,7 @@ const actionIcons: Record<AutomationAction, typeof Send> = {
 const actionLabels: Record<AutomationAction, string> = {
   'n8n-webhook': 'n8n Webhook',
   'telegram-message': 'Telegram Message',
+  'whatsapp-message': 'WhatsApp Message',
   'portfolio-update': 'Portfolio Update',
   'manychat-broadcast': 'ManyChat Broadcast',
   'call_api': 'API Call',

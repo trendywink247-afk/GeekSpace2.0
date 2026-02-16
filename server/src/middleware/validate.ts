@@ -243,3 +243,9 @@ export const memoryUpdateSchema = z.object({
   value: z.string().min(1).max(2000).optional(),
   confidence: z.number().min(0).max(1).optional(),
 });
+
+// ---- Workflow schemas ----
+
+export const workflowQuerySchema = z.object({
+  limit: z.number().min(1).max(100).optional().default(20),
+});
