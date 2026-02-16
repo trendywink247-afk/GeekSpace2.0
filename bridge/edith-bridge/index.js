@@ -85,25 +85,64 @@ class OpenClawClient {
     });
 
     this.ws.on('open', () => {
-      this.connected = true;
       this.reconnectAttempt = 0;
       log('info', 'WebSocket connected');
 
-      // Send authentication handshake — OpenClaw gateway requires this as first frame
-      if (TOKEN) {
-        const authFrame = JSON.stringify({ type: 'auth', token: TOKEN });
-        try {
-          this.ws.send(authFrame);
-          log('info', 'Auth handshake sent');
-        } catch (err) {
-          log('error', 'Failed to send auth handshake', { error: err.message });
-        }
-      }
+      // Delay handshake to give the OpenClaw proxy time to establish
+      // its internal WebSocket connection to the gateway (race condition fix)
+      setTimeout(() => {
+        if (this.ws?.readyState !== WebSocket.OPEN) return;
 
-      this._startPing();
+        // Send OpenClaw protocol v3 connect handshake
+        const connectId = randomUUID();
+        const connectFrame = JSON.stringify({
+          type: 'req',
+          id: connectId,
+          method: 'connect',
+          params: {
+            minProtocol: 1,
+            maxProtocol: 3,
+            client: {
+              id: 'gateway-client',
+              version: '1.0.0',
+              platform: 'linux',
+              mode: 'backend',
+            },
+            auth: { token: TOKEN },
+            scopes: ['operator.write'],
+          },
+        });
+
+        try {
+          this.ws.send(connectFrame);
+          log('info', 'Connect handshake sent', { id: connectId });
+        } catch (err) {
+          log('error', 'Failed to send connect handshake', { error: err.message });
+        }
+      }, 1000);
     });
 
-    this.ws.on('message', (data) => this._onMessage(data.toString()));
+    this.ws.on('message', (data) => {
+      const raw = data.toString();
+
+      // Check for connect response to mark connection as ready
+      if (!this.connected) {
+        try {
+          const frame = JSON.parse(raw);
+          if (frame.type === 'res' && frame.ok !== false) {
+            this.connected = true;
+            log('info', 'Gateway handshake accepted', { protocol: frame.result?.protocol });
+            this._startPing();
+            return;
+          } else if (frame.type === 'res' && frame.ok === false) {
+            log('error', 'Gateway handshake rejected', { error: frame.error });
+            return;
+          }
+        } catch { /* pass through to normal handler */ }
+      }
+
+      this._onMessage(raw);
+    });
 
     this.ws.on('close', (code, reason) => {
       this.connected = false;
@@ -206,7 +245,7 @@ class OpenClawClient {
       this.pending.set(id, { resolve, reject, timer });
 
       try {
-        const frame = JSON.stringify({ id, method, params });
+        const frame = JSON.stringify({ type: 'req', id, method, params });
         this.ws.send(frame);
         log('debug', 'RPC sent', { id, method });
       } catch (err) {
