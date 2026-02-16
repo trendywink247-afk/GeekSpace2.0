@@ -238,6 +238,31 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_automations_user ON automations(user_id);
   CREATE INDEX IF NOT EXISTS idx_agent_configs_user ON agent_configs(user_id);
   CREATE INDEX IF NOT EXISTS idx_usage_events_user_date ON usage_events(user_id, created_at);
+
+  -- Channel links: map Telegram/WhatsApp external IDs to GeekSpace users
+  CREATE TABLE IF NOT EXISTS channel_links (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    channel TEXT NOT NULL,
+    external_id TEXT NOT NULL,
+    external_username TEXT DEFAULT '',
+    linked_at TEXT DEFAULT (datetime('now')),
+    last_message_at TEXT,
+    is_verified INTEGER DEFAULT 1,
+    metadata TEXT DEFAULT '{}',
+    UNIQUE(channel, external_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_channel_links_user ON channel_links(user_id);
+  CREATE INDEX IF NOT EXISTS idx_channel_links_ext ON channel_links(channel, external_id);
+
+  -- Link codes: temporary codes for account linking via bots
+  CREATE TABLE IF NOT EXISTS link_codes (
+    code TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    channel TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    expires_at TEXT NOT NULL
+  );
 `);
 
 // ── Migrations (safe to run on existing DBs) ────────────────

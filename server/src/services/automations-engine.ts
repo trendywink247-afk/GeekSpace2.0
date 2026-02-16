@@ -77,26 +77,72 @@ async function executeAction(
           'Content-Type': 'application/json',
           ...actionConfig.headers,
         };
-        const res = await fetch(url, {
-          method,
-          headers,
-          body: method !== 'GET' ? (actionConfig.body || JSON.stringify({
+
+        // Build payload — include channel context if available
+        let bodyPayload: Record<string, unknown>;
+        if (actionConfig.body) {
+          bodyPayload = JSON.parse(actionConfig.body);
+        } else {
+          bodyPayload = {
             automation: automation.name,
             trigger: triggerContext || automation.trigger_type,
             timestamp: new Date().toISOString(),
-          })) : undefined,
+            userId: automation.user_id,
+          };
+        }
+
+        // Inject channel context for agentic task relay
+        if (triggerContext?.startsWith('channel:')) {
+          try {
+            const channelCtx = JSON.parse(triggerContext.slice(8));
+            bodyPayload.channelContext = channelCtx;
+          } catch { /* ignore parse errors */ }
+        }
+
+        const res = await fetch(url, {
+          method,
+          headers,
+          body: method !== 'GET' ? JSON.stringify(bodyPayload) : undefined,
           signal: AbortSignal.timeout(30000),
         });
         output = `HTTP ${res.status} ${res.statusText}`;
         if (!res.ok) throw new Error(output);
+
+        // Capture response body if n8n returns a reply
+        try {
+          const responseBody = await res.json() as { reply?: string; message?: string };
+          if (responseBody.reply || responseBody.message) {
+            output = responseBody.reply || responseBody.message || output;
+          }
+        } catch { /* no JSON body */ }
         break;
       }
 
       case 'telegram-message': {
-        // Queue message via internal chat if Telegram not configured directly
         const message = actionConfig.message || `[Automation] ${automation.name} triggered`;
-        output = `Message queued: ${message}`;
+        // Try to send via Telegram if user has a linked account
+        try {
+          const link = db.prepare(
+            "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram'"
+          ).get(automation.user_id) as { external_id: string } | undefined;
+          if (link) {
+            const { sendTelegramMessage } = await import('./telegram.js');
+            await sendTelegramMessage(link.external_id, message);
+            output = `Telegram message sent: ${message}`;
+          } else {
+            output = `Message queued (no Telegram link): ${message}`;
+          }
+        } catch (err) {
+          output = `Message queued (send failed): ${message}`;
+        }
         logger.info({ automationId: automation.id, message }, 'Telegram message action');
+        break;
+      }
+
+      case 'whatsapp-message': {
+        const message = actionConfig.message || `[Automation] ${automation.name} triggered`;
+        output = `WhatsApp message queued: ${message}`;
+        logger.info({ automationId: automation.id, message }, 'WhatsApp message action (not yet implemented)');
         break;
       }
 

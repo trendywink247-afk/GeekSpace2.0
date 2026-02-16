@@ -85,6 +85,10 @@ export const config = {
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
   telegramWebhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET || '',
 
+  // n8n (workflow automation)
+  n8nBaseUrl: optional('N8N_BASE_URL', 'http://n8n:5678'),
+  n8nWebhookSecret: process.env.N8N_WEBHOOK_SECRET || '',
+
   // Rate limiting
   rateLimitWindowMs: optionalInt('RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000),
   rateLimitMax: optionalInt('RATE_LIMIT_MAX', 200),
