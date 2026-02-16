@@ -35,6 +35,11 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
     INSERT INTO features (user_id) VALUES (?)
   `).run(id);
 
+  // Create default subscription (free plan)
+  db.prepare(`
+    INSERT INTO subscriptions (id, user_id) VALUES (?, ?)
+  `).run(uuid(), id);
+
   // Create default portfolio
   db.prepare(`
     INSERT INTO portfolios (user_id, username) VALUES (?, ?)

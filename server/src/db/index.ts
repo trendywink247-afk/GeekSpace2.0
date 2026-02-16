@@ -191,6 +191,24 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS subscriptions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    plan TEXT DEFAULT 'free',
+    status TEXT DEFAULT 'active',
+    monthly_credits INTEGER DEFAULT 5000,
+    credits_remaining INTEGER DEFAULT 5000,
+    credits_used_this_cycle INTEGER DEFAULT 0,
+    billing_interval_days INTEGER DEFAULT 30,
+    billing_cycle_start TEXT DEFAULT (datetime('now')),
+    billing_cycle_end TEXT DEFAULT (datetime('now', '+30 days')),
+    price_usd REAL DEFAULT 0,
+    price_inr REAL DEFAULT 0,
+    currency TEXT DEFAULT 'USD',
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
   CREATE INDEX IF NOT EXISTS idx_reminders_user ON reminders(user_id);
   CREATE INDEX IF NOT EXISTS idx_integrations_user ON integrations(user_id);
   CREATE INDEX IF NOT EXISTS idx_usage_events_user ON usage_events(user_id);
@@ -215,6 +233,38 @@ try {
 try {
   db.exec(`ALTER TABLE agent_configs ADD COLUMN personality TEXT DEFAULT 'jarvis'`);
 } catch { /* column already exists — ignore */ }
+
+try {
+  db.exec(`ALTER TABLE subscriptions ADD COLUMN billing_interval_days INTEGER DEFAULT 30`);
+} catch { /* column already exists — ignore */ }
+
+try {
+  db.exec(`ALTER TABLE subscriptions ADD COLUMN price_inr REAL DEFAULT 0`);
+} catch { /* column already exists — ignore */ }
+
+try {
+  db.exec(`ALTER TABLE subscriptions ADD COLUMN currency TEXT DEFAULT 'USD'`);
+} catch { /* column already exists — ignore */ }
+
+// ── Plan definitions ────────────────────────────────────────
+
+export interface PlanDefinition {
+  credits: number;
+  priceUsd: number;
+  priceInr: number;
+  intervalDays: number;
+  intervalLabel: string;
+  description: string;
+  badge?: string;
+}
+
+export const PLAN_DEFINITIONS: Record<string, PlanDefinition> = {
+  free:     { credits: 5000,    priceUsd: 0,  priceInr: 0,    intervalDays: 30,  intervalLabel: 'month',    description: 'Local Engine only' },
+  intro:    { credits: 100000,  priceUsd: 10, priceInr: 999,  intervalDays: 60,  intervalLabel: '2 months', description: 'All engines + personalities — first 2 months', badge: 'Best to start' },
+  monthly:  { credits: 100000,  priceUsd: 10, priceInr: 999,  intervalDays: 30,  intervalLabel: 'month',    description: 'All engines + personalities' },
+  halfyear: { credits: 700000,  priceUsd: 30, priceInr: 2999, intervalDays: 180, intervalLabel: '6 months', description: 'Everything + priority support', badge: 'Most popular' },
+  yearly:   { credits: 1500000, priceUsd: 50, priceInr: 4999, intervalDays: 365, intervalLabel: 'year',     description: 'Everything + premium reasoning + automations', badge: 'Best value' },
+};
 
 // ── Seed demo data ──────────────────────────────────────────
 
@@ -358,6 +408,18 @@ function seedDemoData() {
     INSERT INTO features (user_id, social_discovery, portfolio_chat, automation_builder, website_builder, n8n_integration, manychat_integration)
     VALUES (?, 1, 1, 1, 0, 1, 0)
   `).run('demo-1');
+
+  // Subscriptions for demo users
+  const insertSub = db.prepare(`
+    INSERT INTO subscriptions (id, user_id, plan, monthly_credits, credits_remaining, credits_used_this_cycle, billing_interval_days, price_usd, price_inr, currency)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  insertSub.run(uuid(), 'demo-1', 'yearly',   1500000, 1420000, 80000, 365, 50, 4999, 'INR');
+  insertSub.run(uuid(), 'demo-2', 'monthly',   100000,  98200,  1800,  30,  10, 999,  'USD');
+  insertSub.run(uuid(), 'demo-3', 'halfyear',  700000,  685000, 15000, 180, 30, 2999, 'USD');
+  for (let i = 4; i <= 8; i++) {
+    insertSub.run(uuid(), `demo-${i}`, 'free', 5000, 5000, 0, 30, 0, 0, 'USD');
+  }
 
   // Seed some usage events
   const insertEvent = db.prepare(`

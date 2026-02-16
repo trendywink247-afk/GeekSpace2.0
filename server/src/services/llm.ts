@@ -341,33 +341,61 @@ async function callMoonshotReasoning(messages: ChatMessage[]): Promise<{ content
 
 // ---- Credit Cost ----
 //
-// Credits are the user-facing currency.  1 credit ≈ processing
-// ~200 tokens on the standard cloud model.  Ollama is always free.
+// Every AI call costs at least 1 credit so the meter always moves.
 //
-// Rates (credits per 1K tokens, input+output combined):
-//   ollama / builtin  →  0  (free, local)
-//   openrouter (k2.5) →  5
-//   edith (k2-think)  → 10
+// Flat costs per call:
+//   ollama           →  1 (local, cheap)
+//   openrouter-free  →  2 (free cloud models)
+//   picoclaw         →  1 (automation sidecar)
+//   builtin          →  0 (fallback, no real AI)
 //
-// Minimum per premium call: 10 credits (prevents zero-cost micro-queries).
+// Token-based costs (per 1K tokens):
+//   openrouter (k2.5)       →  5
+//   edith (k2-thinking)     → 10
+//
+// Minimum per premium call: 10 credits.
 
-const CREDIT_RATES: Record<Provider, number> = {
-  ollama:              0,
-  'openrouter-free':   0,   // free cloud models (Llama 3.3 70B etc.)
-  openrouter:          5,   // kimi-k2.5 — standard cloud
-  edith:               10,  // kimi-k2-thinking — heavy reasoning
-  picoclaw:            0,   // lightweight sidecar — free
-  builtin:             0,
+import { db } from '../db/index.js';
+
+const FLAT_CREDIT_COSTS: Partial<Record<Provider, number>> = {
+  ollama:            1,
+  'openrouter-free': 2,
+  picoclaw:          1,
+  builtin:           0,
+};
+
+const TOKEN_CREDIT_RATES: Partial<Record<Provider, number>> = {
+  openrouter: 5,   // kimi-k2.5 — standard cloud
+  edith:      10,  // kimi-k2-thinking — heavy reasoning
 };
 
 const MIN_PREMIUM_CREDITS = 10;
 
 export function computeCreditCost(provider: Provider, tokensIn: number, tokensOut: number): number {
-  const rate = CREDIT_RATES[provider] ?? 0;
-  if (rate === 0) return 0;
-  const totalTokens = tokensIn + tokensOut;
-  const cost = Math.ceil((totalTokens / 1000) * rate);
-  return Math.max(cost, MIN_PREMIUM_CREDITS);
+  // Flat-cost providers
+  const flat = FLAT_CREDIT_COSTS[provider];
+  if (flat !== undefined) return flat;
+
+  // Token-based providers
+  const rate = TOKEN_CREDIT_RATES[provider];
+  if (rate) {
+    const totalTokens = tokensIn + tokensOut;
+    const cost = Math.ceil((totalTokens / 1000) * rate);
+    return Math.max(cost, MIN_PREMIUM_CREDITS);
+  }
+
+  return 0;
+}
+
+// Deduct credits from the subscription table after each LLM call
+export function deductSubscriptionCredits(userId: string, credits: number): void {
+  if (credits <= 0) return;
+  db.prepare(`
+    UPDATE subscriptions
+    SET credits_remaining = MAX(0, credits_remaining - ?),
+        credits_used_this_cycle = credits_used_this_cycle + ?
+    WHERE user_id = ?
+  `).run(credits, credits, userId);
 }
 
 // Legacy USD estimate (kept for usage_events.cost_usd column)

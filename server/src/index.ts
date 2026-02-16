@@ -29,6 +29,7 @@ import { dashboardRouter } from './routes/dashboard.js';
 import { directoryRouter } from './routes/directory.js';
 import { apiKeysRouter } from './routes/apiKeys.js';
 import { featuresRouter } from './routes/features.js';
+import { billingRouter } from './routes/billing.js';
 
 const app = express();
 
@@ -159,6 +160,7 @@ app.use('/api/dashboard', dashboardRouter);
 app.use('/api/directory', directoryRouter);
 app.use('/api/api-keys', apiKeysRouter);
 app.use('/api/features', featuresRouter);
+app.use('/api/billing', billingRouter);
 
 // ---- Global error handler (MUST be last) ----
 app.use(errorHandler);

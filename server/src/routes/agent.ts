@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema, memoryCreateSchema, memoryUpdateSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
-import { routeChat, classifyIntent, computeCreditCost, streamOllama, type ChatMessage, type Provider } from '../services/llm.js';
+import { routeChat, classifyIntent, computeCreditCost, deductSubscriptionCredits, streamOllama, type ChatMessage, type Provider } from '../services/llm.js';
 import { edithChat } from '../services/edith.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
@@ -107,6 +107,21 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     const systemPrompt = buildSystemPrompt(agentConfig, user, userId, message);
     const userCredits = (user?.credits as number) || 0;
 
+    // Check subscription credits
+    const sub = db.prepare('SELECT credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number; billing_cycle_end: string } | undefined;
+    if (sub && sub.credits_remaining <= 0) {
+      res.json({
+        text: `You've used all your credits for this month! They reset on ${sub.billing_cycle_end.split('T')[0]}. Upgrade your plan for more.`,
+        route: 'error',
+        tier: 'local',
+        provider: 'builtin',
+        latencyMs: 0,
+        creditsUsed: 0,
+        creditsRemaining: 0,
+      });
+      return;
+    }
+
     // Log user message + extract memories (non-blocking)
     logConversation(userId, 'user', message);
     extractMemories(userId, message);
@@ -154,6 +169,7 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
 
         // Deduct credits
         db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(creditCost, userId);
+        deductSubscriptionCredits(userId, creditCost);
         const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? 0;
 
         res.json({
@@ -198,10 +214,11 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
       result.tokensIn, result.tokensOut, result.creditCost,
     );
 
-    // Deduct credits for premium tier
+    // Deduct credits
     if (result.creditCost > 0) {
       db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(result.creditCost, userId);
     }
+    deductSubscriptionCredits(userId, result.creditCost);
 
     const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? userCredits;
 
