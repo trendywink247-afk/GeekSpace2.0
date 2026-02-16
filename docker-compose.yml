@@ -1,4 +1,6 @@
-version: "3.9"
+# NOTE: Ollama and OpenClaw containers are managed externally by Hostinger.
+# They are NOT part of this compose file. GeekSpace connects to them via
+# the geekspace-shared network using their container names.
 
 services:
   # ---- GeekSpace API + Frontend ----
@@ -14,7 +16,8 @@ services:
       - PORT=3001
       - DB_PATH=/app/data/geekspace.db
       - REDIS_URL=redis://redis:6379
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
+      # Set to your actual Ollama container name/address
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:7b}
       - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://edith-bridge:8787}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
@@ -32,6 +35,10 @@ services:
       timeout: 10s
       start_period: 30s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   # ---- EDITH Bridge (WS-RPC → HTTP for OpenClaw) ----
   edith-bridge:
@@ -40,7 +47,8 @@ services:
     restart: unless-stopped
     profiles: ["edith"]
     environment:
-      - EDITH_OPENCLAW_WS=${EDITH_OPENCLAW_WS:-ws://openclaw-1xzv-openclaw-1:55550}
+      # Set to your actual OpenClaw container name/address
+      - EDITH_OPENCLAW_WS=${EDITH_OPENCLAW_WS:-ws://openclaw:55550}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
       - OPENCLAW_CHAT_METHOD=${OPENCLAW_CHAT_METHOD:-chat.completions}
       - BRIDGE_PORT=8787
@@ -55,6 +63,10 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
   # ---- Redis ----
   redis:
@@ -71,6 +83,10 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
 volumes:
   geekspace-data:
