@@ -1,6 +1,10 @@
-# OpenClaw — The Brain Behind GeekSpace
+# OpenClaw — Historical Reference
 
-> One document. Everything OpenClaw needs to know about itself, GeekSpace, and how to think.
+> **DEPRECATED**: The OpenClaw WebSocket bridge has been replaced by direct Moonshot API integration via OpenRouter. GeekSpace now uses a multi-engine LLM router (Ollama + OpenRouter + Moonshot) with no WebSocket bridge. This document is kept for historical reference only. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the current architecture.
+
+---
+
+> Original document below (written when OpenClaw was the primary reasoning engine).
 
 ---
 

@@ -2,123 +2,110 @@
 
 ## Prerequisites
 
-- VPS with Docker and Docker Compose v2 installed
-- Caddy (or any reverse proxy) for HTTPS termination
-- Ollama running on the host (optional but recommended)
-- OpenClaw running on the host (optional — for Premium Engine)
+| Requirement | Minimum | Recommended |
+|-------------|---------|-------------|
+| VPS | 2 vCPU, 4 GB RAM | 4 vCPU, 12-16 GB RAM |
+| OS | Ubuntu 22.04+ / Debian 12+ | Ubuntu 24.04 |
+| Docker | 24.0+ with Compose v2 | Latest |
+| Caddy | 2.6+ (on host, not Docker) | Latest |
+| Domain | A-record pointing to VPS IP | — |
+| Ollama | Running on host or Docker | With 7B+ model |
+
+> **RAM note**: Ollama's `llama3.1:8b` model needs ~5-6 GB RAM on CPU. Budget 12-16 GB total for the full stack.
 
 ## Quick Deploy
 
 ```bash
 # 1. Clone and configure
-git clone <repo-url> && cd GeekSpace2.0
+git clone https://github.com/trendywink247-afk/GeekSpace2.0.git
+cd GeekSpace2.0
 cp .env.example .env
 
 # 2. Generate secrets
 echo "JWT_SECRET=$(openssl rand -hex 64)" >> .env
 echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
 
-# 3. Set your domain
-sed -i 's|https://yourdomain.com|https://your-actual-domain.com|g' .env
+# 3. Set your domain and Ollama URL
+# Edit .env — set CORS_ORIGINS, PUBLIC_URL, OLLAMA_BASE_URL
 
-# 4. Deploy (core only)
-./scripts/prod.sh
+# 4. Deploy
+docker compose up -d --build
 
-# 5. Deploy (with EDITH/OpenClaw)
-./scripts/prod.sh --edith
+# 5. Copy frontend to Caddy serving directory
+docker cp geekspace-app:/app/dist/. /var/www/geekspace/
+
+# 6. Verify
+curl http://localhost:3001/api/health | jq .
 ```
-
-The app listens on port 3001. Point your reverse proxy (Caddy) at it.
 
 ## Architecture
 
 ```
-Internet → Caddy (:443) → GeekSpace (:3001) → Redis (:6379)
-                                ↓
-                          edith-bridge (:8787) → OpenClaw WS (:18789)
-                                ↓
-                          Ollama (host :11434 or :32768)
+Internet → Caddy (:443, auto-HTTPS)
+               │
+               ├── /api/*  →  GeekSpace (:3001) → Redis (:6379)
+               │                    │
+               │                    ├── Ollama (local LLM)
+               │                    └── Moonshot API (cloud LLM)
+               │
+               └── /*  →  /var/www/geekspace (SPA files)
 ```
 
-**Services in docker-compose.yml:**
+**Docker Compose services:**
 
 | Service | Required | Port | Purpose |
 |---------|----------|------|---------|
-| `geekspace` | Yes | 3001 (exposed) | API + frontend |
+| `geekspace` | Yes | 3001 (exposed) | Express API + built frontend |
 | `redis` | Yes | 6379 (internal) | Job queue + cache |
-| `edith-bridge` | No | 8787 (internal) | WS-RPC→HTTP bridge for OpenClaw |
 
 ## Caddy Configuration
 
 ```caddyfile
+{
+    email admin@yourdomain.com
+}
+
 yourdomain.com {
-    reverse_proxy localhost:3001
+    handle /api/* {
+        reverse_proxy localhost:3001
+    }
+    handle {
+        root * /var/www/geekspace
+        try_files {path} /index.html
+        file_server
+    }
 }
 ```
 
-Caddy handles HTTPS automatically via Let's Encrypt.
-
-## Docker Compose Profiles
-
-The EDITH bridge is **optional** and gated behind a Docker Compose profile:
+Caddy handles HTTPS automatically via Let's Encrypt. No manual certificate management needed.
 
 ```bash
-# Core only (geekspace + redis)
-docker compose up -d
+# Install Caddy
+apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+apt update && apt install caddy
 
-# With EDITH bridge
-docker compose --profile edith up -d
-
-# Rebuild after code changes
-docker compose --profile edith up -d --build
+# Apply config
+cp Caddyfile /etc/caddy/Caddyfile
+systemctl restart caddy
 ```
 
 ## Ollama Setup
 
-### Host-mapped port
+```bash
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+ollama pull llama3.1:8b
 
-If Ollama maps `32768→11434`:
+# Verify
+curl http://localhost:11434/api/tags
+```
 
+If Ollama runs in Docker with a mapped port (e.g. `32778→11434`):
 ```env
-OLLAMA_BASE_URL=http://host.docker.internal:32768
-```
-
-### Standard port
-
-```env
-OLLAMA_BASE_URL=http://host.docker.internal:11434
-```
-
-### Pull a model
-
-```bash
-ollama pull qwen2.5-coder:1.5b
-curl http://localhost:11434/api/tags   # verify
-```
-
-## EDITH / OpenClaw Setup
-
-1. Get your token:
-```bash
-cat /data/.openclaw/openclaw.json | jq -r .token
-```
-
-2. Set in `.env`:
-```env
-EDITH_TOKEN=<your-token>
-EDITH_OPENCLAW_WS=ws://host.docker.internal:18789
-EDITH_GATEWAY_URL=http://edith-bridge:8787
-```
-
-3. Start with the edith profile:
-```bash
-docker compose --profile edith up -d --build
-```
-
-4. Verify:
-```bash
-curl http://localhost:8787/health | jq .
-# {"status":"ok","ws_connected":true,"rpc_ok":true,...}
+OLLAMA_BASE_URL=http://localhost:32778
+# Or from inside Docker: http://host.docker.internal:32778
 ```
 
 ## Health Checks
@@ -130,31 +117,72 @@ curl http://localhost:8787/health | jq .
 # Just the API
 curl http://localhost:3001/api/health | jq .
 
-# Just the bridge
-curl http://localhost:8787/health | jq .
+# Docker container status
+docker compose ps
 ```
 
 ## Updating
 
 ```bash
-cd /path/to/GeekSpace2.0
-git pull
-./scripts/prod.sh          # or ./scripts/prod.sh --edith
+cd GeekSpace2.0
+git pull origin live-production
+docker compose up -d --build
+docker cp geekspace-app:/app/dist/. /var/www/geekspace/
+docker compose ps
+curl https://yourdomain.com/api/health
 ```
 
-SQLite migrations run automatically (`CREATE TABLE IF NOT EXISTS`).
+> **Important**: Step 3 (`docker cp`) is required because Caddy serves the frontend from `/var/www/geekspace`, not from Docker. Forgetting this means users see the old frontend.
+
+## Monitoring
+
+```bash
+# Container resource usage
+docker stats --no-stream
+
+# Expected baseline (idle):
+# geekspace-app:   ~80MB RAM, <1% CPU
+# geekspace-redis: ~10MB RAM, <1% CPU
+
+# Application logs (JSON structured)
+docker compose logs -f geekspace
+
+# Filter errors only (Pino level 50 = error)
+docker compose logs geekspace 2>&1 | grep '"level":50'
+
+# Caddy logs
+journalctl -u caddy -f
+```
+
+## Docker Cleanup & Maintenance
+
+```bash
+# Remove unused images (after updates)
+docker image prune -f
+
+# Remove all stopped containers
+docker container prune -f
+
+# Remove unused volumes (CAUTION: don't remove data volumes)
+docker volume ls  # check first
+docker volume prune -f --filter "label!=keep"
+
+# Full cleanup (unused images, containers, networks)
+docker system prune -f
+
+# Check disk usage
+docker system df
+```
 
 ## Backup
 
 ```bash
-# Database only
-docker cp geekspace-app:/app/data/geekspace.db ./backup-$(date +%Y%m%d).db
+# Database backup
+docker cp geekspace-app:/app/data/geekspace.db ./backups/geekspace-$(date +%Y%m%d).db
 
-# Full volume backup
-docker compose down
-docker run --rm -v geekspace2_geekspace-data:/data -v $(pwd):/backup \
-  alpine tar czf /backup/geekspace-data-$(date +%Y%m%d).tar.gz /data
-docker compose up -d
+# Automated daily backup (add to crontab)
+0 3 * * * mkdir -p /root/backups && docker cp geekspace-app:/app/data/geekspace.db /root/backups/geekspace-$(date +\%Y\%m\%d).db
+0 4 * * * find /root/backups -name "geekspace-*.db" -mtime +30 -delete
 ```
 
 ## Environment Variables

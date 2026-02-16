@@ -4,27 +4,27 @@ Base URL: `http://localhost:3001/api` (dev) or `https://yourdomain.com/api` (pro
 
 All authenticated endpoints require `Authorization: Bearer <jwt_token>` header.
 
+---
+
 ## Health
 
 ### `GET /api/health`
 
-No auth required. Live-probes Ollama and EDITH.
+No auth required. Live-probes all components.
 
 **Response:**
 ```json
 {
   "ok": true,
   "status": "ok | degraded",
-  "timestamp": "2026-02-14T12:00:00.000Z",
+  "timestamp": "2026-02-16T12:00:00.000Z",
   "version": "2.2.0",
   "uptime": 3600,
-  "edith": true,
   "ollama": true,
   "components": {
     "database": "ok | down",
     "ollama": "reachable | unreachable | not_configured",
-    "openrouter": "configured | not_configured",
-    "edith": "reachable | unreachable | not_configured"
+    "openrouter": "configured | not_configured"
   }
 }
 ```
@@ -37,7 +37,7 @@ Status code: 200 if database is ok, 503 if degraded.
 
 ### `POST /api/auth/signup`
 
-Rate limited: 10/15min.
+Rate limited: 10/15min. Creates account with free subscription (5,000 credits).
 
 **Body:**
 ```json
@@ -59,7 +59,7 @@ Rate limited: 10/15min.
     "username": "username",
     "name": "Display Name",
     "plan": "free",
-    "credits": 15000
+    "credits": 5000
   }
 }
 ```
@@ -84,13 +84,21 @@ Rate limited: 10/15min.
 }
 ```
 
+### `POST /api/auth/demo`
+
+No auth. Demo login with seed data (dev only).
+
+### `GET /api/auth/me`
+
+Returns the authenticated user's profile.
+
 ---
 
 ## Agent
 
 ### `GET /api/agent/config`
 
-Get the authenticated user's agent personality configuration.
+Get the authenticated user's agent configuration.
 
 **Response:**
 ```json
@@ -98,42 +106,70 @@ Get the authenticated user's agent personality configuration.
   "id": "agent-uuid",
   "user_id": "user-uuid",
   "name": "Geek",
-  "display_name": "Alex's AI",
+  "display_name": "Geek's AI",
   "mode": "builder",
   "voice": "friendly",
+  "personality": "jarvis",
   "system_prompt": "Custom instructions...",
-  "primary_model": "geekspace-default",
-  "fallback_model": "ollama-qwen2.5",
   "creativity": 70,
   "formality": 50,
-  "response_speed": "balanced",
-  "monthly_budget_usd": 5.0,
-  "avatar_emoji": "bot-icon",
-  "accent_color": "#7B61FF",
-  "bubble_style": "modern",
   "status": "online"
 }
 ```
 
 ### `PATCH /api/agent/config`
 
-Update agent personality. Send only fields to change.
+Update agent configuration. Send only fields to change.
 
 **Body (partial):**
 ```json
 {
-  "name": "EDITH",
+  "personality": "edith",
+  "name": "My Agent",
   "mode": "operator",
-  "voice": "professional",
-  "creativity": 85
+  "voice": "professional"
 }
 ```
 
-Allowed fields: name, displayName, mode, voice, systemPrompt, primaryModel, fallbackModel, creativity, formality, responseSpeed, monthlyBudgetUSD, avatarEmoji, accentColor, bubbleStyle, status.
+Allowed fields: name, displayName, mode, voice, personality, systemPrompt, primaryModel, fallbackModel, creativity, formality, responseSpeed, monthlyBudgetUSD, avatarEmoji, accentColor, bubbleStyle, status.
+
+### `GET /api/agent/personalities`
+
+Public endpoint. Returns all available personality definitions.
+
+**Response:**
+```json
+[
+  {
+    "id": "edith",
+    "name": "Edith",
+    "subtitle": "The Boss",
+    "description": "Professional CTO energy. Gets things done.",
+    "emoji": "👩‍💼",
+    "greeting": "What do you need?"
+  },
+  {
+    "id": "jarvis",
+    "name": "Jarvis",
+    "subtitle": "The Helper",
+    "description": "Warm, capable butler. At your service.",
+    "emoji": "🤵",
+    "greeting": "Good day. How may I assist you?"
+  },
+  {
+    "id": "weebo",
+    "name": "Weebo",
+    "subtitle": "The Darling",
+    "description": "Cute, enthusiastic, excited to help!",
+    "emoji": "🤖",
+    "greeting": "Hi hi! What are we doing today?"
+  }
+]
+```
 
 ### `POST /api/agent/chat`
 
-The primary AI chat endpoint. Multi-engine routed with EDITH prefix support.
+Primary AI chat endpoint. Multi-engine routed with credit tracking.
 
 **Body:**
 ```json
@@ -145,37 +181,30 @@ The primary AI chat endpoint. Multi-engine routed with EDITH prefix support.
 Message max: 4000 characters.
 
 **Prefix routing:**
-- `"/edith analyze this code..."` — Forces EDITH/OpenClaw
-- `"/local what time is it?"` — Forces Ollama
+- `"/premium analyze this code..."` — Forces Moonshot reasoning model (costs credits)
+- `"/local what time is it?"` — Forces Ollama (free)
 - No prefix — Auto-routes based on intent classification
 
 **Response:**
 ```json
 {
   "text": "The AI response text...",
-  "route": "edith",
+  "route": "premium | local",
+  "tier": "premium | local",
   "latencyMs": 1250,
-  "provider": "edith"
+  "provider": "ollama | openrouter | edith | builtin",
+  "model": "llama3.1:8b",
+  "creditsUsed": 0,
+  "creditsRemaining": 4990
 }
 ```
 
-With `LOG_LEVEL=debug`:
+Returns 402 if credits exhausted:
 ```json
 {
-  "text": "...",
-  "route": "edith",
-  "latencyMs": 1250,
-  "provider": "edith",
-  "debug": {
-    "intent": "complex",
-    "forceRoute": null,
-    "edithKeywordHit": true
-  }
+  "error": "You've used all your credits for this billing cycle..."
 }
 ```
-
-**Provider values:** `edith`, `ollama`, `openrouter`, `builtin`
-**Route values:** `edith` (served by EDITH gateway), `local` (served by Ollama/OpenRouter/builtin)
 
 ### `POST /api/agent/command`
 
@@ -196,22 +225,9 @@ Execute a terminal command.
 }
 ```
 
-For `ai` commands:
-```json
-{
-  "output": "[Geek] Here is the AI response...",
-  "isError": false,
-  "meta": {
-    "provider": "ollama",
-    "model": "qwen2.5-coder:1.5b",
-    "latencyMs": 800
-  }
-}
-```
-
 ### `POST /api/agent/chat/public/:username`
 
-Public portfolio chat. No auth required.
+Public portfolio chat. No auth required. Always routed to Ollama (free). Personality-aware — uses the portfolio owner's selected personality for greeting style and tone.
 
 **Body:**
 ```json
@@ -229,7 +245,136 @@ Public portfolio chat. No auth required.
 }
 ```
 
-Always routed to Ollama (local) to keep costs free for visitors.
+### `POST /api/agent/deploy-premium`
+
+Deploy a specialist agent session. Requires paid plan. Costs 100 credits.
+
+**Body:**
+```json
+{
+  "task": "Review my authentication middleware for security vulnerabilities"
+}
+```
+
+**Response (201):**
+```json
+{
+  "session": {
+    "id": "session-uuid",
+    "agent_codename": "Agent-7",
+    "task": "Review my authentication middleware...",
+    "status": "active",
+    "model_used": "kimi-k2-thinking"
+  },
+  "message": "Agent-7 has been deployed and is standing by.",
+  "creditsUsed": 100
+}
+```
+
+Returns 403 for free users. Returns 402 for insufficient credits.
+
+### `POST /api/agent/premium-chat/:sessionId`
+
+Chat within a premium specialist session. Uses Moonshot reasoning model.
+
+**Body:**
+```json
+{
+  "message": "What did you find in the auth middleware?"
+}
+```
+
+**Response:**
+```json
+{
+  "text": "I've analyzed the middleware and found...",
+  "creditsUsed": 45,
+  "creditsRemaining": 4855
+}
+```
+
+### `DELETE /api/agent/premium-session/:sessionId`
+
+End a premium specialist session.
+
+---
+
+## Billing
+
+### `GET /api/billing/plans`
+
+Public. Returns all available plans with pricing.
+
+**Response:**
+```json
+[
+  {
+    "id": "free",
+    "name": "Free",
+    "credits": 5000,
+    "priceUsd": 0,
+    "priceInr": 0,
+    "intervalDays": 0,
+    "intervalLabel": "",
+    "badge": ""
+  },
+  {
+    "id": "monthly",
+    "name": "Monthly",
+    "credits": 100000,
+    "priceUsd": 10,
+    "priceInr": 999,
+    "intervalDays": 30,
+    "intervalLabel": "/mo",
+    "badge": "Popular"
+  }
+]
+```
+
+### `GET /api/billing/plan`
+
+Get the authenticated user's current subscription.
+
+**Response:**
+```json
+{
+  "plan": "monthly",
+  "credits_remaining": 85000,
+  "credits_total": 100000,
+  "price_usd": 10,
+  "price_inr": 999,
+  "interval_days": 30,
+  "cycle_start": "2026-01-16",
+  "cycle_end": "2026-02-16"
+}
+```
+
+### `POST /api/billing/upgrade`
+
+Upgrade to a new plan.
+
+**Body:**
+```json
+{
+  "plan": "monthly",
+  "currency": "usd"
+}
+```
+
+`currency` accepts `"usd"` or `"inr"`.
+
+### `GET /api/billing/usage`
+
+Get 30-day usage history.
+
+**Response:**
+```json
+{
+  "daily": [
+    { "date": "2026-02-15", "credits_used": 150, "messages": 12 }
+  ]
+}
+```
 
 ---
 
@@ -254,25 +399,17 @@ List all reminders for the authenticated user.
 }
 ```
 
-Channel options: `telegram`, `email`, `push`
-Category options: `personal`, `work`, `health`, `other`, `general`
-Recurring options: `""` (none), `daily`, `weekly`, `monthly`
-
 ### `PATCH /api/reminders/:id`
 
 Update a reminder. Send only fields to change.
 
 ### `DELETE /api/reminders/:id`
 
-Delete a reminder.
-
 ---
 
 ## Automations
 
 ### `GET /api/automations`
-
-List all automations for the authenticated user.
 
 ### `POST /api/automations`
 
@@ -287,9 +424,6 @@ List all automations for the authenticated user.
   "enabled": true
 }
 ```
-
-Trigger types: `time`, `event`, `webhook`
-Action types: `n8n-webhook`, `telegram-message`, `portfolio-update`, `manychat-broadcast`
 
 ### `PATCH /api/automations/:id`
 
@@ -321,7 +455,7 @@ Get any user's public portfolio (no auth).
 
 ### `PATCH /api/portfolio`
 
-Update portfolio. Accepts: headline, about, skills (JSON array), projects (JSON array), milestones, social (JSON object), layout, agentEnabled, visibility.
+Update portfolio. Accepts: headline, about, skills, projects, milestones, social, layout, agentEnabled, visibility.
 
 ---
 
@@ -329,11 +463,15 @@ Update portfolio. Accepts: headline, about, skills (JSON array), projects (JSON 
 
 ### `GET /api/usage`
 
-Get usage statistics for the authenticated user.
+Get usage statistics. **Query params:** `period` (today | week | month | all)
 
-**Query params:** `period` (today | week | month | all)
+### `GET /api/usage/summary`
 
-Returns token counts, costs, and breakdown by provider/channel.
+Aggregated usage summary (tokens, costs, messages).
+
+### `GET /api/usage/billing`
+
+Credits + billing info (alternative to `/api/billing/plan`).
 
 ---
 
@@ -349,7 +487,7 @@ Aggregated dashboard data: activity charts, task distribution, hourly activity, 
 
 ### `GET /api/api-keys`
 
-List stored API keys (returns masked versions only).
+List stored API keys (masked versions only).
 
 ### `POST /api/api-keys`
 
@@ -363,7 +501,7 @@ List stored API keys (returns masked versions only).
 }
 ```
 
-Keys are AES-encrypted at rest.
+Keys are AES-256-GCM encrypted at rest.
 
 ### `DELETE /api/api-keys/:id`
 
@@ -373,7 +511,7 @@ Keys are AES-encrypted at rest.
 
 ### `GET /api/directory`
 
-User discovery. Returns public profiles for the constellation view.
+User discovery. Returns public profiles for the explore/constellation view.
 
 ---
 
@@ -391,8 +529,6 @@ Toggle feature flags (social_discovery, portfolio_chat, automation_builder, etc.
 
 ## Error Format
 
-All errors follow this format:
-
 ```json
 {
   "error": "Human-readable error message"
@@ -404,8 +540,7 @@ Validation errors:
 {
   "error": "Validation failed",
   "details": [
-    { "path": "email", "message": "Invalid email" },
-    { "path": "password", "message": "Password must be at least 8 characters" }
+    { "path": "email", "message": "Invalid email" }
   ]
 }
 ```
@@ -415,7 +550,8 @@ Validation errors:
 | Endpoint | Window | Max Requests |
 |----------|--------|-------------|
 | All `/api/*` | 15 min | 200 |
-| `/api/auth/login` | 15 min | 10 (failed only) |
-| `/api/auth/signup` | 15 min | 10 (failed only) |
+| `/api/auth/login` | 15 min | 10 |
+| `/api/auth/signup` | 15 min | 10 |
+| `/api/agent/chat` | 15 min | 30 |
 
 Rate limit headers are included in responses (`RateLimit-*`).

@@ -1,6 +1,8 @@
 # GeekSpace 2.0 — Environment Variables Reference
 
-All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
+All variables read by `server/src/config.ts`. Synced as of 2026-02-16.
+
+---
 
 ## Core (required in production)
 
@@ -9,6 +11,7 @@ All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
 | `NODE_ENV` | `development` | Yes (prod) | Set to `production` for security features |
 | `PORT` | `3001` | No | Express listen port |
 | `JWT_SECRET` | dev fallback | **Yes** | JWT signing key. Generate: `openssl rand -hex 64` |
+| `JWT_EXPIRES_IN` | `7d` | No | Token expiry duration |
 | `ENCRYPTION_KEY` | dev fallback | **Yes** | AES key for API-key encryption. Generate: `openssl rand -hex 32` |
 
 ## Database
@@ -29,13 +32,12 @@ All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API endpoint. In Docker: `http://host.docker.internal:11434` |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API endpoint |
 | `OLLAMA_MODEL` | `qwen2.5-coder:1.5b` | Model name to use |
-| `OLLAMA_TIMEOUT_MS` | `120000` | Request timeout in milliseconds. 7B models on CPU need 90-120s |
-| `OLLAMA_MAX_TOKENS` | `1024` | Max tokens for Ollama to generate (`num_predict`) |
+| `OLLAMA_TIMEOUT_MS` | `120000` | Request timeout in ms. 7B+ models on CPU need 90-120s |
+| `OLLAMA_MAX_TOKENS` | `512` | Max tokens for Ollama to generate (`num_predict`) |
 
-> **VPS note**: If Ollama maps port `32768→11434`, set `OLLAMA_BASE_URL=http://host.docker.internal:32768`
-> or use the internal port directly from the host.
+> **VPS note**: If Ollama maps port `32778→11434`, set `OLLAMA_BASE_URL=http://localhost:32778`
 
 ## Cloud Engine — OpenRouter
 
@@ -43,26 +45,42 @@ All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
 |----------|---------|-------------|
 | `OPENROUTER_API_KEY` | (empty) | API key from [openrouter.ai/keys](https://openrouter.ai/keys) |
 | `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | API base URL |
-| `OPENROUTER_MODEL` | `anthropic/claude-sonnet-4-5-20250929` | Model identifier |
+| `OPENROUTER_MODEL` | `anthropic/claude-sonnet-4-5-20250929` | Paid model identifier |
+| `OPENROUTER_TIMEOUT_MS` | `90000` | Request timeout in ms |
+| `OPENROUTER_MAX_TOKENS` | `1024` | Max generation tokens |
 
-## Premium Engine — Moonshot Reasoning (via bridge)
-
-### GeekSpace side
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `EDITH_GATEWAY_URL` | `http://edith-bridge:8787` | Bridge HTTP endpoint (GeekSpace calls this) |
-| `EDITH_TOKEN` | (empty) | Auth token. Without this, EDITH is disabled |
-
-### Bridge side (only when using `--profile edith`)
+### OpenRouter Free Tier
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `EDITH_OPENCLAW_WS` | `ws://host.docker.internal:18789` | OpenClaw WebSocket RPC endpoint |
-| `EDITH_TOKEN` | (empty) | Token sent to OpenClaw via query param + header |
-| `OPENCLAW_CHAT_METHOD` | `chat.completions` | RPC method name for chat requests |
-| `BRIDGE_PORT` | `8787` | Bridge HTTP listen port |
-| `REQUEST_TIMEOUT_MS` | `120000` | Per-request timeout for RPC calls |
+| `OPENROUTER_FREE_MODEL` | `meta-llama/llama-3.3-70b-instruct:free` | Free model identifier |
+| `OPENROUTER_FREE_BASE_URL` | `https://openrouter.ai/api/v1` | Free tier base URL |
+| `OPENROUTER_FREE_API_KEY` | (empty) | Separate API key for free tier (optional) |
+
+## Premium Engine — Moonshot Reasoning
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MOONSHOT_REASONING_MODEL` | `kimi-k2-thinking` | Heavy reasoning model (uses OpenRouter API key) |
+| `MOONSHOT_TIMEOUT_MS` | `120000` | Request timeout in ms |
+| `MOONSHOT_MAX_TOKENS` | `8192` | Max reasoning tokens |
+
+## Automation Engine — PicoClaw
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PICOCLAW_URL` | `http://localhost:8080` | PicoClaw endpoint |
+| `PICOCLAW_ENABLED` | `false` | Enable PicoClaw automation engine |
+| `PICOCLAW_TIMEOUT_MS` | `5000` | Request timeout in ms |
+
+## [DEPRECATED] EDITH / OpenClaw Bridge
+
+> These variables are no longer used. The EDITH WebSocket bridge has been replaced by direct Moonshot API calls via OpenRouter. Kept for reference only.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| ~~`EDITH_GATEWAY_URL`~~ | (empty) | ~~Bridge HTTP endpoint~~ |
+| ~~`EDITH_TOKEN`~~ | (empty) | ~~Auth token for bridge~~ |
 
 ## Redis
 
@@ -89,15 +107,20 @@ All variables read by the server (`server/src/config.ts`) and the EDITH bridge.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PREMIUM_MONTHLY_CREDITS` | `50000` | Credits allocated per month (premium) |
+| `PREMIUM_MONTHLY_CREDITS` | `50000` | Credits allocated per month (premium plan) |
 | `TRIAL_DAYS` | `3` | Trial period length |
 | `TRIAL_PREMIUM_CREDITS` | `10000` | Credits given during trial |
+
+## Session
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SESSION_IDLE_TIMEOUT_MS` | `1800000` | Session idle timeout (30 min) |
 
 ## Misc
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `JWT_EXPIRES_IN` | `7d` | Token expiry duration |
 | `MAX_REQUEST_BODY_BYTES` | `1048576` | Request body size limit (1 MB) |
 | `LOG_LEVEL` | `info` (prod) / `debug` (dev) | Pino log level |
-| `SEED_DEMO_DATA` | `false` | Seed demo users/data on startup (dev only) |
+| `SEED_DEMO_DATA` | `true` (dev) / `false` (prod) | Seed demo users/data on startup |

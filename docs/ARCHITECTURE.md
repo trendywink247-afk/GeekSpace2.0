@@ -1,6 +1,6 @@
 # GeekSpace 2.0 — System Architecture
 
-This document is the authoritative reference for how GeekSpace works internally. It is written so that OpenClaw (EDITH), other AI agents, and human developers can understand the full system.
+> Authoritative reference for how GeekSpace works internally.
 
 ## 1. High-Level Overview
 
@@ -8,32 +8,38 @@ GeekSpace is a **Personal AI Operating System** — a self-hosted platform where
 
 ```
 User (Browser)
-    |
-    v
-[Caddy :443] ── reverse proxy + auto HTTPS
-    |
-    v
-[Express API :3001] ── serves built SPA + API
-    |
-    +-- JWT auth
-    +-- Zod validation
-    +-- Rate limiting
-    +-- SQLite (better-sqlite3, WAL mode)
-    |
-    +-- Multi-Engine LLM Router
-    |       |
-    |       +-- Local Engine: Ollama (local, free)
-    |       +-- Cloud Engine: OpenRouter (cloud, paid)
-    |       +-- Premium Engine: Moonshot Reasoning (gateway, self-hosted)
-    |
-    +-- Redis (job queue, cache)
+    │
+    ▼
+┌─────────────────────┐
+│  Caddy :443         │  auto-HTTPS, reverse proxy
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│  Express API :3001  │  serves built SPA + API
+│                     │
+│  ├── JWT auth       │
+│  ├── Zod validation │
+│  ├── Rate limiting  │
+│  ├── SQLite (WAL)   │
+│  │                  │
+│  ├── Multi-Engine LLM Router
+│  │   ├── Local Engine:      Ollama (free)
+│  │   ├── Cloud Engine:      OpenRouter (paid)
+│  │   ├── Premium Engine:    Moonshot Reasoning (paid)
+│  │   └── Automation Engine: PicoClaw (lightweight)
+│  │
+│  ├── Personality System (Edith / Jarvis / Weebo)
+│  ├── Credit & Billing System
+│  └── Redis (cache, job queue)
+└─────────────────────┘
 ```
 
 ## 2. Request Lifecycle
 
 1. Browser sends request to Caddy (:443, auto-HTTPS)
-2. Caddy reverse-proxies all traffic to Express (:3001), which serves the React SPA and API
-3. Express middleware chain: helmet -> CORS -> body parser -> request logger -> rate limiter
+2. Caddy reverse-proxies `/api/*` to Express (:3001), serves SPA for everything else
+3. Express middleware chain: helmet → CORS → body parser → request logger → rate limiter
 4. Route handler authenticates via JWT (`Authorization: Bearer <token>`)
 5. Zod schema validates request body/query
 6. Business logic executes (DB queries, LLM calls, etc.)
@@ -53,136 +59,158 @@ type Intent = 'simple' | 'planning' | 'coding' | 'automation' | 'complex';
 ```
 
 Classification rules (in order of precedence):
-1. Word count > 80 -> `complex`
-2. 2+ coding keywords -> `coding`
-3. 1+ automation keywords -> `automation`
-4. 2+ planning keywords -> `planning`
-5. 2+ complex keywords OR word count > 40 -> `complex`
-6. Otherwise -> `simple`
-
-**Coding keywords:** code, function, class, debug, error, bug, implement, refactor, typescript, javascript, python, react, api, sql, query, regex, algorithm, data structure
-
-**Planning keywords:** plan, schedule, roadmap, timeline, milestone, goal, project, workflow, step by step, outline, organize
-
-**Complex keywords:** explain, analyze, compare, design, architect, strategy, pros and cons, trade-off, deep dive, in detail, comprehensive
-
-**Automation keywords:** automate, automation, cron, trigger, webhook, workflow, schedule task, batch, pipeline, n8n, zapier
+1. Word count > 80 → `complex`
+2. 2+ coding keywords → `coding`
+3. 1+ automation keywords → `automation`
+4. 2+ planning keywords → `planning`
+5. 2+ complex keywords OR word count > 40 → `complex`
+6. Otherwise → `simple`
 
 ### 3.2 Provider Selection
 
 ```
-if forceProvider is set -> use that provider
+if forceProvider is set → use that provider
 else:
-  simple       -> Ollama (fallback: OpenRouter -> builtin)
-  coding       -> EDITH (fallback: OpenRouter -> Ollama -> builtin)
-  complex      -> EDITH (fallback: OpenRouter -> Ollama -> builtin)
-  planning     -> EDITH (fallback: OpenRouter -> Ollama -> builtin)
-  automation   -> Ollama (fallback: OpenRouter -> builtin)
+  simple       → Ollama (fallback: OpenRouter → builtin)
+  coding       → Moonshot (fallback: OpenRouter → Ollama → builtin)
+  complex      → Moonshot (fallback: OpenRouter → Ollama → builtin)
+  planning     → Moonshot (fallback: OpenRouter → Ollama → builtin)
+  automation   → Ollama (fallback: OpenRouter → builtin)
 ```
 
 ### 3.3 Provider Details
 
-| Provider | URL | Timeout | Auth | Model |
-|----------|-----|---------|------|-------|
-| Ollama | `OLLAMA_BASE_URL/api/chat` | 120s (configurable via `OLLAMA_TIMEOUT_MS`) | None | `OLLAMA_MODEL` (default: qwen2.5-coder:1.5b) |
-| OpenRouter | `OPENROUTER_BASE_URL/chat/completions` | 120s (shares `OLLAMA_TIMEOUT_MS`) | Bearer `OPENROUTER_API_KEY` | `OPENROUTER_MODEL` |
-| EDITH | `EDITH_GATEWAY_URL/v1/chat/completions` | 120s | Bearer `EDITH_TOKEN` | `openclaw` |
-| Builtin | N/A | N/A | N/A | Static fallback message |
+| Provider | Endpoint | Timeout | Auth | Cost |
+|----------|----------|---------|------|------|
+| Ollama (Local) | `OLLAMA_BASE_URL/api/chat` | 120s | None | 1 credit/call |
+| OpenRouter (Cloud) | `OPENROUTER_BASE_URL/chat/completions` | 90s | Bearer API key | 5 cr/1K tokens |
+| OpenRouter Free | `OPENROUTER_FREE_BASE_URL/chat/completions` | 90s | Bearer API key | 2 credits/call |
+| Moonshot Reasoning | `OPENROUTER_BASE_URL/chat/completions` | 120s | Bearer API key | 10 cr/1K tokens (min 10) |
+| PicoClaw | `PICOCLAW_URL` | 5s | None | 1 credit/call |
+| Builtin | N/A | N/A | N/A | 0 (static fallback) |
 
-### 3.4 EDITH Direct Service
-
-**Source:** `server/src/services/edith.ts`
-
-Separate from the router's `callEdith()`, this dedicated service is used for `/edith` prefix routing and the enhanced chat handler:
-
-- Single endpoint: `/v1/chat/completions` via edith-bridge
-- 120-second timeout per call
-- 1 automatic retry on transient failure
-- HTML detection (rejects if the response is a web UI page, not an API)
-- Supports OpenAI-format responses AND flat `{ content, response }` formats
-
-### 3.5 Fallback Chain
+### 3.4 Fallback Chain
 
 If a provider fails:
-1. EDITH fails -> try Ollama -> try builtin
-2. OpenRouter fails -> try Ollama -> try builtin
-3. Ollama fails -> try builtin (static error message)
+1. Moonshot fails → try OpenRouter → try Ollama → try builtin
+2. OpenRouter fails → try Ollama → try builtin
+3. Ollama fails → try builtin (static error message)
 
-The builtin fallback returns a message explaining that AI backends are unreachable and suggests using terminal commands.
+The builtin fallback returns a message explaining that AI backends are unreachable.
+
+### 3.5 Credit Cost Computation
+
+**Source:** `server/src/services/llm.ts` → `computeCreditCost()`
+
+| Provider | Calculation |
+|----------|-------------|
+| Ollama | 1 credit flat |
+| OpenRouter Free | 2 credits flat |
+| PicoClaw | 1 credit flat |
+| Builtin | 0 credits |
+| OpenRouter (paid) | `totalTokens / 1000 * 5` |
+| Moonshot / Premium | `totalTokens / 1000 * 10` (minimum 10) |
+
+Credits deducted via `deductSubscriptionCredits()` after each call.
 
 ## 4. Chat Handler — Prefix Routing
 
 **Source:** `server/src/routes/agent.ts`, `POST /api/agent/chat`
 
-The chat handler supports three routing modes:
-
 ### 4.1 Prefix Commands
-- **`/edith <message>`** — Strip prefix, force route to EDITH direct service
-- **`/local <message>`** — Strip prefix, force route to Ollama via LLM router
+- **`/premium <message>`** — Force route to Moonshot reasoning model
+- **`/local <message>`** — Force route to Ollama via LLM router
 
 ### 4.2 Auto-Routing (no prefix)
 1. Classify intent via `classifyIntent()`
-2. Check EDITH keyword heuristic (code, debug, analyze, plan, complex, refactor, architecture, explain, compare, design, implement, strategy, deep dive, trade-off, algorithm)
-3. If intent is `complex`, `coding`, or `planning`, OR keyword match -> try EDITH first
-4. If EDITH fails or is not configured -> fall through to LLM router
+2. Check credit balance — if `credits_remaining <= 0`, return friendly error
+3. Route based on intent (see §3.2)
+4. Deduct credits after response
 
 ### 4.3 Response Format
 
 ```json
 {
   "text": "AI response text",
-  "route": "edith | local",
+  "route": "premium | local",
   "latencyMs": 342,
-  "provider": "edith | ollama | openrouter | builtin"
+  "provider": "ollama | openrouter | edith | builtin",
+  "tier": "local | premium",
+  "creditsUsed": 10,
+  "creditsRemaining": 14990
 }
 ```
 
-When `LOG_LEVEL=debug`:
-```json
-{
-  "text": "...",
-  "route": "edith",
-  "latencyMs": 342,
-  "provider": "edith",
-  "debug": {
-    "intent": "coding",
-    "forceRoute": null,
-    "edithKeywordHit": true
-  }
-}
+## 5. Personality System
+
+**Source:** `server/src/prompts/personalities.ts`
+
+Three built-in personalities that change the agent's tone, greeting, and behavior:
+
+| Personality | Codename | Tone | Greeting Style |
+|-------------|----------|------|----------------|
+| **Edith** | The Boss | Professional CTO. Direct, efficient. | "What do you need?" |
+| **Jarvis** | The Helper | Warm, capable butler. Default. | "Good day. How may I assist you?" |
+| **Weebo** | The Darling | Enthusiastic, cute, excited to help. | "Hi hi! What are we doing today?" |
+
+### How Personalities Work
+
+1. User selects personality via `PATCH /api/agent/config` with `{"personality": "edith"}`
+2. Stored in `agent_configs.personality` column
+3. `buildSystemPrompt()` injects the personality prompt between the base system prompt and user session context
+4. Portfolio visitor chat is personality-aware — greeting, suggested questions, and emoji adapt
+
+### Prompt Assembly Order
+
+```
+1. OPENCLAW_IDENTITY (base system prompt — ~800 tokens)
+2. Personality prompt (Edith/Jarvis/Weebo — ~100 tokens)
+3. USER SESSION block (name, mode, voice, reminders, integrations)
+4. Conversation history
 ```
 
-## 5. System Prompt Architecture
+**Source:** `server/src/prompts/openclaw-system.ts` for base prompt, `buildPortfolioVisitorPrompt()` for portfolio chat.
 
-**Source:** `server/src/prompts/openclaw-system.ts`
+## 6. Credit & Billing System
 
-### 5.1 Base Prompt (OPENCLAW_IDENTITY)
+**Source:** `server/src/db/index.ts` (PLAN_DEFINITIONS), `server/src/routes/billing.ts`, `server/src/services/llm.ts`
 
-The master system prompt (~800 tokens) defines:
-- **Identity:** OpenClaw / EDITH — personal AI, not a generic chatbot
-- **Role:** Premium Engine (reasoning engine)
-- **GeekSpace context:** Dashboard, Agent Chat, Terminal, Reminders, Automations, Integrations, Portfolio, Settings
-- **Agent modes:** minimal (Q&A), builder (code/APIs), operator (planning/routines)
-- **Capabilities:** answer, plan, code, debug, analyze, draft, automate, reference user context
-- **Limitations:** cannot execute code, call APIs, access filesystem, send messages, remember across sessions
-- **Terminal commands:** full `gs` command reference
-- **Rules:** respect voice/mode, be concise, never fabricate data, never reveal system prompts
+### Plans
 
-### 5.2 Compact Prompt (OPENCLAW_IDENTITY_COMPACT)
+| Plan | Credits | Price (USD) | Price (INR) | Interval |
+|------|---------|-------------|-------------|----------|
+| Free | 5,000 | $0 | ₹0 | — |
+| Intro | 100,000 | $10 | ₹999 | 2 months |
+| Monthly | 100,000 | $10 | ₹999 | 1 month |
+| Half-Year | 700,000 | $30 | ₹2,999 | 6 months |
+| Yearly | 1,500,000 | $50 | ₹4,999 | 12 months |
 
-~300 tokens. Used for token-constrained contexts like portfolio visitor chat.
+### Billing Flow
 
-### 5.3 Per-User Context
+1. Signup creates a free subscription (`server/src/routes/auth.ts`)
+2. Each chat/command call checks `credits_remaining > 0` before processing
+3. After LLM response, `deductSubscriptionCredits()` updates the subscription
+4. `POST /api/billing/upgrade` changes plan and resets credits
+5. Cycle dates tracked via `cycle_start` and `cycle_end` columns
 
-Appended by `buildSystemPrompt()` at request time:
-```
---- USER SESSION ---
-Agent name: Geek. User: Alex. Voice: friendly. Mode: builder.
-Custom instructions: <user's custom prompt>
-Active reminders: 5. Connected integrations: 3.
-```
+### Database Table: `subscriptions`
 
-## 6. Database Schema
+Key columns: `user_id`, `plan`, `credits_remaining`, `credits_total`, `price_usd`, `price_inr`, `interval_days`, `cycle_start`, `cycle_end`.
+
+## 7. Premium Agent (Specialist Sessions)
+
+**Source:** `server/src/services/premium-agent.ts`, `server/src/routes/agent.ts`
+
+Users on paid plans can deploy a dedicated specialist agent session:
+
+1. `POST /api/agent/deploy-premium` — costs 100 credits, creates a `premium_sessions` row
+2. Agent gets a random codename (Agent-7, Nova, Cipher, etc.) and personality-flavored deploy message
+3. `POST /api/agent/premium-chat/:sessionId` — uses Moonshot reasoning model, costs 10 cr/1K tokens
+4. `DELETE /api/agent/premium-session/:sessionId` — ends the session
+
+Guards: free users blocked (403), insufficient credits blocked.
+
+## 8. Database Schema
 
 **Source:** `server/src/db/index.ts`
 
@@ -192,98 +220,43 @@ SQLite with WAL mode + foreign keys enabled.
 
 | Table | Primary Key | Key Columns |
 |-------|-------------|-------------|
-| `users` | `id` (TEXT/UUID) | email, username, password_hash, plan, credits |
-| `agent_configs` | `id` | user_id (FK unique), name, mode, voice, system_prompt, primary_model, creativity, formality |
-| `api_keys` | `id` | user_id (FK), provider, key_encrypted, masked_key, is_default |
-| `reminders` | `id` | user_id (FK), text, datetime, channel, category, recurring, completed |
+| `users` | `id` (UUID) | email, username, password_hash, plan, credits |
+| `agent_configs` | `id` | user_id (FK), name, mode, voice, personality, system_prompt |
+| `subscriptions` | `id` | user_id (FK), plan, credits_remaining, credits_total, cycle dates |
+| `premium_sessions` | `id` | user_id, agent_codename, task, status, credits_used, model_used |
+| `api_keys` | `id` | user_id (FK), provider, key_encrypted, masked_key |
+| `reminders` | `id` | user_id (FK), text, datetime, channel, category, recurring |
 | `integrations` | `id` | user_id (FK), type, name, status, health, requests_today |
-| `portfolios` | `user_id` (FK) | username, headline, about, skills (JSON), projects (JSON), social (JSON) |
+| `portfolios` | `user_id` (FK) | username, headline, about, skills (JSON), projects (JSON) |
 | `automations` | `id` | user_id (FK), name, trigger_type, action_type, enabled, run_count |
-| `usage_events` | `id` | user_id (FK), provider, model, tokens_in, tokens_out, cost_usd, channel, tool |
-| `features` | `user_id` (FK) | social_discovery, portfolio_chat, automation_builder, etc. |
-| `contact_submissions` | `id` | name, email, company, message |
+| `usage_events` | `id` | user_id (FK), provider, model, tokens_in, tokens_out, cost_usd |
+| `features` | `user_id` (FK) | social_discovery, portfolio_chat, automation_builder |
 | `activity_log` | `id` | user_id (FK), action, details, icon |
+| `contact_submissions` | `id` | name, email, company, message |
 
-### Indexes
+Migrations run automatically (`CREATE TABLE IF NOT EXISTS` + `ALTER TABLE` for new columns).
 
-Performance-critical indexes on: users(email), users(username), reminders(user_id), integrations(user_id), usage_events(user_id, created_at), activity_log(user_id), portfolios(username), api_keys(user_id), automations(user_id), agent_configs(user_id).
-
-## 7. Authentication
+## 9. Authentication
 
 **Source:** `server/src/middleware/auth.ts`
 
-- JWT-based. Tokens signed with `JWT_SECRET`, expire per `JWT_EXPIRES_IN` (default 7d).
+- JWT-based. Tokens signed with `JWT_SECRET` (HS256 algorithm pinned), expire per `JWT_EXPIRES_IN` (default 7d).
 - `requireAuth` middleware extracts `sub` claim as `userId`.
 - Passwords hashed with bcryptjs (10 rounds).
 - Rate-limited: 10 attempts per 15 minutes on login/signup.
 
-## 8. Request Validation
+## 10. Request Validation
 
 **Source:** `server/src/middleware/validate.ts`
 
 Zod schemas for all input:
-- `signupSchema` — email, password (8-128 chars), username (regex), name
-- `loginSchema` — email, password
+- `signupSchema`, `loginSchema` — auth
 - `chatSchema` — message (1-4000 chars)
 - `commandSchema` — command (1-500 chars)
-- `reminderCreateSchema` — text, datetime, channel, recurring, category, completed
-- `automationCreateSchema` — name, description, triggerType, actionType, config, enabled
-- `apiKeyCreateSchema` — provider, key, label, isDefault
-- `contactSchema` — name, email, company, message
-
-## 9. Terminal Command System
-
-**Source:** `server/src/routes/agent.ts`, `POST /api/agent/command`
-
-Server-side command execution (not a real shell). Commands:
-
-| Command | What it does |
-|---------|-------------|
-| `gs me` | Reads user profile from DB |
-| `gs reminders list` | Lists all reminders as formatted table |
-| `gs reminders add "text"` | Inserts reminder + logs activity |
-| `gs credits` | Shows credit balance + total usage |
-| `gs usage today` | Today's API calls, tokens, cost |
-| `gs usage month` | 30-day usage by provider |
-| `gs integrations` | Lists integration status/health |
-| `gs connect <svc>` | Sets integration status to connected |
-| `gs disconnect <svc>` | Sets integration status to disconnected |
-| `gs automations` | Lists automations with run counts |
-| `gs status` | Shows agent config (name, mode, voice, model) |
-| `gs portfolio` | Shows portfolio URL |
-| `gs deploy` | Sets portfolio to public |
-| `gs profile set <f> <v>` | Updates user profile field |
-| `gs export` | Dumps all user data as JSON |
-| `ai "prompt"` | Routes through LLM router, returns AI response |
-
-## 10. Health Check
-
-**Source:** `server/src/index.ts`, `GET /api/health`
-
-Live probing of all components:
-
-```json
-{
-  "ok": true,
-  "status": "ok",
-  "timestamp": "2026-02-14T12:00:00.000Z",
-  "version": "2.2.0",
-  "uptime": 3600,
-  "edith": true,
-  "ollama": true,
-  "components": {
-    "database": "ok",
-    "ollama": "reachable | unreachable | not_configured",
-    "openrouter": "configured | not_configured",
-    "edith": "reachable | unreachable | not_configured"
-  }
-}
-```
-
-- `ok` = true only if database is healthy (core requirement)
-- `edith` / `ollama` booleans for quick checks
-- Ollama probed via `GET /api/tags` (3s timeout)
-- EDITH probed via `GET /health` on the bridge (3s timeout), checks `ws_connected: true`
+- `agentConfigUpdateSchema` — personality, name, mode, voice, etc.
+- `deployPremiumSchema` — task description for specialist session
+- `premiumChatSchema` — message for premium chat
+- `reminderCreateSchema`, `automationCreateSchema`, `apiKeyCreateSchema`, `contactSchema`
 
 ## 11. Docker Architecture
 
@@ -293,43 +266,31 @@ Live probing of all components:
 |-----------|-------|------|---------|
 | `geekspace-app` | Custom (multi-stage Node 20) | 3001 (exposed) | geekspace-net, geekspace-shared |
 | `geekspace-redis` | redis:7-alpine | 6379 (internal) | geekspace-net |
-| `geekspace-edith-bridge` | Custom (Node 20, profile: edith) | 8787 (internal) | geekspace-net, geekspace-shared |
 
 ### Networks
 
 - **`geekspace-net`** — Internal bridge. All GeekSpace containers.
-- **`geekspace-shared`** — External. Allows DNS resolution of Ollama and OpenClaw containers on the same Docker host.
-
-### Reaching External Services
-
-- **Ollama:** Via container name on shared network (e.g. `ollama-qtzz-ollama-1:11434`) or `host.docker.internal:11434`
-- **EDITH/OpenClaw:** Via `edith-bridge:8787` (bridge handles WS connection to OpenClaw)
+- **`geekspace-shared`** — External. Allows DNS resolution of Ollama containers on the same Docker host.
 
 ### Volumes
 
 - `geekspace-data` — SQLite database (`/app/data/geekspace.db`)
 - `redis-data` — Redis AOF persistence
 
-## 12. Cost Model
+### Legacy: EDITH Bridge
 
-| Provider | Input Cost | Output Cost | Notes |
-|----------|-----------|-------------|-------|
-| Ollama | $0 | $0 | Local, free |
-| OpenRouter | ~$3/M tokens | ~$15/M tokens | Depends on model |
-| EDITH | $0 | $0 | Self-hosted gateway |
-| Builtin | $0 | $0 | Static fallback |
+The `edith-bridge` service (`bridge/edith-bridge/`) was a WebSocket-to-HTTP bridge for the OpenClaw inference gateway. It has been **replaced by direct Moonshot API calls** via OpenRouter. The bridge code is kept for historical reference but is not deployed.
 
-Credits: 1 credit = $0.00001 USD. Premium plan: 50,000 credits/month. Trial: 10,000 credits for 3 days.
-
-## 13. Security
+## 12. Security
 
 - **Helmet** security headers (CSP in production)
 - **CORS** restricted to configured origins
-- **Rate limiting:** 200 req/15min global, 10 req/15min on auth
-- **JWT** with configurable expiry
+- **Rate limiting:** 200 req/15min global, 10 req/15min on auth, 30 req/15min on chat
+- **JWT** with HS256 algorithm pinning (prevents algorithm-none attacks)
 - **bcryptjs** password hashing (10 rounds)
-- **AES encryption** for stored API keys
+- **AES-256-GCM + scrypt** encryption for stored API keys
 - **Input validation** via Zod on all endpoints
 - **Body size limit** (1MB default)
 - **Non-root Docker user** (node)
 - **WAL mode** SQLite for safe concurrent reads
+- **Secrets never committed** — `.env` is gitignored
