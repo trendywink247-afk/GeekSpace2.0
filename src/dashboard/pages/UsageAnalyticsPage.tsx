@@ -163,7 +163,9 @@ export function UsageAnalyticsPage() {
 
   // Format helpers
   const fmt = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
-  const fmtCost = (n: number) => `$${n.toFixed(4)}`;
+  const fmtCost = (n: number) => `$${(n ?? 0).toFixed(4)}`;
+  const safeDollar2 = (v: number) => `$${(v ?? 0).toFixed(2)}`;
+  const safeDollar4 = (v: number) => [`$${(v ?? 0).toFixed(4)}`, 'Cost'];
 
   if (error && !summary && !chartData.length) {
     return (
@@ -233,7 +235,7 @@ export function UsageAnalyticsPage() {
                   )}
                 </div>
                 <div className="text-2xl font-bold text-[#F4F6FF] group-hover:text-[#61FF7B] transition-colors font-mono">
-                  ${summary?.totalCostUSD.toFixed(2) ?? '0.00'}
+                  ${(summary?.totalCostUSD ?? 0).toFixed(2)}
                 </div>
                 <div className="text-sm text-[#A7ACB8]">Total Cost</div>
               </CardContent>
@@ -332,11 +334,11 @@ export function UsageAnalyticsPage() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(v: number) => `$${v.toFixed(2)}`}
+                    tickFormatter={safeDollar2}
                   />
                   <Tooltip
                     {...TOOLTIP_STYLE}
-                    formatter={(value: number) => [`$${value.toFixed(4)}`, 'Cost']}
+                    formatter={safeDollar4}
                   />
                   <Area type="monotone" dataKey="cost" stroke="#61FF7B" strokeWidth={2} fillOpacity={1} fill="url(#costGradient)" />
                 </AreaChart>
@@ -380,7 +382,7 @@ export function UsageAnalyticsPage() {
                         </Pie>
                         <Tooltip
                           {...TOOLTIP_STYLE}
-                          formatter={(value: number) => [`$${value.toFixed(4)}`, 'Cost']}
+                          formatter={safeDollar4}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -455,12 +457,12 @@ export function UsageAnalyticsPage() {
                         fontSize={11}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(v: number) => `$${v.toFixed(2)}`}
+                        tickFormatter={safeDollar2}
                       />
                       <YAxis type="category" dataKey="name" stroke="#A7ACB8" fontSize={11} tickLine={false} axisLine={false} width={75} />
                       <Tooltip
                         {...TOOLTIP_STYLE}
-                        formatter={(value: number) => [`$${value.toFixed(4)}`, 'Cost']}
+                        formatter={safeDollar4}
                       />
                       <Bar dataKey="cost" fill="#FF61DC" radius={[0, 4, 4, 0]} />
                     </BarChart>
@@ -490,8 +492,8 @@ export function UsageAnalyticsPage() {
                 {[
                   { label: 'Plan', value: billing.plan.charAt(0).toUpperCase() + billing.plan.slice(1) },
                   { label: 'Credits', value: billing.credits.toLocaleString() },
-                  { label: 'Monthly Allowance', value: `$${billing.monthlyAllowance.toFixed(2)}` },
-                  { label: 'Used This Month', value: `$${billing.usageThisMonth.totalCostUSD.toFixed(2)}` },
+                  { label: 'Monthly Allowance', value: `$${(billing.monthlyAllowance ?? 0).toFixed(2)}` },
+                  { label: 'Used This Month', value: `$${(billing.usageThisMonth?.totalCostUSD ?? 0).toFixed(2)}` },
                   { label: 'Resets', value: new Date(billing.resetDate).toLocaleDateString() },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between text-sm">
@@ -504,13 +506,13 @@ export function UsageAnalyticsPage() {
                 <div className="pt-2">
                   <div className="flex items-center justify-between text-xs text-[#A7ACB8] mb-1.5">
                     <span>Usage</span>
-                    <span>{billing.monthlyAllowance > 0 ? `${Math.min(100, (billing.usageThisMonth.totalCostUSD / billing.monthlyAllowance * 100)).toFixed(0)}%` : '0%'}</span>
+                    <span>{billing.monthlyAllowance > 0 ? `${Math.min(100, ((billing.usageThisMonth?.totalCostUSD ?? 0) / billing.monthlyAllowance * 100)).toFixed(0)}%` : '0%'}</span>
                   </div>
                   <div className="h-2 bg-[#05050A] rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-[#7B61FF] to-[#61FF7B] transition-all duration-500"
                       style={{
-                        width: `${billing.monthlyAllowance > 0 ? Math.min(100, (billing.usageThisMonth.totalCostUSD / billing.monthlyAllowance * 100)) : 0}%`,
+                        width: `${billing.monthlyAllowance > 0 ? Math.min(100, ((billing.usageThisMonth?.totalCostUSD ?? 0) / billing.monthlyAllowance * 100)) : 0}%`,
                       }}
                     />
                   </div>
