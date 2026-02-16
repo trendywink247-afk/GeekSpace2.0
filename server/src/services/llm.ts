@@ -1,24 +1,22 @@
 // ============================================================
-// Three-Agent LLM Router
+// Quad-Brain LLM Router
 //
-// Edith  (premium):  OpenClaw via Bridge → Moonshot fallback
-// Jarvis (cloud):    OpenRouter free tier (Llama 3.3 70B etc.)
-// Weebo  (local):    Ollama on VPS (qwen2.5-coder)
+// Brain 1: Ollama (local) — fast/cheap, handles simple tasks
+// Brain 2: OpenRouter (global) — handles complex/coding/planning
+// Brain 3: EDITH/OpenClaw (Moonshot) — heavy reasoning
+// Brain 4: PicoClaw (sidecar) — lightweight automation tasks
 //
-// Flow: Intent classify → Route to agent → Call provider → Log usage
+// Flow: Intent classify → Route → Call → Log usage
 // ============================================================
 
 import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
-import { edithProbe } from './edith.js';
-import { sanitizeResponse } from '../prompts/openclaw-system.js';
 
 // ---- Types ----
 
-export type AgentName = 'edith' | 'jarvis' | 'weebo';
 export type Intent = 'simple' | 'planning' | 'coding' | 'automation' | 'complex';
-export type Provider = 'openclaw' | 'openrouter' | 'openrouter-free' | 'ollama' | 'picoclaw' | 'builtin';
+export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'edith' | 'picoclaw' | 'builtin';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -27,7 +25,6 @@ export interface ChatMessage {
 
 export interface LLMResponse {
   reply: string;
-  agent: AgentName;
   provider: Provider;
   model: string;
   tokensIn: number;
@@ -63,6 +60,7 @@ export function classifyIntent(message: string): Intent {
   const lower = message.toLowerCase();
   const wordCount = message.split(/\s+/).length;
 
+  // Long messages are more likely complex
   if (wordCount > 80) return 'complex';
 
   const matchCount = (keywords: string[]) =>
@@ -81,27 +79,13 @@ export function classifyIntent(message: string): Intent {
   return 'simple';
 }
 
-// ---- Max tokens per agent/intent ----
-
-function getMaxTokens(agent: AgentName, intent: Intent): number {
-  switch (agent) {
-    case 'weebo':
-      return 256;
-    case 'jarvis':
-      return intent === 'coding' ? 2048 : 1024;
-    case 'edith':
-      return 4096;
-    default:
-      return 1024;
-  }
-}
-
 // ---- Provider Availability ----
 
 let ollamaAvailable: boolean | null = null;
 let ollamaCheckTime = 0;
 
 async function isOllamaAvailable(): Promise<boolean> {
+  // Cache check for 30 seconds
   if (ollamaAvailable !== null && Date.now() - ollamaCheckTime < 30_000) {
     return ollamaAvailable;
   }
@@ -118,19 +102,16 @@ async function isOllamaAvailable(): Promise<boolean> {
   return ollamaAvailable;
 }
 
-async function isEdithAvailable(): Promise<boolean> {
-  return edithProbe();
-}
-
-function isOpenRouterFreeAvailable(): boolean {
-  return !!config.openrouterFreeApiKey && !!config.openrouterFreeModel;
-}
-
 function isOpenRouterAvailable(): boolean {
   return !!config.openrouterApiKey;
 }
 
-// ---- Ollama Streaming ----
+function isEdithAvailable(): boolean {
+  // Now checks for direct Moonshot API access (no longer needs EDITH bridge)
+  return !!config.openrouterApiKey && !!config.openrouterBaseUrl;
+}
+
+// ---- Ollama Streaming Call ----
 
 export async function streamOllama(
   messages: ChatMessage[],
@@ -163,6 +144,7 @@ export async function streamOllama(
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
 
+    // Ollama sends newline-delimited JSON
     const lines = buffer.split('\n');
     buffer = lines.pop() || '';
 
@@ -191,7 +173,8 @@ export async function streamOllama(
 
 // ---- Ollama Call ----
 
-async function callOllama(messages: ChatMessage[], maxTokens?: number): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+async function callOllama(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+  const start = Date.now();
   const response = await fetch(`${config.ollamaBaseUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -201,7 +184,7 @@ async function callOllama(messages: ChatMessage[], maxTokens?: number): Promise<
       stream: false,
       options: {
         temperature: 0.7,
-        num_predict: maxTokens || config.ollamaMaxTokens,
+        num_predict: config.ollamaMaxTokens,
       },
     }),
     signal: AbortSignal.timeout(config.ollamaTimeout),
@@ -218,46 +201,14 @@ async function callOllama(messages: ChatMessage[], maxTokens?: number): Promise<
     eval_count?: number;
   };
 
+  const content = data.message?.content || '';
+  const elapsed = Date.now() - start;
+  logger.debug({ provider: 'ollama', elapsed, model: config.ollamaModel }, 'Ollama response');
+
   return {
-    content: data.message?.content || '',
+    content,
     tokensIn: data.prompt_eval_count || Math.ceil(messages.map(m => m.content).join('').length / 4),
-    tokensOut: data.eval_count || Math.ceil((data.message?.content || '').length / 4),
-  };
-}
-
-// ---- OpenClaw via Bridge ----
-
-async function callOpenClaw(messages: ChatMessage[], maxTokens?: number): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
-  const bridgeUrl = config.edithGatewayUrl || 'http://edith-bridge:8787';
-
-  const response = await fetch(`${bridgeUrl}/v1/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(config.edithToken ? { Authorization: `Bearer ${config.edithToken}` } : {}),
-    },
-    body: JSON.stringify({
-      model: 'openclaw',
-      messages,
-      max_tokens: maxTokens || 4096,
-    }),
-    signal: AbortSignal.timeout(120000),
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`Bridge returned ${response.status}: ${text}`);
-  }
-
-  const data = await response.json() as {
-    choices?: Array<{ message?: { content: string } }>;
-    usage?: { prompt_tokens: number; completion_tokens: number };
-  };
-
-  return {
-    content: data.choices?.[0]?.message?.content || '',
-    tokensIn: data.usage?.prompt_tokens || 0,
-    tokensOut: data.usage?.completion_tokens || 0,
+    tokensOut: data.eval_count || Math.ceil(content.length / 4),
   };
 }
 
@@ -266,7 +217,6 @@ async function callOpenClaw(messages: ChatMessage[], maxTokens?: number): Promis
 async function callOpenRouterWithModel(
   messages: ChatMessage[],
   model: string,
-  maxTokens?: number,
 ): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
   const response = await fetch(`${config.openrouterBaseUrl}/chat/completions`, {
     method: 'POST',
@@ -274,12 +224,12 @@ async function callOpenRouterWithModel(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${config.openrouterApiKey}`,
       'HTTP-Referer': config.publicUrl,
-      'X-Title': 'GeekSpace',
+      'X-Title': 'GeekSpace AI OS',
     },
     body: JSON.stringify({
       model,
       messages,
-      max_tokens: maxTokens || config.openrouterMaxTokens,
+      max_tokens: config.openrouterMaxTokens,
     }),
     signal: AbortSignal.timeout(config.openrouterTimeout),
   });
@@ -294,30 +244,34 @@ async function callOpenRouterWithModel(
     usage?: { prompt_tokens: number; completion_tokens: number };
   };
 
+  const content = data.choices?.[0]?.message?.content || '';
   return {
-    content: data.choices?.[0]?.message?.content || '',
+    content,
     tokensIn: data.usage?.prompt_tokens || 0,
     tokensOut: data.usage?.completion_tokens || 0,
   };
 }
 
-async function callOpenRouter(messages: ChatMessage[], maxTokens?: number) {
-  return callOpenRouterWithModel(messages, config.openrouterModel, maxTokens);
+async function callOpenRouter(messages: ChatMessage[]) {
+  return callOpenRouterWithModel(messages, config.openrouterModel);
 }
 
-async function callOpenRouterFree(messages: ChatMessage[], maxTokens?: number): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
-  const response = await fetch(`${config.openrouterFreeBaseUrl}/chat/completions`, {
+async function callOpenRouterFree(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+  const baseUrl = config.openrouterFreeBaseUrl;
+  const apiKey = config.openrouterFreeApiKey;
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.openrouterFreeApiKey}`,
+      'Authorization': `Bearer ${apiKey}`,
       'HTTP-Referer': config.publicUrl,
-      'X-Title': 'GeekSpace',
+      'X-Title': 'GeekSpace AI OS',
     },
     body: JSON.stringify({
       model: config.openrouterFreeModel,
       messages,
-      max_tokens: maxTokens || config.openrouterMaxTokens,
+      max_tokens: config.openrouterMaxTokens,
     }),
     signal: AbortSignal.timeout(config.openrouterTimeout),
   });
@@ -332,21 +286,75 @@ async function callOpenRouterFree(messages: ChatMessage[], maxTokens?: number): 
     usage?: { prompt_tokens: number; completion_tokens: number };
   };
 
+  const content = data.choices?.[0]?.message?.content || '';
   return {
-    content: data.choices?.[0]?.message?.content || '',
+    content,
+    tokensIn: data.usage?.prompt_tokens || 0,
+    tokensOut: data.usage?.completion_tokens || 0,
+  };
+}
+
+function isOpenRouterFreeAvailable(): boolean {
+  return !!config.openrouterFreeApiKey && !!config.openrouterFreeModel;
+}
+
+// ---- Moonshot Reasoning Call (direct HTTP — replaces broken EDITH/WS bridge) ----
+
+async function callMoonshotReasoning(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+  if (!config.openrouterApiKey) {
+    throw new Error('Moonshot API key not configured (OPENROUTER_API_KEY)');
+  }
+
+  const response = await fetch(`${config.openrouterBaseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.openrouterApiKey}`,
+    },
+    body: JSON.stringify({
+      model: config.moonshotReasoningModel,
+      messages,
+      max_tokens: config.moonshotMaxTokens,
+    }),
+    signal: AbortSignal.timeout(config.moonshotTimeout),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`Moonshot reasoning returned ${response.status}: ${text}`);
+  }
+
+  const data = await response.json() as {
+    choices?: Array<{ message?: { content: string } }>;
+    usage?: { prompt_tokens: number; completion_tokens: number };
+  };
+
+  const content = data.choices?.[0]?.message?.content || '';
+  return {
+    content,
     tokensIn: data.usage?.prompt_tokens || 0,
     tokensOut: data.usage?.completion_tokens || 0,
   };
 }
 
 // ---- Credit Cost ----
+//
+// Credits are the user-facing currency.  1 credit ≈ processing
+// ~200 tokens on the standard cloud model.  Ollama is always free.
+//
+// Rates (credits per 1K tokens, input+output combined):
+//   ollama / builtin  →  0  (free, local)
+//   openrouter (k2.5) →  5
+//   edith (k2-think)  → 10
+//
+// Minimum per premium call: 10 credits (prevents zero-cost micro-queries).
 
 const CREDIT_RATES: Record<Provider, number> = {
-  openclaw:            10,  // Edith — premium via OpenClaw bridge
-  openrouter:          5,   // paid cloud model
-  'openrouter-free':   0,   // Jarvis — included in plan
-  ollama:              0,   // Weebo — included in plan
-  picoclaw:            0,   // Weebo automation — included in plan
+  ollama:              0,
+  'openrouter-free':   0,   // free cloud models (Llama 3.3 70B etc.)
+  openrouter:          5,   // kimi-k2.5 — standard cloud
+  edith:               10,  // kimi-k2-thinking — heavy reasoning
+  picoclaw:            0,   // lightweight sidecar — free
   builtin:             0,
 };
 
@@ -360,34 +368,16 @@ export function computeCreditCost(provider: Provider, tokensIn: number, tokensOu
   return Math.max(cost, MIN_PREMIUM_CREDITS);
 }
 
+// Legacy USD estimate (kept for usage_events.cost_usd column)
 function estimateCost(provider: Provider, tokensIn: number, tokensOut: number): number {
   switch (provider) {
     case 'ollama': return 0;
     case 'openrouter-free': return 0;
     case 'openrouter': return (tokensIn * 0.0000006) + (tokensOut * 0.000002);
-    case 'openclaw': return (tokensIn * 0.0000012) + (tokensOut * 0.000004);
+    case 'edith': return (tokensIn * 0.0000012) + (tokensOut * 0.000004);
     case 'picoclaw': return 0;
     case 'builtin': return 0;
     default: return 0;
-  }
-}
-
-// ---- Agent resolver ----
-
-function resolveAgent(intent: Intent, forceAgent?: AgentName): AgentName {
-  if (forceAgent) return forceAgent;
-
-  switch (intent) {
-    case 'simple':
-    case 'automation':
-      return 'weebo';
-    case 'coding':
-    case 'planning':
-      return 'jarvis';
-    case 'complex':
-      return 'edith';
-    default:
-      return 'jarvis';
   }
 }
 
@@ -397,11 +387,9 @@ export async function routeChat(
   messages: ChatMessage[],
   opts?: {
     forceProvider?: Provider;
-    forceAgent?: AgentName;
     userCredits?: number;
     systemPrompt?: string;
     agentName?: string;
-    maxTokensOverride?: number;
   },
 ): Promise<LLMResponse> {
   const start = Date.now();
@@ -415,9 +403,9 @@ export async function routeChat(
   }
   fullMessages.push(...messages);
 
-  // Resolve agent and provider
-  const agent = resolveAgent(intent, opts?.forceAgent);
-  const maxTokens = opts?.maxTokensOverride || getMaxTokens(agent, intent);
+  // Determine routing — two-tier system:
+  //   Tier 1 (free):    Ollama local — default for ALL queries
+  //   Tier 2 (premium): Moonshot cloud — only when explicitly forced or Ollama unavailable
   let provider: Provider = opts?.forceProvider || 'ollama';
 
   if (!opts?.forceProvider) {
@@ -425,47 +413,30 @@ export async function routeChat(
     const picoOk = await isPicoClawAvailable();
     const hasCredits = opts?.userCredits === undefined || opts.userCredits > 0;
 
-    switch (agent) {
-      case 'edith': {
-        // Premium: OpenClaw via bridge → Moonshot → Jarvis fallback → Weebo
-        const edithOk = await isEdithAvailable();
-        if (edithOk && hasCredits) {
-          provider = 'openclaw';
-        } else if (hasCredits && isOpenRouterAvailable()) {
-          provider = 'openrouter'; // Moonshot direct fallback
-        } else if (isOpenRouterFreeAvailable()) {
-          provider = 'openrouter-free'; // Downgrade to Jarvis
-        } else if (ollamaOk) {
-          provider = 'ollama';
-        } else {
-          provider = 'builtin';
-        }
-        break;
+    if (picoOk && intent === 'automation') {
+      provider = 'picoclaw';
+    } else if (intent === 'simple' && ollamaOk) {
+      // Simple queries → always local (fast, free)
+      provider = 'ollama';
+    } else if (intent === 'coding' || intent === 'planning' || intent === 'complex') {
+      // Complex queries → try free cloud first, then paid, then local fallback
+      if (isOpenRouterFreeAvailable()) {
+        provider = 'openrouter-free';
+      } else if (hasCredits && isEdithAvailable() && intent === 'complex') {
+        provider = 'edith';
+      } else if (hasCredits && isOpenRouterAvailable()) {
+        provider = 'openrouter';
+      } else if (ollamaOk) {
+        provider = 'ollama';
+      } else {
+        provider = 'builtin';
       }
-      case 'jarvis': {
-        // Cloud: OpenRouter free → Ollama fallback
-        if (isOpenRouterFreeAvailable()) {
-          provider = 'openrouter-free';
-        } else if (ollamaOk) {
-          provider = 'ollama';
-        } else {
-          provider = 'builtin';
-        }
-        break;
-      }
-      case 'weebo': {
-        // Local: PicoClaw for automation, else Ollama → cloud fallback
-        if (picoOk && intent === 'automation') {
-          provider = 'picoclaw';
-        } else if (ollamaOk) {
-          provider = 'ollama';
-        } else if (isOpenRouterFreeAvailable()) {
-          provider = 'openrouter-free';
-        } else {
-          provider = 'builtin';
-        }
-        break;
-      }
+    } else if (ollamaOk) {
+      provider = 'ollama';
+    } else if (picoOk) {
+      provider = 'picoclaw';
+    } else {
+      provider = 'builtin';
     }
   }
 
@@ -474,44 +445,39 @@ export async function routeChat(
   let tokensIn = 0;
   let tokensOut = 0;
   let model = '';
-  let actualAgent = agent;
 
   try {
     switch (provider) {
       case 'ollama': {
-        const result = await callOllama(fullMessages, maxTokens);
+        const result = await callOllama(fullMessages);
         reply = result.content;
         tokensIn = result.tokensIn;
         tokensOut = result.tokensOut;
         model = config.ollamaModel;
-        if (agent !== 'weebo') actualAgent = 'weebo';
-        break;
-      }
-      case 'openclaw': {
-        const result = await callOpenClaw(fullMessages, maxTokens);
-        reply = result.content;
-        tokensIn = result.tokensIn;
-        tokensOut = result.tokensOut;
-        model = 'openclaw';
-        actualAgent = 'edith';
         break;
       }
       case 'openrouter': {
-        const result = await callOpenRouter(fullMessages, maxTokens);
+        const result = await callOpenRouter(fullMessages);
         reply = result.content;
         tokensIn = result.tokensIn;
         tokensOut = result.tokensOut;
         model = config.openrouterModel;
-        actualAgent = 'edith';
         break;
       }
       case 'openrouter-free': {
-        const result = await callOpenRouterFree(fullMessages, maxTokens);
+        const result = await callOpenRouterFree(fullMessages);
         reply = result.content;
         tokensIn = result.tokensIn;
         tokensOut = result.tokensOut;
         model = config.openrouterFreeModel;
-        if (agent !== 'jarvis') actualAgent = 'jarvis';
+        break;
+      }
+      case 'edith': {
+        const result = await callMoonshotReasoning(fullMessages);
+        reply = result.content;
+        tokensIn = result.tokensIn;
+        tokensOut = result.tokensOut;
+        model = config.moonshotReasoningModel;
         break;
       }
       case 'picoclaw': {
@@ -522,11 +488,12 @@ export async function routeChat(
         tokensIn = result.tokensIn;
         tokensOut = result.tokensOut;
         model = 'picoclaw-haiku';
-        actualAgent = 'weebo';
         break;
       }
       default: {
-        reply = "I'm having a moment. Try again shortly, or use terminal commands for quick tasks.";
+        // Builtin fallback — no LLM available
+        reply = `I'm currently running in offline mode — my AI backend isn't available right now. ` +
+          `Please try again shortly, or use terminal commands like \`gs reminders list\` or \`gs credits\`.`;
         model = 'builtin-fallback';
         tokensIn = userMessage.length;
         tokensOut = reply.length;
@@ -535,103 +502,56 @@ export async function routeChat(
     }
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    logger.warn({ provider, intent, agent, error: errorMsg }, 'LLM call failed, attempting fallback');
+    logger.warn({ provider, intent, error: errorMsg }, 'LLM call failed, attempting fallback');
 
-    // Fallback chain based on agent
-    reply = await attemptFallback(fullMessages, provider, agent, maxTokens);
-    if (reply) {
-      // Determine which provider handled the fallback
-      if (provider === 'openclaw' || provider === 'openrouter') {
-        // Edith failed → try Jarvis → Weebo
-        if (isOpenRouterFreeAvailable()) {
-          provider = 'openrouter-free';
-          model = config.openrouterFreeModel;
-          actualAgent = 'jarvis';
-        } else {
-          provider = 'ollama';
+    // Fallback chain: cloud → ollama → builtin
+    if (provider === 'edith' || provider === 'openrouter' || provider === 'openrouter-free') {
+      const ollamaOk = await isOllamaAvailable();
+      if (ollamaOk) {
+        try {
+          const result = await callOllama(fullMessages);
+          reply = result.content;
+          tokensIn = result.tokensIn;
+          tokensOut = result.tokensOut;
           model = config.ollamaModel;
-          actualAgent = 'weebo';
+          provider = 'ollama';
+        } catch {
+          reply = 'I had trouble connecting to my AI backends. Please try again shortly.';
+          model = 'error-fallback';
+          tokensIn = userMessage.length;
+          tokensOut = reply.length;
+          provider = 'builtin';
         }
-      } else if (provider === 'openrouter-free') {
-        provider = 'ollama';
-        model = config.ollamaModel;
-        actualAgent = 'weebo';
       } else {
-        provider = 'openrouter-free';
-        model = config.openrouterFreeModel;
-        actualAgent = 'jarvis';
+        reply = 'I had trouble connecting to my AI backends. Please try again shortly.';
+        model = 'error-fallback';
+        tokensIn = userMessage.length;
+        tokensOut = reply.length;
+        provider = 'builtin';
       }
-      tokensIn = Math.ceil(userMessage.length / 4);
-      tokensOut = Math.ceil(reply.length / 4);
     } else {
-      reply = "Sorry, couldn't process that. Let's try again!";
+      reply = 'I had trouble processing your request. Please try again shortly.';
       model = 'error-fallback';
-      provider = 'builtin';
       tokensIn = userMessage.length;
       tokensOut = reply.length;
+      provider = 'builtin';
     }
   }
-
-  // Sanitize response — strip any leaked internal terms
-  reply = sanitizeResponse(reply);
 
   const latencyMs = Date.now() - start;
   const costEstimate = estimateCost(provider, tokensIn, tokensOut);
   const creditCost = computeCreditCost(provider, tokensIn, tokensOut);
 
   logger.info({
-    intent, agent: actualAgent, provider, model,
-    tokensIn, tokensOut, latencyMs, creditCost,
+    intent,
+    provider,
+    model,
+    tokensIn,
+    tokensOut,
+    latencyMs,
+    costEstimate,
+    creditCost,
   }, 'LLM response');
 
-  return { reply, agent: actualAgent, provider, model, tokensIn, tokensOut, latencyMs, costEstimate, creditCost, intent };
-}
-
-// ---- Fallback helper ----
-
-async function attemptFallback(
-  messages: ChatMessage[],
-  failedProvider: Provider,
-  agent: AgentName,
-  maxTokens: number,
-): Promise<string | null> {
-  // Edith/paid failed → try Jarvis (free cloud) → Weebo (local)
-  if (failedProvider === 'openclaw' || failedProvider === 'openrouter') {
-    if (isOpenRouterFreeAvailable()) {
-      try {
-        const result = await callOpenRouterFree(messages, maxTokens);
-        return result.content;
-      } catch { /* continue */ }
-    }
-    const ollamaOk = await isOllamaAvailable();
-    if (ollamaOk) {
-      try {
-        const result = await callOllama(messages, maxTokens);
-        return result.content;
-      } catch { /* continue */ }
-    }
-  }
-
-  // Jarvis (free cloud) failed → try Weebo (local)
-  if (failedProvider === 'openrouter-free') {
-    const ollamaOk = await isOllamaAvailable();
-    if (ollamaOk) {
-      try {
-        const result = await callOllama(messages, maxTokens);
-        return result.content;
-      } catch { /* continue */ }
-    }
-  }
-
-  // Weebo (local) failed → try Jarvis (free cloud)
-  if (failedProvider === 'ollama' || failedProvider === 'picoclaw') {
-    if (isOpenRouterFreeAvailable()) {
-      try {
-        const result = await callOpenRouterFree(messages, maxTokens);
-        return result.content;
-      } catch { /* continue */ }
-    }
-  }
-
-  return null;
+  return { reply, provider, model, tokensIn, tokensOut, latencyMs, costEstimate, creditCost, intent };
 }

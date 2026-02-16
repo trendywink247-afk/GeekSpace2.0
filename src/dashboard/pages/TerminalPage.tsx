@@ -15,7 +15,7 @@ interface Command {
 }
 
 const welcomeMessage = `GeekSpace Terminal v2.0.0
-GeekSpace AI Engine
+Powered by OpenClaw AI Engine
 Type 'help' to see available commands.
 `;
 
@@ -65,7 +65,7 @@ export function TerminalPage() {
     'gs me': `Name: ${user?.name || 'User'}
 Username: ${user?.username || 'user'}
 Email: ${user?.email || '—'}
-Plan: ${user?.plan === 'free' ? 'Starter' : user?.plan || 'Starter'}
+Plan: ${user?.plan || 'free'}
 Credits: ${(user?.credits ?? 0).toLocaleString()}
 Agent: ${agent.name} (${agent.mode} mode)
 Joined: ${user?.createdAt?.slice(0, 10) || '—'}`,

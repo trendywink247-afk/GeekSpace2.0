@@ -1,5 +1,5 @@
 // ============================================================
-// PicoClaw — Lightweight AI Sidecar
+// PicoClaw — Brain 4 (Lightweight AI Sidecar)
 //
 // Handles: quick automation tasks, heartbeat monitoring,
 // Telegram presence, simple Q&A via a fast local model.
