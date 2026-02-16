@@ -3,7 +3,6 @@ import {
   User,
   Bell,
   Shield,
-  CreditCard,
   Globe,
   Mail,
   Smartphone,
@@ -15,7 +14,6 @@ import {
   Palette,
   Plus,
   Trash2,
-  DollarSign,
   Brain,
   Tag,
   Clock
@@ -26,9 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { useAuthStore } from '@/stores/authStore';
-import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { userService, apiKeyService, memoryService } from '@/services/api';
 import type { ApiProvider, MemoryEntry } from '@/types';
@@ -37,7 +33,6 @@ export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const user = useAuthStore((s) => s.user);
-  const usage = useDashboardStore((s) => s.usage);
   const { accentColor, accentPresets, setAccentColor } = useThemeStore();
 
   const [profile, setProfile] = useState({
@@ -175,9 +170,6 @@ export function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="apikeys" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
             <Key className="w-4 h-4 mr-2" />API Keys
-          </TabsTrigger>
-          <TabsTrigger value="billing" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
-            <CreditCard className="w-4 h-4 mr-2" />Billing
           </TabsTrigger>
           <TabsTrigger value="memory" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
             <Brain className="w-4 h-4 mr-2" />Memory
@@ -394,71 +386,6 @@ export function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Billing Tab */}
-        <TabsContent value="billing" className="space-y-6">
-          <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
-            <CardHeader>
-              <CardTitle>Current Plan</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="p-6 rounded-xl bg-gradient-to-br from-[#7B61FF]/20 to-[#0B0B10] border border-[#7B61FF]/30 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-[#F4F6FF]">Pro Plan</h3>
-                    <p className="text-sm text-[#A7ACB8]">$50/year billed annually</p>
-                  </div>
-                  <Badge className="bg-[#7B61FF]">Active</Badge>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div className="p-3 rounded-lg bg-[#05050A]">
-                    <div className="text-2xl font-bold text-[#F4F6FF]">12,450</div>
-                    <div className="text-xs text-[#A7ACB8]">Credits</div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[#05050A]">
-                    <div className="text-2xl font-bold text-[#F4F6FF]">15K</div>
-                    <div className="text-xs text-[#A7ACB8]">Monthly</div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[#05050A]">
-                    <div className="text-2xl font-bold text-[#F4F6FF]">Mar 1</div>
-                    <div className="text-xs text-[#A7ACB8]">Resets</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Spend Breakdown */}
-              <h3 className="font-semibold text-[#F4F6FF] mb-4 flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-[#7B61FF]" />
-                Usage This Month
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-[#05050A]">
-                  <span className="text-sm text-[#A7ACB8]">Total Spend</span>
-                  <span className="font-mono font-bold text-[#F4F6FF]">${usage.totalCostUSD.toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-[#05050A]">
-                  <span className="text-sm text-[#A7ACB8]">Forecast</span>
-                  <span className="font-mono text-[#FFD761]">${usage.forecastUSD.toFixed(2)}</span>
-                </div>
-                <Separator className="bg-[#7B61FF]/20" />
-                <div className="text-sm text-[#A7ACB8] mb-2">By Provider</div>
-                {Object.entries(usage.byProvider).map(([provider, cost]) => (
-                  <div key={provider} className="flex items-center justify-between p-2 rounded-lg">
-                    <span className="text-sm text-[#F4F6FF] capitalize">{provider}</span>
-                    <span className="font-mono text-sm text-[#A7ACB8]">${cost.toFixed(2)}</span>
-                  </div>
-                ))}
-                <Separator className="bg-[#7B61FF]/20" />
-                <div className="text-sm text-[#A7ACB8] mb-2">Top Tools by Cost</div>
-                {Object.entries(usage.byTool).sort(([,a], [,b]) => b - a).slice(0, 5).map(([tool, cost]) => (
-                  <div key={tool} className="flex items-center justify-between p-2 rounded-lg">
-                    <span className="text-sm text-[#F4F6FF] font-mono">{tool}</span>
-                    <span className="font-mono text-sm text-[#A7ACB8]">${cost.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Memory Tab */}
         <TabsContent value="memory" className="space-y-6">

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   User, LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
-  X, Menu, Clock, BarChart3, Brain
+  X, Menu, Clock, BarChart3, Brain, CreditCard
 } from 'lucide-react';
 import { AlexButton } from '@/components/AlexButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
@@ -30,8 +30,9 @@ const AutomationsPage = lazy(() => import('./pages/AutomationsPage').then(m => (
 const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
 const UsageAnalyticsPage = lazy(() => import('./pages/UsageAnalyticsPage').then(m => ({ default: m.UsageAnalyticsPage })));
 const MemoryManagerPage = lazy(() => import('./pages/MemoryManagerPage').then(m => ({ default: m.MemoryManagerPage })));
+const BillingPage = lazy(() => import('./pages/BillingPage').then(m => ({ default: m.BillingPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'terminal' | 'settings';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'terminal' | 'settings';
 
 // Bottom tabs for mobile (5 max for thumb reach)
 const mobileTabs: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
@@ -76,6 +77,7 @@ export function DashboardApp() {
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'portfolio', label: 'Portfolio', icon: Palette },
     { id: 'usage', label: 'Usage', icon: BarChart3 },
+    { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'memory', label: 'Memory', icon: Brain },
     { id: 'connections', label: 'Connections', icon: Link2 },
     { id: 'agent', label: 'Agent Settings', icon: Bot },
@@ -105,6 +107,8 @@ export function DashboardApp() {
         return <PortfolioPage />;
       case 'usage':
         return <UsageAnalyticsPage />;
+      case 'billing':
+        return <BillingPage />;
       case 'memory':
         return <MemoryManagerPage />;
       case 'connections':

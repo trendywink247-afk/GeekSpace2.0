@@ -106,6 +106,43 @@ export interface ApiKeyCreateInput {
   key: string;            // plaintext, encrypted server-side
 }
 
+// ----- Subscriptions & Billing --------------------------------
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  plan: string;
+  status: string;
+  monthly_credits: number;
+  credits_remaining: number;
+  credits_used_this_cycle: number;
+  billing_interval_days: number;
+  billing_cycle_start: string;
+  billing_cycle_end: string;
+  price_usd: number;
+  price_inr: number;
+  currency: string;
+  created_at: string;
+}
+
+export interface PlanDefinition {
+  id: string;
+  credits: number;
+  priceUsd: number;
+  priceInr: number;
+  intervalDays: number;
+  intervalLabel: string;
+  description: string;
+  badge?: string;
+}
+
+export interface DailyUsage {
+  day: string;
+  total_cost: number;
+  calls: number;
+  total_tokens: number;
+}
+
 // ----- Usage & Billing ---------------------------------------
 
 export type UsageChannel = 'telegram' | 'web' | 'terminal' | 'portfolio-chat' | 'whatsapp' | 'api';

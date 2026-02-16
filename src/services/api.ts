@@ -26,6 +26,9 @@ import type {
   ProviderBreakdown,
   HourlyActivity,
   Personality,
+  Subscription,
+  PlanDefinition,
+  DailyUsage,
 } from '@/types';
 
 // ----- Axios instance ----------------------------------------
@@ -158,6 +161,19 @@ export const usageService = {
     api.get<ProviderBreakdown[]>(`/usage/providers?days=${days}`),
 
   latency: () => api.get<HourlyActivity[]>('/usage/latency'),
+};
+
+// ----- Billing -----------------------------------------------
+
+export const billingService = {
+  getPlans: () => api.get<PlanDefinition[]>('/billing/plans'),
+
+  getPlan: () => api.get<Subscription>('/billing/plan'),
+
+  upgrade: (plan: string, currency: string) =>
+    api.post<Subscription>('/billing/upgrade', { plan, currency }),
+
+  getUsage: () => api.get<DailyUsage[]>('/billing/usage'),
 };
 
 // ----- Integrations ------------------------------------------
