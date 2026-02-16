@@ -17,6 +17,7 @@ import { edithProbe } from './services/edith.js';
 import { picoClawProbe } from './services/picoclaw.js';
 import { initAutomationsEngine } from './services/automations-engine.js';
 import { initMemoryTables } from './services/memory.js';
+import { initWorkflowTables } from './services/workflow-engine.js';
 import { authRouter } from './routes/auth.js';
 import { usersRouter } from './routes/users.js';
 import { agentRouter } from './routes/agent.js';
@@ -130,21 +131,26 @@ app.get('/api/health', async (_req, res) => {
   const allOk = dbOk;  // core requirement
   const code = allOk ? 200 : 503;
 
+  // Bridge availability depends on having at least one LLM backend
+  const bridgeOk = config.bridgeEnabled && (ollamaOk || edithOk || !!config.openrouterApiKey);
+
   res.status(code).json({
     ok: allOk,
     status: allOk ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
-    version: '2.3.0',
+    version: '2.4.0',
     uptime: Math.floor(process.uptime()),
     edith: edithOk,
     ollama: ollamaOk,
     picoclaw: picoOk,
+    bridge: bridgeOk,
     components: {
       database: dbOk ? 'ok' : 'down',
       ollama: ollamaOk ? 'reachable' : (config.ollamaBaseUrl ? 'unreachable' : 'not_configured'),
       openrouter: config.openrouterApiKey ? 'configured' : 'not_configured',
       edith: edithOk ? 'reachable' : (config.edithGatewayUrl ? 'unreachable' : 'not_configured'),
       picoclaw: picoOk ? 'reachable' : (config.picoClawEnabled ? 'unreachable' : 'not_configured'),
+      bridge: bridgeOk ? 'active' : (config.bridgeEnabled ? 'no_backends' : 'disabled'),
       telegram: config.telegramBotToken ? 'configured' : 'not_configured',
       n8n: config.n8nBaseUrl ? 'configured' : 'not_configured',
     },
@@ -190,6 +196,7 @@ app.listen(config.port, () => {
 
   // Initialize subsystems
   initMemoryTables();
+  initWorkflowTables();
   initAutomationsEngine();
   initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)'));
 });

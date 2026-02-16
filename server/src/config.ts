@@ -78,6 +78,11 @@ export const config = {
   picoClawEnabled: optional('PICOCLAW_ENABLED', 'false') === 'true',
   picoClawTimeout: optionalInt('PICOCLAW_TIMEOUT_MS', 5000),
 
+  // Pico-Kimi Bridge (orchestration layer)
+  bridgeEnabled: optional('BRIDGE_ENABLED', 'true') === 'true',
+  bridgeMaxWorkflowSteps: optionalInt('BRIDGE_MAX_WORKFLOW_STEPS', 6),
+  bridgeAutoEscalate: optional('BRIDGE_AUTO_ESCALATE', 'true') === 'true', // Auto-detect complex requests
+
   // Redis (job queue)
   redisUrl: optional('REDIS_URL', 'redis://localhost:6379'),
 
