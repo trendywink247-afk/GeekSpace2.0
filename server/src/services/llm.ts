@@ -5,6 +5,7 @@
 // Cloud Engine: OpenRouter — handles complex/coding/planning
 // Premium Engine: Moonshot Reasoning — heavy reasoning
 // Automation Engine: PicoClaw — lightweight automation tasks
+// Orchestration: Pico-Kimi Bridge — multi-agent workflows
 //
 // Flow: Intent classify → Route → Call → Log usage
 // ============================================================
