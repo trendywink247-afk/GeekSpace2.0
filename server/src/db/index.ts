@@ -191,6 +191,19 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS premium_sessions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    agent_codename TEXT NOT NULL,
+    task TEXT NOT NULL,
+    status TEXT DEFAULT 'active',
+    credits_used INTEGER DEFAULT 0,
+    messages_count INTEGER DEFAULT 0,
+    model_used TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now')),
+    ended_at TEXT
+  );
+
   CREATE TABLE IF NOT EXISTS subscriptions (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -208,6 +221,7 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   );
 
+  CREATE INDEX IF NOT EXISTS idx_premium_sessions_user ON premium_sessions(user_id);
   CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
   CREATE INDEX IF NOT EXISTS idx_reminders_user ON reminders(user_id);
   CREATE INDEX IF NOT EXISTS idx_integrations_user ON integrations(user_id);
@@ -245,6 +259,24 @@ try {
 try {
   db.exec(`ALTER TABLE subscriptions ADD COLUMN currency TEXT DEFAULT 'USD'`);
 } catch { /* column already exists — ignore */ }
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS premium_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      agent_codename TEXT NOT NULL,
+      task TEXT NOT NULL,
+      status TEXT DEFAULT 'active',
+      credits_used INTEGER DEFAULT 0,
+      messages_count INTEGER DEFAULT 0,
+      model_used TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now')),
+      ended_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_premium_sessions_user ON premium_sessions(user_id);
+  `);
+} catch { /* table already exists — ignore */ }
 
 // ── Plan definitions ────────────────────────────────────────
 

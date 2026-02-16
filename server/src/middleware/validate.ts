@@ -217,6 +217,16 @@ export const featuresUpdateSchema = z.object({
   manyChatIntegration: z.boolean().optional(),
 });
 
+// ---- Premium agent schemas ----
+
+export const deployPremiumSchema = z.object({
+  task: z.string().min(1).max(2000),
+});
+
+export const premiumChatSchema = z.object({
+  message: z.string().min(1).max(4000),
+});
+
 // ---- Memory schemas ----
 
 export const memoryCreateSchema = z.object({

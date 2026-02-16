@@ -143,6 +143,18 @@ export interface DailyUsage {
   total_tokens: number;
 }
 
+// ----- Premium Agent -----------------------------------------
+
+export interface PremiumSession {
+  sessionId: string;
+  codename: string;
+  task: string;
+  status: 'active' | 'completed';
+  creditsUsed: number;
+  messagesCount: number;
+  message?: string;
+}
+
 // ----- Usage & Billing ---------------------------------------
 
 export type UsageChannel = 'telegram' | 'web' | 'terminal' | 'portfolio-chat' | 'whatsapp' | 'api';

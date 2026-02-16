@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Sparkles, Mic, Paperclip, RotateCcw, Zap } from 'lucide-react';
+import { X, Send, Sparkles, Mic, Paperclip, RotateCcw, Zap, Rocket, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { agentService } from '@/services/api';
-import type { AgentPersonality } from '@/types';
+import { agentService, premiumAgentService } from '@/services/api';
+import type { AgentPersonality, PremiumSession } from '@/types';
 
 const personalityMeta: Record<AgentPersonality, { emoji: string; name: string; greeting: string }> = {
   edith: { emoji: '🔷', name: 'Edith', greeting: "What do you need? I'm ready." },
@@ -14,7 +14,7 @@ const personalityMeta: Record<AgentPersonality, { emoji: string; name: string; g
 
 interface ChatMessage {
   id: string;
-  role: 'user' | 'agent';
+  role: 'user' | 'agent' | 'system';
   content: string;
   timestamp: Date;
   provider?: string;
@@ -43,6 +43,12 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Premium session state
+  const [premiumSession, setPremiumSession] = useState<PremiumSession | null>(null);
+  const [showDeployDialog, setShowDeployDialog] = useState(false);
+  const [deployTask, setDeployTask] = useState('');
+  const [isDeploying, setIsDeploying] = useState(false);
+
   const pMeta = personalityMeta[(agent.personality as AgentPersonality) || 'jarvis'] || personalityMeta.jarvis;
 
   // Initialize with greeting
@@ -68,6 +74,60 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [isOpen]);
+
+  // Deploy specialist
+  const handleDeploy = useCallback(async () => {
+    if (!deployTask.trim() || isDeploying) return;
+    setIsDeploying(true);
+    try {
+      const { data } = await premiumAgentService.deploy(deployTask.trim());
+      setPremiumSession({ ...data, task: deployTask.trim() });
+      setShowDeployDialog(false);
+      setDeployTask('');
+      // Add personality intro message
+      if (data.message) {
+        setMessages((prev) => [...prev, {
+          id: `deploy-intro-${Date.now()}`,
+          role: 'agent',
+          content: data.message,
+          timestamp: new Date(),
+        }, {
+          id: `deploy-system-${Date.now()}`,
+          role: 'system',
+          content: `${data.codename} deployed — 100 credits used`,
+          timestamp: new Date(),
+        }]);
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to deploy specialist.';
+      setMessages((prev) => [...prev, {
+        id: `deploy-err-${Date.now()}`,
+        role: 'system',
+        content: msg,
+        timestamp: new Date(),
+      }]);
+      setShowDeployDialog(false);
+    } finally {
+      setIsDeploying(false);
+    }
+  }, [deployTask, isDeploying]);
+
+  // End session
+  const handleEndSession = useCallback(async () => {
+    if (!premiumSession) return;
+    try {
+      const { data } = await premiumAgentService.endSession(premiumSession.sessionId);
+      setMessages((prev) => [...prev, {
+        id: `session-end-${Date.now()}`,
+        role: 'system',
+        content: `${premiumSession.codename} session complete — ${data.creditsUsed} credits used, ${data.messagesCount} messages`,
+        timestamp: new Date(),
+      }]);
+      setPremiumSession(null);
+    } catch {
+      setPremiumSession(null);
+    }
+  }, [premiumSession]);
 
   const sendMessage = useCallback((text?: string) => {
     const content = text || input.trim();
@@ -96,6 +156,25 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
         return [...prev, { id: agentMsgId, role: 'agent' as const, content: '', timestamp: new Date(), ...update }];
       });
     };
+
+    // Premium session chat (non-streaming)
+    if (premiumSession) {
+      (async () => {
+        try {
+          const { data } = await premiumAgentService.chat(premiumSession.sessionId, content);
+          setAgentMsg({ content: data.text, isStreaming: false, provider: data.provider });
+          setPremiumSession((prev) => prev ? { ...prev, creditsUsed: data.sessionCreditsTotal, messagesCount: data.messagesCount } : prev);
+        } catch {
+          setAgentMsg({
+            content: "Sorry, I couldn't process that right now. Please try again.",
+            isStreaming: false,
+          });
+        } finally {
+          setIsTyping(false);
+        }
+      })();
+      return;
+    }
 
     // Helper: non-streaming chat call
     const doRegularChat = async () => {
@@ -186,18 +265,27 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
         setIsTyping(false);
       }
     })();
-  }, [input, isTyping]);
+  }, [input, isTyping, premiumSession]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      if (showDeployDialog) {
+        handleDeploy();
+      } else {
+        sendMessage();
+      }
     }
   };
 
   const resetChat = () => {
     setMessages([]);
+    setPremiumSession(null);
   };
+
+  // Current avatar emoji — specialist uses a rocket
+  const avatarEmoji = premiumSession ? '🚀' : pMeta.emoji;
+  const headerName = premiumSession ? `${premiumSession.codename} — Specialist` : (agent.name || pMeta.name);
 
   return (
     <>
@@ -216,26 +304,48 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
         <div className="flex items-center justify-between p-4 border-b border-[#7B61FF]/20 bg-[#05050A]">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center text-lg">
-                {pMeta.emoji}
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
+                premiumSession
+                  ? 'bg-gradient-to-br from-[#F59E0B] to-[#EF4444]'
+                  : 'bg-gradient-to-br from-[#7B61FF] to-[#FF61DC]'
+              }`}>
+                {avatarEmoji}
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#61FF7B] border-2 border-[#05050A]" />
+              <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#05050A] ${
+                premiumSession ? 'bg-[#F59E0B] animate-pulse' : 'bg-[#61FF7B]'
+              }`} />
             </div>
             <div>
-              <div className="font-semibold text-sm text-[#F4F6FF]">{agent.name || pMeta.name}</div>
-              <div className="text-xs text-[#61FF7B] flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> Online
-              </div>
+              <div className="font-semibold text-sm text-[#F4F6FF]">{headerName}</div>
+              {premiumSession ? (
+                <div className="text-xs text-[#F59E0B] flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> Session active &middot; {premiumSession.creditsUsed} credits
+                </div>
+              ) : (
+                <div className="text-xs text-[#61FF7B] flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> Online
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={resetChat}
-              className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors"
-              title="Reset chat"
-            >
-              <RotateCcw className="w-4 h-4 text-[#A7ACB8]" />
-            </button>
+            {premiumSession ? (
+              <button
+                onClick={handleEndSession}
+                className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium transition-colors flex items-center gap-1"
+                title="End specialist session"
+              >
+                <Square className="w-3 h-3" /> End Session
+              </button>
+            ) : (
+              <button
+                onClick={resetChat}
+                className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors"
+                title="Reset chat"
+              >
+                <RotateCcw className="w-4 h-4 text-[#A7ACB8]" />
+              </button>
+            )}
             <button
               onClick={onClose}
               className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors"
@@ -250,36 +360,48 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start'}`}
             >
-              {msg.role === 'agent' && (
-                <div className="w-7 h-7 rounded-full bg-[#7B61FF]/20 flex items-center justify-center mr-2 flex-shrink-0 mt-1 text-sm">
-                  {pMeta.emoji}
+              {msg.role === 'system' ? (
+                <div className="px-3 py-1.5 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/20 text-[10px] text-[#A7ACB8]">
+                  {msg.content}
                 </div>
+              ) : (
+                <>
+                  {msg.role === 'agent' && (
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center mr-2 flex-shrink-0 mt-1 text-sm ${
+                      premiumSession ? 'bg-[#F59E0B]/20' : 'bg-[#7B61FF]/20'
+                    }`}>
+                      {avatarEmoji}
+                    </div>
+                  )}
+                  <div
+                    className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                      msg.role === 'user'
+                        ? 'bg-[#7B61FF] text-white rounded-br-md'
+                        : 'bg-[#05050A] text-[#F4F6FF] border border-[#7B61FF]/20 rounded-bl-md'
+                    }`}
+                  >
+                    {msg.content}
+                    {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-[#7B61FF] ml-0.5 animate-pulse rounded-sm" />}
+                    {msg.provider && !msg.isStreaming && (
+                      <span className="block mt-1.5 text-[10px] text-[#A7ACB8]/60 flex items-center gap-1">
+                        <Zap className="w-2.5 h-2.5" /> {msg.provider}
+                      </span>
+                    )}
+                  </div>
+                </>
               )}
-              <div
-                className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'bg-[#7B61FF] text-white rounded-br-md'
-                    : 'bg-[#05050A] text-[#F4F6FF] border border-[#7B61FF]/20 rounded-bl-md'
-                }`}
-              >
-                {msg.content}
-                {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-[#7B61FF] ml-0.5 animate-pulse rounded-sm" />}
-                {msg.provider && !msg.isStreaming && (
-                  <span className="block mt-1.5 text-[10px] text-[#A7ACB8]/60 flex items-center gap-1">
-                    <Zap className="w-2.5 h-2.5" /> {msg.provider}
-                  </span>
-                )}
-              </div>
             </div>
           ))}
 
           {/* Typing indicator */}
           {isTyping && (
             <div className="flex justify-start">
-              <div className="w-7 h-7 rounded-full bg-[#7B61FF]/20 flex items-center justify-center mr-2 flex-shrink-0 mt-1 text-sm">
-                {pMeta.emoji}
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center mr-2 flex-shrink-0 mt-1 text-sm ${
+                premiumSession ? 'bg-[#F59E0B]/20' : 'bg-[#7B61FF]/20'
+              }`}>
+                {avatarEmoji}
               </div>
               <div className="bg-[#05050A] border border-[#7B61FF]/20 px-4 py-3 rounded-2xl rounded-bl-md">
                 <div className="flex gap-1.5">
@@ -296,7 +418,7 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
           )}
 
           {/* Suggested prompts (show when only greeting) */}
-          {messages.length <= 1 && !isTyping && (
+          {messages.length <= 1 && !isTyping && !premiumSession && (
             <div className="space-y-2 pt-2">
               <p className="text-xs text-[#A7ACB8] uppercase tracking-wider">Suggestions</p>
               {suggestedPrompts.map((prompt) => (
@@ -314,9 +436,59 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Deploy Dialog Overlay */}
+        {showDeployDialog && (
+          <div className="absolute inset-0 bg-black/60 z-10 flex items-center justify-center p-6">
+            <div className="bg-[#0B0B10] border border-[#7B61FF]/30 rounded-2xl p-5 w-full max-w-sm space-y-4">
+              <div className="flex items-center gap-2">
+                <Rocket className="w-5 h-5 text-[#F59E0B]" />
+                <h3 className="text-sm font-semibold text-[#F4F6FF]">Deploy Specialist</h3>
+              </div>
+              <textarea
+                value={deployTask}
+                onChange={(e) => setDeployTask(e.target.value)}
+                placeholder="Describe the task for the specialist..."
+                className="w-full h-24 px-3 py-2 bg-[#05050A] border border-[#7B61FF]/30 rounded-xl text-sm text-[#F4F6FF] placeholder-[#A7ACB8]/50 resize-none focus:outline-none focus:border-[#7B61FF]/60"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleDeploy();
+                  }
+                }}
+              />
+              <p className="text-[11px] text-[#A7ACB8]/60">Costs 100 credits to deploy. Uses premium reasoning engine.</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowDeployDialog(false); setDeployTask(''); }}
+                  className="flex-1 px-4 py-2 rounded-xl border border-[#7B61FF]/20 text-sm text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors"
+                >
+                  Cancel
+                </button>
+                <Button
+                  onClick={handleDeploy}
+                  disabled={!deployTask.trim() || isDeploying}
+                  className="flex-1 bg-[#F59E0B] hover:bg-[#D97706] text-black rounded-xl text-sm font-medium"
+                >
+                  {isDeploying ? 'Deploying...' : 'Deploy'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Input */}
         <div className="p-4 border-t border-[#7B61FF]/20 bg-[#05050A] pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-2">
+            {!premiumSession && (
+              <button
+                onClick={() => setShowDeployDialog(true)}
+                className="p-2 rounded-lg hover:bg-[#F59E0B]/10 transition-colors"
+                title="Deploy Specialist"
+              >
+                <Rocket className="w-4 h-4 text-[#F59E0B]" />
+              </button>
+            )}
             <button className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors" title="Attach file">
               <Paperclip className="w-4 h-4 text-[#A7ACB8]" />
             </button>
@@ -325,7 +497,7 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything..."
+              placeholder={premiumSession ? `Ask ${premiumSession.codename}...` : 'Ask anything...'}
               className="flex-1 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF] rounded-xl"
             />
             <button className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors" title="Voice input">
@@ -334,13 +506,20 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
             <Button
               onClick={() => sendMessage()}
               disabled={!input.trim() || isTyping}
-              className="bg-[#7B61FF] hover:bg-[#6B51EF] rounded-xl px-3"
+              className={`rounded-xl px-3 ${
+                premiumSession
+                  ? 'bg-[#F59E0B] hover:bg-[#D97706]'
+                  : 'bg-[#7B61FF] hover:bg-[#6B51EF]'
+              }`}
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
           <p className="text-[10px] text-[#A7ACB8]/50 text-center mt-2">
-            Powered by GeekSpace &middot; {agent.primaryModel}
+            {premiumSession
+              ? `${premiumSession.codename} · Premium Engine · ${premiumSession.messagesCount} messages`
+              : <>Powered by GeekSpace &middot; {agent.primaryModel}</>
+            }
           </p>
         </div>
       </div>

@@ -29,6 +29,7 @@ import type {
   Subscription,
   PlanDefinition,
   DailyUsage,
+  PremiumSession,
 } from '@/types';
 
 // ----- Axios instance ----------------------------------------
@@ -301,6 +302,20 @@ export const automationLogService = {
 
   forAutomation: (automationId: string, limit = 50) =>
     api.get<AutomationLog[]>(`/automations/${automationId}/logs?limit=${limit}`),
+};
+
+// ----- Premium Agent -----------------------------------------
+
+export const premiumAgentService = {
+  deploy: (task: string) =>
+    api.post<PremiumSession>('/agent/deploy-premium', { task }),
+
+  chat: (sessionId: string, message: string) =>
+    api.post<{ text: string; provider: string; model: string; latencyMs: number; creditsUsed: number; sessionCreditsTotal: number; messagesCount: number; creditsRemaining: number }>(
+      `/agent/premium-chat/${sessionId}`, { message }),
+
+  endSession: (sessionId: string) =>
+    api.delete<PremiumSession>(`/agent/premium-session/${sessionId}`),
 };
 
 // ----- Public Agent Chat -------------------------------------

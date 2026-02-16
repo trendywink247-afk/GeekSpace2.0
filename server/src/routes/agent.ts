@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema, memoryCreateSchema, memoryUpdateSchema } from '../middleware/validate.js';
+import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema, memoryCreateSchema, memoryUpdateSchema, deployPremiumSchema, premiumChatSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { routeChat, classifyIntent, computeCreditCost, deductSubscriptionCredits, streamOllama, type ChatMessage, type Provider } from '../services/llm.js';
 import { edithChat } from '../services/edith.js';
@@ -11,6 +11,7 @@ import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openc
 import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
 import { buildMemoryContext, logConversation, extractMemories, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory } from '../services/memory.js';
+import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
 
 export const agentRouter = Router();
 
@@ -607,6 +608,120 @@ agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
   const conversations = getRecentConversations(req.userId!, limit);
   res.json(conversations);
+});
+
+// ---- Premium Agent (Specialist Sessions) ----
+
+agentRouter.post('/deploy-premium', requireAuth, validateBody(deployPremiumSchema), async (req: AuthRequest, res) => {
+  const { task } = req.body as { task: string };
+  const userId = req.userId!;
+
+  try {
+    // Check subscription: must be paid plan
+    const sub = db.prepare('SELECT plan, credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string; credits_remaining: number } | undefined;
+    if (!sub || sub.plan === 'free') {
+      res.status(403).json({ error: 'Premium agent requires a paid plan.' });
+      return;
+    }
+    if (sub.credits_remaining < 100) {
+      res.status(403).json({ error: 'Not enough credits to deploy a specialist (100 required).' });
+      return;
+    }
+
+    // Deduct deployment cost
+    deductSubscriptionCredits(userId, 100);
+
+    const codename = generateCodename();
+    const agentConfig = db.prepare('SELECT personality FROM agent_configs WHERE user_id = ?').get(userId) as { personality?: string } | undefined;
+    const personalityId = agentConfig?.personality || 'jarvis';
+
+    const sessionId = uuid();
+    db.prepare(`INSERT INTO premium_sessions (id, user_id, agent_codename, task, credits_used) VALUES (?, ?, ?, ?, 100)`).run(sessionId, userId, codename, task);
+
+    const message = getDeployMessage(codename, personalityId);
+
+    res.json({ sessionId, codename, status: 'active', message, creditsUsed: 100 });
+  } catch (err) {
+    logger.error({ err, userId }, 'Deploy premium agent error');
+    res.status(500).json({ error: 'Failed to deploy specialist.' });
+  }
+});
+
+agentRouter.post('/premium-chat/:sessionId', requireAuth, validateBody(premiumChatSchema), async (req: AuthRequest, res) => {
+  const { message } = req.body as { message: string };
+  const { sessionId } = req.params;
+  const userId = req.userId!;
+
+  try {
+    const session = db.prepare('SELECT * FROM premium_sessions WHERE id = ? AND user_id = ?').get(sessionId, userId) as Record<string, unknown> | undefined;
+    if (!session) { res.status(404).json({ error: 'Session not found.' }); return; }
+    if (session.status !== 'active') { res.status(400).json({ error: 'Session has ended.' }); return; }
+
+    // Check credits
+    const sub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+    if (!sub || sub.credits_remaining <= 0) {
+      res.json({ text: 'You have no credits remaining. Please upgrade your plan.', provider: 'builtin', model: '', latencyMs: 0, creditsUsed: 0, sessionCreditsTotal: session.credits_used as number, messagesCount: session.messages_count as number, creditsRemaining: 0 });
+      return;
+    }
+
+    const agentConfig = db.prepare('SELECT personality FROM agent_configs WHERE user_id = ?').get(userId) as { personality?: string } | undefined;
+    const personalityId = agentConfig?.personality || 'jarvis';
+    const premiumSystemPrompt = buildPremiumPrompt(session.task as string, session.agent_codename as string, personalityId);
+
+    const edithResult = await edithChat(message, premiumSystemPrompt);
+
+    const creditCost = computeCreditCost('edith', edithResult.tokensIn, edithResult.tokensOut);
+    deductSubscriptionCredits(userId, creditCost);
+
+    // Update session stats
+    const newCreditsUsed = (session.credits_used as number) + creditCost;
+    const newMessagesCount = (session.messages_count as number) + 1;
+    db.prepare('UPDATE premium_sessions SET credits_used = ?, messages_count = ?, model_used = ? WHERE id = ?').run(newCreditsUsed, newMessagesCount, config.moonshotReasoningModel, sessionId);
+
+    // Log usage
+    db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
+      VALUES (?, ?, 'edith', ?, ?, ?, ?, 'web', 'premium-agent')`).run(
+      uuid(), userId, config.moonshotReasoningModel, edithResult.tokensIn, edithResult.tokensOut, creditCost,
+    );
+
+    const updatedSub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number };
+
+    res.json({
+      text: edithResult.text,
+      provider: 'edith',
+      model: config.moonshotReasoningModel,
+      latencyMs: edithResult.latencyMs,
+      creditsUsed: creditCost,
+      sessionCreditsTotal: newCreditsUsed,
+      messagesCount: newMessagesCount,
+      creditsRemaining: updatedSub.credits_remaining,
+    });
+  } catch (err) {
+    logger.error({ err, userId, sessionId }, 'Premium chat error');
+    res.status(500).json({ error: 'Failed to process message.' });
+  }
+});
+
+agentRouter.delete('/premium-session/:sessionId', requireAuth, (req: AuthRequest, res) => {
+  const { sessionId } = req.params;
+  const userId = req.userId!;
+
+  const session = db.prepare('SELECT * FROM premium_sessions WHERE id = ? AND user_id = ?').get(sessionId, userId) as Record<string, unknown> | undefined;
+  if (!session) { res.status(404).json({ error: 'Session not found.' }); return; }
+
+  db.prepare("UPDATE premium_sessions SET status = 'completed', ended_at = datetime('now') WHERE id = ?").run(sessionId);
+
+  const createdAt = new Date(session.created_at as string).getTime();
+  const duration = Math.round((Date.now() - createdAt) / 1000);
+
+  res.json({
+    sessionId,
+    codename: session.agent_codename,
+    creditsUsed: session.credits_used,
+    messagesCount: session.messages_count,
+    duration,
+    status: 'completed',
+  });
 });
 
 // ---- Public Portfolio Chat (real LLM-powered) ----
