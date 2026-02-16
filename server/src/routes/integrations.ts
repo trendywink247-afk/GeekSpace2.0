@@ -8,6 +8,9 @@ export const integrationsRouter = Router();
 
 const parseIntegration = (row: Record<string, unknown>) => ({
   ...row,
+  userId: row.user_id,
+  requestsToday: row.requests_today ?? 0,
+  lastSync: row.last_sync ?? '',
   features: JSON.parse(row.features as string || '[]'),
   permissions: JSON.parse(row.permissions as string || '[]'),
   config: JSON.parse(row.config as string || '{}'),
