@@ -67,6 +67,18 @@ export function BillingPage() {
     }
   };
 
+  const handleDayPass = async () => {
+    try {
+      const { data } = await billingService.activateDayPass();
+      setToast({ message: data.message, type: 'success' });
+      const { data: sub } = await billingService.getPlan();
+      setSubscription(sub);
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Day pass failed';
+      setToast({ message, type: 'error' });
+    }
+  };
+
   const price = (plan: PlanDefinition) =>
     currency === 'INR' ? `₹${plan.priceInr.toLocaleString()}` : `$${plan.priceUsd}`;
 
@@ -253,10 +265,13 @@ export function BillingPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
+                  <div className="flex items-baseline flex-wrap gap-1">
                     <span className="text-3xl font-bold text-[#F4F6FF]">{price(plan)}</span>
                     {plan.priceUsd > 0 && (
-                      <span className="text-sm text-[#A7ACB8] ml-1">/ {plan.intervalLabel}</span>
+                      <span className="text-sm text-[#A7ACB8]">/ {plan.intervalLabel}</span>
+                    )}
+                    {currency === 'INR' && plan.originalPriceInr && (
+                      <span className="text-sm text-[#A7ACB8] line-through ml-1">₹{plan.originalPriceInr.toLocaleString()}</span>
                     )}
                   </div>
                   <div className="text-sm text-[#A7ACB8]">{plan.description}</div>
@@ -282,6 +297,14 @@ export function BillingPage() {
                       )}
                       {isFree ? 'Free tier' : 'Upgrade'}
                     </Button>
+                  )}
+                  {subscription?.plan === 'free' && plan.id === 'free' && (
+                    <button
+                      onClick={handleDayPass}
+                      className="w-full mt-2 py-1.5 px-3 rounded-lg border border-[#7B61FF]/30 text-[#7B61FF] text-xs hover:bg-[#7B61FF]/10 transition-colors"
+                    >
+                      Try PicoClaw for $1/day →
+                    </button>
                   )}
                 </CardContent>
               </Card>

@@ -134,6 +134,9 @@ export const agentService = {
 
   getPersonalities: () =>
     api.get<Record<string, Personality>>('/agent/personalities'),
+
+  generateContent: (type: 'headline' | 'bio' | 'about' | 'skills', tags: string[], name?: string) =>
+    api.post<{ content: string }>('/agent/generate-content', { type, tags, name }),
 };
 
 // ----- API Keys ----------------------------------------------
@@ -183,6 +186,8 @@ export const billingService = {
     api.post<Subscription>('/billing/upgrade', { plan, currency }),
 
   getUsage: () => api.get<DailyUsage[]>('/billing/usage'),
+
+  activateDayPass: () => api.post<{ message: string; expiresAt: string }>('/billing/day-pass'),
 };
 
 // ----- Integrations ------------------------------------------

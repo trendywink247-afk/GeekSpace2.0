@@ -143,10 +143,12 @@ export interface PlanDefinition {
   credits: number;
   priceUsd: number;
   priceInr: number;
+  originalPriceInr?: number;   // slashed original price
   intervalDays: number;
   intervalLabel: string;
   description: string;
   badge?: string;
+  picoSlots?: number;
 }
 
 export interface DailyUsage {
