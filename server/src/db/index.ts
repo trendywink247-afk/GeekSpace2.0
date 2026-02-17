@@ -337,6 +337,23 @@ try {
   `);
 } catch { /* table already exists — ignore */ }
 
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS generated_artifacts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL DEFAULT 'code',
+      title TEXT NOT NULL,
+      html TEXT DEFAULT '',
+      css TEXT DEFAULT '',
+      js TEXT DEFAULT '',
+      metadata TEXT DEFAULT '{}',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_artifacts_user ON generated_artifacts(user_id);
+  `);
+} catch { /* table already exists — ignore */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
