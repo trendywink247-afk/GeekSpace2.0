@@ -97,6 +97,42 @@ agentRouter.get('/personalities', (_req, res) => {
   res.json(PERSONALITIES);
 });
 
+// ---- AI Content Generation (for onboarding magic) ----
+
+agentRouter.post('/generate-content', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { type, tags, name } = req.body as { type: string; tags: string[]; name?: string };
+    if (!type || !tags || tags.length === 0) {
+      return res.status(400).json({ error: 'type and at least 1 tag required' });
+    }
+
+    const prompts: Record<string, string> = {
+      headline: `Generate a short professional headline (under 12 words) for someone named "${name || 'a developer'}" who specializes in: ${tags.join(', ')}. Return ONLY the headline text, no quotes, no explanation.`,
+      bio: `Write a 2-sentence professional bio for someone named "${name || 'a developer'}" who specializes in: ${tags.join(', ')}. Make it engaging and personal. Return ONLY the bio text, no quotes.`,
+      about: `Write a brief 3-sentence "about me" for a developer portfolio. Person: "${name || 'a developer'}". Expertise: ${tags.join(', ')}. Make it compelling for potential collaborators. Return ONLY the text, no quotes.`,
+      skills: `Suggest 6 technical skills (comma-separated) for someone who specializes in: ${tags.join(', ')}. Return ONLY the comma-separated list, nothing else.`,
+    };
+
+    const systemPrompt = prompts[type];
+    if (!systemPrompt) {
+      return res.status(400).json({ error: 'type must be headline, bio, about, or skills' });
+    }
+
+    const result = await routeChat(
+      [{ role: 'system', content: systemPrompt }, { role: 'user', content: 'Generate it now.' }],
+      { forceProvider: 'edith' as Provider }
+    );
+
+    // Deduct 1 credit
+    deductSubscriptionCredits(req.userId!, 1);
+
+    res.json({ content: result.reply.trim().replace(/^["']|["']$/g, '') });
+  } catch (err: unknown) {
+    logger.error('generate-content error: %s', err instanceof Error ? err.message : String(err));
+    res.status(500).json({ error: 'AI generation failed. Try again.' });
+  }
+});
+
 // ---- Two-Tier Agent Chat ----
 //
 // Tier 1 (free):    Ollama local — handles all queries by default
