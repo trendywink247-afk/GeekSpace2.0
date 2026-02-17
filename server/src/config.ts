@@ -118,6 +118,9 @@ export const config = {
     ? required('ENCRYPTION_KEY')
     : optional('ENCRYPTION_KEY', 'dev-encryption-key-32-chars-long!'),
 
+  // Pico Fleet worker
+  picoWorkerIntervalMs: optionalInt('PICO_WORKER_INTERVAL_MS', 10000),
+
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',
 } as const;

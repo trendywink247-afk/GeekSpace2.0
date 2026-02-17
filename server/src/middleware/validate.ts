@@ -249,3 +249,24 @@ export const memoryUpdateSchema = z.object({
 export const workflowQuerySchema = z.object({
   limit: z.number().min(1).max(100).optional().default(20),
 });
+
+// ---- Pico Fleet schemas ----
+
+export const picoAgentCreateSchema = z.object({
+  name: z.string().min(1).max(30),
+});
+
+export const picoAgentUpdateSchema = z.object({
+  name: z.string().min(1).max(30).optional(),
+  status: z.enum(['active', 'paused']).optional(),
+}).strict();
+
+export const picoTaskPlanSchema = z.object({
+  request: z.string().min(1).max(1000),
+});
+
+export const picoTaskQuerySchema = z.object({
+  status: z.enum(['queued', 'running', 'completed', 'failed']).optional(),
+  slot: z.coerce.number().int().min(1).max(3).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});

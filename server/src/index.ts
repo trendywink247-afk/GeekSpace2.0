@@ -33,6 +33,8 @@ import { featuresRouter } from './routes/features.js';
 import { billingRouter } from './routes/billing.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { initTelegramBot } from './services/telegram.js';
+import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
+import { picoRouter } from './routes/pico.js';
 
 const APP_VERSION = '2.4.0';
 
@@ -174,6 +176,7 @@ app.use('/api/api-keys', apiKeysRouter);
 app.use('/api/features', featuresRouter);
 app.use('/api/billing', billingRouter);
 app.use('/api/webhooks', webhooksRouter);
+app.use('/api/pico', picoRouter);
 
 // ---- Global error handler (MUST be last) ----
 app.use(errorHandler);
@@ -199,6 +202,9 @@ app.listen(config.port, () => {
   // Initialize subsystems
   initMemoryTables();
   initWorkflowTables();
+  initPicoFleetTables();
+  ensureDefaultAgents();
   initAutomationsEngine();
+  startPicoWorker();
   initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)'));
 });

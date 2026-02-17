@@ -144,6 +144,47 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     } else if (message.startsWith('/pico ')) {
       forceRoute = 'pico';
       message = message.slice(6).trim();
+    } else if (message.startsWith('/task ')) {
+      // ---- Pico Fleet task planning via chat ----
+      const taskDesc = message.slice(6).trim();
+      if (!taskDesc) {
+        res.json({ text: 'Usage: /task <description>', route: 'error', provider: 'builtin', latencyMs: 0 });
+        return;
+      }
+      try {
+        if (sub && sub.credits_remaining < 10) {
+          res.json({ text: 'Not enough credits for task planning (minimum 10 required).', route: 'error', provider: 'builtin', latencyMs: 0 });
+          return;
+        }
+        const { planTasks: planTasksFn, queueTasks: queueTasksFn } = await import('../services/pico-fleet.js');
+        const start = Date.now();
+        const { tasks, creditCost } = await planTasksFn(userId, taskDesc);
+        const latencyMs = Date.now() - start;
+
+        if (tasks.length === 0) {
+          res.json({ text: `No actionable tasks could be planned. Credits used: ${creditCost}`, route: 'pico-fleet', provider: 'edith', latencyMs, creditsUsed: creditCost });
+          return;
+        }
+
+        const taskIds = queueTasksFn(userId, tasks, 'kimi');
+        const updatedSub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+        const summary = tasks.map(t => `[slot ${t.agent_slot}] ${t.task_type}: ${t.description}`).join('\n');
+
+        logConversation(userId, 'assistant', `Planned ${taskIds.length} task(s):\n${summary}`);
+
+        res.json({
+          text: `Planned ${taskIds.length} task(s):\n${summary}\n\nCredits used: ${creditCost}. Remaining: ${updatedSub?.credits_remaining ?? 0}`,
+          route: 'pico-fleet',
+          tier: 'premium',
+          provider: 'edith',
+          latencyMs,
+          creditsUsed: creditCost,
+          creditsRemaining: updatedSub?.credits_remaining ?? 0,
+        });
+      } catch (err) {
+        res.json({ text: `Task planning failed: ${err instanceof Error ? err.message : 'Unknown error'}`, route: 'error', provider: 'builtin', latencyMs: 0 });
+      }
+      return;
     } else if (message.startsWith('/bridge ') || message.startsWith('/workflow ')) {
       forceRoute = 'bridge';
       const prefixLen = message.startsWith('/bridge ') ? 8 : 10;
@@ -468,6 +509,100 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
     return;
   }
 
+  // ---- Pico Fleet commands ----
+  if (cmd === 'gs pico list') {
+    const { getUserAgents } = await import('../services/pico-fleet.js');
+    const agents = getUserAgents(userId);
+    if (!agents.length) { res.json({ output: 'No Pico agents found.', isError: false }); return; }
+    const lines = agents.map(a =>
+      `  Slot ${a.slot}: ${a.name} [${a.status}] completed: ${a.tasks_completed}, failed: ${a.tasks_failed}`
+    );
+    res.json({ output: `Pico Agents:\n${lines.join('\n')}`, isError: false });
+    return;
+  }
+
+  if (cmd.startsWith('gs pico create ')) {
+    const name = cmd.slice(15).replace(/^["']|["']$/g, '').trim();
+    if (!name || name.length > 30) { res.json({ output: 'Agent name required (1-30 chars)', isError: true }); return; }
+    try {
+      const { createAgent } = await import('../services/pico-fleet.js');
+      const agent = createAgent(userId, name);
+      res.json({ output: `Created Pico agent "${agent.name}" at slot ${agent.slot}`, isError: false });
+    } catch (err) {
+      res.json({ output: err instanceof Error ? err.message : 'Failed to create agent', isError: true });
+    }
+    return;
+  }
+
+  if (cmd.startsWith('gs pico pause ')) {
+    const slotStr = cmd.slice(14).trim();
+    const slot = parseInt(slotStr, 10);
+    if (isNaN(slot) || slot < 1 || slot > 3) { res.json({ output: 'Usage: gs pico pause <slot> (1-3)', isError: true }); return; }
+    const { getAgentBySlot, updateAgent } = await import('../services/pico-fleet.js');
+    const agent = getAgentBySlot(userId, slot);
+    if (!agent) { res.json({ output: `No agent at slot ${slot}`, isError: true }); return; }
+    updateAgent(agent.id, userId, { status: 'paused' });
+    res.json({ output: `Paused ${agent.name} (slot ${slot})`, isError: false });
+    return;
+  }
+
+  if (cmd.startsWith('gs pico resume ')) {
+    const slotStr = cmd.slice(15).trim();
+    const slot = parseInt(slotStr, 10);
+    if (isNaN(slot) || slot < 1 || slot > 3) { res.json({ output: 'Usage: gs pico resume <slot> (1-3)', isError: true }); return; }
+    const { getAgentBySlot, updateAgent } = await import('../services/pico-fleet.js');
+    const agent = getAgentBySlot(userId, slot);
+    if (!agent) { res.json({ output: `No agent at slot ${slot}`, isError: true }); return; }
+    updateAgent(agent.id, userId, { status: 'active' });
+    res.json({ output: `Resumed ${agent.name} (slot ${slot})`, isError: false });
+    return;
+  }
+
+  if (cmd === 'gs pico tasks') {
+    const { getUserTasks } = await import('../services/pico-fleet.js');
+    const tasks = getUserTasks(userId, { limit: 20 });
+    if (!tasks.length) { res.json({ output: 'No tasks found. Use: gs task "description"', isError: false }); return; }
+    const lines = tasks.map(t => {
+      const slot = t.agent_slot || '?';
+      return `  ${(t.id).slice(0, 6)} | slot ${slot} | ${t.task_type.padEnd(18)} | ${t.status.padEnd(9)} | ${t.description.slice(0, 40)}`;
+    });
+    res.json({ output: `Recent Tasks:\nID     | Slot | Type               | Status    | Description\n${lines.join('\n')}`, isError: false });
+    return;
+  }
+
+  if (cmd.startsWith('gs task ')) {
+    const taskDesc = command.slice(8).replace(/^["']|["']$/g, '').trim();
+    if (!taskDesc) { res.json({ output: 'Usage: gs task "description"', isError: true }); return; }
+
+    try {
+      const sub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+      if (sub && sub.credits_remaining < 10) {
+        res.json({ output: 'Not enough credits for task planning (minimum 10 required)', isError: true });
+        return;
+      }
+
+      const { planTasks, queueTasks } = await import('../services/pico-fleet.js');
+      const { tasks, creditCost } = await planTasks(userId, taskDesc);
+
+      if (tasks.length === 0) {
+        res.json({ output: `No actionable tasks planned. Credits used: ${creditCost}`, isError: false });
+        return;
+      }
+
+      const taskIds = queueTasks(userId, tasks, 'kimi');
+      const summary = tasks.map(t => `  - [slot ${t.agent_slot}] ${t.task_type}: ${t.description}`).join('\n');
+      const updatedSub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+
+      res.json({
+        output: `Planned ${taskIds.length} task(s):\n${summary}\n\nCredits used: ${creditCost} (planning). Remaining: ${updatedSub?.credits_remaining ?? 0}`,
+        isError: false,
+      });
+    } catch (err) {
+      res.json({ output: `Task planning failed: ${err instanceof Error ? err.message : 'Unknown error'}`, isError: true });
+    }
+    return;
+  }
+
   // ---- AI command — routed through LLM router ----
   if (cmd.startsWith('ai ')) {
     const query = command.slice(3).replace(/^["']|["']$/g, '');
@@ -507,7 +642,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
   }
 
   if (cmd === 'help') {
-    res.json({ output: `GeekSpace Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs credits                Check credit balance\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  ai "prompt"               Ask your AI agent (real LLM)\n  clear                     Clear terminal\n  help                      Show this help\n\nChat Prefixes:\n  /bridge <msg>             Multi-agent orchestration\n  /workflow <msg>           Alias for /bridge\n  /agent:<role> <msg>       Force specific agent (coder, planner, analyst, etc.)\n  /premium <msg>            Force Kimi premium reasoning\n  /local <msg>              Force local Ollama\n  /pico <msg>               Force PicoClaw`, isError: false });
+    res.json({ output: `GeekSpace Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs credits                Check credit balance\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  gs pico list              List Pico agents\n  gs pico create "Name"     Create a new Pico agent (max 3)\n  gs pico pause <slot>      Pause agent at slot (1-3)\n  gs pico resume <slot>     Resume agent at slot\n  gs pico tasks             List recent tasks\n  gs task "description"     Plan and queue tasks via Kimi\n  ai "prompt"               Ask your AI agent (real LLM)\n  clear                     Clear terminal\n  help                      Show this help\n\nChat Prefixes:\n  /bridge <msg>             Multi-agent orchestration\n  /workflow <msg>           Alias for /bridge\n  /agent:<role> <msg>       Force specific agent (coder, planner, analyst, etc.)\n  /premium <msg>            Force Kimi premium reasoning\n  /local <msg>              Force local Ollama\n  /pico <msg>               Force PicoClaw\n  /task <description>       Plan and queue tasks via Kimi`, isError: false });
     return;
   }
 

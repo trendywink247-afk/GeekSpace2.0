@@ -45,6 +45,9 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
     INSERT INTO portfolios (user_id, username) VALUES (?, ?)
   `).run(id, username);
 
+  // Create default Pico agent (slot 1)
+  db.prepare('INSERT INTO pico_agents (id, user_id, slot, name) VALUES (?, ?, 1, ?)').run(uuid(), id, 'Pico-1');
+
   // Log activity
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Signed up', 'Welcome to GeekSpace!', 'user-plus')`).run(uuid(), id);
 
