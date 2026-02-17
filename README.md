@@ -5,8 +5,8 @@
 ### Your AI, Your Domain
 
 [![Live](https://img.shields.io/badge/LIVE-ai.geekspace.space-7B61FF?style=for-the-badge)](https://ai.geekspace.space)
-[![Version](https://img.shields.io/badge/v2.4.0-stable-61FF7B?style=for-the-badge)](RELEASE_v2.4.0.md)
-[![Stack](https://img.shields.io/badge/React_18-TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
+[![Version](https://img.shields.io/badge/v2.4.0-stable-61FF7B?style=for-the-badge)](docs/archive/RELEASE_v2.4.0.md)
+[![Stack](https://img.shields.io/badge/React_19-TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
 [![Backend](https://img.shields.io/badge/Express-SQLite-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com)
 [![License](https://img.shields.io/badge/License-MIT-61FF7B?style=for-the-badge)](LICENSE)
 
@@ -98,7 +98,7 @@ cd server && npm run dev
        |    |    |            server/data/geekspace.db
        |    |    |
        |    |    +---------> Redis :6379
-       |    |                 (session cache, job queue)
+       |    |                 (rate limiting, cache)
        |    |
        |    +--------------> Ollama (local LLM)
        |                      llama3.1:8b
@@ -148,7 +148,7 @@ Use `/agent:coder`, `/agent:analyst`, `/agent:planner`, `/agent:researcher`, `/a
 
 ### Frontend
 
-React 18 · TypeScript · Vite · Tailwind CSS · shadcn/ui · Zustand · Recharts · Lucide Icons
+React 19 · TypeScript · Vite 7 · Tailwind CSS · shadcn/ui · Zustand · Recharts · Lucide Icons
 
 ### Backend
 
@@ -190,10 +190,12 @@ GeekSpace2.0/
 │       ├── db/index.ts              #   SQLite schema, seeds, migrations
 │       └── config.ts                #   Environment config
 │
-├── docker-compose.yml                # GeekSpace + Redis + n8n (profile)
+├── picoclaw/                         # PicoClaw automation sidecar
+├── bridge/edith-bridge/              # [DEPRECATED] OpenClaw WebSocket bridge
+├── docker-compose.yml                # GeekSpace + Redis + PicoClaw + profiles
 ├── Dockerfile                        # Multi-stage production build
 ├── Caddyfile                         # Reverse proxy config
-├── RELEASE_v2.4.0.md                 # Current release notes
+├── docs/                             # Architecture, deployment, env vars, troubleshooting
 └── .env.example                      # Environment template
 ```
 
@@ -265,7 +267,7 @@ echo "BRIDGE_ENABLED=false" >> .env && docker compose up -d --build geekspace
 docker compose --profile n8n down
 ```
 
-See [RELEASE_v2.4.0.md](RELEASE_v2.4.0.md) for the full operational runbook.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full operational runbook.
 
 ---
 
