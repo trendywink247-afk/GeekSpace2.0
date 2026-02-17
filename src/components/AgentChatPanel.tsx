@@ -8,6 +8,27 @@ import type { AgentPersonality, PremiumSession } from '@/types';
 import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
 
+// Browser SpeechRecognition (Chrome/Edge — not in @types/dom by default)
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+  interface SpeechRecognition {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start(): void;
+    stop(): void;
+    onresult: ((event: SpeechRecognitionEvent) => void) | null;
+    onend: (() => void) | null;
+    onerror: (() => void) | null;
+  }
+  interface SpeechRecognitionEvent {
+    results: SpeechRecognitionResultList;
+  }
+}
+
 const personalityMeta: Record<AgentPersonality, { emoji: string; name: string; greeting: string }> = {
   edith: { emoji: '🔷', name: 'Edith', greeting: "What do you need? I'm ready." },
   jarvis: { emoji: '🟣', name: 'Jarvis', greeting: "Good day. How may I assist you?" },
@@ -60,6 +81,10 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const speechSupported = typeof window !== 'undefined' &&
+    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
   // Premium session state
   const [premiumSession, setPremiumSession] = useState<PremiumSession | null>(null);
@@ -315,6 +340,31 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     setPremiumSession(null);
   };
 
+  const handleVoiceInput = () => {
+    if (!speechSupported) return;
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = Array.from(event.results)
+        .map((r) => r[0].transcript)
+        .join('');
+      setInput(transcript);
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  };
+
   // Current avatar emoji — specialist uses a rocket
   const avatarEmoji = premiumSession ? '🚀' : pMeta.emoji;
   const headerName = premiumSession ? `${premiumSession.codename} — Specialist` : (agent.name || pMeta.name);
@@ -546,9 +596,15 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               placeholder={premiumSession ? `Ask ${premiumSession.codename}...` : 'Ask anything...'}
               className="flex-1 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF] rounded-xl"
             />
-            <button className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors" title="Voice input">
-              <Mic className="w-4 h-4 text-[#A7ACB8]" />
-            </button>
+            {speechSupported && (
+              <button
+                onClick={handleVoiceInput}
+                className={`p-2 rounded-lg transition-colors ${isListening ? 'bg-[#7B61FF]/20 hover:bg-[#7B61FF]/30' : 'hover:bg-[#7B61FF]/10'}`}
+                title={isListening ? 'Stop listening' : 'Voice input'}
+              >
+                <Mic className={`w-4 h-4 ${isListening ? 'text-[#7B61FF]' : 'text-[#A7ACB8]'}`} />
+              </button>
+            )}
             <Button
               onClick={() => sendMessage()}
               disabled={!input.trim() || isTyping}
