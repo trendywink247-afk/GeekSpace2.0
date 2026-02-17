@@ -118,13 +118,22 @@ agentRouter.post('/generate-content', requireAuth, async (req: AuthRequest, res)
       return res.status(400).json({ error: 'type must be headline, bio, about, or skills' });
     }
 
+    // Check subscription credits
+    const sub = db.prepare('SELECT credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(req.userId!) as { credits_remaining: number; billing_cycle_end: string } | undefined;
+    if (sub && sub.credits_remaining <= 0) {
+      res.status(402).json({
+        error: `You've used all your credits for this month. They reset on ${sub.billing_cycle_end.split('T')[0]}. Upgrade your plan for more.`,
+      });
+      return;
+    }
+
     const result = await routeChat(
       [{ role: 'system', content: systemPrompt }, { role: 'user', content: 'Generate it now.' }],
       { forceProvider: 'edith' as Provider }
     );
 
-    // Deduct 1 credit
-    deductSubscriptionCredits(req.userId!, 1);
+    // Deduct actual credit cost
+    deductSubscriptionCredits(req.userId!, result.creditCost);
 
     res.json({ content: result.reply.trim().replace(/^["']|["']$/g, '') });
   } catch (err: unknown) {
