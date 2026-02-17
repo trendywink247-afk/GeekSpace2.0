@@ -3,7 +3,7 @@ import { X, Send, Sparkles, Mic, Paperclip, RotateCcw, Zap, Rocket, Square } fro
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { agentService, premiumAgentService } from '@/services/api';
+import { agentService, premiumAgentService, publicAgentService } from '@/services/api';
 import type { AgentPersonality, PremiumSession } from '@/types';
 import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
@@ -53,7 +53,7 @@ const suggestedPrompts = [
   "Help me with a code review",
 ];
 
-export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
+export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelProps) {
   const agent = useDashboardStore((s) => s.agent);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -197,6 +197,14 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
 
     // Helper: non-streaming chat call
     const doRegularChat = async () => {
+      if (agentOwner) {
+        // Visitor mode: call the public portfolio endpoint
+        const { data } = await publicAgentService.chat(agentOwner, content);
+        const text = data.reply || '';
+        if (!text) throw new Error('Empty response');
+        setAgentMsg({ content: text, isStreaming: false, provider: 'ollama' });
+        return;
+      }
       const { data } = await agentService.chat(content);
       const text = data.text || '';
       if (!text && !data.actions?.length) throw new Error('Empty response');
@@ -206,6 +214,11 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
     // Main chat logic: try streaming → fall back to regular → show error
     (async () => {
       try {
+        // Visitor mode: no streaming endpoint for public chat
+        if (agentOwner) {
+          await doRegularChat();
+          return;
+        }
         // Attempt SSE streaming
         const res = await agentService.chatStream(content);
 
@@ -451,7 +464,7 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
           )}
 
           {/* Suggested prompts (show when only greeting) */}
-          {messages.length <= 1 && !isTyping && !premiumSession && (
+          {messages.length <= 1 && !isTyping && !premiumSession && !agentOwner && (
             <div className="space-y-2 pt-2">
               <p className="text-xs text-[#A7ACB8] uppercase tracking-wider">Suggestions</p>
               {suggestedPrompts.map((prompt) => (
@@ -513,7 +526,7 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
         {/* Input */}
         <div className="p-4 border-t border-[#7B61FF]/20 bg-[#05050A] pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-2">
-            {!premiumSession && (
+            {!premiumSession && !agentOwner && (
               <button
                 onClick={() => setShowDeployDialog(true)}
                 className="p-2 rounded-lg hover:bg-[#F59E0B]/10 transition-colors"
