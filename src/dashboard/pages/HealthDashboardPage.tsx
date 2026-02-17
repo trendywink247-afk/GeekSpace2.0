@@ -111,20 +111,25 @@ export function HealthDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retriesRef = useRef(0);
+  const MAX_RETRIES = 10;
+  const BASE_DELAY_MS = 3000;
+  const MAX_DELAY_MS = 30000;
 
   const connect = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
 
-    const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
-    const url = `${apiBase}/health/stream`;
+    const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+    const url = `${apiBase}/api/health/stream`;
     const es = new EventSource(url);
     eventSourceRef.current = es;
 
     es.onopen = () => {
       setConnected(true);
       setError(null);
+      retriesRef.current = 0;
     };
 
     es.onmessage = (event) => {
@@ -137,14 +142,23 @@ export function HealthDashboardPage() {
     es.addEventListener('timeout', () => {
       es.close();
       setConnected(false);
+      retriesRef.current = 0;
       reconnectTimerRef.current = setTimeout(connect, 1000);
     });
 
     es.onerror = () => {
       es.close();
       setConnected(false);
-      setError('Connection lost. Reconnecting...');
-      reconnectTimerRef.current = setTimeout(connect, 3000);
+
+      if (retriesRef.current >= MAX_RETRIES) {
+        setError('Health stream unavailable. Refresh the page to retry.');
+        return;
+      }
+
+      retriesRef.current += 1;
+      const delay = Math.min(BASE_DELAY_MS * Math.pow(2, retriesRef.current - 1), MAX_DELAY_MS);
+      setError(`Connection lost. Retrying in ${Math.round(delay / 1000)}s... (${retriesRef.current}/${MAX_RETRIES})`);
+      reconnectTimerRef.current = setTimeout(connect, delay);
     };
   }, []);
 

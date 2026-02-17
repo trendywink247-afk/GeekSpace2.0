@@ -78,6 +78,7 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Please slow down.' },
+  skip: (req) => req.path === '/api/health/stream' || req.path === '/api/health',
 });
 app.use('/api/', globalLimiter);
 
