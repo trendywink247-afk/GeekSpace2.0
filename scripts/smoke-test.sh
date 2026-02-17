@@ -70,7 +70,7 @@ check_sse() {
   local path="$2"
 
   local output
-  output=$(curl -s -N --max-time 8 "${BASE}${path}" 2>/dev/null | head -1 || echo "")
+  output=$(curl -s -N --max-time 8 -H "Authorization: Bearer $TOKEN" "${BASE}${path}" 2>/dev/null | head -1 || echo "")
 
   if echo "$output" | grep -q "data:"; then
     green "  PASS  $name (SSE streaming)"
