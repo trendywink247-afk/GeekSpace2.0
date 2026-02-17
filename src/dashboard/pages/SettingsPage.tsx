@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { userService, apiKeyService, memoryService } from '@/services/api';
-import type { ApiProvider, MemoryEntry } from '@/types';
+import type { ApiProvider, MemoryEntry, User as UserType } from '@/types';
 
 export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
@@ -104,7 +104,9 @@ export function SettingsPage() {
     try {
       const { data: updatedUser } = await userService.updateProfile(profile);
       if (updatedUser) {
-        setUser(updatedUser);
+        // Merge with existing user to preserve credits, plan, and any fields
+        // not returned by PATCH /me (server omits some fields on update)
+        setUser({ ...(user ?? {}), ...updatedUser } as UserType);
       }
     } catch (err) {
       console.error('[settings] save failed:', err);
@@ -203,8 +205,8 @@ export function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      const seed = profile.username + '-' + Date.now();
-                      const url = `https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(seed)}&backgroundColor=7B61FF`;
+                      const seed = encodeURIComponent((profile.username || profile.name || 'user') + '-' + Date.now());
+                      const url = `https://api.dicebear.com/9.x/pixel-art/svg?seed=${seed}&backgroundColor=7B61FF,0f0b1e`;
                       setProfile({ ...profile, avatar: url });
                     }}
                     className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#7B61FF] flex items-center justify-center hover:bg-[#6B51EF] transition-colors"
