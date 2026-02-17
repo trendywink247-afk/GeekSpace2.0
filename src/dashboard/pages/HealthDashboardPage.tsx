@@ -117,8 +117,8 @@ export function HealthDashboardPage() {
       eventSourceRef.current.close();
     }
 
-    const apiBase = import.meta.env.VITE_API_URL || '';
-    const url = `${apiBase}/api/health/stream`;
+    const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
+    const url = `${apiBase}/health/stream`;
     const es = new EventSource(url);
     eventSourceRef.current = es;
 

@@ -82,6 +82,21 @@ All variables read by `server/src/config.ts`. Synced as of 2026-02-16.
 | ~~`EDITH_GATEWAY_URL`~~ | (empty) | ~~Bridge HTTP endpoint~~ |
 | ~~`EDITH_TOKEN`~~ | (empty) | ~~Auth token for bridge~~ |
 
+## Pico-Kimi Bridge (Orchestration)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BRIDGE_ENABLED` | `false` | Enable multi-agent bridge orchestration |
+| `BRIDGE_AUTO_ESCALATE` | `true` | Auto-detect complex requests for bridge routing |
+| `BRIDGE_MAX_WORKFLOW_STEPS` | `6` | Max agents per workflow pipeline |
+
+## n8n (Workflow Automation)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `N8N_BASE_URL` | `http://n8n:5678` | n8n endpoint (Docker profile) |
+| `N8N_WEBHOOK_SECRET` | (empty) | Secret for n8n callback verification |
+
 ## Redis
 
 | Variable | Default | Description |
@@ -116,6 +131,19 @@ All variables read by `server/src/config.ts`. Synced as of 2026-02-16.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SESSION_IDLE_TIMEOUT_MS` | `1800000` | Session idle timeout (30 min) |
+
+## Email (Resend)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RESEND_API_KEY` | (empty) | Resend API key for email sending. Server starts without it (logs warning) |
+| `RESEND_FROM_EMAIL` | `agent@geekspace.space` | From address for agent-sent emails |
+
+## Pico Fleet Worker
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PICO_WORKER_INTERVAL_MS` | `10000` | Pico fleet task polling interval |
 
 ## Misc
 

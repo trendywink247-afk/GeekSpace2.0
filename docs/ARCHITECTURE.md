@@ -262,24 +262,29 @@ Zod schemas for all input:
 
 ### Containers
 
-| Container | Image | Port | Network |
-|-----------|-------|------|---------|
-| `geekspace-app` | Custom (multi-stage Node 20) | 3001 (exposed) | geekspace-net, geekspace-shared |
-| `geekspace-redis` | redis:7-alpine | 6379 (internal) | geekspace-net |
+| Container | Image | Port | Network | Memory Limit |
+|-----------|-------|------|---------|--------------|
+| `geekspace-app` | Custom (multi-stage Node 20) | 3001 (exposed) | geekspace-net, geekspace-shared | 512MB |
+| `geekspace-redis` | redis:7-alpine | 6379 (internal) | geekspace-net | 256MB |
+| `geekspace-picoclaw` | Custom (Node 20) | 8080 (localhost only) | geekspace-net, geekspace-shared | 64MB |
+| `geekspace-edith-bridge` | Custom (Node 20) | 8787 (internal) | geekspace-shared | 128MB |
+| `ollama-qtzz-ollama-1` | ollama/ollama | 32778→11434 | geekspace-shared | — (external) |
+| `openclaw-e3n5-openclaw-1` | hostinger/hvps-openclaw | 52325 | geekspace-shared | — (external) |
 
 ### Networks
 
-- **`geekspace-net`** — Internal bridge. All GeekSpace containers.
-- **`geekspace-shared`** — External. Allows DNS resolution of Ollama containers on the same Docker host.
+- **`geekspace-net`** — Internal bridge. GeekSpace app, Redis, PicoClaw.
+- **`geekspace-shared`** — External. Shared with Ollama and OpenClaw containers for DNS resolution.
 
 ### Volumes
 
-- `geekspace-data` — SQLite database (`/app/data/geekspace.db`)
-- `redis-data` — Redis AOF persistence
+- `geekspace20_geekspace-data` — SQLite database (`/app/data/geekspace.db`)
+- `geekspace20_redis-data` — Redis AOF persistence
+- `ollama-qtzz_ollama` — Ollama model storage
 
-### Legacy: EDITH Bridge
+### EDITH Bridge (Legacy but Active)
 
-The `edith-bridge` service (`bridge/edith-bridge/`) was a WebSocket-to-HTTP bridge for the OpenClaw inference gateway. It has been **replaced by direct Moonshot API calls** via OpenRouter. The bridge code is kept for historical reference but is not deployed.
+The `edith-bridge` service (`bridge/edith-bridge/`) is a WebSocket-to-HTTP bridge for the OpenClaw inference gateway. While the primary premium path now uses direct Moonshot API calls, the bridge remains **deployed and running** for fallback/compatibility.
 
 ## 12. Security
 

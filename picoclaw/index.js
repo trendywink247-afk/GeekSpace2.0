@@ -44,6 +44,7 @@ app.post('/api/chat', async (req, res) => {
         model: MODEL,
         messages,
         stream: false,
+        keep_alive: '5m',
         options: {
           num_predict: 256,
           temperature: 0.3,

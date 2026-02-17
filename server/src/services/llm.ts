@@ -125,6 +125,7 @@ export async function streamOllama(
       model: config.ollamaModel,
       messages,
       stream: true,
+      keep_alive: '5m',
       options: { temperature: 0.7, num_predict: config.ollamaMaxTokens },
     }),
     signal: AbortSignal.timeout(config.ollamaTimeout),
@@ -183,6 +184,7 @@ async function callOllama(messages: ChatMessage[]): Promise<{ content: string; t
       model: config.ollamaModel,
       messages,
       stream: false,
+      keep_alive: '5m',
       options: {
         temperature: 0.7,
         num_predict: config.ollamaMaxTokens,
