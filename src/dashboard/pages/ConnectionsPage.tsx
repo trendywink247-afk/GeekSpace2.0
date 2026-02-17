@@ -19,7 +19,11 @@ import {
   Copy,
   Check,
   X,
-  Send
+  Send,
+  ChevronRight,
+  Loader2,
+  CheckCircle2,
+  MessageCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -51,10 +55,13 @@ const colorMap: Record<string, string> = {
   'custom-webhook': '#7B61FF',
 };
 
+type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error';
+
 export function ConnectionsPage() {
   const { integrations, connectIntegration, disconnectIntegration, isLoading } = useDashboardStore();
 
   const [telegramDialog, setTelegramDialog] = useState(false);
+  const [telegramStep, setTelegramStep] = useState<TelegramStep>('idle');
   const [telegramLink, setTelegramLink] = useState<{
     code?: string;
     deepLink?: string | null;
@@ -62,7 +69,6 @@ export function ConnectionsPage() {
     message?: string;
     linked?: boolean;
   } | null>(null);
-  const [telegramLoading, setTelegramLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [polling, setPolling] = useState(false);
 
@@ -75,10 +81,8 @@ export function ConnectionsPage() {
     try {
       const res = await integrationService.checkTelegramLink();
       if (res.data.linked) {
-        setTelegramLink({ linked: true, message: 'Telegram linked!' });
+        setTelegramStep('success');
         setPolling(false);
-        // Refresh integrations list
-        window.location.reload();
       }
     } catch { /* ignore */ }
   }, []);
@@ -95,17 +99,19 @@ export function ConnectionsPage() {
     }
     if (type === 'telegram') {
       setTelegramDialog(true);
-      setTelegramLoading(true);
+      setTelegramStep('generating');
       try {
         const res = await integrationService.linkTelegram();
         setTelegramLink(res.data);
-        if (!res.data.linked) {
+        if (res.data.linked) {
+          setTelegramStep('success');
+        } else {
+          setTelegramStep('open-bot');
           setPolling(true);
         }
       } catch {
-        setTelegramLink({ message: 'Failed to generate link. Is the Telegram bot configured?' });
-      } finally {
-        setTelegramLoading(false);
+        setTelegramLink({ message: 'Telegram bot is not configured on this server. Contact the admin.' });
+        setTelegramStep('error');
       }
       return;
     }
@@ -126,11 +132,29 @@ export function ConnectionsPage() {
   };
 
   const closeTelegramDialog = () => {
+    if (telegramStep === 'success') {
+      window.location.reload();
+      return;
+    }
     setTelegramDialog(false);
     setTelegramLink(null);
+    setTelegramStep('idle');
     setPolling(false);
     setCopied(false);
   };
+
+  const stepNumber = (step: TelegramStep): number => {
+    switch (step) {
+      case 'generating': return 0;
+      case 'open-bot': return 1;
+      case 'send-code': return 2;
+      case 'waiting': return 3;
+      case 'success': return 4;
+      default: return 0;
+    }
+  };
+
+  const currentStepNum = stepNumber(telegramStep);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -233,81 +257,209 @@ export function ConnectionsPage() {
         </Card>
       </div>
 
-      {/* Telegram Link Dialog */}
+      {/* Telegram Link Wizard */}
       {telegramDialog && (
-        <Card className="bg-[#0B0B10] border-[#0088cc]/40 relative">
+        <Card className="bg-[#0B0B10] border-[#0088cc]/40 relative overflow-hidden">
           <CardContent className="p-6">
-            <button onClick={closeTelegramDialog} className="absolute top-4 right-4 text-[#A7ACB8] hover:text-white">
+            <button onClick={closeTelegramDialog} className="absolute top-4 right-4 text-[#A7ACB8] hover:text-white z-10">
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-3 mb-4">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-[#0088cc]/20 flex items-center justify-center">
                 <Send className="w-5 h-5 text-[#0088cc]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#F4F6FF]">Link Telegram</h3>
-                <p className="text-xs text-[#A7ACB8]">Connect your Telegram account to chat with your AI agent</p>
+                <h3 className="font-semibold text-[#F4F6FF]">Connect Telegram</h3>
+                <p className="text-xs text-[#A7ACB8]">Link your account in 4 easy steps</p>
               </div>
             </div>
 
-            {telegramLoading && (
-              <div className="flex items-center gap-2 text-[#A7ACB8]">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Generating link...</span>
+            {/* Step Indicator */}
+            {telegramStep !== 'error' && (
+              <div className="flex items-center gap-2 mb-6">
+                {['Open Bot', 'Send Code', 'Confirm', 'Done'].map((label, i) => {
+                  const stepIdx = i + 1;
+                  const isActive = currentStepNum === stepIdx;
+                  const isDone = currentStepNum > stepIdx;
+                  return (
+                    <div key={label} className="flex items-center gap-2 flex-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
+                          isDone ? 'bg-[#61FF7B] text-[#0B0B10]' :
+                          isActive ? 'bg-[#0088cc] text-white' :
+                          'bg-[#1A1A24] text-[#A7ACB8]'
+                        }`}>
+                          {isDone ? <Check className="w-3.5 h-3.5" /> : stepIdx}
+                        </div>
+                        <span className={`text-xs hidden sm:inline truncate ${
+                          isActive ? 'text-[#F4F6FF] font-medium' :
+                          isDone ? 'text-[#61FF7B]' : 'text-[#A7ACB8]'
+                        }`}>{label}</span>
+                      </div>
+                      {i < 3 && <ChevronRight className="w-4 h-4 text-[#A7ACB8]/30 flex-shrink-0" />}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
-            {telegramLink?.linked && (
-              <div className="flex items-center gap-2 text-[#61FF7B]">
-                <Check className="w-5 h-5" />
-                <span className="font-medium">Telegram is linked!</span>
+            {/* Generating state */}
+            {telegramStep === 'generating' && (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <Loader2 className="w-8 h-8 text-[#0088cc] animate-spin" />
+                <p className="text-sm text-[#A7ACB8]">Setting up your connection...</p>
               </div>
             )}
 
-            {telegramLink && !telegramLink.linked && !telegramLoading && (
+            {/* Step 1: Open Bot */}
+            {telegramStep === 'open-bot' && telegramLink?.deepLink && (
               <div className="space-y-4">
-                {telegramLink.deepLink && (
-                  <a
-                    href={telegramLink.deepLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#0088cc] hover:bg-[#0077b5] text-white font-medium transition-colors"
-                  >
-                    <Send className="w-4 h-4" />
-                    Open in Telegram
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                )}
-
-                <div className="text-center text-xs text-[#A7ACB8]">or copy the command and send it to the bot manually</div>
-
-                {telegramLink.code && (
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-[#05050A] border border-[#7B61FF]/20 rounded-lg px-4 py-2.5 text-sm text-[#F4F6FF] font-mono">
-                      /start link_{telegramLink.code}
-                    </code>
-                    <Button size="sm" variant="outline" onClick={handleCopyCode} className="border-[#7B61FF]/30">
-                      {copied ? <Check className="w-4 h-4 text-[#61FF7B]" /> : <Copy className="w-4 h-4" />}
-                    </Button>
+                <div className="bg-[#05050A] rounded-lg p-4 border border-[#0088cc]/20">
+                  <div className="flex items-start gap-3">
+                    <MessageCircle className="w-5 h-5 text-[#0088cc] flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-[#F4F6FF] font-medium mb-1">Open our Telegram bot</p>
+                      <p className="text-xs text-[#A7ACB8]">
+                        Click the button below to open our bot in Telegram. This will take you to a chat where you can link your account.
+                      </p>
+                    </div>
                   </div>
-                )}
+                </div>
 
-                {polling && (
-                  <div className="flex items-center gap-2 text-[#A7ACB8] text-sm">
-                    <RefreshCw className="w-3 h-3 animate-spin" />
-                    Waiting for link confirmation...
+                <a
+                  href={telegramLink.deepLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#0088cc] hover:bg-[#0077b5] text-white font-medium transition-colors"
+                >
+                  <Send className="w-4 h-4" />
+                  Open in Telegram
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+
+                <Button
+                  variant="outline"
+                  className="w-full border-[#7B61FF]/30 text-[#A7ACB8] hover:text-[#F4F6FF]"
+                  onClick={() => setTelegramStep('send-code')}
+                >
+                  I opened the bot
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            )}
+
+            {/* Step 2: Send Code */}
+            {telegramStep === 'send-code' && telegramLink?.code && (
+              <div className="space-y-4">
+                <div className="bg-[#05050A] rounded-lg p-4 border border-[#0088cc]/20">
+                  <div className="flex items-start gap-3">
+                    <Copy className="w-5 h-5 text-[#0088cc] flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-[#F4F6FF] font-medium mb-1">Send this command to the bot</p>
+                      <p className="text-xs text-[#A7ACB8]">
+                        Copy the command below and paste it in the Telegram chat with our bot. Press Send in Telegram.
+                      </p>
+                    </div>
                   </div>
-                )}
+                </div>
 
-                <p className="text-xs text-[#A7ACB8]">
-                  Code expires in 10 minutes. After linking, you can chat with your AI agent directly in Telegram.
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-[#05050A] border border-[#7B61FF]/20 rounded-lg px-4 py-3 text-sm text-[#F4F6FF] font-mono">
+                    /start link_{telegramLink.code}
+                  </code>
+                  <Button size="sm" variant="outline" onClick={handleCopyCode} className="border-[#7B61FF]/30 h-[46px] px-4">
+                    {copied ? <Check className="w-4 h-4 text-[#61FF7B]" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+
+                <Button
+                  className="w-full bg-[#0088cc] hover:bg-[#0077b5]"
+                  onClick={() => setTelegramStep('waiting')}
+                >
+                  I sent the command
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+
+                <p className="text-xs text-[#A7ACB8] text-center">
+                  Code expires in 10 minutes
                 </p>
               </div>
             )}
 
-            {telegramLink && !telegramLink.deepLink && !telegramLink.linked && !telegramLink.code && (
-              <p className="text-sm text-[#FF6161]">{telegramLink.message}</p>
+            {/* Step 3: Waiting for confirmation */}
+            {telegramStep === 'waiting' && (
+              <div className="flex flex-col items-center gap-4 py-6">
+                <div className="w-16 h-16 rounded-full bg-[#0088cc]/10 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-[#0088cc] animate-spin" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Waiting for confirmation...</p>
+                  <p className="text-xs text-[#A7ACB8]">
+                    We're checking if the bot received your command. This usually takes a few seconds.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#7B61FF]/30 text-[#A7ACB8]"
+                  onClick={() => setTelegramStep('send-code')}
+                >
+                  Go back
+                </Button>
+              </div>
+            )}
+
+            {/* Step 4: Success */}
+            {telegramStep === 'success' && (
+              <div className="flex flex-col items-center gap-4 py-6">
+                <div className="w-16 h-16 rounded-full bg-[#61FF7B]/10 flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8 text-[#61FF7B]" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Telegram connected!</p>
+                  <p className="text-xs text-[#A7ACB8]">
+                    You can now chat with your AI agent directly in Telegram. Send any message to get started.
+                  </p>
+                </div>
+                <Button
+                  className="bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10] font-medium"
+                  onClick={closeTelegramDialog}
+                >
+                  Done
+                </Button>
+              </div>
+            )}
+
+            {/* Error state */}
+            {telegramStep === 'error' && (
+              <div className="flex flex-col items-center gap-4 py-6">
+                <div className="w-16 h-16 rounded-full bg-[#FF6161]/10 flex items-center justify-center">
+                  <AlertTriangle className="w-8 h-8 text-[#FF6161]" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Connection failed</p>
+                  <p className="text-xs text-[#A7ACB8]">
+                    {telegramLink?.message || 'Could not connect to Telegram. Please try again later.'}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="border-[#7B61FF]/30"
+                    onClick={closeTelegramDialog}
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    className="bg-[#0088cc] hover:bg-[#0077b5]"
+                    onClick={() => handleConnect('telegram')}
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
