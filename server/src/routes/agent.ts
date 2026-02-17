@@ -364,7 +364,7 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     const actionResults: ActionResult[] = [];
 
     for (const action of parsedActions) {
-      const actionResult = executeAction(userId, action);
+      const actionResult = await executeAction(userId, action);
       actionResults.push(actionResult);
     }
 

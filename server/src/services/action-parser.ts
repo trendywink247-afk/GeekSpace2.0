@@ -42,6 +42,11 @@ const portfolioUpdateThemeSchema = z.object({
   accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
 });
 
+const sendEmailSchema = z.object({
+  subject: z.string().min(1).max(200),
+  body: z.string().min(1).max(5000),
+});
+
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -49,6 +54,7 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   portfolio_update_skills: portfolioUpdateSkillsSchema,
   portfolio_remove_project: portfolioRemoveProjectSchema,
   portfolio_update_theme: portfolioUpdateThemeSchema,
+  send_email: sendEmailSchema,
 };
 
 // ── Types ───────────────────────────────────────────────────

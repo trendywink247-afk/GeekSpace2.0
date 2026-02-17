@@ -149,7 +149,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   const actionResults: ActionResult[] = [];
 
   for (const action of parsedActions) {
-    const actionResult = executeAction(userId, action);
+    const actionResult = await executeAction(userId, action);
     actionResults.push(actionResult);
   }
 

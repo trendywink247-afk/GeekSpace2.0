@@ -200,6 +200,10 @@ export const integrationService = {
 
   unlinkTelegram: () =>
     api.delete('/integrations/telegram/link'),
+
+  // Email notification settings
+  updateNotificationEmail: (data: { enabled?: boolean; address?: string }) =>
+    api.patch<{ enabled: boolean; address: string | null }>('/user/notification-email', data),
 };
 
 // ----- Reminders ---------------------------------------------

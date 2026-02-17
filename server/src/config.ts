@@ -126,6 +126,10 @@ export const config = {
   // Pico Fleet worker
   picoWorkerIntervalMs: optionalInt('PICO_WORKER_INTERVAL_MS', 10000),
 
+  // Resend email
+  resendApiKey: process.env.RESEND_API_KEY || '',
+  resendFromEmail: optional('RESEND_FROM_EMAIL', 'agent@geekspace.space'),
+
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',
 } as const;

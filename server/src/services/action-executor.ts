@@ -9,6 +9,7 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
+import { sendAgentEmail, resolveEmailAddress } from './email.js';
 import type { ParsedAction } from './action-parser.js';
 
 // ── Types ───────────────────────────────────────────────────
@@ -23,7 +24,7 @@ export interface ActionResult {
 
 // ── Executor ────────────────────────────────────────────────
 
-export function executeAction(userId: string, action: ParsedAction): ActionResult {
+export async function executeAction(userId: string, action: ParsedAction): Promise<ActionResult> {
   const { tool, params } = action;
 
   try {
@@ -153,6 +154,39 @@ export function executeAction(userId: string, action: ParsedAction): ActionResul
           tool,
           success: true,
           message: `Theme accent color updated to ${params.accentColor}`,
+        };
+      }
+
+      // ── send_email ──────────────────────────────────────
+      case 'send_email': {
+        const to = resolveEmailAddress(userId);
+        if (!to) {
+          return {
+            tool,
+            success: false,
+            message: 'No email address configured. Add one in Settings → Connections.',
+          };
+        }
+
+        const sent = await sendAgentEmail(
+          userId,
+          params.subject as string,
+          params.body as string,
+        );
+
+        if (!sent) {
+          return {
+            tool,
+            success: false,
+            message: 'Email could not be sent — check server configuration.',
+          };
+        }
+
+        return {
+          tool,
+          success: true,
+          message: `Email sent to ${to}`,
+          data: { to, subject: params.subject as string },
         };
       }
 

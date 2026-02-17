@@ -3,6 +3,7 @@ import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
 import { routeChat, type ChatMessage } from './llm.js';
+import { sendBriefingEmail } from './email.js';
 
 let schedulerInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -87,6 +88,19 @@ export async function createBriefing(userId: string): Promise<string> {
   ).run(id, userId, content);
 
   logger.info({ userId, briefingId: id }, 'Daily briefing created');
+
+  // Send via email if the user has email notifications enabled
+  const user = db.prepare('SELECT notification_email FROM users WHERE id = ?').get(userId) as { notification_email: number } | undefined;
+  if (user?.notification_email) {
+    sendBriefingEmail(userId, content).then((sent) => {
+      if (sent) {
+        db.prepare("UPDATE briefings SET channels_sent = json_insert(channels_sent, '$[#]', 'email') WHERE id = ?").run(id);
+      }
+    }).catch((err: Error) => {
+      logger.warn({ userId, briefingId: id, error: err.message }, 'Briefing email failed');
+    });
+  }
+
   return content;
 }
 

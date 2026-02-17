@@ -71,6 +71,29 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), (req: Auth
   });
 });
 
+usersRouter.patch('/notification-email', requireAuth, (req: AuthRequest, res) => {
+  const { enabled, address } = req.body as { enabled?: boolean; address?: string };
+
+  if (enabled !== undefined) {
+    db.prepare('UPDATE users SET notification_email = ? WHERE id = ?')
+      .run(enabled ? 1 : 0, req.userId);
+  }
+
+  if (address !== undefined) {
+    const trimmed = typeof address === 'string' ? address.trim() : null;
+    db.prepare('UPDATE agent_configs SET notification_email_address = ? WHERE user_id = ?')
+      .run(trimmed || null, req.userId);
+  }
+
+  const user = db.prepare('SELECT notification_email FROM users WHERE id = ?').get(req.userId!) as { notification_email: number };
+  const cfg = db.prepare('SELECT notification_email_address FROM agent_configs WHERE user_id = ?').get(req.userId!) as { notification_email_address: string | null } | undefined;
+
+  res.json({
+    enabled: !!user.notification_email,
+    address: cfg?.notification_email_address ?? null,
+  });
+});
+
 usersRouter.get('/:username/public', (req, res) => {
   const user = db.prepare('SELECT * FROM users WHERE username = ?').get(req.params.username) as Record<string, unknown> | undefined;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }

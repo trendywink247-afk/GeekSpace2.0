@@ -24,9 +24,11 @@ import {
   Loader2,
   CheckCircle2,
   MessageCircle,
+  Mail,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -40,6 +42,7 @@ const iconMap: Record<string, typeof MessageSquare> = {
   github: Github,
   twitter: Twitter,
   linkedin: Linkedin,
+  email: Mail,
 };
 
 const colorMap: Record<string, string> = {
@@ -53,6 +56,7 @@ const colorMap: Record<string, string> = {
   manychat: '#0084ff',
   whatsapp: '#25d366',
   'custom-webhook': '#7B61FF',
+  email: '#61FF7B',
 };
 
 type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error';
@@ -71,6 +75,12 @@ export function ConnectionsPage() {
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const [polling, setPolling] = useState(false);
+
+  // Email dialog state
+  const [emailDialog, setEmailDialog] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailSaved, setEmailSaved] = useState(false);
 
   const connectedCount = integrations.filter(c => c.status === 'connected').length;
   const totalRequests = integrations.reduce((acc, c) => acc + c.requestsToday, 0);
@@ -93,8 +103,25 @@ export function ConnectionsPage() {
     return () => clearInterval(interval);
   }, [polling, pollTelegramStatus]);
 
+  const handleEmailSave = async () => {
+    setEmailSaving(true);
+    try {
+      await integrationService.updateNotificationEmail({ enabled: true, address: emailAddress || undefined });
+      await connectIntegration('email');
+      setEmailSaved(true);
+    } catch { /* ignore */ } finally {
+      setEmailSaving(false);
+    }
+  };
+
   const handleConnect = async (type: IntegrationType) => {
     if (type === 'whatsapp') {
+      return;
+    }
+    if (type === 'email') {
+      setEmailAddress('');
+      setEmailSaved(false);
+      setEmailDialog(true);
       return;
     }
     if (type === 'telegram') {
@@ -119,7 +146,11 @@ export function ConnectionsPage() {
     connectIntegration(type);
   };
 
-  const handleDisconnect = (id: string) => {
+  const handleDisconnect = async (id: string) => {
+    const integration = integrations.find((i) => i.id === id);
+    if (integration?.type === 'email') {
+      await integrationService.updateNotificationEmail({ enabled: false });
+    }
     disconnectIntegration(id);
   };
 
@@ -459,6 +490,70 @@ export function ConnectionsPage() {
                     Try Again
                   </Button>
                 </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Email Setup Dialog */}
+      {emailDialog && (
+        <Card className="bg-[#0B0B10] border-[#61FF7B]/40 relative overflow-hidden">
+          <CardContent className="p-6">
+            <button onClick={() => setEmailDialog(false)} className="absolute top-4 right-4 text-[#A7ACB8] hover:text-white z-10">
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-[#61FF7B]/20 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-[#61FF7B]" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-[#F4F6FF]">Enable Email Notifications</h3>
+                <p className="text-xs text-[#A7ACB8]">Receive reminders, briefings, and agent summaries via email</p>
+              </div>
+            </div>
+
+            {emailSaved ? (
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="w-16 h-16 rounded-full bg-[#61FF7B]/10 flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8 text-[#61FF7B]" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Email notifications enabled!</p>
+                  <p className="text-xs text-[#A7ACB8]">You'll receive reminders and daily briefings at your configured address.</p>
+                </div>
+                <Button className="bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10] font-medium" onClick={() => setEmailDialog(false)}>
+                  Done
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-[#05050A] rounded-lg p-4 border border-[#61FF7B]/20">
+                  <p className="text-xs text-[#A7ACB8]">
+                    By default, notifications go to your signup email. You can optionally set a separate delivery address below.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-xs text-[#A7ACB8] mb-1.5 block">Delivery email (optional — leave blank to use your account email)</label>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={emailAddress}
+                    onChange={(e) => setEmailAddress(e.target.value)}
+                    className="bg-[#05050A] border-[#7B61FF]/20 text-[#F4F6FF] placeholder:text-[#A7ACB8]/50"
+                  />
+                </div>
+
+                <Button
+                  className="w-full bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10] font-medium"
+                  onClick={handleEmailSave}
+                  disabled={emailSaving}
+                >
+                  {emailSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
+                  Enable Email Notifications
+                </Button>
               </div>
             )}
           </CardContent>
