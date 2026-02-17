@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Sparkles, Mic, Paperclip, RotateCcw, Zap, Rocket, Square } from 'lucide-react';
+import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -585,9 +585,6 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 <Rocket className="w-4 h-4 text-[#F59E0B]" />
               </button>
             )}
-            <button className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors" title="Attach file">
-              <Paperclip className="w-4 h-4 text-[#A7ACB8]" />
-            </button>
             <Input
               ref={inputRef}
               value={input}
