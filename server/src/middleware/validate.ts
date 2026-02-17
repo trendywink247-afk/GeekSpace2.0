@@ -74,8 +74,8 @@ export const reminderCreateSchema = z.object({
 export const automationCreateSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional().default(''),
-  triggerType: z.enum(['time', 'event', 'webhook']),
-  actionType: z.enum(['n8n-webhook', 'telegram-message', 'portfolio-update', 'manychat-broadcast']),
+  triggerType: z.enum(['time', 'event', 'webhook', 'manual', 'keyword', 'health_down']),
+  actionType: z.enum(['n8n-webhook', 'telegram-message', 'portfolio-update', 'manychat-broadcast', 'whatsapp-message', 'call_api', 'create_reminder', 'log']),
   config: z.record(z.string(), z.unknown()).optional().default({}),
   enabled: z.boolean().optional().default(true),
 });
@@ -198,9 +198,10 @@ export const reminderUpdateSchema = z.object({
 
 export const automationUpdateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  triggerType: z.enum(['time', 'event', 'webhook']).optional(),
+  description: z.string().max(1000).optional(),
+  triggerType: z.enum(['time', 'event', 'webhook', 'manual', 'keyword', 'health_down']).optional(),
   triggerConfig: z.record(z.string(), z.unknown()).optional(),
-  actionType: z.enum(['n8n-webhook', 'telegram-message', 'portfolio-update', 'manychat-broadcast']).optional(),
+  actionType: z.enum(['n8n-webhook', 'telegram-message', 'portfolio-update', 'manychat-broadcast', 'whatsapp-message', 'call_api', 'create_reminder', 'log']).optional(),
   actionConfig: z.record(z.string(), z.unknown()).optional(),
   enabled: z.boolean().optional(),
 });
