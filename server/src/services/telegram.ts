@@ -91,24 +91,32 @@ export async function sendTelegramMessage(
       body.reply_to_message_id = replyToMessageId;
     }
 
-    try {
-      const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(15000),
-      });
+    let sent = false;
+    for (let attempt = 0; attempt < 3 && !sent; attempt++) {
+      try {
+        const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(15000),
+        });
 
-      if (!res.ok) {
-        const errText = await res.text().catch(() => '');
-        logger.warn({ chatId, status: res.status, error: errText }, 'Telegram sendMessage failed');
-        return { messageId: 0, success: false };
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          logger.warn({ chatId, status: res.status, error: errText, attempt }, 'Telegram sendMessage failed');
+          return { messageId: 0, success: false };
+        }
+
+        const data = await res.json() as { result?: { message_id: number } };
+        lastMessageId = data.result?.message_id || 0;
+        sent = true;
+      } catch (err) {
+        logger.warn({ err, chatId, attempt }, 'Telegram sendMessage attempt failed');
+        if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
       }
-
-      const data = await res.json() as { result?: { message_id: number } };
-      lastMessageId = data.result?.message_id || 0;
-    } catch (err) {
-      logger.error({ err, chatId }, 'Telegram sendMessage error');
+    }
+    if (!sent) {
+      logger.error({ chatId }, 'Telegram sendMessage failed after 3 attempts');
       return { messageId: 0, success: false };
     }
   }

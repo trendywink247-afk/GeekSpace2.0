@@ -337,6 +337,27 @@ try {
   `);
 } catch { /* table already exists — ignore */ }
 
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS generated_artifacts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL DEFAULT 'code',
+      title TEXT NOT NULL,
+      html TEXT DEFAULT '',
+      css TEXT DEFAULT '',
+      js TEXT DEFAULT '',
+      metadata TEXT DEFAULT '{}',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_artifacts_user ON generated_artifacts(user_id);
+  `);
+} catch { /* table already exists — ignore */ }
+
+try {
+  db.exec(`ALTER TABLE agent_configs ADD COLUMN notification_email_address TEXT DEFAULT NULL`);
+} catch { /* column already exists — ignore */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
@@ -445,6 +466,7 @@ function seedDemoData() {
   insertIntegration.run('int-6', 'demo-1', 'linkedin', 'LinkedIn', 'Professional profile sync and networking', 'disconnected', 0, 0, '', '["Profile sync","Network updates"]', '[]');
   insertIntegration.run('int-7', 'demo-1', 'n8n', 'n8n', 'Workflow automation engine for advanced integrations', 'disconnected', 0, 0, '', '["Custom workflows","Triggers","Webhooks"]', '[]');
   insertIntegration.run('int-8', 'demo-1', 'manychat', 'ManyChat', 'Chatbot and marketing automation platform', 'disconnected', 0, 0, '', '["Broadcast","Tag users","Flows"]', '[]');
+  insertIntegration.run('int-9', 'demo-1', 'email', 'Email', 'Receive reminders, daily briefings, and agent summaries via email', 'disconnected', 0, 0, '', '["Reminders","Daily briefing","Agent summaries"]', '[]');
 
   // Portfolios
   const insertPortfolio = db.prepare(`

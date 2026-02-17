@@ -16,6 +16,8 @@ import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeReque
 import { getUserWorkflows, getWorkflowStatus, getWorkflowAnalytics } from '../services/workflow-engine.js';
 import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } from '../services/agent-registry.js';
 import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
+import { parseActions } from '../services/action-parser.js';
+import { executeAction, type ActionResult } from '../services/action-executor.js';
 
 export const agentRouter = Router();
 
@@ -357,11 +359,20 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
 
     const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? userCredits;
 
-    // Log assistant response
-    logConversation(userId, 'assistant', result.reply, result.provider, result.model);
+    // Parse and execute any tool actions from LLM response
+    const { text: cleanReply, actions: parsedActions } = parseActions(result.reply);
+    const actionResults: ActionResult[] = [];
+
+    for (const action of parsedActions) {
+      const actionResult = await executeAction(userId, action);
+      actionResults.push(actionResult);
+    }
+
+    // Log the clean reply (without action blocks)
+    logConversation(userId, 'assistant', cleanReply || result.reply, result.provider, result.model);
 
     const response: Record<string, unknown> = {
-      text: result.reply,
+      text: cleanReply || result.reply,
       route: tier,
       tier,
       latencyMs: result.latencyMs,
@@ -370,18 +381,38 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
       creditsUsed: result.creditCost,
       creditsRemaining: updatedCredits,
     };
+
+    // Attach action results if any
+    if (actionResults.length > 0) {
+      response.actions = actionResults;
+    }
+
     if (config.logLevel === 'debug') {
       response.debug = { intent, forceRoute, tokensUsed: result.tokensIn + result.tokensOut };
     }
 
     // Background AI memory extraction (non-blocking)
-    extractMemoriesWithAI(userId, message, result.reply).catch(() => {});
+    extractMemoriesWithAI(userId, message, cleanReply || result.reply).catch(() => {});
 
     res.json(response);
   } catch (err) {
     logger.error({ err, userId }, 'Chat handler error');
     res.status(500).json({ error: 'Failed to process message. Please try again.' });
   }
+});
+
+// ---- Get Generated Artifact ----
+agentRouter.get('/artifact/:id', requireAuth, (req: AuthRequest, res) => {
+  const artifact = db.prepare(
+    'SELECT * FROM generated_artifacts WHERE id = ? AND user_id = ?'
+  ).get(req.params.id, req.userId!) as Record<string, unknown> | undefined;
+
+  if (!artifact) {
+    res.status(404).json({ error: 'Artifact not found' });
+    return;
+  }
+
+  res.json(artifact);
 });
 
 // ---- Terminal Commands ----

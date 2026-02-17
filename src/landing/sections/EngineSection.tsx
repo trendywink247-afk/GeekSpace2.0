@@ -82,7 +82,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30 mb-6">
               <Zap className="w-4 h-4 text-[#7B61FF]" />
-              <span className="text-sm font-mono text-[#7B61FF]">OPENCLAW POWERED</span>
+              <span className="text-sm font-mono text-[#7B61FF]">WEEBO ENGINE</span>
             </div>
 
             <h2 

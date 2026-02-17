@@ -26,6 +26,9 @@ services:
       - BRIDGE_ENABLED=${BRIDGE_ENABLED:-true}
       - BRIDGE_AUTO_ESCALATE=${BRIDGE_AUTO_ESCALATE:-true}
       - BRIDGE_MAX_WORKFLOW_STEPS=${BRIDGE_MAX_WORKFLOW_STEPS:-6}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     volumes:
       - geekspace-data:/app/data
     networks:

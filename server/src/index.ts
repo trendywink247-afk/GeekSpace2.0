@@ -38,6 +38,8 @@ import { picoRouter } from './routes/pico.js';
 import { briefingsRouter } from './routes/briefings.js';
 import { recipesRouter } from './routes/recipes.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
+import { metricsMiddleware } from './middleware/metrics.js';
+import { healthRouter } from './routes/health.js';
 
 const APP_VERSION = '3.0.0';
 
@@ -65,6 +67,9 @@ app.use(express.json({ limit: `${config.maxRequestBodyBytes}` }));
 
 // ---- Request logging + ID tracking ----
 app.use(requestLogger);
+
+// ---- Metrics collection for health dashboard ----
+app.use(metricsMiddleware);
 
 // ---- Global rate limiting ----
 const globalLimiter = rateLimit({
@@ -182,6 +187,7 @@ app.use('/api/webhooks', webhooksRouter);
 app.use('/api/pico', picoRouter);
 app.use('/api/briefings', briefingsRouter);
 app.use('/api/recipes', recipesRouter);
+app.use('/api/health', healthRouter);
 
 // ---- Global error handler (MUST be last) ----
 app.use(errorHandler);

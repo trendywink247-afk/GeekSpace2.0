@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   User, LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
-  X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen
+  X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity
 } from 'lucide-react';
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
@@ -35,8 +35,9 @@ const RecipesPage = lazy(() => import('./pages/RecipesPage').then(m => ({ defaul
 const PicoFleetPage = lazy(() =>
   import('./pages/PicoFleetPage').then(m => ({ default: m.PicoFleetPage }))
 );
+const HealthDashboardPage = lazy(() => import('./pages/HealthDashboardPage').then(m => ({ default: m.HealthDashboardPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'terminal' | 'settings';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings';
 
 // Bottom tabs for mobile (5 max for thumb reach)
 const mobileTabs: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
@@ -100,6 +101,7 @@ export function DashboardApp() {
     { id: 'automations', label: 'Automations', icon: Zap },
     { id: 'recipes', label: 'Recipes', icon: BookOpen },
     { id: 'pico', label: "Weebo's", icon: Cpu },
+    { id: 'health', label: 'Health', icon: Activity },
     { id: 'terminal', label: 'Terminal', icon: Terminal },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
@@ -140,6 +142,8 @@ export function DashboardApp() {
         return <RecipesPage />;
       case 'pico':
         return <PicoFleetPage />;
+      case 'health':
+        return <HealthDashboardPage />;
       case 'terminal':
         return <TerminalPage />;
       case 'settings':

@@ -206,7 +206,8 @@ export type IntegrationType =
   | 'n8n'
   | 'manychat'
   | 'location'
-  | 'custom-webhook';
+  | 'custom-webhook'
+  | 'email';
 
 export type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'pending' | 'paused';
 

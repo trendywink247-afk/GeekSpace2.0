@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { agentService, premiumAgentService } from '@/services/api';
 import type { AgentPersonality, PremiumSession } from '@/types';
+import { CodePreviewCard } from './CodePreviewCard';
+import { ActionResultCard } from './ActionResultCard';
 
 const personalityMeta: Record<AgentPersonality, { emoji: string; name: string; greeting: string }> = {
   edith: { emoji: '🔷', name: 'Edith', greeting: "What do you need? I'm ready." },
@@ -19,6 +21,13 @@ interface ChatMessage {
   timestamp: Date;
   provider?: string;
   isStreaming?: boolean;
+  actions?: Array<{
+    tool: string;
+    success: boolean;
+    message: string;
+    artifactId?: string;
+    data?: Record<string, unknown>;
+  }>;
 }
 
 interface AgentChatPanelProps {
@@ -181,8 +190,8 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
     const doRegularChat = async () => {
       const { data } = await agentService.chat(content);
       const text = data.text || '';
-      if (!text) throw new Error('Empty response');
-      setAgentMsg({ content: text, isStreaming: false, provider: data.provider });
+      if (!text && !data.actions?.length) throw new Error('Empty response');
+      setAgentMsg({ content: text, isStreaming: false, provider: data.provider, actions: data.actions || undefined });
     };
 
     // Main chat logic: try streaming → fall back to regular → show error
@@ -390,6 +399,20 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
                         <Zap className="w-2.5 h-2.5" /> {msg.provider}
                       </span>
                     )}
+                    {msg.actions?.map((action, i) => (
+                      action.tool === 'generate_code' && action.data ? (
+                        <CodePreviewCard
+                          key={i}
+                          artifactId={action.artifactId || ''}
+                          title={(action.data.title as string) || 'Project'}
+                          html={action.data.html as string}
+                          css={action.data.css as string}
+                          js={action.data.js as string}
+                        />
+                      ) : (
+                        <ActionResultCard key={i} tool={action.tool} success={action.success} message={action.message} />
+                      )
+                    ))}
                   </div>
                 </>
               )}

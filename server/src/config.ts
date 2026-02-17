@@ -90,6 +90,11 @@ export const config = {
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
   telegramWebhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET || '',
 
+  // WhatsApp Business (future phase)
+  whatsappBusinessId: process.env.WHATSAPP_BUSINESS_ID || '',
+  whatsappToken: process.env.WHATSAPP_TOKEN || '',
+  whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
+
   // n8n (workflow automation)
   n8nBaseUrl: optional('N8N_BASE_URL', 'http://n8n:5678'),
   n8nWebhookSecret: process.env.N8N_WEBHOOK_SECRET || '',
@@ -120,6 +125,10 @@ export const config = {
 
   // Pico Fleet worker
   picoWorkerIntervalMs: optionalInt('PICO_WORKER_INTERVAL_MS', 10000),
+
+  // Resend email
+  resendApiKey: process.env.RESEND_API_KEY || '',
+  resendFromEmail: optional('RESEND_FROM_EMAIL', 'agent@geekspace.space'),
 
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',

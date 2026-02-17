@@ -17,6 +17,8 @@ import { checkKeywordTriggers } from './automations-engine.js';
 import { sendTelegramMessage } from './telegram.js';
 import { getPersonalityPrompt, getPersonality } from '../prompts/personalities.js';
 import { OPENCLAW_IDENTITY_COMPACT } from '../prompts/openclaw-system.js';
+import { parseActions } from './action-parser.js';
+import { executeAction, type ActionResult } from './action-executor.js';
 
 // ---- Types ----
 
@@ -142,6 +144,28 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     userCredits,
   });
 
+  // 7b. Parse and execute actions
+  const { text: cleanReply, actions: parsedActions } = parseActions(result.reply);
+  const actionResults: ActionResult[] = [];
+
+  for (const action of parsedActions) {
+    const actionResult = await executeAction(userId, action);
+    actionResults.push(actionResult);
+  }
+
+  const replyText = cleanReply || result.reply;
+
+  // Build action summary for channel (no iframe possible)
+  let channelReply = replyText;
+  for (const ar of actionResults) {
+    if (ar.success) {
+      channelReply += `\n\n✅ ${ar.message}`;
+      if (ar.tool === 'generate_code' && ar.artifactId) {
+        channelReply += `\nOpen your dashboard to preview the project.`;
+      }
+    }
+  }
+
   // 8. Log usage with correct channel
   db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ai.chat')`).run(
@@ -155,14 +179,14 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   }
   deductSubscriptionCredits(userId, result.creditCost);
 
-  // 10. Log assistant response
-  logConversation(userId, 'assistant', result.reply, result.provider, result.model);
+  // 10. Log assistant response (clean text without action blocks)
+  logConversation(userId, 'assistant', replyText, result.provider, result.model);
 
   // 11. Send response back through originating channel
   await sendChannelResponse({
     channel: msg.channel,
     externalId: msg.externalId,
-    text: result.reply,
+    text: channelReply,
     replyToMessageId: msg.messageId,
   });
 
@@ -187,10 +211,10 @@ export async function sendChannelResponse(response: ChannelResponse): Promise<vo
         response.replyToMessageId ? parseInt(response.replyToMessageId, 10) : undefined,
       );
       break;
-    // WhatsApp: to be added in future phase
-    // case 'whatsapp':
-    //   await sendWhatsAppMessage(response.externalId, response.text, response.replyToMessageId);
-    //   break;
+    case 'whatsapp':
+      // WhatsApp Business API integration — future phase
+      logger.warn({ externalId: response.externalId }, 'WhatsApp send not yet implemented');
+      break;
     default:
       logger.warn({ channel: response.channel }, 'Unknown channel for response dispatch');
   }
