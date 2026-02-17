@@ -36,6 +36,7 @@ import { initTelegramBot } from './services/telegram.js';
 import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
 import { picoRouter } from './routes/pico.js';
 import { briefingsRouter } from './routes/briefings.js';
+import { recipesRouter } from './routes/recipes.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
 
 const APP_VERSION = '3.0.0';
@@ -180,6 +181,7 @@ app.use('/api/billing', billingRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/pico', picoRouter);
 app.use('/api/briefings', briefingsRouter);
+app.use('/api/recipes', recipesRouter);
 
 // ---- Global error handler (MUST be last) ----
 app.use(errorHandler);
