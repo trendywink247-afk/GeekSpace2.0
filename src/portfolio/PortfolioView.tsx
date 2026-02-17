@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
 import {
   Sparkles, MessageSquare, Github, Twitter, Linkedin, Globe,
   Mail, ArrowLeft, Send, Bot, MapPin, Briefcase, Award, X, Loader2
@@ -43,6 +44,7 @@ const personalityMeta: Record<PersonalityKey, {
 export function PortfolioView() {
   const navigate = useNavigate();
   const { username } = useParams<{ username: string }>();
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<{role: 'user' | 'agent', message: string}[]>([]);
@@ -122,7 +124,7 @@ export function PortfolioView() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#05050A]/80 backdrop-blur-xl border-b border-[#7B61FF]/20">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors">
+            <button onClick={() => isAuthenticated ? navigate('/dashboard') : navigate('/')} className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors">
               <ArrowLeft className="w-5 h-5 text-[#A7ACB8]" />
             </button>
             <div className="flex items-center gap-2">
