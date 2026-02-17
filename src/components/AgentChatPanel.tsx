@@ -14,6 +14,15 @@ const personalityMeta: Record<AgentPersonality, { emoji: string; name: string; g
   weebo: { emoji: '💚', name: 'Weebo', greeting: "Hiii! What are we working on today?!" },
 };
 
+const providerLabels: Record<string, string> = {
+  picoclaw: 'Weebo Engine',
+  ollama: 'Local Engine',
+  openrouter: 'Cloud Engine',
+  'openrouter-free': 'Cloud Engine',
+  edith: 'Premium Engine',
+  builtin: 'Built-in',
+};
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'agent' | 'system';
@@ -396,7 +405,7 @@ export function AgentChatPanel({ isOpen, onClose }: AgentChatPanelProps) {
                     {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-[#7B61FF] ml-0.5 animate-pulse rounded-sm" />}
                     {msg.provider && !msg.isStreaming && (
                       <span className="block mt-1.5 text-[10px] text-[#A7ACB8]/60 flex items-center gap-1">
-                        <Zap className="w-2.5 h-2.5" /> {msg.provider}
+                        <Zap className="w-2.5 h-2.5" /> {providerLabels[msg.provider!] ?? msg.provider}
                       </span>
                     )}
                     {msg.actions?.map((action, i) => (
