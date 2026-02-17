@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   User, LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
-  X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu
+  X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen
 } from 'lucide-react';
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
@@ -31,11 +31,12 @@ const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then(m => ({ de
 const UsageAnalyticsPage = lazy(() => import('./pages/UsageAnalyticsPage').then(m => ({ default: m.UsageAnalyticsPage })));
 const MemoryManagerPage = lazy(() => import('./pages/MemoryManagerPage').then(m => ({ default: m.MemoryManagerPage })));
 const BillingPage = lazy(() => import('./pages/BillingPage').then(m => ({ default: m.BillingPage })));
+const RecipesPage = lazy(() => import('./pages/RecipesPage').then(m => ({ default: m.RecipesPage })));
 const PicoFleetPage = lazy(() =>
   import('./pages/PicoFleetPage').then(m => ({ default: m.PicoFleetPage }))
 );
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'pico' | 'terminal' | 'settings';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'terminal' | 'settings';
 
 // Bottom tabs for mobile (5 max for thumb reach)
 const mobileTabs: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
@@ -97,6 +98,7 @@ export function DashboardApp() {
     { id: 'agent', label: 'Agent Settings', icon: Bot },
     { id: 'reminders', label: 'Reminders', icon: Bell },
     { id: 'automations', label: 'Automations', icon: Zap },
+    { id: 'recipes', label: 'Recipes', icon: BookOpen },
     { id: 'pico', label: "Weebo's", icon: Cpu },
     { id: 'terminal', label: 'Terminal', icon: Terminal },
     { id: 'settings', label: 'Settings', icon: Settings },
@@ -134,6 +136,8 @@ export function DashboardApp() {
         return <RemindersPage />;
       case 'automations':
         return <AutomationsPage />;
+      case 'recipes':
+        return <RecipesPage />;
       case 'pico':
         return <PicoFleetPage />;
       case 'terminal':
