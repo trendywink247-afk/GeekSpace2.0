@@ -55,7 +55,7 @@ export function ExplorePage() {
 
   const handleChat = (e: React.MouseEvent, profile: DirectoryProfile) => {
     e.stopPropagation();
-    setChatOwner(profile.name.split(' ')[0]);
+    setChatOwner(profile.username);
     setChatOpen(true);
   };
 
