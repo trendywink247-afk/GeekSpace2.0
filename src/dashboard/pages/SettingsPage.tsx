@@ -34,7 +34,7 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-  const { accentColor, accentPresets, setAccentColor } = useThemeStore();
+  const { mode: themeMode, accentColor, accentPresets, setMode: setThemeMode, setAccentColor } = useThemeStore();
 
   const [profile, setProfile] = useState({
     name: user?.name || 'Alex Chen',
@@ -47,11 +47,11 @@ export function SettingsPage() {
   });
 
   const [notifications, setNotifications] = useState({
-    emailReminders: true,
-    pushNotifications: true,
-    weeklyDigest: true,
+    emailReminders: user?.notifications?.email ?? true,
+    pushNotifications: user?.notifications?.push ?? false,
+    weeklyDigest: user?.notifications?.weeklyDigest ?? true,
     marketingEmails: false,
-    securityAlerts: true,
+    securityAlerts: user?.notifications?.agentUpdates ?? true,
   });
 
   const [privacy, setPrivacy] = useState({
@@ -96,6 +96,23 @@ export function SettingsPage() {
       setMemories(memories.filter(m => m.id !== memoryId));
     } catch {
       // keep local state
+    }
+  };
+
+  const notificationFieldMap: Record<string, string> = {
+    emailReminders: 'email',
+    pushNotifications: 'push',
+    weeklyDigest: 'weeklyDigest',
+    securityAlerts: 'agentUpdates',
+  };
+
+  const saveNotification = async (field: string, value: boolean) => {
+    const serverKey = notificationFieldMap[field];
+    if (!serverKey) return;
+    try {
+      await userService.updateProfile({ notifications: { [serverKey]: value } } as Parameters<typeof userService.updateProfile>[0]);
+    } catch {
+      // Silent fail — local state still updated
     }
   };
 
@@ -287,7 +304,13 @@ export function SettingsPage() {
                       <div className="text-sm text-[#A7ACB8]">{item.desc}</div>
                     </div>
                   </div>
-                  <Switch checked={notifications[item.key as keyof typeof notifications]} onCheckedChange={(checked) => setNotifications({ ...notifications, [item.key]: checked })} />
+                  <Switch
+                    checked={notifications[item.key as keyof typeof notifications]}
+                    onCheckedChange={(checked) => {
+                      setNotifications({ ...notifications, [item.key]: checked });
+                      void saveNotification(item.key, checked);
+                    }}
+                  />
                 </div>
               ))}
             </CardContent>
@@ -552,16 +575,20 @@ export function SettingsPage() {
               <div>
                 <label className="text-sm text-[#A7ACB8] mb-3 block">Theme Mode</label>
                 <div className="flex gap-3">
-                  {(['dark', 'light', 'system'] as const).map((mode) => (
+                  {(['dark', 'light', 'system'] as const).map((m) => (
                     <button
-                      key={mode}
+                      key={m}
+                      onClick={() => {
+                        setThemeMode(m);
+                        void userService.updateProfile({ theme: { mode: m } } as Parameters<typeof userService.updateProfile>[0]);
+                      }}
                       className={`flex-1 p-4 rounded-xl border-2 capitalize transition-all ${
-                        mode === 'dark'
+                        themeMode === m
                           ? 'border-[#7B61FF] bg-[#7B61FF]/10 text-[#7B61FF]'
-                          : 'border-[#7B61FF]/20 text-[#A7ACB8]'
+                          : 'border-[#7B61FF]/20 text-[#A7ACB8] hover:border-[#7B61FF]/40'
                       }`}
                     >
-                      {mode}
+                      {m}
                     </button>
                   ))}
                 </div>
