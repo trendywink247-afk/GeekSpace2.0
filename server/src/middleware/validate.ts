@@ -55,6 +55,7 @@ export const loginSchema = z.object({
 
 export const chatSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty').max(4000, 'Message too long (4000 chars max)'),
+  messageCount: z.number().int().min(0).optional(),
 });
 
 export const commandSchema = z.object({

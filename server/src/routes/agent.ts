@@ -15,6 +15,7 @@ import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../servi
 import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeRequest } from '../services/pico-kimi-bridge.js';
 import { getUserWorkflows, getWorkflowStatus, getWorkflowAnalytics } from '../services/workflow-engine.js';
 import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } from '../services/agent-registry.js';
+import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
 
 export const agentRouter = Router();
 
@@ -1005,7 +1006,7 @@ agentRouter.delete('/premium-session/:sessionId', requireAuth, (req: AuthRequest
 // ---- Public Portfolio Chat (real LLM-powered) ----
 
 agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req, res) => {
-  const { message } = req.body;
+  const { message, messageCount } = req.body as { message: string; messageCount?: number };
   const { username } = req.params;
 
   const user = db.prepare('SELECT id, name, location, role, company FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
@@ -1022,6 +1023,37 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
   const ownerName = user.name as string;
   const agentName = (agentConfig?.name || personality.name) as string;
 
+  // ---- Abuse detection: cap at 20 messages per session ----
+  if (messageCount !== undefined && messageCount >= 20) {
+    res.json({
+      reply: `Thanks for chatting! You've been really engaged. If you'd like to continue the conversation, feel free to reach out to ${ownerName} directly.`,
+      agentName,
+      ownerName,
+      personality: personalityId,
+      personalityEmoji: personality.emoji,
+    });
+    return;
+  }
+
+  // ---- Visitor intent detection (first message only, non-fatal) ----
+  let visitorIntent = 'curious';
+  if (!messageCount || messageCount === 0) {
+    try {
+      const picoAvail = await isPicoClawAvailable();
+      if (picoAvail) {
+        const classifyResult = await queryPicoClaw(
+          `Classify this visitor message into exactly one category: "recruiter", "collaborator", or "curious". Only respond with one of those three words.\n\nMessage: "${message}"`,
+        );
+        const classified = classifyResult.text.trim().toLowerCase();
+        if (classified === 'recruiter' || classified === 'collaborator' || classified === 'curious') {
+          visitorIntent = classified;
+        }
+      }
+    } catch {
+      // Non-fatal — default to "curious"
+    }
+  }
+
   const basePrompt = buildPortfolioVisitorPrompt({
     ownerName,
     agentName,
@@ -1031,9 +1063,19 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
     location: (user.location as string) || undefined,
     role: (user.role as string) || undefined,
     company: (user.company as string) || undefined,
+    visitorIntent,
   });
 
   const systemPrompt = `${basePrompt}\n\n--- PERSONALITY ---\n${personality.promptAddition}`;
+
+  // ---- Log visitor interaction to activity_log ----
+  try {
+    db.prepare('INSERT INTO activity_log (id, user_id, action, details) VALUES (?, ?, \'portfolio_visitor_chat\', ?)').run(
+      uuid(), user.id as string, JSON.stringify({ intent: visitorIntent, messageLength: message.length }),
+    );
+  } catch {
+    // Non-fatal — don't block the chat response
+  }
 
   try {
     const result = await routeChat(
