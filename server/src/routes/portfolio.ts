@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, portfolioUpdateSchema, portfolioAiEditSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
+import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 
 export const portfolioRouter = Router();
 
@@ -23,7 +24,7 @@ portfolioRouter.get('/me', requireAuth, (req: AuthRequest, res) => {
   res.json(parsePortfolio(portfolio));
 });
 
-portfolioRouter.patch('/me', requireAuth, validateBody(portfolioUpdateSchema), (req: AuthRequest, res) => {
+portfolioRouter.patch('/me', requireAuth, validateBody(portfolioUpdateSchema), async (req: AuthRequest, res) => {
   const updates = req.body;
   const fields: string[] = [];
   const values: unknown[] = [];
@@ -42,17 +43,27 @@ portfolioRouter.patch('/me', requireAuth, validateBody(portfolioUpdateSchema), (
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Updated portfolio', ?, 'layout')`).run(uuid(), req.userId, `Changed: ${Object.keys(updates).join(', ')}`);
 
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(req.userId!) as Record<string, unknown>;
+
+  // Invalidate public portfolio cache so visitors see fresh data
+  if (portfolio?.username) {
+    await cacheDel(`portfolio:${portfolio.username}`);
+  }
+
   res.json(parsePortfolio(portfolio));
 });
 
-portfolioRouter.get('/:username', (req, res) => {
+portfolioRouter.get('/:username', async (req, res) => {
+  const cacheKey = `portfolio:${req.params.username}`;
+  const cached = await cacheGet(cacheKey);
+  if (cached) { res.json(JSON.parse(cached)); return; }
+
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE username = ?').get(req.params.username) as Record<string, unknown> | undefined;
   if (!portfolio) { res.status(404).json({ error: 'Portfolio not found' }); return; }
 
   const user = db.prepare('SELECT name, avatar, bio FROM users WHERE id = ?').get(portfolio.user_id as string) as Record<string, unknown> | undefined;
   const agentConfig = db.prepare('SELECT personality FROM agent_configs WHERE user_id = ?').get(portfolio.user_id as string) as Record<string, unknown> | undefined;
 
-  res.json({
+  const responseData = {
     userId: portfolio.user_id, username: portfolio.username, headline: portfolio.headline,
     about: portfolio.about, avatar: portfolio.avatar || user?.avatar, name: user?.name,
     location: portfolio.location, role: portfolio.role, company: portfolio.company,
@@ -63,7 +74,10 @@ portfolioRouter.get('/:username', (req, res) => {
     layout: portfolio.layout, agentEnabled: !!portfolio.agent_enabled,
     visibility: JSON.parse(portfolio.visibility as string || '{}'),
     personality: (agentConfig?.personality as string) || 'jarvis',
-  });
+  };
+
+  await cacheSet(cacheKey, JSON.stringify(responseData), 300);
+  res.json(responseData);
 });
 
 portfolioRouter.post('/ai-edit', requireAuth, validateBody(portfolioAiEditSchema), (req: AuthRequest, res) => {

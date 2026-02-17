@@ -4,15 +4,21 @@ import { validateBody, billingUpgradeSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { PLAN_DEFINITIONS } from '../db/index.js';
 import { v4 as uuid } from 'uuid';
+import { cacheGet, cacheSet } from '../services/cache.js';
 
 export const billingRouter = Router();
 
 // GET /api/billing/plans — list all available plans
-billingRouter.get('/plans', (_req, res) => {
+billingRouter.get('/plans', async (_req, res) => {
+  const cacheKey = 'billing:plans';
+  const cached = await cacheGet(cacheKey);
+  if (cached) { res.json(JSON.parse(cached)); return; }
+
   const plans = Object.entries(PLAN_DEFINITIONS).map(([id, plan]) => ({
     id,
     ...plan,
   }));
+  await cacheSet(cacheKey, JSON.stringify(plans), 3600);
   res.json(plans);
 });
 

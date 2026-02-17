@@ -18,6 +18,7 @@ import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } f
 import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
 import { parseActions } from '../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
+import { cacheGet, cacheSet } from '../services/cache.js';
 
 export const agentRouter = Router();
 
@@ -93,7 +94,10 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
 
 // ---- Personalities ----
 
-agentRouter.get('/personalities', (_req, res) => {
+agentRouter.get('/personalities', async (_req, res) => {
+  const cached = await cacheGet('agent:personalities');
+  if (cached) { res.json(JSON.parse(cached)); return; }
+  await cacheSet('agent:personalities', JSON.stringify(PERSONALITIES), 3600);
   res.json(PERSONALITIES);
 });
 
