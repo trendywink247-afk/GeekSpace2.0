@@ -102,10 +102,12 @@ export function AutomationsPage() {
     actionType: 'telegram-message' as AutomationAction,
     enabled: true,
   });
+  const [saveError, setSaveError] = useState('');
 
   const resetForm = () => {
     setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true });
     setEditingId(null);
+    setSaveError('');
   };
 
   const handleOpenAdd = () => {
@@ -129,26 +131,31 @@ export function AutomationsPage() {
 
   const handleSave = async () => {
     if (!form.name) return;
-    if (editingId) {
-      await updateAutomation(editingId, {
-        name: form.name,
-        description: form.description,
-        triggerType: form.triggerType,
-        actionType: form.actionType,
-        enabled: form.enabled,
-      });
-    } else {
-      await addAutomation({
-        name: form.name,
-        description: form.description,
-        triggerType: form.triggerType,
-        actionType: form.actionType,
-        config: {},
-        enabled: form.enabled,
-      });
+    setSaveError('');
+    try {
+      if (editingId) {
+        await updateAutomation(editingId, {
+          name: form.name,
+          description: form.description,
+          triggerType: form.triggerType,
+          actionType: form.actionType,
+          enabled: form.enabled,
+        });
+      } else {
+        await addAutomation({
+          name: form.name,
+          description: form.description,
+          triggerType: form.triggerType,
+          actionType: form.actionType,
+          config: {},
+          enabled: form.enabled,
+        });
+      }
+      setIsAddDialogOpen(false);
+      resetForm();
+    } catch {
+      setSaveError('Failed to save automation. Please try again.');
     }
-    setIsAddDialogOpen(false);
-    resetForm();
   };
 
   const handleToggle = async (id: string, enabled: boolean) => {
@@ -468,6 +475,9 @@ export function AutomationsPage() {
                 </select>
               </div>
             </div>
+            {saveError && (
+              <p className="text-sm text-[#FF6161] mt-2">{saveError}</p>
+            )}
             <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
