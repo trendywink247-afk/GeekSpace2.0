@@ -51,7 +51,7 @@ const demoUser: User = {
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -99,8 +99,8 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
             onboarding: {
               ...s.onboarding,
-              completed: !!(data as Record<string, unknown>).onboardingCompleted,
-              step: ((data as Record<string, unknown>).onboardingStep as number) ?? 0,
+              completed: !!(data as unknown as { onboardingCompleted?: boolean }).onboardingCompleted,
+              step: (data as unknown as { onboardingStep?: number }).onboardingStep ?? 0,
             },
           }));
         } catch {
