@@ -208,6 +208,11 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
       }
     }
 
+    // ---- Auto-route through bridge when enabled ----
+    if (!forceRoute && config.bridgeEnabled && config.picoClawEnabled) {
+      forceRoute = 'bridge';
+    }
+
     // ---- Premium route: explicit opt-in via prefix ----
     if (forceRoute === 'premium') {
       if (userCredits <= 0) {
