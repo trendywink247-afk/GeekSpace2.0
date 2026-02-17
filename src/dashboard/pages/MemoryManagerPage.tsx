@@ -71,6 +71,7 @@ export function MemoryManagerPage() {
   const [conversations, setConversations] = useState<ConversationEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [convLoading, setConvLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Filter / search state
   const [search, setSearch] = useState('');
@@ -103,11 +104,12 @@ export function MemoryManagerPage() {
 
   const fetchMemories = useCallback(async (cat?: CategoryFilter, q?: string) => {
     try {
+      setLoadError(null);
       const catParam = cat && cat !== 'all' ? cat : undefined;
       const res = await memoryService.list(catParam, q || undefined);
       setMemories(res.data);
     } catch {
-      // silent
+      setLoadError('Failed to load memories. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -118,7 +120,7 @@ export function MemoryManagerPage() {
       const res = await memoryService.conversations(100);
       setConversations(res.data);
     } catch {
-      // silent
+      // conversations are secondary — don't overwrite primary error
     } finally {
       setConvLoading(false);
     }
@@ -339,17 +341,32 @@ export function MemoryManagerPage() {
               <div className="w-16 h-16 rounded-2xl bg-[#7B61FF]/10 flex items-center justify-center mb-4">
                 <Brain className="w-8 h-8 text-[#7B61FF]/50" />
               </div>
-              <h3 className="text-lg font-medium text-[#F4F6FF] mb-1">No memories yet</h3>
-              <p className="text-sm text-[#A7ACB8] max-w-sm">
-                Memories are automatically extracted from conversations, or you can add them manually.
-              </p>
-              <button
-                onClick={openCreate}
-                className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7B61FF]/20 hover:bg-[#7B61FF]/30 text-[#7B61FF] text-sm font-medium transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Add your first memory
-              </button>
+              {loadError ? (
+                <>
+                  <h3 className="text-lg font-medium text-[#FF6161] mb-1">Unable to load memories</h3>
+                  <p className="text-sm text-[#A7ACB8] max-w-sm">{loadError}</p>
+                  <button
+                    onClick={() => { setLoading(true); fetchMemories(category, search); }}
+                    className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7B61FF]/20 hover:bg-[#7B61FF]/30 text-[#7B61FF] text-sm font-medium transition-colors"
+                  >
+                    Retry
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-medium text-[#F4F6FF] mb-1">No memories yet</h3>
+                  <p className="text-sm text-[#A7ACB8] max-w-sm">
+                    Memories are automatically extracted from conversations, or you can add them manually.
+                  </p>
+                  <button
+                    onClick={openCreate}
+                    className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7B61FF]/20 hover:bg-[#7B61FF]/30 text-[#7B61FF] text-sm font-medium transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add your first memory
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
