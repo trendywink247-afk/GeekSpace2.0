@@ -13,7 +13,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   RefreshCw,
-  MapPin
+  MapPin,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +35,7 @@ import {
 } from 'recharts';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { briefingService } from '@/services/api';
 
 interface OverviewPageProps {
   onViewPortfolio: (username: string) => void;
@@ -85,6 +87,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [latestBriefing, setLatestBriefing] = useState<{ content: string; created_at: string } | null>(null);
 
   const user = useAuthStore((s) => s.user);
   const { stats, integrations, agent, reminders, chartData, hourlyData } = useDashboardStore();
@@ -126,6 +129,12 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    briefingService.getRecent(1).then(res => {
+      if (res.data.length > 0) setLatestBriefing(res.data[0]);
+    }).catch(() => {});
   }, []);
 
   const handleRefresh = () => {
@@ -267,6 +276,32 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           </Card>
         ))}
       </div>
+
+      {/* Daily Briefing */}
+      {latestBriefing && (
+        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#FFD761]" />
+              Daily Briefing
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-[#F4F6FF] leading-relaxed whitespace-pre-line">
+              {latestBriefing.content}
+            </p>
+            <p className="text-xs text-[#A7ACB8] mt-3 font-mono">
+              {new Date(latestBriefing.created_at).toLocaleString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts Row */}
       <div className="grid lg:grid-cols-3 gap-6">
