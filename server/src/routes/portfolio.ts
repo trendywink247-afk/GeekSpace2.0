@@ -48,6 +48,11 @@ portfolioRouter.patch('/me', requireAuth, validateBody(portfolioUpdateSchema), a
   if (portfolio?.username) {
     await cacheDel(`portfolio:${portfolio.username}`);
   }
+  // Also invalidate by users.username in case portfolios.username is stale/null
+  const userRow = db.prepare('SELECT username FROM users WHERE id = ?').get(req.userId) as { username: string } | undefined;
+  if (userRow?.username) {
+    await cacheDel(`portfolio:${userRow.username}`);
+  }
 
   res.json(parsePortfolio(portfolio));
 });
@@ -80,7 +85,7 @@ portfolioRouter.get('/:username', async (req, res) => {
   res.json(responseData);
 });
 
-portfolioRouter.post('/ai-edit', requireAuth, validateBody(portfolioAiEditSchema), (req: AuthRequest, res) => {
+portfolioRouter.post('/ai-edit', requireAuth, validateBody(portfolioAiEditSchema), async (req: AuthRequest, res) => {
   const { prompt } = req.body;
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(req.userId!) as Record<string, unknown>;
   if (!portfolio) { res.status(404).json({ error: 'Portfolio not found' }); return; }
@@ -90,6 +95,12 @@ portfolioRouter.post('/ai-edit', requireAuth, validateBody(portfolioAiEditSchema
   db.prepare('UPDATE portfolios SET about = ? WHERE user_id = ?').run(enhanced, req.userId);
 
   db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool) VALUES (?, ?, 'geekspace', 'built-in', ?, ?, 0, 'web', 'portfolio.update')`).run(uuid(), req.userId, prompt.length, enhanced.length);
+
+  // Invalidate portfolio cache after AI edit
+  const userRow2 = db.prepare('SELECT username FROM users WHERE id = ?').get(req.userId) as { username: string } | undefined;
+  if (userRow2?.username) {
+    await cacheDel(`portfolio:${userRow2.username}`);
+  }
 
   const updated = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(req.userId!) as Record<string, unknown>;
   res.json(parsePortfolio(updated));
