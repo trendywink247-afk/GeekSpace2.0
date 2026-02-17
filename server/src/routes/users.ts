@@ -56,12 +56,17 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), (req: Auth
     for (const [k, c] of Object.entries(m)) { if (updates.privacy[k] !== undefined) { fields.push(`${c} = ?`); values.push(updates.privacy[k] ? 1 : 0); } }
   }
 
-  if (fields.length) { values.push(req.userId); db.prepare(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`).run(...values); }
-
-  if (updates.username) {
-    db.prepare('UPDATE portfolios SET username = ? WHERE user_id = ?')
-      .run(updates.username, req.userId);
-  }
+  const updateUser = db.transaction(() => {
+    if (fields.length) {
+      values.push(req.userId);
+      db.prepare(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+    }
+    if (updates.username) {
+      db.prepare('UPDATE portfolios SET username = ? WHERE user_id = ?')
+        .run(updates.username, req.userId);
+    }
+  });
+  updateUser();
 
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Updated profile', 'Settings changed', 'user')`).run(uuid(), req.userId);
 

@@ -12,7 +12,7 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
 
   const existing = db.prepare('SELECT id FROM users WHERE email = ? OR username = ?').get(email, username);
   if (existing) {
-    res.status(409).json({ error: 'Email or username taken' });
+    res.status(409).json({ error: 'Email or username already taken' });
     return;
   }
 
