@@ -11,6 +11,7 @@ import { db } from '../db/index.js';
 import { edithProbe } from '../services/edith.js';
 import { picoClawProbe } from '../services/picoclaw.js';
 import { logger } from '../logger.js';
+import { requireAuth } from '../middleware/auth.js';
 
 export const healthRouter = Router();
 
@@ -52,7 +53,7 @@ async function probeComponents() {
 
 // ---- SSE Stream ----
 
-healthRouter.get('/stream', (req: Request, res: Response) => {
+healthRouter.get('/stream', requireAuth, async (req: Request, res: Response) => {
   // SSE headers
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -64,6 +65,36 @@ healthRouter.get('/stream', (req: Request, res: Response) => {
 
   incrementSSEConnections();
   logger.info('SSE health stream connected');
+
+  // Send first snapshot immediately on connect (no 5s wait)
+  try {
+    const metrics = getMetricsSnapshot();
+    const components = await probeComponents();
+    const payload = {
+      timestamp: new Date().toISOString(),
+      components,
+      metrics: {
+        totalRequests: metrics.totalRequests,
+        totalErrors: metrics.totalErrors,
+        avgLatencyMs: metrics.avgLatencyMs,
+        requestsPerMinute: metrics.requestsPerMinute,
+        activeConnections: metrics.activeConnections,
+      },
+      system: { uptime: metrics.uptime, memoryMb: metrics.memoryMb },
+      topEndpoints: Object.entries(metrics.endpoints)
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 10)
+        .map(([path, stats]) => ({
+          path,
+          count: stats.count,
+          errors: stats.errors,
+          avgMs: stats.count > 0 ? Math.round(stats.totalLatencyMs / stats.count) : 0,
+        })),
+    };
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  } catch (err) {
+    logger.error({ err }, 'SSE health stream initial push error');
+  }
 
   // Send snapshot every 5 seconds
   const interval = setInterval(async () => {
