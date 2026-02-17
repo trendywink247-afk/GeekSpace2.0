@@ -130,9 +130,9 @@ export function MemoryManagerPage() {
 
   // Debounced search
   useEffect(() => {
+    setLoading(true);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      setLoading(true);
       fetchMemories(category, search);
     }, 300);
     return () => clearTimeout(debounceRef.current);
@@ -175,6 +175,7 @@ export function MemoryManagerPage() {
           key: formKey.trim(),
           value: formValue.trim(),
           confidence: formConfidence / 100,
+          source: 'manual',
         });
       }
       setDialogOpen(false);

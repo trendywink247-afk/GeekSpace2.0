@@ -295,7 +295,7 @@ export const memoryService = {
       params: { ...(category ? { category } : {}), ...(search ? { search } : {}) },
     }),
 
-  create: (data: { category: string; key: string; value: string; confidence?: number }) =>
+  create: (data: { category: string; key: string; value: string; confidence?: number; source?: string }) =>
     api.post<MemoryEntry>('/agent/memory', data),
 
   update: (id: string, data: { category?: string; key?: string; value?: string; confidence?: number }) =>
