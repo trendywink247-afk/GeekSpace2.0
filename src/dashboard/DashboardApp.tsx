@@ -10,6 +10,7 @@ import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentDesignWizard } from '@/components/AgentDesignWizard';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { useThemeStore } from '@/stores/themeStore';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import type { AgentPersonality } from '@/types';
 
@@ -69,10 +70,22 @@ export function DashboardApp() {
   const usage = useDashboardStore((s) => s.usage);
   const agent = useDashboardStore((s) => s.agent);
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
+  const applyTheme = useThemeStore((s) => s.applyTheme);
+  const setThemeMode = useThemeStore((s) => s.setMode);
+  const themeMode = user?.theme?.mode as 'dark' | 'light' | 'system' | undefined;
 
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  // Apply stored theme on mount and when user changes
+  useEffect(() => {
+    if (themeMode) {
+      setThemeMode(themeMode as 'dark' | 'light' | 'system');
+    } else {
+      applyTheme();
+    }
+  }, [themeMode, setThemeMode, applyTheme]);
 
   // First-load welcome toast (once per session)
   useEffect(() => {
