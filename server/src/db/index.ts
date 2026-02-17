@@ -436,6 +436,23 @@ function seedDemoData() {
     'Singapore', '', 'Web3 Developer', 'ChainDev',
     '["Web3","Blockchain","Solidity"]', 'free', 15000, 1);
 
+  const newPass = bcrypt.hashSync('P@ssw0rd2026', 10);
+
+  insertUser.run('demo-9', 'srikar@geekspace.demo', 'srikar', newPass, 'Srikar', 'SK',
+    'Exploring the future of AI-powered productivity.',
+    'Hyderabad, IN', '', 'Developer', 'GeekSpace',
+    '["AI","Productivity","Full-stack"]', 'monthly', 95000, 1);
+
+  insertUser.run('demo-10', 'abhi@geekspace.demo', 'abhi', newPass, 'Abhi', 'AB',
+    'Building smarter systems one line at a time.',
+    'Bangalore, IN', '', 'Engineer', 'GeekSpace',
+    '["Backend","Cloud","Python"]', 'monthly', 92000, 1);
+
+  insertUser.run('demo-11', 'guest@geekspace.demo', 'guest', newPass, 'Guest', 'GU',
+    'Exploring GeekSpace as a guest.',
+    '', '', 'Guest', '',
+    '[]', 'free', 5000, 1);
+
   // Agent configs
   const insertAgent = db.prepare(`
     INSERT INTO agent_configs (id, user_id, name, display_name, mode, voice, system_prompt)
@@ -444,6 +461,9 @@ function seedDemoData() {
   insertAgent.run('agent-1', 'demo-1', 'Geek', "Alex's AI", 'builder', 'friendly', "You are Alex's personal AI assistant. You help with coding, scheduling, and general tasks.");
   insertAgent.run('agent-2', 'demo-2', 'Muse', "Sarah's AI", 'minimal', 'professional', "You are Sarah's design assistant.");
   insertAgent.run('agent-3', 'demo-3', 'Atlas', "Marcus's AI", 'operator', 'witty', "You are Marcus's business advisor assistant.");
+  insertAgent.run('agent-9', 'demo-9', 'Nexus', "Srikar's AI", 'builder', 'friendly', "You are Srikar's personal AI assistant. You help with coding, productivity, and general tasks.");
+  insertAgent.run('agent-10', 'demo-10', 'Pulse', "Abhi's AI", 'builder', 'friendly', "You are Abhi's personal AI assistant. You help with engineering, cloud, and general tasks.");
+  insertAgent.run('agent-11', 'demo-11', 'Scout', 'Guest AI', 'minimal', 'friendly', "You are a helpful AI assistant for a GeekSpace guest user.");
 
   // Reminders for demo-1
   const insertReminder = db.prepare(`
@@ -520,11 +540,15 @@ function seedDemoData() {
     'timeline', 1, '{"showInDirectory":true,"showAvatar":true,"showLocation":true,"showProjects":true,"showActivity":true}'
   );
 
-  // Features for demo-1
-  db.prepare(`
+  // Features for demo users
+  const insertFeature = db.prepare(`
     INSERT INTO features (user_id, social_discovery, portfolio_chat, automation_builder, website_builder, n8n_integration, manychat_integration)
     VALUES (?, 1, 1, 1, 0, 1, 0)
-  `).run('demo-1');
+  `);
+  insertFeature.run('demo-1');
+  insertFeature.run('demo-9');
+  insertFeature.run('demo-10');
+  insertFeature.run('demo-11');
 
   // Subscriptions for demo users
   const insertSub = db.prepare(`
@@ -537,6 +561,9 @@ function seedDemoData() {
   for (let i = 4; i <= 8; i++) {
     insertSub.run(uuid(), `demo-${i}`, 'free', 5000, 5000, 0, 30, 0, 0, 'USD');
   }
+  insertSub.run(uuid(), 'demo-9',  'monthly', 100000, 95000, 5000, 30, 10, 999, 'INR');
+  insertSub.run(uuid(), 'demo-10', 'monthly', 100000, 92000, 8000, 30, 10, 999, 'INR');
+  insertSub.run(uuid(), 'demo-11', 'free', 5000, 5000, 0, 30, 0, 0, 'USD');
 
   // Seed some usage events
   const insertEvent = db.prepare(`
