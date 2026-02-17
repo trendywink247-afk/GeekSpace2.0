@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { integrationService } from '@/services/api';
 import type { IntegrationType } from '@/types';
 
-const integrationOptions: { id: IntegrationType; name: string; description: string; hasConnectFlow: boolean }[] = [
-  { id: 'telegram', name: 'Telegram', description: 'Chat with your agent via Telegram', hasConnectFlow: true },
-  { id: 'google-calendar', name: 'Google Calendar', description: 'Sync events and schedules', hasConnectFlow: false },
-  { id: 'github', name: 'GitHub', description: 'Showcase repos in portfolio', hasConnectFlow: false },
-  { id: 'n8n', name: 'n8n', description: 'Advanced workflow automation', hasConnectFlow: false },
+const integrationOptions: { id: IntegrationType; name: string; description: string }[] = [
+  { id: 'telegram', name: 'Telegram', description: 'Chat with your agent via Telegram' },
+  { id: 'google-calendar', name: 'Google Calendar', description: 'Sync events and schedules' },
+  { id: 'github', name: 'GitHub', description: 'Showcase repos in portfolio' },
+  { id: 'n8n', name: 'n8n', description: 'Advanced workflow automation' },
 ];
 
 interface IntegrationsStepProps {
@@ -38,7 +38,13 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
     setTelegramState('loading');
     try {
       const { data } = await integrationService.linkTelegram();
-      if (data.deepLink) {
+      if (data.linked) {
+        // Already connected
+        setTelegramState('connected');
+        if (!selected.includes('telegram')) {
+          onToggle([...selected, 'telegram']);
+        }
+      } else if (data.deepLink) {
         setDeepLink(data.deepLink);
         setTelegramState('waiting');
       } else {
