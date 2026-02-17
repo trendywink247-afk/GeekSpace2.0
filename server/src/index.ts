@@ -169,6 +169,14 @@ app.get('/api/health', async (_req, res) => {
   });
 });
 
+// ---- Redirect stale /api/api/* double-prefix requests ----
+// Stale frontend builds may request /api/api/health/stream etc.
+// Redirect to the correct single-prefix path instead of 404-ing.
+app.use('/api/api', (req, res) => {
+  const qs = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+  res.redirect(301, `/api${req.path}${qs}`);
+});
+
 // ---- Mount routes ----
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);

@@ -64,9 +64,10 @@ export const useAuthStore = create<AuthStore>()(
           const { data } = await authService.login(email, password);
           localStorage.setItem('gs_token', data.token);
           set({ user: data.user, token: data.token, isAuthenticated: true, isLoading: false });
-        } catch {
+        } catch (err: unknown) {
           set({ isLoading: false });
-          throw new Error('Invalid credentials');
+          const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Invalid credentials';
+          throw new Error(message);
         }
       },
 
@@ -76,9 +77,10 @@ export const useAuthStore = create<AuthStore>()(
           const { data } = await authService.signup(email, password, username);
           localStorage.setItem('gs_token', data.token);
           set({ user: data.user, token: data.token, isAuthenticated: true, isLoading: false });
-        } catch {
+        } catch (err: unknown) {
           set({ isLoading: false });
-          throw new Error('Signup failed');
+          const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Signup failed';
+          throw new Error(message);
         }
       },
 

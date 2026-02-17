@@ -50,13 +50,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Refresh / logout on 401
+// Refresh / logout on 401 (skip for auth endpoints — 401 there means wrong credentials)
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('gs_token');
-      window.location.href = '/login';
+      const url = err.config?.url || '';
+      const isAuthEndpoint = ['/auth/login', '/auth/signup', '/auth/demo'].some(
+        (p) => url.includes(p),
+      );
+      if (!isAuthEndpoint) {
+        localStorage.removeItem('gs_token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   },
