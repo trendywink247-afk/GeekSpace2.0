@@ -21,6 +21,19 @@ export interface User {
   plan: Plan;
   credits?: number;
   createdAt: string;
+  notifications?: {
+    email: boolean;
+    push: boolean;
+    agentUpdates: boolean;
+    reminders: boolean;
+    weeklyDigest: boolean;
+  };
+  privacy?: {
+    showProfile: boolean;
+    showActivity: boolean;
+    allowAgentChat: boolean;
+    showLocation: boolean;
+  };
 }
 
 export interface AuthState {

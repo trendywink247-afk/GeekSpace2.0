@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { userService, apiKeyService, memoryService } from '@/services/api';
-import type { ApiProvider, MemoryEntry, User as UserType } from '@/types';
+import type { ApiProvider, MemoryEntry } from '@/types';
 
 export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
@@ -103,10 +103,10 @@ export function SettingsPage() {
     setIsSaving(true);
     try {
       const { data: updatedUser } = await userService.updateProfile(profile);
-      if (updatedUser) {
-        // Merge with existing user to preserve credits, plan, and any fields
-        // not returned by PATCH /me (server omits some fields on update)
-        setUser({ ...(user ?? {}), ...updatedUser } as UserType);
+      if (user && updatedUser) {
+        // Merge with existing user to preserve notifications, privacy, credits,
+        // and any fields not returned by PATCH /me (server omits some on update)
+        setUser({ ...user, ...updatedUser });
       }
     } catch (err) {
       console.error('[settings] save failed:', err);
