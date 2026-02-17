@@ -69,7 +69,7 @@ export function initPicoFleetTables(): void {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       slot INTEGER NOT NULL,
-      name TEXT NOT NULL DEFAULT 'Pico-1',
+      name TEXT NOT NULL DEFAULT 'Weebo',
       status TEXT NOT NULL DEFAULT 'active',
       tasks_completed INTEGER DEFAULT 0,
       tasks_failed INTEGER DEFAULT 0,
@@ -123,7 +123,7 @@ export function ensureDefaultAgents(): void {
 
   for (const { id } of usersWithout) {
     db.prepare('INSERT INTO pico_agents (id, user_id, slot, name) VALUES (?, ?, 1, ?)')
-      .run(uuid(), id, 'Pico-1');
+      .run(uuid(), id, 'Weebo');
   }
 
   if (usersWithout.length > 0) {

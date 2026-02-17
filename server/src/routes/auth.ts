@@ -46,7 +46,7 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
   `).run(id, username);
 
   // Create default Pico agent (slot 1)
-  db.prepare('INSERT INTO pico_agents (id, user_id, slot, name) VALUES (?, ?, 1, ?)').run(uuid(), id, 'Pico-1');
+  db.prepare('INSERT INTO pico_agents (id, user_id, slot, name) VALUES (?, ?, 1, ?)').run(uuid(), id, 'Weebo');
 
   // Create default integrations
   const insInt = db.prepare('INSERT INTO integrations (id, user_id, type, name, description, status, health, requests_today, last_sync, features, permissions) VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?)');

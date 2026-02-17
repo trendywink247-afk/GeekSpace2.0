@@ -38,10 +38,13 @@ export function LoginPage() {
         await login(email, password);
         navigate('/dashboard');
       }
-    } catch {
-      // If backend is not running, fall back to demo mode
-      await loginDemo();
-      navigate('/dashboard');
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { error?: string } } };
+      const message =
+        axiosError?.response?.data?.error ||
+        (err instanceof Error ? err.message : null) ||
+        (isSignup ? 'Signup failed. Please try again.' : 'Invalid credentials.');
+      setError(message);
     }
   };
 
