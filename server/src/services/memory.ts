@@ -8,6 +8,7 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
+import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
 
 // ---- Schema (called on init) ----
 
@@ -204,6 +205,50 @@ export function extractMemories(userId: string, message: string): number {
     }
   }
   return extracted;
+}
+
+/**
+ * AI-powered memory extraction: uses PicoClaw to analyze conversations
+ * and extract user preferences, facts, projects, and patterns.
+ * Falls back to regex-based extraction when PicoClaw is unavailable.
+ */
+export async function extractMemoriesWithAI(userId: string, userMessage: string, assistantResponse: string): Promise<void> {
+  try {
+    const picoAvailable = await isPicoClawAvailable();
+    if (!picoAvailable) {
+      extractMemories(userId, userMessage);
+      return;
+    }
+
+    const prompt = `Extract facts about the user from this conversation. Return ONLY a JSON array of objects with {category, key, value}. Categories: preference, fact, project, pattern. If nothing notable, return [].
+
+User said: "${userMessage.slice(0, 500)}"
+Assistant said: "${assistantResponse.slice(0, 500)}"`;
+
+    const result = await queryPicoClaw(prompt, 'You extract user facts from conversations. Return valid JSON only.');
+
+    let facts: Array<{ category: string; key: string; value: string }>;
+    try {
+      facts = JSON.parse(result.text);
+      if (!Array.isArray(facts)) return;
+    } catch {
+      return;
+    }
+
+    for (const fact of facts.slice(0, 5)) {
+      if (!fact.category || !fact.key || !fact.value) continue;
+
+      const existing = db.prepare(
+        "SELECT value FROM agent_memory WHERE user_id = ? AND key = ?"
+      ).get(userId, fact.key) as { value: string } | undefined;
+
+      if (existing && existing.value === fact.value) continue;
+
+      upsertMemory(userId, fact.category, fact.key, fact.value, 0.7, 'ai-extract');
+    }
+  } catch (err) {
+    logger.debug({ error: (err as Error).message }, 'AI memory extraction failed (non-fatal)');
+  }
 }
 
 // ---- Build memory context for system prompt ----

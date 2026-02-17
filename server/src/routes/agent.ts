@@ -10,7 +10,7 @@ import { config } from '../config.js';
 import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openclaw-system.js';
 import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
-import { buildMemoryContext, logConversation, extractMemories, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations } from '../services/memory.js';
+import { buildMemoryContext, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations } from '../services/memory.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
 import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeRequest } from '../services/pico-kimi-bridge.js';
 import { getUserWorkflows, getWorkflowStatus, getWorkflowAnalytics } from '../services/workflow-engine.js';
@@ -312,6 +312,9 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
           response.steps = bridgeResult.steps;
         }
 
+        // Background AI memory extraction (non-blocking)
+        extractMemoriesWithAI(userId, message, bridgeResult.text).catch(() => {});
+
         res.json(response);
         return;
       } catch (err) {
@@ -369,6 +372,9 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     if (config.logLevel === 'debug') {
       response.debug = { intent, forceRoute, tokensUsed: result.tokensIn + result.tokensOut };
     }
+
+    // Background AI memory extraction (non-blocking)
+    extractMemoriesWithAI(userId, message, result.reply).catch(() => {});
 
     res.json(response);
   } catch (err) {
