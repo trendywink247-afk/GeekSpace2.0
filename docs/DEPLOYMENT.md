@@ -16,27 +16,24 @@
 ## Quick Deploy
 
 ```bash
-# 1. Clone and configure
+# 1. Clone
 git clone https://github.com/trendywink247-afk/GeekSpace2.0.git
 cd GeekSpace2.0
-cp .env.example .env
 
-# 2. Generate secrets
-echo "JWT_SECRET=$(openssl rand -hex 64)" >> .env
-echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
+# 2. Bootstrap (creates .env, generates secrets, builds, deploys)
+./scripts/bootstrap.sh
 
-# 3. Set your domain and Ollama URL
-# Edit .env — set CORS_ORIGINS, PUBLIC_URL, OLLAMA_BASE_URL
+# 3. Edit .env — set your domain and Ollama URL
+#    CORS_ORIGINS, PUBLIC_URL, API_URL, OLLAMA_BASE_URL
 
-# 4. Deploy
-docker compose up -d --build
-
-# 5. Copy frontend to Caddy serving directory
+# 4. Copy frontend to Caddy serving directory
 docker cp geekspace-app:/app/dist/. /var/www/geekspace/
 
-# 6. Verify
+# 5. Verify
 curl http://localhost:3001/api/health | jq .
 ```
+
+The bootstrap script handles `.env` creation, secret generation (`JWT_SECRET`, `ENCRYPTION_KEY`), Docker network setup, and container deployment. It's idempotent — safe to run multiple times.
 
 ## Architecture
 
@@ -57,6 +54,7 @@ Internet → Caddy (:443, auto-HTTPS)
 |---------|----------|------|---------|
 | `geekspace` | Yes | 3001 (exposed) | Express API + built frontend |
 | `redis` | Yes | 6379 (internal) | Job queue + cache |
+| `picoclaw` | Optional | 8080 (internal) | Automation sidecar (fast small model) |
 
 ## Caddy Configuration
 
@@ -108,11 +106,52 @@ OLLAMA_BASE_URL=http://localhost:32778
 # Or from inside Docker: http://host.docker.internal:32778
 ```
 
-## Health Checks
+## Telegram Bot Setup
+
+1. Create a bot via [@BotFather](https://t.me/BotFather) on Telegram
+2. Copy the bot token
+3. Set in `.env`:
+   ```env
+   TELEGRAM_BOT_TOKEN=your_token_here
+   TELEGRAM_WEBHOOK_SECRET=any_random_string_here
+   API_URL=https://yourdomain.com
+   ```
+4. Restart: `docker compose up -d geekspace`
+5. Verify — the server registers the webhook automatically on startup:
+   ```bash
+   docker logs --tail 20 geekspace-app | grep -i telegram
+   # Expected: "Telegram bot identified" + "Telegram webhook registered"
+   ```
+
+> **Note**: The bot token and webhook secret are read from `.env` only. They are never stored in the database.
+
+## PicoClaw (Automation Sidecar)
+
+PicoClaw is a lightweight Node.js sidecar that handles trivial/automation tasks via a fast small model. It runs as a Docker container on the internal network — **never exposed publicly**.
+
+1. Set in `.env`:
+   ```env
+   PICOCLAW_URL=http://picoclaw:8080
+   PICOCLAW_ENABLED=true
+   ```
+2. Rebuild: `docker compose up -d --build`
+3. Verify:
+   ```bash
+   curl http://localhost:3001/api/health | jq .components.picoclaw
+   # Expected: "reachable"
+   ```
+
+## Health Checks & Repair
 
 ```bash
-# All components
+# Full system health check
 ./scripts/healthcheck.sh
+
+# Diagnose port conflicts and container issues
+./scripts/repair.sh
+
+# Docker cleanup (unused images, containers, build cache)
+./scripts/cleanup.sh
 
 # Just the API
 curl http://localhost:3001/api/health | jq .
@@ -120,6 +159,8 @@ curl http://localhost:3001/api/health | jq .
 # Docker container status
 docker compose ps
 ```
+
+Use `repair.sh` when the API is unreachable or you suspect a port conflict (e.g., a stale host Node process competing with Docker for port 3001). It prints diagnostics and suggested fix commands without modifying anything.
 
 ## Updating
 
