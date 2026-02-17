@@ -482,10 +482,18 @@ export interface OnboardingState {
     name: string;
     username: string;
     bio: string;
+    headline: string;
     tags: string[];
   };
-  agentMode: AgentMode;
+  agentPreferences: {
+    personality: 'edith' | 'jarvis' | 'weebo';
+    agentMode: AgentMode;
+  };
+  portfolio: {
+    skills: string[];
+    headline: string;
+    about: string;
+  };
   integrations: IntegrationType[];
   visibility: 'public' | 'private';
-  apiKeyChoice: 'geekspace' | 'own';
 }

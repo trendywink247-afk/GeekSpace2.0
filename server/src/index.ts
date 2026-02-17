@@ -58,7 +58,7 @@ app.use(helmet({
 app.use(cors({
   origin: config.corsOrigins,
   credentials: true,
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
 }));
 
@@ -101,6 +101,7 @@ const chatLimiter = rateLimit({
   message: { error: 'Too many chat requests. Please slow down.' },
 });
 app.use('/api/agent/chat', chatLimiter);
+app.use('/api/agent/chat/stream', chatLimiter);
 
 // ---- Strict rate limit on public (unauthenticated) endpoints ----
 const publicLimiter = rateLimit({

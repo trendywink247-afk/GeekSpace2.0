@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { validateBody, userUpdateSchema } from '../middleware/validate.js';
+import { validateBody, userUpdateSchema, notificationEmailSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 
 export const usersRouter = Router();
@@ -71,7 +71,7 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), (req: Auth
   });
 });
 
-usersRouter.patch('/notification-email', requireAuth, (req: AuthRequest, res) => {
+usersRouter.patch('/notification-email', requireAuth, validateBody(notificationEmailSchema), (req: AuthRequest, res) => {
   const { enabled, address } = req.body as { enabled?: boolean; address?: string };
 
   if (enabled !== undefined) {

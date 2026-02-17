@@ -367,6 +367,18 @@ try {
   db.exec("UPDATE pico_agents SET name = 'Weebo' WHERE name = 'Pico-1' AND slot = 1");
 } catch { /* ignore */ }
 
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN onboarding_step INTEGER DEFAULT 0`);
+} catch { /* column already exists */ }
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_installed_recipes_user ON installed_recipes(user_id)`);
+} catch { /* index already exists */ }
+
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_automations_trigger ON automations(trigger_type, enabled)`);
+} catch { /* index already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {

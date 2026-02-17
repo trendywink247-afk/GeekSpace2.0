@@ -316,7 +316,7 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
         }
 
         // Background AI memory extraction (non-blocking)
-        extractMemoriesWithAI(userId, message, bridgeResult.text).catch(() => {});
+        extractMemoriesWithAI(userId, message, bridgeResult.text).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
 
         res.json(response);
         return;
@@ -327,7 +327,7 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     }
 
     // Fire keyword-based automation triggers (non-blocking)
-    checkKeywordTriggers(userId, message).catch(() => {});
+    checkKeywordTriggers(userId, message).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
 
     // ---- Default: local-first router (Ollama → cloud fallback if Ollama down) ----
     const history = getConversationContext(userId);
@@ -392,7 +392,7 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     }
 
     // Background AI memory extraction (non-blocking)
-    extractMemoriesWithAI(userId, message, cleanReply || result.reply).catch(() => {});
+    extractMemoriesWithAI(userId, message, cleanReply || result.reply).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
 
     res.json(response);
   } catch (err) {

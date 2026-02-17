@@ -219,6 +219,18 @@ export const featuresUpdateSchema = z.object({
   manyChatIntegration: z.boolean().optional(),
 });
 
+// ---- Billing schemas ----
+
+export const billingUpgradeSchema = z.object({
+  plan: z.string().min(1).max(30),
+  currency: z.enum(['USD', 'INR']).optional(),
+});
+
+export const notificationEmailSchema = z.object({
+  enabled: z.boolean(),
+  address: z.string().email().max(254).nullable().optional(),
+});
+
 // ---- Premium agent schemas ----
 
 export const deployPremiumSchema = z.object({

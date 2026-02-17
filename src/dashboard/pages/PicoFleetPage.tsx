@@ -181,8 +181,8 @@ export function PicoFleetPage() {
     setPlanning(true);
     try {
       const res = await picoService.planTask(taskInput.trim());
-      const count = res.data.tasks.length;
-      showToast(`Planned ${count} task${count !== 1 ? 's' : ''} (${res.data.creditCost} credits)`, 'success');
+      const count = res.data.queued;
+      showToast(`Planned ${count} task${count !== 1 ? 's' : ''} (${res.data.credits_used} credits)`, 'success');
       setTaskInput('');
       await loadData();
     } catch {

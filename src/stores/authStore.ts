@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, OnboardingState, AgentMode, IntegrationType } from '@/types';
+import type { User, OnboardingState, AgentMode } from '@/types';
 import { authService } from '@/services/api';
 
 interface AuthStore {
@@ -16,7 +16,7 @@ interface AuthStore {
   logout: () => void;
   fetchUser: () => Promise<void>;
   setUser: (user: User) => void;
-  setOnboardingStep: (step: number) => void;
+  saveOnboardingStep: (step: number, data: Record<string, unknown>) => Promise<void>;
   updateOnboarding: (data: Partial<OnboardingState>) => void;
   completeOnboarding: () => Promise<void>;
 
@@ -27,11 +27,11 @@ interface AuthStore {
 const defaultOnboarding: OnboardingState = {
   step: 0,
   completed: false,
-  profile: { name: '', username: '', bio: '', tags: [] },
-  agentMode: 'builder' as AgentMode,
-  integrations: [] as IntegrationType[],
+  profile: { name: '', username: '', bio: '', headline: '', tags: [] },
+  agentPreferences: { personality: 'jarvis', agentMode: 'builder' as AgentMode },
+  portfolio: { skills: [], headline: '', about: '' },
+  integrations: [],
   visibility: 'public',
-  apiKeyChoice: 'geekspace',
 };
 
 const demoUser: User = {
@@ -51,7 +51,7 @@ const demoUser: User = {
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -93,7 +93,16 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true });
         try {
           const { data } = await authService.me();
-          set({ user: data, isAuthenticated: true, isLoading: false });
+          set((s) => ({
+            user: data,
+            isAuthenticated: true,
+            isLoading: false,
+            onboarding: {
+              ...s.onboarding,
+              completed: !!(data as unknown as { onboardingCompleted?: boolean }).onboardingCompleted,
+              step: (data as unknown as { onboardingStep?: number }).onboardingStep ?? 0,
+            },
+          }));
         } catch {
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
@@ -101,21 +110,21 @@ export const useAuthStore = create<AuthStore>()(
 
       setUser: (user) => set({ user }),
 
-      setOnboardingStep: (step) =>
-        set((s) => ({ onboarding: { ...s.onboarding, step } })),
+      saveOnboardingStep: async (step, data) => {
+        try {
+          await authService.saveOnboardingStep(step, data);
+        } catch { /* allow offline */ }
+        set((s) => ({ onboarding: { ...s.onboarding, step } }));
+      },
 
       updateOnboarding: (data) =>
         set((s) => ({ onboarding: { ...s.onboarding, ...data } })),
 
       completeOnboarding: async () => {
-        const state = get();
         try {
-          await authService.completeOnboarding(state.onboarding);
-          set((s) => ({ onboarding: { ...s.onboarding, completed: true } }));
-        } catch {
-          // Allow offline completion in demo mode
-          set((s) => ({ onboarding: { ...s.onboarding, completed: true } }));
-        }
+          await authService.completeOnboarding();
+        } catch { /* allow offline */ }
+        set((s) => ({ onboarding: { ...s.onboarding, completed: true, step: 6 } }));
       },
 
       // Demo mode: call real API, fallback to mock if backend unreachable
