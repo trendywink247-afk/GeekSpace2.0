@@ -56,6 +56,21 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), (req: Auth
     for (const [k, c] of Object.entries(m)) { if (updates.privacy[k] !== undefined) { fields.push(`${c} = ?`); values.push(updates.privacy[k] ? 1 : 0); } }
   }
 
+  if (updates.username) {
+    // Validate format: 3-30 chars, letters/numbers/underscores only
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(updates.username)) {
+      res.status(400).json({ error: 'Username must be 3–30 characters: letters, numbers, underscores only' });
+      return;
+    }
+    // Check uniqueness
+    const taken = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?')
+      .get(updates.username, req.userId);
+    if (taken) {
+      res.status(409).json({ error: 'Username already taken' });
+      return;
+    }
+  }
+
   const updateUser = db.transaction(() => {
     if (fields.length) {
       values.push(req.userId);
@@ -66,7 +81,15 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), (req: Auth
         .run(updates.username, req.userId);
     }
   });
-  updateUser();
+  try {
+    updateUser();
+  } catch (err: any) {
+    if (err.message?.includes('UNIQUE constraint')) {
+      res.status(409).json({ error: 'Username already taken' });
+      return;
+    }
+    throw err;
+  }
 
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Updated profile', 'Settings changed', 'user')`).run(uuid(), req.userId);
 
