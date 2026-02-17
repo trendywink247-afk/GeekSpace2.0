@@ -335,4 +335,74 @@ export const publicAgentService = {
     api.post<{ reply: string; agentName: string; ownerName: string; personality: string; personalityEmoji: string }>(`/agent/chat/public/${username}`, { message }),
 };
 
+// ----- Pico Fleet (Weebo's) --------------------------------
+
+export const picoService = {
+  getAgents: () =>
+    api.get<Array<{
+      id: string; user_id: string; slot: number; name: string;
+      status: string; tasks_completed: number; tasks_failed: number;
+      created_at: string;
+    }>>('/pico/agents'),
+
+  createAgent: (name: string) =>
+    api.post<{ id: string; slot: number; name: string }>('/pico/agents', { name }),
+
+  updateAgent: (id: string, data: { name?: string; status?: string }) =>
+    api.patch(`/pico/agents/${id}`, data),
+
+  deleteAgent: (id: string) =>
+    api.delete(`/pico/agents/${id}`),
+
+  getTasks: (params?: { status?: string; slot?: number; limit?: number }) =>
+    api.get<Array<{
+      id: string; user_id: string; agent_slot: number; agent_name: string;
+      task_type: string; description: string; payload: string;
+      status: string; result: string | null; planned_by: string;
+      created_at: string; started_at: string | null; completed_at: string | null;
+    }>>('/pico/tasks', { params }),
+
+  getTask: (id: string) =>
+    api.get('/pico/tasks/' + id),
+
+  planTask: (request: string) =>
+    api.post<{
+      tasks: Array<{ id: string; task_type: string; description: string; agent_slot: number }>;
+      creditCost: number;
+    }>('/pico/tasks/plan', { request }),
+
+  cancelTask: (id: string) =>
+    api.delete(`/pico/tasks/${id}`),
+};
+
+// ----- Briefings -------------------------------------------
+
+export const briefingService = {
+  getRecent: (limit = 10) =>
+    api.get<Array<{
+      id: string; type: string; content: string;
+      channels_sent: string; created_at: string;
+    }>>('/briefings', { params: { limit } }),
+
+  triggerNow: () =>
+    api.post('/briefings/trigger'),
+};
+
+// ----- Recipes -----------------------------------------------
+
+export const recipeService = {
+  getAll: () =>
+    api.get<Array<{
+      id: string; name: string; description: string; icon: string;
+      category: string; requiredIntegrations: string[];
+      installed: boolean; installedAt: string | null;
+    }>>('/recipes'),
+
+  install: (id: string, config?: Record<string, unknown>) =>
+    api.post(`/recipes/${id}/install`, { config }),
+
+  uninstall: (id: string) =>
+    api.delete(`/recipes/${id}/uninstall`),
+};
+
 export default api;
