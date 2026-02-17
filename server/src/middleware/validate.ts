@@ -139,7 +139,7 @@ export const userUpdateSchema = z.object({
   company: z.string().max(100).optional(),
   tags: z.array(z.string().max(50)).max(20).optional(),
   theme: z.object({
-    mode: z.enum(['light', 'dark']).optional(),
+    mode: z.enum(['light', 'dark', 'system']).optional(),
     accentColor: z.string().max(20).optional(),
   }).optional(),
   notifications: z.object({
