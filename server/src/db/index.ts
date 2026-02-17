@@ -358,6 +358,10 @@ try {
   db.exec(`ALTER TABLE agent_configs ADD COLUMN notification_email_address TEXT DEFAULT NULL`);
 } catch { /* column already exists — ignore */ }
 
+try {
+  db.exec(`ALTER TABLE automations ADD COLUMN description TEXT NOT NULL DEFAULT ''`);
+} catch { /* column already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
