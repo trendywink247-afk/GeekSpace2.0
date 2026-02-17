@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, userUpdateSchema, notificationEmailSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
+import { cacheDel } from '../services/cache.js';
 
 export const usersRouter = Router();
 
@@ -30,7 +31,7 @@ usersRouter.get('/me', requireAuth, (req: AuthRequest, res) => {
   });
 });
 
-usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), (req: AuthRequest, res) => {
+usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), async (req: AuthRequest, res) => {
   const updates = req.body;
   const fields: string[] = [];
   const values: unknown[] = [];
@@ -56,6 +57,7 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), (req: Auth
     for (const [k, c] of Object.entries(m)) { if (updates.privacy[k] !== undefined) { fields.push(`${c} = ?`); values.push(updates.privacy[k] ? 1 : 0); } }
   }
 
+  let oldUsername: string | undefined;
   if (updates.username) {
     // Validate format: 3-30 chars, letters/numbers/underscores only
     if (!/^[a-zA-Z0-9_]{3,30}$/.test(updates.username)) {
@@ -69,6 +71,9 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), (req: Auth
       res.status(409).json({ error: 'Username already taken' });
       return;
     }
+    // Capture old username before update so we can bust the old cache key
+    const oldUser = db.prepare('SELECT username FROM users WHERE id = ?').get(req.userId!) as { username: string } | undefined;
+    oldUsername = oldUser?.username;
   }
 
   const updateUser = db.transaction(() => {
@@ -89,6 +94,10 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), (req: Auth
       return;
     }
     throw err;
+  }
+
+  if (oldUsername && oldUsername !== updates.username) {
+    await cacheDel(`portfolio:${oldUsername}`);
   }
 
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Updated profile', 'Settings changed', 'user')`).run(uuid(), req.userId);

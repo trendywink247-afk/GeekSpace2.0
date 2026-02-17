@@ -4,7 +4,7 @@ import { config } from '../config.js';
 let client: Redis | null = null;
 
 function getClient(): Redis | null {
-  if (!config.redisUrl) return null;
+  if (!process.env.REDIS_URL) return null;  // only connect if REDIS_URL explicitly set
   if (!client) {
     client = new Redis(config.redisUrl, {
       lazyConnect: true,

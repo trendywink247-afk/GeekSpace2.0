@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { signToken, requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { db, seedDemoData } from '../db/index.js';
 import { validateBody, signupSchema, loginSchema, onboardingSchema } from '../middleware/validate.js';
+import { cacheDel } from '../services/cache.js';
 
 export const authRouter = Router();
 
@@ -229,7 +230,7 @@ authRouter.post('/onboarding', requireAuth, validateBody(onboardingSchema), (req
 });
 
 // Per-step onboarding save
-authRouter.patch('/onboarding/:step', requireAuth, (req: AuthRequest, res) => {
+authRouter.patch('/onboarding/:step', requireAuth, async (req: AuthRequest, res) => {
   const step = parseInt(req.params.step, 10);
   if (isNaN(step) || step < 1 || step > 6) {
     res.status(400).json({ error: 'Invalid step (1-6)' });
@@ -245,8 +246,15 @@ authRouter.patch('/onboarding/:step', requireAuth, (req: AuthRequest, res) => {
       if (username) {
         const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, req.userId);
         if (existing) { res.status(409).json({ error: 'Username taken' }); return; }
+        // Capture old username before update so we can bust the old cache key
+        const oldUserRow = db.prepare('SELECT username FROM users WHERE id = ?').get(req.userId!) as { username: string } | undefined;
+        const oldUsername = oldUserRow?.username;
         db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, req.userId);
         db.prepare('UPDATE portfolios SET username = ? WHERE user_id = ?').run(username, req.userId);
+        // Invalidate old portfolio cache
+        if (oldUsername && oldUsername !== username) {
+          await cacheDel(`portfolio:${oldUsername}`);
+        }
       }
       break;
     }
