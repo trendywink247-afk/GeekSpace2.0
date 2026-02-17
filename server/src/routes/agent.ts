@@ -562,11 +562,11 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
   if (cmd === 'gs pico list') {
     const { getUserAgents } = await import('../services/pico-fleet.js');
     const agents = getUserAgents(userId);
-    if (!agents.length) { res.json({ output: 'No Pico agents found.', isError: false }); return; }
+    if (!agents.length) { res.json({ output: 'No Weebo agents found.', isError: false }); return; }
     const lines = agents.map(a =>
       `  Slot ${a.slot}: ${a.name} [${a.status}] completed: ${a.tasks_completed}, failed: ${a.tasks_failed}`
     );
-    res.json({ output: `Pico Agents:\n${lines.join('\n')}`, isError: false });
+    res.json({ output: `Weebo Agents:\n${lines.join('\n')}`, isError: false });
     return;
   }
 
@@ -576,7 +576,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
     try {
       const { createAgent } = await import('../services/pico-fleet.js');
       const agent = createAgent(userId, name);
-      res.json({ output: `Created Pico agent "${agent.name}" at slot ${agent.slot}`, isError: false });
+      res.json({ output: `Created Weebo agent "${agent.name}" at slot ${agent.slot}`, isError: false });
     } catch (err) {
       res.json({ output: err instanceof Error ? err.message : 'Failed to create agent', isError: true });
     }
@@ -734,7 +734,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
   }
 
   if (cmd === 'help') {
-    res.json({ output: `GeekSpace Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs remind <text>          Quick reminder shortcut\n  gs credits                Check subscription credits\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs health                 System health check\n  gs brief                  Daily briefing summary\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs deploy portfolio       Deploy portfolio (alias)\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  gs pico list              List Pico agents\n  gs pico create "Name"     Create a new Pico agent (max 3)\n  gs pico pause <slot>      Pause agent at slot (1-3)\n  gs pico resume <slot>     Resume agent at slot\n  gs pico tasks             List recent tasks\n  gs task "description"     Plan and queue tasks via Kimi\n  ai "prompt"               Ask your AI agent (real LLM)\n  clear                     Clear terminal\n  help                      Show this help\n\nChat Prefixes:\n  /bridge <msg>             Multi-agent orchestration\n  /workflow <msg>           Alias for /bridge\n  /agent:<role> <msg>       Force specific agent (coder, planner, analyst, etc.)\n  /premium <msg>            Force Kimi premium reasoning\n  /local <msg>              Force local Ollama\n  /pico <msg>               Force PicoClaw\n  /task <description>       Plan and queue tasks via Kimi`, isError: false });
+    res.json({ output: `GeekSpace Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs remind <text>          Quick reminder shortcut\n  gs credits                Check subscription credits\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs health                 System health check\n  gs brief                  Daily briefing summary\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs deploy portfolio       Deploy portfolio (alias)\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  gs pico list              List Pico agents\n  gs pico create "Name"     Create a new Pico agent (max 3)\n  gs pico pause <slot>      Pause agent at slot (1-3)\n  gs pico resume <slot>     Resume agent at slot\n  gs pico tasks             List recent tasks\n  gs task "description"     Plan and queue tasks via Kimi\n  ai "prompt"               Ask your AI agent (real LLM)\n  clear                     Clear terminal\n  help                      Show this help\n\nChat Prefixes:\n  /bridge <msg>             Multi-agent orchestration\n  /workflow <msg>           Alias for /bridge\n  /agent:<role> <msg>       Force specific agent (coder, planner, analyst, etc.)\n  /premium <msg>            Force Kimi premium reasoning\n  /local <msg>              Force local Ollama\n  /pico <msg>               Force Weebo Engine\n  /task <description>       Plan and queue tasks via Kimi`, isError: false });
     return;
   }
 
