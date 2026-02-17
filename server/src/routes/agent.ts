@@ -412,9 +412,15 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
   }
 
   if (cmd === 'gs credits') {
-    const user = db.prepare('SELECT credits, plan FROM users WHERE id = ?').get(userId) as Record<string, unknown>;
-    const usage = db.prepare('SELECT COUNT(*) as calls, SUM(cost_usd) as cost FROM usage_events WHERE user_id = ?').get(userId) as Record<string, unknown>;
-    res.json({ output: `Credit Balance: ${user?.credits || 0}\nPlan: ${user?.plan || 'free'}\n\nUsage:\n- API Calls: ${usage?.calls || 0}\n- Total Cost: $${((usage?.cost as number) || 0).toFixed(2)}`, isError: false });
+    const creditsSub = db.prepare('SELECT plan, credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string; credits_remaining: number; billing_cycle_end: string } | undefined;
+    if (!creditsSub) {
+      res.json({ output: 'No subscription found.', isError: false });
+      return;
+    }
+    res.json({
+      output: `<span style="color:#7B61FF;font-weight:bold">Plan:</span> ${creditsSub.plan}\n<span style="color:#7B61FF;font-weight:bold">Credits remaining:</span> <span style="color:#61FF7B">${creditsSub.credits_remaining.toLocaleString()}</span>\n<span style="color:#7B61FF;font-weight:bold">Cycle ends:</span> ${creditsSub.billing_cycle_end}`,
+      isError: false,
+    });
     return;
   }
 
@@ -646,8 +652,51 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
     return;
   }
 
+  if (cmd === 'gs health') {
+    try {
+      const healthRes = await fetch(`http://localhost:${config.port}/api/health`);
+      const health = await healthRes.json() as Record<string, unknown>;
+      const lines = Object.entries(health)
+        .map(([k, v]) => `<span style="color:#7B61FF;font-weight:bold">${k}:</span> ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+        .join('\n');
+      res.json({ output: lines, isError: false });
+    } catch {
+      res.json({ output: '<span style="color:#FF6161">Failed to reach health endpoint</span>', isError: true });
+    }
+    return;
+  }
+
+  if (cmd === 'gs brief') {
+    try {
+      const { createBriefing: createBriefingFn } = await import('../services/daily-briefing.js');
+      const content = await createBriefingFn(userId);
+      res.json({ output: `<span style="color:#7B61FF;font-weight:bold">Daily Briefing:</span>\n${content}`, isError: false });
+    } catch (err) {
+      res.json({ output: `<span style="color:#FF6161">Briefing failed: ${(err as Error).message}</span>`, isError: true });
+    }
+    return;
+  }
+
+  if (cmd.startsWith('gs remind ')) {
+    const reminderText = command.slice(10).trim().replace(/^["']|["']$/g, '');
+    if (!reminderText) {
+      res.json({ output: 'Usage: gs remind &lt;text&gt;', isError: false });
+      return;
+    }
+    const remId = uuid();
+    db.prepare("INSERT INTO reminders (id, user_id, text, channel, category, created_by) VALUES (?, ?, ?, 'push', 'general', 'terminal')").run(remId, userId, reminderText);
+    res.json({ output: `<span style="color:#61FF7B">Reminder created:</span> ${reminderText}`, isError: false });
+    return;
+  }
+
+  if (cmd === 'gs deploy portfolio') {
+    db.prepare("UPDATE portfolios SET is_public = 1 WHERE user_id = ?").run(userId);
+    res.json({ output: '<span style="color:#61FF7B">Portfolio deployed!</span>', isError: false });
+    return;
+  }
+
   if (cmd === 'help') {
-    res.json({ output: `GeekSpace Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs credits                Check credit balance\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  gs pico list              List Pico agents\n  gs pico create "Name"     Create a new Pico agent (max 3)\n  gs pico pause <slot>      Pause agent at slot (1-3)\n  gs pico resume <slot>     Resume agent at slot\n  gs pico tasks             List recent tasks\n  gs task "description"     Plan and queue tasks via Kimi\n  ai "prompt"               Ask your AI agent (real LLM)\n  clear                     Clear terminal\n  help                      Show this help\n\nChat Prefixes:\n  /bridge <msg>             Multi-agent orchestration\n  /workflow <msg>           Alias for /bridge\n  /agent:<role> <msg>       Force specific agent (coder, planner, analyst, etc.)\n  /premium <msg>            Force Kimi premium reasoning\n  /local <msg>              Force local Ollama\n  /pico <msg>               Force PicoClaw\n  /task <description>       Plan and queue tasks via Kimi`, isError: false });
+    res.json({ output: `GeekSpace Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs remind <text>          Quick reminder shortcut\n  gs credits                Check subscription credits\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs health                 System health check\n  gs brief                  Daily briefing summary\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs deploy portfolio       Deploy portfolio (alias)\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  gs pico list              List Pico agents\n  gs pico create "Name"     Create a new Pico agent (max 3)\n  gs pico pause <slot>      Pause agent at slot (1-3)\n  gs pico resume <slot>     Resume agent at slot\n  gs pico tasks             List recent tasks\n  gs task "description"     Plan and queue tasks via Kimi\n  ai "prompt"               Ask your AI agent (real LLM)\n  clear                     Clear terminal\n  help                      Show this help\n\nChat Prefixes:\n  /bridge <msg>             Multi-agent orchestration\n  /workflow <msg>           Alias for /bridge\n  /agent:<role> <msg>       Force specific agent (coder, planner, analyst, etc.)\n  /premium <msg>            Force Kimi premium reasoning\n  /local <msg>              Force local Ollama\n  /pico <msg>               Force PicoClaw\n  /task <description>       Plan and queue tasks via Kimi`, isError: false });
     return;
   }
 
