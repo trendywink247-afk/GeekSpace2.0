@@ -18,7 +18,7 @@ import {
 
 // ---- Helpers ----
 
-const CATEGORIES = ['all', 'fact', 'preference', 'observation'] as const;
+const CATEGORIES = ['all', 'preference', 'fact', 'project', 'pattern'] as const;
 type CategoryFilter = (typeof CATEGORIES)[number];
 
 const SORTS = [
@@ -42,9 +42,10 @@ function sortMemories(memories: MemoryEntry[], sort: SortKey): MemoryEntry[] {
 
 function categoryColor(cat: string): string {
   switch (cat) {
+    case 'preference': return '#7B61FF';
     case 'fact': return '#61FF7B';
-    case 'preference': return '#FF61DC';
-    case 'observation': return '#FFD761';
+    case 'project': return '#FFD761';
+    case 'pattern': return '#FF61DC';
     default: return '#7B61FF';
   }
 }
@@ -85,6 +86,16 @@ export function MemoryManagerPage() {
   const [formValue, setFormValue] = useState('');
   const [formConfidence, setFormConfidence] = useState(100);
   const [saving, setSaving] = useState(false);
+
+  // Inline toast state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    clearTimeout(toastTimer.current);
+    setToast({ message, type });
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  };
 
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -180,8 +191,9 @@ export function MemoryManagerPage() {
     try {
       await memoryService.delete(id);
       setMemories(prev => prev.filter(m => m.id !== id));
+      showToast('Memory deleted');
     } catch {
-      // silent
+      showToast('Failed to delete memory', 'error');
     }
   };
 
@@ -204,7 +216,20 @@ export function MemoryManagerPage() {
   // ---- Render ----
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto relative">
+      {/* Inline toast */}
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-50 px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all ${
+            toast.type === 'success'
+              ? 'bg-[#61FF7B]/15 text-[#61FF7B] border border-[#61FF7B]/30'
+              : 'bg-red-500/15 text-red-400 border border-red-500/30'
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -281,8 +306,8 @@ export function MemoryManagerPage() {
                   onClick={() => setCategory(cat)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     category === cat
-                      ? 'bg-[#7B61FF]/20 text-[#7B61FF] border border-[#7B61FF]/30'
-                      : 'text-[#A7ACB8] hover:bg-[#7B61FF]/10 border border-transparent'
+                      ? 'bg-[#7B61FF] text-white'
+                      : 'bg-transparent text-[#A7ACB8] hover:text-[#F4F6FF]'
                   }`}
                 >
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -478,7 +503,7 @@ export function MemoryManagerPage() {
             <div>
               <label className="text-xs text-[#A7ACB8] mb-1.5 block">Category</label>
               <div className="flex gap-2">
-                {(['fact', 'preference', 'observation'] as const).map(cat => (
+                {(['preference', 'fact', 'project', 'pattern'] as const).map(cat => (
                   <button
                     key={cat}
                     onClick={() => setFormCategory(cat)}
