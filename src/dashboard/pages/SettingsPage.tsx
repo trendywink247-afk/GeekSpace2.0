@@ -9,7 +9,7 @@ import {
   Key,
   Save,
   Check,
-  Upload,
+  Sparkles,
   Eye,
   Palette,
   Plus,
@@ -33,6 +33,7 @@ export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
   const { accentColor, accentPresets, setAccentColor } = useThemeStore();
 
   const [profile, setProfile] = useState({
@@ -42,6 +43,7 @@ export function SettingsPage() {
     bio: user?.bio || 'Full-stack developer and AI enthusiast.',
     location: user?.location || 'San Francisco, CA',
     website: user?.website || 'alexchen.dev',
+    avatar: user?.avatar || '',
   });
 
   const [notifications, setNotifications] = useState({
@@ -100,9 +102,12 @@ export function SettingsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await userService.updateProfile(profile);
-    } catch {
-      // keep local state on error
+      const { data: updatedUser } = await userService.updateProfile(profile);
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+    } catch (err) {
+      console.error('[settings] save failed:', err);
     } finally {
       setIsSaving(false);
     }
@@ -188,11 +193,24 @@ export function SettingsPage() {
             <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
               <CardContent className="p-6 text-center">
                 <div className="relative inline-block mb-4">
-                  <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center text-3xl font-bold">
-                    {profile.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#7B61FF] flex items-center justify-center hover:bg-[#6B51EF] transition-colors">
-                    <Upload className="w-4 h-4 text-white" />
+                  {profile.avatar ? (
+                    <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[#0B0B10]" />
+                  ) : (
+                    <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center text-3xl font-bold">
+                      {profile.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const seed = profile.username + '-' + Date.now();
+                      const url = `https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(seed)}&backgroundColor=7B61FF`;
+                      setProfile({ ...profile, avatar: url });
+                    }}
+                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#7B61FF] flex items-center justify-center hover:bg-[#6B51EF] transition-colors"
+                    title="Generate new pixel avatar"
+                  >
+                    <Sparkles className="w-4 h-4 text-white" />
                   </button>
                 </div>
                 <h3 className="font-semibold text-[#F4F6FF]">{profile.name}</h3>

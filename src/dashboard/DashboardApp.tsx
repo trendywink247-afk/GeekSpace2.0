@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
-  User, LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
+  LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity
 } from 'lucide-react';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -363,8 +363,14 @@ export function DashboardApp() {
               className="flex items-center p-1.5 rounded-xl hover:bg-[#7B61FF]/10 transition-colors min-w-[44px] min-h-[44px] justify-center"
               aria-label="User settings"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center flex-shrink-0">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.name || user.username || ''} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-white text-xs font-bold">
+                    {(user?.name || user?.username || '?').charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
             </button>
           </div>
