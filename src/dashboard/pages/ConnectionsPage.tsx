@@ -90,6 +90,9 @@ export function ConnectionsPage() {
   }, [polling, pollTelegramStatus]);
 
   const handleConnect = async (type: IntegrationType) => {
+    if (type === 'whatsapp') {
+      return;
+    }
     if (type === 'telegram') {
       setTelegramDialog(true);
       setTelegramLoading(true);
@@ -345,6 +348,10 @@ export function ConnectionsPage() {
                       checked={true}
                       onCheckedChange={() => handleDisconnect(connection.id)}
                     />
+                  ) : connection.type === 'whatsapp' ? (
+                    <Badge variant="outline" className="border-[#25d366]/40 text-[#25d366]">
+                      Coming Soon
+                    </Badge>
                   ) : (
                     <Button
                       size="sm"
