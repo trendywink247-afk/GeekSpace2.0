@@ -304,6 +304,25 @@ try {
   `);
 } catch { /* table already exists — ignore */ }
 
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS briefings (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      type TEXT DEFAULT 'daily',
+      content TEXT NOT NULL,
+      channels_sent TEXT DEFAULT '[]',
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_briefings_user ON briefings(user_id, created_at);
+  `);
+} catch { /* table already exists — ignore */ }
+
+try {
+  db.exec(`ALTER TABLE agent_configs ADD COLUMN briefing_time TEXT DEFAULT '08:00'`);
+} catch { /* column already exists — ignore */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
