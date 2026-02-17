@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { agentService } from '@/services/api';
+import { useTilt } from '@/hooks/useTilt';
 import type { Personality, AgentPersonality } from '@/types';
 
 type AgentStyle = 'minimal' | 'builder' | 'operator';
@@ -64,6 +65,11 @@ const voiceOptions = [
   { id: 'witty', name: 'Witty', description: 'Casual with humor' },
 ];
 
+function TiltCard({ children }: { children: React.ReactNode }) {
+  const ref = useTilt();
+  return <div ref={ref} className="transition-transform duration-200">{children}</div>;
+}
+
 export function AgentSettingsPage() {
   const { agent, updateAgent } = useDashboardStore();
 
@@ -101,6 +107,7 @@ export function AgentSettingsPage() {
   }, [agent.id, agent.mode, agent.voice, agent.creativity, agent.formality, agent.systemPrompt, agent.name, agent.personality]);
 
   const handlePersonalitySwitch = async (id: AgentPersonality) => {
+    const prev = selectedPersonality;
     setSelectedPersonality(id);
     const p = personalities[id];
     try {
@@ -109,8 +116,13 @@ export function AgentSettingsPage() {
         setPersonalityToast(`Switched to ${p.name}! ${p.greeting}`);
         setTimeout(() => setPersonalityToast(''), 3000);
       }
-    } catch { /* keep local state */ }
+    } catch {
+      setSelectedPersonality(prev);
+      setPersonalityToast('Failed to switch personality. Try again.');
+      setTimeout(() => setPersonalityToast(''), 3000);
+    }
   };
+
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -181,24 +193,25 @@ export function AgentSettingsPage() {
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
             {Object.values(personalities).map((p) => (
-              <button
-                key={p.id}
-                onClick={() => handlePersonalitySwitch(p.id as AgentPersonality)}
-                className={`p-5 rounded-xl border-2 transition-all duration-300 text-center ${
-                  selectedPersonality === p.id
-                    ? 'border-[#7B61FF] bg-[#7B61FF]/10 shadow-[0_0_20px_rgba(123,97,255,0.15)]'
-                    : 'border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40'
-                }`}
-              >
-                <div className="text-4xl mb-3">{p.emoji}</div>
-                <h3 className="font-semibold text-[#F4F6FF] mb-1">{p.name}</h3>
-                <p className="text-sm text-[#A7ACB8]">{p.description}</p>
-                {selectedPersonality === p.id && (
-                  <div className="mt-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#7B61FF]/20 text-[#7B61FF] text-xs">
-                    <Check className="w-3 h-3" /> Active
-                  </div>
-                )}
-              </button>
+              <TiltCard key={p.id}>
+                <button
+                  onClick={() => handlePersonalitySwitch(p.id as AgentPersonality)}
+                  className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-center ${
+                    selectedPersonality === p.id
+                      ? 'border-[#7B61FF] bg-[#7B61FF]/10 shadow-[0_0_20px_rgba(123,97,255,0.15)]'
+                      : 'border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40'
+                  }`}
+                >
+                  <div className="text-4xl mb-3">{p.emoji}</div>
+                  <h3 className="font-semibold text-[#F4F6FF] mb-1">{p.name}</h3>
+                  <p className="text-sm text-[#A7ACB8]">{p.description}</p>
+                  {selectedPersonality === p.id && (
+                    <div className="mt-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#7B61FF]/20 text-[#7B61FF] text-xs">
+                      <Check className="w-3 h-3" /> Active
+                    </div>
+                  )}
+                </button>
+              </TiltCard>
             ))}
           </div>
           {personalityToast && (

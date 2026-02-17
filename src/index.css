@@ -179,4 +179,11 @@
     animation: none !important;
     background-image: none !important;
   }
+  .animate-modal-spring-in,
+  .animate-modal-spring-out,
+  .animate-step-slide-in,
+  .animate-step-slide-out,
+  .animate-welcome-in {
+    animation: none !important;
+  }
 }

@@ -7,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/authStore';
+import { useTilt } from '@/hooks/useTilt';
 import type { AgentMode, IntegrationType } from '@/types';
 
 const STEPS = ['Profile', 'Agent Mode', 'Integrations', 'Visibility'];
@@ -24,16 +25,30 @@ const integrationOptions: { id: IntegrationType; name: string; description: stri
   { id: 'n8n', name: 'n8n', description: 'Advanced workflow automation' },
 ];
 
+function TiltCard({ children }: { children: React.ReactNode }) {
+  const ref = useTilt();
+  return <div ref={ref} className="transition-transform duration-200">{children}</div>;
+}
+
 export function OnboardingPage() {
   const navigate = useNavigate();
   const { onboarding, updateOnboarding, completeOnboarding } = useAuthStore();
   const [step, setStep] = useState(0);
+  const [stepAnimClass, setStepAnimClass] = useState('animate-step-slide-in');
 
   const profile = onboarding.profile;
 
+  const animateStep = (next: number) => {
+    setStepAnimClass('animate-step-slide-out');
+    setTimeout(() => {
+      setStep(next);
+      setStepAnimClass('animate-step-slide-in');
+    }, 200);
+  };
+
   const handleNext = async () => {
     if (step < STEPS.length - 1) {
-      setStep(step + 1);
+      animateStep(step + 1);
     } else {
       await completeOnboarding();
       navigate('/dashboard');
@@ -41,7 +56,7 @@ export function OnboardingPage() {
   };
 
   const handleBack = () => {
-    if (step > 0) setStep(step - 1);
+    if (step > 0) animateStep(step - 1);
   };
 
   return (
@@ -64,7 +79,7 @@ export function OnboardingPage() {
         <div className="flex items-center justify-center gap-2 mb-8">
           {STEPS.map((s, i) => (
             <div key={s} className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
                 i < step ? 'bg-[#61FF7B] text-[#05050A]' :
                 i === step ? 'bg-[#7B61FF] text-white' :
                 'bg-[#0B0B10] border border-[#7B61FF]/30 text-[#A7ACB8]'
@@ -72,14 +87,14 @@ export function OnboardingPage() {
                 {i < step ? <Check className="w-4 h-4" /> : i + 1}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`w-12 h-0.5 ${i < step ? 'bg-[#61FF7B]' : 'bg-[#7B61FF]/20'}`} />
+                <div className={`w-12 h-0.5 transition-all duration-500 ${i < step ? 'bg-[#61FF7B]' : 'bg-[#7B61FF]/20'}`} />
               )}
             </div>
           ))}
         </div>
 
         {/* Step content */}
-        <div className="p-8 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/20 mb-6">
+        <div className={`p-8 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/20 mb-6 ${stepAnimClass}`}>
           {step === 0 && (
             <div className="space-y-6">
               <div className="flex items-center gap-3 mb-6">
@@ -152,33 +167,34 @@ export function OnboardingPage() {
               </div>
               <div className="grid md:grid-cols-3 gap-4">
                 {agentModes.map((mode) => (
-                  <button
-                    key={mode.id}
-                    onClick={() => updateOnboarding({ agentMode: mode.id })}
-                    className={`p-5 rounded-xl border-2 transition-all text-left ${
-                      onboarding.agentMode === mode.id
-                        ? 'border-[#7B61FF] bg-[#7B61FF]/10'
-                        : 'border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${mode.color}20` }}>
-                        <mode.icon className="w-5 h-5" style={{ color: mode.color }} />
-                      </div>
-                      {onboarding.agentMode === mode.id && (
-                        <div className="w-6 h-6 rounded-full bg-[#7B61FF] flex items-center justify-center">
-                          <Check className="w-4 h-4 text-white" />
+                  <TiltCard key={mode.id}>
+                    <button
+                      onClick={() => updateOnboarding({ agentMode: mode.id })}
+                      className={`w-full p-5 rounded-xl border-2 transition-all text-left ${
+                        onboarding.agentMode === mode.id
+                          ? 'border-[#7B61FF] bg-[#7B61FF]/10'
+                          : 'border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${mode.color}20` }}>
+                          <mode.icon className="w-5 h-5" style={{ color: mode.color }} />
                         </div>
-                      )}
-                    </div>
-                    <h3 className="font-semibold text-[#F4F6FF] mb-1">{mode.name}</h3>
-                    <p className="text-sm text-[#A7ACB8] mb-3">{mode.description}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {mode.features.map((f) => (
-                        <span key={f} className="px-2 py-0.5 text-xs rounded-full bg-[#0B0B10] text-[#A7ACB8]">{f}</span>
-                      ))}
-                    </div>
-                  </button>
+                        {onboarding.agentMode === mode.id && (
+                          <div className="w-6 h-6 rounded-full bg-[#7B61FF] flex items-center justify-center">
+                            <Check className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-semibold text-[#F4F6FF] mb-1">{mode.name}</h3>
+                      <p className="text-sm text-[#A7ACB8] mb-3">{mode.description}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {mode.features.map((f) => (
+                          <span key={f} className="px-2 py-0.5 text-xs rounded-full bg-[#0B0B10] text-[#A7ACB8]">{f}</span>
+                        ))}
+                      </div>
+                    </button>
+                  </TiltCard>
                 ))}
               </div>
 
@@ -306,7 +322,7 @@ export function OnboardingPage() {
           <span className="text-sm text-[#A7ACB8]">
             Step {step + 1} of {STEPS.length}
           </span>
-          <Button onClick={handleNext} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+          <Button onClick={handleNext} className={`bg-[#7B61FF] hover:bg-[#6B51EF] ${step === STEPS.length - 1 ? 'pulse-glow' : ''}`}>
             {step === STEPS.length - 1 ? 'Launch My Space' : 'Next'}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>

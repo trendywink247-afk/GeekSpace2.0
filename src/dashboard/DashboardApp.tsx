@@ -58,6 +58,7 @@ export function DashboardApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop collapse state
   const [chatOpen, setChatOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const usage = useDashboardStore((s) => s.usage);
@@ -67,6 +68,16 @@ export function DashboardApp() {
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  // First-load welcome toast (once per session)
+  useEffect(() => {
+    if (!sessionStorage.getItem('gs-welcome-shown')) {
+      sessionStorage.setItem('gs-welcome-shown', '1');
+      setShowWelcome(true);
+      const timer = setTimeout(() => setShowWelcome(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Close mobile sidebar when page changes
   useEffect(() => {
@@ -246,6 +257,21 @@ export function DashboardApp() {
           >
             Stay logged in
           </button>
+        </div>
+      )}
+
+      {/* ---- Welcome toast ---- */}
+      {showWelcome && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-welcome-in">
+          <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-[#0B0B10]/90 backdrop-blur-sm border border-[#7B61FF]/40 shadow-2xl shadow-[#7B61FF]/10">
+            <Sparkles className="w-5 h-5 text-[#7B61FF] shrink-0" />
+            <span className="text-sm text-[#F4F6FF] font-medium">
+              Welcome to GeekSpace! Your AI space is ready.
+            </span>
+            <button onClick={() => setShowWelcome(false)} className="ml-2 text-[#A7ACB8] hover:text-[#F4F6FF]">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 

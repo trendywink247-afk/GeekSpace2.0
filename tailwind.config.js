@@ -76,12 +76,38 @@ module.exports = {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
+        "modal-spring-in": {
+          "0%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.92)" },
+          "60%": { opacity: "1", transform: "translate(-50%, -50%) scale(1.02)" },
+          "100%": { transform: "translate(-50%, -50%) scale(1)" },
+        },
+        "modal-spring-out": {
+          "0%": { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+          "100%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.95)" },
+        },
+        "step-slide-in": {
+          "0%": { opacity: "0", transform: "translateX(24px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        "step-slide-out": {
+          "0%": { opacity: "1", transform: "translateX(0)" },
+          "100%": { opacity: "0", transform: "translateX(-24px)" },
+        },
+        "welcome-in": {
+          "0%": { opacity: "0", transform: "translateY(16px) scale(0.96)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "caret-blink": "caret-blink 1.25s ease-out infinite",
         shimmer: "shimmer 1.5s ease-in-out infinite",
+        "modal-spring-in": "modal-spring-in 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+        "modal-spring-out": "modal-spring-out 0.2s ease-in",
+        "step-slide-in": "step-slide-in 0.35s ease-out",
+        "step-slide-out": "step-slide-out 0.2s ease-in",
+        "welcome-in": "welcome-in 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
       },
     },
   },
