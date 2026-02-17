@@ -8,7 +8,7 @@
 set -euo pipefail
 
 BASE="${1:-http://localhost:3001}"
-TEST_EMAIL="${2:-alex@demo.dev}"
+TEST_EMAIL="${2:-alex@example.com}"
 TEST_PASSWORD="${3:-demo123}"
 PASS=0
 FAIL=0
