@@ -33,10 +33,10 @@ export function LoginPage() {
     try {
       if (isSignup) {
         await signup(email, password, username);
-        navigate('/onboarding');
+        navigate('/onboarding', { replace: true });
       } else {
         await login(email, password);
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { error?: string } } };
@@ -50,7 +50,7 @@ export function LoginPage() {
 
   const handleDemo = async () => {
     await loginDemo();
-    navigate('/dashboard');
+    navigate('/dashboard', { replace: true });
   };
 
   return (

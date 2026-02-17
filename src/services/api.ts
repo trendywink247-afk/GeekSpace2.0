@@ -18,7 +18,6 @@ import type {
   AutomationLog,
   DashboardStats,
   DirectoryProfile,
-  OnboardingState,
   FeatureToggles,
   MemoryEntry,
   ConversationEntry,
@@ -86,8 +85,11 @@ export const authService = {
     localStorage.removeItem('gs_token');
   },
 
-  completeOnboarding: (state: OnboardingState) =>
-    api.post<User>('/auth/onboarding', state),
+  saveOnboardingStep: (step: number, data: Record<string, unknown>) =>
+    api.patch(`/auth/onboarding/${step}`, data),
+
+  completeOnboarding: () =>
+    api.post('/auth/onboarding/complete'),
 };
 
 // ----- Users -------------------------------------------------

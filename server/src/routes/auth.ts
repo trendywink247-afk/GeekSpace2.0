@@ -176,6 +176,7 @@ authRouter.get('/me', requireAuth, (req: AuthRequest, res) => {
     plan: user.plan,
     credits: user.credits,
     onboardingCompleted: !!user.onboarding_completed,
+    onboardingStep: (user.onboarding_step as number) ?? 0,
     createdAt: user.created_at,
   });
 });
@@ -208,5 +209,63 @@ authRouter.post('/onboarding', requireAuth, validateBody(onboardingSchema), (req
   // Log activity
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Completed onboarding', 'Profile set up', 'check-circle')`).run(uuid(), req.userId);
 
+  res.json({ success: true });
+});
+
+// Per-step onboarding save
+authRouter.patch('/onboarding/:step', requireAuth, (req: AuthRequest, res) => {
+  const step = parseInt(req.params.step, 10);
+  if (isNaN(step) || step < 1 || step > 6) {
+    res.status(400).json({ error: 'Invalid step (1-6)' });
+    return;
+  }
+
+  const data = req.body;
+
+  switch (step) {
+    case 1: { // Profile
+      const { name, username } = data;
+      if (name) db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name, req.userId);
+      if (username) {
+        const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, req.userId);
+        if (existing) { res.status(409).json({ error: 'Username taken' }); return; }
+        db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, req.userId);
+        db.prepare('UPDATE portfolios SET username = ? WHERE user_id = ?').run(username, req.userId);
+      }
+      break;
+    }
+    case 2: { // Bio & Headline
+      const { bio, headline } = data;
+      if (bio !== undefined) db.prepare('UPDATE users SET bio = ? WHERE id = ?').run(bio, req.userId);
+      if (headline !== undefined) db.prepare('UPDATE portfolios SET headline = ? WHERE user_id = ?').run(headline, req.userId);
+      break;
+    }
+    case 3: { // Agent Preferences
+      const { personality, agentMode } = data;
+      if (personality) db.prepare('UPDATE agent_configs SET personality = ? WHERE user_id = ?').run(personality, req.userId);
+      if (agentMode) db.prepare('UPDATE agent_configs SET mode = ? WHERE user_id = ?').run(agentMode, req.userId);
+      break;
+    }
+    case 4: { // Portfolio Setup
+      const { skills, headline: portfolioHeadline, about } = data;
+      if (skills) db.prepare('UPDATE portfolios SET skills = ? WHERE user_id = ?').run(JSON.stringify(skills), req.userId);
+      if (portfolioHeadline) db.prepare('UPDATE portfolios SET headline = ? WHERE user_id = ?').run(portfolioHeadline, req.userId);
+      if (about) db.prepare('UPDATE portfolios SET about = ? WHERE user_id = ?').run(about, req.userId);
+      break;
+    }
+    case 5: // Integrations — connected via separate API
+    case 6: // Review — no data
+      break;
+  }
+
+  db.prepare('UPDATE users SET onboarding_step = ? WHERE id = ?').run(step, req.userId);
+  res.json({ success: true, step });
+});
+
+// Complete onboarding
+authRouter.post('/onboarding/complete', requireAuth, (req: AuthRequest, res) => {
+  db.prepare('UPDATE users SET onboarding_completed = 1, onboarding_step = 6 WHERE id = ?').run(req.userId);
+  const logActivity = db.prepare('INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, ?, ?, ?)');
+  logActivity.run(uuid(), req.userId, 'Completed onboarding', 'Profile set up', 'rocket');
   res.json({ success: true });
 });

@@ -44,7 +44,7 @@ function App() {
             path="/dashboard/*"
             element={
               isAuthenticated
-                ? <DashboardApp />
+                ? (onboardingCompleted ? <DashboardApp /> : <Navigate to="/onboarding" replace />)
                 : <Navigate to="/login" replace />
             }
           />
