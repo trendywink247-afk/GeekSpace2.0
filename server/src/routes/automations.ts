@@ -18,11 +18,11 @@ automationsRouter.get('/', requireAuth, (req: AuthRequest, res) => {
 });
 
 automationsRouter.post('/', requireAuth, validateBody(automationCreateSchema), (req: AuthRequest, res) => {
-  const { name, triggerType, triggerConfig, actionType, actionConfig } = req.body;
+  const { name, description, triggerType, triggerConfig, actionType, actionConfig } = req.body;
 
   const id = uuid();
-  db.prepare('INSERT INTO automations (id, user_id, name, trigger_type, trigger_config, action_type, action_config) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
-    id, req.userId, name, triggerType || 'manual', JSON.stringify(triggerConfig || {}), actionType || '', JSON.stringify(actionConfig || {})
+  db.prepare('INSERT INTO automations (id, user_id, name, description, trigger_type, trigger_config, action_type, action_config) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+    id, req.userId, name, description || '', triggerType || 'manual', JSON.stringify(triggerConfig || {}), actionType || '', JSON.stringify(actionConfig || {})
   );
 
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created automation', ?, 'zap')`).run(uuid(), req.userId, name);
@@ -42,6 +42,7 @@ automationsRouter.patch('/:id', requireAuth, validateBody(automationUpdateSchema
   const fields: string[] = [];
   const values: unknown[] = [];
   if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
+  if (updates.description !== undefined) { fields.push('description = ?'); values.push(updates.description); }
   if (updates.triggerType !== undefined) { fields.push('trigger_type = ?'); values.push(updates.triggerType); }
   if (updates.triggerConfig !== undefined) { fields.push('trigger_config = ?'); values.push(JSON.stringify(updates.triggerConfig)); }
   if (updates.actionType !== undefined) { fields.push('action_type = ?'); values.push(updates.actionType); }
