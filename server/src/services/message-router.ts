@@ -129,7 +129,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   extractMemories(userId, msg.text);
 
   // 5. Fire keyword automation triggers (non-blocking)
-  checkKeywordTriggers(userId, msg.text).catch(() => {});
+  checkKeywordTriggers(userId, msg.text).catch((e: unknown) => console.debug('[bg]', (e as Error).message));
 
   // 6. Build messages for LLM
   const systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);

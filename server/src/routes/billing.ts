@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { validateBody, billingUpgradeSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { PLAN_DEFINITIONS } from '../db/index.js';
 import { v4 as uuid } from 'uuid';
@@ -30,7 +31,7 @@ billingRouter.get('/plan', requireAuth, (req: AuthRequest, res) => {
 });
 
 // POST /api/billing/upgrade — change plan (stub — no real payment yet)
-billingRouter.post('/upgrade', requireAuth, (req: AuthRequest, res) => {
+billingRouter.post('/upgrade', requireAuth, validateBody(billingUpgradeSchema), (req: AuthRequest, res) => {
   const { plan, currency } = req.body;
   const planInfo = PLAN_DEFINITIONS[plan];
   if (!planInfo) { res.status(400).json({ error: 'Invalid plan' }); return; }

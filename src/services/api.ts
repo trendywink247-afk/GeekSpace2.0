@@ -160,7 +160,7 @@ export const usageService = {
 
   events: (page = 1, limit = 50) =>
     api.get<{ events: import('@/types').UsageEvent[]; total: number }>(
-      `/usage/events?page=${page}&limit=${limit}`,
+      `/usage/events?offset=${(page - 1) * limit}&limit=${limit}`,
     ),
 
   chart: (range: '7d' | '14d' | '30d' = '7d') =>
@@ -211,7 +211,7 @@ export const integrationService = {
 
   // Email notification settings
   updateNotificationEmail: (data: { enabled?: boolean; address?: string }) =>
-    api.patch<{ enabled: boolean; address: string | null }>('/user/notification-email', data),
+    api.patch<{ enabled: boolean; address: string | null }>('/users/notification-email', data),
 };
 
 // ----- Reminders ---------------------------------------------
@@ -379,8 +379,12 @@ export const picoService = {
 
   planTask: (request: string) =>
     api.post<{
-      tasks: Array<{ id: string; task_type: string; description: string; agent_slot: number }>;
-      creditCost: number;
+      planned: Array<{ task_type: string; description: string }>;
+      queued: number;
+      task_ids: string[];
+      credits_used: number;
+      credits_remaining: number;
+      message?: string;
     }>('/pico/tasks/plan', { request }),
 
   cancelTask: (id: string) =>
