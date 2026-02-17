@@ -40,6 +40,7 @@ import { recipesRouter } from './routes/recipes.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
 import { metricsMiddleware } from './middleware/metrics.js';
 import { healthRouter } from './routes/health.js';
+import { adminRouter } from './routes/admin.js';
 
 const APP_VERSION = '3.0.0';
 
@@ -198,6 +199,7 @@ app.use('/api/pico', picoRouter);
 app.use('/api/briefings', briefingsRouter);
 app.use('/api/recipes', recipesRouter);
 app.use('/api/health', healthRouter);
+app.use('/api/admin', adminRouter);
 
 // ---- Global error handler (MUST be last) ----
 app.use(errorHandler);
