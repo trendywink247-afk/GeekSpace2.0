@@ -32,9 +32,11 @@ export function ExplorePage() {
   const [chatOwner, setChatOwner] = useState('');
   const [profiles, setProfiles] = useState<DirectoryProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchProfiles = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const { data } = await directoryService.list({
         search: search || undefined,
@@ -42,7 +44,9 @@ export function ExplorePage() {
       });
       setProfiles(data.profiles);
     } catch {
-      // keep existing profiles on error
+      if (profiles.length === 0) {
+        setLoadError('Unable to load profiles. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -227,7 +231,15 @@ export function ExplorePage() {
         {!isLoading && profiles.length === 0 && (
           <div className="text-center py-20">
             <Search className="w-12 h-12 text-[#7B61FF]/30 mx-auto mb-4" />
-            <p className="text-[#A7ACB8]">No people found matching your search</p>
+            <p className="text-[#A7ACB8]">{loadError || 'No people found matching your search'}</p>
+            {loadError && (
+              <button
+                onClick={fetchProfiles}
+                className="mt-4 px-4 py-2 rounded-xl bg-[#7B61FF]/20 hover:bg-[#7B61FF]/30 text-[#7B61FF] text-sm font-medium transition-colors"
+              >
+                Retry
+              </button>
+            )}
           </div>
         )}
       </main>
