@@ -105,7 +105,7 @@ export const agentService = {
     api.patch<AgentConfig>('/agent/config', data),
 
   chat: (message: string, channel: string = 'web') =>
-    api.post<{ text: string; route: string; latencyMs: number; provider: string }>('/agent/chat', { message, channel }),
+    api.post<{ text: string; route: string; latencyMs: number; provider: string; model: string; actions?: Array<{ tool: string; success: boolean; message: string; artifactId?: string; data?: Record<string, unknown> }> }>('/agent/chat', { message, channel }),
 
   /** SSE streaming chat — returns a ReadableStream */
   chatStream: async (message: string, channel: string = 'web') => {
