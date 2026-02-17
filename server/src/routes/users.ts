@@ -58,6 +58,11 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), (req: Auth
 
   if (fields.length) { values.push(req.userId); db.prepare(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`).run(...values); }
 
+  if (updates.username) {
+    db.prepare('UPDATE portfolios SET username = ? WHERE user_id = ?')
+      .run(updates.username, req.userId);
+  }
+
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Updated profile', 'Settings changed', 'user')`).run(uuid(), req.userId);
 
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.userId!) as Record<string, unknown>;
