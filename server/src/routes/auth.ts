@@ -234,10 +234,11 @@ authRouter.patch('/onboarding/:step', requireAuth, (req: AuthRequest, res) => {
       }
       break;
     }
-    case 2: { // Bio & Headline
-      const { bio, headline } = data;
+    case 2: { // Bio, Headline & Tags
+      const { bio, headline, tags } = data;
       if (bio !== undefined) db.prepare('UPDATE users SET bio = ? WHERE id = ?').run(bio, req.userId);
       if (headline !== undefined) db.prepare('UPDATE portfolios SET headline = ? WHERE user_id = ?').run(headline, req.userId);
+      if (tags !== undefined) db.prepare('UPDATE users SET tags = ? WHERE id = ?').run(JSON.stringify(tags), req.userId);
       break;
     }
     case 3: { // Agent Preferences
