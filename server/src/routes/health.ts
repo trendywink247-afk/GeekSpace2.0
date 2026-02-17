@@ -11,7 +11,6 @@ import { db } from '../db/index.js';
 import { edithProbe } from '../services/edith.js';
 import { picoClawProbe } from '../services/picoclaw.js';
 import { logger } from '../logger.js';
-import { requireAuth } from '../middleware/auth.js';
 
 export const healthRouter = Router();
 
@@ -53,7 +52,7 @@ async function probeComponents() {
 
 // ---- SSE Stream ----
 
-healthRouter.get('/stream', requireAuth, async (req: Request, res: Response) => {
+healthRouter.get('/stream', async (req: Request, res: Response) => {
   // SSE headers
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
