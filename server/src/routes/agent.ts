@@ -10,7 +10,7 @@ import { config } from '../config.js';
 import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openclaw-system.js';
 import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
-import { buildMemoryContext, logConversation, extractMemories, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory } from '../services/memory.js';
+import { buildMemoryContext, logConversation, extractMemories, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations } from '../services/memory.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
 import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeRequest } from '../services/pico-kimi-bridge.js';
 import { getUserWorkflows, getWorkflowStatus, getWorkflowAnalytics } from '../services/workflow-engine.js';
@@ -823,7 +823,6 @@ agentRouter.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
 // ---- Conversation History ----
 
 agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
-  const { getRecentConversations } = require('../services/memory.js');
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
   const conversations = getRecentConversations(req.userId!, limit);
   res.json(conversations);

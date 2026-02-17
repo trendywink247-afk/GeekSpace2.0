@@ -36,7 +36,7 @@ import { initTelegramBot } from './services/telegram.js';
 import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
 import { picoRouter } from './routes/pico.js';
 
-const APP_VERSION = '2.4.0';
+const APP_VERSION = '3.0.0';
 
 const app = express();
 
