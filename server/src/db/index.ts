@@ -412,6 +412,21 @@ try { db.exec(`ALTER TABLE installed_recipes ADD COLUMN last_run_at TEXT`); } ca
 // Task 17: link Pico-created reminders to pico_tasks
 try { db.exec(`ALTER TABLE reminders ADD COLUMN pico_task_id TEXT`); } catch { /* column already exists */ }
 
+// Security event logging
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS security_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event TEXT NOT NULL,
+      ip TEXT NOT NULL DEFAULT '',
+      details TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_security_events_event ON security_events(event);
+    CREATE INDEX IF NOT EXISTS idx_security_events_created ON security_events(created_at);
+  `);
+} catch { /* table already exists — ignore */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
