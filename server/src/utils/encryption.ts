@@ -4,22 +4,35 @@
 // Format: base64(iv:authTag:ciphertext)
 // ============================================================
 
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto';
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync, createHash } from 'node:crypto';
 import { config } from '../config.js';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 const KEY_LENGTH = 32;
-const SALT = 'geekspace-api-key-encryption'; // static salt is fine — the key itself is high-entropy
+const LEGACY_SALT = 'geekspace-api-key-encryption';
+
+function makeSalt(): Buffer {
+  return createHash('sha256').update(config.encryptionKey).digest();
+}
 
 // Derive a 32-byte key from the config encryption key using scrypt
 let derivedKey: Buffer | null = null;
+let legacyKey: Buffer | null = null;
+
 function getKey(): Buffer {
   if (!derivedKey) {
-    derivedKey = scryptSync(config.encryptionKey, SALT, KEY_LENGTH);
+    derivedKey = scryptSync(config.encryptionKey, makeSalt(), KEY_LENGTH);
   }
   return derivedKey;
+}
+
+function getLegacyKey(): Buffer {
+  if (!legacyKey) {
+    legacyKey = scryptSync(config.encryptionKey, LEGACY_SALT, KEY_LENGTH);
+  }
+  return legacyKey;
 }
 
 export function encrypt(plaintext: string): string {
@@ -40,10 +53,18 @@ export function decrypt(ciphertext: string): string {
   const iv = packed.subarray(0, IV_LENGTH);
   const authTag = packed.subarray(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
   const encrypted = packed.subarray(IV_LENGTH + AUTH_TAG_LENGTH);
-  const decipher = createDecipheriv(ALGORITHM, getKey(), iv, { authTagLength: AUTH_TAG_LENGTH });
-  decipher.setAuthTag(authTag);
-  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
-  return decrypted.toString('utf8');
+
+  for (const key of [getKey(), getLegacyKey()]) {
+    try {
+      const decipher = createDecipheriv(ALGORITHM, key, iv, { authTagLength: AUTH_TAG_LENGTH });
+      decipher.setAuthTag(authTag);
+      const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+      return decrypted.toString('utf8');
+    } catch {
+      continue;
+    }
+  }
+  throw new Error('Decryption failed — invalid key or corrupted data');
 }
 
 export function maskKey(key: string): string {
