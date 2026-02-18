@@ -311,6 +311,7 @@ export interface Portfolio {
     showProjects: boolean;
     showActivity: boolean;
   };
+  connectionCount?: number;
 }
 
 // ----- Channel Links (Telegram/WhatsApp user mapping) --------

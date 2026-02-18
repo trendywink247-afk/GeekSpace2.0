@@ -19,7 +19,8 @@ import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } f
 import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
 import { parseActions } from '../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
-import { cacheGet, cacheSet } from '../services/cache.js';
+import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
+import { sendTelegramMessage } from '../services/telegram.js';
 
 export const agentRouter = Router();
 
@@ -170,6 +171,45 @@ Skills/interests: ${Array.isArray(tags) ? tags.join(', ') : tags || 'software de
   } catch (err: unknown) {
     logger.error('generate-content error: %s', err instanceof Error ? err.message : String(err));
     res.status(500).json({ error: 'AI generation failed. Try again.' });
+  }
+});
+
+// ---- AI-Generated Background Gradient ----
+
+agentRouter.post('/generate-background', requireAuth, async (req: AuthRequest, res) => {
+  const { vibe } = req.body as { vibe?: string };
+
+  const prompt = `Generate a beautiful CSS gradient for a dark tech dashboard.
+${vibe ? `Vibe: ${vibe}` : 'Make it feel like a dark, futuristic workspace — deep purples, dark blues, subtle teals.'}
+
+Return ONLY valid JSON in this exact format:
+{
+  "gradient": "linear-gradient(135deg, #1a0533 0%, #0d1b4b 50%, #003d2b 100%)",
+  "name": "Neon Jungle",
+  "accent": "#7B61FF"
+}
+
+Rules:
+- gradient must be a valid CSS gradient string
+- All colors must be dark (no white or light backgrounds)
+- name must be 2-3 words, evocative
+- accent must be a single hex color that works as UI accent`;
+
+  try {
+    const edithResult = await edithChat(prompt);
+    const raw = edithResult.text.trim().replace(/^```(?:json)?\n?|\n?```$/g, '');
+    const parsed = JSON.parse(raw) as { gradient?: string; name?: string; accent?: string };
+    if (!parsed.gradient || !parsed.name || !parsed.accent) throw new Error('Invalid response');
+    const creditCost = computeCreditCost('edith', edithResult.tokensIn, edithResult.tokensOut);
+    deductSubscriptionCredits(req.userId!, creditCost);
+    res.json(parsed);
+  } catch {
+    // Fallback gradient if Kimi fails
+    res.json({
+      gradient: 'linear-gradient(135deg, #1a0533 0%, #0a0a1a 40%, #001a33 100%)',
+      name: 'Deep Space',
+      accent: '#7B61FF',
+    });
   }
 });
 
@@ -1230,6 +1270,35 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
       [{ role: 'user', content: message }],
       { systemPrompt, agentName, forceProvider: 'ollama' },
     );
+
+    // Save visitor interaction to owner's memory
+    const snippet = message.slice(0, 80);
+    upsertMemory(user.id as string, 'visitor', `portfolio-chat:${Date.now()}`, `Visitor asked about: "${snippet}"`, 0.8, 'portfolio-chat');
+
+    // Increment connection counter
+    db.prepare(`
+      UPDATE portfolios SET
+        connection_count = connection_count + 1,
+        last_connected_at = datetime('now')
+      WHERE user_id = ?
+    `).run(user.id as string);
+
+    // Invalidate portfolio cache
+    void cacheDel(`portfolio:${req.params.username}`);
+
+    // Send Telegram notification if connected (non-blocking, non-fatal)
+    const telegramLink = db.prepare(`
+      SELECT external_id FROM channel_links
+      WHERE user_id = ? AND channel = 'telegram'
+      ORDER BY linked_at DESC LIMIT 1
+    `).get(user.id as string) as { external_id: string } | undefined;
+
+    if (telegramLink) {
+      void sendTelegramMessage(telegramLink.external_id,
+        `Someone just chatted with your agent about: <i>"${snippet}"</i>\n\nCheck your dashboard for the conversation.`
+      ).catch(() => { /* non-fatal */ });
+    }
+
     res.json({ reply: result.reply, agentName, ownerName, personality: personalityId, personalityEmoji: personality.emoji });
   } catch {
     res.json({

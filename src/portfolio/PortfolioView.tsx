@@ -111,8 +111,8 @@ export function PortfolioView() {
     return (
       <div className="min-h-screen bg-[#05050A] flex flex-col items-center justify-center gap-4">
         <p className="text-[#A7ACB8] text-lg">Portfolio not found</p>
-        <Button onClick={() => navigate('/explore')} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
-          Browse Directory
+        <Button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/explore')} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+          {isAuthenticated ? 'Back to Dashboard' : 'Browse Directory'}
         </Button>
       </div>
     );
@@ -139,9 +139,15 @@ export function PortfolioView() {
                 Chat with Agent
               </Button>
             )}
-            <Button onClick={() => navigate('/login')} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
-              Get Your Own
-            </Button>
+            {isAuthenticated ? (
+              <Button onClick={() => navigate('/dashboard')} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+                Dashboard
+              </Button>
+            ) : (
+              <Button onClick={() => navigate('/login')} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+                Get Your Own
+              </Button>
+            )}
           </div>
         </div>
       </nav>
@@ -153,9 +159,13 @@ export function PortfolioView() {
           <div className={chatOpen ? 'flex-1 max-w-3xl' : 'max-w-4xl mx-auto'}>
             {/* Profile Header */}
             <div className="text-center mb-12">
-              <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center text-3xl font-bold">
-                {portfolio.avatar}
-              </div>
+              {portfolio.avatar && portfolio.avatar.startsWith('http') ? (
+                <img src={portfolio.avatar} alt={displayName} className="w-24 h-24 mx-auto mb-6 rounded-full bg-[#0B0B10]" />
+              ) : (
+                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center text-3xl font-bold">
+                  {portfolio.avatar || displayName?.[0] || '?'}
+                </div>
+              )}
               <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{displayName}</h1>
               <p className="text-xl text-[#7B61FF] mb-4">{portfolio.headline}</p>
               <div className="flex items-center justify-center gap-4 text-sm text-[#A7ACB8]">
@@ -164,6 +174,11 @@ export function PortfolioView() {
                 )}
                 {portfolio.location && (
                   <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{portfolio.location}</span>
+                )}
+                {(portfolio.connectionCount ?? 0) > 0 && (
+                  <span className="text-xs text-[#A7ACB8] flex items-center gap-1">
+                    🔗 {portfolio.connectionCount} connection{portfolio.connectionCount !== 1 ? 's' : ''}
+                  </span>
                 )}
               </div>
               {/* Social Links */}
@@ -281,7 +296,11 @@ export function PortfolioView() {
               <div className="flex items-center justify-between p-4 border-b border-[#7B61FF]/20 bg-[#05050A]">
                 <div className="flex items-center gap-3">
                   <div className="relative">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center font-bold text-sm">{portfolio.avatar}</div>
+                    {portfolio.avatar && portfolio.avatar.startsWith('http') ? (
+                      <img src={portfolio.avatar} alt={displayName} className="w-10 h-10 rounded-full bg-[#0B0B10]" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center font-bold text-sm">{portfolio.avatar || displayName?.[0] || '?'}</div>
+                    )}
                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#61FF7B] border-2 border-[#05050A]" />
                   </div>
                   <div>
@@ -377,7 +396,11 @@ export function PortfolioView() {
           <div className="flex items-center justify-between p-4 border-b border-[#7B61FF]/20 bg-[#05050A] safe-area-pt">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center font-bold text-sm">{portfolio.avatar}</div>
+                {portfolio.avatar && portfolio.avatar.startsWith('http') ? (
+                      <img src={portfolio.avatar} alt={displayName} className="w-10 h-10 rounded-full bg-[#0B0B10]" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center font-bold text-sm">{portfolio.avatar || displayName?.[0] || '?'}</div>
+                    )}
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#61FF7B] border-2 border-[#05050A]" />
               </div>
               <div>

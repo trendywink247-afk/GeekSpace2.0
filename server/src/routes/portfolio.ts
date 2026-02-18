@@ -79,6 +79,7 @@ portfolioRouter.get('/:username', async (req, res) => {
     layout: portfolio.layout, agentEnabled: !!portfolio.agent_enabled,
     visibility: JSON.parse(portfolio.visibility as string || '{}'),
     personality: (agentConfig?.personality as string) || 'jarvis',
+    connectionCount: (portfolio.connection_count as number) || 0,
   };
 
   await cacheSet(cacheKey, JSON.stringify(responseData), 300);

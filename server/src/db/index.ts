@@ -399,6 +399,13 @@ try {
   db.exec("ALTER TABLE agent_configs ADD COLUMN model_preference TEXT DEFAULT 'auto'");
 } catch { /* already exists */ }
 
+// Portfolio connection counter (Task 13)
+try { db.exec(`ALTER TABLE portfolios ADD COLUMN connection_count INTEGER DEFAULT 0`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE portfolios ADD COLUMN last_connected_at TEXT`); } catch { /* column already exists */ }
+
+// AI-generated background gradient per user (Task 14)
+try { db.exec(`ALTER TABLE users ADD COLUMN theme_background TEXT`); } catch { /* column already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
