@@ -271,6 +271,7 @@ export const workflowQuerySchema = z.object({
 
 export const picoAgentCreateSchema = z.object({
   name: z.string().min(1).max(30),
+  personality: z.enum(['edith', 'jarvis', 'weebo']).default('weebo'),
 });
 
 export const picoAgentUpdateSchema = z.object({

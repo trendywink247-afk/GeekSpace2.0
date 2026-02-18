@@ -16,6 +16,7 @@ interface PicoAgent {
   user_id: string;
   slot: number;
   name: string;
+  personality: string;
   status: string;
   tasks_completed: number;
   tasks_failed: number;
@@ -111,6 +112,7 @@ export function PicoFleetPage() {
   // Create agent
   const [creatingSlot, setCreatingSlot] = useState<number | null>(null);
   const [newAgentName, setNewAgentName] = useState('');
+  const [newAgentPersonality, setNewAgentPersonality] = useState<'edith' | 'jarvis' | 'weebo'>('weebo');
   const [savingAgent, setSavingAgent] = useState(false);
 
   // Expanded task detail
@@ -178,9 +180,10 @@ export function PicoFleetPage() {
     if (!newAgentName.trim() || creatingSlot === null) return;
     setSavingAgent(true);
     try {
-      await picoService.createAgent(newAgentName.trim());
-      showToast(`Agent "${newAgentName.trim()}" deployed`, 'success');
+      await picoService.createAgent(newAgentName.trim(), newAgentPersonality);
+      showToast(`Agent "${newAgentName.trim()}" deployed as ${newAgentPersonality}`, 'success');
       setNewAgentName('');
+      setNewAgentPersonality('weebo');
       setCreatingSlot(null);
       await loadData();
     } catch {
@@ -314,7 +317,7 @@ export function PicoFleetPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg text-[#F4F6FF] flex items-center gap-2">
-                      <Zap className="w-4 h-4" style={{ color }} />
+                      <span>{agent.personality === 'edith' ? '⚡' : agent.personality === 'jarvis' ? '🎩' : '🤖'}</span>
                       {agent.name}
                     </CardTitle>
                     <div className="flex items-center gap-2">
@@ -361,14 +364,35 @@ export function PicoFleetPage() {
 
           // Empty slot — show create button or inline form
           if (creatingSlot === slotNum) {
+            const personalities = [
+              { id: 'weebo' as const, emoji: '🤖', label: 'Weebo', desc: 'Enthusiastic helper', color: '#61FF7B' },
+              { id: 'jarvis' as const, emoji: '🎩', label: 'Jarvis', desc: 'Professional butler', color: '#7B61FF' },
+              { id: 'edith' as const, emoji: '⚡', label: 'Edith', desc: 'Sharp CTO', color: '#FFD761' },
+            ];
             return (
               <Card key={slotNum} className="bg-[#0B0B10] border-[#7B61FF]/30 border-dashed">
-                <CardContent className="p-6 flex flex-col items-center justify-center gap-3 min-h-[180px]">
-                  <p className="text-sm text-[#A7ACB8]">Name your agent</p>
+                <CardContent className="p-4 flex flex-col items-center gap-3 min-h-[180px]">
+                  <p className="text-sm text-[#A7ACB8]">Choose personality</p>
+                  <div className="flex gap-2">
+                    {personalities.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setNewAgentPersonality(p.id)}
+                        className="flex flex-col items-center gap-1 p-2 rounded-lg border transition-all"
+                        style={{
+                          borderColor: newAgentPersonality === p.id ? p.color : 'rgba(123,97,255,0.2)',
+                          backgroundColor: newAgentPersonality === p.id ? `${p.color}10` : 'transparent',
+                        }}
+                      >
+                        <span className="text-lg">{p.emoji}</span>
+                        <span className="text-xs font-medium" style={{ color: newAgentPersonality === p.id ? p.color : '#A7ACB8' }}>{p.label}</span>
+                      </button>
+                    ))}
+                  </div>
                   <Input
                     value={newAgentName}
                     onChange={(e) => setNewAgentName(e.target.value)}
-                    placeholder="e.g. Scout, Relay..."
+                    placeholder="Agent name..."
                     className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF] max-w-[200px]"
                     onKeyDown={(e) => e.key === 'Enter' && handleCreateAgent()}
                     autoFocus
@@ -377,7 +401,7 @@ export function PicoFleetPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => { setCreatingSlot(null); setNewAgentName(''); }}
+                      onClick={() => { setCreatingSlot(null); setNewAgentName(''); setNewAgentPersonality('weebo'); }}
                       className="border-[#7B61FF]/30 text-[#A7ACB8]"
                     >
                       Cancel

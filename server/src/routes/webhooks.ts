@@ -189,9 +189,122 @@ async function handleTelegramCommand(
         `/unlink — Unlink your account\n` +
         `/credits — Check credit balance\n` +
         `/status — Connection status\n` +
+        `/tasks — View recent tasks\n` +
+        `/agents — List your agents\n` +
+        `/cancel — Cancel a queued task\n` +
+        `/remind <text> — Set a quick reminder\n` +
+        `/deploy — Deploy your portfolio\n` +
         `/help — Show this message\n\n` +
         `Or just type a message to chat with your AI agent!`
       );
+      break;
+    }
+
+    case '/tasks': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      const tasks = db.prepare(`
+        SELECT task_type, description, status, completed_at, created_at
+        FROM pico_tasks WHERE user_id = ? ORDER BY created_at DESC LIMIT 10
+      `).all(link.user_id) as Array<{ task_type: string; description: string; status: string; completed_at: string | null; created_at: string }>;
+
+      if (tasks.length === 0) {
+        await sendTelegramMessage(chatId, 'No tasks yet. Send a message like "remind me to check email at 5pm" to create one.');
+        return;
+      }
+
+      const statusEmoji: Record<string, string> = { completed: '✅', running: '⏳', queued: '🔵', failed: '❌', cancelled: '⛔' };
+      const lines = tasks.map((t, i) => {
+        const emoji = statusEmoji[t.status] || '⚪';
+        const desc = t.description.length > 50 ? t.description.slice(0, 50) + '...' : t.description;
+        return `${i + 1}. ${emoji} ${desc}`;
+      });
+      await sendTelegramMessage(chatId, `Recent tasks:\n\n${lines.join('\n')}`);
+      break;
+    }
+
+    case '/agents': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      const agents = db.prepare(
+        'SELECT slot, name, personality, status, tasks_completed, tasks_failed FROM pico_agents WHERE user_id = ? ORDER BY slot'
+      ).all(link.user_id) as Array<{ slot: number; name: string; personality: string; status: string; tasks_completed: number; tasks_failed: number }>;
+
+      if (agents.length === 0) {
+        await sendTelegramMessage(chatId, 'No agents deployed yet.');
+        return;
+      }
+
+      const personalityEmoji: Record<string, string> = { edith: '⚡', jarvis: '🎩', weebo: '🤖' };
+      const lines = agents.map(a => {
+        const emoji = personalityEmoji[a.personality] || '🤖';
+        return `${emoji} Slot ${a.slot}: ${a.name} (${a.personality}) — ${a.status}\n   ✅ ${a.tasks_completed} done, ❌ ${a.tasks_failed} failed`;
+      });
+      await sendTelegramMessage(chatId, `Your agents:\n\n${lines.join('\n\n')}`);
+      break;
+    }
+
+    case '/cancel': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      const queued = db.prepare(
+        "SELECT id, description FROM pico_tasks WHERE user_id = ? AND status = 'queued' ORDER BY created_at ASC LIMIT 1"
+      ).get(link.user_id) as { id: string; description: string } | undefined;
+
+      if (!queued) {
+        await sendTelegramMessage(chatId, 'No queued tasks to cancel.');
+        return;
+      }
+
+      db.prepare("UPDATE pico_tasks SET status = 'cancelled', completed_at = datetime('now') WHERE id = ?").run(queued.id);
+      await sendTelegramMessage(chatId, `Cancelled: ${queued.description.slice(0, 80)}`);
+      break;
+    }
+
+    case '/remind': {
+      if (!cmd.args.trim()) {
+        await sendTelegramMessage(chatId, 'Usage: /remind <text>\nExample: /remind check email in 30 minutes');
+        return;
+      }
+
+      // Treat as a regular message so it goes through task auto-detection
+      const normalized = parseTelegramUpdate(update);
+      if (normalized) {
+        // Override the text to prepend "remind me" if not already there
+        if (!normalized.text.toLowerCase().startsWith('remind')) {
+          normalized.text = `remind me ${cmd.args}`;
+        } else {
+          normalized.text = cmd.args;
+        }
+        await handleIncomingMessage(normalized);
+      }
+      break;
+    }
+
+    case '/deploy': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      // Deploy portfolio
+      db.prepare('UPDATE portfolios SET is_public = 1 WHERE user_id = ?').run(link.user_id);
+      const user = db.prepare('SELECT username FROM users WHERE id = ?').get(link.user_id) as { username: string } | undefined;
+      const url = user ? `https://ai.geekspace.space/${user.username}` : 'your dashboard';
+      await sendTelegramMessage(chatId, `Portfolio deployed! View it at ${url}`);
       break;
     }
 

@@ -39,6 +39,7 @@ interface PicoAgent {
   user_id: string;
   slot: number;
   name: string;
+  personality: string;
   status: string;
   tasks_completed: number;
   tasks_failed: number;
@@ -110,6 +111,11 @@ export function initPicoFleetTables(): void {
     CREATE INDEX IF NOT EXISTS idx_pico_task_logs_task ON pico_task_logs(task_id);
   `);
 
+  // Migration: add personality column to pico_agents
+  try {
+    db.exec("ALTER TABLE pico_agents ADD COLUMN personality TEXT NOT NULL DEFAULT 'weebo'");
+  } catch { /* column already exists */ }
+
   logger.info('Pico Fleet tables initialized');
 }
 
@@ -145,7 +151,7 @@ export function getAgentBySlot(userId: string, slot: number): PicoAgent | undefi
     .get(userId, slot) as PicoAgent | undefined;
 }
 
-export function createAgent(userId: string, name: string): PicoAgent {
+export function createAgent(userId: string, name: string, personality = 'weebo'): PicoAgent {
   const existing = getUserAgents(userId);
   if (existing.length >= 3) {
     throw new Error('Maximum 3 Pico agents allowed');
@@ -158,8 +164,8 @@ export function createAgent(userId: string, name: string): PicoAgent {
   }
 
   const id = uuid();
-  db.prepare('INSERT INTO pico_agents (id, user_id, slot, name) VALUES (?, ?, ?, ?)')
-    .run(id, userId, nextSlot, name);
+  db.prepare('INSERT INTO pico_agents (id, user_id, slot, name, personality) VALUES (?, ?, ?, ?, ?)')
+    .run(id, userId, nextSlot, name, personality);
 
   return db.prepare('SELECT * FROM pico_agents WHERE id = ?').get(id) as PicoAgent;
 }
