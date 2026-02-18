@@ -198,18 +198,18 @@ export function AutomationsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-2xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Automations
           </h1>
-          <p className="text-[#A7ACB8]">
+          <p className="text-sm md:text-base text-[#A7ACB8]">
             <span className="text-[#7B61FF] font-medium">{enabledCount}</span> active of {automations.length} total
           </p>
         </div>
-        <Button onClick={handleOpenAdd} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+        <Button onClick={handleOpenAdd} className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale min-h-[44px]">
           <Plus className="w-4 h-4 mr-2" />New Automation
         </Button>
       </div>
@@ -273,21 +273,21 @@ export function AutomationsPage() {
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
           <Input
             placeholder="Search automations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF]"
+            className="pl-10 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF] min-h-[44px]"
           />
         </div>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20">
-            <TabsTrigger value="all" className="data-[state=active]:bg-[#7B61FF]">All</TabsTrigger>
-            <TabsTrigger value="active" className="data-[state=active]:bg-[#7B61FF]">Active</TabsTrigger>
-            <TabsTrigger value="inactive" className="data-[state=active]:bg-[#7B61FF]">Inactive</TabsTrigger>
+          <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20 overflow-x-auto flex-nowrap w-full sm:w-auto">
+            <TabsTrigger value="all" className="data-[state=active]:bg-[#7B61FF] min-h-[40px]">All</TabsTrigger>
+            <TabsTrigger value="active" className="data-[state=active]:bg-[#7B61FF] min-h-[40px]">Active</TabsTrigger>
+            <TabsTrigger value="inactive" className="data-[state=active]:bg-[#7B61FF] min-h-[40px]">Inactive</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -302,16 +302,16 @@ export function AutomationsPage() {
             return (
               <Card
                 key={auto.id}
-                className={`bg-[#0B0B10] border-[#7B61FF]/20 transition-all duration-300 hover:border-[#7B61FF]/40 ${
+                className={`bg-[#0B0B10] border-[#7B61FF]/20 transition-all duration-300 hover:border-[#7B61FF]/40 press-scale ${
                   !auto.enabled ? 'opacity-60' : ''
                 }`}
               >
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-4">
+                <CardContent className="p-3 md:p-5">
+                  <div className="flex items-start gap-3 md:gap-4">
                     {/* Toggle */}
                     <button
                       onClick={() => handleToggle(auto.id, auto.enabled)}
-                      className="flex-shrink-0 mt-1"
+                      className="flex-shrink-0 mt-1 press-scale min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       {auto.enabled ? (
                         <ToggleRight className="w-8 h-5 text-[#61FF7B]" />
@@ -370,7 +370,7 @@ export function AutomationsPage() {
                         size="sm"
                         onClick={() => handleTrigger(auto.id)}
                         disabled={!auto.enabled || isLoading}
-                        className="text-[#61FF7B] hover:text-[#61FF7B] hover:bg-[#61FF7B]/10 h-8 w-8 p-0"
+                        className="text-[#61FF7B] hover:text-[#61FF7B] hover:bg-[#61FF7B]/10 h-10 w-10 md:h-8 md:w-8 p-0 press-scale"
                         title="Run now"
                       >
                         <Play className="w-4 h-4" />
@@ -379,7 +379,7 @@ export function AutomationsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleOpenEdit(auto.id)}
-                        className="text-[#7B61FF] hover:text-[#7B61FF] hover:bg-[#7B61FF]/10 h-8 w-8 p-0"
+                        className="text-[#7B61FF] hover:text-[#7B61FF] hover:bg-[#7B61FF]/10 h-10 w-10 md:h-8 md:w-8 p-0 press-scale"
                         title="Edit"
                       >
                         <Edit3 className="w-4 h-4" />
@@ -388,7 +388,7 @@ export function AutomationsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(auto.id)}
-                        className="text-[#A7ACB8] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-8 w-8 p-0"
+                        className="text-[#A7ACB8] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 md:h-8 md:w-8 p-0 press-scale"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -416,14 +416,14 @@ export function AutomationsPage() {
 
       {/* Add / Edit Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="bg-[#0B0B10] border border-[#7B61FF]/30 text-[#F4F6FF] max-w-md">
+        <DialogContent className="bg-[#0B0B10] border border-[#7B61FF]/30 text-[#F4F6FF] max-w-md mx-2 md:mx-auto p-4 md:p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <Zap className="w-5 h-5 text-[#7B61FF]" />
               {editingId ? 'Edit Automation' : 'New Automation'}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-4">
+          <div className="space-y-4 pt-3 md:pt-4">
             <div>
               <label className="text-sm text-[#A7ACB8] mb-2 block">Name</label>
               <Input
@@ -482,14 +482,14 @@ export function AutomationsPage() {
               <Button
                 variant="outline"
                 onClick={() => { setIsAddDialogOpen(false); resetForm(); }}
-                className="flex-1 border-[#7B61FF]/30"
+                className="flex-1 border-[#7B61FF]/30 min-h-[44px] press-scale"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={!form.name}
-                className="flex-1 bg-[#7B61FF] hover:bg-[#6B51EF]"
+                className="flex-1 bg-[#7B61FF] hover:bg-[#6B51EF] min-h-[44px] press-scale"
               >
                 {editingId ? 'Save Changes' : 'Create'}
               </Button>
