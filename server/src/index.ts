@@ -53,7 +53,21 @@ app.set('trust proxy', 1);
 
 // ---- Security headers ----
 app.use(helmet({
-  contentSecurityPolicy: config.isProduction ? undefined : false,
+  contentSecurityPolicy: config.isProduction ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://openrouter.ai", "wss:"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+    },
+  } : false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  frameguard: { action: 'deny' },
 }));
 
 // ---- CORS — from config, not hardcoded ----
