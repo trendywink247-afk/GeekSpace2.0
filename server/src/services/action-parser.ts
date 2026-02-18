@@ -52,6 +52,13 @@ const crawlUrlSchema = z.object({
   priority: z.number().int().min(1).max(10).default(5),
 });
 
+const setReminderSchema = z.object({
+  text: z.string().min(1).max(500),
+  datetime: z.string().max(100).optional(),
+  channel: z.enum(['push', 'telegram']).optional(),
+  category: z.string().max(50).optional(),
+});
+
 const triggerWorkflowSchema = z.object({
   flowPath: z.string().min(1).max(500),
   payload: z.record(z.string(), z.unknown()).default({}),
@@ -65,6 +72,7 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   portfolio_remove_project: portfolioRemoveProjectSchema,
   portfolio_update_theme: portfolioUpdateThemeSchema,
   send_email: sendEmailSchema,
+  set_reminder: setReminderSchema,
   crawl_url: crawlUrlSchema,
   trigger_workflow: triggerWorkflowSchema,
 };

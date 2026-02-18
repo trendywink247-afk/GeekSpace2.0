@@ -54,7 +54,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
       {/* Glassmorphism background */}
       <div
         className="absolute inset-0"
@@ -70,7 +70,7 @@ export function LoginPage() {
       <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] rounded-full bg-[#FF61DC]/8 blur-[100px]" />
 
       <div
-        className={`w-full max-w-md relative z-10 transition-all duration-700 ${
+        className={`w-full max-w-sm sm:max-w-md relative z-10 mx-auto animate-page-enter transition-all duration-700 ${
           isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
         }`}
       >
@@ -221,7 +221,7 @@ export function LoginPage() {
           {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
             onClick={() => { setIsSignup(!isSignup); setError(''); }}
-            className="text-[#7B61FF] hover:underline font-medium"
+            className="text-[#7B61FF] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center"
           >
             {isSignup ? 'Sign In' : 'Sign Up'}
           </button>

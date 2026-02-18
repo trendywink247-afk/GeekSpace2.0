@@ -1,3 +1,4 @@
+import 'apminsight';
 // ============================================================
 // GeekSpace Core API — Express + SQLite + JWT
 // Production-hardened with helmet, pino, validation, error handling
@@ -16,7 +17,7 @@ import { db } from './db/index.js';
 import { edithProbe } from './services/edith.js';
 import { picoClawProbe } from './services/picoclaw.js';
 import { initAutomationsEngine } from './services/automations-engine.js';
-import { initMemoryTables } from './services/memory.js';
+import { initMemoryTables, startMemorySyncScheduler } from './services/memory.js';
 import { initWorkflowTables } from './services/workflow-engine.js';
 import { authRouter } from './routes/auth.js';
 import { usersRouter } from './routes/users.js';
@@ -31,6 +32,7 @@ import { directoryRouter } from './routes/directory.js';
 import { apiKeysRouter } from './routes/apiKeys.js';
 import { featuresRouter } from './routes/features.js';
 import { billingRouter } from './routes/billing.js';
+import { modelsRouter } from './routes/models.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { initTelegramBot } from './services/telegram.js';
 import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
@@ -38,10 +40,11 @@ import { picoRouter } from './routes/pico.js';
 import { briefingsRouter } from './routes/briefings.js';
 import { recipesRouter } from './routes/recipes.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
+import { startReminderScheduler } from './services/reminder-scheduler.js';
 import { metricsMiddleware } from './middleware/metrics.js';
 import { healthRouter } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
-import { fetchFreeModels } from './services/openrouter-models.js';
+import { startModelSyncScheduler } from './services/model-sync.js';
 
 const APP_VERSION = '3.0.0';
 
@@ -75,7 +78,7 @@ app.use(cors({
   origin: config.corsOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'X-Admin-Password'],
 }));
 
 // ---- Body parsing with size limit ----
@@ -209,6 +212,7 @@ app.use('/api/directory', directoryRouter);
 app.use('/api/api-keys', apiKeysRouter);
 app.use('/api/features', featuresRouter);
 app.use('/api/billing', billingRouter);
+app.use('/api/models', modelsRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/pico', picoRouter);
 app.use('/api/briefings', briefingsRouter);
@@ -247,5 +251,7 @@ app.listen(config.port, () => {
   startPicoWorker();
   initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)'));
   startBriefingScheduler();
-  fetchFreeModels().catch(() => { logger.warn('OpenRouter model prefetch failed'); });
+  startReminderScheduler();
+  startMemorySyncScheduler();
+  startModelSyncScheduler();
 });

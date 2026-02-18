@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { picoService } from '@/services/api';
 
 // ---- Types ----
@@ -16,6 +18,7 @@ interface PicoAgent {
   user_id: string;
   slot: number;
   name: string;
+  personality: string;
   status: string;
   tasks_completed: number;
   tasks_failed: number;
@@ -93,6 +96,7 @@ function formatTime(ts: string | null): string {
 // ---- Main Component ----
 
 export function PicoFleetPage() {
+  const isMobile = useMobileDetect();
   const [agents, setAgents] = useState<PicoAgent[]>([]);
   const [tasks, setTasks] = useState<PicoTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,13 +115,14 @@ export function PicoFleetPage() {
   // Create agent
   const [creatingSlot, setCreatingSlot] = useState<number | null>(null);
   const [newAgentName, setNewAgentName] = useState('');
+  const [newAgentPersonality, setNewAgentPersonality] = useState<'edith' | 'jarvis' | 'weebo'>('weebo');
   const [savingAgent, setSavingAgent] = useState(false);
 
   // Expanded task detail
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
   // Recent activity (last 10 tasks — polled independently every 30s)
-  const [recentTasks, setRecentTasks] = useState<Array<{ id: string; description: string; status: string; created_at?: string }>>([]);
+  const [recentTasks, setRecentTasks] = useState<Array<{ id: string; description: string; status: string; created_at?: string; started_at?: string; completed_at?: string }>>([]);
 
   // Toast auto-dismiss
   useEffect(() => {
@@ -178,9 +183,10 @@ export function PicoFleetPage() {
     if (!newAgentName.trim() || creatingSlot === null) return;
     setSavingAgent(true);
     try {
-      await picoService.createAgent(newAgentName.trim());
-      showToast(`Agent "${newAgentName.trim()}" deployed`, 'success');
+      await picoService.createAgent(newAgentName.trim(), newAgentPersonality);
+      showToast(`Agent "${newAgentName.trim()}" deployed as ${newAgentPersonality}`, 'success');
       setNewAgentName('');
+      setNewAgentPersonality('weebo');
       setCreatingSlot(null);
       await loadData();
     } catch {
@@ -257,7 +263,7 @@ export function PicoFleetPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <PullToRefreshWrapper onRefresh={() => loadData()} className="space-y-6 animate-in fade-in duration-500">
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top duration-300">
@@ -310,11 +316,11 @@ export function PicoFleetPage() {
             const color = getStatusColor(agent.status);
             const isPermanent = slotNum === 1;
             return (
-              <Card key={slotNum} className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all">
+              <Card key={slotNum} className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all press-scale">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg text-[#F4F6FF] flex items-center gap-2">
-                      <Zap className="w-4 h-4" style={{ color }} />
+                      <span>{agent.personality === 'edith' ? '⚡' : agent.personality === 'jarvis' ? '🎩' : '🤖'}</span>
                       {agent.name}
                     </CardTitle>
                     <div className="flex items-center gap-2">
@@ -361,14 +367,35 @@ export function PicoFleetPage() {
 
           // Empty slot — show create button or inline form
           if (creatingSlot === slotNum) {
+            const personalities = [
+              { id: 'weebo' as const, emoji: '🤖', label: 'Weebo', desc: 'Enthusiastic helper', color: '#61FF7B' },
+              { id: 'jarvis' as const, emoji: '🎩', label: 'Jarvis', desc: 'Professional butler', color: '#7B61FF' },
+              { id: 'edith' as const, emoji: '⚡', label: 'Edith', desc: 'Sharp CTO', color: '#FFD761' },
+            ];
             return (
               <Card key={slotNum} className="bg-[#0B0B10] border-[#7B61FF]/30 border-dashed">
-                <CardContent className="p-6 flex flex-col items-center justify-center gap-3 min-h-[180px]">
-                  <p className="text-sm text-[#A7ACB8]">Name your agent</p>
+                <CardContent className={`flex flex-col items-center gap-3 min-h-[180px] ${isMobile ? 'p-3' : 'p-4'}`}>
+                  <p className="text-sm text-[#A7ACB8]">Choose personality</p>
+                  <div className="flex gap-2">
+                    {personalities.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setNewAgentPersonality(p.id)}
+                        className="flex flex-col items-center gap-1 p-3 sm:p-2 rounded-lg border transition-all min-w-[60px] min-h-[44px]"
+                        style={{
+                          borderColor: newAgentPersonality === p.id ? p.color : 'rgba(123,97,255,0.2)',
+                          backgroundColor: newAgentPersonality === p.id ? `${p.color}10` : 'transparent',
+                        }}
+                      >
+                        <span className="text-lg">{p.emoji}</span>
+                        <span className="text-xs font-medium" style={{ color: newAgentPersonality === p.id ? p.color : '#A7ACB8' }}>{p.label}</span>
+                      </button>
+                    ))}
+                  </div>
                   <Input
                     value={newAgentName}
                     onChange={(e) => setNewAgentName(e.target.value)}
-                    placeholder="e.g. Scout, Relay..."
+                    placeholder="Agent name..."
                     className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF] max-w-[200px]"
                     onKeyDown={(e) => e.key === 'Enter' && handleCreateAgent()}
                     autoFocus
@@ -377,7 +404,7 @@ export function PicoFleetPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => { setCreatingSlot(null); setNewAgentName(''); }}
+                      onClick={() => { setCreatingSlot(null); setNewAgentName(''); setNewAgentPersonality('weebo'); }}
                       className="border-[#7B61FF]/30 text-[#A7ACB8]"
                     >
                       Cancel
@@ -399,7 +426,7 @@ export function PicoFleetPage() {
           return (
             <Card
               key={slotNum}
-              className="bg-[#0B0B10] border-[#7B61FF]/20 border-dashed hover:border-[#7B61FF]/40 transition-all cursor-pointer group"
+              className="bg-[#0B0B10] border-[#7B61FF]/20 border-dashed hover:border-[#7B61FF]/40 transition-all cursor-pointer group press-scale"
               onClick={() => setCreatingSlot(slotNum)}
             >
               <CardContent className="p-6 flex flex-col items-center justify-center gap-3 min-h-[180px]">
@@ -511,7 +538,7 @@ export function PicoFleetPage() {
               {recentTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="flex items-center gap-3 p-2.5 rounded-lg bg-[#05050A] border border-[#7B61FF]/10"
+                  className="flex items-center gap-3 p-3 sm:p-2.5 rounded-lg bg-[#05050A] border border-[#7B61FF]/10 min-h-[44px]"
                 >
                   {/* Colored status dot */}
                   <span
@@ -531,7 +558,7 @@ export function PicoFleetPage() {
                   </span>
                   {/* Time */}
                   <span className="text-xs text-[#A7ACB8] shrink-0 hidden sm:block">
-                    {formatTime(task.created_at || null)}
+                    {formatTime(task.completed_at || task.started_at || task.created_at || null)}
                   </span>
                 </div>
               ))}
@@ -565,7 +592,7 @@ export function PicoFleetPage() {
                   <div key={task.id}>
                     <button
                       onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                      className="w-full text-left p-3 rounded-lg bg-[#05050A] border border-[#7B61FF]/10 hover:border-[#7B61FF]/30 transition-all"
+                      className="w-full text-left p-3 sm:p-3 py-4 rounded-lg bg-[#05050A] border border-[#7B61FF]/10 hover:border-[#7B61FF]/30 transition-all min-h-[44px]"
                     >
                       <div className="flex items-center gap-3">
                         {/* Status icon */}
@@ -595,7 +622,7 @@ export function PicoFleetPage() {
 
                         {/* Timestamp */}
                         <span className="text-xs text-[#A7ACB8] hidden md:block shrink-0 min-w-[70px] text-right">
-                          {formatTime(task.created_at)}
+                          {formatTime(task.completed_at || task.started_at || task.created_at)}
                         </span>
 
                         {/* Cancel button for queued tasks */}
@@ -666,6 +693,6 @@ export function PicoFleetPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PullToRefreshWrapper>
   );
 }

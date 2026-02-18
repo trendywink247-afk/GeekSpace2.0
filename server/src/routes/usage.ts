@@ -160,8 +160,21 @@ usageRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
   const offset = parseInt(req.query.offset as string) || 0;
 
-  const events = db.prepare('SELECT * FROM usage_events WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?').all(userId, limit, offset);
+  const rows = db.prepare('SELECT * FROM usage_events WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?').all(userId, limit, offset) as Record<string, unknown>[];
   const total = db.prepare('SELECT COUNT(*) as count FROM usage_events WHERE user_id = ?').get(userId) as Record<string, unknown>;
+
+  const events = rows.map(r => ({
+    id: r.id,
+    userId: r.user_id,
+    provider: r.provider,
+    model: r.model,
+    tokensIn: r.tokens_in ?? 0,
+    tokensOut: r.tokens_out ?? 0,
+    costUSD: r.cost_usd ?? 0,
+    channel: r.channel,
+    tool: r.tool,
+    createdAt: r.created_at,
+  }));
 
   res.json({ events, total: (total.count as number) || 0 });
 });

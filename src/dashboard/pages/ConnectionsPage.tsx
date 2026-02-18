@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { integrationService } from '@/services/api';
 import type { IntegrationType } from '@/types';
 
@@ -63,6 +64,7 @@ type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting'
 
 export function ConnectionsPage() {
   const { integrations, connectIntegration, disconnectIntegration, isLoading } = useDashboardStore();
+  const isMobile = useMobileDetect();
 
   const [telegramDialog, setTelegramDialog] = useState(false);
   const [telegramStep, setTelegramStep] = useState<TelegramStep>('idle');
@@ -233,7 +235,7 @@ export function ConnectionsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -291,7 +293,7 @@ export function ConnectionsPage() {
       {/* Telegram Link Wizard */}
       {telegramDialog && (
         <Card className="bg-[#0B0B10] border-[#0088cc]/40 relative overflow-hidden">
-          <CardContent className="p-6">
+          <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
             <button onClick={closeTelegramDialog} className="absolute top-4 right-4 text-[#A7ACB8] hover:text-white z-10">
               <X className="w-5 h-5" />
             </button>
@@ -499,7 +501,7 @@ export function ConnectionsPage() {
       {/* Email Setup Dialog */}
       {emailDialog && (
         <Card className="bg-[#0B0B10] border-[#61FF7B]/40 relative overflow-hidden">
-          <CardContent className="p-6">
+          <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
             <button onClick={() => setEmailDialog(false)} className="absolute top-4 right-4 text-[#A7ACB8] hover:text-white z-10">
               <X className="w-5 h-5" />
             </button>
@@ -568,20 +570,20 @@ export function ConnectionsPage() {
           return (
             <Card
               key={connection.id}
-              className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all duration-300 group"
+              className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all duration-300 group press-scale"
             >
-              <CardContent className="p-6">
+              <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
+                      className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
                       style={{ backgroundColor: `${color}20` }}
                     >
                       <Icon className="w-6 h-6" style={{ color }} />
                     </div>
                     <div>
                       <h3 className="font-semibold text-[#F4F6FF]">{connection.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 min-h-[28px]">
                         {getStatusIcon(connection.status)}
                         <span className={`text-xs ${getStatusColor(connection.status)} capitalize`}>
                           {connection.status}
@@ -601,10 +603,10 @@ export function ConnectionsPage() {
                     </Badge>
                   ) : (
                     <Button
-                      size="sm"
+                      size={isMobile ? 'default' : 'sm'}
                       onClick={() => handleConnect(connection.type)}
                       disabled={isLoading}
-                      className="bg-[#7B61FF] hover:bg-[#6B51EF]"
+                      className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale min-h-[44px]"
                     >
                       Connect
                     </Button>
@@ -640,7 +642,7 @@ export function ConnectionsPage() {
                     <Badge
                       key={i}
                       variant="outline"
-                      className="border-[#7B61FF]/20 text-[#A7ACB8] text-xs"
+                      className="border-[#7B61FF]/20 text-[#A7ACB8] text-xs min-h-[28px] sm:min-h-0"
                     >
                       {feature}
                     </Badge>

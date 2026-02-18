@@ -90,7 +90,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
         ))}
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left: Content */}
           <div 
@@ -99,7 +99,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
             }`}
           >
             <h2 
-              className="text-4xl md:text-5xl font-bold mb-4"
+              className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               Ready to deploy <span className="text-gradient">your AI?</span>
@@ -162,7 +162,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
               isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'
             }`}
           >
-            <div className="glass-card rounded-2xl p-8">
+            <div className="glass-card rounded-2xl p-5 sm:p-8">
               {isSubmitted ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 rounded-full bg-[#61FF7B]/20 flex items-center justify-center mx-auto mb-4">

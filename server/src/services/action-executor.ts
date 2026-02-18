@@ -10,6 +10,7 @@ import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { sendAgentEmail, resolveEmailAddress } from './email.js';
+import { parseReminderTime } from './pico-fleet.js';
 import type { ParsedAction } from './action-parser.js';
 import { config } from '../config.js';
 
@@ -188,6 +189,37 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           success: true,
           message: `Email sent to ${to}`,
           data: { to, subject: params.subject as string },
+        };
+      }
+
+      // ── set_reminder ────────────────────────────────────────
+      case 'set_reminder': {
+        const text = params.text as string;
+        const reminderId = uuid();
+        const dueAt = params.datetime as string || parseReminderTime(text);
+        // Use user-specified channel, or auto-detect from linked accounts
+        let channel = (params.channel as string) || 'push';
+        if (!params.channel) {
+          const hasChannel = db.prepare(
+            "SELECT 1 FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+          ).get(userId);
+          if (hasChannel) channel = 'telegram';
+        }
+        const category = (params.category as string) || 'general';
+
+        db.prepare(
+          'INSERT INTO reminders (id, user_id, text, datetime, channel, category, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).run(reminderId, userId, text, dueAt, channel, category, 'agent');
+
+        db.prepare(
+          `INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`
+        ).run(uuid(), userId, text);
+
+        return {
+          tool,
+          success: true,
+          message: `Reminder set: "${text}"${dueAt ? ` (${dueAt})` : ''}`,
+          data: { reminderId, text, datetime: dueAt, channel },
         };
       }
 

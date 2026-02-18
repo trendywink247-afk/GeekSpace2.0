@@ -144,6 +144,20 @@ export function shouldEscalateToKimi(
   // Moderate goes to Kimi if available, otherwise Pico handles it
   if (complexity === 'moderate') return true;
 
+  // Code/build requests need a capable model — PicoClaw 1.5b can't generate quality code
+  const lower = message.toLowerCase();
+  if (/\b(?:write|build|create|code|generate|make)\b.*\b(?:function|script|app|website|page|component|api|program|class)\b/i.test(lower) ||
+      /\b(?:function|script|app|website|page|component)\b.*\b(?:write|build|create|code|generate|make)\b/i.test(lower)) {
+    return true;
+  }
+
+  // Long-form content requests need a capable model — PicoClaw truncates at ~256 tokens
+  // Covers: workout plans, meal plans, recipes, guides, tutorials, schedules, routines, comparisons, etc.
+  if (/\b(?:give|create|make|write|list|provide|share|suggest|recommend)\b.*\b(?:workout|exercise|meal|diet|recipe|plan|routine|schedule|guide|tutorial|steps|comparison|overview|summary|breakdown|split|program|itinerary|roadmap|checklist)\b/i.test(lower) ||
+      /\b(?:workout|exercise|meal|diet|recipe|plan|routine|schedule|guide|tutorial|split|program|itinerary|roadmap|checklist)\b.*\b(?:for|to|that)\b/i.test(lower)) {
+    return true;
+  }
+
   // Simple can be handled by Pico if available
   if (complexity === 'simple' && picoAvailable) return false;
 

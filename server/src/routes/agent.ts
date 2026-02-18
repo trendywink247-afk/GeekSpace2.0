@@ -24,6 +24,26 @@ import { sendTelegramMessage } from '../services/telegram.js';
 
 export const agentRouter = Router();
 
+// ---- Helper: Detect task intent in natural chat ----
+// Returns true if the message looks like a task request (remind, telegram, deploy)
+function detectAndHandleTaskIntent(message: string): boolean {
+  const lower = message.toLowerCase().trim();
+  // Must be an imperative/request — skip questions and short greetings
+  if (lower.endsWith('?') || lower.split(' ').length < 3) return false;
+  // Strong intent signals
+  const patterns = [
+    /\bremind\s+me\b/i,
+    /\bset\s+(?:a\s+)?reminder\b/i,
+    /\bsend\s+(?:a\s+)?(?:telegram|tg)\s+(?:message|notification|alert)\b/i,
+    /\bsend\s+(?:a\s+)?message\s+(?:on|via|through)\s+telegram\b/i,
+    /\bnotify\s+(?:me\s+)?(?:on|via)\s+telegram\b/i,
+    /\bdeploy\s+(?:my\s+)?portfolio\b/i,
+    /\bpublish\s+(?:my\s+)?portfolio\b/i,
+    /\bmake\s+(?:my\s+)?portfolio\s+(?:public|live)\b/i,
+  ];
+  return patterns.some(p => p.test(lower));
+}
+
 // ---- Helper: Build system prompt with user context ----
 
 function buildSystemPrompt(
@@ -81,6 +101,7 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     monthlyBudgetUSD: 'monthly_budget_usd', avatarEmoji: 'avatar_emoji',
     accentColor: 'accent_color', bubbleStyle: 'bubble_style', status: 'status',
     personality: 'personality', model_preference: 'model_preference',
+    preferred_free_model: 'preferred_free_model',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {
@@ -148,7 +169,7 @@ Skills/interests: ${Array.isArray(tags) ? tags.join(', ') : tags || 'software de
 
     const result = await routeChat(
       [{ role: 'system', content: systemPrompt }, { role: 'user', content: 'Generate it now.' }],
-      { forceProvider: 'edith' as Provider }
+      { forceProvider: 'edith' as Provider, userId: req.userId! }
     );
 
     // Deduct actual credit cost
@@ -264,7 +285,7 @@ You are assisting via the GeekSpace terminal. Be concise. No markdown headers. P
         { role: 'user', content: message },
       ];
 
-      const terminalResult = await routeChat(terminalMessages, { forceProvider: 'openrouter-free' as Provider });
+      const terminalResult = await routeChat(terminalMessages, { forceProvider: 'openrouter-free' as Provider, userId });
       deductSubscriptionCredits(userId, terminalResult.creditCost);
       db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'terminal', 'ai.chat')`).run(
@@ -350,6 +371,38 @@ You are assisting via the GeekSpace terminal. Be concise. No markdown headers. P
             error: `Unknown agent role: "${requestedRole}". Valid roles: ${validRoles.join(', ')}`,
           });
           return;
+        }
+      }
+    }
+
+    // ---- Auto-detect task intent: automatically create Pico tasks without /task prefix ----
+    if (!forceRoute) {
+      const taskIntentResult = detectAndHandleTaskIntent(message);
+      if (taskIntentResult) {
+        try {
+          const { planTasks: planTasksFn, queueTasks: queueTasksFn } = await import('../services/pico-fleet.js');
+          const { tasks } = await planTasksFn(userId, message, userPlan);
+
+          if (tasks.length > 0) {
+            const taskIds = queueTasksFn(userId, tasks, 'weebo');
+            const updatedSub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+            const summary = tasks.map(t => `**${t.task_type.replace(/_/g, ' ')}**: ${t.description}`).join('\n');
+
+            logConversation(userId, 'assistant', `Done! I've queued ${taskIds.length} task(s) for Weebo:\n${summary}`);
+
+            res.json({
+              text: `Done! I've queued ${taskIds.length} task(s) for Weebo:\n${summary}`,
+              route: 'pico-fleet',
+              tier: 'local',
+              provider: 'builtin',
+              latencyMs: 0,
+              creditsUsed: 0,
+              creditsRemaining: updatedSub?.credits_remaining ?? 0,
+            });
+            return;
+          }
+        } catch {
+          // Fall through to normal chat if task planning fails
         }
       }
     }
@@ -495,6 +548,7 @@ You are assisting via the GeekSpace terminal. Be concise. No markdown headers. P
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
       forceProvider: resolvedProvider,
+      userId,
     });
 
     // Determine tier from actual provider used
@@ -823,6 +877,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
           systemPrompt: buildSystemPrompt(agentConfig, user, userId),
           agentName: (agentConfig?.name as string) || 'Geek',
           userCredits: (user?.credits as number) || 0,
+          userId,
         },
       );
 
@@ -927,7 +982,7 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     if (intent === 'coding' || intent === 'planning' || intent === 'complex') {
       const result = await routeChat(
         [...history, { role: 'user', content: message }],
-        { systemPrompt, agentName, userCredits },
+        { systemPrompt, agentName, userCredits, userId },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
       const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';
@@ -966,7 +1021,7 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
         logger.warn({ userId, latencyMs }, 'Stream produced empty reply, falling back to routeChat');
         const result = await routeChat(
           [...history, { role: 'user', content: message }],
-          { systemPrompt, agentName, userCredits },
+          { systemPrompt, agentName, userCredits, userId },
         );
         res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
         res.write(`data: ${JSON.stringify({
@@ -997,7 +1052,7 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
       const fallbackHistory = getConversationContext(userId);
       const result = await routeChat(
         [...fallbackHistory, { role: 'user', content: message }],
-        { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0 },
+        { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0, userId },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
       res.write(`data: ${JSON.stringify({ text: '', done: true, provider: result.provider, model: result.model })}\n\n`);
@@ -1013,6 +1068,36 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
 
 // ---- Memory Management ----
 
+/** Map snake_case DB row to camelCase for frontend */
+function mapMemory(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    category: row.category,
+    key: row.key,
+    value: row.value,
+    confidence: row.confidence,
+    source: row.source,
+    accessCount: row.access_count ?? 0,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapConversation(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    role: row.role,
+    content: row.content,
+    provider: row.provider,
+    model: row.model,
+    summary: row.summary,
+    tags: row.tags,
+    createdAt: row.created_at,
+  };
+}
+
 agentRouter.get('/memory', requireAuth, (req: AuthRequest, res) => {
   const category = req.query.category as string | undefined;
   const search = req.query.search as string | undefined;
@@ -1020,22 +1105,21 @@ agentRouter.get('/memory', requireAuth, (req: AuthRequest, res) => {
 
   if (search) {
     const memories = getRelevantMemories(req.userId!, search, limit);
-    res.json(memories);
+    res.json((memories as unknown as Record<string, unknown>[]).map(mapMemory));
     return;
   }
   const memories = getMemories(req.userId!, category, limit);
-  res.json(memories);
+  res.json((memories as unknown as Record<string, unknown>[]).map(mapMemory));
 });
 
 agentRouter.post('/memory', requireAuth, validateBody(memoryCreateSchema), (req: AuthRequest, res) => {
   const { category, key, value, confidence, source } = req.body;
   upsertMemory(req.userId!, category, key, value, confidence, source);
 
-  // Return the newly created/updated memory
   const memory = db.prepare(
     'SELECT * FROM agent_memory WHERE user_id = ? AND category = ? AND key = ?'
-  ).get(req.userId!, category, key);
-  res.status(201).json(memory);
+  ).get(req.userId!, category, key) as Record<string, unknown>;
+  res.status(201).json(mapMemory(memory));
 });
 
 agentRouter.put('/memory/:id', requireAuth, validateBody(memoryUpdateSchema), (req: AuthRequest, res) => {
@@ -1059,8 +1143,8 @@ agentRouter.put('/memory/:id', requireAuth, validateBody(memoryUpdateSchema), (r
 
   const updated = db.prepare(
     'SELECT * FROM agent_memory WHERE user_id = ? AND category = ? AND key = ?'
-  ).get(req.userId!, category, key);
-  res.json(updated);
+  ).get(req.userId!, category, key) as Record<string, unknown>;
+  res.json(mapMemory(updated));
 });
 
 agentRouter.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
@@ -1074,7 +1158,7 @@ agentRouter.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
 agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
   const conversations = getRecentConversations(req.userId!, limit);
-  res.json(conversations);
+  res.json((conversations as unknown as Record<string, unknown>[]).map(mapConversation));
 });
 
 // ---- Premium Agent (Specialist Sessions) ----

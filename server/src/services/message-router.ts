@@ -11,7 +11,9 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
-import { routeChat, classifyIntent, deductSubscriptionCredits, type ChatMessage } from './llm.js';
+import { config } from '../config.js';
+import { routeChat, deductSubscriptionCredits, type ChatMessage } from './llm.js';
+import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, extractMemories, getConversationContext } from './memory.js';
 import { checkKeywordTriggers } from './automations-engine.js';
 import { sendTelegramMessage } from './telegram.js';
@@ -19,6 +21,33 @@ import { getPersonalityPrompt, getPersonality } from '../prompts/personalities.j
 import { OPENCLAW_IDENTITY_COMPACT } from '../prompts/openclaw-system.js';
 import { parseActions } from './action-parser.js';
 import { executeAction, type ActionResult } from './action-executor.js';
+
+// ---- Task Intent Detection ----
+
+function detectTaskIntent(message: string): boolean {
+  const lower = message.toLowerCase().trim();
+  if (lower.endsWith('?') || lower.split(' ').length < 3) return false;
+  const patterns = [
+    /\bremind\s+me\b/i,
+    /\bset\s+(?:a\s+)?reminder\b/i,
+    /\bsend\s+(?:a\s+)?(?:telegram|tg)\s+(?:message|notification|alert)\b/i,
+    /\bsend\s+(?:a\s+)?message\s+(?:on|via|through)\s+telegram\b/i,
+    /\bnotify\s+(?:me\s+)?(?:on|via)\s+telegram\b/i,
+    /\bdeploy\s+(?:my\s+)?portfolio\b/i,
+    /\bpublish\s+(?:my\s+)?portfolio\b/i,
+    /\bmake\s+(?:my\s+)?portfolio\s+(?:public|live)\b/i,
+  ];
+  return patterns.some(p => p.test(lower));
+}
+
+/** Check if a message with a task intent also has a content request (mixed intent).
+ *  e.g. "Give me a workout plan and remind me to start Monday" */
+function hasMixedContent(message: string): boolean {
+  const lower = message.toLowerCase();
+  const hasContentRequest = /\b(?:give|create|make|build|explain|list|show|tell|help|write|suggest|recommend|what|how|why|describe|generate)\b/i.test(lower);
+  const hasConjunction = /\b(?:and|also|but also|plus|then|as well|additionally)\b/i.test(lower);
+  return hasContentRequest && hasConjunction;
+}
 
 // ---- Types ----
 
@@ -131,21 +160,113 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // 5. Fire keyword automation triggers (non-blocking)
   checkKeywordTriggers(userId, msg.text).catch((e: unknown) => console.debug('[bg]', (e as Error).message));
 
+  // 5b. Auto-detect task intents (remind, telegram, deploy) — route to Pico Fleet
+  // For mixed-intent messages (e.g. "Give me a workout plan and remind me"),
+  // queue the tasks but continue to LLM for the content response.
+  let taskConfirmation = '';
+  if (detectTaskIntent(msg.text)) {
+    try {
+      const { planTasks, queueTasks } = await import('./pico-fleet.js');
+      const userPlan = (subscription as Record<string, unknown>)?.plan as string || 'free';
+      const { tasks } = await planTasks(userId, msg.text, userPlan);
+      if (tasks.length > 0) {
+        const taskIds = queueTasks(userId, tasks, 'weebo');
+        const summary = tasks.map((t: { task_type: string; description: string }) =>
+          `${t.task_type.replace(/_/g, ' ')}: ${t.description}`).join('\n');
+
+        if (hasMixedContent(msg.text)) {
+          // Mixed intent — queue tasks, but continue to LLM for content
+          taskConfirmation = `Done! I've queued ${taskIds.length} task(s): ${summary}\n\n`;
+          logger.info({ channel: msg.channel, userId, taskCount: taskIds.length }, 'Mixed intent: tasks queued, continuing to LLM');
+        } else {
+          // Pure task intent — return task confirmation only
+          const reply = `Done! I've queued ${taskIds.length} task(s):\n${summary}`;
+          logConversation(userId, 'assistant', reply, 'builtin', 'pico-fleet');
+          await sendChannelResponse({
+            channel: msg.channel,
+            externalId: msg.externalId,
+            text: reply,
+          });
+          logger.info({ channel: msg.channel, userId, taskCount: taskIds.length, latencyMs: Date.now() - startTime }, 'Channel task auto-detected');
+          return;
+        }
+      }
+    } catch (e) {
+      logger.warn({ err: (e as Error).message }, 'Channel task auto-detect failed, falling through to chat');
+    }
+  }
+
   // 6. Build messages for LLM
   const systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);
   const history = getConversationContext(userId);
-  const messages: ChatMessage[] = [...history, { role: 'user', content: msg.text }];
   const userCredits = (user?.credits as number) || 0;
 
-  // 7. Route through LLM (same pipeline as web chat)
-  const result = await routeChat(messages, {
-    systemPrompt,
-    agentName: (agentConfig?.name as string) || 'Geek',
-    userCredits,
-  });
+  // 7. Route through bridge (PicoClaw for simple, Kimi for complex) or fallback to routeChat
+  let replyText: string;
+  let provider: string;
+  let model: string;
+  let tokensIn = 0;
+  let tokensOut = 0;
+  let creditCost = 0;
+
+  if (config.bridgeEnabled) {
+    // Use the bridge — routes trivial/simple → PicoClaw (2-5s), complex → Kimi
+    try {
+      const bridgeReq: BridgeRequest = {
+        userId,
+        message: msg.text,
+        systemPrompt,
+        conversationHistory: history,
+        userCredits,
+      };
+      const bridgeResult = await bridgeChat(bridgeReq);
+      replyText = bridgeResult.text;
+      provider = bridgeResult.provider;
+      model = bridgeResult.model;
+      tokensIn = bridgeResult.tokensIn;
+      tokensOut = bridgeResult.tokensOut;
+      creditCost = bridgeResult.creditCost;
+
+      logger.debug({
+        route: bridgeResult.route,
+        complexity: bridgeResult.complexity,
+        provider,
+        latencyMs: bridgeResult.latencyMs,
+      }, 'Channel message routed via bridge');
+    } catch (err) {
+      logger.warn({ err: (err as Error).message }, 'Bridge failed for channel message, falling back to routeChat');
+      // Fallback to routeChat
+      const messages: ChatMessage[] = [...history, { role: 'user', content: msg.text }];
+      const result = await routeChat(messages, {
+        systemPrompt,
+        agentName: (agentConfig?.name as string) || 'Geek',
+        userCredits,
+      });
+      replyText = result.reply;
+      provider = result.provider;
+      model = result.model;
+      tokensIn = result.tokensIn;
+      tokensOut = result.tokensOut;
+      creditCost = result.creditCost;
+    }
+  } else {
+    // Bridge not enabled — use routeChat directly
+    const messages: ChatMessage[] = [...history, { role: 'user', content: msg.text }];
+    const result = await routeChat(messages, {
+      systemPrompt,
+      agentName: (agentConfig?.name as string) || 'Geek',
+      userCredits,
+    });
+    replyText = result.reply;
+    provider = result.provider;
+    model = result.model;
+    tokensIn = result.tokensIn;
+    tokensOut = result.tokensOut;
+    creditCost = result.creditCost;
+  }
 
   // 7b. Parse and execute actions
-  const { text: cleanReply, actions: parsedActions } = parseActions(result.reply);
+  const { text: cleanReply, actions: parsedActions } = parseActions(replyText);
   const actionResults: ActionResult[] = [];
 
   for (const action of parsedActions) {
@@ -153,10 +274,14 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     actionResults.push(actionResult);
   }
 
-  const replyText = cleanReply || result.reply;
+  // Strip any remaining action-like patterns the parser missed (malformed tags, PicoClaw inline format)
+  const finalReply = (cleanReply || replyText)
+    .replace(/<<<?\w[\s\S]*?>>>?/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 
   // Build action summary for channel (no iframe possible)
-  let channelReply = replyText;
+  let channelReply = taskConfirmation + finalReply;
   for (const ar of actionResults) {
     if (ar.success) {
       channelReply += `\n\n✅ ${ar.message}`;
@@ -169,18 +294,18 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // 8. Log usage with correct channel
   db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ai.chat')`).run(
-    uuid(), userId, result.provider, result.model,
-    result.tokensIn, result.tokensOut, result.creditCost, msg.channel,
+    uuid(), userId, provider, model,
+    tokensIn, tokensOut, creditCost, msg.channel,
   );
 
   // 9. Deduct credits
-  if (result.creditCost > 0) {
-    db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(result.creditCost, userId);
+  if (creditCost > 0) {
+    db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(creditCost, userId);
   }
-  deductSubscriptionCredits(userId, result.creditCost);
+  deductSubscriptionCredits(userId, creditCost);
 
   // 10. Log assistant response (clean text without action blocks)
-  logConversation(userId, 'assistant', replyText, result.provider, result.model);
+  logConversation(userId, 'assistant', finalReply, provider, model);
 
   // 11. Send response back through originating channel
   await sendChannelResponse({
@@ -193,10 +318,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   logger.info({
     channel: msg.channel,
     userId,
-    intent: result.intent,
-    provider: result.provider,
+    provider,
     latencyMs: Date.now() - startTime,
-    creditCost: result.creditCost,
+    creditCost,
   }, 'Channel message processed');
 }
 

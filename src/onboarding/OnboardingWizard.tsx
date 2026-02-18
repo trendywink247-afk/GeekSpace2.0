@@ -98,23 +98,30 @@ export function OnboardingWizard() {
   return (
     <div className="w-full max-w-2xl">
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Sparkles className="w-8 h-8 text-[#7B61FF]" />
-          <span className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+      <div className="text-center mb-6 sm:mb-8">
+        <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
+          <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-[#7B61FF]" />
+          <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             GeekSpace
           </span>
         </div>
-        <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
           Set up your AI space
         </h1>
       </div>
 
-      {/* Progress */}
-      <div className="flex items-center justify-center gap-1.5 mb-8">
+      {/* Progress — compact dots on mobile, numbered circles on sm+ */}
+      <div className="flex items-center justify-center gap-1.5 sm:gap-1.5 mb-6 sm:mb-8">
         {STEPS.map((s, i) => (
           <div key={s} className="flex items-center gap-1.5">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+            {/* Mobile: small dots */}
+            <div className={`w-2.5 h-2.5 sm:hidden rounded-full transition-all duration-300 ${
+              i < step ? 'bg-[#61FF7B]' :
+              i === step ? 'bg-[#7B61FF] ring-2 ring-[#7B61FF]/40' :
+              'bg-[#7B61FF]/20'
+            }`} />
+            {/* Desktop: numbered circles */}
+            <div className={`hidden sm:flex w-8 h-8 rounded-full items-center justify-center text-sm font-medium transition-all duration-300 ${
               i < step ? 'bg-[#61FF7B] text-[#05050A]' :
               i === step ? 'bg-[#7B61FF] text-white' :
               'bg-[#0B0B10] border border-[#7B61FF]/30 text-[#A7ACB8]'
@@ -122,14 +129,14 @@ export function OnboardingWizard() {
               {i < step ? <Check className="w-4 h-4" /> : i + 1}
             </div>
             {i < STEPS.length - 1 && (
-              <div className={`w-6 sm:w-10 h-0.5 transition-all duration-500 ${i < step ? 'bg-[#61FF7B]' : 'bg-[#7B61FF]/20'}`} />
+              <div className={`w-3 sm:w-10 h-0.5 transition-all duration-500 ${i < step ? 'bg-[#61FF7B]' : 'bg-[#7B61FF]/20'}`} />
             )}
           </div>
         ))}
       </div>
 
       {/* Step content */}
-      <div className={`p-8 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/20 mb-6 ${stepAnimClass}`}>
+      <div className={`p-4 sm:p-8 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/20 mb-6 animate-page-enter ${stepAnimClass}`}>
         {step === 0 && (
           <ProfileStep
             name={onboarding.profile.name}
@@ -188,27 +195,55 @@ export function OnboardingWizard() {
 
       {/* Navigation buttons */}
       {step < 5 && (
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={step === 0}
-            className="border-[#7B61FF]/30 text-[#A7ACB8]"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-          <span className="text-sm text-[#A7ACB8]">
-            Step {step + 1} of {STEPS.length}
-          </span>
-          <Button
-            onClick={handleNext}
-            disabled={!canAdvance()}
-            className="bg-[#7B61FF] hover:bg-[#6B51EF]"
-          >
-            Continue
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
+        <div className="space-y-3 sm:space-y-0">
+          {/* Mobile: stacked layout */}
+          <div className="flex sm:hidden flex-col gap-3">
+            <Button
+              onClick={handleNext}
+              disabled={!canAdvance()}
+              className="w-full min-h-[44px] bg-[#7B61FF] hover:bg-[#6B51EF] text-base font-medium"
+            >
+              Continue
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                disabled={step === 0}
+                className="min-h-[44px] border-[#7B61FF]/30 text-[#A7ACB8]"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <span className="text-sm text-[#A7ACB8]">
+                {step + 1} / {STEPS.length}
+              </span>
+            </div>
+          </div>
+          {/* Desktop: row layout */}
+          <div className="hidden sm:flex items-center justify-between">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={step === 0}
+              className="min-h-[44px] border-[#7B61FF]/30 text-[#A7ACB8]"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            <span className="text-sm text-[#A7ACB8]">
+              Step {step + 1} of {STEPS.length}
+            </span>
+            <Button
+              onClick={handleNext}
+              disabled={!canAdvance()}
+              className="min-h-[44px] bg-[#7B61FF] hover:bg-[#6B51EF]"
+            >
+              Continue
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -218,7 +253,7 @@ export function OnboardingWizard() {
           <Button
             variant="outline"
             onClick={handleBack}
-            className="border-[#7B61FF]/30 text-[#A7ACB8]"
+            className="min-h-[44px] border-[#7B61FF]/30 text-[#A7ACB8]"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back

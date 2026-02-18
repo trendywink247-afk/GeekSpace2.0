@@ -39,7 +39,7 @@ picoRouter.get('/agents', requireAuth, (req: AuthRequest, res) => {
 
 picoRouter.post('/agents', requireAuth, validateBody(picoAgentCreateSchema), (req: AuthRequest, res) => {
   try {
-    const agent = createAgent(req.userId!, req.body.name);
+    const agent = createAgent(req.userId!, req.body.name, req.body.personality);
     res.status(201).json(agent);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to create agent';

@@ -72,7 +72,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
         />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 w-full">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Content */}
           <div 
@@ -86,7 +86,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
             </div>
 
             <h2 
-              className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               AUTOMATION <span className="text-gradient">ENGINE</span>

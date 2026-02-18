@@ -43,8 +43,14 @@ COPY --from=builder /app/server/dist ./server/dist
 # Copy built frontend
 COPY --from=builder /app/dist ./dist
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data && chown -R node:node /app/data
+# Copy admin dashboard
+COPY --from=builder /app/admin-dashboard ./admin-dashboard
+
+# Copy APM Insight config
+COPY apminsightnode.json ./
+
+# Create data directory for SQLite and APM logs directory
+RUN mkdir -p /app/data /app/apminsightdata && chown -R node:node /app/data /app/apminsightdata
 
 # Run as non-root
 USER node

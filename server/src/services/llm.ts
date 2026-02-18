@@ -13,7 +13,7 @@
 import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
-import { getCurrentFreeModel, switchToNextFreeModel } from './openrouter-models.js';
+import { getCurrentFreeModel, switchToNextFreeModel, getUserPreferredFreeModel } from './openrouter-models.js';
 
 // ---- Types ----
 
@@ -262,15 +262,17 @@ async function callOpenRouter(messages: ChatMessage[]) {
   return callOpenRouterWithModel(messages, config.openrouterModel);
 }
 
-async function callOpenRouterFree(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+async function callOpenRouterFree(messages: ChatMessage[], userId?: string): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
   const baseUrl = config.openrouterFreeBaseUrl;
   const apiKey = config.openrouterFreeApiKey;
   const MAX_ATTEMPTS = 3;
 
+  const preferredModel = userId ? getUserPreferredFreeModel(userId) : null;
+
   let lastError: Error = new Error('OpenRouter Free: no attempts made');
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const model = await getCurrentFreeModel();
+    const model = (attempt === 0 && preferredModel) ? preferredModel : await getCurrentFreeModel();
 
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
@@ -449,6 +451,7 @@ export async function routeChat(
     userCredits?: number;
     systemPrompt?: string;
     agentName?: string;
+    userId?: string;
   },
 ): Promise<LLMResponse> {
   const start = Date.now();
@@ -524,7 +527,7 @@ export async function routeChat(
         break;
       }
       case 'openrouter-free': {
-        const result = await callOpenRouterFree(fullMessages);
+        const result = await callOpenRouterFree(fullMessages, opts?.userId);
         reply = result.content;
         tokensIn = result.tokensIn;
         tokensOut = result.tokensOut;

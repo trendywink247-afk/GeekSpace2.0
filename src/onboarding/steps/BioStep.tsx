@@ -68,7 +68,7 @@ export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChan
               key={tag}
               type="button"
               onClick={() => toggleTag(tag)}
-              className={`px-4 py-2 rounded-full text-sm transition-all ${
+              className={`px-4 py-2 min-h-[44px] rounded-full text-sm transition-all ${
                 tags.includes(tag)
                   ? 'bg-[#7B61FF]/20 border border-[#7B61FF] text-[#7B61FF]'
                   : 'bg-[#05050A] border border-[#7B61FF]/20 text-[#A7ACB8] hover:border-[#7B61FF]/50'
@@ -86,7 +86,7 @@ export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChan
           type="button"
           onClick={handleMagic}
           disabled={magicLoading}
-          className="w-full py-3 rounded-xl border-2 border-dashed border-[#7B61FF]/40 text-[#7B61FF] hover:bg-[#7B61FF]/10 hover:border-[#7B61FF] transition-all flex items-center justify-center gap-2 text-sm font-medium"
+          className="w-full py-3 min-h-[44px] rounded-xl border-2 border-dashed border-[#7B61FF]/40 text-[#7B61FF] hover:bg-[#7B61FF]/10 hover:border-[#7B61FF] transition-all flex items-center justify-center gap-2 text-sm font-medium"
         >
           {magicLoading ? (
             <>

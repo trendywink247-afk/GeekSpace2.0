@@ -7,6 +7,7 @@ import { agentService, premiumAgentService, publicAgentService } from '@/service
 import type { AgentPersonality, PremiumSession } from '@/types';
 import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 // Browser SpeechRecognition (Chrome/Edge — not in @types/dom by default)
 declare global {
@@ -44,12 +45,19 @@ const providerLabels: Record<string, string> = {
   builtin: 'Built-in',
 };
 
+function formatModelName(model: string): string {
+  if (!model || model === 'builtin-fallback' || model === 'error-fallback' || model === 'picoclaw-haiku') return '';
+  const base = model.replace(/:free$/, '').split('/').pop() || '';
+  return base.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
+}
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'agent' | 'system';
   content: string;
   timestamp: Date;
   provider?: string;
+  model?: string;
   isStreaming?: boolean;
   actions?: Array<{
     tool: string;
@@ -76,6 +84,7 @@ const suggestedPrompts = [
 
 export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelProps) {
   const agent = useDashboardStore((s) => s.agent);
+  const isMobile = useMobileDetect();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -85,6 +94,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const speechSupported = typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
+  // Swipe-down-to-close on mobile header
+  const [touchStartY, setTouchStartY] = useState(0);
+  const handleHeaderTouchStart = (e: React.TouchEvent) => setTouchStartY(e.touches[0].clientY);
+  const handleHeaderTouchEnd = (e: React.TouchEvent) => {
+    const diff = e.changedTouches[0].clientY - touchStartY;
+    if (diff > 100) onClose(); // swipe down 100px+ to close
+  };
 
   // Premium session state
   const [premiumSession, setPremiumSession] = useState<PremiumSession | null>(null);
@@ -206,7 +223,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       (async () => {
         try {
           const { data } = await premiumAgentService.chat(premiumSession.sessionId, content);
-          setAgentMsg({ content: data.text, isStreaming: false, provider: data.provider });
+          setAgentMsg({ content: data.text, isStreaming: false, provider: data.provider, model: data.model });
           setPremiumSession((prev) => prev ? { ...prev, creditsUsed: data.sessionCreditsTotal, messagesCount: data.messagesCount } : prev);
         } catch {
           setAgentMsg({
@@ -233,7 +250,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       const { data } = await agentService.chat(content);
       const text = data.text || '';
       if (!text && !data.actions?.length) throw new Error('Empty response');
-      setAgentMsg({ content: text, isStreaming: false, provider: data.provider, actions: data.actions || undefined });
+      setAgentMsg({ content: text, isStreaming: false, provider: data.provider, model: data.model, actions: data.actions || undefined });
     };
 
     // Main chat logic: try streaming → fall back to regular → show error
@@ -289,7 +306,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               }
 
               if (chunk.done) {
-                setAgentMsg({ isStreaming: false, provider: chunk.provider });
+                setAgentMsg({ isStreaming: false, provider: chunk.provider, model: chunk.model });
               }
             } catch {
               // skip malformed chunks
@@ -371,19 +388,27 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
   return (
     <>
-      {/* Backdrop */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] md:bg-transparent md:backdrop-blur-none" onClick={onClose} />
+      {/* Backdrop — only on desktop (mobile chat is full-screen, no backdrop needed) */}
+      {isOpen && !isMobile && (
+        <div className="fixed inset-0 z-[60]" onClick={onClose} />
       )}
 
       {/* Panel */}
       <div
-        className={`fixed right-0 top-0 h-full w-full md:w-[420px] bg-[#0B0B10] border-l border-[#7B61FF]/20 shadow-2xl shadow-[#7B61FF]/10 z-[61] transition-transform duration-300 ease-out flex flex-col ${
+        className={`${
+          isMobile
+            ? 'fixed inset-0 z-[70] bg-[#0B0B10] flex flex-col'
+            : `fixed right-0 top-0 h-full w-full md:w-[420px] bg-[#0B0B10] border-l border-[#7B61FF]/20 shadow-2xl shadow-[#7B61FF]/10 z-[61] flex flex-col`
+        } transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[#7B61FF]/20 bg-[#05050A]">
+        <div
+          className="flex items-center justify-between p-4 border-b border-[#7B61FF]/20 bg-[#05050A] safe-area-pt"
+          onTouchStart={handleHeaderTouchStart}
+          onTouchEnd={handleHeaderTouchEnd}
+        >
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
@@ -443,6 +468,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             <div
               key={msg.id}
               className={`flex ${msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start'}`}
+              style={{ animation: 'page-enter 0.2s ease-out' }}
             >
               {msg.role === 'system' ? (
                 <div className="px-3 py-1.5 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/20 text-[10px] text-[#A7ACB8]">
@@ -458,7 +484,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                     </div>
                   )}
                   <div
-                    className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                    className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed overflow-x-auto ${
                       msg.role === 'user'
                         ? 'bg-[#7B61FF] text-white rounded-br-md'
                         : 'bg-[#05050A] text-[#F4F6FF] border border-[#7B61FF]/20 rounded-bl-md'
@@ -469,6 +495,9 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                     {msg.provider && !msg.isStreaming && (
                       <span className="block mt-1.5 text-[10px] text-[#A7ACB8]/60 flex items-center gap-1">
                         <Zap className="w-2.5 h-2.5" /> {providerLabels[msg.provider!] ?? msg.provider}
+                        {msg.model && formatModelName(msg.model) && (
+                          <span className="text-[#555]">· via {formatModelName(msg.model)}</span>
+                        )}
                       </span>
                     )}
                     {msg.actions?.map((action, i) => (
@@ -574,7 +603,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         )}
 
         {/* Input */}
-        <div className="p-4 border-t border-[#7B61FF]/20 bg-[#05050A] pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="p-4 border-t border-[#7B61FF]/20 bg-[#05050A] safe-area-pb">
           <div className="flex items-center gap-2">
             {!premiumSession && !agentOwner && (
               <button
@@ -605,7 +634,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             <Button
               onClick={() => sendMessage()}
               disabled={!input.trim() || isTyping}
-              className={`rounded-xl px-3 ${
+              className={`rounded-xl px-3 press-scale ${
                 premiumSession
                   ? 'bg-[#F59E0B] hover:bg-[#D97706]'
                   : 'bg-[#7B61FF] hover:bg-[#6B51EF]'

@@ -20,7 +20,7 @@ export function ProfileStep({ name, username, onNameChange, onUsernameChange }: 
       <p className="text-[#A7ACB8] text-sm">
         Let's start with the essentials. You can always change these later.
       </p>
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="text-sm text-[#A7ACB8] mb-2 block">Display Name *</label>
           <Input

@@ -17,6 +17,14 @@ import {
   type TelegramUpdate,
 } from '../services/telegram.js';
 import { handleIncomingMessage, sendChannelResponse } from '../services/message-router.js';
+import {
+  isVoiceEnabled,
+  downloadTelegramVoice,
+  transcribeVoice,
+  textToSpeech,
+  sendTelegramVoice,
+  voiceCreditCost,
+} from '../services/voice.js';
 import { db } from '../db/index.js';
 import { v4 as uuid } from 'uuid';
 
@@ -53,6 +61,12 @@ webhooksRouter.post('/telegram', async (req, res) => {
       return;
     }
 
+    // Handle voice messages
+    if (update.message?.voice) {
+      await handleVoiceMessage(update);
+      return;
+    }
+
     // Handle regular text messages
     const normalized = parseTelegramUpdate(update);
     if (normalized) {
@@ -62,6 +76,103 @@ webhooksRouter.post('/telegram', async (req, res) => {
     logger.error({ err, updateId: update.update_id }, 'Telegram webhook processing error');
   }
 });
+
+// ---- Telegram Voice Message Handler ----
+
+async function handleVoiceMessage(update: TelegramUpdate): Promise<void> {
+  const msg = update.message!;
+  const chatId = msg.chat.id;
+  const voice = msg.voice!;
+
+  // Check if voice is enabled
+  if (!isVoiceEnabled()) {
+    await sendTelegramMessage(chatId, 'Voice notes are not enabled yet. Please send a text message instead.');
+    return;
+  }
+
+  // Reject voice notes longer than 5 minutes (cost/abuse guard)
+  if (voice.duration > 300) {
+    await sendTelegramMessage(chatId, 'Voice note too long (max 5 minutes). Please send a shorter message.');
+    return;
+  }
+
+  // Check if user is linked
+  const link = db.prepare(
+    "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+  ).get(String(chatId)) as { user_id: string } | undefined;
+
+  if (!link) {
+    await sendTelegramMessage(chatId,
+      'Link your account first to use voice notes. Go to your GeekSpace dashboard → Connections → Telegram.');
+    return;
+  }
+
+  // Check credits (voice costs extra)
+  const sub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?')
+    .get(link.user_id) as { credits_remaining: number } | undefined;
+
+  if (sub && sub.credits_remaining < 10) {
+    await sendTelegramMessage(chatId, 'Not enough credits for voice processing. Voice notes require extra credits for transcription.');
+    return;
+  }
+
+  try {
+    // 1. Download voice file from Telegram
+    logger.info({ chatId, duration: voice.duration, fileId: voice.file_id }, 'Processing voice message');
+    const audioBuffer = await downloadTelegramVoice(voice.file_id);
+
+    // 2. Transcribe with Whisper
+    const transcribedText = await transcribeVoice(audioBuffer, voice.mime_type || 'audio/ogg');
+
+    if (!transcribedText || transcribedText.trim().length === 0) {
+      await sendTelegramMessage(chatId, "I couldn't understand that voice note. Could you try again or type your message?");
+      return;
+    }
+
+    logger.info({ chatId, duration: voice.duration, textLength: transcribedText.length }, 'Voice transcribed');
+
+    // 3. Route transcribed text through normal message handler (captures the reply)
+    // We need the reply text to convert to voice, so we intercept the flow
+    const normalized = {
+      channel: 'telegram' as const,
+      externalId: String(chatId),
+      text: transcribedText,
+      messageId: String(msg.message_id),
+      senderName: [msg.from.first_name, msg.from.last_name].filter(Boolean).join(' '),
+      timestamp: new Date(msg.date * 1000).toISOString(),
+    };
+
+    // Use handleIncomingMessage which sends the text reply automatically
+    await handleIncomingMessage(normalized);
+
+    // 4. Get the agent's reply from conversation log to generate voice
+    const lastReply = db.prepare(
+      "SELECT content FROM conversations WHERE user_id = ? AND role = 'assistant' ORDER BY created_at DESC LIMIT 1"
+    ).get(link.user_id) as { content: string } | undefined;
+
+    if (lastReply?.content) {
+      try {
+        // 5. Convert reply to speech and send as voice note
+        const speechBuffer = await textToSpeech(lastReply.content);
+        await sendTelegramVoice(chatId, speechBuffer, msg.message_id);
+
+        // 6. Deduct extra voice credits
+        const extraCredits = voiceCreditCost(voice.duration, lastReply.content.length);
+        db.prepare('UPDATE subscriptions SET credits_remaining = MAX(0, credits_remaining - ?) WHERE user_id = ?')
+          .run(extraCredits, link.user_id);
+
+        logger.info({ chatId, extraCredits, duration: voice.duration }, 'Voice reply sent');
+      } catch (ttsErr) {
+        // TTS failed — text reply was already sent, just log
+        logger.warn({ err: (ttsErr as Error).message }, 'TTS failed, text reply already sent');
+      }
+    }
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : 'Unknown error';
+    logger.error({ err: errMsg, chatId }, 'Voice message processing failed');
+    await sendTelegramMessage(chatId, "Sorry, I couldn't process that voice note. Please try again or send a text message.");
+  }
+}
 
 // ---- Telegram Bot Command Handler ----
 
@@ -188,10 +299,200 @@ async function handleTelegramCommand(
         `/link — Link your GeekSpace account\n` +
         `/unlink — Unlink your account\n` +
         `/credits — Check credit balance\n` +
+        `/model — View and switch AI models\n` +
         `/status — Connection status\n` +
+        `/tasks — View recent tasks\n` +
+        `/agents — List your agents\n` +
+        `/cancel — Cancel a queued task\n` +
+        `/remind <text> — Set a quick reminder\n` +
+        `/deploy — Deploy your portfolio\n` +
         `/help — Show this message\n\n` +
         `Or just type a message to chat with your AI agent!`
       );
+      break;
+    }
+
+    case '/tasks': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      const tasks = db.prepare(`
+        SELECT task_type, description, status, completed_at, created_at
+        FROM pico_tasks WHERE user_id = ? ORDER BY created_at DESC LIMIT 10
+      `).all(link.user_id) as Array<{ task_type: string; description: string; status: string; completed_at: string | null; created_at: string }>;
+
+      if (tasks.length === 0) {
+        await sendTelegramMessage(chatId, 'No tasks yet. Send a message like "remind me to check email at 5pm" to create one.');
+        return;
+      }
+
+      const statusEmoji: Record<string, string> = { completed: '✅', running: '⏳', queued: '🔵', failed: '❌', cancelled: '⛔' };
+      const lines = tasks.map((t, i) => {
+        const emoji = statusEmoji[t.status] || '⚪';
+        const desc = t.description.length > 50 ? t.description.slice(0, 50) + '...' : t.description;
+        return `${i + 1}. ${emoji} ${desc}`;
+      });
+      await sendTelegramMessage(chatId, `Recent tasks:\n\n${lines.join('\n')}`);
+      break;
+    }
+
+    case '/agents': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      const agents = db.prepare(
+        'SELECT slot, name, personality, status, tasks_completed, tasks_failed FROM pico_agents WHERE user_id = ? ORDER BY slot'
+      ).all(link.user_id) as Array<{ slot: number; name: string; personality: string; status: string; tasks_completed: number; tasks_failed: number }>;
+
+      if (agents.length === 0) {
+        await sendTelegramMessage(chatId, 'No agents deployed yet.');
+        return;
+      }
+
+      const personalityEmoji: Record<string, string> = { edith: '⚡', jarvis: '🎩', weebo: '🤖' };
+      const lines = agents.map(a => {
+        const emoji = personalityEmoji[a.personality] || '🤖';
+        return `${emoji} Slot ${a.slot}: ${a.name} (${a.personality}) — ${a.status}\n   ✅ ${a.tasks_completed} done, ❌ ${a.tasks_failed} failed`;
+      });
+      await sendTelegramMessage(chatId, `Your agents:\n\n${lines.join('\n\n')}`);
+      break;
+    }
+
+    case '/cancel': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      const queued = db.prepare(
+        "SELECT id, description FROM pico_tasks WHERE user_id = ? AND status = 'queued' ORDER BY created_at ASC LIMIT 1"
+      ).get(link.user_id) as { id: string; description: string } | undefined;
+
+      if (!queued) {
+        await sendTelegramMessage(chatId, 'No queued tasks to cancel.');
+        return;
+      }
+
+      db.prepare("UPDATE pico_tasks SET status = 'cancelled', completed_at = datetime('now') WHERE id = ?").run(queued.id);
+      await sendTelegramMessage(chatId, `Cancelled: ${queued.description.slice(0, 80)}`);
+      break;
+    }
+
+    case '/remind': {
+      if (!cmd.args.trim()) {
+        await sendTelegramMessage(chatId, 'Usage: /remind <text>\nExample: /remind check email in 30 minutes');
+        return;
+      }
+
+      // Treat as a regular message so it goes through task auto-detection
+      const normalized = parseTelegramUpdate(update);
+      if (normalized) {
+        // Override the text to prepend "remind me" if not already there
+        if (!normalized.text.toLowerCase().startsWith('remind')) {
+          normalized.text = `remind me ${cmd.args}`;
+        } else {
+          normalized.text = cmd.args;
+        }
+        await handleIncomingMessage(normalized);
+      }
+      break;
+    }
+
+    case '/deploy': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      // Deploy portfolio
+      db.prepare('UPDATE portfolios SET is_public = 1 WHERE user_id = ?').run(link.user_id);
+      const user = db.prepare('SELECT username FROM users WHERE id = ?').get(link.user_id) as { username: string } | undefined;
+      const url = user ? `https://ai.geekspace.space/${user.username}` : 'your dashboard';
+      await sendTelegramMessage(chatId, `Portfolio deployed! View it at ${url}`);
+      break;
+    }
+
+    case '/model': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+
+      if (!link) {
+        await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.');
+        return;
+      }
+
+      // Get available models
+      const models = db.prepare(`
+        SELECT id, display_name, summary, status FROM free_models
+        WHERE status IN ('active', 'new') ORDER BY curated DESC, context_length DESC
+      `).all() as Array<{ id: string; display_name: string; summary: string; status: string }>;
+
+      if (models.length === 0) {
+        await sendTelegramMessage(chatId, 'No free models available right now. Check back later.');
+        return;
+      }
+
+      // Get user's current preference
+      const agentCfg = db.prepare('SELECT preferred_free_model FROM agent_configs WHERE user_id = ?')
+        .get(link.user_id) as { preferred_free_model: string | null } | undefined;
+      const currentPref = agentCfg?.preferred_free_model || 'auto';
+
+      if (!cmd.args.trim()) {
+        // List all models
+        const lines = models.map((m, i) => {
+          const check = m.id === currentPref ? ' ✅' : '';
+          const badge = m.status === 'new' ? ' 🆕' : '';
+          return `${i + 1}. ${m.display_name}${badge}${check}\n   ${m.summary}`;
+        });
+
+        const autoCheck = currentPref === 'auto' ? ' ✅' : '';
+        await sendTelegramMessage(chatId,
+          `🤖 Available Free Models:\n\n` +
+          `0. Auto-select${autoCheck}\n   Let the system pick the best model\n\n` +
+          `${lines.join('\n\n')}\n\n` +
+          `Reply /model <number> to switch, or /model auto`
+        );
+        return;
+      }
+
+      // Handle /model auto
+      if (cmd.args.trim().toLowerCase() === 'auto') {
+        db.prepare("UPDATE agent_configs SET preferred_free_model = 'auto' WHERE user_id = ?").run(link.user_id);
+        await sendTelegramMessage(chatId, '✅ Switched to auto-select. The system will pick the best available model.');
+        return;
+      }
+
+      // Handle /model <number>
+      const num = parseInt(cmd.args.trim(), 10);
+      if (!isNaN(num) && num >= 1 && num <= models.length) {
+        const chosen = models[num - 1];
+        db.prepare('UPDATE agent_configs SET preferred_free_model = ? WHERE user_id = ?').run(chosen.id, link.user_id);
+        await sendTelegramMessage(chatId, `✅ Switched to ${chosen.display_name}.\n${chosen.summary}`);
+        return;
+      }
+
+      // Handle /model <partial name>
+      const search = cmd.args.trim().toLowerCase();
+      const match = models.find(m =>
+        m.display_name.toLowerCase().includes(search) ||
+        m.id.toLowerCase().includes(search)
+      );
+
+      if (match) {
+        db.prepare('UPDATE agent_configs SET preferred_free_model = ? WHERE user_id = ?').run(match.id, link.user_id);
+        await sendTelegramMessage(chatId, `✅ Switched to ${match.display_name}.\n${match.summary}`);
+      } else {
+        await sendTelegramMessage(chatId, `Model not found: "${cmd.args.trim()}"\nUse /model to see available models.`);
+      }
       break;
     }
 

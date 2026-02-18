@@ -76,7 +76,7 @@ export const config = {
   // PicoClaw (lightweight automation engine)
   picoClawUrl: optional('PICOCLAW_URL', 'http://localhost:8080'),
   picoClawEnabled: optional('PICOCLAW_ENABLED', 'false') === 'true',
-  picoClawTimeout: optionalInt('PICOCLAW_TIMEOUT_MS', 5000),
+  picoClawTimeout: optionalInt('PICOCLAW_TIMEOUT_MS', 15000),
 
   // Pico-Kimi Bridge (orchestration layer)
   bridgeEnabled: optional('BRIDGE_ENABLED', 'false') === 'true',
@@ -85,6 +85,9 @@ export const config = {
 
   // Redis (job queue)
   redisUrl: optional('REDIS_URL', 'redis://localhost:6379'),
+
+  // OpenAI (Whisper STT + TTS for voice notes)
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
 
   // Telegram
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',

@@ -194,7 +194,7 @@ export function PortfolioPage() {
               View Live
             </a>
           )}
-          <Button onClick={handleSave} disabled={isSaving} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+          <Button onClick={handleSave} disabled={isSaving} className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale">
             {isSaving ? (
               <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
             ) : (
@@ -216,26 +216,28 @@ export function PortfolioPage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20 p-1 flex-wrap">
-          <TabsTrigger value="profile" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
-            <User className="w-4 h-4 mr-2" />Profile
-          </TabsTrigger>
-          <TabsTrigger value="skills" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
-            <Code2 className="w-4 h-4 mr-2" />Skills
-          </TabsTrigger>
-          <TabsTrigger value="projects" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
-            <FolderGit2 className="w-4 h-4 mr-2" />Projects
-          </TabsTrigger>
-          <TabsTrigger value="milestones" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
-            <Award className="w-4 h-4 mr-2" />Milestones
-          </TabsTrigger>
-          <TabsTrigger value="social" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
-            <Share2 className="w-4 h-4 mr-2" />Social
-          </TabsTrigger>
-          <TabsTrigger value="ai" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
-            <Bot className="w-4 h-4 mr-2" />AI Edit
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
+          <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20 p-1 flex flex-nowrap w-max md:w-auto">
+            <TabsTrigger value="profile" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+              <User className="w-4 h-4 mr-2" />Profile
+            </TabsTrigger>
+            <TabsTrigger value="skills" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+              <Code2 className="w-4 h-4 mr-2" />Skills
+            </TabsTrigger>
+            <TabsTrigger value="projects" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+              <FolderGit2 className="w-4 h-4 mr-2" />Projects
+            </TabsTrigger>
+            <TabsTrigger value="milestones" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+              <Award className="w-4 h-4 mr-2" />Milestones
+            </TabsTrigger>
+            <TabsTrigger value="social" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+              <Share2 className="w-4 h-4 mr-2" />Social
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+              <Bot className="w-4 h-4 mr-2" />AI Edit
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* ── Profile Tab ─────────────────────────────────────── */}
         <TabsContent value="profile" className="space-y-6">
@@ -279,7 +281,7 @@ export function PortfolioPage() {
                     <button
                       key={l}
                       onClick={() => setLayout(l)}
-                      className={`flex-1 p-4 rounded-xl border-2 capitalize transition-all ${
+                      className={`flex-1 p-4 min-h-[44px] rounded-xl border-2 capitalize transition-all press-scale ${
                         layout === l
                           ? 'border-[#7B61FF] bg-[#7B61FF]/10 text-[#7B61FF]'
                           : 'border-[#7B61FF]/20 text-[#A7ACB8] hover:border-[#7B61FF]/40'
@@ -326,10 +328,10 @@ export function PortfolioPage() {
                     <button
                       key={skill}
                       onClick={() => removeSkill(skill)}
-                      className="group flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30 text-[#7B61FF] hover:bg-[#FF6161]/10 hover:border-[#FF6161]/30 hover:text-[#FF6161] transition-all"
+                      className="group flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30 text-[#7B61FF] hover:bg-[#FF6161]/10 hover:border-[#FF6161]/30 hover:text-[#FF6161] transition-all press-scale"
                     >
                       {skill}
-                      <X className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <X className="w-3 h-3 opacity-0 group-hover:opacity-100 md:opacity-0 max-md:opacity-60 transition-opacity" />
                     </button>
                   ))}
                 </div>
@@ -408,7 +410,7 @@ export function PortfolioPage() {
                           <Badge
                             key={tag}
                             variant="outline"
-                            className="border-[#7B61FF]/30 text-[#A7ACB8] cursor-pointer hover:border-[#FF6161]/30 hover:text-[#FF6161]"
+                            className="border-[#7B61FF]/30 text-[#A7ACB8] cursor-pointer hover:border-[#FF6161]/30 hover:text-[#FF6161] min-h-[36px] px-3 py-1 press-scale"
                             onClick={() => setEditingProject({ ...editingProject, tags: editingProject.tags!.filter((t) => t !== tag) })}
                           >
                             {tag} <X className="w-3 h-3 ml-1" />
@@ -436,9 +438,9 @@ export function PortfolioPage() {
               )}
 
               {projects.map((project, idx) => (
-                <div key={idx} className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/20 group hover:border-[#7B61FF]/40 transition-all">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
+                <div key={idx} className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/20 group hover:border-[#7B61FF]/40 transition-all press-scale w-full">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-[#F4F6FF]">{project.name}</h3>
                       {project.description && <p className="text-sm text-[#A7ACB8] mt-1">{project.description}</p>}
                       {project.url && <p className="text-xs text-[#7B61FF] mt-1 truncate">{project.url}</p>}
@@ -450,12 +452,12 @@ export function PortfolioPage() {
                         </div>
                       )}
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => { setEditingProject({ ...project }); setEditingProjectIdx(idx); }}
-                        className="text-[#7B61FF] hover:text-[#7B61FF]"
+                        className="text-[#7B61FF] hover:text-[#7B61FF] min-h-[44px] min-w-[44px] press-scale"
                       >
                         Edit
                       </Button>
@@ -463,7 +465,7 @@ export function PortfolioPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => deleteProject(idx)}
-                        className="text-[#FF6161] hover:text-[#FF6161]"
+                        className="text-[#FF6161] hover:text-[#FF6161] min-h-[44px] min-w-[44px] press-scale"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -546,24 +548,24 @@ export function PortfolioPage() {
               {/* Timeline-style list */}
               <div className="space-y-0">
                 {milestones.map((milestone, idx) => (
-                  <div key={idx} className="flex gap-4 group">
-                    <div className="flex flex-col items-center">
+                  <div key={idx} className="flex gap-3 md:gap-4 group">
+                    <div className="flex flex-col items-center shrink-0">
                       <div className="w-3 h-3 rounded-full bg-[#7B61FF] mt-1.5" />
                       {idx < milestones.length - 1 && <div className="w-0.5 flex-1 bg-[#7B61FF]/20" />}
                     </div>
-                    <div className="flex-1 pb-6">
-                      <div className="flex items-start justify-between">
-                        <div>
+                    <div className="flex-1 pb-6 min-w-0">
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-1">
+                        <div className="min-w-0">
                           <div className="text-xs text-[#7B61FF] font-mono mb-1">{milestone.date}</div>
                           <div className="font-medium text-[#F4F6FF]">{milestone.title}</div>
                           {milestone.description && <div className="text-sm text-[#A7ACB8] mt-1">{milestone.description}</div>}
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0 mt-2 md:mt-0">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => { setEditingMilestone({ ...milestone }); setEditingMilestoneIdx(idx); }}
-                            className="text-[#7B61FF] hover:text-[#7B61FF]"
+                            className="text-[#7B61FF] hover:text-[#7B61FF] min-h-[44px] min-w-[44px] press-scale"
                           >
                             Edit
                           </Button>
@@ -571,7 +573,7 @@ export function PortfolioPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteMilestone(idx)}
-                            className="text-[#FF6161] hover:text-[#FF6161]"
+                            className="text-[#FF6161] hover:text-[#FF6161] min-h-[44px] min-w-[44px] press-scale"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>

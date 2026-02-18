@@ -79,7 +79,7 @@ export function ActivitySection() {
         ))}
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6">
         <div className="grid lg:grid-cols-3 gap-12">
           {/* Left: Header & Stats */}
           <div 
@@ -88,7 +88,7 @@ export function ActivitySection() {
             }`}
           >
             <h2 
-              className="text-4xl md:text-5xl font-bold mb-4"
+              className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               Live <span className="text-gradient">Activity</span>

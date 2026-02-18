@@ -29,6 +29,8 @@ import type {
   PlanDefinition,
   DailyUsage,
   PremiumSession,
+  FreeModelsResponse,
+  ModelChangelogEntry,
 } from '@/types';
 
 // ----- Axios instance ----------------------------------------
@@ -360,13 +362,13 @@ export const publicAgentService = {
 export const picoService = {
   getAgents: () =>
     api.get<Array<{
-      id: string; user_id: string; slot: number; name: string;
+      id: string; user_id: string; slot: number; name: string; personality: string;
       status: string; tasks_completed: number; tasks_failed: number;
       created_at: string;
     }>>('/pico/agents'),
 
-  createAgent: (name: string) =>
-    api.post<{ id: string; slot: number; name: string }>('/pico/agents', { name }),
+  createAgent: (name: string, personality: string = 'weebo') =>
+    api.post<{ id: string; slot: number; name: string; personality: string }>('/pico/agents', { name, personality }),
 
   updateAgent: (id: string, data: { name?: string; status?: string }) =>
     api.patch(`/pico/agents/${id}`, data),
@@ -439,6 +441,13 @@ export const recipeService = {
 
   uninstall: (id: string) =>
     api.delete(`/recipes/${id}/uninstall`),
+};
+
+// ----- Free Models -------------------------------------------
+
+export const modelService = {
+  getFreeModels: () => api.get<FreeModelsResponse>('/models/free'),
+  getChangelog: () => api.get<{ entries: ModelChangelogEntry[] }>('/models/changelog'),
 };
 
 export default api;

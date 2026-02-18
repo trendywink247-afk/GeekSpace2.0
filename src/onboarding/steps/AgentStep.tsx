@@ -44,7 +44,7 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
       {/* Personality picker */}
       <div>
         <label className="text-sm text-[#A7ACB8] mb-3 block">Choose your agent's personality</label>
-        <div className="grid md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {personalities.map((p) => (
             <button
               key={p.id}
@@ -82,7 +82,7 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
       {/* Agent mode picker */}
       <div>
         <label className="text-sm text-[#A7ACB8] mb-3 block">Choose your agent's mode</label>
-        <div className="grid md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {agentModes.map((mode) => (
             <TiltCard key={mode.id}>
               <button

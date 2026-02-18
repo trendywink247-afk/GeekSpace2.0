@@ -18,6 +18,7 @@ import { config } from '../config.js';
 import { edithChat } from './edith.js';
 import { computeCreditCost, deductSubscriptionCredits } from './llm.js';
 import { refreshModelsIfStale } from './openrouter-models.js';
+import { eventBus } from './event-bus.js';
 
 // ---- Types ----
 
@@ -38,6 +39,7 @@ interface PicoAgent {
   user_id: string;
   slot: number;
   name: string;
+  personality: string;
   status: string;
   tasks_completed: number;
   tasks_failed: number;
@@ -109,6 +111,11 @@ export function initPicoFleetTables(): void {
     CREATE INDEX IF NOT EXISTS idx_pico_task_logs_task ON pico_task_logs(task_id);
   `);
 
+  // Migration: add personality column to pico_agents
+  try {
+    db.exec("ALTER TABLE pico_agents ADD COLUMN personality TEXT NOT NULL DEFAULT 'weebo'");
+  } catch { /* column already exists */ }
+
   logger.info('Pico Fleet tables initialized');
 }
 
@@ -144,7 +151,7 @@ export function getAgentBySlot(userId: string, slot: number): PicoAgent | undefi
     .get(userId, slot) as PicoAgent | undefined;
 }
 
-export function createAgent(userId: string, name: string): PicoAgent {
+export function createAgent(userId: string, name: string, personality = 'weebo'): PicoAgent {
   const existing = getUserAgents(userId);
   if (existing.length >= 3) {
     throw new Error('Maximum 3 Pico agents allowed');
@@ -157,8 +164,8 @@ export function createAgent(userId: string, name: string): PicoAgent {
   }
 
   const id = uuid();
-  db.prepare('INSERT INTO pico_agents (id, user_id, slot, name) VALUES (?, ?, ?, ?)')
-    .run(id, userId, nextSlot, name);
+  db.prepare('INSERT INTO pico_agents (id, user_id, slot, name, personality) VALUES (?, ?, ?, ?, ?)')
+    .run(id, userId, nextSlot, name, personality);
 
   return db.prepare('SELECT * FROM pico_agents WHERE id = ?').get(id) as PicoAgent;
 }
@@ -209,40 +216,207 @@ function estimateComplexity(request: string): 'simple' | 'medium' | 'complex' {
 }
 
 // ---- Simple Task Parser (no LLM) ----
+// Detects multiple intents in a single request and creates separate tasks.
+// Splits on "and also", "and then", "also", "then" when multiple types match.
 
 function parseSimpleTask(request: string): PlannedTask[] {
   const lower = request.toLowerCase();
-  if (lower.includes('remind') || lower.includes('reminder')) {
-    return [{
-      task_type: 'create_reminder',
-      description: request,
-      config: { reminder_text: request },
-      agent_slot: 1,
-    }];
+
+  // Try to split multi-intent requests on common conjunctions
+  const splitPatterns = /\b(?:and also|and then|,\s*(?:also|then)|;\s*(?:also|then)?)\b/i;
+  const segments = request.split(splitPatterns).map(s => s.trim()).filter(Boolean);
+
+  // If we have segments, parse each independently
+  if (segments.length > 1) {
+    const tasks: PlannedTask[] = [];
+    for (const seg of segments) {
+      tasks.push(...parseSingleIntent(seg));
+    }
+    // Deduplicate: if all tasks are the same type and same content, collapse
+    if (tasks.length > 1) return tasks;
   }
-  if (lower.includes('send') && (lower.includes('message') || lower.includes('telegram'))) {
-    return [{
-      task_type: 'telegram_message',
-      description: request,
-      config: { message: request },
-      agent_slot: 1,
-    }];
+
+  // Check if single request has multiple intent keywords
+  const hasReminder = /\bremind(?:er|me)?\b/i.test(lower);
+  const hasTelegram = /\b(?:send|message|telegram|notify)\b/i.test(lower) && /\b(?:telegram|message|send)\b/i.test(lower);
+  const hasDeploy = /\bdeploy\b/i.test(lower) || /\bpublish\s*portfolio\b/i.test(lower);
+
+  const intentCount = [hasReminder, hasTelegram, hasDeploy].filter(Boolean).length;
+
+  // Multiple distinct intents detected — split by intent type
+  if (intentCount >= 2) {
+    const tasks: PlannedTask[] = [];
+    if (hasReminder) {
+      // Extract reminder part
+      const reminderText = extractIntentText(request, /\bremind(?:er|me)?\b/i);
+      tasks.push({ task_type: 'create_reminder', description: reminderText, config: { reminder_text: reminderText }, agent_slot: 1 });
+    }
+    if (hasTelegram) {
+      const msgText = extractIntentText(request, /\b(?:send|telegram|message|notify)\b/i);
+      tasks.push({ task_type: 'telegram_message', description: msgText, config: { message: msgText }, agent_slot: 1 });
+    }
+    if (hasDeploy) {
+      tasks.push({ task_type: 'portfolio_deploy', description: 'Deploy portfolio', config: {}, agent_slot: 1 });
+    }
+    return tasks;
   }
-  if (lower.includes('deploy') || lower.includes('publish portfolio')) {
-    return [{
-      task_type: 'portfolio_deploy',
-      description: 'Deploy portfolio',
-      config: {},
-      agent_slot: 1,
-    }];
+
+  return parseSingleIntent(request);
+}
+
+function parseSingleIntent(request: string): PlannedTask[] {
+  const lower = request.toLowerCase();
+  if (/\bremind(?:er|me)?\b/i.test(lower)) {
+    return [{ task_type: 'create_reminder', description: request, config: { reminder_text: request }, agent_slot: 1 }];
   }
-  // Fallback: generic reminder for unrecognised simple requests
-  return [{
-    task_type: 'create_reminder',
-    description: request,
-    config: { reminder_text: request },
-    agent_slot: 1,
-  }];
+  if (/\b(?:send|message)\b/i.test(lower) && /\b(?:telegram|message)\b/i.test(lower)) {
+    return [{ task_type: 'telegram_message', description: request, config: { message: request }, agent_slot: 1 }];
+  }
+  if (/\bdeploy\b/i.test(lower) || /\bpublish\s*portfolio\b/i.test(lower)) {
+    return [{ task_type: 'portfolio_deploy', description: 'Deploy portfolio', config: {}, agent_slot: 1 }];
+  }
+  // Fallback: generic reminder
+  return [{ task_type: 'create_reminder', description: request, config: { reminder_text: request }, agent_slot: 1 }];
+}
+
+/** Extract the clause most relevant to a given intent keyword */
+function extractIntentText(request: string, pattern: RegExp): string {
+  // Try splitting on conjunctions to find the relevant clause
+  const clauses = request.split(/\b(?:and also|and then|,\s*and|;\s*)\b/i).map(s => s.trim());
+  for (const clause of clauses) {
+    if (pattern.test(clause.toLowerCase())) return clause;
+  }
+  return request; // fallback to full request
+}
+
+// ---- Reminder Time Parsing ----
+
+/**
+ * Parse natural language time expressions from reminder text.
+ * Returns ISO datetime string or null if no time found.
+ * Supports: "in X minutes/hours", "at Xpm/am", "tomorrow at X", "tonight", "in half an hour"
+ */
+/** Convert Date to SQLite-compatible format: "YYYY-MM-DD HH:MM:SS" */
+function toSqliteDatetime(d: Date): string {
+  return d.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+}
+
+export function parseReminderTime(text: string): string | null {
+  const lower = text.toLowerCase();
+  const now = new Date();
+
+  // "in X minute(s)" / "in X min"
+  let match = lower.match(/\bin\s+(\d+)\s*(?:min(?:ute)?s?)\b/);
+  if (match) {
+    const mins = parseInt(match[1], 10);
+    return toSqliteDatetime(new Date(now.getTime() + mins * 60_000));
+  }
+
+  // "in X hour(s)"
+  match = lower.match(/\bin\s+(\d+)\s*(?:hours?|hrs?)\b/);
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    return toSqliteDatetime(new Date(now.getTime() + hours * 3600_000));
+  }
+
+  // "in half an hour" / "in 30 minutes"
+  if (/\bin\s+half\s+an?\s+hour\b/.test(lower)) {
+    return toSqliteDatetime(new Date(now.getTime() + 30 * 60_000));
+  }
+
+  // "in X seconds" (for testing)
+  match = lower.match(/\bin\s+(\d+)\s*(?:seconds?|secs?)\b/);
+  if (match) {
+    const secs = parseInt(match[1], 10);
+    return toSqliteDatetime(new Date(now.getTime() + secs * 1000));
+  }
+
+  // "at X:XX pm/am" or "at Xpm/am"
+  match = lower.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    const minute = match[2] ? parseInt(match[2], 10) : 0;
+    const ampm = match[3];
+    if (ampm === 'pm' && hour < 12) hour += 12;
+    if (ampm === 'am' && hour === 12) hour = 0;
+    const target = new Date(now);
+    target.setHours(hour, minute, 0, 0);
+    if (target.getTime() <= now.getTime()) {
+      target.setDate(target.getDate() + 1);
+    }
+    if (/\btomorrow\b/.test(lower)) {
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const targetStart = new Date(target);
+      targetStart.setHours(0, 0, 0, 0);
+      if (targetStart.getTime() === todayStart.getTime()) {
+        target.setDate(target.getDate() + 1);
+      }
+    }
+    return toSqliteDatetime(target);
+  }
+
+  // "at X" (24-hour implied, e.g., "at 5pm" without am/pm → assume PM for 1-7)
+  match = lower.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\b(?!\s*(?:am|pm))/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    const minute = match[2] ? parseInt(match[2], 10) : 0;
+    if (hour >= 1 && hour <= 7) hour += 12;
+    const target = new Date(now);
+    target.setHours(hour, minute, 0, 0);
+    if (target.getTime() <= now.getTime()) {
+      target.setDate(target.getDate() + 1);
+    }
+    if (/\btomorrow\b/.test(lower)) {
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const targetStart = new Date(target);
+      targetStart.setHours(0, 0, 0, 0);
+      if (targetStart.getTime() === todayStart.getTime()) {
+        target.setDate(target.getDate() + 1);
+      }
+    }
+    return toSqliteDatetime(target);
+  }
+
+  // "tomorrow morning" (9am) / "tomorrow evening" (6pm) / "tomorrow" (9am)
+  if (/\btomorrow\b/.test(lower)) {
+    const target = new Date(now);
+    target.setDate(target.getDate() + 1);
+    if (/\bevening\b/.test(lower)) {
+      target.setHours(18, 0, 0, 0);
+    } else if (/\bafternoon\b/.test(lower)) {
+      target.setHours(14, 0, 0, 0);
+    } else if (/\bnight\b/.test(lower)) {
+      target.setHours(21, 0, 0, 0);
+    } else {
+      target.setHours(9, 0, 0, 0);
+    }
+    return toSqliteDatetime(target);
+  }
+
+  // "tonight" (9pm)
+  if (/\btonight\b/.test(lower)) {
+    const target = new Date(now);
+    target.setHours(21, 0, 0, 0);
+    if (target.getTime() <= now.getTime()) {
+      target.setDate(target.getDate() + 1);
+    }
+    return toSqliteDatetime(target);
+  }
+
+  // "after work" / "end of day" (6pm)
+  if (/\b(?:after work|end of (?:the )?day|eod)\b/.test(lower)) {
+    const target = new Date(now);
+    target.setHours(18, 0, 0, 0);
+    if (target.getTime() <= now.getTime()) {
+      target.setDate(target.getDate() + 1);
+    }
+    return toSqliteDatetime(target);
+  }
+
+  // No time expression found → default to 1 hour from now
+  return toSqliteDatetime(new Date(now.getTime() + 3600_000));
 }
 
 // ---- Kimi Task Planner ----
@@ -362,6 +536,9 @@ export function queueTasks(userId: string, tasks: PlannedTask[], plannedBy: stri
     taskIds.push(id);
   }
 
+  // Wake the worker so tasks execute immediately (not 5 min later)
+  if (taskIds.length > 0) wakeWorker();
+
   return taskIds;
 }
 
@@ -455,6 +632,7 @@ async function executeTask(task: PicoTask): Promise<void> {
     .run(now, task.id);
   db.prepare('INSERT INTO pico_task_logs (id, task_id, agent_id, event, detail) VALUES (?, ?, ?, ?, ?)')
     .run(uuid(), task.id, task.agent_id, 'started', `Executing ${task.task_type}`);
+  eventBus.emit('pico:task', { event: 'started', taskId: task.id, taskType: task.task_type, userId: task.user_id });
 
   let output = '';
   try {
@@ -464,9 +642,16 @@ async function executeTask(task: PicoTask): Promise<void> {
       case 'create_reminder': {
         const text = String(taskConfig.reminder_text || task.description);
         const reminderId = uuid();
-        db.prepare('INSERT INTO reminders (id, user_id, text, channel, category, created_by, pico_task_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
-          .run(reminderId, task.user_id, text, 'push', 'general', 'pico-fleet', task.id);
-        output = `Reminder created: ${text}`;
+        const dueAt = parseReminderTime(text);
+        // Use telegram channel if user has Telegram linked, otherwise push
+        const hasChannel = db.prepare(
+          "SELECT 1 FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+        ).get(task.user_id);
+        const channel = hasChannel ? 'telegram' : 'push';
+        db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, created_by, pico_task_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+          .run(reminderId, task.user_id, text, dueAt, channel, 'general', 'pico-fleet', task.id);
+        const timeNote = dueAt ? ` (due ${new Date(dueAt).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })})` : '';
+        output = `Reminder created: ${text}${timeNote}`;
         break;
       }
 
@@ -545,6 +730,7 @@ async function executeTask(task: PicoTask): Promise<void> {
     db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Pico task completed', ?, 'zap')`)
       .run(uuid(), task.user_id, `${task.task_type}: ${output.slice(0, 100)}`);
 
+    eventBus.emit('pico:task', { event: 'completed', taskId: task.id, taskType: task.task_type, userId: task.user_id, result: output.slice(0, 200) });
     logger.info({ taskId: task.id, taskType: task.task_type }, 'Pico task completed');
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -557,6 +743,7 @@ async function executeTask(task: PicoTask): Promise<void> {
     db.prepare('INSERT INTO pico_task_logs (id, task_id, agent_id, event, detail) VALUES (?, ?, ?, ?, ?)')
       .run(uuid(), task.id, task.agent_id, 'failed', errorMsg);
 
+    eventBus.emit('pico:task', { event: 'failed', taskId: task.id, taskType: task.task_type, userId: task.user_id, error: errorMsg.slice(0, 200) });
     logger.warn({ taskId: task.id, taskType: task.task_type, error: errorMsg }, 'Pico task failed');
   }
 }
@@ -616,35 +803,49 @@ async function checkAndRunRecipes(): Promise<void> {
 }
 
 let workerRunning = false;
+let idleStreak = 0;
+let nextTickTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Wake the worker immediately — call after queueing tasks */
+export function wakeWorker(): void {
+  if (!workerRunning) return;
+  idleStreak = 0;
+  if (nextTickTimer) {
+    clearTimeout(nextTickTimer);
+    nextTickTimer = null;
+  }
+  // Schedule immediate tick (1ms to avoid blocking caller)
+  nextTickTimer = setTimeout(tick, 1);
+  logger.debug('Pico worker woken — processing next tick immediately');
+}
+
+async function tick() {
+  nextTickTimer = null;
+  try {
+    refreshModelsIfStale().catch(() => {});
+    await checkDailySummarization();
+    await checkAndRunRecipes();
+    const worked = await processNextTask();
+    if (worked) {
+      idleStreak = 0;
+    } else {
+      idleStreak++;
+    }
+  } catch (err) {
+    logger.error({ err }, 'Pico worker tick error');
+  }
+
+  const IDLE_THRESHOLD = 10;
+  const interval = idleStreak >= IDLE_THRESHOLD
+    ? config.picoIdleIntervalMs   // 5 min when idle
+    : config.picoWorkerIntervalMs; // 10s normally
+
+  nextTickTimer = setTimeout(tick, interval);
+}
 
 export function startPicoWorker(): void {
   if (workerRunning) return;
   workerRunning = true;
-
-  let idleStreak = 0;           // consecutive ticks with no work
-  const IDLE_THRESHOLD = 10;    // after 10 idle ticks → slow mode
-
-  async function tick() {
-    try {
-      refreshModelsIfStale().catch(() => {});
-      await checkDailySummarization();
-      await checkAndRunRecipes();
-      const worked = await processNextTask();
-      if (worked) {
-        idleStreak = 0;
-      } else {
-        idleStreak++;
-      }
-    } catch (err) {
-      logger.error({ err }, 'Pico worker tick error');
-    }
-
-    const interval = idleStreak >= IDLE_THRESHOLD
-      ? config.picoIdleIntervalMs   // 5 min when idle
-      : config.picoWorkerIntervalMs; // 10s normally
-
-    setTimeout(tick, interval);
-  }
 
   tick();
   logger.info({ normal: config.picoWorkerIntervalMs, idle: config.picoIdleIntervalMs }, 'Pico worker started (adaptive)');

@@ -291,3 +291,88 @@ interface ConversationEntry {
   tags: string;
   created_at: string;
 }
+
+// ---- 3-Hour Memory Sync ----
+
+let memorySyncInterval: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Sync memories for all users active in the last 3 hours.
+ * Re-runs AI extraction on recent conversations that haven't been
+ * processed yet, and stores tasks/connections as memory entries.
+ */
+async function syncMemoriesForActiveUsers(): Promise<void> {
+  try {
+    // Find users with conversation activity in the last 3 hours
+    const activeUsers = db.prepare(`
+      SELECT DISTINCT user_id FROM conversation_log
+      WHERE created_at >= datetime('now', '-3 hours')
+    `).all() as { user_id: string }[];
+
+    if (activeUsers.length === 0) return;
+
+    logger.info({ count: activeUsers.length }, 'Memory sync: processing active users');
+
+    for (const { user_id: userId } of activeUsers) {
+      try {
+        // 1. Store completed tasks as memories
+        const recentTasks = db.prepare(`
+          SELECT task_type, description, result FROM pico_tasks
+          WHERE user_id = ? AND status = 'completed'
+            AND completed_at >= datetime('now', '-3 hours')
+        `).all(userId) as { task_type: string; description: string; result: string }[];
+
+        for (const task of recentTasks) {
+          upsertMemory(userId, 'pattern', `task_${task.task_type}_${Date.now()}`,
+            `Completed: ${task.description}${task.result ? ` → ${task.result.slice(0, 100)}` : ''}`,
+            0.7, 'memory-sync');
+        }
+
+        // 2. Store connected services as memories
+        const connections = db.prepare(`
+          SELECT channel, external_username FROM channel_links
+          WHERE user_id = ? AND is_verified = 1
+        `).all(userId) as { channel: string; external_username: string }[];
+
+        for (const conn of connections) {
+          upsertMemory(userId, 'fact', `connected_${conn.channel}`,
+            `Connected via ${conn.channel}${conn.external_username ? ` as @${conn.external_username}` : ''}`,
+            0.9, 'memory-sync');
+        }
+
+        // 3. Run AI extraction on recent conversation pairs
+        const recentConvos = db.prepare(`
+          SELECT role, content FROM conversation_log
+          WHERE user_id = ? AND created_at >= datetime('now', '-3 hours')
+          ORDER BY created_at ASC LIMIT 20
+        `).all(userId) as { role: string; content: string }[];
+
+        // Process conversation pairs (user + assistant)
+        for (let i = 0; i < recentConvos.length - 1; i++) {
+          if (recentConvos[i].role === 'user' && recentConvos[i + 1]?.role === 'assistant') {
+            await extractMemoriesWithAI(userId, recentConvos[i].content, recentConvos[i + 1].content);
+            i++; // skip the assistant message
+          }
+        }
+      } catch (err) {
+        logger.debug({ userId, error: (err as Error).message }, 'Memory sync failed for user (non-fatal)');
+      }
+    }
+
+    logger.info({ count: activeUsers.length }, 'Memory sync complete');
+  } catch (err) {
+    logger.error({ err: (err as Error).message }, 'Memory sync tick failed');
+  }
+}
+
+export function startMemorySyncScheduler(): void {
+  if (memorySyncInterval) return;
+
+  // Run every 3 hours (10800000 ms)
+  memorySyncInterval = setInterval(syncMemoriesForActiveUsers, 3 * 60 * 60_000);
+
+  // Also run once 5 minutes after startup to catch any recent activity
+  setTimeout(syncMemoriesForActiveUsers, 5 * 60_000);
+
+  logger.info('Memory sync scheduler started (3h interval)');
+}

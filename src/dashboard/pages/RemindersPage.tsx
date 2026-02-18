@@ -109,14 +109,14 @@ export function RemindersPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-2xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Reminders
           </h1>
-          <p className="text-[#A7ACB8]">
+          <p className="text-sm md:text-base text-[#A7ACB8]">
             <span className="text-[#7B61FF] font-medium">{activeReminders.length}</span> active,{' '}
             <span className="text-[#61FF7B]">{completedReminders.length}</span> completed
           </p>
@@ -124,36 +124,36 @@ export function RemindersPage() {
         <div className="flex items-center gap-3">
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'calendar')}>
             <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20">
-              <TabsTrigger value="list" className="data-[state=active]:bg-[#7B61FF]">
+              <TabsTrigger value="list" className="data-[state=active]:bg-[#7B61FF] min-h-[44px] min-w-[44px]">
                 <List className="w-4 h-4" />
               </TabsTrigger>
-              <TabsTrigger value="calendar" className="data-[state=active]:bg-[#7B61FF]">
+              <TabsTrigger value="calendar" className="data-[state=active]:bg-[#7B61FF] min-h-[44px] min-w-[44px]">
                 <LayoutGrid className="w-4 h-4" />
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button onClick={() => setIsAddDialogOpen(true)} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+          <Button onClick={() => setIsAddDialogOpen(true)} className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale min-h-[44px]">
             <Plus className="w-4 h-4 mr-2" />New
           </Button>
         </div>
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
           <Input
             placeholder="Search reminders..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF]"
+            className="pl-10 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF] min-h-[44px]"
           />
         </div>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20">
-            <TabsTrigger value="all" className="data-[state=active]:bg-[#7B61FF]">All</TabsTrigger>
-            <TabsTrigger value="active" className="data-[state=active]:bg-[#7B61FF]">Active</TabsTrigger>
-            <TabsTrigger value="completed" className="data-[state=active]:bg-[#7B61FF]">Done</TabsTrigger>
+          <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20 overflow-x-auto flex-nowrap w-full sm:w-auto">
+            <TabsTrigger value="all" className="data-[state=active]:bg-[#7B61FF] min-h-[40px]">All</TabsTrigger>
+            <TabsTrigger value="active" className="data-[state=active]:bg-[#7B61FF] min-h-[40px]">Active</TabsTrigger>
+            <TabsTrigger value="completed" className="data-[state=active]:bg-[#7B61FF] min-h-[40px]">Done</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -167,13 +167,13 @@ export function RemindersPage() {
               return (
                 <Card
                   key={reminder.id}
-                  className={`bg-[#0B0B10] border-[#7B61FF]/20 transition-all duration-300 hover:border-[#7B61FF]/40 ${reminder.completed ? 'opacity-60' : ''}`}
+                  className={`bg-[#0B0B10] border-[#7B61FF]/20 transition-all duration-300 hover:border-[#7B61FF]/40 press-scale ${reminder.completed ? 'opacity-60' : ''}`}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex items-start gap-3 md:gap-4">
                       <button
                         onClick={() => handleComplete(reminder.id)}
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 transition-colors ${
+                        className={`w-7 h-7 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 transition-colors press-scale ${
                           reminder.completed ? 'bg-[#61FF7B] border-[#61FF7B]' : 'border-[#7B61FF]/40 hover:border-[#7B61FF]'
                         }`}
                       >
@@ -223,7 +223,7 @@ export function RemindersPage() {
                         </div>
                         <button
                           onClick={() => handleDelete(reminder.id)}
-                          className="p-2 rounded-lg hover:bg-[#FF6161]/10 text-[#A7ACB8] hover:text-[#FF6161] transition-colors"
+                          className="p-2 rounded-lg hover:bg-[#FF6161]/10 text-[#A7ACB8] hover:text-[#FF6161] transition-colors press-scale min-h-[44px] min-w-[44px] flex items-center justify-center"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -262,8 +262,8 @@ export function RemindersPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-1">
+          <CardContent className="overflow-x-auto">
+            <div className="grid grid-cols-7 gap-1 min-w-[320px]">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
                 <div key={day} className="text-center text-sm text-[#A7ACB8] py-2">
                   <span className="hidden md:inline">{day}</span>
@@ -313,13 +313,13 @@ export function RemindersPage() {
 
       {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="bg-[#0B0B10] border border-[#7B61FF]/30 text-[#F4F6FF] max-w-md">
+        <DialogContent className="bg-[#0B0B10] border border-[#7B61FF]/30 text-[#F4F6FF] max-w-md mx-2 md:mx-auto p-4 md:p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <Bell className="w-5 h-5 text-[#7B61FF]" />New Reminder
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-4">
+          <div className="space-y-4 pt-3 md:pt-4">
             <div>
               <label className="text-sm text-[#A7ACB8] mb-2 block">What to remind?</label>
               <Input
@@ -373,7 +373,7 @@ export function RemindersPage() {
                   <button
                     key={channel}
                     onClick={() => setNewReminder({ ...newReminder, channel })}
-                    className={`flex-1 p-2 rounded-lg border capitalize text-sm transition-all ${
+                    className={`flex-1 p-2 rounded-lg border capitalize text-sm transition-all press-scale min-h-[44px] ${
                       newReminder.channel === channel
                         ? 'border-[#7B61FF] bg-[#7B61FF]/20 text-[#7B61FF]'
                         : 'border-[#7B61FF]/20 bg-[#05050A] text-[#A7ACB8]'
@@ -385,13 +385,13 @@ export function RemindersPage() {
               </div>
             </div>
             <div className="flex gap-3 pt-2">
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="flex-1 border-[#7B61FF]/30">
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="flex-1 border-[#7B61FF]/30 min-h-[44px] press-scale">
                 Cancel
               </Button>
               <Button
                 onClick={handleAdd}
                 disabled={!newReminder.text || !newReminder.datetime}
-                className="flex-1 bg-[#7B61FF] hover:bg-[#6B51EF]"
+                className="flex-1 bg-[#7B61FF] hover:bg-[#6B51EF] min-h-[44px] press-scale"
               >
                 Add Reminder
               </Button>

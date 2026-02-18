@@ -219,7 +219,7 @@ export function MemoryManagerPage() {
   // ---- Render ----
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto relative">
+    <div className="space-y-4 md:space-y-6 max-w-6xl mx-auto relative px-1 md:px-0">
       {/* Inline toast */}
       {toast && (
         <div
@@ -234,19 +234,20 @@ export function MemoryManagerPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#F4F6FF]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-xl md:text-2xl font-bold text-[#F4F6FF]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Memory Manager
           </h1>
-          <p className="text-sm text-[#A7ACB8] mt-1">Browse, search, and manage your agent's memories</p>
+          <p className="text-xs md:text-sm text-[#A7ACB8] mt-1">Browse, search, and manage your agent's memories</p>
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#7B61FF] hover:bg-[#6B51EF] text-white text-sm font-medium transition-colors min-h-[44px]"
+          className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-xl bg-[#7B61FF] hover:bg-[#6B51EF] text-white text-sm font-medium transition-colors min-h-[44px] press-scale shrink-0"
         >
           <Plus className="w-4 h-4" />
-          Add Memory
+          <span className="hidden sm:inline">Add Memory</span>
+          <span className="sm:hidden">Add</span>
         </button>
       </div>
 
@@ -290,24 +291,36 @@ export function MemoryManagerPage() {
         {/* ---- Memories Tab ---- */}
         <TabsContent value="memories" className="space-y-4">
           {/* Filter bar */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
-              <Input
-                placeholder="Search memories..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="pl-10 bg-[#0B0B10] border-[#7B61FF]/20 text-[#F4F6FF] placeholder:text-[#A7ACB8]/50"
-              />
+          <div className="sticky top-0 z-10 bg-[#05050A] py-2 -mx-1 px-1 md:mx-0 md:px-0 space-y-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
+                <Input
+                  placeholder="Search memories..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-10 bg-[#0B0B10] border-[#7B61FF]/20 text-[#F4F6FF] placeholder:text-[#A7ACB8]/50 min-h-[44px]"
+                />
+              </div>
+
+              <select
+                value={sort}
+                onChange={e => setSort(e.target.value as SortKey)}
+                className="px-3 py-1.5 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 text-[#F4F6FF] text-xs min-h-[44px]"
+              >
+                {SORTS.map(s => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-[#A7ACB8] hidden sm:block" />
+            <div className="flex items-center gap-2 overflow-x-auto flex-nowrap pb-1 -mb-1 scrollbar-none">
+              <Filter className="w-4 h-4 text-[#A7ACB8] hidden sm:block shrink-0" />
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setCategory(cat)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap press-scale shrink-0 ${
                     category === cat
                       ? 'bg-[#7B61FF] text-white'
                       : 'bg-transparent text-[#A7ACB8] hover:text-[#F4F6FF]'
@@ -317,16 +330,6 @@ export function MemoryManagerPage() {
                 </button>
               ))}
             </div>
-
-            <select
-              value={sort}
-              onChange={e => setSort(e.target.value as SortKey)}
-              className="px-3 py-1.5 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 text-[#F4F6FF] text-xs"
-            >
-              {SORTS.map(s => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
           </div>
 
           {/* Memory list */}
@@ -371,12 +374,12 @@ export function MemoryManagerPage() {
           ) : (
             <div className="space-y-3">
               {sorted.map(mem => (
-                <Card key={mem.id} className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-colors group">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
+                <Card key={mem.id} className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-colors group press-scale">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex items-start justify-between gap-3 md:gap-4">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="text-sm font-semibold text-[#F4F6FF]">{mem.key}</span>
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <span className="text-sm font-semibold text-[#F4F6FF] break-all">{mem.key}</span>
                           <Badge
                             className="text-[10px] px-1.5 py-0 border-0"
                             style={{ background: `${categoryColor(mem.category)}20`, color: categoryColor(mem.category) }}
@@ -412,17 +415,17 @@ export function MemoryManagerPage() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => openEdit(mem)}
-                          className="p-2 rounded-lg hover:bg-[#7B61FF]/10 text-[#A7ACB8] hover:text-[#7B61FF] transition-colors"
+                          className="p-2 rounded-lg hover:bg-[#7B61FF]/10 text-[#A7ACB8] hover:text-[#7B61FF] transition-colors press-scale min-h-[44px] min-w-[44px] flex items-center justify-center"
                           title="Edit"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(mem.id)}
-                          className="p-2 rounded-lg hover:bg-red-500/10 text-[#A7ACB8] hover:text-red-400 transition-colors"
+                          className="p-2 rounded-lg hover:bg-red-500/10 text-[#A7ACB8] hover:text-red-400 transition-colors press-scale min-h-[44px] min-w-[44px] flex items-center justify-center"
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -467,7 +470,7 @@ export function MemoryManagerPage() {
               {filteredConvs.map(conv => (
                 <div
                   key={conv.id}
-                  className={`flex gap-3 p-3 rounded-xl ${
+                  className={`flex gap-2.5 md:gap-3 p-3 md:p-3.5 rounded-xl ${
                     conv.role === 'user'
                       ? 'bg-[#0B0B10] border border-[#7B61FF]/10'
                       : 'bg-[#7B61FF]/5 border border-[#7B61FF]/20'
@@ -511,7 +514,7 @@ export function MemoryManagerPage() {
 
       {/* ---- Add/Edit Memory Dialog ---- */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-[#0B0B10] border-[#7B61FF]/20 text-[#F4F6FF] sm:max-w-md">
+        <DialogContent className="bg-[#0B0B10] border-[#7B61FF]/20 text-[#F4F6FF] sm:max-w-md mx-2 md:mx-auto p-4 md:p-6">
           <DialogHeader>
             <DialogTitle>{editingMemory ? 'Edit Memory' : 'Add Memory'}</DialogTitle>
           </DialogHeader>
@@ -525,7 +528,7 @@ export function MemoryManagerPage() {
                   <button
                     key={cat}
                     onClick={() => setFormCategory(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors press-scale min-h-[40px] ${
                       formCategory === cat
                         ? 'border border-[#7B61FF]/30'
                         : 'text-[#A7ACB8] hover:bg-[#7B61FF]/10 border border-transparent'
@@ -577,17 +580,17 @@ export function MemoryManagerPage() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <button
               onClick={() => setDialogOpen(false)}
-              className="px-4 py-2 rounded-xl text-sm text-[#A7ACB8] hover:bg-[#7B61FF]/10 transition-colors"
+              className="px-4 py-2 rounded-xl text-sm text-[#A7ACB8] hover:bg-[#7B61FF]/10 transition-colors min-h-[44px] press-scale"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving || !formKey.trim() || !formValue.trim()}
-              className="px-4 py-2 rounded-xl bg-[#7B61FF] hover:bg-[#6B51EF] text-white text-sm font-medium transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-[#7B61FF] hover:bg-[#6B51EF] text-white text-sm font-medium transition-colors disabled:opacity-50 min-h-[44px] press-scale"
             >
               {saving ? 'Saving...' : editingMemory ? 'Update' : 'Create'}
             </button>
