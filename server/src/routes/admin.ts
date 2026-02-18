@@ -47,9 +47,13 @@ function requireAdminToken(req: Request, res: Response, next: NextFunction): voi
 // ---- Helper: check if request has valid admin token ----
 function hasValidToken(req: Request): boolean {
   if (!config.adminToken) return false;
+  // Check Authorization header
   const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  return token === config.adminToken;
+  const headerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (headerToken === config.adminToken) return true;
+  // Check query parameter (used after login redirect)
+  const queryToken = (req.query.token as string) || '';
+  return queryToken === config.adminToken;
 }
 
 // ---- /health endpoint ----
@@ -373,7 +377,7 @@ export function serveAdminDashboard(req: Request, res: Response): void {
       .then(r => {
         if (r.ok) {
           sessionStorage.setItem('gs_admin_token', token);
-          window.location.reload();
+          window.location.href = '/admin?token=' + encodeURIComponent(token);
         } else {
           document.getElementById('err').style.display = 'block';
         }
