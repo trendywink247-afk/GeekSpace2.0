@@ -133,7 +133,7 @@ async function handleTelegramCommand(
         "UPDATE integrations SET status = 'disconnected', health = 0 WHERE user_id = ? AND type = 'telegram'"
       ).run(link.user_id);
 
-      await sendTelegramMessage(chatId, 'Account unlinked. Use /link <email> to link again.');
+      await sendTelegramMessage(chatId, 'Account unlinked. To re-link, go to your GeekSpace dashboard → Connections → Telegram.');
       break;
     }
 
@@ -143,7 +143,7 @@ async function handleTelegramCommand(
       ).get(String(chatId)) as { user_id: string } | undefined;
 
       if (!link) {
-        await sendTelegramMessage(chatId, 'Link your account first with /link <email>');
+        await sendTelegramMessage(chatId, 'Link your account first — go to your GeekSpace dashboard → Connections → Telegram.');
         return;
       }
 

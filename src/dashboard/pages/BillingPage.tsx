@@ -303,7 +303,7 @@ export function BillingPage() {
                       onClick={handleDayPass}
                       className="w-full mt-2 py-1.5 px-3 rounded-lg border border-[#7B61FF]/30 text-[#7B61FF] text-xs hover:bg-[#7B61FF]/10 transition-colors"
                     >
-                      Try PicoClaw for $1/day →
+                      Try Weebo for $1/day →
                     </button>
                   )}
                 </CardContent>
