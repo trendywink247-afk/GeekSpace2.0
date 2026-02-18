@@ -553,6 +553,34 @@ async function executeTask(task: PicoTask): Promise<void> {
   }
 }
 
+// ---- Recipe Scheduler ----
+
+async function checkAndRunRecipes(): Promise<void> {
+  try {
+    const { executeRecipe } = await import('./recipes.js');
+    const dueRecipes = db.prepare(`
+      SELECT ir.user_id, ir.recipe_id
+      FROM installed_recipes ir
+      WHERE ir.last_run_at IS NULL
+         OR (ir.recipe_id = 'morning-briefing' AND date(ir.last_run_at) < date('now') AND strftime('%H', 'now') >= '08')
+         OR (ir.recipe_id = 'deadline-enforcer' AND date(ir.last_run_at) < date('now') AND strftime('%H', 'now') >= '07')
+         OR (ir.recipe_id = 'weekly-review' AND date(ir.last_run_at, '-7 days') < date('now') AND strftime('%w', 'now') = '1')
+         OR (ir.recipe_id = 'api-health-monitor' AND ir.last_run_at < datetime('now', '-15 minutes'))
+         OR (ir.recipe_id = 'portfolio-traffic' AND date(ir.last_run_at) < date('now') AND strftime('%H', 'now') >= '09')
+    `).all() as { user_id: string; recipe_id: string }[];
+
+    for (const { user_id, recipe_id } of dueRecipes) {
+      try {
+        await executeRecipe(recipe_id, user_id);
+      } catch (err) {
+        logger.error({ err, recipe_id, user_id }, 'Recipe execution failed');
+      }
+    }
+  } catch (err) {
+    logger.error({ err }, 'Recipe check failed');
+  }
+}
+
 let workerRunning = false;
 
 export function startPicoWorker(): void {
@@ -564,6 +592,7 @@ export function startPicoWorker(): void {
 
   async function tick() {
     try {
+      await checkAndRunRecipes();
       const worked = await processNextTask();
       if (worked) {
         idleStreak = 0;

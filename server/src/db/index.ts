@@ -406,6 +406,12 @@ try { db.exec(`ALTER TABLE portfolios ADD COLUMN last_connected_at TEXT`); } cat
 // AI-generated background gradient per user (Task 14)
 try { db.exec(`ALTER TABLE users ADD COLUMN theme_background TEXT`); } catch { /* column already exists */ }
 
+// Task 15: recipe scheduling columns
+try { db.exec(`ALTER TABLE installed_recipes ADD COLUMN last_run_at TEXT`); } catch { /* column already exists */ }
+
+// Task 17: link Pico-created reminders to pico_tasks
+try { db.exec(`ALTER TABLE reminders ADD COLUMN pico_task_id TEXT`); } catch { /* column already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
