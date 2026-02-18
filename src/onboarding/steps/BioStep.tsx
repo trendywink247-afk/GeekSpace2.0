@@ -1,5 +1,7 @@
-import { FileText } from 'lucide-react';
+import { useState } from 'react';
+import { FileText, Sparkles, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { agentService } from '@/services/api';
 
 const TAG_OPTIONS = [
   'AI Engineer', 'No-Code Automation', 'Designer', 'Founder',
@@ -10,17 +12,38 @@ interface BioStepProps {
   bio: string;
   headline: string;
   tags: string[];
+  name: string;
   onBioChange: (bio: string) => void;
   onHeadlineChange: (headline: string) => void;
   onTagsChange: (tags: string[]) => void;
 }
 
-export function BioStep({ bio, headline, tags, onBioChange, onHeadlineChange, onTagsChange }: BioStepProps) {
+export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChange, onTagsChange }: BioStepProps) {
+  const [magicLoading, setMagicLoading] = useState(false);
+  const [magicDone, setMagicDone] = useState(false);
+
   const toggleTag = (tag: string) => {
     if (tags.includes(tag)) {
       onTagsChange(tags.filter((t) => t !== tag));
     } else if (tags.length < 3) {
       onTagsChange([...tags, tag]);
+    }
+  };
+
+  const handleMagic = async () => {
+    if (tags.length === 0) return;
+    setMagicLoading(true);
+    try {
+      const { data } = await agentService.generateContent('bio-batch', tags, name);
+      const headline = (data.parsed?.headline as string) || '';
+      const bio = (data.parsed?.bio as string) || '';
+      onHeadlineChange(headline);
+      onBioChange(bio);
+      setMagicDone(true);
+    } catch {
+      // silently fail — user can still type manually
+    } finally {
+      setMagicLoading(false);
     }
   };
 
@@ -35,27 +58,8 @@ export function BioStep({ bio, headline, tags, onBioChange, onHeadlineChange, on
       <p className="text-[#A7ACB8] text-sm">
         Tell the world a bit about yourself. This shows on your public portfolio.
       </p>
-      <div>
-        <label className="text-sm text-[#A7ACB8] mb-2 block">Headline / Tagline</label>
-        <Input
-          value={headline}
-          onChange={(e) => onHeadlineChange(e.target.value)}
-          placeholder="Full-stack Developer & AI Enthusiast"
-          className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]"
-        />
-      </div>
-      <div>
-        <label className="text-sm text-[#A7ACB8] mb-2 block">Short Bio (min 10 characters)</label>
-        <textarea
-          value={bio}
-          onChange={(e) => onBioChange(e.target.value)}
-          placeholder="What do you do? What are you into?"
-          className="w-full p-3 rounded-xl bg-[#05050A] border border-[#7B61FF]/30 text-[#F4F6FF] min-h-[100px] resize-none focus:outline-none focus:border-[#7B61FF] placeholder:text-[#A7ACB8]/50"
-        />
-        {bio.length > 0 && bio.length < 10 && (
-          <p className="text-xs text-[#FF6161] mt-1">Bio must be at least 10 characters</p>
-        )}
-      </div>
+
+      {/* Tags first — needed for magic */}
       <div>
         <label className="text-sm text-[#A7ACB8] mb-2 block">Tags (select up to 3)</label>
         <div className="flex flex-wrap gap-2">
@@ -75,6 +79,62 @@ export function BioStep({ bio, headline, tags, onBioChange, onHeadlineChange, on
           ))}
         </div>
       </div>
+
+      {/* Magic button — only shows when tags selected */}
+      {tags.length > 0 && !magicDone && (
+        <button
+          type="button"
+          onClick={handleMagic}
+          disabled={magicLoading}
+          className="w-full py-3 rounded-xl border-2 border-dashed border-[#7B61FF]/40 text-[#7B61FF] hover:bg-[#7B61FF]/10 hover:border-[#7B61FF] transition-all flex items-center justify-center gap-2 text-sm font-medium"
+        >
+          {magicLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Generating magic...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              Wanna see a magic trick?
+            </>
+          )}
+        </button>
+      )}
+
+      <div>
+        <label className="text-sm text-[#A7ACB8] mb-2 block">Headline / Tagline</label>
+        <Input
+          value={headline}
+          onChange={(e) => onHeadlineChange(e.target.value)}
+          placeholder="Developer & Builder"
+          className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]"
+        />
+      </div>
+      <div>
+        <label className="text-sm text-[#A7ACB8] mb-2 block">Short Bio (min 10 characters)</label>
+        <textarea
+          value={bio}
+          onChange={(e) => onBioChange(e.target.value)}
+          placeholder="What do you do? What are you into?"
+          className="w-full p-3 rounded-xl bg-[#05050A] border border-[#7B61FF]/30 text-[#F4F6FF] min-h-[100px] resize-none focus:outline-none focus:border-[#7B61FF] placeholder:text-[#A7ACB8]/50"
+        />
+        {bio.length > 0 && bio.length < 10 && (
+          <p className="text-xs text-[#FF6161] mt-1">Bio must be at least 10 characters</p>
+        )}
+      </div>
+
+      {/* Regenerate option after magic was used */}
+      {magicDone && (
+        <button
+          type="button"
+          onClick={() => { setMagicDone(false); }}
+          className="text-xs text-[#A7ACB8] hover:text-[#7B61FF] transition-colors flex items-center gap-1"
+        >
+          <Sparkles className="w-3 h-3" />
+          Try the magic trick again
+        </button>
+      )}
     </div>
   );
 }

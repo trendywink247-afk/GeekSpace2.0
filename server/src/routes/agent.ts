@@ -117,11 +117,23 @@ agentRouter.post('/generate-content', requireAuth, async (req: AuthRequest, res)
       bio: `Write a 2-sentence professional bio for someone named "${name || 'a developer'}" who specializes in: ${tags.join(', ')}. Make it engaging and personal. Return ONLY the bio text, no quotes.`,
       about: `Write a brief 3-sentence "about me" for a developer portfolio. Person: "${name || 'a developer'}". Expertise: ${tags.join(', ')}. Make it compelling for potential collaborators. Return ONLY the text, no quotes.`,
       skills: `Suggest 6 technical skills (comma-separated) for someone who specializes in: ${tags.join(', ')}. Return ONLY the comma-separated list, nothing else.`,
+      'bio-batch': `You are helping a developer set up their GeekSpace AI profile.
+Return ONLY valid JSON, no markdown, no extra text:
+{"headline": "one-line professional headline under 80 chars", "bio": "2-3 sentence professional summary"}
+
+Name: ${name || 'a developer'}
+Skills/interests: ${Array.isArray(tags) ? tags.join(', ') : tags || 'software development'}`,
+      'portfolio-batch': `You are helping a developer complete their portfolio.
+Return ONLY valid JSON, no markdown, no extra text:
+{"headline": "one-line professional headline under 80 chars", "about": "2-3 sentence about section", "skills": ["skill1","skill2","skill3","skill4","skill5"]}
+
+Name: ${name || 'a developer'}
+Skills/interests: ${Array.isArray(tags) ? tags.join(', ') : tags || 'software development'}`,
     };
 
     const systemPrompt = prompts[type];
     if (!systemPrompt) {
-      return res.status(400).json({ error: 'type must be headline, bio, about, or skills' });
+      return res.status(400).json({ error: 'type must be headline, bio, about, skills, bio-batch, or portfolio-batch' });
     }
 
     // Check subscription credits
@@ -141,6 +153,19 @@ agentRouter.post('/generate-content', requireAuth, async (req: AuthRequest, res)
     // Deduct actual credit cost
     deductSubscriptionCredits(req.userId!, result.creditCost);
 
+    // Batch types return structured JSON
+    if (type.endsWith('-batch')) {
+      try {
+        const jsonText = result.reply.trim().replace(/^```(?:json)?\n?|\n?```$/g, '');
+        const parsed = JSON.parse(jsonText);
+        res.json({ content: result.reply, parsed });
+        return;
+      } catch {
+        res.status(500).json({ error: 'AI returned invalid JSON. Please try again.' });
+        return;
+      }
+    }
+
     res.json({ content: result.reply.trim().replace(/^["']|["']$/g, '') });
   } catch (err: unknown) {
     logger.error('generate-content error: %s', err instanceof Error ? err.message : String(err));
@@ -156,8 +181,9 @@ agentRouter.post('/generate-content', requireAuth, async (req: AuthRequest, res)
 // Auto-fallback: if Ollama is down, routes to cloud only when user has credits
 
 agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
-  let { message } = req.body as { message: string };
+  let { message } = req.body as { message: string; channel?: string; context?: string };
   const userId = req.userId!;
+  const reqChannel = (req.body as { channel?: string }).channel;
 
   try {
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
@@ -184,6 +210,31 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     // Log user message + extract memories (non-blocking)
     logConversation(userId, 'user', message);
     extractMemories(userId, message);
+
+    // ---- Terminal Jarvis: route ai "prompt" through Jarvis on OpenRouter free ----
+    if (reqChannel === 'terminal') {
+      const terminalSystemPrompt = `${OPENCLAW_IDENTITY}
+
+${getPersonalityPrompt('jarvis')}
+
+You are assisting via the GeekSpace terminal. Be concise. No markdown headers. Plain text or simple code blocks only.`;
+
+      const terminalMessages: ChatMessage[] = [
+        { role: 'system', content: terminalSystemPrompt },
+        { role: 'user', content: message },
+      ];
+
+      const terminalResult = await routeChat(terminalMessages, { forceProvider: 'openrouter-free' as Provider });
+      deductSubscriptionCredits(userId, terminalResult.creditCost);
+      db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'terminal', 'ai.chat')`).run(
+        uuid(), userId, terminalResult.provider, terminalResult.model,
+        terminalResult.tokensIn, terminalResult.tokensOut, terminalResult.creditCost,
+      );
+      logConversation(userId, 'assistant', terminalResult.reply, terminalResult.provider, terminalResult.model);
+      res.json({ text: terminalResult.reply, provider: 'jarvis-terminal', creditCost: terminalResult.creditCost, latencyMs: terminalResult.latencyMs });
+      return;
+    }
 
     // ---- Parse route prefix: /premium, /edith, /local, /pico, /bridge, or auto ----
     let forceRoute: 'premium' | 'local' | 'pico' | 'bridge' | null = null;

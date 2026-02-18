@@ -135,8 +135,8 @@ export const agentService = {
   getPersonalities: () =>
     api.get<Record<string, Personality>>('/agent/personalities'),
 
-  generateContent: (type: 'headline' | 'bio' | 'about' | 'skills', tags: string[], name?: string) =>
-    api.post<{ content: string }>('/agent/generate-content', { type, tags, name }),
+  generateContent: (type: string, tags: string[], name?: string) =>
+    api.post<{ content: string; parsed?: Record<string, unknown> }>('/agent/generate-content', { type, tags, name }),
 };
 
 // ----- API Keys ----------------------------------------------
