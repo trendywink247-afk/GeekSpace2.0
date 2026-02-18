@@ -1,3 +1,4 @@
+import 'apminsight';
 // ============================================================
 // GeekSpace Core API — Express + SQLite + JWT
 // Production-hardened with helmet, pino, validation, error handling
