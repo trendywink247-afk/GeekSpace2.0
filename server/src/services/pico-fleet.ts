@@ -196,6 +196,54 @@ export function deleteAgent(agentId: string, userId: string): void {
   db.prepare('DELETE FROM pico_agents WHERE id = ?').run(agentId);
 }
 
+// ---- Complexity Estimator ----
+
+function estimateComplexity(request: string): 'simple' | 'medium' | 'complex' {
+  const lower = request.toLowerCase();
+  const complexKeywords = ['analyze', 'research', 'compare', 'generate report', 'multi-step', 'workflow'];
+  const simpleKeywords = ['remind me', 'send', 'message', 'set reminder', 'notify', 'deploy portfolio'];
+  if (complexKeywords.some(k => lower.includes(k))) return 'complex';
+  if (simpleKeywords.some(k => lower.includes(k))) return 'simple';
+  return request.split(' ').length > 15 ? 'medium' : 'simple';
+}
+
+// ---- Simple Task Parser (no LLM) ----
+
+function parseSimpleTask(request: string): PlannedTask[] {
+  const lower = request.toLowerCase();
+  if (lower.includes('remind') || lower.includes('reminder')) {
+    return [{
+      task_type: 'create_reminder',
+      description: request,
+      config: { reminder_text: request },
+      agent_slot: 1,
+    }];
+  }
+  if (lower.includes('send') && (lower.includes('message') || lower.includes('telegram'))) {
+    return [{
+      task_type: 'telegram_message',
+      description: request,
+      config: { message: request },
+      agent_slot: 1,
+    }];
+  }
+  if (lower.includes('deploy') || lower.includes('publish portfolio')) {
+    return [{
+      task_type: 'portfolio_deploy',
+      description: 'Deploy portfolio',
+      config: {},
+      agent_slot: 1,
+    }];
+  }
+  // Fallback: generic reminder for unrecognised simple requests
+  return [{
+    task_type: 'create_reminder',
+    description: request,
+    config: { reminder_text: request },
+    agent_slot: 1,
+  }];
+}
+
 // ---- Kimi Task Planner ----
 
 const PLANNER_SYSTEM_PROMPT = `You are a task planner for GeekSpace. The user wants to automate something.
@@ -215,7 +263,7 @@ Example: [{"task_type":"create_reminder","description":"Set morning standup remi
 
 If the request cannot be mapped to these task types, return exactly: []`;
 
-export async function planTasks(userId: string, userRequest: string): Promise<{
+export async function planWithKimi(userId: string, userRequest: string): Promise<{
   tasks: PlannedTask[];
   creditCost: number;
 }> {
@@ -269,6 +317,25 @@ export async function planTasks(userId: string, userRequest: string): Promise<{
   }
 
   return { tasks, creditCost };
+}
+
+export async function planTasks(userId: string, userRequest: string, userPlan: string): Promise<{
+  tasks: PlannedTask[];
+  creditCost: number;
+}> {
+  const complexity = estimateComplexity(userRequest);
+  const isPremium = ['halfyear', 'yearly'].includes(userPlan);
+
+  if (complexity === 'simple') {
+    return { tasks: parseSimpleTask(userRequest), creditCost: 0 };
+  }
+
+  if (complexity === 'complex' && !isPremium) {
+    throw Object.assign(new Error('ESCALATE'), { code: 'ESCALATE_TO_PREMIUM' });
+  }
+
+  // medium or complex + premium → use Kimi
+  return planWithKimi(userId, userRequest);
 }
 
 // ---- Queue Tasks ----
@@ -340,10 +407,9 @@ export function cancelTask(taskId: string, userId: string): void {
 
 // ---- Worker ----
 
-let workerTimer: ReturnType<typeof setInterval> | null = null;
 let lastProcessedUserId = '';
 
-async function processNextTask(): Promise<void> {
+async function processNextTask(): Promise<boolean> {
   try {
     // Fair round-robin: find next queued task from a user after lastProcessedUserId
     // Skip paused agents and agents with a running task (1 concurrent per agent)
@@ -369,12 +435,14 @@ async function processNextTask(): Promise<void> {
       task = db.prepare(roundRobinQuery).get('') as PicoTask | undefined;
     }
 
-    if (!task) return; // idle — no eligible tasks
+    if (!task) return false; // idle — no eligible tasks
 
     lastProcessedUserId = task.user_id;
     await executeTask(task);
+    return true;
   } catch (err) {
     logger.error({ error: err instanceof Error ? err.message : String(err) }, 'Pico worker error');
+    return false;
   }
 }
 
@@ -485,9 +553,34 @@ async function executeTask(task: PicoTask): Promise<void> {
   }
 }
 
+let workerRunning = false;
+
 export function startPicoWorker(): void {
-  if (workerTimer) return;
-  const interval = config.picoWorkerIntervalMs;
-  workerTimer = setInterval(processNextTask, interval);
-  logger.info({ intervalMs: interval }, 'Pico Fleet worker started');
+  if (workerRunning) return;
+  workerRunning = true;
+
+  let idleStreak = 0;           // consecutive ticks with no work
+  const IDLE_THRESHOLD = 10;    // after 10 idle ticks → slow mode
+
+  async function tick() {
+    try {
+      const worked = await processNextTask();
+      if (worked) {
+        idleStreak = 0;
+      } else {
+        idleStreak++;
+      }
+    } catch (err) {
+      logger.error({ err }, 'Pico worker tick error');
+    }
+
+    const interval = idleStreak >= IDLE_THRESHOLD
+      ? config.picoIdleIntervalMs   // 5 min when idle
+      : config.picoWorkerIntervalMs; // 10s normally
+
+    setTimeout(tick, interval);
+  }
+
+  tick();
+  logger.info({ normal: config.picoWorkerIntervalMs, idle: config.picoIdleIntervalMs }, 'Pico worker started (adaptive)');
 }
