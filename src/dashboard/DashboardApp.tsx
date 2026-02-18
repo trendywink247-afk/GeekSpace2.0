@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
+import { agentService } from '@/services/api';
 import type { AgentPersonality } from '@/types';
 
 const personalityEmojis: Record<AgentPersonality, string> = {
@@ -72,6 +73,7 @@ export function DashboardApp() {
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
   const applyTheme = useThemeStore((s) => s.applyTheme);
   const setThemeMode = useThemeStore((s) => s.setMode);
+  const setAccentColor = useThemeStore((s) => s.setAccentColor);
   const background = useThemeStore((s) => s.background);
   const themeMode = user?.theme?.mode as 'dark' | 'light' | 'system' | undefined;
 
@@ -87,6 +89,14 @@ export function DashboardApp() {
       applyTheme();
     }
   }, [themeMode, setThemeMode, applyTheme]);
+
+  // Load stored accent color from server on mount
+  useEffect(() => {
+    agentService.getConfig().then((res) => {
+      const color = res.data.accent_color || res.data.accentColor;
+      if (color) setAccentColor(color);
+    }).catch(() => {});
+  }, [setAccentColor]);
 
   // First-load welcome toast (once per session)
   useEffect(() => {
