@@ -13,6 +13,7 @@
 import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
+import { getCurrentFreeModel, switchToNextFreeModel } from './openrouter-models.js';
 
 // ---- Types ----
 
@@ -264,39 +265,64 @@ async function callOpenRouter(messages: ChatMessage[]) {
 async function callOpenRouterFree(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
   const baseUrl = config.openrouterFreeBaseUrl;
   const apiKey = config.openrouterFreeApiKey;
+  const MAX_ATTEMPTS = 3;
 
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-      'HTTP-Referer': config.publicUrl,
-      'X-Title': 'GeekSpace AI OS',
-    },
-    body: JSON.stringify({
-      model: config.openrouterFreeModel,
-      messages,
-      max_tokens: config.openrouterMaxTokens,
-    }),
-    signal: AbortSignal.timeout(config.openrouterTimeout),
-  });
+  let lastError: Error = new Error('OpenRouter Free: no attempts made');
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`OpenRouter Free returned ${response.status}: ${text}`);
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const model = await getCurrentFreeModel();
+
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': config.publicUrl,
+        'X-Title': 'GeekSpace AI OS',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        max_tokens: config.openrouterMaxTokens,
+      }),
+      signal: AbortSignal.timeout(config.openrouterTimeout),
+    });
+
+    // On quota/rate-limit errors, switch model and retry immediately
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      const isQuotaError =
+        response.status === 429 ||
+        response.status === 402 ||
+        text.toLowerCase().includes('quota') ||
+        text.toLowerCase().includes('rate_limit') ||
+        text.toLowerCase().includes('insufficient');
+
+      if (isQuotaError) {
+        logger.warn({ model, status: response.status, attempt }, 'OpenRouter Free quota/rate error — switching model');
+        await switchToNextFreeModel(model);
+        lastError = new Error(`OpenRouter Free model ${model} quota exceeded (${response.status})`);
+        continue; // retry with next model
+      }
+
+      // Non-quota error — throw immediately without retrying
+      throw new Error(`OpenRouter Free returned ${response.status}: ${text}`);
+    }
+
+    const data = await response.json() as {
+      choices?: Array<{ message?: { content: string } }>;
+      usage?: { prompt_tokens: number; completion_tokens: number };
+    };
+
+    const content = data.choices?.[0]?.message?.content || '';
+    return {
+      content,
+      tokensIn: data.usage?.prompt_tokens || 0,
+      tokensOut: data.usage?.completion_tokens || 0,
+    };
   }
 
-  const data = await response.json() as {
-    choices?: Array<{ message?: { content: string } }>;
-    usage?: { prompt_tokens: number; completion_tokens: number };
-  };
-
-  const content = data.choices?.[0]?.message?.content || '';
-  return {
-    content,
-    tokensIn: data.usage?.prompt_tokens || 0,
-    tokensOut: data.usage?.completion_tokens || 0,
-  };
+  throw lastError;
 }
 
 function isOpenRouterFreeAvailable(): boolean {
@@ -502,7 +528,7 @@ export async function routeChat(
         reply = result.content;
         tokensIn = result.tokensIn;
         tokensOut = result.tokensOut;
-        model = config.openrouterFreeModel;
+        model = await getCurrentFreeModel();
         break;
       }
       case 'edith': {

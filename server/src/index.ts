@@ -41,6 +41,7 @@ import { startBriefingScheduler } from './services/daily-briefing.js';
 import { metricsMiddleware } from './middleware/metrics.js';
 import { healthRouter } from './routes/health.js';
 import { adminRouter } from './routes/admin.js';
+import { fetchFreeModels } from './services/openrouter-models.js';
 
 const APP_VERSION = '3.0.0';
 
@@ -231,4 +232,5 @@ app.listen(config.port, () => {
   startPicoWorker();
   initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)'));
   startBriefingScheduler();
+  fetchFreeModels().catch(() => { logger.warn('OpenRouter model prefetch failed'); });
 });
