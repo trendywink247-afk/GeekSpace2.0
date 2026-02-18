@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import {
   AreaChart,
   Area,
@@ -216,7 +217,13 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     { label: 'Open terminal', icon: Terminal, color: '#FF61DC', action: () => onNavigate?.('terminal') },
   ];
 
+  const handlePullRefresh = async () => {
+    handleRefresh();
+    await new Promise(resolve => setTimeout(resolve, 1500));
+  };
+
   return (
+    <PullToRefreshWrapper onRefresh={handlePullRefresh}>
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -250,14 +257,14 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {quickStats.map((stat, i) => (
           <Card
             key={i}
-            className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all duration-300 group"
+            className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all duration-300 group press-scale touch-highlight"
             style={{ animationDelay: `${i * 100}ms` }}
           >
-            <CardContent className="p-5">
+            <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -319,7 +326,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             </div>
           </CardHeader>
           <CardContent>
-            <div className="h-[250px]">
+            <div className="min-h-[200px] h-[250px]">
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={weeklyChartData}>
@@ -358,7 +365,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[200px]">
+            <div className="min-h-[200px] h-[200px]">
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -451,7 +458,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[180px]">
+              <div className="min-h-[200px] h-[200px] sm:h-[180px]">
                 {mounted && (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={hourlyActivityData}>
@@ -488,7 +495,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 {connectedServices.length > 0 ? connectedServices.map((service, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-[#05050A] border border-[#7B61FF]/10 hover:border-[#7B61FF]/30 transition-all duration-300 group"
+                    className="flex items-center gap-3 p-3 rounded-xl bg-[#05050A] border border-[#7B61FF]/10 hover:border-[#7B61FF]/30 transition-all duration-300 group press-scale touch-highlight"
                   >
                     <div
                       className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -528,7 +535,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   <button
                     key={i}
                     onClick={action.action}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#05050A] hover:bg-[#7B61FF]/10 transition-all duration-300 text-left group"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#05050A] hover:bg-[#7B61FF]/10 transition-all duration-300 text-left group press-scale touch-highlight"
                   >
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -544,7 +551,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           </Card>
 
           {/* Public Portfolio Card */}
-          <Card className="bg-gradient-to-br from-[#7B61FF]/20 to-[#0B0B10] border-[#7B61FF]/30">
+          <Card className="bg-gradient-to-br from-[#7B61FF]/20 to-[#0B0B10] border-[#7B61FF]/30 press-scale touch-highlight">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-[#7B61FF]/20 flex items-center justify-center">
@@ -605,5 +612,6 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         </div>
       </div>
     </div>
+    </PullToRefreshWrapper>
   );
 }

@@ -13,14 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
+import { MobileTable } from '@/components/ui/mobile-table';
 import {
   AreaChart,
   Area,
@@ -158,6 +152,18 @@ export function UsageAnalyticsPage() {
     }).catch(() => {});
   }, []);
 
+  // Pull-to-refresh handler
+  const handlePullRefresh = async () => {
+    await Promise.allSettled([
+      usageService.summary(summaryRange).then(r => setSummary(r.data)),
+      usageService.chart(chartRange).then(r => setChartData(r.data)),
+      usageService.providers().then(r => setProviders(r.data)),
+      usageService.latency().then(r => setHourly(r.data)),
+      usageService.billing().then(r => setBilling(r.data)),
+      usageService.events(eventsPage, 50).then(r => { setEvents(r.data.events); setEventsTotal(r.data.total); }),
+    ]);
+  };
+
   // Derived data
   const toolData = summary?.byTool
     ? Object.entries(summary.byTool)
@@ -197,6 +203,7 @@ export function UsageAnalyticsPage() {
   }
 
   return (
+    <PullToRefreshWrapper onRefresh={handlePullRefresh}>
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -224,7 +231,7 @@ export function UsageAnalyticsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="bg-[#0B0B10] border-[#7B61FF]/20">
@@ -238,8 +245,8 @@ export function UsageAnalyticsPage() {
         ) : (
           <>
             {/* Total Cost */}
-            <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all group">
-              <CardContent className="p-5">
+            <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all group press-scale touch-highlight">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${KPI_COLORS.cost}15` }}>
                     <DollarSign className="w-5 h-5" style={{ color: KPI_COLORS.cost }} />
@@ -251,55 +258,55 @@ export function UsageAnalyticsPage() {
                     </div>
                   )}
                 </div>
-                <div className="text-2xl font-bold text-[#F4F6FF] group-hover:text-[#61FF7B] transition-colors font-mono">
+                <div className="text-xl sm:text-2xl font-bold text-[#F4F6FF] group-hover:text-[#61FF7B] transition-colors font-mono">
                   ${(summary?.totalCostUSD ?? 0).toFixed(2)}
                 </div>
-                <div className="text-sm text-[#A7ACB8]">Total Cost</div>
+                <div className="text-xs sm:text-sm text-[#A7ACB8]">Total Cost</div>
               </CardContent>
             </Card>
 
             {/* Messages */}
-            <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all group">
-              <CardContent className="p-5">
+            <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all group press-scale touch-highlight">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${KPI_COLORS.messages}15` }}>
                     <MessageSquare className="w-5 h-5" style={{ color: KPI_COLORS.messages }} />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-[#F4F6FF] group-hover:text-[#7B61FF] transition-colors">
+                <div className="text-xl sm:text-2xl font-bold text-[#F4F6FF] group-hover:text-[#7B61FF] transition-colors">
                   {fmt(summary?.totalMessages ?? 0)}
                 </div>
-                <div className="text-sm text-[#A7ACB8]">Messages</div>
+                <div className="text-xs sm:text-sm text-[#A7ACB8]">Messages</div>
               </CardContent>
             </Card>
 
             {/* Tokens */}
-            <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all group">
-              <CardContent className="p-5">
+            <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all group press-scale touch-highlight">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${KPI_COLORS.tokens}15` }}>
                     <Coins className="w-5 h-5" style={{ color: KPI_COLORS.tokens }} />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-[#F4F6FF] group-hover:text-[#FFD761] transition-colors">
+                <div className="text-xl sm:text-2xl font-bold text-[#F4F6FF] group-hover:text-[#FFD761] transition-colors">
                   {fmt(summary?.totalTokensIn ?? 0)} / {fmt(summary?.totalTokensOut ?? 0)}
                 </div>
-                <div className="text-sm text-[#A7ACB8]">Tokens In / Out</div>
+                <div className="text-xs sm:text-sm text-[#A7ACB8]">Tokens In / Out</div>
               </CardContent>
             </Card>
 
             {/* Tool Calls */}
-            <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all group">
-              <CardContent className="p-5">
+            <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all group press-scale touch-highlight">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${KPI_COLORS.tools}15` }}>
                     <Wrench className="w-5 h-5" style={{ color: KPI_COLORS.tools }} />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-[#F4F6FF] group-hover:text-[#FF61DC] transition-colors">
+                <div className="text-xl sm:text-2xl font-bold text-[#F4F6FF] group-hover:text-[#FF61DC] transition-colors">
                   {fmt(summary?.totalToolCalls ?? 0)}
                 </div>
-                <div className="text-sm text-[#A7ACB8]">Tool Calls</div>
+                <div className="text-xs sm:text-sm text-[#A7ACB8]">Tool Calls</div>
               </CardContent>
             </Card>
           </>
@@ -332,7 +339,7 @@ export function UsageAnalyticsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="h-[280px]">
+          <div className="min-h-[180px] h-[280px]">
             {loading ? (
               <Skeleton className="w-full h-full rounded-lg" />
             ) : mounted && (
@@ -379,7 +386,7 @@ export function UsageAnalyticsPage() {
               <div className="flex items-center justify-center h-[220px] text-sm text-[#A7ACB8]">No provider data</div>
             ) : (
               <>
-                <div className="h-[220px]">
+                <div className="min-h-[180px] h-[220px]">
                   {mounted && (
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -429,7 +436,7 @@ export function UsageAnalyticsPage() {
             ) : hourlyData.length === 0 ? (
               <div className="flex items-center justify-center h-[250px] text-sm text-[#A7ACB8]">No activity data</div>
             ) : (
-              <div className="h-[250px]">
+              <div className="min-h-[180px] h-[250px]">
                 {mounted && (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={hourlyData}>
@@ -463,7 +470,7 @@ export function UsageAnalyticsPage() {
             ) : toolData.length === 0 ? (
               <div className="flex items-center justify-center h-[200px] text-sm text-[#A7ACB8]">No tool usage data</div>
             ) : (
-              <div className="h-[200px]">
+              <div className="min-h-[180px] h-[200px]">
                 {mounted && (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={toolData} layout="vertical" margin={{ left: 80 }}>
@@ -563,44 +570,35 @@ export function UsageAnalyticsPage() {
             <div className="text-center py-8 text-sm text-[#A7ACB8]">No usage events yet</div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-[#7B61FF]/20">
-                      <TableHead className="text-[#A7ACB8]">Time</TableHead>
-                      <TableHead className="text-[#A7ACB8]">Provider</TableHead>
-                      <TableHead className="text-[#A7ACB8]">Model</TableHead>
-                      <TableHead className="text-[#A7ACB8] text-right">Tokens</TableHead>
-                      <TableHead className="text-[#A7ACB8] text-right">Cost</TableHead>
-                      <TableHead className="text-[#A7ACB8]">Channel</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {events.map((event) => (
-                      <TableRow key={event.id} className="border-[#7B61FF]/10 hover:bg-[#7B61FF]/5">
-                        <TableCell className="text-[#A7ACB8] font-mono text-xs">
-                          {new Date(event.createdAt).toLocaleString(undefined, {
-                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                          })}
-                        </TableCell>
-                        <TableCell className="text-[#F4F6FF]">{friendlyProvider(event.provider)}</TableCell>
-                        <TableCell className="text-[#A7ACB8] font-mono text-xs">{friendlyModel(event.model)}</TableCell>
-                        <TableCell className="text-[#F4F6FF] text-right font-mono text-xs">
-                          {fmt(event.tokensIn)} / {fmt(event.tokensOut)}
-                        </TableCell>
-                        <TableCell className="text-[#61FF7B] text-right font-mono text-xs">
-                          {fmtCost(event.costUSD)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="border-[#7B61FF]/30 text-[#A7ACB8] text-xs">
-                            {event.channel}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <MobileTable<UsageEvent>
+                columns={[
+                  {
+                    key: 'time', label: 'Time', primary: true,
+                    render: (event) => (
+                      <span className="text-[#A7ACB8] font-mono text-xs">
+                        {new Date(event.createdAt).toLocaleString(undefined, {
+                          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                        })}
+                      </span>
+                    ),
+                  },
+                  { key: 'provider', label: 'Provider', render: (event) => <span className="text-[#F4F6FF]">{friendlyProvider(event.provider)}</span> },
+                  { key: 'model', label: 'Model', hideOnMobile: true, render: (event) => <span className="text-[#A7ACB8] font-mono text-xs">{friendlyModel(event.model)}</span> },
+                  { key: 'tokens', label: 'Tokens', render: (event) => <span className="text-[#F4F6FF] font-mono text-xs">{fmt(event.tokensIn)} / {fmt(event.tokensOut)}</span> },
+                  { key: 'cost', label: 'Cost', render: (event) => <span className="text-[#61FF7B] font-mono text-xs">{fmtCost(event.costUSD)}</span> },
+                  {
+                    key: 'channel', label: 'Channel', hideOnMobile: true,
+                    render: (event) => (
+                      <Badge variant="outline" className="border-[#7B61FF]/30 text-[#A7ACB8] text-xs">
+                        {event.channel}
+                      </Badge>
+                    ),
+                  },
+                ]}
+                data={events}
+                keyExtractor={(event) => String(event.id)}
+                emptyMessage="No usage events yet"
+              />
 
               {/* Pagination */}
               {totalPages > 1 && (
@@ -637,5 +635,6 @@ export function UsageAnalyticsPage() {
         </CardContent>
       </Card>
     </div>
+    </PullToRefreshWrapper>
   );
 }

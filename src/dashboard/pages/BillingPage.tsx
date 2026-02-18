@@ -5,9 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageProgress } from '@/components/ui/page-progress';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
+import { MobileTable } from '@/components/ui/mobile-table';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { billingService } from '@/services/api';
 import type { Subscription, PlanDefinition, DailyUsage } from '@/types';
 
@@ -24,6 +23,7 @@ function formatDate(dateStr: string): string {
 }
 
 export function BillingPage() {
+  const isMobile = useMobileDetect();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [plans, setPlans] = useState<PlanDefinition[]>([]);
   const [usage, setUsage] = useState<DailyUsage[]>([]);
@@ -218,7 +218,7 @@ export function BillingPage() {
                 <span className="text-xs text-[#A7ACB8]">Credit usage</span>
                 <span className="text-xs text-[#A7ACB8] font-mono">{usedPercent.toFixed(1)}%</span>
               </div>
-              <div className="h-2 bg-[#05050A] rounded-full overflow-hidden">
+              <div className="h-3 sm:h-2 bg-[#05050A] rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
                     usedPercent > 90 ? 'bg-[#FF6161]' : usedPercent > 70 ? 'bg-[#FFD761]' : 'bg-gradient-to-r from-[#7B61FF] to-[#61FF7B]'
@@ -236,81 +236,160 @@ export function BillingPage() {
         <h2 className="text-xl font-bold text-[#F4F6FF] mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
           Available Plans
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {plans.map((plan) => {
-            const isCurrent = subscription?.plan === plan.id;
-            const isFree = plan.priceUsd === 0;
-            return (
-              <Card
-                key={plan.id}
-                className={`bg-[#0B0B10] transition-all ${
-                  isCurrent
-                    ? 'border-[#7B61FF] ring-1 ring-[#7B61FF]/30'
-                    : 'border-[#7B61FF]/20 hover:border-[#7B61FF]/40'
-                } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="capitalize text-[#F4F6FF]">{plan.id}</CardTitle>
-                    {plan.badge && (
-                      <Badge variant="outline" className="text-[10px] border-[#FFD761]/30 text-[#FFD761]">
-                        {plan.badge}
-                      </Badge>
-                    )}
-                    {isCurrent && (
-                      <Badge className="bg-[#7B61FF]/20 text-[#7B61FF] border-[#7B61FF]/30">
-                        Current
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-baseline flex-wrap gap-1">
-                    <span className="text-3xl font-bold text-[#F4F6FF]">{price(plan)}</span>
-                    {plan.priceUsd > 0 && (
-                      <span className="text-sm text-[#A7ACB8]">/ {plan.intervalLabel}</span>
-                    )}
-                    {currency === 'INR' && plan.originalPriceInr && (
-                      <span className="text-sm text-[#A7ACB8] line-through ml-1">₹{plan.originalPriceInr.toLocaleString()}</span>
-                    )}
-                  </div>
-                  <div className="text-sm text-[#A7ACB8]">{plan.description}</div>
-                  <div className="flex items-center gap-2 text-sm text-[#F4F6FF]">
-                    <Zap className="w-4 h-4 text-[#7B61FF]" />
-                    {formatCredits(plan.credits)} credits
-                  </div>
-                  {isCurrent ? (
-                    <div className="flex items-center gap-2 p-2 rounded-lg bg-[#7B61FF]/10 text-sm text-[#7B61FF]">
-                      <Check className="w-4 h-4" />
-                      Active plan
-                    </div>
-                  ) : (
-                    <Button
-                      onClick={() => handleUpgrade(plan.id)}
-                      disabled={upgrading === plan.id || isFree}
-                      className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] disabled:opacity-50"
-                    >
-                      {upgrading === plan.id ? (
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+        {isMobile ? (
+          <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4">
+            {plans.map((plan) => {
+              const isCurrent = subscription?.plan === plan.id;
+              const isFree = plan.priceUsd === 0;
+              return (
+                <div key={plan.id} className="min-w-[260px] snap-center flex-shrink-0">
+                  <Card
+                    className={`bg-[#0B0B10] transition-all h-full ${
+                      isCurrent
+                        ? 'border-[#7B61FF] ring-1 ring-[#7B61FF]/30'
+                        : 'border-[#7B61FF]/20 hover:border-[#7B61FF]/40'
+                    } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="capitalize text-[#F4F6FF]">{plan.id}</CardTitle>
+                        {plan.badge && (
+                          <Badge variant="outline" className="text-[10px] border-[#FFD761]/30 text-[#FFD761]">
+                            {plan.badge}
+                          </Badge>
+                        )}
+                        {isCurrent && (
+                          <Badge className="bg-[#7B61FF]/20 text-[#7B61FF] border-[#7B61FF]/30">
+                            Current
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-baseline flex-wrap gap-1">
+                        <span className="text-3xl font-bold text-[#F4F6FF]">{price(plan)}</span>
+                        {plan.priceUsd > 0 && (
+                          <span className="text-sm text-[#A7ACB8]">/ {plan.intervalLabel}</span>
+                        )}
+                        {currency === 'INR' && plan.originalPriceInr && (
+                          <span className="text-sm text-[#A7ACB8] line-through ml-1">₹{plan.originalPriceInr.toLocaleString()}</span>
+                        )}
+                      </div>
+                      <div className="text-sm text-[#A7ACB8]">{plan.description}</div>
+                      <div className="flex items-center gap-2 text-sm text-[#F4F6FF]">
+                        <Zap className="w-4 h-4 text-[#7B61FF]" />
+                        {formatCredits(plan.credits)} credits
+                      </div>
+                      {isCurrent ? (
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-[#7B61FF]/10 text-sm text-[#7B61FF]">
+                          <Check className="w-4 h-4" />
+                          Active plan
+                        </div>
                       ) : (
-                        <ArrowUpRight className="w-4 h-4 mr-2" />
+                        <Button
+                          onClick={() => handleUpgrade(plan.id)}
+                          disabled={upgrading === plan.id || isFree}
+                          className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] disabled:opacity-50"
+                        >
+                          {upgrading === plan.id ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                          ) : (
+                            <ArrowUpRight className="w-4 h-4 mr-2" />
+                          )}
+                          {isFree ? 'Free tier' : 'Upgrade'}
+                        </Button>
                       )}
-                      {isFree ? 'Free tier' : 'Upgrade'}
-                    </Button>
-                  )}
-                  {subscription?.plan === 'free' && plan.id === 'free' && (
-                    <button
-                      onClick={handleDayPass}
-                      className="w-full mt-2 py-1.5 px-3 rounded-lg border border-[#7B61FF]/30 text-[#7B61FF] text-xs hover:bg-[#7B61FF]/10 transition-colors"
-                    >
-                      Try Weebo for $1/day →
-                    </button>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                      {subscription?.plan === 'free' && plan.id === 'free' && (
+                        <button
+                          onClick={handleDayPass}
+                          className="w-full mt-2 py-1.5 px-3 rounded-lg border border-[#7B61FF]/30 text-[#7B61FF] text-xs hover:bg-[#7B61FF]/10 transition-colors"
+                        >
+                          Try Weebo for $1/day →
+                        </button>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {plans.map((plan) => {
+              const isCurrent = subscription?.plan === plan.id;
+              const isFree = plan.priceUsd === 0;
+              return (
+                <Card
+                  key={plan.id}
+                  className={`bg-[#0B0B10] transition-all ${
+                    isCurrent
+                      ? 'border-[#7B61FF] ring-1 ring-[#7B61FF]/30'
+                      : 'border-[#7B61FF]/20 hover:border-[#7B61FF]/40'
+                  } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="capitalize text-[#F4F6FF]">{plan.id}</CardTitle>
+                      {plan.badge && (
+                        <Badge variant="outline" className="text-[10px] border-[#FFD761]/30 text-[#FFD761]">
+                          {plan.badge}
+                        </Badge>
+                      )}
+                      {isCurrent && (
+                        <Badge className="bg-[#7B61FF]/20 text-[#7B61FF] border-[#7B61FF]/30">
+                          Current
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-baseline flex-wrap gap-1">
+                      <span className="text-3xl font-bold text-[#F4F6FF]">{price(plan)}</span>
+                      {plan.priceUsd > 0 && (
+                        <span className="text-sm text-[#A7ACB8]">/ {plan.intervalLabel}</span>
+                      )}
+                      {currency === 'INR' && plan.originalPriceInr && (
+                        <span className="text-sm text-[#A7ACB8] line-through ml-1">₹{plan.originalPriceInr.toLocaleString()}</span>
+                      )}
+                    </div>
+                    <div className="text-sm text-[#A7ACB8]">{plan.description}</div>
+                    <div className="flex items-center gap-2 text-sm text-[#F4F6FF]">
+                      <Zap className="w-4 h-4 text-[#7B61FF]" />
+                      {formatCredits(plan.credits)} credits
+                    </div>
+                    {isCurrent ? (
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-[#7B61FF]/10 text-sm text-[#7B61FF]">
+                        <Check className="w-4 h-4" />
+                        Active plan
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => handleUpgrade(plan.id)}
+                        disabled={upgrading === plan.id || isFree}
+                        className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] disabled:opacity-50"
+                      >
+                        {upgrading === plan.id ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        ) : (
+                          <ArrowUpRight className="w-4 h-4 mr-2" />
+                        )}
+                        {isFree ? 'Free tier' : 'Upgrade'}
+                      </Button>
+                    )}
+                    {subscription?.plan === 'free' && plan.id === 'free' && (
+                      <button
+                        onClick={handleDayPass}
+                        className="w-full mt-2 py-1.5 px-3 rounded-lg border border-[#7B61FF]/30 text-[#7B61FF] text-xs hover:bg-[#7B61FF]/10 transition-colors"
+                      >
+                        Try Weebo for $1/day →
+                      </button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Usage History Table */}
@@ -327,26 +406,17 @@ export function BillingPage() {
               <p className="text-sm text-[#A7ACB8]">Start chatting and usage will appear here</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-[#7B61FF]/20">
-                  <TableHead className="text-[#A7ACB8]">Date</TableHead>
-                  <TableHead className="text-[#A7ACB8]">Calls</TableHead>
-                  <TableHead className="text-[#A7ACB8]">Tokens</TableHead>
-                  <TableHead className="text-[#A7ACB8] text-right">Cost</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {usage.map((row) => (
-                  <TableRow key={row.day} className="border-[#7B61FF]/10">
-                    <TableCell className="text-[#F4F6FF]">{formatDate(row.day)}</TableCell>
-                    <TableCell className="text-[#A7ACB8] font-mono">{row.calls}</TableCell>
-                    <TableCell className="text-[#A7ACB8] font-mono">{(row.total_tokens ?? 0).toLocaleString()}</TableCell>
-                    <TableCell className="text-[#F4F6FF] font-mono text-right">${(row.total_cost ?? 0).toFixed(4)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <MobileTable<DailyUsage>
+              columns={[
+                { key: 'day', label: 'Date', primary: true, render: (row) => <span className="text-[#F4F6FF]">{formatDate(row.day)}</span> },
+                { key: 'calls', label: 'Calls', render: (row) => <span className="text-[#A7ACB8] font-mono">{row.calls}</span> },
+                { key: 'tokens', label: 'Tokens', render: (row) => <span className="text-[#A7ACB8] font-mono">{(row.total_tokens ?? 0).toLocaleString()}</span> },
+                { key: 'cost', label: 'Cost', render: (row) => <span className="text-[#F4F6FF] font-mono">${(row.total_cost ?? 0).toFixed(4)}</span> },
+              ]}
+              data={usage}
+              keyExtractor={(row) => row.day}
+              emptyMessage="No usage data yet"
+            />
           )}
         </CardContent>
       </Card>
