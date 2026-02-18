@@ -301,7 +301,7 @@ function toSqliteDatetime(d: Date): string {
   return d.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
 }
 
-function parseReminderTime(text: string): string | null {
+export function parseReminderTime(text: string): string | null {
   const lower = text.toLowerCase();
   const now = new Date();
 

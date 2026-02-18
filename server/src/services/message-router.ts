@@ -40,6 +40,15 @@ function detectTaskIntent(message: string): boolean {
   return patterns.some(p => p.test(lower));
 }
 
+/** Check if a message with a task intent also has a content request (mixed intent).
+ *  e.g. "Give me a workout plan and remind me to start Monday" */
+function hasMixedContent(message: string): boolean {
+  const lower = message.toLowerCase();
+  const hasContentRequest = /\b(?:give|create|make|build|explain|list|show|tell|help|write|suggest|recommend|what|how|why|describe|generate)\b/i.test(lower);
+  const hasConjunction = /\b(?:and|also|but also|plus|then|as well|additionally)\b/i.test(lower);
+  return hasContentRequest && hasConjunction;
+}
+
 // ---- Types ----
 
 interface NormalizedMessage {
@@ -152,6 +161,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   checkKeywordTriggers(userId, msg.text).catch((e: unknown) => console.debug('[bg]', (e as Error).message));
 
   // 5b. Auto-detect task intents (remind, telegram, deploy) — route to Pico Fleet
+  // For mixed-intent messages (e.g. "Give me a workout plan and remind me"),
+  // queue the tasks but continue to LLM for the content response.
+  let taskConfirmation = '';
   if (detectTaskIntent(msg.text)) {
     try {
       const { planTasks, queueTasks } = await import('./pico-fleet.js');
@@ -161,15 +173,23 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         const taskIds = queueTasks(userId, tasks, 'weebo');
         const summary = tasks.map((t: { task_type: string; description: string }) =>
           `${t.task_type.replace(/_/g, ' ')}: ${t.description}`).join('\n');
-        const reply = `Done! I've queued ${taskIds.length} task(s):\n${summary}`;
-        logConversation(userId, 'assistant', reply, 'builtin', 'pico-fleet');
-        await sendChannelResponse({
-          channel: msg.channel,
-          externalId: msg.externalId,
-          text: reply,
-        });
-        logger.info({ channel: msg.channel, userId, taskCount: taskIds.length, latencyMs: Date.now() - startTime }, 'Channel task auto-detected');
-        return;
+
+        if (hasMixedContent(msg.text)) {
+          // Mixed intent — queue tasks, but continue to LLM for content
+          taskConfirmation = `Done! I've queued ${taskIds.length} task(s): ${summary}\n\n`;
+          logger.info({ channel: msg.channel, userId, taskCount: taskIds.length }, 'Mixed intent: tasks queued, continuing to LLM');
+        } else {
+          // Pure task intent — return task confirmation only
+          const reply = `Done! I've queued ${taskIds.length} task(s):\n${summary}`;
+          logConversation(userId, 'assistant', reply, 'builtin', 'pico-fleet');
+          await sendChannelResponse({
+            channel: msg.channel,
+            externalId: msg.externalId,
+            text: reply,
+          });
+          logger.info({ channel: msg.channel, userId, taskCount: taskIds.length, latencyMs: Date.now() - startTime }, 'Channel task auto-detected');
+          return;
+        }
       }
     } catch (e) {
       logger.warn({ err: (e as Error).message }, 'Channel task auto-detect failed, falling through to chat');
@@ -261,7 +281,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     .trim();
 
   // Build action summary for channel (no iframe possible)
-  let channelReply = finalReply;
+  let channelReply = taskConfirmation + finalReply;
   for (const ar of actionResults) {
     if (ar.success) {
       channelReply += `\n\n✅ ${ar.message}`;
