@@ -133,6 +133,7 @@ export const config = {
 
   // Admin dashboard
   adminDashboardPassword: process.env.ADMIN_DASHBOARD_PASSWORD || '',
+  adminToken: optional('ADMIN_TOKEN', ''),
 
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,24 @@ const STEPS = ['Profile', 'Bio', 'Agent', 'Portfolio', 'Integrations', 'Review']
 
 export function OnboardingWizard() {
   const navigate = useNavigate();
-  const { onboarding, updateOnboarding, saveOnboardingStep, completeOnboarding } = useAuthStore();
+  const { onboarding, updateOnboarding, saveOnboardingStep, completeOnboarding, user, fetchUser } = useAuthStore();
   const [step, setStep] = useState(Math.min(onboarding.step, 5));
   const [stepAnimClass, setStepAnimClass] = useState('animate-step-slide-in');
   const [isLaunching, setIsLaunching] = useState(false);
+
+  // Pre-populate profile fields from the auth store user (set during signup)
+  // so the user is not asked to re-enter their username and name.
+  useEffect(() => {
+    if (user) {
+      const updates: Partial<typeof onboarding.profile> = {};
+      if (!onboarding.profile.username && user.username) updates.username = user.username;
+      if (!onboarding.profile.name && user.name) updates.name = user.name;
+      if (Object.keys(updates).length > 0) {
+        updateOnboarding({ profile: { ...onboarding.profile, ...updates } });
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const animateStep = (next: number) => {
     setStepAnimClass('animate-step-slide-out');
@@ -50,6 +64,7 @@ export function OnboardingWizard() {
   const handleLaunch = async () => {
     setIsLaunching(true);
     await completeOnboarding();
+    await fetchUser();
     navigate('/dashboard', { replace: true });
   };
 
@@ -128,6 +143,7 @@ export function OnboardingWizard() {
             bio={onboarding.profile.bio}
             headline={onboarding.profile.headline}
             tags={onboarding.profile.tags}
+            name={onboarding.profile.name}
             onBioChange={(bio) => updateOnboarding({ profile: { ...onboarding.profile, bio } })}
             onHeadlineChange={(headline) => updateOnboarding({ profile: { ...onboarding.profile, headline } })}
             onTagsChange={(tags) => updateOnboarding({ profile: { ...onboarding.profile, tags } })}
@@ -146,6 +162,8 @@ export function OnboardingWizard() {
             skills={onboarding.portfolio.skills}
             headline={onboarding.portfolio.headline}
             about={onboarding.portfolio.about}
+            tags={onboarding.profile.tags}
+            name={onboarding.profile.name}
             onSkillsChange={(skills) => updateOnboarding({ portfolio: { ...onboarding.portfolio, skills } })}
             onHeadlineChange={(headline) => updateOnboarding({ portfolio: { ...onboarding.portfolio, headline } })}
             onAboutChange={(about) => updateOnboarding({ portfolio: { ...onboarding.portfolio, about } })}

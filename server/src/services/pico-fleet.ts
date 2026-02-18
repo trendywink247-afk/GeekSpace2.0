@@ -17,6 +17,7 @@ import { logger } from '../logger.js';
 import { config } from '../config.js';
 import { edithChat } from './edith.js';
 import { computeCreditCost, deductSubscriptionCredits } from './llm.js';
+import { refreshModelsIfStale } from './openrouter-models.js';
 
 // ---- Types ----
 
@@ -625,6 +626,7 @@ export function startPicoWorker(): void {
 
   async function tick() {
     try {
+      refreshModelsIfStale().catch(() => {});
       await checkDailySummarization();
       await checkAndRunRecipes();
       const worked = await processNextTask();

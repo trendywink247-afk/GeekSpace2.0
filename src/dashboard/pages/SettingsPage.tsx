@@ -624,7 +624,7 @@ export function SettingsPage() {
                   {accentPresets.map((color) => (
                     <button
                       key={color}
-                      onClick={() => setAccentColor(color)}
+                      onClick={() => { setAccentColor(color); void agentService.updateConfig({ accentColor: color }).catch(() => {}); }}
                       className={`w-10 h-10 rounded-xl transition-all ${
                         accentColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0B0B10] scale-110' : 'hover:scale-110'
                       }`}
@@ -637,7 +637,7 @@ export function SettingsPage() {
                   <input
                     type="color"
                     value={accentColor}
-                    onChange={(e) => setAccentColor(e.target.value)}
+                    onChange={(e) => { setAccentColor(e.target.value); void agentService.updateConfig({ accentColor: e.target.value }).catch(() => {}); }}
                     className="w-8 h-8 rounded cursor-pointer bg-transparent"
                   />
                   <span className="text-sm font-mono text-[#A7ACB8]">{accentColor}</span>

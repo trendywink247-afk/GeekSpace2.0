@@ -91,6 +91,8 @@ export interface AgentConfig {
   formality: number;    // 0–100
   monthlyBudgetUSD: number;
   status: 'online' | 'offline' | 'error';
+  accentColor?: string;   // camelCase for PATCH requests
+  accent_color?: string;  // snake_case returned by GET (raw DB row)
 }
 
 export interface Personality {

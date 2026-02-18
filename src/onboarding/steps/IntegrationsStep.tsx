@@ -149,9 +149,25 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
               )}
 
               {isTelegram && telegramState === 'connected' && (
-                <div className="mt-2 p-3 rounded-xl bg-[#61FF7B]/5 border border-[#61FF7B]/20 flex items-center gap-2">
-                  <Check className="w-4 h-4 text-[#61FF7B]" />
-                  <span className="text-sm text-[#61FF7B]">Telegram connected!</span>
+                <div className="mt-2 p-3 rounded-xl bg-[#61FF7B]/5 border border-[#61FF7B]/20 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-[#61FF7B]" />
+                    <span className="text-sm text-[#61FF7B]">Telegram connected!</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await integrationService.unlinkTelegram();
+                      } catch {
+                        // ignore errors — reset UI regardless
+                      }
+                      setTelegramState('idle');
+                    }}
+                    className="text-xs text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors underline underline-offset-2"
+                  >
+                    Link a different account
+                  </button>
                 </div>
               )}
             </div>

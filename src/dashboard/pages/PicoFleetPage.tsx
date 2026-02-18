@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Zap, Plus, Trash2, Clock, CheckCircle, XCircle, AlertCircle,
-  RefreshCw, Send, Loader2, ChevronDown, ChevronUp, X
+  RefreshCw, Send, Loader2, ChevronDown, ChevronUp, X, Activity
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -116,6 +116,9 @@ export function PicoFleetPage() {
   // Expanded task detail
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
+  // Recent activity (last 10 tasks — polled independently every 30s)
+  const [recentTasks, setRecentTasks] = useState<Array<{ id: string; description: string; status: string; created_at?: string }>>([]);
+
   // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
@@ -150,6 +153,24 @@ export function PicoFleetPage() {
   useEffect(() => {
     loadData(true);
   }, [loadData]);
+
+  // ---- Recent activity polling (every 30s) ----
+  useEffect(() => {
+    const fetchRecent = async () => {
+      try {
+        const res = await picoService.getTasks({ limit: 10 });
+        setRecentTasks(res.data.map(t => ({
+          id: t.id,
+          description: t.description,
+          status: t.status,
+          created_at: t.created_at,
+        })));
+      } catch { /* non-fatal */ }
+    };
+    fetchRecent();
+    const interval = setInterval(fetchRecent, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // ---- Agent actions ----
 
@@ -468,6 +489,56 @@ export function PicoFleetPage() {
           </div>
         </div>
       )}
+
+      {/* Weebo Activity Card — last 10 tasks, polled every 30s */}
+      <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg text-[#F4F6FF] flex items-center gap-2">
+            <Activity className="w-4 h-4 text-[#61FF7B]" />
+            Recent Activity
+            <Badge variant="outline" className="ml-2 border-[#7B61FF]/20 text-[#A7ACB8] text-xs">
+              {recentTasks.length}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {recentTasks.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-[#A7ACB8] text-sm">No recent activity.</p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {recentTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center gap-3 p-2.5 rounded-lg bg-[#05050A] border border-[#7B61FF]/10"
+                >
+                  {/* Colored status dot */}
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: getStatusColor(task.status) }}
+                  />
+                  {/* Description */}
+                  <span className="flex-1 text-sm text-[#F4F6FF] truncate">
+                    {task.description}
+                  </span>
+                  {/* Status */}
+                  <span
+                    className="text-xs capitalize shrink-0"
+                    style={{ color: getStatusColor(task.status) }}
+                  >
+                    {task.status}
+                  </span>
+                  {/* Time */}
+                  <span className="text-xs text-[#A7ACB8] shrink-0 hidden sm:block">
+                    {formatTime(task.created_at || null)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Task History */}
       <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
