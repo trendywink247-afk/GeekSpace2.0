@@ -1,11 +1,13 @@
-import { Bot, MessageSquare, Code, Briefcase, Check } from 'lucide-react';
+import { useState } from 'react';
+import { Bot, MessageSquare, Code, Briefcase, Check, ChevronDown, Key } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useTilt } from '@/hooks/useTilt';
 import type { AgentMode } from '@/types';
 
 const personalities = [
-  { id: 'edith' as const, name: 'Edith', role: 'CTO', description: 'Sharp, efficient, no-nonsense technical partner', color: '#FF6161' },
-  { id: 'jarvis' as const, name: 'Jarvis', role: 'Butler', description: 'Polished, helpful, anticipates your needs', color: '#7B61FF' },
-  { id: 'weebo' as const, name: 'Weebo', role: 'Enthusiastic', description: 'Energetic, creative, loves learning together', color: '#61FF7B' },
+  { id: 'edith' as const, name: 'Edith', role: 'CTO', description: 'Sharp, efficient, no-nonsense technical partner', color: '#FF6161', price: '$3/mo | \u20B9300/mo', premium: true },
+  { id: 'jarvis' as const, name: 'Jarvis', role: 'Butler', description: 'Polished, helpful, anticipates your needs', color: '#7B61FF', price: '$1/mo | \u20B9100/mo', premium: false },
+  { id: 'weebo' as const, name: 'Weebo', role: 'Enthusiastic', description: 'Energetic, creative, loves learning together', color: '#61FF7B', price: '$1/mo | \u20B9100/mo', premium: false },
 ];
 
 const agentModes: { id: AgentMode; name: string; description: string; icon: typeof Bot; features: string[]; color: string }[] = [
@@ -27,6 +29,9 @@ interface AgentStepProps {
 }
 
 export function AgentStep({ personality, agentMode, onPersonalityChange, onAgentModeChange }: AgentStepProps) {
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
@@ -64,6 +69,11 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
               <h3 className="font-semibold text-[#F4F6FF] text-sm">{p.name}</h3>
               <p className="text-xs text-[#A7ACB8] mt-0.5">{p.role}</p>
               <p className="text-xs text-[#A7ACB8]/70 mt-1">{p.description}</p>
+              <div className="mt-2 pt-2 border-t border-[#7B61FF]/10">
+                <span className={`text-[10px] font-medium ${p.premium ? 'text-[#FFD761]' : 'text-[#61FF7B]'}`}>
+                  {p.price}
+                </span>
+              </div>
             </button>
           ))}
         </div>
@@ -105,6 +115,34 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
             </TiltCard>
           ))}
         </div>
+      </div>
+
+      {/* API Key section */}
+      <div className="border border-[#7B61FF]/10 rounded-xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowApiKey(!showApiKey)}
+          className="w-full px-4 py-3 flex items-center justify-between text-sm text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors"
+        >
+          <span className="flex items-center gap-2">
+            <Key className="w-4 h-4" />
+            Have your own API key? (Optional)
+          </span>
+          <ChevronDown className={`w-4 h-4 transition-transform ${showApiKey ? 'rotate-180' : ''}`} />
+        </button>
+        {showApiKey && (
+          <div className="px-4 pb-4 space-y-2">
+            <p className="text-xs text-[#A7ACB8]/70">Add your OpenRouter API key to use your own credits. You can skip this and add it later in settings.</p>
+            <Input
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="sk-or-v1-..."
+              type="password"
+              className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF] text-sm"
+            />
+            <p className="text-[10px] text-[#A7ACB8]/50">Get a free key at openrouter.ai/keys</p>
+          </div>
+        )}
       </div>
     </div>
   );

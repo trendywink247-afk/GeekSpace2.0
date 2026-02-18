@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search, Sparkles, MapPin, Bot, ArrowLeft, Filter, MessageSquare, Eye, Users, Loader2
 } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,7 @@ const avatarGradients = [
 
 export function ExplorePage() {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState('All');
   const [chatOpen, setChatOpen] = useState(false);
@@ -69,7 +71,7 @@ export function ExplorePage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#05050A]/80 backdrop-blur-xl border-b border-[#7B61FF]/20">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/')} className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors">
+            <button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')} className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors">
               <ArrowLeft className="w-5 h-5 text-[#A7ACB8]" />
             </button>
             <div className="flex items-center gap-2">
@@ -77,9 +79,11 @@ export function ExplorePage() {
               <span className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Explore</span>
             </div>
           </div>
-          <Button onClick={() => navigate('/login')} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
-            Get Your Space
-          </Button>
+          {!isAuthenticated && (
+            <Button onClick={() => navigate('/login')} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+              Get Your Space
+            </Button>
+          )}
         </div>
       </nav>
 
@@ -164,9 +168,13 @@ export function ExplorePage() {
 
                 {/* Avatar + status */}
                 <div className="relative mb-4">
-                  <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${avatarGradients[i % avatarGradients.length]} flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform`}>
-                    {profile.avatar}
-                  </div>
+                  {profile.avatar && profile.avatar.startsWith('http') ? (
+                    <img src={profile.avatar} alt={profile.name} className="w-16 h-16 rounded-full bg-[#0B0B10] group-hover:scale-110 transition-transform" />
+                  ) : (
+                    <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${avatarGradients[i % avatarGradients.length]} flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform`}>
+                      {profile.avatar || profile.name?.[0] || '?'}
+                    </div>
+                  )}
                   {profile.agentEnabled && (
                     <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-[#61FF7B] border-2 border-[#0B0B10] flex items-center justify-center">
                       <Bot className="w-3 h-3 text-[#0B0B10]" />
