@@ -73,6 +73,8 @@ export type AgentVoice = 'professional' | 'friendly' | 'witty';
 
 export type AgentPersonality = 'edith' | 'jarvis' | 'weebo';
 
+export type ModelPreference = 'auto' | 'local' | 'cloud' | 'premium';
+
 export interface AgentConfig {
   id: string;
   userId: string;
@@ -81,6 +83,7 @@ export interface AgentConfig {
   mode: AgentMode;
   voice: AgentVoice;
   personality?: AgentPersonality;
+  model_preference?: ModelPreference;
   systemPrompt: string;
   primaryModel: string;
   fallbackModel?: string;

@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema, memoryCreateSchema, memoryUpdateSchema, deployPremiumSchema, premiumChatSchema, workflowQuerySchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
-import { routeChat, classifyIntent, computeCreditCost, deductSubscriptionCredits, streamOllama, type ChatMessage, type Provider } from '../services/llm.js';
+import { routeChat, classifyIntent, computeCreditCost, deductSubscriptionCredits, streamOllama, pickProvider, type ChatMessage, type Provider } from '../services/llm.js';
 import { edithChat } from '../services/edith.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
@@ -11,6 +11,7 @@ import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openc
 import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
 import { buildMemoryContext, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations } from '../services/memory.js';
+import { loadPicoContext, formatContextBlock } from '../services/pico-context.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
 import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeRequest } from '../services/pico-kimi-bridge.js';
 import { getUserWorkflows, getWorkflowStatus, getWorkflowAnalytics } from '../services/workflow-engine.js';
@@ -39,10 +40,9 @@ function buildSystemPrompt(
   const customPrompt = (agentConfig?.system_prompt as string) || '';
   const userName = (user?.name as string) || 'there';
 
-  const reminderCount = (db.prepare('SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 0').get(userId) as { c: number })?.c || 0;
-  const connectedCount = (db.prepare("SELECT COUNT(*) as c FROM integrations WHERE user_id = ? AND status = 'connected'").get(userId) as { c: number })?.c || 0;
-
-  // Inject memory context
+  // Load full PicoContext (superset of buildMemoryContext)
+  const picoCtx = loadPicoContext(userId);
+  // Keep buildMemoryContext for any additional AI-extracted memory context
   const memoryBlock = buildMemoryContext(userId, userMessage);
 
   return `${OPENCLAW_IDENTITY}
@@ -50,10 +50,12 @@ function buildSystemPrompt(
 --- PERSONALITY ---
 ${personalityPrompt}
 
+${formatContextBlock(picoCtx)}
+
 --- USER SESSION ---
 Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
 ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
-Active reminders: ${reminderCount}. Connected integrations: ${connectedCount}.${memoryBlock}
+${memoryBlock}
 
 IMPORTANT: Keep responses SHORT. 1-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain conversational text only.`;
 }
@@ -77,7 +79,7 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     creativity: 'creativity', formality: 'formality', responseSpeed: 'response_speed',
     monthlyBudgetUSD: 'monthly_budget_usd', avatarEmoji: 'avatar_emoji',
     accentColor: 'accent_color', bubbleStyle: 'bubble_style', status: 'status',
-    personality: 'personality',
+    personality: 'personality', model_preference: 'model_preference',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {
@@ -164,7 +166,8 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     const userCredits = (user?.credits as number) || 0;
 
     // Check subscription credits
-    const sub = db.prepare('SELECT credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number; billing_cycle_end: string } | undefined;
+    const sub = db.prepare('SELECT plan, credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string; credits_remaining: number; billing_cycle_end: string } | undefined;
+    const userPlan = sub?.plan || 'free';
     if (sub && sub.credits_remaining <= 0) {
       res.json({
         text: `You've used all your credits for this month! They reset on ${sub.billing_cycle_end.split('T')[0]}. Upgrade your plan for more.`,
@@ -383,11 +386,24 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     const messages: ChatMessage[] = [...history, { role: 'user', content: message }];
     const intent = classifyIntent(message);
 
+    // Resolve forced provider from prefix overrides or smart picker
+    let resolvedProvider: Provider | undefined;
+    if (forceRoute === 'local') {
+      resolvedProvider = 'ollama';
+    } else if (forceRoute === 'pico') {
+      resolvedProvider = 'picoclaw';
+    } else {
+      const smartProvider = await pickProvider(userId, message, userPlan);
+      if (smartProvider !== 'ollama') {
+        resolvedProvider = smartProvider;
+      }
+    }
+
     const result = await routeChat(messages, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
-      forceProvider: forceRoute === 'local' ? 'ollama' : forceRoute === 'pico' ? 'picoclaw' : undefined,
+      forceProvider: resolvedProvider,
     });
 
     // Determine tier from actual provider used
