@@ -201,10 +201,11 @@ Deploy ID: dep_${Date.now().toString(36)}`,
 
       agentService.chat(prompt, 'terminal')
         .then(({ data }) => {
+          const prefix = data.provider === 'jarvis-terminal' ? 'Jarvis: ' : '';
           setCommands((prev) =>
             prev.map((c) =>
               c.id === loadingCmd.id
-                ? { ...c, output: `${data.text}\n\n[${data.provider} · ${data.latencyMs}ms]`, isLoading: false }
+                ? { ...c, output: `${prefix}${data.text}\n\n[${data.provider} · ${data.latencyMs}ms]`, isLoading: false }
                 : c
             )
           );
