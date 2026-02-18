@@ -263,6 +263,31 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now')),
     expires_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS free_models (
+    id TEXT PRIMARY KEY,
+    display_name TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    context_length INTEGER DEFAULT 0,
+    parameters TEXT,
+    status TEXT DEFAULT 'active',
+    curated INTEGER DEFAULT 0,
+    first_seen TEXT NOT NULL,
+    last_seen TEXT NOT NULL,
+    last_checked TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS model_changelog (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    model_id TEXT NOT NULL,
+    event TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    notified INTEGER DEFAULT 0
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_free_models_status ON free_models(status);
+  CREATE INDEX IF NOT EXISTS idx_model_changelog_timestamp ON model_changelog(timestamp);
 `);
 
 // ── Migrations (safe to run on existing DBs) ────────────────
@@ -397,6 +422,10 @@ try {
 // Add model_preference to agent_configs if not present
 try {
   db.exec("ALTER TABLE agent_configs ADD COLUMN model_preference TEXT DEFAULT 'auto'");
+} catch { /* already exists */ }
+
+try {
+  db.exec("ALTER TABLE agent_configs ADD COLUMN preferred_free_model TEXT DEFAULT 'auto'");
 } catch { /* already exists */ }
 
 // Portfolio connection counter (Task 13)
