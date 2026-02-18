@@ -245,9 +245,9 @@ export function AgentSettingsPage() {
         </h2>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { value: 'auto', label: 'Auto', desc: 'Pico decides best model' },
-            { value: 'local', label: 'Local Engine', desc: 'Always Ollama — fastest for simple' },
-            { value: 'cloud', label: 'Cloud Engine', desc: 'OpenRouter free tier' },
+            { value: 'auto', label: 'Auto', desc: 'Weebo picks the best engine for your request' },
+            { value: 'local', label: 'Local AI Engine', desc: 'Always runs locally — fastest, most private' },
+            { value: 'cloud', label: 'Cloud Engine', desc: 'OpenRouter free tier — stronger reasoning' },
             { value: 'premium', label: 'Premium Engine', desc: 'Kimi K2 — best results, uses more credits' },
           ].map((opt) => (
             <button
