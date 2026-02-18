@@ -143,3 +143,14 @@ export const config = {
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',
 } as const;
+
+// ---- Startup validation ----
+if (config.isProduction) {
+  if (!config.adminToken) {
+    console.warn('WARNING: ADMIN_TOKEN not set — admin API will return 503');
+  }
+  if (config.encryptionKey && !/^[a-f0-9]{64}$/i.test(config.encryptionKey)) {
+    console.error('FATAL: ENCRYPTION_KEY must be 64 hex characters');
+    process.exit(1);
+  }
+}
