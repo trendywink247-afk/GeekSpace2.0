@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { picoService } from '@/services/api';
 
 // ---- Types ----
@@ -94,6 +96,7 @@ function formatTime(ts: string | null): string {
 // ---- Main Component ----
 
 export function PicoFleetPage() {
+  const isMobile = useMobileDetect();
   const [agents, setAgents] = useState<PicoAgent[]>([]);
   const [tasks, setTasks] = useState<PicoTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -260,7 +263,7 @@ export function PicoFleetPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <PullToRefreshWrapper onRefresh={() => loadData()} className="space-y-6 animate-in fade-in duration-500">
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top duration-300">
@@ -313,7 +316,7 @@ export function PicoFleetPage() {
             const color = getStatusColor(agent.status);
             const isPermanent = slotNum === 1;
             return (
-              <Card key={slotNum} className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all">
+              <Card key={slotNum} className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all press-scale">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg text-[#F4F6FF] flex items-center gap-2">
@@ -371,14 +374,14 @@ export function PicoFleetPage() {
             ];
             return (
               <Card key={slotNum} className="bg-[#0B0B10] border-[#7B61FF]/30 border-dashed">
-                <CardContent className="p-4 flex flex-col items-center gap-3 min-h-[180px]">
+                <CardContent className={`flex flex-col items-center gap-3 min-h-[180px] ${isMobile ? 'p-3' : 'p-4'}`}>
                   <p className="text-sm text-[#A7ACB8]">Choose personality</p>
                   <div className="flex gap-2">
                     {personalities.map((p) => (
                       <button
                         key={p.id}
                         onClick={() => setNewAgentPersonality(p.id)}
-                        className="flex flex-col items-center gap-1 p-2 rounded-lg border transition-all"
+                        className="flex flex-col items-center gap-1 p-3 sm:p-2 rounded-lg border transition-all min-w-[60px] min-h-[44px]"
                         style={{
                           borderColor: newAgentPersonality === p.id ? p.color : 'rgba(123,97,255,0.2)',
                           backgroundColor: newAgentPersonality === p.id ? `${p.color}10` : 'transparent',
@@ -423,7 +426,7 @@ export function PicoFleetPage() {
           return (
             <Card
               key={slotNum}
-              className="bg-[#0B0B10] border-[#7B61FF]/20 border-dashed hover:border-[#7B61FF]/40 transition-all cursor-pointer group"
+              className="bg-[#0B0B10] border-[#7B61FF]/20 border-dashed hover:border-[#7B61FF]/40 transition-all cursor-pointer group press-scale"
               onClick={() => setCreatingSlot(slotNum)}
             >
               <CardContent className="p-6 flex flex-col items-center justify-center gap-3 min-h-[180px]">
@@ -535,7 +538,7 @@ export function PicoFleetPage() {
               {recentTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="flex items-center gap-3 p-2.5 rounded-lg bg-[#05050A] border border-[#7B61FF]/10"
+                  className="flex items-center gap-3 p-3 sm:p-2.5 rounded-lg bg-[#05050A] border border-[#7B61FF]/10 min-h-[44px]"
                 >
                   {/* Colored status dot */}
                   <span
@@ -589,7 +592,7 @@ export function PicoFleetPage() {
                   <div key={task.id}>
                     <button
                       onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                      className="w-full text-left p-3 rounded-lg bg-[#05050A] border border-[#7B61FF]/10 hover:border-[#7B61FF]/30 transition-all"
+                      className="w-full text-left p-3 sm:p-3 py-4 rounded-lg bg-[#05050A] border border-[#7B61FF]/10 hover:border-[#7B61FF]/30 transition-all min-h-[44px]"
                     >
                       <div className="flex items-center gap-3">
                         {/* Status icon */}
@@ -690,6 +693,6 @@ export function PicoFleetPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PullToRefreshWrapper>
   );
 }

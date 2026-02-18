@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { userService, apiKeyService, memoryService, agentService } from '@/services/api';
 import type { ApiProvider, MemoryEntry } from '@/types';
 
@@ -36,6 +37,7 @@ export function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const { mode: themeMode, accentColor, accentPresets, setMode: setThemeMode, setAccentColor, setBackground } = useThemeStore();
+  const isMobile = useMobileDetect();
 
   const [profile, setProfile] = useState({
     name: user?.name || 'Alex Chen',
@@ -196,7 +198,7 @@ export function SettingsPage() {
           </h1>
           <p className="text-[#A7ACB8]">Manage your account preferences</p>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+        <Button onClick={handleSave} disabled={isSaving} className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale">
           {isSaving ? (
             <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
           ) : (
@@ -206,7 +208,7 @@ export function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20 p-1 flex-wrap">
+        <TabsList className={`bg-[#0B0B10] border border-[#7B61FF]/20 p-1 ${isMobile ? 'overflow-x-auto flex-nowrap w-full justify-start scrollbar-hide' : 'flex-wrap'}`}>
           <TabsTrigger value="profile" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
             <User className="w-4 h-4 mr-2" />Profile
           </TabsTrigger>
@@ -413,12 +415,12 @@ export function SettingsPage() {
                 <div className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/30 space-y-3">
                   <div>
                     <label className="text-sm text-[#A7ACB8] mb-2 block">Provider</label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       {(['openai', 'anthropic', 'qwen', 'openrouter'] as ApiProvider[]).map((p) => (
                         <button
                           key={p}
                           onClick={() => setNewKeyProvider(p)}
-                          className={`px-3 py-1.5 rounded-lg text-sm capitalize transition-all ${
+                          className={`px-3 py-2 min-h-[44px] rounded-lg text-sm capitalize transition-all ${
                             newKeyProvider === p
                               ? 'bg-[#7B61FF]/20 border border-[#7B61FF] text-[#7B61FF]'
                               : 'bg-[#0B0B10] border border-[#7B61FF]/20 text-[#A7ACB8]'
@@ -443,7 +445,7 @@ export function SettingsPage() {
                     <Button variant="outline" onClick={() => { setShowAddKey(false); setNewKeyValue(''); }} className="border-[#7B61FF]/30">
                       Cancel
                     </Button>
-                    <Button onClick={handleAddKey} disabled={!newKeyValue} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+                    <Button onClick={handleAddKey} disabled={!newKeyValue} className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale">
                       Save Key
                     </Button>
                   </div>
@@ -463,12 +465,12 @@ export function SettingsPage() {
                   <CardTitle>Agent Memory</CardTitle>
                   <CardDescription className="text-[#A7ACB8]">What your AI assistant remembers about you</CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {['all', 'fact', 'preference'].map((cat) => (
                     <button
                       key={cat}
                       onClick={() => setMemoryFilter(cat)}
-                      className={`px-3 py-1.5 rounded-lg text-xs capitalize transition-all ${
+                      className={`px-3 py-2 min-h-[44px] rounded-lg text-xs capitalize transition-all ${
                         memoryFilter === cat
                           ? 'bg-[#7B61FF]/20 border border-[#7B61FF] text-[#7B61FF]'
                           : 'bg-[#0B0B10] border border-[#7B61FF]/20 text-[#A7ACB8]'
@@ -625,7 +627,7 @@ export function SettingsPage() {
                     <button
                       key={color}
                       onClick={() => { setAccentColor(color); void agentService.updateConfig({ accentColor: color }).catch(() => {}); }}
-                      className={`w-10 h-10 rounded-xl transition-all ${
+                      className={`w-10 h-10 sm:w-8 sm:h-8 rounded-xl transition-all ${
                         accentColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0B0B10] scale-110' : 'hover:scale-110'
                       }`}
                       style={{ backgroundColor: color }}
@@ -667,7 +669,7 @@ export function SettingsPage() {
                     />
                     <p className="text-xs text-[#A7ACB8]">"{bgPreview.name}" — click Apply to use this background</p>
                     <div className="flex gap-2">
-                      <Button onClick={handleApplyBg} size="sm" className="bg-[#7B61FF] hover:bg-[#6B51EF]">Apply</Button>
+                      <Button onClick={handleApplyBg} size="sm" className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale">Apply</Button>
                       <Button onClick={handleGenerateBg} variant="outline" size="sm" className="border-[#7B61FF]/30">Try another</Button>
                     </div>
                   </div>
