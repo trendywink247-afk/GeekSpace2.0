@@ -18,8 +18,12 @@ fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 const db = new Database(DB_PATH);
 
-// Enable WAL mode for better concurrent read performance
-db.pragma('journal_mode = WAL');
+// Performance pragmas
+db.pragma('journal_mode = WAL');       // WAL: concurrent reads + single writer
+db.pragma('synchronous = NORMAL');     // Safe with WAL; skips fsync on every write
+db.pragma('cache_size = -32000');      // 32MB page cache (was 8MB default)
+db.pragma('temp_store = MEMORY');      // Temp tables in RAM not disk
+db.pragma('mmap_size = 134217728');    // 128MB memory-mapped I/O
 db.pragma('foreign_keys = ON');
 
 // ── Schema ──────────────────────────────────────────────────

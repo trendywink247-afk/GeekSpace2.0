@@ -43,14 +43,17 @@ Request → Helmet/CORS/RateLimit → Auth middleware → Route handler
 ```
 
 **Key server files:**
-- `server/src/index.ts` — Express app, middleware stack, 19 route mounts, subsystem init
+- `server/src/index.ts` — Express app, middleware stack, 20 route mounts, subsystem init
 - `server/src/config.ts` — All env vars with defaults, crashes on missing required vars in production
 - `server/src/db/index.ts` — SQLite schema, migrations (idempotent ALTER TABLE), seed data, plan definitions
 - `server/src/services/llm.ts` — Intent classifier + multi-provider router with credit-based cost system
+- `server/src/services/edith.ts` — Direct Moonshot/Kimi K2 HTTP client (OpenAI-compatible, 120s timeout, 1 retry). Used by premium sessions and pico-fleet. Shares `OPENROUTER_API_KEY`. `EDITH_GATEWAY_URL`/`EDITH_TOKEN` are deprecated config vars (old WebSocket bridge, now unused).
 - `server/src/services/pico-kimi-bridge.ts` — Complexity classifier, routes trivial→PicoClaw, complex→Kimi
+- `server/src/services/automations-engine.ts` — User-defined automations with cron/webhook/health_down triggers and call_api/log/send_message/create_reminder actions (separate from pico-kimi-bridge)
 - `server/src/services/message-router.ts` — Unified Telegram/WhatsApp handler with task-intent detection
 - `server/src/services/action-parser.ts` — Extracts `<<<ACTION {"tool":"...","params":{}} ACTION>>>` blocks from LLM output
 - `server/src/services/action-executor.ts` — Executes parsed actions (portfolio, reminders, email, code gen)
+- `server/src/services/model-sync.ts` — Daily sync of free OpenRouter models against live API; sends Telegram notification on changes
 - `server/src/prompts/openclaw-system.ts` — Main agent identity, compact variant, portfolio visitor prompt
 - `server/src/prompts/personalities.ts` — Edith (CTO), Jarvis (butler, default), Weebo (enthusiastic)
 
@@ -105,6 +108,8 @@ Per-user slot-based agents (up to 3). Task types: `create_reminder`, `telegram_m
 ## Environment
 
 - `.env` is gitignored. `.env.example` is tracked with all variables documented.
+- `OPENROUTER_API_KEY` — used for OpenRouter paid tier AND Moonshot/Kimi K2 (edith.ts). `OPENROUTER_FREE_API_KEY` is a separate key for the free-tier model rotation.
+- `OPENAI_API_KEY` — Whisper STT + TTS for voice notes (`voice.ts`); optional.
 - Production: `ai.geekspace.space` (frontend), `api.geekspace.space` (admin dashboard), via Caddy reverse proxy
 - Demo users: alex/sarah/marcus (password: `demo123`)
 - Branch: `live-production`

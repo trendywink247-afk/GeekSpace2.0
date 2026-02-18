@@ -14,8 +14,6 @@ import { logger, requestLogger } from './logger.js';
 import { errorHandler } from './middleware/errors.js';
 import { db } from './db/index.js';
 
-import { edithProbe } from './services/edith.js';
-import { picoClawProbe } from './services/picoclaw.js';
 import { initAutomationsEngine } from './services/automations-engine.js';
 import { initMemoryTables, startMemorySyncScheduler } from './services/memory.js';
 import { initWorkflowTables } from './services/workflow-engine.js';
@@ -42,7 +40,7 @@ import { recipesRouter } from './routes/recipes.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
 import { startReminderScheduler } from './services/reminder-scheduler.js';
 import { metricsMiddleware } from './middleware/metrics.js';
-import { healthRouter } from './routes/health.js';
+import { healthRouter, getCachedComponents, startHealthProbeCache } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { startModelSyncScheduler } from './services/model-sync.js';
 
@@ -134,59 +132,21 @@ const publicLimiter = rateLimit({
 app.use('/api/agent/chat/public', publicLimiter);
 app.use('/api/dashboard/contact', publicLimiter);
 
-// ---- Health check with live component probing ----
-app.get('/api/health', async (_req, res) => {
-  let dbOk = false;
-  try {
-    const row = db.prepare('SELECT 1 as ok').get() as { ok: number } | undefined;
-    dbOk = row?.ok === 1;
-  } catch { /* db not ready */ }
-
-  // Live probe: Ollama
-  let ollamaOk = false;
-  if (config.ollamaBaseUrl) {
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 3000);
-      const r = await fetch(`${config.ollamaBaseUrl}/api/tags`, { signal: ctrl.signal });
-      clearTimeout(timer);
-      ollamaOk = r.ok;
-    } catch { /* unreachable */ }
-  }
-
-  // Live probe: EDITH / OpenClaw — uses the shared edithProbe() which
-  // correctly rejects HTML responses and handles 401/403/405 as "reachable"
-  const edithOk = await edithProbe();
-
-  // Live probe: PicoClaw (automation engine)
-  const picoOk = config.picoClawEnabled ? await picoClawProbe() : false;
-
-  const allOk = dbOk;  // core requirement
-  const code = allOk ? 200 : 503;
-
-  // Bridge availability depends on having at least one LLM backend
-  const bridgeOk = config.bridgeEnabled && (ollamaOk || edithOk || !!config.openrouterApiKey);
-
-  res.status(code).json({
+// ---- Health check — served from 30s background cache (no live probing per request) ----
+app.get('/api/health', (_req, res) => {
+  const components = getCachedComponents();
+  const allOk = components.database === 'ok';
+  res.status(allOk ? 200 : 503).json({
     ok: allOk,
     status: allOk ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
     version: APP_VERSION,
     uptime: Math.floor(process.uptime()),
-    edith: edithOk,
-    ollama: ollamaOk,
-    picoclaw: picoOk,
-    bridge: bridgeOk,
-    components: {
-      database: dbOk ? 'ok' : 'down',
-      ollama: ollamaOk ? 'reachable' : (config.ollamaBaseUrl ? 'unreachable' : 'not_configured'),
-      openrouter: config.openrouterApiKey ? 'configured' : 'not_configured',
-      edith: edithOk ? 'reachable' : (config.edithGatewayUrl ? 'unreachable' : 'not_configured'),
-      picoclaw: picoOk ? 'reachable' : (config.picoClawEnabled ? 'unreachable' : 'not_configured'),
-      bridge: bridgeOk ? 'active' : (config.bridgeEnabled ? 'no_backends' : 'disabled'),
-      telegram: config.telegramBotToken ? 'configured' : 'not_configured',
-      n8n: config.n8nBaseUrl ? 'configured' : 'not_configured',
-    },
+    edith: components.edith === 'reachable',
+    ollama: components.ollama === 'reachable',
+    picoclaw: components.picoclaw === 'reachable',
+    bridge: components.bridge === 'active',
+    components,
   });
 });
 
@@ -242,16 +202,28 @@ app.listen(config.port, () => {
     ollamaUrl: config.ollamaBaseUrl,
   }, `GeekSpace API v${APP_VERSION} running on :${config.port}`);
 
-  // Initialize subsystems
+  // Idempotent table migrations — safe to run in every cluster worker
   initMemoryTables();
   initWorkflowTables();
   initPicoFleetTables();
   ensureDefaultAgents();
-  initAutomationsEngine();
-  startPicoWorker();
-  initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)'));
-  startBriefingScheduler();
-  startReminderScheduler();
-  startMemorySyncScheduler();
-  startModelSyncScheduler();
+
+  // Health probe cache — runs in every worker (own 30s timer per process)
+  startHealthProbeCache();
+
+  // Schedulers, Telegram bot, and cron jobs — run ONLY in the primary worker.
+  // In PM2 cluster mode NODE_APP_INSTANCE is '0' for the primary worker.
+  // In non-cluster mode (dev/local) the variable is undefined — run everything.
+  const isMainWorker = !process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === '0';
+  if (isMainWorker) {
+    initAutomationsEngine();
+    startPicoWorker();
+    initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)'));
+    startBriefingScheduler();
+    startReminderScheduler();
+    startMemorySyncScheduler();
+    startModelSyncScheduler();
+  } else {
+    logger.info({ worker: process.env.NODE_APP_INSTANCE }, 'Cluster worker — schedulers skipped');
+  }
 });
