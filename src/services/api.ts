@@ -137,6 +137,9 @@ export const agentService = {
 
   generateContent: (type: string, tags: string[], name?: string) =>
     api.post<{ content: string; parsed?: Record<string, unknown> }>('/agent/generate-content', { type, tags, name }),
+
+  generateBackground: (vibe?: string) =>
+    api.post<{ gradient: string; name: string; accent: string }>('/agent/generate-background', { vibe }),
 };
 
 // ----- API Keys ----------------------------------------------

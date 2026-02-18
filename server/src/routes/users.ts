@@ -39,6 +39,7 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), async (req
   const directFields: Record<string, string> = {
     name: 'name', username: 'username', bio: 'bio', avatar: 'avatar',
     location: 'location', website: 'website', role: 'role', company: 'company',
+    theme_background: 'theme_background',
   };
   for (const [key, col] of Object.entries(directFields)) {
     if (updates[key] !== undefined) { fields.push(`${col} = ?`); values.push(updates[key]); }

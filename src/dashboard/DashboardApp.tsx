@@ -72,6 +72,7 @@ export function DashboardApp() {
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
   const applyTheme = useThemeStore((s) => s.applyTheme);
   const setThemeMode = useThemeStore((s) => s.setMode);
+  const background = useThemeStore((s) => s.background);
   const themeMode = user?.theme?.mode as 'dark' | 'light' | 'system' | undefined;
 
   useEffect(() => {
@@ -270,7 +271,7 @@ export function DashboardApp() {
   );
 
   return (
-    <div className="min-h-screen bg-[#05050A] flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#05050A] flex flex-col md:flex-row" style={{ background: background || undefined }}>
       {/* ---- Session idle warning ---- */}
       {showIdleWarning && (
         <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-3 bg-[#FFD761]/10 border-b border-[#FFD761]/30 backdrop-blur-sm">

@@ -16,7 +16,8 @@ import {
   Trash2,
   Brain,
   Tag,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
-import { userService, apiKeyService, memoryService } from '@/services/api';
+import { userService, apiKeyService, memoryService, agentService } from '@/services/api';
 import type { ApiProvider, MemoryEntry } from '@/types';
 
 export function SettingsPage() {
@@ -34,7 +35,7 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-  const { mode: themeMode, accentColor, accentPresets, setMode: setThemeMode, setAccentColor } = useThemeStore();
+  const { mode: themeMode, accentColor, accentPresets, setMode: setThemeMode, setAccentColor, setBackground } = useThemeStore();
 
   const [profile, setProfile] = useState({
     name: user?.name || 'Alex Chen',
@@ -66,6 +67,11 @@ export function SettingsPage() {
   const [newKeyProvider, setNewKeyProvider] = useState<ApiProvider>('openai');
   const [newKeyValue, setNewKeyValue] = useState('');
   const [showAddKey, setShowAddKey] = useState(false);
+
+  // AI Background Generator state
+  const [bgVibe, setBgVibe] = useState('');
+  const [bgPreview, setBgPreview] = useState<{ gradient: string; name: string; accent: string } | null>(null);
+  const [isGeneratingBg, setIsGeneratingBg] = useState(false);
 
   // Memory state
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
@@ -114,6 +120,24 @@ export function SettingsPage() {
     } catch {
       // Silent fail — local state still updated
     }
+  };
+
+  const handleGenerateBg = async () => {
+    setIsGeneratingBg(true);
+    try {
+      const { data } = await agentService.generateBackground(bgVibe || undefined);
+      setBgPreview(data);
+    } catch {
+      // ignore
+    } finally {
+      setIsGeneratingBg(false);
+    }
+  };
+
+  const handleApplyBg = async () => {
+    if (!bgPreview) return;
+    setBackground(bgPreview.gradient);
+    await userService.updateProfile({ theme_background: bgPreview.gradient } as Parameters<typeof userService.updateProfile>[0]);
   };
 
   const handleSave = async () => {
@@ -618,6 +642,36 @@ export function SettingsPage() {
                   />
                   <span className="text-sm font-mono text-[#A7ACB8]">{accentColor}</span>
                 </div>
+              </div>
+
+              {/* AI Background Generator */}
+              <div className="space-y-3">
+                <label className="text-sm text-[#A7ACB8] block">AI-Generated Background</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Describe a vibe (optional)..."
+                    value={bgVibe}
+                    onChange={(e) => setBgVibe(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-lg bg-[#05050A] border border-[#7B61FF]/20 text-[#F4F6FF] text-sm focus:outline-none focus:border-[#7B61FF]/60"
+                  />
+                  <Button onClick={handleGenerateBg} disabled={isGeneratingBg} size="sm" className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+                    {isGeneratingBg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  </Button>
+                </div>
+                {bgPreview && (
+                  <div className="space-y-2">
+                    <div
+                      className="h-24 rounded-xl border border-[#7B61FF]/20"
+                      style={{ background: bgPreview.gradient }}
+                    />
+                    <p className="text-xs text-[#A7ACB8]">"{bgPreview.name}" — click Apply to use this background</p>
+                    <div className="flex gap-2">
+                      <Button onClick={handleApplyBg} size="sm" className="bg-[#7B61FF] hover:bg-[#6B51EF]">Apply</Button>
+                      <Button onClick={handleGenerateBg} variant="outline" size="sm" className="border-[#7B61FF]/30">Try another</Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

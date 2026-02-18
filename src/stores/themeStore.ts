@@ -15,9 +15,11 @@ interface ThemeStore {
   mode: ThemeMode;
   accentColor: string;
   accentPresets: string[];
+  background: string | null;
   setMode: (mode: ThemeMode) => void;
   setAccentColor: (color: string) => void;
   applyTheme: () => void;
+  setBackground: (background: string | null) => void;
 }
 
 export const useThemeStore = create<ThemeStore>()(
@@ -29,6 +31,7 @@ export const useThemeStore = create<ThemeStore>()(
         '#7B61FF', '#61FF7B', '#FF61DC', '#61B5FF',
         '#FFD761', '#FF6161', '#61FFD7', '#FF9B61',
       ],
+      background: null,
       setMode: (mode) => {
         set({ mode });
         applyThemeToDOM(mode);
@@ -38,6 +41,7 @@ export const useThemeStore = create<ThemeStore>()(
         document.documentElement.style.setProperty('--accent-dynamic', accentColor);
       },
       applyTheme: () => applyThemeToDOM(get().mode),
+      setBackground: (background) => set({ background }),
     }),
     { name: 'gs-theme' },
   ),
