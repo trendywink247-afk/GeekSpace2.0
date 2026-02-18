@@ -20,6 +20,13 @@ export interface TelegramUpdate {
     chat: { id: number; type: string; title?: string };
     date: number;
     text?: string;
+    voice?: {
+      file_id: string;
+      file_unique_id: string;
+      duration: number;
+      mime_type?: string;
+      file_size?: number;
+    };
     entities?: Array<{ type: string; offset: number; length: number }>;
   };
 }

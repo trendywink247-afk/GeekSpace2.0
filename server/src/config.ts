@@ -86,6 +86,9 @@ export const config = {
   // Redis (job queue)
   redisUrl: optional('REDIS_URL', 'redis://localhost:6379'),
 
+  // OpenAI (Whisper STT + TTS for voice notes)
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
+
   // Telegram
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
   telegramWebhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET || '',
