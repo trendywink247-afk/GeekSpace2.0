@@ -119,6 +119,7 @@ services:
       - OLLAMA_BASE_URL=${PICOCLAW_OLLAMA_URL:-http://ollama-qtzz-ollama-1:11434}
       - PICOCLAW_PORT=8080
       - PICOCLAW_MODEL=${PICOCLAW_MODEL:-qwen2.5-coder:1.5b}
+      - PICOCLAW_TIMEOUT_MS=15000
     networks:
       - geekspace-net
       - geekspace-shared
@@ -126,7 +127,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 30s
       retries: 3
     deploy:
       resources:

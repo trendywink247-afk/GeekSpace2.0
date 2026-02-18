@@ -24,6 +24,26 @@ import { sendTelegramMessage } from '../services/telegram.js';
 
 export const agentRouter = Router();
 
+// ---- Helper: Detect task intent in natural chat ----
+// Returns true if the message looks like a task request (remind, telegram, deploy)
+function detectAndHandleTaskIntent(message: string): boolean {
+  const lower = message.toLowerCase().trim();
+  // Must be an imperative/request — skip questions and short greetings
+  if (lower.endsWith('?') || lower.split(' ').length < 3) return false;
+  // Strong intent signals
+  const patterns = [
+    /\bremind\s+me\b/i,
+    /\bset\s+(?:a\s+)?reminder\b/i,
+    /\bsend\s+(?:a\s+)?(?:telegram|tg)\s+(?:message|notification|alert)\b/i,
+    /\bsend\s+(?:a\s+)?message\s+(?:on|via|through)\s+telegram\b/i,
+    /\bnotify\s+(?:me\s+)?(?:on|via)\s+telegram\b/i,
+    /\bdeploy\s+(?:my\s+)?portfolio\b/i,
+    /\bpublish\s+(?:my\s+)?portfolio\b/i,
+    /\bmake\s+(?:my\s+)?portfolio\s+(?:public|live)\b/i,
+  ];
+  return patterns.some(p => p.test(lower));
+}
+
 // ---- Helper: Build system prompt with user context ----
 
 function buildSystemPrompt(
@@ -350,6 +370,38 @@ You are assisting via the GeekSpace terminal. Be concise. No markdown headers. P
             error: `Unknown agent role: "${requestedRole}". Valid roles: ${validRoles.join(', ')}`,
           });
           return;
+        }
+      }
+    }
+
+    // ---- Auto-detect task intent: automatically create Pico tasks without /task prefix ----
+    if (!forceRoute) {
+      const taskIntentResult = detectAndHandleTaskIntent(message);
+      if (taskIntentResult) {
+        try {
+          const { planTasks: planTasksFn, queueTasks: queueTasksFn } = await import('../services/pico-fleet.js');
+          const { tasks } = await planTasksFn(userId, message, userPlan);
+
+          if (tasks.length > 0) {
+            const taskIds = queueTasksFn(userId, tasks, 'weebo');
+            const updatedSub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+            const summary = tasks.map(t => `**${t.task_type.replace(/_/g, ' ')}**: ${t.description}`).join('\n');
+
+            logConversation(userId, 'assistant', `Done! I've queued ${taskIds.length} task(s) for Weebo:\n${summary}`);
+
+            res.json({
+              text: `Done! I've queued ${taskIds.length} task(s) for Weebo:\n${summary}`,
+              route: 'pico-fleet',
+              tier: 'local',
+              provider: 'builtin',
+              latencyMs: 0,
+              creditsUsed: 0,
+              creditsRemaining: updatedSub?.credits_remaining ?? 0,
+            });
+            return;
+          }
+        } catch {
+          // Fall through to normal chat if task planning fails
         }
       }
     }

@@ -209,40 +209,77 @@ function estimateComplexity(request: string): 'simple' | 'medium' | 'complex' {
 }
 
 // ---- Simple Task Parser (no LLM) ----
+// Detects multiple intents in a single request and creates separate tasks.
+// Splits on "and also", "and then", "also", "then" when multiple types match.
 
 function parseSimpleTask(request: string): PlannedTask[] {
   const lower = request.toLowerCase();
-  if (lower.includes('remind') || lower.includes('reminder')) {
-    return [{
-      task_type: 'create_reminder',
-      description: request,
-      config: { reminder_text: request },
-      agent_slot: 1,
-    }];
+
+  // Try to split multi-intent requests on common conjunctions
+  const splitPatterns = /\b(?:and also|and then|,\s*(?:also|then)|;\s*(?:also|then)?)\b/i;
+  const segments = request.split(splitPatterns).map(s => s.trim()).filter(Boolean);
+
+  // If we have segments, parse each independently
+  if (segments.length > 1) {
+    const tasks: PlannedTask[] = [];
+    for (const seg of segments) {
+      tasks.push(...parseSingleIntent(seg));
+    }
+    // Deduplicate: if all tasks are the same type and same content, collapse
+    if (tasks.length > 1) return tasks;
   }
-  if (lower.includes('send') && (lower.includes('message') || lower.includes('telegram'))) {
-    return [{
-      task_type: 'telegram_message',
-      description: request,
-      config: { message: request },
-      agent_slot: 1,
-    }];
+
+  // Check if single request has multiple intent keywords
+  const hasReminder = /\bremind(?:er|me)?\b/i.test(lower);
+  const hasTelegram = /\b(?:send|message|telegram|notify)\b/i.test(lower) && /\b(?:telegram|message|send)\b/i.test(lower);
+  const hasDeploy = /\bdeploy\b/i.test(lower) || /\bpublish\s*portfolio\b/i.test(lower);
+
+  const intentCount = [hasReminder, hasTelegram, hasDeploy].filter(Boolean).length;
+
+  // Multiple distinct intents detected — split by intent type
+  if (intentCount >= 2) {
+    const tasks: PlannedTask[] = [];
+    if (hasReminder) {
+      // Extract reminder part
+      const reminderText = extractIntentText(request, /\bremind(?:er|me)?\b/i);
+      tasks.push({ task_type: 'create_reminder', description: reminderText, config: { reminder_text: reminderText }, agent_slot: 1 });
+    }
+    if (hasTelegram) {
+      const msgText = extractIntentText(request, /\b(?:send|telegram|message|notify)\b/i);
+      tasks.push({ task_type: 'telegram_message', description: msgText, config: { message: msgText }, agent_slot: 1 });
+    }
+    if (hasDeploy) {
+      tasks.push({ task_type: 'portfolio_deploy', description: 'Deploy portfolio', config: {}, agent_slot: 1 });
+    }
+    return tasks;
   }
-  if (lower.includes('deploy') || lower.includes('publish portfolio')) {
-    return [{
-      task_type: 'portfolio_deploy',
-      description: 'Deploy portfolio',
-      config: {},
-      agent_slot: 1,
-    }];
+
+  return parseSingleIntent(request);
+}
+
+function parseSingleIntent(request: string): PlannedTask[] {
+  const lower = request.toLowerCase();
+  if (/\bremind(?:er|me)?\b/i.test(lower)) {
+    return [{ task_type: 'create_reminder', description: request, config: { reminder_text: request }, agent_slot: 1 }];
   }
-  // Fallback: generic reminder for unrecognised simple requests
-  return [{
-    task_type: 'create_reminder',
-    description: request,
-    config: { reminder_text: request },
-    agent_slot: 1,
-  }];
+  if (/\b(?:send|message)\b/i.test(lower) && /\b(?:telegram|message)\b/i.test(lower)) {
+    return [{ task_type: 'telegram_message', description: request, config: { message: request }, agent_slot: 1 }];
+  }
+  if (/\bdeploy\b/i.test(lower) || /\bpublish\s*portfolio\b/i.test(lower)) {
+    return [{ task_type: 'portfolio_deploy', description: 'Deploy portfolio', config: {}, agent_slot: 1 }];
+  }
+  // Fallback: generic reminder
+  return [{ task_type: 'create_reminder', description: request, config: { reminder_text: request }, agent_slot: 1 }];
+}
+
+/** Extract the clause most relevant to a given intent keyword */
+function extractIntentText(request: string, pattern: RegExp): string {
+  // Try splitting on conjunctions to find the relevant clause
+  const clauses = request.split(/\b(?:and also|and then|,\s*and|;\s*)\b/i).map(s => s.trim());
+  for (const clause of clauses) {
+    if (pattern.test(clause.toLowerCase())) return clause;
+  }
+  return request; // fallback to full request
 }
 
 // ---- Kimi Task Planner ----
@@ -361,6 +398,9 @@ export function queueTasks(userId: string, tasks: PlannedTask[], plannedBy: stri
     );
     taskIds.push(id);
   }
+
+  // Wake the worker so tasks execute immediately (not 5 min later)
+  if (taskIds.length > 0) wakeWorker();
 
   return taskIds;
 }
@@ -616,35 +656,49 @@ async function checkAndRunRecipes(): Promise<void> {
 }
 
 let workerRunning = false;
+let idleStreak = 0;
+let nextTickTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Wake the worker immediately — call after queueing tasks */
+export function wakeWorker(): void {
+  if (!workerRunning) return;
+  idleStreak = 0;
+  if (nextTickTimer) {
+    clearTimeout(nextTickTimer);
+    nextTickTimer = null;
+  }
+  // Schedule immediate tick (1ms to avoid blocking caller)
+  nextTickTimer = setTimeout(tick, 1);
+  logger.debug('Pico worker woken — processing next tick immediately');
+}
+
+async function tick() {
+  nextTickTimer = null;
+  try {
+    refreshModelsIfStale().catch(() => {});
+    await checkDailySummarization();
+    await checkAndRunRecipes();
+    const worked = await processNextTask();
+    if (worked) {
+      idleStreak = 0;
+    } else {
+      idleStreak++;
+    }
+  } catch (err) {
+    logger.error({ err }, 'Pico worker tick error');
+  }
+
+  const IDLE_THRESHOLD = 10;
+  const interval = idleStreak >= IDLE_THRESHOLD
+    ? config.picoIdleIntervalMs   // 5 min when idle
+    : config.picoWorkerIntervalMs; // 10s normally
+
+  nextTickTimer = setTimeout(tick, interval);
+}
 
 export function startPicoWorker(): void {
   if (workerRunning) return;
   workerRunning = true;
-
-  let idleStreak = 0;           // consecutive ticks with no work
-  const IDLE_THRESHOLD = 10;    // after 10 idle ticks → slow mode
-
-  async function tick() {
-    try {
-      refreshModelsIfStale().catch(() => {});
-      await checkDailySummarization();
-      await checkAndRunRecipes();
-      const worked = await processNextTask();
-      if (worked) {
-        idleStreak = 0;
-      } else {
-        idleStreak++;
-      }
-    } catch (err) {
-      logger.error({ err }, 'Pico worker tick error');
-    }
-
-    const interval = idleStreak >= IDLE_THRESHOLD
-      ? config.picoIdleIntervalMs   // 5 min when idle
-      : config.picoWorkerIntervalMs; // 10s normally
-
-    setTimeout(tick, interval);
-  }
 
   tick();
   logger.info({ normal: config.picoWorkerIntervalMs, idle: config.picoIdleIntervalMs }, 'Pico worker started (adaptive)');
