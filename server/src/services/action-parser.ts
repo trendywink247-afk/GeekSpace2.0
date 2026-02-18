@@ -47,6 +47,16 @@ const sendEmailSchema = z.object({
   body: z.string().min(1).max(5000),
 });
 
+const crawlUrlSchema = z.object({
+  url: z.string().url(),
+  priority: z.number().int().min(1).max(10).default(5),
+});
+
+const triggerWorkflowSchema = z.object({
+  flowPath: z.string().min(1).max(500),
+  payload: z.record(z.string(), z.unknown()).default({}),
+});
+
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -55,6 +65,8 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   portfolio_remove_project: portfolioRemoveProjectSchema,
   portfolio_update_theme: portfolioUpdateThemeSchema,
   send_email: sendEmailSchema,
+  crawl_url: crawlUrlSchema,
+  trigger_workflow: triggerWorkflowSchema,
 };
 
 // ── Types ───────────────────────────────────────────────────
