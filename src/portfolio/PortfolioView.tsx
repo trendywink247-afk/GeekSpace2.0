@@ -160,43 +160,43 @@ export function PortfolioView() {
             {/* Profile Header */}
             <div className="text-center mb-12">
               {portfolio.avatar && portfolio.avatar.startsWith('http') ? (
-                <img src={portfolio.avatar} alt={displayName} className="w-24 h-24 mx-auto mb-6 rounded-full bg-[#0B0B10]" />
+                <img src={portfolio.avatar} alt={displayName} className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 rounded-full bg-[#0B0B10]" />
               ) : (
-                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center text-3xl font-bold">
+                <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center text-2xl md:text-3xl font-bold">
                   {portfolio.avatar || displayName?.[0] || '?'}
                 </div>
               )}
-              <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{displayName}</h1>
-              <p className="text-xl text-[#7B61FF] mb-4">{portfolio.headline}</p>
-              <div className="flex items-center justify-center gap-4 text-sm text-[#A7ACB8]">
+              <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>{displayName}</h1>
+              <p className="text-lg md:text-xl text-[#7B61FF] mb-4 px-2">{portfolio.headline}</p>
+              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-sm text-[#A7ACB8]">
                 {portfolio.role && portfolio.company && (
-                  <span className="flex items-center gap-1"><Briefcase className="w-4 h-4" />{portfolio.role} @ {portfolio.company}</span>
+                  <span className="flex items-center gap-1"><Briefcase className="w-4 h-4 shrink-0" />{portfolio.role} @ {portfolio.company}</span>
                 )}
                 {portfolio.location && (
-                  <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{portfolio.location}</span>
+                  <span className="flex items-center gap-1"><MapPin className="w-4 h-4 shrink-0" />{portfolio.location}</span>
                 )}
                 {(portfolio.connectionCount ?? 0) > 0 && (
                   <span className="text-xs text-[#A7ACB8] flex items-center gap-1">
-                    🔗 {portfolio.connectionCount} connection{portfolio.connectionCount !== 1 ? 's' : ''}
+                    {portfolio.connectionCount} connection{portfolio.connectionCount !== 1 ? 's' : ''}
                   </span>
                 )}
               </div>
               {/* Social Links */}
               <div className="flex items-center justify-center gap-3 mt-6">
                 {portfolio.social?.github && (
-                  <a href={`https://${portfolio.social.github}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-colors"><Github className="w-5 h-5 text-[#A7ACB8]" /></a>
+                  <a href={`https://${portfolio.social.github}`} target="_blank" rel="noopener noreferrer" className="p-3 md:p-2 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center press-scale"><Github className="w-5 h-5 text-[#A7ACB8]" /></a>
                 )}
                 {portfolio.social?.twitter && (
-                  <a href={`https://${portfolio.social.twitter}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-colors"><Twitter className="w-5 h-5 text-[#A7ACB8]" /></a>
+                  <a href={`https://${portfolio.social.twitter}`} target="_blank" rel="noopener noreferrer" className="p-3 md:p-2 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center press-scale"><Twitter className="w-5 h-5 text-[#A7ACB8]" /></a>
                 )}
                 {portfolio.social?.linkedin && (
-                  <a href={`https://${portfolio.social.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-colors"><Linkedin className="w-5 h-5 text-[#A7ACB8]" /></a>
+                  <a href={`https://${portfolio.social.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-3 md:p-2 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center press-scale"><Linkedin className="w-5 h-5 text-[#A7ACB8]" /></a>
                 )}
                 {portfolio.social?.website && (
-                  <a href={`https://${portfolio.social.website}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-colors"><Globe className="w-5 h-5 text-[#A7ACB8]" /></a>
+                  <a href={`https://${portfolio.social.website}`} target="_blank" rel="noopener noreferrer" className="p-3 md:p-2 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center press-scale"><Globe className="w-5 h-5 text-[#A7ACB8]" /></a>
                 )}
                 {portfolio.social?.email && (
-                  <a href={`mailto:${portfolio.social.email}`} className="p-2 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-colors"><Mail className="w-5 h-5 text-[#A7ACB8]" /></a>
+                  <a href={`mailto:${portfolio.social.email}`} className="p-3 md:p-2 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center press-scale"><Mail className="w-5 h-5 text-[#A7ACB8]" /></a>
                 )}
               </div>
             </div>
@@ -211,10 +211,12 @@ export function PortfolioView() {
             {portfolio.skills?.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4">Skills</h2>
-                <div className="flex flex-wrap gap-2">
-                  {portfolio.skills.map((skill, i) => (
-                    <span key={i} className="px-4 py-2 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30 text-[#7B61FF]">{skill}</span>
-                  ))}
+                <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+                  <div className="flex flex-nowrap md:flex-wrap gap-2 pb-2 md:pb-0">
+                    {portfolio.skills.map((skill, i) => (
+                      <span key={i} className="px-4 py-2 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30 text-[#7B61FF] whitespace-nowrap shrink-0">{skill}</span>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -223,18 +225,18 @@ export function PortfolioView() {
             {portfolio.projects?.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4">Projects</h2>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {portfolio.projects.map((project, i) => (
-                    <a key={i} href={project.url} className="p-5 rounded-xl bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all group">
-                      <div className="flex items-start justify-between">
+                    <a key={i} href={project.url} className="p-5 rounded-xl bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all group press-scale block w-full">
+                      <div className="flex items-start justify-between gap-2">
                         <h3 className="font-semibold text-[#F4F6FF] group-hover:text-[#7B61FF] transition-colors">{project.name}</h3>
                         {project.aiGenerated && (
-                          <Badge variant="outline" className="border-[#7B61FF]/30 text-[#7B61FF] text-xs">AI Generated</Badge>
+                          <Badge variant="outline" className="border-[#7B61FF]/30 text-[#7B61FF] text-xs shrink-0">AI Generated</Badge>
                         )}
                       </div>
                       <p className="text-sm text-[#A7ACB8] mt-1">{project.description}</p>
                       {project.tags && (
-                        <div className="flex gap-1 mt-3">
+                        <div className="flex flex-wrap gap-1 mt-3">
                           {project.tags.map((tag) => (
                             <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#05050A] text-[#A7ACB8]">{tag}</span>
                           ))}
@@ -272,17 +274,17 @@ export function PortfolioView() {
 
             {/* Inline CTA to open chat (when chat panel is closed) */}
             {portfolio.agentEnabled && !chatOpen && (
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-[#7B61FF]/20 to-[#0B0B10] border border-[#7B61FF]/30">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-[#7B61FF]/20 flex items-center justify-center">
+              <div className="p-4 md:p-6 rounded-2xl bg-gradient-to-br from-[#7B61FF]/20 to-[#0B0B10] border border-[#7B61FF]/30">
+                <div className="flex items-center gap-3 md:gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-[#7B61FF]/20 flex items-center justify-center shrink-0">
                     <Bot className="w-6 h-6 text-[#7B61FF]" />
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold">Chat with {firstName}'s Agent</h2>
+                  <div className="min-w-0">
+                    <h2 className="text-base md:text-lg font-semibold">Chat with {firstName}'s Agent</h2>
                     <p className="text-sm text-[#A7ACB8]">Ask questions, explore projects, or just say hello</p>
                   </div>
                 </div>
-                <Button onClick={() => setChatOpen(true)} className="w-full bg-[#7B61FF] hover:bg-[#6B51EF]">
+                <Button onClick={() => setChatOpen(true)} className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] min-h-[48px] press-scale">
                   <MessageSquare className="w-4 h-4 mr-2" />Start Conversation
                 </Button>
               </div>

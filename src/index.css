@@ -233,3 +233,11 @@ html, body {
 .press-scale:active {
   transform: scale(0.97);
 }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

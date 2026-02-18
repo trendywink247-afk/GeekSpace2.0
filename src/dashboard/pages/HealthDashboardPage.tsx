@@ -185,31 +185,31 @@ export function HealthDashboardPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1
             className="text-3xl md:text-4xl font-bold mb-1"
             style={{ fontFamily: 'Space Grotesk, sans-serif' }}
           >
             API Health
           </h1>
-          <p className="text-[#A7ACB8] flex items-center gap-2">
+          <p className="text-[#A7ACB8] flex items-center gap-2 text-sm md:text-base">
             {connected ? (
               <>
-                <span className="w-2 h-2 rounded-full bg-[#61FF7B] animate-pulse" />
-                Live — updates every 5s
+                <span className="w-2 h-2 rounded-full bg-[#61FF7B] animate-pulse shrink-0" />
+                <span className="truncate">Live — updates every 5s</span>
               </>
             ) : (
               <>
-                <span className="w-2 h-2 rounded-full bg-[#FF6161]" />
-                {error || 'Disconnected'}
+                <span className="w-2 h-2 rounded-full bg-[#FF6161] shrink-0" />
+                <span className="truncate">{error || 'Disconnected'}</span>
               </>
             )}
           </p>
         </div>
         <Badge
           variant="outline"
-          className="border-[#7B61FF]/40 text-[#7B61FF]"
+          className="border-[#7B61FF]/40 text-[#7B61FF] shrink-0 text-xs"
         >
           {new Date(snapshot.timestamp).toLocaleTimeString()}
         </Badge>
@@ -224,13 +224,13 @@ export function HealthDashboardPage() {
           { label: 'Req/min', value: snapshot.metrics.requestsPerMinute, icon: Zap, color: '#7B61FF' },
           { label: 'Uptime', value: formatUptime(snapshot.system.uptime), icon: Server, color: '#61FF7B' },
         ].map((stat) => (
-          <Card key={stat.label} className="bg-[#0B0B10] border-[#7B61FF]/20">
-            <CardContent className="p-4">
+          <Card key={stat.label} className="bg-[#0B0B10] border-[#7B61FF]/20 press-scale">
+            <CardContent className="p-3 md:p-4">
               <div className="flex items-center gap-2 mb-1">
                 <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
                 <span className="text-xs text-[#A7ACB8]">{stat.label}</span>
               </div>
-              <p className="text-xl font-bold text-[#F4F6FF]">{stat.value}</p>
+              <p className="text-2xl md:text-xl font-bold text-[#F4F6FF]">{stat.value}</p>
             </CardContent>
           </Card>
         ))}
@@ -244,8 +244,8 @@ export function HealthDashboardPage() {
             const Icon = componentIcons[key] || Wifi;
             const color = statusColor(status);
             return (
-              <Card key={key} className="bg-[#0B0B10] border-[#7B61FF]/20 transition-all hover:border-[#7B61FF]/40">
-                <CardContent className="p-4 flex items-center gap-3">
+              <Card key={key} className="bg-[#0B0B10] transition-all hover:border-[#7B61FF]/40 press-scale" style={{ borderColor: `${color}40` }}>
+                <CardContent className="p-3 md:p-4 flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}15` }}>
                     <Icon className="w-4 h-4" style={{ color }} />
                   </div>
@@ -304,7 +304,7 @@ export function HealthDashboardPage() {
                 <tbody>
                   {snapshot.topEndpoints.map((ep) => (
                     <tr key={ep.path} className="border-b border-[#7B61FF]/5 hover:bg-[#7B61FF]/5 transition-colors">
-                      <td className="px-4 py-2.5 font-mono text-[#F4F6FF] text-xs">{ep.path}</td>
+                      <td className="px-4 py-2.5 font-mono text-[#F4F6FF] text-xs whitespace-nowrap">{ep.path}</td>
                       <td className="px-4 py-2.5 text-right text-[#F4F6FF]">{ep.count}</td>
                       <td className="px-4 py-2.5 text-right" style={{ color: ep.errors > 0 ? '#FF6161' : '#61FF7B' }}>{ep.errors}</td>
                       <td className="px-4 py-2.5 text-right" style={{ color: ep.avgMs > 1000 ? '#FFD761' : '#A7ACB8' }}>{ep.avgMs}ms</td>
