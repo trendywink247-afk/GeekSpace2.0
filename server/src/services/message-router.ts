@@ -254,14 +254,14 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     actionResults.push(actionResult);
   }
 
-  const finalReply = cleanReply || replyText;
-
-  // Build action summary for channel (no iframe possible)
-  // Strip any remaining action-like patterns the parser missed (malformed tags)
-  let channelReply = finalReply
+  // Strip any remaining action-like patterns the parser missed (malformed tags, PicoClaw inline format)
+  const finalReply = (cleanReply || replyText)
     .replace(/<<<?\w[\s\S]*?>>>?/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+
+  // Build action summary for channel (no iframe possible)
+  let channelReply = finalReply;
   for (const ar of actionResults) {
     if (ar.success) {
       channelReply += `\n\n✅ ${ar.message}`;
