@@ -645,123 +645,122 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             </CardContent>
           </Card>
 
-          {/* Available AI Models */}
-          {freeModels.length > 0 && (
-            <div className="col-span-full">
-              <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-[#7B61FF]" />
-                      <CardTitle className="text-lg font-semibold">Available AI Models</CardTitle>
-                    </div>
-                    {modelsLastUpdated && (
-                      <span className="text-xs text-[#A7ACB8]">
-                        Updated {new Date(modelsLastUpdated).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-[#A7ACB8] mt-1">Free models powered by OpenRouter — updated daily</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-2">
-                    {/* Auto-select */}
-                    <button
-                      onClick={() => handleSelectModel('auto')}
-                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                        preferredModel === 'auto'
-                          ? 'border-[#7B61FF] bg-[#7B61FF]/10'
-                          : 'border-[#1E1E2A] bg-[#0F0F18] hover:border-[#7B61FF]/40'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-sm font-medium text-[#F4F6FF]">Auto-select</span>
-                          <p className="text-xs text-[#A7ACB8] mt-0.5">System picks the best available model for each request</p>
-                        </div>
-                        {preferredModel === 'auto' && <Check className="w-4 h-4 text-[#7B61FF] shrink-0" />}
-                      </div>
-                    </button>
-
-                    {/* Model cards */}
-                    {freeModels.map(model => (
-                      <button
-                        key={model.id}
-                        onClick={() => handleSelectModel(model.id)}
-                        disabled={modelSaving === model.id}
-                        className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                          preferredModel === model.id
-                            ? 'border-[#7B61FF] bg-[#7B61FF]/10'
-                            : 'border-[#1E1E2A] bg-[#0F0F18] hover:border-[#7B61FF]/40'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-md bg-[#1E1E2A] flex items-center justify-center text-xs font-bold text-[#7B61FF] shrink-0">
-                              {model.provider.slice(0, 2).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm font-medium text-[#F4F6FF]">{model.displayName}</span>
-                                {model.isNew && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FFD761]/20 text-[#FFD761] font-medium">NEW</span>
-                                )}
-                                {model.parameters && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1E1E2A] text-[#A7ACB8] font-mono">{model.parameters}</span>
-                                )}
-                              </div>
-                              <p className="text-xs text-[#A7ACB8] mt-0.5 truncate">{model.summary}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1E1E2A] text-[#A7ACB8] font-mono">
-                              {model.contextLength >= 1000 ? `${Math.round(model.contextLength / 1000)}K` : model.contextLength} ctx
-                            </span>
-                            {preferredModel === model.id && <Check className="w-4 h-4 text-[#7B61FF]" />}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <p className="text-xs text-[#A7ACB8] mt-4">
-                    Tip: Use <code className="text-[#7B61FF] bg-[#1E1E2A] px-1 rounded">/model</code> in Telegram to switch models, or let auto-select pick the best one.
-                  </p>
-
-                  {/* Collapsible changelog */}
-                  {changelog.length > 0 && (
-                    <div className="mt-4 border-t border-[#1E1E2A] pt-3">
-                      <button
-                        onClick={() => setShowChangelog(!showChangelog)}
-                        className="flex items-center gap-1 text-xs text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors"
-                      >
-                        {showChangelog ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                        Recent changes ({changelog.length})
-                      </button>
-                      {showChangelog && (
-                        <div className="mt-2 space-y-1">
-                          {changelog.slice(0, 10).map((entry, i) => (
-                            <div key={i} className="flex items-center gap-2 text-xs">
-                              <span className={
-                                entry.event === 'added' || entry.event === 'returned' ? 'text-[#61FF7B]' :
-                                entry.event === 'removed' ? 'text-[#FF6161]' : 'text-[#FFD761]'
-                              }>
-                                {entry.event === 'added' ? '+' : entry.event === 'removed' ? '-' : entry.event === 'returned' ? '↩' : '🔍'}
-                              </span>
-                              <span className="text-[#A7ACB8]">{entry.displayName}</span>
-                              <span className="text-[#555] ml-auto">{new Date(entry.timestamp).toLocaleDateString()}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Available AI Models — full-width grid below the 3-col section */}
+      {freeModels.length > 0 && (
+        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[#7B61FF]" />
+                <CardTitle className="text-lg font-semibold">Available AI Models</CardTitle>
+              </div>
+              {modelsLastUpdated && (
+                <span className="text-xs text-[#A7ACB8]">
+                  Updated {new Date(modelsLastUpdated).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-[#A7ACB8] mt-1">Free models via OpenRouter — refreshed daily. Pin one or let auto-select decide.</p>
+          </CardHeader>
+          <CardContent>
+            {/* Auto-select — full-width row */}
+            <button
+              onClick={() => handleSelectModel('auto')}
+              className={`w-full text-left p-3 rounded-lg border transition-colors mb-3 ${
+                preferredModel === 'auto'
+                  ? 'border-[#7B61FF] bg-[#7B61FF]/10'
+                  : 'border-[#1E1E2A] bg-[#0F0F18] hover:border-[#7B61FF]/40'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <span className="text-sm font-medium text-[#F4F6FF]">Auto-select</span>
+                  <p className="text-xs text-[#A7ACB8] mt-0.5">System picks the best available model for each request</p>
+                </div>
+                {preferredModel === 'auto' && <Check className="w-4 h-4 text-[#7B61FF] shrink-0" />}
+              </div>
+            </button>
+
+            {/* Models — responsive grid: 2 cols mobile, 3 tablet, 4 desktop */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {freeModels.map(model => (
+                <button
+                  key={model.id}
+                  onClick={() => handleSelectModel(model.id)}
+                  disabled={modelSaving === model.id}
+                  className={`text-left p-3 rounded-lg border transition-colors ${
+                    preferredModel === model.id
+                      ? 'border-[#7B61FF] bg-[#7B61FF]/10'
+                      : 'border-[#1E1E2A] bg-[#0F0F18] hover:border-[#7B61FF]/40'
+                  }`}
+                >
+                  {/* Header row: provider badge + badges */}
+                  <div className="flex items-start justify-between gap-1 mb-2">
+                    <div className="w-7 h-7 rounded-md bg-[#1E1E2A] flex items-center justify-center text-[10px] font-bold text-[#7B61FF] shrink-0">
+                      {model.provider.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {model.isNew && (
+                        <span className="text-[9px] px-1 py-0.5 rounded bg-[#FFD761]/20 text-[#FFD761] font-medium leading-none">NEW</span>
+                      )}
+                      {preferredModel === model.id && <Check className="w-3.5 h-3.5 text-[#7B61FF]" />}
+                    </div>
+                  </div>
+                  {/* Name */}
+                  <div className="text-xs font-semibold text-[#F4F6FF] leading-snug mb-1">{model.displayName}</div>
+                  {/* Summary */}
+                  <p className="text-[11px] text-[#A7ACB8] leading-snug line-clamp-2 mb-2">{model.summary}</p>
+                  {/* Meta badges */}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {model.parameters && (
+                      <span className="text-[10px] px-1 py-0.5 rounded bg-[#1E1E2A] text-[#A7ACB8] font-mono">{model.parameters}</span>
+                    )}
+                    <span className="text-[10px] px-1 py-0.5 rounded bg-[#1E1E2A] text-[#A7ACB8] font-mono">
+                      {model.contextLength >= 1000 ? `${Math.round(model.contextLength / 1000)}K` : model.contextLength}ctx
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <p className="text-xs text-[#A7ACB8] mt-4">
+              Tip: Use <code className="text-[#7B61FF] bg-[#1E1E2A] px-1 rounded">/model</code> in Telegram to switch, or let auto-select handle it.
+            </p>
+
+            {/* Collapsible changelog */}
+            {changelog.length > 0 && (
+              <div className="mt-4 border-t border-[#1E1E2A] pt-3">
+                <button
+                  onClick={() => setShowChangelog(!showChangelog)}
+                  className="flex items-center gap-1 text-xs text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors"
+                >
+                  {showChangelog ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  Recent changes ({changelog.length})
+                </button>
+                {showChangelog && (
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
+                    {changelog.slice(0, 12).map((entry, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        <span className={
+                          entry.event === 'added' || entry.event === 'returned' ? 'text-[#61FF7B]' :
+                          entry.event === 'removed' ? 'text-[#FF6161]' : 'text-[#FFD761]'
+                        }>
+                          {entry.event === 'added' ? '+' : entry.event === 'removed' ? '-' : entry.event === 'returned' ? '↩' : '🔍'}
+                        </span>
+                        <span className="text-[#A7ACB8] truncate">{entry.displayName}</span>
+                        <span className="text-[#555] ml-auto shrink-0">{new Date(entry.timestamp).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
     </PullToRefreshWrapper>
   );
