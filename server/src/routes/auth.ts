@@ -128,6 +128,8 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
       theme: { mode: user.theme_mode, accentColor: user.theme_accent },
       plan: user.plan,
       credits: user.credits,
+      onboardingCompleted: !!user.onboarding_completed,
+      onboardingStep: (user.onboarding_step as number) ?? 0,
       createdAt: user.created_at,
     },
     token,
