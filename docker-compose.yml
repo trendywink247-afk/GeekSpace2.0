@@ -31,6 +31,7 @@ services:
       - 1.1.1.1
     volumes:
       - geekspace-data:/app/data
+      - apm-data:/app/apminsightdata
     networks:
       - geekspace-net
       - geekspace-shared
@@ -170,6 +171,8 @@ services:
 
 volumes:
   geekspace-data:
+    driver: local
+  apm-data:
     driver: local
   redis-data:
     driver: local
