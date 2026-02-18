@@ -18,6 +18,7 @@ import { config } from '../config.js';
 import { edithChat } from './edith.js';
 import { computeCreditCost, deductSubscriptionCredits } from './llm.js';
 import { refreshModelsIfStale } from './openrouter-models.js';
+import { eventBus } from './event-bus.js';
 
 // ---- Types ----
 
@@ -625,6 +626,7 @@ async function executeTask(task: PicoTask): Promise<void> {
     .run(now, task.id);
   db.prepare('INSERT INTO pico_task_logs (id, task_id, agent_id, event, detail) VALUES (?, ?, ?, ?, ?)')
     .run(uuid(), task.id, task.agent_id, 'started', `Executing ${task.task_type}`);
+  eventBus.emit('pico:task', { event: 'started', taskId: task.id, taskType: task.task_type, userId: task.user_id });
 
   let output = '';
   try {
@@ -722,6 +724,7 @@ async function executeTask(task: PicoTask): Promise<void> {
     db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Pico task completed', ?, 'zap')`)
       .run(uuid(), task.user_id, `${task.task_type}: ${output.slice(0, 100)}`);
 
+    eventBus.emit('pico:task', { event: 'completed', taskId: task.id, taskType: task.task_type, userId: task.user_id, result: output.slice(0, 200) });
     logger.info({ taskId: task.id, taskType: task.task_type }, 'Pico task completed');
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -734,6 +737,7 @@ async function executeTask(task: PicoTask): Promise<void> {
     db.prepare('INSERT INTO pico_task_logs (id, task_id, agent_id, event, detail) VALUES (?, ?, ?, ?, ?)')
       .run(uuid(), task.id, task.agent_id, 'failed', errorMsg);
 
+    eventBus.emit('pico:task', { event: 'failed', taskId: task.id, taskType: task.task_type, userId: task.user_id, error: errorMsg.slice(0, 200) });
     logger.warn({ taskId: task.id, taskType: task.task_type, error: errorMsg }, 'Pico task failed');
   }
 }

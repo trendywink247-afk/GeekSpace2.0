@@ -16,7 +16,7 @@ import { db } from './db/index.js';
 import { edithProbe } from './services/edith.js';
 import { picoClawProbe } from './services/picoclaw.js';
 import { initAutomationsEngine } from './services/automations-engine.js';
-import { initMemoryTables } from './services/memory.js';
+import { initMemoryTables, startMemorySyncScheduler } from './services/memory.js';
 import { initWorkflowTables } from './services/workflow-engine.js';
 import { authRouter } from './routes/auth.js';
 import { usersRouter } from './routes/users.js';
@@ -249,5 +249,6 @@ app.listen(config.port, () => {
   initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)'));
   startBriefingScheduler();
   startReminderScheduler();
+  startMemorySyncScheduler();
   fetchFreeModels().catch(() => { logger.warn('OpenRouter model prefetch failed'); });
 });
