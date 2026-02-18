@@ -553,6 +553,32 @@ async function executeTask(task: PicoTask): Promise<void> {
   }
 }
 
+// ---- Daily Memory Summarizer ----
+
+async function checkDailySummarization(): Promise<void> {
+  const hour = new Date().getHours();
+  if (hour !== 0) return; // only at midnight
+
+  try {
+    const { summarizeUserDay } = await import('./memory-summarizer.js');
+
+    const users = db.prepare(`
+      SELECT DISTINCT user_id FROM conversation_log
+      WHERE date(created_at) = date('now', '-1 day')
+      AND user_id NOT IN (
+        SELECT user_id FROM agent_memory
+        WHERE category = 'auto_summary' AND key = date('now')
+      )
+    `).all() as { user_id: string }[];
+
+    for (const { user_id } of users) {
+      await summarizeUserDay(user_id);
+    }
+  } catch (err) {
+    logger.error({ err }, 'Daily summarization check failed');
+  }
+}
+
 // ---- Recipe Scheduler ----
 
 async function checkAndRunRecipes(): Promise<void> {
@@ -592,6 +618,7 @@ export function startPicoWorker(): void {
 
   async function tick() {
     try {
+      await checkDailySummarization();
       await checkAndRunRecipes();
       const worked = await processNextTask();
       if (worked) {
