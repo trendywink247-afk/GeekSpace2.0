@@ -93,7 +93,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
               <button
                 type="button"
                 onClick={() => toggle(opt.id)}
-                className={`w-full p-4 rounded-xl border transition-all flex items-center justify-between ${
+                className={`w-full p-4 min-h-[44px] rounded-xl border transition-all flex items-center justify-between ${
                   isSelected || (isTelegram && telegramState === 'connected')
                     ? 'border-[#7B61FF] bg-[#7B61FF]/10'
                     : 'border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40'
@@ -118,12 +118,12 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
                   <p className="text-sm text-[#A7ACB8]">
                     Click the button below to open Telegram, then send <span className="text-[#7B61FF] font-mono">/start</span> to the bot.
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <a
                       href={deepLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#7B61FF] text-white rounded-lg text-sm font-medium hover:bg-[#6B51EF] transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-[#7B61FF] text-white rounded-lg text-sm font-medium hover:bg-[#6B51EF] transition-colors"
                     >
                       <ExternalLink className="w-4 h-4" />
                       Open Telegram
@@ -132,7 +132,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
                       variant="outline"
                       size="sm"
                       onClick={handleCheckStatus}
-                      className="border-[#7B61FF]/30 text-[#A7ACB8]"
+                      className="min-h-[44px] border-[#7B61FF]/30 text-[#A7ACB8]"
                     >
                       <RefreshCw className="w-4 h-4 mr-1" />
                       I've connected
@@ -178,7 +178,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm text-[#A7ACB8] hover:text-[#7B61FF] transition-colors"
+          className="text-sm text-[#A7ACB8] hover:text-[#7B61FF] transition-colors min-h-[44px] px-4"
         >
           I'll do this later
         </button>

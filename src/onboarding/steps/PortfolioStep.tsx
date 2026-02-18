@@ -61,7 +61,7 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
           type="button"
           onClick={handleMagic}
           disabled={magicLoading}
-          className="w-full py-3 rounded-xl border-2 border-dashed border-[#7B61FF]/40 text-[#7B61FF] hover:bg-[#7B61FF]/10 hover:border-[#7B61FF] transition-all flex items-center justify-center gap-2 text-sm font-medium"
+          className="w-full py-3 min-h-[44px] rounded-xl border-2 border-dashed border-[#7B61FF]/40 text-[#7B61FF] hover:bg-[#7B61FF]/10 hover:border-[#7B61FF] transition-all flex items-center justify-center gap-2 text-sm font-medium"
         >
           {magicLoading ? (
             <>
@@ -129,7 +129,7 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm text-[#A7ACB8] hover:text-[#7B61FF] transition-colors"
+          className="text-sm text-[#A7ACB8] hover:text-[#7B61FF] transition-colors min-h-[44px] px-4"
         >
           I'll do this later
         </button>

@@ -89,7 +89,7 @@ export function ReviewStep({ onboarding, onLaunch, isLaunching }: ReviewStepProp
       <Button
         onClick={onLaunch}
         disabled={isLaunching}
-        className="w-full h-12 bg-[#7B61FF] hover:bg-[#6B51EF] text-base font-semibold pulse-glow"
+        className="w-full h-12 min-h-[44px] bg-[#7B61FF] hover:bg-[#6B51EF] text-base font-semibold pulse-glow"
       >
         {isLaunching ? (
           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
