@@ -43,6 +43,9 @@ COPY --from=builder /app/server/dist ./server/dist
 # Copy built frontend
 COPY --from=builder /app/dist ./dist
 
+# Copy admin dashboard
+COPY --from=builder /app/admin-dashboard ./admin-dashboard
+
 # Create data directory for SQLite
 RUN mkdir -p /app/data && chown -R node:node /app/data
 

@@ -381,16 +381,16 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
   return (
     <>
-      {/* Backdrop */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] md:bg-transparent md:backdrop-blur-none" onClick={onClose} />
+      {/* Backdrop — only on desktop (mobile chat is full-screen, no backdrop needed) */}
+      {isOpen && !isMobile && (
+        <div className="fixed inset-0 z-[60]" onClick={onClose} />
       )}
 
       {/* Panel */}
       <div
         className={`${
           isMobile
-            ? 'fixed inset-0 z-50 bg-[#0B0B10] flex flex-col'
+            ? 'fixed inset-0 z-[70] bg-[#0B0B10] flex flex-col'
             : `fixed right-0 top-0 h-full w-full md:w-[420px] bg-[#0B0B10] border-l border-[#7B61FF]/20 shadow-2xl shadow-[#7B61FF]/10 z-[61] flex flex-col`
         } transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
