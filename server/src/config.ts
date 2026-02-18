@@ -135,6 +135,11 @@ export const config = {
   adminDashboardPassword: process.env.ADMIN_DASHBOARD_PASSWORD || '',
   adminToken: optional('ADMIN_TOKEN', ''),
 
+  // Docker tool services
+  crawl4aiUrl: optional('CRAWL4AI_URL', 'http://crawl4ai-ykgs-crawl4ai-1:11235'),
+  windmillUrl: optional('WINDMILL_URL', 'http://windmill-95s4-windmill_server-1:8000'),
+  windmillToken: process.env.WINDMILL_TOKEN || '',
+
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',
 } as const;

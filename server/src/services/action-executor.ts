@@ -11,6 +11,7 @@ import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { sendAgentEmail, resolveEmailAddress } from './email.js';
 import type { ParsedAction } from './action-parser.js';
+import { config } from '../config.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -187,6 +188,74 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           success: true,
           message: `Email sent to ${to}`,
           data: { to, subject: params.subject as string },
+        };
+      }
+
+      // ── crawl_url ─────────────────────────────────────────
+      case 'crawl_url': {
+        const url = params.url as string;
+        const priority = (params.priority as number) || 5;
+
+        const resp = await fetch(`${config.crawl4aiUrl}/crawl`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ urls: [url], priority }),
+        });
+
+        if (!resp.ok) {
+          return {
+            tool,
+            success: false,
+            message: `Crawl failed with status ${resp.status}`,
+          };
+        }
+
+        const result = await resp.json() as { results?: Array<{ markdown?: string; url?: string }> };
+        const markdown = result.results?.[0]?.markdown || '';
+        const truncated = markdown.length > 4000 ? markdown.slice(0, 4000) + '\n\n[truncated]' : markdown;
+
+        return {
+          tool,
+          success: true,
+          message: `Crawled ${url} — ${markdown.length} chars`,
+          data: { url, content: truncated },
+        };
+      }
+
+      // ── trigger_workflow ──────────────────────────────────
+      case 'trigger_workflow': {
+        const flowPath = params.flowPath as string;
+        const payload = (params.payload as Record<string, unknown>) || {};
+
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (config.windmillToken) {
+          headers['Authorization'] = `Bearer ${config.windmillToken}`;
+        }
+
+        const resp = await fetch(
+          `${config.windmillUrl}/api/w/admins/jobs/run/f/${flowPath}`,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+          },
+        );
+
+        if (!resp.ok) {
+          const body = await resp.text();
+          return {
+            tool,
+            success: false,
+            message: `Workflow trigger failed (${resp.status}): ${body.slice(0, 200)}`,
+          };
+        }
+
+        const jobId = await resp.text();
+        return {
+          tool,
+          success: true,
+          message: `Workflow "${flowPath}" triggered — job ${jobId}`,
+          data: { flowPath, jobId },
         };
       }
 
