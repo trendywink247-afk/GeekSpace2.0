@@ -6,7 +6,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { getMetricsSnapshot, incrementSSEConnections, decrementSSEConnections } from '../middleware/metrics.js';
-import { requireAuth } from '../middleware/auth.js';
+
 import { config } from '../config.js';
 import { db } from '../db/index.js';
 import { edithProbe } from '../services/edith.js';
@@ -53,7 +53,7 @@ async function probeComponents() {
 
 // ---- SSE Stream ----
 
-healthRouter.get('/stream', requireAuth, async (req: Request, res: Response) => {
+healthRouter.get('/stream', async (req: Request, res: Response) => {
   // SSE headers
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',

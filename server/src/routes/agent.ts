@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema, memoryCreateSchema, memoryUpdateSchema, deployPremiumSchema, premiumChatSchema, workflowQuerySchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
-import { routeChat, classifyIntent, computeCreditCost, deductSubscriptionCredits, streamOllama, type ChatMessage, type Provider } from '../services/llm.js';
+import { routeChat, classifyIntent, computeCreditCost, deductSubscriptionCredits, streamOllama, pickProvider, type ChatMessage, type Provider } from '../services/llm.js';
 import { edithChat } from '../services/edith.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
@@ -11,6 +11,7 @@ import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openc
 import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
 import { buildMemoryContext, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations } from '../services/memory.js';
+import { loadPicoContext, formatContextBlock } from '../services/pico-context.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
 import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeRequest } from '../services/pico-kimi-bridge.js';
 import { getUserWorkflows, getWorkflowStatus, getWorkflowAnalytics } from '../services/workflow-engine.js';
@@ -18,6 +19,8 @@ import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } f
 import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
 import { parseActions } from '../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
+import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
+import { sendTelegramMessage } from '../services/telegram.js';
 
 export const agentRouter = Router();
 
@@ -38,10 +41,9 @@ function buildSystemPrompt(
   const customPrompt = (agentConfig?.system_prompt as string) || '';
   const userName = (user?.name as string) || 'there';
 
-  const reminderCount = (db.prepare('SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 0').get(userId) as { c: number })?.c || 0;
-  const connectedCount = (db.prepare("SELECT COUNT(*) as c FROM integrations WHERE user_id = ? AND status = 'connected'").get(userId) as { c: number })?.c || 0;
-
-  // Inject memory context
+  // Load full PicoContext (superset of buildMemoryContext)
+  const picoCtx = loadPicoContext(userId);
+  // Keep buildMemoryContext for any additional AI-extracted memory context
   const memoryBlock = buildMemoryContext(userId, userMessage);
 
   return `${OPENCLAW_IDENTITY}
@@ -49,10 +51,12 @@ function buildSystemPrompt(
 --- PERSONALITY ---
 ${personalityPrompt}
 
+${formatContextBlock(picoCtx)}
+
 --- USER SESSION ---
 Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
 ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
-Active reminders: ${reminderCount}. Connected integrations: ${connectedCount}.${memoryBlock}
+${memoryBlock}
 
 IMPORTANT: Keep responses SHORT. 1-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain conversational text only.`;
 }
@@ -76,7 +80,7 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     creativity: 'creativity', formality: 'formality', responseSpeed: 'response_speed',
     monthlyBudgetUSD: 'monthly_budget_usd', avatarEmoji: 'avatar_emoji',
     accentColor: 'accent_color', bubbleStyle: 'bubble_style', status: 'status',
-    personality: 'personality',
+    personality: 'personality', model_preference: 'model_preference',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {
@@ -93,8 +97,120 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
 
 // ---- Personalities ----
 
-agentRouter.get('/personalities', (_req, res) => {
+agentRouter.get('/personalities', async (_req, res) => {
+  const cached = await cacheGet('agent:personalities');
+  if (cached) { res.json(JSON.parse(cached)); return; }
+  await cacheSet('agent:personalities', JSON.stringify(PERSONALITIES), 3600);
   res.json(PERSONALITIES);
+});
+
+// ---- AI Content Generation (for onboarding magic) ----
+
+agentRouter.post('/generate-content', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { type, tags, name } = req.body as { type: string; tags: string[]; name?: string };
+    if (!type || !tags || tags.length === 0) {
+      return res.status(400).json({ error: 'type and at least 1 tag required' });
+    }
+
+    const prompts: Record<string, string> = {
+      headline: `Generate a short professional headline (under 12 words) for someone named "${name || 'a developer'}" who specializes in: ${tags.join(', ')}. Return ONLY the headline text, no quotes, no explanation.`,
+      bio: `Write a 2-sentence professional bio for someone named "${name || 'a developer'}" who specializes in: ${tags.join(', ')}. Make it engaging and personal. Return ONLY the bio text, no quotes.`,
+      about: `Write a brief 3-sentence "about me" for a developer portfolio. Person: "${name || 'a developer'}". Expertise: ${tags.join(', ')}. Make it compelling for potential collaborators. Return ONLY the text, no quotes.`,
+      skills: `Suggest 6 technical skills (comma-separated) for someone who specializes in: ${tags.join(', ')}. Return ONLY the comma-separated list, nothing else.`,
+      'bio-batch': `You are helping a developer set up their GeekSpace AI profile.
+Return ONLY valid JSON, no markdown, no extra text:
+{"headline": "one-line professional headline under 80 chars", "bio": "2-3 sentence professional summary"}
+
+Name: ${name || 'a developer'}
+Skills/interests: ${Array.isArray(tags) ? tags.join(', ') : tags || 'software development'}`,
+      'portfolio-batch': `You are helping a developer complete their portfolio.
+Return ONLY valid JSON, no markdown, no extra text:
+{"headline": "one-line professional headline under 80 chars", "about": "2-3 sentence about section", "skills": ["skill1","skill2","skill3","skill4","skill5"]}
+
+Name: ${name || 'a developer'}
+Skills/interests: ${Array.isArray(tags) ? tags.join(', ') : tags || 'software development'}`,
+    };
+
+    const systemPrompt = prompts[type];
+    if (!systemPrompt) {
+      return res.status(400).json({ error: 'type must be headline, bio, about, skills, bio-batch, or portfolio-batch' });
+    }
+
+    // Check subscription credits
+    const sub = db.prepare('SELECT credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(req.userId!) as { credits_remaining: number; billing_cycle_end: string } | undefined;
+    if (sub && sub.credits_remaining <= 0) {
+      res.status(402).json({
+        error: `You've used all your credits for this month. They reset on ${sub.billing_cycle_end.split('T')[0]}. Upgrade your plan for more.`,
+      });
+      return;
+    }
+
+    const result = await routeChat(
+      [{ role: 'system', content: systemPrompt }, { role: 'user', content: 'Generate it now.' }],
+      { forceProvider: 'edith' as Provider }
+    );
+
+    // Deduct actual credit cost
+    deductSubscriptionCredits(req.userId!, result.creditCost);
+
+    // Batch types return structured JSON
+    if (type.endsWith('-batch')) {
+      try {
+        const jsonText = result.reply.trim().replace(/^```(?:json)?\n?|\n?```$/g, '');
+        const parsed = JSON.parse(jsonText);
+        res.json({ content: result.reply, parsed });
+        return;
+      } catch {
+        res.status(500).json({ error: 'AI returned invalid JSON. Please try again.' });
+        return;
+      }
+    }
+
+    res.json({ content: result.reply.trim().replace(/^["']|["']$/g, '') });
+  } catch (err: unknown) {
+    logger.error('generate-content error: %s', err instanceof Error ? err.message : String(err));
+    res.status(500).json({ error: 'AI generation failed. Try again.' });
+  }
+});
+
+// ---- AI-Generated Background Gradient ----
+
+agentRouter.post('/generate-background', requireAuth, async (req: AuthRequest, res) => {
+  const { vibe } = req.body as { vibe?: string };
+
+  const prompt = `Generate a beautiful CSS gradient for a dark tech dashboard.
+${vibe ? `Vibe: ${vibe}` : 'Make it feel like a dark, futuristic workspace — deep purples, dark blues, subtle teals.'}
+
+Return ONLY valid JSON in this exact format:
+{
+  "gradient": "linear-gradient(135deg, #1a0533 0%, #0d1b4b 50%, #003d2b 100%)",
+  "name": "Neon Jungle",
+  "accent": "#7B61FF"
+}
+
+Rules:
+- gradient must be a valid CSS gradient string
+- All colors must be dark (no white or light backgrounds)
+- name must be 2-3 words, evocative
+- accent must be a single hex color that works as UI accent`;
+
+  try {
+    const edithResult = await edithChat(prompt);
+    const raw = edithResult.text.trim().replace(/^```(?:json)?\n?|\n?```$/g, '');
+    const parsed = JSON.parse(raw) as { gradient?: string; name?: string; accent?: string };
+    if (!parsed.gradient || !parsed.name || !parsed.accent) throw new Error('Invalid response');
+    const creditCost = computeCreditCost('edith', edithResult.tokensIn, edithResult.tokensOut);
+    deductSubscriptionCredits(req.userId!, creditCost);
+    res.json(parsed);
+  } catch {
+    // Fallback gradient if Kimi fails
+    res.json({
+      gradient: 'linear-gradient(135deg, #1a0533 0%, #0a0a1a 40%, #001a33 100%)',
+      name: 'Deep Space',
+      accent: '#7B61FF',
+    });
+  }
 });
 
 // ---- Two-Tier Agent Chat ----
@@ -105,8 +221,9 @@ agentRouter.get('/personalities', (_req, res) => {
 // Auto-fallback: if Ollama is down, routes to cloud only when user has credits
 
 agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
-  let { message } = req.body as { message: string };
+  let { message } = req.body as { message: string; channel?: string; context?: string };
   const userId = req.userId!;
+  const reqChannel = (req.body as { channel?: string }).channel;
 
   try {
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
@@ -115,7 +232,8 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     const userCredits = (user?.credits as number) || 0;
 
     // Check subscription credits
-    const sub = db.prepare('SELECT credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number; billing_cycle_end: string } | undefined;
+    const sub = db.prepare('SELECT plan, credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string; credits_remaining: number; billing_cycle_end: string } | undefined;
+    const userPlan = sub?.plan || 'free';
     if (sub && sub.credits_remaining <= 0) {
       res.json({
         text: `You've used all your credits for this month! They reset on ${sub.billing_cycle_end.split('T')[0]}. Upgrade your plan for more.`,
@@ -132,6 +250,31 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     // Log user message + extract memories (non-blocking)
     logConversation(userId, 'user', message);
     extractMemories(userId, message);
+
+    // ---- Terminal Jarvis: route ai "prompt" through Jarvis on OpenRouter free ----
+    if (reqChannel === 'terminal') {
+      const terminalSystemPrompt = `${OPENCLAW_IDENTITY}
+
+${getPersonalityPrompt('jarvis')}
+
+You are assisting via the GeekSpace terminal. Be concise. No markdown headers. Plain text or simple code blocks only.`;
+
+      const terminalMessages: ChatMessage[] = [
+        { role: 'system', content: terminalSystemPrompt },
+        { role: 'user', content: message },
+      ];
+
+      const terminalResult = await routeChat(terminalMessages, { forceProvider: 'openrouter-free' as Provider });
+      deductSubscriptionCredits(userId, terminalResult.creditCost);
+      db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'terminal', 'ai.chat')`).run(
+        uuid(), userId, terminalResult.provider, terminalResult.model,
+        terminalResult.tokensIn, terminalResult.tokensOut, terminalResult.creditCost,
+      );
+      logConversation(userId, 'assistant', terminalResult.reply, terminalResult.provider, terminalResult.model);
+      res.json({ text: terminalResult.reply, provider: 'jarvis-terminal', creditCost: terminalResult.creditCost, latencyMs: terminalResult.latencyMs });
+      return;
+    }
 
     // ---- Parse route prefix: /premium, /edith, /local, /pico, /bridge, or auto ----
     let forceRoute: 'premium' | 'local' | 'pico' | 'bridge' | null = null;
@@ -161,7 +304,7 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
         }
         const { planTasks: planTasksFn, queueTasks: queueTasksFn } = await import('../services/pico-fleet.js');
         const start = Date.now();
-        const { tasks, creditCost } = await planTasksFn(userId, taskDesc);
+        const { tasks, creditCost } = await planTasksFn(userId, taskDesc, userPlan);
         const latencyMs = Date.now() - start;
 
         if (tasks.length === 0) {
@@ -334,11 +477,24 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
     const messages: ChatMessage[] = [...history, { role: 'user', content: message }];
     const intent = classifyIntent(message);
 
+    // Resolve forced provider from prefix overrides or smart picker
+    let resolvedProvider: Provider | undefined;
+    if (forceRoute === 'local') {
+      resolvedProvider = 'ollama';
+    } else if (forceRoute === 'pico') {
+      resolvedProvider = 'picoclaw';
+    } else {
+      const smartProvider = await pickProvider(userId, message, userPlan);
+      if (smartProvider !== 'ollama') {
+        resolvedProvider = smartProvider;
+      }
+    }
+
     const result = await routeChat(messages, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
-      forceProvider: forceRoute === 'local' ? 'ollama' : forceRoute === 'pico' ? 'picoclaw' : undefined,
+      forceProvider: resolvedProvider,
     });
 
     // Determine tier from actual provider used
@@ -624,14 +780,15 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
     if (!taskDesc) { res.json({ output: 'Usage: gs task "description"', isError: true }); return; }
 
     try {
-      const sub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+      const sub = db.prepare('SELECT plan, credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string; credits_remaining: number } | undefined;
       if (sub && sub.credits_remaining < 10) {
         res.json({ output: 'Not enough credits for task planning (minimum 10 required)', isError: true });
         return;
       }
+      const taskUserPlan = sub?.plan || 'free';
 
       const { planTasks, queueTasks } = await import('../services/pico-fleet.js');
-      const { tasks, creditCost } = await planTasks(userId, taskDesc);
+      const { tasks, creditCost } = await planTasks(userId, taskDesc, taskUserPlan);
 
       if (tasks.length === 0) {
         res.json({ output: `No actionable tasks planned. Credits used: ${creditCost}`, isError: false });
@@ -1113,6 +1270,35 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
       [{ role: 'user', content: message }],
       { systemPrompt, agentName, forceProvider: 'ollama' },
     );
+
+    // Save visitor interaction to owner's memory
+    const snippet = message.slice(0, 80);
+    upsertMemory(user.id as string, 'visitor', `portfolio-chat:${Date.now()}`, `Visitor asked about: "${snippet}"`, 0.8, 'portfolio-chat');
+
+    // Increment connection counter
+    db.prepare(`
+      UPDATE portfolios SET
+        connection_count = connection_count + 1,
+        last_connected_at = datetime('now')
+      WHERE user_id = ?
+    `).run(user.id as string);
+
+    // Invalidate portfolio cache
+    void cacheDel(`portfolio:${req.params.username}`);
+
+    // Send Telegram notification if connected (non-blocking, non-fatal)
+    const telegramLink = db.prepare(`
+      SELECT external_id FROM channel_links
+      WHERE user_id = ? AND channel = 'telegram'
+      ORDER BY linked_at DESC LIMIT 1
+    `).get(user.id as string) as { external_id: string } | undefined;
+
+    if (telegramLink) {
+      void sendTelegramMessage(telegramLink.external_id,
+        `Someone just chatted with your agent about: <i>"${snippet}"</i>\n\nCheck your dashboard for the conversation.`
+      ).catch(() => { /* non-fatal */ });
+    }
+
     res.json({ reply: result.reply, agentName, ownerName, personality: personalityId, personalityEmoji: personality.emoji });
   } catch {
     res.json({

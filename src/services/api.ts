@@ -134,6 +134,12 @@ export const agentService = {
 
   getPersonalities: () =>
     api.get<Record<string, Personality>>('/agent/personalities'),
+
+  generateContent: (type: string, tags: string[], name?: string) =>
+    api.post<{ content: string; parsed?: Record<string, unknown> }>('/agent/generate-content', { type, tags, name }),
+
+  generateBackground: (vibe?: string) =>
+    api.post<{ gradient: string; name: string; accent: string }>('/agent/generate-background', { vibe }),
 };
 
 // ----- API Keys ----------------------------------------------
@@ -183,6 +189,8 @@ export const billingService = {
     api.post<Subscription>('/billing/upgrade', { plan, currency }),
 
   getUsage: () => api.get<DailyUsage[]>('/billing/usage'),
+
+  activateDayPass: () => api.post<{ message: string; expiresAt: string }>('/billing/day-pass'),
 };
 
 // ----- Integrations ------------------------------------------
@@ -385,7 +393,19 @@ export const picoService = {
       credits_used: number;
       credits_remaining: number;
       message?: string;
+      escalate?: boolean;
+      request?: string;
     }>('/pico/tasks/plan', { request }),
+
+  planTaskPremium: (request: string) =>
+    api.post<{
+      planned: Array<{ task_type: string; description: string }>;
+      queued: number;
+      task_ids: string[];
+      credits_used: number;
+      credits_remaining: number;
+      message?: string;
+    }>('/pico/tasks/plan-premium', { request }),
 
   cancelTask: (id: string) =>
     api.delete(`/pico/tasks/${id}`),

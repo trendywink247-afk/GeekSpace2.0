@@ -4,15 +4,20 @@ import { validateBody, billingUpgradeSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { PLAN_DEFINITIONS } from '../db/index.js';
 import { v4 as uuid } from 'uuid';
+import { cacheGet, cacheSet } from '../services/cache.js';
 
 export const billingRouter = Router();
 
 // GET /api/billing/plans — list all available plans
-billingRouter.get('/plans', (_req, res) => {
-  const plans = Object.entries(PLAN_DEFINITIONS).map(([id, plan]) => ({
-    id,
-    ...plan,
-  }));
+billingRouter.get('/plans', async (_req, res) => {
+  const cacheKey = 'billing:plans';
+  const cached = await cacheGet(cacheKey);
+  if (cached) { res.json(JSON.parse(cached)); return; }
+
+  const plans = Object.entries(PLAN_DEFINITIONS)
+    .filter(([id]) => id !== 'monthly')
+    .map(([id, plan]) => ({ id, ...plan }));
+  await cacheSet(cacheKey, JSON.stringify(plans), 3600);
   res.json(plans);
 });
 
@@ -69,4 +74,45 @@ billingRouter.get('/usage', requireAuth, (req: AuthRequest, res) => {
     ORDER BY day DESC
   `).all(req.userId!);
   res.json(usage);
+});
+
+// POST /api/billing/day-pass — $1 for 24hr PicoClaw access (free users only)
+billingRouter.post('/day-pass', requireAuth, async (req: AuthRequest, res) => {
+  const sub = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?').get(req.userId!) as { plan: string } | undefined;
+  if (sub?.plan !== 'free') {
+    res.status(400).json({ error: 'Day pass is only available on the free plan. Upgrade for full access.' });
+    return;
+  }
+
+  // Check for active day pass
+  const activePas = db.prepare(
+    "SELECT id FROM day_passes WHERE user_id = ? AND expires_at > datetime('now')"
+  ).get(req.userId!) as { id: string } | undefined;
+  if (activePas) {
+    res.status(400).json({ error: 'You already have an active day pass.' });
+    return;
+  }
+
+  // Grant the pass (payment hook to be added later)
+  const id = uuid();
+  db.prepare(`
+    INSERT INTO day_passes (id, user_id, expires_at, credits_granted)
+    VALUES (?, ?, datetime('now', '+1 day'), 2000)
+  `).run(id, req.userId);
+
+  // Grant 2000 bonus credits
+  db.prepare(
+    'UPDATE subscriptions SET credits_remaining = credits_remaining + 2000 WHERE user_id = ?'
+  ).run(req.userId!);
+
+  const inserted = db.prepare('SELECT expires_at FROM day_passes WHERE id = ?').get(id) as { expires_at: string };
+  res.json({ message: 'Day pass activated! You have 24 hours of PicoClaw access.', expiresAt: inserted.expires_at });
+});
+
+// GET /api/billing/day-pass — check if user has active day pass
+billingRouter.get('/day-pass', requireAuth, (req: AuthRequest, res) => {
+  const pass = db.prepare(
+    "SELECT expires_at FROM day_passes WHERE user_id = ? AND expires_at > datetime('now') ORDER BY expires_at DESC LIMIT 1"
+  ).get(req.userId!) as { expires_at: string } | undefined;
+  res.json({ active: !!pass, expiresAt: pass?.expires_at || null });
 });

@@ -9,14 +9,15 @@ import {
   Key,
   Save,
   Check,
-  Upload,
+  Sparkles,
   Eye,
   Palette,
   Plus,
   Trash2,
   Brain,
   Tag,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,14 +27,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
-import { userService, apiKeyService, memoryService } from '@/services/api';
+import { userService, apiKeyService, memoryService, agentService } from '@/services/api';
 import type { ApiProvider, MemoryEntry } from '@/types';
 
 export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const user = useAuthStore((s) => s.user);
-  const { accentColor, accentPresets, setAccentColor } = useThemeStore();
+  const setUser = useAuthStore((s) => s.setUser);
+  const { mode: themeMode, accentColor, accentPresets, setMode: setThemeMode, setAccentColor, setBackground } = useThemeStore();
 
   const [profile, setProfile] = useState({
     name: user?.name || 'Alex Chen',
@@ -42,14 +44,15 @@ export function SettingsPage() {
     bio: user?.bio || 'Full-stack developer and AI enthusiast.',
     location: user?.location || 'San Francisco, CA',
     website: user?.website || 'alexchen.dev',
+    avatar: user?.avatar || '',
   });
 
   const [notifications, setNotifications] = useState({
-    emailReminders: true,
-    pushNotifications: true,
-    weeklyDigest: true,
+    emailReminders: user?.notifications?.email ?? true,
+    pushNotifications: user?.notifications?.push ?? false,
+    weeklyDigest: user?.notifications?.weeklyDigest ?? true,
     marketingEmails: false,
-    securityAlerts: true,
+    securityAlerts: user?.notifications?.agentUpdates ?? true,
   });
 
   const [privacy, setPrivacy] = useState({
@@ -64,6 +67,11 @@ export function SettingsPage() {
   const [newKeyProvider, setNewKeyProvider] = useState<ApiProvider>('openai');
   const [newKeyValue, setNewKeyValue] = useState('');
   const [showAddKey, setShowAddKey] = useState(false);
+
+  // AI Background Generator state
+  const [bgVibe, setBgVibe] = useState('');
+  const [bgPreview, setBgPreview] = useState<{ gradient: string; name: string; accent: string } | null>(null);
+  const [isGeneratingBg, setIsGeneratingBg] = useState(false);
 
   // Memory state
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
@@ -97,12 +105,52 @@ export function SettingsPage() {
     }
   };
 
+  const notificationFieldMap: Record<string, string> = {
+    emailReminders: 'email',
+    pushNotifications: 'push',
+    weeklyDigest: 'weeklyDigest',
+    securityAlerts: 'agentUpdates',
+  };
+
+  const saveNotification = async (field: string, value: boolean) => {
+    const serverKey = notificationFieldMap[field];
+    if (!serverKey) return;
+    try {
+      await userService.updateProfile({ notifications: { [serverKey]: value } } as Parameters<typeof userService.updateProfile>[0]);
+    } catch {
+      // Silent fail — local state still updated
+    }
+  };
+
+  const handleGenerateBg = async () => {
+    setIsGeneratingBg(true);
+    try {
+      const { data } = await agentService.generateBackground(bgVibe || undefined);
+      setBgPreview(data);
+    } catch {
+      // ignore
+    } finally {
+      setIsGeneratingBg(false);
+    }
+  };
+
+  const handleApplyBg = async () => {
+    if (!bgPreview) return;
+    setBackground(bgPreview.gradient);
+    await userService.updateProfile({ theme_background: bgPreview.gradient } as Parameters<typeof userService.updateProfile>[0]);
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await userService.updateProfile(profile);
-    } catch {
-      // keep local state on error
+      const { data: updatedUser } = await userService.updateProfile(profile);
+      if (user && updatedUser) {
+        // Merge with existing user to preserve notifications, privacy, credits,
+        // and any fields not returned by PATCH /me (server omits some on update)
+        setUser({ ...user, ...updatedUser });
+      }
+    } catch (err) {
+      console.error('[settings] save failed:', err);
     } finally {
       setIsSaving(false);
     }
@@ -188,11 +236,24 @@ export function SettingsPage() {
             <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
               <CardContent className="p-6 text-center">
                 <div className="relative inline-block mb-4">
-                  <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center text-3xl font-bold">
-                    {profile.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#7B61FF] flex items-center justify-center hover:bg-[#6B51EF] transition-colors">
-                    <Upload className="w-4 h-4 text-white" />
+                  {profile.avatar ? (
+                    <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[#0B0B10]" />
+                  ) : (
+                    <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center text-3xl font-bold">
+                      {profile.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const seed = encodeURIComponent((profile.username || profile.name || 'user') + '-' + Date.now());
+                      const url = `https://api.dicebear.com/9.x/pixel-art/svg?seed=${seed}&backgroundColor=7B61FF,0f0b1e`;
+                      setProfile({ ...profile, avatar: url });
+                    }}
+                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#7B61FF] flex items-center justify-center hover:bg-[#6B51EF] transition-colors"
+                    title="Generate new pixel avatar"
+                  >
+                    <Sparkles className="w-4 h-4 text-white" />
                   </button>
                 </div>
                 <h3 className="font-semibold text-[#F4F6FF]">{profile.name}</h3>
@@ -267,7 +328,13 @@ export function SettingsPage() {
                       <div className="text-sm text-[#A7ACB8]">{item.desc}</div>
                     </div>
                   </div>
-                  <Switch checked={notifications[item.key as keyof typeof notifications]} onCheckedChange={(checked) => setNotifications({ ...notifications, [item.key]: checked })} />
+                  <Switch
+                    checked={notifications[item.key as keyof typeof notifications]}
+                    onCheckedChange={(checked) => {
+                      setNotifications({ ...notifications, [item.key]: checked });
+                      void saveNotification(item.key, checked);
+                    }}
+                  />
                 </div>
               ))}
             </CardContent>
@@ -532,16 +599,20 @@ export function SettingsPage() {
               <div>
                 <label className="text-sm text-[#A7ACB8] mb-3 block">Theme Mode</label>
                 <div className="flex gap-3">
-                  {(['dark', 'light', 'system'] as const).map((mode) => (
+                  {(['dark', 'light', 'system'] as const).map((m) => (
                     <button
-                      key={mode}
+                      key={m}
+                      onClick={() => {
+                        setThemeMode(m);
+                        void userService.updateProfile({ theme: { mode: m } } as Parameters<typeof userService.updateProfile>[0]);
+                      }}
                       className={`flex-1 p-4 rounded-xl border-2 capitalize transition-all ${
-                        mode === 'dark'
+                        themeMode === m
                           ? 'border-[#7B61FF] bg-[#7B61FF]/10 text-[#7B61FF]'
-                          : 'border-[#7B61FF]/20 text-[#A7ACB8]'
+                          : 'border-[#7B61FF]/20 text-[#A7ACB8] hover:border-[#7B61FF]/40'
                       }`}
                     >
-                      {mode}
+                      {m}
                     </button>
                   ))}
                 </div>
@@ -571,6 +642,36 @@ export function SettingsPage() {
                   />
                   <span className="text-sm font-mono text-[#A7ACB8]">{accentColor}</span>
                 </div>
+              </div>
+
+              {/* AI Background Generator */}
+              <div className="space-y-3">
+                <label className="text-sm text-[#A7ACB8] block">AI-Generated Background</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Describe a vibe (optional)..."
+                    value={bgVibe}
+                    onChange={(e) => setBgVibe(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-lg bg-[#05050A] border border-[#7B61FF]/20 text-[#F4F6FF] text-sm focus:outline-none focus:border-[#7B61FF]/60"
+                  />
+                  <Button onClick={handleGenerateBg} disabled={isGeneratingBg} size="sm" className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+                    {isGeneratingBg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  </Button>
+                </div>
+                {bgPreview && (
+                  <div className="space-y-2">
+                    <div
+                      className="h-24 rounded-xl border border-[#7B61FF]/20"
+                      style={{ background: bgPreview.gradient }}
+                    />
+                    <p className="text-xs text-[#A7ACB8]">"{bgPreview.name}" — click Apply to use this background</p>
+                    <div className="flex gap-2">
+                      <Button onClick={handleApplyBg} size="sm" className="bg-[#7B61FF] hover:bg-[#6B51EF]">Apply</Button>
+                      <Button onClick={handleGenerateBg} variant="outline" size="sm" className="border-[#7B61FF]/30">Try another</Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

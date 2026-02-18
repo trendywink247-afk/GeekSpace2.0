@@ -24,6 +24,7 @@ import {
   getTaskWithLogs,
   cancelTask,
   planTasks,
+  planWithKimi,
   queueTasks,
 } from '../services/pico-fleet.js';
 
@@ -85,13 +86,15 @@ picoRouter.post('/tasks/plan', requireAuth, validateBody(picoTaskPlanSchema), as
   try {
     // Check credits
     const sub = db_getSub(userId);
+    const userPlan = db_getPlan(userId);
+
     if (sub && sub.credits_remaining < 10) {
       res.status(402).json({ error: 'Not enough credits for task planning (minimum 10 required)' });
       return;
     }
 
-    // Plan via Kimi
-    const { tasks, creditCost } = await planTasks(userId, request);
+    // Plan — routes based on complexity and plan tier
+    const { tasks, creditCost } = await planTasks(userId, request, userPlan);
 
     if (tasks.length === 0) {
       res.json({ planned: [], queued: 0, credits_used: creditCost, message: 'No actionable tasks could be planned from your request.' });
@@ -99,7 +102,7 @@ picoRouter.post('/tasks/plan', requireAuth, validateBody(picoTaskPlanSchema), as
     }
 
     // Queue tasks
-    const taskIds = queueTasks(userId, tasks, 'kimi');
+    const taskIds = queueTasks(userId, tasks, creditCost === 0 ? 'weebo' : 'kimi');
 
     const updatedSub = db_getSub(userId);
 
@@ -110,8 +113,51 @@ picoRouter.post('/tasks/plan', requireAuth, validateBody(picoTaskPlanSchema), as
       credits_used: creditCost,
       credits_remaining: updatedSub?.credits_remaining ?? 0,
     });
-  } catch (err) {
+  } catch (err: unknown) {
+    if ((err as { code?: string }).code === 'ESCALATE_TO_PREMIUM') {
+      res.json({
+        escalate: true,
+        message: "This task looks complex. Want Edith (Kimi) to handle it? It costs ~10 credits but gets better results.",
+        request,
+      });
+      return;
+    }
     const msg = err instanceof Error ? err.message : 'Failed to plan tasks';
+    res.status(500).json({ error: msg });
+  }
+});
+
+// POST /tasks/plan-premium — user confirmed they want Kimi for a complex task
+picoRouter.post('/tasks/plan-premium', requireAuth, validateBody(picoTaskPlanSchema), async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { request } = req.body as { request: string };
+
+  try {
+    const sub = db_getSub(userId);
+    if (sub && sub.credits_remaining < 10) {
+      res.status(402).json({ error: 'Not enough credits for task planning (minimum 10 required)' });
+      return;
+    }
+
+    const { tasks, creditCost } = await planWithKimi(userId, request);
+
+    if (tasks.length === 0) {
+      res.json({ planned: [], queued: 0, credits_used: creditCost, message: 'No actionable tasks could be planned from your request.' });
+      return;
+    }
+
+    const taskIds = queueTasks(userId, tasks, 'kimi');
+    const updatedSub = db_getSub(userId);
+
+    res.json({
+      planned: tasks,
+      queued: taskIds.length,
+      task_ids: taskIds,
+      credits_used: creditCost,
+      credits_remaining: updatedSub?.credits_remaining ?? 0,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to plan tasks with Kimi';
     res.status(500).json({ error: msg });
   }
 });
@@ -142,4 +188,10 @@ import { db } from '../db/index.js';
 function db_getSub(userId: string) {
   return db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?')
     .get(userId) as { credits_remaining: number } | undefined;
+}
+
+function db_getPlan(userId: string): string {
+  const row = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?')
+    .get(userId) as { plan: string } | undefined;
+  return row?.plan || 'free';
 }

@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { signToken, requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { db, seedDemoData } from '../db/index.js';
 import { validateBody, signupSchema, loginSchema, onboardingSchema } from '../middleware/validate.js';
+import { cacheDel } from '../services/cache.js';
 
 export const authRouter = Router();
 
@@ -12,60 +13,76 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
 
   const existing = db.prepare('SELECT id FROM users WHERE email = ? OR username = ?').get(email, username);
   if (existing) {
-    res.status(409).json({ error: 'Email or username taken' });
+    res.status(409).json({ error: 'Email or username already taken' });
     return;
   }
 
   const id = uuid();
   const passwordHash = await bcrypt.hash(password, 10);
 
-  db.prepare(`
-    INSERT INTO users (id, email, username, password_hash, name, plan, credits)
-    VALUES (?, ?, ?, ?, ?, 'free', 15000)
-  `).run(id, email, username, passwordHash, name || username);
+  const doSignup = db.transaction(() => {
+    db.prepare(`
+      INSERT INTO users (id, email, username, password_hash, name, plan, credits)
+      VALUES (?, ?, ?, ?, ?, 'free', 15000)
+    `).run(id, email, username, passwordHash, name || username);
 
-  // Create default agent config
-  db.prepare(`
-    INSERT INTO agent_configs (id, user_id, name, display_name, mode, voice, system_prompt)
-    VALUES (?, ?, 'Geek', ?, 'builder', 'friendly', 'You are a helpful personal AI assistant.')
-  `).run(uuid(), id, `${name || username}'s AI`);
+    // Create default agent config
+    db.prepare(`
+      INSERT INTO agent_configs (id, user_id, name, display_name, mode, voice, system_prompt)
+      VALUES (?, ?, 'Geek', ?, 'builder', 'friendly', 'You are a helpful personal AI assistant.')
+    `).run(uuid(), id, `${name || username}'s AI`);
 
-  // Create default features
-  db.prepare(`
-    INSERT INTO features (user_id) VALUES (?)
-  `).run(id);
+    // Create default features
+    db.prepare(`
+      INSERT INTO features (user_id) VALUES (?)
+    `).run(id);
 
-  // Create default subscription (free plan)
-  db.prepare(`
-    INSERT INTO subscriptions (id, user_id) VALUES (?, ?)
-  `).run(uuid(), id);
+    // Create default subscription (free plan)
+    db.prepare(`
+      INSERT INTO subscriptions (id, user_id) VALUES (?, ?)
+    `).run(uuid(), id);
 
-  // Create default portfolio
-  db.prepare(`
-    INSERT INTO portfolios (user_id, username) VALUES (?, ?)
-  `).run(id, username);
+    // Create default portfolio
+    db.prepare(`
+      INSERT INTO portfolios (user_id, username) VALUES (?, ?)
+    `).run(id, username);
 
-  // Create default Pico agent (slot 1)
-  db.prepare('INSERT INTO pico_agents (id, user_id, slot, name) VALUES (?, ?, 1, ?)').run(uuid(), id, 'Weebo');
+    // Create default Pico agent (slot 1) — non-fatal if it fails
+    try {
+      db.prepare('INSERT INTO pico_agents (id, user_id, slot, name) VALUES (?, ?, 1, ?)').run(uuid(), id, 'Weebo');
+    } catch (e) {
+      console.warn('[signup] pico_agents insert skipped:', (e as Error).message);
+    }
 
-  // Create default integrations
-  const insInt = db.prepare('INSERT INTO integrations (id, user_id, type, name, description, status, health, requests_today, last_sync, features, permissions) VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?)');
-  const defaultIntegrations: [string, string, string, string][] = [
-    ['telegram', 'Telegram', 'Send messages, reminders, and receive notifications via Telegram bot', '["Send messages","Receive reminders","Bot commands"]'],
-    ['google-calendar', 'Google Calendar', 'Sync events, schedule reminders, and check availability', '["Event sync","Reminders","Availability check"]'],
-    ['location', 'Location Services', 'Share location for contextual reminders', '["Location queries","Geofenced reminders"]'],
-    ['github', 'GitHub', 'Sync repositories, track issues, and showcase projects', '["Repo sync","Issue tracking","Portfolio showcase"]'],
-    ['twitter', 'Twitter/X', 'Share updates and connect your social presence', '["Auto-share","Social sync","Profile link"]'],
-    ['linkedin', 'LinkedIn', 'Professional profile sync and networking', '["Profile sync","Network updates"]'],
-    ['n8n', 'n8n', 'Workflow automation engine for advanced integrations', '["Custom workflows","Triggers","Webhooks"]'],
-    ['whatsapp', 'WhatsApp', 'Chat with your AI agent via WhatsApp', '["Messages","Voice notes","Media"]'],
-  ];
-  for (const [type, name2, desc, feats] of defaultIntegrations) {
-    insInt.run(uuid(), id, type, name2, desc, 'disconnected', '', feats, '[]');
+    // Create default integrations
+    const insInt = db.prepare('INSERT INTO integrations (id, user_id, type, name, description, status, health, requests_today, last_sync, features, permissions) VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?)');
+    const defaultIntegrations: [string, string, string, string][] = [
+      ['telegram', 'Telegram', 'Send messages, reminders, and receive notifications via Telegram bot', '["Send messages","Receive reminders","Bot commands"]'],
+      ['google-calendar', 'Google Calendar', 'Sync events, schedule reminders, and check availability', '["Event sync","Reminders","Availability check"]'],
+      ['location', 'Location Services', 'Share location for contextual reminders', '["Location queries","Geofenced reminders"]'],
+      ['github', 'GitHub', 'Sync repositories, track issues, and showcase projects', '["Repo sync","Issue tracking","Portfolio showcase"]'],
+      ['twitter', 'Twitter/X', 'Share updates and connect your social presence', '["Auto-share","Social sync","Profile link"]'],
+      ['linkedin', 'LinkedIn', 'Professional profile sync and networking', '["Profile sync","Network updates"]'],
+      ['n8n', 'n8n', 'Workflow automation engine for advanced integrations', '["Custom workflows","Triggers","Webhooks"]'],
+      ['whatsapp', 'WhatsApp', 'Chat with your AI agent via WhatsApp', '["Messages","Voice notes","Media"]'],
+    ];
+    for (const [type, name2, desc, feats] of defaultIntegrations) {
+      insInt.run(uuid(), id, type, name2, desc, 'disconnected', '', feats, '[]');
+    }
+
+    // Log activity
+    db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Signed up', 'Welcome to GeekSpace!', 'user-plus')`).run(uuid(), id);
+  });
+
+  try {
+    doSignup();
+  } catch (err: unknown) {
+    if ((err as Error).message?.includes('UNIQUE constraint')) {
+      res.status(409).json({ error: 'Email or username already taken' });
+      return;
+    }
+    throw err;
   }
-
-  // Log activity
-  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Signed up', 'Welcome to GeekSpace!', 'user-plus')`).run(uuid(), id);
 
   const token = signToken(id);
 
@@ -213,7 +230,7 @@ authRouter.post('/onboarding', requireAuth, validateBody(onboardingSchema), (req
 });
 
 // Per-step onboarding save
-authRouter.patch('/onboarding/:step', requireAuth, (req: AuthRequest, res) => {
+authRouter.patch('/onboarding/:step', requireAuth, async (req: AuthRequest, res) => {
   const step = parseInt(req.params.step, 10);
   if (isNaN(step) || step < 1 || step > 6) {
     res.status(400).json({ error: 'Invalid step (1-6)' });
@@ -229,8 +246,15 @@ authRouter.patch('/onboarding/:step', requireAuth, (req: AuthRequest, res) => {
       if (username) {
         const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, req.userId);
         if (existing) { res.status(409).json({ error: 'Username taken' }); return; }
+        // Capture old username before update so we can bust the old cache key
+        const oldUserRow = db.prepare('SELECT username FROM users WHERE id = ?').get(req.userId!) as { username: string } | undefined;
+        const oldUsername = oldUserRow?.username;
         db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, req.userId);
         db.prepare('UPDATE portfolios SET username = ? WHERE user_id = ?').run(username, req.userId);
+        // Invalidate old portfolio cache
+        if (oldUsername && oldUsername !== username) {
+          await cacheDel(`portfolio:${oldUsername}`);
+        }
       }
       break;
     }

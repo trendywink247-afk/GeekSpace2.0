@@ -125,10 +125,14 @@ export const config = {
 
   // Pico Fleet worker
   picoWorkerIntervalMs: optionalInt('PICO_WORKER_INTERVAL_MS', 10000),
+  picoIdleIntervalMs: optionalInt('PICO_IDLE_INTERVAL_MS', 300000), // 5 min default
 
   // Resend email
   resendApiKey: process.env.RESEND_API_KEY || '',
   resendFromEmail: optional('RESEND_FROM_EMAIL', 'agent@geekspace.space'),
+
+  // Admin dashboard
+  adminDashboardPassword: process.env.ADMIN_DASHBOARD_PASSWORD || '',
 
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',

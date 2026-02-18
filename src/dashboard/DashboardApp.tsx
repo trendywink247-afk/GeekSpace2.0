@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
-  User, LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
+  LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity
 } from 'lucide-react';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -10,6 +10,7 @@ import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentDesignWizard } from '@/components/AgentDesignWizard';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { useThemeStore } from '@/stores/themeStore';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import type { AgentPersonality } from '@/types';
 
@@ -69,10 +70,23 @@ export function DashboardApp() {
   const usage = useDashboardStore((s) => s.usage);
   const agent = useDashboardStore((s) => s.agent);
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
+  const applyTheme = useThemeStore((s) => s.applyTheme);
+  const setThemeMode = useThemeStore((s) => s.setMode);
+  const background = useThemeStore((s) => s.background);
+  const themeMode = user?.theme?.mode as 'dark' | 'light' | 'system' | undefined;
 
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  // Apply stored theme on mount and when user changes
+  useEffect(() => {
+    if (themeMode) {
+      setThemeMode(themeMode as 'dark' | 'light' | 'system');
+    } else {
+      applyTheme();
+    }
+  }, [themeMode, setThemeMode, applyTheme]);
 
   // First-load welcome toast (once per session)
   useEffect(() => {
@@ -257,7 +271,7 @@ export function DashboardApp() {
   );
 
   return (
-    <div className="min-h-screen bg-[#05050A] flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#05050A] flex flex-col md:flex-row" style={{ background: background || undefined }}>
       {/* ---- Session idle warning ---- */}
       {showIdleWarning && (
         <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-3 bg-[#FFD761]/10 border-b border-[#FFD761]/30 backdrop-blur-sm">
@@ -363,8 +377,14 @@ export function DashboardApp() {
               className="flex items-center p-1.5 rounded-xl hover:bg-[#7B61FF]/10 transition-colors min-w-[44px] min-h-[44px] justify-center"
               aria-label="User settings"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center flex-shrink-0">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.name || user.username || ''} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-white text-xs font-bold">
+                    {(user?.name || user?.username || '?').charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
             </button>
           </div>

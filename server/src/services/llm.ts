@@ -588,3 +588,37 @@ export async function routeChat(
 
   return { reply, provider, model, tokensIn, tokensOut, latencyMs, costEstimate, creditCost, intent };
 }
+
+// ---- Smart Provider Picker ----
+
+export type UserModelPreference = 'local' | 'cloud' | 'premium' | 'auto';
+
+export async function pickProvider(
+  userId: string,
+  messageText: string,
+  userPlan: string,
+): Promise<Provider> {
+  // Read user preference
+  const agentConfig = db.prepare('SELECT model_preference FROM agent_configs WHERE user_id = ?')
+    .get(userId) as { model_preference: string } | undefined;
+  const preference = (agentConfig?.model_preference || 'auto') as UserModelPreference;
+
+  // Plan-based access
+  const isPremiumPlan = ['halfyear', 'yearly'].includes(userPlan);
+  const isPaidPlan = ['pilot', 'intro', 'halfyear', 'yearly', 'monthly'].includes(userPlan);
+
+  if (preference === 'local') return 'ollama';
+  if (preference === 'cloud') return isPaidPlan ? 'openrouter-free' : 'ollama';
+  if (preference === 'premium') return isPremiumPlan ? 'edith' : (isPaidPlan ? 'openrouter-free' : 'ollama');
+
+  // Auto: check complexity + plan
+  const intent = classifyIntent(messageText);
+  if (['planning', 'complex'].includes(intent)) {
+    if (isPremiumPlan) return 'edith';
+    if (isPaidPlan) return 'openrouter-free';
+    return 'ollama';
+  }
+
+  // Simple queries: default to ollama
+  return 'ollama';
+}

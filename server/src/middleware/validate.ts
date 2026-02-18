@@ -56,6 +56,8 @@ export const loginSchema = z.object({
 export const chatSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty').max(4000, 'Message too long (4000 chars max)'),
   messageCount: z.number().int().min(0).optional(),
+  channel: z.string().max(50).optional(),
+  context: z.string().max(50).optional(),
 });
 
 export const commandSchema = z.object({
@@ -126,6 +128,7 @@ export const agentConfigUpdateSchema = z.object({
   bubbleStyle: z.string().max(20).optional(),
   status: z.enum(['online', 'offline', 'busy']).optional(),
   personality: z.enum(['edith', 'jarvis', 'weebo']).optional(),
+  model_preference: z.enum(['auto', 'local', 'cloud', 'premium']).optional(),
 }).strict();
 
 export const userUpdateSchema = z.object({
@@ -139,7 +142,7 @@ export const userUpdateSchema = z.object({
   company: z.string().max(100).optional(),
   tags: z.array(z.string().max(50)).max(20).optional(),
   theme: z.object({
-    mode: z.enum(['light', 'dark']).optional(),
+    mode: z.enum(['light', 'dark', 'system']).optional(),
     accentColor: z.string().max(20).optional(),
   }).optional(),
   notifications: z.object({
@@ -222,7 +225,7 @@ export const featuresUpdateSchema = z.object({
 // ---- Billing schemas ----
 
 export const billingUpgradeSchema = z.object({
-  plan: z.string().min(1).max(30),
+  plan: z.enum(['free', 'pilot', 'intro', 'halfyear', 'yearly']),
   currency: z.enum(['USD', 'INR']).optional(),
 });
 

@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { agentService } from '@/services/api';
 import { useTilt } from '@/hooks/useTilt';
-import type { Personality, AgentPersonality } from '@/types';
+import type { Personality, AgentPersonality, ModelPreference } from '@/types';
 
 type AgentStyle = 'minimal' | 'builder' | 'operator';
 
@@ -83,6 +83,7 @@ export function AgentSettingsPage() {
   );
   const [agentName, setAgentName] = useState(agent.name || 'Geek');
   const [selectedPersonality, setSelectedPersonality] = useState<AgentPersonality>(agent.personality || 'jarvis');
+  const [selectedModelPref, setSelectedModelPref] = useState<ModelPreference>(agent.model_preference || 'auto');
   const [personalities, setPersonalities] = useState<Record<string, Personality>>({});
   const [personalityToast, setPersonalityToast] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -103,8 +104,9 @@ export function AgentSettingsPage() {
       setSystemPrompt(agent.systemPrompt || '');
       setAgentName(agent.name || 'Geek');
       setSelectedPersonality(agent.personality || 'jarvis');
+      setSelectedModelPref(agent.model_preference || 'auto');
     }
-  }, [agent.id, agent.mode, agent.voice, agent.creativity, agent.formality, agent.systemPrompt, agent.name, agent.personality]);
+  }, [agent.id, agent.mode, agent.voice, agent.creativity, agent.formality, agent.systemPrompt, agent.name, agent.personality, agent.model_preference]);
 
   const handlePersonalitySwitch = async (id: AgentPersonality) => {
     const prev = selectedPersonality;
@@ -123,6 +125,18 @@ export function AgentSettingsPage() {
     }
   };
 
+
+  const handleSavePref = async (field: string, value: string) => {
+    if (field === 'model_preference') {
+      const prev = selectedModelPref;
+      setSelectedModelPref(value as ModelPreference);
+      try {
+        await updateAgent({ model_preference: value as ModelPreference });
+      } catch {
+        setSelectedModelPref(prev);
+      }
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -222,6 +236,35 @@ export function AgentSettingsPage() {
           )}
         </div>
       )}
+
+      {/* Model Preference */}
+      <div className="p-6 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/20">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Brain className="w-5 h-5 text-[#7B61FF]" />
+          AI Engine Preference
+        </h2>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { value: 'auto', label: 'Auto', desc: 'Pico decides best model' },
+            { value: 'local', label: 'Local Engine', desc: 'Always Ollama — fastest for simple' },
+            { value: 'cloud', label: 'Cloud Engine', desc: 'OpenRouter free tier' },
+            { value: 'premium', label: 'Premium Engine', desc: 'Kimi K2 — best results, uses more credits' },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => handleSavePref('model_preference', opt.value)}
+              className={`p-3 rounded-xl border text-left transition-all ${
+                selectedModelPref === opt.value
+                  ? 'border-[#7B61FF] bg-[#7B61FF]/10'
+                  : 'border-[#7B61FF]/20 hover:border-[#7B61FF]/40'
+              }`}
+            >
+              <div className="text-sm font-medium text-[#F4F6FF]">{opt.label}</div>
+              <div className="text-xs text-[#A7ACB8]">{opt.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Agent Style Selection */}
       <div className="p-6 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/20">

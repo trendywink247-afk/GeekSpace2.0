@@ -21,6 +21,19 @@ export interface User {
   plan: Plan;
   credits?: number;
   createdAt: string;
+  notifications?: {
+    email: boolean;
+    push: boolean;
+    agentUpdates: boolean;
+    reminders: boolean;
+    weeklyDigest: boolean;
+  };
+  privacy?: {
+    showProfile: boolean;
+    showActivity: boolean;
+    allowAgentChat: boolean;
+    showLocation: boolean;
+  };
 }
 
 export interface AuthState {
@@ -60,6 +73,8 @@ export type AgentVoice = 'professional' | 'friendly' | 'witty';
 
 export type AgentPersonality = 'edith' | 'jarvis' | 'weebo';
 
+export type ModelPreference = 'auto' | 'local' | 'cloud' | 'premium';
+
 export interface AgentConfig {
   id: string;
   userId: string;
@@ -68,6 +83,7 @@ export interface AgentConfig {
   mode: AgentMode;
   voice: AgentVoice;
   personality?: AgentPersonality;
+  model_preference?: ModelPreference;
   systemPrompt: string;
   primaryModel: string;
   fallbackModel?: string;
@@ -130,10 +146,12 @@ export interface PlanDefinition {
   credits: number;
   priceUsd: number;
   priceInr: number;
+  originalPriceInr?: number;   // slashed original price
   intervalDays: number;
   intervalLabel: string;
   description: string;
   badge?: string;
+  picoSlots?: number;
 }
 
 export interface DailyUsage {
@@ -230,7 +248,7 @@ export interface Integration {
 
 export type ReminderChannel = 'telegram' | 'email' | 'push' | 'whatsapp';
 export type ReminderCategory = 'personal' | 'work' | 'health' | 'other';
-export type ReminderCreatedBy = 'user' | 'agent' | 'automation';
+export type ReminderCreatedBy = 'user' | 'agent' | 'automation' | 'pico-fleet';
 
 export interface Reminder {
   id: string;
@@ -293,6 +311,7 @@ export interface Portfolio {
     showProjects: boolean;
     showActivity: boolean;
   };
+  connectionCount?: number;
 }
 
 // ----- Channel Links (Telegram/WhatsApp user mapping) --------
