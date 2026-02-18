@@ -69,7 +69,7 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
         ))}
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 w-full">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: 3D Persona Visual */}
           <div 
@@ -138,7 +138,7 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
             }`}
           >
             <h2 
-              className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               YOUR AI <span className="text-gradient">PERSONA</span>

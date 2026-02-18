@@ -141,11 +141,11 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
           isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'
         }`}
       >
-        <div className="glass-card rounded-2xl p-8 md:p-10">
+        <div className="glass-card rounded-2xl p-5 sm:p-8 md:p-10">
           {/* Header */}
           <div className="text-center mb-8">
             <h2 
-              className="text-3xl md:text-4xl font-bold mb-4"
+              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               Company <span className="text-gradient">Constellation</span>
@@ -167,7 +167,7 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
           </div>
 
           {/* Company Preview Grid */}
-          <div className="grid grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-6">
             {filteredCompanies.map((company, i) => (
               <button
                 key={i}

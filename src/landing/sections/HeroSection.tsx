@@ -74,7 +74,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center px-4 max-w-5xl mx-auto mt-[30vh] md:mt-[35vh]">
+      <div className="relative z-10 text-center px-4 sm:px-6 md:px-8 max-w-5xl mx-auto mt-[28vh] sm:mt-[30vh] md:mt-[35vh] animate-page-enter">
         {/* Micro Label */}
         <div 
           className={`mb-6 transition-all duration-700 delay-100 ${
@@ -88,7 +88,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
 
         {/* Main Headline */}
         <h1 
-          className={`text-5xl md:text-7xl lg:text-8xl font-bold mb-4 transition-all duration-700 delay-200 ${
+          className={`text-3xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-8xl font-bold mb-4 transition-all duration-700 delay-200 ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1.05 }}
@@ -96,7 +96,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
           <span className="text-gradient">YOUR AI</span>
         </h1>
         <h1 
-          className={`text-5xl md:text-7xl lg:text-8xl font-bold mb-8 transition-all duration-700 delay-300 ${
+          className={`text-3xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-8xl font-bold mb-6 sm:mb-8 transition-all duration-700 delay-300 ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1.05 }}
@@ -106,7 +106,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
 
         {/* Subheadline */}
         <p 
-          className={`text-lg md:text-xl text-[#A7ACB8] max-w-2xl mx-auto mb-10 transition-all duration-700 delay-400 ${
+          className={`text-base sm:text-lg md:text-xl text-[#A7ACB8] max-w-2xl mx-auto mb-8 sm:mb-10 transition-all duration-700 delay-400 ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
@@ -122,7 +122,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
           <Button
             size="lg"
             onClick={onEnterDashboard}
-            className="bg-[#7B61FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#7B61FF]/30 group"
+            className="w-full sm:w-auto bg-[#7B61FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#7B61FF]/30 group"
           >
             {onEnterDashboard ? 'Enter Dashboard' : 'Explore the Network'}
             <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
@@ -131,7 +131,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
             size="lg"
             variant="outline"
             onClick={() => onWatchDemo ? onWatchDemo() : navigate('/login?demo=true')}
-            className="border-[#7B61FF]/50 text-[#F4F6FF] hover:bg-[#7B61FF]/10 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
+            className="w-full sm:w-auto border-[#7B61FF]/50 text-[#F4F6FF] hover:bg-[#7B61FF]/10 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
           >
             <Play className="mr-2 w-5 h-5 text-[#7B61FF]" />
             Watch Demo
