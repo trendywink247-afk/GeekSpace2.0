@@ -37,8 +37,9 @@ WORKDIR /app
 COPY server/package.json server/package-lock.json ./server/
 RUN cd server && npm ci --omit=dev
 
-# Copy compiled server
+# Copy compiled server + PM2 ecosystem config
 COPY --from=builder /app/server/dist ./server/dist
+COPY server/ecosystem.config.cjs ./server/ecosystem.config.cjs
 
 # Copy built frontend
 COPY --from=builder /app/dist ./dist
@@ -61,7 +62,9 @@ ENV DB_PATH=/app/data/geekspace.db
 
 EXPOSE 3001
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+# Longer start-period for PM2 cluster (2 workers starting up)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -f http://localhost:3001/api/health || exit 1
 
-CMD ["node", "server/dist/index.js"]
+# pm2-runtime: runs PM2 in foreground (Docker-friendly, no daemon)
+CMD ["./server/node_modules/.bin/pm2-runtime", "server/ecosystem.config.cjs"]
