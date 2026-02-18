@@ -461,7 +461,8 @@ export function serveAdminDashboard(req: Request, res: Response): void {
 </div>
 
 <script>
-  const TOKEN = sessionStorage.getItem('gs_admin_token') || '';
+  const TOKEN = sessionStorage.getItem('gs_admin_token') || new URLSearchParams(window.location.search).get('token') || '';
+  if (TOKEN && !sessionStorage.getItem('gs_admin_token')) sessionStorage.setItem('gs_admin_token', TOKEN);
 
   function chipClass(status) {
     if (status === 'ok') return 'chip-ok';
