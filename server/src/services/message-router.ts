@@ -11,7 +11,9 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
-import { routeChat, classifyIntent, deductSubscriptionCredits, type ChatMessage } from './llm.js';
+import { config } from '../config.js';
+import { routeChat, deductSubscriptionCredits, type ChatMessage } from './llm.js';
+import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, extractMemories, getConversationContext } from './memory.js';
 import { checkKeywordTriggers } from './automations-engine.js';
 import { sendTelegramMessage } from './telegram.js';
@@ -134,18 +136,74 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // 6. Build messages for LLM
   const systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);
   const history = getConversationContext(userId);
-  const messages: ChatMessage[] = [...history, { role: 'user', content: msg.text }];
   const userCredits = (user?.credits as number) || 0;
 
-  // 7. Route through LLM (same pipeline as web chat)
-  const result = await routeChat(messages, {
-    systemPrompt,
-    agentName: (agentConfig?.name as string) || 'Geek',
-    userCredits,
-  });
+  // 7. Route through bridge (PicoClaw for simple, Kimi for complex) or fallback to routeChat
+  let replyText: string;
+  let provider: string;
+  let model: string;
+  let tokensIn = 0;
+  let tokensOut = 0;
+  let creditCost = 0;
+
+  if (config.bridgeEnabled) {
+    // Use the bridge — routes trivial/simple → PicoClaw (2-5s), complex → Kimi
+    try {
+      const bridgeReq: BridgeRequest = {
+        userId,
+        message: msg.text,
+        systemPrompt,
+        conversationHistory: history,
+        userCredits,
+      };
+      const bridgeResult = await bridgeChat(bridgeReq);
+      replyText = bridgeResult.text;
+      provider = bridgeResult.provider;
+      model = bridgeResult.model;
+      tokensIn = bridgeResult.tokensIn;
+      tokensOut = bridgeResult.tokensOut;
+      creditCost = bridgeResult.creditCost;
+
+      logger.debug({
+        route: bridgeResult.route,
+        complexity: bridgeResult.complexity,
+        provider,
+        latencyMs: bridgeResult.latencyMs,
+      }, 'Channel message routed via bridge');
+    } catch (err) {
+      logger.warn({ err: (err as Error).message }, 'Bridge failed for channel message, falling back to routeChat');
+      // Fallback to routeChat
+      const messages: ChatMessage[] = [...history, { role: 'user', content: msg.text }];
+      const result = await routeChat(messages, {
+        systemPrompt,
+        agentName: (agentConfig?.name as string) || 'Geek',
+        userCredits,
+      });
+      replyText = result.reply;
+      provider = result.provider;
+      model = result.model;
+      tokensIn = result.tokensIn;
+      tokensOut = result.tokensOut;
+      creditCost = result.creditCost;
+    }
+  } else {
+    // Bridge not enabled — use routeChat directly
+    const messages: ChatMessage[] = [...history, { role: 'user', content: msg.text }];
+    const result = await routeChat(messages, {
+      systemPrompt,
+      agentName: (agentConfig?.name as string) || 'Geek',
+      userCredits,
+    });
+    replyText = result.reply;
+    provider = result.provider;
+    model = result.model;
+    tokensIn = result.tokensIn;
+    tokensOut = result.tokensOut;
+    creditCost = result.creditCost;
+  }
 
   // 7b. Parse and execute actions
-  const { text: cleanReply, actions: parsedActions } = parseActions(result.reply);
+  const { text: cleanReply, actions: parsedActions } = parseActions(replyText);
   const actionResults: ActionResult[] = [];
 
   for (const action of parsedActions) {
@@ -153,10 +211,14 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     actionResults.push(actionResult);
   }
 
-  const replyText = cleanReply || result.reply;
+  const finalReply = cleanReply || replyText;
 
   // Build action summary for channel (no iframe possible)
-  let channelReply = replyText;
+  // Strip any remaining action-like patterns the parser missed (malformed tags)
+  let channelReply = finalReply
+    .replace(/<<<?\w[\s\S]*?>>>?/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
   for (const ar of actionResults) {
     if (ar.success) {
       channelReply += `\n\n✅ ${ar.message}`;
@@ -169,18 +231,18 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // 8. Log usage with correct channel
   db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ai.chat')`).run(
-    uuid(), userId, result.provider, result.model,
-    result.tokensIn, result.tokensOut, result.creditCost, msg.channel,
+    uuid(), userId, provider, model,
+    tokensIn, tokensOut, creditCost, msg.channel,
   );
 
   // 9. Deduct credits
-  if (result.creditCost > 0) {
-    db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(result.creditCost, userId);
+  if (creditCost > 0) {
+    db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(creditCost, userId);
   }
-  deductSubscriptionCredits(userId, result.creditCost);
+  deductSubscriptionCredits(userId, creditCost);
 
   // 10. Log assistant response (clean text without action blocks)
-  logConversation(userId, 'assistant', replyText, result.provider, result.model);
+  logConversation(userId, 'assistant', finalReply, provider, model);
 
   // 11. Send response back through originating channel
   await sendChannelResponse({
@@ -193,10 +255,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   logger.info({
     channel: msg.channel,
     userId,
-    intent: result.intent,
-    provider: result.provider,
+    provider,
     latencyMs: Date.now() - startTime,
-    creditCost: result.creditCost,
+    creditCost,
   }, 'Channel message processed');
 }
 

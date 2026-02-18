@@ -70,6 +70,20 @@ export function extractBotCommand(update: TelegramUpdate): { command: string; ar
   return { command, args };
 }
 
+// ---- Text Sanitization for Telegram ----
+
+/** Strip action blocks (<<<ACTION...ACTION>>>) and other LLM artifacts */
+function sanitizeForTelegram(text: string): string {
+  return text
+    // Strip well-formed action blocks: <<<ACTION {...} ACTION>>>
+    .replace(/<<<ACTION[\s\S]*?ACTION>>>/g, '')
+    // Strip malformed action-like tags: <<word or <<<word
+    .replace(/<<<?\w[\s\S]*?>>>?/g, '')
+    // Clean up extra whitespace left by stripping
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 // ---- Send Message ----
 
 export async function sendTelegramMessage(
@@ -77,51 +91,73 @@ export async function sendTelegramMessage(
   text: string,
   replyToMessageId?: number,
 ): Promise<{ messageId: number; success: boolean }> {
+  // Sanitize LLM output before sending
+  const cleanText = sanitizeForTelegram(text) || 'Done.';
+
   // Telegram has a 4096 char limit per message — split if needed
-  const chunks = splitMessage(text, 4096);
+  const chunks = splitMessage(cleanText, 4096);
 
   let lastMessageId = 0;
   for (const chunk of chunks) {
-    const body: Record<string, unknown> = {
-      chat_id: chatId,
-      text: chunk,
-      parse_mode: 'HTML',
-    };
-    if (replyToMessageId && chunk === chunks[0]) {
-      body.reply_to_message_id = replyToMessageId;
-    }
-
-    let sent = false;
-    for (let attempt = 0; attempt < 3 && !sent; attempt++) {
-      try {
-        const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (!res.ok) {
-          const errText = await res.text().catch(() => '');
-          logger.warn({ chatId, status: res.status, error: errText, attempt }, 'Telegram sendMessage failed');
-          return { messageId: 0, success: false };
-        }
-
-        const data = await res.json() as { result?: { message_id: number } };
-        lastMessageId = data.result?.message_id || 0;
-        sent = true;
-      } catch (err) {
-        logger.warn({ err, chatId, attempt }, 'Telegram sendMessage attempt failed');
-        if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-      }
-    }
-    if (!sent) {
-      logger.error({ chatId }, 'Telegram sendMessage failed after 3 attempts');
+    const sent = await sendSingleChunk(chatId, chunk, replyToMessageId && chunk === chunks[0] ? replyToMessageId : undefined);
+    if (!sent.success) {
       return { messageId: 0, success: false };
     }
+    lastMessageId = sent.messageId;
   }
 
   return { messageId: lastMessageId, success: true };
+}
+
+/** Send a single message chunk — tries plain text (safe), no HTML parsing issues */
+async function sendSingleChunk(
+  chatId: string | number,
+  text: string,
+  replyToMessageId?: number,
+): Promise<{ messageId: number; success: boolean }> {
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    text,
+    // Use plain text — LLM output is not safe HTML
+  };
+  if (replyToMessageId) {
+    body.reply_to_message_id = replyToMessageId;
+  }
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        logger.warn({ chatId, status: res.status, error: errText, attempt }, 'Telegram sendMessage failed');
+        // If reply_to caused a 400, retry without it
+        if (res.status === 400 && body.reply_to_message_id && errText.includes('message to be replied not found')) {
+          delete body.reply_to_message_id;
+          continue;
+        }
+        // Other client errors (4xx) — don't retry
+        if (res.status >= 400 && res.status < 500) {
+          return { messageId: 0, success: false };
+        }
+        continue;
+      }
+
+      const data = await res.json() as { result?: { message_id: number } };
+      return { messageId: data.result?.message_id || 0, success: true };
+    } catch (err) {
+      logger.warn({ err, chatId, attempt }, 'Telegram sendMessage attempt failed');
+      if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+  }
+
+  logger.error({ chatId }, 'Telegram sendMessage failed after 3 attempts');
+  return { messageId: 0, success: false };
 }
 
 // ---- Register Webhook ----
