@@ -31,6 +31,7 @@ import { directoryRouter } from './routes/directory.js';
 import { apiKeysRouter } from './routes/apiKeys.js';
 import { featuresRouter } from './routes/features.js';
 import { billingRouter } from './routes/billing.js';
+import { modelsRouter } from './routes/models.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { initTelegramBot } from './services/telegram.js';
 import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
@@ -42,7 +43,7 @@ import { startReminderScheduler } from './services/reminder-scheduler.js';
 import { metricsMiddleware } from './middleware/metrics.js';
 import { healthRouter } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
-import { fetchFreeModels } from './services/openrouter-models.js';
+import { startModelSyncScheduler } from './services/model-sync.js';
 
 const APP_VERSION = '3.0.0';
 
@@ -210,6 +211,7 @@ app.use('/api/directory', directoryRouter);
 app.use('/api/api-keys', apiKeysRouter);
 app.use('/api/features', featuresRouter);
 app.use('/api/billing', billingRouter);
+app.use('/api/models', modelsRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/pico', picoRouter);
 app.use('/api/briefings', briefingsRouter);
@@ -250,5 +252,5 @@ app.listen(config.port, () => {
   startBriefingScheduler();
   startReminderScheduler();
   startMemorySyncScheduler();
-  fetchFreeModels().catch(() => { logger.warn('OpenRouter model prefetch failed'); });
+  startModelSyncScheduler();
 });

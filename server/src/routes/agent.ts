@@ -101,6 +101,7 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     monthlyBudgetUSD: 'monthly_budget_usd', avatarEmoji: 'avatar_emoji',
     accentColor: 'accent_color', bubbleStyle: 'bubble_style', status: 'status',
     personality: 'personality', model_preference: 'model_preference',
+    preferred_free_model: 'preferred_free_model',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {
