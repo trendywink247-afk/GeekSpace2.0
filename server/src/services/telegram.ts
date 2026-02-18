@@ -79,13 +79,25 @@ export function extractBotCommand(update: TelegramUpdate): { command: string; ar
 
 // ---- Text Sanitization for Telegram ----
 
-/** Strip action blocks (<<<ACTION...ACTION>>>) and other LLM artifacts */
+/** Strip action blocks, markdown formatting, and other LLM artifacts for plain-text Telegram */
 function sanitizeForTelegram(text: string): string {
   return text
     // Strip well-formed action blocks: <<<ACTION {...} ACTION>>>
     .replace(/<<<ACTION[\s\S]*?ACTION>>>/g, '')
     // Strip malformed action-like tags: <<word or <<<word
     .replace(/<<<?\w[\s\S]*?>>>?/g, '')
+    // Strip markdown bold/italic: **text** or __text__ → text
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    // Strip single emphasis: *text* or _text_ → text (but not mid-word underscores)
+    .replace(/(?<!\w)\*(.+?)\*(?!\w)/g, '$1')
+    .replace(/(?<!\w)_(.+?)_(?!\w)/g, '$1')
+    // Strip markdown headers: ## Header → Header
+    .replace(/^#{1,6}\s+/gm, '')
+    // Strip markdown horizontal rules
+    .replace(/^[-*_]{3,}\s*$/gm, '')
+    // Convert markdown bullet lists to plain dashes (keep structure readable)
+    .replace(/^\*\s+/gm, '- ')
     // Clean up extra whitespace left by stripping
     .replace(/\n{3,}/g, '\n\n')
     .trim();
