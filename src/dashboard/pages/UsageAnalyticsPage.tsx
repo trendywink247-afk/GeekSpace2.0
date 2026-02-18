@@ -52,6 +52,22 @@ const TOOLTIP_STYLE = {
   itemStyle: { color: '#F4F6FF' },
 };
 
+const PROVIDER_LABELS: Record<string, string> = {
+  picoclaw: 'Weebo',
+  ollama: 'Local Engine',
+  openrouter: 'Cloud Engine',
+  'openrouter-free': 'Cloud Engine',
+  edith: 'Premium Engine',
+  builtin: 'Built-in',
+};
+
+const MODEL_LABELS: Record<string, string> = {
+  'picoclaw-haiku': 'Weebo',
+};
+
+function friendlyProvider(p: string) { return PROVIDER_LABELS[p] || p; }
+function friendlyModel(m: string) { return MODEL_LABELS[m] || m; }
+
 type SummaryRange = 'day' | 'week' | 'month';
 type ChartRange = '7d' | '14d' | '30d';
 
@@ -156,6 +172,7 @@ export function UsageAnalyticsPage() {
 
   const pieData = providers.map((p, i) => ({
     ...p,
+    provider: friendlyProvider(p.provider),
     color: PROVIDER_COLORS[i % PROVIDER_COLORS.length],
   }));
 
@@ -392,7 +409,7 @@ export function UsageAnalyticsPage() {
                   {pieData.map((p) => (
                     <div key={p.provider} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
-                      <span className="text-xs text-[#A7ACB8]">{p.provider}</span>
+                      <span className="text-xs text-[#A7ACB8]">{friendlyProvider(p.provider)}</span>
                     </div>
                   ))}
                 </div>
@@ -566,8 +583,8 @@ export function UsageAnalyticsPage() {
                             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
                           })}
                         </TableCell>
-                        <TableCell className="text-[#F4F6FF]">{event.provider}</TableCell>
-                        <TableCell className="text-[#A7ACB8] font-mono text-xs">{event.model}</TableCell>
+                        <TableCell className="text-[#F4F6FF]">{friendlyProvider(event.provider)}</TableCell>
+                        <TableCell className="text-[#A7ACB8] font-mono text-xs">{friendlyModel(event.model)}</TableCell>
                         <TableCell className="text-[#F4F6FF] text-right font-mono text-xs">
                           {fmt(event.tokensIn)} / {fmt(event.tokensOut)}
                         </TableCell>

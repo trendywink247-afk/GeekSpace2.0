@@ -1065,6 +1065,36 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
 
 // ---- Memory Management ----
 
+/** Map snake_case DB row to camelCase for frontend */
+function mapMemory(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    category: row.category,
+    key: row.key,
+    value: row.value,
+    confidence: row.confidence,
+    source: row.source,
+    accessCount: row.access_count ?? 0,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapConversation(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    role: row.role,
+    content: row.content,
+    provider: row.provider,
+    model: row.model,
+    summary: row.summary,
+    tags: row.tags,
+    createdAt: row.created_at,
+  };
+}
+
 agentRouter.get('/memory', requireAuth, (req: AuthRequest, res) => {
   const category = req.query.category as string | undefined;
   const search = req.query.search as string | undefined;
@@ -1072,22 +1102,21 @@ agentRouter.get('/memory', requireAuth, (req: AuthRequest, res) => {
 
   if (search) {
     const memories = getRelevantMemories(req.userId!, search, limit);
-    res.json(memories);
+    res.json((memories as unknown as Record<string, unknown>[]).map(mapMemory));
     return;
   }
   const memories = getMemories(req.userId!, category, limit);
-  res.json(memories);
+  res.json((memories as unknown as Record<string, unknown>[]).map(mapMemory));
 });
 
 agentRouter.post('/memory', requireAuth, validateBody(memoryCreateSchema), (req: AuthRequest, res) => {
   const { category, key, value, confidence, source } = req.body;
   upsertMemory(req.userId!, category, key, value, confidence, source);
 
-  // Return the newly created/updated memory
   const memory = db.prepare(
     'SELECT * FROM agent_memory WHERE user_id = ? AND category = ? AND key = ?'
-  ).get(req.userId!, category, key);
-  res.status(201).json(memory);
+  ).get(req.userId!, category, key) as Record<string, unknown>;
+  res.status(201).json(mapMemory(memory));
 });
 
 agentRouter.put('/memory/:id', requireAuth, validateBody(memoryUpdateSchema), (req: AuthRequest, res) => {
@@ -1111,8 +1140,8 @@ agentRouter.put('/memory/:id', requireAuth, validateBody(memoryUpdateSchema), (r
 
   const updated = db.prepare(
     'SELECT * FROM agent_memory WHERE user_id = ? AND category = ? AND key = ?'
-  ).get(req.userId!, category, key);
-  res.json(updated);
+  ).get(req.userId!, category, key) as Record<string, unknown>;
+  res.json(mapMemory(updated));
 });
 
 agentRouter.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
@@ -1126,7 +1155,7 @@ agentRouter.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
 agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
   const conversations = getRecentConversations(req.userId!, limit);
-  res.json(conversations);
+  res.json((conversations as unknown as Record<string, unknown>[]).map(mapConversation));
 });
 
 // ---- Premium Agent (Specialist Sessions) ----

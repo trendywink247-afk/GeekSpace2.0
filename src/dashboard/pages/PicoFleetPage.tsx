@@ -117,7 +117,7 @@ export function PicoFleetPage() {
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
   // Recent activity (last 10 tasks — polled independently every 30s)
-  const [recentTasks, setRecentTasks] = useState<Array<{ id: string; description: string; status: string; created_at?: string }>>([]);
+  const [recentTasks, setRecentTasks] = useState<Array<{ id: string; description: string; status: string; created_at?: string; started_at?: string; completed_at?: string }>>([]);
 
   // Toast auto-dismiss
   useEffect(() => {
@@ -531,7 +531,7 @@ export function PicoFleetPage() {
                   </span>
                   {/* Time */}
                   <span className="text-xs text-[#A7ACB8] shrink-0 hidden sm:block">
-                    {formatTime(task.created_at || null)}
+                    {formatTime(task.completed_at || task.started_at || task.created_at || null)}
                   </span>
                 </div>
               ))}
@@ -595,7 +595,7 @@ export function PicoFleetPage() {
 
                         {/* Timestamp */}
                         <span className="text-xs text-[#A7ACB8] hidden md:block shrink-0 min-w-[70px] text-right">
-                          {formatTime(task.created_at)}
+                          {formatTime(task.completed_at || task.started_at || task.created_at)}
                         </span>
 
                         {/* Cancel button for queued tasks */}

@@ -194,7 +194,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
       id: r.id,
       action: r.completed ? 'Reminder completed' : 'Reminder active',
       detail: r.text,
-      time: new Date(r.datetime).toLocaleDateString(),
+      time: r.datetime ? new Date(r.datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Pending',
       status: r.completed ? 'success' as const : 'warning' as const,
       icon: Bell,
     })),
