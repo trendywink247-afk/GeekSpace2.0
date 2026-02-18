@@ -18,7 +18,7 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
   }
 
   const id = uuid();
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 12);
 
   const doSignup = db.transaction(() => {
     db.prepare(`
