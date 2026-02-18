@@ -299,6 +299,7 @@ async function handleTelegramCommand(
         `/link — Link your GeekSpace account\n` +
         `/unlink — Unlink your account\n` +
         `/credits — Check credit balance\n` +
+        `/model — View and switch AI models\n` +
         `/status — Connection status\n` +
         `/tasks — View recent tasks\n` +
         `/agents — List your agents\n` +
@@ -416,6 +417,82 @@ async function handleTelegramCommand(
       const user = db.prepare('SELECT username FROM users WHERE id = ?').get(link.user_id) as { username: string } | undefined;
       const url = user ? `https://ai.geekspace.space/${user.username}` : 'your dashboard';
       await sendTelegramMessage(chatId, `Portfolio deployed! View it at ${url}`);
+      break;
+    }
+
+    case '/model': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+
+      if (!link) {
+        await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.');
+        return;
+      }
+
+      // Get available models
+      const models = db.prepare(`
+        SELECT id, display_name, summary, status FROM free_models
+        WHERE status IN ('active', 'new') ORDER BY curated DESC, context_length DESC
+      `).all() as Array<{ id: string; display_name: string; summary: string; status: string }>;
+
+      if (models.length === 0) {
+        await sendTelegramMessage(chatId, 'No free models available right now. Check back later.');
+        return;
+      }
+
+      // Get user's current preference
+      const agentCfg = db.prepare('SELECT preferred_free_model FROM agent_configs WHERE user_id = ?')
+        .get(link.user_id) as { preferred_free_model: string | null } | undefined;
+      const currentPref = agentCfg?.preferred_free_model || 'auto';
+
+      if (!cmd.args.trim()) {
+        // List all models
+        const lines = models.map((m, i) => {
+          const check = m.id === currentPref ? ' ✅' : '';
+          const badge = m.status === 'new' ? ' 🆕' : '';
+          return `${i + 1}. ${m.display_name}${badge}${check}\n   ${m.summary}`;
+        });
+
+        const autoCheck = currentPref === 'auto' ? ' ✅' : '';
+        await sendTelegramMessage(chatId,
+          `🤖 Available Free Models:\n\n` +
+          `0. Auto-select${autoCheck}\n   Let the system pick the best model\n\n` +
+          `${lines.join('\n\n')}\n\n` +
+          `Reply /model <number> to switch, or /model auto`
+        );
+        return;
+      }
+
+      // Handle /model auto
+      if (cmd.args.trim().toLowerCase() === 'auto') {
+        db.prepare("UPDATE agent_configs SET preferred_free_model = 'auto' WHERE user_id = ?").run(link.user_id);
+        await sendTelegramMessage(chatId, '✅ Switched to auto-select. The system will pick the best available model.');
+        return;
+      }
+
+      // Handle /model <number>
+      const num = parseInt(cmd.args.trim(), 10);
+      if (!isNaN(num) && num >= 1 && num <= models.length) {
+        const chosen = models[num - 1];
+        db.prepare('UPDATE agent_configs SET preferred_free_model = ? WHERE user_id = ?').run(chosen.id, link.user_id);
+        await sendTelegramMessage(chatId, `✅ Switched to ${chosen.display_name}.\n${chosen.summary}`);
+        return;
+      }
+
+      // Handle /model <partial name>
+      const search = cmd.args.trim().toLowerCase();
+      const match = models.find(m =>
+        m.display_name.toLowerCase().includes(search) ||
+        m.id.toLowerCase().includes(search)
+      );
+
+      if (match) {
+        db.prepare('UPDATE agent_configs SET preferred_free_model = ? WHERE user_id = ?').run(match.id, link.user_id);
+        await sendTelegramMessage(chatId, `✅ Switched to ${match.display_name}.\n${match.summary}`);
+      } else {
+        await sendTelegramMessage(chatId, `Model not found: "${cmd.args.trim()}"\nUse /model to see available models.`);
+      }
       break;
     }
 

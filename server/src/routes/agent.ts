@@ -169,7 +169,7 @@ Skills/interests: ${Array.isArray(tags) ? tags.join(', ') : tags || 'software de
 
     const result = await routeChat(
       [{ role: 'system', content: systemPrompt }, { role: 'user', content: 'Generate it now.' }],
-      { forceProvider: 'edith' as Provider }
+      { forceProvider: 'edith' as Provider, userId: req.userId! }
     );
 
     // Deduct actual credit cost
@@ -285,7 +285,7 @@ You are assisting via the GeekSpace terminal. Be concise. No markdown headers. P
         { role: 'user', content: message },
       ];
 
-      const terminalResult = await routeChat(terminalMessages, { forceProvider: 'openrouter-free' as Provider });
+      const terminalResult = await routeChat(terminalMessages, { forceProvider: 'openrouter-free' as Provider, userId });
       deductSubscriptionCredits(userId, terminalResult.creditCost);
       db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'terminal', 'ai.chat')`).run(
@@ -548,6 +548,7 @@ You are assisting via the GeekSpace terminal. Be concise. No markdown headers. P
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
       forceProvider: resolvedProvider,
+      userId,
     });
 
     // Determine tier from actual provider used
@@ -876,6 +877,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
           systemPrompt: buildSystemPrompt(agentConfig, user, userId),
           agentName: (agentConfig?.name as string) || 'Geek',
           userCredits: (user?.credits as number) || 0,
+          userId,
         },
       );
 
@@ -980,7 +982,7 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     if (intent === 'coding' || intent === 'planning' || intent === 'complex') {
       const result = await routeChat(
         [...history, { role: 'user', content: message }],
-        { systemPrompt, agentName, userCredits },
+        { systemPrompt, agentName, userCredits, userId },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
       const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';
@@ -1019,7 +1021,7 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
         logger.warn({ userId, latencyMs }, 'Stream produced empty reply, falling back to routeChat');
         const result = await routeChat(
           [...history, { role: 'user', content: message }],
-          { systemPrompt, agentName, userCredits },
+          { systemPrompt, agentName, userCredits, userId },
         );
         res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
         res.write(`data: ${JSON.stringify({
@@ -1050,7 +1052,7 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
       const fallbackHistory = getConversationContext(userId);
       const result = await routeChat(
         [...fallbackHistory, { role: 'user', content: message }],
-        { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0 },
+        { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0, userId },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
       res.write(`data: ${JSON.stringify({ text: '', done: true, provider: result.provider, model: result.model })}\n\n`);

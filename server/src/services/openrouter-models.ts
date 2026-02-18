@@ -9,6 +9,7 @@
 import { cacheGet, cacheSet } from './cache.js';
 import { config } from '../config.js';
 import { logger } from '../logger.js';
+import { db } from '../db/index.js';
 
 // ---- Constants ----
 
@@ -148,4 +149,22 @@ export async function refreshModelsIfStale(): Promise<void> {
   } catch {
     // Non-fatal — best effort
   }
+}
+
+/**
+ * Get the user's preferred free model if it's currently available.
+ * Returns null if preference is 'auto' or model is unavailable.
+ */
+export function getUserPreferredFreeModel(userId: string): string | null {
+  const row = db.prepare('SELECT preferred_free_model FROM agent_configs WHERE user_id = ?')
+    .get(userId) as { preferred_free_model: string | null } | undefined;
+
+  const pref = row?.preferred_free_model;
+  if (!pref || pref === 'auto') return null;
+
+  // Check the model is still active
+  const model = db.prepare("SELECT id FROM free_models WHERE id = ? AND status IN ('active', 'new')")
+    .get(pref) as { id: string } | undefined;
+
+  return model ? model.id : null;
 }
