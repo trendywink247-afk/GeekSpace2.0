@@ -128,13 +128,9 @@ picoRouter.post('/tasks/plan', requireAuth, validateBody(picoTaskPlanSchema), as
 });
 
 // POST /tasks/plan-premium — user confirmed they want Kimi for a complex task
-picoRouter.post('/tasks/plan-premium', requireAuth, async (req: AuthRequest, res) => {
+picoRouter.post('/tasks/plan-premium', requireAuth, validateBody(picoTaskPlanSchema), async (req: AuthRequest, res) => {
   const userId = req.userId!;
-  const { request } = req.body as { request?: string };
-  if (!request?.trim()) {
-    res.status(400).json({ error: 'request is required' });
-    return;
-  }
+  const { request } = req.body as { request: string };
 
   try {
     const sub = db_getSub(userId);

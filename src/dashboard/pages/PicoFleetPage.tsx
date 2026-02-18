@@ -191,6 +191,7 @@ export function PicoFleetPage() {
         setEscalateMessage(res.data.message || "This task looks complex. Want Edith (Kimi) to handle it?");
         setShowEscalateDialog(true);
       } else {
+        setShowEscalateDialog(false);
         const count = res.data.queued;
         showToast(`Planned ${count} task${count !== 1 ? 's' : ''} (${res.data.credits_used} credits)`, 'success');
         setTaskInput('');

@@ -410,40 +410,40 @@ export function cancelTask(taskId: string, userId: string): void {
 let lastProcessedUserId = '';
 
 async function processNextTask(): Promise<boolean> {
-  try {
-    // Fair round-robin: find next queued task from a user after lastProcessedUserId
-    // Skip paused agents and agents with a running task (1 concurrent per agent)
-    const roundRobinQuery = `
-      SELECT t.*, a.status AS agent_status, a.slot AS agent_slot
-      FROM pico_tasks t
-      JOIN pico_agents a ON a.id = t.agent_id
-      WHERE t.status = 'queued'
-        AND a.status = 'active'
-        AND NOT EXISTS (
-          SELECT 1 FROM pico_tasks r
-          WHERE r.agent_id = t.agent_id AND r.status = 'running'
-        )
-        AND t.user_id > ?
-      ORDER BY t.user_id ASC, t.created_at ASC
-      LIMIT 1
-    `;
+  // Fair round-robin: find next queued task from a user after lastProcessedUserId
+  // Skip paused agents and agents with a running task (1 concurrent per agent)
+  const roundRobinQuery = `
+    SELECT t.*, a.status AS agent_status, a.slot AS agent_slot
+    FROM pico_tasks t
+    JOIN pico_agents a ON a.id = t.agent_id
+    WHERE t.status = 'queued'
+      AND a.status = 'active'
+      AND NOT EXISTS (
+        SELECT 1 FROM pico_tasks r
+        WHERE r.agent_id = t.agent_id AND r.status = 'running'
+      )
+      AND t.user_id > ?
+    ORDER BY t.user_id ASC, t.created_at ASC
+    LIMIT 1
+  `;
 
-    let task = db.prepare(roundRobinQuery).get(lastProcessedUserId) as PicoTask | undefined;
+  let task = db.prepare(roundRobinQuery).get(lastProcessedUserId) as PicoTask | undefined;
 
-    // Wrap around if nothing found after current user
-    if (!task) {
-      task = db.prepare(roundRobinQuery).get('') as PicoTask | undefined;
-    }
-
-    if (!task) return false; // idle — no eligible tasks
-
-    lastProcessedUserId = task.user_id;
-    await executeTask(task);
-    return true;
-  } catch (err) {
-    logger.error({ error: err instanceof Error ? err.message : String(err) }, 'Pico worker error');
-    return false;
+  // Wrap around if nothing found after current user
+  if (!task) {
+    task = db.prepare(roundRobinQuery).get('') as PicoTask | undefined;
   }
+
+  if (!task) return false; // genuinely idle — nothing in queue
+
+  // Task found — attempt execution; errors here don't mean idle
+  lastProcessedUserId = task.user_id;
+  try {
+    await executeTask(task);
+  } catch (err) {
+    logger.error({ error: err instanceof Error ? err.message : String(err), taskId: task.id }, 'Pico worker: unexpected task execution error');
+  }
+  return true;
 }
 
 async function executeTask(task: PicoTask): Promise<void> {
