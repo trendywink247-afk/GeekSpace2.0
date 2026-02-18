@@ -22,6 +22,24 @@ import { OPENCLAW_IDENTITY_COMPACT } from '../prompts/openclaw-system.js';
 import { parseActions } from './action-parser.js';
 import { executeAction, type ActionResult } from './action-executor.js';
 
+// ---- Task Intent Detection ----
+
+function detectTaskIntent(message: string): boolean {
+  const lower = message.toLowerCase().trim();
+  if (lower.endsWith('?') || lower.split(' ').length < 3) return false;
+  const patterns = [
+    /\bremind\s+me\b/i,
+    /\bset\s+(?:a\s+)?reminder\b/i,
+    /\bsend\s+(?:a\s+)?(?:telegram|tg)\s+(?:message|notification|alert)\b/i,
+    /\bsend\s+(?:a\s+)?message\s+(?:on|via|through)\s+telegram\b/i,
+    /\bnotify\s+(?:me\s+)?(?:on|via)\s+telegram\b/i,
+    /\bdeploy\s+(?:my\s+)?portfolio\b/i,
+    /\bpublish\s+(?:my\s+)?portfolio\b/i,
+    /\bmake\s+(?:my\s+)?portfolio\s+(?:public|live)\b/i,
+  ];
+  return patterns.some(p => p.test(lower));
+}
+
 // ---- Types ----
 
 interface NormalizedMessage {
@@ -132,6 +150,31 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 5. Fire keyword automation triggers (non-blocking)
   checkKeywordTriggers(userId, msg.text).catch((e: unknown) => console.debug('[bg]', (e as Error).message));
+
+  // 5b. Auto-detect task intents (remind, telegram, deploy) — route to Pico Fleet
+  if (detectTaskIntent(msg.text)) {
+    try {
+      const { planTasks, queueTasks } = await import('./pico-fleet.js');
+      const userPlan = (subscription as Record<string, unknown>)?.plan as string || 'free';
+      const { tasks } = await planTasks(userId, msg.text, userPlan);
+      if (tasks.length > 0) {
+        const taskIds = queueTasks(userId, tasks, 'weebo');
+        const summary = tasks.map((t: { task_type: string; description: string }) =>
+          `${t.task_type.replace(/_/g, ' ')}: ${t.description}`).join('\n');
+        const reply = `Done! I've queued ${taskIds.length} task(s):\n${summary}`;
+        logConversation(userId, 'assistant', reply, 'builtin', 'pico-fleet');
+        await sendChannelResponse({
+          channel: msg.channel,
+          externalId: msg.externalId,
+          text: reply,
+        });
+        logger.info({ channel: msg.channel, userId, taskCount: taskIds.length, latencyMs: Date.now() - startTime }, 'Channel task auto-detected');
+        return;
+      }
+    } catch (e) {
+      logger.warn({ err: (e as Error).message }, 'Channel task auto-detect failed, falling through to chat');
+    }
+  }
 
   // 6. Build messages for LLM
   const systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);
