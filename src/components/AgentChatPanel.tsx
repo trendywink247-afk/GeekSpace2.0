@@ -45,12 +45,19 @@ const providerLabels: Record<string, string> = {
   builtin: 'Built-in',
 };
 
+function formatModelName(model: string): string {
+  if (!model || model === 'builtin-fallback' || model === 'error-fallback' || model === 'picoclaw-haiku') return '';
+  const base = model.replace(/:free$/, '').split('/').pop() || '';
+  return base.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
+}
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'agent' | 'system';
   content: string;
   timestamp: Date;
   provider?: string;
+  model?: string;
   isStreaming?: boolean;
   actions?: Array<{
     tool: string;
@@ -216,7 +223,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       (async () => {
         try {
           const { data } = await premiumAgentService.chat(premiumSession.sessionId, content);
-          setAgentMsg({ content: data.text, isStreaming: false, provider: data.provider });
+          setAgentMsg({ content: data.text, isStreaming: false, provider: data.provider, model: data.model });
           setPremiumSession((prev) => prev ? { ...prev, creditsUsed: data.sessionCreditsTotal, messagesCount: data.messagesCount } : prev);
         } catch {
           setAgentMsg({
@@ -243,7 +250,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       const { data } = await agentService.chat(content);
       const text = data.text || '';
       if (!text && !data.actions?.length) throw new Error('Empty response');
-      setAgentMsg({ content: text, isStreaming: false, provider: data.provider, actions: data.actions || undefined });
+      setAgentMsg({ content: text, isStreaming: false, provider: data.provider, model: data.model, actions: data.actions || undefined });
     };
 
     // Main chat logic: try streaming → fall back to regular → show error
@@ -299,7 +306,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               }
 
               if (chunk.done) {
-                setAgentMsg({ isStreaming: false, provider: chunk.provider });
+                setAgentMsg({ isStreaming: false, provider: chunk.provider, model: chunk.model });
               }
             } catch {
               // skip malformed chunks
@@ -488,6 +495,9 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                     {msg.provider && !msg.isStreaming && (
                       <span className="block mt-1.5 text-[10px] text-[#A7ACB8]/60 flex items-center gap-1">
                         <Zap className="w-2.5 h-2.5" /> {providerLabels[msg.provider!] ?? msg.provider}
+                        {msg.model && formatModelName(msg.model) && (
+                          <span className="text-[#555]">· via {formatModelName(msg.model)}</span>
+                        )}
                       </span>
                     )}
                     {msg.actions?.map((action, i) => (

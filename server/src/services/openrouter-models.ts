@@ -83,9 +83,18 @@ export async function fetchFreeModels(): Promise<string[]> {
 }
 
 // ---- getModelList ----
-// Returns the cached model list or DEFAULT_FREE_MODELS if cache is empty.
+// Returns the model list. Prefers DB-sourced curated models,
+// falls back to Redis cache, then DEFAULT_FREE_MODELS.
 
 async function getModelList(): Promise<string[]> {
+  // Prefer DB-sourced active curated models (populated by model-sync.ts)
+  try {
+    const rows = db.prepare("SELECT id FROM free_models WHERE status = 'active' AND curated = 1 ORDER BY context_length DESC")
+      .all() as Array<{ id: string }>;
+    if (rows.length > 0) return rows.map(r => r.id);
+  } catch { /* DB not ready — fall through */ }
+
+  // Fallback to Redis cache
   try {
     const cached = await cacheGet(CACHE_KEY_MODELS);
     if (cached) {
@@ -97,6 +106,7 @@ async function getModelList(): Promise<string[]> {
   } catch {
     // Cache miss or parse error — fall through
   }
+
   return DEFAULT_FREE_MODELS;
 }
 

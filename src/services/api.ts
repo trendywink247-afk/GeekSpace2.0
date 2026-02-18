@@ -29,6 +29,8 @@ import type {
   PlanDefinition,
   DailyUsage,
   PremiumSession,
+  FreeModelsResponse,
+  ModelChangelogEntry,
 } from '@/types';
 
 // ----- Axios instance ----------------------------------------
@@ -439,6 +441,13 @@ export const recipeService = {
 
   uninstall: (id: string) =>
     api.delete(`/recipes/${id}/uninstall`),
+};
+
+// ----- Free Models -------------------------------------------
+
+export const modelService = {
+  getFreeModels: () => api.get<FreeModelsResponse>('/models/free'),
+  getChangelog: () => api.get<{ entries: ModelChangelogEntry[] }>('/models/changelog'),
 };
 
 export default api;

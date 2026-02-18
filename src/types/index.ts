@@ -163,6 +163,58 @@ export interface DailyUsage {
   total_tokens: number;
 }
 
+// ----- Free OpenRouter Models ---------------------------------
+
+export interface FreeModel {
+  id: string;
+  displayName: string;
+  provider: string;
+  summary: string;
+  contextLength: number;
+  parameters: string | null;
+  status: string;
+  curated: boolean;
+  isNew: boolean;
+}
+
+export interface FreeModelsResponse {
+  models: FreeModel[];
+  lastUpdated: string | null;
+}
+
+export interface ModelChangelogEntry {
+  modelId: string;
+  displayName: string;
+  event: string;
+  timestamp: string;
+}
+
+// ----- Free Models & Changelog --------------------------------
+
+export interface FreeModel {
+  id: string;
+  displayName: string;
+  provider: string;
+  summary: string;
+  contextLength: number;
+  parameters: string | null;
+  status: string;
+  curated: boolean;
+  isNew: boolean;
+}
+
+export interface FreeModelsResponse {
+  models: FreeModel[];
+  lastUpdated: string | null;
+}
+
+export interface ModelChangelogEntry {
+  modelId: string;
+  displayName: string;
+  event: string;
+  timestamp: string;
+}
+
 // ----- Premium Agent -----------------------------------------
 
 export interface PremiumSession {

@@ -14,7 +14,10 @@ import {
   ArrowDownRight,
   RefreshCw,
   MapPin,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +39,8 @@ import {
 } from 'recharts';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { briefingService } from '@/services/api';
+import { briefingService, modelService, agentService } from '@/services/api';
+import type { FreeModel, ModelChangelogEntry } from '@/types';
 
 interface OverviewPageProps {
   onViewPortfolio: (username: string) => void;
@@ -89,6 +93,12 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [latestBriefing, setLatestBriefing] = useState<{ content: string; created_at: string } | null>(null);
+  const [freeModels, setFreeModels] = useState<FreeModel[]>([]);
+  const [changelog, setChangelog] = useState<ModelChangelogEntry[]>([]);
+  const [modelsLastUpdated, setModelsLastUpdated] = useState<string | null>(null);
+  const [preferredModel, setPreferredModel] = useState<string>('auto');
+  const [showChangelog, setShowChangelog] = useState(false);
+  const [modelSaving, setModelSaving] = useState<string | null>(null);
 
   const user = useAuthStore((s) => s.user);
   const { stats, integrations, agent, reminders, chartData, hourlyData } = useDashboardStore();
@@ -137,6 +147,31 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
       if (res.data.length > 0) setLatestBriefing(res.data[0]);
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    modelService.getFreeModels().then(res => {
+      setFreeModels(res.data.models);
+      setModelsLastUpdated(res.data.lastUpdated);
+    }).catch(() => {});
+    modelService.getChangelog().then(res => {
+      setChangelog(res.data.entries);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const pref = (agent as unknown as Record<string, unknown>)?.preferred_free_model as string | undefined;
+    if (pref) setPreferredModel(pref);
+  }, [agent]);
+
+  const handleSelectModel = async (modelId: string) => {
+    setModelSaving(modelId);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await agentService.updateConfig({ preferred_free_model: modelId } as any);
+      setPreferredModel(modelId);
+    } catch { /* ignore */ }
+    setModelSaving(null);
+  };
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -609,6 +644,122 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </div>
             </CardContent>
           </Card>
+
+          {/* Available AI Models */}
+          {freeModels.length > 0 && (
+            <div className="col-span-full">
+              <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-[#7B61FF]" />
+                      <CardTitle className="text-lg font-semibold">Available AI Models</CardTitle>
+                    </div>
+                    {modelsLastUpdated && (
+                      <span className="text-xs text-[#A7ACB8]">
+                        Updated {new Date(modelsLastUpdated).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-[#A7ACB8] mt-1">Free models powered by OpenRouter — updated daily</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-2">
+                    {/* Auto-select */}
+                    <button
+                      onClick={() => handleSelectModel('auto')}
+                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                        preferredModel === 'auto'
+                          ? 'border-[#7B61FF] bg-[#7B61FF]/10'
+                          : 'border-[#1E1E2A] bg-[#0F0F18] hover:border-[#7B61FF]/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-sm font-medium text-[#F4F6FF]">Auto-select</span>
+                          <p className="text-xs text-[#A7ACB8] mt-0.5">System picks the best available model for each request</p>
+                        </div>
+                        {preferredModel === 'auto' && <Check className="w-4 h-4 text-[#7B61FF] shrink-0" />}
+                      </div>
+                    </button>
+
+                    {/* Model cards */}
+                    {freeModels.map(model => (
+                      <button
+                        key={model.id}
+                        onClick={() => handleSelectModel(model.id)}
+                        disabled={modelSaving === model.id}
+                        className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                          preferredModel === model.id
+                            ? 'border-[#7B61FF] bg-[#7B61FF]/10'
+                            : 'border-[#1E1E2A] bg-[#0F0F18] hover:border-[#7B61FF]/40'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-md bg-[#1E1E2A] flex items-center justify-center text-xs font-bold text-[#7B61FF] shrink-0">
+                              {model.provider.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-medium text-[#F4F6FF]">{model.displayName}</span>
+                                {model.isNew && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FFD761]/20 text-[#FFD761] font-medium">NEW</span>
+                                )}
+                                {model.parameters && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1E1E2A] text-[#A7ACB8] font-mono">{model.parameters}</span>
+                                )}
+                              </div>
+                              <p className="text-xs text-[#A7ACB8] mt-0.5 truncate">{model.summary}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1E1E2A] text-[#A7ACB8] font-mono">
+                              {model.contextLength >= 1000 ? `${Math.round(model.contextLength / 1000)}K` : model.contextLength} ctx
+                            </span>
+                            {preferredModel === model.id && <Check className="w-4 h-4 text-[#7B61FF]" />}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <p className="text-xs text-[#A7ACB8] mt-4">
+                    Tip: Use <code className="text-[#7B61FF] bg-[#1E1E2A] px-1 rounded">/model</code> in Telegram to switch models, or let auto-select pick the best one.
+                  </p>
+
+                  {/* Collapsible changelog */}
+                  {changelog.length > 0 && (
+                    <div className="mt-4 border-t border-[#1E1E2A] pt-3">
+                      <button
+                        onClick={() => setShowChangelog(!showChangelog)}
+                        className="flex items-center gap-1 text-xs text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors"
+                      >
+                        {showChangelog ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        Recent changes ({changelog.length})
+                      </button>
+                      {showChangelog && (
+                        <div className="mt-2 space-y-1">
+                          {changelog.slice(0, 10).map((entry, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs">
+                              <span className={
+                                entry.event === 'added' || entry.event === 'returned' ? 'text-[#61FF7B]' :
+                                entry.event === 'removed' ? 'text-[#FF6161]' : 'text-[#FFD761]'
+                              }>
+                                {entry.event === 'added' ? '+' : entry.event === 'removed' ? '-' : entry.event === 'returned' ? '↩' : '🔍'}
+                              </span>
+                              <span className="text-[#A7ACB8]">{entry.displayName}</span>
+                              <span className="text-[#555] ml-auto">{new Date(entry.timestamp).toLocaleDateString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     </div>
