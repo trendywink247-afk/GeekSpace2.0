@@ -390,7 +390,19 @@ export const picoService = {
       credits_used: number;
       credits_remaining: number;
       message?: string;
+      escalate?: boolean;
+      request?: string;
     }>('/pico/tasks/plan', { request }),
+
+  planTaskPremium: (request: string) =>
+    api.post<{
+      planned: Array<{ task_type: string; description: string }>;
+      queued: number;
+      task_ids: string[];
+      credits_used: number;
+      credits_remaining: number;
+      message?: string;
+    }>('/pico/tasks/plan-premium', { request }),
 
   cancelTask: (id: string) =>
     api.delete(`/pico/tasks/${id}`),

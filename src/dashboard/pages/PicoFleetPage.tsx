@@ -103,6 +103,11 @@ export function PicoFleetPage() {
   const [taskInput, setTaskInput] = useState('');
   const [planning, setPlanning] = useState(false);
 
+  // Escalation dialog
+  const [showEscalateDialog, setShowEscalateDialog] = useState(false);
+  const [escalateRequest, setEscalateRequest] = useState('');
+  const [escalateMessage, setEscalateMessage] = useState('');
+
   // Create agent
   const [creatingSlot, setCreatingSlot] = useState<number | null>(null);
   const [newAgentName, setNewAgentName] = useState('');
@@ -181,10 +186,16 @@ export function PicoFleetPage() {
     setPlanning(true);
     try {
       const res = await picoService.planTask(taskInput.trim());
-      const count = res.data.queued;
-      showToast(`Planned ${count} task${count !== 1 ? 's' : ''} (${res.data.credits_used} credits)`, 'success');
-      setTaskInput('');
-      await loadData();
+      if (res.data.escalate) {
+        setEscalateRequest(res.data.request || taskInput.trim());
+        setEscalateMessage(res.data.message || "This task looks complex. Want Edith (Kimi) to handle it?");
+        setShowEscalateDialog(true);
+      } else {
+        const count = res.data.queued;
+        showToast(`Planned ${count} task${count !== 1 ? 's' : ''} (${res.data.credits_used} credits)`, 'success');
+        setTaskInput('');
+        await loadData();
+      }
     } catch {
       showToast('Failed to plan task', 'error');
     } finally {
@@ -421,6 +432,41 @@ export function PicoFleetPage() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Escalation dialog */}
+      {showEscalateDialog && (
+        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-3">
+          <p className="text-sm text-amber-400">{escalateMessage}</p>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                setShowEscalateDialog(false);
+                setPlanning(true);
+                try {
+                  const res = await picoService.planTaskPremium(escalateRequest);
+                  const count = res.data.queued;
+                  showToast(`Queued ${count} task${count !== 1 ? 's' : ''} with Edith! (${res.data.credits_used} credits)`, 'success');
+                  setTaskInput('');
+                  await loadData();
+                } catch {
+                  showToast('Failed to plan task with Edith', 'error');
+                } finally {
+                  setPlanning(false);
+                }
+              }}
+              className="px-3 py-1.5 rounded-lg bg-amber-500 text-black text-sm font-medium hover:bg-amber-400"
+            >
+              Use Edith (Kimi)
+            </button>
+            <button
+              onClick={() => setShowEscalateDialog(false)}
+              className="px-3 py-1.5 rounded-lg border border-[#7B61FF]/30 text-[#A7ACB8] text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Task History */}
       <Card className="bg-[#0B0B10] border-[#7B61FF]/20">

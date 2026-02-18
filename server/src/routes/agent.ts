@@ -213,7 +213,7 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
         }
         const { planTasks: planTasksFn, queueTasks: queueTasksFn } = await import('../services/pico-fleet.js');
         const start = Date.now();
-        const { tasks, creditCost } = await planTasksFn(userId, taskDesc);
+        const { tasks, creditCost } = await planTasksFn(userId, taskDesc, userPlan);
         const latencyMs = Date.now() - start;
 
         if (tasks.length === 0) {
@@ -689,14 +689,15 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
     if (!taskDesc) { res.json({ output: 'Usage: gs task "description"', isError: true }); return; }
 
     try {
-      const sub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+      const sub = db.prepare('SELECT plan, credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string; credits_remaining: number } | undefined;
       if (sub && sub.credits_remaining < 10) {
         res.json({ output: 'Not enough credits for task planning (minimum 10 required)', isError: true });
         return;
       }
+      const taskUserPlan = sub?.plan || 'free';
 
       const { planTasks, queueTasks } = await import('../services/pico-fleet.js');
-      const { tasks, creditCost } = await planTasks(userId, taskDesc);
+      const { tasks, creditCost } = await planTasks(userId, taskDesc, taskUserPlan);
 
       if (tasks.length === 0) {
         res.json({ output: `No actionable tasks planned. Credits used: ${creditCost}`, isError: false });
