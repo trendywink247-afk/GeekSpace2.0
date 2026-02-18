@@ -38,6 +38,7 @@ import { picoRouter } from './routes/pico.js';
 import { briefingsRouter } from './routes/briefings.js';
 import { recipesRouter } from './routes/recipes.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
+import { startReminderScheduler } from './services/reminder-scheduler.js';
 import { metricsMiddleware } from './middleware/metrics.js';
 import { healthRouter } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
@@ -247,5 +248,6 @@ app.listen(config.port, () => {
   startPicoWorker();
   initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)'));
   startBriefingScheduler();
+  startReminderScheduler();
   fetchFreeModels().catch(() => { logger.warn('OpenRouter model prefetch failed'); });
 });

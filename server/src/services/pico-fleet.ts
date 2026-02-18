@@ -282,6 +282,136 @@ function extractIntentText(request: string, pattern: RegExp): string {
   return request; // fallback to full request
 }
 
+// ---- Reminder Time Parsing ----
+
+/**
+ * Parse natural language time expressions from reminder text.
+ * Returns ISO datetime string or null if no time found.
+ * Supports: "in X minutes/hours", "at Xpm/am", "tomorrow at X", "tonight", "in half an hour"
+ */
+/** Convert Date to SQLite-compatible format: "YYYY-MM-DD HH:MM:SS" */
+function toSqliteDatetime(d: Date): string {
+  return d.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+}
+
+function parseReminderTime(text: string): string | null {
+  const lower = text.toLowerCase();
+  const now = new Date();
+
+  // "in X minute(s)" / "in X min"
+  let match = lower.match(/\bin\s+(\d+)\s*(?:min(?:ute)?s?)\b/);
+  if (match) {
+    const mins = parseInt(match[1], 10);
+    return toSqliteDatetime(new Date(now.getTime() + mins * 60_000));
+  }
+
+  // "in X hour(s)"
+  match = lower.match(/\bin\s+(\d+)\s*(?:hours?|hrs?)\b/);
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    return toSqliteDatetime(new Date(now.getTime() + hours * 3600_000));
+  }
+
+  // "in half an hour" / "in 30 minutes"
+  if (/\bin\s+half\s+an?\s+hour\b/.test(lower)) {
+    return toSqliteDatetime(new Date(now.getTime() + 30 * 60_000));
+  }
+
+  // "in X seconds" (for testing)
+  match = lower.match(/\bin\s+(\d+)\s*(?:seconds?|secs?)\b/);
+  if (match) {
+    const secs = parseInt(match[1], 10);
+    return toSqliteDatetime(new Date(now.getTime() + secs * 1000));
+  }
+
+  // "at X:XX pm/am" or "at Xpm/am"
+  match = lower.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    const minute = match[2] ? parseInt(match[2], 10) : 0;
+    const ampm = match[3];
+    if (ampm === 'pm' && hour < 12) hour += 12;
+    if (ampm === 'am' && hour === 12) hour = 0;
+    const target = new Date(now);
+    target.setHours(hour, minute, 0, 0);
+    if (target.getTime() <= now.getTime()) {
+      target.setDate(target.getDate() + 1);
+    }
+    if (/\btomorrow\b/.test(lower)) {
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const targetStart = new Date(target);
+      targetStart.setHours(0, 0, 0, 0);
+      if (targetStart.getTime() === todayStart.getTime()) {
+        target.setDate(target.getDate() + 1);
+      }
+    }
+    return toSqliteDatetime(target);
+  }
+
+  // "at X" (24-hour implied, e.g., "at 5pm" without am/pm → assume PM for 1-7)
+  match = lower.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\b(?!\s*(?:am|pm))/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    const minute = match[2] ? parseInt(match[2], 10) : 0;
+    if (hour >= 1 && hour <= 7) hour += 12;
+    const target = new Date(now);
+    target.setHours(hour, minute, 0, 0);
+    if (target.getTime() <= now.getTime()) {
+      target.setDate(target.getDate() + 1);
+    }
+    if (/\btomorrow\b/.test(lower)) {
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const targetStart = new Date(target);
+      targetStart.setHours(0, 0, 0, 0);
+      if (targetStart.getTime() === todayStart.getTime()) {
+        target.setDate(target.getDate() + 1);
+      }
+    }
+    return toSqliteDatetime(target);
+  }
+
+  // "tomorrow morning" (9am) / "tomorrow evening" (6pm) / "tomorrow" (9am)
+  if (/\btomorrow\b/.test(lower)) {
+    const target = new Date(now);
+    target.setDate(target.getDate() + 1);
+    if (/\bevening\b/.test(lower)) {
+      target.setHours(18, 0, 0, 0);
+    } else if (/\bafternoon\b/.test(lower)) {
+      target.setHours(14, 0, 0, 0);
+    } else if (/\bnight\b/.test(lower)) {
+      target.setHours(21, 0, 0, 0);
+    } else {
+      target.setHours(9, 0, 0, 0);
+    }
+    return toSqliteDatetime(target);
+  }
+
+  // "tonight" (9pm)
+  if (/\btonight\b/.test(lower)) {
+    const target = new Date(now);
+    target.setHours(21, 0, 0, 0);
+    if (target.getTime() <= now.getTime()) {
+      target.setDate(target.getDate() + 1);
+    }
+    return toSqliteDatetime(target);
+  }
+
+  // "after work" / "end of day" (6pm)
+  if (/\b(?:after work|end of (?:the )?day|eod)\b/.test(lower)) {
+    const target = new Date(now);
+    target.setHours(18, 0, 0, 0);
+    if (target.getTime() <= now.getTime()) {
+      target.setDate(target.getDate() + 1);
+    }
+    return toSqliteDatetime(target);
+  }
+
+  // No time expression found → default to 1 hour from now
+  return toSqliteDatetime(new Date(now.getTime() + 3600_000));
+}
+
 // ---- Kimi Task Planner ----
 
 const PLANNER_SYSTEM_PROMPT = `You are a task planner for GeekSpace. The user wants to automate something.
@@ -504,9 +634,16 @@ async function executeTask(task: PicoTask): Promise<void> {
       case 'create_reminder': {
         const text = String(taskConfig.reminder_text || task.description);
         const reminderId = uuid();
-        db.prepare('INSERT INTO reminders (id, user_id, text, channel, category, created_by, pico_task_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
-          .run(reminderId, task.user_id, text, 'push', 'general', 'pico-fleet', task.id);
-        output = `Reminder created: ${text}`;
+        const dueAt = parseReminderTime(text);
+        // Use telegram channel if user has Telegram linked, otherwise push
+        const hasChannel = db.prepare(
+          "SELECT 1 FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+        ).get(task.user_id);
+        const channel = hasChannel ? 'telegram' : 'push';
+        db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, created_by, pico_task_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+          .run(reminderId, task.user_id, text, dueAt, channel, 'general', 'pico-fleet', task.id);
+        const timeNote = dueAt ? ` (due ${new Date(dueAt).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })})` : '';
+        output = `Reminder created: ${text}${timeNote}`;
         break;
       }
 
