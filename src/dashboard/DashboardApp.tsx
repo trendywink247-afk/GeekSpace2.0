@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
@@ -60,6 +61,8 @@ function PageLoader() {
 
 export function DashboardApp() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const swipeHandlers = useSwipeNavigation(location.pathname);
   const [currentPage, setCurrentPage] = useState<PageType>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop collapse state
@@ -316,7 +319,7 @@ export function DashboardApp() {
       {/* ---- Mobile overlay backdrop ---- */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 md:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-xl z-40 md:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -335,7 +338,7 @@ export function DashboardApp() {
 
       {/* ---- Mobile Sidebar Drawer ---- */}
       <aside
-        className={`md:hidden fixed left-0 top-0 h-full w-72 bg-[#0B0B10] border-r border-[#7B61FF]/20 z-50 flex flex-col transition-transform duration-300 ${
+        className={`md:hidden fixed left-0 top-0 h-full w-64 bg-[#0B0B10] border-r border-[#7B61FF]/20 z-50 flex flex-col transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         role="navigation"
@@ -401,35 +404,41 @@ export function DashboardApp() {
         </header>
 
         {/* Page Content */}
-        <div className="p-4 md:p-6">
+        <div className="p-4 md:p-6" {...swipeHandlers}>
           <Suspense fallback={<PageLoader />}>
-            {renderPage()}
+            <div key={currentPage} className="animate-page-enter">
+              {renderPage()}
+            </div>
           </Suspense>
         </div>
       </main>
 
       {/* ---- Mobile Bottom Tab Bar ---- */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0B0B10]/95 backdrop-blur-xl border-t border-[#7B61FF]/20 z-30 flex items-center justify-around px-2 safe-area-pb"
+        className="md:hidden fixed bottom-0 left-0 right-0 h-16 backdrop-blur-xl bg-background/80 border-t border-[#7B61FF]/20 z-30 flex items-center justify-around px-2 safe-area-pb"
         role="tablist"
         aria-label="Main tabs"
       >
-        {mobileTabs.map((tab) => (
-          <button
-            key={tab.id}
-            role="tab"
-            aria-selected={currentPage === tab.id}
-            onClick={() => setCurrentPage(tab.id)}
-            className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-lg transition-colors ${
-              currentPage === tab.id
-                ? 'text-[#7B61FF]'
-                : 'text-[#A7ACB8] active:text-[#F4F6FF]'
-            }`}
-          >
-            <tab.icon className="w-5 h-5" />
-            <span className="text-[10px] font-medium">{tab.label}</span>
-          </button>
-        ))}
+        {mobileTabs.map((tab) => {
+          const isActive = currentPage === tab.id;
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setCurrentPage(tab.id)}
+              className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-lg transition-colors touch-highlight ${
+                isActive
+                  ? 'text-[#7B61FF]'
+                  : 'text-[#A7ACB8] active:text-[#F4F6FF]'
+              }`}
+            >
+              <tab.icon className="w-5 h-5" />
+              <span className="text-[10px] font-medium">{tab.label}</span>
+              {isActive && <div className="w-1 h-1 rounded-full bg-primary mt-0.5" />}
+            </button>
+          );
+        })}
       </nav>
 
       {/* Floating Alex orb — higher on mobile to clear bottom tabs */}
