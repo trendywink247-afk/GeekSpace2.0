@@ -63,7 +63,14 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const { data } = await authService.login(email, password);
           localStorage.setItem('gs_token', data.token);
-          set({ user: data.user, token: data.token, isAuthenticated: true, isLoading: false });
+          const u = data.user as unknown as { onboardingCompleted?: boolean; onboardingStep?: number };
+          set({
+            user: data.user,
+            token: data.token,
+            isAuthenticated: true,
+            isLoading: false,
+            onboarding: { ...defaultOnboarding, completed: !!u.onboardingCompleted, step: u.onboardingStep ?? 0 },
+          });
         } catch (err: unknown) {
           set({ isLoading: false });
           const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Invalid credentials';
