@@ -180,8 +180,13 @@ export function RemindersPage() {
                         {reminder.completed && <Check className="w-4 h-4 text-[#05050A]" />}
                       </button>
                       <div className="flex-1 min-w-0">
-                        <div className={`font-medium ${reminder.completed ? 'line-through text-[#A7ACB8]' : 'text-[#F4F6FF]'}`}>
+                        <div className={`font-medium flex items-center gap-1 flex-wrap ${reminder.completed ? 'line-through text-[#A7ACB8]' : 'text-[#F4F6FF]'}`}>
                           {reminder.text}
+                          {reminder.createdBy === 'pico-fleet' && (
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-[#7B61FF]/10 text-[#7B61FF] border border-[#7B61FF]/20 ml-1 no-underline" style={{ textDecoration: 'none' }}>
+                              Weebo
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-3 mt-2 flex-wrap">
                           <Badge variant="outline" className="border-[#7B61FF]/30 text-[#A7ACB8]">

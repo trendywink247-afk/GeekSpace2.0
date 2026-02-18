@@ -7,7 +7,15 @@ import { db } from '../db/index.js';
 export const remindersRouter = Router();
 
 remindersRouter.get('/', requireAuth, (req: AuthRequest, res) => {
-  const reminders = db.prepare('SELECT * FROM reminders WHERE user_id = ? ORDER BY datetime ASC').all(req.userId!);
+  const rows = db.prepare('SELECT * FROM reminders WHERE user_id = ? ORDER BY datetime ASC').all(req.userId!) as Array<Record<string, unknown>>;
+  // Map snake_case DB fields to camelCase for frontend consistency
+  const reminders = rows.map(r => ({
+    ...r,
+    createdBy: r.created_by,
+    createdAt: r.created_at,
+    userId: r.user_id,
+    picoTaskId: r.pico_task_id,
+  }));
   res.json(reminders);
 });
 

@@ -462,8 +462,9 @@ async function executeTask(task: PicoTask): Promise<void> {
     switch (task.task_type) {
       case 'create_reminder': {
         const text = String(taskConfig.reminder_text || task.description);
-        db.prepare('INSERT INTO reminders (id, user_id, text, channel, category, created_by) VALUES (?, ?, ?, ?, ?, ?)')
-          .run(uuid(), task.user_id, text, 'push', 'general', 'pico-fleet');
+        const reminderId = uuid();
+        db.prepare('INSERT INTO reminders (id, user_id, text, channel, category, created_by, pico_task_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
+          .run(reminderId, task.user_id, text, 'push', 'general', 'pico-fleet', task.id);
         output = `Reminder created: ${text}`;
         break;
       }
@@ -529,6 +530,12 @@ async function executeTask(task: PicoTask): Promise<void> {
       .run(task.agent_id);
     db.prepare('INSERT INTO pico_task_logs (id, task_id, agent_id, event, detail) VALUES (?, ?, ?, ?, ?)')
       .run(uuid(), task.id, task.agent_id, 'completed', output);
+
+    // Mark any linked reminders as complete (for non-create_reminder tasks)
+    if (task.task_type !== 'create_reminder') {
+      db.prepare('UPDATE reminders SET completed = 1 WHERE pico_task_id = ? AND user_id = ?')
+        .run(task.id, task.user_id);
+    }
 
     // Deduct 1 credit for execution
     deductSubscriptionCredits(task.user_id, 1);

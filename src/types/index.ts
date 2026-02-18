@@ -248,7 +248,7 @@ export interface Integration {
 
 export type ReminderChannel = 'telegram' | 'email' | 'push' | 'whatsapp';
 export type ReminderCategory = 'personal' | 'work' | 'health' | 'other';
-export type ReminderCreatedBy = 'user' | 'agent' | 'automation';
+export type ReminderCreatedBy = 'user' | 'agent' | 'automation' | 'pico-fleet';
 
 export interface Reminder {
   id: string;
