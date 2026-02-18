@@ -14,10 +14,9 @@ billingRouter.get('/plans', async (_req, res) => {
   const cached = await cacheGet(cacheKey);
   if (cached) { res.json(JSON.parse(cached)); return; }
 
-  const plans = Object.entries(PLAN_DEFINITIONS).map(([id, plan]) => ({
-    id,
-    ...plan,
-  }));
+  const plans = Object.entries(PLAN_DEFINITIONS)
+    .filter(([id]) => id !== 'monthly')
+    .map(([id, plan]) => ({ id, ...plan }));
   await cacheSet(cacheKey, JSON.stringify(plans), 3600);
   res.json(plans);
 });
@@ -106,7 +105,8 @@ billingRouter.post('/day-pass', requireAuth, async (req: AuthRequest, res) => {
     'UPDATE subscriptions SET credits_remaining = credits_remaining + 2000 WHERE user_id = ?'
   ).run(req.userId!);
 
-  res.json({ message: 'Day pass activated! You have 24 hours of PicoClaw access.', expiresAt: new Date(Date.now() + 86400000).toISOString() });
+  const inserted = db.prepare('SELECT expires_at FROM day_passes WHERE id = ?').get(id) as { expires_at: string };
+  res.json({ message: 'Day pass activated! You have 24 hours of PicoClaw access.', expiresAt: inserted.expires_at });
 });
 
 // GET /api/billing/day-pass — check if user has active day pass

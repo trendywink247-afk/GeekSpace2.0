@@ -222,7 +222,7 @@ export const featuresUpdateSchema = z.object({
 // ---- Billing schemas ----
 
 export const billingUpgradeSchema = z.object({
-  plan: z.enum(['free', 'pilot', 'intro', 'halfyear', 'yearly', 'monthly']),
+  plan: z.enum(['free', 'pilot', 'intro', 'halfyear', 'yearly']),
   currency: z.enum(['USD', 'INR']).optional(),
 });
 

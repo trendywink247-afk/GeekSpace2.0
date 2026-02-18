@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './landing/LandingPage';
 import { DashboardApp } from './dashboard/DashboardApp';
@@ -10,10 +11,14 @@ import { TermsPage } from './pages/TermsPage';
 import { StatusPage } from './pages/StatusPage';
 import { DocsPage } from './pages/DocsPage';
 import { useAuthStore } from './stores/authStore';
+import { useThemeStore } from '@/stores/themeStore';
 
 function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const onboardingCompleted = useAuthStore((s) => s.onboarding.completed);
+  const applyTheme = useThemeStore((s) => s.applyTheme);
+
+  useEffect(() => { applyTheme(); }, [applyTheme]);
 
   return (
     <BrowserRouter>
