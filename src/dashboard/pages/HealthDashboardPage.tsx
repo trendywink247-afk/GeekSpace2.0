@@ -118,6 +118,24 @@ export function HealthDashboardPage() {
   const MAX_DELAY_MS = 30000;
   const restIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Define fetchRestHealth first so connect can reference it
+  const fetchRestHealth = useCallback(async () => {
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+      const res = await fetch(`${apiBase}/api/health`);
+      if (res.ok) {
+        const data = await res.json();
+        setSnapshot(data);
+        setConnected(false); // Not using SSE, but we have data
+        setError(null);
+      } else {
+        setError('Health API returned an error. Click retry to try again.');
+      }
+    } catch {
+      setError('Failed to fetch health data. Click retry to try again.');
+    }
+  }, []);
+
   const connect = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -166,24 +184,7 @@ export function HealthDashboardPage() {
       setError(`Connection lost. Retrying in ${Math.round(delay / 1000)}s... (${retriesRef.current}/${MAX_RETRIES})`);
       reconnectTimerRef.current = setTimeout(connect, delay);
     };
-  }, []);
-
-  const fetchRestHealth = useCallback(async () => {
-    try {
-      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
-      const res = await fetch(`${apiBase}/api/health`);
-      if (res.ok) {
-        const data = await res.json();
-        setSnapshot(data);
-        setConnected(false); // Not using SSE, but we have data
-        setError(null);
-      } else {
-        setError('Health API returned an error. Click retry to try again.');
-      }
-    } catch {
-      setError('Failed to fetch health data. Click retry to try again.');
-    }
-  }, []);
+  }, [fetchRestHealth]);
 
   const handleRetry = () => {
     retriesRef.current = 0;
