@@ -2,17 +2,10 @@ import { logger } from '../logger.js';
 import { config } from '../config.js';
 import crypto from 'crypto';
 
-interface WhatsAppMessage {
-  from: string;
-  text: string;
-  timestamp: string;
-  messageId: string;
-}
-
 export async function sendWhatsAppMessage(
   to: string,
-  text: string,
-  replyToMessageId?: string
+  _text: string,
+  _replyToMessageId?: string
 ): Promise<void> {
   if (!config.whatsappToken || !config.whatsappBusinessId) {
     logger.warn('WhatsApp not configured');
