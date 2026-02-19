@@ -64,7 +64,7 @@ type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting'
 type WhatsAppStep = 'idle' | 'generating' | 'open-whatsapp' | 'send-code' | 'waiting' | 'success' | 'error';
 
 export function ConnectionsPage() {
-  const { integrations, connectIntegration, disconnectIntegration, isLoading } = useDashboardStore();
+  const { integrations, connectIntegration, disconnectIntegration, isLoading, loadDashboard } = useDashboardStore();
   const isMobile = useMobileDetect();
 
   const [telegramDialog, setTelegramDialog] = useState(false);
@@ -212,26 +212,22 @@ export function ConnectionsPage() {
   };
 
   const closeTelegramDialog = () => {
-    if (telegramStep === 'success') {
-      window.location.reload();
-      return;
-    }
     setTelegramDialog(false);
     setTelegramLink(null);
     setTelegramStep('idle');
     setPolling(false);
     setCopied(false);
+    // Refresh data without page reload
+    loadDashboard();
   };
 
   const closeWhatsAppDialog = () => {
-    if (whatsappStep === 'success') {
-      window.location.reload();
-      return;
-    }
     setWhatsappDialog(false);
     setWhatsappLink(null);
     setWhatsappStep('idle');
     setWhatsappPolling(false);
+    // Refresh data without page reload
+    loadDashboard();
   };
 
   const stepNumber = (step: TelegramStep): number => {
