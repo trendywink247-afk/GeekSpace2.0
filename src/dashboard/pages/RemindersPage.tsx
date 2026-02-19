@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Bell,
   Plus,
@@ -31,7 +31,7 @@ const categoryColors: Record<string, string> = {
 };
 
 export function RemindersPage() {
-  const { reminders, addReminder, toggleReminder, deleteReminder } = useDashboardStore();
+  const { reminders, addReminder, toggleReminder, deleteReminder, loadDashboard } = useDashboardStore();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,6 +49,14 @@ export function RemindersPage() {
     recurring: '',
     category: 'personal',
   });
+
+  // Poll for reminders every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadDashboard();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [loadDashboard]);
 
   const handleAdd = async () => {
     if (!newReminder.text || !newReminder.datetime) return;
