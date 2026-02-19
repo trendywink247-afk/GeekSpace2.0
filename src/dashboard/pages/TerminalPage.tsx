@@ -1,18 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Terminal as TerminalIcon, Copy, Check, Trash2, Bot, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useTerminalStore } from '@/stores/terminalStore';
 import { agentService } from '@/services/api';
-
-interface Command {
-  id: string;
-  input: string;
-  output: string;
-  timestamp: Date;
-  isError?: boolean;
-  isLoading?: boolean;
-}
 
 const welcomeMessage = `GeekSpace Terminal v2.0.0
 Powered by GeekSpace AI Engine
@@ -38,18 +30,39 @@ const helpText = `Available commands:
   help                     - Show this help message
 `;
 
+interface Command {
+  id: string;
+  input: string;
+  output: string;
+  timestamp: Date;
+  isError?: boolean;
+  isLoading?: boolean;
+}
+
 export function TerminalPage() {
   const user = useAuthStore((s) => s.user);
   const { usage, reminders, agent, addReminder } = useDashboardStore();
-  const [commands, setCommands] = useState<Command[]>([
-    { id: 'welcome', input: '', output: welcomeMessage, timestamp: new Date() },
-  ]);
+  const { history: terminalHistory, addCommand, clearHistory } = useTerminalStore();
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [welcomeShown, setWelcomeShown] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Build commands array from store history
+  const commands: Command[] = useMemo(() => [
+    ...(welcomeShown || terminalHistory.length > 0 ? [] : [{ id: 'welcome', input: '', output: welcomeMessage, timestamp: new Date(), isError: false }]),
+    ...terminalHistory.map(cmd => ({
+      id: cmd.id,
+      input: cmd.type === 'input' ? cmd.command : '',
+      output: cmd.output,
+      timestamp: new Date(cmd.timestamp),
+      isError: cmd.type === 'error',
+      isLoading: false,
+    })),
+  ], [terminalHistory, welcomeShown]);
 
   useEffect(() => {
     if (terminalRef.current) {
@@ -59,7 +72,11 @@ export function TerminalPage() {
 
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
+    // Mark welcome as shown after initial render if we have history
+    if (terminalHistory.length > 0) {
+      setWelcomeShown(true);
+    }
+  }, [terminalHistory.length]);
 
   const getResponses = (): Record<string, string | (() => string)> => ({
     'gs me': `Name: ${user?.name || 'User'}
@@ -166,11 +183,10 @@ Deploy ID: dep_${Date.now().toString(36)}`,
 
   const executeCommand = (cmd: string) => {
     const trimmedCmd = cmd.trim().toLowerCase();
-    let output = '';
-    let isError = false;
 
     if (trimmedCmd === 'clear') {
-      setCommands([{ id: 'welcome', input: '', output: welcomeMessage, timestamp: new Date() }]);
+      clearHistory();
+      setWelcomeShown(false);
       setHistory([...history, cmd]);
       setHistoryIndex(-1);
       setInput('');
@@ -187,14 +203,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
     // Handle AI prompts — call real agent API
     if (trimmedCmd.startsWith('ai ')) {
       const prompt = cmd.trim().slice(3).replace(/^["']|["']$/g, '');
-      const loadingCmd: Command = {
-        id: Date.now().toString(),
-        input: cmd,
-        output: '',
-        timestamp: new Date(),
-        isLoading: true,
-      };
-      setCommands((prev) => [...prev, loadingCmd]);
+      addCommand({ command: cmd, output: 'Thinking...', type: 'input' });
       setHistory([...history, cmd]);
       setHistoryIndex(-1);
       setInput('');
@@ -202,22 +211,18 @@ Deploy ID: dep_${Date.now().toString(36)}`,
       agentService.chat(prompt, 'terminal')
         .then(({ data }) => {
           const prefix = data.provider === 'jarvis-terminal' ? 'Jarvis: ' : '';
-          setCommands((prev) =>
-            prev.map((c) =>
-              c.id === loadingCmd.id
-                ? { ...c, output: `${prefix}${data.text}\n\n[${data.provider} · ${data.latencyMs}ms]`, isLoading: false }
-                : c
-            )
-          );
+          addCommand({
+            command: cmd,
+            output: `${prefix}${data.text}\n\n[${data.provider} · ${data.latencyMs}ms]`,
+            type: 'output'
+          });
         })
         .catch((err) => {
-          setCommands((prev) =>
-            prev.map((c) =>
-              c.id === loadingCmd.id
-                ? { ...c, output: `Error: ${err.response?.data?.error || err.message || 'Failed to reach AI agent'}`, isLoading: false, isError: true }
-                : c
-            )
-          );
+          addCommand({
+            command: cmd,
+            output: `Error: ${err.response?.data?.error || err.message || 'Failed to reach AI agent'}`,
+            type: 'error'
+          });
         });
       return;
     }
@@ -226,14 +231,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
     if (trimmedCmd.startsWith('gs reminders add')) {
       const text = cmd.match(/"([^"]+)"/)?.[1] || 'New reminder';
       const datetime = new Date(Date.now() + 3600000).toISOString();
-      const loadingCmd: Command = {
-        id: Date.now().toString(),
-        input: cmd,
-        output: '',
-        timestamp: new Date(),
-        isLoading: true,
-      };
-      setCommands((prev) => [...prev, loadingCmd]);
+      addCommand({ command: cmd, output: 'Adding reminder...', type: 'input' });
       setHistory([...history, cmd]);
       setHistoryIndex(-1);
       setInput('');
@@ -244,16 +242,17 @@ Deploy ID: dep_${Date.now().toString(36)}`,
         channel: 'push',
         category: 'other',
       }).then(() => {
-        setCommands((prev) =>
-          prev.map((c) =>
-            c.id === loadingCmd.id
-              ? { ...c, output: `Reminder added!\n  Text: "${text}"\n  Channel: push\n  Due: ${new Date(datetime).toLocaleString()}`, isLoading: false }
-              : c
-          )
-        );
+        addCommand({
+          command: cmd,
+          output: `Reminder added!\n  Text: "${text}"\n  Channel: push\n  Due: ${new Date(datetime).toLocaleString()}`,
+          type: 'output'
+        });
       });
       return;
     }
+
+    let output = '';
+    let isError = false;
 
     if (responses[trimmedCmd]) {
       const resp = responses[trimmedCmd];
@@ -263,15 +262,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
       isError = true;
     }
 
-    const newCommand: Command = {
-      id: Date.now().toString(),
-      input: cmd,
-      output,
-      timestamp: new Date(),
-      isError,
-    };
-
-    setCommands([...commands, newCommand]);
+    addCommand({ command: cmd, output, type: isError ? 'error' : 'output' });
     setHistory([...history, cmd]);
     setHistoryIndex(-1);
     setInput('');
@@ -310,7 +301,8 @@ Deploy ID: dep_${Date.now().toString(36)}`,
   };
 
   const clearTerminal = () => {
-    setCommands([{ id: 'welcome', input: '', output: welcomeMessage, timestamp: new Date() }]);
+    clearHistory();
+    setWelcomeShown(false);
   };
 
   return (
