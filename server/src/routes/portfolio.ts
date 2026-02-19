@@ -57,6 +57,109 @@ portfolioRouter.patch('/me', requireAuth, validateBody(portfolioUpdateSchema), a
   res.json(parsePortfolio(portfolio));
 });
 
+portfolioRouter.post('/ai-edit', requireAuth, validateBody(portfolioAiEditSchema), async (req: AuthRequest, res) => {
+  const { prompt } = req.body;
+  const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(req.userId!) as Record<string, unknown>;
+  if (!portfolio) { res.status(404).json({ error: 'Portfolio not found' }); return; }
+
+  const currentAbout = portfolio.about as string || '';
+  const enhanced = `${currentAbout}\n\n[Enhanced by AI: ${prompt}]`;
+  db.prepare('UPDATE portfolios SET about = ? WHERE user_id = ?').run(enhanced, req.userId);
+
+  db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool) VALUES (?, ?, 'geekspace', 'built-in', ?, ?, 0, 'web', 'portfolio.update')`).run(uuid(), req.userId, prompt.length, enhanced.length);
+
+  // Invalidate portfolio cache after AI edit
+  const userRow2 = db.prepare('SELECT username FROM users WHERE id = ?').get(req.userId) as { username: string } | undefined;
+  if (userRow2?.username) {
+    await cacheDel(`portfolio:${userRow2.username}`);
+  }
+
+  const updated = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(req.userId!) as Record<string, unknown>;
+  res.json(parsePortfolio(updated));
+});
+
+// Task 5: Portfolio Magic Generate - STATIC routes must come BEFORE parameterized routes
+portfolioRouter.post('/generate/:field', requireAuth, async (req: AuthRequest, res) => {
+  const { field } = req.params;
+  const { context } = req.body;
+
+  const validFields = ['headline', 'about', 'skills', 'project'];
+  if (!validFields.includes(field)) {
+    res.status(400).json({ error: 'Invalid field' });
+    return;
+  }
+
+  // Check credits
+  const sub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(req.userId!) as { credits_remaining: number } | undefined;
+  if (!sub || sub.credits_remaining < 5) {
+    res.status(402).json({ error: 'Insufficient credits' });
+    return;
+  }
+
+  // Route to cheap model
+  const { routeChat } = await import('../services/llm.js');
+  const prompt = `Generate a professional ${field} for a developer portfolio based on: ${context}`;
+
+  const result = await routeChat([{ role: 'user', content: prompt }], {
+    systemPrompt: 'You are a professional copywriter for developer portfolios. Be concise and impactful.',
+    userCredits: sub.credits_remaining,
+  });
+
+  // Deduct credits (5 for cheap generation)
+  db.prepare('UPDATE subscriptions SET credits_remaining = credits_remaining - 5 WHERE user_id = ?').run(req.userId!);
+
+  res.json({
+    generated: result.reply,
+    creditsUsed: 5,
+    creditsRemaining: sub.credits_remaining - 5,
+  });
+});
+
+// Task 6: Portfolio Suggestions - STATIC routes before parameterized
+portfolioRouter.get('/suggestions', requireAuth, async (req: AuthRequest, res) => {
+  const { generatePortfolioSuggestions } = await import('../services/portfolio-suggestions.js');
+  const suggestions = generatePortfolioSuggestions(req.userId!);
+  res.json(suggestions);
+});
+
+portfolioRouter.post('/suggestions/:id/apply', requireAuth, async (req: AuthRequest, res) => {
+  const { applySuggestion } = await import('../services/portfolio-suggestions.js');
+  const success = applySuggestion(req.userId!, req.params.id);
+  if (success) {
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: 'Suggestion not found' });
+  }
+});
+
+// Task 7: Agent Chat - STATIC routes before parameterized
+portfolioRouter.get('/agent-messages', requireAuth, async (req: AuthRequest, res) => {
+  const { getAgentMessages } = await import('../services/agent-chat.js');
+  const messages = getAgentMessages(req.userId!);
+  res.json(messages);
+});
+
+// PARAMETERIZED routes come AFTER all static routes
+portfolioRouter.get('/:username/can-chat', async (req, res) => {
+  const { canChatWithAgent } = await import('../services/agent-chat.js');
+  const userId = (req as AuthRequest).userId;
+  const canChat = canChatWithAgent(userId || '', req.params.username);
+  res.json({ canChat });
+});
+
+portfolioRouter.post('/:username/chat', requireAuth, async (req: AuthRequest, res) => {
+  const { sendAgentMessage } = await import('../services/agent-chat.js');
+  const { message } = req.body;
+
+  const success = sendAgentMessage(req.userId!, req.params.username, message);
+  if (success) {
+    res.json({ success: true });
+  } else {
+    res.status(403).json({ error: 'Agent chat not enabled for this user' });
+  }
+});
+
+// Public portfolio view - MUST be last as it catches any /:username pattern
 portfolioRouter.get('/:username', async (req, res) => {
   const cacheKey = `portfolio:${req.params.username}`;
   const cached = await cacheGet(cacheKey);
@@ -84,25 +187,4 @@ portfolioRouter.get('/:username', async (req, res) => {
 
   await cacheSet(cacheKey, JSON.stringify(responseData), 300);
   res.json(responseData);
-});
-
-portfolioRouter.post('/ai-edit', requireAuth, validateBody(portfolioAiEditSchema), async (req: AuthRequest, res) => {
-  const { prompt } = req.body;
-  const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(req.userId!) as Record<string, unknown>;
-  if (!portfolio) { res.status(404).json({ error: 'Portfolio not found' }); return; }
-
-  const currentAbout = portfolio.about as string || '';
-  const enhanced = `${currentAbout}\n\n[Enhanced by AI: ${prompt}]`;
-  db.prepare('UPDATE portfolios SET about = ? WHERE user_id = ?').run(enhanced, req.userId);
-
-  db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool) VALUES (?, ?, 'geekspace', 'built-in', ?, ?, 0, 'web', 'portfolio.update')`).run(uuid(), req.userId, prompt.length, enhanced.length);
-
-  // Invalidate portfolio cache after AI edit
-  const userRow2 = db.prepare('SELECT username FROM users WHERE id = ?').get(req.userId) as { username: string } | undefined;
-  if (userRow2?.username) {
-    await cacheDel(`portfolio:${userRow2.username}`);
-  }
-
-  const updated = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(req.userId!) as Record<string, unknown>;
-  res.json(parsePortfolio(updated));
 });

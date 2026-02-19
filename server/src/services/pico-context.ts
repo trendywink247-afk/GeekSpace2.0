@@ -21,18 +21,18 @@ export function loadPicoContext(userId: string): PicoContext {
   try {
     // Recent memories (last 20, prefer auto_summary first)
     const memories = db.prepare(`
-      SELECT content, tags FROM agent_memory
+      SELECT key, value, category FROM agent_memory
       WHERE user_id = ?
-      ORDER BY CASE WHEN tags LIKE '%auto_summary%' THEN 0 ELSE 1 END ASC,
-               created_at DESC
+      ORDER BY CASE WHEN key LIKE '%auto_summary%' THEN 0 ELSE 1 END ASC,
+               updated_at DESC
       LIMIT 20
-    `).all(userId) as { content: string; tags: string }[];
+    `).all(userId) as { key: string; value: string; category: string }[];
 
-    const todaySummary = memories.find(m => m.tags?.includes('auto_summary'))?.content || '';
+    const todaySummary = memories.find(m => m.key?.includes('auto_summary'))?.value || '';
     const recentMemories = memories
-      .filter(m => !m.tags?.includes('auto_summary'))
+      .filter(m => !m.key?.includes('auto_summary'))
       .slice(0, 10)
-      .map(m => `• ${m.content}`)
+      .map(m => `• [${m.category}] ${m.key}: ${m.value}`)
       .join('\n') || 'No memories yet.';
 
     // Active reminders (next 5 due)

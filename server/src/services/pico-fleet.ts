@@ -19,6 +19,15 @@ import { edithChat } from './edith.js';
 import { computeCreditCost, deductSubscriptionCredits } from './llm.js';
 import { refreshModelsIfStale } from './openrouter-models.js';
 import { eventBus } from './event-bus.js';
+import { upsertMemory } from './memory.js';
+
+const PLAN_AGENT_SLOTS: Record<string, number> = {
+  free: 1,
+  intro: 2,
+  monthly: 2,
+  halfyear: 3,
+  yearly: 3,
+};
 
 // ---- Types ----
 
@@ -152,9 +161,13 @@ export function getAgentBySlot(userId: string, slot: number): PicoAgent | undefi
 }
 
 export function createAgent(userId: string, name: string, personality = 'weebo'): PicoAgent {
+  // Get user's plan
+  const sub = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string } | undefined;
+  const maxSlots = PLAN_AGENT_SLOTS[sub?.plan || 'free'];
+
   const existing = getUserAgents(userId);
-  if (existing.length >= 3) {
-    throw new Error('Maximum 3 Pico agents allowed');
+  if (existing.length >= maxSlots) {
+    throw new Error(`Your plan allows ${maxSlots} agent(s). Upgrade to add more.`);
   }
 
   const usedSlots = existing.map(a => a.slot);
@@ -652,6 +665,21 @@ async function executeTask(task: PicoTask): Promise<void> {
           .run(reminderId, task.user_id, text, dueAt, channel, 'general', 'pico-fleet', task.id);
         const timeNote = dueAt ? ` (due ${new Date(dueAt).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })})` : '';
         output = `Reminder created: ${text}${timeNote}`;
+
+        // Create memory entry for the reminder
+        upsertMemory(task.user_id, 'reminder', `reminder_${reminderId}`, JSON.stringify({
+          text,
+          dueAt,
+          channel,
+          reminderId,
+          createdAt: new Date().toISOString(),
+        }), 0.9, 'pico-fleet');
+
+        // Update channel_links last_message_at
+        db.prepare(
+          "UPDATE channel_links SET last_message_at = datetime('now') WHERE user_id = ? AND channel = ?"
+        ).run(task.user_id, channel);
+
         break;
       }
 

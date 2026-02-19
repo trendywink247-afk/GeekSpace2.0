@@ -13,6 +13,7 @@ import {
   Send,
   Loader2,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -115,6 +116,25 @@ export function HealthDashboardPage() {
   const MAX_RETRIES = 10;
   const BASE_DELAY_MS = 3000;
   const MAX_DELAY_MS = 30000;
+  const restIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Define fetchRestHealth first so connect can reference it
+  const fetchRestHealth = useCallback(async () => {
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+      const res = await fetch(`${apiBase}/api/health`);
+      if (res.ok) {
+        const data = await res.json();
+        setSnapshot(data);
+        setConnected(false); // Not using SSE, but we have data
+        setError(null);
+      } else {
+        setError('Health API returned an error. Click retry to try again.');
+      }
+    } catch {
+      setError('Failed to fetch health data. Click retry to try again.');
+    }
+  }, []);
 
   const connect = useCallback(() => {
     if (eventSourceRef.current) {
@@ -151,7 +171,11 @@ export function HealthDashboardPage() {
       setConnected(false);
 
       if (retriesRef.current >= MAX_RETRIES) {
-        setError('Health stream unavailable. Refresh the page to retry.');
+        setError('Health stream unavailable. Using REST fallback.');
+        // Fall back to REST polling
+        fetchRestHealth();
+        // Set up REST polling interval (every 10 seconds)
+        restIntervalRef.current = setInterval(fetchRestHealth, 10000);
         return;
       }
 
@@ -160,13 +184,25 @@ export function HealthDashboardPage() {
       setError(`Connection lost. Retrying in ${Math.round(delay / 1000)}s... (${retriesRef.current}/${MAX_RETRIES})`);
       reconnectTimerRef.current = setTimeout(connect, delay);
     };
-  }, []);
+  }, [fetchRestHealth]);
+
+  const handleRetry = () => {
+    retriesRef.current = 0;
+    setError(null);
+    // Clear any existing REST interval
+    if (restIntervalRef.current) {
+      clearInterval(restIntervalRef.current);
+      restIntervalRef.current = null;
+    }
+    connect();
+  };
 
   useEffect(() => {
     connect();
     return () => {
       eventSourceRef.current?.close();
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (restIntervalRef.current) clearInterval(restIntervalRef.current);
     };
   }, [connect]);
 
@@ -203,6 +239,16 @@ export function HealthDashboardPage() {
               <>
                 <span className="w-2 h-2 rounded-full bg-[#FF6161] shrink-0" />
                 <span className="truncate">{error || 'Disconnected'}</span>
+                {error && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRetry}
+                    className="ml-2 h-6 px-2 text-xs border-[#7B61FF]/30 hover:bg-[#7B61FF]/10"
+                  >
+                    Retry
+                  </Button>
+                )}
               </>
             )}
           </p>

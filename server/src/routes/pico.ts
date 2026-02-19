@@ -27,6 +27,20 @@ import {
   planWithKimi,
   queueTasks,
 } from '../services/pico-fleet.js';
+import { db } from '../db/index.js';
+
+// ---- Helpers ----
+
+function db_getSub(userId: string) {
+  return db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?')
+    .get(userId) as { credits_remaining: number } | undefined;
+}
+
+function db_getPlan(userId: string): string {
+  const row = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?')
+    .get(userId) as { plan: string } | undefined;
+  return row?.plan || 'free';
+}
 
 export const picoRouter = Router();
 
@@ -107,10 +121,10 @@ picoRouter.post('/tasks/plan', requireAuth, validateBody(picoTaskPlanSchema), as
     const updatedSub = db_getSub(userId);
 
     res.json({
-      planned: tasks,
+      tasks: tasks.map((t, i) => ({ id: taskIds[i], task_type: t.task_type, description: t.description, agent_slot: t.agent_slot })),
+      creditCost: creditCost,
       queued: taskIds.length,
       task_ids: taskIds,
-      credits_used: creditCost,
       credits_remaining: updatedSub?.credits_remaining ?? 0,
     });
   } catch (err: unknown) {
@@ -150,10 +164,10 @@ picoRouter.post('/tasks/plan-premium', requireAuth, validateBody(picoTaskPlanSch
     const updatedSub = db_getSub(userId);
 
     res.json({
-      planned: tasks,
+      tasks: tasks.map((t, i) => ({ id: taskIds[i], task_type: t.task_type, description: t.description, agent_slot: t.agent_slot })),
+      creditCost: creditCost,
       queued: taskIds.length,
       task_ids: taskIds,
-      credits_used: creditCost,
       credits_remaining: updatedSub?.credits_remaining ?? 0,
     });
   } catch (err) {
@@ -180,18 +194,3 @@ picoRouter.delete('/tasks/:id', requireAuth, (req: AuthRequest, res) => {
     res.status(400).json({ error: msg });
   }
 });
-
-// ---- Helpers ----
-
-import { db } from '../db/index.js';
-
-function db_getSub(userId: string) {
-  return db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?')
-    .get(userId) as { credits_remaining: number } | undefined;
-}
-
-function db_getPlan(userId: string): string {
-  const row = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?')
-    .get(userId) as { plan: string } | undefined;
-  return row?.plan || 'free';
-}

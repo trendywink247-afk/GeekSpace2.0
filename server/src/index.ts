@@ -39,7 +39,7 @@ import { briefingsRouter } from './routes/briefings.js';
 import { recipesRouter } from './routes/recipes.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
 import { startReminderScheduler } from './services/reminder-scheduler.js';
-import { metricsMiddleware } from './middleware/metrics.js';
+import { metricsMiddleware, getMetricsSnapshot } from './middleware/metrics.js';
 import { healthRouter, getCachedComponents, startHealthProbeCache } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { startModelSyncScheduler } from './services/model-sync.js';
@@ -133,20 +133,39 @@ app.use('/api/agent/chat/public', publicLimiter);
 app.use('/api/dashboard/contact', publicLimiter);
 
 // ---- Health check — served from 30s background cache (no live probing per request) ----
+// Returns same structure as SSE stream for frontend compatibility
 app.get('/api/health', (_req, res) => {
   const components = getCachedComponents();
+  const metrics = getMetricsSnapshot();
   const allOk = components.database === 'ok';
+
   res.status(allOk ? 200 : 503).json({
+    timestamp: new Date().toISOString(),
+    components,
+    metrics: {
+      totalRequests: metrics.totalRequests,
+      totalErrors: metrics.totalErrors,
+      avgLatencyMs: metrics.avgLatencyMs,
+      requestsPerMinute: metrics.requestsPerMinute,
+      activeConnections: metrics.activeConnections,
+    },
+    system: {
+      uptime: metrics.uptime,
+      memoryMb: metrics.memoryMb,
+    },
+    topEndpoints: Object.entries(metrics.endpoints)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 10)
+      .map(([path, stats]) => ({
+        path,
+        count: stats.count,
+        errors: stats.errors,
+        avgMs: stats.count > 0 ? Math.round(stats.totalLatencyMs / stats.count) : 0,
+      })),
+    // Legacy fields for backwards compatibility
     ok: allOk,
     status: allOk ? 'ok' : 'degraded',
-    timestamp: new Date().toISOString(),
     version: APP_VERSION,
-    uptime: Math.floor(process.uptime()),
-    edith: components.edith === 'reachable',
-    ollama: components.ollama === 'reachable',
-    picoclaw: components.picoclaw === 'reachable',
-    bridge: components.bridge === 'active',
-    components,
   });
 });
 

@@ -1,10 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwtPkg from 'jsonwebtoken';
 import type { SignOptions } from 'jsonwebtoken';
+import { timingSafeEqual } from 'crypto';
 import { config } from '../config.js';
 import { db } from '../db/index.js';
 
-const { sign, verify, TokenExpiredError } = jwtPkg as any;
+const { sign, verify, TokenExpiredError } = jwtPkg;
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -43,4 +44,20 @@ export function signToken(userId: string): string {
     algorithm: 'HS256',
     expiresIn: config.jwtExpiresIn as SignOptions['expiresIn'],
   });
+}
+
+// Admin middleware - checks for admin password header
+export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+  const adminPassword = req.headers['x-admin-password'];
+  if (typeof adminPassword !== 'string') {
+    res.status(401).json({ error: 'Admin authentication required' });
+    return;
+  }
+  const expected = Buffer.from(config.adminToken || '', 'utf8');
+  const provided = Buffer.from(adminPassword, 'utf8');
+  if (expected.length !== provided.length || !timingSafeEqual(expected, provided)) {
+    res.status(401).json({ error: 'Admin authentication required' });
+    return;
+  }
+  next();
 }

@@ -61,9 +61,10 @@ const colorMap: Record<string, string> = {
 };
 
 type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error';
+type WhatsAppStep = 'idle' | 'generating' | 'open-whatsapp' | 'send-code' | 'waiting' | 'success' | 'error';
 
 export function ConnectionsPage() {
-  const { integrations, connectIntegration, disconnectIntegration, isLoading } = useDashboardStore();
+  const { integrations, connectIntegration, disconnectIntegration, isLoading, loadDashboard } = useDashboardStore();
   const isMobile = useMobileDetect();
 
   const [telegramDialog, setTelegramDialog] = useState(false);
@@ -77,6 +78,17 @@ export function ConnectionsPage() {
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const [polling, setPolling] = useState(false);
+
+  // WhatsApp dialog state
+  const [whatsappDialog, setWhatsappDialog] = useState(false);
+  const [whatsappStep, setWhatsappStep] = useState<WhatsAppStep>('idle');
+  const [whatsappLink, setWhatsappLink] = useState<{
+    token?: string;
+    qrUrl?: string;
+    message?: string;
+    linked?: boolean;
+  } | null>(null);
+  const [whatsappPolling, setWhatsappPolling] = useState(false);
 
   // Email dialog state
   const [emailDialog, setEmailDialog] = useState(false);
@@ -105,6 +117,23 @@ export function ConnectionsPage() {
     return () => clearInterval(interval);
   }, [polling, pollTelegramStatus]);
 
+  // Poll for WhatsApp link status
+  const pollWhatsAppStatus = useCallback(async () => {
+    try {
+      const res = await integrationService.checkWhatsAppStatus();
+      if (res.data.linked) {
+        setWhatsappStep('success');
+        setWhatsappPolling(false);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    if (!whatsappPolling) return;
+    const interval = setInterval(pollWhatsAppStatus, 3000);
+    return () => clearInterval(interval);
+  }, [whatsappPolling, pollWhatsAppStatus]);
+
   const handleEmailSave = async () => {
     setEmailSaving(true);
     try {
@@ -118,6 +147,21 @@ export function ConnectionsPage() {
 
   const handleConnect = async (type: IntegrationType) => {
     if (type === 'whatsapp') {
+      setWhatsappDialog(true);
+      setWhatsappStep('generating');
+      try {
+        const res = await integrationService.linkWhatsApp();
+        setWhatsappLink(res.data);
+        if (res.data.linked) {
+          setWhatsappStep('success');
+        } else {
+          setWhatsappStep('open-whatsapp');
+          setWhatsappPolling(true);
+        }
+      } catch {
+        setWhatsappLink({ message: 'WhatsApp is not configured on this server. Contact the admin.' });
+        setWhatsappStep('error');
+      }
       return;
     }
     if (type === 'email') {
@@ -153,6 +197,9 @@ export function ConnectionsPage() {
     if (integration?.type === 'email') {
       await integrationService.updateNotificationEmail({ enabled: false });
     }
+    if (integration?.type === 'whatsapp') {
+      await integrationService.unlinkWhatsApp();
+    }
     disconnectIntegration(id);
   };
 
@@ -165,15 +212,22 @@ export function ConnectionsPage() {
   };
 
   const closeTelegramDialog = () => {
-    if (telegramStep === 'success') {
-      window.location.reload();
-      return;
-    }
     setTelegramDialog(false);
     setTelegramLink(null);
     setTelegramStep('idle');
     setPolling(false);
     setCopied(false);
+    // Refresh data without page reload
+    loadDashboard();
+  };
+
+  const closeWhatsAppDialog = () => {
+    setWhatsappDialog(false);
+    setWhatsappLink(null);
+    setWhatsappStep('idle');
+    setWhatsappPolling(false);
+    // Refresh data without page reload
+    loadDashboard();
   };
 
   const stepNumber = (step: TelegramStep): number => {
@@ -319,7 +373,7 @@ export function ConnectionsPage() {
                   return (
                     <div key={label} className="flex items-center gap-2 flex-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
                           isDone ? 'bg-[#61FF7B] text-[#0B0B10]' :
                           isActive ? 'bg-[#0088cc] text-white' :
                           'bg-[#1A1A24] text-[#A7ACB8]'
@@ -498,6 +552,147 @@ export function ConnectionsPage() {
         </Card>
       )}
 
+      {/* WhatsApp Link Wizard */}
+      {whatsappDialog && (
+        <Card className="bg-[#0B0B10] border-[#25d366]/40 relative overflow-hidden">
+          <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
+            <button onClick={closeWhatsAppDialog} className="absolute top-4 right-4 text-[#A7ACB8] hover:text-white z-10">
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-[#25d366]/20 flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-[#25d366]" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-[#F4F6FF]">Connect WhatsApp</h3>
+                <p className="text-xs text-[#A7ACB8]">Link your account via WhatsApp Business</p>
+              </div>
+            </div>
+
+            {/* Generating state */}
+            {whatsappStep === 'generating' && (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <Loader2 className="w-8 h-8 text-[#25d366] animate-spin" />
+                <p className="text-sm text-[#A7ACB8]">Setting up your connection...</p>
+              </div>
+            )}
+
+            {/* Step 1: Open WhatsApp */}
+            {whatsappStep === 'open-whatsapp' && whatsappLink?.qrUrl && (
+              <div className="space-y-4">
+                <div className="bg-[#05050A] rounded-lg p-4 border border-[#25d366]/20">
+                  <div className="flex items-start gap-3">
+                    <MessageCircle className="w-5 h-5 text-[#25d366] flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-[#F4F6FF] font-medium mb-1">Open WhatsApp</p>
+                      <p className="text-xs text-[#A7ACB8]">
+                        Click the button below to open WhatsApp with a pre-filled message. Send the message to link your account.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href={whatsappLink.qrUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#25d366] hover:bg-[#128c7e] text-white font-medium transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Open in WhatsApp
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+
+                <Button
+                  variant="outline"
+                  className="w-full border-[#7B61FF]/30 text-[#A7ACB8] hover:text-[#F4F6FF]"
+                  onClick={() => setWhatsappStep('waiting')}
+                >
+                  I sent the message
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            )}
+
+            {/* Step 2: Waiting for confirmation */}
+            {whatsappStep === 'waiting' && (
+              <div className="flex flex-col items-center gap-4 py-6">
+                <div className="w-16 h-16 rounded-full bg-[#25d366]/10 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-[#25d366] animate-spin" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Waiting for confirmation...</p>
+                  <p className="text-xs text-[#A7ACB8]">
+                    We're checking if the message was received. This usually takes a few seconds.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#7B61FF]/30 text-[#A7ACB8]"
+                  onClick={() => setWhatsappStep('open-whatsapp')}
+                >
+                  Go back
+                </Button>
+              </div>
+            )}
+
+            {/* Step 3: Success */}
+            {whatsappStep === 'success' && (
+              <div className="flex flex-col items-center gap-4 py-6">
+                <div className="w-16 h-16 rounded-full bg-[#61FF7B]/10 flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8 text-[#61FF7B]" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">WhatsApp connected!</p>
+                  <p className="text-xs text-[#A7ACB8]">
+                    You can now chat with your AI agent directly in WhatsApp. Send any message to get started.
+                  </p>
+                </div>
+                <Button
+                  className="bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10] font-medium"
+                  onClick={closeWhatsAppDialog}
+                >
+                  Done
+                </Button>
+              </div>
+            )}
+
+            {/* Error state */}
+            {whatsappStep === 'error' && (
+              <div className="flex flex-col items-center gap-4 py-6">
+                <div className="w-16 h-16 rounded-full bg-[#FF6161]/10 flex items-center justify-center">
+                  <AlertTriangle className="w-8 h-8 text-[#FF6161]" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Connection failed</p>
+                  <p className="text-xs text-[#A7ACB8]">
+                    {whatsappLink?.message || 'Could not connect to WhatsApp. Please try again later.'}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="border-[#7B61FF]/30"
+                    onClick={closeWhatsAppDialog}
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    className="bg-[#25d366] hover:bg-[#128c7e]"
+                    onClick={() => handleConnect('whatsapp')}
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Email Setup Dialog */}
       {emailDialog && (
         <Card className="bg-[#0B0B10] border-[#61FF7B]/40 relative overflow-hidden">
@@ -597,10 +792,6 @@ export function ConnectionsPage() {
                       checked={true}
                       onCheckedChange={() => handleDisconnect(connection.id)}
                     />
-                  ) : connection.type === 'whatsapp' ? (
-                    <Badge variant="outline" className="border-[#25d366]/40 text-[#25d366]">
-                      Coming Soon
-                    </Badge>
                   ) : (
                     <Button
                       size={isMobile ? 'default' : 'sm'}
