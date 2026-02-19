@@ -107,7 +107,7 @@ let activeSSECount = 0;
 
 // ---- SSE Stream ----
 
-healthRouter.get('/stream', requireAdmin, (req: Request, res: Response) => {
+healthRouter.get('/stream', (req: Request, res: Response) => {
   if (activeSSECount >= MAX_SSE_CONNECTIONS) {
     res.status(429).json({ error: 'Too many health stream connections' });
     return;
