@@ -19,6 +19,7 @@ import { edithChat } from './edith.js';
 import { computeCreditCost, deductSubscriptionCredits } from './llm.js';
 import { refreshModelsIfStale } from './openrouter-models.js';
 import { eventBus } from './event-bus.js';
+import { upsertMemory } from './memory.js';
 
 const PLAN_AGENT_SLOTS: Record<string, number> = {
   free: 1,
@@ -664,6 +665,21 @@ async function executeTask(task: PicoTask): Promise<void> {
           .run(reminderId, task.user_id, text, dueAt, channel, 'general', 'pico-fleet', task.id);
         const timeNote = dueAt ? ` (due ${new Date(dueAt).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })})` : '';
         output = `Reminder created: ${text}${timeNote}`;
+
+        // Create memory entry for the reminder
+        upsertMemory(task.user_id, 'reminder', `reminder_${reminderId}`, JSON.stringify({
+          text,
+          dueAt,
+          channel,
+          reminderId,
+          createdAt: new Date().toISOString(),
+        }), 0.9, 'pico-fleet');
+
+        // Update channel_links last_message_at
+        db.prepare(
+          "UPDATE channel_links SET last_message_at = datetime('now') WHERE user_id = ? AND channel = ?"
+        ).run(task.user_id, channel);
+
         break;
       }
 

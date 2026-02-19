@@ -18,7 +18,7 @@ import {
 
 // ---- Helpers ----
 
-const CATEGORIES = ['all', 'preference', 'fact', 'project', 'pattern'] as const;
+const CATEGORIES = ['all', 'preference', 'fact', 'project', 'pattern', 'reminder'] as const;
 type CategoryFilter = (typeof CATEGORIES)[number];
 
 const SORTS = [
@@ -46,6 +46,7 @@ function categoryColor(cat: string): string {
     case 'fact': return '#61FF7B';
     case 'project': return '#FFD761';
     case 'pattern': return '#FF61DC';
+    case 'reminder': return '#61D0FF';
     default: return '#7B61FF';
   }
 }
