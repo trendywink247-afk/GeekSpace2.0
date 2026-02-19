@@ -112,6 +112,8 @@ artifactsRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   });
 });
 
+import { saveArtifactPermanently } from '../services/artifact-cleanup.js';
+
 // ---- Get Single Artifact (auth required) ----
 artifactsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
   const artifact = db.prepare(
@@ -128,6 +130,16 @@ artifactsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
     ...artifact,
     previewUrl: `${baseUrl}/preview/${req.userId}/${artifact.id}`,
   });
+});
+
+// ---- Save Artifact Permanently (remove expiration) ----
+artifactsRouter.post('/:id/save', requireAuth, (req: AuthRequest, res) => {
+  const success = saveArtifactPermanently(req.params.id, req.userId!);
+  if (!success) {
+    res.status(404).json({ error: 'Artifact not found' });
+    return;
+  }
+  res.json({ success: true, message: 'Artifact saved permanently' });
 });
 
 // ---- Delete Artifact (auth required) ----
@@ -191,4 +203,231 @@ function escapeHtml(text: string): string {
 
 function escapeJs(text: string): string {
   return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+// ---- Custom Domain Management ----
+
+artifactsRouter.post('/:id/domain', requireAuth, (req: AuthRequest, res) => {
+  const { subdomain } = req.body as { subdomain?: string };
+  const userId = req.userId!;
+  const artifactId = req.params.id;
+
+  if (!subdomain || !/^[a-z0-9-]+$/.test(subdomain) || subdomain.length < 2 || subdomain.length > 30) {
+    res.status(400).json({ error: 'Invalid subdomain. Use 2-30 lowercase letters, numbers, and hyphens only.' });
+    return;
+  }
+
+  // Check artifact exists and belongs to user
+  const artifact = db.prepare('SELECT * FROM generated_artifacts WHERE id = ? AND user_id = ?').get(artifactId, userId);
+  if (!artifact) {
+    res.status(404).json({ error: 'Artifact not found' });
+    return;
+  }
+
+  // Check subdomain availability
+  const existing = db.prepare('SELECT * FROM artifact_domains WHERE subdomain = ?').get(subdomain);
+  if (existing) {
+    res.status(409).json({ error: 'Subdomain already taken' });
+    return;
+  }
+
+  // Remove any existing domain for this artifact
+  db.prepare('DELETE FROM artifact_domains WHERE artifact_id = ?').run(artifactId);
+
+  // Create new domain mapping
+  const domainId = uuid();
+  db.prepare(`
+    INSERT INTO artifact_domains (id, artifact_id, user_id, subdomain, is_active)
+    VALUES (?, ?, ?, ?, 1)
+  `).run(domainId, artifactId, userId, subdomain);
+
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  logger.info({ userId, artifactId, subdomain }, 'Custom domain assigned');
+
+  res.json({
+    success: true,
+    subdomain,
+    fullDomain: `${subdomain}.${req.get('host')}`,
+    previewUrl: `${baseUrl}/preview/${userId}/${artifactId}`,
+  });
+});
+
+artifactsRouter.delete('/:id/domain', requireAuth, (req: AuthRequest, res) => {
+  const result = db.prepare('DELETE FROM artifact_domains WHERE artifact_id = ? AND user_id = ?').run(req.params.id, req.userId!);
+
+  if (result.changes === 0) {
+    res.status(404).json({ error: 'No custom domain found for this artifact' });
+    return;
+  }
+
+  res.json({ success: true, message: 'Custom domain removed' });
+});
+
+artifactsRouter.get('/:id/domain', requireAuth, (req: AuthRequest, res) => {
+  const domain = db.prepare('SELECT * FROM artifact_domains WHERE artifact_id = ? AND user_id = ?').get(req.params.id, req.userId!) as {
+    subdomain: string;
+    is_active: number;
+    created_at: string;
+  } | undefined;
+
+  if (!domain) {
+    res.status(404).json({ error: 'No custom domain found' });
+    return;
+  }
+
+  res.json({
+    subdomain: domain.subdomain,
+    fullDomain: `${domain.subdomain}.${req.get('host')}`,
+    isActive: domain.is_active === 1,
+    createdAt: domain.created_at,
+  });
+});
+
+// ---- Export Functionality ----
+
+artifactsRouter.post('/:id/export/zip', requireAuth, async (req: AuthRequest, res) => {
+  const artifact = db.prepare('SELECT * FROM generated_artifacts WHERE id = ? AND user_id = ?').get(req.params.id, req.userId!) as {
+    title: string;
+    html: string;
+    css: string;
+    js: string;
+  } | undefined;
+
+  if (!artifact) {
+    res.status(404).json({ error: 'Artifact not found' });
+    return;
+  }
+
+  try {
+    // Create a simple ZIP using Node.js built-in zlib
+    const { createZipArchive } = await import('../services/export.js');
+    const zipBuffer = await createZipArchive({
+      'index.html': buildHtmlFile(artifact.title, artifact.html, artifact.css, artifact.js),
+      'style.css': artifact.css || '',
+      'script.js': artifact.js || '',
+      'README.md': `# ${artifact.title}\n\nGenerated with GeekSpace`,
+    });
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${artifact.title.replace(/\s+/g, '_')}.zip"`);
+    res.send(zipBuffer);
+
+    logger.info({ userId: req.userId, artifactId: req.params.id }, 'Artifact exported as ZIP');
+  } catch (err) {
+    logger.error({ err, artifactId: req.params.id }, 'ZIP export failed');
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+artifactsRouter.post('/:id/export/netlify', requireAuth, async (req: AuthRequest, res) => {
+  const { netlifyToken } = req.body as { netlifyToken?: string };
+
+  if (!netlifyToken) {
+    res.status(400).json({ error: 'Netlify token required' });
+    return;
+  }
+
+  const artifact = db.prepare('SELECT * FROM generated_artifacts WHERE id = ? AND user_id = ?').get(req.params.id, req.userId!) as {
+    title: string;
+    html: string;
+    css: string;
+    js: string;
+  } | undefined;
+
+  if (!artifact) {
+    res.status(404).json({ error: 'Artifact not found' });
+    return;
+  }
+
+  try {
+    const { deployToNetlify } = await import('../services/deploy.js');
+    const result = await deployToNetlify(netlifyToken, {
+      name: artifact.title,
+      html: buildHtmlFile(artifact.title, artifact.html, artifact.css, artifact.js),
+      css: artifact.css || '',
+      js: artifact.js || '',
+    });
+
+    // Save deployment info
+    db.prepare(`
+      INSERT INTO artifact_deployments (id, artifact_id, user_id, provider, external_url, external_id, status)
+      VALUES (?, ?, ?, 'netlify', ?, ?, 'active')
+    `).run(uuid(), req.params.id, req.userId!, result.url, result.id);
+
+    res.json({ success: true, url: result.url, message: `Deployed to Netlify: ${result.url}` });
+  } catch (err) {
+    logger.error({ err, artifactId: req.params.id }, 'Netlify deploy failed');
+    res.status(500).json({ error: 'Deployment failed', details: err instanceof Error ? err.message : 'Unknown error' });
+  }
+});
+
+artifactsRouter.post('/:id/export/vercel', requireAuth, async (req: AuthRequest, res) => {
+  const { vercelToken } = req.body as { vercelToken?: string };
+
+  if (!vercelToken) {
+    res.status(400).json({ error: 'Vercel token required' });
+    return;
+  }
+
+  const artifact = db.prepare('SELECT * FROM generated_artifacts WHERE id = ? AND user_id = ?').get(req.params.id, req.userId!) as {
+    title: string;
+    html: string;
+    css: string;
+    js: string;
+  } | undefined;
+
+  if (!artifact) {
+    res.status(404).json({ error: 'Artifact not found' });
+    return;
+  }
+
+  try {
+    const { deployToVercel } = await import('../services/deploy.js');
+    const result = await deployToVercel(vercelToken, {
+      name: artifact.title,
+      html: buildHtmlFile(artifact.title, artifact.html, artifact.css, artifact.js),
+      css: artifact.css || '',
+      js: artifact.js || '',
+    });
+
+    // Save deployment info
+    db.prepare(`
+      INSERT INTO artifact_deployments (id, artifact_id, user_id, provider, external_url, external_id, status)
+      VALUES (?, ?, ?, 'vercel', ?, ?, 'active')
+    `).run(uuid(), req.params.id, req.userId!, result.url, result.id);
+
+    res.json({ success: true, url: result.url, message: `Deployed to Vercel: ${result.url}` });
+  } catch (err) {
+    logger.error({ err, artifactId: req.params.id }, 'Vercel deploy failed');
+    res.status(500).json({ error: 'Deployment failed', details: err instanceof Error ? err.message : 'Unknown error' });
+  }
+});
+
+artifactsRouter.get('/:id/deployments', requireAuth, (req: AuthRequest, res) => {
+  const deployments = db.prepare(`
+    SELECT id, provider, external_url, status, created_at
+    FROM artifact_deployments
+    WHERE artifact_id = ? AND user_id = ?
+    ORDER BY created_at DESC
+  `).all(req.params.id, req.userId!);
+
+  res.json({ deployments });
+});
+
+// ---- Helper: Build complete HTML file ----
+
+function buildHtmlFile(title: string, html: string, css: string, js: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)}</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  ${html || ''}
+  <script src="script.js"></script>
+</body>
+</html>`;
 }

@@ -282,6 +282,8 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     // Inject baseUrl for generate_code actions to create preview links
     if (action.tool === 'generate_code') {
       action.params.baseUrl = config.apiUrl;
+      // Self-destruct enabled by default (24h)
+      action.params.selfDestruct = true;
     }
     const actionResult = await executeAction(userId, action);
     actionResults.push(actionResult);

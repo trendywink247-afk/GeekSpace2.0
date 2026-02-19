@@ -570,3 +570,52 @@ export interface OnboardingState {
   integrations: IntegrationType[];
   visibility: 'public' | 'private';
 }
+
+// Artifacts (Generated Code Projects)
+export interface Artifact {
+  id: string;
+  title: string;
+  type: 'code' | 'template';
+  html?: string;
+  css?: string;
+  js?: string;
+  previewUrl: string;
+  createdAt: string;
+  expiresAt?: string; // For self-destruct feature
+}
+
+export interface ArtifactDomain {
+  subdomain: string;
+  fullDomain: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface ArtifactDeployment {
+  id: string;
+  provider: 'netlify' | 'vercel' | 'zip';
+  externalUrl: string;
+  status: 'active' | 'failed' | 'removed';
+  createdAt: string;
+}
+
+// Templates
+export interface Template {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  thumbnail: string;
+  html?: string;
+  css?: string;
+  js?: string;
+  isOfficial: boolean;
+  cloneCount: number;
+  createdAt: string;
+}
+
+export interface TemplateCategory {
+  id: string;
+  name: string;
+  icon: string;
+}

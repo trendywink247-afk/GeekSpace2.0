@@ -38,12 +38,14 @@ import { picoRouter } from './routes/pico.js';
 import { briefingsRouter } from './routes/briefings.js';
 import { recipesRouter } from './routes/recipes.js';
 import { artifactsRouter } from './routes/artifacts.js';
+import { templatesRouter, seedDefaultTemplates } from './routes/templates.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
 import { startReminderScheduler } from './services/reminder-scheduler.js';
 import { metricsMiddleware, getMetricsSnapshot } from './middleware/metrics.js';
 import { healthRouter, getCachedComponents, startHealthProbeCache } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { startModelSyncScheduler } from './services/model-sync.js';
+import { startArtifactCleanupScheduler } from './services/artifact-cleanup.js';
 
 const APP_VERSION = '3.0.0';
 
@@ -200,6 +202,30 @@ app.use('/api/recipes', recipesRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/artifacts', artifactsRouter);
+app.use('/api/templates', templatesRouter);
+
+// ---- Subdomain middleware for artifact custom domains ----
+app.use((req, res, next) => {
+  const host = req.get('host') || '';
+  const baseDomain = config.publicUrl.replace(/^https?:\/\//, '');
+
+  // Check if this is a subdomain request
+  if (host !== baseDomain && host.endsWith(baseDomain)) {
+    const subdomain = host.replace(`.${baseDomain}`, '').split(':')[0];
+
+    // Look up artifact by subdomain
+    const domain = db.prepare('SELECT artifact_id, user_id FROM artifact_domains WHERE subdomain = ? AND is_active = 1').get(subdomain) as {
+      artifact_id: string;
+      user_id: string;
+    } | undefined;
+
+    if (domain) {
+      // Rewrite URL to preview route
+      req.url = `/preview/${domain.user_id}/${domain.artifact_id}`;
+    }
+  }
+  next();
+});
 
 // ---- Public artifact preview (must be before /admin catch-all) ----
 app.use('/preview', artifactsRouter);
@@ -232,6 +258,7 @@ app.listen(config.port, () => {
   initWorkflowTables();
   initPicoFleetTables();
   ensureDefaultAgents();
+  seedDefaultTemplates();
 
   // Health probe cache — runs in every worker (own 30s timer per process)
   startHealthProbeCache();
@@ -248,6 +275,7 @@ app.listen(config.port, () => {
     startReminderScheduler();
     startMemorySyncScheduler();
     startModelSyncScheduler();
+    startArtifactCleanupScheduler();
   } else {
     logger.info({ worker: process.env.NODE_APP_INSTANCE }, 'Cluster worker — schedulers skipped');
   }

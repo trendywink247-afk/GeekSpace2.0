@@ -377,11 +377,18 @@ try {
       css TEXT DEFAULT '',
       js TEXT DEFAULT '',
       metadata TEXT DEFAULT '{}',
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT DEFAULT (datetime('now')),
+      expires_at TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_artifacts_user ON generated_artifacts(user_id);
+    CREATE INDEX IF NOT EXISTS idx_artifacts_expires ON generated_artifacts(expires_at);
   `);
 } catch { /* table already exists — ignore */ }
+
+// Migration: Add expires_at to generated_artifacts
+try {
+  db.exec(`ALTER TABLE generated_artifacts ADD COLUMN expires_at TEXT`);
+} catch { /* column already exists */ }
 
 try {
   db.exec(`ALTER TABLE agent_configs ADD COLUMN notification_email_address TEXT DEFAULT NULL`);
@@ -483,6 +490,65 @@ try {
 try {
   db.exec(`ALTER TABLE subscriptions ADD COLUMN tokens_used_this_cycle INTEGER DEFAULT 0`);
 } catch { /* column already exists */ }
+
+// Templates for code artifacts (official + community)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS templates (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      category TEXT NOT NULL DEFAULT 'other',
+      thumbnail TEXT DEFAULT '',
+      html TEXT DEFAULT '',
+      css TEXT DEFAULT '',
+      js TEXT DEFAULT '',
+      is_official INTEGER DEFAULT 0,
+      created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+      clone_count INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_templates_category ON templates(category);
+    CREATE INDEX IF NOT EXISTS idx_templates_official ON templates(is_official);
+  `);
+} catch { /* table already exists */ }
+
+// Custom domains/subdomains for artifacts
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS artifact_domains (
+      id TEXT PRIMARY KEY,
+      artifact_id TEXT NOT NULL REFERENCES generated_artifacts(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      subdomain TEXT NOT NULL,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(subdomain)
+    );
+    CREATE INDEX IF NOT EXISTS idx_artifact_domains_user ON artifact_domains(user_id);
+    CREATE INDEX IF NOT EXISTS idx_artifact_domains_artifact ON artifact_domains(artifact_id);
+    CREATE INDEX IF NOT EXISTS idx_artifact_domains_subdomain ON artifact_domains(subdomain);
+  `);
+} catch { /* table already exists */ }
+
+// External deployments (Netlify, Vercel, etc.)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS artifact_deployments (
+      id TEXT PRIMARY KEY,
+      artifact_id TEXT NOT NULL REFERENCES generated_artifacts(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL,
+      external_url TEXT NOT NULL,
+      external_id TEXT DEFAULT '',
+      status TEXT DEFAULT 'active',
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_artifact_deployments_user ON artifact_deployments(user_id);
+    CREATE INDEX IF NOT EXISTS idx_artifact_deployments_artifact ON artifact_deployments(artifact_id);
+  `);
+} catch { /* table already exists */ }
 
 // Add FK constraint to automation_logs
 try {

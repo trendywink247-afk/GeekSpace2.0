@@ -38,12 +38,18 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
         const html = (params.html as string) || '';
         const css = (params.css as string) || '';
         const js = (params.js as string) || '';
+        const selfDestruct = params.selfDestruct as boolean | undefined;
         const id = uuid();
 
+        // Calculate expiration (24 hours for self-destruct, null for saved)
+        const expiresAt = selfDestruct !== false
+          ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+          : null;
+
         db.prepare(
-          `INSERT INTO generated_artifacts (id, user_id, type, title, html, css, js)
-           VALUES (?, ?, 'code', ?, ?, ?, ?)`,
-        ).run(id, userId, title, html, css, js);
+          `INSERT INTO generated_artifacts (id, user_id, type, title, html, css, js, expires_at)
+           VALUES (?, ?, 'code', ?, ?, ?, ?, ?)`,
+        ).run(id, userId, title, html, css, js, expiresAt);
 
         // Build preview URL if baseUrl provided
         const baseUrl = params.baseUrl as string | undefined;

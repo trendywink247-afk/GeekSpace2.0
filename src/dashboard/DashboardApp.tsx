@@ -4,7 +4,8 @@ import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
-  X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity
+  X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
+  Code, LayoutTemplate
 } from 'lucide-react';
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
@@ -39,8 +40,10 @@ const PicoFleetPage = lazy(() =>
   import('./pages/PicoFleetPage').then(m => ({ default: m.PicoFleetPage }))
 );
 const HealthDashboardPage = lazy(() => import('./pages/HealthDashboardPage').then(m => ({ default: m.HealthDashboardPage })));
+const ArtifactsPage = lazy(() => import('./pages/ArtifactsPage').then(m => ({ default: m.ArtifactsPage })));
+const TemplateGalleryPage = lazy(() => import('./pages/TemplateGalleryPage').then(m => ({ default: m.TemplateGalleryPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'artifacts' | 'templates';
 
 // Bottom tabs for mobile (5 max for thumb reach)
 const mobileTabs: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
@@ -120,6 +123,8 @@ export function DashboardApp() {
 
   const menuItems: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'artifacts', label: 'My Projects', icon: Code },
+    { id: 'templates', label: 'Templates', icon: LayoutTemplate },
     { id: 'portfolio', label: 'Portfolio', icon: Palette },
     { id: 'usage', label: 'Usage', icon: BarChart3 },
     { id: 'billing', label: 'Billing', icon: CreditCard },
@@ -173,6 +178,10 @@ export function DashboardApp() {
         return <PicoFleetPage />;
       case 'health':
         return <HealthDashboardPage />;
+      case 'artifacts':
+        return <ArtifactsPage />;
+      case 'templates':
+        return <TemplateGalleryPage />;
       case 'terminal':
         return <TerminalPage />;
       case 'settings':

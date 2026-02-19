@@ -31,6 +31,11 @@ import type {
   PremiumSession,
   FreeModelsResponse,
   ModelChangelogEntry,
+  Artifact,
+  ArtifactDomain,
+  ArtifactDeployment,
+  Template,
+  TemplateCategory,
 } from '@/types';
 
 // ----- Axios instance ----------------------------------------
@@ -492,6 +497,57 @@ export const recipeService = {
 export const modelService = {
   getFreeModels: () => api.get<FreeModelsResponse>('/models/free'),
   getChangelog: () => api.get<{ entries: ModelChangelogEntry[] }>('/models/changelog'),
+};
+
+// ----- Artifacts -------------------------------------------
+
+export const artifactService = {
+  list: () => api.get<{ artifacts: Artifact[] }>('/artifacts'),
+
+  get: (id: string) => api.get<Artifact & { html?: string; css?: string; js?: string }>(`/artifacts/${id}`),
+
+  update: (id: string, data: { title?: string; html?: string; css?: string; js?: string }) =>
+    api.patch<Artifact>(`/artifacts/${id}`, data),
+
+  delete: (id: string) => api.delete(`/artifacts/${id}`),
+
+  // Custom domain
+  setDomain: (id: string, subdomain: string) =>
+    api.post(`/artifacts/${id}/domain`, { subdomain }),
+
+  getDomain: (id: string) =>
+    api.get<ArtifactDomain>(`/artifacts/${id}/domain`),
+
+  removeDomain: (id: string) =>
+    api.delete(`/artifacts/${id}/domain`),
+
+  // Exports
+  exportZip: (id: string) =>
+    api.post(`/artifacts/${id}/export/zip`, {}, { responseType: 'blob' }),
+
+  deployToNetlify: (id: string, netlifyToken: string) =>
+    api.post<{ success: boolean; url: string; message: string }>(`/artifacts/${id}/export/netlify`, { netlifyToken }),
+
+  deployToVercel: (id: string, vercelToken: string) =>
+    api.post<{ success: boolean; url: string; message: string }>(`/artifacts/${id}/export/vercel`, { vercelToken }),
+
+  getDeployments: (id: string) =>
+    api.get<{ deployments: ArtifactDeployment[] }>(`/artifacts/${id}/deployments`),
+};
+
+// ----- Templates -------------------------------------------
+
+export const templateService = {
+  list: (params?: { category?: string; search?: string; officialOnly?: boolean }) =>
+    api.get<{ templates: Template[] }>('/templates', { params }),
+
+  get: (id: string) => api.get<Template>(`/templates/${id}`),
+
+  clone: (id: string, title?: string) =>
+    api.post<{ success: boolean; artifactId: string; title: string; previewUrl: string; message: string }>(`/templates/${id}/clone`, { title }),
+
+  getCategories: () =>
+    api.get<{ categories: TemplateCategory[] }>('/templates/categories/list'),
 };
 
 export default api;
