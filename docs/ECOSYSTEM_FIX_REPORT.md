@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-19
 **Branch:** `fix/ecosystem-audit-2026-02-19`
-**Status:** ✅ All Tasks Complete
+**Status:** ✅ All Tasks Complete + Smoke Tests Passed
 
 ---
 
@@ -110,6 +110,8 @@ Successfully audited and fixed 6 critical issues in the GeekSpace 2.0 ecosystem:
 ## Commits
 
 ```
+f1d3c44 test(smoke): add comprehensive smoke test suite
+36cd36b docs: update plan checklist and add fix report
 77f1585 feat(terminal): add persistent command history with zustand
 21d3b20 fix(automations): fix tabs stretching and mobile layout
 e21f2ca fix(health): add REST fallback and error state with retry
@@ -129,9 +131,75 @@ f02d382 fix(connections): remove page reload on Telegram/WhatsApp connect
 
 ---
 
-## Testing Notes
+## Automated Smoke Tests
 
-### Manual Testing Checklist
+**Test Script:** `scripts/smoke/ecosystem-fix-smoke-test.ts`
+
+### Results: ✅ 28/28 Tests Passed
+
+| Category | Tests | Status |
+|----------|-------|--------|
+| Build Verification | 2 | ✅ Pass |
+| Connections Page Fixes | 3 | ✅ Pass |
+| Reminders + Memory Sync | 5 | ✅ Pass |
+| Reminders Page Polling | 2 | ✅ Pass |
+| Health Dashboard REST Fallback | 4 | ✅ Pass |
+| Automations Tabs UI | 2 | ✅ Pass |
+| Terminal Persistence | 4 | ✅ Pass |
+| WhatsApp Implementation | 4 | ✅ Pass |
+| Code Quality Checks | 2 | ✅ Pass |
+
+### Test Details
+
+**Build Verification:**
+- ✅ Frontend builds without errors
+- ✅ Backend builds without errors
+
+**Connections Page:**
+- ✅ Has loadDashboard import
+- ✅ Telegram dialog uses loadDashboard not reload
+- ✅ WhatsApp dialog uses loadDashboard not reload
+
+**Reminders + Memory:**
+- ✅ pico-fleet imports upsertMemory
+- ✅ create_reminder creates memory entry
+- ✅ create_reminder updates channel_links
+- ✅ MemoryManagerPage has reminder category
+- ✅ MemoryManagerPage has reminder color
+
+**Reminders Polling:**
+- ✅ Has polling useEffect with 10s interval
+- ✅ Imports loadDashboard from store
+
+**Health Dashboard:**
+- ✅ Imports Button component
+- ✅ Has fetchRestHealth function
+- ✅ Has handleRetry function with Retry button
+- ✅ Clears REST interval on unmount
+
+**Automations Tabs:**
+- ✅ Correct TabsList styling (w-auto)
+- ✅ TabsTrigger has flex-none and 44px touch targets
+
+**Terminal Persistence:**
+- ✅ terminalStore.ts exists with persist middleware
+- ✅ TerminalPage imports terminalStore
+- ✅ Uses store instead of local state
+- ✅ Clear function uses store clearHistory
+
+**WhatsApp (Pre-existing):**
+- ✅ Service exists
+- ✅ Endpoints in integrations.ts
+- ✅ Webhook in webhooks.ts
+- ✅ API methods in api.ts
+
+**Code Quality:**
+- ✅ No console.log statements
+- ✅ All useEffect hooks have cleanup
+
+---
+
+## Manual Testing Checklist
 
 - [ ] Link Telegram → verify no reload → verify "Active" shows
 - [ ] Create reminder via Telegram → verify appears in Reminders page
