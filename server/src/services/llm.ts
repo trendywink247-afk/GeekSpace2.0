@@ -14,6 +14,7 @@ import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
 import { getCurrentFreeModel, switchToNextFreeModel, getUserPreferredFreeModel } from './openrouter-models.js';
+import { recordTokenUsage, shouldDegradeRouting } from './token-budget.js';
 
 // ---- Types ----
 
@@ -470,6 +471,13 @@ export async function routeChat(
   //   Tier 2 (premium): Moonshot cloud — only when explicitly forced or Ollama unavailable
   let provider: Provider = opts?.forceProvider || 'ollama';
 
+  // Check if should degrade to cheaper providers due to budget
+  const overBudget = opts?.userId ? shouldDegradeRouting(opts.userId) : false;
+  if (overBudget && (provider === 'edith' || provider === 'openrouter')) {
+    logger.info({ userId: opts?.userId }, 'User over token budget, degrading routing');
+    provider = 'openrouter-free';
+  }
+
   if (!opts?.forceProvider) {
     const ollamaOk = await isOllamaAvailable();
     const picoOk = await isPicoClawAvailable();
@@ -598,6 +606,11 @@ export async function routeChat(
       tokensOut = reply.length;
       provider = 'builtin';
     }
+  }
+
+  // Record token usage if userId provided
+  if (opts?.userId) {
+    recordTokenUsage(opts.userId, tokensIn + tokensOut);
   }
 
   const latencyMs = Date.now() - start;

@@ -1,0 +1,12 @@
+{
+  "name": "geekspace-smoke-tests",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "tsx smoke-tests.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

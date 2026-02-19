@@ -335,10 +335,11 @@ export async function sendChannelResponse(response: ChannelResponse): Promise<vo
         response.replyToMessageId ? parseInt(response.replyToMessageId, 10) : undefined,
       );
       break;
-    case 'whatsapp':
-      // WhatsApp Business API integration — future phase
-      logger.warn({ externalId: response.externalId }, 'WhatsApp send not yet implemented');
+    case 'whatsapp': {
+      const { sendWhatsAppMessage } = await import('./whatsapp.js');
+      await sendWhatsAppMessage(response.externalId, response.text, response.replyToMessageId);
       break;
+    }
     default:
       logger.warn({ channel: response.channel }, 'Unknown channel for response dispatch');
   }

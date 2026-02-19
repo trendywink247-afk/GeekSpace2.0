@@ -6,6 +6,7 @@
 
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import { requireAdmin } from '../middleware/auth.js';
 import { getMetricsSnapshot, incrementSSEConnections, decrementSSEConnections } from '../middleware/metrics.js';
 
 import { config } from '../config.js';
@@ -106,7 +107,7 @@ let activeSSECount = 0;
 
 // ---- SSE Stream ----
 
-healthRouter.get('/stream', (req: Request, res: Response) => {
+healthRouter.get('/stream', requireAdmin, (req: Request, res: Response) => {
   if (activeSSECount >= MAX_SSE_CONNECTIONS) {
     res.status(429).json({ error: 'Too many health stream connections' });
     return;

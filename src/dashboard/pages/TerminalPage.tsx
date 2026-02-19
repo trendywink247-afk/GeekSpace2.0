@@ -416,7 +416,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
           <button
             key={cmd}
             onClick={() => executeCommand(cmd)}
-            className={`px-3 py-2.5 min-h-[36px] rounded-lg border text-xs transition-colors ${
+            className={`px-3 py-2.5 min-h-[44px] rounded-lg border text-xs transition-colors ${
               cmd.startsWith('ai ')
                 ? 'bg-[#7B61FF]/10 border-[#7B61FF]/30 text-[#7B61FF] hover:bg-[#7B61FF]/20'
                 : 'bg-[#0B0B10] border-[#7B61FF]/20 text-[#A7ACB8] hover:border-[#7B61FF]/50 hover:text-[#F4F6FF]'

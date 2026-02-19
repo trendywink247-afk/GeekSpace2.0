@@ -17,6 +17,7 @@ import {
   type TelegramUpdate,
 } from '../services/telegram.js';
 import { handleIncomingMessage, sendChannelResponse } from '../services/message-router.js';
+import { v4 as uuid } from 'uuid';
 import {
   isVoiceEnabled,
   downloadTelegramVoice,
@@ -26,7 +27,6 @@ import {
   voiceCreditCost,
 } from '../services/voice.js';
 import { db } from '../db/index.js';
-import { v4 as uuid } from 'uuid';
 
 export const webhooksRouter = Router();
 
@@ -591,3 +591,104 @@ webhooksRouter.post('/n8n/callback', async (req, res) => {
     res.status(500).json({ error: 'Failed to relay message' });
   }
 });
+
+// ================================================================
+// WHATSAPP WEBHOOK
+// ================================================================
+
+webhooksRouter.post('/whatsapp', async (req, res) => {
+  // Verify webhook signature if configured
+  const signature = req.headers['x-whatsapp-signature'] as string;
+  const body = JSON.stringify(req.body);
+
+  const { verifyWhatsAppWebhook } = await import('../services/whatsapp.js');
+  if (!verifyWhatsAppWebhook(signature, body)) {
+    res.status(401).json({ error: 'Invalid signature' });
+    return;
+  }
+
+  try {
+    const { entry } = req.body;
+
+    // Process incoming WhatsApp messages
+    if (entry && entry.length > 0) {
+      for (const e of entry) {
+        if (e.changes) {
+          for (const change of e.changes) {
+            if (change.value?.messages) {
+              for (const message of change.value.messages) {
+                // Handle LINK command for account linking
+                if (message.text?.body?.startsWith('LINK ')) {
+                  const code = message.text.body.slice(5).trim();
+                  await handleWhatsAppLinkCode(
+                    message.from,
+                    change.value.contacts?.[0]?.profile?.name || '',
+                    code
+                  );
+                } else {
+                  // Regular message - route through message router
+                  const normalized = {
+                    channel: 'whatsapp' as const,
+                    externalId: message.from,
+                    text: message.text?.body || '',
+                    messageId: message.id,
+                    senderName: change.value.contacts?.[0]?.profile?.name || '',
+                    timestamp: new Date(message.timestamp * 1000).toISOString(),
+                  };
+                  await handleIncomingMessage(normalized);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error({ err }, 'WhatsApp webhook processing error');
+    res.status(500).json({ error: 'Processing failed' });
+  }
+});
+
+async function handleWhatsAppLinkCode(
+  phoneNumber: string,
+  name: string,
+  code: string,
+): Promise<void> {
+  // Look up the code
+  const linkCode = db.prepare(
+    "SELECT user_id FROM link_codes WHERE code = ? AND channel = 'whatsapp' AND expires_at > datetime('now')"
+  ).get(code) as { user_id: string } | undefined;
+
+  if (!linkCode) {
+    // Send error message via WhatsApp (would need actual API integration)
+    logger.warn({ phoneNumber, code }, 'Invalid or expired WhatsApp link code');
+    return;
+  }
+
+  // Check if already linked
+  const existing = db.prepare(
+    "SELECT id FROM channel_links WHERE channel = 'whatsapp' AND external_id = ?"
+  ).get(phoneNumber);
+
+  if (existing) {
+    logger.info({ phoneNumber }, 'WhatsApp account already linked');
+    return;
+  }
+
+  // Create the link
+  db.prepare(
+    'INSERT INTO channel_links (id, user_id, channel, external_id, external_username) VALUES (?, ?, ?, ?, ?)'
+  ).run(uuid(), linkCode.user_id, 'whatsapp', phoneNumber, name);
+
+  // Update integrations table
+  db.prepare(
+    "UPDATE integrations SET status = 'connected', health = 100, last_sync = ? WHERE user_id = ? AND type = 'whatsapp'"
+  ).run(new Date().toISOString(), linkCode.user_id);
+
+  // Delete the used code
+  db.prepare('DELETE FROM link_codes WHERE code = ?').run(code);
+
+  logger.info({ userId: linkCode.user_id, phoneNumber }, 'WhatsApp account linked');
+}

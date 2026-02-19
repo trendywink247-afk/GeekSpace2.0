@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, Check, ArrowUpRight, Calendar, Zap, TrendingUp } from 'lucide-react';
+import { CreditCard, Check, ArrowUpRight, Calendar, Zap, TrendingUp, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,15 @@ import { MobileTable } from '@/components/ui/mobile-table';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { billingService } from '@/services/api';
 import type { Subscription, PlanDefinition, DailyUsage } from '@/types';
+
+// Plan display metadata for sale styling
+const PLAN_DISPLAY: Record<string, { oldPrice: number; badge: string; badgeColor?: string; agentSlots: number; tokenBudget: string; hasKimi: boolean }> = {
+  free: { oldPrice: 99, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false },
+  intro: { oldPrice: 1499, badge: 'Most Popular', badgeColor: '#7B61FF', agentSlots: 2, tokenBudget: '300K', hasKimi: true },
+  monthly: { oldPrice: 1499, badge: 'Popular', badgeColor: '#FFD761', agentSlots: 2, tokenBudget: '300K', hasKimi: true },
+  halfyear: { oldPrice: 5999, badge: '', agentSlots: 3, tokenBudget: '750K', hasKimi: true },
+  yearly: { oldPrice: 9999, badge: 'Best Value', badgeColor: '#61FF7B', agentSlots: 3, tokenBudget: '1M', hasKimi: true },
+};
 
 function formatCredits(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -81,6 +90,12 @@ export function BillingPage() {
 
   const price = (plan: PlanDefinition) =>
     currency === 'INR' ? `₹${plan.priceInr.toLocaleString()}` : `$${plan.priceUsd}`;
+
+  const oldPrice = (plan: PlanDefinition) => {
+    const display = PLAN_DISPLAY[plan.id];
+    if (!display || display.oldPrice === 0) return null;
+    return currency === 'INR' ? `₹${display.oldPrice.toLocaleString()}` : `$${Math.round(display.oldPrice / 83)}`;
+  };
 
   if (loading) {
     return (
@@ -241,23 +256,33 @@ export function BillingPage() {
             {plans.map((plan) => {
               const isCurrent = subscription?.plan === plan.id;
               const isFree = plan.priceUsd === 0;
+              const display = PLAN_DISPLAY[plan.id] || { oldPrice: 0, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false };
               return (
-                <div key={plan.id} className="min-w-[260px] snap-center flex-shrink-0">
+                <div key={plan.id} className="min-w-[280px] snap-center flex-shrink-0">
                   <Card
-                    className={`bg-[#0B0B10] transition-all h-full ${
+                    className={`bg-[#0B0B10] transition-all h-full relative overflow-hidden ${
                       isCurrent
                         ? 'border-[#7B61FF] ring-1 ring-[#7B61FF]/30'
                         : 'border-[#7B61FF]/20 hover:border-[#7B61FF]/40'
                     } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
                   >
-                    <CardHeader className="pb-3">
+                    {/* Badge */}
+                    {display.badge && (
+                      <div
+                        className="absolute top-0 right-0 px-3 py-1 text-xs font-bold rounded-bl-lg"
+                        style={{
+                          backgroundColor: `${display.badgeColor}20`,
+                          color: display.badgeColor,
+                          borderBottom: `1px solid ${display.badgeColor}40`,
+                          borderLeft: `1px solid ${display.badgeColor}40`,
+                        }}
+                      >
+                        {display.badge}
+                      </div>
+                    )}
+                    <CardHeader className="pb-3 pt-6">
                       <div className="flex items-center justify-between">
                         <CardTitle className="capitalize text-[#F4F6FF]">{plan.id}</CardTitle>
-                        {plan.badge && (
-                          <Badge variant="outline" className="text-[10px] border-[#FFD761]/30 text-[#FFD761]">
-                            {plan.badge}
-                          </Badge>
-                        )}
                         {isCurrent && (
                           <Badge className="bg-[#7B61FF]/20 text-[#7B61FF] border-[#7B61FF]/30">
                             Current
@@ -266,16 +291,38 @@ export function BillingPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="flex items-baseline flex-wrap gap-1">
-                        <span className="text-3xl font-bold text-[#F4F6FF]">{price(plan)}</span>
+                      {/* Price with slashed old price */}
+                      <div className="flex items-baseline flex-wrap gap-2">
+                        <span className="text-4xl font-bold text-[#F4F6FF]">{price(plan)}</span>
+                        {display.oldPrice > 0 && (
+                          <span className="text-lg text-[#A7ACB8] line-through">{oldPrice(plan)}</span>
+                        )}
                         {plan.priceUsd > 0 && (
                           <span className="text-sm text-[#A7ACB8]">/ {plan.intervalLabel}</span>
                         )}
-                        {currency === 'INR' && plan.originalPriceInr && (
-                          <span className="text-sm text-[#A7ACB8] line-through ml-1">₹{plan.originalPriceInr.toLocaleString()}</span>
-                        )}
                       </div>
                       <div className="text-sm text-[#A7ACB8]">{plan.description}</div>
+
+                      {/* Features */}
+                      <div className="space-y-2 py-2 border-t border-[#7B61FF]/10">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-[#A7ACB8]">Agent Slots</span>
+                          <span className="text-[#F4F6FF] font-medium">{display.agentSlots}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-[#A7ACB8]">Token Budget</span>
+                          <span className="text-[#F4F6FF] font-medium">{display.tokenBudget}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-[#A7ACB8]">Kimi Access</span>
+                          {display.hasKimi ? (
+                            <CheckCircle2 className="w-4 h-4 text-[#61FF7B]" />
+                          ) : (
+                            <span className="text-[#A7ACB8]">—</span>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="flex items-center gap-2 text-sm text-[#F4F6FF]">
                         <Zap className="w-4 h-4 text-[#7B61FF]" />
                         {formatCredits(plan.credits)} credits
@@ -289,7 +336,7 @@ export function BillingPage() {
                         <Button
                           onClick={() => handleUpgrade(plan.id)}
                           disabled={upgrading === plan.id || isFree}
-                          className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] disabled:opacity-50"
+                          className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] disabled:opacity-50 min-h-[44px]"
                         >
                           {upgrading === plan.id ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
@@ -302,7 +349,7 @@ export function BillingPage() {
                       {subscription?.plan === 'free' && plan.id === 'free' && (
                         <button
                           onClick={handleDayPass}
-                          className="w-full mt-2 py-1.5 px-3 rounded-lg border border-[#7B61FF]/30 text-[#7B61FF] text-xs hover:bg-[#7B61FF]/10 transition-colors"
+                          className="w-full mt-2 py-2 px-3 rounded-lg border border-[#7B61FF]/30 text-[#7B61FF] text-xs hover:bg-[#7B61FF]/10 transition-colors min-h-[44px]"
                         >
                           Try Weebo for $1/day →
                         </button>
@@ -318,23 +365,33 @@ export function BillingPage() {
             {plans.map((plan) => {
               const isCurrent = subscription?.plan === plan.id;
               const isFree = plan.priceUsd === 0;
+              const display = PLAN_DISPLAY[plan.id] || { oldPrice: 0, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false };
               return (
                 <Card
                   key={plan.id}
-                  className={`bg-[#0B0B10] transition-all ${
+                  className={`bg-[#0B0B10] transition-all relative overflow-hidden ${
                     isCurrent
                       ? 'border-[#7B61FF] ring-1 ring-[#7B61FF]/30'
                       : 'border-[#7B61FF]/20 hover:border-[#7B61FF]/40'
                   } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
                 >
-                  <CardHeader className="pb-3">
+                  {/* Badge */}
+                  {display.badge && (
+                    <div
+                      className="absolute top-0 right-0 px-3 py-1 text-xs font-bold rounded-bl-lg"
+                      style={{
+                        backgroundColor: `${display.badgeColor}20`,
+                        color: display.badgeColor,
+                        borderBottom: `1px solid ${display.badgeColor}40`,
+                        borderLeft: `1px solid ${display.badgeColor}40`,
+                      }}
+                    >
+                      {display.badge}
+                    </div>
+                  )}
+                  <CardHeader className="pb-3 pt-6">
                     <div className="flex items-center justify-between">
                       <CardTitle className="capitalize text-[#F4F6FF]">{plan.id}</CardTitle>
-                      {plan.badge && (
-                        <Badge variant="outline" className="text-[10px] border-[#FFD761]/30 text-[#FFD761]">
-                          {plan.badge}
-                        </Badge>
-                      )}
                       {isCurrent && (
                         <Badge className="bg-[#7B61FF]/20 text-[#7B61FF] border-[#7B61FF]/30">
                           Current
@@ -343,16 +400,38 @@ export function BillingPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-baseline flex-wrap gap-1">
+                    {/* Price with slashed old price */}
+                    <div className="flex items-baseline flex-wrap gap-2">
                       <span className="text-3xl font-bold text-[#F4F6FF]">{price(plan)}</span>
+                      {display.oldPrice > 0 && (
+                        <span className="text-sm text-[#A7ACB8] line-through">{oldPrice(plan)}</span>
+                      )}
                       {plan.priceUsd > 0 && (
                         <span className="text-sm text-[#A7ACB8]">/ {plan.intervalLabel}</span>
                       )}
-                      {currency === 'INR' && plan.originalPriceInr && (
-                        <span className="text-sm text-[#A7ACB8] line-through ml-1">₹{plan.originalPriceInr.toLocaleString()}</span>
-                      )}
                     </div>
                     <div className="text-sm text-[#A7ACB8]">{plan.description}</div>
+
+                    {/* Features */}
+                    <div className="space-y-2 py-2 border-t border-[#7B61FF]/10">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[#A7ACB8]">Agent Slots</span>
+                        <span className="text-[#F4F6FF] font-medium">{display.agentSlots}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[#A7ACB8]">Token Budget</span>
+                        <span className="text-[#F4F6FF] font-medium">{display.tokenBudget}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[#A7ACB8]">Kimi Access</span>
+                        {display.hasKimi ? (
+                          <CheckCircle2 className="w-4 h-4 text-[#61FF7B]" />
+                        ) : (
+                          <span className="text-[#A7ACB8]">—</span>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="flex items-center gap-2 text-sm text-[#F4F6FF]">
                       <Zap className="w-4 h-4 text-[#7B61FF]" />
                       {formatCredits(plan.credits)} credits
@@ -391,6 +470,112 @@ export function BillingPage() {
           </div>
         )}
       </div>
+
+      {/* Plan Comparison Table */}
+      <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <CardHeader>
+          <CardTitle className="text-[#F4F6FF] flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-[#FFD761]" />
+            Plan Comparison
+          </CardTitle>
+          <p className="text-sm text-[#A7ACB8]">Compare features across all plans</p>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full min-w-[500px]">
+              <thead>
+                <tr className="border-b border-[#7B61FF]/20">
+                  <th className="text-left py-3 px-2 text-sm font-medium text-[#A7ACB8]">Feature</th>
+                  {plans.map((plan) => {
+                    const display = PLAN_DISPLAY[plan.id];
+                    return (
+                      <th key={plan.id} className="text-center py-3 px-2 text-sm font-medium">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-[#F4F6FF] capitalize">{plan.id}</span>
+                          {display?.badge && (
+                            <span
+                              className="text-[10px] px-1.5 py-0.5 rounded"
+                              style={{
+                                backgroundColor: `${display.badgeColor}20`,
+                                color: display.badgeColor,
+                              }}
+                            >
+                              {display.badge}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-[#7B61FF]/10">
+                  <td className="py-3 px-2 text-sm text-[#A7ACB8]">Agent Slots</td>
+                  {plans.map((plan) => {
+                    const display = PLAN_DISPLAY[plan.id];
+                    return (
+                      <td key={plan.id} className="text-center py-3 px-2 text-sm text-[#F4F6FF]">
+                        {display?.agentSlots || 1}
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr className="border-b border-[#7B61FF]/10">
+                  <td className="py-3 px-2 text-sm text-[#A7ACB8]">Token Budget</td>
+                  {plans.map((plan) => {
+                    const display = PLAN_DISPLAY[plan.id];
+                    return (
+                      <td key={plan.id} className="text-center py-3 px-2 text-sm text-[#F4F6FF]">
+                        {display?.tokenBudget || '50K'}
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr className="border-b border-[#7B61FF]/10">
+                  <td className="py-3 px-2 text-sm text-[#A7ACB8]">Kimi Access</td>
+                  {plans.map((plan) => {
+                    const display = PLAN_DISPLAY[plan.id];
+                    return (
+                      <td key={plan.id} className="text-center py-3 px-2">
+                        {display?.hasKimi ? (
+                          <CheckCircle2 className="w-5 h-5 text-[#61FF7B] mx-auto" />
+                        ) : (
+                          <span className="text-[#A7ACB8]">—</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr className="border-b border-[#7B61FF]/10">
+                  <td className="py-3 px-2 text-sm text-[#A7ACB8]">Credits / Cycle</td>
+                  {plans.map((plan) => (
+                    <td key={plan.id} className="text-center py-3 px-2 text-sm text-[#F4F6FF]">
+                      {formatCredits(plan.credits)}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="py-3 px-2 text-sm text-[#A7ACB8]">Price</td>
+                  {plans.map((plan) => {
+                    const display = PLAN_DISPLAY[plan.id];
+                    return (
+                      <td key={plan.id} className="text-center py-3 px-2">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-sm font-bold text-[#F4F6FF]">{price(plan)}</span>
+                          {display?.oldPrice > 0 && (
+                            <span className="text-xs text-[#A7ACB8] line-through">{oldPrice(plan)}</span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Usage History Table */}
       <Card className="bg-[#0B0B10] border-[#7B61FF]/20">

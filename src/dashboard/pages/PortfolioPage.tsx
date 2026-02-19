@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Save, Plus, Trash2, X, ExternalLink, Sparkles, Loader2,
-  User, Code2, FolderGit2, Award, Share2, Bot
+  User, Code2, FolderGit2, Award, Share2, Bot, Wand2, Lightbulb, CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,7 +44,24 @@ export function PortfolioPage() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
 
-  // Load portfolio
+  // Magic Generate state
+  const [generatingField, setGeneratingField] = useState<string | null>(null);
+  const [generatedPreview, setGeneratedPreview] = useState<string | null>(null);
+  const [generateTarget, setGenerateTarget] = useState<{ field: string; setter: (val: string) => void } | null>(null);
+
+  // Suggestions state
+  const [suggestions, setSuggestions] = useState<Array<{
+    id: string;
+    field: string;
+    currentValue: string;
+    suggestedValue: string;
+    reason: string;
+    confidence: number;
+  }>>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [applyingSuggestion, setApplyingSuggestion] = useState<string | null>(null);
+
+  // Load portfolio and suggestions
   useEffect(() => {
     portfolioService.get()
       .then(({ data }) => {
@@ -59,7 +76,22 @@ export function PortfolioPage() {
       })
       .catch(() => setMessage({ type: 'error', text: 'Failed to load portfolio' }))
       .finally(() => setIsLoading(false));
+
+    // Load suggestions
+    loadSuggestions();
   }, []);
+
+  const loadSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const { data } = await portfolioService.getSuggestions();
+      setSuggestions(data);
+    } catch {
+      // Silent fail - suggestions are optional
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
 
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
@@ -156,6 +188,62 @@ export function PortfolioPage() {
     }
   };
 
+  // Magic Generate handlers
+  const handleGenerate = async (field: string, context: string, setter: (val: string) => void) => {
+    setGeneratingField(field);
+    setGenerateTarget({ field, setter });
+    try {
+      const { data } = await portfolioService.generateField(field, context);
+      setGeneratedPreview(data.generated);
+      showMessage('success', `Generated ${field} (5 credits used)`);
+    } catch (err: unknown) {
+      const error = err as { response?: { status?: number; data?: { error?: string } } };
+      if (error.response?.status === 402) {
+        showMessage('error', 'Insufficient credits — upgrade your plan');
+      } else {
+        showMessage('error', error.response?.data?.error || 'Generation failed');
+      }
+    } finally {
+      setGeneratingField(null);
+    }
+  };
+
+  const applyGenerated = () => {
+    if (generatedPreview && generateTarget) {
+      generateTarget.setter(generatedPreview);
+      setGeneratedPreview(null);
+      setGenerateTarget(null);
+      showMessage('success', 'Generated content applied — save to persist');
+    }
+  };
+
+  const discardGenerated = () => {
+    setGeneratedPreview(null);
+    setGenerateTarget(null);
+  };
+
+  // Suggestions handlers
+  const handleApplySuggestion = async (suggestionId: string) => {
+    setApplyingSuggestion(suggestionId);
+    try {
+      await portfolioService.applySuggestion(suggestionId);
+      // Refresh portfolio data
+      const { data } = await portfolioService.get();
+      setHeadline(data.headline || '');
+      setAbout(data.about || '');
+      setSkills(data.skills || []);
+      setProjects(data.projects || []);
+      setMilestones(data.milestones || []);
+      // Remove applied suggestion
+      setSuggestions(suggestions.filter(s => s.id !== suggestionId));
+      showMessage('success', 'Suggestion applied — save to persist');
+    } catch {
+      showMessage('error', 'Failed to apply suggestion');
+    } finally {
+      setApplyingSuggestion(null);
+    }
+  };
+
   const addTag = () => {
     const t = tagInput.trim();
     if (t && editingProject && !(editingProject.tags || []).includes(t)) {
@@ -236,6 +324,14 @@ export function PortfolioPage() {
             <TabsTrigger value="ai" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Bot className="w-4 h-4 mr-2" />AI Edit
             </TabsTrigger>
+            <TabsTrigger value="suggestions" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+              <Lightbulb className="w-4 h-4 mr-2" />Suggestions
+              {suggestions.length > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-[#FF6161] text-white rounded-full">
+                  {suggestions.length}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -248,7 +344,21 @@ export function PortfolioPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-2 block">Headline</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm text-[#A7ACB8] block">Headline</label>
+                  <button
+                    onClick={() => handleGenerate('headline', `${about}\n${skills.join(', ')}`, setHeadline)}
+                    disabled={generatingField === 'headline'}
+                    className="text-xs flex items-center gap-1 text-[#7B61FF] hover:text-[#6B51EF] disabled:opacity-50"
+                  >
+                    {generatingField === 'headline' ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-3 h-3" />
+                    )}
+                    Generate
+                  </button>
+                </div>
                 <Input
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
@@ -257,7 +367,21 @@ export function PortfolioPage() {
                 />
               </div>
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-2 block">Bio</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm text-[#A7ACB8] block">Bio</label>
+                  <button
+                    onClick={() => handleGenerate('about', `${headline}\n${skills.join(', ')}`, setAbout)}
+                    disabled={generatingField === 'about'}
+                    className="text-xs flex items-center gap-1 text-[#7B61FF] hover:text-[#6B51EF] disabled:opacity-50"
+                  >
+                    {generatingField === 'about' ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-3 h-3" />
+                    )}
+                    Generate
+                  </button>
+                </div>
                 <textarea
                   value={about}
                   onChange={(e) => setAbout(e.target.value)}
@@ -300,8 +424,44 @@ export function PortfolioPage() {
         <TabsContent value="skills" className="space-y-6">
           <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
             <CardHeader>
-              <CardTitle>Skills</CardTitle>
-              <CardDescription className="text-[#A7ACB8]">Add technologies and skills you want to showcase</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Skills</CardTitle>
+                  <CardDescription className="text-[#A7ACB8]">Add technologies and skills you want to showcase</CardDescription>
+                </div>
+                <Button
+                  onClick={async () => {
+                    setGeneratingField('skills');
+                    try {
+                      const { data } = await portfolioService.generateField('skills', `${headline}\n${about}`);
+                      // Parse generated skills (expecting comma-separated list)
+                      const newSkills = data.generated.split(',').map(s => s.trim()).filter(Boolean);
+                      const uniqueSkills = [...new Set([...skills, ...newSkills])];
+                      setSkills(uniqueSkills);
+                      showMessage('success', `Added ${newSkills.length} skills (5 credits used)`);
+                    } catch (err: unknown) {
+                      const error = err as { response?: { status?: number; data?: { error?: string } } };
+                      if (error.response?.status === 402) {
+                        showMessage('error', 'Insufficient credits — upgrade your plan');
+                      } else {
+                        showMessage('error', error.response?.data?.error || 'Generation failed');
+                      }
+                    } finally {
+                      setGeneratingField(null);
+                    }
+                  }}
+                  disabled={generatingField === 'skills' || !headline}
+                  variant="outline"
+                  className="border-[#7B61FF]/30"
+                >
+                  {generatingField === 'skills' ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-4 h-4 mr-2" />
+                  )}
+                  Generate
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-2">
@@ -410,7 +570,7 @@ export function PortfolioPage() {
                           <Badge
                             key={tag}
                             variant="outline"
-                            className="border-[#7B61FF]/30 text-[#A7ACB8] cursor-pointer hover:border-[#FF6161]/30 hover:text-[#FF6161] min-h-[36px] px-3 py-1 press-scale"
+                            className="border-[#7B61FF]/30 text-[#A7ACB8] cursor-pointer hover:border-[#FF6161]/30 hover:text-[#FF6161] min-h-[44px] px-3 py-1.5 press-scale"
                             onClick={() => setEditingProject({ ...editingProject, tags: editingProject.tags!.filter((t) => t !== tag) })}
                           >
                             {tag} <X className="w-3 h-3 ml-1" />
@@ -652,7 +812,107 @@ export function PortfolioPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ── Suggestions Tab ─────────────────────────────────── */}
+        <TabsContent value="suggestions" className="space-y-6">
+          <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-[#7B61FF]" />
+                Memory-Driven Suggestions
+              </CardTitle>
+              <CardDescription className="text-[#A7ACB8]">
+                AI found these portfolio-worthy items from your conversations
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {loadingSuggestions ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 text-[#7B61FF] animate-spin" />
+                </div>
+              ) : suggestions.length === 0 ? (
+                <div className="text-center py-12">
+                  <Lightbulb className="w-12 h-12 text-[#7B61FF]/30 mx-auto mb-4" />
+                  <p className="text-[#A7ACB8] mb-2">No suggestions yet</p>
+                  <p className="text-sm text-[#A7ACB8]/70">
+                    Chat with your agent about projects and accomplishments — suggestions will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {suggestions.map((suggestion) => (
+                    <div
+                      key={suggestion.id}
+                      className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline" className="border-[#7B61FF]/30 text-[#7B61FF]">
+                              {suggestion.field}
+                            </Badge>
+                            <span className="text-xs text-[#A7ACB8]">
+                              {Math.round(suggestion.confidence * 100)}% confidence
+                            </span>
+                          </div>
+                          <p className="text-sm text-[#F4F6FF] mb-1">{suggestion.reason}</p>
+                          <p className="text-sm text-[#A7ACB8] line-clamp-2">{suggestion.suggestedValue}</p>
+                        </div>
+                        <Button
+                          onClick={() => handleApplySuggestion(suggestion.id)}
+                          disabled={applyingSuggestion === suggestion.id}
+                          size="sm"
+                          className="bg-[#61FF7B]/10 border border-[#61FF7B]/30 text-[#61FF7B] hover:bg-[#61FF7B]/20 shrink-0"
+                        >
+                          {applyingSuggestion === suggestion.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <><CheckCircle2 className="w-4 h-4 mr-1" />Apply</>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-[#A7ACB8] text-center pt-4">
+                Suggestions are based on memories from your agent conversations. Review before applying.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Generated Preview Modal */}
+      {generatedPreview && generateTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0B0B10] border border-[#7B61FF]/30 rounded-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-2">
+              <Wand2 className="w-5 h-5 text-[#7B61FF]" />
+              <h3 className="text-lg font-semibold text-[#F4F6FF]">Generated {generateTarget.field}</h3>
+            </div>
+            <div className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/20">
+              <p className="text-[#F4F6FF] whitespace-pre-wrap">{generatedPreview}</p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={discardGenerated}
+                variant="outline"
+                className="flex-1 border-[#7B61FF]/30"
+              >
+                Discard
+              </Button>
+              <Button
+                onClick={applyGenerated}
+                className="flex-1 bg-[#7B61FF] hover:bg-[#6B51EF]"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Apply
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
