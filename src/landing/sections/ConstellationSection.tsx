@@ -27,6 +27,18 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
   const [activeDot, setActiveDot] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Pre-calculate dot positions to avoid Math.random() during render
+  const dotPositions = useMemo(() => {
+    return [...Array(24)].map((_, i) => {
+      const angle = (i / 24) * Math.PI * 2;
+      const radius = 35 + Math.random() * 10;
+      return {
+        x: 50 + radius * Math.cos(angle),
+        y: 50 + radius * Math.sin(angle) * 0.6,
+      };
+    });
+  }, []);
+
   const filteredCompanies = useMemo(() => {
     if (!searchQuery.trim()) return companies.slice(0, 8);
     const q = searchQuery.toLowerCase();
@@ -84,13 +96,9 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
 
       {/* Constellation Dots */}
       <div className="absolute inset-0 pointer-events-none">
-        {[...Array(24)].map((_, i) => {
-          const angle = (i / 24) * Math.PI * 2;
-          const radius = 35 + Math.random() * 10;
-          const x = 50 + radius * Math.cos(angle);
-          const y = 50 + radius * Math.sin(angle) * 0.6;
+        {dotPositions.map((pos, i) => {
           const isActive = i === activeDot;
-          
+
           return (
             <div
               key={i}
@@ -98,8 +106,8 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
                 isVisible ? 'opacity-100' : 'opacity-0'
               }`}
               style={{
-                left: `${x}%`,
-                top: `${y}%`,
+                left: `${pos.x}%`,
+                top: `${pos.y}%`,
                 transform: 'translate(-50%, -50%)',
                 backgroundColor: isActive ? '#7B61FF' : 'rgba(244, 246, 255, 0.35)',
                 boxShadow: isActive ? '0 0 15px rgba(123, 97, 255, 0.8)' : 'none',

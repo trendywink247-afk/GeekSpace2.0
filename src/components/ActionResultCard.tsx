@@ -1,3 +1,4 @@
+import React from 'react';
 import { CheckCircle2, XCircle, Briefcase, Palette, User, Code } from 'lucide-react';
 
 interface ActionResultCardProps {
@@ -25,7 +26,8 @@ function getToolIcon(tool: string) {
 }
 
 export function ActionResultCard({ tool, success, message }: ActionResultCardProps) {
-  const ToolIcon = getToolIcon(tool);
+  // Use lowercase variable name to avoid "component during render" error
+  const iconComponent = getToolIcon(tool);
 
   const colorClasses = success
     ? 'border-[#61FF7B]/30 bg-[#61FF7B]/5 text-[#61FF7B]'
@@ -38,7 +40,8 @@ export function ActionResultCard({ tool, success, message }: ActionResultCardPro
       ) : (
         <XCircle className="w-4 h-4 shrink-0" />
       )}
-      <ToolIcon className="w-4 h-4 shrink-0" />
+      {/* Use React.createElement to render dynamically selected icon */}
+      {React.createElement(iconComponent, { className: 'w-4 h-4 shrink-0' })}
       <span>{message}</span>
     </div>
   );
