@@ -44,3 +44,13 @@ export function signToken(userId: string): string {
     expiresIn: config.jwtExpiresIn as SignOptions['expiresIn'],
   });
 }
+
+// Admin middleware - checks for admin password header
+export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+  const adminPassword = req.headers['x-admin-password'] as string;
+  if (!adminPassword || adminPassword !== config.adminToken) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  next();
+}

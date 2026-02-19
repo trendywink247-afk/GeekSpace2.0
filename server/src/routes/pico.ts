@@ -107,10 +107,10 @@ picoRouter.post('/tasks/plan', requireAuth, validateBody(picoTaskPlanSchema), as
     const updatedSub = db_getSub(userId);
 
     res.json({
-      planned: tasks,
+      tasks: tasks.map(t => ({ task_type: t.task_type, description: t.description, agent_slot: t.agent_slot })),
+      creditCost: creditCost,
       queued: taskIds.length,
       task_ids: taskIds,
-      credits_used: creditCost,
       credits_remaining: updatedSub?.credits_remaining ?? 0,
     });
   } catch (err: unknown) {
@@ -150,10 +150,10 @@ picoRouter.post('/tasks/plan-premium', requireAuth, validateBody(picoTaskPlanSch
     const updatedSub = db_getSub(userId);
 
     res.json({
-      planned: tasks,
+      tasks: tasks.map(t => ({ task_type: t.task_type, description: t.description, agent_slot: t.agent_slot })),
+      creditCost: creditCost,
       queued: taskIds.length,
       task_ids: taskIds,
-      credits_used: creditCost,
       credits_remaining: updatedSub?.credits_remaining ?? 0,
     });
   } catch (err) {
