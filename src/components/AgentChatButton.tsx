@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bot } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
@@ -9,6 +9,12 @@ interface AgentChatButtonProps {
 }
 
 function VoiceWave({ isActive }: { isActive: boolean }) {
+  // Pre-calculate heights to avoid Math.random() during render
+  const heights = useMemo(() =>
+    [0, 1, 2, 3, 4].map(() => 8 + Math.random() * 12),
+    []
+  );
+
   return (
     <div className="flex gap-[3px] items-center h-5">
       {[0, 1, 2, 3, 4].map((i) => (
@@ -16,7 +22,7 @@ function VoiceWave({ isActive }: { isActive: boolean }) {
           key={i}
           className="w-[3px] rounded-full bg-white transition-all"
           style={{
-            height: isActive ? `${8 + Math.random() * 12}px` : '4px',
+            height: isActive ? `${heights[i]}px` : '4px',
             animation: isActive ? `voice-wave 0.6s ease-in-out ${i * 0.1}s infinite alternate` : 'none',
           }}
         />

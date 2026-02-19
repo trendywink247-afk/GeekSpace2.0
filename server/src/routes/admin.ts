@@ -62,18 +62,6 @@ function requireAdminToken(req: Request, res: Response, next: NextFunction): voi
   next();
 }
 
-// ---- Helper: check if request has valid admin token ----
-function hasValidToken(req: Request): boolean {
-  if (!config.adminToken) return false;
-  // Check Authorization header
-  const authHeader = req.headers.authorization || '';
-  const headerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  if (headerToken === config.adminToken) return true;
-  // Check query parameter (used after login redirect)
-  const queryToken = (req.query.token as string) || '';
-  return queryToken === config.adminToken;
-}
-
 // ---- /health endpoint ----
 adminRouter.get('/health', requireAdminToken, async (_req: Request, res: Response): Promise<void> => {
   // DB check
