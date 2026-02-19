@@ -219,6 +219,11 @@ export const integrationService = {
   unlinkTelegram: () =>
     api.delete('/integrations/telegram/link'),
 
+  // WhatsApp linking
+  linkWhatsApp: () => api.post<{ linked: boolean; token?: string; qrUrl?: string; expiresIn?: number; message?: string }>('/integrations/whatsapp/link'),
+  checkWhatsAppStatus: () => api.get<{ linked: boolean; externalId?: string; linkedAt?: string }>('/integrations/whatsapp/status'),
+  unlinkWhatsApp: () => api.delete('/integrations/whatsapp/link'),
+
   // Email notification settings
   updateNotificationEmail: (data: { enabled?: boolean; address?: string }) =>
     api.patch<{ enabled: boolean; address: string | null }>('/users/notification-email', data),
@@ -252,6 +257,45 @@ export const portfolioService = {
 
   aiEdit: (prompt: string) =>
     api.post<Portfolio>('/portfolio/ai-edit', { prompt }),
+
+  // Task 5: Magic Generate
+  generateField: (field: string, context: string) =>
+    api.post<{ generated: string; creditsUsed: number; creditsRemaining: number }>(
+      `/portfolio/generate/${field}`,
+      { context }
+    ),
+
+  // Task 6: Suggestions
+  getSuggestions: () =>
+    api.get<Array<{
+      id: string;
+      field: string;
+      currentValue: string;
+      suggestedValue: string;
+      reason: string;
+      confidence: number;
+    }>>('/portfolio/suggestions'),
+
+  applySuggestion: (id: string) =>
+    api.post<{ success: boolean }>(`/portfolio/suggestions/${id}/apply`),
+
+  // Task 7: Agent Chat
+  canChat: (username: string) =>
+    api.get<{ canChat: boolean }>(`/portfolio/${username}/can-chat`),
+
+  sendAgentMessage: (username: string, message: string) =>
+    api.post<{ success: boolean }>(`/portfolio/${username}/chat`, { message }),
+
+  getAgentMessages: () =>
+    api.get<Array<{
+      id: string;
+      from_user_id: string;
+      to_user_id: string;
+      content: string;
+      is_read: number;
+      created_at: string;
+      from_username: string;
+    }>>('/portfolio/agent-messages'),
 };
 
 // ----- Automations -------------------------------------------

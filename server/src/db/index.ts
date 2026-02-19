@@ -460,6 +460,30 @@ try {
   `);
 } catch { /* table already exists — ignore */ }
 
+// Token budget system (Task 3: Weebo Ecosystem)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS token_usage (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      month TEXT NOT NULL,
+      tokens_used INTEGER DEFAULT 0,
+      tokens_budget INTEGER DEFAULT 0,
+      warnings_sent TEXT DEFAULT '[]',
+      UNIQUE(user_id, month)
+    );
+    CREATE INDEX IF NOT EXISTS idx_token_usage_user_month ON token_usage(user_id, month);
+  `);
+} catch { /* table already exists — ignore */ }
+
+try {
+  db.exec(`ALTER TABLE subscriptions ADD COLUMN tokens_budget INTEGER DEFAULT 0`);
+} catch { /* column already exists */ }
+
+try {
+  db.exec(`ALTER TABLE subscriptions ADD COLUMN tokens_used_this_cycle INTEGER DEFAULT 0`);
+} catch { /* column already exists */ }
+
 // Add FK constraint to automation_logs
 try {
   db.exec(`
@@ -482,6 +506,7 @@ try {
 
 export interface PlanDefinition {
   credits: number;
+  tokensBudget: number;       // monthly token budget
   priceUsd: number;
   priceInr: number;
   originalPriceInr?: number;  // shown as slashed price in UI
@@ -494,34 +519,34 @@ export interface PlanDefinition {
 
 export const PLAN_DEFINITIONS: Record<string, PlanDefinition> = {
   free: {
-    credits: 5000, priceUsd: 0, priceInr: 0,
+    credits: 5000, tokensBudget: 50000, priceUsd: 0, priceInr: 0,
     intervalDays: 30, intervalLabel: 'month',
     description: 'Local Engine only — try PicoClaw for $1/day',
     picoSlots: 0,
   },
   pilot: {
-    credits: 100000, priceUsd: 4, priceInr: 299,
+    credits: 100000, tokensBudget: 300000, priceUsd: 4, priceInr: 299,
     intervalDays: 30, intervalLabel: 'month',
     description: 'Dual PicoClaw agents + all engines',
     badge: 'New',
     picoSlots: 2,
   },
   intro: {
-    credits: 100000, priceUsd: 12, priceInr: 999, originalPriceInr: 1999,
+    credits: 100000, tokensBudget: 300000, priceUsd: 12, priceInr: 999, originalPriceInr: 1999,
     intervalDays: 60, intervalLabel: '2 months',
     description: 'All engines + personalities — best to start',
     badge: 'Best to start',
     picoSlots: 2,
   },
   halfyear: {
-    credits: 700000, priceUsd: 35, priceInr: 2999, originalPriceInr: 3999,
+    credits: 700000, tokensBudget: 750000, priceUsd: 35, priceInr: 2999, originalPriceInr: 3999,
     intervalDays: 180, intervalLabel: '6 months',
     description: 'Everything + priority support',
     badge: 'Most popular',
     picoSlots: 3,
   },
   yearly: {
-    credits: 1500000, priceUsd: 60, priceInr: 4999, originalPriceInr: 5999,
+    credits: 1500000, tokensBudget: 1000000, priceUsd: 60, priceInr: 4999, originalPriceInr: 5999,
     intervalDays: 365, intervalLabel: 'year',
     description: 'Everything + Kimi reasoning included',
     badge: 'Best value',

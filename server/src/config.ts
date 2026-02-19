@@ -97,6 +97,7 @@ export const config = {
   whatsappBusinessId: process.env.WHATSAPP_BUSINESS_ID || '',
   whatsappToken: process.env.WHATSAPP_TOKEN || '',
   whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
+  whatsappBusinessNumber: process.env.WHATSAPP_BUSINESS_NUMBER || '',
 
   // n8n (workflow automation)
   n8nBaseUrl: optional('N8N_BASE_URL', 'http://n8n:5678'),

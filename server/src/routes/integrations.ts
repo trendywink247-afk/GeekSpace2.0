@@ -154,3 +154,89 @@ integrationsRouter.delete('/telegram/link', requireAuth, (req: AuthRequest, res)
 
   res.json({ success: true });
 });
+
+// ================================================================
+// WhatsApp Account Linking
+// ================================================================
+
+// Generate a link code and return a WhatsApp wa.me link
+integrationsRouter.post('/whatsapp/link', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  if (!config.whatsappBusinessNumber) {
+    res.status(503).json({ error: 'WhatsApp is not configured on this server.' });
+    return;
+  }
+
+  // Check if already linked
+  const existing = db.prepare(
+    "SELECT id, external_id FROM channel_links WHERE user_id = ? AND channel = 'whatsapp'"
+  ).get(userId) as { id: string; external_id: string } | undefined;
+
+  if (existing) {
+    res.json({
+      linked: true,
+      externalId: existing.external_id,
+      message: 'WhatsApp is already linked.',
+    });
+    return;
+  }
+
+  // Generate link token
+  const { generateWhatsAppLinkToken } = await import('../services/whatsapp.js');
+  const token = await generateWhatsAppLinkToken(userId);
+
+  // Generate wa.me link with pre-filled message
+  const waMeUrl = `https://wa.me/${config.whatsappBusinessNumber}?text=LINK%20${token}`;
+
+  res.json({
+    linked: false,
+    token,
+    qrUrl: waMeUrl,
+    expiresIn: 3600,
+    message: 'Scan the QR code or click the link to open WhatsApp and send the connect message.',
+  });
+});
+
+// Check WhatsApp link status
+integrationsRouter.get('/whatsapp/status', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  const link = db.prepare(
+    "SELECT external_id, linked_at FROM channel_links WHERE user_id = ? AND channel = 'whatsapp'"
+  ).get(userId) as { external_id: string; linked_at: string } | undefined;
+
+  if (link) {
+    res.json({
+      linked: true,
+      externalId: link.external_id,
+      linkedAt: link.linked_at,
+    });
+  } else {
+    res.json({ linked: false });
+  }
+});
+
+// Unlink WhatsApp
+integrationsRouter.delete('/whatsapp/link', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  const link = db.prepare(
+    "SELECT id FROM channel_links WHERE user_id = ? AND channel = 'whatsapp'"
+  ).get(userId) as { id: string } | undefined;
+
+  if (!link) {
+    res.status(404).json({ error: 'No WhatsApp link found.' });
+    return;
+  }
+
+  db.prepare('DELETE FROM channel_links WHERE id = ?').run(link.id);
+  db.prepare(
+    "UPDATE integrations SET status = 'disconnected', health = 0 WHERE user_id = ? AND type = 'whatsapp'"
+  ).run(userId);
+
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Unlinked WhatsApp', 'WhatsApp disconnected', 'unlink')`)
+    .run(uuid(), userId);
+
+  res.json({ success: true });
+});

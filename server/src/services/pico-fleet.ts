@@ -20,6 +20,14 @@ import { computeCreditCost, deductSubscriptionCredits } from './llm.js';
 import { refreshModelsIfStale } from './openrouter-models.js';
 import { eventBus } from './event-bus.js';
 
+const PLAN_AGENT_SLOTS: Record<string, number> = {
+  free: 1,
+  intro: 2,
+  monthly: 2,
+  halfyear: 3,
+  yearly: 3,
+};
+
 // ---- Types ----
 
 export const ALLOWED_TASK_TYPES = [
@@ -152,9 +160,13 @@ export function getAgentBySlot(userId: string, slot: number): PicoAgent | undefi
 }
 
 export function createAgent(userId: string, name: string, personality = 'weebo'): PicoAgent {
+  // Get user's plan
+  const sub = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string } | undefined;
+  const maxSlots = PLAN_AGENT_SLOTS[sub?.plan || 'free'];
+
   const existing = getUserAgents(userId);
-  if (existing.length >= 3) {
-    throw new Error('Maximum 3 Pico agents allowed');
+  if (existing.length >= maxSlots) {
+    throw new Error(`Your plan allows ${maxSlots} agent(s). Upgrade to add more.`);
   }
 
   const usedSlots = existing.map(a => a.slot);
