@@ -51,13 +51,14 @@ function hasMixedContent(message: string): boolean {
 
 // ---- Types ----
 
-interface NormalizedMessage {
+export interface NormalizedMessage {
   channel: 'telegram' | 'whatsapp';
   externalId: string;
   text: string;
   messageId?: string;
   senderName?: string;
   timestamp: string;
+  requestId?: string;  // For tracing through the pipeline
 }
 
 interface ChannelResponse {
@@ -127,19 +128,25 @@ IMPORTANT: Max 2-3 sentences for simple questions. No markdown formatting (no **
 
 export async function handleIncomingMessage(msg: NormalizedMessage): Promise<void> {
   const startTime = Date.now();
+  const requestId = msg.requestId || uuid(); // Generate if not provided
+
+  logger.info({ requestId, channel: msg.channel, externalId: msg.externalId }, 'Processing incoming message');
 
   // 1. Resolve user
   const resolved = resolveUserFromChannel(msg.channel, msg.externalId);
 
   if (!resolved) {
+    logger.info({ requestId, channel: msg.channel }, 'No linked user found');
     await sendUnlinkedResponse(msg);
     return;
   }
 
   const { userId, agentConfig, user, subscription } = resolved;
+  logger.debug({ requestId, userId }, 'User resolved');
 
   // 2. Check credits
   if (subscription && subscription.credits_remaining <= 0) {
+    logger.info({ requestId, userId }, 'User has no credits');
     await sendChannelResponse({
       channel: msg.channel,
       externalId: msg.externalId,
@@ -154,8 +161,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     .run(new Date().toISOString(), msg.channel, msg.externalId);
 
   // 4. Log user message + extract memories
-  logConversation(userId, 'user', msg.text);
+  logConversation(userId, 'user', msg.text, requestId);
   extractMemories(userId, msg.text);
+  logger.debug({ requestId, userId }, 'Activity logged and memories extracted');
 
   // 5. Fire keyword automation triggers (non-blocking)
   checkKeywordTriggers(userId, msg.text).catch((e: unknown) => console.debug('[bg]', (e as Error).message));
@@ -170,9 +178,10 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       const userPlan = (subscription as Record<string, unknown>)?.plan as string || 'free';
       const { tasks } = await planTasks(userId, msg.text, userPlan);
       if (tasks.length > 0) {
-        const taskIds = queueTasks(userId, tasks, 'weebo');
+        const taskIds = queueTasks(userId, tasks, 'weebo', requestId);
         const summary = tasks.map((t: { task_type: string; description: string }) =>
           `${t.task_type.replace(/_/g, ' ')}: ${t.description}`).join('\n');
+        logger.info({ requestId, taskCount: taskIds.length, taskIds }, 'Tasks queued from message router');
 
         if (hasMixedContent(msg.text)) {
           // Mixed intent — queue tasks, but continue to LLM for content
@@ -181,7 +190,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         } else {
           // Pure task intent — return task confirmation only
           const reply = `Done! I've queued ${taskIds.length} task(s):\n${summary}`;
-          logConversation(userId, 'assistant', reply, 'builtin', 'pico-fleet');
+          logConversation(userId, 'assistant', reply, requestId, 'builtin', 'pico-fleet');
           await sendChannelResponse({
             channel: msg.channel,
             externalId: msg.externalId,
@@ -270,6 +279,10 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   const actionResults: ActionResult[] = [];
 
   for (const action of parsedActions) {
+    // Inject baseUrl for generate_code actions to create preview links
+    if (action.tool === 'generate_code') {
+      action.params.baseUrl = config.apiUrl;
+    }
     const actionResult = await executeAction(userId, action);
     actionResults.push(actionResult);
   }
@@ -305,7 +318,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   deductSubscriptionCredits(userId, creditCost);
 
   // 10. Log assistant response (clean text without action blocks)
-  logConversation(userId, 'assistant', finalReply, provider, model);
+  logConversation(userId, 'assistant', finalReply, requestId, provider, model);
 
   // 11. Send response back through originating channel
   await sendChannelResponse({
@@ -316,6 +329,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   });
 
   logger.info({
+    requestId,
     channel: msg.channel,
     userId,
     provider,

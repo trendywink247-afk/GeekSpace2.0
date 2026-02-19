@@ -1,0 +1,194 @@
+// ============================================================
+// Artifact Routes — Public Preview & Management for Generated Code
+//
+// Provides live website preview for HTML/CSS/JS artifacts created
+// via the generate_code action. Artifacts are served at:
+//   /preview/:userId/:artifactId  — full-page preview
+//   /api/artifacts/:id            — JSON API (requires auth)
+// ============================================================
+
+import { Router } from 'express';
+import { db } from '../db/index.js';
+import { logger } from '../logger.js';
+import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { v4 as uuid } from 'uuid';
+
+export const artifactsRouter = Router();
+
+// ---- Public Preview Route (no auth required) ----
+// Serves the artifact as a full HTML page with inline CSS/JS
+artifactsRouter.get('/preview/:userId/:artifactId', (req, res) => {
+  const { userId, artifactId } = req.params;
+
+  try {
+    const artifact = db.prepare(
+      'SELECT * FROM generated_artifacts WHERE id = ? AND user_id = ?'
+    ).get(artifactId, userId) as {
+      id: string;
+      user_id: string;
+      title: string;
+      html: string;
+      css: string;
+      js: string;
+      created_at: string;
+    } | undefined;
+
+    if (!artifact) {
+      res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Preview Not Found</title></head>
+        <body style="font-family: system-ui; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #0a0a0a; color: #fff;">
+          <div style="text-align: center;">
+            <h1>🔍 Preview Not Found</h1>
+            <p>This project doesn't exist or has been removed.</p>
+          </div>
+        </body>
+        </html>
+      `);
+      return;
+    }
+
+    // Build the preview page with the artifact's code
+    const previewHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(artifact.title)} — GeekSpace Preview</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; }
+    ${artifact.css || ''}
+  </style>
+</head>
+<body>
+  ${artifact.html || ''}
+  <script>
+    // GeekSpace Preview Environment
+    console.log('🔧 GeekSpace Preview — Project: ${escapeJs(artifact.title)}');
+    try {
+      ${artifact.js || ''}
+    } catch (err) {
+      console.error('Script error:', err);
+    }
+  </script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.send(previewHtml);
+
+    // Log view (non-blocking)
+    try {
+      db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Artifact preview viewed', ?, 'eye')`)
+        .run(uuid(), userId, `Artifact: ${artifact.title}`);
+    } catch { /* non-fatal */ }
+
+  } catch (err) {
+    logger.error({ err, userId, artifactId }, 'Artifact preview error');
+    res.status(500).send('Preview unavailable');
+  }
+});
+
+// ---- List User's Artifacts (auth required) ----
+artifactsRouter.get('/', requireAuth, (req: AuthRequest, res) => {
+  const artifacts = db.prepare(
+    'SELECT id, title, type, created_at FROM generated_artifacts WHERE user_id = ? ORDER BY created_at DESC'
+  ).all(req.userId!) as Array<{
+    id: string;
+    title: string;
+    type: string;
+    created_at: string;
+  }>;
+
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.json({
+    artifacts: artifacts.map(a => ({
+      ...a,
+      previewUrl: `${baseUrl}/preview/${req.userId}/${a.id}`,
+    })),
+  });
+});
+
+// ---- Get Single Artifact (auth required) ----
+artifactsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
+  const artifact = db.prepare(
+    'SELECT * FROM generated_artifacts WHERE id = ? AND user_id = ?'
+  ).get(req.params.id, req.userId!) as Record<string, unknown> | undefined;
+
+  if (!artifact) {
+    res.status(404).json({ error: 'Artifact not found' });
+    return;
+  }
+
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.json({
+    ...artifact,
+    previewUrl: `${baseUrl}/preview/${req.userId}/${artifact.id}`,
+  });
+});
+
+// ---- Delete Artifact (auth required) ----
+artifactsRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
+  const result = db.prepare(
+    'DELETE FROM generated_artifacts WHERE id = ? AND user_id = ?'
+  ).run(req.params.id, req.userId!);
+
+  if (result.changes === 0) {
+    res.status(404).json({ error: 'Artifact not found' });
+    return;
+  }
+
+  res.json({ success: true, message: 'Artifact deleted' });
+});
+
+// ---- Update Artifact (auth required) ----
+artifactsRouter.patch('/:id', requireAuth, (req: AuthRequest, res) => {
+  const { title, html, css, js } = req.body as Record<string, string>;
+
+  const artifact = db.prepare(
+    'SELECT * FROM generated_artifacts WHERE id = ? AND user_id = ?'
+  ).get(req.params.id, req.userId!) as Record<string, unknown> | undefined;
+
+  if (!artifact) {
+    res.status(404).json({ error: 'Artifact not found' });
+    return;
+  }
+
+  const updates: string[] = [];
+  const values: unknown[] = [];
+
+  if (title !== undefined) { updates.push('title = ?'); values.push(title); }
+  if (html !== undefined) { updates.push('html = ?'); values.push(html); }
+  if (css !== undefined) { updates.push('css = ?'); values.push(css); }
+  if (js !== undefined) { updates.push('js = ?'); values.push(js); }
+
+  if (updates.length === 0) {
+    res.status(400).json({ error: 'No fields to update' });
+    return;
+  }
+
+  values.push(req.params.id);
+  db.prepare(`UPDATE generated_artifacts SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+
+  const updated = db.prepare('SELECT * FROM generated_artifacts WHERE id = ?').get(req.params.id) as Record<string, unknown>;
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.json({ ...updated, previewUrl: `${baseUrl}/preview/${req.userId}/${req.params.id}` });
+});
+
+// ---- Helpers ----
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeJs(text: string): string {
+  return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}

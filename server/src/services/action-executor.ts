@@ -21,6 +21,7 @@ export interface ActionResult {
   success: boolean;
   message: string;
   artifactId?: string;
+  previewUrl?: string;
   data?: Record<string, unknown>;
 }
 
@@ -44,12 +45,17 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
            VALUES (?, ?, 'code', ?, ?, ?, ?)`,
         ).run(id, userId, title, html, css, js);
 
+        // Build preview URL if baseUrl provided
+        const baseUrl = params.baseUrl as string | undefined;
+        const previewUrl = baseUrl ? `${baseUrl}/preview/${userId}/${id}` : undefined;
+
         return {
           tool,
           success: true,
-          message: `Created project "${title}"`,
+          message: `Created project "${title}"${previewUrl ? `. Live preview: ${previewUrl}` : ''}`,
           artifactId: id,
-          data: { title, html, css, js },
+          previewUrl,
+          data: { title, html, css, js, previewUrl },
         };
       }
 

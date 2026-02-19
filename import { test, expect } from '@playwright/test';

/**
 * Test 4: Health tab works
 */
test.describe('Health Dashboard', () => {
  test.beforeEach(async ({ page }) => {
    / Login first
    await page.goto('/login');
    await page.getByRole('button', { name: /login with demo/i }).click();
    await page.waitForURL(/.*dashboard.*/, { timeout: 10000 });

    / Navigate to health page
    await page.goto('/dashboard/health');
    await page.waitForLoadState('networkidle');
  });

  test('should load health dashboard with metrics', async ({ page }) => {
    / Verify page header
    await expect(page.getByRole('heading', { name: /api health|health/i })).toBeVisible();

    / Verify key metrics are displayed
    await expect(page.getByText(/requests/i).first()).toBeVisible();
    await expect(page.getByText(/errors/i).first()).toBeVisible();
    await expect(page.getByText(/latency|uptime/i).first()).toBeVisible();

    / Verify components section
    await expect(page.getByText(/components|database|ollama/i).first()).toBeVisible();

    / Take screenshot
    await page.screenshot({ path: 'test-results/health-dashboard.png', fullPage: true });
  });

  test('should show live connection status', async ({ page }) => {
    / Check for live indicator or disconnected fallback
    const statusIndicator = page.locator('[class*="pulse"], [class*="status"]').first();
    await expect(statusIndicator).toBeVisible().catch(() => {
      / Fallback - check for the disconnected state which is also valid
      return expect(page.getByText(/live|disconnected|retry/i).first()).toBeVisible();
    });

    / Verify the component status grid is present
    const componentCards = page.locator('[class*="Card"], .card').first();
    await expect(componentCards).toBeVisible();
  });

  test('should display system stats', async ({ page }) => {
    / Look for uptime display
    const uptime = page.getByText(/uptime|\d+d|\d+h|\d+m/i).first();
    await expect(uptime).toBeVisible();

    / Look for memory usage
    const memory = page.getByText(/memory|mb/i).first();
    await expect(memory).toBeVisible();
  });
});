@@ -1,0 +1,56 @@
+import { test, expect } from '@playwright/test';
+
+/**
+ * Test 4: Health tab works
+ */
+test.describe('Health Dashboard', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login first
+    await page.goto('/login');
+    await page.getByRole('button', { name: /login with demo/i }).click();
+    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
+
+    // Navigate to health page
+    await page.goto('/dashboard/health');
+    await page.waitForLoadState('networkidle');
+  });
+
+  test('should load health dashboard with metrics', async ({ page }) => {
+    // Verify page header
+    await expect(page.getByRole('heading', { name: /api health|health/i })).toBeVisible();
+
+    // Verify key metrics are displayed
+    await expect(page.getByText(/requests/i).first()).toBeVisible();
+    await expect(page.getByText(/errors/i).first()).toBeVisible();
+    await expect(page.getByText(/latency|uptime/i).first()).toBeVisible();
+
+    // Verify components section
+    await expect(page.getByText(/components|database|ollama/i).first()).toBeVisible();
+
+    // Take screenshot
+    await page.screenshot({ path: 'test-results/health-dashboard.png', fullPage: true });
+  });
+
+  test('should show live connection status', async ({ page }) => {
+    // Check for live indicator or disconnected fallback
+    const statusIndicator = page.locator('[class*="pulse"], [class*="status"]').first();
+    await expect(statusIndicator).toBeVisible().catch(() => {
+      // Fallback - check for the disconnected state which is also valid
+      return expect(page.getByText(/live|disconnected|retry/i).first()).toBeVisible();
+    });
+
+    // Verify the component status grid is present
+    const componentCards = page.locator('[class*="Card"], .card').first();
+    await expect(componentCards).toBeVisible();
+  });
+
+  test('should display system stats', async ({ page }) => {
+    // Look for uptime display
+    const uptime = page.getByText(/uptime|\d+d|\d+h|\d+m/i).first();
+    await expect(uptime).toBeVisible();
+
+    // Look for memory usage
+    const memory = page.getByText(/memory|mb/i).first();
+    await expect(memory).toBeVisible();
+  });
+});

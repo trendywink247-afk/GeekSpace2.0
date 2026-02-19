@@ -28,6 +28,11 @@ import {
 } from '../services/voice.js';
 import { db } from '../db/index.js';
 
+// Extend Express Request to include requestId for pipeline tracing
+interface RequestWithId {
+  requestId: string;
+}
+
 export const webhooksRouter = Router();
 
 // ================================================================
@@ -35,15 +40,19 @@ export const webhooksRouter = Router();
 // ================================================================
 
 webhooksRouter.post('/telegram', async (req, res) => {
+  // Generate request-id for tracing this message through the pipeline
+  const requestId = uuid();
+  (req as RequestWithId).requestId = requestId;
+
   // Verify secret token — reject if secret not configured (secure by default)
   if (!config.telegramWebhookSecret) {
-    logger.warn('Telegram webhook: no secret configured, rejecting');
+    logger.warn({ requestId }, 'Telegram webhook: no secret configured, rejecting');
     res.sendStatus(401);
     return;
   }
   const secretToken = req.headers['x-telegram-bot-api-secret-token'] as string;
   if (!verifyTelegramWebhook(secretToken)) {
-    logger.warn('Telegram webhook: invalid secret token');
+    logger.warn({ requestId }, 'Telegram webhook: invalid secret token');
     res.sendStatus(403);
     return;
   }
@@ -52,34 +61,35 @@ webhooksRouter.post('/telegram', async (req, res) => {
   res.sendStatus(200);
 
   const update = req.body as TelegramUpdate;
+  logger.info({ requestId, updateId: update.update_id }, 'Telegram webhook received');
 
   try {
     // Handle bot commands first
     const command = extractBotCommand(update);
     if (command) {
-      await handleTelegramCommand(command, update);
+      await handleTelegramCommand(command, update, requestId);
       return;
     }
 
     // Handle voice messages
     if (update.message?.voice) {
-      await handleVoiceMessage(update);
+      await handleVoiceMessage(update, requestId);
       return;
     }
 
     // Handle regular text messages
     const normalized = parseTelegramUpdate(update);
     if (normalized) {
-      await handleIncomingMessage(normalized);
+      await handleIncomingMessage({ ...normalized, requestId });
     }
   } catch (err) {
-    logger.error({ err, updateId: update.update_id }, 'Telegram webhook processing error');
+    logger.error({ err, updateId: update.update_id, requestId }, 'Telegram webhook processing error');
   }
 });
 
 // ---- Telegram Voice Message Handler ----
 
-async function handleVoiceMessage(update: TelegramUpdate): Promise<void> {
+async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Promise<void> {
   const msg = update.message!;
   const chatId = msg.chat.id;
   const voice = msg.voice!;
@@ -140,6 +150,7 @@ async function handleVoiceMessage(update: TelegramUpdate): Promise<void> {
       messageId: String(msg.message_id),
       senderName: [msg.from.first_name, msg.from.last_name].filter(Boolean).join(' '),
       timestamp: new Date(msg.date * 1000).toISOString(),
+      requestId,
     };
 
     // Use handleIncomingMessage which sends the text reply automatically
@@ -179,6 +190,7 @@ async function handleVoiceMessage(update: TelegramUpdate): Promise<void> {
 async function handleTelegramCommand(
   cmd: { command: string; args: string },
   update: TelegramUpdate,
+  requestId: string,
 ): Promise<void> {
   const chatId = update.message!.chat.id;
   const fromId = update.message!.from.id;
@@ -400,7 +412,7 @@ async function handleTelegramCommand(
         } else {
           normalized.text = cmd.args;
         }
-        await handleIncomingMessage(normalized);
+        await handleIncomingMessage({ ...normalized, requestId });
       }
       break;
     }

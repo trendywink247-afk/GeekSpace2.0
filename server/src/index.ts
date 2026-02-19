@@ -37,6 +37,7 @@ import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './ser
 import { picoRouter } from './routes/pico.js';
 import { briefingsRouter } from './routes/briefings.js';
 import { recipesRouter } from './routes/recipes.js';
+import { artifactsRouter } from './routes/artifacts.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
 import { startReminderScheduler } from './services/reminder-scheduler.js';
 import { metricsMiddleware, getMetricsSnapshot } from './middleware/metrics.js';
@@ -198,6 +199,11 @@ app.use('/api/briefings', briefingsRouter);
 app.use('/api/recipes', recipesRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/artifacts', artifactsRouter);
+
+// ---- Public artifact preview (must be before /admin catch-all) ----
+app.use('/preview', artifactsRouter);
+
 app.get('/admin', serveAdminDashboard);
 
 // ---- Global error handler (MUST be last) ----

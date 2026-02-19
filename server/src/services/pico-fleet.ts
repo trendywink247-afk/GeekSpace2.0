@@ -125,6 +125,16 @@ export function initPicoFleetTables(): void {
     db.exec("ALTER TABLE pico_agents ADD COLUMN personality TEXT NOT NULL DEFAULT 'weebo'");
   } catch { /* column already exists */ }
 
+  // Migration: add source_request_id column to pico_tasks
+  try {
+    db.exec("ALTER TABLE pico_tasks ADD COLUMN source_request_id TEXT DEFAULT ''");
+  } catch { /* column already exists */ }
+
+  // Migration: add index for source_request_id (after column migration)
+  try {
+    db.exec("CREATE INDEX IF NOT EXISTS idx_pico_tasks_request_id ON pico_tasks(source_request_id)");
+  } catch { /* index already exists or column doesn't exist yet */ }
+
   logger.info('Pico Fleet tables initialized');
 }
 
@@ -528,7 +538,12 @@ export async function planTasks(userId: string, userRequest: string, userPlan: s
 
 // ---- Queue Tasks ----
 
-export function queueTasks(userId: string, tasks: PlannedTask[], plannedBy: string): string[] {
+export function queueTasks(
+  userId: string,
+  tasks: PlannedTask[],
+  plannedBy: string,
+  sourceRequestId?: string,
+): string[] {
   const taskIds: string[] = [];
 
   for (const task of tasks) {
@@ -536,16 +551,17 @@ export function queueTasks(userId: string, tasks: PlannedTask[], plannedBy: stri
     let agent = getAgentBySlot(userId, task.agent_slot);
     if (!agent) agent = getAgentBySlot(userId, 1);
     if (!agent) {
-      logger.warn({ userId, slot: task.agent_slot }, 'No agent found for task — skipping');
+      logger.warn({ userId, slot: task.agent_slot, sourceRequestId }, 'No agent found for task — skipping');
       continue;
     }
 
     const id = uuid();
-    db.prepare(`INSERT INTO pico_tasks (id, user_id, agent_id, task_type, description, config, planned_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
+    db.prepare(`INSERT INTO pico_tasks (id, user_id, agent_id, task_type, description, config, planned_by, source_request_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, userId, agent.id, task.task_type, task.description,
-      JSON.stringify(task.config), plannedBy,
+      JSON.stringify(task.config), plannedBy, sourceRequestId || '',
     );
+    logger.info({ taskId: id, userId, taskType: task.task_type, sourceRequestId }, 'Task queued');
     taskIds.push(id);
   }
 

@@ -574,6 +574,10 @@ You are assisting via the GeekSpace terminal. Be concise. No markdown headers. P
     const actionResults: ActionResult[] = [];
 
     for (const action of parsedActions) {
+      // Inject baseUrl for generate_code actions to create preview links
+      if (action.tool === 'generate_code') {
+        action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
+      }
       const actionResult = await executeAction(userId, action);
       actionResults.push(actionResult);
     }
@@ -622,7 +626,11 @@ agentRouter.get('/artifact/:id', requireAuth, (req: AuthRequest, res) => {
     return;
   }
 
-  res.json(artifact);
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.json({
+    ...artifact,
+    previewUrl: `${baseUrl}/preview/${req.userId}/${artifact.id}`,
+  });
 });
 
 // ---- Terminal Commands ----

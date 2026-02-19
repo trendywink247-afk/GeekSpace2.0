@@ -38,6 +38,7 @@ export function initMemoryTables() {
       model TEXT DEFAULT '',
       summary TEXT DEFAULT '',
       tags TEXT DEFAULT '[]',
+      request_id TEXT DEFAULT '',
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -48,6 +49,12 @@ export function initMemoryTables() {
   `);
 
   logger.info('Memory tables initialized');
+
+  // Migration: add request_id column to conversation_log if not exists
+  try {
+    db.exec("ALTER TABLE conversation_log ADD COLUMN request_id TEXT DEFAULT ''");
+    logger.info('Migration: added request_id to conversation_log');
+  } catch { /* column already exists */ }
 }
 
 // ---- Memory CRUD ----
@@ -121,12 +128,29 @@ export function logConversation(
   userId: string,
   role: 'user' | 'assistant',
   content: string,
-  provider = '',
-  model = '',
+  requestIdOrProvider?: string,
+  providerOrModel?: string,
+  modelParam?: string,
 ): void {
+  // Support both old signature and new signature with requestId
+  let requestId = '';
+  let provider = '';
+  let model = '';
+
+  if (arguments.length <= 4) {
+    // New signature: (userId, role, content, requestId?, provider?, model?)
+    requestId = requestIdOrProvider || '';
+    provider = providerOrModel || '';
+    model = modelParam || '';
+  } else {
+    // Old signature: (userId, role, content, provider, model)
+    provider = requestIdOrProvider || '';
+    model = providerOrModel || '';
+  }
+
   db.prepare(
-    'INSERT INTO conversation_log (id, user_id, role, content, provider, model) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(uuid(), userId, role, content, provider, model);
+    'INSERT INTO conversation_log (id, user_id, role, content, provider, model, request_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(uuid(), userId, role, content, provider, model, requestId);
 }
 
 export function getRecentConversations(userId: string, limit = 10): ConversationEntry[] {
