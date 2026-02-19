@@ -284,10 +284,10 @@ export function AutomationsPage() {
           />
         </div>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20 overflow-x-auto flex-nowrap w-full sm:w-auto">
-            <TabsTrigger value="all" className="data-[state=active]:bg-[#7B61FF] min-h-[40px]">All</TabsTrigger>
-            <TabsTrigger value="active" className="data-[state=active]:bg-[#7B61FF] min-h-[40px]">Active</TabsTrigger>
-            <TabsTrigger value="inactive" className="data-[state=active]:bg-[#7B61FF] min-h-[40px]">Inactive</TabsTrigger>
+          <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20 overflow-x-auto flex-nowrap w-auto">
+            <TabsTrigger value="all" className="data-[state=active]:bg-[#7B61FF] min-h-[44px] flex-none">All</TabsTrigger>
+            <TabsTrigger value="active" className="data-[state=active]:bg-[#7B61FF] min-h-[44px] flex-none">Active</TabsTrigger>
+            <TabsTrigger value="inactive" className="data-[state=active]:bg-[#7B61FF] min-h-[44px] flex-none">Inactive</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
