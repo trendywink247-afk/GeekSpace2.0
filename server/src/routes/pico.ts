@@ -27,6 +27,20 @@ import {
   planWithKimi,
   queueTasks,
 } from '../services/pico-fleet.js';
+import { db } from '../db/index.js';
+
+// ---- Helpers ----
+
+function db_getSub(userId: string) {
+  return db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?')
+    .get(userId) as { credits_remaining: number } | undefined;
+}
+
+function db_getPlan(userId: string): string {
+  const row = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?')
+    .get(userId) as { plan: string } | undefined;
+  return row?.plan || 'free';
+}
 
 export const picoRouter = Router();
 
@@ -180,18 +194,3 @@ picoRouter.delete('/tasks/:id', requireAuth, (req: AuthRequest, res) => {
     res.status(400).json({ error: msg });
   }
 });
-
-// ---- Helpers ----
-
-import { db } from '../db/index.js';
-
-function db_getSub(userId: string) {
-  return db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?')
-    .get(userId) as { credits_remaining: number } | undefined;
-}
-
-function db_getPlan(userId: string): string {
-  const row = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?')
-    .get(userId) as { plan: string } | undefined;
-  return row?.plan || 'free';
-}
