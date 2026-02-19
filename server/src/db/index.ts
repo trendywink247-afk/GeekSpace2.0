@@ -550,6 +550,25 @@ try {
   `);
 } catch { /* table already exists */ }
 
+// Telegram bot onboarding state
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS telegram_onboarding (
+      id TEXT PRIMARY KEY,
+      user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+      telegram_chat_id TEXT NOT NULL UNIQUE,
+      state TEXT NOT NULL DEFAULT 'welcome',
+      path TEXT DEFAULT NULL,
+      step INTEGER DEFAULT 0,
+      data TEXT DEFAULT '{}',
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_tg_onboarding_user ON telegram_onboarding(user_id);
+    CREATE INDEX IF NOT EXISTS idx_tg_onboarding_chat ON telegram_onboarding(telegram_chat_id);
+  `);
+} catch { /* table already exists */ }
+
 // Add FK constraint to automation_logs
 try {
   db.exec(`

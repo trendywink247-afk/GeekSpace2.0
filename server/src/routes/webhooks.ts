@@ -14,9 +14,15 @@ import {
   extractBotCommand,
   sendTelegramMessage,
   getBotUsername,
+  answerCallbackQuery,
   type TelegramUpdate,
 } from '../services/telegram.js';
 import { handleIncomingMessage, sendChannelResponse } from '../services/message-router.js';
+import {
+  getOrCreateOnboarding,
+  handleOnboardingCallback,
+  startOnboarding,
+} from '../services/onboarding.js';
 import { v4 as uuid } from 'uuid';
 import {
   isVoiceEnabled,
@@ -64,11 +70,52 @@ webhooksRouter.post('/telegram', async (req, res) => {
   logger.info({ requestId, updateId: update.update_id }, 'Telegram webhook received');
 
   try {
+    const chatId = update.message?.chat.id || update.callback_query?.message?.chat.id;
+
+    // Handle callback queries (button clicks) first
+    if (update.callback_query) {
+      const callbackData = update.callback_query.data;
+      const callbackChatId = String(update.callback_query.message?.chat?.id);
+      const callbackQueryId = update.callback_query.id;
+
+      if (callbackData && callbackChatId) {
+        // Answer the callback query immediately
+        await answerCallbackQuery(callbackQueryId);
+
+        // Try to handle as onboarding callback
+        const handled = await handleOnboardingCallback(callbackChatId, callbackData);
+        if (handled) {
+          return; // Onboarding handled it
+        }
+
+        // Otherwise, it's a regular action chip - handle accordingly
+        logger.info({ callbackData, chatId: callbackChatId }, 'Unhandled callback query');
+      }
+      return;
+    }
+
     // Handle bot commands first
     const command = extractBotCommand(update);
     if (command) {
+      // Special handling for /start command - begin onboarding
+      if (command.command === 'start') {
+        await startOnboarding(String(chatId));
+        return;
+      }
       await handleTelegramCommand(command, update, requestId);
       return;
+    }
+
+    // Check if user is in onboarding mode
+    if (chatId) {
+      const session = getOrCreateOnboarding(String(chatId));
+      if (session.state !== 'complete' && session.state !== 'welcome') {
+        // User is in onboarding but sent a text message instead of clicking buttons
+        await sendTelegramMessage(chatId,
+          "Please use the buttons above to continue setup, or type /start to restart."
+        );
+        return;
+      }
     }
 
     // Handle voice messages
@@ -81,6 +128,17 @@ webhooksRouter.post('/telegram', async (req, res) => {
     const normalized = parseTelegramUpdate(update);
     if (normalized) {
       await handleIncomingMessage({ ...normalized, requestId });
+
+      // After handling, send action chips for agentic feel
+      // This happens asynchronously after the main response
+      setTimeout(async () => {
+        try {
+          const { sendActionChips } = await import('../services/onboarding.js');
+          await sendActionChips(normalized.externalId);
+        } catch {
+          // Non-fatal
+        }
+      }, 2000);
     }
   } catch (err) {
     logger.error({ err, updateId: update.update_id, requestId }, 'Telegram webhook processing error');

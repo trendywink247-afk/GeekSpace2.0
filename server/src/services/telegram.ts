@@ -29,6 +29,15 @@ export interface TelegramUpdate {
     };
     entities?: Array<{ type: string; offset: number; length: number }>;
   };
+  callback_query?: {
+    id: string;
+    from: { id: number; is_bot: boolean; first_name: string; username?: string };
+    message?: {
+      message_id: number;
+      chat: { id: number; type: string };
+    };
+    data?: string;
+  };
 }
 
 export interface NormalizedMessage {
@@ -177,6 +186,76 @@ async function sendSingleChunk(
 
   logger.error({ chatId }, 'Telegram sendMessage failed after 3 attempts');
   return { messageId: 0, success: false };
+}
+
+// ---- Send Message with Inline Buttons ----
+
+export async function sendTelegramButtons(
+  chatId: string | number,
+  text: string,
+  buttons: Array<Array<{ text: string; callback_data: string }>>,
+): Promise<{ messageId: number; success: boolean }> {
+  const body = {
+    chat_id: chatId,
+    text: sanitizeForTelegram(text) || 'Choose an option:',
+    reply_markup: {
+      inline_keyboard: buttons,
+    },
+  };
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        logger.warn({ chatId, status: res.status, error: errText, attempt }, 'Telegram sendButtons failed');
+        if (res.status >= 400 && res.status < 500) {
+          return { messageId: 0, success: false };
+        }
+        continue;
+      }
+
+      const data = await res.json() as { result?: { message_id: number } };
+      return { messageId: data.result?.message_id || 0, success: true };
+    } catch (err) {
+      logger.warn({ err, chatId, attempt }, 'Telegram sendButtons attempt failed');
+      if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+  }
+
+  logger.error({ chatId }, 'Telegram sendButtons failed after 3 attempts');
+  return { messageId: 0, success: false };
+}
+
+// ---- Answer Callback Query ----
+
+export async function answerCallbackQuery(
+  callbackQueryId: string,
+  text?: string,
+): Promise<boolean> {
+  const body: Record<string, unknown> = {
+    callback_query_id: callbackQueryId,
+  };
+  if (text) body.text = text;
+
+  try {
+    const res = await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10000),
+    });
+    return res.ok;
+  } catch (err) {
+    logger.warn({ err, callbackQueryId }, 'Failed to answer callback query');
+    return false;
+  }
 }
 
 // ---- Register Webhook ----
