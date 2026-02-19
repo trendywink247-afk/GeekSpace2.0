@@ -98,7 +98,9 @@ export function DashboardApp() {
     agentService.getConfig().then((res) => {
       const color = res.data.accent_color || res.data.accentColor;
       if (color) setAccentColor(color);
-    }).catch(() => {});
+    }).catch((err) => {
+      console.debug('Failed to load accent color:', err);
+    });
   }, [setAccentColor]);
 
   // First-load welcome toast (once per session)
@@ -135,7 +137,7 @@ export function DashboardApp() {
 
   const handleLogout = useCallback(() => {
     logout();
-    navigate('/');
+    navigate('/', { replace: true });
   }, [logout, navigate]);
 
   // Session idle timeout — warn at 25 min, logout at 30 min

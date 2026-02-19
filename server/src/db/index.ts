@@ -460,6 +460,24 @@ try {
   `);
 } catch { /* table already exists — ignore */ }
 
+// Add FK constraint to automation_logs
+try {
+  db.exec(`
+    DELETE FROM automation_logs WHERE user_id NOT IN (SELECT id FROM users);
+    CREATE TABLE automation_logs_new (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      automation_id TEXT,
+      event TEXT NOT NULL,
+      details TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    INSERT INTO automation_logs_new SELECT * FROM automation_logs;
+    DROP TABLE automation_logs;
+    ALTER TABLE automation_logs_new RENAME TO automation_logs;
+  `);
+} catch { /* table may not exist or already has FK — ignore */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
