@@ -336,10 +336,10 @@ export function PicoFleetPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteAgent(agent)}
-                          className="text-[#A7ACB8] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-7 w-7 p-0"
+                          className="text-[#A7ACB8] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 press-scale"
                           title="Remove agent"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       )}
                     </div>
@@ -634,10 +634,10 @@ export function PicoFleetPage() {
                               e.stopPropagation();
                               handleCancelTask(task.id);
                             }}
-                            className="text-[#A7ACB8] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-7 w-7 p-0 shrink-0"
+                            className="text-[#A7ACB8] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 shrink-0 press-scale"
                             title="Cancel task"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-4 h-4" />
                           </Button>
                         )}
 
