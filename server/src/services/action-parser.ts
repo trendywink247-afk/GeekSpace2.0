@@ -92,16 +92,20 @@ export interface ParseResult {
 // ── Parser ──────────────────────────────────────────────────
 
 const ACTION_REGEX = /<<<ACTION\s*([\s\S]*?)ACTION>>>/g;
+const TOOL_CALL_REGEX = /<tool_call>\s*<function=(\w+)>\s*<parameter=(\w+)>([\s\S]*?)<\/parameter>\s*<\/function>\s*<\/tool_call>/g;
 
 export function parseActions(llmResponse: string): ParseResult {
   const actions: ParsedAction[] = [];
 
   // Strip action blocks from the text
-  const text = llmResponse.replace(ACTION_REGEX, '').trim();
+  let text = llmResponse.replace(ACTION_REGEX, '').trim();
+  text = text.replace(TOOL_CALL_REGEX, '').trim();
 
   // Reset regex lastIndex since we use the global flag
   ACTION_REGEX.lastIndex = 0;
+  TOOL_CALL_REGEX.lastIndex = 0;
 
+  // Parse <<<ACTION ... ACTION>>> format
   let match: RegExpExecArray | null;
   while ((match = ACTION_REGEX.exec(llmResponse)) !== null) {
     const rawBlock = match[1].trim();
@@ -141,6 +145,55 @@ export function parseActions(llmResponse: string): ParseResult {
       logger.warn(
         { tool, errors: result.error.flatten() },
         'Action block params failed validation — skipping',
+      );
+      continue;
+    }
+
+    actions.push({ tool, params: result.data as Record<string, unknown> });
+  }
+
+  // Parse <tool_call><function=name><parameter=key>value</parameter></function></tool_call> format
+  while ((match = TOOL_CALL_REGEX.exec(llmResponse)) !== null) {
+    const toolName = match[1];
+    const paramName = match[2];
+    const paramValue = match[3].trim();
+
+    // Map function names to tool names
+    const toolMapping: Record<string, string> = {
+      generate_code: 'generate_code',
+      portfolio_add_project: 'portfolio_add_project',
+      portfolio_update_bio: 'portfolio_update_bio',
+      portfolio_update_skills: 'portfolio_update_skills',
+      portfolio_remove_project: 'portfolio_remove_project',
+      portfolio_update_theme: 'portfolio_update_theme',
+      send_email: 'send_email',
+      set_reminder: 'set_reminder',
+      crawl_url: 'crawl_url',
+      trigger_workflow: 'trigger_workflow',
+    };
+
+    const tool = toolMapping[toolName];
+    if (!tool) {
+      logger.warn({ toolName }, 'Unknown function in tool_call — skipping');
+      continue;
+    }
+
+    // Build params object from XML parameters
+    const params: Record<string, unknown> = { [paramName]: paramValue };
+
+    // Validate tool name
+    const schema = TOOL_SCHEMAS[tool];
+    if (!schema) {
+      logger.warn({ tool }, 'Unknown tool in action block — skipping');
+      continue;
+    }
+
+    // Validate params with Zod
+    const result = schema.safeParse(params);
+    if (!result.success) {
+      logger.warn(
+        { tool, errors: result.error.flatten() },
+        'Tool_call params failed validation — skipping',
       );
       continue;
     }

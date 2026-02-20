@@ -22,6 +22,7 @@ import { executeAction, type ActionResult } from '../services/action-executor.js
 import { formatReceiptCompact, type ReceiptItem } from '../services/receipts.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { sendTelegramMessage } from '../services/telegram.js';
+import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../services/agent-chat.js';
 
 export const agentRouter = Router();
 
@@ -1511,4 +1512,40 @@ agentRouter.post('/bridge-preview', requireAuth, validateBody(chatSchema), (req:
       : complexity === 'complex' ? '20-80'
       : '50-200',
   });
+});
+
+// ---- Agent-to-Agent Messaging ----
+
+agentRouter.post('/send-message', requireAuth, (req: AuthRequest, res) => {
+  const { recipientAgentId, message } = req.body as { recipientAgentId?: string; message?: string };
+
+  if (!recipientAgentId || !message) {
+    res.status(400).json({ error: 'Missing recipientAgentId or message' });
+    return;
+  }
+
+  if (message.length > 2000) {
+    res.status(400).json({ error: 'Message too long (max 2000 characters)' });
+    return;
+  }
+
+  const success = sendAgentMessage(req.userId!, recipientAgentId, message);
+
+  if (!success) {
+    res.status(400).json({ error: 'Cannot send message to this agent. They may have agent chat disabled or not exist.' });
+    return;
+  }
+
+  res.json({ success: true, message: 'Message sent successfully' });
+});
+
+agentRouter.get('/messages', requireAuth, (req: AuthRequest, res) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+  const messages = getAgentMessages(req.userId!, limit);
+  res.json(messages);
+});
+
+agentRouter.get('/can-chat/:username', requireAuth, (req: AuthRequest, res) => {
+  const canChat = canChatWithAgent(req.userId!, req.params.username);
+  res.json({ canChat });
 });
