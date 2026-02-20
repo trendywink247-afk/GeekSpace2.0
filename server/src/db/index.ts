@@ -507,6 +507,19 @@ try {
   db.exec(`ALTER TABLE subscriptions ADD COLUMN tokens_used_this_cycle INTEGER DEFAULT 0`);
 } catch { /* column already exists */ }
 
+// Reminder scheduling tracking - for drift monitoring and accuracy
+try {
+  db.exec(`ALTER TABLE reminders ADD COLUMN scheduled_for INTEGER`);
+} catch { /* column already exists */ }
+
+try {
+  db.exec(`ALTER TABLE reminders ADD COLUMN delivered_at INTEGER`);
+} catch { /* column already exists */ }
+
+try {
+  db.exec(`ALTER TABLE reminders ADD COLUMN drift_ms INTEGER`);
+} catch { /* column already exists */ }
+
 // Templates for code artifacts (official + community)
 try {
   db.exec(`

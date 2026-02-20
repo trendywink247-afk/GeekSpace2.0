@@ -1,8 +1,11 @@
 // ============================================================
 // Reminder Scheduler
 //
-// Checks every 30 seconds for due reminders and delivers them
+// Checks every 5 seconds for due reminders and delivers them
 // through the appropriate channel (Telegram, email, push).
+//
+// Drift tracking: logs drift_ms = actual_fire_time - scheduled_time
+// Target: reminders fire within 30 seconds of scheduled time
 // ============================================================
 
 import { v4 as uuid } from 'uuid';
@@ -20,6 +23,7 @@ interface DueReminder {
   channel: string;
   category: string;
   recurring: string;
+  scheduled_for: number | null;
 }
 
 interface ChannelLink {
@@ -28,16 +32,17 @@ interface ChannelLink {
 
 // ---- Scheduler ----
 
+const POLL_INTERVAL_MS = 5_000; // 5 seconds for <=30s drift requirement
 let schedulerInterval: ReturnType<typeof setInterval> | null = null;
 
 export function startReminderScheduler(): void {
   if (schedulerInterval) return;
 
-  // Run immediately on startup, then every 30 seconds
+  // Run immediately on startup, then every 5 seconds
   checkAndDeliverReminders();
-  schedulerInterval = setInterval(checkAndDeliverReminders, 30_000);
+  schedulerInterval = setInterval(checkAndDeliverReminders, POLL_INTERVAL_MS);
 
-  logger.info('Reminder scheduler started (30s interval)');
+  logger.info('Reminder scheduler started (5s interval)');
 }
 
 export function stopReminderScheduler(): void {
@@ -50,16 +55,27 @@ export function stopReminderScheduler(): void {
 // ---- Core Logic ----
 
 async function checkAndDeliverReminders(): Promise<void> {
+  const tickStart = Date.now();
+
   try {
+    // Use epoch milliseconds for precise comparison (avoids SQLite timezone issues)
+    const now = Date.now();
+
     const dueReminders = db.prepare(`
-      SELECT id, user_id, text, datetime, channel, category, recurring
+      SELECT id, user_id, text, datetime, channel, category, recurring, scheduled_for
       FROM reminders
-      WHERE datetime IS NOT NULL
-        AND REPLACE(REPLACE(datetime, 'T', ' '), 'Z', '') <= datetime('now')
-        AND completed = 0
-      ORDER BY datetime ASC
-      LIMIT 20
-    `).all() as DueReminder[];
+      WHERE completed = 0
+        AND (
+          (scheduled_for IS NOT NULL AND scheduled_for <= ?)
+          OR
+          (scheduled_for IS NULL AND datetime IS NOT NULL
+           AND REPLACE(REPLACE(datetime, 'T', ' '), 'Z', '') <= datetime('now'))
+        )
+      ORDER BY
+        CASE WHEN scheduled_for IS NOT NULL THEN scheduled_for ELSE 0 END ASC,
+        datetime ASC
+      LIMIT 50
+    `).all(now) as DueReminder[];
 
     if (dueReminders.length === 0) return;
 
@@ -67,10 +83,30 @@ async function checkAndDeliverReminders(): Promise<void> {
 
     for (const reminder of dueReminders) {
       try {
+        const fireTime = Date.now();
+        const scheduledTime = reminder.scheduled_for || new Date(reminder.datetime).getTime();
+        const driftMs = fireTime - scheduledTime;
+
+        // Log drift for observability
+        logger.info({
+          reminderId: reminder.id,
+          userId: reminder.user_id,
+          scheduledFor: scheduledTime,
+          firedAt: fireTime,
+          driftMs,
+          driftSeconds: Math.round(driftMs / 1000 * 10) / 10,
+        }, 'Reminder firing');
+
         await deliverReminder(reminder);
 
-        // Mark as completed
-        db.prepare('UPDATE reminders SET completed = 1 WHERE id = ?').run(reminder.id);
+        // Mark as completed with delivery tracking
+        db.prepare(`
+          UPDATE reminders
+          SET completed = 1,
+              delivered_at = ?,
+              drift_ms = ?
+          WHERE id = ?
+        `).run(fireTime, driftMs, reminder.id);
 
         // Handle recurring reminders
         if (reminder.recurring) {
@@ -142,11 +178,67 @@ function scheduleNextRecurrence(reminder: DueReminder): void {
 
   if (next.getTime() > Date.now()) {
     const nextStr = next.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
-    db.prepare(`INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, completed, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'scheduler')`).run(
+    const nextEpoch = next.getTime();
+
+    db.prepare(`INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, completed, created_by, scheduled_for)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'scheduler', ?)`).run(
       uuid(), reminder.user_id, reminder.text, nextStr,
-      reminder.channel, reminder.category, reminder.recurring,
+      reminder.channel, reminder.category, reminder.recurring, nextEpoch,
     );
-    logger.info({ reminderId: reminder.id, nextAt: nextStr }, 'Recurring reminder rescheduled');
+    logger.info({ reminderId: reminder.id, nextAt: nextStr, scheduledFor: nextEpoch }, 'Recurring reminder rescheduled');
   }
+}
+
+// ---- Dev/Test Helpers ----
+
+/**
+ * Schedule a test reminder that fires in specified seconds.
+ * Returns the reminder ID for tracking.
+ */
+export function scheduleTestReminder(userId: string, seconds: number): string {
+  const id = uuid();
+  const scheduledFor = Date.now() + seconds * 1000;
+  const datetime = new Date(scheduledFor).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+
+  db.prepare(`
+    INSERT INTO reminders (id, user_id, text, datetime, channel, category, completed, created_by, scheduled_for)
+    VALUES (?, ?, ?, ?, ?, ?, 0, 'test', ?)
+  `).run(id, userId, `Test reminder (${seconds}s)`, datetime, 'push', 'test', scheduledFor);
+
+  logger.info({ reminderId: id, userId, scheduledFor, seconds }, 'Test reminder scheduled');
+  return id;
+}
+
+/**
+ * Get drift statistics for reminders fired in the last N hours.
+ */
+export function getReminderDriftStats(hours: number = 24): {
+  count: number;
+  avgDriftMs: number;
+  maxDriftMs: number;
+  withinTolerance: number;
+} {
+  const since = Date.now() - hours * 3600_000;
+
+  const stats = db.prepare(`
+    SELECT
+      COUNT(*) as count,
+      AVG(drift_ms) as avg_drift,
+      MAX(drift_ms) as max_drift,
+      SUM(CASE WHEN drift_ms <= 30000 THEN 1 ELSE 0 END) as within_tolerance
+    FROM reminders
+    WHERE delivered_at >= ? AND drift_ms IS NOT NULL
+  `).get(since) as {
+    count: number;
+    avg_drift: number | null;
+    max_drift: number | null;
+    within_tolerance: number;
+  };
+
+  return {
+    count: stats.count || 0,
+    avgDriftMs: Math.round(stats.avg_drift || 0),
+    maxDriftMs: stats.max_drift || 0,
+    withinTolerance: stats.within_tolerance || 0,
+  };
 }

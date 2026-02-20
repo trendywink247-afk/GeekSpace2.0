@@ -219,6 +219,9 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
         const text = params.text as string;
         const reminderId = uuid();
         const dueAt = params.datetime as string || parseReminderTime(text);
+        // Calculate epoch ms for drift tracking
+        const scheduledFor = dueAt ? new Date(dueAt).getTime() : Date.now();
+
         // Use user-specified channel, or auto-detect from linked accounts
         let channel = (params.channel as string) || 'push';
         if (!params.channel) {
@@ -230,8 +233,8 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
         const category = (params.category as string) || 'general';
 
         db.prepare(
-          'INSERT INTO reminders (id, user_id, text, datetime, channel, category, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        ).run(reminderId, userId, text, dueAt, channel, category, 'agent');
+          'INSERT INTO reminders (id, user_id, text, datetime, channel, category, created_by, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        ).run(reminderId, userId, text, dueAt, channel, category, 'agent', scheduledFor);
 
         db.prepare(
           `INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`

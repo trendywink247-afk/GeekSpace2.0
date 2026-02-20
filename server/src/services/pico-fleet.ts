@@ -677,8 +677,9 @@ async function executeTask(task: PicoTask): Promise<void> {
           "SELECT 1 FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
         ).get(task.user_id);
         const channel = hasChannel ? 'telegram' : 'push';
-        db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, created_by, pico_task_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-          .run(reminderId, task.user_id, text, dueAt, channel, 'general', 'pico-fleet', task.id);
+        const scheduledFor = dueAt ? new Date(dueAt).getTime() : Date.now();
+        db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, created_by, pico_task_id, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          .run(reminderId, task.user_id, text, dueAt, channel, 'general', 'pico-fleet', task.id, scheduledFor);
         const timeNote = dueAt ? ` (due ${new Date(dueAt).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })})` : '';
         output = `Reminder created: ${text}${timeNote}`;
 

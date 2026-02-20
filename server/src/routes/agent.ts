@@ -701,7 +701,8 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
     const text = cmd.slice(17).replace(/^["']|["']$/g, '');
     if (!text || text.length > 500) { res.json({ output: 'Reminder text required (max 500 chars)', isError: true }); return; }
     const id = uuid();
-    db.prepare('INSERT INTO reminders (id, user_id, text, channel, category, created_by) VALUES (?, ?, ?, ?, ?, ?)').run(id, userId, text, 'push', 'general', 'terminal');
+    const scheduledFor = Date.now() + 3600_000; // Default 1 hour from now
+    db.prepare('INSERT INTO reminders (id, user_id, text, channel, category, created_by, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?)').run(id, userId, text, 'push', 'general', 'terminal', scheduledFor);
     db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`).run(uuid(), userId, text);
     res.json({ output: `Reminder added! ID: ${id.slice(0, 8)}\nText: ${text}`, isError: false });
     return;
@@ -982,7 +983,8 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
       return;
     }
     const remId = uuid();
-    db.prepare("INSERT INTO reminders (id, user_id, text, channel, category, created_by) VALUES (?, ?, ?, 'push', 'general', 'terminal')").run(remId, userId, reminderText);
+    const scheduledFor = Date.now() + 3600_000; // Default 1 hour from now
+    db.prepare("INSERT INTO reminders (id, user_id, text, channel, category, created_by, scheduled_for) VALUES (?, ?, ?, 'push', 'general', 'terminal', ?)").run(remId, userId, reminderText, scheduledFor);
     res.json({ output: `<span style="color:#61FF7B">Reminder created:</span> ${reminderText}`, isError: false });
     return;
   }
