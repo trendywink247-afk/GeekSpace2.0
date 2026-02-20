@@ -9,8 +9,8 @@ import { db } from '../../db/index.js';
 const app = express();
 app.use(express.json());
 
-// Mock auth middleware
-app.use((req, res, next) => {
+// Mock auth middleware for testing - must set userId before requireAuth runs
+app.use('/api/agent', (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (authHeader) {
     const token = authHeader.replace('Bearer ', '');
@@ -22,15 +22,15 @@ app.use((req, res, next) => {
       const decoded = jwt.verify(token, config.jwtSecret) as { userId: string };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (req as any).userId = decoded.userId;
-      return next();
+      next();
     } catch {
-      return res.status(401).json({ error: 'Invalid token' });
+      res.status(401).json({ error: 'Invalid token' });
     }
+  } else {
+    // Continue to let requireAuth handle the missing auth
+    next();
   }
-  next();
-});
-
-app.use('/api/agent', agentRouter);
+}, agentRouter);
 
 describe('Agent Status Endpoints', () => {
   beforeAll(() => {
