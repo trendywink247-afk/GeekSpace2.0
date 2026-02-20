@@ -65,7 +65,9 @@ interface ChatMessage {
     message: string;
     artifactId?: string;
     data?: Record<string, unknown>;
+    receipt?: { icon: string; text: string; details?: string; link?: string };
   }>;
+  receipts?: Array<{ icon: string; text: string; details?: string; link?: string }>;
 }
 
 interface AgentChatPanelProps {
@@ -250,7 +252,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       const { data } = await agentService.chat(content);
       const text = data.text || '';
       if (!text && !data.actions?.length) throw new Error('Empty response');
-      setAgentMsg({ content: text, isStreaming: false, provider: data.provider, model: data.model, actions: data.actions || undefined });
+      setAgentMsg({ content: text, isStreaming: false, provider: data.provider, model: data.model, actions: data.actions || undefined, receipts: data.receipts || undefined });
     };
 
     // Main chat logic: try streaming → fall back to regular → show error
@@ -514,6 +516,28 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         <ActionResultCard key={i} tool={action.tool} success={action.success} message={action.message} />
                       )
                     ))}
+                    {/* Receipts - Visual confirmation of actions */}
+                    {msg.receipts && msg.receipts.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {msg.receipts.map((receipt, i) => (
+                          <a
+                            key={i}
+                            href={receipt.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#61FF7B]/10 border border-[#61FF7B]/20 text-sm hover:bg-[#61FF7B]/15 transition-colors"
+                          >
+                            <span className="text-lg">{receipt.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-[#61FF7B]">{receipt.text}</p>
+                              {receipt.details && (
+                                <p className="text-xs text-[#A7ACB8] truncate">{receipt.details}</p>
+                              )}
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </>
               )}
