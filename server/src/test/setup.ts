@@ -9,12 +9,9 @@ process.env.TEST_MODE = 'true';
 // Use a dedicated test database path
 import path from 'path';
 import os from 'os';
-import { fileURLToPath } from 'url';
 import { v4 as uuid } from 'uuid';
 import bcrypt from 'bcryptjs';
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEST_DB_PATH = process.env.TEST_DB_PATH || path.join(os.tmpdir(), `geekspace-test-${process.pid}.db`);
 process.env.DB_PATH = TEST_DB_PATH;
 
