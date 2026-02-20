@@ -10,7 +10,10 @@ process.env.TEST_MODE = 'true';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { v4 as uuid } from 'uuid';
+import bcrypt from 'bcryptjs';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEST_DB_PATH = process.env.TEST_DB_PATH || path.join(os.tmpdir(), `geekspace-test-${process.pid}.db`);
 process.env.DB_PATH = TEST_DB_PATH;
@@ -86,10 +89,6 @@ export function createTestUser(email = `test-${Date.now()}@example.com`): {
   username: string;
   password: string;
 } {
-  // Use dynamic imports to avoid circular dependency issues
-  const { v4: uuid } = require('uuid');
-  const bcrypt = require('bcryptjs');
-
   const id = uuid();
   const username = `test_${Date.now()}`;
   const password = 'test-password-123';
@@ -126,7 +125,6 @@ export function generateTestToken(userId: string): string {
  * Create test agent config
  */
 export function createTestAgent(userId: string, isActive = true): string {
-  const { v4: uuid } = require('uuid');
   const id = uuid();
 
   db.prepare(`

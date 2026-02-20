@@ -13,7 +13,7 @@ import { sendAgentEmail, resolveEmailAddress } from './email.js';
 import { parseReminderTime } from './pico-fleet.js';
 import type { ParsedAction } from './action-parser.js';
 import { config } from '../config.js';
-import { createReceipt, RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
+import { RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
 
 // ── Types ───────────────────────────────────────────────────
 
