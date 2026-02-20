@@ -107,6 +107,7 @@ export function PortfolioView() {
     setChatHistory([
       { role: 'agent', message: pMeta.greeting(firstName) },
     ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolio, firstName, pKey]);
 
   useEffect(() => {

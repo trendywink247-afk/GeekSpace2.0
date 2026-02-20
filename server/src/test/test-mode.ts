@@ -248,7 +248,6 @@ export function mockTelegramSend(chatId: string, text: string): { ok: boolean } 
  */
 export async function mockPicoClawCall(
   message: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _systemPrompt?: string,
 ): Promise<{ text: string; tokensIn: number; tokensOut: number }> {
   // _systemPrompt is accepted for API compatibility but not used in mock
