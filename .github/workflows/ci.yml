@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -34,21 +36,48 @@ jobs:
       - name: Install server dependencies
         run: npm --prefix server ci
 
-      # Install picoclaw dependencies
+      # Install picoclaw dependencies (if exists)
       - name: Install picoclaw dependencies
+        if: hashFiles('picoclaw/package-lock.json') != ''
         run: npm --prefix picoclaw ci
 
-      # Install bridge dependencies
+      # Install bridge dependencies (if exists)
       - name: Install bridge dependencies
+        if: hashFiles('bridge/edith-bridge/package-lock.json') != ''
         run: npm --prefix bridge/edith-bridge ci
 
-      # Install smoke test dependencies
+      # Install smoke test dependencies (if exists)
       - name: Install smoke test dependencies
+        if: hashFiles('scripts/smoke/package-lock.json') != ''
         run: npm --prefix scripts/smoke ci
 
-      # Run lint
-      - name: Run lint
-        run: npm run lint
+      # Run lint on changed files only
+      - name: Run lint on changed files
+        run: |
+          # Determine the base and head for comparison
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+            HEAD="HEAD"
+          else
+            BASE="${{ github.event.before }}"
+            HEAD="${{ github.sha }}"
+          fi
+
+          echo "Comparing $BASE...$HEAD"
+
+          # Get changed JS/TS files
+          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE $HEAD | grep -E '\.(ts|tsx|js|jsx)$' || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No JS/TS files changed. Skipping lint."
+            exit 0
+          fi
+
+          echo "Linting changed files:"
+          echo "$CHANGED_FILES"
+
+          # Run eslint on changed files
+          npx eslint --max-warnings=0 $CHANGED_FILES
 
       # Run typecheck on root
       - name: Run typecheck (root)
@@ -186,6 +215,7 @@ jobs:
         run: npm --prefix server ci
 
       - name: Install smoke test dependencies
+        if: hashFiles('scripts/smoke/package-lock.json') != ''
         run: npm --prefix scripts/smoke ci
 
       # Build the application

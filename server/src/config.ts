@@ -23,8 +23,14 @@ function optionalInt(key: string, fallback: number): number {
   return v ? parseInt(v, 10) : fallback;
 }
 
+// Parse TEST_MODE robustly - accepts "true", "1", "yes" (case-insensitive)
+function parseTestMode(): boolean {
+  const tm = String(process.env.TEST_MODE ?? '').toLowerCase().trim();
+  return tm === 'true' || tm === '1' || tm === 'yes';
+}
+
 const isProduction = optional('NODE_ENV', 'development') === 'production';
-const isTestMode = optional('TEST_MODE', 'false') === 'true';
+const isTestMode = parseTestMode();
 
 export const config = {
   env: optional('NODE_ENV', 'development'),
