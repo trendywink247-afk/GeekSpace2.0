@@ -26,4 +26,15 @@ export default defineConfig([
       }]
     },
   },
+  // Override for E2E test files - Playwright fixtures use patterns that look like hooks
+  {
+    files: ['e2e/**/*.{ts,tsx}', 'playwright/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: globals.node,
+    },
+    rules: {
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+    },
+  },
 ])

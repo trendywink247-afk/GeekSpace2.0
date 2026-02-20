@@ -2,35 +2,27 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { agentRouter } from '../../routes/agent.js';
-import { createTestUser, cleanupTestUser, generateTestToken, resetDatabase, createTestAgent } from '../setup.js';
+import { createTestUser, cleanupTestUser, resetDatabase, createTestAgent } from '../setup.js';
 import { db } from '../../db/index.js';
 
 // Create minimal app for testing
 const app = express();
 app.use(express.json());
 
-// Mock auth middleware for testing - must set userId before requireAuth runs
-app.use('/api/agent', (req, res, next) => {
+// Simple mock auth that sets userId directly
+app.use((req, res, next) => {
+  // Check if this is a test request with Authorization header
   const authHeader = req.headers.authorization;
-  if (authHeader) {
-    const token = authHeader.replace('Bearer ', '');
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const jwt = require('jsonwebtoken');
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { config } = require('../../config.js');
-      const decoded = jwt.verify(token, config.jwtSecret) as { userId: string };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (req as any).userId = decoded.userId;
-      next();
-    } catch {
-      res.status(401).json({ error: 'Invalid token' });
-    }
-  } else {
-    // Continue to let requireAuth handle the missing auth
-    next();
+  if (authHeader?.startsWith('Bearer test-')) {
+    // Extract userId from token format: test-{userId}
+    const userId = authHeader.slice(12); // Remove 'Bearer test-'
+    // Use type assertion to add userId to request
+    Object.defineProperty(req, 'userId', { value: userId, writable: true });
   }
-}, agentRouter);
+  next();
+});
+
+app.use('/api/agent', agentRouter);
 
 describe('Agent Status Endpoints', () => {
   beforeAll(() => {
@@ -43,9 +35,8 @@ describe('Agent Status Endpoints', () => {
 
   const setupUserWithAgent = (agentActive = true) => {
     const user = createTestUser();
-    const token = generateTestToken(user.id);
     createTestAgent(user.id, agentActive);
-    return { ...user, token };
+    return { ...user, token: `test-${user.id}` };
   };
 
   describe('GET /api/agent/status', () => {

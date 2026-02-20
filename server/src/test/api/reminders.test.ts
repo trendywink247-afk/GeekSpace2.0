@@ -2,39 +2,31 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { remindersRouter } from '../../routes/reminders.js';
-import { createTestUser, cleanupTestUser, generateTestToken, resetDatabase } from '../setup.js';
+import { createTestUser, cleanupTestUser, resetDatabase } from '../setup.js';
 import { db } from '../../db/index.js';
 
-// Create minimal app for testing with auth middleware
+// Create minimal app for testing - mount router directly
+// Note: The reminders router has requireAuth middleware that will reject requests
+// without proper auth. For unit tests, we verify the middleware works correctly.
 const app = express();
 app.use(express.json());
 
-// Mock auth middleware for testing - must set userId before requireAuth runs
-app.use('/api/reminders', (req, res, next) => {
+// Simple mock auth that sets userId directly
+app.use((req, res, next) => {
+  // Check if this is a test request with Authorization header
   const authHeader = req.headers.authorization;
-  if (authHeader) {
-    const token = authHeader.replace('Bearer ', '');
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const jwt = require('jsonwebtoken');
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { config } = require('../../config.js');
-      const decoded = jwt.verify(token, config.jwtSecret) as { userId: string };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (req as any).userId = decoded.userId;
-      next();
-    } catch {
-      res.status(401).json({ error: 'Invalid token' });
-    }
-  } else {
-    // Continue to let requireAuth handle the missing auth
-    next();
+  if (authHeader?.startsWith('Bearer test-')) {
+    // Extract userId from token format: test-{userId}
+    const userId = authHeader.slice(12); // Remove 'Bearer test-'
+    // Use type assertion to add userId to request
+    Object.defineProperty(req, 'userId', { value: userId, writable: true });
   }
-}, remindersRouter);
+  next();
+});
+
+app.use('/api/reminders', remindersRouter);
 
 describe('Reminders Endpoints', () => {
-  let testUser: { id: string; email: string; token: string };
-
   beforeAll(() => {
     resetDatabase();
   });
@@ -42,13 +34,6 @@ describe('Reminders Endpoints', () => {
   afterEach(() => {
     resetDatabase();
   });
-
-  const setupUser = () => {
-    const user = createTestUser();
-    const token = generateTestToken(user.id);
-    testUser = { ...user, token };
-    return testUser;
-  };
 
   describe('GET /api/reminders', () => {
     it('should require authentication', async () => {
@@ -61,7 +46,7 @@ describe('Reminders Endpoints', () => {
     });
 
     it('should return reminders for authenticated user', async () => {
-      const user = setupUser();
+      const user = createTestUser();
 
       // Create a test reminder
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -73,13 +58,12 @@ describe('Reminders Endpoints', () => {
 
       const response = await request(app)
         .get('/api/reminders')
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', `Bearer test-${user.id}`)
         .expect('Content-Type', /json/)
         .expect(200);
 
-      expect(response.body).toHaveProperty('reminders');
-      expect(Array.isArray(response.body.reminders)).toBe(true);
-      expect(response.body.reminders.length).toBeGreaterThan(0);
+      expect(response.body).toBeInstanceOf(Array);
+      expect(response.body.length).toBeGreaterThan(0);
 
       cleanupTestUser(user.id);
     });
@@ -87,11 +71,11 @@ describe('Reminders Endpoints', () => {
 
   describe('POST /api/reminders', () => {
     it('should create a new reminder', async () => {
-      const user = setupUser();
+      const user = createTestUser();
 
       const response = await request(app)
         .post('/api/reminders')
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', `Bearer test-${user.id}`)
         .send({
           text: 'Take out the trash',
           datetime: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
@@ -108,11 +92,11 @@ describe('Reminders Endpoints', () => {
     });
 
     it('should reject reminder without text', async () => {
-      const user = setupUser();
+      const user = createTestUser();
 
       const response = await request(app)
         .post('/api/reminders')
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', `Bearer test-${user.id}`)
         .send({
           datetime: new Date().toISOString(),
         })
@@ -127,7 +111,7 @@ describe('Reminders Endpoints', () => {
 
   describe('DELETE /api/reminders/:id', () => {
     it('should delete a reminder', async () => {
-      const user = setupUser();
+      const user = createTestUser();
 
       // Create a test reminder
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -140,7 +124,7 @@ describe('Reminders Endpoints', () => {
 
       const response = await request(app)
         .delete(`/api/reminders/${reminderId}`)
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', `Bearer test-${user.id}`)
         .expect('Content-Type', /json/)
         .expect(200);
 
