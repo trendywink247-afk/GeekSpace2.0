@@ -24,10 +24,12 @@ function optionalInt(key: string, fallback: number): number {
 }
 
 const isProduction = optional('NODE_ENV', 'development') === 'production';
+const isTestMode = optional('TEST_MODE', 'false') === 'true';
 
 export const config = {
   env: optional('NODE_ENV', 'development'),
   isProduction,
+  isTestMode,
   port: optionalInt('PORT', 3001),
 
   // JWT — required in production, has dev fallback

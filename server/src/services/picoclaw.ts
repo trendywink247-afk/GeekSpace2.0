@@ -8,6 +8,7 @@
 
 import { config } from '../config.js';
 import { logger } from '../logger.js';
+import { isTestMode, mockPicoClawCall } from '../test/test-mode.js';
 
 let picoAvailable: boolean | null = null;
 let picoCheckTime = 0;
@@ -36,6 +37,17 @@ export async function queryPicoClaw(
   systemPrompt?: string,
 ): Promise<{ text: string; tokensIn: number; tokensOut: number; latencyMs: number }> {
   const start = Date.now();
+
+  // Test mode: return deterministic mock response
+  if (isTestMode()) {
+    const result = await mockPicoClawCall(message, systemPrompt);
+    return {
+      text: result.text,
+      tokensIn: result.tokensIn,
+      tokensOut: result.tokensOut,
+      latencyMs: Date.now() - start,
+    };
+  }
 
   const res = await fetch(`${config.picoClawUrl}/api/chat`, {
     method: 'POST',

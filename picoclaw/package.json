@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node index.js" },
+  "scripts": {
+    "start": "node index.js",
+    "lint": "echo 'No lint configured'",
+    "typecheck": "echo 'No TypeScript configured'",
+    "build": "echo 'No build step needed'"
+  },
   "dependencies": { "express": "^4.21.0" }
 }

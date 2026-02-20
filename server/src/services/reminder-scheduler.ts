@@ -12,6 +12,7 @@ import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { sendTelegramMessage } from './telegram.js';
+import { isTestMode, recordReminderExecuted } from '../test/test-mode.js';
 
 // ---- Types ----
 
@@ -107,6 +108,11 @@ async function checkAndDeliverReminders(): Promise<void> {
               drift_ms = ?
           WHERE id = ?
         `).run(fireTime, driftMs, reminder.id);
+
+        // Record in test state if in test mode
+        if (isTestMode()) {
+          recordReminderExecuted(reminder.id, reminder.text, new Date(scheduledTime).toISOString(), driftMs);
+        }
 
         // Handle recurring reminders
         if (reminder.recurring) {

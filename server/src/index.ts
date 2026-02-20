@@ -39,6 +39,7 @@ import { briefingsRouter } from './routes/briefings.js';
 import { recipesRouter } from './routes/recipes.js';
 import { artifactsRouter } from './routes/artifacts.js';
 import { templatesRouter, seedDefaultTemplates } from './routes/templates.js';
+import testRouter from './routes/test.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
 import { startReminderScheduler } from './services/reminder-scheduler.js';
 import { metricsMiddleware, getMetricsSnapshot } from './middleware/metrics.js';
@@ -206,6 +207,7 @@ app.use('/api/health', healthRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/artifacts', artifactsRouter);
 app.use('/api/templates', templatesRouter);
+app.use('/api/test', testRouter);
 
 // ---- Output Generator Routes (Authenticated) ----
 app.post('/api/outputs/generate', requireAuth, async (req, res) => {

@@ -198,7 +198,7 @@ export function AutomationsPage() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
+    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0" data-testid="automations-page">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         <div>

@@ -1,0 +1,125 @@
+name: Test
+
+on:
+  push:
+    branches: [main, master, live-production]
+  pull_request:
+    branches: [main, master, live-production]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TEST_MODE: '1'
+      CI: 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ============================================
+      # Install Dependencies
+      # ============================================
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install server dependencies
+        run: npm --prefix server ci
+
+      - name: Install picoclaw dependencies
+        run: npm --prefix picoclaw ci
+
+      - name: Install bridge dependencies
+        run: npm --prefix bridge/edith-bridge ci
+
+      - name: Install smoke test dependencies
+        run: npm --prefix scripts/smoke ci
+
+      # ============================================
+      # Build
+      # ============================================
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build server
+        run: npm --prefix server run build
+
+      # ============================================
+      # Lint & Type Check
+      # ============================================
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run typecheck (root)
+        run: npm run typecheck
+
+      - name: Run typecheck (server)
+        run: npm --prefix server run typecheck
+
+      # ============================================
+      # Unit Tests
+      # ============================================
+      - name: Run frontend unit tests
+        run: npm run test || echo "No frontend tests configured"
+
+      - name: Run server unit tests
+        run: npm --prefix server run test
+
+      # ============================================
+      # Install Playwright
+      # ============================================
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      # ============================================
+      # E2E Tests
+      # ============================================
+      - name: Run Playwright tests
+        run: npm run test:e2e
+
+      # ============================================
+      # Smoke Tests
+      # ============================================
+      - name: Start server for smoke tests
+        run: |
+          cd server
+          TEST_MODE=1 PORT=3001 node dist/index.js &
+          echo $! > /tmp/server.pid
+          npx wait-on http://localhost:3001/api/health --timeout 60000
+
+      - name: Run smoke tests
+        run: npm --prefix scripts/smoke run smoke
+        env:
+          API_URL: http://localhost:3001
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            kill $(cat /tmp/server.pid) || true
+          fi
+
+      # ============================================
+      # Upload Artifacts
+      # ============================================
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

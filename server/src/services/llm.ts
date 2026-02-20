@@ -15,6 +15,7 @@ import { logger } from '../logger.js';
 import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
 import { getCurrentFreeModel, switchToNextFreeModel, getUserPreferredFreeModel } from './openrouter-models.js';
 import { recordTokenUsage, shouldDegradeRouting } from './token-budget.js';
+import { isTestMode, mockLLMCall, mockPicoClawCall } from '../test/test-mode.js';
 
 // ---- Types ----
 
@@ -458,6 +459,23 @@ export async function routeChat(
   const start = Date.now();
   const userMessage = messages[messages.length - 1]?.content || '';
   const intent = classifyIntent(userMessage);
+
+  // Test mode: return deterministic mock responses
+  if (isTestMode()) {
+    const mockResult = await mockLLMCall(messages, intent, opts?.forceProvider || 'ollama');
+    const latencyMs = Date.now() - start;
+    return {
+      reply: mockResult.content,
+      provider: opts?.forceProvider || 'ollama',
+      model: 'test-mock',
+      tokensIn: mockResult.tokensIn,
+      tokensOut: mockResult.tokensOut,
+      latencyMs,
+      costEstimate: 0,
+      creditCost: 0,
+      intent,
+    };
+  }
 
   // Build full message list with system prompt
   const fullMessages: ChatMessage[] = [];

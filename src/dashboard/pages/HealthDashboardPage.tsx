@@ -219,7 +219,7 @@ export function HealthDashboardPage() {
     : 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500" data-testid="health-page">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">

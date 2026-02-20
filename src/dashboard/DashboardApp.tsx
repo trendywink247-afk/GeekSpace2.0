@@ -223,6 +223,7 @@ export function DashboardApp() {
             key={item.id}
             onClick={() => setCurrentPage(item.id)}
             aria-current={currentPage === item.id ? 'page' : undefined}
+            data-testid={`nav-${item.id}`}
             className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 min-h-[44px] ${
               currentPage === item.id
                 ? 'bg-[#7B61FF]/20 text-[#7B61FF] border border-[#7B61FF]/30'
@@ -343,6 +344,7 @@ export function DashboardApp() {
         }`}
         role="navigation"
         aria-label="Main navigation"
+        data-testid="dashboard-sidebar"
       >
         {sidebarContent}
       </aside>
@@ -393,7 +395,7 @@ export function DashboardApp() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <div className="px-2 md:px-3 py-1.5 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30">
+            <div className="px-2 md:px-3 py-1.5 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30" data-testid="credits-display">
               <span className="text-xs text-[#7B61FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
             </div>
             <button

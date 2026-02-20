@@ -6,6 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 
 const baseURL = process.env.E2E_BASE_URL || 'http://localhost:5173';
+const apiURL = process.env.API_URL || 'http://localhost:3001';
 
 export default defineConfig({
   testDir: './e2e',
@@ -16,14 +17,15 @@ export default defineConfig({
   reporter: [
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
     ['list'],
+    ['junit', { outputFile: 'test-results/junit.xml' }],
   ],
   outputDir: 'test-results/',
 
   use: {
     baseURL,
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'on-first-retry',
+    trace: 'retain-on-failure',
+    screenshot: 'on',
+    video: 'retain-on-failure',
     actionTimeout: 10000,
     navigationTimeout: 15000,
   },
@@ -66,13 +68,25 @@ export default defineConfig({
     },
   ],
 
-  // Run local dev server before starting tests (if testing locally)
-  webServer: process.env.E2E_BASE_URL?.includes('localhost:5173')
-    ? {
-        command: 'npm run dev',
-        url: 'http://localhost:5173',
-        reuseExistingServer: !process.env.CI,
-        timeout: 120000,
-      }
-    : undefined,
+  // Run backend and frontend before starting tests (if testing locally)
+  webServer: [
+    // Start backend first
+    {
+      command: 'cd server && npm run dev',
+      url: `${apiURL}/api/health`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+      env: {
+        TEST_MODE: '1',
+        PORT: '3001',
+      },
+    },
+    // Then start frontend
+    {
+      command: 'npm run dev',
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+  ],
 });
