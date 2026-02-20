@@ -1,58 +1,51 @@
-import { test as setup, expect, request } from '@playwright/test';
+import { test as setup, expect } from '@playwright/test';
 
 const authFile = 'playwright/.auth/user.json';
-const apiURL = process.env.API_URL || 'http://localhost:3001';
 
 /**
- * Authentication setup - runs before tests to create authenticated state
- * Uses test-mode seeding for deterministic test data
+ * E2E Authentication Setup
+ * Creates a test user via TEST_MODE API and logs in
+ * This is more reliable than UI-based login for CI
  */
-setup('authenticate', async ({ page }) => {
-  // First, reset test state to ensure clean slate
-  const apiContext = await request.newContext({
-    baseURL: apiURL,
-  });
+setup('authenticate', async ({ request }) => {
+  const apiURL = process.env.API_URL || 'http://localhost:3001';
 
-  // Reset test state with full cleanup
-  const resetResponse = await apiContext.post('/api/test/reset', {
+  // Reset test state first
+  await request.post(`${apiURL}/api/test/reset`, {
     data: { fullCleanup: true },
   });
-  expect(resetResponse.ok()).toBeTruthy();
 
-  // Create test user via test-mode API
-  const seedResponse = await apiContext.post('/api/test/seed', {
+  // Create a test user via the seed endpoint
+  const seedResponse = await request.post(`${apiURL}/api/test/seed`, {
     data: {
-      email: 'test-e2e@example.com',
+      email: 'e2e-test@example.com',
       name: 'E2E Test User',
       plan: 'premium',
       credits: 50000,
       agentActive: true,
-      agentPersonality: 'jarvis',
     },
   });
+
+  // Verify seed was successful
   expect(seedResponse.ok()).toBeTruthy();
 
   const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
 
-  await apiContext.dispose();
+  // Login to get a valid session
+  const loginResponse = await request.post(`${apiURL}/api/auth/login`, {
+    data: {
+      email: credentials.email,
+      password: credentials.password,
+    },
+  });
 
-  // Navigate to login page
-  await page.goto('/login');
+  expect(loginResponse.ok()).toBeTruthy();
 
-  // Wait for login form to be ready
-  await page.waitForSelector('[data-testid="login-email"]');
+  const { token } = await loginResponse.json() as { token: string };
+  expect(token).toBeDefined();
 
-  // Fill in credentials
-  await page.getByTestId('login-email').fill(credentials.email);
-  await page.getByTestId('login-password').fill(credentials.password);
-  await page.getByTestId('login-submit').click();
+  // Save authentication state for other tests
+  await request.storageState({ path: authFile });
 
-  // Wait for dashboard navigation
-  await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
-
-  // Verify we're logged in by checking for dashboard elements
-  await expect(page.getByTestId('dashboard-sidebar')).toBeVisible();
-
-  // Save authentication state for reuse across tests
-  await page.context().storageState({ path: authFile });
+  console.log('E2E authentication setup complete');
 });

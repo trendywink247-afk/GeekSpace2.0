@@ -9,7 +9,6 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { config } from '../config.js';
 
 // ---- Types ----
@@ -54,7 +53,6 @@ interface ExecutionResult {
 // ---- Scheduled timers ----
 
 const cronTimers = new Map<string, ReturnType<typeof setInterval>>();
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const healthCheckInterval: ReturnType<typeof setInterval> | null = null;
 
 // ---- Action Executors ----
@@ -134,7 +132,7 @@ async function executeAction(
           } else {
             output = `Message queued (no Telegram link): ${message}`;
           }
-        } catch {
+        } catch (err) {
           output = `Message queued (send failed): ${message}`;
         }
         logger.info({ automationId: automation.id, message }, 'Telegram message action');

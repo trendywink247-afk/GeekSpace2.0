@@ -132,14 +132,11 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const credits = Number((stats as unknown as Record<string, unknown>).credits) || 0;
 
   useEffect(() => {
-    // Component mount initialization - suppress setState in effect warnings
-    /* eslint-disable react-hooks/set-state-in-effect */
     setMounted(true);
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('Good morning');
     else if (hour < 18) setGreeting('Good afternoon');
     else setGreeting('Good evening');
-    /* eslint-enable react-hooks/set-state-in-effect */
 
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
@@ -163,9 +160,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
   useEffect(() => {
     const pref = (agent as unknown as Record<string, unknown>)?.preferred_free_model as string | undefined;
-    /* eslint-disable react-hooks/set-state-in-effect */
     if (pref) setPreferredModel(pref);
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [agent]);
 
   const handleSelectModel = async (modelId: string) => {
@@ -264,7 +259,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
   return (
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
-    <div className="space-y-6 animate-in fade-in duration-500" data-testid="dashboard-overview">
+    <div className="space-y-6 animate-in fade-in duration-500">
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

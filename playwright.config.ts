@@ -2,18 +2,28 @@ import { defineConfig, devices } from '@playwright/test';
 
 /**
  * Playwright E2E Configuration for GeekSpace
- * Supports local and prod environments via E2E_BASE_URL env var
+ * Supports local and CI environments
+ *
+ * CI mode (CI=true):
+ *   - Uses built backend: node server/dist/index.js
+ *   - Uses built frontend: vite preview
+ *   - Single worker for deterministic tests
+ *
+ * Local mode:
+ *   - Uses dev servers with hot reload
+ *   - Parallel workers for faster feedback
  */
 
 const baseURL = process.env.E2E_BASE_URL || 'http://localhost:5173';
 const apiURL = process.env.API_URL || 'http://localhost:3001';
+const isCI = !!process.env.CI;
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  fullyParallel: !isCI, // Disable parallel in CI for determinism
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 1,
+  workers: isCI ? 1 : undefined,
   reporter: [
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
     ['list'],
@@ -23,9 +33,9 @@ export default defineConfig({
 
   use: {
     baseURL,
-    trace: 'retain-on-failure',
-    screenshot: 'on',
-    video: 'retain-on-failure',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'on-first-retry',
     actionTimeout: 10000,
     navigationTimeout: 15000,
   },
@@ -68,25 +78,37 @@ export default defineConfig({
     },
   ],
 
-  // Run backend and frontend before starting tests (if testing locally)
-  webServer: [
-    // Start backend first
-    {
-      command: 'cd server && npm run dev',
-      url: `${apiURL}/api/health`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 120000,
-      env: {
-        TEST_MODE: '1',
-        PORT: '3001',
-      },
-    },
-    // Then start frontend
-    {
-      command: 'npm run dev',
-      url: baseURL,
-      reuseExistingServer: !process.env.CI,
-      timeout: 120000,
-    },
-  ],
+  // Run backend and frontend before starting tests
+  webServer: isCI
+    ? [
+        // CI: Use built production code
+        {
+          command: 'cd server && npm run build && TEST_MODE=1 PORT=3001 node dist/index.js',
+          url: `${apiURL}/api/health`,
+          reuseExistingServer: false,
+          timeout: 120000,
+        },
+        // Frontend preview
+        {
+          command: 'npm run build && npx vite preview --port 5173',
+          url: baseURL,
+          reuseExistingServer: false,
+          timeout: 120000,
+        },
+      ]
+    : [
+        // Local: Use dev servers
+        {
+          command: 'cd server && TEST_MODE=1 PORT=3001 npm run dev',
+          url: `${apiURL}/api/health`,
+          reuseExistingServer: true,
+          timeout: 120000,
+        },
+        {
+          command: 'npm run dev',
+          url: baseURL,
+          reuseExistingServer: true,
+          timeout: 120000,
+        },
+      ],
 });

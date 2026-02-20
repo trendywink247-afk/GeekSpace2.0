@@ -265,7 +265,7 @@ export function ConnectionsPage() {
   const getColor = (type: string) => colorMap[type] || '#7B61FF';
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500" data-testid="connections-page">
+    <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

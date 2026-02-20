@@ -1,16 +1,10 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import request from 'supertest';
-import express from 'express';
-import { authRouter } from '../../routes/auth.js';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { config } from '../../config.js';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createTestUser, cleanupTestUser, generateTestToken, resetDatabase } from '../setup.js';
+import { createApp } from '../../app.js';
+import { createTestUser, cleanupTestUser, resetDatabase } from '../setup.js';
 
-// Create minimal app for testing
-const app = express();
-app.use(express.json());
-app.use('/api/auth', authRouter);
+// Create the real app (same as production)
+const app = createApp();
 
 describe('Auth Endpoints', () => {
   beforeAll(() => {
@@ -92,7 +86,7 @@ describe('Auth Endpoints', () => {
           username: 'newuser123',
         })
         .expect('Content-Type', /json/)
-        .expect(201);
+        .expect(200); // Auth returns 200, not 201
 
       expect(response.body).toHaveProperty('token');
       expect(response.body).toHaveProperty('user');

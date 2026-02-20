@@ -110,9 +110,7 @@ export function DashboardApp() {
   useEffect(() => {
     if (!sessionStorage.getItem('gs-welcome-shown')) {
       sessionStorage.setItem('gs-welcome-shown', '1');
-      /* eslint-disable react-hooks/set-state-in-effect */
       setShowWelcome(true);
-      /* eslint-enable react-hooks/set-state-in-effect */
       const timer = setTimeout(() => setShowWelcome(false), 5000);
       return () => clearTimeout(timer);
     }
@@ -120,9 +118,7 @@ export function DashboardApp() {
 
   // Close mobile sidebar when page changes
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     setSidebarOpen(false);
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [currentPage]);
 
   const menuItems: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
@@ -227,7 +223,6 @@ export function DashboardApp() {
             key={item.id}
             onClick={() => setCurrentPage(item.id)}
             aria-current={currentPage === item.id ? 'page' : undefined}
-            data-testid={`nav-${item.id}`}
             className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 min-h-[44px] ${
               currentPage === item.id
                 ? 'bg-[#7B61FF]/20 text-[#7B61FF] border border-[#7B61FF]/30'
@@ -348,7 +343,6 @@ export function DashboardApp() {
         }`}
         role="navigation"
         aria-label="Main navigation"
-        data-testid="dashboard-sidebar"
       >
         {sidebarContent}
       </aside>
@@ -399,7 +393,7 @@ export function DashboardApp() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <div className="px-2 md:px-3 py-1.5 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30" data-testid="credits-display">
+            <div className="px-2 md:px-3 py-1.5 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30">
               <span className="text-xs text-[#7B61FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
             </div>
             <button

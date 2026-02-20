@@ -37,7 +37,7 @@ router.get('/state', (req, res) => {
   const dbStats = {
     users: db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number },
     reminders: db.prepare('SELECT COUNT(*) as count FROM reminders').get() as { count: number },
-    remindersPending: db.prepare("SELECT COUNT(*) as count FROM reminders WHERE status = 'pending'").get() as { count: number },
+    remindersPending: db.prepare("SELECT COUNT(*) as count FROM reminders WHERE completed = 0").get() as { count: number },
     agents: db.prepare('SELECT COUNT(*) as count FROM agent_configs').get() as { count: number },
   };
 
@@ -67,11 +67,17 @@ router.post('/reset', (req, res) => {
   // Optionally do full database cleanup
   if (fullCleanup) {
     try {
+      // Disable foreign keys for cleanup
+      db.pragma('foreign_keys = OFF');
+
       // Clean up test users (identified by email pattern)
       db.prepare("DELETE FROM users WHERE email LIKE 'test-%@example.com' OR email LIKE '%@test.com'").run();
 
       // Clean up test reminders without valid users
       db.prepare(`DELETE FROM reminders WHERE user_id NOT IN (SELECT id FROM users)`).run();
+
+      // Re-enable foreign keys
+      db.pragma('foreign_keys = ON');
 
       logger.info('Full test cleanup completed');
     } catch (err) {
@@ -128,10 +134,10 @@ router.post('/seed', async (req, res) => {
       VALUES (?, ?, ?, ?, ?)
     `).run(agentId, userId, 'TestAgent', 'builder', agentActive ? 'online' : 'offline');
 
-    // Create subscription
+    // Create subscription with correct column names
     const subscriptionId = uuid();
     db.prepare(`
-      INSERT INTO subscriptions (id, user_id, plan, credits_remaining, credits_used_this_cycle, period_start, period_end)
+      INSERT INTO subscriptions (id, user_id, plan, credits_remaining, credits_used_this_cycle, billing_cycle_start, billing_cycle_end)
       VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now', '+30 days'))
     `).run(subscriptionId, userId, plan, credits, 0);
 
@@ -178,12 +184,12 @@ router.post('/reminder/execute', async (req, res) => {
 
     if (reminderId) {
       reminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(reminderId) as
-        | { id: string; user_id: string; text: string; status: string; scheduled_for: string }
+        | { id: string; user_id: string; text: string; completed: number; datetime: string }
         | undefined;
     } else {
-      // Get oldest pending reminder
-      reminder = db.prepare("SELECT * FROM reminders WHERE status = 'pending' ORDER BY scheduled_for ASC LIMIT 1").get() as
-        | { id: string; user_id: string; text: string; status: string; scheduled_for: string }
+      // Get oldest pending reminder (completed = 0)
+      reminder = db.prepare("SELECT * FROM reminders WHERE completed = 0 ORDER BY datetime ASC LIMIT 1").get() as
+        | { id: string; user_id: string; text: string; completed: number; datetime: string }
         | undefined;
     }
 
@@ -191,29 +197,19 @@ router.post('/reminder/execute', async (req, res) => {
       return res.status(404).json({ error: 'No pending reminder found' });
     }
 
-    // Mark as executed
-    const executedAt = new Date().toISOString();
-    const scheduledFor = new Date(reminder.scheduled_for);
-    const driftMs = Date.now() - scheduledFor.getTime();
-
+    // Mark as completed
     db.prepare(`
       UPDATE reminders
-      SET status = 'executed', executed_at = ?, updated_at = datetime('now')
+      SET completed = 1
       WHERE id = ?
-    `).run(executedAt, reminder.id);
-
-    // Record in test state
-    const { recordReminderExecuted } = await import('../test/test-mode.js');
-    recordReminderExecuted(reminder.id, reminder.text, reminder.scheduled_for, driftMs);
+    `).run(reminder.id);
 
     res.json({
       success: true,
       reminder: {
         id: reminder.id,
         text: reminder.text,
-        scheduledFor: reminder.scheduled_for,
-        executedAt,
-        driftMs,
+        completed: true,
       },
     });
   } catch (err) {
@@ -238,8 +234,11 @@ router.get('/reminders', (req, res) => {
   }
 
   if (status) {
-    query += ' AND status = ?';
-    params.push(status as string);
+    if (status === 'pending') {
+      query += ' AND completed = 0';
+    } else if (status === 'completed') {
+      query += ' AND completed = 1';
+    }
   }
 
   query += ' ORDER BY created_at DESC LIMIT 100';
@@ -257,7 +256,8 @@ router.post('/agent/status', (req, res) => {
   const { userId, active } = req.body as { userId: string; active: boolean };
 
   try {
-    db.prepare('UPDATE agent_configs SET is_active = ? WHERE user_id = ?').run(active ? 1 : 0, userId);
+    // Use status column (online/offline) not is_active
+    db.prepare('UPDATE agent_configs SET status = ? WHERE user_id = ?').run(active ? 'online' : 'offline', userId);
 
     recordAgentStatus(userId, active ? 'active' : 'inactive');
 

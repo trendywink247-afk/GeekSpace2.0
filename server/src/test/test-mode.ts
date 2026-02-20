@@ -266,6 +266,6 @@ export async function mockPicoClawCall(
  */
 export function requireTestMode(): void {
   if (!isTestMode()) {
-  throw new Error('This endpoint is only available in TEST_MODE');
+    throw new Error('This endpoint is only available in TEST_MODE');
   }
 }

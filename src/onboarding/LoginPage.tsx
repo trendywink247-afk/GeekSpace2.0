@@ -19,8 +19,6 @@ export function LoginPage() {
   // Auto-fill demo credentials from URL params
   useEffect(() => {
     if (searchParams.get('demo') === 'true') {
-      // Prefill demo credentials for quick testing
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEmail('alex@example.com');
       setPassword('pass');
       setUsername('alex');
@@ -136,7 +134,6 @@ export function LoginPage() {
                   placeholder="you@example.com"
                   className="pl-10 bg-[#05050A]/60 border-[#7B61FF]/30 text-[#F4F6FF]"
                   required
-                  data-testid="login-email"
                 />
               </div>
             </div>
@@ -151,16 +148,15 @@ export function LoginPage() {
                   placeholder="••••••••"
                   className="pl-10 bg-[#05050A]/60 border-[#7B61FF]/30 text-[#F4F6FF]"
                   required
-                  data-testid="login-password"
                 />
               </div>
             </div>
 
             {error && (
-              <p className="text-sm text-[#FF6161]" data-testid="login-error">{error}</p>
+              <p className="text-sm text-[#FF6161]">{error}</p>
             )}
 
-            <Button type="submit" disabled={isLoading} className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] h-12 text-base" data-testid="login-submit">
+            <Button type="submit" disabled={isLoading} className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] h-12 text-base">
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
@@ -189,7 +185,6 @@ export function LoginPage() {
               variant="outline"
               onClick={handleDemo}
               className="w-full border-[#7B61FF]/30 hover:bg-[#7B61FF]/10 h-12 group"
-              data-testid="demo-login-button"
             >
               <Zap className="w-4 h-4 mr-2 text-[#FFD761] group-hover:animate-pulse" />
               Login with Demo

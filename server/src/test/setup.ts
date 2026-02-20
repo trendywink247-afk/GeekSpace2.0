@@ -3,47 +3,77 @@
  * Configures the test environment and provides shared utilities
  */
 
-// Set test mode BEFORE importing config
+// Set test mode BEFORE any imports
 process.env.TEST_MODE = 'true';
 
+// Use a dedicated test database path
+import path from 'path';
+import os from 'os';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const TEST_DB_PATH = process.env.TEST_DB_PATH || path.join(os.tmpdir(), `geekspace-test-${process.pid}.db`);
+process.env.DB_PATH = TEST_DB_PATH;
+
+// Now import the rest
 import { config } from '../config.js';
-import { db } from '../db/index.js';
 import { logger } from '../logger.js';
+import { signToken } from '../middleware/auth.js';
 
 // Suppress logging during tests unless explicitly enabled
 if (!process.env.DEBUG_TESTS) {
   logger.level = 'silent';
 }
 
+// Import db after setting DB_PATH
+import { db } from '../db/index.js';
+
 /**
  * Reset database for tests
- * WARNING: Only works in test mode
+ * Properly handles foreign keys by disabling during cleanup
  */
 export function resetDatabase(): void {
   if (!config.isTestMode) {
     throw new Error('Cannot reset database outside of test mode');
   }
 
-  // Clean up test data
-  const tables = [
-    'reminders',
-    'pico_tasks',
-    'agent_memory',
-    'conversation_log',
-    'channel_links',
-    'pico_agents',
-    'agent_configs',
-    'subscriptions',
-    'usage_events',
-    'users',
-  ];
+  // Disable foreign key constraints during cleanup
+  db.pragma('foreign_keys = OFF');
 
-  for (const table of tables) {
-    try {
-      db.prepare(`DELETE FROM ${table}`).run();
-    } catch {
-      // Table might not exist, ignore
+  try {
+    // Clean up test data in reverse dependency order
+    const tables = [
+      'activity_log',
+      'security_events',
+      'usage_events',
+      'reminders',
+      'pico_tasks',
+      'agent_memory',
+      'conversation_log',
+      'channel_links',
+      'link_codes',
+      'pico_agents',
+      'agent_configs',
+      'subscriptions',
+      'features',
+      'portfolios',
+      'integrations',
+      'api_keys',
+      'automations',
+      'users',
+    ];
+
+    for (const table of tables) {
+      try {
+        db.prepare(`DELETE FROM ${table}`).run();
+      } catch (err) {
+        // Table might not exist, ignore
+        logger.debug({ table, err }, 'Could not clean table');
+      }
     }
+  } finally {
+    // Re-enable foreign keys
+    db.pragma('foreign_keys = ON');
   }
 }
 
@@ -56,9 +86,8 @@ export function createTestUser(email = `test-${Date.now()}@example.com`): {
   username: string;
   password: string;
 } {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // Use dynamic imports to avoid circular dependency issues
   const { v4: uuid } = require('uuid');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const bcrypt = require('bcryptjs');
 
   const id = uuid();
@@ -71,29 +100,32 @@ export function createTestUser(email = `test-${Date.now()}@example.com`): {
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(id, email, username, passwordHash, 'Test User', 'premium', 50000);
 
-  // Create subscription
+  // Create subscription with correct column names
   db.prepare(`
     INSERT INTO subscriptions (id, user_id, plan, credits_remaining, billing_cycle_start, billing_cycle_end)
     VALUES (?, ?, ?, ?, datetime('now'), datetime('now', '+30 days'))
   `).run(uuid(), id, 'premium', 50000);
 
+  // Create agent config for the user (many endpoints expect this)
+  db.prepare(`
+    INSERT INTO agent_configs (id, user_id, name, mode, status)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(uuid(), id, 'TestAgent', 'builder', 'online');
+
   return { id, email, username, password };
 }
 
 /**
- * Generate JWT token for test user
+ * Generate JWT token for test user using the same method as production
  */
 export function generateTestToken(userId: string): string {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const jwt = require('jsonwebtoken');
-  return jwt.sign({ userId }, config.jwtSecret, { expiresIn: '1h' });
+  return signToken(userId);
 }
 
 /**
  * Create test agent config
  */
 export function createTestAgent(userId: string, isActive = true): string {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { v4: uuid } = require('uuid');
   const id = uuid();
 
@@ -109,25 +141,47 @@ export function createTestAgent(userId: string, isActive = true): string {
  * Clean up test data for a specific user
  */
 export function cleanupTestUser(userId: string): void {
-  const tables = [
-    'reminders',
-    'pico_tasks',
-    'agent_memory',
-    'conversation_log',
-    'channel_links',
-    'pico_agents',
-    'agent_configs',
-    'subscriptions',
-    'usage_events',
-  ];
+  // Disable foreign keys during cleanup
+  db.pragma('foreign_keys = OFF');
 
-  for (const table of tables) {
-    try {
-      db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).run(userId);
-    } catch {
-      // Table might not exist, ignore
+  try {
+    const tables = [
+      'activity_log',
+      'security_events',
+      'usage_events',
+      'reminders',
+      'pico_tasks',
+      'agent_memory',
+      'conversation_log',
+      'channel_links',
+      'link_codes',
+      'pico_agents',
+      'agent_configs',
+      'subscriptions',
+      'features',
+      'portfolios',
+      'integrations',
+      'api_keys',
+      'automations',
+    ];
+
+    for (const table of tables) {
+      try {
+        db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).run(userId);
+      } catch {
+        // Table might not exist, ignore
+      }
     }
-  }
 
-  db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  } finally {
+    db.pragma('foreign_keys = ON');
+  }
+}
+
+/**
+ * Make Authorization header for Supertest
+ */
+export function makeAuthHeader(userId: string): string {
+  return `Bearer ${generateTestToken(userId)}`;
 }

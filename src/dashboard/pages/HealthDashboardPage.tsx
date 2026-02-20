@@ -163,7 +163,6 @@ export function HealthDashboardPage() {
       es.close();
       setConnected(false);
       retriesRef.current = 0;
-      // eslint-disable-next-line react-hooks/immutability
       reconnectTimerRef.current = setTimeout(connect, 1000);
     });
 
@@ -220,7 +219,7 @@ export function HealthDashboardPage() {
     : 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500" data-testid="health-page">
+    <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">

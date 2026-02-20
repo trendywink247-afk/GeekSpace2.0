@@ -1,28 +1,11 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import request from 'supertest';
-import express from 'express';
-import { agentRouter } from '../../routes/agent.js';
-import { createTestUser, cleanupTestUser, resetDatabase, createTestAgent } from '../setup.js';
+import { createApp } from '../../app.js';
+import { createTestUser, cleanupTestUser, resetDatabase, makeAuthHeader } from '../setup.js';
 import { db } from '../../db/index.js';
 
-// Create minimal app for testing
-const app = express();
-app.use(express.json());
-
-// Simple mock auth that sets userId directly
-app.use((req, res, next) => {
-  // Check if this is a test request with Authorization header
-  const authHeader = req.headers.authorization;
-  if (authHeader?.startsWith('Bearer test-')) {
-    // Extract userId from token format: test-{userId}
-    const userId = authHeader.slice(12); // Remove 'Bearer test-'
-    // Use type assertion to add userId to request
-    Object.defineProperty(req, 'userId', { value: userId, writable: true });
-  }
-  next();
-});
-
-app.use('/api/agent', agentRouter);
+// Create the real app (same as production)
+const app = createApp();
 
 describe('Agent Status Endpoints', () => {
   beforeAll(() => {
@@ -35,8 +18,12 @@ describe('Agent Status Endpoints', () => {
 
   const setupUserWithAgent = (agentActive = true) => {
     const user = createTestUser();
-    createTestAgent(user.id, agentActive);
-    return { ...user, token: `test-${user.id}` };
+    // Set agent status based on active parameter
+    // createTestUser already creates an agent config with status 'online'
+    if (!agentActive) {
+      db.prepare('UPDATE agent_configs SET status = ? WHERE user_id = ?').run('offline', user.id);
+    }
+    return { ...user, token: makeAuthHeader(user.id) };
   };
 
   describe('GET /api/agent/status', () => {
@@ -45,12 +32,13 @@ describe('Agent Status Endpoints', () => {
 
       const response = await request(app)
         .get('/api/agent/status')
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', user.token)
         .expect('Content-Type', /json/)
         .expect(200);
 
       expect(response.body).toHaveProperty('status');
       expect(response.body).toHaveProperty('agent');
+      expect(response.body.status).toBe('active');
 
       cleanupTestUser(user.id);
     });
@@ -60,7 +48,7 @@ describe('Agent Status Endpoints', () => {
 
       const response = await request(app)
         .get('/api/agent/status')
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', user.token)
         .expect('Content-Type', /json/)
         .expect(200);
 
@@ -85,15 +73,15 @@ describe('Agent Status Endpoints', () => {
 
       const response = await request(app)
         .post('/api/agent/activate')
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', user.token)
         .expect('Content-Type', /json/)
         .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
 
       // Verify in database
-      const agent = db.prepare('SELECT is_active FROM agent_configs WHERE user_id = ?').get(user.id) as { is_active: number } | undefined;
-      expect(agent?.is_active).toBe(1);
+      const agent = db.prepare('SELECT status FROM agent_configs WHERE user_id = ?').get(user.id) as { status: string } | undefined;
+      expect(agent?.status).toBe('online');
 
       cleanupTestUser(user.id);
     });
@@ -105,15 +93,15 @@ describe('Agent Status Endpoints', () => {
 
       const response = await request(app)
         .post('/api/agent/deactivate')
-        .set('Authorization', `Bearer ${user.token}`)
+        .set('Authorization', user.token)
         .expect('Content-Type', /json/)
         .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
 
       // Verify in database
-      const agent = db.prepare('SELECT is_active FROM agent_configs WHERE user_id = ?').get(user.id) as { is_active: number } | undefined;
-      expect(agent?.is_active).toBe(0);
+      const agent = db.prepare('SELECT status FROM agent_configs WHERE user_id = ?').get(user.id) as { status: string } | undefined;
+      expect(agent?.status).toBe('offline');
 
       cleanupTestUser(user.id);
     });

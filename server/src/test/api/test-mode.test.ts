@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import request from 'supertest';
-import express from 'express';
-import testRouter from '../../routes/test.js';
+import { createApp } from '../../app.js';
 import { createTestUser, cleanupTestUser, resetDatabase } from '../setup.js';
 import { config } from '../../config.js';
 
@@ -10,10 +9,8 @@ if (!config.isTestMode) {
   throw new Error('Test mode must be enabled for test-mode tests');
 }
 
-// Create minimal app for testing
-const app = express();
-app.use(express.json());
-app.use('/api/test', testRouter);
+// Create the real app (same as production)
+const app = createApp();
 
 describe('Test-Only Endpoints', () => {
   beforeAll(() => {

@@ -7,8 +7,6 @@
 
 import { config } from '../config.js';
 import { logger } from '../logger.js';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { isTestMode, mockTelegramSend, recordTelegramMessage } from '../test/test-mode.js';
 
 const TELEGRAM_API = `https://api.telegram.org/bot${config.telegramBotToken}`;
 
@@ -123,12 +121,6 @@ export async function sendTelegramMessage(
 ): Promise<{ messageId: number; success: boolean }> {
   // Sanitize LLM output before sending
   const cleanText = sanitizeForTelegram(text) || 'Done.';
-
-  // Test mode: mock the send and record it
-  if (isTestMode()) {
-    recordTelegramMessage(String(chatId), cleanText);
-    return { messageId: Date.now(), success: true };
-  }
 
   // Telegram has a 4096 char limit per message — split if needed
   const chunks = splitMessage(cleanText, 4096);
