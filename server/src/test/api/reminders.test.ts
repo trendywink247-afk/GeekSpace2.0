@@ -3,6 +3,7 @@ import request from 'supertest';
 import { createApp } from '../../app.js';
 import { createTestUser, cleanupTestUser, resetDatabase, makeAuthHeader } from '../setup.js';
 import { db } from '../../db/index.js';
+import { v4 as uuid } from 'uuid';
 
 // Create the real app (same as production)
 const app = createApp();
@@ -30,7 +31,6 @@ describe('Reminders Endpoints', () => {
       const user = createTestUser();
 
       // Create a test reminder
-      const { v4: uuid } = require('uuid');
       db.prepare(`
         INSERT INTO reminders (id, user_id, text, datetime, channel, category, completed, created_by)
         VALUES (?, ?, ?, datetime('now'), 'push', 'test', 0, 'test')
@@ -94,7 +94,6 @@ describe('Reminders Endpoints', () => {
       const user = createTestUser();
 
       // Create a test reminder
-      const { v4: uuid } = require('uuid');
       const reminderId = uuid();
       db.prepare(`
         INSERT INTO reminders (id, user_id, text, datetime, channel, category, completed, created_by)
