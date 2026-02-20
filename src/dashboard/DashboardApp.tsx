@@ -110,7 +110,9 @@ export function DashboardApp() {
   useEffect(() => {
     if (!sessionStorage.getItem('gs-welcome-shown')) {
       sessionStorage.setItem('gs-welcome-shown', '1');
+      /* eslint-disable react-hooks/set-state-in-effect */
       setShowWelcome(true);
+      /* eslint-enable react-hooks/set-state-in-effect */
       const timer = setTimeout(() => setShowWelcome(false), 5000);
       return () => clearTimeout(timer);
     }
@@ -118,7 +120,9 @@ export function DashboardApp() {
 
   // Close mobile sidebar when page changes
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     setSidebarOpen(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [currentPage]);
 
   const menuItems: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
