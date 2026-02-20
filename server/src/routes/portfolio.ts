@@ -140,10 +140,9 @@ portfolioRouter.get('/agent-messages', requireAuth, async (req: AuthRequest, res
 });
 
 // PARAMETERIZED routes come AFTER all static routes
-portfolioRouter.get('/:username/can-chat', async (req, res) => {
+portfolioRouter.get('/:username/can-chat', requireAuth, async (req: AuthRequest, res) => {
   const { canChatWithAgent } = await import('../services/agent-chat.js');
-  const userId = (req as AuthRequest).userId;
-  const canChat = canChatWithAgent(userId || '', req.params.username);
+  const canChat = canChatWithAgent(req.userId!, req.params.username);
   res.json({ canChat });
 });
 

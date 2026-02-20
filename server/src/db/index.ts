@@ -452,6 +452,22 @@ try { db.exec(`ALTER TABLE installed_recipes ADD COLUMN last_run_at TEXT`); } ca
 // Task 17: link Pico-created reminders to pico_tasks
 try { db.exec(`ALTER TABLE reminders ADD COLUMN pico_task_id TEXT`); } catch { /* column already exists */ }
 
+// Agent chat feature - enable users to receive messages from other agents
+try { db.exec(`ALTER TABLE users ADD COLUMN agent_chat_enabled INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+
+// User connections table (for agent chat and networking)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_connections (
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      connected_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      last_interaction TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (user_id, connected_user_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_connections ON user_connections(user_id, last_interaction);
+  `);
+} catch { /* table already exists */ }
+
 // Security event logging
 try {
   db.exec(`
@@ -569,6 +585,23 @@ try {
   `);
 } catch { /* table already exists */ }
 
+// Generated outputs (PDFs, docs, plans from conversations)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS generated_outputs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      format TEXT NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      metadata TEXT DEFAULT '{}',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_outputs_user ON generated_outputs(user_id);
+    CREATE INDEX IF NOT EXISTS idx_outputs_created ON generated_outputs(created_at);
+  `);
+} catch { /* table already exists */ }
+
 // Add FK constraint to automation_logs
 try {
   db.exec(`
@@ -586,6 +619,22 @@ try {
     ALTER TABLE automation_logs_new RENAME TO automation_logs;
   `);
 } catch { /* table may not exist or already has FK — ignore */ }
+
+// Agent chat messages table
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_messages (
+      id TEXT PRIMARY KEY,
+      from_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      to_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      content TEXT NOT NULL,
+      is_read INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_agent_messages_to ON agent_messages(to_user_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_agent_messages_conversation ON agent_messages(from_user_id, to_user_id);
+  `);
+} catch { /* table already exists */ }
 
 // ── Plan definitions ────────────────────────────────────────
 

@@ -179,7 +179,7 @@ export function DashboardApp() {
       case 'health':
         return <HealthDashboardPage />;
       case 'artifacts':
-        return <ArtifactsPage />;
+        return <ArtifactsPage onNavigate={(page: string) => setCurrentPage(page as PageType)} />;
       case 'templates':
         return <TemplateGalleryPage />;
       case 'terminal':

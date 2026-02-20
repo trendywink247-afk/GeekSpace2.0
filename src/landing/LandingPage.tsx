@@ -9,6 +9,7 @@ import { ActivitySection } from './sections/ActivitySection';
 import { EngineSection } from './sections/EngineSection';
 import { SecuritySection } from './sections/SecuritySection';
 import { ContactSection } from './sections/ContactSection';
+import { PromptTemplatesSection } from './sections/PromptTemplatesSection';
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ export function LandingPage() {
 
       <main className="relative z-10">
         <HeroSection onEnterDashboard={onEnterDashboard} onWatchDemo={onWatchDemo} />
+        <PromptTemplatesSection />
         <ConstellationSection onViewPortfolio={onViewPortfolio} onBrowseDirectory={onBrowseDirectory} />
         <PersonaSection onDesignAssistant={onDesignAssistant} />
         <ActivitySection />

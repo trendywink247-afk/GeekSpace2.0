@@ -8,7 +8,6 @@
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { v4 as uuid } from 'uuid';
-import { sendTelegramMessage } from './telegram.js';
 
 let cleanupInterval: ReturnType<typeof setInterval> | null = null;
 let warningInterval: ReturnType<typeof setInterval> | null = null;
@@ -20,16 +19,14 @@ export function cleanupExpiredArtifacts(): void {
   try {
     // Find expired artifacts
     const expired = db.prepare(`
-      SELECT ga.id, ga.user_id, ga.title, u.telegram_chat_id
+      SELECT ga.id, ga.user_id, ga.title
       FROM generated_artifacts ga
-      JOIN users u ON ga.user_id = u.id
       WHERE ga.expires_at IS NOT NULL
         AND datetime(ga.expires_at) <= datetime('now')
     `).all() as Array<{
       id: string;
       user_id: string;
       title: string;
-      telegram_chat_id: string | null;
     }>;
 
     for (const artifact of expired) {
@@ -42,14 +39,6 @@ export function cleanupExpiredArtifacts(): void {
           INSERT INTO activity_log (id, user_id, action, details, icon)
           VALUES (?, ?, 'Artifact auto-deleted', ?, 'trash')
         `).run(uuid(), artifact.user_id, `"${artifact.title}" expired and was deleted`);
-
-        // Notify via Telegram if linked
-        if (artifact.telegram_chat_id) {
-          sendTelegramMessage(
-            artifact.telegram_chat_id,
-            `🗑️ Your project "${artifact.title}" has been auto-deleted after 24 hours.\n\nCreate a new project anytime!`
-          ).catch(() => { /* non-fatal */ });
-        }
 
         logger.info({ artifactId: artifact.id, userId: artifact.user_id }, 'Expired artifact deleted');
       } catch (err) {
@@ -74,9 +63,8 @@ export function sendExpirationWarnings(): void {
   for (const warning of warnings) {
     try {
       const expiring = db.prepare(`
-        SELECT ga.id, ga.user_id, ga.title, ga.expires_at, u.telegram_chat_id
+        SELECT ga.id, ga.user_id, ga.title, ga.expires_at
         FROM generated_artifacts ga
-        JOIN users u ON ga.user_id = u.id
         WHERE ga.expires_at IS NOT NULL
           AND datetime(ga.expires_at) <= datetime('now', '+${warning.minutes} minutes')
           AND datetime(ga.expires_at) > datetime('now', '+${warning.minutes - 5} minutes')
@@ -85,22 +73,11 @@ export function sendExpirationWarnings(): void {
         user_id: string;
         title: string;
         expires_at: string;
-        telegram_chat_id: string | null;
       }>;
 
+      // Note: Telegram notifications disabled - would need telegram_chat_id from user integrations
       for (const artifact of expiring) {
-        if (!artifact.telegram_chat_id) continue;
-
-        const previewUrl = `${process.env.PUBLIC_URL || 'https://ai.geekspace.space'}/preview/${artifact.user_id}/${artifact.id}`;
-
-        sendTelegramMessage(
-          artifact.telegram_chat_id,
-          `${warning.emoji} Your project "${artifact.title}" will be deleted in ${warning.text}!\n\n` +
-          `Preview: ${previewUrl}\n\n` +
-          `To save it permanently, go to My Projects and click "Save" before it expires!`
-        ).catch(() => { /* non-fatal */ });
-
-        logger.info({ artifactId: artifact.id, warning: warning.text }, 'Expiration warning sent');
+        logger.info({ artifactId: artifact.id, warning: warning.text }, 'Artifact expiring soon (notifications disabled)');
       }
     } catch (err) {
       logger.error({ err, warning }, 'Failed to send expiration warnings');

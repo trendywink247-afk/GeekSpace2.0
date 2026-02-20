@@ -91,7 +91,7 @@ export interface ParseResult {
 
 // ── Parser ──────────────────────────────────────────────────
 
-const ACTION_REGEX = /<<<ACTION\s*\n([\s\S]*?)\nACTION>>>/g;
+const ACTION_REGEX = /<<<ACTION\s*([\s\S]*?)ACTION>>>/g;
 
 export function parseActions(llmResponse: string): ParseResult {
   const actions: ParsedAction[] = [];

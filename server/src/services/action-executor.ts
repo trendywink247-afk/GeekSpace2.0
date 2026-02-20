@@ -13,6 +13,7 @@ import { sendAgentEmail, resolveEmailAddress } from './email.js';
 import { parseReminderTime } from './pico-fleet.js';
 import type { ParsedAction } from './action-parser.js';
 import { config } from '../config.js';
+import { createReceipt, RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -23,6 +24,7 @@ export interface ActionResult {
   artifactId?: string;
   previewUrl?: string;
   data?: Record<string, unknown>;
+  receipt?: ReceiptItem; // Visual confirmation of action taken
 }
 
 // ── Executor ────────────────────────────────────────────────
@@ -55,14 +57,18 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
         const baseUrl = params.baseUrl as string | undefined;
         const previewUrl = baseUrl ? `${baseUrl}/preview/${userId}/${id}` : undefined;
 
-        return {
+        const result: ActionResult = {
           tool,
           success: true,
           message: `Created project "${title}"${previewUrl ? `. Live preview: ${previewUrl}` : ''}`,
           artifactId: id,
           previewUrl,
           data: { title, html, css, js, previewUrl },
+          receipt: previewUrl
+            ? RECEIPT_TEMPLATES.website(title, previewUrl)
+            : RECEIPT_TEMPLATES.project(title),
         };
+        return result;
       }
 
       // ── portfolio_add_project ───────────────────────────
@@ -90,6 +96,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           tool,
           success: true,
           message: `Added project "${params.title}" to portfolio`,
+          receipt: RECEIPT_TEMPLATES.project(params.title as string),
         };
       }
 
@@ -103,6 +110,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           tool,
           success: true,
           message: 'Portfolio bio updated',
+          receipt: RECEIPT_TEMPLATES.memory('Portfolio bio'),
         };
       }
 
@@ -116,6 +124,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           tool,
           success: true,
           message: 'Portfolio skills updated',
+          receipt: RECEIPT_TEMPLATES.memory('Portfolio skills'),
         };
       }
 
@@ -201,6 +210,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           success: true,
           message: `Email sent to ${to}`,
           data: { to, subject: params.subject as string },
+          receipt: RECEIPT_TEMPLATES.email(to),
         };
       }
 
@@ -232,6 +242,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           success: true,
           message: `Reminder set: "${text}"${dueAt ? ` (${dueAt})` : ''}`,
           data: { reminderId, text, datetime: dueAt, channel },
+          receipt: RECEIPT_TEMPLATES.reminder(text, dueAt || 'soon'),
         };
       }
 
@@ -300,6 +311,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           success: true,
           message: `Workflow "${flowPath}" triggered — job ${jobId}`,
           data: { flowPath, jobId },
+          receipt: RECEIPT_TEMPLATES.automation(flowPath),
         };
       }
 

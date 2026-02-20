@@ -6,7 +6,11 @@ import {
 import { artifactService } from '@/services/api';
 import type { Artifact, ArtifactDomain } from '@/types';
 
-export function ArtifactsPage() {
+interface ArtifactsPageProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedArtifact, setSelectedArtifact] = useState<Artifact | null>(null);
@@ -141,7 +145,7 @@ export function ArtifactsPage() {
           </p>
         </div>
         <button
-          onClick={() => window.open('/dashboard/templates', '_self')}
+          onClick={() => onNavigate?.('templates')}
           className="flex items-center gap-2 px-4 py-2 bg-[#7B61FF] text-white rounded-lg hover:bg-[#7B61FF]/80 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -156,7 +160,7 @@ export function ArtifactsPage() {
           <h3 className="text-lg font-medium text-[#F4F6FF] mb-2">No projects yet</h3>
           <p className="text-[#A7ACB8] mb-6">Create your first website from a template or ask your AI agent</p>
           <button
-            onClick={() => window.open('/dashboard/templates', '_self')}
+            onClick={() => onNavigate?.('templates')}
             className="px-4 py-2 bg-[#7B61FF]/20 text-[#7B61FF] rounded-lg hover:bg-[#7B61FF]/30 transition-colors"
           >
             Browse Templates

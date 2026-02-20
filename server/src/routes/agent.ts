@@ -19,6 +19,7 @@ import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } f
 import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
 import { parseActions } from '../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
+import { formatReceiptCompact, type ReceiptItem } from '../services/receipts.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { sendTelegramMessage } from '../services/telegram.js';
 
@@ -491,11 +492,24 @@ You are assisting via the GeekSpace terminal. Be concise. No markdown headers. P
 
         const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? userCredits;
 
-        // Log assistant response
-        logConversation(userId, 'assistant', bridgeResult.text, bridgeResult.provider, bridgeResult.model);
+        // Parse and execute any tool actions from LLM response
+        const { text: cleanReply, actions: parsedActions } = parseActions(bridgeResult.text);
+        const actionResults: ActionResult[] = [];
+
+        for (const action of parsedActions) {
+          // Inject baseUrl for generate_code actions to create preview links
+          if (action.tool === 'generate_code') {
+            action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
+          }
+          const actionResult = await executeAction(userId, action);
+          actionResults.push(actionResult);
+        }
+
+        // Log the clean reply (without action blocks)
+        logConversation(userId, 'assistant', cleanReply || bridgeResult.text, bridgeResult.provider, bridgeResult.model);
 
         const response: Record<string, unknown> = {
-          text: bridgeResult.text,
+          text: cleanReply || bridgeResult.text,
           route: bridgeResult.route,
           tier: bridgeResult.route === 'pico-direct' ? 'local' : 'premium',
           latencyMs: bridgeResult.latencyMs,
@@ -511,8 +525,23 @@ You are assisting via the GeekSpace terminal. Be concise. No markdown headers. P
           response.steps = bridgeResult.steps;
         }
 
+        // Attach action results and receipts if any
+        if (actionResults.length > 0) {
+          response.actions = actionResults;
+
+          // Format receipts for display
+          const receipts = actionResults
+            .filter(ar => ar.receipt)
+            .map(ar => ar.receipt!);
+
+          if (receipts.length > 0) {
+            response.receiptText = formatReceiptCompact(receipts);
+            response.receipts = receipts;
+          }
+        }
+
         // Background AI memory extraction (non-blocking)
-        extractMemoriesWithAI(userId, message, bridgeResult.text).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
+        extractMemoriesWithAI(userId, message, cleanReply || bridgeResult.text).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
 
         res.json(response);
         return;
@@ -596,9 +625,19 @@ You are assisting via the GeekSpace terminal. Be concise. No markdown headers. P
       creditsRemaining: updatedCredits,
     };
 
-    // Attach action results if any
+    // Attach action results and receipts if any
     if (actionResults.length > 0) {
       response.actions = actionResults;
+
+      // Format receipts for display
+      const receipts: ReceiptItem[] = actionResults
+        .filter(ar => ar.receipt)
+        .map(ar => ar.receipt!);
+
+      if (receipts.length > 0) {
+        response.receiptText = formatReceiptCompact(receipts);
+        response.receipts = receipts;
+      }
     }
 
     if (config.logLevel === 'debug') {

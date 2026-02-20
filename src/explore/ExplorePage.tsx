@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, Sparkles, MapPin, Bot, ArrowLeft, Filter, MessageSquare, Eye, Users, Loader2
+  Search, Sparkles, MapPin, Bot, ArrowLeft, Filter, Eye, Users, Loader2
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentToAgentChat } from '@/components/AgentToAgentChat';
 import { directoryService } from '@/services/api';
 import type { DirectoryProfile } from '@/types';
@@ -31,8 +30,6 @@ export function ExplorePage() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState('All');
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatOwner, setChatOwner] = useState('');
   const [agentChatOpen, setAgentChatOpen] = useState(false);
   const [agentChatTarget, setAgentChatTarget] = useState<{ username: string; name: string } | null>(null);
   const [profiles, setProfiles] = useState<DirectoryProfile[]>([]);
@@ -61,12 +58,6 @@ export function ExplorePage() {
     const timer = setTimeout(fetchProfiles, 300);
     return () => clearTimeout(timer);
   }, [fetchProfiles]);
-
-  const handleChat = (e: React.MouseEvent, profile: DirectoryProfile) => {
-    e.stopPropagation();
-    setChatOwner(profile.username);
-    setChatOpen(true);
-  };
 
   const handleAgentChat = (e: React.MouseEvent, profile: DirectoryProfile) => {
     e.stopPropagation();
@@ -225,15 +216,6 @@ export function ExplorePage() {
 
                 {/* Action buttons */}
                 <div className="mt-4 pt-3 border-t border-[#7B61FF]/10 flex gap-2">
-                  {profile.agentEnabled && (
-                    <button
-                      onClick={(e) => handleChat(e, profile)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] rounded-lg bg-[#7B61FF]/10 border border-[#7B61FF]/20 text-xs text-[#7B61FF] hover:bg-[#7B61FF]/20 transition-colors press-scale"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      Chat
-                    </button>
-                  )}
                   {isAuthenticated && profile.agentEnabled && (
                     <button
                       onClick={(e) => handleAgentChat(e, profile)}
@@ -241,7 +223,7 @@ export function ExplorePage() {
                       title="Send a message to their agent"
                     >
                       <Bot className="w-3.5 h-3.5" />
-                      Agent
+                      Message Agent
                     </button>
                   )}
                   <button
@@ -272,13 +254,6 @@ export function ExplorePage() {
           </div>
         )}
       </main>
-
-      {/* Agent Chat Panel */}
-      <AgentChatPanel
-        isOpen={chatOpen}
-        onClose={() => setChatOpen(false)}
-        agentOwner={chatOwner}
-      />
 
       {/* Agent-to-Agent Chat Modal */}
       {agentChatOpen && agentChatTarget && (

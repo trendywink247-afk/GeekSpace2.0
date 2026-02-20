@@ -46,6 +46,9 @@ import { healthRouter, getCachedComponents, startHealthProbeCache } from './rout
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { startModelSyncScheduler } from './services/model-sync.js';
 import { startArtifactCleanupScheduler } from './services/artifact-cleanup.js';
+import { generateOutput, packageAsTodo, packageAsPlan, packageAsPDF, summarizeChat } from './services/output-generator.js';
+import { createProjectFromChat, detectProjectFromChat, getProjectSuggestionText } from './services/chat-to-project.js';
+import { requireAuth } from './middleware/auth.js';
 
 const APP_VERSION = '3.0.0';
 
@@ -203,6 +206,112 @@ app.use('/api/health', healthRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/artifacts', artifactsRouter);
 app.use('/api/templates', templatesRouter);
+
+// ---- Output Generator Routes (Authenticated) ----
+app.post('/api/outputs/generate', requireAuth, async (req, res) => {
+  const { format, title, content, metadata } = req.body;
+  const userId = (req as any).userId;
+  if (!format || !title || !content) return res.status(400).json({ error: 'Missing required fields' });
+
+  try {
+    const result = await generateOutput({ userId, format, title, content, metadata });
+    res.json(result);
+  } catch (err) {
+    logger.error({ err }, 'Output generation failed');
+    res.status(500).json({ error: 'Failed to generate output' });
+  }
+});
+
+app.post('/api/outputs/todo', requireAuth, async (req, res) => {
+  const { title, content, actionItems } = req.body;
+  const userId = (req as any).userId;
+
+  try {
+    const result = await packageAsTodo(userId, title || 'To-Do List', content, actionItems);
+    res.json(result);
+  } catch (err) {
+    logger.error({ err }, 'Todo packaging failed');
+    res.status(500).json({ error: 'Failed to create todo list' });
+  }
+});
+
+app.post('/api/outputs/plan', requireAuth, async (req, res) => {
+  const { title, content, steps } = req.body;
+  const userId = (req as any).userId;
+
+  try {
+    const result = await packageAsPlan(userId, title || 'Plan', content, steps);
+    res.json(result);
+  } catch (err) {
+    logger.error({ err }, 'Plan packaging failed');
+    res.status(500).json({ error: 'Failed to create plan' });
+  }
+});
+
+app.post('/api/outputs/pdf', requireAuth, async (req, res) => {
+  const { title, content, metadata } = req.body;
+  const userId = (req as any).userId;
+
+  try {
+    const result = await packageAsPDF(userId, title || 'Document', content, metadata);
+    res.json(result);
+  } catch (err) {
+    logger.error({ err }, 'PDF generation failed');
+    res.status(500).json({ error: 'Failed to generate PDF' });
+  }
+});
+
+app.post('/api/outputs/summarize', requireAuth, async (req, res) => {
+  const { messages } = req.body;
+  const userId = (req as any).userId;
+  if (!Array.isArray(messages)) return res.status(400).json({ error: 'Messages array required' });
+
+  try {
+    const summary = await summarizeChat(userId, messages);
+    res.json({ success: true, summary });
+  } catch (err) {
+    logger.error({ err }, 'Chat summarization failed');
+    res.status(500).json({ error: 'Failed to summarize chat' });
+  }
+});
+
+// ---- Chat-to-Project Routes ----
+app.post('/api/chat/detect-project', requireAuth, (req, res) => {
+  const { messages, detectedIntent, artifactsCreated, actionsTaken } = req.body;
+  const userId = (req as any).userId;
+
+  const detected = detectProjectFromChat({
+    userId,
+    messages: messages || [],
+    detectedIntent,
+    artifactsCreated,
+    actionsTaken,
+  });
+
+  if (detected) {
+    res.json({
+      detected: true,
+      project: detected,
+      suggestionText: getProjectSuggestionText(detected),
+    });
+  } else {
+    res.json({ detected: false });
+  }
+});
+
+app.post('/api/chat/create-project', requireAuth, async (req, res) => {
+  const { project, autoCreate } = req.body;
+  const userId = (req as any).userId;
+  if (!project) return res.status(400).json({ error: 'Project data required' });
+
+  try {
+    const result = await createProjectFromChat(userId, project, { autoCreate });
+    res.json(result);
+  } catch (err) {
+    logger.error({ err }, 'Project creation from chat failed');
+    res.status(500).json({ error: 'Failed to create project' });
+  }
+});
 
 // ---- Subdomain middleware for artifact custom domains ----
 app.use((req, res, next) => {
