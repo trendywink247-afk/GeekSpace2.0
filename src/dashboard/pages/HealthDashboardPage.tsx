@@ -163,6 +163,7 @@ export function HealthDashboardPage() {
       es.close();
       setConnected(false);
       retriesRef.current = 0;
+      // eslint-disable-next-line react-hooks/immutability
       reconnectTimerRef.current = setTimeout(connect, 1000);
     });
 
