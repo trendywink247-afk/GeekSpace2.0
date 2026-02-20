@@ -94,7 +94,6 @@ export function DashboardApp() {
     } else {
       applyTheme();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themeMode, setThemeMode, applyTheme]);
 
   // Load stored accent color from server on mount

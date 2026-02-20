@@ -19,6 +19,8 @@ export function LoginPage() {
   // Auto-fill demo credentials from URL params
   useEffect(() => {
     if (searchParams.get('demo') === 'true') {
+      // Prefill demo credentials for quick testing
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEmail('alex@example.com');
       setPassword('pass');
       setUsername('alex');

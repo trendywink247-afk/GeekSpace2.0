@@ -56,7 +56,9 @@ export function createTestUser(email = `test-${Date.now()}@example.com`): {
   username: string;
   password: string;
 } {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { v4: uuid } = require('uuid');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const bcrypt = require('bcryptjs');
 
   const id = uuid();
@@ -82,6 +84,7 @@ export function createTestUser(email = `test-${Date.now()}@example.com`): {
  * Generate JWT token for test user
  */
 export function generateTestToken(userId: string): string {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const jwt = require('jsonwebtoken');
   return jwt.sign({ userId }, config.jwtSecret, { expiresIn: '1h' });
 }
@@ -90,6 +93,7 @@ export function generateTestToken(userId: string): string {
  * Create test agent config
  */
 export function createTestAgent(userId: string, isActive = true): string {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { v4: uuid } = require('uuid');
   const id = uuid();
 

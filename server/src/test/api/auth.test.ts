@@ -2,7 +2,9 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { authRouter } from '../../routes/auth.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { config } from '../../config.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { createTestUser, cleanupTestUser, generateTestToken, resetDatabase } from '../setup.js';
 
 // Create minimal app for testing

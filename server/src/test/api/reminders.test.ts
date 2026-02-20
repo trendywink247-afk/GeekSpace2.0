@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { remindersRouter } from '../../routes/reminders.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { requireAuth } from '../../middleware/auth.js';
 import { createTestUser, cleanupTestUser, generateTestToken, resetDatabase } from '../setup.js';
 import { db } from '../../db/index.js';
@@ -16,12 +17,13 @@ app.use((req, res, next) => {
   if (authHeader) {
     const token = authHeader.replace('Bearer ', '');
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const jwt = require('jsonwebtoken');
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { config } = require('../../config.js');
-      const decoded = jwt.verify(token, config.jwtSecret);
-      (req as any).userId = decoded.userId;
+      const decoded = jwt.verify(token, config.jwtSecret) as { userId: string };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (req as Record<string, unknown>).userId = decoded.userId;
       return next();
     } catch {
       return res.status(401).json({ error: 'Invalid token' });
@@ -64,7 +66,7 @@ describe('Reminders Endpoints', () => {
       const user = setupUser();
 
       // Create a test reminder
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { v4: uuid } = require('uuid');
       db.prepare(`
         INSERT INTO reminders (id, user_id, text, datetime, channel, category, completed, created_by)
@@ -130,6 +132,7 @@ describe('Reminders Endpoints', () => {
       const user = setupUser();
 
       // Create a test reminder
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { v4: uuid } = require('uuid');
       const reminderId = uuid();
       db.prepare(`

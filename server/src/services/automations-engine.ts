@@ -9,6 +9,7 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { config } from '../config.js';
 
 // ---- Types ----
@@ -133,7 +134,7 @@ async function executeAction(
           } else {
             output = `Message queued (no Telegram link): ${message}`;
           }
-        } catch (err) {
+        } catch {
           output = `Message queued (send failed): ${message}`;
         }
         logger.info({ automationId: automation.id, message }, 'Telegram message action');

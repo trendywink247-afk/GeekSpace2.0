@@ -213,7 +213,6 @@ app.use('/api/test', testRouter);
 app.post('/api/outputs/generate', requireAuth, async (req, res) => {
   const { format, title, content, metadata } = req.body;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userId = (req as any).userId;
   if (!format || !title || !content) return res.status(400).json({ error: 'Missing required fields' });
 
