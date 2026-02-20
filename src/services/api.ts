@@ -432,7 +432,7 @@ export const publicAgentService = {
     api.post<{ reply: string; agentName: string; ownerName: string; personality: string; personalityEmoji: string }>(`/agent/chat/public/${username}`, { message }),
 };
 
-// ----- Pico Fleet (Weebo's) --------------------------------
+// ----- Weebo Fleet ----------------------------------------
 
 export const picoService = {
   getAgents: () =>
