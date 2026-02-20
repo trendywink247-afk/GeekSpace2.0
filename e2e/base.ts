@@ -1,3 +1,7 @@
+/* eslint-disable react-hooks/rules-of-hooks */
+// ^ Playwright's `use` in test.extend() is NOT a React Hook
+// This file uses Playwright's fixture API, not React
+
 import { test as base, expect, type Page } from '@playwright/test';
 
 /**
