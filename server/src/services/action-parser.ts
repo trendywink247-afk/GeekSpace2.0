@@ -92,6 +92,71 @@ export interface ParseResult {
 // ── Parser ──────────────────────────────────────────────────
 
 const ACTION_REGEX = /<<<ACTION\s*([\s\S]*?)ACTION>>+>/g;
+
+/**
+ * Fix unescaped newlines in JSON string values.
+ * LLMs sometimes output raw newlines inside JSON strings instead of \n.
+ */
+function fixUnescapedNewlines(jsonStr: string): string {
+  let result = '';
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < jsonStr.length; i++) {
+    const char = jsonStr[i];
+    const prevChar = i > 0 ? jsonStr[i - 1] : '';
+
+    if (!inString) {
+      // Not in a string - just copy and track if we enter a string
+      result += char;
+      if (char === '"' && !escaped) {
+        inString = true;
+      }
+    } else {
+      // Inside a string
+      if (escaped) {
+        // Previous char was backslash, this char is escaped
+        result += char;
+        escaped = false;
+      } else if (char === '\\') {
+        // Start of escape sequence
+        result += char;
+        escaped = true;
+      } else if (char === '"') {
+        // End of string
+        result += char;
+        inString = false;
+      } else if (char === '\n') {
+        // Unescaped newline - replace with escaped version
+        result += '\\n';
+      } else if (char === '\r') {
+        // Carriage return - replace with escaped version
+        result += '\\r';
+      } else if (char === '\t') {
+        // Tab - replace with escaped version
+        result += '\\t';
+      } else {
+        result += char;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Try to parse JSON, fixing common LLM formatting issues if needed.
+ */
+function parseJsonLlm(jsonStr: string): unknown {
+  // Try normal parsing first
+  try {
+    return JSON.parse(jsonStr);
+  } catch {
+    // Try fixing unescaped newlines
+    const fixed = fixUnescapedNewlines(jsonStr);
+    return JSON.parse(fixed);
+  }
+}
 const TOOL_CALL_REGEX = /<tool_call>\s*<function=(\w+)>\s*<parameter=(\w+)>([\s\S]*?)<\/parameter>\s*<\/function>\s*<\/tool_call>/g;
 
 export function parseActions(llmResponse: string): ParseResult {
@@ -110,10 +175,10 @@ export function parseActions(llmResponse: string): ParseResult {
   while ((match = ACTION_REGEX.exec(llmResponse)) !== null) {
     const rawBlock = match[1].trim();
 
-    // Parse JSON
+    // Parse JSON (with LLM formatting fixes)
     let parsed: unknown;
     try {
-      parsed = JSON.parse(rawBlock);
+      parsed = parseJsonLlm(rawBlock);
     } catch {
       logger.warn({ block: rawBlock }, 'Action block contains invalid JSON — skipping');
       continue;
