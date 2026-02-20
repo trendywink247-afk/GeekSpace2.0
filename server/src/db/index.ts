@@ -439,6 +439,11 @@ try {
   db.exec("ALTER TABLE agent_configs ADD COLUMN preferred_free_model TEXT DEFAULT 'auto'");
 } catch { /* already exists */ }
 
+// Agent status tracking - for active/inactive status on portfolio
+try {
+  db.exec(`ALTER TABLE agent_configs ADD COLUMN last_active INTEGER`);
+} catch { /* column already exists */ }
+
 // Portfolio connection counter (Task 13)
 try { db.exec(`ALTER TABLE portfolios ADD COLUMN connection_count INTEGER DEFAULT 0`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE portfolios ADD COLUMN last_connected_at TEXT`); } catch { /* column already exists */ }

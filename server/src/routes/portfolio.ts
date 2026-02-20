@@ -139,6 +139,51 @@ portfolioRouter.get('/agent-messages', requireAuth, async (req: AuthRequest, res
   res.json(messages);
 });
 
+// Agent status endpoint for portfolio view - returns Active/Inactive status
+portfolioRouter.get('/:username/agent-status', async (req, res) => {
+  const { username } = req.params;
+
+  // Get user and portfolio info
+  const user = db.prepare('SELECT id, username FROM users WHERE username = ?').get(username) as { id: string; username: string } | undefined;
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  const portfolio = db.prepare('SELECT agent_enabled FROM portfolios WHERE user_id = ?').get(user.id) as { agent_enabled: number } | undefined;
+
+  // Agent is disabled at portfolio level
+  if (!portfolio || !portfolio.agent_enabled) {
+    res.json({
+      status: 'inactive',
+      reason: 'Agent chat is disabled for this portfolio',
+      enabled: false,
+      lastActive: null,
+    });
+    return;
+  }
+
+  // Check agent config for last_active timestamp
+  const agentConfig = db.prepare('SELECT last_active FROM agent_configs WHERE user_id = ?').get(user.id) as { last_active: number } | undefined;
+
+  // Define "active" as having activity within last 30 minutes, or if no last_active recorded, assume active
+  const now = Date.now();
+  const thirtyMinutes = 30 * 60 * 1000;
+  const lastActive = agentConfig?.last_active || now;
+  const isRecentlyActive = (now - lastActive) < thirtyMinutes;
+
+  // Status logic: Active if agent_enabled AND (has recent activity OR no last_active recorded yet)
+  const isActive = portfolio.agent_enabled && (isRecentlyActive || !agentConfig?.last_active);
+
+  res.json({
+    status: isActive ? 'active' : 'inactive',
+    enabled: true,
+    lastActive,
+    inactiveSince: isActive ? null : lastActive,
+    reason: isActive ? undefined : 'Agent has been inactive for more than 30 minutes',
+  });
+});
+
 // PARAMETERIZED routes come AFTER all static routes
 portfolioRouter.get('/:username/can-chat', requireAuth, async (req: AuthRequest, res) => {
   const { canChatWithAgent } = await import('../services/agent-chat.js');
