@@ -22,7 +22,6 @@ app.use((req, res, next) => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { config } = require('../../config.js');
       const decoded = jwt.verify(token, config.jwtSecret) as { userId: string };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (req as Record<string, unknown>).userId = decoded.userId;
       return next();
     } catch {
