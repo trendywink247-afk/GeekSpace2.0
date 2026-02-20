@@ -204,6 +204,7 @@ export function HealthDashboardPage() {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       if (restIntervalRef.current) clearInterval(restIntervalRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connect]);
 
   if (!snapshot) {

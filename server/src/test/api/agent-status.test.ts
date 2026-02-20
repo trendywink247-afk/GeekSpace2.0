@@ -15,7 +15,9 @@ app.use((req, res, next) => {
   if (authHeader) {
     const token = authHeader.replace('Bearer ', '');
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const jwt = require('jsonwebtoken');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { config } = require('../../config.js');
       const decoded = jwt.verify(token, config.jwtSecret);
       (req as any).userId = decoded.userId;

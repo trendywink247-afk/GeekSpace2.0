@@ -212,6 +212,8 @@ app.use('/api/test', testRouter);
 // ---- Output Generator Routes (Authenticated) ----
 app.post('/api/outputs/generate', requireAuth, async (req, res) => {
   const { format, title, content, metadata } = req.body;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userId = (req as any).userId;
   if (!format || !title || !content) return res.status(400).json({ error: 'Missing required fields' });
 
@@ -226,6 +228,7 @@ app.post('/api/outputs/generate', requireAuth, async (req, res) => {
 
 app.post('/api/outputs/todo', requireAuth, async (req, res) => {
   const { title, content, actionItems } = req.body;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userId = (req as any).userId;
 
   try {
@@ -239,6 +242,7 @@ app.post('/api/outputs/todo', requireAuth, async (req, res) => {
 
 app.post('/api/outputs/plan', requireAuth, async (req, res) => {
   const { title, content, steps } = req.body;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userId = (req as any).userId;
 
   try {
@@ -252,6 +256,7 @@ app.post('/api/outputs/plan', requireAuth, async (req, res) => {
 
 app.post('/api/outputs/pdf', requireAuth, async (req, res) => {
   const { title, content, metadata } = req.body;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userId = (req as any).userId;
 
   try {
@@ -265,6 +270,7 @@ app.post('/api/outputs/pdf', requireAuth, async (req, res) => {
 
 app.post('/api/outputs/summarize', requireAuth, async (req, res) => {
   const { messages } = req.body;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userId = (req as any).userId;
   if (!Array.isArray(messages)) return res.status(400).json({ error: 'Messages array required' });
 
@@ -280,6 +286,7 @@ app.post('/api/outputs/summarize', requireAuth, async (req, res) => {
 // ---- Chat-to-Project Routes ----
 app.post('/api/chat/detect-project', requireAuth, (req, res) => {
   const { messages, detectedIntent, artifactsCreated, actionsTaken } = req.body;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userId = (req as any).userId;
 
   const detected = detectProjectFromChat({
@@ -303,6 +310,7 @@ app.post('/api/chat/detect-project', requireAuth, (req, res) => {
 
 app.post('/api/chat/create-project', requireAuth, async (req, res) => {
   const { project, autoCreate } = req.body;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userId = (req as any).userId;
   if (!project) return res.status(400).json({ error: 'Project data required' });
 

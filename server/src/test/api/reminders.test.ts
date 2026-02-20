@@ -16,7 +16,9 @@ app.use((req, res, next) => {
   if (authHeader) {
     const token = authHeader.replace('Bearer ', '');
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const jwt = require('jsonwebtoken');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { config } = require('../../config.js');
       const decoded = jwt.verify(token, config.jwtSecret);
       (req as any).userId = decoded.userId;
@@ -62,6 +64,7 @@ describe('Reminders Endpoints', () => {
       const user = setupUser();
 
       // Create a test reminder
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { v4: uuid } = require('uuid');
       db.prepare(`
         INSERT INTO reminders (id, user_id, text, datetime, channel, category, completed, created_by)

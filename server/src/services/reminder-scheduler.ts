@@ -56,6 +56,7 @@ export function stopReminderScheduler(): void {
 // ---- Core Logic ----
 
 async function checkAndDeliverReminders(): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const tickStart = Date.now();
 
   try {

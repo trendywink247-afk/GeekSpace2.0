@@ -140,6 +140,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

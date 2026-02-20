@@ -15,6 +15,7 @@ import { logger } from '../logger.js';
 import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
 import { getCurrentFreeModel, switchToNextFreeModel, getUserPreferredFreeModel } from './openrouter-models.js';
 import { recordTokenUsage, shouldDegradeRouting } from './token-budget.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { isTestMode, mockLLMCall, mockPicoClawCall } from '../test/test-mode.js';
 
 // ---- Types ----

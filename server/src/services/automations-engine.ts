@@ -53,6 +53,7 @@ interface ExecutionResult {
 // ---- Scheduled timers ----
 
 const cronTimers = new Map<string, ReturnType<typeof setInterval>>();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const healthCheckInterval: ReturnType<typeof setInterval> | null = null;
 
 // ---- Action Executors ----

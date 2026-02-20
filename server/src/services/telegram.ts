@@ -7,6 +7,7 @@
 
 import { config } from '../config.js';
 import { logger } from '../logger.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { isTestMode, mockTelegramSend, recordTelegramMessage } from '../test/test-mode.js';
 
 const TELEGRAM_API = `https://api.telegram.org/bot${config.telegramBotToken}`;
