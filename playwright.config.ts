@@ -89,6 +89,9 @@ export default defineConfig({
           url: baseURL,
           reuseExistingServer: false,
           timeout: 120000,
+          env: {
+            VITE_TEST_MODE: 'true',
+          },
         },
       ]
     : [

@@ -34,13 +34,12 @@ test.describe('Connections Page', () => {
 
     const { token } = await tokenResponse.json() as { token: string };
 
-    // Inject auth token and navigate
+    // Set auth using test helper and navigate
     await page.goto('/login');
     await page.evaluate((t) => {
-      localStorage.setItem('gs-auth', JSON.stringify({
-        state: { token: t, isAuthenticated: true, user: null, onboarding: { step: 0, completed: true } },
-        version: 0
-      }));
+      if (window.__TEST_SET_AUTH__) {
+        window.__TEST_SET_AUTH__(t);
+      }
     }, token);
 
     await page.goto('/dashboard/connections');

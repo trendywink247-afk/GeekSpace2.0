@@ -3,6 +3,13 @@ import { persist } from 'zustand/middleware';
 import type { User, OnboardingState, AgentMode } from '@/types';
 import { authService } from '@/services/api';
 
+// Extend Window interface for test helpers
+declare global {
+  interface Window {
+    __TEST_SET_AUTH__?: (token: string) => void;
+  }
+}
+
 interface AuthStore {
   user: User | null;
   token: string | null;
@@ -170,3 +177,10 @@ export const useAuthStore = create<AuthStore>()(
     },
   ),
 );
+
+// Test-only: Expose helper to set auth from E2E tests
+if (import.meta.env.VITE_TEST_MODE === 'true' || window.location?.hostname === 'localhost') {
+  window.__TEST_SET_AUTH__ = (token: string) => {
+    useAuthStore.setState({ token, isAuthenticated: true });
+  };
+}

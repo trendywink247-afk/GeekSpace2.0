@@ -24,7 +24,7 @@ async function waitForBackend(page: { request: { get: (url: string, options?: { 
 
 /**
  * E2E Authentication Setup
- * Uses API to create user and generate token, then sets up storage state
+ * Uses API to create user and generate token, then sets auth via test helper
  */
 async function globalSetup() {
   const apiURL = process.env.API_URL || 'http://localhost:3001';
@@ -74,22 +74,17 @@ async function globalSetup() {
     const { token } = await tokenResponse.json() as { token: string };
     console.log('Auth token generated');
 
-    // Navigate to the app and set up auth via localStorage
-    console.log('Setting up auth state...');
+    // Navigate to the app and set auth using the test helper
+    console.log('Setting up auth state via test helper...');
     await page.goto(`${baseURL}/login`);
 
-    // Inject auth state into localStorage in the format the app expects
+    // Use the test helper to set auth directly in the store
     await page.evaluate((authToken) => {
-      const authState = {
-        state: {
-          token: authToken,
-          isAuthenticated: true,
-          user: null,
-          onboarding: { step: 0, completed: true },
-        },
-        version: 0,
-      };
-      localStorage.setItem('gs-auth', JSON.stringify(authState));
+      if (window.__TEST_SET_AUTH__) {
+        window.__TEST_SET_AUTH__(authToken);
+      } else {
+        throw new Error('__TEST_SET_AUTH__ not available - VITE_TEST_MODE may not be enabled');
+      }
     }, token);
 
     // Verify auth works by navigating to dashboard
