@@ -23,29 +23,8 @@ async function waitForBackend(page: { request: { get: (url: string, options?: { 
 }
 
 /**
- * Wait for frontend server to be ready by trying to load a page
- */
-async function waitForFrontend(page: { goto: (url: string, options?: { timeout?: number; waitUntil?: string }) => Promise<{ status: () => number | null }> }, url: string, maxAttempts = 30): Promise<void> {
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const response = await page.goto(`${url}/login`, { timeout: 10000, waitUntil: 'domcontentloaded' });
-      if (response && response.status() !== null) {
-        console.log(`Frontend is ready after ${attempt} attempts`);
-        return;
-      }
-    } catch {
-      // Server not ready yet
-    }
-    console.log(`Waiting for frontend... attempt ${attempt}/${maxAttempts}`);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  }
-  throw new Error('Frontend did not become ready in time');
-}
-
-/**
  * E2E Authentication Setup
- * Creates a test user via TEST_MODE API and logs in via browser
- * Saves storage state (cookies + localStorage) for reuse across tests
+ * Uses API login + localStorage injection for deterministic auth in CI
  */
 async function globalSetup() {
   const apiURL = process.env.API_URL || 'http://localhost:3001';
@@ -85,65 +64,35 @@ async function globalSetup() {
     const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
     console.log('Test user seeded:', credentials.email);
 
-    // Wait for frontend to be ready
-    console.log('Waiting for frontend to be ready...');
-    await waitForFrontend(page, baseURL, 30);
-    console.log('Frontend is ready, proceeding with login...');
+    // Login via API to get the token
+    console.log('Logging in via API...');
+    const loginResponse = await page.request.post(`${apiURL}/api/auth/login`, {
+      data: {
+        email: credentials.email,
+        password: credentials.password,
+      },
+    });
+    expect(loginResponse.ok(), `Login failed: ${await loginResponse.text()}`).toBeTruthy();
 
-    // Navigate to login page with retry logic
-    let loginSuccess = false;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        // Navigate to login page
-        console.log(`Navigating to login page (attempt ${attempt})...`);
-        const response = await page.goto(`${baseURL}/login`, { timeout: 30000, waitUntil: 'networkidle' });
-        console.log(`Navigation response status: ${response?.status()}`);
-        console.log(`Current URL: ${page.url()}`);
+    const { token } = await loginResponse.json() as { token: string };
+    console.log('Login successful, got token');
 
-        // Take a screenshot to see what's on the page
-        await page.screenshot({ path: `test-results/login-page-attempt-${attempt}.png` });
-        console.log(`Screenshot saved to test-results/login-page-attempt-${attempt}.png`);
+    // Navigate to any page and inject the token into localStorage
+    console.log('Navigating to app and setting auth state...');
+    await page.goto(`${baseURL}/login`);
 
-        // Wait for the login form to be ready
-        await page.getByTestId('login-email').waitFor({ state: 'visible', timeout: 15000 });
+    // Inject the token into localStorage (matching what the app expects)
+    await page.evaluate((authToken) => {
+      localStorage.setItem('token', authToken);
+      localStorage.setItem('geekspace_auth', JSON.stringify({ token: authToken, timestamp: Date.now() }));
+    }, token);
 
-        // Fill in login form
-        console.log('Filling in login form...');
-        await page.getByTestId('login-email').fill(credentials.email);
-        await page.getByTestId('login-password').fill(credentials.password);
-        console.log('Clicking submit button...');
-        await page.getByTestId('login-submit').click();
+    // Now navigate to dashboard - should be authenticated
+    await page.goto(`${baseURL}/dashboard`);
 
-        // Wait for navigation to dashboard
-        console.log('Waiting for navigation to dashboard...');
-        await page.waitForURL(/.*dashboard.*/, { timeout: 15000 });
-
-        // Verify we're actually logged in by checking for dashboard element
-        await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 10000 });
-
-        loginSuccess = true;
-        console.log('Login successful on attempt', attempt);
-        break;
-      } catch (error) {
-        console.log(`Login attempt ${attempt} failed:`, (error as Error).message);
-        // Take a screenshot to see what's on the page
-        try {
-          await page.screenshot({ path: `test-results/login-failed-attempt-${attempt}.png` });
-          console.log(`Error screenshot saved to test-results/login-failed-attempt-${attempt}.png`);
-        } catch {
-          // Ignore
-        }
-        // Log current URL
-        console.log(`Current URL after error: ${page.url()}`);
-        if (attempt === 3) throw error;
-        // Wait before retry
-        await page.waitForTimeout(3000);
-      }
-    }
-
-    if (!loginSuccess) {
-      throw new Error('Failed to login after 3 attempts');
-    }
+    // Verify we're on the dashboard
+    await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 10000 });
+    console.log('Dashboard loaded successfully');
 
     // Save storage state (cookies + localStorage) for other tests
     await page.context().storageState({ path: authFile });
