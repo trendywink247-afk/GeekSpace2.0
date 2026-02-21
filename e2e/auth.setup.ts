@@ -81,10 +81,21 @@ async function globalSetup() {
     console.log('Navigating to app and setting auth state...');
     await page.goto(`${baseURL}/login`);
 
-    // Inject the token into localStorage (matching what the app expects: gs_token)
-    await page.evaluate((authToken) => {
-      localStorage.setItem('gs_token', authToken);
-    }, token);
+    // Inject the auth state into localStorage (matching Zustand persist format)
+    // The persist middleware uses key 'gs-auth' with a specific structure
+    const authState = {
+      state: {
+        token: token,
+        isAuthenticated: true,
+        user: null, // Will be fetched on first API call
+        onboarding: { step: 0, completed: true },
+      },
+      version: 0,
+    };
+
+    await page.evaluate((state) => {
+      localStorage.setItem('gs-auth', JSON.stringify(state));
+    }, authState);
 
     // Now navigate to dashboard - should be authenticated
     console.log('Navigating to dashboard...');
