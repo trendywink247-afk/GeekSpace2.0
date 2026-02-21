@@ -2,8 +2,11 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Dashboard Navigation Tests
- * Uses API login to ensure authenticated state
+ * Each test creates its own user and logs in via UI
  */
+
+// Don't use global setup auth - each test handles its own
+test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('Dashboard Navigation', () => {
   test.beforeEach(async ({ page, request }) => {
@@ -25,24 +28,14 @@ test.describe('Dashboard Navigation', () => {
     });
     expect(seedResponse.ok()).toBeTruthy();
 
-    const { user } = await seedResponse.json() as { user: { id: string } };
+    const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
 
-    // Generate a token using the test auth endpoint
-    const tokenResponse = await request.post('http://localhost:3001/api/test/auth/token', {
-      data: { userId: user.id },
-    });
-    expect(tokenResponse.ok()).toBeTruthy();
-
-    const { token } = await tokenResponse.json() as { token: string };
-
-    // Set auth using test helper and navigate to dashboard
+    // Login via UI
     await page.goto('/login');
-    await page.evaluate((t) => {
-      if (window.__TEST_SET_AUTH__) {
-        window.__TEST_SET_AUTH__(t);
-      }
-    }, token);
-    await page.goto('/dashboard');
+    await page.getByTestId('login-email').fill(credentials.email);
+    await page.getByTestId('login-password').fill(credentials.password);
+    await page.getByTestId('login-submit').click();
+    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
   });
 
   test('should load overview page', async ({ page }) => {
