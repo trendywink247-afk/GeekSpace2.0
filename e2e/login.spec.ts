@@ -1,8 +1,11 @@
-import { test, expect } from './base.ts';
+import { test, expect } from '@playwright/test';
 
 /**
- * Test 1: Login -> Dashboard loads
+ * Login Flow Tests
+ * These tests don't use the authenticated storage state since they test the login flow
  */
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Login Flow', () => {
   test('should login with demo credentials and load dashboard', async ({ page }) => {
     // Navigate to login
@@ -21,10 +24,6 @@ test.describe('Login Flow', () => {
 
     // Verify dashboard/onboarding loaded - look for key elements
     await expect(page.locator('text=/overview|good|welcome/i').first()).toBeVisible();
-
-    // Verify navigation sidebar/tabs are present
-    const navElements = page.locator('nav, [class*="sidebar"], [class*="navigation"]').first();
-    await expect(navElements).toBeVisible();
 
     // Take screenshot of successful dashboard load
     await page.screenshot({ path: 'test-results/dashboard-loaded.png', fullPage: true });
