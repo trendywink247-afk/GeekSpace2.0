@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as path from 'path';
 
 /**
  * Playwright E2E Configuration for GeekSpace
@@ -17,6 +18,9 @@ import { defineConfig, devices } from '@playwright/test';
 const baseURL = process.env.E2E_BASE_URL || 'http://localhost:5173';
 const apiURL = process.env.API_URL || 'http://localhost:3001';
 const isCI = !!process.env.CI;
+
+// Absolute path to auth file for consistency
+const authFile = path.resolve(__dirname, 'playwright/.auth/user.json');
 
 export default defineConfig({
   testDir: './e2e',
@@ -49,7 +53,7 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/user.json',
+        storageState: authFile,
       },
     },
 
@@ -58,7 +62,7 @@ export default defineConfig({
       name: 'pixel5',
       use: {
         ...devices['Pixel 5'],
-        storageState: 'playwright/.auth/user.json',
+        storageState: authFile,
       },
     },
 

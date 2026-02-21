@@ -1,6 +1,7 @@
 import { chromium, expect } from '@playwright/test';
+import * as path from 'path';
 
-const authFile = 'playwright/.auth/user.json';
+const authFile = path.resolve(process.cwd(), 'playwright/.auth/user.json');
 
 /**
  * Wait for backend server to be ready
