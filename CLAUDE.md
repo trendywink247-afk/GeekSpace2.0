@@ -2,27 +2,35 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Build & Run Commands
+## Build, Run & Test Commands
 
 ```bash
 # Frontend (Vite + React)
-npm run build          # tsc -b && vite build
-npm run dev            # Vite dev server
+npm run build          # tsc -b && vite build → dist/
+npm run dev            # Vite dev server (port 5173)
 npm run lint           # eslint .
 
 # Server (TypeScript + Express)
-cd server && npm run build    # tsc
-cd server && npm run dev      # tsx watch src/index.ts (hot reload)
+cd server && npm run build    # tsc → server/dist/
+cd server && npm run dev      # tsx watch src/index.ts (hot reload, port 3001)
+
+# Unit tests (Vitest, server only)
+cd server && npm test                              # vitest run (one-shot, sets TEST_MODE=true)
+cd server && npm run test:watch                    # vitest watch mode
+cd server && npx vitest run src/test/api/auth.test.ts  # single test file
+
+# E2E tests (Playwright)
+npx playwright test                        # all tests (requires dev servers or CI build)
+npx playwright test e2e/login.spec.ts      # single spec
+npx playwright test --project=chromium     # single browser
+npx playwright test --headed               # visible browser
 
 # Production (Docker)
-docker compose up -d --build geekspace    # Build and start
-docker compose logs -f geekspace-app      # Tail logs
+docker compose up -d --build geekspace    # build and start
+docker compose logs -f geekspace-app      # tail logs
 
 # Local dev server (from project root, NOT server/)
 OLLAMA_BASE_URL=http://localhost:32778 OLLAMA_MODEL=llama3.1:8b node server/dist/index.js
-
-# Deploy frontend to static host
-npm run build && cp -r dist/* /var/www/geekspace/
 ```
 
 **Port conflicts:** Kill stale processes with `fuser -k 3001/tcp` before starting. Stale Node processes cause "Invalid token" errors because JWT secret changes on restart.
@@ -33,7 +41,7 @@ npm run build && cp -r dist/* /var/www/geekspace/
 - **Frontend:** React 19 + TypeScript + Vite + Tailwind CSS + Shadcn/Radix UI + Zustand
 - **Backend:** Express + TypeScript + better-sqlite3 + JWT + Pino logging
 - **AI:** Multi-provider LLM routing (Ollama local, OpenRouter cloud, Moonshot reasoning, PicoClaw automation)
-- **Infra:** Docker Compose (GeekSpace + Redis + PicoClaw sidecar), Caddy reverse proxy
+- **Infra:** Docker Compose (GeekSpace + Redis + PicoClaw sidecar), Caddy reverse proxy, PM2 cluster (2 workers in Docker)
 
 ### Server Layer Architecture
 ```
@@ -43,17 +51,17 @@ Request → Helmet/CORS/RateLimit → Auth middleware → Route handler
 ```
 
 **Key server files:**
-- `server/src/index.ts` — Express app, middleware stack, 20 route mounts, subsystem init
+- `server/src/index.ts` — Express app, middleware stack, 20+ route mounts, subsystem init
+- `server/src/app.ts` — Express app factory (used by tests to create isolated app instances)
 - `server/src/config.ts` — All env vars with defaults, crashes on missing required vars in production
 - `server/src/db/index.ts` — SQLite schema, migrations (idempotent ALTER TABLE), seed data, plan definitions
 - `server/src/services/llm.ts` — Intent classifier + multi-provider router with credit-based cost system
-- `server/src/services/edith.ts` — Direct Moonshot/Kimi K2 HTTP client (OpenAI-compatible, 120s timeout, 1 retry). Used by premium sessions and pico-fleet. Shares `OPENROUTER_API_KEY`. `EDITH_GATEWAY_URL`/`EDITH_TOKEN` are deprecated config vars (old WebSocket bridge, now unused).
+- `server/src/services/edith.ts` — Direct Moonshot/Kimi K2 HTTP client (OpenAI-compatible, 120s timeout, 1 retry). Shares `OPENROUTER_API_KEY`. `EDITH_GATEWAY_URL`/`EDITH_TOKEN` are deprecated config vars (old WebSocket bridge, now unused).
 - `server/src/services/pico-kimi-bridge.ts` — Complexity classifier, routes trivial→PicoClaw, complex→Kimi
-- `server/src/services/automations-engine.ts` — User-defined automations with cron/webhook/health_down triggers and call_api/log/send_message/create_reminder actions (separate from pico-kimi-bridge)
+- `server/src/services/automations-engine.ts` — User-defined automations with cron/webhook/health_down triggers and call_api/log/send_message/create_reminder actions
 - `server/src/services/message-router.ts` — Unified Telegram/WhatsApp handler with task-intent detection
-- `server/src/services/action-parser.ts` — Extracts `<<<ACTION {"tool":"...","params":{}} ACTION>>>` blocks from LLM output
+- `server/src/services/action-parser.ts` — Extracts `<<<ACTION {...} ACTION>>>` blocks from LLM output (Zod-validated)
 - `server/src/services/action-executor.ts` — Executes parsed actions (portfolio, reminders, email, code gen)
-- `server/src/services/model-sync.ts` — Daily sync of free OpenRouter models against live API; sends Telegram notification on changes
 - `server/src/prompts/openclaw-system.ts` — Main agent identity, compact variant, portfolio visitor prompt
 - `server/src/prompts/personalities.ts` — Edith (CTO), Jarvis (butler, default), Weebo (enthusiastic)
 
@@ -63,13 +71,17 @@ App.tsx (BrowserRouter) → Auth gate (Zustand) → DashboardApp (sidebar + lazy
   → Page components → Zustand store actions → API service (Axios + JWT interceptor)
 ```
 
+**Path alias:** `@/*` → `./src/*` (configured in `tsconfig.json` and `vite.config.ts`). Use `import { X } from '@/components/...'`.
+
 **Key frontend files:**
 - `src/App.tsx` — Root router, auth/onboarding gate
 - `src/stores/authStore.ts` — User, token, onboarding state (persisted to localStorage)
 - `src/stores/dashboardStore.ts` — All dashboard data, parallel fetch with `Promise.allSettled`
 - `src/services/api.ts` — Typed Axios wrapper, all API services, JWT interceptor
-- `src/dashboard/DashboardApp.tsx` — Sidebar layout (desktop) / bottom nav (mobile), 14 lazy-loaded pages
+- `src/dashboard/DashboardApp.tsx` — Sidebar layout (desktop) / bottom nav (mobile), lazy-loaded pages
 - `src/types/index.ts` — All TypeScript interfaces
+
+**shadcn/ui:** New York style, configured in `components.json`. Add components via `npx shadcn@latest add <component>`. Components land in `src/components/ui/`.
 
 ### LLM Routing (how chat works)
 1. `buildSystemPrompt()` combines: identity + personality + Pico context + memory + user session
@@ -87,11 +99,38 @@ Classifies message complexity (trivial→multi-step). Trivial/simple stay on Pic
 ### Pico Fleet (background tasks)
 Per-user slot-based agents (up to 3). Task types: `create_reminder`, `telegram_message`, `call_api`, `n8n_webhook`, `portfolio_deploy`. In-process worker with round-robin scheduling. Tasks planned by Kimi or detected from chat via `detectTaskIntent()`.
 
+## Testing
+
+### Unit Tests (Vitest)
+Tests live in `server/src/test/api/*.test.ts`. Run via `cd server && npm test`. Uses `supertest` against `createApp()` from `server/src/app.ts`.
+
+**Test infrastructure (`server/src/test/`):**
+- `setup.ts` — Creates temp DB, exports `resetDatabase()`, `createTestUser()`, `generateTestToken()`, `makeAuthHeader()`
+- `test-mode.ts` — When `TEST_MODE=true`, mocks LLM calls, Telegram, PicoClaw with deterministic responses based on message content keywords. Exports `mockLLMCall()`, `getTestState()`, `resetTestState()`.
+
+Tests run with `pool: 'forks'` and `singleFork: true` (sequential) to avoid SQLite conflicts.
+
+### E2E Tests (Playwright)
+Tests live in `e2e/*.spec.ts`. Config in `playwright.config.ts`.
+
+- **Auth setup:** `e2e/auth.setup.ts` seeds a test user via `/api/test/seed`, logs in, saves auth state to `playwright/.auth/user.json`
+- **Base fixture:** `e2e/base.ts` provides `resetTestState`, `seedTestUser`, `getTestState` helpers
+- **Browser projects:** chromium, pixel5 (Android), iphone13 (iOS)
+- **CI mode:** Builds production first, runs with 1 worker, 2 retries
+- **Local mode:** Reuses running dev servers (`npm run dev` + `cd server && npm run dev`)
+
+### Docker Build
+Multi-stage (`node:20-alpine`): installs deps → builds frontend (`dist/`) + server (`server/dist/`) → production image with `npm ci --omit=dev`. Runs as non-root `node` user via `pm2-runtime` (2 cluster workers). Server `tsconfig.json` excludes `**/*.test.ts` and `**/test/**` from build output.
+
 ## Critical Gotchas
 
 **Database:** THREE DB files can exist. The running Docker server always uses `/app/data/geekspace.db` (volume mount). `server/data/geekspace.db` is for local dev. Direct DB changes for immediate production effect must go to `/app/data/geekspace.db`.
 
-**TypeScript strictness:** `tsconfig.app.json` enforces `noUnusedLocals` and `noUnusedParameters`. Docker builds fail on unused imports. Always clean up imports.
+**TypeScript strictness:** `tsconfig.app.json` (frontend) enforces `noUnusedLocals` and `noUnusedParameters`. Docker builds fail on unused imports. Always clean up imports. Server `tsconfig.json` does not enforce these.
+
+**Package.json duplication:** Root `package.json` is a copy of `server/package.json` (both named `geekspace-api`). Frontend dependencies are installed at root via `npm ci` but are not listed in a separate manifest — they live in `package-lock.json`.
+
+**ESLint:** `@typescript-eslint/no-unused-vars` and `no-explicit-any` are both **off** in `eslint.config.js`. TypeScript compiler flags catch unused vars in frontend code instead.
 
 **Vite base path:** `vite.config.ts` must use `base: '/'` (not `'./'`) for SPA deep-route asset loading.
 
@@ -99,17 +138,17 @@ Per-user slot-based agents (up to 3). Task types: `create_reminder`, `telegram_m
 
 **Ollama on this VPS:** Runs in Docker mapped to host port 32778 (not default 11434). Inside Docker network, it's at `http://ollama-qtzz-ollama-1:11434`. llama3.1:8b takes 50-70s — intermittent 500s are usually timeouts, not bugs.
 
-**Helmet CSP:** Blocks inline `onclick` handlers (`script-src-attr 'none'`). Use `addEventListener` instead. The admin dashboard HTML (`admin-dashboard/index.html`) must follow this.
+**Helmet CSP:** Blocks inline `onclick` handlers (`script-src-attr 'none'`). Use `addEventListener` instead.
 
 **Sonner toast:** Installed but depends on `next-themes` which isn't usable in this Vite app. Use inline toast state instead.
 
-**Telegram messages:** `sanitizeForTelegram()` strips markdown before sending (no `parse_mode` set). LLM system prompt says "no markdown" but lightweight models ignore it — the sanitizer is the safety net.
+**Telegram messages:** `sanitizeForTelegram()` strips markdown before sending (no `parse_mode` set). The sanitizer is the safety net since lightweight models ignore "no markdown" in the system prompt.
 
 ## Environment
 
 - `.env` is gitignored. `.env.example` is tracked with all variables documented.
 - `OPENROUTER_API_KEY` — used for OpenRouter paid tier AND Moonshot/Kimi K2 (edith.ts). `OPENROUTER_FREE_API_KEY` is a separate key for the free-tier model rotation.
 - `OPENAI_API_KEY` — Whisper STT + TTS for voice notes (`voice.ts`); optional.
-- Production: `ai.geekspace.space` (frontend), `api.geekspace.space` (admin dashboard), via Caddy reverse proxy
+- Production: `ai.geekspace.space` (frontend), `api.geekspace.space` (API + admin dashboard), via Caddy reverse proxy
 - Demo users: alex/sarah/marcus (password: `demo123`)
-- Branch: `live-production`
+- Production branch: `live-production`
