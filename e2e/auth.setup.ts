@@ -24,7 +24,8 @@ async function waitForBackend(page: { request: { get: (url: string, options?: { 
 
 /**
  * E2E Authentication Setup
- * Uses API to create user and generate token, then sets auth via test helper
+ * Uses API to create test user, then performs real login via UI
+ * Storage state is saved for other tests to use
  */
 async function globalSetup() {
   const apiURL = process.env.API_URL || 'http://localhost:3001';
@@ -62,51 +63,20 @@ async function globalSetup() {
     });
     expect(seedResponse.ok(), `Test seed failed: ${await seedResponse.text()}`).toBeTruthy();
 
-    const { user } = await seedResponse.json() as { user: { id: string; email: string } };
+    const { user, credentials } = await seedResponse.json() as { user: { id: string; email: string }; credentials: { email: string; password: string } };
     console.log('Test user seeded:', user.email);
+    console.log('Test user credentials received');
 
-    // Generate a token using the test auth endpoint
-    console.log('Generating auth token...');
-    const tokenResponse = await page.request.post(`${apiURL}/api/test/auth/token`, {
-      data: { userId: user.id },
-    });
-    expect(tokenResponse.ok(), `Token generation failed: ${await tokenResponse.text()}`).toBeTruthy();
-
-    const { token } = await tokenResponse.json() as { token: string };
-    console.log('Auth token generated');
-
-    // Navigate to the app and set auth using the test helper
-    console.log('Setting up auth state via test helper...');
+    // Navigate to login and perform real login via UI
+    console.log('Performing login via UI...');
     await page.goto(`${baseURL}/login`);
+    await page.getByTestId('login-email').fill(credentials.email);
+    await page.getByTestId('login-password').fill(credentials.password);
+    await page.getByTestId('login-submit').click();
 
-    // Debug: Check if helper is available
-    const helperCheck = await page.evaluate(() => {
-      return {
-        hasHelper: typeof window.__TEST_SET_AUTH__ === 'function',
-        hostname: window.location.hostname,
-      };
-    });
-    console.log('Auth helper check:', helperCheck);
-
-    if (!helperCheck.hasHelper) {
-      throw new Error(
-        `__TEST_SET_AUTH__ not available. ` +
-        `Hostname: ${helperCheck.hostname}. ` +
-        `VITE_TEST_MODE must be set during build.`
-      );
-    }
-
-    // Use the test helper to set auth (directly updates both Zustand and localStorage)
-    await page.evaluate(({ token: authToken, user: authUser }) => {
-      if (window.__TEST_SET_AUTH__) {
-        window.__TEST_SET_AUTH__(authToken, authUser);
-      }
-    }, { token, user });
-
-    // Navigate to dashboard to verify auth
-    console.log('Verifying auth state...');
-    await page.goto(`${baseURL}/dashboard`);
-    await page.waitForTimeout(2000);
+    // Wait for navigation to dashboard
+    console.log('Waiting for navigation to dashboard...');
+    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
 
     // Check that we're actually on the dashboard (not redirected to login)
     const url = page.url();
