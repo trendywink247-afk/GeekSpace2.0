@@ -54,21 +54,23 @@ export default defineConfig({
     },
 
     // Mobile - Pixel 5
+    // Note: Mobile tests handle their own auth per-test since they use different viewport
     {
       name: 'pixel5',
       use: {
         ...devices['Pixel 5'],
-        storageState: 'playwright/.auth/user.json',
+        storageState: null, // Each test handles its own auth
       },
     },
 
     // Mobile - iPhone 13 (use chromium with iPhone viewport to avoid webkit dependency)
+    // Note: Mobile tests handle their own auth per-test since they use different viewport
     {
       name: 'iphone13',
       use: {
         browserName: 'chromium',
         ...devices['iPhone 13'],
-        storageState: 'playwright/.auth/user.json',
+        storageState: null, // Each test handles its own auth
       },
     },
   ],

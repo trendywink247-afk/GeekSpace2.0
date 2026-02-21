@@ -105,9 +105,9 @@ export function createApp(): express.Application {
     legacyHeaders: false,
     message: { error: 'Too many requests. Please slow down.' },
     skip: (req) =>
-      req.path === '/api/health/stream' ||
-      req.path === '/api/health' ||
-      (config.isTestMode && req.path.startsWith('/api/test')),
+      req.path === '/health/stream' ||
+      req.path === '/health' ||
+      (config.isTestMode && req.path.startsWith('/test')),
   });
   app.use('/api/', globalLimiter);
 
