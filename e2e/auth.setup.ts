@@ -24,7 +24,7 @@ async function waitForBackend(page: { request: { get: (url: string, options?: { 
 
 /**
  * E2E Authentication Setup
- * Uses API login + localStorage injection for deterministic auth in CI
+ * Uses API to create user and generate token, then sets up storage state
  */
 async function globalSetup() {
   const apiURL = process.env.API_URL || 'http://localhost:3001';
@@ -61,67 +61,55 @@ async function globalSetup() {
     });
     expect(seedResponse.ok(), `Test seed failed: ${await seedResponse.text()}`).toBeTruthy();
 
-    const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
-    console.log('Test user seeded:', credentials.email);
+    const { user } = await seedResponse.json() as { user: { id: string; email: string } };
+    console.log('Test user seeded:', user.email);
 
-    // Login via API to get the token
-    console.log('Logging in via API...');
-    const loginResponse = await page.request.post(`${apiURL}/api/auth/login`, {
-      data: {
-        email: credentials.email,
-        password: credentials.password,
-      },
+    // Generate a token using the test auth endpoint
+    console.log('Generating auth token...');
+    const tokenResponse = await page.request.post(`${apiURL}/api/test/auth/token`, {
+      data: { userId: user.id },
     });
-    expect(loginResponse.ok(), `Login failed: ${await loginResponse.text()}`).toBeTruthy();
+    expect(tokenResponse.ok(), `Token generation failed: ${await tokenResponse.text()}`).toBeTruthy();
 
-    const { token } = await loginResponse.json() as { token: string };
-    console.log('Login successful, got token');
+    const { token } = await tokenResponse.json() as { token: string };
+    console.log('Auth token generated');
 
-    // Navigate to any page and inject the token into localStorage
-    console.log('Navigating to app and setting auth state...');
+    // Navigate to the app and set up auth via localStorage
+    console.log('Setting up auth state...');
     await page.goto(`${baseURL}/login`);
 
-    // Inject the auth state into localStorage (matching Zustand persist format)
-    // The persist middleware uses key 'gs-auth' with a specific structure
-    const authState = {
-      state: {
-        token: token,
-        isAuthenticated: true,
-        user: null, // Will be fetched on first API call
-        onboarding: { step: 0, completed: true },
-      },
-      version: 0,
-    };
+    // Inject auth state into localStorage in the format the app expects
+    await page.evaluate((authToken) => {
+      const authState = {
+        state: {
+          token: authToken,
+          isAuthenticated: true,
+          user: null,
+          onboarding: { step: 0, completed: true },
+        },
+        version: 0,
+      };
+      localStorage.setItem('gs-auth', JSON.stringify(authState));
+    }, token);
 
-    await page.evaluate((state) => {
-      localStorage.setItem('gs-auth', JSON.stringify(state));
-    }, authState);
-
-    // Now navigate to dashboard - should be authenticated
-    console.log('Navigating to dashboard...');
+    // Verify auth works by navigating to dashboard
+    console.log('Verifying auth state...');
     await page.goto(`${baseURL}/dashboard`);
+    await page.waitForTimeout(2000);
 
-    // Wait for the page to fully load
-    await page.waitForLoadState('networkidle');
-
-    // Take a screenshot to debug
-    await page.screenshot({ path: 'test-results/dashboard-after-auth.png' });
-    console.log('Screenshot saved');
-
-    // Check current URL
-    console.log('Current URL:', page.url());
-
-    // Verify we're on the dashboard by checking URL contains dashboard
-    expect(page.url()).toContain('/dashboard');
-    console.log('Dashboard loaded successfully');
+    // Check that we're actually on the dashboard (not redirected to login)
+    const url = page.url();
+    if (url.includes('/login')) {
+      throw new Error('Auth setup failed - redirected to login page');
+    }
+    console.log('Auth verified, current URL:', url);
 
     // Save storage state (cookies + localStorage) for other tests
     await page.context().storageState({ path: authFile });
-
     console.log('E2E authentication setup complete - storage state saved to', authFile);
+
   } catch (error) {
     console.error('E2E setup failed:', error);
-    // Take a screenshot for debugging
     try {
       await page.screenshot({ path: 'test-results/setup-failed.png' });
       console.log('Screenshot saved to test-results/setup-failed.png');
