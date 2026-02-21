@@ -1,7 +1,19 @@
 import { chromium, expect } from '@playwright/test';
 import * as path from 'path';
+import * as fs from 'fs';
 
 const authFile = path.resolve(process.cwd(), 'playwright/.auth/user.json');
+
+/**
+ * Ensure directory exists for file path
+ */
+function ensureDir(filePath: string) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log('Created directory:', dir);
+  }
+}
 
 /**
  * Wait for backend server to be ready
@@ -94,9 +106,20 @@ async function globalSetup() {
     }
     console.log('Auth verified, current URL:', url);
 
+    // Ensure directory exists before saving
+    ensureDir(authFile);
+
     // Save storage state (cookies + localStorage) for other tests
     await page.context().storageState({ path: authFile });
     console.log('E2E authentication setup complete - storage state saved to', authFile);
+
+    // Verify file was created
+    if (fs.existsSync(authFile)) {
+      const stats = fs.statSync(authFile);
+      console.log('Auth file verified:', authFile, 'Size:', stats.size, 'bytes');
+    } else {
+      console.error('Auth file was not created:', authFile);
+    }
 
   } catch (error) {
     console.error('E2E setup failed:', error);
