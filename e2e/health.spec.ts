@@ -7,11 +7,12 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Health Dashboard', () => {
   test.beforeEach(async ({ page, request }) => {
-    // Reset and seed test user via API
+    // Reset test state
     await request.post('http://localhost:3001/api/test/reset', {
       data: { fullCleanup: true },
     });
 
+    // Seed a test user
     const seedResponse = await request.post('http://localhost:3001/api/test/seed', {
       data: {
         email: 'health-test@example.com',
@@ -23,9 +24,20 @@ test.describe('Health Dashboard', () => {
     });
     expect(seedResponse.ok()).toBeTruthy();
 
-    const { token } = await seedResponse.json() as { token: string };
+    const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
 
-    // Inject auth token and navigate to login first
+    // Login via API to get token
+    const loginResponse = await request.post('http://localhost:3001/api/auth/login', {
+      data: {
+        email: credentials.email,
+        password: credentials.password,
+      },
+    });
+    expect(loginResponse.ok()).toBeTruthy();
+
+    const { token } = await loginResponse.json() as { token: string };
+
+    // Inject auth token and navigate
     await page.goto('/login');
     await page.evaluate((t) => {
       localStorage.setItem('gs-auth', JSON.stringify({
@@ -34,38 +46,25 @@ test.describe('Health Dashboard', () => {
       }));
     }, token);
 
-    // Navigate to health page
     await page.goto('/dashboard/health');
     await page.waitForTimeout(1000);
   });
 
   test('should load health dashboard page', async ({ page }) => {
-    // Verify we're on the health page
     expect(page.url()).toContain('/dashboard/health');
-
-    // Take screenshot of the health page state
     await page.screenshot({ path: 'test-results/health-dashboard.png', fullPage: true });
-
-    // Verify the page hasn't crashed - should have either loading spinner or content
     const hasSpinner = await page.locator('.animate-spin, [class*="spin"]').first().isVisible().catch(() => false);
     const hasContent = await page.getByRole('heading').first().isVisible().catch(() => false);
-
     expect(hasSpinner || hasContent).toBeTruthy();
   });
 
   test('should show health page structure', async ({ page }) => {
-    // Wait for potential loading to complete (with timeout)
     await page.waitForTimeout(5000);
-
-    // Check if we have any heading or the loading spinner
     const heading = page.getByRole('heading').first();
     const headingText = await heading.textContent().catch(() => '');
-
-    // Should either show 'Health' heading or still be loading
     if (headingText.includes('Health')) {
       await expect(heading).toBeVisible();
     } else {
-      // Still loading or rate limited - verify page hasn't crashed
       const pageContent = await page.content();
       expect(pageContent).toContain('Health');
       expect(pageContent.length).toBeGreaterThan(1000);

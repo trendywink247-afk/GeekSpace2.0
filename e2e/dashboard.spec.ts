@@ -7,11 +7,12 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Dashboard Navigation', () => {
   test.beforeEach(async ({ page, request }) => {
-    // Reset and seed test user via API
+    // Reset test state
     await request.post('http://localhost:3001/api/test/reset', {
       data: { fullCleanup: true },
     });
 
+    // Seed a test user
     const seedResponse = await request.post('http://localhost:3001/api/test/seed', {
       data: {
         email: 'dashboard-test@example.com',
@@ -23,7 +24,18 @@ test.describe('Dashboard Navigation', () => {
     });
     expect(seedResponse.ok()).toBeTruthy();
 
-    const { token } = await seedResponse.json() as { token: string };
+    const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
+
+    // Login via API to get token
+    const loginResponse = await request.post('http://localhost:3001/api/auth/login', {
+      data: {
+        email: credentials.email,
+        password: credentials.password,
+      },
+    });
+    expect(loginResponse.ok()).toBeTruthy();
+
+    const { token } = await loginResponse.json() as { token: string };
 
     // Inject auth token and navigate to dashboard
     await page.goto('/login');
@@ -37,31 +49,20 @@ test.describe('Dashboard Navigation', () => {
   });
 
   test('should load overview page', async ({ page }) => {
-    // Wait for the page to load
     await page.waitForTimeout(2000);
-
-    // Verify we're on the dashboard
     expect(page.url()).toContain('/dashboard');
-
-    // Look for main content area
     await expect(page.locator('main').first()).toBeVisible();
   });
 
   test('should navigate to health tab', async ({ page }) => {
-    // Navigate to health tab
     await page.goto('/dashboard/health');
     await page.waitForTimeout(2000);
-
-    // Verify we're on the health page
     expect(page.url()).toContain('/dashboard/health');
-
-    // Look for health page content
     await expect(page.locator('main').first()).toBeVisible();
   });
 
   test('should navigate through all main sections', async ({ page }) => {
     const sections = ['overview', 'health', 'connections', 'reminders'];
-
     for (const section of sections) {
       await page.goto(`/dashboard/${section}`);
       await page.waitForTimeout(1000);
@@ -70,11 +71,8 @@ test.describe('Dashboard Navigation', () => {
   });
 
   test('should display agent status', async ({ page }) => {
-    // Navigate to overview
     await page.goto('/dashboard/overview');
     await page.waitForTimeout(2000);
-
-    // Look for agent-related content
     const pageContent = await page.content();
     expect(pageContent.length).toBeGreaterThan(500);
   });
@@ -82,8 +80,6 @@ test.describe('Dashboard Navigation', () => {
   test('should show credits or usage info', async ({ page }) => {
     await page.goto('/dashboard/overview');
     await page.waitForTimeout(2000);
-
-    // Check page loaded
     expect(page.url()).toContain('/dashboard');
   });
 });
