@@ -108,11 +108,14 @@ async function globalSetup() {
         await page.getByTestId('login-email').waitFor({ state: 'visible', timeout: 15000 });
 
         // Fill in login form
+        console.log('Filling in login form...');
         await page.getByTestId('login-email').fill(credentials.email);
         await page.getByTestId('login-password').fill(credentials.password);
+        console.log('Clicking submit button...');
         await page.getByTestId('login-submit').click();
 
         // Wait for navigation to dashboard
+        console.log('Waiting for navigation to dashboard...');
         await page.waitForURL(/.*dashboard.*/, { timeout: 15000 });
 
         // Verify we're actually logged in by checking for dashboard element
@@ -123,6 +126,15 @@ async function globalSetup() {
         break;
       } catch (error) {
         console.log(`Login attempt ${attempt} failed:`, (error as Error).message);
+        // Take a screenshot to see what's on the page
+        try {
+          await page.screenshot({ path: `test-results/login-failed-attempt-${attempt}.png` });
+          console.log(`Error screenshot saved to test-results/login-failed-attempt-${attempt}.png`);
+        } catch {
+          // Ignore
+        }
+        // Log current URL
+        console.log(`Current URL after error: ${page.url()}`);
         if (attempt === 3) throw error;
         // Wait before retry
         await page.waitForTimeout(3000);
