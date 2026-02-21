@@ -343,6 +343,7 @@ export function DashboardApp() {
         }`}
         role="navigation"
         aria-label="Main navigation"
+        data-testid="dashboard-sidebar"
       >
         {sidebarContent}
       </aside>
@@ -372,6 +373,7 @@ export function DashboardApp() {
               onClick={() => setSidebarOpen(true)}
               className="md:hidden p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Open menu"
+              data-testid="mobile-nav-toggle"
             >
               <Menu className="w-5 h-5 text-[#A7ACB8]" />
             </button>

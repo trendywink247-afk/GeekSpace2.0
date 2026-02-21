@@ -95,7 +95,14 @@ async function globalSetup() {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         // Navigate to login page
-        await page.goto(`${baseURL}/login`, { timeout: 30000, waitUntil: 'networkidle' });
+        console.log(`Navigating to login page (attempt ${attempt})...`);
+        const response = await page.goto(`${baseURL}/login`, { timeout: 30000, waitUntil: 'networkidle' });
+        console.log(`Navigation response status: ${response?.status()}`);
+        console.log(`Current URL: ${page.url()}`);
+
+        // Take a screenshot to see what's on the page
+        await page.screenshot({ path: `test-results/login-page-attempt-${attempt}.png` });
+        console.log(`Screenshot saved to test-results/login-page-attempt-${attempt}.png`);
 
         // Wait for the login form to be ready
         await page.getByTestId('login-email').waitFor({ state: 'visible', timeout: 15000 });
