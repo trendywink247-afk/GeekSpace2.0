@@ -5,6 +5,19 @@ import { openNavIfMobile } from './base.ts';
  * SSE Stream Health Tests
  */
 test.describe('SSE Stream Health', () => {
+  test.beforeEach(async ({ resetTestState, seedTestUser }) => {
+    await resetTestState();
+    // Seed a test user with onboarding completed so dashboard works
+    await seedTestUser({
+      email: 'stream-test@example.com',
+      name: 'Stream Test User',
+      plan: 'premium',
+      credits: 50000,
+      agentActive: true,
+      onboardingCompleted: true,
+    });
+  });
+
   test('health endpoint should return valid JSON', async ({ page }) => {
     // Use the local API running in Docker
     const healthUrl = 'http://localhost:3001/api/health';

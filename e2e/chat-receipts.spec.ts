@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 test('chat receipts display in UI', async ({ page }) => {
+  // Skip this test in CI - it tests production, not the local build
+  if (process.env.CI) {
+    test.skip();
+    return;
+  }
+
   // Navigate to production GeekSpace
   await page.goto('https://ai.geekspace.space/login');
 

@@ -6,7 +6,17 @@ import { test, expect } from './base.ts';
  */
 
 test.describe('Portfolio Agent', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, resetTestState, seedTestUser }) => {
+    await resetTestState();
+    // Seed a test user with onboarding completed so dashboard works
+    await seedTestUser({
+      email: 'portfolio-test@example.com',
+      name: 'Portfolio Test User',
+      plan: 'premium',
+      credits: 50000,
+      agentActive: true,
+      onboardingCompleted: true,
+    });
     await page.goto('/dashboard/portfolio');
     await expect(page.getByTestId('portfolio-page')).toBeVisible();
   });

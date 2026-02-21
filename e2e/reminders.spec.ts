@@ -6,8 +6,17 @@ import { test, expect } from './base.ts';
  */
 
 test.describe('Reminders', () => {
-  test.beforeEach(async ({ page, resetTestState }) => {
+  test.beforeEach(async ({ page, resetTestState, seedTestUser }) => {
     await resetTestState();
+    // Seed a test user with onboarding completed so dashboard works
+    await seedTestUser({
+      email: 'reminders-test@example.com',
+      name: 'Reminders Test User',
+      plan: 'premium',
+      credits: 50000,
+      agentActive: true,
+      onboardingCompleted: true,
+    });
     await page.goto('/dashboard/reminders');
     await expect(page.getByTestId('reminders-page')).toBeVisible();
   });
