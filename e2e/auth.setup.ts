@@ -79,12 +79,27 @@ async function globalSetup() {
     console.log('Setting up auth state via test helper...');
     await page.goto(`${baseURL}/login`);
 
+    // Debug: Check if helper is available
+    const helperCheck = await page.evaluate(() => {
+      return {
+        hasHelper: typeof window.__TEST_SET_AUTH__ === 'function',
+        hostname: window.location.hostname,
+      };
+    });
+    console.log('Auth helper check:', helperCheck);
+
+    if (!helperCheck.hasHelper) {
+      throw new Error(
+        `__TEST_SET_AUTH__ not available. ` +
+        `Hostname: ${helperCheck.hostname}. ` +
+        `VITE_TEST_MODE must be set during build.`
+      );
+    }
+
     // Use the test helper to set auth directly in the store
     await page.evaluate((authToken) => {
       if (window.__TEST_SET_AUTH__) {
         window.__TEST_SET_AUTH__(authToken);
-      } else {
-        throw new Error('__TEST_SET_AUTH__ not available - VITE_TEST_MODE may not be enabled');
       }
     }, token);
 
