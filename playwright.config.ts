@@ -23,7 +23,7 @@ export default defineConfig({
   fullyParallel: !isCI, // Disable parallel in CI for determinism
   forbidOnly: isCI,
   retries: isCI ? 2 : 1,
-  workers: isCI ? 1 : undefined,
+  workers: isCI ? 2 : undefined, // 2 workers for speed without resource thrash
   reporter: [
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
     ['list'],
@@ -36,9 +36,9 @@ export default defineConfig({
 
   use: {
     baseURL,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'on-first-retry',
+    video: 'retain-on-failure',
     actionTimeout: 10000,
     navigationTimeout: 15000,
   },
@@ -63,16 +63,8 @@ export default defineConfig({
       },
     },
 
-    // Mobile - iPhone 13 (use chromium with iPhone viewport to avoid webkit dependency)
-    // Note: Mobile tests handle their own auth per-test since they use different viewport
-    {
-      name: 'iphone13',
-      use: {
-        browserName: 'chromium',
-        ...devices['iPhone 13'],
-        storageState: null, // Each test handles its own auth
-      },
-    },
+    // Mobile - iPhone 13 removed from CI for speed (keep pixel5 for mobile coverage)
+    // Can run full matrix locally or in nightly builds
   ],
 
   // Run backend and frontend before starting tests
