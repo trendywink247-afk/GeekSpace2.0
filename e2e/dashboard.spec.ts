@@ -11,14 +11,18 @@ test.use({ storageState: { cookies: [], origins: [] } });
 test.describe('Dashboard Navigation', () => {
   test.beforeEach(async ({ page, request }) => {
     // Reset test state
-    await request.post('http://localhost:3001/api/test/reset', {
+    const resetResponse = await request.post('http://localhost:3001/api/test/reset', {
       data: { fullCleanup: true },
     });
+    if (!resetResponse.ok()) {
+      throw new Error(`Reset failed: ${await resetResponse.text()}`);
+    }
 
-    // Seed a test user
+    // Seed a test user with unique email to avoid conflicts
+    const uniqueId = Date.now();
     const seedResponse = await request.post('http://localhost:3001/api/test/seed', {
       data: {
-        email: 'dashboard-test@example.com',
+        email: `dashboard-test-${uniqueId}@example.com`,
         name: 'Dashboard Test User',
         plan: 'premium',
         credits: 50000,
@@ -26,7 +30,9 @@ test.describe('Dashboard Navigation', () => {
         onboardingCompleted: true,
       },
     });
-    expect(seedResponse.ok()).toBeTruthy();
+    if (!seedResponse.ok()) {
+      throw new Error(`Seed failed: ${await seedResponse.text()}`);
+    }
 
     const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
 
