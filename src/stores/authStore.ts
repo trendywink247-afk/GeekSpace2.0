@@ -184,7 +184,7 @@ if (import.meta.env.VITE_TEST_MODE === 'true') {
   window.__TEST_SET_AUTH__ = (token: string, user?: Record<string, unknown>) => {
     useAuthStore.setState({
       token,
-      user: user as User | null,
+      user: user ? (user as unknown as User) : null,
       isAuthenticated: true,
       isLoading: false,
       onboarding: { ...defaultOnboarding, completed: true },
