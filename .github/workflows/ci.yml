@@ -90,6 +90,8 @@ jobs:
       # Run build on root
       - name: Run build (root)
         run: npm run build
+        env:
+          VITE_TEST_MODE: 'true'
 
       # Run build on server
       - name: Run build (server)
@@ -160,6 +162,8 @@ jobs:
       # Build the application
       - name: Build frontend
         run: npm run build
+        env:
+          VITE_TEST_MODE: 'true'
 
       - name: Build server
         run: npm --prefix server run build

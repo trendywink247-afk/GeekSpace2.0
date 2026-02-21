@@ -76,9 +76,9 @@ export default defineConfig({
   // Run backend and frontend before starting tests
   webServer: isCI
     ? [
-        // CI: Use built production code
+        // CI: Use already-built production code (built in workflow)
         {
-          command: 'cd server && npm run build && PORT=3001 node dist/index.js',
+          command: 'cd server && PORT=3001 node dist/index.js',
           url: `${apiURL}/api/health`,
           reuseExistingServer: false,
           timeout: 120000,
@@ -87,15 +87,12 @@ export default defineConfig({
             PORT: '3001',
           },
         },
-        // Frontend preview
+        // Frontend preview (dist folder already built in workflow with VITE_TEST_MODE)
         {
-          command: 'npm run build && npx vite preview --port 5173',
+          command: 'npx vite preview --port 5173',
           url: baseURL,
           reuseExistingServer: false,
           timeout: 120000,
-          env: {
-            VITE_TEST_MODE: 'true',
-          },
         },
       ]
     : [

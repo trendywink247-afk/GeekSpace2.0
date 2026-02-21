@@ -52,6 +52,8 @@ jobs:
       # ============================================
       - name: Build frontend
         run: npm run build
+        env:
+          VITE_TEST_MODE: 'true'
 
       - name: Build server
         run: npm --prefix server run build
