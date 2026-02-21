@@ -182,12 +182,17 @@ export const useAuthStore = create<AuthStore>()(
 // Available when VITE_TEST_MODE is set during build
 if (import.meta.env.VITE_TEST_MODE === 'true') {
   window.__TEST_SET_AUTH__ = (token: string, user?: Record<string, unknown>) => {
-    useAuthStore.setState({
+    const newState = {
       token,
       user: user ? (user as unknown as User) : null,
       isAuthenticated: true,
       isLoading: false,
       onboarding: { ...defaultOnboarding, completed: true },
-    });
+    };
+    // Set state in Zustand
+    useAuthStore.setState(newState);
+    // Also directly update localStorage to ensure persist works
+    const existingData = JSON.parse(localStorage.getItem('gs-auth') || '{}');
+    localStorage.setItem('gs-auth', JSON.stringify({ ...existingData, state: { ...existingData.state, ...newState } }));
   };
 }
