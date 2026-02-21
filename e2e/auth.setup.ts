@@ -81,14 +81,21 @@ async function globalSetup() {
     console.log('Navigating to app and setting auth state...');
     await page.goto(`${baseURL}/login`);
 
-    // Inject the token into localStorage (matching what the app expects)
+    // Inject the token into localStorage (matching what the app expects: gs_token)
     await page.evaluate((authToken) => {
-      localStorage.setItem('token', authToken);
-      localStorage.setItem('geekspace_auth', JSON.stringify({ token: authToken, timestamp: Date.now() }));
+      localStorage.setItem('gs_token', authToken);
     }, token);
 
     // Now navigate to dashboard - should be authenticated
+    console.log('Navigating to dashboard...');
     await page.goto(`${baseURL}/dashboard`);
+
+    // Take a screenshot to debug
+    await page.screenshot({ path: 'test-results/dashboard-after-auth.png' });
+    console.log('Screenshot saved');
+
+    // Check current URL
+    console.log('Current URL:', page.url());
 
     // Verify we're on the dashboard
     await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 10000 });
