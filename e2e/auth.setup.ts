@@ -103,10 +103,17 @@ async function globalSetup() {
       }
     }, { token, user });
 
+    // Wait for Zustand persist to write to localStorage
+    await page.waitForTimeout(500);
+
+    // Reload to trigger rehydration from localStorage
+    await page.reload();
+    await page.waitForTimeout(500);
+
     // Verify auth works by navigating to dashboard
     console.log('Verifying auth state...');
     await page.goto(`${baseURL}/dashboard`);
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Check that we're actually on the dashboard (not redirected to login)
     const url = page.url();
