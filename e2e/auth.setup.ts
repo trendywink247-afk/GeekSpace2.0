@@ -3,6 +3,26 @@ import { chromium, expect } from '@playwright/test';
 const authFile = 'playwright/.auth/user.json';
 
 /**
+ * Wait for server to be ready
+ */
+async function waitForServer(page: { request: { get: (url: string, options?: { timeout?: number }) => Promise<{ ok: () => boolean; status: () => number }> } }, url: string, maxAttempts = 30): Promise<void> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await page.request.get(`${url}/api/health`, { timeout: 5000 });
+      if (response.ok() || response.status() === 429) {
+        console.log(`Server is ready after ${attempt} attempts`);
+        return;
+      }
+    } catch {
+      // Server not ready yet
+    }
+    console.log(`Waiting for server... attempt ${attempt}/${maxAttempts}`);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+  throw new Error('Server did not become ready in time');
+}
+
+/**
  * E2E Authentication Setup
  * Creates a test user via TEST_MODE API and logs in via browser
  * Saves storage state (cookies + localStorage) for reuse across tests
@@ -17,6 +37,10 @@ async function globalSetup() {
   const page = await context.newPage();
 
   try {
+    // Wait for backend to be ready
+    console.log('Waiting for backend to be ready...');
+    await waitForServer(page, apiURL, 30);
+
     // Reset test state first via API
     console.log('Resetting test state...');
     const resetResponse = await page.request.post(`${apiURL}/api/test/reset`, {
@@ -40,6 +64,10 @@ async function globalSetup() {
 
     const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
     console.log('Test user seeded:', credentials.email);
+
+    // Wait for frontend to be ready
+    console.log('Waiting for frontend to be ready...');
+    await waitForServer(page, baseURL, 30);
 
     // Navigate to login page with retry logic
     console.log('Navigating to login page...');
@@ -69,7 +97,7 @@ async function globalSetup() {
         console.log(`Login attempt ${attempt} failed:`, (error as Error).message);
         if (attempt === 3) throw error;
         // Wait before retry
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
       }
     }
 
