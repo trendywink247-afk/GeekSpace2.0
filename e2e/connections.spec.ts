@@ -24,18 +24,15 @@ test.describe('Connections Page', () => {
     });
     expect(seedResponse.ok()).toBeTruthy();
 
-    const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
+    const { user } = await seedResponse.json() as { user: { id: string } };
 
-    // Login via API to get token
-    const loginResponse = await request.post('http://localhost:3001/api/auth/login', {
-      data: {
-        email: credentials.email,
-        password: credentials.password,
-      },
+    // Generate a token using the test auth endpoint
+    const tokenResponse = await request.post('http://localhost:3001/api/test/auth/token', {
+      data: { userId: user.id },
     });
-    expect(loginResponse.ok()).toBeTruthy();
+    expect(tokenResponse.ok()).toBeTruthy();
 
-    const { token } = await loginResponse.json() as { token: string };
+    const { token } = await tokenResponse.json() as { token: string };
 
     // Inject auth token and navigate
     await page.goto('/login');
