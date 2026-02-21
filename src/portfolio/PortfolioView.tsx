@@ -349,7 +349,7 @@ export function PortfolioView() {
                   </div>
                   <div>
                     <div className="font-semibold text-sm">{pMeta.emoji} {firstName}'s Agent</div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" data-testid="portfolio-agent-status">
                       {isStatusLoading ? (
                         <div className="text-xs text-[#A7ACB8]">Checking...</div>
                       ) : agentStatus?.status === 'active' ? (
@@ -476,7 +476,7 @@ export function PortfolioView() {
               </div>
               <div>
                 <div className="font-semibold text-sm">{pMeta.emoji} {firstName}'s Agent</div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" data-testid="portfolio-agent-status">
                     {isStatusLoading ? (
                       <div className="text-xs text-[#A7ACB8]">Checking...</div>
                     ) : agentStatus?.status === 'active' ? (
