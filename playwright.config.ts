@@ -78,10 +78,14 @@ export default defineConfig({
     ? [
         // CI: Use built production code
         {
-          command: 'cd server && npm run build && TEST_MODE=1 PORT=3001 node dist/index.js',
+          command: 'cd server && npm run build && PORT=3001 node dist/index.js',
           url: `${apiURL}/api/health`,
           reuseExistingServer: false,
           timeout: 120000,
+          env: {
+            TEST_MODE: '1',
+            PORT: '3001',
+          },
         },
         // Frontend preview
         {
@@ -97,10 +101,14 @@ export default defineConfig({
     : [
         // Local: Use dev servers
         {
-          command: 'cd server && TEST_MODE=1 PORT=3001 npm run dev',
+          command: 'cd server && npm run dev',
           url: `${apiURL}/api/health`,
           reuseExistingServer: true,
           timeout: 120000,
+          env: {
+            TEST_MODE: '1',
+            PORT: '3001',
+          },
         },
         {
           command: 'npm run dev',
