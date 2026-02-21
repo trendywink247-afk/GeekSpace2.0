@@ -2,48 +2,12 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Portfolio Agent E2E Tests
- * Tests agent chat gating (active vs inactive)
+ * Uses shared auth state from global setup
  */
 
-// Don't use global setup auth - each test handles its own
-test.use({ storageState: { cookies: [], origins: [] } });
-
 test.describe('Portfolio Agent', () => {
-  test.beforeEach(async ({ page, request }) => {
-    // Reset test state
-    const resetResponse = await request.post('http://localhost:3001/api/test/reset', {
-      data: { fullCleanup: true },
-    });
-    if (!resetResponse.ok()) {
-      throw new Error(`Reset failed: ${await resetResponse.text()}`);
-    }
-
-    // Seed a test user with unique email to avoid conflicts
-    const uniqueId = Date.now();
-    const seedResponse = await request.post('http://localhost:3001/api/test/seed', {
-      data: {
-        email: `portfolio-test-${uniqueId}@example.com`,
-        name: 'Portfolio Test User',
-        plan: 'premium',
-        credits: 50000,
-        agentActive: true,
-        onboardingCompleted: true,
-      },
-    });
-    if (!seedResponse.ok()) {
-      throw new Error(`Seed failed: ${await seedResponse.text()}`);
-    }
-
-    const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
-
-    // Login via UI
-    await page.goto('/login');
-    await page.getByTestId('login-email').fill(credentials.email);
-    await page.getByTestId('login-password').fill(credentials.password);
-    await page.getByTestId('login-submit').click();
-    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
-
-    // Navigate to portfolio page
+  test.beforeEach(async ({ page }) => {
+    // Navigate to portfolio page (auth is handled by global setup)
     await page.goto('/dashboard/portfolio');
   });
 
@@ -69,7 +33,7 @@ test.describe('Portfolio Agent', () => {
     await chatInput.fill('Hello, can you help me update my portfolio?');
     await page.getByTestId('portfolio-chat-send').click();
 
-    // Should receive a response
+    // Should receive a response (mock response in test mode)
     await expect(page.getByTestId('chat-message-assistant').last()).toBeVisible({ timeout: 10000 });
   });
 

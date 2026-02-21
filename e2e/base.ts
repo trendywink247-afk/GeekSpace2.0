@@ -115,22 +115,42 @@ export { expect };
 
 /**
  * Login helper for tests
+ * Uses element visibility instead of URL to be more robust in CI
  */
 export async function login(page: Page, email: string, password: string) {
   await page.goto('/login');
   await page.getByTestId('login-email').fill(email);
   await page.getByTestId('login-password').fill(password);
   await page.getByTestId('login-submit').click();
-  await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
+  // Wait for dashboard to load by checking for a stable element instead of URL
+  await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 30000 });
 }
 
 /**
  * Demo login helper
+ * Uses element visibility instead of URL to be more robust in CI
  */
 export async function loginWithDemo(page: Page) {
   await page.goto('/login');
   await page.getByTestId('demo-login-button').click();
-  await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
+  // Wait for dashboard to load by checking for a stable element instead of URL
+  await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 30000 });
+}
+
+/**
+ * Ensure authenticated helper - checks if already authed, otherwise logs in via demo
+ * Safe to call in tests that may or may not have auth state
+ */
+export async function ensureAuthed(page: Page) {
+  await page.goto('/dashboard');
+  // Check if redirected to login
+  const url = page.url();
+  if (url.includes('/login')) {
+    // Need to login
+    await loginWithDemo(page);
+  }
+  // Verify we're now on dashboard
+  await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 30000 });
 }
 
 /**

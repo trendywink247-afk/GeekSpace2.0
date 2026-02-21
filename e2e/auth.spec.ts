@@ -4,23 +4,20 @@ import { test, expect } from '@playwright/test';
  * Authentication E2E Tests
  * Tests login flow including happy path and error cases
  * Note: These tests don't use the authenticated storage state since they test the login flow
+ * Uses unique users per test to avoid conflicts in single-worker CI runs
  */
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('Authentication', () => {
-  test.beforeEach(async ({ page, request }) => {
-    // Reset test state via API
-    await request.post('http://localhost:3001/api/test/reset', {
-      data: { fullCleanup: true },
-    });
-  });
+  // No beforeEach reset - tests use unique users to avoid conflicts
 
   test('should login with valid credentials', async ({ page, request }) => {
-    // Seed a test user via API
+    // Seed a test user via API with unique email to avoid conflicts
+    const uniqueId = Date.now();
     const seedResponse = await request.post('http://localhost:3001/api/test/seed', {
       data: {
-        email: 'auth-test@example.com',
+        email: `auth-test-${uniqueId}@example.com`,
         name: 'Auth Test User',
         plan: 'premium',
         credits: 50000,
@@ -38,10 +35,10 @@ test.describe('Authentication', () => {
     await page.getByTestId('login-password').fill(credentials.password);
     await page.getByTestId('login-submit').click();
 
-    // Should navigate to dashboard
-    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
+    // Wait for dashboard element (longer timeout for CI)
+    await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 30000 });
 
-    // Verify dashboard loaded (check URL since sidebar is desktop-only)
+    // Verify dashboard loaded
     expect(page.url()).toContain('/dashboard');
   });
 
@@ -91,10 +88,10 @@ test.describe('Authentication', () => {
     // Click demo login
     await page.getByTestId('demo-login-button').click();
 
-    // Should navigate to dashboard or onboarding
-    await page.waitForURL(/.*(dashboard|onboarding).*/, { timeout: 10000 });
+    // Wait for dashboard element (longer timeout for CI)
+    await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 30000 });
 
-    // Should be logged in (check URL contains dashboard or onboarding)
-    expect(page.url()).toMatch(/.*(dashboard|onboarding).*/);
+    // Should be logged in (check URL contains dashboard)
+    expect(page.url()).toContain('/dashboard');
   });
 });

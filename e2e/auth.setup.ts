@@ -41,7 +41,7 @@ async function globalSetup() {
     console.log('Waiting for backend to be ready...');
     await waitForBackend(page, apiURL, 30);
 
-    // Reset test state first via API
+    // Reset test state once at the start of the test run (per-worker in CI)
     console.log('Resetting test state...');
     const resetResponse = await page.request.post(`${apiURL}/api/test/reset`, {
       data: { fullCleanup: true },
@@ -74,9 +74,17 @@ async function globalSetup() {
     await page.getByTestId('login-password').fill(credentials.password);
     await page.getByTestId('login-submit').click();
 
-    // Wait for navigation to dashboard
-    console.log('Waiting for navigation to dashboard...');
-    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
+    // Wait for dashboard to load by checking for stable element (longer timeout for CI)
+    console.log('Waiting for dashboard to load...');
+    try {
+      await page.waitForSelector('[data-testid="dashboard-sidebar"]', { timeout: 30000 });
+    } catch {
+      // Fallback: check if we're on dashboard by URL
+      const url = page.url();
+      if (!url.includes('/dashboard')) {
+        throw new Error(`Auth setup failed - not on dashboard. Current URL: ${url}`);
+      }
+    }
 
     // Check that we're actually on the dashboard (not redirected to login)
     const url = page.url();

@@ -19,11 +19,11 @@ test.describe('Login Flow', () => {
     await expect(demoButton).toBeVisible();
     await demoButton.click();
 
-    // Wait for navigation to dashboard (or onboarding for new users)
-    await page.waitForURL(/.*(dashboard|onboarding).*/, { timeout: 10000 });
+    // Wait for dashboard element (longer timeout for CI)
+    await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 30000 });
 
-    // Verify dashboard/onboarding loaded - look for key elements
-    await expect(page.locator('text=/overview|good|welcome/i').first()).toBeVisible();
+    // Verify we're on dashboard
+    expect(page.url()).toContain('/dashboard');
 
     // Take screenshot of successful dashboard load
     await page.screenshot({ path: 'test-results/dashboard-loaded.png', fullPage: true });

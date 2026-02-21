@@ -23,7 +23,7 @@ export default defineConfig({
   fullyParallel: !isCI, // Disable parallel in CI for determinism
   forbidOnly: isCI,
   retries: isCI ? 2 : 1,
-  workers: isCI ? 2 : undefined, // 2 workers for speed without resource thrash
+  workers: isCI ? 1 : undefined, // Single worker to prevent DB reset interference between tests
   reporter: [
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
     ['list'],
@@ -53,13 +53,12 @@ export default defineConfig({
       },
     },
 
-    // Mobile - Pixel 5
-    // Note: Mobile tests handle their own auth per-test since they use different viewport
+    // Mobile - Pixel 5 (uses same shared auth as desktop)
     {
       name: 'pixel5',
       use: {
         ...devices['Pixel 5'],
-        storageState: null, // Each test handles its own auth
+        storageState: 'playwright/.auth/user.json',
       },
     },
 

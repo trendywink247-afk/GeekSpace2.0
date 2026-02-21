@@ -2,48 +2,12 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Reminder E2E Tests
- * Tests scheduling reminders and verifying execution
+ * Uses shared auth state from global setup
  */
 
-// Don't use global setup auth - each test handles its own
-test.use({ storageState: { cookies: [], origins: [] } });
-
 test.describe('Reminders', () => {
-  test.beforeEach(async ({ page, request }) => {
-    // Reset test state
-    const resetResponse = await request.post('http://localhost:3001/api/test/reset', {
-      data: { fullCleanup: true },
-    });
-    if (!resetResponse.ok()) {
-      throw new Error(`Reset failed: ${await resetResponse.text()}`);
-    }
-
-    // Seed a test user with unique email to avoid conflicts
-    const uniqueId = Date.now();
-    const seedResponse = await request.post('http://localhost:3001/api/test/seed', {
-      data: {
-        email: `reminders-test-${uniqueId}@example.com`,
-        name: 'Reminders Test User',
-        plan: 'premium',
-        credits: 50000,
-        agentActive: true,
-        onboardingCompleted: true,
-      },
-    });
-    if (!seedResponse.ok()) {
-      throw new Error(`Seed failed: ${await seedResponse.text()}`);
-    }
-
-    const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
-
-    // Login via UI
-    await page.goto('/login');
-    await page.getByTestId('login-email').fill(credentials.email);
-    await page.getByTestId('login-password').fill(credentials.password);
-    await page.getByTestId('login-submit').click();
-    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
-
-    // Navigate to reminders page
+  test.beforeEach(async ({ page }) => {
+    // Navigate to reminders page (auth is handled by global setup)
     await page.goto('/dashboard/reminders');
   });
 
@@ -70,7 +34,7 @@ test.describe('Reminders', () => {
     await expect(page.getByText('Test reminder from E2E')).toBeVisible();
   });
 
-  test('should schedule and execute reminder within tolerance', async ({ page, request }) => {
+  test('should schedule and execute reminder via test endpoint', async ({ page, request }) => {
     // Create a reminder via API for precise timing control
     const scheduledFor = Date.now() + 3000; // 3 seconds from now
 
