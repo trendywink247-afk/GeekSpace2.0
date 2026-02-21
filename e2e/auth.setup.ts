@@ -97,11 +97,11 @@ async function globalSetup() {
     }
 
     // Use the test helper to set auth directly in the store
-    await page.evaluate((authToken) => {
+    await page.evaluate(({ token: authToken, user: authUser }) => {
       if (window.__TEST_SET_AUTH__) {
-        window.__TEST_SET_AUTH__(authToken);
+        window.__TEST_SET_AUTH__(authToken, authUser);
       }
-    }, token);
+    }, { token, user });
 
     // Verify auth works by navigating to dashboard
     console.log('Verifying auth state...');

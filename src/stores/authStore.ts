@@ -6,7 +6,7 @@ import { authService } from '@/services/api';
 // Extend Window interface for test helpers
 declare global {
   interface Window {
-    __TEST_SET_AUTH__?: (token: string) => void;
+    __TEST_SET_AUTH__?: (token: string, user?: Record<string, unknown>) => void;
   }
 }
 
@@ -181,10 +181,12 @@ export const useAuthStore = create<AuthStore>()(
 // Test-only: Expose helper to set auth from E2E tests
 // Available when VITE_TEST_MODE is set during build
 if (import.meta.env.VITE_TEST_MODE === 'true') {
-  window.__TEST_SET_AUTH__ = (token: string) => {
+  window.__TEST_SET_AUTH__ = (token: string, user?: Record<string, unknown>) => {
     useAuthStore.setState({
       token,
+      user: user as User | null,
       isAuthenticated: true,
+      isLoading: false,
       onboarding: { ...defaultOnboarding, completed: true },
     });
   };
