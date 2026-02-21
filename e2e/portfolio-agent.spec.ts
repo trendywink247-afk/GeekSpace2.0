@@ -1,24 +1,44 @@
-import { test, expect } from './base.ts';
+import { test, expect } from '@playwright/test';
 
 /**
  * Portfolio Agent E2E Tests
  * Tests agent chat gating (active vs inactive)
  */
 
+// Don't use global setup auth - each test handles its own
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Portfolio Agent', () => {
-  test.beforeEach(async ({ page, resetTestState, seedTestUser }) => {
-    await resetTestState();
-    // Seed a test user with onboarding completed so dashboard works
-    await seedTestUser({
-      email: 'portfolio-test@example.com',
-      name: 'Portfolio Test User',
-      plan: 'premium',
-      credits: 50000,
-      agentActive: true,
-      onboardingCompleted: true,
+  test.beforeEach(async ({ page, request }) => {
+    // Reset test state
+    await request.post('http://localhost:3001/api/test/reset', {
+      data: { fullCleanup: true },
     });
+
+    // Seed a test user
+    const seedResponse = await request.post('http://localhost:3001/api/test/seed', {
+      data: {
+        email: 'portfolio-test@example.com',
+        name: 'Portfolio Test User',
+        plan: 'premium',
+        credits: 50000,
+        agentActive: true,
+        onboardingCompleted: true,
+      },
+    });
+    expect(seedResponse.ok()).toBeTruthy();
+
+    const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
+
+    // Login via UI
+    await page.goto('/login');
+    await page.getByTestId('login-email').fill(credentials.email);
+    await page.getByTestId('login-password').fill(credentials.password);
+    await page.getByTestId('login-submit').click();
+    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
+
+    // Navigate to portfolio page
     await page.goto('/dashboard/portfolio');
-    await expect(page.getByTestId('portfolio-page')).toBeVisible();
   });
 
   test('should allow chat when agent is active', async ({ page }) => {

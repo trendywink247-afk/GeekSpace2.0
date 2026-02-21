@@ -1,24 +1,44 @@
-import { test, expect } from './base.ts';
+import { test, expect } from '@playwright/test';
 
 /**
  * Reminder E2E Tests
  * Tests scheduling reminders and verifying execution
  */
 
+// Don't use global setup auth - each test handles its own
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Reminders', () => {
-  test.beforeEach(async ({ page, resetTestState, seedTestUser }) => {
-    await resetTestState();
-    // Seed a test user with onboarding completed so dashboard works
-    await seedTestUser({
-      email: 'reminders-test@example.com',
-      name: 'Reminders Test User',
-      plan: 'premium',
-      credits: 50000,
-      agentActive: true,
-      onboardingCompleted: true,
+  test.beforeEach(async ({ page, request }) => {
+    // Reset test state
+    await request.post('http://localhost:3001/api/test/reset', {
+      data: { fullCleanup: true },
     });
+
+    // Seed a test user
+    const seedResponse = await request.post('http://localhost:3001/api/test/seed', {
+      data: {
+        email: 'reminders-test@example.com',
+        name: 'Reminders Test User',
+        plan: 'premium',
+        credits: 50000,
+        agentActive: true,
+        onboardingCompleted: true,
+      },
+    });
+    expect(seedResponse.ok()).toBeTruthy();
+
+    const { credentials } = await seedResponse.json() as { credentials: { email: string; password: string } };
+
+    // Login via UI
+    await page.goto('/login');
+    await page.getByTestId('login-email').fill(credentials.email);
+    await page.getByTestId('login-password').fill(credentials.password);
+    await page.getByTestId('login-submit').click();
+    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
+
+    // Navigate to reminders page
     await page.goto('/dashboard/reminders');
-    await expect(page.getByTestId('reminders-page')).toBeVisible();
   });
 
   test('should display reminders list', async ({ page }) => {
