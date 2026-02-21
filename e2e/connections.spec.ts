@@ -1,20 +1,15 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './base.ts';
+import { openNavIfMobile } from './base.ts';
 
 /**
  * Test 2 & 3: Connections page - Telegram and Disconnect/Reconnect flow
  */
 test.describe('Connections Page', () => {
   test.beforeEach(async ({ page }) => {
-    // Login first
-    await page.goto('/login');
-    await page.getByRole('button', { name: /login with demo/i }).click();
-    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
-
-    // Navigate to connections page by clicking sidebar menu
-    await page.getByRole('button', { name: /^connections$/i }).click();
-
+    // Auth is handled by setup project, just navigate directly to connections page
+    await page.goto('/dashboard/connections');
     // Wait for the Connections page to load
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
   });
 
   test('should load connections page with integrations', async ({ page }) => {

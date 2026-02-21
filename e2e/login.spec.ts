@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './base.ts';
 
 /**
  * Test 1: Login -> Dashboard loads

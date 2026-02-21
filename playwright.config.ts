@@ -31,6 +31,9 @@ export default defineConfig({
   ],
   outputDir: 'test-results/',
 
+  // Global setup runs once before all tests to authenticate
+  globalSetup: './e2e/auth.setup.ts',
+
   use: {
     baseURL,
     trace: 'on-first-retry',
@@ -41,12 +44,6 @@ export default defineConfig({
   },
 
   projects: [
-    // Setup project (runs first to authenticate)
-    {
-      name: 'setup',
-      testMatch: /auth\.setup\.ts/,
-    },
-
     // Desktop Chrome
     {
       name: 'chromium',
@@ -54,7 +51,6 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/user.json',
       },
-      dependencies: ['setup'],
     },
 
     // Mobile - Pixel 5
@@ -64,7 +60,6 @@ export default defineConfig({
         ...devices['Pixel 5'],
         storageState: 'playwright/.auth/user.json',
       },
-      dependencies: ['setup'],
     },
 
     // Mobile - iPhone 13
@@ -74,7 +69,6 @@ export default defineConfig({
         ...devices['iPhone 13'],
         storageState: 'playwright/.auth/user.json',
       },
-      dependencies: ['setup'],
     },
   ],
 

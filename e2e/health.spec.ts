@@ -1,20 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './base.ts';
 
 /**
  * Test 4: Health tab works
  */
 test.describe('Health Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    // Login first
-    await page.goto('/login');
-    await page.getByRole('button', { name: /login with demo/i }).click();
-    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
-
-    // Navigate to health page by clicking sidebar menu
-    await page.getByRole('button', { name: /^health$/i }).click();
-
-    // Wait for the Health page to start loading (either spinner or content)
-    await page.waitForTimeout(2000);
+    // Auth is handled by setup project, just navigate directly to health page
+    await page.goto('/dashboard/health');
+    // Wait for page to start loading
+    await page.waitForTimeout(1000);
   });
 
   test('should load health dashboard page', async ({ page }) => {

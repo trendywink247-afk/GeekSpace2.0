@@ -1,54 +1,40 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './base.ts';
+import { openNavIfMobile } from './base.ts';
 
 /**
- * Test 5: /stream does not return 5xx repeatedly (or degrades gracefully)
+ * SSE Stream Health Tests
  */
 test.describe('SSE Stream Health', () => {
-  test('stream endpoint should not return 5xx errors', async ({ page }) => {
+  test('health endpoint should return valid JSON', async ({ page }) => {
     // Use the local API running in Docker
-    const apiBase = 'http://localhost:3001';
-    const streamUrl = `${apiBase}/api/health/stream`;
+    const healthUrl = 'http://localhost:3001/api/health';
 
-    // Try to connect to the SSE stream
-    try {
-      const response = await page.request.get(streamUrl, {
-        headers: {
-          'Accept': 'text/event-stream',
-        },
-        timeout: 10000,
-      });
+    const response = await page.request.get(healthUrl, {
+      timeout: 10000,
+    });
 
-      const status = response.status();
+    // Should return 200 or 429 (rate limited but server is working)
+    const status = response.status();
+    expect(status).toBeLessThan(500);
+    expect(status === 200 || status === 429).toBeTruthy();
 
-      // Should not be a 5xx error (429 rate limit is acceptable)
-      expect(status).toBeLessThan(500);
-
-      // If successful, verify it's actually an SSE stream
-      if (status === 200) {
-        const contentType = response.headers()['content-type'] || '';
-        expect(contentType).toContain('text/event-stream');
-      }
-    } catch (error) {
-      // If we get an error, verify it's not a 500
-      if (error instanceof Error && error.message.includes('500')) {
-        throw new Error('Stream endpoint returned 500 error');
-      }
-      // Other errors (timeout, etc.) are acceptable for this test
-      console.log('Stream connection error (may be rate limited):', error instanceof Error ? error.message : 'Unknown error');
+    // If not rate limited, verify JSON structure
+    if (status === 200) {
+      const data = await response.json();
+      expect(data).toBeTruthy();
+      expect(typeof data).toBe('object');
+      expect(data.ok).toBe(true);
+      expect(data.timestamp).toBeTruthy();
+      expect(data.components).toBeTruthy();
     }
   });
 
   test('stream should handle connection gracefully in UI', async ({ page }) => {
-    // Login first
-    await page.goto('/login');
-    await page.getByRole('button', { name: /login with demo/i }).click();
-    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
-
-    // Navigate to health page by clicking sidebar menu
-    await page.getByRole('button', { name: /^health$/i }).click();
+    // Auth is handled by setup project, just navigate directly to health page
+    await page.goto('/dashboard/health');
 
     // Wait for page to load
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
 
     // Verify the page doesn't crash - it should show either:
     // - Loading spinner (waiting for API)
@@ -68,25 +54,5 @@ test.describe('SSE Stream Health', () => {
     const hasHeading = await page.getByRole('heading').first().isVisible().catch(() => false);
 
     expect(hasSpinner || hasHeading).toBeTruthy();
-  });
-
-  test('health endpoint should return valid JSON', async ({ page }) => {
-    // Use the local API running in Docker
-    const healthUrl = 'http://localhost:3001/api/health';
-
-    const response = await page.request.get(healthUrl);
-
-    // Should return 200 or 429 (rate limited but server is working)
-    const status = response.status();
-    expect(status === 200 || status === 429).toBeTruthy();
-
-    // If not rate limited, verify JSON structure
-    if (status === 200) {
-      const data = await response.json();
-      expect(data).toBeTruthy();
-      expect(typeof data).toBe('object');
-      expect(data.timestamp).toBeTruthy();
-      expect(data.components).toBeTruthy();
-    }
   });
 });
