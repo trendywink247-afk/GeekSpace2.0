@@ -62,10 +62,11 @@ export default defineConfig({
       },
     },
 
-    // Mobile - iPhone 13
+    // Mobile - iPhone 13 (use chromium with iPhone viewport to avoid webkit dependency)
     {
       name: 'iphone13',
       use: {
+        browserName: 'chromium',
         ...devices['iPhone 13'],
         storageState: 'playwright/.auth/user.json',
       },
