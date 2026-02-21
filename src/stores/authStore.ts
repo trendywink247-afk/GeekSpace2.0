@@ -181,6 +181,10 @@ export const useAuthStore = create<AuthStore>()(
 // Test-only: Expose helper to set auth from E2E tests
 if (import.meta.env.VITE_TEST_MODE === 'true' || window.location?.hostname === 'localhost') {
   window.__TEST_SET_AUTH__ = (token: string) => {
-    useAuthStore.setState({ token, isAuthenticated: true });
+    useAuthStore.setState({
+      token,
+      isAuthenticated: true,
+      onboarding: { ...defaultOnboarding, completed: true },
+    });
   };
 }

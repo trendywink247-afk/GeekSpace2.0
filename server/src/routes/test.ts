@@ -102,6 +102,7 @@ router.post('/seed', async (req, res) => {
     credits = 1000,
     agentActive = true,
     agentPersonality = 'jarvis',
+    onboardingCompleted = false,
   } = req.body as {
     email?: string;
     name?: string;
@@ -109,6 +110,7 @@ router.post('/seed', async (req, res) => {
     credits?: number;
     agentActive?: boolean;
     agentPersonality?: string;
+    onboardingCompleted?: boolean;
   };
 
   try {
@@ -124,9 +126,9 @@ router.post('/seed', async (req, res) => {
     const passwordHash = await bcrypt.hash('test-password-123', 10);
 
     db.prepare(`
-      INSERT INTO users (id, email, username, password_hash, name, plan, credits)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(userId, email, username, passwordHash, name, plan, credits);
+      INSERT INTO users (id, email, username, password_hash, name, plan, credits, onboarding_completed)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(userId, email, username, passwordHash, name, plan, credits, onboardingCompleted ? 1 : 0);
 
     // Create agent config
     const agentId = uuid();

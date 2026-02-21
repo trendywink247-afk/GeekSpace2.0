@@ -17,6 +17,7 @@ export interface TestFixtures {
     plan?: string;
     credits?: number;
     agentActive?: boolean;
+    onboardingCompleted?: boolean;
   }) => Promise<{
     user: { id: string; email: string; name: string };
     credentials: { email: string; password: string };

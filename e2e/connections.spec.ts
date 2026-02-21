@@ -20,6 +20,7 @@ test.describe('Connections Page', () => {
         plan: 'premium',
         credits: 50000,
         agentActive: true,
+        onboardingCompleted: true,
       },
     });
     expect(seedResponse.ok()).toBeTruthy();

@@ -20,6 +20,7 @@ test.describe('Health Dashboard', () => {
         plan: 'premium',
         credits: 50000,
         agentActive: true,
+        onboardingCompleted: true,
       },
     });
     expect(seedResponse.ok()).toBeTruthy();
