@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#05050A"/>
+      <stop offset="50%" style="stop-color:#0D0D1A"/>
+      <stop offset="100%" style="stop-color:#05050A"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7B61FF"/>
+      <stop offset="100%" style="stop-color:#FF61DC"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#7B61FF;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#7B61FF;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="blur1">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="40"/>
+    </filter>
+    <filter id="blur2">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="60"/>
+    </filter>
+    <filter id="textglow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="300" fill="url(#bg)"/>
+
+  <!-- Ambient glow orbs -->
+  <circle cx="250" cy="80" r="120" fill="#7B61FF" opacity="0.08" filter="url(#blur2)"/>
+  <circle cx="900" cy="220" r="100" fill="#FF61DC" opacity="0.06" filter="url(#blur2)"/>
+  <circle cx="600" cy="150" r="80" fill="#61FF7B" opacity="0.04" filter="url(#blur1)"/>
+
+  <!-- Star field -->
+  <circle cx="100" cy="40" r="1" fill="#F4F6FF" opacity="0.6"/>
+  <circle cx="250" cy="25" r="1.2" fill="#F4F6FF" opacity="0.4"/>
+  <circle cx="380" cy="60" r="0.8" fill="#F4F6FF" opacity="0.7"/>
+  <circle cx="520" cy="30" r="1" fill="#F4F6FF" opacity="0.5"/>
+  <circle cx="680" cy="50" r="1.5" fill="#7B61FF" opacity="0.6"/>
+  <circle cx="800" cy="35" r="0.8" fill="#F4F6FF" opacity="0.4"/>
+  <circle cx="950" cy="55" r="1" fill="#F4F6FF" opacity="0.6"/>
+  <circle cx="1080" cy="40" r="1.2" fill="#FF61DC" opacity="0.4"/>
+  <circle cx="1150" cy="65" r="0.8" fill="#F4F6FF" opacity="0.5"/>
+  <circle cx="150" cy="260" r="1" fill="#F4F6FF" opacity="0.3"/>
+  <circle cx="350" cy="270" r="0.8" fill="#F4F6FF" opacity="0.5"/>
+  <circle cx="550" cy="280" r="1.2" fill="#F4F6FF" opacity="0.3"/>
+  <circle cx="750" cy="265" r="0.8" fill="#F4F6FF" opacity="0.4"/>
+  <circle cx="1000" cy="275" r="1" fill="#F4F6FF" opacity="0.3"/>
+  <circle cx="1100" cy="255" r="1.5" fill="#61FF7B" opacity="0.3"/>
+
+  <!-- Sparkle icon -->
+  <g transform="translate(440, 95)">
+    <rect x="8" y="8" width="44" height="44" rx="12" fill="#7B61FF" opacity="0.2"/>
+    <path d="M30 16 L33 24 L41 27 L33 30 L30 38 L27 30 L19 27 L27 24 Z" fill="#7B61FF" stroke="#7B61FF" stroke-width="0.5"/>
+    <path d="M39 18 L40 21 L43 22 L40 23 L39 26 L38 23 L35 22 L38 21 Z" fill="#FF61DC" opacity="0.7"/>
+  </g>
+
+  <!-- Main title -->
+  <text x="500" y="140" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="56" font-weight="800" fill="url(#purple)" letter-spacing="-1">
+    GeekSpace
+  </text>
+  <text x="832" y="140" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="56" font-weight="300" fill="#F4F6FF" opacity="0.5" letter-spacing="-1">
+    2.0
+  </text>
+
+  <!-- Tagline -->
+  <text x="600" y="178" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="18" fill="#A7ACB8" text-anchor="middle" letter-spacing="4" font-weight="400">
+    YOUR AI. YOUR SPACE. YOUR RULES.
+  </text>
+
+  <!-- Decorative line -->
+  <line x1="420" y1="198" x2="780" y2="198" stroke="url(#purple)" stroke-width="1" opacity="0.3"/>
+
+  <!-- Description -->
+  <text x="600" y="228" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#A7ACB8" text-anchor="middle" opacity="0.8">
+    Self-hosted AI OS — personal agent, smart routing, developer portfolio, automations
+  </text>
+
+  <!-- Version badge -->
+  <rect x="545" y="245" width="50" height="22" rx="11" fill="#7B61FF" opacity="0.15"/>
+  <text x="570" y="260" font-family="'Segoe UI', monospace" font-size="11" fill="#7B61FF" text-anchor="middle" font-weight="600">v3.0</text>
+
+  <!-- Tech badges -->
+  <text x="625" y="260" font-family="'Segoe UI', monospace" font-size="10" fill="#A7ACB8" opacity="0.5">
+    React 19 · Express · SQLite · Docker
+  </text>
+
+  <!-- Border glow at top -->
+  <rect x="0" y="0" width="1200" height="2" fill="url(#purple)" opacity="0.6"/>
+
+  <!-- Border glow at bottom -->
+  <rect x="0" y="298" width="1200" height="2" fill="url(#purple)" opacity="0.3"/>
+</svg>
