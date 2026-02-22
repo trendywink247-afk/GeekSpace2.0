@@ -1,5 +1,5 @@
 // GeekSpace Service Worker — App Shell Caching
-const CACHE_NAME = 'geekspace-v2.3.0';
+const CACHE_NAME = 'geekspace-v3.0.0';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -45,17 +45,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For assets, try cache first, then network
+  // For assets — network first, cache fallback (Vite hashes filenames so new deploys get new URLs)
   if (request.url.match(/\.(js|css|png|jpg|svg|woff2?)$/)) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((response) => {
+      fetch(request)
+        .then((response) => {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           return response;
-        });
-      })
+        })
+        .catch(() => caches.match(request))
     );
   }
 });
