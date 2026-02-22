@@ -34,6 +34,6 @@ test.describe('Reminders', () => {
     await page.getByTestId('create-reminder-button').click();
     // Dialog should open - use testid-based detection
     await expect(page.getByTestId('reminder-text')).toBeVisible();
-    await expect(page.getByText('Add Reminder')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Add Reminder' })).toBeVisible();
   });
 });
