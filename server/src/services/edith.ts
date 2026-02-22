@@ -3,12 +3,12 @@
 //
 // Previously routed through the EDITH WebSocket bridge to OpenClaw.
 // Now calls the Moonshot API directly via standard OpenAI-compatible
-// HTTP endpoints, using the kimi-k2-thinking model for heavy
+// HTTP endpoints, using the kimi-k2.5 model for heavy
 // reasoning tasks.
 //
 // 120s timeout, 1 retry on transient failure.  If OPENROUTER_API_KEY
 // is missing, calls throw / probe returns false — the LLM router
-// falls back to OpenRouter (kimi-k2.5) or Ollama.
+// falls back to OpenRouter or Ollama.
 // ============================================================
 
 import { config } from '../config.js';
@@ -77,7 +77,7 @@ async function tryMoonshot(
 }
 
 /**
- * Send a chat message via Moonshot reasoning model (kimi-k2-thinking).
+ * Send a chat message via Moonshot reasoning model (kimi-k2.5).
  * 1 retry on transient failure.
  */
 export async function edithChat(
