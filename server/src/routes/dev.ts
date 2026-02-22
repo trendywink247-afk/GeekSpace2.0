@@ -7,6 +7,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { requireAdminToken } from '../middleware/auth.js';
 import { logDevAction, completeDevAction, getDevAuditLog } from '../services/dev-audit.js';
+import { isAllowedCommand, runAllowlistedCommand, COMMAND_ALLOWLIST } from '../services/dev-runner.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -37,6 +38,38 @@ devRouter.get('/status', async (_req, res) => {
   } catch (err) {
     completeDevAction(auditId, 'failed', String(err));
     res.status(500).json({ error: 'Failed to get status' });
+  }
+});
+
+// ---- POST /run-checks — run an allowlisted dev command ----
+devRouter.post('/run-checks', async (req, res) => {
+  const { command } = req.body || {};
+
+  if (!command || typeof command !== 'string') {
+    res.status(400).json({ error: 'Missing required field: command' });
+    return;
+  }
+
+  if (!isAllowedCommand(command)) {
+    res.status(400).json({
+      error: `Unknown command: ${command}`,
+      allowed: Object.keys(COMMAND_ALLOWLIST),
+    });
+    return;
+  }
+
+  const auditId = logDevAction('run-checks', { command });
+  try {
+    const result = await runAllowlistedCommand(command);
+    const status = result.exitCode === 0 ? 'success' : 'failed';
+    completeDevAction(auditId, status, `exit=${result.exitCode} duration=${result.durationMs}ms`);
+    res.json({
+      command,
+      ...result,
+    });
+  } catch (err) {
+    completeDevAction(auditId, 'failed', String(err));
+    res.status(500).json({ error: 'Command execution failed', details: String(err) });
   }
 });
 

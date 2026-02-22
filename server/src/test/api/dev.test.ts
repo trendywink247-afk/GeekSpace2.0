@@ -3,6 +3,7 @@ import request from 'supertest';
 import { createApp } from '../../app.js';
 import { resetDatabase } from '../setup.js';
 import { config } from '../../config.js';
+import { isAllowedCommand } from '../../services/dev-runner.js';
 
 const app = createApp();
 const ADMIN_TOKEN = config.adminToken || 'test-admin-token';
@@ -119,6 +120,49 @@ describe('Dev API Endpoints', () => {
 
       expect(res.body.entries.length).toBeLessThanOrEqual(2);
       expect(res.body.count).toBeLessThanOrEqual(2);
+    });
+  });
+
+  // ---- Run checks endpoint ----
+  describe('POST /api/dev/run-checks', () => {
+    it('should reject unknown command', async () => {
+      const res = await request(app)
+        .post('/api/dev/run-checks')
+        .set('Authorization', authHeader())
+        .send({ command: 'rm -rf /' })
+        .expect(400);
+
+      expect(res.body.error).toMatch(/Unknown command/);
+      expect(res.body).toHaveProperty('allowed');
+    });
+
+    it('should reject empty body', async () => {
+      const res = await request(app)
+        .post('/api/dev/run-checks')
+        .set('Authorization', authHeader())
+        .send({})
+        .expect(400);
+
+      expect(res.body.error).toMatch(/Missing required field/);
+    });
+
+    it('should reject without auth', async () => {
+      await request(app)
+        .post('/api/dev/run-checks')
+        .send({ command: 'lint' })
+        .expect(401);
+    });
+
+    it('should reject arbitrary strings via isAllowedCommand', () => {
+      expect(isAllowedCommand('lint')).toBe(true);
+      expect(isAllowedCommand('test')).toBe(true);
+      expect(isAllowedCommand('build')).toBe(true);
+      expect(isAllowedCommand('typecheck')).toBe(true);
+      expect(isAllowedCommand('e2e')).toBe(true);
+      expect(isAllowedCommand('rm -rf /')).toBe(false);
+      expect(isAllowedCommand('')).toBe(false);
+      expect(isAllowedCommand('cat /etc/passwd')).toBe(false);
+      expect(isAllowedCommand('lint && rm -rf /')).toBe(false);
     });
   });
 });
