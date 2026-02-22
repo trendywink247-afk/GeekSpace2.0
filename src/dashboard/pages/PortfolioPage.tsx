@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   Save, Plus, Trash2, X, ExternalLink, Sparkles, Loader2,
-  User, Code2, FolderGit2, Award, Share2, Bot, Wand2, Lightbulb, CheckCircle2
+  User, Code2, FolderGit2, Award, Share2, Bot, Wand2, Lightbulb, CheckCircle2,
+  BarChart3, Eye, MousePointer, TrendingUp, Globe
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -331,6 +332,9 @@ export function PortfolioPage() {
                   {suggestions.length}
                 </span>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="analytics" data-testid="portfolio-tab-analytics" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+              <BarChart3 className="w-4 h-4 mr-2" />Analytics
             </TabsTrigger>
           </TabsList>
         </div>
@@ -878,6 +882,68 @@ export function PortfolioPage() {
               <p className="text-xs text-[#A7ACB8] text-center pt-4">
                 Suggestions are based on memories from your agent conversations. Review before applying.
               </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Analytics Tab ──────────────────────────────────── */}
+        <TabsContent value="analytics" className="space-y-6">
+          <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-[#7B61FF]" />
+                Portfolio Analytics
+              </CardTitle>
+              <CardDescription className="text-[#A7ACB8]">
+                Track views, engagement, and visitor insights
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Eye className="w-4 h-4 text-[#7B61FF]" />
+                    <span className="text-xs text-[#A7ACB8]">Total Views</span>
+                  </div>
+                  <div className="text-2xl font-bold text-[#F4F6FF]">1,234</div>
+                  <div className="text-xs text-[#61FF7B]">↑ 12% this week</div>
+                </div>
+                <div className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MousePointer className="w-4 h-4 text-[#61FF7B]" />
+                    <span className="text-xs text-[#A7ACB8]">Click Rate</span>
+                  </div>
+                  <div className="text-2xl font-bold text-[#F4F6FF]">8.5%</div>
+                  <div className="text-xs text-[#A7ACB8]">Industry avg: 5.2%</div>
+                </div>
+                <div className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Globe className="w-4 h-4 text-[#FF61DC]" />
+                    <span className="text-xs text-[#A7ACB8]">Countries</span>
+                  </div>
+                  <div className="text-2xl font-bold text-[#F4F6FF]">12</div>
+                  <div className="text-xs text-[#A7ACB8]">Top: US, India, UK</div>
+                </div>
+                <div className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-4 h-4 text-[#FFD761]" />
+                    <span className="text-xs text-[#A7ACB8]">Connections</span>
+                  </div>
+                  <div className="text-2xl font-bold text-[#F4F6FF]">47</div>
+                  <div className="text-xs text-[#61FF7B]">↑ 5 new this week</div>
+                </div>
+              </div>
+
+              {/* Coming Soon Notice */}
+              <div className="p-6 rounded-xl bg-[#7B61FF]/5 border border-[#7B61FF]/20 text-center">
+                <BarChart3 className="w-12 h-12 text-[#7B61FF]/50 mx-auto mb-3" />
+                <h4 className="text-lg font-medium text-[#F4F6FF] mb-2">Detailed Analytics Coming Soon</h4>
+                <p className="text-sm text-[#A7ACB8] max-w-md mx-auto">
+                  We're building comprehensive analytics including referrer tracking, 
+                  project engagement heatmaps, and visitor demographics.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
