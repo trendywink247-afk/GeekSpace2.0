@@ -12,6 +12,7 @@ import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentDesignWizard } from '@/components/AgentDesignWizard';
 import { CommandPalette } from '@/components/CommandPalette';
 import { QuickActionsWidget } from '@/components/QuickActionsWidget';
+import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPrompt';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
@@ -505,6 +506,10 @@ export function DashboardApp() {
           </div>
         </div>
       )}
+
+      {/* PWA Components */}
+      <PWAInstallPrompt />
+      <OfflineIndicator />
     </div>
   );
 }
