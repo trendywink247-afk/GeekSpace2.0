@@ -45,7 +45,7 @@ export async function generateWhatsAppQRSession(userId: string, chatId: string):
     });
 
     // Generate QR code data (this would be replaced with actual WhatsApp Web QR)
-    const qrData = `https://api.whatsapp.com/send?phone=${config.whatsappPhoneNumber || '0000000000'}&text=LINK:${sessionId}`;
+    const qrData = `https://api.whatsapp.com/send?phone=${config.whatsappBusinessNumber || '0000000000'}&text=LINK:${sessionId}`;
     
     // Create a simple QR code URL using a free service
     // In production, generate this server-side
