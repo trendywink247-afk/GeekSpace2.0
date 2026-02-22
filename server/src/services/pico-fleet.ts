@@ -71,6 +71,11 @@ interface PicoTask {
   completed_at: string | null;
   agent_status?: string;
   agent_slot?: number;
+  source_request_id?: string;
+  attempts?: number;
+  max_attempts?: number;
+  idempotency_key?: string;
+  retry_after?: string | null;
 }
 
 // ---- Schema Init ----
@@ -134,6 +139,27 @@ export function initPicoFleetTables(): void {
   try {
     db.exec("CREATE INDEX IF NOT EXISTS idx_pico_tasks_request_id ON pico_tasks(source_request_id)");
   } catch { /* index already exists or column doesn't exist yet */ }
+
+  // Migration: add attempts column for retry tracking
+  try {
+    db.exec("ALTER TABLE pico_tasks ADD COLUMN attempts INTEGER DEFAULT 0");
+  } catch { /* column already exists */ }
+
+  // Migration: add max_attempts column for configurable retries
+  try {
+    db.exec("ALTER TABLE pico_tasks ADD COLUMN max_attempts INTEGER DEFAULT 3");
+  } catch { /* column already exists */ }
+
+  // Migration: add idempotency_key column for deduplication
+  try {
+    db.exec("ALTER TABLE pico_tasks ADD COLUMN idempotency_key TEXT DEFAULT ''");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_pico_tasks_idempotency ON pico_tasks(user_id, idempotency_key) WHERE idempotency_key != ''");
+  } catch { /* column or index already exists */ }
+
+  // Migration: add retry_after column for exponential backoff
+  try {
+    db.exec("ALTER TABLE pico_tasks ADD COLUMN retry_after TEXT");
+  } catch { /* column already exists */ }
 
   logger.info('Pico Fleet tables initialized');
 }
@@ -536,6 +562,25 @@ export async function planTasks(userId: string, userRequest: string, userPlan: s
   return planWithKimi(userId, userRequest);
 }
 
+// ---- Idempotency Check ----
+
+function generateIdempotencyKey(userId: string, taskType: string, description: string): string {
+  // Simple hash for deduplication — same user + type + description within 5 min window
+  return `${userId}:${taskType}:${description.slice(0, 50)}`;
+}
+
+function checkDuplicateTask(userId: string, idempotencyKey: string): string | null {
+  // Check for completed/queued task with same key within last 5 minutes
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const existing = db.prepare(
+    `SELECT id FROM pico_tasks 
+     WHERE user_id = ? AND idempotency_key = ? 
+     AND (status IN ('completed', 'queued', 'running') OR (status = 'failed' AND created_at > ?))
+     ORDER BY created_at DESC LIMIT 1`
+  ).get(userId, idempotencyKey, fiveMinutesAgo) as { id: string } | undefined;
+  return existing?.id || null;
+}
+
 // ---- Queue Tasks ----
 
 export function queueTasks(
@@ -555,13 +600,25 @@ export function queueTasks(
       continue;
     }
 
+    // Generate idempotency key
+    const idempotencyKey = generateIdempotencyKey(userId, task.task_type, task.description);
+
+    // Check for duplicate (idempotency)
+    const duplicateId = checkDuplicateTask(userId, idempotencyKey);
+    if (duplicateId) {
+      logger.info({ userId, taskType: task.task_type, duplicateId, sourceRequestId }, 'Duplicate task detected — skipping');
+      taskIds.push(duplicateId); // Return existing task ID
+      continue;
+    }
+
     const id = uuid();
-    db.prepare(`INSERT INTO pico_tasks (id, user_id, agent_id, task_type, description, config, planned_by, source_request_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    db.prepare(`INSERT INTO pico_tasks (id, user_id, agent_id, task_type, description, config, planned_by, source_request_id, idempotency_key, attempts, max_attempts)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, userId, agent.id, task.task_type, task.description,
       JSON.stringify(task.config), plannedBy, sourceRequestId || '',
+      idempotencyKey, 0, 3, // attempts=0, max_attempts=3
     );
-    logger.info({ taskId: id, userId, taskType: task.task_type, sourceRequestId }, 'Task queued');
+    logger.info({ taskId: id, userId, taskType: task.task_type, sourceRequestId, idempotencyKey }, 'Task queued');
     taskIds.push(id);
   }
 
@@ -617,14 +674,18 @@ export function cancelTask(taskId: string, userId: string): void {
 let lastProcessedUserId = '';
 
 async function processNextTask(): Promise<boolean> {
+  const now = new Date().toISOString();
+
   // Fair round-robin: find next queued task from a user after lastProcessedUserId
   // Skip paused agents and agents with a running task (1 concurrent per agent)
+  // Also skip tasks with retry_after in the future
   const roundRobinQuery = `
     SELECT t.*, a.status AS agent_status, a.slot AS agent_slot
     FROM pico_tasks t
     JOIN pico_agents a ON a.id = t.agent_id
     WHERE t.status = 'queued'
       AND a.status = 'active'
+      AND (t.retry_after IS NULL OR t.retry_after <= ?)
       AND NOT EXISTS (
         SELECT 1 FROM pico_tasks r
         WHERE r.agent_id = t.agent_id AND r.status = 'running'
@@ -634,11 +695,11 @@ async function processNextTask(): Promise<boolean> {
     LIMIT 1
   `;
 
-  let task = db.prepare(roundRobinQuery).get(lastProcessedUserId) as PicoTask | undefined;
+  let task = db.prepare(roundRobinQuery).get(now, lastProcessedUserId) as PicoTask | undefined;
 
   // Wrap around if nothing found after current user
   if (!task) {
-    task = db.prepare(roundRobinQuery).get('') as PicoTask | undefined;
+    task = db.prepare(roundRobinQuery).get(now, '') as PicoTask | undefined;
   }
 
   if (!task) return false; // genuinely idle — nothing in queue
@@ -780,16 +841,34 @@ async function executeTask(task: PicoTask): Promise<void> {
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     const failedAt = new Date().toISOString();
+    const currentAttempts = (task.attempts || 0) + 1;
+    const maxAttempts = task.max_attempts || 3;
 
-    db.prepare("UPDATE pico_tasks SET status = 'failed', result = ?, completed_at = ? WHERE id = ?")
-      .run(errorMsg, failedAt, task.id);
-    db.prepare('UPDATE pico_agents SET tasks_failed = tasks_failed + 1 WHERE id = ?')
-      .run(task.agent_id);
+    // Log the failure
     db.prepare('INSERT INTO pico_task_logs (id, task_id, agent_id, event, detail) VALUES (?, ?, ?, ?, ?)')
-      .run(uuid(), task.id, task.agent_id, 'failed', errorMsg);
+      .run(uuid(), task.id, task.agent_id, 'failed', `Attempt ${currentAttempts}/${maxAttempts}: ${errorMsg}`);
 
-    eventBus.emit('pico:task', { event: 'failed', taskId: task.id, taskType: task.task_type, userId: task.user_id, error: errorMsg.slice(0, 200) });
-    logger.warn({ taskId: task.id, taskType: task.task_type, error: errorMsg }, 'Pico task failed');
+    // Check if we should retry
+    if (currentAttempts < maxAttempts) {
+      // Calculate exponential backoff: 5s, 15s, 45s...
+      const backoffSeconds = 5 * Math.pow(3, currentAttempts - 1);
+      const retryAfter = new Date(Date.now() + backoffSeconds * 1000).toISOString();
+
+      db.prepare("UPDATE pico_tasks SET status = 'queued', attempts = ?, retry_after = ?, result = ? WHERE id = ?")
+        .run(currentAttempts, retryAfter, `Retry scheduled in ${backoffSeconds}s: ${errorMsg}`, task.id);
+
+      logger.info({ taskId: task.id, taskType: task.task_type, attempt: currentAttempts, maxAttempts, retryAfter, backoffSeconds }, 'Pico task failed, will retry');
+      eventBus.emit('pico:task', { event: 'retry_scheduled', taskId: task.id, taskType: task.task_type, userId: task.user_id, attempt: currentAttempts, retryAfter });
+    } else {
+      // Max retries exceeded — mark as permanently failed
+      db.prepare("UPDATE pico_tasks SET status = 'failed', result = ?, completed_at = ?, attempts = ? WHERE id = ?")
+        .run(`Failed after ${maxAttempts} attempts: ${errorMsg}`, failedAt, currentAttempts, task.id);
+      db.prepare('UPDATE pico_agents SET tasks_failed = tasks_failed + 1 WHERE id = ?')
+        .run(task.agent_id);
+
+      eventBus.emit('pico:task', { event: 'failed', taskId: task.id, taskType: task.task_type, userId: task.user_id, error: errorMsg.slice(0, 200) });
+      logger.warn({ taskId: task.id, taskType: task.task_type, error: errorMsg, attempts: currentAttempts }, 'Pico task failed permanently after max retries');
+    }
   }
 }
 
