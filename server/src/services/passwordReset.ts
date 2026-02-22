@@ -110,19 +110,17 @@ export function getUserResetChannels(userId: string): { email: string | null; te
 async function sendEmailOTP(email: string, otp: string, userName: string): Promise<boolean> {
   try {
     // Use existing email service
-    const { sendAgentEmail } = await import('./email.js');
-    
-    await sendAgentEmail({
-      to: email,
-      subject: 'Your GeekSpace Password Reset Code',
-      text: `Hi ${userName},\n\nYour password reset code is: ${otp}\n\nThis code is valid for 10 minutes. If you didn't request this, please ignore this email.\n\n- GeekSpace Team`,
-      html: `<p>Hi ${userName},</p>
+    const { sendEmail } = await import('./email.js');
+
+    const subject = 'Your GeekSpace Password Reset Code';
+    const html = `<p>Hi ${userName},</p>
              <p>Your password reset code is:</p>
              <h2 style="font-size: 32px; letter-spacing: 8px; background: #f0f0f0; padding: 20px; text-align: center;">${otp}</h2>
              <p>This code is valid for <strong>10 minutes</strong>.</p>
              <p>If you didn't request this, please ignore this email.</p>
-             <p>- GeekSpace Team</p>`,
-    });
+             <p>- GeekSpace Team</p>`;
+
+    await sendEmail(email, subject, html);
 
     return true;
   } catch (err) {
@@ -212,10 +210,10 @@ export async function requestPasswordReset(
 
     // Check channel availability
     if (channel === 'email' && !channels.email) {
-      return { success: false, error: 'No email associated with account' };
+      return { success: false, message: 'No email associated with account', error: 'No email associated with account' };
     }
     if (channel === 'telegram' && !channels.telegram) {
-      return { success: false, error: 'Telegram not connected' };
+      return { success: false, message: 'Telegram not connected', error: 'Telegram not connected' };
     }
 
     // Generate OTP
@@ -247,7 +245,7 @@ export async function requestPasswordReset(
       // Rollback token
       db.prepare("DELETE FROM password_reset_tokens WHERE id = ?").run(tokenId);
       logResetAudit(user.id, 'otp_sent', channel, ipAddress, false, 'Failed to send OTP');
-      return { success: false, error: 'Failed to send reset code. Please try again.' };
+      return { success: false, message: 'Failed to send reset code. Please try again.', error: 'Failed to send reset code. Please try again.' };
     }
 
     logResetAudit(user.id, 'otp_sent', channel, ipAddress, true);
@@ -259,7 +257,7 @@ export async function requestPasswordReset(
     };
   } catch (err) {
     logger.error({ err, identifier }, 'Password reset request error');
-    return { success: false, error: 'Something went wrong. Please try again.' };
+    return { success: false, message: 'Something went wrong. Please try again.', error: 'Something went wrong. Please try again.' };
   }
 }
 
@@ -361,8 +359,7 @@ export async function resetPassword(
     }
 
     // Hash new password
-    const { hashPassword } = await import('../middleware/auth.js');
-    const passwordHash = await hashPassword(newPassword);
+    const passwordHash = await bcrypt.hash(newPassword, 12);
 
     // Update password
     db.prepare('UPDATE users SET password_hash = ?, updated_at = datetime("now") WHERE id = ?').run(

@@ -17,8 +17,9 @@ import {
   getAvailabilityResponse,
   isInQuietHours,
   type ContactRequest,
+  type ContactChannel,
 } from '../services/contactRouter.js';
-import type { AuthRequest } from '../types.js';
+import type { AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -171,7 +172,7 @@ router.post('/request', async (req: AuthRequest, res) => {
     const inQuietHours = isInQuietHours(toUserId);
     
     // Notify target user (unless in quiet hours - delay notification)
-    let notifyResult = { success: false, channel: 'none' as const, error: 'Quiet hours' };
+    let notifyResult: { success: boolean; channel: ContactChannel; error?: string } = { success: false, channel: 'none', error: 'Quiet hours' };
     if (!inQuietHours) {
       const request: ContactRequest = {
         id: requestId,
@@ -285,7 +286,7 @@ router.get('/:id/status', async (req, res) => {
        FROM contact_requests cr
        JOIN users u ON cr.to_user_id = u.id
        WHERE cr.id = ?`
-    ).get(id) as (ContactRequest & { to_user_name: string; to_user_avatar: string }) | undefined;
+    ).get(id) as (ContactRequest & { to_user_name: string; to_user_avatar: string; decided_at: string | null }) | undefined;
 
     if (!request) {
       return res.status(404).json({ error: 'Request not found' });
@@ -318,7 +319,7 @@ router.get('/:id/status', async (req, res) => {
       },
       createdAt: request.createdAt,
       expiresAt: request.expiresAt,
-      decidedAt: request.status !== 'pending' ? request.decidedAt : null,
+      decidedAt: request.status !== 'pending' ? request.decided_at : null,
     });
   } catch (err) {
     logger.error({ err, requestId: req.params.id }, 'Failed to get contact request status');
@@ -347,7 +348,7 @@ router.get('/incoming', requireAuth, async (req: AuthRequest, res) => {
       requests: requests.map(r => ({
         id: r.id,
         fromName: r.fromName,
-        fromUser: r.from_user_id ? {
+        fromUser: r.fromUserId ? {
           name: r.from_user_name,
           avatar: r.from_user_avatar,
         } : null,
