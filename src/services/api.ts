@@ -240,10 +240,14 @@ export const integrationService = {
   unlinkTelegram: () =>
     api.delete('/integrations/telegram/link'),
 
-  // WhatsApp linking
+  // WhatsApp linking (old token-based)
   linkWhatsApp: () => api.post<{ linked: boolean; token?: string; qrUrl?: string; expiresIn?: number; message?: string }>('/integrations/whatsapp/link'),
   checkWhatsAppStatus: () => api.get<{ linked: boolean; externalId?: string; linkedAt?: string }>('/integrations/whatsapp/status'),
   unlinkWhatsApp: () => api.delete('/integrations/whatsapp/link'),
+  
+  // WhatsApp QR-based linking (new, like OpenClaw)
+  linkWhatsAppQR: () => api.post<{ success: boolean; sessionId: string; qrCodeDataUrl?: string; error?: string }>('/integrations/whatsapp/qr'),
+  checkWhatsAppQRStatus: (sessionId: string) => api.get<{ linked: boolean; phoneNumber?: string; error?: string }>('/integrations/whatsapp/qr/' + sessionId + '/status'),
 
   // Email notification settings
   updateNotificationEmail: (data: { enabled?: boolean; address?: string }) =>

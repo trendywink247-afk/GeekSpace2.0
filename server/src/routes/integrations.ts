@@ -240,3 +240,53 @@ integrationsRouter.delete('/whatsapp/link', requireAuth, (req: AuthRequest, res)
 
   res.json({ success: true });
 });
+
+// ================================================================
+// WhatsApp QR-Based Linking (New - Like OpenClaw)
+// ================================================================
+
+// Generate QR code for WhatsApp linking
+integrationsRouter.post('/whatsapp/qr', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  // Check if already linked
+  const existing = db.prepare(
+    "SELECT id FROM channel_links WHERE user_id = ? AND channel = 'whatsapp'"
+  ).get(userId) as { id: string } | undefined;
+
+  if (existing) {
+    res.status(400).json({ success: false, error: 'WhatsApp is already linked.' });
+    return;
+  }
+
+  try {
+    const { generateWhatsAppQRSession } = await import('../services/whatsapp-new.js');
+    const result = await generateWhatsAppQRSession(userId, 'dashboard');
+
+    if (result.success) {
+      res.json({
+        success: true,
+        sessionId: result.sessionId,
+        qrCodeDataUrl: result.qrCodeDataUrl,
+      });
+    } else {
+      res.status(500).json({ success: false, error: result.error });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to generate QR code' });
+  }
+});
+
+// Check QR linking status
+integrationsRouter.get('/whatsapp/qr/:sessionId/status', requireAuth, async (req: AuthRequest, res) => {
+  const { sessionId } = req.params;
+
+  try {
+    const { checkWhatsAppSession } = await import('../services/whatsapp-new.js');
+    const result = await checkWhatsAppSession(sessionId);
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ linked: false, error: 'Failed to check status' });
+  }
+});

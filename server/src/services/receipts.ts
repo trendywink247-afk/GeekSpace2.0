@@ -95,6 +95,24 @@ export const RECEIPT_TEMPLATES = {
     text: 'Remembered',
     details: key,
   }),
+
+  image: (prompt: string): ReceiptItem => ({
+    icon: '🖼️',
+    text: 'Image generated',
+    details: prompt.slice(0, 50) + (prompt.length > 50 ? '...' : ''),
+  }),
+
+  video: (prompt: string): ReceiptItem => ({
+    icon: '🎬',
+    text: 'Video generated',
+    details: prompt.slice(0, 50) + (prompt.length > 50 ? '...' : ''),
+  }),
+
+  avatar: (): ReceiptItem => ({
+    icon: '👤',
+    text: 'Avatar updated',
+    details: 'Profile picture generated',
+  }),
 };
 
 // ---- Format Receipt for Display ----

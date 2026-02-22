@@ -64,6 +64,22 @@ const triggerWorkflowSchema = z.object({
   payload: z.record(z.string(), z.unknown()).default({}),
 });
 
+const generateImageSchema = z.object({
+  prompt: z.string().min(1).max(1000),
+  width: z.number().int().min(256).max(2048).optional(),
+  height: z.number().int().min(256).max(2048).optional(),
+});
+
+const generateVideoSchema = z.object({
+  prompt: z.string().min(1).max(1000),
+  duration: z.number().int().min(3).max(10).optional(),
+});
+
+const generateAvatarSchema = z.object({
+  description: z.string().min(1).max(500),
+  style: z.enum(['professional', 'creative', 'fun']).optional(),
+});
+
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -75,6 +91,9 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   set_reminder: setReminderSchema,
   crawl_url: crawlUrlSchema,
   trigger_workflow: triggerWorkflowSchema,
+  generate_image: generateImageSchema,
+  generate_video: generateVideoSchema,
+  generate_avatar: generateAvatarSchema,
 };
 
 // ── Types ───────────────────────────────────────────────────

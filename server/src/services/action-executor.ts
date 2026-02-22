@@ -14,6 +14,7 @@ import { parseReminderTime } from './pico-fleet.js';
 import type { ParsedAction } from './action-parser.js';
 import { config } from '../config.js';
 import { RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
+import { generateImage, generateVideo, generateAvatar } from './media-generation.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -315,6 +316,81 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           message: `Workflow "${flowPath}" triggered — job ${jobId}`,
           data: { flowPath, jobId },
           receipt: RECEIPT_TEMPLATES.automation(flowPath),
+        };
+      }
+
+      // ── generate_image ──────────────────────────────────────
+      case 'generate_image': {
+        const prompt = params.prompt as string;
+        const width = params.width as number | undefined;
+        const height = params.height as number | undefined;
+
+        const result = await generateImage(prompt, { width, height });
+
+        if (!result.success) {
+          return {
+            tool,
+            success: false,
+            message: `Image generation failed: ${result.error}`,
+          };
+        }
+
+        return {
+          tool,
+          success: true,
+          message: `Image generated successfully`,
+          data: { url: result.url, prompt },
+          receipt: RECEIPT_TEMPLATES.image(prompt),
+        };
+      }
+
+      // ── generate_video ──────────────────────────────────────
+      case 'generate_video': {
+        const prompt = params.prompt as string;
+        const duration = params.duration as number | undefined;
+
+        const result = await generateVideo(prompt, { duration });
+
+        if (!result.success) {
+          return {
+            tool,
+            success: false,
+            message: `Video generation failed: ${result.error}`,
+          };
+        }
+
+        return {
+          tool,
+          success: true,
+          message: `Video generation started. ETA: ~${result.estimatedTime}s`,
+          data: { url: result.url, prompt, estimatedTime: result.estimatedTime },
+        };
+      }
+
+      // ── generate_avatar ─────────────────────────────────────
+      case 'generate_avatar': {
+        const description = params.description as string;
+        const style = (params.style as 'professional' | 'creative' | 'fun') || 'professional';
+
+        const result = await generateAvatar(description, style);
+
+        if (!result.success) {
+          return {
+            tool,
+            success: false,
+            message: `Avatar generation failed: ${result.error}`,
+          };
+        }
+
+        // Save avatar to user profile
+        db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(result.url, userId);
+
+        return {
+          tool,
+          success: true,
+          message: `Avatar generated and saved`,
+          data: { url: result.url, style },
+          receipt: RECEIPT_TEMPLATES.avatar(),
         };
       }
 
