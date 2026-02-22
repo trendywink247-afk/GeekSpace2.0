@@ -148,7 +148,7 @@ export const config = {
 
   // DevClaw Bridge
   githubDevToken: process.env.GITHUB_DEV_TOKEN || '',
-  devRunnerTimeoutMs: optionalInt('DEV_RUNNER_TIMEOUT_MS', 120000),
+  devRunnerTimeoutMs: optionalInt('DEV_RUNNER_TIMEOUT_MS', 300000), // 5 min
 
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',
