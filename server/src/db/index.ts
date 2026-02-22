@@ -749,6 +749,15 @@ function seedDefaultIntegrations(userId: string) {
 }
 
 function seedDemoData() {
+  // Guard: never seed if real (non-demo) users already exist in the database
+  const realUserCount = (db.prepare(
+    "SELECT count(*) as cnt FROM users WHERE id NOT LIKE 'demo-%'"
+  ).get() as { cnt: number }).cnt;
+  if (realUserCount > 0) {
+    logger.info({ realUserCount }, 'seedDemoData: Real users detected, skipping seed to protect production data');
+    return;
+  }
+
   const hasOriginal = db.prepare('SELECT id FROM users WHERE id = ?').get('demo-1');
   const hasNew = db.prepare('SELECT id FROM users WHERE id = ?').get('demo-9');
 
@@ -1029,8 +1038,8 @@ function seedDemoData() {
   }
 }
 
-// Only seed demo data when enabled (non-production by default)
-const shouldSeed = process.env.NODE_ENV !== 'production' && (process.env.SEED_DEMO_DATA ?? 'true') === 'true';
+// Only seed demo data when explicitly enabled in non-production environments
+const shouldSeed = process.env.NODE_ENV !== 'production' && process.env.SEED_DEMO_DATA === 'true';
 if (shouldSeed) {
   seedDemoData();
 }

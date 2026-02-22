@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid';
 import bcrypt from 'bcryptjs';
 import { signToken, requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { db, seedDemoData } from '../db/index.js';
+import { config } from '../config.js';
 import { validateBody, signupSchema, loginSchema, onboardingSchema } from '../middleware/validate.js';
 import { cacheDel } from '../services/cache.js';
 import { logSecurityEvent } from '../services/security-log.js';
@@ -141,8 +142,10 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
 });
 
 authRouter.post('/demo', (req, res) => {
-  // Ensure demo data exists regardless of SEED_DEMO_DATA env
-  seedDemoData();
+  // Seed demo data only in non-production (seedDemoData has its own real-user guard)
+  if (!config.isProduction) {
+    seedDemoData();
+  }
 
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get('demo-1') as Record<string, unknown> | undefined;
   if (!user) {
