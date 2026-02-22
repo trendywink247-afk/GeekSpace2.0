@@ -150,6 +150,12 @@ export const config = {
   githubDevToken: process.env.GITHUB_DEV_TOKEN || '',
   devRunnerTimeoutMs: optionalInt('DEV_RUNNER_TIMEOUT_MS', 300000), // 5 min
 
+  // OAuth - Google & GitHub
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+  githubClientId: process.env.GITHUB_CLIENT_ID || '',
+  githubClientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',
 } as const;

@@ -10,7 +10,7 @@ import {
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentDesignWizard } from '@/components/AgentDesignWizard';
-import { CommandPalette, useCommandPalette } from '@/components/CommandPalette';
+import { CommandPalette } from '@/components/CommandPalette';
 import { QuickActionsWidget } from '@/components/QuickActionsWidget';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -75,7 +75,7 @@ export function DashboardApp() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
-  const { isOpen: commandPaletteOpen, setIsOpen: setCommandPaletteOpen } = useCommandPalette();
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const usage = useDashboardStore((s) => s.usage);
@@ -465,6 +465,16 @@ export function DashboardApp() {
         <AgentChatButton context="dashboard" onOpenChat={() => setChatOpen(true)} />
       </div>
 
+      {/* Mobile Quick Actions Button */}
+      <div className="fixed bottom-24 left-4 md:hidden z-40">
+        <button
+          onClick={() => setShowQuickActions(true)}
+          className="w-12 h-12 rounded-full bg-[#61FF7B] text-[#0B0B10] flex items-center justify-center shadow-lg shadow-[#61FF7B]/30"
+        >
+          <span className="text-xl">⚡</span>
+        </button>
+      </div>
+
       {/* Slide-out agent chat */}
       <AgentChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
 
@@ -475,19 +485,24 @@ export function DashboardApp() {
       <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
 
       {/* Quick Actions Widget */}
-      {showQuickActions ? (
-        <div className="fixed bottom-24 right-4 md:right-8 z-40 w-80">
-          <QuickActionsWidget onToggleCollapse={() => setShowQuickActions(false)} />
-        </div>
-      ) : (
-        <div className="fixed bottom-24 md:bottom-8 right-20 md:right-28 z-40">
-          <button
-            onClick={() => setShowQuickActions(true)}
-            className="w-12 h-12 rounded-full bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10] flex items-center justify-center shadow-lg shadow-[#61FF7B]/30 transition-all hover:scale-110"
-            title="Quick Actions"
-          >
-            <span className="text-xl">⚡</span>
-          </button>
+      {/* Mobile Quick Actions Button */}
+      <div className="fixed bottom-24 left-4 md:hidden z-40">
+        <button
+          onClick={() => setShowQuickActions(true)}
+          className="w-12 h-12 rounded-full bg-[#61FF7B] text-[#0B0B10] flex items-center justify-center shadow-lg shadow-[#61FF7B]/30"
+        >
+          <span className="text-xl">⚡</span>
+        </button>
+      </div>
+
+      {/* Quick Actions Widget */}
+      {showQuickActions && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4 md:p-0">
+          <div className="w-full md:w-80 md:absolute md:bottom-24 md:right-8">
+            <QuickActionsWidget 
+              onToggleCollapse={() => setShowQuickActions(false)} 
+            />
+          </div>
         </div>
       )}
     </div>

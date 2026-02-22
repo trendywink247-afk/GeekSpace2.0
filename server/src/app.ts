@@ -7,6 +7,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import passport from 'passport';
 
 import { config } from './config.js';
 import { logger, requestLogger } from './logger.js';
@@ -14,6 +15,7 @@ import { errorHandler } from './middleware/errors.js';
 import { db } from './db/index.js';
 
 import { authRouter } from './routes/auth.js';
+import { oauthRouter } from './routes/oauth.js';
 import { usersRouter } from './routes/users.js';
 import { agentRouter } from './routes/agent.js';
 import { usageRouter } from './routes/usage.js';
@@ -91,6 +93,9 @@ export function createApp(): express.Application {
 
   // ---- Body parsing ----
   app.use(express.json({ limit: `${config.maxRequestBodyBytes}` }));
+
+  // ---- Passport initialization (for OAuth) ----
+  app.use(passport.initialize());
 
   // ---- Request logging ----
   app.use(requestLogger);
@@ -183,6 +188,7 @@ export function createApp(): express.Application {
 
   // ---- Mount routes ----
   app.use('/api/auth', authRouter);
+  app.use('/api/oauth', oauthRouter);
   app.use('/api/users', usersRouter);
   app.use('/api/agent', agentRouter);
   app.use('/api/usage', usageRouter);
