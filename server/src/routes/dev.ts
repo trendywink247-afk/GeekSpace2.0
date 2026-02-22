@@ -8,6 +8,8 @@ import { promisify } from 'util';
 import { requireAdminToken } from '../middleware/auth.js';
 import { logDevAction, completeDevAction, getDevAuditLog } from '../services/dev-audit.js';
 import { isAllowedCommand, runAllowlistedCommand, COMMAND_ALLOWLIST } from '../services/dev-runner.js';
+import { createDevPR, validateBranchName } from '../services/dev-github.js';
+import { config } from '../config.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -70,6 +72,42 @@ devRouter.post('/run-checks', async (req, res) => {
   } catch (err) {
     completeDevAction(auditId, 'failed', String(err));
     res.status(500).json({ error: 'Command execution failed', details: String(err) });
+  }
+});
+
+// ---- POST /create-pr — create a branch + PR from feature/testing-ci ----
+devRouter.post('/create-pr', async (req, res) => {
+  if (!config.githubDevToken) {
+    res.status(503).json({ error: 'GITHUB_DEV_TOKEN not configured' });
+    return;
+  }
+
+  const { branchName, title, body } = req.body || {};
+
+  if (!branchName || typeof branchName !== 'string') {
+    res.status(400).json({ error: 'Missing required field: branchName' });
+    return;
+  }
+
+  const branchError = validateBranchName(branchName);
+  if (branchError) {
+    res.status(400).json({ error: branchError });
+    return;
+  }
+
+  if (!title || typeof title !== 'string') {
+    res.status(400).json({ error: 'Missing required field: title' });
+    return;
+  }
+
+  const auditId = logDevAction('create-pr', { branchName, title });
+  try {
+    const result = await createDevPR(branchName, title, body || '');
+    completeDevAction(auditId, 'success', `PR #${result.prNumber}`, result.prUrl);
+    res.json(result);
+  } catch (err) {
+    completeDevAction(auditId, 'failed', String(err));
+    res.status(500).json({ error: 'Failed to create PR', details: String(err) });
   }
 });
 
