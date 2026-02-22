@@ -46,6 +46,9 @@ export function signToken(userId: string): string {
   });
 }
 
+// Alias for OAuth compatibility
+export const generateToken = signToken;
+
 // Bearer token middleware — checks Authorization: Bearer <ADMIN_TOKEN>
 export function requireAdminToken(req: Request, res: Response, next: NextFunction): void {
   if (!config.adminToken) {

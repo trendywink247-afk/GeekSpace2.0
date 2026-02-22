@@ -10,6 +10,8 @@ import {
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentDesignWizard } from '@/components/AgentDesignWizard';
+import { QuickActionsWidget } from '@/components/QuickActionsWidget';
+import { CommandPalette } from '@/components/CommandPalette';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
@@ -72,6 +74,8 @@ export function DashboardApp() {
   const [chatOpen, setChatOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const usage = useDashboardStore((s) => s.usage);
@@ -461,11 +465,35 @@ export function DashboardApp() {
         <AgentChatButton context="dashboard" onOpenChat={() => setChatOpen(true)} />
       </div>
 
+      {/* Mobile Quick Actions Button */}
+      <div className="fixed bottom-24 left-4 md:hidden z-40">
+        <button
+          onClick={() => setShowQuickActions(true)}
+          className="w-12 h-12 rounded-full bg-[#61FF7B] text-[#0B0B10] flex items-center justify-center shadow-lg shadow-[#61FF7B]/30"
+        >
+          <span className="text-xl">⚡</span>
+        </button>
+      </div>
+
       {/* Slide-out agent chat */}
       <AgentChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
 
       {/* Agent design wizard */}
       <AgentDesignWizard isOpen={wizardOpen} onClose={() => setWizardOpen(false)} />
+
+      {/* Command Palette (Ctrl+K) */}
+      <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+
+      {/* Quick Actions Widget */}
+      {showQuickActions && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4 md:p-0">
+          <div className="w-full md:w-80 md:absolute md:bottom-24 md:right-8">
+            <QuickActionsWidget 
+              onToggleCollapse={() => setShowQuickActions(false)} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
