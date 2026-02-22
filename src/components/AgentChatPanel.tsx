@@ -7,6 +7,7 @@ import { agentService, premiumAgentService, publicAgentService } from '@/service
 import type { AgentPersonality, PremiumSession } from '@/types';
 import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
+import { MessageReactions } from './MessageReactions';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 
 // Browser SpeechRecognition (Chrome/Edge — not in @types/dom by default)
@@ -537,6 +538,19 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                           </a>
                         ))}
                       </div>
+                    )}
+                    {/* Message Reactions for agent messages */}
+                    {msg.role === 'agent' && !msg.isStreaming && (
+                      <MessageReactions
+                        messageId={msg.id}
+                        onReact={(id, reaction) => {
+                          // TODO: Send reaction to server
+                          console.log('Reacted to message:', id, reaction);
+                        }}
+                        onCopy={(id) => {
+                          console.log('Copied message:', id);
+                        }}
+                      />
                     )}
                   </div>
                 </>
