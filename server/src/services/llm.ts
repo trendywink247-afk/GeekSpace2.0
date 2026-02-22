@@ -38,6 +38,61 @@ export interface LLMResponse {
   intent: Intent;
 }
 
+// ---- Routing Trace (for debugging/monitoring) ----
+
+export interface RoutingTrace {
+  timestamp: string;
+  userId: string;
+  routeDecision: Provider;
+  reason: 
+    | 'ollama_healthy'
+    | 'ollama_unreachable' 
+    | 'ollama_timeout'
+    | 'openrouter_free_available'
+    | 'openrouter_error'
+    | 'complexity_escalation'
+    | 'budget_degradation'
+    | 'manual_override'
+    | 'fallback_chain';
+  latencyMs: number;
+  tokensEstimate: number;
+  intent: Intent;
+  ollamaAvailable: boolean;
+  forcedProvider?: Provider;
+  error?: string;
+}
+
+// In-memory routing traces (last 1000 for debugging)
+const routingTraces: RoutingTrace[] = [];
+
+export function getRoutingTraces(limit = 100): RoutingTrace[] {
+  return routingTraces.slice(-limit);
+}
+
+export function clearRoutingTraces(): void {
+  routingTraces.length = 0;
+}
+
+function recordRoutingTrace(trace: RoutingTrace): void {
+  routingTraces.push(trace);
+  // Keep only last 1000
+  if (routingTraces.length > 1000) {
+    routingTraces.shift();
+  }
+  
+  // Log structured info (no secrets, no prompt content)
+  logger.info({
+    routing: {
+      decision: trace.routeDecision,
+      reason: trace.reason,
+      intent: trace.intent,
+      latency: trace.latencyMs,
+      ollamaAvailable: trace.ollamaAvailable,
+      forced: !!trace.forcedProvider,
+    }
+  }, 'LLM routing decision');
+}
+
 // ---- Intent Classifier ----
 
 const COMPLEX_KEYWORDS = [
@@ -443,6 +498,21 @@ function estimateCost(provider: Provider, tokensIn: number, tokensOut: number): 
   }
 }
 
+// ---- Manual Override Helper (TEST_MODE only) ----
+
+export function getManualOverride(): Provider | null {
+  // Only allow manual override in TEST_MODE
+  if (!config.isTestMode) return null;
+  
+  // Check env var
+  const envOverride = process.env.FORCE_LLM_PROVIDER as Provider;
+  if (envOverride && ['ollama', 'openrouter', 'openrouter-free', 'edith', 'picoclaw', 'builtin'].includes(envOverride)) {
+    return envOverride;
+  }
+  
+  return null;
+}
+
 // ---- Main Router ----
 
 export async function routeChat(
@@ -453,11 +523,15 @@ export async function routeChat(
     systemPrompt?: string;
     agentName?: string;
     userId?: string;
+    requestHeaders?: Record<string, string>; // For X-Model-Route header (TEST_MODE only)
   },
 ): Promise<LLMResponse> {
   const start = Date.now();
   const userMessage = messages[messages.length - 1]?.content || '';
   const intent = classifyIntent(userMessage);
+  
+  // Estimate tokens (rough heuristic)
+  const tokensEstimate = Math.ceil(userMessage.length / 4) + 100;
 
   // Build full message list with system prompt
   const fullMessages: ChatMessage[] = [];
@@ -466,55 +540,109 @@ export async function routeChat(
   }
   fullMessages.push(...messages);
 
-  // Determine routing — two-tier system:
-  //   Tier 1 (free):    Ollama local — default for ALL queries
-  //   Tier 2 (premium): Moonshot cloud — only when explicitly forced or Ollama unavailable
-  let provider: Provider = opts?.forceProvider || 'ollama';
+  // Check manual override (TEST_MODE only)
+  let manualOverride: Provider | null = null;
+  if (config.isTestMode) {
+    // Check header
+    const headerOverride = opts?.requestHeaders?.['x-model-route'] as Provider;
+    if (headerOverride && ['ollama', 'openrouter', 'openrouter-free', 'edith', 'picoclaw', 'builtin'].includes(headerOverride)) {
+      manualOverride = headerOverride;
+    }
+    // Check env var as fallback
+    if (!manualOverride) {
+      manualOverride = getManualOverride();
+    }
+  }
+
+  // Determine routing — three-tier system:
+  //   Tier 1 (free):     Ollama local — default for simple tasks
+  //   Tier 2 (free):     OpenRouter Free — fallback for complex when Ollama fails
+  //   Tier 3 (premium):  Moonshot/Edith — escalation for complex tasks
+  let provider: Provider = manualOverride || opts?.forceProvider || 'ollama';
+  let routingReason: RoutingTrace['reason'] = manualOverride ? 'manual_override' : 'ollama_healthy';
+  let ollamaAvailable = false;
 
   // Check if should degrade to cheaper providers due to budget
   const overBudget = opts?.userId ? shouldDegradeRouting(opts.userId) : false;
   if (overBudget && (provider === 'edith' || provider === 'openrouter')) {
     logger.info({ userId: opts?.userId }, 'User over token budget, degrading routing');
     provider = 'openrouter-free';
+    routingReason = 'budget_degradation';
   }
 
-  if (!opts?.forceProvider) {
-    const ollamaOk = await isOllamaAvailable();
+  if (!manualOverride && !opts?.forceProvider) {
+    ollamaAvailable = await isOllamaAvailable();
     const picoOk = await isPicoClawAvailable();
     const hasCredits = opts?.userCredits === undefined || opts.userCredits > 0;
 
     if (picoOk && intent === 'automation') {
       provider = 'picoclaw';
-    } else if (intent === 'simple' && ollamaOk) {
+      routingReason = ollamaAvailable ? 'ollama_healthy' : 'fallback_chain';
+    } else if (intent === 'simple' && ollamaAvailable) {
       // Simple queries → always local (fast, free)
       provider = 'ollama';
+      routingReason = 'ollama_healthy';
     } else if (intent === 'coding' || intent === 'planning' || intent === 'complex') {
-      // Complex queries → try free cloud first, then paid, then local fallback
-      if (isOpenRouterFreeAvailable()) {
-        provider = 'openrouter-free';
-      } else if (hasCredits && isEdithAvailable() && intent === 'complex') {
+      // Complex queries → ESCALATION PATH
+      // 1. Try Kimi/Moonshot for complex tasks (if available)
+      if (hasCredits && isEdithAvailable() && intent === 'complex') {
         provider = 'edith';
-      } else if (hasCredits && isOpenRouterAvailable()) {
+        routingReason = 'complexity_escalation';
+      } 
+      // 2. Fallback to OpenRouter Free
+      else if (isOpenRouterFreeAvailable()) {
+        provider = 'openrouter-free';
+        routingReason = ollamaAvailable ? 'ollama_healthy' : 'openrouter_free_available';
+      } 
+      // 3. Try OpenRouter paid if free not available
+      else if (hasCredits && isOpenRouterAvailable()) {
         provider = 'openrouter';
-      } else if (ollamaOk) {
+        routingReason = 'openrouter_free_available';
+      } 
+      // 4. Last resort: Ollama
+      else if (ollamaAvailable) {
         provider = 'ollama';
+        routingReason = 'fallback_chain';
       } else {
         provider = 'builtin';
+        routingReason = 'ollama_unreachable';
       }
-    } else if (ollamaOk) {
+    } else if (ollamaAvailable) {
       provider = 'ollama';
+      routingReason = 'ollama_healthy';
     } else if (picoOk) {
       provider = 'picoclaw';
+      routingReason = 'fallback_chain';
     } else {
       provider = 'builtin';
+      routingReason = 'ollama_unreachable';
     }
+  } else {
+    // Still need to check Ollama availability for trace
+    ollamaAvailable = await isOllamaAvailable();
   }
+
+  // Record initial routing decision trace
+  const traceStart: RoutingTrace = {
+    timestamp: new Date().toISOString(),
+    userId: opts?.userId || 'anonymous',
+    routeDecision: provider,
+    reason: routingReason,
+    latencyMs: 0,
+    tokensEstimate,
+    intent,
+    ollamaAvailable,
+    forcedProvider: manualOverride || opts?.forceProvider,
+  };
+  recordRoutingTrace(traceStart);
 
   // Execute
   let reply: string;
   let tokensIn = 0;
   let tokensOut = 0;
   let model = '';
+  let finalProvider = provider;
+  let error: string | undefined;
 
   try {
     switch (provider) {
@@ -572,6 +700,7 @@ export async function routeChat(
     }
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
+    error = errorMsg;
     logger.warn({ provider, intent, error: errorMsg }, 'LLM call failed, attempting fallback');
 
     // Fallback chain: cloud → ollama → builtin
@@ -584,13 +713,15 @@ export async function routeChat(
           tokensIn = result.tokensIn;
           tokensOut = result.tokensOut;
           model = config.ollamaModel;
-          provider = 'ollama';
+          finalProvider = 'ollama';
+          routingReason = 'fallback_chain';
         } catch {
           reply = 'I had trouble connecting to my AI backends. Please try again shortly.';
           model = 'error-fallback';
           tokensIn = userMessage.length;
           tokensOut = reply.length;
-          provider = 'builtin';
+          finalProvider = 'builtin';
+          routingReason = 'ollama_unreachable';
         }
       } else {
         reply = 'I had trouble connecting to my AI backends. Please try again shortly.';

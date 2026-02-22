@@ -14,6 +14,7 @@ import { errorHandler } from './middleware/errors.js';
 import { db } from './db/index.js';
 
 import { authRouter } from './routes/auth.js';
+import { routingDebugRouter } from './routes/debug-routing.js';
 import { usersRouter } from './routes/users.js';
 import { agentRouter } from './routes/agent.js';
 import { usageRouter } from './routes/usage.js';
@@ -182,6 +183,7 @@ export function createApp(): express.Application {
 
   // ---- Mount routes ----
   app.use('/api/auth', authRouter);
+  app.use('/api/debug', routingDebugRouter);
   app.use('/api/users', usersRouter);
   app.use('/api/agent', agentRouter);
   app.use('/api/usage', usageRouter);
