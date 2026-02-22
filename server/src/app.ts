@@ -330,6 +330,9 @@ export function createApp(): express.Application {
   // ---- Public artifact preview ----
   app.use('/preview', artifactsRouter);
 
+  // ---- Root redirect ----
+  app.get('/', (_req, res) => res.redirect('/admin'));
+
   // ---- Admin dashboard ----
   app.get('/admin', serveAdminDashboard);
 
