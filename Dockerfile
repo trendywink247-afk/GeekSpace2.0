@@ -20,7 +20,7 @@ RUN cd server && npm ci
 # Copy source
 COPY . .
 
-# Build frontend (vite build)
+# Build frontend (tsc -b && vite build → dist/)
 RUN npm run build
 
 # Build server (tsc)
