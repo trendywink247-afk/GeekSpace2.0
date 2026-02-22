@@ -21,16 +21,11 @@ import {
   Plus,
   Zap,
   ExternalLink,
-  Copy,
-  Check,
   X,
   Send,
-  ChevronRight,
   Loader2,
   CheckCircle2,
-  MessageCircle,
   Mail,
-  QrCode,
   Smartphone,
   Image as ImageIcon,
 } from 'lucide-react';
@@ -87,7 +82,6 @@ export function ConnectionsPage() {
     message?: string;
     linked?: boolean;
   } | null>(null);
-  const [copied, setCopied] = useState(false);
   const [polling, setPolling] = useState(false);
 
   // WhatsApp dialog state
@@ -211,20 +205,11 @@ export function ConnectionsPage() {
     disconnectIntegration(id);
   };
 
-  const handleCopyCode = () => {
-    if (telegramLink?.code) {
-      navigator.clipboard.writeText(`/start link_${telegramLink.code}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   const closeTelegramDialog = () => {
     setTelegramDialog(false);
     setTelegramLink(null);
     setTelegramStep('idle');
     setPolling(false);
-    setCopied(false);
     loadDashboard();
   };
 
@@ -236,19 +221,6 @@ export function ConnectionsPage() {
     setWhatsappPolling(false);
     loadDashboard();
   };
-
-  const stepNumber = (step: TelegramStep): number => {
-    switch (step) {
-      case 'generating': return 0;
-      case 'open-bot': return 1;
-      case 'send-code': return 2;
-      case 'waiting': return 3;
-      case 'success': return 4;
-      default: return 0;
-    }
-  };
-
-  const currentStepNum = stepNumber(telegramStep);
 
   const getStatusIcon = (status: string) => {
     switch (status) {

@@ -186,7 +186,6 @@ export function OnboardingWizard() {
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isCompleted = i < step;
-          const isUpcoming = i > step;
           
           return (
             <div key={s.id} className="flex items-center">
@@ -251,12 +250,14 @@ export function OnboardingWizard() {
             onSkillsChange={(skills) => updateOnboarding({ portfolio: { ...onboarding.portfolio, skills } })}
             onHeadlineChange={(headline) => updateOnboarding({ portfolio: { ...onboarding.portfolio, headline } })}
             onAboutChange={(about) => updateOnboarding({ portfolio: { ...onboarding.portfolio, about } })}
+            onSkip={() => handleSkip(false)}
           />
         )}
         {step === 4 && (
           <IntegrationsStep
             selected={onboarding.integrations}
             onToggle={(integrations: IntegrationType[]) => updateOnboarding({ integrations })}
+            onSkip={() => handleSkip(false)}
           />
         )}
         {step === 5 && (
