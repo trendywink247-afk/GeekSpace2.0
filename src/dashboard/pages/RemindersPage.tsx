@@ -182,7 +182,7 @@ export function RemindersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="reminders-page">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -197,7 +197,7 @@ export function RemindersPage() {
           <div className="px-3 py-1.5 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30">
             <span className="text-sm text-[#7B61FF]">{activeReminders.length} active</span>
           </div>
-          <Button onClick={() => setIsAddDialogOpen(true)} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+          <Button data-testid="create-reminder-button" onClick={() => setIsAddDialogOpen(true)} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
             <Plus className="w-4 h-4 mr-2" />
             Add Reminder
           </Button>
@@ -480,6 +480,7 @@ export function RemindersPage() {
               <div className="flex gap-2">
                 <Input
                   ref={inputRef}
+                  data-testid="reminder-text"
                   placeholder="Remind me..."
                   value={naturalInput}
                   onChange={(e) => setNaturalInput(e.target.value)}
