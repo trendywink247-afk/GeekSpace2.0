@@ -749,9 +749,9 @@ function seedDefaultIntegrations(userId: string) {
 }
 
 function seedDemoData() {
-  // Guard: never seed if real (non-demo) users already exist in the database
+  // Guard: never seed if real production users exist (exclude demo and test users)
   const realUserCount = (db.prepare(
-    "SELECT count(*) as cnt FROM users WHERE id NOT LIKE 'demo-%'"
+    "SELECT count(*) as cnt FROM users WHERE id NOT LIKE 'demo-%' AND email NOT LIKE '%test-e2e-%' AND email NOT LIKE '%e2etest%'"
   ).get() as { cnt: number }).cnt;
   if (realUserCount > 0) {
     logger.info({ realUserCount }, 'seedDemoData: Real users detected, skipping seed to protect production data');
