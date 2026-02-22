@@ -136,30 +136,30 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <Link2 className="w-6 h-6 text-[#7B61FF]" />
-        <h2 className="text-xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+        <Link2 className="w-6 h-6 text-[#00FFD4]" />
+        <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
           Connect Integrations
         </h2>
       </div>
-      <p className="text-[#A7ACB8] text-sm">
+      <p className="text-[#6B7280] text-sm">
         Optional — you can add these later from the dashboard.
       </p>
 
       {/* WhatsApp QR Modal */}
       {whatsappState === 'waiting' && whatsappQR && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0B0B10] border border-[#25d366]/40 rounded-2xl p-6 max-w-sm w-full">
+          <div className="bg-[#0A0A0F] border border-[#25d366]/40 rounded-2xl p-6 max-w-sm w-full">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Smartphone className="w-5 h-5 text-[#25d366]" />
-                <h3 className="font-semibold text-[#F4F6FF]">Connect WhatsApp</h3>
+                <h3 className="font-semibold text-[#E8E8F0]">Connect WhatsApp</h3>
               </div>
               <button
                 onClick={() => {
                   setWhatsappState('idle');
                   setWhatsappPolling(false);
                 }}
-                className="text-[#A7ACB8] hover:text-white"
+                className="text-[#6B7280] hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -169,13 +169,13 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
               <div className="bg-white p-4 rounded-xl inline-block">
                 <img src={whatsappQR} alt="WhatsApp QR Code" className="w-48 h-48" />
               </div>
-              <p className="text-sm text-[#A7ACB8]">
+              <p className="text-sm text-[#6B7280]">
                 Open WhatsApp → Settings → Linked Devices → Link a Device
               </p>
-              <p className="text-xs text-[#A7ACB8]">
+              <p className="text-xs text-[#6B7280]">
                 Scan the QR code to connect
               </p>
-              <div className="flex items-center justify-center gap-2 text-xs text-[#61FF7B]">
+              <div className="flex items-center justify-center gap-2 text-xs text-[#00FF88]">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Waiting for scan...
               </div>
@@ -200,29 +200,29 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
                 onClick={() => toggle(opt.id)}
                 className={`w-full p-4 min-h-[44px] rounded-xl border transition-all flex items-center justify-between ${
                   isConnected
-                    ? 'border-[#7B61FF] bg-[#7B61FF]/10'
-                    : 'border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40'
+                    ? 'border-[#00FFD4] bg-[#00FFD4]/10'
+                    : 'border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40'
                 }`}
               >
                 <div className="text-left">
-                  <div className="font-medium text-[#F4F6FF]">{opt.name}</div>
-                  <div className="text-sm text-[#A7ACB8]">{opt.description}</div>
+                  <div className="font-medium text-[#E8E8F0]">{opt.name}</div>
+                  <div className="text-sm text-[#6B7280]">{opt.description}</div>
                 </div>
                 {isConnected ? (
-                  <div className="w-6 h-6 rounded-full bg-[#61FF7B] flex items-center justify-center flex-shrink-0">
-                    <Check className="w-4 h-4 text-[#0B0B10]" />
+                  <div className="w-6 h-6 rounded-full bg-[#00FF88] flex items-center justify-center flex-shrink-0">
+                    <Check className="w-4 h-4 text-[#0A0A0F]" />
                   </div>
                 ) : isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-[#7B61FF]" />
+                  <Loader2 className="w-5 h-5 animate-spin text-[#00FFD4]" />
                 ) : isWaiting ? (
-                  <div className="w-2 h-2 rounded-full bg-[#FFD761] animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-[#FFB800] animate-pulse" />
                 ) : null}
               </button>
 
               {/* Telegram connect flow panel */}
               {opt.id === 'telegram' && isWaiting && (
                 <div className="mt-2 p-4 rounded-xl bg-[#0088cc]/5 border border-[#0088cc]/20 space-y-3">
-                  <p className="text-sm text-[#A7ACB8]">
+                  <p className="text-sm text-[#6B7280]">
                     Click to open Telegram, then send <span className="text-[#0088cc] font-mono">/start</span> to the bot.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-2">
@@ -239,7 +239,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
                       variant="outline"
                       size="sm"
                       onClick={handleCheckTelegramStatus}
-                      className="min-h-[44px] border-[#0088cc]/30 text-[#A7ACB8]"
+                      className="min-h-[44px] border-[#0088cc]/30 text-[#6B7280]"
                     >
                       <RefreshCw className="w-4 h-4 mr-1" />
                       I've connected
@@ -251,15 +251,15 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
               {opt.id === 'telegram' && isChecking && (
                 <div className="mt-2 p-3 rounded-xl bg-[#0088cc]/5 border border-[#0088cc]/20 flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-[#0088cc]" />
-                  <span className="text-sm text-[#A7ACB8]">Checking connection...</span>
+                  <span className="text-sm text-[#6B7280]">Checking connection...</span>
                 </div>
               )}
 
               {opt.id === 'telegram' && isConnected && (
-                <div className="mt-2 p-3 rounded-xl bg-[#61FF7B]/5 border border-[#61FF7B]/20 flex items-center justify-between gap-2">
+                <div className="mt-2 p-3 rounded-xl bg-[#00FF88]/5 border border-[#00FF88]/20 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-[#61FF7B]" />
-                    <span className="text-sm text-[#61FF7B]">Telegram connected!</span>
+                    <Check className="w-4 h-4 text-[#00FF88]" />
+                    <span className="text-sm text-[#00FF88]">Telegram connected!</span>
                   </div>
                   <button
                     type="button"
@@ -272,7 +272,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
                       setTelegramState('idle');
                       onToggle(selected.filter((i) => i !== 'telegram'));
                     }}
-                    className="text-xs text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors underline underline-offset-2"
+                    className="text-xs text-[#6B7280] hover:text-[#E8E8F0] transition-colors underline underline-offset-2"
                   >
                     Unlink
                   </button>
@@ -280,10 +280,10 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
               )}
 
               {opt.id === 'whatsapp' && isConnected && (
-                <div className="mt-2 p-3 rounded-xl bg-[#61FF7B]/5 border border-[#61FF7B]/20 flex items-center justify-between gap-2">
+                <div className="mt-2 p-3 rounded-xl bg-[#00FF88]/5 border border-[#00FF88]/20 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-[#61FF7B]" />
-                    <span className="text-sm text-[#61FF7B]">WhatsApp connected!</span>
+                    <Check className="w-4 h-4 text-[#00FF88]" />
+                    <span className="text-sm text-[#00FF88]">WhatsApp connected!</span>
                   </div>
                   <button
                     type="button"
@@ -297,7 +297,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
                       setWhatsappPolling(false);
                       onToggle(selected.filter((i) => i !== 'whatsapp'));
                     }}
-                    className="text-xs text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors underline underline-offset-2"
+                    className="text-xs text-[#6B7280] hover:text-[#E8E8F0] transition-colors underline underline-offset-2"
                   >
                     Unlink
                   </button>
@@ -305,8 +305,8 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
               )}
 
               {opt.id === 'whatsapp' && isError && (
-                <div className="mt-2 p-3 rounded-xl bg-[#FF6161]/5 border border-[#FF6161]/20 flex items-center gap-2">
-                  <span className="text-sm text-[#FF6161]">Failed to connect. Please try again.</span>
+                <div className="mt-2 p-3 rounded-xl bg-[#FF3366]/5 border border-[#FF3366]/20 flex items-center gap-2">
+                  <span className="text-sm text-[#FF3366]">Failed to connect. Please try again.</span>
                 </div>
               )}
             </div>
@@ -317,7 +317,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm text-[#A7ACB8] hover:text-[#7B61FF] transition-colors min-h-[44px] px-4"
+          className="text-sm text-[#6B7280] hover:text-[#00FFD4] transition-colors min-h-[44px] px-4"
         >
           I'll do this later
         </button>

@@ -37,21 +37,21 @@ const styleOptions = [
     name: 'Minimal',
     icon: MessageSquare,
     features: ['Reminders', 'Q&A', 'Quick facts'],
-    color: '#7B61FF',
+    color: '#00FFD4',
   },
   {
     id: 'builder' as const,
     name: 'Builder',
     icon: Code,
     features: ['Code help', 'API calls', 'Automation', 'Terminal'],
-    color: '#61FF7B',
+    color: '#00FF88',
   },
   {
     id: 'operator' as const,
     name: 'Operator',
     icon: Briefcase,
     features: ['Daily planning', 'Routines', 'Schedule', 'Goals'],
-    color: '#FFD761',
+    color: '#FFB800',
   },
 ];
 
@@ -63,7 +63,7 @@ const chatBubbleStyles = [
   { id: 'minimal', label: 'Minimal', class: 'rounded-lg' },
 ];
 
-const accentColors = ['#7B61FF', '#61FF7B', '#FF61DC', '#61B5FF', '#FFD761', '#FF6161'];
+const accentColors = ['#00FFD4', '#00FF88', '#FF0080', '#61B5FF', '#FFB800', '#FF3366'];
 
 const specialties = [
   'React', 'TypeScript', 'Python', 'AI/ML', 'Design', 'DevOps',
@@ -91,7 +91,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
 
   // Step 3 - Appearance
   const [selectedAvatar, setSelectedAvatar] = useState('🤖');
-  const [selectedColor, setSelectedColor] = useState('#7B61FF');
+  const [selectedColor, setSelectedColor] = useState('#00FFD4');
   const [selectedBubbleStyle, setSelectedBubbleStyle] = useState('modern');
 
   const [isSaving, setIsSaving] = useState(false);
@@ -128,22 +128,22 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0B0B10] border border-[#7B61FF]/30 rounded-2xl shadow-2xl shadow-[#7B61FF]/10">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0A0A0F] border border-[#00FFD4]/30 rounded-2xl shadow-2xl shadow-[#00FFD4]/10">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between p-6 pb-4 border-b border-[#7B61FF]/20 bg-[#0B0B10]">
+        <div className="sticky top-0 z-10 flex items-center justify-between p-6 pb-4 border-b border-[#00FFD4]/20 bg-[#0A0A0F]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00FFD4] to-[#FF0080] flex items-center justify-center">
               <Palette className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h2 className="text-lg font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
                 Design Your Assistant
               </h2>
-              <p className="text-xs text-[#A7ACB8]">Step {step} of 3</p>
+              <p className="text-xs text-[#6B7280]">Step {step} of 3</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors">
-            <X className="w-5 h-5 text-[#A7ACB8]" />
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[#00FFD4]/10 transition-colors">
+            <X className="w-5 h-5 text-[#6B7280]" />
           </button>
         </div>
 
@@ -155,19 +155,19 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                     s <= step
-                      ? 'bg-[#7B61FF] text-white'
-                      : 'bg-[#05050A] text-[#A7ACB8] border border-[#7B61FF]/20'
+                      ? 'bg-[#00FFD4] text-white'
+                      : 'bg-[#030304] text-[#6B7280] border border-[#00FFD4]/20'
                   }`}
                 >
                   {s < step ? <Check className="w-4 h-4" /> : s}
                 </div>
                 {s < 3 && (
-                  <div className={`flex-1 h-0.5 rounded ${s < step ? 'bg-[#7B61FF]' : 'bg-[#7B61FF]/20'}`} />
+                  <div className={`flex-1 h-0.5 rounded ${s < step ? 'bg-[#00FFD4]' : 'bg-[#00FFD4]/20'}`} />
                 )}
               </div>
             ))}
           </div>
-          <div className="flex justify-between mt-2 text-xs text-[#A7ACB8]">
+          <div className="flex justify-between mt-2 text-xs text-[#6B7280]">
             <span>Personality</span>
             <span>Knowledge</span>
             <span>Appearance</span>
@@ -181,18 +181,18 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
             <>
               {/* Agent Name */}
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-2 block">Agent Name</label>
+                <label className="text-sm text-[#6B7280] mb-2 block">Agent Name</label>
                 <Input
                   value={agentName}
                   onChange={(e) => setAgentName(e.target.value)}
-                  className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]"
+                  className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
                   placeholder="Give your agent a name..."
                 />
               </div>
 
               {/* Voice/Tone */}
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-3 block">Voice</label>
+                <label className="text-sm text-[#6B7280] mb-3 block">Voice</label>
                 <div className="grid grid-cols-2 gap-2">
                   {voiceOptions.map((v) => (
                     <button
@@ -200,13 +200,13 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => setSelectedVoice(v.id)}
                       className={`p-3 rounded-xl border transition-all text-left ${
                         selectedVoice === v.id
-                          ? 'border-[#7B61FF] bg-[#7B61FF]/10'
-                          : 'border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40'
+                          ? 'border-[#00FFD4] bg-[#00FFD4]/10'
+                          : 'border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40'
                       }`}
                     >
                       <span className="text-lg">{v.emoji}</span>
-                      <div className="font-medium text-sm text-[#F4F6FF] mt-1">{v.label}</div>
-                      <div className="text-xs text-[#A7ACB8]">{v.description}</div>
+                      <div className="font-medium text-sm text-[#E8E8F0] mt-1">{v.label}</div>
+                      <div className="text-xs text-[#6B7280]">{v.description}</div>
                     </button>
                   ))}
                 </div>
@@ -214,7 +214,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
 
               {/* Agent Style */}
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-3 block">Agent Mode</label>
+                <label className="text-sm text-[#6B7280] mb-3 block">Agent Mode</label>
                 <div className="grid grid-cols-3 gap-3">
                   {styleOptions.map((style) => (
                     <button
@@ -222,8 +222,8 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => setSelectedStyle(style.id)}
                       className={`p-4 rounded-xl border-2 transition-all text-left ${
                         selectedStyle === style.id
-                          ? 'border-[#7B61FF] bg-[#7B61FF]/10'
-                          : 'border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40'
+                          ? 'border-[#00FFD4] bg-[#00FFD4]/10'
+                          : 'border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -234,15 +234,15 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                           <style.icon className="w-4 h-4" style={{ color: style.color }} />
                         </div>
                         {selectedStyle === style.id && (
-                          <div className="w-5 h-5 rounded-full bg-[#7B61FF] flex items-center justify-center">
+                          <div className="w-5 h-5 rounded-full bg-[#00FFD4] flex items-center justify-center">
                             <Check className="w-3 h-3 text-white" />
                           </div>
                         )}
                       </div>
-                      <div className="font-medium text-sm text-[#F4F6FF]">{style.name}</div>
+                      <div className="font-medium text-sm text-[#E8E8F0]">{style.name}</div>
                       <div className="flex flex-wrap gap-1 mt-2">
                         {style.features.slice(0, 2).map((f) => (
-                          <span key={f} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#0B0B10] text-[#A7ACB8]">{f}</span>
+                          <span key={f} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#0A0A0F] text-[#6B7280]">{f}</span>
                         ))}
                       </div>
                     </button>
@@ -254,15 +254,15 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="flex justify-between mb-2">
-                    <label className="text-sm text-[#A7ACB8]">Creativity</label>
-                    <span className="text-sm text-[#F4F6FF] font-mono">{creativity[0]}%</span>
+                    <label className="text-sm text-[#6B7280]">Creativity</label>
+                    <span className="text-sm text-[#E8E8F0] font-mono">{creativity[0]}%</span>
                   </div>
                   <Slider value={creativity} onValueChange={setCreativity} max={100} step={10} />
                 </div>
                 <div>
                   <div className="flex justify-between mb-2">
-                    <label className="text-sm text-[#A7ACB8]">Formality</label>
-                    <span className="text-sm text-[#F4F6FF] font-mono">{formality[0]}%</span>
+                    <label className="text-sm text-[#6B7280]">Formality</label>
+                    <span className="text-sm text-[#E8E8F0] font-mono">{formality[0]}%</span>
                   </div>
                   <Slider value={formality} onValueChange={setFormality} max={100} step={10} />
                 </div>
@@ -270,7 +270,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
 
               {/* Response Speed */}
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-3 block">Response Speed</label>
+                <label className="text-sm text-[#6B7280] mb-3 block">Response Speed</label>
                 <div className="grid grid-cols-3 gap-2">
                   {speedOptions.map((opt) => (
                     <button
@@ -278,12 +278,12 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => setResponseSpeed(opt.id)}
                       className={`p-3 rounded-xl border transition-all text-center ${
                         responseSpeed === opt.id
-                          ? 'border-[#7B61FF] bg-[#7B61FF]/10'
-                          : 'border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40'
+                          ? 'border-[#00FFD4] bg-[#00FFD4]/10'
+                          : 'border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40'
                       }`}
                     >
-                      <opt.icon className="w-5 h-5 mx-auto mb-1 text-[#7B61FF]" />
-                      <div className="text-xs font-medium text-[#F4F6FF]">{opt.label}</div>
+                      <opt.icon className="w-5 h-5 mx-auto mb-1 text-[#00FFD4]" />
+                      <div className="text-xs font-medium text-[#E8E8F0]">{opt.label}</div>
                     </button>
                   ))}
                 </div>
@@ -296,26 +296,26 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
             <>
               {/* Knowledge Sources */}
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-3 block">Upload Knowledge</label>
+                <label className="text-sm text-[#6B7280] mb-3 block">Upload Knowledge</label>
                 <div className="grid grid-cols-3 gap-3">
-                  <button className="p-4 rounded-xl border border-dashed border-[#7B61FF]/30 bg-[#05050A] hover:border-[#7B61FF]/50 transition-colors flex flex-col items-center gap-2 text-center">
-                    <FileText className="w-6 h-6 text-[#7B61FF]" />
-                    <span className="text-xs text-[#A7ACB8]">Resume.pdf</span>
+                  <button className="p-4 rounded-xl border border-dashed border-[#00FFD4]/30 bg-[#030304] hover:border-[#00FFD4]/50 transition-colors flex flex-col items-center gap-2 text-center">
+                    <FileText className="w-6 h-6 text-[#00FFD4]" />
+                    <span className="text-xs text-[#6B7280]">Resume.pdf</span>
                   </button>
-                  <button className="p-4 rounded-xl border border-dashed border-[#7B61FF]/30 bg-[#05050A] hover:border-[#7B61FF]/50 transition-colors flex flex-col items-center gap-2 text-center">
-                    <Github className="w-6 h-6 text-[#7B61FF]" />
-                    <span className="text-xs text-[#A7ACB8]">GitHub Profile</span>
+                  <button className="p-4 rounded-xl border border-dashed border-[#00FFD4]/30 bg-[#030304] hover:border-[#00FFD4]/50 transition-colors flex flex-col items-center gap-2 text-center">
+                    <Github className="w-6 h-6 text-[#00FFD4]" />
+                    <span className="text-xs text-[#6B7280]">GitHub Profile</span>
                   </button>
-                  <button className="p-4 rounded-xl border border-dashed border-[#7B61FF]/30 bg-[#05050A] hover:border-[#7B61FF]/50 transition-colors flex flex-col items-center gap-2 text-center">
-                    <Upload className="w-6 h-6 text-[#7B61FF]" />
-                    <span className="text-xs text-[#A7ACB8]">Custom File</span>
+                  <button className="p-4 rounded-xl border border-dashed border-[#00FFD4]/30 bg-[#030304] hover:border-[#00FFD4]/50 transition-colors flex flex-col items-center gap-2 text-center">
+                    <Upload className="w-6 h-6 text-[#00FFD4]" />
+                    <span className="text-xs text-[#6B7280]">Custom File</span>
                   </button>
                 </div>
               </div>
 
               {/* Specialties */}
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-3 block">Specialties</label>
+                <label className="text-sm text-[#6B7280] mb-3 block">Specialties</label>
                 <div className="flex flex-wrap gap-2">
                   {specialties.map((s) => (
                     <button
@@ -323,8 +323,8 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => toggleSpecialty(s)}
                       className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                         selectedSpecialties.includes(s)
-                          ? 'bg-[#7B61FF] text-white'
-                          : 'bg-[#05050A] border border-[#7B61FF]/20 text-[#A7ACB8] hover:border-[#7B61FF]/50'
+                          ? 'bg-[#00FFD4] text-white'
+                          : 'bg-[#030304] border border-[#00FFD4]/20 text-[#6B7280] hover:border-[#00FFD4]/50'
                       }`}
                     >
                       {s}
@@ -335,22 +335,22 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
 
               {/* Tone Example */}
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-2 block">Describe your tone</label>
+                <label className="text-sm text-[#6B7280] mb-2 block">Describe your tone</label>
                 <Input
                   value={toneExample}
                   onChange={(e) => setToneExample(e.target.value)}
-                  className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]"
+                  className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
                   placeholder='e.g. "I explain complex things simply"'
                 />
               </div>
 
               {/* System Prompt */}
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-2 block">System Instructions</label>
+                <label className="text-sm text-[#6B7280] mb-2 block">System Instructions</label>
                 <Textarea
                   value={systemPrompt}
                   onChange={(e) => setSystemPrompt(e.target.value)}
-                  className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF] min-h-[100px] resize-none"
+                  className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0] min-h-[100px] resize-none"
                   placeholder="Instructions for how your agent should behave..."
                 />
               </div>
@@ -362,7 +362,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
             <>
               {/* Avatar */}
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-3 block">Avatar</label>
+                <label className="text-sm text-[#6B7280] mb-3 block">Avatar</label>
                 <div className="flex gap-3">
                   {avatarOptions.map((emoji) => (
                     <button
@@ -370,29 +370,29 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => setSelectedAvatar(emoji)}
                       className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl transition-all ${
                         selectedAvatar === emoji
-                          ? 'bg-[#7B61FF]/20 border-2 border-[#7B61FF] scale-110'
-                          : 'bg-[#05050A] border border-[#7B61FF]/20 hover:border-[#7B61FF]/40'
+                          ? 'bg-[#00FFD4]/20 border-2 border-[#00FFD4] scale-110'
+                          : 'bg-[#030304] border border-[#00FFD4]/20 hover:border-[#00FFD4]/40'
                       }`}
                     >
                       {emoji}
                     </button>
                   ))}
-                  <button className="w-14 h-14 rounded-xl flex items-center justify-center bg-[#05050A] border border-dashed border-[#7B61FF]/30 hover:border-[#7B61FF]/50 transition-colors">
-                    <Upload className="w-5 h-5 text-[#A7ACB8]" />
+                  <button className="w-14 h-14 rounded-xl flex items-center justify-center bg-[#030304] border border-dashed border-[#00FFD4]/30 hover:border-[#00FFD4]/50 transition-colors">
+                    <Upload className="w-5 h-5 text-[#6B7280]" />
                   </button>
                 </div>
               </div>
 
               {/* Accent Color */}
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-3 block">Color Theme</label>
+                <label className="text-sm text-[#6B7280] mb-3 block">Color Theme</label>
                 <div className="flex gap-3">
                   {accentColors.map((color) => (
                     <button
                       key={color}
                       onClick={() => setSelectedColor(color)}
                       className={`w-10 h-10 rounded-full transition-all ${
-                        selectedColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0B0B10] scale-110' : 'hover:scale-105'
+                        selectedColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0A0A0F] scale-110' : 'hover:scale-105'
                       }`}
                       style={{ backgroundColor: color }}
                     />
@@ -402,7 +402,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
 
               {/* Chat Bubble Style */}
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-3 block">Chat Bubble Style</label>
+                <label className="text-sm text-[#6B7280] mb-3 block">Chat Bubble Style</label>
                 <div className="grid grid-cols-3 gap-3">
                   {chatBubbleStyles.map((style) => (
                     <button
@@ -410,8 +410,8 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => setSelectedBubbleStyle(style.id)}
                       className={`p-4 rounded-xl border transition-all text-center ${
                         selectedBubbleStyle === style.id
-                          ? 'border-[#7B61FF] bg-[#7B61FF]/10'
-                          : 'border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40'
+                          ? 'border-[#00FFD4] bg-[#00FFD4]/10'
+                          : 'border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40'
                       }`}
                     >
                       <div
@@ -420,7 +420,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       >
                         Hello!
                       </div>
-                      <div className="text-xs text-[#A7ACB8]">{style.label}</div>
+                      <div className="text-xs text-[#6B7280]">{style.label}</div>
                     </button>
                   ))}
                 </div>
@@ -429,18 +429,18 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
               {/* Preview Toggle */}
               <button
                 onClick={() => setShowPreview(!showPreview)}
-                className="w-full p-4 rounded-xl border border-[#7B61FF]/20 bg-[#05050A] hover:border-[#7B61FF]/40 transition-colors flex items-center justify-center gap-2"
+                className="w-full p-4 rounded-xl border border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40 transition-colors flex items-center justify-center gap-2"
               >
-                <Eye className="w-4 h-4 text-[#7B61FF]" />
-                <span className="text-sm text-[#A7ACB8]">{showPreview ? 'Hide Preview' : 'Preview Conversation'}</span>
+                <Eye className="w-4 h-4 text-[#00FFD4]" />
+                <span className="text-sm text-[#6B7280]">{showPreview ? 'Hide Preview' : 'Preview Conversation'}</span>
               </button>
 
               {showPreview && (
-                <div className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/20 space-y-3">
+                <div className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/20 space-y-3">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-xl">{selectedAvatar}</span>
-                    <span className="font-medium text-sm text-[#F4F6FF]">{agentName || 'Agent'}</span>
-                    <span className="text-xs text-[#61FF7B]">Online</span>
+                    <span className="font-medium text-sm text-[#E8E8F0]">{agentName || 'Agent'}</span>
+                    <span className="text-xs text-[#00FF88]">Online</span>
                   </div>
                   <div
                     className={`max-w-[75%] px-4 py-2.5 text-sm text-white ${chatBubbleStyles.find((s) => s.id === selectedBubbleStyle)?.class}`}
@@ -449,7 +449,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                     Hey there! I'm {agentName || 'your AI'}. I specialize in {selectedSpecialties.slice(0, 2).join(' and ') || 'helping you get things done'}. What can I do for you?
                   </div>
                   <div className="flex justify-end">
-                    <div className="max-w-[75%] px-4 py-2.5 text-sm bg-[#0B0B10] border border-[#7B61FF]/20 rounded-2xl text-[#F4F6FF]">
+                    <div className="max-w-[75%] px-4 py-2.5 text-sm bg-[#0A0A0F] border border-[#00FFD4]/20 rounded-2xl text-[#E8E8F0]">
                       Can you help me with my React project?
                     </div>
                   </div>
@@ -466,12 +466,12 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
         </div>
 
         {/* Footer nav */}
-        <div className="sticky bottom-0 p-6 pt-4 border-t border-[#7B61FF]/20 bg-[#0B0B10] flex items-center justify-between">
+        <div className="sticky bottom-0 p-6 pt-4 border-t border-[#00FFD4]/20 bg-[#0A0A0F] flex items-center justify-between">
           {step > 1 ? (
             <Button
               variant="outline"
               onClick={() => setStep((step - 1) as WizardStep)}
-              className="border-[#7B61FF]/30 text-[#A7ACB8]"
+              className="border-[#00FFD4]/30 text-[#6B7280]"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -483,7 +483,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
           {step < 3 ? (
             <Button
               onClick={() => setStep((step + 1) as WizardStep)}
-              className="bg-[#7B61FF] hover:bg-[#6B51EF]"
+              className="bg-[#00FFD4] hover:bg-[#00D4B0]"
             >
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -492,7 +492,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
             <Button
               onClick={handleSave}
               disabled={isSaving}
-              className="bg-gradient-to-r from-[#7B61FF] to-[#FF61DC] hover:opacity-90"
+              className="bg-gradient-to-r from-[#00FFD4] to-[#FF0080] hover:opacity-90"
             >
               {isSaving ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />

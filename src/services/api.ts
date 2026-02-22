@@ -1,5 +1,5 @@
 // ============================================================
-// GeekSpace API service layer — typed HTTP client that
+// Agentin API service layer — typed HTTP client that
 // communicates with the Core API backend.
 // ============================================================
 

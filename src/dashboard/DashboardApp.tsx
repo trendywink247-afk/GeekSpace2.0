@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
-  LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
+  LogOut, ChevronRight, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
   Code, LayoutTemplate, Rocket
 } from 'lucide-react';
@@ -61,7 +61,7 @@ const mobileTabs: { id: PageType; label: string; icon: typeof LayoutDashboard }[
 function PageLoader() {
   return (
     <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[#7B61FF] border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }
@@ -204,24 +204,24 @@ export function DashboardApp() {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="h-14 flex items-center px-4 border-b border-[#7B61FF]/20">
+      <div className="h-14 flex items-center px-4 border-b border-[#00FFD4]/10">
         <div className="flex items-center gap-3 flex-1">
-          <div className="w-8 h-8 rounded-lg bg-[#7B61FF]/20 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-[#7B61FF]" />
+          <div className="w-8 h-8 rounded-lg bg-[#00FFD4]/10 border border-[#00FFD4]/15 flex items-center justify-center flex-shrink-0">
+            <Hexagon className="w-5 h-5 text-[#00FFD4]" />
           </div>
           {!sidebarCollapsed && (
-            <span className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              GeekSpace
+            <span className="font-bold text-lg" style={{ fontFamily: 'Syne, sans-serif' }}>
+              <span className="text-[#E8E8F0]">Agent</span><span className="text-[#00FFD4]">in</span>
             </span>
           )}
         </div>
         {/* Close button — mobile only */}
         <button
           onClick={() => setSidebarOpen(false)}
-          className="md:hidden p-2 rounded-lg hover:bg-[#7B61FF]/10"
+          className="md:hidden p-2 rounded-lg hover:bg-[#00FFD4]/10"
           aria-label="Close menu"
         >
-          <X className="w-5 h-5 text-[#A7ACB8]" />
+          <X className="w-5 h-5 text-[#6B7280]" />
         </button>
       </div>
 
@@ -234,8 +234,8 @@ export function DashboardApp() {
             aria-current={currentPage === item.id ? 'page' : undefined}
             className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 min-h-[44px] ${
               currentPage === item.id
-                ? 'bg-[#7B61FF]/20 text-[#7B61FF] border border-[#7B61FF]/30'
-                : 'text-[#A7ACB8] hover:bg-[#7B61FF]/10 hover:text-[#F4F6FF] active:bg-[#7B61FF]/20'
+                ? 'bg-[#00FFD4]/20 text-[#00FFD4] border border-[#00FFD4]/30'
+                : 'text-[#6B7280] hover:bg-[#00FFD4]/10 hover:text-[#E8E8F0] active:bg-[#00FFD4]/20'
             }`}
           >
             <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -245,7 +245,7 @@ export function DashboardApp() {
 
         <button
           onClick={() => navigate('/explore')}
-          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[#A7ACB8] hover:bg-[#7B61FF]/10 hover:text-[#F4F6FF] transition-all min-h-[44px]"
+          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[#6B7280] hover:bg-[#00FFD4]/10 hover:text-[#E8E8F0] transition-all min-h-[44px]"
         >
           <Compass className="w-5 h-5 flex-shrink-0" />
           {!sidebarCollapsed && <span className="text-sm font-medium">Explore</span>}
@@ -257,13 +257,13 @@ export function DashboardApp() {
         <div className="mx-3 mt-2">
           <button
             onClick={() => setWizardOpen(true)}
-            className="w-full p-3 rounded-xl bg-gradient-to-r from-[#7B61FF]/20 to-[#FF61DC]/10 border border-[#7B61FF]/30 hover:border-[#7B61FF]/50 transition-all group min-h-[44px]"
+            className="w-full p-3 rounded-xl bg-gradient-to-r from-[#00FFD4]/20 to-[#FF0080]/10 border border-[#00FFD4]/30 hover:border-[#00FFD4]/50 transition-all group min-h-[44px]"
           >
             <div className="flex items-center gap-2">
-              <Palette className="w-4 h-4 text-[#FF61DC] group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-medium text-[#F4F6FF]">Design Assistant</span>
+              <Palette className="w-4 h-4 text-[#FF0080] group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-medium text-[#E8E8F0]">Design Assistant</span>
             </div>
-            <p className="text-[10px] text-[#A7ACB8] mt-1 text-left">
+            <p className="text-[10px] text-[#6B7280] mt-1 text-left">
               {personalityEmojis[(agent.personality as AgentPersonality) || 'jarvis'] || '🟣'} {agent.name} &middot; {agent.mode} &middot; {agent.voice}
             </p>
           </button>
@@ -272,18 +272,18 @@ export function DashboardApp() {
 
       {/* Spend indicator */}
       {!sidebarCollapsed && (
-        <div className="mx-3 mt-3 mb-3 p-3 rounded-xl bg-[#05050A] border border-[#7B61FF]/20">
+        <div className="mx-3 mt-3 mb-3 p-3 rounded-xl bg-[#030304] border border-[#00FFD4]/20">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-[#61FF7B]" />
-            <span className="text-xs text-[#A7ACB8]">This month</span>
+            <span className="text-xs text-[#6B7280]">This month</span>
           </div>
-          <div className="text-lg font-bold text-[#F4F6FF] font-mono">${usage.totalCostUSD.toFixed(2)}</div>
-          <div className="text-xs text-[#A7ACB8]">
+          <div className="text-lg font-bold text-[#E8E8F0] font-mono">${usage.totalCostUSD.toFixed(2)}</div>
+          <div className="text-xs text-[#6B7280]">
             Forecast: <span className="text-[#FFD761]">${usage.forecastUSD.toFixed(2)}</span>
           </div>
-          <div className="mt-2 h-1.5 bg-[#0B0B10] rounded-full overflow-hidden">
+          <div className="mt-2 h-1.5 bg-[#0A0A0F] rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#7B61FF] to-[#61FF7B]"
+              className="h-full rounded-full bg-gradient-to-r from-[#00FFD4] to-[#61FF7B]"
               style={{ width: `${Math.min((usage.totalCostUSD / 5) * 100, 100)}%` }}
             />
           </div>
@@ -291,10 +291,10 @@ export function DashboardApp() {
       )}
 
       {/* Logout */}
-      <div className="p-3 border-t border-[#7B61FF]/20">
+      <div className="p-3 border-t border-[#00FFD4]/20">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[#A7ACB8] hover:bg-[#7B61FF]/10 hover:text-[#F4F6FF] transition-all min-h-[44px]"
+          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[#6B7280] hover:bg-[#00FFD4]/10 hover:text-[#E8E8F0] transition-all min-h-[44px]"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {!sidebarCollapsed && <span className="text-sm font-medium">Sign Out</span>}
@@ -304,7 +304,7 @@ export function DashboardApp() {
   );
 
   return (
-    <div className="min-h-screen bg-[#05050A] flex flex-col md:flex-row" style={{ background: background || undefined }}>
+    <div className="min-h-screen bg-[#030304] flex flex-col md:flex-row" style={{ background: background || undefined }}>
       {/* ---- Session idle warning ---- */}
       {showIdleWarning && (
         <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-3 bg-[#FFD761]/10 border-b border-[#FFD761]/30 backdrop-blur-sm">
@@ -314,7 +314,7 @@ export function DashboardApp() {
           </span>
           <button
             onClick={dismissWarning}
-            className="ml-2 px-3 py-1 text-xs font-medium rounded-md bg-[#FFD761] text-[#05050A] hover:bg-[#FFD761]/80 transition-colors"
+            className="ml-2 px-3 py-1 text-xs font-medium rounded-md bg-[#FFD761] text-[#030304] hover:bg-[#FFD761]/80 transition-colors"
           >
             Stay logged in
           </button>
@@ -324,12 +324,12 @@ export function DashboardApp() {
       {/* ---- Welcome toast ---- */}
       {showWelcome && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-welcome-in">
-          <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-[#0B0B10]/90 backdrop-blur-sm border border-[#7B61FF]/40 shadow-2xl shadow-[#7B61FF]/10">
-            <Sparkles className="w-5 h-5 text-[#7B61FF] shrink-0" />
-            <span className="text-sm text-[#F4F6FF] font-medium">
-              Welcome to GeekSpace! Your AI space is ready.
+          <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-[#0A0A0F]/90 backdrop-blur-sm border border-[#00FFD4]/40 shadow-2xl shadow-[#00FFD4]/10">
+            <Hexagon className="w-5 h-5 text-[#00FFD4] shrink-0" />
+            <span className="text-sm text-[#E8E8F0] font-medium">
+              Welcome to Agentin! Your AI command center is ready.
             </span>
-            <button onClick={() => setShowWelcome(false)} className="ml-2 text-[#A7ACB8] hover:text-[#F4F6FF]">
+            <button onClick={() => setShowWelcome(false)} className="ml-2 text-[#6B7280] hover:text-[#E8E8F0]">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -347,7 +347,7 @@ export function DashboardApp() {
 
       {/* ---- Desktop Sidebar (hidden on mobile) ---- */}
       <aside
-        className={`hidden md:flex fixed left-0 top-0 h-full bg-[#0B0B10] border-r border-[#7B61FF]/20 transition-all duration-300 z-50 flex-col ${
+        className={`hidden md:flex fixed left-0 top-0 h-full bg-[#0A0A0F] border-r border-[#00FFD4]/20 transition-all duration-300 z-50 flex-col ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         }`}
         role="navigation"
@@ -359,7 +359,7 @@ export function DashboardApp() {
 
       {/* ---- Mobile Sidebar Drawer ---- */}
       <aside
-        className={`md:hidden fixed left-0 top-0 h-full w-64 bg-[#0B0B10] border-r border-[#7B61FF]/20 z-50 flex flex-col transition-transform duration-300 ${
+        className={`md:hidden fixed left-0 top-0 h-full w-64 bg-[#0A0A0F] border-r border-[#00FFD4]/20 z-50 flex flex-col transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         role="navigation"
@@ -377,44 +377,44 @@ export function DashboardApp() {
         data-testid="dashboard-shell"
       >
         {/* Header */}
-        <header className="h-14 bg-[#0B0B10]/80 backdrop-blur-xl border-b border-[#7B61FF]/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
+        <header className="h-14 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-[#00FFD4]/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             {/* Mobile hamburger */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="md:hidden p-2 rounded-lg hover:bg-[#00FFD4]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Open menu"
               data-testid="mobile-nav-toggle"
             >
-              <Menu className="w-5 h-5 text-[#A7ACB8]" />
+              <Menu className="w-5 h-5 text-[#6B7280]" />
             </button>
             {/* Desktop collapse toggle */}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden md:flex p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors items-center justify-center"
+              className="hidden md:flex p-2 rounded-lg hover:bg-[#00FFD4]/10 transition-colors items-center justify-center"
               aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <ChevronRight
-                className={`w-5 h-5 text-[#A7ACB8] transition-transform duration-300 ${
+                className={`w-5 h-5 text-[#6B7280] transition-transform duration-300 ${
                   sidebarCollapsed ? '' : 'rotate-180'
                 }`}
               />
             </button>
-            <div className="text-sm text-[#A7ACB8] hidden sm:block">
-              Welcome, <span className="text-[#F4F6FF] font-medium">{user?.name?.split(' ')[0] || 'there'}</span>
+            <div className="text-sm text-[#6B7280] hidden sm:block">
+              Welcome, <span className="text-[#E8E8F0] font-medium">{user?.name?.split(' ')[0] || 'there'}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <div className="px-2 md:px-3 py-1.5 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30">
-              <span className="text-xs text-[#7B61FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
+            <div className="px-2 md:px-3 py-1.5 rounded-full bg-[#00FFD4]/10 border border-[#00FFD4]/30">
+              <span className="text-xs text-[#00FFD4] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
             </div>
             <button
               onClick={() => setCurrentPage('settings')}
-              className="flex items-center p-1.5 rounded-xl hover:bg-[#7B61FF]/10 transition-colors min-w-[44px] min-h-[44px] justify-center"
+              className="flex items-center p-1.5 rounded-xl hover:bg-[#00FFD4]/10 transition-colors min-w-[44px] min-h-[44px] justify-center"
               aria-label="User settings"
             >
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-[#00FFD4] to-[#FF0080] flex items-center justify-center flex-shrink-0">
                 {user?.avatar ? (
                   <img src={user.avatar} alt={user.name || user.username || ''} className="w-full h-full object-cover" />
                 ) : (
@@ -439,7 +439,7 @@ export function DashboardApp() {
 
       {/* ---- Mobile Bottom Tab Bar ---- */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 h-16 backdrop-blur-xl bg-background/80 border-t border-[#7B61FF]/20 z-30 flex items-center justify-around px-2 safe-area-pb"
+        className="md:hidden fixed bottom-0 left-0 right-0 h-16 backdrop-blur-xl bg-background/80 border-t border-[#00FFD4]/20 z-30 flex items-center justify-around px-2 safe-area-pb"
         role="tablist"
         aria-label="Main tabs"
       >
@@ -453,8 +453,8 @@ export function DashboardApp() {
               onClick={() => setCurrentPage(tab.id)}
               className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-lg transition-colors touch-highlight ${
                 isActive
-                  ? 'text-[#7B61FF]'
-                  : 'text-[#A7ACB8] active:text-[#F4F6FF]'
+                  ? 'text-[#00FFD4]'
+                  : 'text-[#6B7280] active:text-[#E8E8F0]'
               }`}
             >
               <tab.icon className="w-5 h-5" />
@@ -474,7 +474,7 @@ export function DashboardApp() {
       <div className="fixed bottom-24 left-4 md:hidden z-40">
         <button
           onClick={() => setShowQuickActions(true)}
-          className="w-12 h-12 rounded-full bg-[#61FF7B] text-[#0B0B10] flex items-center justify-center shadow-lg shadow-[#61FF7B]/30"
+          className="w-12 h-12 rounded-full bg-[#61FF7B] text-[#0A0A0F] flex items-center justify-center shadow-lg shadow-[#61FF7B]/30"
         >
           <span className="text-xl">⚡</span>
         </button>
@@ -494,7 +494,7 @@ export function DashboardApp() {
       <div className="fixed bottom-24 left-4 md:hidden z-40">
         <button
           onClick={() => setShowQuickActions(true)}
-          className="w-12 h-12 rounded-full bg-[#61FF7B] text-[#0B0B10] flex items-center justify-center shadow-lg shadow-[#61FF7B]/30"
+          className="w-12 h-12 rounded-full bg-[#61FF7B] text-[#0A0A0F] flex items-center justify-center shadow-lg shadow-[#61FF7B]/30"
         >
           <span className="text-xl">⚡</span>
         </button>

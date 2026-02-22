@@ -186,19 +186,19 @@ export function SettingsPage() {
     anthropic: '#d4a574',
     qwen: '#6366f1',
     openrouter: '#ef4444',
-    custom: '#7B61FF',
+    custom: '#00FFD4',
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Settings
           </h1>
-          <p className="text-[#A7ACB8]">Manage your account preferences</p>
+          <p className="text-[#6B7280]">Manage your account preferences</p>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale">
+        <Button onClick={handleSave} disabled={isSaving} className="bg-[#00FFD4] hover:bg-[#00D4B0] press-scale">
           {isSaving ? (
             <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
           ) : (
@@ -208,26 +208,26 @@ export function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className={`bg-[#0B0B10] border border-[#7B61FF]/20 p-1 ${isMobile ? 'overflow-x-auto flex-nowrap w-full justify-start scrollbar-hide' : 'flex-wrap'}`}>
-          <TabsTrigger value="profile" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
+        <TabsList className={`bg-[#0A0A0F] border border-[#00FFD4]/20 p-1 ${isMobile ? 'overflow-x-auto flex-nowrap w-full justify-start scrollbar-hide' : 'flex-wrap'}`}>
+          <TabsTrigger value="profile" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white">
             <User className="w-4 h-4 mr-2" />Profile
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
+          <TabsTrigger value="notifications" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white">
             <Bell className="w-4 h-4 mr-2" />Notifications
           </TabsTrigger>
-          <TabsTrigger value="security" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
+          <TabsTrigger value="security" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white">
             <Shield className="w-4 h-4 mr-2" />Security
           </TabsTrigger>
-          <TabsTrigger value="apikeys" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
+          <TabsTrigger value="apikeys" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white">
             <Key className="w-4 h-4 mr-2" />API Keys
           </TabsTrigger>
-          <TabsTrigger value="memory" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
+          <TabsTrigger value="memory" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white">
             <Brain className="w-4 h-4 mr-2" />Memory
           </TabsTrigger>
-          <TabsTrigger value="privacy" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
+          <TabsTrigger value="privacy" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white">
             <Eye className="w-4 h-4 mr-2" />Privacy
           </TabsTrigger>
-          <TabsTrigger value="theme" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white">
+          <TabsTrigger value="theme" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white">
             <Palette className="w-4 h-4 mr-2" />Theme
           </TabsTrigger>
         </TabsList>
@@ -235,13 +235,13 @@ export function SettingsPage() {
         {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6">
           <div className="grid lg:grid-cols-3 gap-6">
-            <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+            <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
               <CardContent className="p-6 text-center">
                 <div className="relative inline-block mb-4">
                   {profile.avatar ? (
-                    <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[#0B0B10]" />
+                    <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[#0A0A0F]" />
                   ) : (
-                    <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center text-3xl font-bold">
+                    <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#00FFD4] to-[#FF0080] flex items-center justify-center text-3xl font-bold">
                       {profile.name.split(' ').map(n => n[0]).join('')}
                     </div>
                   )}
@@ -252,53 +252,53 @@ export function SettingsPage() {
                       const url = `https://api.dicebear.com/9.x/pixel-art/svg?seed=${seed}&backgroundColor=7B61FF,0f0b1e`;
                       setProfile({ ...profile, avatar: url });
                     }}
-                    className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#7B61FF] flex items-center justify-center hover:bg-[#6B51EF] transition-colors press-scale"
+                    className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#00FFD4] flex items-center justify-center hover:bg-[#00D4B0] transition-colors press-scale"
                     title="Generate new pixel avatar"
                   >
                     <Sparkles className="w-4 h-4 text-white" />
                   </button>
                 </div>
-                <h3 className="font-semibold text-[#F4F6FF]">{profile.name}</h3>
-                <p className="text-sm text-[#A7ACB8]">@{profile.username}</p>
-                <Badge variant="outline" className="mt-3 border-[#61FF7B]/30 text-[#61FF7B]">Pro Plan</Badge>
+                <h3 className="font-semibold text-[#E8E8F0]">{profile.name}</h3>
+                <p className="text-sm text-[#6B7280]">@{profile.username}</p>
+                <Badge variant="outline" className="mt-3 border-[#00FF88]/30 text-[#00FF88]">Pro Plan</Badge>
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-2 bg-[#0B0B10] border-[#7B61FF]/20">
+            <Card className="lg:col-span-2 bg-[#0A0A0F] border-[#00FFD4]/20">
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
-                <CardDescription className="text-[#A7ACB8]">Update your public profile</CardDescription>
+                <CardDescription className="text-[#6B7280]">Update your public profile</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-[#A7ACB8] mb-2 block">Display Name</label>
-                    <Input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]" />
+                    <label className="text-sm text-[#6B7280] mb-2 block">Display Name</label>
+                    <Input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]" />
                   </div>
                   <div>
-                    <label className="text-sm text-[#A7ACB8] mb-2 block">Username</label>
+                    <label className="text-sm text-[#6B7280] mb-2 block">Username</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A7ACB8]">@</span>
-                      <Input value={profile.username} onChange={(e) => setProfile({ ...profile, username: e.target.value })} className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF] pl-8" />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]">@</span>
+                      <Input value={profile.username} onChange={(e) => setProfile({ ...profile, username: e.target.value })} className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0] pl-8" />
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-[#A7ACB8] mb-2 block">Email</label>
-                  <Input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]" />
+                  <label className="text-sm text-[#6B7280] mb-2 block">Email</label>
+                  <Input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]" />
                 </div>
                 <div>
-                  <label className="text-sm text-[#A7ACB8] mb-2 block">Bio</label>
-                  <textarea value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} className="w-full p-3 rounded-xl bg-[#05050A] border border-[#7B61FF]/30 text-[#F4F6FF] min-h-[100px] resize-none focus:outline-none focus:border-[#7B61FF]" />
+                  <label className="text-sm text-[#6B7280] mb-2 block">Bio</label>
+                  <textarea value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} className="w-full p-3 rounded-xl bg-[#030304] border border-[#00FFD4]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00FFD4]" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-[#A7ACB8] mb-2 block">Location</label>
-                    <Input value={profile.location} onChange={(e) => setProfile({ ...profile, location: e.target.value })} className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]" />
+                    <label className="text-sm text-[#6B7280] mb-2 block">Location</label>
+                    <Input value={profile.location} onChange={(e) => setProfile({ ...profile, location: e.target.value })} className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]" />
                   </div>
                   <div>
-                    <label className="text-sm text-[#A7ACB8] mb-2 block">Website</label>
-                    <Input value={profile.website} onChange={(e) => setProfile({ ...profile, website: e.target.value })} className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]" />
+                    <label className="text-sm text-[#6B7280] mb-2 block">Website</label>
+                    <Input value={profile.website} onChange={(e) => setProfile({ ...profile, website: e.target.value })} className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]" />
                   </div>
                 </div>
               </CardContent>
@@ -308,10 +308,10 @@ export function SettingsPage() {
 
         {/* Notifications Tab */}
         <TabsContent value="notifications" className="space-y-6">
-          <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
             <CardHeader>
               <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription className="text-[#A7ACB8]">Choose how you want to be notified</CardDescription>
+              <CardDescription className="text-[#6B7280]">Choose how you want to be notified</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {[
@@ -322,12 +322,12 @@ export function SettingsPage() {
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#7B61FF]/10 flex items-center justify-center">
-                      <item.icon className="w-5 h-5 text-[#7B61FF]" />
+                    <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center">
+                      <item.icon className="w-5 h-5 text-[#00FFD4]" />
                     </div>
                     <div>
-                      <div className="font-medium text-[#F4F6FF]">{item.title}</div>
-                      <div className="text-sm text-[#A7ACB8]">{item.desc}</div>
+                      <div className="font-medium text-[#E8E8F0]">{item.title}</div>
+                      <div className="text-sm text-[#6B7280]">{item.desc}</div>
                     </div>
                   </div>
                   <Switch
@@ -345,25 +345,25 @@ export function SettingsPage() {
 
         {/* Security Tab */}
         <TabsContent value="security" className="space-y-6">
-          <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
             <CardHeader>
               <CardTitle>Security Settings</CardTitle>
-              <CardDescription className="text-[#A7ACB8]">Manage your account security</CardDescription>
+              <CardDescription className="text-[#6B7280]">Manage your account security</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#61FF7B]/10 border border-[#61FF7B]/30 flex items-center gap-3">
-                <Check className="w-5 h-5 text-[#61FF7B]" />
+              <div className="p-4 rounded-xl bg-[#00FF88]/10 border border-[#00FF88]/30 flex items-center gap-3">
+                <Check className="w-5 h-5 text-[#00FF88]" />
                 <div>
-                  <div className="font-medium text-[#F4F6FF]">Two-Factor Authentication</div>
-                  <div className="text-sm text-[#A7ACB8]">Enabled via authenticator app</div>
+                  <div className="font-medium text-[#E8E8F0]">Two-Factor Authentication</div>
+                  <div className="text-sm text-[#6B7280]">Enabled via authenticator app</div>
                 </div>
               </div>
-              <div className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/20">
+              <div className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/20">
                 <div className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-[#61FF7B]" />
+                  <Check className="w-5 h-5 text-[#00FF88]" />
                   <div>
-                    <div className="font-medium text-[#F4F6FF]">Active Sessions</div>
-                    <div className="text-sm text-[#A7ACB8]">Current session active</div>
+                    <div className="font-medium text-[#E8E8F0]">Active Sessions</div>
+                    <div className="text-sm text-[#6B7280]">Current session active</div>
                   </div>
                 </div>
               </div>
@@ -373,14 +373,14 @@ export function SettingsPage() {
 
         {/* API Keys Tab */}
         <TabsContent value="apikeys" className="space-y-6">
-          <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>API Keys</CardTitle>
-                  <CardDescription className="text-[#A7ACB8]">Manage provider keys for &quot;Bring Your Own&quot; mode</CardDescription>
+                  <CardDescription className="text-[#6B7280]">Manage provider keys for &quot;Bring Your Own&quot; mode</CardDescription>
                 </div>
-                <Button onClick={() => setShowAddKey(true)} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+                <Button onClick={() => setShowAddKey(true)} className="bg-[#00FFD4] hover:bg-[#00D4B0]">
                   <Plus className="w-4 h-4 mr-2" />Add Key
                 </Button>
               </div>
@@ -388,21 +388,21 @@ export function SettingsPage() {
             <CardContent className="space-y-4">
               {apiKeys.length === 0 && !showAddKey && (
                 <div className="text-center py-8">
-                  <Key className="w-10 h-10 text-[#7B61FF]/30 mx-auto mb-3" />
-                  <p className="text-[#A7ACB8] mb-2">No API keys added yet</p>
-                  <p className="text-sm text-[#A7ACB8]">Add your provider keys to use your own credits</p>
+                  <Key className="w-10 h-10 text-[#00FFD4]/30 mx-auto mb-3" />
+                  <p className="text-[#6B7280] mb-2">No API keys added yet</p>
+                  <p className="text-sm text-[#6B7280]">Add your provider keys to use your own credits</p>
                 </div>
               )}
 
               {apiKeys.map((key) => (
-                <div key={key.id} className="flex items-center justify-between p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/20">
+                <div key={key.id} className="flex items-center justify-between p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/20">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${providerColors[key.provider]}20` }}>
                       <Key className="w-5 h-5" style={{ color: providerColors[key.provider] }} />
                     </div>
                     <div>
-                      <div className="font-medium text-[#F4F6FF]">{key.label}</div>
-                      <div className="text-sm text-[#A7ACB8] font-mono">{key.maskedKey}</div>
+                      <div className="font-medium text-[#E8E8F0]">{key.label}</div>
+                      <div className="text-sm text-[#6B7280] font-mono">{key.maskedKey}</div>
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => setApiKeys(apiKeys.filter(k => k.id !== key.id))} className="text-[#FF6161] hover:text-[#FF6161]">
@@ -412,9 +412,9 @@ export function SettingsPage() {
               ))}
 
               {showAddKey && (
-                <div className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/30 space-y-3">
+                <div className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/30 space-y-3">
                   <div>
-                    <label className="text-sm text-[#A7ACB8] mb-2 block">Provider</label>
+                    <label className="text-sm text-[#6B7280] mb-2 block">Provider</label>
                     <div className="flex gap-2 flex-wrap">
                       {(['openai', 'anthropic', 'qwen', 'openrouter'] as ApiProvider[]).map((p) => (
                         <button
@@ -422,8 +422,8 @@ export function SettingsPage() {
                           onClick={() => setNewKeyProvider(p)}
                           className={`px-3 py-2 min-h-[44px] rounded-lg text-sm capitalize transition-all ${
                             newKeyProvider === p
-                              ? 'bg-[#7B61FF]/20 border border-[#7B61FF] text-[#7B61FF]'
-                              : 'bg-[#0B0B10] border border-[#7B61FF]/20 text-[#A7ACB8]'
+                              ? 'bg-[#00FFD4]/20 border border-[#00FFD4] text-[#00FFD4]'
+                              : 'bg-[#0A0A0F] border border-[#00FFD4]/20 text-[#6B7280]'
                           }`}
                         >
                           {p}
@@ -432,20 +432,20 @@ export function SettingsPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-[#A7ACB8] mb-2 block">API Key</label>
+                    <label className="text-sm text-[#6B7280] mb-2 block">API Key</label>
                     <Input
                       type="password"
                       value={newKeyValue}
                       onChange={(e) => setNewKeyValue(e.target.value)}
                       placeholder="sk-..."
-                      className="bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF] font-mono"
+                      className="bg-[#0A0A0F] border-[#00FFD4]/30 text-[#E8E8F0] font-mono"
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => { setShowAddKey(false); setNewKeyValue(''); }} className="border-[#7B61FF]/30">
+                    <Button variant="outline" onClick={() => { setShowAddKey(false); setNewKeyValue(''); }} className="border-[#00FFD4]/30">
                       Cancel
                     </Button>
-                    <Button onClick={handleAddKey} disabled={!newKeyValue} className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale">
+                    <Button onClick={handleAddKey} disabled={!newKeyValue} className="bg-[#00FFD4] hover:bg-[#00D4B0] press-scale">
                       Save Key
                     </Button>
                   </div>
@@ -458,12 +458,12 @@ export function SettingsPage() {
 
         {/* Memory Tab */}
         <TabsContent value="memory" className="space-y-6">
-          <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Agent Memory</CardTitle>
-                  <CardDescription className="text-[#A7ACB8]">What your AI assistant remembers about you</CardDescription>
+                  <CardDescription className="text-[#6B7280]">What your AI assistant remembers about you</CardDescription>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {['all', 'fact', 'preference'].map((cat) => (
@@ -472,8 +472,8 @@ export function SettingsPage() {
                       onClick={() => setMemoryFilter(cat)}
                       className={`px-3 py-2 min-h-[44px] rounded-lg text-xs capitalize transition-all ${
                         memoryFilter === cat
-                          ? 'bg-[#7B61FF]/20 border border-[#7B61FF] text-[#7B61FF]'
-                          : 'bg-[#0B0B10] border border-[#7B61FF]/20 text-[#A7ACB8]'
+                          ? 'bg-[#00FFD4]/20 border border-[#00FFD4] text-[#00FFD4]'
+                          : 'bg-[#0A0A0F] border border-[#00FFD4]/20 text-[#6B7280]'
                       }`}
                     >
                       {cat}
@@ -485,32 +485,32 @@ export function SettingsPage() {
             <CardContent className="space-y-3">
               {memoriesLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-[#7B61FF] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : memories.length === 0 ? (
                 <div className="text-center py-8">
-                  <Brain className="w-10 h-10 text-[#7B61FF]/30 mx-auto mb-3" />
-                  <p className="text-[#A7ACB8] mb-2">No memories yet</p>
-                  <p className="text-sm text-[#A7ACB8]">Your agent learns about you through conversations</p>
+                  <Brain className="w-10 h-10 text-[#00FFD4]/30 mx-auto mb-3" />
+                  <p className="text-[#6B7280] mb-2">No memories yet</p>
+                  <p className="text-sm text-[#6B7280]">Your agent learns about you through conversations</p>
                 </div>
               ) : (
                 memories.map((memory) => (
-                  <div key={memory.id} className="flex items-start justify-between p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/20 group hover:border-[#7B61FF]/40 transition-all">
+                  <div key={memory.id} className="flex items-start justify-between p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/20 group hover:border-[#00FFD4]/40 transition-all">
                     <div className="flex items-start gap-3 flex-1">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center mt-0.5" style={{
-                        backgroundColor: memory.category === 'fact' ? '#61FF7B15' : '#7B61FF15'
+                        backgroundColor: memory.category === 'fact' ? '#00FF8815' : '#00FFD415'
                       }}>
                         <Tag className="w-4 h-4" style={{
-                          color: memory.category === 'fact' ? '#61FF7B' : '#7B61FF'
+                          color: memory.category === 'fact' ? '#00FF88' : '#00FFD4'
                         }} />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-[#F4F6FF]">{memory.key}</span>
-                          <Badge variant="outline" className="text-[10px] border-[#7B61FF]/30 text-[#A7ACB8]">{memory.category}</Badge>
+                          <span className="text-sm font-medium text-[#E8E8F0]">{memory.key}</span>
+                          <Badge variant="outline" className="text-[10px] border-[#00FFD4]/30 text-[#6B7280]">{memory.category}</Badge>
                         </div>
-                        <p className="text-sm text-[#A7ACB8]">{memory.value}</p>
-                        <div className="flex items-center gap-3 mt-2 text-[10px] text-[#A7ACB8]/60">
+                        <p className="text-sm text-[#6B7280]">{memory.value}</p>
+                        <div className="flex items-center gap-3 mt-2 text-[10px] text-[#6B7280]/60">
                           <span className="flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> {new Date(memory.updatedAt || memory.createdAt).toLocaleDateString()}</span>
                           <span>Confidence: {Math.round(memory.confidence * 100)}%</span>
                           <span>Source: {memory.source}</span>
@@ -531,13 +531,13 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-r from-[#7B61FF]/10 to-transparent border-[#7B61FF]/20">
+          <Card className="bg-gradient-to-r from-[#00FFD4]/10 to-transparent border-[#00FFD4]/20">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <Brain className="w-5 h-5 text-[#7B61FF] flex-shrink-0 mt-0.5" />
+                <Brain className="w-5 h-5 text-[#00FFD4] flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-medium text-[#F4F6FF] mb-1">How Memory Works</h4>
-                  <p className="text-xs text-[#A7ACB8]">
+                  <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">How Memory Works</h4>
+                  <p className="text-xs text-[#6B7280]">
                     Your agent learns about you through conversations — extracting facts, preferences, and context.
                     Memories improve response quality over time. You can delete any memory at any time.
                   </p>
@@ -549,10 +549,10 @@ export function SettingsPage() {
 
         {/* Privacy Tab */}
         <TabsContent value="privacy" className="space-y-6">
-          <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
             <CardHeader>
               <CardTitle>Privacy Controls</CardTitle>
-              <CardDescription className="text-[#A7ACB8]">Control what is visible on your public portfolio</CardDescription>
+              <CardDescription className="text-[#6B7280]">Control what is visible on your public portfolio</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {[
@@ -564,8 +564,8 @@ export function SettingsPage() {
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-[#F4F6FF]">{item.title}</div>
-                    <div className="text-sm text-[#A7ACB8]">{item.desc}</div>
+                    <div className="font-medium text-[#E8E8F0]">{item.title}</div>
+                    <div className="text-sm text-[#6B7280]">{item.desc}</div>
                   </div>
                   <Switch
                     checked={privacy[item.key as keyof typeof privacy]}
@@ -575,13 +575,13 @@ export function SettingsPage() {
               ))}
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-r from-[#7B61FF]/10 to-transparent border-[#7B61FF]/20">
+          <Card className="bg-gradient-to-r from-[#00FFD4]/10 to-transparent border-[#00FFD4]/20">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-[#7B61FF] flex-shrink-0 mt-0.5" />
+                <Shield className="w-5 h-5 text-[#00FFD4] flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-medium text-[#F4F6FF] mb-1">What We Never Show</h4>
-                  <p className="text-xs text-[#A7ACB8]">
+                  <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">What We Never Show</h4>
+                  <p className="text-xs text-[#6B7280]">
                     Raw chat logs, internal system data, precise location (only city if enabled), and API keys are never exposed publicly.
                   </p>
                 </div>
@@ -592,14 +592,14 @@ export function SettingsPage() {
 
         {/* Theme Tab */}
         <TabsContent value="theme" className="space-y-6">
-          <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
             <CardHeader>
               <CardTitle>Appearance</CardTitle>
-              <CardDescription className="text-[#A7ACB8]">Customize the look of your dashboard</CardDescription>
+              <CardDescription className="text-[#6B7280]">Customize the look of your dashboard</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-3 block">Theme Mode</label>
+                <label className="text-sm text-[#6B7280] mb-3 block">Theme Mode</label>
                 <div className="flex gap-3">
                   {(['dark', 'light', 'system'] as const).map((m) => (
                     <button
@@ -610,8 +610,8 @@ export function SettingsPage() {
                       }}
                       className={`flex-1 p-4 rounded-xl border-2 capitalize transition-all ${
                         themeMode === m
-                          ? 'border-[#7B61FF] bg-[#7B61FF]/10 text-[#7B61FF]'
-                          : 'border-[#7B61FF]/20 text-[#A7ACB8] hover:border-[#7B61FF]/40'
+                          ? 'border-[#00FFD4] bg-[#00FFD4]/10 text-[#00FFD4]'
+                          : 'border-[#00FFD4]/20 text-[#6B7280] hover:border-[#00FFD4]/40'
                       }`}
                     >
                       {m}
@@ -621,56 +621,56 @@ export function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-3 block">Accent Color</label>
+                <label className="text-sm text-[#6B7280] mb-3 block">Accent Color</label>
                 <div className="flex gap-3 flex-wrap">
                   {accentPresets.map((color) => (
                     <button
                       key={color}
                       onClick={() => { setAccentColor(color); void agentService.updateConfig({ accentColor: color }).catch(() => {}); }}
                       className={`w-10 h-10 sm:w-8 sm:h-8 rounded-xl transition-all ${
-                        accentColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0B0B10] scale-110' : 'hover:scale-110'
+                        accentColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0A0A0F] scale-110' : 'hover:scale-110'
                       }`}
                       style={{ backgroundColor: color }}
                     />
                   ))}
                 </div>
                 <div className="mt-3 flex items-center gap-3">
-                  <label className="text-sm text-[#A7ACB8]">Custom:</label>
+                  <label className="text-sm text-[#6B7280]">Custom:</label>
                   <input
                     type="color"
                     value={accentColor}
                     onChange={(e) => { setAccentColor(e.target.value); void agentService.updateConfig({ accentColor: e.target.value }).catch(() => {}); }}
                     className="w-8 h-8 rounded cursor-pointer bg-transparent"
                   />
-                  <span className="text-sm font-mono text-[#A7ACB8]">{accentColor}</span>
+                  <span className="text-sm font-mono text-[#6B7280]">{accentColor}</span>
                 </div>
               </div>
 
               {/* AI Background Generator */}
               <div className="space-y-3">
-                <label className="text-sm text-[#A7ACB8] block">AI-Generated Background</label>
+                <label className="text-sm text-[#6B7280] block">AI-Generated Background</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     placeholder="Describe a vibe (optional)..."
                     value={bgVibe}
                     onChange={(e) => setBgVibe(e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-lg bg-[#05050A] border border-[#7B61FF]/20 text-[#F4F6FF] text-sm focus:outline-none focus:border-[#7B61FF]/60"
+                    className="flex-1 px-3 py-2 rounded-lg bg-[#030304] border border-[#00FFD4]/20 text-[#E8E8F0] text-sm focus:outline-none focus:border-[#00FFD4]/60"
                   />
-                  <Button onClick={handleGenerateBg} disabled={isGeneratingBg} size="sm" className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+                  <Button onClick={handleGenerateBg} disabled={isGeneratingBg} size="sm" className="bg-[#00FFD4] hover:bg-[#00D4B0]">
                     {isGeneratingBg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   </Button>
                 </div>
                 {bgPreview && (
                   <div className="space-y-2">
                     <div
-                      className="h-24 rounded-xl border border-[#7B61FF]/20"
+                      className="h-24 rounded-xl border border-[#00FFD4]/20"
                       style={{ background: bgPreview.gradient }}
                     />
-                    <p className="text-xs text-[#A7ACB8]">"{bgPreview.name}" — click Apply to use this background</p>
+                    <p className="text-xs text-[#6B7280]">"{bgPreview.name}" — click Apply to use this background</p>
                     <div className="flex gap-2">
-                      <Button onClick={handleApplyBg} size="sm" className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale">Apply</Button>
-                      <Button onClick={handleGenerateBg} variant="outline" size="sm" className="border-[#7B61FF]/30">Try another</Button>
+                      <Button onClick={handleApplyBg} size="sm" className="bg-[#00FFD4] hover:bg-[#00D4B0] press-scale">Apply</Button>
+                      <Button onClick={handleGenerateBg} variant="outline" size="sm" className="border-[#00FFD4]/30">Try another</Button>
                     </div>
                   </div>
                 )}

@@ -54,16 +54,16 @@ const iconMap: Record<string, typeof MessageSquare> = {
 const colorMap: Record<string, string> = {
   telegram: '#0088cc',
   'google-calendar': '#4285f4',
-  location: '#61FF7B',
+  location: '#00FF88',
   github: '#f0f6fc',
   twitter: '#1da1f2',
   linkedin: '#0a66c2',
   n8n: '#ff6d5a',
   manychat: '#0084ff',
   whatsapp: '#25d366',
-  'custom-webhook': '#7B61FF',
-  email: '#61FF7B',
-  image: '#FF61DC',
+  'custom-webhook': '#00FFD4',
+  email: '#00FF88',
+  image: '#FF0080',
 };
 
 type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error';
@@ -224,43 +224,43 @@ export function ConnectionsPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'connected': return <Wifi className="w-4 h-4 text-[#61FF7B]" />;
+      case 'connected': return <Wifi className="w-4 h-4 text-[#00FF88]" />;
       case 'error': return <AlertTriangle className="w-4 h-4 text-[#FF6161]" />;
-      case 'paused': return <WifiOff className="w-4 h-4 text-[#FFD761]" />;
-      default: return <WifiOff className="w-4 h-4 text-[#A7ACB8]" />;
+      case 'paused': return <WifiOff className="w-4 h-4 text-[#FFB800]" />;
+      default: return <WifiOff className="w-4 h-4 text-[#6B7280]" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'connected': return 'text-[#61FF7B]';
+      case 'connected': return 'text-[#00FF88]';
       case 'error': return 'text-[#FF6161]';
-      case 'paused': return 'text-[#FFD761]';
-      default: return 'text-[#A7ACB8]';
+      case 'paused': return 'text-[#FFB800]';
+      default: return 'text-[#6B7280]';
     }
   };
 
   const getIcon = (type: string) => iconMap[type] || Zap;
-  const getColor = (type: string) => colorMap[type] || '#7B61FF';
+  const getColor = (type: string) => colorMap[type] || '#00FFD4';
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Connections
           </h1>
-          <p className="text-[#A7ACB8]">
-            <span className="text-[#7B61FF] font-medium">{connectedCount}</span> of {integrations.length} services connected
+          <p className="text-[#6B7280]">
+            <span className="text-[#00FFD4] font-medium">{connectedCount}</span> of {integrations.length} services connected
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className="border-[#61FF7B]/30 text-[#61FF7B] px-3 py-1">
+          <Badge variant="outline" className="border-[#00FF88]/30 text-[#00FF88] px-3 py-1">
             <Shield className="w-4 h-4 mr-2" />
             End-to-end encrypted
           </Badge>
-          <Button onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+          <Button onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })} className="bg-[#00FFD4] hover:bg-[#00D4B0]">
             <Plus className="w-4 h-4 mr-2" />
             Add New
           </Button>
@@ -269,54 +269,54 @@ export function ConnectionsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all">
+        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#61FF7B]/10 flex items-center justify-center">
-                <Plug className="w-5 h-5 text-[#61FF7B]" />
+              <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center">
+                <Plug className="w-5 h-5 text-[#00FF88]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{connectedCount}</div>
-                <div className="text-xs text-[#A7ACB8]">Connected</div>
+                <div className="text-2xl font-bold text-[#E8E8F0]">{connectedCount}</div>
+                <div className="text-xs text-[#6B7280]">Connected</div>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all">
+        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#7B61FF]/10 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-[#7B61FF]" />
+              <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-[#00FFD4]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{totalRequests}</div>
-                <div className="text-xs text-[#A7ACB8]">Requests Today</div>
+                <div className="text-2xl font-bold text-[#E8E8F0]">{totalRequests}</div>
+                <div className="text-xs text-[#6B7280]">Requests Today</div>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all">
+        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FFD761]/10 flex items-center justify-center">
-                <RefreshCw className="w-5 h-5 text-[#FFD761]" />
+              <div className="w-10 h-10 rounded-lg bg-[#FFB800]/10 flex items-center justify-center">
+                <RefreshCw className="w-5 h-5 text-[#FFB800]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{avgHealth}%</div>
-                <div className="text-xs text-[#A7ACB8]">Avg Health</div>
+                <div className="text-2xl font-bold text-[#E8E8F0]">{avgHealth}%</div>
+                <div className="text-xs text-[#6B7280]">Avg Health</div>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all">
+        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FF61DC]/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-[#FF61DC]" />
+              <div className="w-10 h-10 rounded-lg bg-[#FF0080]/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-[#FF0080]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">100%</div>
-                <div className="text-xs text-[#A7ACB8]">Secure</div>
+                <div className="text-2xl font-bold text-[#E8E8F0]">100%</div>
+                <div className="text-xs text-[#6B7280]">Secure</div>
               </div>
             </div>
           </CardContent>
@@ -325,9 +325,9 @@ export function ConnectionsPage() {
 
       {/* Telegram Link Wizard */}
       {telegramDialog && (
-        <Card className="bg-[#0B0B10] border-[#0088cc]/40 relative overflow-hidden">
+        <Card className="bg-[#0A0A0F] border-[#0088cc]/40 relative overflow-hidden">
           <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
-            <button onClick={closeTelegramDialog} className="absolute top-4 right-4 text-[#A7ACB8] hover:text-white z-10">
+            <button onClick={closeTelegramDialog} className="absolute top-4 right-4 text-[#6B7280] hover:text-white z-10">
               <X className="w-5 h-5" />
             </button>
 
@@ -336,23 +336,23 @@ export function ConnectionsPage() {
                 <Send className="w-5 h-5 text-[#0088cc]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#F4F6FF]">Connect Telegram</h3>
-                <p className="text-xs text-[#A7ACB8]">Chat with your agent on Telegram</p>
+                <h3 className="font-semibold text-[#E8E8F0]">Connect Telegram</h3>
+                <p className="text-xs text-[#6B7280]">Chat with your agent on Telegram</p>
               </div>
             </div>
 
             {telegramStep === 'generating' && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="w-8 h-8 text-[#0088cc] animate-spin" />
-                <p className="text-sm text-[#A7ACB8]">Setting up your connection...</p>
+                <p className="text-sm text-[#6B7280]">Setting up your connection...</p>
               </div>
             )}
 
             {telegramStep === 'open-bot' && telegramLink?.deepLink && (
               <div className="space-y-4">
-                <div className="bg-[#05050A] rounded-lg p-4 border border-[#0088cc]/20">
-                  <p className="text-sm text-[#F4F6FF] font-medium mb-2">Step 1: Open Telegram</p>
-                  <p className="text-xs text-[#A7ACB8]">Click below to open our bot, then send the start command.</p>
+                <div className="bg-[#030304] rounded-lg p-4 border border-[#0088cc]/20">
+                  <p className="text-sm text-[#E8E8F0] font-medium mb-2">Step 1: Open Telegram</p>
+                  <p className="text-xs text-[#6B7280]">Click below to open our bot, then send the start command.</p>
                 </div>
                 <a href={telegramLink.deepLink} target="_blank" rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#0088cc] hover:bg-[#0077b5] text-white font-medium">
@@ -365,9 +365,9 @@ export function ConnectionsPage() {
 
             {telegramStep === 'success' && (
               <div className="flex flex-col items-center gap-4 py-6">
-                <CheckCircle2 className="w-12 h-12 text-[#61FF7B]" />
-                <p className="text-sm text-[#F4F6FF] font-medium">Telegram connected!</p>
-                <Button className="bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10]" onClick={closeTelegramDialog}>
+                <CheckCircle2 className="w-12 h-12 text-[#00FF88]" />
+                <p className="text-sm text-[#E8E8F0] font-medium">Telegram connected!</p>
+                <Button className="bg-[#00FF88] hover:bg-[#51EF6B] text-[#0A0A0F]" onClick={closeTelegramDialog}>
                   Done
                 </Button>
               </div>
@@ -376,8 +376,8 @@ export function ConnectionsPage() {
             {telegramStep === 'error' && (
               <div className="text-center py-6">
                 <AlertTriangle className="w-12 h-12 text-[#FF6161] mx-auto mb-2" />
-                <p className="text-sm text-[#F4F6FF]">Connection failed</p>
-                <p className="text-xs text-[#A7ACB8] mt-1">{telegramLink?.message}</p>
+                <p className="text-sm text-[#E8E8F0]">Connection failed</p>
+                <p className="text-xs text-[#6B7280] mt-1">{telegramLink?.message}</p>
               </div>
             )}
           </CardContent>
@@ -386,9 +386,9 @@ export function ConnectionsPage() {
 
       {/* WhatsApp Link Wizard with QR */}
       {whatsappDialog && (
-        <Card className="bg-[#0B0B10] border-[#25d366]/40 relative overflow-hidden">
+        <Card className="bg-[#0A0A0F] border-[#25d366]/40 relative overflow-hidden">
           <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
-            <button onClick={closeWhatsAppDialog} className="absolute top-4 right-4 text-[#A7ACB8] hover:text-white z-10">
+            <button onClick={closeWhatsAppDialog} className="absolute top-4 right-4 text-[#6B7280] hover:text-white z-10">
               <X className="w-5 h-5" />
             </button>
 
@@ -397,15 +397,15 @@ export function ConnectionsPage() {
                 <Smartphone className="w-5 h-5 text-[#25d366]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#F4F6FF]">Connect WhatsApp</h3>
-                <p className="text-xs text-[#A7ACB8]">Scan QR code with your phone</p>
+                <h3 className="font-semibold text-[#E8E8F0]">Connect WhatsApp</h3>
+                <p className="text-xs text-[#6B7280]">Scan QR code with your phone</p>
               </div>
             </div>
 
             {whatsappStep === 'generating' && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="w-8 h-8 text-[#25d366] animate-spin" />
-                <p className="text-sm text-[#A7ACB8]">Generating QR code...</p>
+                <p className="text-sm text-[#6B7280]">Generating QR code...</p>
               </div>
             )}
 
@@ -414,13 +414,13 @@ export function ConnectionsPage() {
                 <div className="bg-white p-4 rounded-xl inline-block">
                   <img src={whatsappQR} alt="WhatsApp QR Code" className="w-48 h-48" />
                 </div>
-                <p className="text-sm text-[#A7ACB8]">
+                <p className="text-sm text-[#6B7280]">
                   Open WhatsApp → Settings → Linked Devices → Link a Device
                 </p>
-                <p className="text-xs text-[#A7ACB8]">
+                <p className="text-xs text-[#6B7280]">
                   Scan the QR code above to connect
                 </p>
-                <div className="flex items-center justify-center gap-2 text-xs text-[#61FF7B]">
+                <div className="flex items-center justify-center gap-2 text-xs text-[#00FF88]">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   Waiting for scan...
                 </div>
@@ -429,9 +429,9 @@ export function ConnectionsPage() {
 
             {whatsappStep === 'success' && (
               <div className="flex flex-col items-center gap-4 py-6">
-                <CheckCircle2 className="w-12 h-12 text-[#61FF7B]" />
-                <p className="text-sm text-[#F4F6FF] font-medium">WhatsApp connected!</p>
-                <Button className="bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10]" onClick={closeWhatsAppDialog}>
+                <CheckCircle2 className="w-12 h-12 text-[#00FF88]" />
+                <p className="text-sm text-[#E8E8F0] font-medium">WhatsApp connected!</p>
+                <Button className="bg-[#00FF88] hover:bg-[#51EF6B] text-[#0A0A0F]" onClick={closeWhatsAppDialog}>
                   Done
                 </Button>
               </div>
@@ -440,8 +440,8 @@ export function ConnectionsPage() {
             {whatsappStep === 'error' && (
               <div className="text-center py-6">
                 <AlertTriangle className="w-12 h-12 text-[#FF6161] mx-auto mb-2" />
-                <p className="text-sm text-[#F4F6FF]">Connection failed</p>
-                <p className="text-xs text-[#A7ACB8] mt-1">Please try again later</p>
+                <p className="text-sm text-[#E8E8F0]">Connection failed</p>
+                <p className="text-xs text-[#6B7280] mt-1">Please try again later</p>
               </div>
             )}
           </CardContent>
@@ -450,26 +450,26 @@ export function ConnectionsPage() {
 
       {/* Email Dialog */}
       {emailDialog && (
-        <Card className="bg-[#0B0B10] border-[#61FF7B]/40 relative overflow-hidden">
+        <Card className="bg-[#0A0A0F] border-[#00FF88]/40 relative overflow-hidden">
           <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
-            <button onClick={() => setEmailDialog(false)} className="absolute top-4 right-4 text-[#A7ACB8] hover:text-white z-10">
+            <button onClick={() => setEmailDialog(false)} className="absolute top-4 right-4 text-[#6B7280] hover:text-white z-10">
               <X className="w-5 h-5" />
             </button>
 
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-[#61FF7B]/20 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-[#61FF7B]" />
+              <div className="w-10 h-10 rounded-lg bg-[#00FF88]/20 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-[#00FF88]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#F4F6FF]">Email Notifications</h3>
-                <p className="text-xs text-[#A7ACB8]">Get reminders and briefings via email</p>
+                <h3 className="font-semibold text-[#E8E8F0]">Email Notifications</h3>
+                <p className="text-xs text-[#6B7280]">Get reminders and briefings via email</p>
               </div>
             </div>
 
             {emailSaved ? (
               <div className="text-center py-4">
-                <CheckCircle2 className="w-12 h-12 text-[#61FF7B] mx-auto mb-2" />
-                <p className="text-sm text-[#F4F6FF]">Email notifications enabled!</p>
+                <CheckCircle2 className="w-12 h-12 text-[#00FF88] mx-auto mb-2" />
+                <p className="text-sm text-[#E8E8F0]">Email notifications enabled!</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -478,10 +478,10 @@ export function ConnectionsPage() {
                   placeholder="you@example.com"
                   value={emailAddress}
                   onChange={(e) => setEmailAddress(e.target.value)}
-                  className="bg-[#05050A] border-[#7B61FF]/20 text-[#F4F6FF]"
+                  className="bg-[#030304] border-[#00FFD4]/20 text-[#E8E8F0]"
                 />
                 <Button
-                  className="w-full bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10]"
+                  className="w-full bg-[#00FF88] hover:bg-[#51EF6B] text-[#0A0A0F]"
                   onClick={handleEmailSave}
                   disabled={emailSaving}
                 >
@@ -502,7 +502,7 @@ export function ConnectionsPage() {
           return (
             <Card
               key={connection.id}
-              className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all duration-300 group"
+              className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all duration-300 group"
             >
               <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
                 <div className="flex items-start justify-between mb-4">
@@ -514,7 +514,7 @@ export function ConnectionsPage() {
                       <Icon className="w-6 h-6" style={{ color }} />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-[#F4F6FF]">{connection.name}</h3>
+                      <h3 className="font-semibold text-[#E8E8F0]">{connection.name}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         {getStatusIcon(connection.status)}
                         <span className={`text-xs ${getStatusColor(connection.status)} capitalize`}>
@@ -534,29 +534,29 @@ export function ConnectionsPage() {
                       size={isMobile ? 'default' : 'sm'}
                       onClick={() => handleConnect(connection.type)}
                       disabled={isLoading}
-                      className="bg-[#7B61FF] hover:bg-[#6B51EF]"
+                      className="bg-[#00FFD4] hover:bg-[#00D4B0]"
                     >
                       Connect
                     </Button>
                   )}
                 </div>
 
-                <p className="text-sm text-[#A7ACB8] mb-4">
+                <p className="text-sm text-[#6B7280] mb-4">
                   {connection.description}
                 </p>
 
                 {connection.status === 'connected' && (
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-[#A7ACB8]">Health</span>
-                      <span className="text-[#F4F6FF]">{connection.health}%</span>
+                      <span className="text-[#6B7280]">Health</span>
+                      <span className="text-[#E8E8F0]">{connection.health}%</span>
                     </div>
-                    <div className="h-1.5 bg-[#05050A] rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-[#030304] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
                           width: `${connection.health}%`,
-                          backgroundColor: connection.health > 80 ? '#61FF7B' : connection.health > 50 ? '#FFD761' : '#FF6161'
+                          backgroundColor: connection.health > 80 ? '#00FF88' : connection.health > 50 ? '#FFB800' : '#FF6161'
                         }}
                       />
                     </div>
@@ -565,13 +565,13 @@ export function ConnectionsPage() {
 
                 <div className="flex flex-wrap gap-2 mb-4">
                   {connection.features.map((feature, i) => (
-                    <Badge key={i} variant="outline" className="border-[#7B61FF]/20 text-[#A7ACB8] text-xs">
+                    <Badge key={i} variant="outline" className="border-[#00FFD4]/20 text-[#6B7280] text-xs">
                       {feature}
                     </Badge>
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-[#7B61FF]/10 text-xs text-[#A7ACB8]">
+                <div className="flex items-center justify-between pt-4 border-t border-[#00FFD4]/10 text-xs text-[#6B7280]">
                   {connection.lastSync ? (
                     <span>Last synced: {connection.lastSync}</span>
                   ) : (
@@ -588,13 +588,13 @@ export function ConnectionsPage() {
       </div>
 
       {/* Privacy Note */}
-      <Card className="bg-gradient-to-r from-[#7B61FF]/10 to-transparent border-[#7B61FF]/20">
+      <Card className="bg-gradient-to-r from-[#00FFD4]/10 to-transparent border-[#00FFD4]/20">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-[#7B61FF] flex-shrink-0 mt-0.5" />
+            <Shield className="w-5 h-5 text-[#00FFD4] flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-medium text-[#F4F6FF] mb-1">Privacy First</h4>
-              <p className="text-xs text-[#A7ACB8]">
+              <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Privacy First</h4>
+              <p className="text-xs text-[#6B7280]">
                 Your data is encrypted and never shared. You can disconnect any service at any time.
               </p>
             </div>

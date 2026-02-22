@@ -16,7 +16,7 @@ export function ReviewStep({ onboarding, onLaunch, isLaunching }: ReviewStepProp
       label: 'Profile',
       items: [
         { key: 'Name', value: profile.name || '--' },
-        { key: 'Username', value: profile.username ? `${profile.username}.geekspace.space` : '--' },
+        { key: 'Username', value: profile.username ? `${profile.username}.agentin.chat` : '--' },
       ],
     },
     {
@@ -52,24 +52,24 @@ export function ReviewStep({ onboarding, onLaunch, isLaunching }: ReviewStepProp
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <Rocket className="w-6 h-6 text-[#7B61FF]" />
-        <h2 className="text-xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+        <Rocket className="w-6 h-6 text-[#00FFD4]" />
+        <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
           Review & Launch
         </h2>
       </div>
-      <p className="text-[#A7ACB8] text-sm">
+      <p className="text-[#6B7280] text-sm">
         Everything looks good! Here's a summary of your setup.
       </p>
 
       <div className="space-y-3">
         {sections.map((section) => (
-          <div key={section.label} className="p-4 rounded-xl bg-[#05050A] border border-[#7B61FF]/20">
-            <h3 className="text-sm font-medium text-[#7B61FF] mb-2">{section.label}</h3>
+          <div key={section.label} className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/20">
+            <h3 className="text-sm font-medium text-[#00FFD4] mb-2">{section.label}</h3>
             <div className="space-y-1">
               {section.items.map((item) => (
                 <div key={item.key} className="flex justify-between text-sm">
-                  <span className="text-[#A7ACB8]">{item.key}</span>
-                  <span className="text-[#F4F6FF] text-right max-w-[60%] truncate">{item.value}</span>
+                  <span className="text-[#6B7280]">{item.key}</span>
+                  <span className="text-[#E8E8F0] text-right max-w-[60%] truncate">{item.value}</span>
                 </div>
               ))}
             </div>
@@ -77,10 +77,10 @@ export function ReviewStep({ onboarding, onLaunch, isLaunching }: ReviewStepProp
         ))}
       </div>
 
-      <div className="p-4 rounded-xl bg-[#61FF7B]/10 border border-[#61FF7B]/30">
+      <div className="p-4 rounded-xl bg-[#00FF88]/10 border border-[#00FF88]/30">
         <div className="flex items-center gap-2">
-          <Check className="w-4 h-4 text-[#61FF7B]" />
-          <p className="text-sm text-[#F4F6FF]">
+          <Check className="w-4 h-4 text-[#00FF88]" />
+          <p className="text-sm text-[#E8E8F0]">
             You can update any of these settings later from your dashboard.
           </p>
         </div>
@@ -89,7 +89,7 @@ export function ReviewStep({ onboarding, onLaunch, isLaunching }: ReviewStepProp
       <Button
         onClick={onLaunch}
         disabled={isLaunching}
-        className="w-full h-12 min-h-[44px] bg-[#7B61FF] hover:bg-[#6B51EF] text-base font-semibold pulse-glow"
+        className="w-full h-12 min-h-[44px] bg-[#00FFD4] hover:bg-[#00D4B0] text-base font-semibold pulse-glow"
       >
         {isLaunching ? (
           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

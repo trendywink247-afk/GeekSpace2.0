@@ -100,11 +100,11 @@ function baseTemplate(title: string, body: string): string {
 <body>
 <div class="wrapper">
   <div class="header">
-    <div class="logo">Geek<span>Space</span></div>
+    <div class="logo">Agent<span>in</span></div>
   </div>
   <h1>${title}</h1>
   ${body}
-  <div class="footer">GeekSpace · You're receiving this because notifications are enabled for your account.</div>
+  <div class="footer">Agentin · You're receiving this because notifications are enabled for your account.</div>
 </div>
 </body>
 </html>`;

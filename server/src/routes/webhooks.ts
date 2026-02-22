@@ -171,7 +171,7 @@ async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Pr
 
   if (!link) {
     await sendTelegramMessage(chatId,
-      'Link your account first to use voice notes. Go to your GeekSpace dashboard → Connections → Telegram.');
+      'Link your account first to use voice notes. Go to your Agentin dashboard → Connections → Telegram.');
     return;
   }
 
@@ -276,9 +276,9 @@ async function handleTelegramCommand(
         );
       } else {
         await sendTelegramMessage(chatId,
-          `Hi! I'm your GeekSpace AI assistant.\n\n` +
+          `Hi! I'm your Agentin AI assistant.\n\n` +
           `To get started, link your account:\n` +
-          `1. Go to your GeekSpace dashboard → Connections\n` +
+          `1. Go to your Agentin dashboard → Connections\n` +
           `2. Click "Connect" on Telegram\n` +
           `3. Follow the instructions\n\n` +
           `Or use /link for instructions.`
@@ -291,7 +291,7 @@ async function handleTelegramCommand(
       // Direct email linking removed for security — use link code flow instead
       await sendTelegramMessage(chatId,
         'To link your account:\n' +
-        '1. Go to your GeekSpace dashboard → Connections\n' +
+        '1. Go to your Agentin dashboard → Connections\n' +
         '2. Click "Connect" on Telegram\n' +
         '3. Click the link code to open this bot\n\n' +
         'This generates a secure one-time code that expires in 10 minutes.'
@@ -314,7 +314,7 @@ async function handleTelegramCommand(
         "UPDATE integrations SET status = 'disconnected', health = 0 WHERE user_id = ? AND type = 'telegram'"
       ).run(link.user_id);
 
-      await sendTelegramMessage(chatId, 'Account unlinked. To re-link, go to your GeekSpace dashboard → Connections → Telegram.');
+      await sendTelegramMessage(chatId, 'Account unlinked. To re-link, go to your Agentin dashboard → Connections → Telegram.');
       break;
     }
 
@@ -324,7 +324,7 @@ async function handleTelegramCommand(
       ).get(String(chatId)) as { user_id: string } | undefined;
 
       if (!link) {
-        await sendTelegramMessage(chatId, 'Link your account first — go to your GeekSpace dashboard → Connections → Telegram.');
+        await sendTelegramMessage(chatId, 'Link your account first — go to your Agentin dashboard → Connections → Telegram.');
         return;
       }
 
@@ -364,9 +364,9 @@ async function handleTelegramCommand(
 
     case '/help': {
       await sendTelegramMessage(chatId,
-        `GeekSpace Bot Commands:\n\n` +
+        `Agentin Bot Commands:\n\n` +
         `/start — Get started\n` +
-        `/link — Link your GeekSpace account\n` +
+        `/link — Link your Agentin account\n` +
         `/unlink — Unlink your account\n` +
         `/credits — Check credit balance\n` +
         `/model — View and switch AI models\n` +
@@ -485,7 +485,7 @@ async function handleTelegramCommand(
       // Deploy portfolio
       db.prepare('UPDATE portfolios SET is_public = 1 WHERE user_id = ?').run(link.user_id);
       const user = db.prepare('SELECT username FROM users WHERE id = ?').get(link.user_id) as { username: string } | undefined;
-      const url = user ? `https://ai.geekspace.space/${user.username}` : 'your dashboard';
+      const url = user ? `https://ai.agentin.chat/${user.username}` : 'your dashboard';
       await sendTelegramMessage(chatId, `Portfolio deployed! View it at ${url}`);
       break;
     }
@@ -601,7 +601,7 @@ async function handleLinkCode(
   ).get(telegramId);
 
   if (existing) {
-    await sendTelegramMessage(chatId, 'This Telegram account is already linked to a GeekSpace account.');
+    await sendTelegramMessage(chatId, 'This Telegram account is already linked to an Agentin account.');
     // Clean up the code
     db.prepare('DELETE FROM link_codes WHERE code = ?').run(code);
     return;

@@ -273,10 +273,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-2xl mx-4 bg-[#0B0B10] border border-[#7B61FF]/20 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+      <div className="w-full max-w-2xl mx-4 bg-[#0A0A0F] border border-[#00FFD4]/20 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3 p-4 border-b border-[#7B61FF]/10">
-          <Search className="w-5 h-5 text-[#A7ACB8]" />
+        <div className="flex items-center gap-3 p-4 border-b border-[#00FFD4]/10">
+          <Search className="w-5 h-5 text-[#6B7280]" />
           <input
             ref={inputRef}
             type="text"
@@ -284,9 +284,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-[#F4F6FF] placeholder-[#A7ACB8] outline-none text-base"
+            className="flex-1 bg-transparent text-[#E8E8F0] placeholder-[#6B7280] outline-none text-base"
           />
-          <kbd className="hidden sm:inline-block px-2 py-1 text-xs bg-[#05050A] rounded text-[#A7ACB8]">
+          <kbd className="hidden sm:inline-block px-2 py-1 text-xs bg-[#030304] rounded text-[#6B7280]">
             ESC
           </kbd>
         </div>
@@ -294,7 +294,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         {/* Commands List */}
         <div ref={listRef} className="max-h-[60vh] overflow-y-auto p-2">
           {flatCommands.length === 0 ? (
-            <div className="p-8 text-center text-[#A7ACB8]">
+            <div className="p-8 text-center text-[#6B7280]">
               <Command className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>No commands found</p>
               <p className="text-sm mt-1">Try a different search</p>
@@ -302,7 +302,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           ) : (
             Object.entries(groupedCommands).map(([category, items]) => (
               <div key={category} className="mb-2">
-                <div className="px-3 py-2 text-xs font-medium text-[#A7ACB8] uppercase tracking-wider">
+                <div className="px-3 py-2 text-xs font-medium text-[#6B7280] uppercase tracking-wider">
                   {category}
                 </div>
                 {items.map((cmd) => {
@@ -316,27 +316,27 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       onMouseEnter={() => setSelectedIndex(globalIdx)}
                       className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                         isSelected
-                          ? 'bg-[#7B61FF]/20 border border-[#7B61FF]/30'
-                          : 'hover:bg-[#7B61FF]/10'
+                          ? 'bg-[#00FFD4]/20 border border-[#00FFD4]/30'
+                          : 'hover:bg-[#00FFD4]/10'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        isSelected ? 'bg-[#7B61FF]/30 text-[#7B61FF]' : 'bg-[#05050A] text-[#A7ACB8]'
+                        isSelected ? 'bg-[#00FFD4]/30 text-[#00FFD4]' : 'bg-[#030304] text-[#6B7280]'
                       }`}>
                         {cmd.icon}
                       </div>
                       <div className="flex-1 text-left">
-                        <div className={`font-medium ${isSelected ? 'text-[#F4F6FF]' : 'text-[#A7ACB8]'}`}>
+                        <div className={`font-medium ${isSelected ? 'text-[#E8E8F0]' : 'text-[#6B7280]'}`}>
                           {cmd.title}
                         </div>
                         {cmd.subtitle && (
-                          <div className="text-xs text-[#A7ACB8]/70">{cmd.subtitle}</div>
+                          <div className="text-xs text-[#6B7280]/70">{cmd.subtitle}</div>
                         )}
                       </div>
                       {cmd.shortcut && (
                         <div className="flex items-center gap-1">
                           {cmd.shortcut.split(' ').map((key, i) => (
-                            <kbd key={i} className="px-1.5 py-0.5 text-xs bg-[#05050A] rounded text-[#A7ACB8]">
+                            <kbd key={i} className="px-1.5 py-0.5 text-xs bg-[#030304] rounded text-[#6B7280]">
                               {key}
                             </kbd>
                           ))}
@@ -351,19 +351,19 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-[#7B61FF]/10 text-xs text-[#A7ACB8]">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-[#00FFD4]/10 text-xs text-[#6B7280]">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-[#05050A] rounded">↑↓</kbd>
+              <kbd className="px-1.5 py-0.5 bg-[#030304] rounded">↑↓</kbd>
               to navigate
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-[#05050A] rounded">↵</kbd>
+              <kbd className="px-1.5 py-0.5 bg-[#030304] rounded">↵</kbd>
               to select
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 bg-[#05050A] rounded">ESC</kbd>
+            <kbd className="px-1.5 py-0.5 bg-[#030304] rounded">ESC</kbd>
             to close
           </div>
         </div>

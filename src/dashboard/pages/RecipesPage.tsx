@@ -28,10 +28,10 @@ const iconMap: Record<string, typeof Sunrise> = {
 
 // ----- Category colours ----------------------------------------
 const categoryColors: Record<string, string> = {
-  productivity: '#7B61FF',
-  monitoring: '#FFD761',
-  communication: '#61FF7B',
-  analytics: '#FF61DC',
+  productivity: '#00FFD4',
+  monitoring: '#FFB800',
+  communication: '#00FF88',
+  analytics: '#FF0080',
 };
 
 // ----- Types ---------------------------------------------------
@@ -119,7 +119,7 @@ export function RecipesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-[#7B61FF] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#00FFD4] animate-spin" />
       </div>
     );
   }
@@ -131,16 +131,16 @@ export function RecipesPage() {
         <div
           className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-5 py-3 rounded-xl backdrop-blur-sm border shadow-2xl animate-in fade-in slide-in-from-top-2 duration-300 ${
             toast.type === 'success'
-              ? 'bg-[#0B0B10]/90 border-[#61FF7B]/40 shadow-[#61FF7B]/10'
-              : 'bg-[#0B0B10]/90 border-[#FF6161]/40 shadow-[#FF6161]/10'
+              ? 'bg-[#0A0A0F]/90 border-[#00FF88]/40 shadow-[#00FF88]/10'
+              : 'bg-[#0A0A0F]/90 border-[#FF6161]/40 shadow-[#FF6161]/10'
           }`}
         >
           {toast.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-[#61FF7B] shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-[#00FF88] shrink-0" />
           ) : (
             <XCircle className="w-4 h-4 text-[#FF6161] shrink-0" />
           )}
-          <span className="text-sm text-[#F4F6FF] font-medium">{toast.message}</span>
+          <span className="text-sm text-[#E8E8F0] font-medium">{toast.message}</span>
         </div>
       )}
 
@@ -148,12 +148,12 @@ export function RecipesPage() {
       <div>
         <h1
           className="text-3xl md:text-4xl font-bold mb-1"
-          style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+          style={{ fontFamily: 'Syne, sans-serif' }}
         >
           Recipes
         </h1>
-        <p className="text-[#A7ACB8]">
-          <span className="text-[#7B61FF] font-medium">{activeCount}</span> active of{' '}
+        <p className="text-[#6B7280]">
+          <span className="text-[#00FFD4] font-medium">{activeCount}</span> active of{' '}
           {recipes.length} recipes
         </p>
       </div>
@@ -161,21 +161,21 @@ export function RecipesPage() {
       {/* Recipe Grid */}
       {recipes.length === 0 ? (
         <div className="text-center py-12">
-          <BookOpen className="w-12 h-12 text-[#7B61FF]/30 mx-auto mb-4" />
-          <p className="text-[#A7ACB8]">No recipes available yet</p>
+          <BookOpen className="w-12 h-12 text-[#00FFD4]/30 mx-auto mb-4" />
+          <p className="text-[#6B7280]">No recipes available yet</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {recipes.map((recipe) => {
             const IconComponent = iconMap[recipe.icon] || BookOpen;
-            const catColor = categoryColors[recipe.category] || '#7B61FF';
+            const catColor = categoryColors[recipe.category] || '#00FFD4';
             const isActionInProgress = actionLoading === recipe.id;
 
             return (
               <Card
                 key={recipe.id}
-                className={`bg-[#0B0B10] border-[#7B61FF]/20 transition-all duration-300 hover:border-[#7B61FF]/40 ${
-                  recipe.installed ? 'ring-1 ring-[#61FF7B]/20' : ''
+                className={`bg-[#0A0A0F] border-[#00FFD4]/20 transition-all duration-300 hover:border-[#00FFD4]/40 ${
+                  recipe.installed ? 'ring-1 ring-[#00FF88]/20' : ''
                 }`}
               >
                 <CardContent className="p-5 flex flex-col h-full">
@@ -191,7 +191,7 @@ export function RecipesPage() {
                       {recipe.installed && (
                         <Badge
                           variant="outline"
-                          className="border-[#61FF7B]/40 text-[#61FF7B] text-xs"
+                          className="border-[#00FF88]/40 text-[#00FF88] text-xs"
                         >
                           Active
                         </Badge>
@@ -210,18 +210,18 @@ export function RecipesPage() {
                   </div>
 
                   {/* Name + Description */}
-                  <h3 className="font-semibold text-[#F4F6FF] mb-1">{recipe.name}</h3>
-                  <p className="text-sm text-[#A7ACB8] mb-4 flex-1">{recipe.description}</p>
+                  <h3 className="font-semibold text-[#E8E8F0] mb-1">{recipe.name}</h3>
+                  <p className="text-sm text-[#6B7280] mb-4 flex-1">{recipe.description}</p>
 
                   {/* Required Integrations */}
                   {recipe.requiredIntegrations.length > 0 && (
                     <div className="mb-4">
-                      <span className="text-xs text-[#A7ACB8]">Requires: </span>
+                      <span className="text-xs text-[#6B7280]">Requires: </span>
                       {recipe.requiredIntegrations.map((int) => (
                         <Badge
                           key={int}
                           variant="outline"
-                          className="text-[10px] border-[#7B61FF]/20 text-[#A7ACB8] mr-1"
+                          className="text-[10px] border-[#00FFD4]/20 text-[#6B7280] mr-1"
                         >
                           {int}
                         </Badge>
@@ -233,7 +233,7 @@ export function RecipesPage() {
                   {recipe.installed ? (
                     <Button
                       variant="outline"
-                      className="w-full border-[#A7ACB8]/30 text-[#A7ACB8] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
+                      className="w-full border-[#6B7280]/30 text-[#6B7280] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
                       onClick={() => handleUninstall(recipe.id)}
                       disabled={isActionInProgress}
                     >
@@ -244,7 +244,7 @@ export function RecipesPage() {
                     </Button>
                   ) : (
                     <Button
-                      className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] text-white transition-colors"
+                      className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] text-white transition-colors"
                       onClick={() => handleInstall(recipe.id)}
                       disabled={isActionInProgress}
                     >

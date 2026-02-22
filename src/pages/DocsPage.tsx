@@ -68,7 +68,7 @@ const docs: DocSection[] = [
     description: 'Use the built-in terminal and REST API',
     articles: [
       { title: 'Terminal Commands', summary: 'Use the built-in terminal to interact with your agent via text commands.' },
-      { title: 'REST API Reference', summary: 'Full API documentation for programmatic access to all GeekSpace features.' },
+      { title: 'REST API Reference', summary: 'Full API documentation for programmatic access to all Agentin features.' },
       { title: 'Rate Limits', summary: 'Understand rate limits: 200 requests per 15-minute window per user.' },
     ],
   },
@@ -79,7 +79,7 @@ const docs: DocSection[] = [
     description: 'Manage API keys and security settings',
     articles: [
       { title: 'Managing API Keys', summary: 'Add, rotate, and revoke API keys for third-party services.' },
-      { title: 'Encryption & Privacy', summary: 'How GeekSpace encrypts your data and protects your privacy.' },
+      { title: 'Encryption & Privacy', summary: 'How Agentin encrypts your data and protects your privacy.' },
       { title: 'OAuth Connections', summary: 'How OAuth tokens work for integration connections.' },
     ],
   },
@@ -99,31 +99,31 @@ export function DocsPage() {
     : docs;
 
   return (
-    <div className="min-h-screen bg-[#05050A] text-[#F4F6FF]">
+    <div className="min-h-screen bg-[#030304] text-[#E8E8F0]">
       <div className="max-w-4xl mx-auto px-6 py-12">
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
-          className="text-[#A7ACB8] hover:text-[#F4F6FF] mb-8"
+          className="text-[#6B7280] hover:text-[#E8E8F0] mb-8"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />Back
         </Button>
 
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
             Documentation
           </h1>
-          <p className="text-[#A7ACB8]">Everything you need to know about GeekSpace</p>
+          <p className="text-[#6B7280]">Everything you need to know about Agentin</p>
         </div>
 
         {/* Search */}
         <div className="relative mb-8">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A7ACB8]" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
           <Input
             placeholder="Search documentation..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 py-6 text-lg bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF]"
+            className="pl-12 py-6 text-lg bg-[#0A0A0F] border-[#00FFD4]/30 text-[#E8E8F0]"
           />
         </div>
 
@@ -132,35 +132,35 @@ export function DocsPage() {
           {filtered.map((section) => (
             <Card
               key={section.id}
-              className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all duration-300 cursor-pointer"
+              className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all duration-300 cursor-pointer"
               onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
             >
               <CardContent className="p-5">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-[#7B61FF]/10 flex items-center justify-center flex-shrink-0">
-                    <section.icon className="w-5 h-5 text-[#7B61FF]" />
+                  <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center flex-shrink-0">
+                    <section.icon className="w-5 h-5 text-[#00FFD4]" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="font-semibold text-[#F4F6FF]">{section.title}</h2>
-                    <p className="text-sm text-[#A7ACB8]">{section.description}</p>
+                    <h2 className="font-semibold text-[#E8E8F0]">{section.title}</h2>
+                    <p className="text-sm text-[#6B7280]">{section.description}</p>
                   </div>
                   <ChevronRight
-                    className={`w-5 h-5 text-[#A7ACB8] transition-transform duration-300 ${
+                    className={`w-5 h-5 text-[#6B7280] transition-transform duration-300 ${
                       expandedSection === section.id ? 'rotate-90' : ''
                     }`}
                   />
                 </div>
 
                 {expandedSection === section.id && (
-                  <div className="mt-4 ml-14 space-y-3 border-t border-[#7B61FF]/10 pt-4">
+                  <div className="mt-4 ml-14 space-y-3 border-t border-[#00FFD4]/10 pt-4">
                     {section.articles.map((article) => (
                       <div
                         key={article.title}
-                        className="p-3 rounded-lg bg-[#05050A] border border-[#7B61FF]/10 hover:border-[#7B61FF]/30 transition-colors"
+                        className="p-3 rounded-lg bg-[#030304] border border-[#00FFD4]/10 hover:border-[#00FFD4]/30 transition-colors"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <h3 className="font-medium text-sm text-[#F4F6FF] mb-1">{article.title}</h3>
-                        <p className="text-xs text-[#A7ACB8]">{article.summary}</p>
+                        <h3 className="font-medium text-sm text-[#E8E8F0] mb-1">{article.title}</h3>
+                        <p className="text-xs text-[#6B7280]">{article.summary}</p>
                       </div>
                     ))}
                   </div>
@@ -172,15 +172,15 @@ export function DocsPage() {
 
         {filtered.length === 0 && (
           <div className="text-center py-12">
-            <BookOpen className="w-12 h-12 text-[#7B61FF]/30 mx-auto mb-4" />
-            <p className="text-[#A7ACB8]">No docs match your search</p>
+            <BookOpen className="w-12 h-12 text-[#00FFD4]/30 mx-auto mb-4" />
+            <p className="text-[#6B7280]">No docs match your search</p>
           </div>
         )}
 
-        <div className="mt-12 p-6 rounded-xl bg-[#0B0B10] border border-[#7B61FF]/20">
-          <p className="text-sm text-[#A7ACB8]">
+        <div className="mt-12 p-6 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20">
+          <p className="text-sm text-[#6B7280]">
             Need help? Contact us at{' '}
-            <span className="text-[#7B61FF]">support@geekspace.app</span>
+            <span className="text-[#00FFD4]">support@agentin.chat</span>
           </p>
         </div>
       </div>

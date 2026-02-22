@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Mail, Lock, ArrowLeft, ArrowRight, KeyRound, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
+import { Hexagon, Mail, Lock, ArrowLeft, ArrowRight, KeyRound, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authService } from '@/services/api';
@@ -145,14 +145,14 @@ export function ForgotPasswordPage() {
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse at top, rgba(123, 97, 255, 0.15), transparent 50%),
+            radial-gradient(ellipse at top, rgba(0, 255, 212, 0.15), transparent 50%),
             radial-gradient(ellipse at bottom, rgba(255, 97, 220, 0.1), transparent 50%),
-            #05050A
+            #030304
           `,
         }}
       />
-      <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-[#7B61FF]/8 blur-[120px]" />
-      <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] rounded-full bg-[#FF61DC]/8 blur-[100px]" />
+      <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-[#00FFD4]/8 blur-[120px]" />
+      <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] rounded-full bg-[#FF0080]/8 blur-[100px]" />
 
       <div
         className={`w-full max-w-sm sm:max-w-md relative z-10 mx-auto transition-all duration-700 ${
@@ -162,11 +162,11 @@ export function ForgotPasswordPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <button onClick={() => navigate('/')} className="inline-flex items-center gap-2 mb-6 group">
-            <div className="w-10 h-10 rounded-xl bg-[#7B61FF]/20 flex items-center justify-center group-hover:bg-[#7B61FF]/30 transition-colors">
-              <Sparkles className="w-6 h-6 text-[#7B61FF]" />
+            <div className="w-10 h-10 rounded-xl bg-[#00FFD4]/20 flex items-center justify-center group-hover:bg-[#00FFD4]/30 transition-colors">
+              <Hexagon className="w-6 h-6 text-[#00FFD4]" />
             </div>
-            <span className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              GeekSpace
+            <span className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
+              <span className="text-white">Agent</span><span className="text-[#00FFD4]">in</span>
             </span>
           </button>
 
@@ -178,10 +178,10 @@ export function ForgotPasswordPage() {
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                       step === s
-                        ? 'bg-[#7B61FF] text-white scale-110'
+                        ? 'bg-[#00FFD4] text-white scale-110'
                         : (['email', 'otp', 'password'].indexOf(step) > i)
-                        ? 'bg-[#61FF7B]/20 text-[#61FF7B]'
-                        : 'bg-[#1A1A2E] text-[#A7ACB8]'
+                        ? 'bg-[#00FF88]/20 text-[#00FF88]'
+                        : 'bg-[#1A1A2E] text-[#6B7280]'
                     }`}
                   >
                     {(['email', 'otp', 'password'].indexOf(step) > i) ? (
@@ -192,7 +192,7 @@ export function ForgotPasswordPage() {
                   </div>
                   {i < 2 && (
                     <div className={`w-8 h-0.5 transition-colors duration-300 ${
-                      (['email', 'otp', 'password'].indexOf(step) > i) ? 'bg-[#61FF7B]/40' : 'bg-[#1A1A2E]'
+                      (['email', 'otp', 'password'].indexOf(step) > i) ? 'bg-[#00FF88]/40' : 'bg-[#1A1A2E]'
                     }`} />
                   )}
                 </div>
@@ -200,10 +200,10 @@ export function ForgotPasswordPage() {
             </div>
           )}
 
-          <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
             {stepConfig[step].title}
           </h1>
-          <p className="text-[#A7ACB8]">
+          <p className="text-[#6B7280]">
             {stepConfig[step].subtitle}
           </p>
         </div>
@@ -214,7 +214,7 @@ export function ForgotPasswordPage() {
           style={{
             background: 'rgba(11, 11, 16, 0.8)',
             backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(123, 97, 255, 0.2)',
+            border: '1px solid rgba(0, 255, 212, 0.2)',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           }}
         >
@@ -222,24 +222,24 @@ export function ForgotPasswordPage() {
           {step === 'email' && (
             <form onSubmit={handleRequestReset} className="space-y-4">
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-2 block">Email address</label>
+                <label className="text-sm text-[#6B7280] mb-2 block">Email address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                   <Input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="pl-10 bg-[#05050A]/60 border-[#7B61FF]/30 text-[#F4F6FF]"
+                    className="pl-10 bg-[#030304]/60 border-[#00FFD4]/30 text-[#E8E8F0]"
                     required
                     autoFocus
                   />
                 </div>
               </div>
 
-              {error && <p className="text-sm text-[#FF6161]">{error}</p>}
+              {error && <p className="text-sm text-[#FF3366]">{error}</p>}
 
-              <Button type="submit" disabled={isLoading} className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] h-12 text-base">
+              <Button type="submit" disabled={isLoading} className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] h-12 text-base">
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
@@ -256,7 +256,7 @@ export function ForgotPasswordPage() {
           {step === 'otp' && (
             <form onSubmit={handleVerifyOTP} className="space-y-4">
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-3 block">Enter 6-digit code</label>
+                <label className="text-sm text-[#6B7280] mb-3 block">Enter 6-digit code</label>
                 <div className="flex gap-2 justify-center">
                   {otp.map((digit, i) => (
                     <input
@@ -268,18 +268,18 @@ export function ForgotPasswordPage() {
                       value={digit}
                       onChange={(e) => handleOtpChange(i, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                      className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl bg-[#05050A]/60 border border-[#7B61FF]/30 text-[#F4F6FF] focus:border-[#7B61FF] focus:ring-1 focus:ring-[#7B61FF] outline-none transition-all"
+                      className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl bg-[#030304]/60 border border-[#00FFD4]/30 text-[#E8E8F0] focus:border-[#00FFD4] focus:ring-1 focus:ring-[#00FFD4] outline-none transition-all"
                     />
                   ))}
                 </div>
-                <p className="text-xs text-[#A7ACB8] mt-3 text-center">
+                <p className="text-xs text-[#6B7280] mt-3 text-center">
                   Code expires in 10 minutes
                 </p>
               </div>
 
-              {error && <p className="text-sm text-[#FF6161]">{error}</p>}
+              {error && <p className="text-sm text-[#FF3366]">{error}</p>}
 
-              <Button type="submit" disabled={isLoading || otp.join('').length !== 6} className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] h-12 text-base">
+              <Button type="submit" disabled={isLoading || otp.join('').length !== 6} className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] h-12 text-base">
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
@@ -297,7 +297,7 @@ export function ForgotPasswordPage() {
                   setError('');
                   setStep('email');
                 }}
-                className="w-full text-sm text-[#A7ACB8] hover:text-[#7B61FF] transition-colors py-2"
+                className="w-full text-sm text-[#6B7280] hover:text-[#00FFD4] transition-colors py-2"
               >
                 Didn't receive a code? Try again
               </button>
@@ -308,15 +308,15 @@ export function ForgotPasswordPage() {
           {step === 'password' && (
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-2 block">New password</label>
+                <label className="text-sm text-[#6B7280] mb-2 block">New password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                   <Input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Min 8 characters"
-                    className="pl-10 bg-[#05050A]/60 border-[#7B61FF]/30 text-[#F4F6FF]"
+                    className="pl-10 bg-[#030304]/60 border-[#00FFD4]/30 text-[#E8E8F0]"
                     required
                     minLength={8}
                     autoFocus
@@ -324,15 +324,15 @@ export function ForgotPasswordPage() {
                 </div>
               </div>
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-2 block">Confirm password</label>
+                <label className="text-sm text-[#6B7280] mb-2 block">Confirm password</label>
                 <div className="relative">
-                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                   <Input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
-                    className="pl-10 bg-[#05050A]/60 border-[#7B61FF]/30 text-[#F4F6FF]"
+                    className="pl-10 bg-[#030304]/60 border-[#00FFD4]/30 text-[#E8E8F0]"
                     required
                     minLength={8}
                   />
@@ -346,17 +346,17 @@ export function ForgotPasswordPage() {
                   { check: newPassword === confirmPassword && confirmPassword.length > 0, label: 'Passwords match' },
                 ].map(({ check, label }) => (
                   <div key={label} className="flex items-center gap-2 text-xs">
-                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${check ? 'bg-[#61FF7B]/20' : 'bg-[#1A1A2E]'}`}>
-                      {check && <CheckCircle2 className="w-3 h-3 text-[#61FF7B]" />}
+                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${check ? 'bg-[#00FF88]/20' : 'bg-[#1A1A2E]'}`}>
+                      {check && <CheckCircle2 className="w-3 h-3 text-[#00FF88]" />}
                     </div>
-                    <span className={check ? 'text-[#61FF7B]' : 'text-[#A7ACB8]'}>{label}</span>
+                    <span className={check ? 'text-[#00FF88]' : 'text-[#6B7280]'}>{label}</span>
                   </div>
                 ))}
               </div>
 
-              {error && <p className="text-sm text-[#FF6161]">{error}</p>}
+              {error && <p className="text-sm text-[#FF3366]">{error}</p>}
 
-              <Button type="submit" disabled={isLoading} className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] h-12 text-base">
+              <Button type="submit" disabled={isLoading} className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] h-12 text-base">
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
@@ -372,15 +372,15 @@ export function ForgotPasswordPage() {
           {/* Step 4: Success */}
           {step === 'success' && (
             <div className="text-center space-y-4 py-4">
-              <div className="w-16 h-16 rounded-full bg-[#61FF7B]/10 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-8 h-8 text-[#61FF7B]" />
+              <div className="w-16 h-16 rounded-full bg-[#00FF88]/10 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8 text-[#00FF88]" />
               </div>
-              <p className="text-[#A7ACB8]">
+              <p className="text-[#6B7280]">
                 Your password has been reset successfully. You can now sign in with your new credentials.
               </p>
               <Button
                 onClick={() => navigate('/login')}
-                className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] h-12 text-base"
+                className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] h-12 text-base"
               >
                 <ArrowRight className="w-4 h-4 mr-2" />
                 Go to Sign In
@@ -391,10 +391,10 @@ export function ForgotPasswordPage() {
 
         {/* Back to login link */}
         {step !== 'success' && (
-          <p className="text-center text-sm text-[#A7ACB8] mt-6">
+          <p className="text-center text-sm text-[#6B7280] mt-6">
             <button
               onClick={() => navigate('/login')}
-              className="text-[#7B61FF] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center"
+              className="text-[#00FFD4] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center"
             >
               <ArrowLeft className="w-3.5 h-3.5 mr-1" />
               Back to Sign In

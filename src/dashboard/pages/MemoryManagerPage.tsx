@@ -154,7 +154,7 @@ export function MemoryManagerPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-[#7B61FF] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -164,19 +164,19 @@ export function MemoryManagerPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Memory Manager
           </h1>
-          <p className="text-[#A7ACB8]">
+          <p className="text-[#6B7280]">
             {stats.total} memories across {stats.categories} categories
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleExport} className="border-[#7B61FF]/30">
+          <Button variant="outline" onClick={handleExport} className="border-[#00FFD4]/30">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button onClick={loadMemories} variant="outline" className="border-[#7B61FF]/30">
+          <Button onClick={loadMemories} variant="outline" className="border-[#00FFD4]/30">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
@@ -184,54 +184,54 @@ export function MemoryManagerPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#7B61FF]/10 flex items-center justify-center">
-                <Brain className="w-5 h-5 text-[#7B61FF]" />
+              <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-[#00FFD4]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{stats.total}</div>
-                <div className="text-xs text-[#A7ACB8]">Total Memories</div>
+                <div className="text-2xl font-bold text-[#E8E8F0]">{stats.total}</div>
+                <div className="text-xs text-[#6B7280]">Total Memories</div>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#61FF7B]/10 flex items-center justify-center">
-                <Tag className="w-5 h-5 text-[#61FF7B]" />
+              <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center">
+                <Tag className="w-5 h-5 text-[#00FF88]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{stats.categories}</div>
-                <div className="text-xs text-[#A7ACB8]">Categories</div>
+                <div className="text-2xl font-bold text-[#E8E8F0]">{stats.categories}</div>
+                <div className="text-xs text-[#6B7280]">Categories</div>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FFD761]/10 flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-[#FFD761]" />
+              <div className="w-10 h-10 rounded-lg bg-[#FFB800]/10 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-[#FFB800]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{stats.avgConfidence}%</div>
-                <div className="text-xs text-[#A7ACB8]">Avg Confidence</div>
+                <div className="text-2xl font-bold text-[#E8E8F0]">{stats.avgConfidence}%</div>
+                <div className="text-xs text-[#6B7280]">Avg Confidence</div>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FF61DC]/10 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-[#FF61DC]" />
+              <div className="w-10 h-10 rounded-lg bg-[#FF0080]/10 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-[#FF0080]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{stats.thisWeek}</div>
-                <div className="text-xs text-[#A7ACB8]">This Week</div>
+                <div className="text-2xl font-bold text-[#E8E8F0]">{stats.thisWeek}</div>
+                <div className="text-xs text-[#6B7280]">This Week</div>
               </div>
             </div>
           </CardContent>
@@ -239,23 +239,23 @@ export function MemoryManagerPage() {
       </div>
 
       {/* Search and Filters */}
-      <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+      <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
                 placeholder="Search memories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#05050A] border-[#7B61FF]/20"
+                className="pl-10 bg-[#030304] border-[#00FFD4]/20"
               />
             </div>
             <div className="flex gap-2">
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-[#05050A] border border-[#7B61FF]/20 text-[#F4F6FF] text-sm"
+                className="px-3 py-2 rounded-lg bg-[#030304] border border-[#00FFD4]/20 text-[#E8E8F0] text-sm"
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -266,7 +266,7 @@ export function MemoryManagerPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="px-3 py-2 rounded-lg bg-[#05050A] border border-[#7B61FF]/20 text-[#F4F6FF] text-sm"
+                className="px-3 py-2 rounded-lg bg-[#030304] border border-[#00FFD4]/20 text-[#E8E8F0] text-sm"
               >
                 <option value="recent">Most Recent</option>
                 <option value="confidence">Highest Confidence</option>
@@ -284,8 +284,8 @@ export function MemoryManagerPage() {
                   onClick={() => setSelectedCategory(selectedCategory === cat ? 'all' : cat)}
                   className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     selectedCategory === cat
-                      ? 'bg-[#7B61FF] text-white'
-                      : 'bg-[#05050A] text-[#A7ACB8] hover:text-white'
+                      ? 'bg-[#00FFD4] text-white'
+                      : 'bg-[#030304] text-[#6B7280] hover:text-white'
                   }`}
                 >
                   {cat}
@@ -299,9 +299,9 @@ export function MemoryManagerPage() {
       {/* Memories List */}
       {filteredMemories.length === 0 ? (
         <div className="text-center py-16">
-          <Brain className="w-16 h-16 text-[#7B61FF]/30 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-[#F4F6FF] mb-2">No memories found</h3>
-          <p className="text-[#A7ACB8] max-w-sm mx-auto">
+          <Brain className="w-16 h-16 text-[#00FFD4]/30 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No memories found</h3>
+          <p className="text-[#6B7280] max-w-sm mx-auto">
             Your agent will build memories as you chat. They'll appear here for you to review and manage.
           </p>
         </div>
@@ -310,7 +310,7 @@ export function MemoryManagerPage() {
           {filteredMemories.map((memory) => (
             <Card
               key={memory.id}
-              className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all"
+              className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all"
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
@@ -319,8 +319,8 @@ export function MemoryManagerPage() {
                     <div
                       className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold"
                       style={{
-                        backgroundColor: `${memory.confidence > 0.8 ? '#61FF7B' : memory.confidence > 0.5 ? '#FFD761' : '#FF6161'}20`,
-                        color: memory.confidence > 0.8 ? '#61FF7B' : memory.confidence > 0.5 ? '#FFD761' : '#FF6161',
+                        backgroundColor: `${memory.confidence > 0.8 ? '#00FF88' : memory.confidence > 0.5 ? '#FFB800' : '#FF6161'}20`,
+                        color: memory.confidence > 0.8 ? '#00FF88' : memory.confidence > 0.5 ? '#FFB800' : '#FF6161',
                       }}
                     >
                       {(memory.confidence * 100).toFixed(0)}
@@ -332,23 +332,23 @@ export function MemoryManagerPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <Badge className="bg-[#7B61FF]/20 text-[#7B61FF]">
+                          <Badge className="bg-[#00FFD4]/20 text-[#00FFD4]">
                             {memory.category}
                           </Badge>
-                          <span className="text-xs text-[#A7ACB8]">
+                          <span className="text-xs text-[#6B7280]">
                             {memory.accessCount} accesses
                           </span>
                         </div>
                         
-                        <h4 className="font-medium text-[#F4F6FF] mb-1">{memory.key}</h4>
+                        <h4 className="font-medium text-[#E8E8F0] mb-1">{memory.key}</h4>
                         
                         {expandedId === memory.id ? (
-                          <p className="text-sm text-[#A7ACB8] whitespace-pre-wrap">{memory.value}</p>
+                          <p className="text-sm text-[#6B7280] whitespace-pre-wrap">{memory.value}</p>
                         ) : (
-                          <p className="text-sm text-[#A7ACB8] line-clamp-2">{memory.value}</p>
+                          <p className="text-sm text-[#6B7280] line-clamp-2">{memory.value}</p>
                         )}
                         
-                        <div className="flex items-center gap-3 mt-2 text-xs text-[#A7ACB8]">
+                        <div className="flex items-center gap-3 mt-2 text-xs text-[#6B7280]">
                           <span>Created: {formatDate(memory.createdAt)}</span>
                           <span>Updated: {formatDate(memory.updatedAt)}</span>
                           <span>Source: {memory.source}</span>
@@ -358,7 +358,7 @@ export function MemoryManagerPage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setExpandedId(expandedId === memory.id ? null : memory.id)}
-                          className="p-2 rounded-lg bg-[#05050A] text-[#A7ACB8] hover:text-white transition-colors"
+                          className="p-2 rounded-lg bg-[#030304] text-[#6B7280] hover:text-white transition-colors"
                         >
                           {expandedId === memory.id ? (
                             <ChevronUp className="w-4 h-4" />
@@ -368,7 +368,7 @@ export function MemoryManagerPage() {
                         </button>
                         <button
                           onClick={() => handleDelete(memory.id)}
-                          className="p-2 rounded-lg bg-[#05050A] text-[#A7ACB8] hover:text-[#FF6161] transition-colors"
+                          className="p-2 rounded-lg bg-[#030304] text-[#6B7280] hover:text-[#FF6161] transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

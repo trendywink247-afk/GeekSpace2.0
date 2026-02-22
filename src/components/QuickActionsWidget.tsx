@@ -53,7 +53,7 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
       id: 'reminder',
       label: 'Add Reminder',
       icon: <Clock className="w-4 h-4" />,
-      color: '#FFD761',
+      color: '#FFB800',
       shortcut: 'R',
       onClick: () => navigate('/dashboard/reminders?action=create'),
     },
@@ -61,7 +61,7 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
       id: 'image',
       label: 'Generate Image',
       icon: <ImageIcon className="w-4 h-4" />,
-      color: '#FF61DC',
+      color: '#FF0080',
       shortcut: 'I',
       onClick: () => navigate('/dashboard/agent?tool=image'),
     },
@@ -69,7 +69,7 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
       id: 'video',
       label: 'Generate Video',
       icon: <Video className="w-4 h-4" />,
-      color: '#7B61FF',
+      color: '#00FFD4',
       shortcut: 'V',
       onClick: () => navigate('/dashboard/agent?tool=video'),
     },
@@ -77,7 +77,7 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
       id: 'terminal',
       label: 'Open Terminal',
       icon: <Terminal className="w-4 h-4" />,
-      color: '#61FF7B',
+      color: '#00FF88',
       shortcut: 'T',
       onClick: () => navigate('/dashboard/terminal'),
     },
@@ -101,7 +101,7 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
       id: 'voice',
       label: 'Voice Note',
       icon: <Mic className="w-4 h-4" />,
-      color: '#FF6161',
+      color: '#FF3366',
       onClick: () => navigate('/dashboard/agent?input=voice'),
     },
     {
@@ -120,7 +120,7 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
       <div className="fixed bottom-6 right-6 z-50">
         <Button
           onClick={onToggleCollapse}
-          className="w-14 h-14 rounded-full bg-[#7B61FF] hover:bg-[#6B51EF] shadow-lg shadow-[#7B61FF]/30"
+          className="w-14 h-14 rounded-full bg-[#00FFD4] hover:bg-[#00D4B0] shadow-lg shadow-[#00FFD4]/30"
         >
           <Plus className="w-6 h-6" />
         </Button>
@@ -129,25 +129,25 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
   }
 
   return (
-    <div className="bg-[#0B0B10] border border-[#7B61FF]/20 rounded-2xl p-4">
+    <div className="bg-[#0A0A0F] border border-[#00FFD4]/20 rounded-2xl p-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#7B61FF]/20 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-[#7B61FF]" />
+          <div className="w-8 h-8 rounded-lg bg-[#00FFD4]/20 flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-[#00FFD4]" />
           </div>
-          <h3 className="font-semibold text-[#F4F6FF]">Quick Actions</h3>
+          <h3 className="font-semibold text-[#E8E8F0]">Quick Actions</h3>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowAll(!showAll)}
-            className="text-xs text-[#A7ACB8] hover:text-[#7B61FF] transition-colors"
+            className="text-xs text-[#6B7280] hover:text-[#00FFD4] transition-colors"
           >
             {showAll ? 'Show Less' : 'Show All'}
           </button>
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              className="text-[#A7ACB8] hover:text-white"
+              className="text-[#6B7280] hover:text-white"
             >
               <X className="w-4 h-4" />
             </button>
@@ -161,7 +161,7 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
             key={action.id}
             onClick={() => handleQuickAction(action.id, action.onClick)}
             disabled={isGenerating === action.id}
-            className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-[#05050A] border border-[#7B61FF]/10 hover:border-[#7B61FF]/40 transition-all min-h-[80px]"
+            className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-[#030304] border border-[#00FFD4]/10 hover:border-[#00FFD4]/40 transition-all min-h-[80px]"
           >
             <div 
               className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110"
@@ -173,11 +173,11 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
                 <span style={{ color: action.color }}>{action.icon}</span>
               )}
             </div>
-            <span className="text-xs text-[#A7ACB8] group-hover:text-[#F4F6FF] transition-colors">
+            <span className="text-xs text-[#6B7280] group-hover:text-[#E8E8F0] transition-colors">
               {action.label}
             </span>
             {action.shortcut && (
-              <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] bg-[#0B0B10] rounded text-[#A7ACB8]">
+              <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] bg-[#0A0A0F] rounded text-[#6B7280]">
                 {action.shortcut}
               </kbd>
             )}
@@ -185,10 +185,10 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
         ))}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-[#7B61FF]/10">
+      <div className="mt-3 pt-3 border-t border-[#00FFD4]/10">
         <button
           onClick={() => navigate('/dashboard/agent')}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-[#7B61FF]/10 hover:bg-[#7B61FF]/20 text-[#7B61FF] text-sm font-medium transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-[#00FFD4]/10 hover:bg-[#00FFD4]/20 text-[#00FFD4] text-sm font-medium transition-colors"
         >
           <Bot className="w-4 h-4" />
           Chat with Agent

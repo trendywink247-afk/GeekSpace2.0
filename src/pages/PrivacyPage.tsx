@@ -34,39 +34,39 @@ export function PrivacyPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#05050A] text-[#F4F6FF]">
+    <div className="min-h-screen bg-[#030304] text-[#E8E8F0]">
       <div className="max-w-3xl mx-auto px-6 py-12">
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
-          className="text-[#A7ACB8] hover:text-[#F4F6FF] mb-8"
+          className="text-[#6B7280] hover:text-[#E8E8F0] mb-8"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />Back
         </Button>
 
-        <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+        <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
           Privacy Policy
         </h1>
-        <p className="text-[#A7ACB8] mb-8">Last updated: February 2026</p>
+        <p className="text-[#6B7280] mb-8">Last updated: February 2026</p>
 
         <div className="space-y-8">
           {sections.map((section) => (
             <div key={section.title} className="flex gap-4">
-              <div className="w-10 h-10 rounded-lg bg-[#7B61FF]/10 flex items-center justify-center flex-shrink-0 mt-1">
-                <section.icon className="w-5 h-5 text-[#7B61FF]" />
+              <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center flex-shrink-0 mt-1">
+                <section.icon className="w-5 h-5 text-[#00FFD4]" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-[#F4F6FF] mb-2">{section.title}</h2>
-                <p className="text-[#A7ACB8] leading-relaxed">{section.content}</p>
+                <h2 className="text-lg font-semibold text-[#E8E8F0] mb-2">{section.title}</h2>
+                <p className="text-[#6B7280] leading-relaxed">{section.content}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="mt-12 p-6 rounded-xl bg-[#0B0B10] border border-[#7B61FF]/20">
-          <p className="text-sm text-[#A7ACB8]">
+        <div className="mt-12 p-6 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20">
+          <p className="text-sm text-[#6B7280]">
             Questions about privacy? Reach us at{' '}
-            <span className="text-[#7B61FF]">privacy@geekspace.app</span>
+            <span className="text-[#00FFD4]">privacy@agentin.chat</span>
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, Menu, X } from 'lucide-react';
+import { Hexagon, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface NavigationProps {
@@ -9,9 +9,9 @@ interface NavigationProps {
 
 export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+
   const isScrolled = scrollY > 100;
-  
+
   const navLinks = [
     { label: 'Directory', href: '#constellation' },
     { label: 'Persona', href: '#persona' },
@@ -24,20 +24,20 @@ export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
-          ? 'bg-[#05050A]/80 backdrop-blur-xl border-b border-[#7B61FF]/20'
+          ? 'bg-[#030304]/80 backdrop-blur-xl border-b border-[#00FFD4]/10'
           : 'bg-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2 group">
+          <a href="#" className="flex items-center gap-2.5 group">
             <div className="relative">
-              <Brain className="w-8 h-8 text-[#7B61FF] transition-transform duration-300 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-[#7B61FF]/30 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <Hexagon className="w-8 h-8 text-[#00FFD4] transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(0,255,212,0.5)]" />
+              <div className="absolute inset-0 bg-[#00FFD4]/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </div>
-            <span className="font-bold text-xl tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              GeekSpace
+            <span className="font-bold text-xl tracking-tight" style={{ fontFamily: 'Syne, sans-serif' }}>
+              <span className="text-[#E8E8F0]">Agent</span><span className="text-[#00FFD4]">in</span>
             </span>
           </a>
 
@@ -47,10 +47,10 @@ export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
               <a
                 key={link.label}
                 href={link.href}
-                className="text-sm text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors duration-300 relative group"
+                className="text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors duration-300 relative group"
               >
                 {link.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-px bg-[#7B61FF] transition-all duration-300 group-hover:w-full" />
+                <span className="absolute -bottom-1 left-0 w-0 h-px bg-gradient-to-r from-[#00FFD4] to-[#FF0080] transition-all duration-300 group-hover:w-full" />
               </a>
             ))}
           </div>
@@ -59,7 +59,7 @@ export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
           <div className="hidden md:block">
             <Button
               onClick={onEnterDashboard}
-              className="bg-[#7B61FF] hover:bg-[#6B51EF] text-white px-6 py-2 rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#7B61FF]/25"
+              className="relative bg-transparent text-[#00FFD4] px-6 py-2 rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(0,255,212,0.2)] border border-[#00FFD4]/40 hover:border-[#00FFD4]/80 hover:bg-[#00FFD4]/5"
             >
               {onEnterDashboard ? 'Enter Dashboard' : 'Request Access'}
             </Button>
@@ -67,7 +67,7 @@ export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-[#F4F6FF]"
+            className="md:hidden p-2 text-[#E8E8F0]"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -77,21 +77,21 @@ export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#05050A]/95 backdrop-blur-xl border-b border-[#7B61FF]/20">
+        <div className="md:hidden bg-[#030304]/95 backdrop-blur-xl border-b border-[#00FFD4]/10">
           <div className="px-4 py-4 space-y-3">
             {navLinks.map((link) => (
               <a
                 key={link.label}
                 href={link.href}
-                className="block py-2 text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors"
+                className="block py-2 text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {link.label}
               </a>
             ))}
-            <Button 
+            <Button
               onClick={onEnterDashboard}
-              className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] text-white mt-4"
+              className="w-full border border-[#00FFD4]/40 bg-[#00FFD4]/5 text-[#00FFD4] hover:bg-[#00FFD4]/10 mt-4"
             >
               {onEnterDashboard ? 'Enter Dashboard' : 'Request Access'}
             </Button>
