@@ -7,9 +7,20 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Portfolio Page', () => {
-  test.beforeEach(async ({ page }) => {
-    // Navigate to portfolio page (auth is handled by global setup)
-    await page.goto('/dashboard/portfolio');
+  test.beforeEach(async ({ page }, testInfo) => {
+    // Navigate to dashboard first (auth is handled by global setup)
+    await page.goto('/dashboard');
+    await expect(page.getByTestId('dashboard-shell')).toBeVisible();
+    // Navigate to Portfolio by project type
+    if (testInfo.project.name === 'chromium') {
+      await page.getByTestId('dashboard-sidebar-desktop').getByText('Portfolio').click();
+    } else {
+      // Mobile: open nav drawer and click
+      await page.getByTestId('mobile-nav-toggle').click();
+      await page.getByTestId('dashboard-sidebar-mobile').getByText('Portfolio').click();
+    }
+    // Wait for page to load
+    await expect(page.getByTestId('portfolio-tab-profile')).toBeVisible();
   });
 
   test('should load portfolio page', async ({ page }) => {
@@ -20,19 +31,19 @@ test.describe('Portfolio Page', () => {
 
   test('should show profile tab with headline input', async ({ page }) => {
     // Profile tab should be accessible
-    await expect(page.getByRole('tab', { name: /profile/i })).toBeVisible();
-    await expect(page.getByPlaceholder(/full-stack developer/i)).toBeVisible();
+    await expect(page.getByTestId('portfolio-tab-profile')).toBeVisible();
+    await expect(page.getByPlaceholder(/Full-Stack Developer/i)).toBeVisible();
   });
 
   test('should show skills tab', async ({ page }) => {
     // Click skills tab
-    await page.getByRole('tab', { name: /skills/i }).click();
+    await page.getByTestId('portfolio-tab-skills').click();
     await expect(page.getByText('Add technologies and skills')).toBeVisible();
   });
 
   test('should show projects tab', async ({ page }) => {
     // Click projects tab
-    await page.getByRole('tab', { name: /projects/i }).click();
+    await page.getByTestId('portfolio-tab-projects').click();
     await expect(page.getByText('Showcase your best work')).toBeVisible();
   });
 

@@ -12,7 +12,7 @@ test.use({ storageState: { cookies: [], origins: [] } });
 test.describe('Authentication', () => {
   // No beforeEach reset - tests use unique users to avoid conflicts
 
-  test('should login with valid credentials', async ({ page, request }) => {
+  test('should login with valid credentials', async ({ page, request }, testInfo) => {
     // Seed a test user via API with unique email to avoid conflicts
     const uniqueId = Date.now();
     const seedResponse = await request.post('http://localhost:3001/api/test/seed', {
@@ -35,8 +35,17 @@ test.describe('Authentication', () => {
     await page.getByTestId('login-password').fill(credentials.password);
     await page.getByTestId('login-submit').click();
 
-    // Wait for dashboard element (longer timeout for CI)
-    await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 30000 });
+    // Wait for dashboard URL and shell (mobile-safe)
+    await page.waitForURL(/\/dashboard/, { timeout: 30000 });
+    await expect(page.getByTestId('dashboard-shell')).toBeVisible({ timeout: 30000 });
+
+    // Optional: verify navigation by project
+    if (testInfo.project.name === 'chromium') {
+      await expect(page.getByTestId('dashboard-sidebar-desktop')).toBeVisible();
+    } else {
+      await page.getByTestId('mobile-nav-toggle').click();
+      await expect(page.getByTestId('dashboard-sidebar-mobile')).toBeVisible();
+    }
 
     // Verify dashboard loaded
     expect(page.url()).toContain('/dashboard');
@@ -82,14 +91,23 @@ test.describe('Authentication', () => {
     expect(page.url()).toContain('/login');
   });
 
-  test('demo login button should work', async ({ page }) => {
+  test('demo login button should work', async ({ page }, testInfo) => {
     await page.goto('/login');
 
     // Click demo login
     await page.getByTestId('demo-login-button').click();
 
-    // Wait for dashboard element (longer timeout for CI)
-    await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 30000 });
+    // Wait for dashboard URL and shell (mobile-safe)
+    await page.waitForURL(/\/dashboard/, { timeout: 30000 });
+    await expect(page.getByTestId('dashboard-shell')).toBeVisible({ timeout: 30000 });
+
+    // Optional: verify navigation by project
+    if (testInfo.project.name === 'chromium') {
+      await expect(page.getByTestId('dashboard-sidebar-desktop')).toBeVisible();
+    } else {
+      await page.getByTestId('mobile-nav-toggle').click();
+      await expect(page.getByTestId('dashboard-sidebar-mobile')).toBeVisible();
+    }
 
     // Should be logged in (check URL contains dashboard)
     expect(page.url()).toContain('/dashboard');

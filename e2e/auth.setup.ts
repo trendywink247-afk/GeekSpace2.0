@@ -66,7 +66,7 @@ async function globalSetup() {
     console.log('Seeding test user...');
     const seedResponse = await page.request.post(`${apiURL}/api/test/seed`, {
       data: {
-        email: 'e2e-test@example.com',
+        email: `test-e2e-${Date.now()}@example.com`,
         name: 'E2E Test User',
         plan: 'premium',
         credits: 50000,
@@ -87,17 +87,10 @@ async function globalSetup() {
     await page.getByTestId('login-password').fill(credentials.password);
     await page.getByTestId('login-submit').click();
 
-    // Wait for dashboard to load by checking for stable element (longer timeout for CI)
+    // Wait for dashboard to load by checking URL and stable shell element (mobile-safe)
     console.log('Waiting for dashboard to load...');
-    try {
-      await page.waitForSelector('[data-testid="dashboard-sidebar"]', { timeout: 30000 });
-    } catch {
-      // Fallback: check if we're on dashboard by URL
-      const url = page.url();
-      if (!url.includes('/dashboard')) {
-        throw new Error(`Auth setup failed - not on dashboard. Current URL: ${url}`);
-      }
-    }
+    await page.waitForURL(/\/dashboard/, { timeout: 30000 });
+    await page.waitForSelector('[data-testid="dashboard-shell"]', { timeout: 30000 });
 
     // Check that we're actually on the dashboard (not redirected to login)
     const url = page.url();

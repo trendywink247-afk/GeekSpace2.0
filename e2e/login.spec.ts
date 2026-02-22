@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('Login Flow', () => {
-  test('should login with demo credentials and load dashboard', async ({ page }) => {
+  test('should login with demo credentials and load dashboard', async ({ page }, testInfo) => {
     // Navigate to login
     await page.goto('/login');
 
@@ -19,8 +19,17 @@ test.describe('Login Flow', () => {
     await expect(demoButton).toBeVisible();
     await demoButton.click();
 
-    // Wait for dashboard element (longer timeout for CI)
-    await expect(page.getByTestId('dashboard-sidebar')).toBeVisible({ timeout: 30000 });
+    // Wait for dashboard URL and shell (mobile-safe)
+    await page.waitForURL(/\/dashboard/, { timeout: 30000 });
+    await expect(page.getByTestId('dashboard-shell')).toBeVisible({ timeout: 30000 });
+
+    // Optional: verify navigation by project
+    if (testInfo.project.name === 'chromium') {
+      await expect(page.getByTestId('dashboard-sidebar-desktop')).toBeVisible();
+    } else {
+      await page.getByTestId('mobile-nav-toggle').click();
+      await expect(page.getByTestId('dashboard-sidebar-mobile')).toBeVisible();
+    }
 
     // Verify we're on dashboard
     expect(page.url()).toContain('/dashboard');

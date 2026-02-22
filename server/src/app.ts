@@ -97,52 +97,56 @@ export function createApp(): express.Application {
   // ---- Metrics collection ----
   app.use(metricsMiddleware);
 
-  // ---- Global rate limiting ----
-  const globalLimiter = rateLimit({
-    windowMs: config.rateLimitWindowMs,
-    max: config.rateLimitMax,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Too many requests. Please slow down.' },
-    skip: (req) =>
-      req.path === '/health/stream' ||
-      req.path === '/health' ||
-      (config.isTestMode && req.path.startsWith('/test')),
-  });
-  app.use('/api/', globalLimiter);
+  // ---- Rate limiting (disabled in TEST_MODE) ----
+  const enableRateLimiting = !config.isTestMode;
 
-  // ---- Strict rate limit on auth endpoints ----
-  const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: config.rateLimitAuthMax,
-    skipSuccessfulRequests: true,
-    message: { error: 'Too many login attempts. Try again in 15 minutes.' },
-  });
-  app.use('/api/auth/login', authLimiter);
-  app.use('/api/auth/signup', authLimiter);
-  app.use('/api/auth/demo', authLimiter);
+  if (enableRateLimiting) {
+    // Global rate limiting
+    const globalLimiter = rateLimit({
+      windowMs: config.rateLimitWindowMs,
+      max: config.rateLimitMax,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many requests. Please slow down.' },
+      skip: (req) =>
+        req.path === '/health/stream' ||
+        req.path === '/health',
+    });
+    app.use('/api/', globalLimiter);
 
-  // ---- Rate limit on LLM chat endpoints ----
-  const chatLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 30,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Too many chat requests. Please slow down.' },
-  });
-  app.use('/api/agent/chat', chatLimiter);
-  app.use('/api/agent/chat/stream', chatLimiter);
+    // Strict rate limit on auth endpoints
+    const authLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: config.rateLimitAuthMax,
+      skipSuccessfulRequests: true,
+      message: { error: 'Too many login attempts. Try again in 15 minutes.' },
+    });
+    app.use('/api/auth/login', authLimiter);
+    app.use('/api/auth/signup', authLimiter);
+    app.use('/api/auth/demo', authLimiter);
 
-  // ---- Strict rate limit on public endpoints ----
-  const publicLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 10,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Too many requests. Please try again later.' },
-  });
-  app.use('/api/agent/chat/public', publicLimiter);
-  app.use('/api/dashboard/contact', publicLimiter);
+    // Rate limit on LLM chat endpoints
+    const chatLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 30,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many chat requests. Please slow down.' },
+    });
+    app.use('/api/agent/chat', chatLimiter);
+    app.use('/api/agent/chat/stream', chatLimiter);
+
+    // Strict rate limit on public endpoints
+    const publicLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many requests. Please try again later.' },
+    });
+    app.use('/api/agent/chat/public', publicLimiter);
+    app.use('/api/dashboard/contact', publicLimiter);
+  }
 
   // ---- Health check ----
   app.get('/api/health', (_req, res) => {

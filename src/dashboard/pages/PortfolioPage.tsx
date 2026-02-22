@@ -306,25 +306,25 @@ export function PortfolioPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
           <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20 p-1 flex flex-nowrap w-max md:w-auto">
-            <TabsTrigger value="profile" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="profile" data-testid="portfolio-tab-profile" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <User className="w-4 h-4 mr-2" />Profile
             </TabsTrigger>
-            <TabsTrigger value="skills" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="skills" data-testid="portfolio-tab-skills" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Code2 className="w-4 h-4 mr-2" />Skills
             </TabsTrigger>
-            <TabsTrigger value="projects" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="projects" data-testid="portfolio-tab-projects" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <FolderGit2 className="w-4 h-4 mr-2" />Projects
             </TabsTrigger>
-            <TabsTrigger value="milestones" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="milestones" data-testid="portfolio-tab-milestones" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Award className="w-4 h-4 mr-2" />Milestones
             </TabsTrigger>
-            <TabsTrigger value="social" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="social" data-testid="portfolio-tab-social" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Share2 className="w-4 h-4 mr-2" />Social
             </TabsTrigger>
-            <TabsTrigger value="ai" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="ai" data-testid="portfolio-tab-ai" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Bot className="w-4 h-4 mr-2" />AI Edit
             </TabsTrigger>
-            <TabsTrigger value="suggestions" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="suggestions" data-testid="portfolio-tab-suggestions" className="data-[state=active]:bg-[#7B61FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Lightbulb className="w-4 h-4 mr-2" />Suggestions
               {suggestions.length > 0 && (
                 <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-[#FF6161] text-white rounded-full">
