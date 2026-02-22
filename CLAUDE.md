@@ -35,12 +35,25 @@ OLLAMA_BASE_URL=http://localhost:32778 OLLAMA_MODEL=llama3.1:8b node server/dist
 
 **Port conflicts:** Kill stale processes with `fuser -k 3001/tcp` before starting. Stale Node processes cause "Invalid token" errors because JWT secret changes on restart.
 
+## CI/CD Pipelines
+
+Two GitHub Actions workflows run on push/PR to `main`, `master`, `live-production`:
+
+**CI workflow** (`ci.yml`): Static checks → Unit tests → E2E tests → Smoke tests (sequential pipeline). Static checks lint **only changed files** with `--max-warnings=0` (warnings fail CI). Also runs typecheck + build for both root and server.
+
+**Test workflow** (`test.yml`): Single job that runs full lint (`eslint .`), typecheck, unit tests, E2E tests, and smoke tests sequentially. Errors fail it; warnings alone do not.
+
+Both workflows cancel in-progress runs on the same branch. E2E tests install only chromium (not all browsers). Smoke tests start the server and hit `/api/health`.
+
+**Key difference:** CI lints only changed files but treats warnings as errors. Test workflow lints everything but only fails on errors. Both must pass before merging.
+
 ## Architecture
 
 ### Stack
 - **Frontend:** React 19 + TypeScript + Vite + Tailwind CSS + Shadcn/Radix UI + Zustand
 - **Backend:** Express + TypeScript + better-sqlite3 + JWT + Pino logging
 - **AI:** Multi-provider LLM routing (Ollama local, OpenRouter cloud, Moonshot reasoning, PicoClaw automation)
+- **Auth:** JWT + Passport.js (Google OAuth 2.0, GitHub OAuth 2.0 via `server/src/routes/oauth.ts`)
 - **Infra:** Docker Compose (GeekSpace + Redis + PicoClaw sidecar), Caddy reverse proxy, PM2 cluster (2 workers in Docker)
 
 ### Server Layer Architecture
@@ -51,12 +64,12 @@ Request → Helmet/CORS/RateLimit → Auth middleware → Route handler
 ```
 
 **Key server files:**
-- `server/src/index.ts` — Express app, middleware stack, 20+ route mounts, subsystem init
+- `server/src/index.ts` — Express app, middleware stack, 25+ route mounts, subsystem init
 - `server/src/app.ts` — Express app factory (used by tests to create isolated app instances)
 - `server/src/config.ts` — All env vars with defaults, crashes on missing required vars in production
 - `server/src/db/index.ts` — SQLite schema, migrations (idempotent ALTER TABLE), seed data, plan definitions
 - `server/src/services/llm.ts` — Intent classifier + multi-provider router with credit-based cost system
-- `server/src/services/edith.ts` — Direct Moonshot/Kimi K2 HTTP client (OpenAI-compatible, 120s timeout, 1 retry). Shares `OPENROUTER_API_KEY`. `EDITH_GATEWAY_URL`/`EDITH_TOKEN` are deprecated config vars (old WebSocket bridge, now unused).
+- `server/src/services/edith.ts` — Direct Moonshot/Kimi K2 HTTP client (OpenAI-compatible, 120s timeout, 1 retry). Shares `OPENROUTER_API_KEY`.
 - `server/src/services/pico-kimi-bridge.ts` — Complexity classifier, routes trivial→PicoClaw, complex→Kimi
 - `server/src/services/automations-engine.ts` — User-defined automations with cron/webhook/health_down triggers and call_api/log/send_message/create_reminder actions
 - `server/src/services/message-router.ts` — Unified Telegram/WhatsApp handler with task-intent detection
@@ -64,6 +77,7 @@ Request → Helmet/CORS/RateLimit → Auth middleware → Route handler
 - `server/src/services/action-executor.ts` — Executes parsed actions (portfolio, reminders, email, code gen)
 - `server/src/prompts/openclaw-system.ts` — Main agent identity, compact variant, portfolio visitor prompt
 - `server/src/prompts/personalities.ts` — Edith (CTO), Jarvis (butler, default), Weebo (enthusiastic)
+- `server/src/routes/oauth.ts` — Google + GitHub OAuth 2.0 with Passport.js strategies
 
 ### Frontend Layer Architecture
 ```
@@ -73,6 +87,8 @@ App.tsx (BrowserRouter) → Auth gate (Zustand) → DashboardApp (sidebar + lazy
 
 **Path alias:** `@/*` → `./src/*` (configured in `tsconfig.json` and `vite.config.ts`). Use `import { X } from '@/components/...'`.
 
+**Vite dev proxy:** Both `server` and `preview` modes proxy `/api` to `http://localhost:3001`.
+
 **Key frontend files:**
 - `src/App.tsx` — Root router, auth/onboarding gate
 - `src/stores/authStore.ts` — User, token, onboarding state (persisted to localStorage)
@@ -80,8 +96,15 @@ App.tsx (BrowserRouter) → Auth gate (Zustand) → DashboardApp (sidebar + lazy
 - `src/services/api.ts` — Typed Axios wrapper, all API services, JWT interceptor
 - `src/dashboard/DashboardApp.tsx` — Sidebar layout (desktop) / bottom nav (mobile), lazy-loaded pages
 - `src/types/index.ts` — All TypeScript interfaces
+- `src/utils/reminderParser.ts` — Natural language reminder parsing (e.g. "tomorrow at 3pm call mom" → structured data)
 
 **shadcn/ui:** New York style, configured in `components.json`. Add components via `npx shadcn@latest add <component>`. Components land in `src/components/ui/`.
+
+### PWA Infrastructure
+- `public/manifest.json` — Full PWA manifest with icons, shortcuts (Chat, Remind, Portfolio), categories
+- `public/sw.ts` — Service worker with static asset caching, push notification handling, background sync for reminders/messages, offline support
+- `src/hooks/usePWA.ts` — Manages PWA state (install prompt, offline detection, push notifications, service worker registration)
+- `src/components/PWAInstallPrompt.tsx` — Install prompt UI
 
 ### LLM Routing (how chat works)
 1. `buildSystemPrompt()` combines: identity + personality + Pico context + memory + user session
@@ -115,7 +138,7 @@ Tests live in `e2e/*.spec.ts`. Config in `playwright.config.ts`.
 
 - **Auth setup:** `e2e/auth.setup.ts` seeds a test user via `/api/test/seed`, logs in, saves auth state to `playwright/.auth/user.json`
 - **Base fixture:** `e2e/base.ts` provides `resetTestState`, `seedTestUser`, `getTestState` helpers
-- **Browser projects:** chromium, pixel5 (Android), iphone13 (iOS)
+- **Browser projects:** chromium, pixel5 (Android) — iphone13 disabled in CI for speed
 - **CI mode:** Builds production first, runs with 1 worker, 2 retries
 - **Local mode:** Reuses running dev servers (`npm run dev` + `cd server && npm run dev`)
 
@@ -130,7 +153,11 @@ Multi-stage (`node:20-alpine`): installs deps → builds frontend (`dist/`) + se
 
 **Package.json duplication:** Root `package.json` is a copy of `server/package.json` (both named `geekspace-api`). Frontend dependencies are installed at root via `npm ci` but are not listed in a separate manifest — they live in `package-lock.json`.
 
-**ESLint:** `@typescript-eslint/no-unused-vars` and `no-explicit-any` are both **off** in `eslint.config.js`. TypeScript compiler flags catch unused vars in frontend code instead.
+**ESLint + React Compiler:** The project uses `eslint-plugin-react-hooks` with `flat.recommended` config, which includes React Compiler rules like `react-hooks/preserve-manual-memoization`. These rules reject `useCallback`/`useMemo` patterns that the compiler can't optimize. **Fix:** Remove manual memoization and use plain functions — the React Compiler optimizes automatically. Several React hooks rules (`purity`, `set-state-in-effect`, `immutability`) are temporarily disabled. `no-unused-vars` and `no-explicit-any` are also **off**.
+
+**CI lint strictness:** The CI workflow lints only changed files with `--max-warnings=0`, meaning even warnings in your changed files will fail CI. The Test workflow runs `eslint .` on the entire codebase but only fails on errors. Both must pass.
+
+**Vite plugins:** `kimi-plugin-inspect-react` (`inspectAttr()`) adds `code-path` attributes to React elements for debugging. This runs before the React plugin.
 
 **Vite base path:** `vite.config.ts` must use `base: '/'` (not `'./'`) for SPA deep-route asset loading.
 
@@ -149,6 +176,8 @@ Multi-stage (`node:20-alpine`): installs deps → builds frontend (`dist/`) + se
 - `.env` is gitignored. `.env.example` is tracked with all variables documented.
 - `OPENROUTER_API_KEY` — used for OpenRouter paid tier AND Moonshot/Kimi K2 (edith.ts). `OPENROUTER_FREE_API_KEY` is a separate key for the free-tier model rotation.
 - `OPENAI_API_KEY` — Whisper STT + TTS for voice notes (`voice.ts`); optional.
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — Google OAuth 2.0; optional.
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` — GitHub OAuth 2.0; optional.
 - Production: `ai.geekspace.space` (frontend), `api.geekspace.space` (API + admin dashboard), via Caddy reverse proxy
 - Demo users: alex/sarah/marcus (password: `demo123`)
 - Production branch: `live-production`
