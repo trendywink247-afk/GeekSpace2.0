@@ -29,7 +29,11 @@ RUN cd server && npm run build
 # ---- Stage 2: Production ----
 FROM node:20-slim AS production
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git gpg && \
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list && \
+    apt-get update && apt-get install -y --no-install-recommends gh && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -52,6 +56,9 @@ COPY apminsightnode.json ./
 
 # Create data directory for SQLite and APM logs directory
 RUN mkdir -p /app/data /app/apminsightdata && chown -R node:node /app/data /app/apminsightdata
+
+# Allow git operations on the mounted /repo volume (owned by root, run as node)
+RUN git config --system safe.directory /repo
 
 # Run as non-root
 USER node

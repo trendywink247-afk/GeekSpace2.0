@@ -8,7 +8,7 @@ import { promisify } from 'util';
 import { requireAdminToken } from '../middleware/auth.js';
 import { logDevAction, completeDevAction, getDevAuditLog } from '../services/dev-audit.js';
 import { isAllowedCommand, runAllowlistedCommand, COMMAND_ALLOWLIST } from '../services/dev-runner.js';
-import { createDevPR, validateBranchName } from '../services/dev-github.js';
+import { createDevPR, pushBranch, validateBranchName } from '../services/dev-github.js';
 import { config } from '../config.js';
 
 const execFileAsync = promisify(execFile);
@@ -72,6 +72,37 @@ devRouter.post('/run-checks', async (req, res) => {
   } catch (err) {
     completeDevAction(auditId, 'failed', String(err));
     res.status(500).json({ error: 'Command execution failed', details: String(err) });
+  }
+});
+
+// ---- POST /git-push — push an existing branch to origin ----
+devRouter.post('/git-push', async (req, res) => {
+  if (!config.githubDevToken) {
+    res.status(503).json({ error: 'GITHUB_DEV_TOKEN not configured' });
+    return;
+  }
+
+  const { branch } = req.body || {};
+
+  if (!branch || typeof branch !== 'string') {
+    res.status(400).json({ error: 'Missing required field: branch' });
+    return;
+  }
+
+  const branchError = validateBranchName(branch);
+  if (branchError) {
+    res.status(400).json({ error: branchError });
+    return;
+  }
+
+  const auditId = logDevAction('git-push', { branch });
+  try {
+    const result = await pushBranch(branch);
+    completeDevAction(auditId, 'success', `pushed ${result.sha} to ${result.remote}/${result.branch}`);
+    res.json(result);
+  } catch (err) {
+    completeDevAction(auditId, 'failed', String(err));
+    res.status(500).json({ error: 'Failed to push branch', details: String(err) });
   }
 });
 
