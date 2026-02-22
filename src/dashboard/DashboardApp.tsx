@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, Sparkles, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
-  Code, LayoutTemplate
+  Code, LayoutTemplate, Rocket
 } from 'lucide-react';
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
@@ -44,9 +44,10 @@ const PicoFleetPage = lazy(() =>
 );
 const HealthDashboardPage = lazy(() => import('./pages/HealthDashboardPage').then(m => ({ default: m.HealthDashboardPage })));
 const ArtifactsPage = lazy(() => import('./pages/ArtifactsPage').then(m => ({ default: m.ArtifactsPage })));
+const RoadmapPage = lazy(() => import('./pages/RoadmapPage').then(m => ({ default: m.RoadmapPage })));
 const TemplateGalleryPage = lazy(() => import('./pages/TemplateGalleryPage').then(m => ({ default: m.TemplateGalleryPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'artifacts' | 'templates';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'artifacts' | 'templates' | 'roadmap';
 
 // Bottom tabs for mobile (5 max for thumb reach)
 const mobileTabs: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
@@ -143,6 +144,7 @@ export function DashboardApp() {
     { id: 'health', label: 'Health', icon: Activity },
     { id: 'terminal', label: 'Terminal', icon: Terminal },
     { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'roadmap', label: 'Roadmap', icon: Rocket },
   ];
 
   const handleLogout = useCallback(() => {
@@ -191,6 +193,8 @@ export function DashboardApp() {
         return <TerminalPage />;
       case 'settings':
         return <SettingsPage />;
+      case 'roadmap':
+        return <RoadmapPage />;
       default:
         return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => setCurrentPage(page as PageType)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
     }
