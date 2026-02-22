@@ -5,7 +5,7 @@
 
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'geekspace-v1';
+const CACHE_NAME = 'agentin-v4.0.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -48,33 +48,30 @@ self.addEventListener('fetch', (event: FetchEvent) => {
   if (event.request.url.includes('/api/')) return;
 
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Return cached version or fetch from network
-      return (
-        response ||
-        fetch(event.request).then((fetchResponse) => {
-          // Don't cache non-successful responses
-          if (!fetchResponse || fetchResponse.status !== 200) {
-            return fetchResponse;
-          }
-
-          // Clone response to cache it
+    fetch(event.request)
+      .then((fetchResponse) => {
+        // Cache successful responses
+        if (fetchResponse && fetchResponse.status === 200) {
           const responseToCache = fetchResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
           });
-
-          return fetchResponse;
-        })
-      );
-    })
+        }
+        return fetchResponse;
+      })
+      .catch(() => {
+        // Network failed — fall back to cache
+        return caches.match(event.request).then((response) => {
+          return response || new Response('Offline', { status: 503 });
+        });
+      })
   );
 });
 
 // Push notification event
 self.addEventListener('push', (event: PushEvent) => {
   const data = event.data?.json() || {};
-  const title = data.title || 'GeekSpace';
+  const title = data.title || 'Agentin';
   const options: NotificationOptions = {
     body: data.body || 'You have a new notification',
     icon: '/icon-192x192.png',

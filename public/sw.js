@@ -1,5 +1,5 @@
-// GeekSpace Service Worker — App Shell Caching
-const CACHE_NAME = 'geekspace-v3.0.0';
+// Agentin Service Worker — App Shell Caching
+const CACHE_NAME = 'agentin-v4.0.0';
 const APP_SHELL = [
   '/',
   '/index.html',
