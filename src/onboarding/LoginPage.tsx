@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Sparkles, Mail, Lock, ArrowRight, Github, User, Chrome, Zap, KeyRound } from 'lucide-react';
+import { Sparkles, Mail, Lock, ArrowRight, Github, User, Chrome, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -156,12 +156,11 @@ export function LoginPage() {
             </div>
 
             {!isSignup && (
-              <div className="flex justify-end -mt-1">
+              <div className="flex justify-end">
                 <Link
                   to="/forgot-password"
-                  className="text-xs text-[#A7ACB8] hover:text-[#7B61FF] transition-colors inline-flex items-center gap-1 py-1"
+                  className="text-sm text-[#7B61FF] hover:text-[#9B85FF] hover:underline transition-colors inline-flex items-center gap-1.5 py-1 font-medium"
                 >
-                  <KeyRound className="w-3 h-3" />
                   Forgot password?
                 </Link>
               </div>
