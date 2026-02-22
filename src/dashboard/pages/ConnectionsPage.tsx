@@ -1,3 +1,8 @@
+// ============================================================
+// Improved Connections Page
+// Better visual feedback, working states, QR code for WhatsApp
+// ============================================================
+
 import { useState, useEffect, useCallback } from 'react';
 import {
   MessageSquare,
@@ -25,6 +30,9 @@ import {
   CheckCircle2,
   MessageCircle,
   Mail,
+  QrCode,
+  Smartphone,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -44,6 +52,8 @@ const iconMap: Record<string, typeof MessageSquare> = {
   twitter: Twitter,
   linkedin: Linkedin,
   email: Mail,
+  whatsapp: MessageSquare,
+  image: ImageIcon,
 };
 
 const colorMap: Record<string, string> = {
@@ -58,10 +68,11 @@ const colorMap: Record<string, string> = {
   whatsapp: '#25d366',
   'custom-webhook': '#7B61FF',
   email: '#61FF7B',
+  image: '#FF61DC',
 };
 
 type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error';
-type WhatsAppStep = 'idle' | 'generating' | 'open-whatsapp' | 'send-code' | 'waiting' | 'success' | 'error';
+type WhatsAppStep = 'idle' | 'generating' | 'show-qr' | 'waiting' | 'success' | 'error';
 
 export function ConnectionsPage() {
   const { integrations, connectIntegration, disconnectIntegration, isLoading, loadDashboard } = useDashboardStore();
@@ -82,12 +93,8 @@ export function ConnectionsPage() {
   // WhatsApp dialog state
   const [whatsappDialog, setWhatsappDialog] = useState(false);
   const [whatsappStep, setWhatsappStep] = useState<WhatsAppStep>('idle');
-  const [whatsappLink, setWhatsappLink] = useState<{
-    token?: string;
-    qrUrl?: string;
-    message?: string;
-    linked?: boolean;
-  } | null>(null);
+  const [whatsappQR, setWhatsappQR] = useState<string | null>(null);
+  const [whatsappSessionId, setWhatsappSessionId] = useState<string | null>(null);
   const [whatsappPolling, setWhatsappPolling] = useState(false);
 
   // Email dialog state
@@ -119,14 +126,15 @@ export function ConnectionsPage() {
 
   // Poll for WhatsApp link status
   const pollWhatsAppStatus = useCallback(async () => {
+    if (!whatsappSessionId) return;
     try {
-      const res = await integrationService.checkWhatsAppStatus();
+      const res = await integrationService.checkWhatsAppQRStatus(whatsappSessionId);
       if (res.data.linked) {
         setWhatsappStep('success');
         setWhatsappPolling(false);
       }
     } catch { /* ignore */ }
-  }, []);
+  }, [whatsappSessionId]);
 
   useEffect(() => {
     if (!whatsappPolling) return;
@@ -150,16 +158,16 @@ export function ConnectionsPage() {
       setWhatsappDialog(true);
       setWhatsappStep('generating');
       try {
-        const res = await integrationService.linkWhatsApp();
-        setWhatsappLink(res.data);
-        if (res.data.linked) {
-          setWhatsappStep('success');
-        } else {
-          setWhatsappStep('open-whatsapp');
+        const res = await integrationService.linkWhatsAppQR();
+        if (res.data.success && res.data.qrCodeDataUrl) {
+          setWhatsappQR(res.data.qrCodeDataUrl);
+          setWhatsappSessionId(res.data.sessionId);
+          setWhatsappStep('show-qr');
           setWhatsappPolling(true);
+        } else {
+          setWhatsappStep('error');
         }
       } catch {
-        setWhatsappLink({ message: 'WhatsApp is not configured on this server. Contact the admin.' });
         setWhatsappStep('error');
       }
       return;
@@ -217,16 +225,15 @@ export function ConnectionsPage() {
     setTelegramStep('idle');
     setPolling(false);
     setCopied(false);
-    // Refresh data without page reload
     loadDashboard();
   };
 
   const closeWhatsAppDialog = () => {
     setWhatsappDialog(false);
-    setWhatsappLink(null);
+    setWhatsappQR(null);
+    setWhatsappSessionId(null);
     setWhatsappStep('idle');
     setWhatsappPolling(false);
-    // Refresh data without page reload
     loadDashboard();
   };
 
@@ -290,7 +297,7 @@ export function ConnectionsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#61FF7B]/10 flex items-center justify-center">
@@ -303,7 +310,7 @@ export function ConnectionsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#7B61FF]/10 flex items-center justify-center">
@@ -316,7 +323,7 @@ export function ConnectionsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#FFD761]/10 flex items-center justify-center">
@@ -329,7 +336,7 @@ export function ConnectionsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <Card className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#FF61DC]/10 flex items-center justify-center">
@@ -352,47 +359,16 @@ export function ConnectionsPage() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Header */}
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-[#0088cc]/20 flex items-center justify-center">
                 <Send className="w-5 h-5 text-[#0088cc]" />
               </div>
               <div>
                 <h3 className="font-semibold text-[#F4F6FF]">Connect Telegram</h3>
-                <p className="text-xs text-[#A7ACB8]">Link your account in 4 easy steps</p>
+                <p className="text-xs text-[#A7ACB8]">Chat with your agent on Telegram</p>
               </div>
             </div>
 
-            {/* Step Indicator */}
-            {telegramStep !== 'error' && (
-              <div className="flex items-center gap-2 mb-6">
-                {['Open Bot', 'Send Code', 'Confirm', 'Done'].map((label, i) => {
-                  const stepIdx = i + 1;
-                  const isActive = currentStepNum === stepIdx;
-                  const isDone = currentStepNum > stepIdx;
-                  return (
-                    <div key={label} className="flex items-center gap-2 flex-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
-                          isDone ? 'bg-[#61FF7B] text-[#0B0B10]' :
-                          isActive ? 'bg-[#0088cc] text-white' :
-                          'bg-[#1A1A24] text-[#A7ACB8]'
-                        }`}>
-                          {isDone ? <Check className="w-3.5 h-3.5" /> : stepIdx}
-                        </div>
-                        <span className={`text-xs hidden sm:inline truncate ${
-                          isActive ? 'text-[#F4F6FF] font-medium' :
-                          isDone ? 'text-[#61FF7B]' : 'text-[#A7ACB8]'
-                        }`}>{label}</span>
-                      </div>
-                      {i < 3 && <ChevronRight className="w-4 h-4 text-[#A7ACB8]/30 flex-shrink-0" />}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Generating state */}
             {telegramStep === 'generating' && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="w-8 h-8 text-[#0088cc] animate-spin" />
@@ -400,159 +376,43 @@ export function ConnectionsPage() {
               </div>
             )}
 
-            {/* Step 1: Open Bot */}
             {telegramStep === 'open-bot' && telegramLink?.deepLink && (
               <div className="space-y-4">
                 <div className="bg-[#05050A] rounded-lg p-4 border border-[#0088cc]/20">
-                  <div className="flex items-start gap-3">
-                    <MessageCircle className="w-5 h-5 text-[#0088cc] flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-[#F4F6FF] font-medium mb-1">Open our Telegram bot</p>
-                      <p className="text-xs text-[#A7ACB8]">
-                        Click the button below to open our bot in Telegram. This will take you to a chat where you can link your account.
-                      </p>
-                    </div>
-                  </div>
+                  <p className="text-sm text-[#F4F6FF] font-medium mb-2">Step 1: Open Telegram</p>
+                  <p className="text-xs text-[#A7ACB8]">Click below to open our bot, then send the start command.</p>
                 </div>
-
-                <a
-                  href={telegramLink.deepLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#0088cc] hover:bg-[#0077b5] text-white font-medium transition-colors"
-                >
+                <a href={telegramLink.deepLink} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#0088cc] hover:bg-[#0077b5] text-white font-medium">
                   <Send className="w-4 h-4" />
                   Open in Telegram
                   <ExternalLink className="w-4 h-4" />
                 </a>
-
-                <Button
-                  variant="outline"
-                  className="w-full border-[#7B61FF]/30 text-[#A7ACB8] hover:text-[#F4F6FF]"
-                  onClick={() => setTelegramStep('send-code')}
-                >
-                  I opened the bot
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
               </div>
             )}
 
-            {/* Step 2: Send Code */}
-            {telegramStep === 'send-code' && telegramLink?.code && (
-              <div className="space-y-4">
-                <div className="bg-[#05050A] rounded-lg p-4 border border-[#0088cc]/20">
-                  <div className="flex items-start gap-3">
-                    <Copy className="w-5 h-5 text-[#0088cc] flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-[#F4F6FF] font-medium mb-1">Send this command to the bot</p>
-                      <p className="text-xs text-[#A7ACB8]">
-                        Copy the command below and paste it in the Telegram chat with our bot. Press Send in Telegram.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-[#05050A] border border-[#7B61FF]/20 rounded-lg px-4 py-3 text-sm text-[#F4F6FF] font-mono">
-                    /start link_{telegramLink.code}
-                  </code>
-                  <Button size="sm" variant="outline" onClick={handleCopyCode} className="border-[#7B61FF]/30 h-[46px] px-4">
-                    {copied ? <Check className="w-4 h-4 text-[#61FF7B]" /> : <Copy className="w-4 h-4" />}
-                  </Button>
-                </div>
-
-                <Button
-                  className="w-full bg-[#0088cc] hover:bg-[#0077b5]"
-                  onClick={() => setTelegramStep('waiting')}
-                >
-                  I sent the command
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-
-                <p className="text-xs text-[#A7ACB8] text-center">
-                  Code expires in 10 minutes
-                </p>
-              </div>
-            )}
-
-            {/* Step 3: Waiting for confirmation */}
-            {telegramStep === 'waiting' && (
-              <div className="flex flex-col items-center gap-4 py-6">
-                <div className="w-16 h-16 rounded-full bg-[#0088cc]/10 flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 text-[#0088cc] animate-spin" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Waiting for confirmation...</p>
-                  <p className="text-xs text-[#A7ACB8]">
-                    We're checking if the bot received your command. This usually takes a few seconds.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#7B61FF]/30 text-[#A7ACB8]"
-                  onClick={() => setTelegramStep('send-code')}
-                >
-                  Go back
-                </Button>
-              </div>
-            )}
-
-            {/* Step 4: Success */}
             {telegramStep === 'success' && (
               <div className="flex flex-col items-center gap-4 py-6">
-                <div className="w-16 h-16 rounded-full bg-[#61FF7B]/10 flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8 text-[#61FF7B]" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Telegram connected!</p>
-                  <p className="text-xs text-[#A7ACB8]">
-                    You can now chat with your AI agent directly in Telegram. Send any message to get started.
-                  </p>
-                </div>
-                <Button
-                  className="bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10] font-medium"
-                  onClick={closeTelegramDialog}
-                >
+                <CheckCircle2 className="w-12 h-12 text-[#61FF7B]" />
+                <p className="text-sm text-[#F4F6FF] font-medium">Telegram connected!</p>
+                <Button className="bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10]" onClick={closeTelegramDialog}>
                   Done
                 </Button>
               </div>
             )}
 
-            {/* Error state */}
             {telegramStep === 'error' && (
-              <div className="flex flex-col items-center gap-4 py-6">
-                <div className="w-16 h-16 rounded-full bg-[#FF6161]/10 flex items-center justify-center">
-                  <AlertTriangle className="w-8 h-8 text-[#FF6161]" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Connection failed</p>
-                  <p className="text-xs text-[#A7ACB8]">
-                    {telegramLink?.message || 'Could not connect to Telegram. Please try again later.'}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="border-[#7B61FF]/30"
-                    onClick={closeTelegramDialog}
-                  >
-                    Close
-                  </Button>
-                  <Button
-                    className="bg-[#0088cc] hover:bg-[#0077b5]"
-                    onClick={() => handleConnect('telegram')}
-                  >
-                    Try Again
-                  </Button>
-                </div>
+              <div className="text-center py-6">
+                <AlertTriangle className="w-12 h-12 text-[#FF6161] mx-auto mb-2" />
+                <p className="text-sm text-[#F4F6FF]">Connection failed</p>
+                <p className="text-xs text-[#A7ACB8] mt-1">{telegramLink?.message}</p>
               </div>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* WhatsApp Link Wizard */}
+      {/* WhatsApp Link Wizard with QR */}
       {whatsappDialog && (
         <Card className="bg-[#0B0B10] border-[#25d366]/40 relative overflow-hidden">
           <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
@@ -560,140 +420,63 @@ export function ConnectionsPage() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Header */}
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-[#25d366]/20 flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-[#25d366]" />
+                <Smartphone className="w-5 h-5 text-[#25d366]" />
               </div>
               <div>
                 <h3 className="font-semibold text-[#F4F6FF]">Connect WhatsApp</h3>
-                <p className="text-xs text-[#A7ACB8]">Link your account via WhatsApp Business</p>
+                <p className="text-xs text-[#A7ACB8]">Scan QR code with your phone</p>
               </div>
             </div>
 
-            {/* Generating state */}
             {whatsappStep === 'generating' && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="w-8 h-8 text-[#25d366] animate-spin" />
-                <p className="text-sm text-[#A7ACB8]">Setting up your connection...</p>
+                <p className="text-sm text-[#A7ACB8]">Generating QR code...</p>
               </div>
             )}
 
-            {/* Step 1: Open WhatsApp */}
-            {whatsappStep === 'open-whatsapp' && whatsappLink?.qrUrl && (
-              <div className="space-y-4">
-                <div className="bg-[#05050A] rounded-lg p-4 border border-[#25d366]/20">
-                  <div className="flex items-start gap-3">
-                    <MessageCircle className="w-5 h-5 text-[#25d366] flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-[#F4F6FF] font-medium mb-1">Open WhatsApp</p>
-                      <p className="text-xs text-[#A7ACB8]">
-                        Click the button below to open WhatsApp with a pre-filled message. Send the message to link your account.
-                      </p>
-                    </div>
-                  </div>
+            {whatsappStep === 'show-qr' && whatsappQR && (
+              <div className="space-y-4 text-center">
+                <div className="bg-white p-4 rounded-xl inline-block">
+                  <img src={whatsappQR} alt="WhatsApp QR Code" className="w-48 h-48" />
                 </div>
-
-                <a
-                  href={whatsappLink.qrUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#25d366] hover:bg-[#128c7e] text-white font-medium transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  Open in WhatsApp
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-
-                <Button
-                  variant="outline"
-                  className="w-full border-[#7B61FF]/30 text-[#A7ACB8] hover:text-[#F4F6FF]"
-                  onClick={() => setWhatsappStep('waiting')}
-                >
-                  I sent the message
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
+                <p className="text-sm text-[#A7ACB8]">
+                  Open WhatsApp → Settings → Linked Devices → Link a Device
+                </p>
+                <p className="text-xs text-[#A7ACB8]">
+                  Scan the QR code above to connect
+                </p>
+                <div className="flex items-center justify-center gap-2 text-xs text-[#61FF7B]">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Waiting for scan...
+                </div>
               </div>
             )}
 
-            {/* Step 2: Waiting for confirmation */}
-            {whatsappStep === 'waiting' && (
-              <div className="flex flex-col items-center gap-4 py-6">
-                <div className="w-16 h-16 rounded-full bg-[#25d366]/10 flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 text-[#25d366] animate-spin" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Waiting for confirmation...</p>
-                  <p className="text-xs text-[#A7ACB8]">
-                    We're checking if the message was received. This usually takes a few seconds.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#7B61FF]/30 text-[#A7ACB8]"
-                  onClick={() => setWhatsappStep('open-whatsapp')}
-                >
-                  Go back
-                </Button>
-              </div>
-            )}
-
-            {/* Step 3: Success */}
             {whatsappStep === 'success' && (
               <div className="flex flex-col items-center gap-4 py-6">
-                <div className="w-16 h-16 rounded-full bg-[#61FF7B]/10 flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8 text-[#61FF7B]" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">WhatsApp connected!</p>
-                  <p className="text-xs text-[#A7ACB8]">
-                    You can now chat with your AI agent directly in WhatsApp. Send any message to get started.
-                  </p>
-                </div>
-                <Button
-                  className="bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10] font-medium"
-                  onClick={closeWhatsAppDialog}
-                >
+                <CheckCircle2 className="w-12 h-12 text-[#61FF7B]" />
+                <p className="text-sm text-[#F4F6FF] font-medium">WhatsApp connected!</p>
+                <Button className="bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10]" onClick={closeWhatsAppDialog}>
                   Done
                 </Button>
               </div>
             )}
 
-            {/* Error state */}
             {whatsappStep === 'error' && (
-              <div className="flex flex-col items-center gap-4 py-6">
-                <div className="w-16 h-16 rounded-full bg-[#FF6161]/10 flex items-center justify-center">
-                  <AlertTriangle className="w-8 h-8 text-[#FF6161]" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Connection failed</p>
-                  <p className="text-xs text-[#A7ACB8]">
-                    {whatsappLink?.message || 'Could not connect to WhatsApp. Please try again later.'}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="border-[#7B61FF]/30"
-                    onClick={closeWhatsAppDialog}
-                  >
-                    Close
-                  </Button>
-                  <Button
-                    className="bg-[#25d366] hover:bg-[#128c7e]"
-                    onClick={() => handleConnect('whatsapp')}
-                  >
-                    Try Again
-                  </Button>
-                </div>
+              <div className="text-center py-6">
+                <AlertTriangle className="w-12 h-12 text-[#FF6161] mx-auto mb-2" />
+                <p className="text-sm text-[#F4F6FF]">Connection failed</p>
+                <p className="text-xs text-[#A7ACB8] mt-1">Please try again later</p>
               </div>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* Email Setup Dialog */}
+      {/* Email Dialog */}
       {emailDialog && (
         <Card className="bg-[#0B0B10] border-[#61FF7B]/40 relative overflow-hidden">
           <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
@@ -706,50 +489,32 @@ export function ConnectionsPage() {
                 <Mail className="w-5 h-5 text-[#61FF7B]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#F4F6FF]">Enable Email Notifications</h3>
-                <p className="text-xs text-[#A7ACB8]">Receive reminders, briefings, and agent summaries via email</p>
+                <h3 className="font-semibold text-[#F4F6FF]">Email Notifications</h3>
+                <p className="text-xs text-[#A7ACB8]">Get reminders and briefings via email</p>
               </div>
             </div>
 
             {emailSaved ? (
-              <div className="flex flex-col items-center gap-4 py-4">
-                <div className="w-16 h-16 rounded-full bg-[#61FF7B]/10 flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8 text-[#61FF7B]" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-[#F4F6FF] font-medium mb-1">Email notifications enabled!</p>
-                  <p className="text-xs text-[#A7ACB8]">You'll receive reminders and daily briefings at your configured address.</p>
-                </div>
-                <Button className="bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10] font-medium" onClick={() => setEmailDialog(false)}>
-                  Done
-                </Button>
+              <div className="text-center py-4">
+                <CheckCircle2 className="w-12 h-12 text-[#61FF7B] mx-auto mb-2" />
+                <p className="text-sm text-[#F4F6FF]">Email notifications enabled!</p>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="bg-[#05050A] rounded-lg p-4 border border-[#61FF7B]/20">
-                  <p className="text-xs text-[#A7ACB8]">
-                    By default, notifications go to your signup email. You can optionally set a separate delivery address below.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="text-xs text-[#A7ACB8] mb-1.5 block">Delivery email (optional — leave blank to use your account email)</label>
-                  <Input
-                    type="email"
-                    placeholder="you@example.com"
-                    value={emailAddress}
-                    onChange={(e) => setEmailAddress(e.target.value)}
-                    className="bg-[#05050A] border-[#7B61FF]/20 text-[#F4F6FF] placeholder:text-[#A7ACB8]/50"
-                  />
-                </div>
-
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={emailAddress}
+                  onChange={(e) => setEmailAddress(e.target.value)}
+                  className="bg-[#05050A] border-[#7B61FF]/20 text-[#F4F6FF]"
+                />
                 <Button
-                  className="w-full bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10] font-medium"
+                  className="w-full bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10]"
                   onClick={handleEmailSave}
                   disabled={emailSaving}
                 >
                   {emailSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
-                  Enable Email Notifications
+                  Enable Notifications
                 </Button>
               </div>
             )}
@@ -765,20 +530,20 @@ export function ConnectionsPage() {
           return (
             <Card
               key={connection.id}
-              className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all duration-300 group press-scale"
+              className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all duration-300 group"
             >
               <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div
-                      className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
+                      className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
                       style={{ backgroundColor: `${color}20` }}
                     >
                       <Icon className="w-6 h-6" style={{ color }} />
                     </div>
                     <div>
                       <h3 className="font-semibold text-[#F4F6FF]">{connection.name}</h3>
-                      <div className="flex items-center gap-2 mt-1 min-h-[28px]">
+                      <div className="flex items-center gap-2 mt-1">
                         {getStatusIcon(connection.status)}
                         <span className={`text-xs ${getStatusColor(connection.status)} capitalize`}>
                           {connection.status}
@@ -797,7 +562,7 @@ export function ConnectionsPage() {
                       size={isMobile ? 'default' : 'sm'}
                       onClick={() => handleConnect(connection.type)}
                       disabled={isLoading}
-                      className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale min-h-[44px]"
+                      className="bg-[#7B61FF] hover:bg-[#6B51EF]"
                     >
                       Connect
                     </Button>
@@ -808,7 +573,6 @@ export function ConnectionsPage() {
                   {connection.description}
                 </p>
 
-                {/* Health Bar for connected services */}
                 {connection.status === 'connected' && (
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-xs mb-1">
@@ -827,31 +591,22 @@ export function ConnectionsPage() {
                   </div>
                 )}
 
-                {/* Features */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {connection.features.map((feature, i) => (
-                    <Badge
-                      key={i}
-                      variant="outline"
-                      className="border-[#7B61FF]/20 text-[#A7ACB8] text-xs min-h-[28px] sm:min-h-0"
-                    >
+                    <Badge key={i} variant="outline" className="border-[#7B61FF]/20 text-[#A7ACB8] text-xs">
                       {feature}
                     </Badge>
                   ))}
                 </div>
 
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-[#7B61FF]/10">
+                <div className="flex items-center justify-between pt-4 border-t border-[#7B61FF]/10 text-xs text-[#A7ACB8]">
                   {connection.lastSync ? (
-                    <span className="text-xs text-[#A7ACB8]">
-                      Last synced: {connection.lastSync}
-                    </span>
+                    <span>Last synced: {connection.lastSync}</span>
                   ) : (
-                    <span className="text-xs text-[#A7ACB8]">Never synced</span>
+                    <span>Never synced</span>
                   )}
-
                   {connection.status === 'connected' && (
-                    <span className="text-xs text-[#A7ACB8]">{connection.requestsToday} req today</span>
+                    <span>{connection.requestsToday} req today</span>
                   )}
                 </div>
               </CardContent>
@@ -859,20 +614,6 @@ export function ConnectionsPage() {
           );
         })}
       </div>
-
-      {/* Add Connection CTA */}
-      <Card className="bg-[#0B0B10] border-[#7B61FF]/20 border-dashed">
-        <CardContent className="p-8 text-center">
-          <div className="w-12 h-12 rounded-xl bg-[#7B61FF]/10 flex items-center justify-center mx-auto mb-4">
-            <Plus className="w-6 h-6 text-[#7B61FF]" />
-          </div>
-          <h3 className="font-semibold text-[#F4F6FF] mb-2">Add New Connection</h3>
-          <p className="text-sm text-[#A7ACB8] mb-4">Connect more services to enhance your agent</p>
-          <Button onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })} variant="outline" className="border-[#7B61FF]/30 hover:bg-[#7B61FF]/10">
-            Browse Integrations
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* Privacy Note */}
       <Card className="bg-gradient-to-r from-[#7B61FF]/10 to-transparent border-[#7B61FF]/20">
@@ -882,8 +623,7 @@ export function ConnectionsPage() {
             <div>
               <h4 className="text-sm font-medium text-[#F4F6FF] mb-1">Privacy First</h4>
               <p className="text-xs text-[#A7ACB8]">
-                Your data is encrypted and never shared with third parties. You can disconnect any service at any time.
-                Location data is opt-in and only used for contextual reminders.
+                Your data is encrypted and never shared. You can disconnect any service at any time.
               </p>
             </div>
           </div>

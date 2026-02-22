@@ -329,13 +329,8 @@ export async function demoScenario1Run(chatId: string): Promise<void> {
   await sendTelegramMessage(chatId, receipts);
   await new Promise(r => setTimeout(r, 300));
 
-  // Action chips
-  await sendTelegramButtons(chatId, `What would you like to do?`, [
-    [{ text: '✅ Save to Dashboard', callback_data: 'action_save' }],
-    [{ text: '🧾 Export as Doc', callback_data: 'action_export' }],
-    [{ text: '⏰ Add reminders', callback_data: 'action_remind' }],
-    [{ text: '🔁 Improve plan', callback_data: 'action_improve' }]
-  ]);
+  // Context-aware action chips (limited frequency)
+  await sendActionChips(chatId, 'plan');
 }
 
 // Demo Scenario 2: Chat → WhatsApp follow-up
@@ -405,11 +400,8 @@ export async function demoScenario3Run(chatId: string): Promise<void> {
   await sendTelegramMessage(chatId, analysis);
   await new Promise(r => setTimeout(r, 500));
 
-  await sendTelegramButtons(chatId, `Next steps:`, [
-    [{ text: '🧾 Create ticket draft', callback_data: 'action_ticket' }],
-    [{ text: '🔍 Run health checks', callback_data: 'action_health' }],
-    [{ text: '📌 Save checklist', callback_data: 'action_save_checklist' }]
-  ]);
+  // Context-aware action chips (limited frequency)
+  await sendActionChips(chatId, 'research');
 }
 
 // ---- Completion ----
@@ -433,40 +425,64 @@ Type anything to get started, or use these shortcuts:
 
   await sendTelegramMessage(chatId, text);
 
-  // Send action chips for first interaction
-  await sendTelegramButtons(chatId, `Quick actions:`, [
-    [{ text: '✅ Make a plan', callback_data: 'chip_plan' }],
-    [{ text: '⏰ Set reminder', callback_data: 'chip_remind' }],
-    [{ text: '📝 Draft message', callback_data: 'chip_draft' }]
-  ]);
+  // Only show action chips once after onboarding completes
+  await sendActionChips(chatId, 'onboarding_complete');
 
   deleteOnboarding(chatId);
 }
 
-// ---- Action Chips (shown after most replies) ----
+// ---- Action Chips (shown intelligently, NOT on every message) ----
+
+// Track last chip send time per chat to prevent spam
+const lastChipSent: Map<string, number> = new Map();
+const CHIP_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes between chip displays
 
 export async function sendActionChips(chatId: string, context?: string): Promise<void> {
-  const chips = [
-    [{ text: '✅ Save', callback_data: 'chip_save' }],
-    [{ text: '⏰ Remind me', callback_data: 'chip_remind' }],
-    [{ text: '📲 Continue on WhatsApp', callback_data: 'chip_whatsapp' }],
-    [{ text: '✈️ Continue on Telegram', callback_data: 'chip_telegram' }],
-    [{ text: '🧾 Export', callback_data: 'chip_export' }],
-    [{ text: '🔁 Improve', callback_data: 'chip_improve' }],
-    [{ text: '🧠 Remember this', callback_data: 'chip_remember' }]
-  ];
-
-  // Show 3-4 most relevant chips based on context
-  let relevantChips = chips;
-  if (context === 'plan') {
-    relevantChips = [chips[0], chips[1], chips[5], chips[6]]; // Save, Remind, Improve, Remember
-  } else if (context === 'draft') {
-    relevantChips = [chips[0], chips[4], chips[5]]; // Save, Export, Improve
-  } else if (context === 'reminder') {
-    relevantChips = [chips[2], chips[3]]; // WhatsApp, Telegram
+  // Check cooldown to prevent button spam
+  const now = Date.now();
+  const lastSent = lastChipSent.get(chatId) || 0;
+  if (now - lastSent < CHIP_COOLDOWN_MS) {
+    return; // Don't spam buttons
   }
 
-  await sendTelegramButtons(chatId, `—`, relevantChips.slice(0, 4));
+  // Define context-appropriate chips
+  const chipSets: Record<string, Array<Array<{ text: string; callback_data: string }>>> = {
+    plan: [
+      [{ text: '✅ Save to Dashboard', callback_data: 'chip_save' }],
+      [{ text: '⏰ Add Reminders', callback_data: 'chip_remind' }],
+      [{ text: '🔁 Refine Plan', callback_data: 'chip_improve' }],
+    ],
+    draft: [
+      [{ text: '✅ Save Draft', callback_data: 'chip_save' }],
+      [{ text: '🧾 Export', callback_data: 'chip_export' }],
+      [{ text: '🔁 Improve', callback_data: 'chip_improve' }],
+    ],
+    reminder: [
+      [{ text: '✅ Confirm', callback_data: 'chip_confirm' }],
+      [{ text: '❌ Cancel', callback_data: 'chip_cancel' }],
+    ],
+    research: [
+      [{ text: '✅ Save Summary', callback_data: 'chip_save' }],
+      [{ text: '🧾 Export Notes', callback_data: 'chip_export' }],
+    ],
+    code: [
+      [{ text: '✅ Save Project', callback_data: 'chip_save' }],
+      [{ text: '🚀 Deploy', callback_data: 'chip_deploy' }],
+      [{ text: '🔁 Optimize', callback_data: 'chip_improve' }],
+    ],
+    onboarding_complete: [
+      [{ text: '⚡ Quick Actions', callback_data: 'chip_quick' }],
+    ]
+  };
+
+  // Get relevant chips or default to empty (no buttons)
+  const chips = context ? chipSets[context] : undefined;
+  if (!chips || chips.length === 0) {
+    return; // No buttons for this context
+  }
+
+  lastChipSent.set(chatId, now);
+  await sendTelegramButtons(chatId, `Quick actions:`, chips.slice(0, 3));
 }
 
 // ---- Handle Callbacks ----
