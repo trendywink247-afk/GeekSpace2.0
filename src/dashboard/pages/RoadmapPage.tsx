@@ -33,7 +33,7 @@ const roadmapItems: RoadmapItem[] = [
   {
     id: 'pwa',
     title: 'PWA Support',
-    description: 'Install GeekSpace as an app, offline mode, push notifications for reminders',
+    description: 'Install Agentin as an app, offline mode, push notifications for reminders',
     icon: <Globe className="w-5 h-5" />,
     status: 'completed',
     quarter: 'Q1 2026',
@@ -130,11 +130,11 @@ export function RoadmapPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-[#61FF7B]/20 text-[#61FF7B] border-[#61FF7B]/30">Completed</Badge>;
+        return <Badge className="bg-[#00FF88]/20 text-[#00FF88] border-[#00FF88]/30">Completed</Badge>;
       case 'in-progress':
-        return <Badge className="bg-[#FFD761]/20 text-[#FFD761] border-[#FFD761]/30">In Progress</Badge>;
+        return <Badge className="bg-[#FFB800]/20 text-[#FFB800] border-[#FFB800]/30">In Progress</Badge>;
       default:
-        return <Badge className="bg-[#7B61FF]/20 text-[#7B61FF] border-[#7B61FF]/30">Planned</Badge>;
+        return <Badge className="bg-[#00FFD4]/20 text-[#00FFD4] border-[#00FFD4]/30">Planned</Badge>;
     }
   };
 
@@ -142,43 +142,43 @@ export function RoadmapPage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30 mb-4">
-          <Rocket className="w-4 h-4 text-[#7B61FF]" />
-          <span className="text-sm text-[#7B61FF] font-medium">Our Vision</span>
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00FFD4]/10 border border-[#00FFD4]/30 mb-4">
+          <Rocket className="w-4 h-4 text-[#00FFD4]" />
+          <span className="text-sm text-[#00FFD4] font-medium">Our Vision</span>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-          GeekSpace Roadmap
+        <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
+          Agentin Roadmap
         </h1>
-        <p className="text-[#A7ACB8]">
+        <p className="text-[#6B7280]">
           Building the future of AI-powered personal workspaces. Here's what we're working on.
         </p>
       </div>
 
       {/* Progress */}
-      <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+      <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-[#A7ACB8]">Overall Progress</span>
-            <span className="text-sm font-medium text-[#F4F6FF]">{Math.round(progressPercent)}%</span>
+            <span className="text-sm text-[#6B7280]">Overall Progress</span>
+            <span className="text-sm font-medium text-[#E8E8F0]">{Math.round(progressPercent)}%</span>
           </div>
-          <div className="h-3 bg-[#05050A] rounded-full overflow-hidden mb-4">
+          <div className="h-3 bg-[#030304] rounded-full overflow-hidden mb-4">
             <div 
-              className="h-full bg-gradient-to-r from-[#7B61FF] to-[#FF61DC] rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-[#00FFD4] to-[#FF0080] rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
           <div className="flex items-center justify-center gap-6 text-sm">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-[#61FF7B]" />
-              <span className="text-[#F4F6FF]">{completedCount} Completed</span>
+              <CheckCircle2 className="w-4 h-4 text-[#00FF88]" />
+              <span className="text-[#E8E8F0]">{completedCount} Completed</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[#FFD761]" />
-              <span className="text-[#A7ACB8]">0 In Progress</span>
+              <Clock className="w-4 h-4 text-[#FFB800]" />
+              <span className="text-[#6B7280]">0 In Progress</span>
             </div>
             <div className="flex items-center gap-2">
-              <Circle className="w-4 h-4 text-[#7B61FF]" />
-              <span className="text-[#A7ACB8]">{plannedCount} Planned</span>
+              <Circle className="w-4 h-4 text-[#00FFD4]" />
+              <span className="text-[#6B7280]">{plannedCount} Planned</span>
             </div>
           </div>
         </CardContent>
@@ -189,30 +189,30 @@ export function RoadmapPage() {
         {/* 2026 Q1 */}
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#61FF7B]/20 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-[#61FF7B]" />
+            <div className="w-10 h-10 rounded-xl bg-[#00FF88]/20 flex items-center justify-center">
+              <CheckCircle2 className="w-5 h-5 text-[#00FF88]" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#F4F6FF]">Q1 2026</h2>
-              <p className="text-sm text-[#A7ACB8]">Recently Shipped</p>
+              <h2 className="text-xl font-bold text-[#E8E8F0]">Q1 2026</h2>
+              <p className="text-sm text-[#6B7280]">Recently Shipped</p>
             </div>
           </div>
           
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter === 'Q1 2026').map(item => (
-              <Card key={item.id} className="bg-[#0B0B10] border-[#61FF7B]/30">
+              <Card key={item.id} className="bg-[#0A0A0F] border-[#00FF88]/30">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#61FF7B]/10 flex items-center justify-center text-[#61FF7B]">
+                    <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center text-[#00FF88]">
                       {item.icon}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-[#F4F6FF]">{item.title}</h3>
+                        <h3 className="font-semibold text-[#E8E8F0]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[#A7ACB8]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#7B61FF]/20 text-[#A7ACB8]">
+                      <p className="text-sm text-[#6B7280]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[#00FFD4]/20 text-[#6B7280]">
                         {item.category}
                       </Badge>
                     </div>
@@ -226,30 +226,30 @@ export function RoadmapPage() {
         {/* 2026 Q2 */}
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#7B61FF]/20 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-[#7B61FF]" />
+            <div className="w-10 h-10 rounded-xl bg-[#00FFD4]/20 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-[#00FFD4]" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#F4F6FF]">Q2 2026</h2>
-              <p className="text-sm text-[#A7ACB8]">Coming Next</p>
+              <h2 className="text-xl font-bold text-[#E8E8F0]">Q2 2026</h2>
+              <p className="text-sm text-[#6B7280]">Coming Next</p>
             </div>
           </div>
           
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter === 'Q2 2026').map(item => (
-              <Card key={item.id} className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all">
+              <Card key={item.id} className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#7B61FF]/10 flex items-center justify-center text-[#7B61FF]">
+                    <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center text-[#00FFD4]">
                       {item.icon}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-[#F4F6FF]">{item.title}</h3>
+                        <h3 className="font-semibold text-[#E8E8F0]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[#A7ACB8]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#7B61FF]/20 text-[#A7ACB8]">
+                      <p className="text-sm text-[#6B7280]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[#00FFD4]/20 text-[#6B7280]">
                         {item.category}
                       </Badge>
                     </div>
@@ -263,30 +263,30 @@ export function RoadmapPage() {
         {/* 2026 Q3-Q4 */}
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#A7ACB8]/20 flex items-center justify-center">
-              <Rocket className="w-5 h-5 text-[#A7ACB8]" />
+            <div className="w-10 h-10 rounded-xl bg-[#6B7280]/20 flex items-center justify-center">
+              <Rocket className="w-5 h-5 text-[#6B7280]" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#F4F6FF]">Q3-Q4 2026</h2>
-              <p className="text-sm text-[#A7ACB8]">Future Vision</p>
+              <h2 className="text-xl font-bold text-[#E8E8F0]">Q3-Q4 2026</h2>
+              <p className="text-sm text-[#6B7280]">Future Vision</p>
             </div>
           </div>
           
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter.startsWith('Q3') || i.quarter.startsWith('Q4')).map(item => (
-              <Card key={item.id} className="bg-[#0B0B10] border-[#7B61FF]/10 hover:border-[#7B61FF]/30 transition-all opacity-80">
+              <Card key={item.id} className="bg-[#0A0A0F] border-[#00FFD4]/10 hover:border-[#00FFD4]/30 transition-all opacity-80">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#A7ACB8]/10 flex items-center justify-center text-[#A7ACB8]">
+                    <div className="w-10 h-10 rounded-lg bg-[#6B7280]/10 flex items-center justify-center text-[#6B7280]">
                       {item.icon}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-[#F4F6FF]">{item.title}</h3>
+                        <h3 className="font-semibold text-[#E8E8F0]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[#A7ACB8]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#7B61FF]/20 text-[#A7ACB8]">
+                      <p className="text-sm text-[#6B7280]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[#00FFD4]/20 text-[#6B7280]">
                         {item.category}
                       </Badge>
                     </div>
@@ -299,16 +299,16 @@ export function RoadmapPage() {
       </div>
 
       {/* CTA */}
-      <Card className="bg-gradient-to-r from-[#7B61FF]/10 to-[#FF61DC]/5 border-[#7B61FF]/20">
+      <Card className="bg-gradient-to-r from-[#00FFD4]/10 to-[#FF0080]/5 border-[#00FFD4]/20">
         <CardContent className="p-6 text-center">
-          <Sparkles className="w-8 h-8 text-[#7B61FF] mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-[#F4F6FF] mb-2">
+          <Sparkles className="w-8 h-8 text-[#00FFD4] mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-[#E8E8F0] mb-2">
             Have a feature request?
           </h3>
-          <p className="text-sm text-[#A7ACB8] mb-4">
-            We're building GeekSpace for you. Let us know what you'd like to see next.
+          <p className="text-sm text-[#6B7280] mb-4">
+            We're building Agentin for you. Let us know what you'd like to see next.
           </p>
-          <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#7B61FF] hover:bg-[#6B51EF] text-white font-medium transition-colors">
+          <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00FFD4] hover:bg-[#00D4B0] text-white font-medium transition-colors">
             Share Feedback
             <ArrowRight className="w-4 h-4" />
           </button>

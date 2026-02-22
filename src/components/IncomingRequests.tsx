@@ -103,7 +103,7 @@ export function IncomingRequests() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="w-6 h-6 border-2 border-[#7B61FF] border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -111,9 +111,9 @@ export function IncomingRequests() {
   if (requests.length === 0) {
     return (
       <div className="text-center py-8">
-        <MessageSquare className="w-12 h-12 text-[#7B61FF]/30 mx-auto mb-3" />
-        <p className="text-[#A7ACB8]">No pending contact requests</p>
-        <p className="text-xs text-[#A7ACB8]/70 mt-1">
+        <MessageSquare className="w-12 h-12 text-[#00FFD4]/30 mx-auto mb-3" />
+        <p className="text-[#6B7280]">No pending contact requests</p>
+        <p className="text-xs text-[#6B7280]/70 mt-1">
           When someone wants to reach you, they'll appear here
         </p>
       </div>
@@ -123,20 +123,20 @@ export function IncomingRequests() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-[#F4F6FF]">
+        <h3 className="font-semibold text-[#E8E8F0]">
           Incoming Requests ({requests.length})
         </h3>
-        <Button variant="outline" size="sm" onClick={loadRequests} className="border-[#7B61FF]/30">
+        <Button variant="outline" size="sm" onClick={loadRequests} className="border-[#00FFD4]/30">
           Refresh
         </Button>
       </div>
 
       {requests.map((request) => (
-        <Card key={request.id} className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <Card key={request.id} className="bg-[#0A0A0F] border-[#00FFD4]/20">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-[#7B61FF]/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#00FFD4]/20 flex items-center justify-center flex-shrink-0">
                 {request.fromUser?.avatar ? (
                   <img
                     src={request.fromUser.avatar}
@@ -144,34 +144,34 @@ export function IncomingRequests() {
                     className="w-10 h-10 rounded-full object-cover"
                   />
                 ) : (
-                  <User className="w-5 h-5 text-[#7B61FF]" />
+                  <User className="w-5 h-5 text-[#00FFD4]" />
                 )}
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-[#F4F6FF]">{request.fromName}</span>
-                  <span className="text-xs text-[#A7ACB8]">via {request.source}</span>
+                  <span className="font-medium text-[#E8E8F0]">{request.fromName}</span>
+                  <span className="text-xs text-[#6B7280]">via {request.source}</span>
                 </div>
 
                 {request.intention && (
-                  <p className="text-sm text-[#A7ACB8] mb-2 line-clamp-2">
+                  <p className="text-sm text-[#6B7280] mb-2 line-clamp-2">
                     {request.intention}
                   </p>
                 )}
 
                 {request.initialMessage && (
-                  <div className="p-2 rounded-lg bg-[#05050A] text-sm text-[#A7ACB8] mb-3 line-clamp-2">
+                  <div className="p-2 rounded-lg bg-[#030304] text-sm text-[#6B7280] mb-3 line-clamp-2">
                     "{request.initialMessage}"
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-xs text-[#A7ACB8] mb-3">
+                <div className="flex items-center gap-2 text-xs text-[#6B7280] mb-3">
                   <Clock className="w-3.5 h-3.5" />
                   Expires {new Date(request.expiresAt).toLocaleDateString()}
                   {request.channelNotified !== 'none' && (
-                    <span className="text-[#61FF7B]">• Notified on {request.channelNotified}</span>
+                    <span className="text-[#00FF88]">• Notified on {request.channelNotified}</span>
                   )}
                 </div>
 
@@ -181,10 +181,10 @@ export function IncomingRequests() {
                     size="sm"
                     onClick={() => handleAccept(request.id)}
                     disabled={processing === request.id}
-                    className="flex-1 bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10]"
+                    className="flex-1 bg-[#00FF88] hover:bg-[#51EF6B] text-[#0A0A0F]"
                   >
                     {processing === request.id ? (
-                      <div className="w-4 h-4 border-2 border-[#0B0B10] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-[#0A0A0F] border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <>
                         <Check className="w-4 h-4 mr-1.5" />
@@ -197,7 +197,7 @@ export function IncomingRequests() {
                     variant="outline"
                     onClick={() => handleDecline(request.id)}
                     disabled={processing === request.id}
-                    className="flex-1 border-[#FF6161]/30 text-[#FF6161] hover:bg-[#FF6161]/10"
+                    className="flex-1 border-[#FF3366]/30 text-[#FF3366] hover:bg-[#FF3366]/10"
                   >
                     <X className="w-4 h-4 mr-1.5" />
                     Decline

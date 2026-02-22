@@ -112,13 +112,13 @@ async function sendEmailOTP(email: string, otp: string, userName: string): Promi
     // Use existing email service
     const { sendEmail } = await import('./email.js');
 
-    const subject = 'Your GeekSpace Password Reset Code';
+    const subject = 'Your Agentin Password Reset Code';
     const html = `<p>Hi ${userName},</p>
              <p>Your password reset code is:</p>
              <h2 style="font-size: 32px; letter-spacing: 8px; background: #f0f0f0; padding: 20px; text-align: center;">${otp}</h2>
              <p>This code is valid for <strong>10 minutes</strong>.</p>
              <p>If you didn't request this, please ignore this email.</p>
-             <p>- GeekSpace Team</p>`;
+             <p>- Agentin Team</p>`;
 
     await sendEmail(email, subject, html);
 
@@ -148,7 +148,7 @@ async function sendTelegramOTP(userId: string, otp: string): Promise<boolean> {
       return false;
     }
 
-    const message = `🔐 *Password Reset Request*\n\nYour reset code is: *${otp}*\n\nThis code is valid for 10 minutes. If you didn't request this, ignore this message.\n\n- GeekSpace`;
+    const message = `🔐 *Password Reset Request*\n\nYour reset code is: *${otp}*\n\nThis code is valid for 10 minutes. If you didn't request this, ignore this message.\n\n- Agentin`;
 
     const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',

@@ -11,14 +11,14 @@ interface Activity {
 }
 
 const activities: Activity[] = [
-  { id: 1, company: 'TechCorp', action: 'scheduled 12 meetings', icon: Calendar, time: '2s ago', color: '#7B61FF' },
-  { id: 2, company: 'DesignStudio', action: 'sent 3 Telegram reminders', icon: Send, time: '5s ago', color: '#FF61DC' },
-  { id: 3, company: 'ConsultX', action: 'updated portfolio pricing', icon: TrendingUp, time: '12s ago', color: '#61FF7B' },
-  { id: 4, company: 'SupportAI', action: 'resolved a ticket in 18s', icon: CheckCircle, time: '18s ago', color: '#FFD761' },
-  { id: 5, company: 'TechCorp', action: 'generated quarterly report', icon: MessageSquare, time: '34s ago', color: '#7B61FF' },
+  { id: 1, company: 'TechCorp', action: 'scheduled 12 meetings', icon: Calendar, time: '2s ago', color: '#00FFD4' },
+  { id: 2, company: 'DesignStudio', action: 'sent 3 Telegram reminders', icon: Send, time: '5s ago', color: '#FF0080' },
+  { id: 3, company: 'ConsultX', action: 'updated portfolio pricing', icon: TrendingUp, time: '12s ago', color: '#00FF88' },
+  { id: 4, company: 'SupportAI', action: 'resolved a ticket in 18s', icon: CheckCircle, time: '18s ago', color: '#FFB800' },
+  { id: 5, company: 'TechCorp', action: 'generated quarterly report', icon: MessageSquare, time: '34s ago', color: '#00FFD4' },
   { id: 6, company: 'SecureNet', action: 'blocked 247 threats', icon: CheckCircle, time: '45s ago', color: '#FF6161' },
-  { id: 7, company: 'BuildCo', action: 'processed 89 invoices', icon: Clock, time: '1m ago', color: '#FFD761' },
-  { id: 8, company: 'DesignStudio', action: 'delivered 5 design drafts', icon: MessageSquare, time: '2m ago', color: '#FF61DC' },
+  { id: 7, company: 'BuildCo', action: 'processed 89 invoices', icon: Clock, time: '1m ago', color: '#FFB800' },
+  { id: 8, company: 'DesignStudio', action: 'delivered 5 design drafts', icon: MessageSquare, time: '2m ago', color: '#FF0080' },
 ];
 
 const stats = [
@@ -89,11 +89,11 @@ export function ActivitySection() {
           >
             <h2 
               className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4"
-              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+              style={{ fontFamily: 'Syne, sans-serif' }}
             >
               Live <span className="text-gradient">Activity</span>
             </h2>
-            <p className="text-lg text-[#A7ACB8] mb-8">
+            <p className="text-lg text-[#6B7280] mb-8">
               See the network working in real time—reminders, messages, tasks, and automations.
             </p>
 
@@ -102,15 +102,15 @@ export function ActivitySection() {
               {stats.map((stat, i) => (
                 <div
                   key={i}
-                  className="p-5 rounded-xl bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all duration-300"
+                  className="p-5 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all duration-300"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-[#7B61FF]/10 flex items-center justify-center">
-                      <stat.icon className="w-6 h-6 text-[#7B61FF]" />
+                    <div className="w-12 h-12 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center">
+                      <stat.icon className="w-6 h-6 text-[#00FFD4]" />
                     </div>
                     <div>
-                      <div className="text-3xl font-bold text-[#F4F6FF]">{stat.value}</div>
-                      <div className="text-sm text-[#A7ACB8]">{stat.label}</div>
+                      <div className="text-3xl font-bold text-[#E8E8F0]">{stat.value}</div>
+                      <div className="text-sm text-[#6B7280]">{stat.label}</div>
                     </div>
                   </div>
                 </div>
@@ -124,7 +124,7 @@ export function ActivitySection() {
               {activities.map((activity, i) => (
                 <div
                   key={activity.id}
-                  className={`p-4 rounded-xl bg-[#0B0B10] border border-[#7B61FF]/10 hover:border-[#7B61FF]/30 transition-all duration-500 flex items-center gap-4 ${
+                  className={`p-4 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/10 hover:border-[#00FFD4]/30 transition-all duration-500 flex items-center gap-4 ${
                     visibleActivities.includes(i)
                       ? 'opacity-100 translate-x-0'
                       : 'opacity-0 translate-x-12'
@@ -145,15 +145,15 @@ export function ActivitySection() {
                   {/* Activity Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-[#F4F6FF]">{activity.company}</span>
-                      <span className="text-[#A7ACB8]">AI</span>
-                      <span className="text-[#A7ACB8]">{activity.action}</span>
+                      <span className="font-medium text-[#E8E8F0]">{activity.company}</span>
+                      <span className="text-[#6B7280]">AI</span>
+                      <span className="text-[#6B7280]">{activity.action}</span>
                     </div>
                   </div>
 
                   {/* Time & Status */}
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-sm text-[#A7ACB8]/70 font-mono">{activity.time}</span>
+                    <span className="text-sm text-[#6B7280]/70 font-mono">{activity.time}</span>
                     <div 
                       className="w-2 h-2 rounded-full animate-pulse"
                       style={{ backgroundColor: activity.color }}
@@ -164,8 +164,8 @@ export function ActivitySection() {
             </div>
 
             {/* Live Indicator */}
-            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-[#A7ACB8]">
-              <div className="w-2 h-2 bg-[#61FF7B] rounded-full animate-pulse" />
+            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-[#6B7280]">
+              <div className="w-2 h-2 bg-[#00FF88] rounded-full animate-pulse" />
               <span className="font-mono">Live updates from the network</span>
             </div>
           </div>

@@ -129,7 +129,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-[#7B61FF] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -139,14 +139,14 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#F4F6FF]">My Projects</h1>
-          <p className="text-[#A7ACB8] text-sm mt-1">
-            {artifacts.length} {artifacts.length === 1 ? 'project' : 'projects'} • Websites you created with GeekSpace
+          <h1 className="text-2xl font-bold text-[#E8E8F0]">My Projects</h1>
+          <p className="text-[#6B7280] text-sm mt-1">
+            {artifacts.length} {artifacts.length === 1 ? 'project' : 'projects'} • Websites you created with Agentin
           </p>
         </div>
         <button
           onClick={() => onNavigate?.('templates')}
-          className="flex items-center gap-2 px-4 py-2 bg-[#7B61FF] text-white rounded-lg hover:bg-[#7B61FF]/80 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[#00FFD4] text-white rounded-lg hover:bg-[#00FFD4]/80 transition-colors"
         >
           <Plus className="w-4 h-4" />
           <span>New Project</span>
@@ -155,13 +155,13 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
       {/* Projects Grid */}
       {artifacts.length === 0 ? (
-        <div className="text-center py-16 bg-[#0B0B10] rounded-xl border border-[#7B61FF]/20">
-          <Folder className="w-16 h-16 text-[#7B61FF]/40 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-[#F4F6FF] mb-2">No projects yet</h3>
-          <p className="text-[#A7ACB8] mb-6">Create your first website from a template or ask your AI agent</p>
+        <div className="text-center py-16 bg-[#0A0A0F] rounded-xl border border-[#00FFD4]/20">
+          <Folder className="w-16 h-16 text-[#00FFD4]/40 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No projects yet</h3>
+          <p className="text-[#6B7280] mb-6">Create your first website from a template or ask your AI agent</p>
           <button
             onClick={() => onNavigate?.('templates')}
-            className="px-4 py-2 bg-[#7B61FF]/20 text-[#7B61FF] rounded-lg hover:bg-[#7B61FF]/30 transition-colors"
+            className="px-4 py-2 bg-[#00FFD4]/20 text-[#00FFD4] rounded-lg hover:bg-[#00FFD4]/30 transition-colors"
           >
             Browse Templates
           </button>
@@ -171,17 +171,17 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
           {artifacts.map(artifact => (
             <div
               key={artifact.id}
-              className="bg-[#0B0B10] rounded-xl border border-[#7B61FF]/20 overflow-hidden hover:border-[#7B61FF]/40 transition-all group"
+              className="bg-[#0A0A0F] rounded-xl border border-[#00FFD4]/20 overflow-hidden hover:border-[#00FFD4]/40 transition-all group"
             >
               {/* Preview thumbnail */}
               <div className="aspect-video bg-gradient-to-br from-[#1a1a2e] to-[#16213e] relative">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Code className="w-12 h-12 text-[#7B61FF]/30" />
+                  <Code className="w-12 h-12 text-[#00FFD4]/30" />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0B10] via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-transparent to-transparent" />
                 <div className="absolute bottom-3 left-3 right-3">
-                  <h3 className="text-[#F4F6FF] font-medium truncate">{artifact.title}</h3>
-                  <div className="flex items-center gap-2 text-xs text-[#A7ACB8]">
+                  <h3 className="text-[#E8E8F0] font-medium truncate">{artifact.title}</h3>
+                  <div className="flex items-center gap-2 text-xs text-[#6B7280]">
                     <Clock className="w-3 h-3" />
                     <span>{new Date(artifact.createdAt).toLocaleDateString()}</span>
                   </div>
@@ -194,7 +194,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   href={artifact.previewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[#7B61FF]/20 text-[#7B61FF] rounded-lg hover:bg-[#7B61FF]/30 transition-colors text-sm"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[#00FFD4]/20 text-[#00FFD4] rounded-lg hover:bg-[#00FFD4]/30 transition-colors text-sm"
                 >
                   <ExternalLink className="w-4 h-4" />
                   <span>Preview</span>
@@ -202,7 +202,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleCopyUrl(artifact.previewUrl, artifact.id)}
-                  className="p-2 text-[#A7ACB8] hover:text-[#F4F6FF] hover:bg-[#7B61FF]/10 rounded-lg transition-colors"
+                  className="p-2 text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00FFD4]/10 rounded-lg transition-colors"
                   title="Copy URL"
                 >
                   {copiedId === artifact.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
@@ -210,7 +210,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleEdit(artifact)}
-                  className="p-2 text-[#A7ACB8] hover:text-[#F4F6FF] hover:bg-[#7B61FF]/10 rounded-lg transition-colors"
+                  className="p-2 text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00FFD4]/10 rounded-lg transition-colors"
                   title="Edit"
                 >
                   <Edit3 className="w-4 h-4" />
@@ -218,7 +218,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleExportZip(artifact)}
-                  className="p-2 text-[#A7ACB8] hover:text-[#F4F6FF] hover:bg-[#7B61FF]/10 rounded-lg transition-colors"
+                  className="p-2 text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00FFD4]/10 rounded-lg transition-colors"
                   title="Download ZIP"
                 >
                   <Download className="w-4 h-4" />
@@ -226,7 +226,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleDomainSetup(artifact)}
-                  className="p-2 text-[#A7ACB8] hover:text-[#F4F6FF] hover:bg-[#7B61FF]/10 rounded-lg transition-colors"
+                  className="p-2 text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00FFD4]/10 rounded-lg transition-colors"
                   title="Custom Domain"
                 >
                   <Globe className="w-4 h-4" />
@@ -237,7 +237,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                     setSelectedArtifact(artifact);
                     setShowDeleteConfirm(true);
                   }}
-                  className="p-2 text-[#A7ACB8] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                  className="p-2 text-[#6B7280] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -251,65 +251,65 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
       {/* Edit Modal */}
       {showEditModal && selectedArtifact && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0B0B10] rounded-xl border border-[#7B61FF]/30 w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-[#7B61FF]/20">
-              <h2 className="text-lg font-medium text-[#F4F6FF]">Edit Project</h2>
-              <button onClick={() => setShowEditModal(false)} className="p-1 hover:bg-[#7B61FF]/10 rounded">
-                <X className="w-5 h-5 text-[#A7ACB8]" />
+          <div className="bg-[#0A0A0F] rounded-xl border border-[#00FFD4]/30 w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-[#00FFD4]/20">
+              <h2 className="text-lg font-medium text-[#E8E8F0]">Edit Project</h2>
+              <button onClick={() => setShowEditModal(false)} className="p-1 hover:bg-[#00FFD4]/10 rounded">
+                <X className="w-5 h-5 text-[#6B7280]" />
               </button>
             </div>
 
             <div className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
               <div>
-                <label className="block text-sm text-[#A7ACB8] mb-2">Title</label>
+                <label className="block text-sm text-[#6B7280] mb-2">Title</label>
                 <input
                   type="text"
                   value={editForm.title}
                   onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 bg-[#05050A] border border-[#7B61FF]/30 rounded-lg text-[#F4F6FF] focus:border-[#7B61FF] outline-none"
+                  className="w-full px-3 py-2 bg-[#030304] border border-[#00FFD4]/30 rounded-lg text-[#E8E8F0] focus:border-[#00FFD4] outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-[#A7ACB8] mb-2">HTML</label>
+                  <label className="block text-sm text-[#6B7280] mb-2">HTML</label>
                   <textarea
                     value={editForm.html}
                     onChange={e => setEditForm(prev => ({ ...prev, html: e.target.value }))}
-                    className="w-full h-48 px-3 py-2 bg-[#05050A] border border-[#7B61FF]/30 rounded-lg text-[#F4F6FF] font-mono text-xs focus:border-[#7B61FF] outline-none resize-none"
+                    className="w-full h-48 px-3 py-2 bg-[#030304] border border-[#00FFD4]/30 rounded-lg text-[#E8E8F0] font-mono text-xs focus:border-[#00FFD4] outline-none resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-[#A7ACB8] mb-2">CSS</label>
+                  <label className="block text-sm text-[#6B7280] mb-2">CSS</label>
                   <textarea
                     value={editForm.css}
                     onChange={e => setEditForm(prev => ({ ...prev, css: e.target.value }))}
-                    className="w-full h-48 px-3 py-2 bg-[#05050A] border border-[#7B61FF]/30 rounded-lg text-[#F4F6FF] font-mono text-xs focus:border-[#7B61FF] outline-none resize-none"
+                    className="w-full h-48 px-3 py-2 bg-[#030304] border border-[#00FFD4]/30 rounded-lg text-[#E8E8F0] font-mono text-xs focus:border-[#00FFD4] outline-none resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-[#A7ACB8] mb-2">JavaScript</label>
+                  <label className="block text-sm text-[#6B7280] mb-2">JavaScript</label>
                   <textarea
                     value={editForm.js}
                     onChange={e => setEditForm(prev => ({ ...prev, js: e.target.value }))}
-                    className="w-full h-48 px-3 py-2 bg-[#05050A] border border-[#7B61FF]/30 rounded-lg text-[#F4F6FF] font-mono text-xs focus:border-[#7B61FF] outline-none resize-none"
+                    className="w-full h-48 px-3 py-2 bg-[#030304] border border-[#00FFD4]/30 rounded-lg text-[#E8E8F0] font-mono text-xs focus:border-[#00FFD4] outline-none resize-none"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 p-4 border-t border-[#7B61FF]/20">
+            <div className="flex justify-end gap-3 p-4 border-t border-[#00FFD4]/20">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors"
+                className="px-4 py-2 text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-[#7B61FF] text-white rounded-lg hover:bg-[#7B61FF]/80 transition-colors"
+                className="px-4 py-2 bg-[#00FFD4] text-white rounded-lg hover:bg-[#00FFD4]/80 transition-colors"
               >
                 Save Changes
               </button>
@@ -321,44 +321,44 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
       {/* Domain Modal */}
       {showDomainModal && selectedArtifact && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0B0B10] rounded-xl border border-[#7B61FF]/30 w-full max-w-md">
-            <div className="flex items-center justify-between p-4 border-b border-[#7B61FF]/20">
-              <h2 className="text-lg font-medium text-[#F4F6FF]">Custom Domain</h2>
-              <button onClick={() => setShowDomainModal(false)} className="p-1 hover:bg-[#7B61FF]/10 rounded">
-                <X className="w-5 h-5 text-[#A7ACB8]" />
+          <div className="bg-[#0A0A0F] rounded-xl border border-[#00FFD4]/30 w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b border-[#00FFD4]/20">
+              <h2 className="text-lg font-medium text-[#E8E8F0]">Custom Domain</h2>
+              <button onClick={() => setShowDomainModal(false)} className="p-1 hover:bg-[#00FFD4]/10 rounded">
+                <X className="w-5 h-5 text-[#6B7280]" />
               </button>
             </div>
 
             <div className="p-4 space-y-4">
               {domainInfo ? (
-                <div className="p-4 bg-[#7B61FF]/10 rounded-lg">
-                  <p className="text-sm text-[#A7ACB8] mb-1">Your custom domain:</p>
+                <div className="p-4 bg-[#00FFD4]/10 rounded-lg">
+                  <p className="text-sm text-[#6B7280] mb-1">Your custom domain:</p>
                   <a
                     href={`https://${domainInfo.fullDomain}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#7B61FF] font-medium hover:underline"
+                    className="text-[#00FFD4] font-medium hover:underline"
                   >
                     {domainInfo.fullDomain}
                   </a>
                 </div>
               ) : (
                 <div>
-                  <p className="text-sm text-[#A7ACB8] mb-3">Choose a subdomain for your project:</p>
+                  <p className="text-sm text-[#6B7280] mb-3">Choose a subdomain for your project:</p>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={domainInput}
                       onChange={e => setDomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                       placeholder="my-project"
-                      className="flex-1 px-3 py-2 bg-[#05050A] border border-[#7B61FF]/30 rounded-lg text-[#F4F6FF] focus:border-[#7B61FF] outline-none"
+                      className="flex-1 px-3 py-2 bg-[#030304] border border-[#00FFD4]/30 rounded-lg text-[#E8E8F0] focus:border-[#00FFD4] outline-none"
                     />
-                    <span className="px-3 py-2 text-[#A7ACB8]">.geekspace.space</span>
+                    <span className="px-3 py-2 text-[#6B7280]">.agentin.chat</span>
                   </div>
                   <button
                     onClick={handleSaveDomain}
                     disabled={!domainInput || domainInput.length < 2}
-                    className="mt-3 w-full px-4 py-2 bg-[#7B61FF] text-white rounded-lg hover:bg-[#7B61FF]/80 transition-colors disabled:opacity-50"
+                    className="mt-3 w-full px-4 py-2 bg-[#00FFD4] text-white rounded-lg hover:bg-[#00FFD4]/80 transition-colors disabled:opacity-50"
                   >
                     Set Domain
                   </button>
@@ -372,20 +372,20 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
       {/* Delete Confirmation */}
       {showDeleteConfirm && selectedArtifact && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0B0B10] rounded-xl border border-red-500/30 w-full max-w-md">
+          <div className="bg-[#0A0A0F] rounded-xl border border-red-500/30 w-full max-w-md">
             <div className="p-4">
               <div className="flex items-center gap-3 mb-4">
                 <AlertTriangle className="w-8 h-8 text-red-500" />
-                <h2 className="text-lg font-medium text-[#F4F6FF]">Delete Project?</h2>
+                <h2 className="text-lg font-medium text-[#E8E8F0]">Delete Project?</h2>
               </div>
-              <p className="text-[#A7ACB8] mb-6">
+              <p className="text-[#6B7280] mb-6">
                 Are you sure you want to delete "{selectedArtifact.title}"? This action cannot be undone.
               </p>
 
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="px-4 py-2 text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors"
+                  className="px-4 py-2 text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
                 >
                   Cancel
                 </button>

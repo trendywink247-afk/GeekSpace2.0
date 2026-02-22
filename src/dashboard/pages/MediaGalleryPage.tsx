@@ -61,7 +61,7 @@ export function MediaGalleryPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-[#7B61FF] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -71,16 +71,16 @@ export function MediaGalleryPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Media Gallery
           </h1>
-          <p className="text-[#A7ACB8]">
+          <p className="text-[#6B7280]">
             All your generated images and videos
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="px-3 py-1.5 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30">
-            <span className="text-sm text-[#7B61FF]">
+          <div className="px-3 py-1.5 rounded-full bg-[#00FFD4]/10 border border-[#00FFD4]/30">
+            <span className="text-sm text-[#00FFD4]">
               {items.length} items
             </span>
           </div>
@@ -98,16 +98,16 @@ export function MediaGalleryPage() {
       {/* Empty State */}
       {items.length === 0 && !isLoading && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-[#7B61FF]/10 flex items-center justify-center mb-4">
-            <Sparkles className="w-10 h-10 text-[#7B61FF]" />
+          <div className="w-20 h-20 rounded-2xl bg-[#00FFD4]/10 flex items-center justify-center mb-4">
+            <Sparkles className="w-10 h-10 text-[#00FFD4]" />
           </div>
-          <h3 className="text-lg font-medium text-[#F4F6FF] mb-2">No media yet</h3>
-          <p className="text-[#A7ACB8] max-w-sm mb-6">
+          <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No media yet</h3>
+          <p className="text-[#6B7280] max-w-sm mb-6">
             Generate your first image or video using the agent chat. They'll appear here automatically.
           </p>
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-agent-chat'))}
-            className="px-6 py-3 rounded-xl bg-[#7B61FF] hover:bg-[#6B51EF] text-white font-medium transition-colors"
+            className="px-6 py-3 rounded-xl bg-[#00FFD4] hover:bg-[#00D4B0] text-white font-medium transition-colors"
           >
             Open Agent Chat
           </button>

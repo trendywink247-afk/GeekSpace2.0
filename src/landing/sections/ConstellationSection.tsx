@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const companies = [
-  { name: 'alex', displayName: 'Alex Chen', icon: Cpu, category: 'Developer', color: '#7B61FF' },
-  { name: 'sarah', displayName: 'Sarah Kim', icon: Palette, category: 'Designer', color: '#FF61DC' },
-  { name: 'marcus', displayName: 'Marcus Wright', icon: LineChart, category: 'Founder', color: '#61FF7B' },
+  { name: 'alex', displayName: 'Alex Chen', icon: Cpu, category: 'Developer', color: '#00FFD4' },
+  { name: 'sarah', displayName: 'Sarah Kim', icon: Palette, category: 'Designer', color: '#FF0080' },
+  { name: 'marcus', displayName: 'Marcus Wright', icon: LineChart, category: 'Founder', color: '#00FF88' },
   { name: 'jordan', displayName: 'Jordan Lee', icon: Shield, category: 'Security', color: '#FF6161' },
-  { name: 'taylor', displayName: 'Taylor Swift', icon: Building2, category: 'Creator', color: '#FFD761' },
-  { name: 'casey', displayName: 'Casey Neistat', icon: Cpu, category: 'Filmmaker', color: '#7B61FF' },
-  { name: 'morgan', displayName: 'Morgan Freeman', icon: Palette, category: 'Artist', color: '#FF61DC' },
-  { name: 'riley', displayName: 'Riley Reid', icon: LineChart, category: 'Analyst', color: '#61FF7B' },
+  { name: 'taylor', displayName: 'Taylor Swift', icon: Building2, category: 'Creator', color: '#FFB800' },
+  { name: 'casey', displayName: 'Casey Neistat', icon: Cpu, category: 'Filmmaker', color: '#00FFD4' },
+  { name: 'morgan', displayName: 'Morgan Freeman', icon: Palette, category: 'Artist', color: '#FF0080' },
+  { name: 'riley', displayName: 'Riley Reid', icon: LineChart, category: 'Analyst', color: '#00FF88' },
 ];
 
 interface ConstellationSectionProps {
@@ -88,7 +88,7 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
             isVisible ? 'opacity-60 scale-100' : 'opacity-0 scale-110'
           }`}
           style={{
-            background: 'radial-gradient(ellipse at center, rgba(123, 97, 255, 0.1) 0%, rgba(11, 11, 16, 0.5) 50%, transparent 70%)',
+            background: 'radial-gradient(ellipse at center, rgba(0, 255, 212, 0.1) 0%, rgba(10, 10, 15, 0.5) 50%, transparent 70%)',
             transform: 'rotate(18deg)',
           }}
         />
@@ -109,8 +109,8 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
                 left: `${pos.x}%`,
                 top: `${pos.y}%`,
                 transform: 'translate(-50%, -50%)',
-                backgroundColor: isActive ? '#7B61FF' : 'rgba(244, 246, 255, 0.35)',
-                boxShadow: isActive ? '0 0 15px rgba(123, 97, 255, 0.8)' : 'none',
+                backgroundColor: isActive ? '#00FFD4' : 'rgba(232, 232, 240, 0.35)',
+                boxShadow: isActive ? '0 0 15px rgba(0, 255, 212, 0.8)' : 'none',
                 transitionDelay: `${i * 50}ms`,
               }}
             />
@@ -135,7 +135,7 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
                 y1={`${y1}%`}
                 x2={`${x2}%`}
                 y2={`${y2}%`}
-                stroke="rgba(123, 97, 255, 0.3)"
+                stroke="rgba(0, 255, 212, 0.3)"
                 strokeWidth="1"
               />
             );
@@ -154,23 +154,23 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
           <div className="text-center mb-8">
             <h2 
               className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4"
-              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+              style={{ fontFamily: 'Syne, sans-serif' }}
             >
               Company <span className="text-gradient">Constellation</span>
             </h2>
-            <p className="text-[#A7ACB8] text-lg">
+            <p className="text-[#6B7280] text-lg">
               Every subdomain is a specialized neuron. Discover partners, vendors, and internal teams—each with their own AI personality.
             </p>
           </div>
 
           {/* Search */}
           <div className="relative mb-6">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A7ACB8]" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
             <Input
               placeholder="Find a company..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 py-6 bg-[#0B0B10] border-[#7B61FF]/30 rounded-xl text-[#F4F6FF] placeholder:text-[#A7ACB8]/60 focus:border-[#7B61FF] focus:ring-[#7B61FF]/20"
+              className="pl-12 py-6 bg-[#0A0A0F] border-[#00FFD4]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/60 focus:border-[#00FFD4] focus:ring-[#00FFD4]/20"
             />
           </div>
 
@@ -180,7 +180,7 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
               <button
                 key={i}
                 onClick={() => onViewPortfolio?.(company.name)}
-                className="aspect-square rounded-xl bg-[#0B0B10] border border-[#7B61FF]/20 flex items-center justify-center cursor-pointer hover:border-[#7B61FF]/50 hover:scale-105 transition-all duration-300 group"
+                className="aspect-square rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20 flex items-center justify-center cursor-pointer hover:border-[#00FFD4]/50 hover:scale-105 transition-all duration-300 group"
                 title={company.displayName}
               >
                 <company.icon 
@@ -194,7 +194,7 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
           {/* CTA */}
           <Button
             onClick={() => onBrowseDirectory ? onBrowseDirectory() : navigate('/explore')}
-            className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] text-white py-6 rounded-xl font-medium transition-all duration-300 hover:shadow-lg hover:shadow-[#7B61FF]/25 group"
+            className="w-full bg-[#00FFD4] hover:bg-[#6B51EF] text-white py-6 rounded-xl font-medium transition-all duration-300 hover:shadow-lg hover:shadow-[#00FFD4]/25 group"
           >
             Browse Directory
             <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
@@ -202,7 +202,7 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
         </div>
 
         {/* Caption */}
-        <p className="text-center mt-6 text-sm text-[#A7ACB8]/70 font-mono">
+        <p className="text-center mt-6 text-sm text-[#6B7280]/70 font-mono">
           Live connections across the network.
         </p>
       </div>

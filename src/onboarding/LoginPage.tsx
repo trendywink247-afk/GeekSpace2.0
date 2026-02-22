@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Sparkles, Mail, Lock, ArrowRight, Github, User, Chrome, Zap } from 'lucide-react';
+import { Hexagon, Mail, Lock, ArrowRight, Github, User, Chrome, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,19 +56,23 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
-      {/* Glassmorphism background */}
+      {/* Aurora background */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 gradient-mesh"
         style={{
           background: `
-            radial-gradient(ellipse at top, rgba(123, 97, 255, 0.15), transparent 50%),
-            radial-gradient(ellipse at bottom, rgba(255, 97, 220, 0.1), transparent 50%),
-            #05050A
+            radial-gradient(ellipse at top, rgba(0, 255, 212, 0.08), transparent 50%),
+            radial-gradient(ellipse at bottom right, rgba(255, 0, 128, 0.06), transparent 50%),
+            radial-gradient(ellipse at bottom left, rgba(112, 0, 255, 0.04), transparent 50%),
+            #030304
           `,
         }}
       />
-      <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-[#7B61FF]/8 blur-[120px]" />
-      <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] rounded-full bg-[#FF61DC]/8 blur-[100px]" />
+      {/* Floating orbs */}
+      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-[#00FFD4]/[0.04] blur-[120px] animate-pulse" style={{ animationDuration: '6s' }} />
+      <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] rounded-full bg-[#FF0080]/[0.03] blur-[100px] animate-pulse" style={{ animationDuration: '8s' }} />
+      {/* Cyber grid */}
+      <div className="absolute inset-0 cyber-grid opacity-30" />
 
       <div
         className={`w-full max-w-sm sm:max-w-md relative z-10 mx-auto animate-page-enter transition-all duration-700 ${
@@ -77,21 +81,21 @@ export function LoginPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <button onClick={() => navigate('/')} className="inline-flex items-center gap-2 mb-6 group">
-            <div className="w-10 h-10 rounded-xl bg-[#7B61FF]/20 flex items-center justify-center group-hover:bg-[#7B61FF]/30 transition-colors">
-              <Sparkles className="w-6 h-6 text-[#7B61FF]" />
+          <button onClick={() => navigate('/')} className="inline-flex items-center gap-2.5 mb-6 group">
+            <div className="w-10 h-10 rounded-xl bg-[#00FFD4]/10 border border-[#00FFD4]/20 flex items-center justify-center group-hover:bg-[#00FFD4]/15 group-hover:border-[#00FFD4]/40 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(0,255,212,0.15)]">
+              <Hexagon className="w-6 h-6 text-[#00FFD4]" />
             </div>
-            <span className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              GeekSpace
+            <span className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
+              <span className="text-[#E8E8F0]">Agent</span><span className="text-[#00FFD4]">in</span>
             </span>
           </button>
-          <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {isSignup ? 'Create your AI space' : 'Welcome back'}
+          <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
+            {isSignup ? 'Create your agent' : 'Welcome back'}
           </h1>
-          <p className="text-[#A7ACB8]">
+          <p className="text-[#6B7280]">
             {isSignup
-              ? 'Join the network of AI-powered people'
-              : 'Sign in to your personal AI OS'}
+              ? 'Join the network of autonomous agents'
+              : 'Sign in to your AI command center'}
           </p>
         </div>
 
@@ -100,55 +104,55 @@ export function LoginPage() {
           <div
             className="p-6 rounded-2xl space-y-4"
             style={{
-              background: 'rgba(11, 11, 16, 0.8)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(123, 97, 255, 0.2)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              background: 'rgba(10, 10, 15, 0.85)',
+              backdropFilter: 'blur(24px)',
+              border: '1px solid rgba(0, 255, 212, 0.12)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 255, 212, 0.03)',
             }}
           >
             {isSignup && (
               <div>
-                <label className="text-sm text-[#A7ACB8] mb-2 block">Username</label>
+                <label className="text-sm text-[#6B7280] mb-2 block">Username</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                   <Input
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="your-username"
-                    className="pl-10 bg-[#05050A]/60 border-[#7B61FF]/30 text-[#F4F6FF]"
+                    className="pl-10 bg-[#030304]/60 border-[#00FFD4]/20 text-[#E8E8F0] focus:border-[#00FFD4]/50 focus:ring-[#00FFD4]/10"
                     required
                   />
                 </div>
-                <p className="text-xs text-[#A7ACB8] mt-1">
-                  Your URL: <span className="text-[#7B61FF]">{username || 'you'}.geekspace.space</span>
+                <p className="text-xs text-[#6B7280] mt-1">
+                  Your URL: <span className="text-[#00FFD4]">{username || 'you'}.agentin.chat</span>
                 </p>
               </div>
             )}
             <div>
-              <label className="text-sm text-[#A7ACB8] mb-2 block">Email</label>
+              <label className="text-sm text-[#6B7280] mb-2 block">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="pl-10 bg-[#05050A]/60 border-[#7B61FF]/30 text-[#F4F6FF]"
+                  className="pl-10 bg-[#030304]/60 border-[#00FFD4]/20 text-[#E8E8F0] focus:border-[#00FFD4]/50 focus:ring-[#00FFD4]/10"
                   required
                   data-testid="login-email"
                 />
               </div>
             </div>
             <div>
-              <label className="text-sm text-[#A7ACB8] mb-2 block">Password</label>
+              <label className="text-sm text-[#6B7280] mb-2 block">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                 <Input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="pl-10 bg-[#05050A]/60 border-[#7B61FF]/30 text-[#F4F6FF]"
+                  className="pl-10 bg-[#030304]/60 border-[#00FFD4]/20 text-[#E8E8F0] focus:border-[#00FFD4]/50 focus:ring-[#00FFD4]/10"
                   required
                   data-testid="login-password"
                 />
@@ -159,7 +163,7 @@ export function LoginPage() {
               <div className="flex justify-end">
                 <Link
                   to="/forgot-password"
-                  className="text-sm text-[#7B61FF] hover:text-[#9B85FF] hover:underline transition-colors inline-flex items-center gap-1.5 py-1 font-medium"
+                  className="text-sm text-[#00FFD4] hover:text-[#00FFD4]/80 hover:underline transition-colors inline-flex items-center gap-1.5 py-1 font-medium"
                 >
                   Forgot password?
                 </Link>
@@ -167,12 +171,12 @@ export function LoginPage() {
             )}
 
             {error && (
-              <p className="text-sm text-[#FF6161]" data-testid="login-error">{error}</p>
+              <p className="text-sm text-[#FF3366]" data-testid="login-error">{error}</p>
             )}
 
-            <Button type="submit" disabled={isLoading} className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] h-12 text-base" data-testid="login-submit">
+            <Button type="submit" disabled={isLoading} className="w-full bg-gradient-to-r from-[#00FFD4] to-[#00D4B0] text-[#030304] h-12 text-base font-bold hover:shadow-[0_0_30px_rgba(0,255,212,0.25)] transition-all duration-300" data-testid="login-submit">
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-[#030304]/30 border-t-[#030304] rounded-full animate-spin" />
               ) : (
                 <>
                   {isSignup ? 'Create Account' : 'Sign In'}
@@ -186,10 +190,10 @@ export function LoginPage() {
           <div className="space-y-3">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#7B61FF]/20" />
+                <div className="w-full border-t border-[#00FFD4]/10" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-[#05050A] px-3 text-sm text-[#A7ACB8]">or</span>
+                <span className="bg-[#030304] px-3 text-sm text-[#6B7280]">or</span>
               </div>
             </div>
 
@@ -198,12 +202,12 @@ export function LoginPage() {
               type="button"
               variant="outline"
               onClick={handleDemo}
-              className="w-full border-[#7B61FF]/30 hover:bg-[#7B61FF]/10 h-12 group"
+              className="w-full border-[#FF0080]/30 hover:bg-[#FF0080]/5 hover:border-[#FF0080]/50 h-12 group text-[#E8E8F0]"
               data-testid="demo-login-button"
             >
-              <Zap className="w-4 h-4 mr-2 text-[#FFD761] group-hover:animate-pulse" />
+              <Zap className="w-4 h-4 mr-2 text-[#FF0080] group-hover:animate-pulse" />
               Login with Demo
-              <span className="ml-2 text-xs text-[#A7ACB8] hidden sm:inline">(alex / pass)</span>
+              <span className="ml-2 text-xs text-[#6B7280] hidden sm:inline">(alex / pass)</span>
             </Button>
 
             {/* Social OAuth buttons */}
@@ -212,7 +216,7 @@ export function LoginPage() {
                 type="button"
                 variant="outline"
                 disabled
-                className="border-[#7B61FF]/20 h-12 opacity-60"
+                className="border-[#00FFD4]/15 h-12 opacity-50 text-[#6B7280]"
               >
                 <Github className="w-4 h-4 mr-2" />
                 GitHub
@@ -221,31 +225,31 @@ export function LoginPage() {
                 type="button"
                 variant="outline"
                 disabled
-                className="border-[#7B61FF]/20 h-12 opacity-60"
+                className="border-[#00FFD4]/15 h-12 opacity-50 text-[#6B7280]"
               >
                 <Chrome className="w-4 h-4 mr-2" />
                 Google
               </Button>
             </div>
-            <p className="text-[10px] text-center text-[#A7ACB8]/50">OAuth coming soon</p>
+            <p className="text-[10px] text-center text-[#6B7280]/50">OAuth coming soon</p>
           </div>
         </form>
 
         {/* Toggle & Demo hint */}
-        <p className="text-center text-sm text-[#A7ACB8] mt-6">
+        <p className="text-center text-sm text-[#6B7280] mt-6">
           {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
             onClick={() => { setIsSignup(!isSignup); setError(''); }}
-            className="text-[#7B61FF] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center"
+            className="text-[#00FFD4] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center"
           >
             {isSignup ? 'Sign In' : 'Sign Up'}
           </button>
         </p>
 
         {searchParams.get('demo') === 'true' && (
-          <div className="mt-4 p-3 rounded-xl bg-[#7B61FF]/10 border border-[#7B61FF]/20 text-center">
-            <p className="text-xs text-[#A7ACB8]">
-              Demo credentials pre-filled. Click <span className="text-[#7B61FF] font-medium">Sign In</span> or <span className="text-[#FFD761] font-medium">Login with Demo</span> for instant access.
+          <div className="mt-4 p-3 rounded-xl bg-[#00FFD4]/5 border border-[#00FFD4]/15 text-center">
+            <p className="text-xs text-[#6B7280]">
+              Demo credentials pre-filled. Click <span className="text-[#00FFD4] font-medium">Sign In</span> or <span className="text-[#FF0080] font-medium">Login with Demo</span> for instant access.
             </p>
           </div>
         )}

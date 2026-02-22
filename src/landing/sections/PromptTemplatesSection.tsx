@@ -262,7 +262,7 @@ export function PromptTemplatesSection() {
           className="text-center mt-16"
         >
           <p className="text-slate-400 mb-4">
-            Or just start typing. GeekSpace figures out what you need.
+            Or just start typing. Agentin figures out what you need.
           </p>
           <button
             onClick={() => navigate('/login')}

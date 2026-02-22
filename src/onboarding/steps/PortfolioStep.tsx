@@ -46,12 +46,12 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <Layout className="w-6 h-6 text-[#7B61FF]" />
-        <h2 className="text-xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+        <Layout className="w-6 h-6 text-[#00FFD4]" />
+        <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
           Portfolio Setup
         </h2>
       </div>
-      <p className="text-[#A7ACB8] text-sm">
+      <p className="text-[#6B7280] text-sm">
         Set up your public portfolio. This is what visitors and potential collaborators see.
       </p>
 
@@ -61,7 +61,7 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
           type="button"
           onClick={handleMagic}
           disabled={magicLoading}
-          className="w-full py-3 min-h-[44px] rounded-xl border-2 border-dashed border-[#7B61FF]/40 text-[#7B61FF] hover:bg-[#7B61FF]/10 hover:border-[#7B61FF] transition-all flex items-center justify-center gap-2 text-sm font-medium"
+          className="w-full py-3 min-h-[44px] rounded-xl border-2 border-dashed border-[#00FFD4]/40 text-[#00FFD4] hover:bg-[#00FFD4]/10 hover:border-[#00FFD4] transition-all flex items-center justify-center gap-2 text-sm font-medium"
         >
           {magicLoading ? (
             <>
@@ -78,26 +78,26 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
       )}
 
       <div>
-        <label className="text-sm text-[#A7ACB8] mb-2 block">Portfolio Headline</label>
+        <label className="text-sm text-[#6B7280] mb-2 block">Portfolio Headline</label>
         <Input
           value={headline}
           onChange={(e) => onHeadlineChange(e.target.value)}
           placeholder="Developer & Builder"
-          className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]"
+          className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
         />
       </div>
       <div>
-        <label className="text-sm text-[#A7ACB8] mb-2 block">Skills (comma-separated)</label>
+        <label className="text-sm text-[#6B7280] mb-2 block">Skills (comma-separated)</label>
         <Input
           value={skills.join(', ')}
           onChange={(e) => handleSkillsInput(e.target.value)}
           placeholder="React, TypeScript, Python"
-          className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]"
+          className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
         />
         {skills.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {skills.map((skill) => (
-              <span key={skill} className="px-2 py-1 text-xs rounded-full bg-[#7B61FF]/15 text-[#7B61FF] border border-[#7B61FF]/20">
+              <span key={skill} className="px-2 py-1 text-xs rounded-full bg-[#00FFD4]/15 text-[#00FFD4] border border-[#00FFD4]/20">
                 {skill}
               </span>
             ))}
@@ -105,12 +105,12 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
         )}
       </div>
       <div>
-        <label className="text-sm text-[#A7ACB8] mb-2 block">About</label>
+        <label className="text-sm text-[#6B7280] mb-2 block">About</label>
         <textarea
           value={about}
           onChange={(e) => onAboutChange(e.target.value)}
           placeholder="Building cool things"
-          className="w-full p-3 rounded-xl bg-[#05050A] border border-[#7B61FF]/30 text-[#F4F6FF] min-h-[100px] resize-none focus:outline-none focus:border-[#7B61FF] placeholder:text-[#A7ACB8]/50"
+          className="w-full p-3 rounded-xl bg-[#030304] border border-[#00FFD4]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00FFD4] placeholder:text-[#6B7280]/50"
         />
       </div>
 
@@ -118,7 +118,7 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
         <button
           type="button"
           onClick={() => { setMagicDone(false); }}
-          className="text-xs text-[#A7ACB8] hover:text-[#7B61FF] transition-colors flex items-center gap-1"
+          className="text-xs text-[#6B7280] hover:text-[#00FFD4] transition-colors flex items-center gap-1"
         >
           <Sparkles className="w-3 h-3" />
           Try the magic trick again
@@ -129,7 +129,7 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm text-[#A7ACB8] hover:text-[#7B61FF] transition-colors min-h-[44px] px-4"
+          className="text-sm text-[#6B7280] hover:text-[#00FFD4] transition-colors min-h-[44px] px-4"
         >
           I'll do this later
         </button>

@@ -123,7 +123,7 @@ async function notifyViaTelegram(
               { text: '❌ Decline', callback_data: `contact_decline:${request.id}` }
             ],
             [
-              { text: '💬 View in GeekSpace', url: `${config.publicUrl}/dashboard/weebo?request=${request.id}` }
+              { text: '💬 View in Agentin', url: `${config.publicUrl}/dashboard/weebo?request=${request.id}` }
             ]
           ]
         }
@@ -172,14 +172,14 @@ async function notifyViaWhatsApp(
     const intention = request.intention || 'wants to connect';
 
     // Build message (WhatsApp has limited formatting)
-    let message = `📩 New Contact Request from GeekSpace\n\n`;
+    let message = `📩 New Contact Request from Agentin\n\n`;
     message += `${fromName} ${intention}\n\n`;
     
     if (request.initialMessage) {
       message += `Message: "${request.initialMessage.slice(0, 150)}"\n\n`;
     }
 
-    message += `To respond, open GeekSpace:\n`;
+    message += `To respond, open Agentin:\n`;
     message += `${config.publicUrl}/dashboard/weebo?request=${request.id}\n\n`;
     message += `Or reply:\n`;
     message += `ACCEPT ${request.id} - to accept\n`;

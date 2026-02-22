@@ -149,33 +149,33 @@ export function OnboardingWizard() {
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8">
         <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00FFD4] to-[#FF0080] flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            GeekSpace
+          <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
+            <span className="text-white">Agent</span><span className="text-[#00FFD4]">in</span>
           </span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
           Set up your AI space
         </h1>
-        <p className="text-[#A7ACB8] text-sm">
+        <p className="text-[#6B7280] text-sm">
           Step {step + 1} of {STEPS.length}: {currentStepInfo.description}
         </p>
       </div>
 
       {/* Progress Bar */}
       <div className="mb-6 sm:mb-8">
-        <div className="flex items-center justify-between text-xs text-[#A7ACB8] mb-2">
+        <div className="flex items-center justify-between text-xs text-[#6B7280] mb-2">
           <span className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
             ~{estimatedTime} min remaining
           </span>
           <span>{Math.round(progressPercent)}% complete</span>
         </div>
-        <div className="h-2 bg-[#0B0B10] rounded-full overflow-hidden">
+        <div className="h-2 bg-[#0A0A0F] rounded-full overflow-hidden">
           <div 
-            className="h-full bg-gradient-to-r from-[#7B61FF] to-[#FF61DC] transition-all duration-500 ease-out"
+            className="h-full bg-gradient-to-r from-[#00FFD4] to-[#FF0080] transition-all duration-500 ease-out"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -192,10 +192,10 @@ export function OnboardingWizard() {
               <div 
                 className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-lg sm:text-xl transition-all duration-300 ${
                   isCompleted 
-                    ? 'bg-[#61FF7B] text-[#0B0B10]' 
+                    ? 'bg-[#00FF88] text-[#0A0A0F]' 
                     : isActive 
-                      ? 'bg-[#7B61FF] text-white ring-4 ring-[#7B61FF]/20 scale-110' 
-                      : 'bg-[#0B0B10] border border-[#7B61FF]/20 text-[#A7ACB8]'
+                      ? 'bg-[#00FFD4] text-white ring-4 ring-[#00FFD4]/20 scale-110' 
+                      : 'bg-[#0A0A0F] border border-[#00FFD4]/20 text-[#6B7280]'
                 }`}
                 title={s.name}
               >
@@ -203,7 +203,7 @@ export function OnboardingWizard() {
               </div>
               {i < STEPS.length - 1 && (
                 <div className={`w-4 sm:w-8 h-0.5 mx-1 sm:mx-2 ${
-                  isCompleted ? 'bg-[#61FF7B]' : 'bg-[#7B61FF]/20'
+                  isCompleted ? 'bg-[#00FF88]' : 'bg-[#00FFD4]/20'
                 }`} />
               )}
             </div>
@@ -212,7 +212,7 @@ export function OnboardingWizard() {
       </div>
 
       {/* Step Content */}
-      <div className={`p-4 sm:p-8 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/20 mb-6 shadow-xl shadow-[#7B61FF]/5 ${stepAnimClass}`}>
+      <div className={`p-4 sm:p-8 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/20 mb-6 shadow-xl shadow-[#00FFD4]/5 ${stepAnimClass}`}>
         {step === 0 && (
           <ProfileStep
             name={onboarding.profile.name}
@@ -272,9 +272,9 @@ export function OnboardingWizard() {
       {/* Skip Modal */}
       {showSkipModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0B0B10] border border-[#7B61FF]/20 rounded-2xl p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-[#F4F6FF] mb-4">Skip this step?</h3>
-            <p className="text-sm text-[#A7ACB8] mb-4">
+          <div className="bg-[#0A0A0F] border border-[#00FFD4]/20 rounded-2xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-[#E8E8F0] mb-4">Skip this step?</h3>
+            <p className="text-sm text-[#6B7280] mb-4">
               You can always complete this later in your dashboard settings.
             </p>
             <div className="space-y-2 mb-4">
@@ -282,7 +282,7 @@ export function OnboardingWizard() {
                 <button
                   key={i}
                   onClick={() => handleSkip(i === 3)}
-                  className="w-full text-left px-4 py-3 rounded-xl bg-[#05050A] border border-[#7B61FF]/20 text-sm text-[#A7ACB8] hover:border-[#7B61FF]/50 hover:text-[#F4F6FF] transition-all"
+                  className="w-full text-left px-4 py-3 rounded-xl bg-[#030304] border border-[#00FFD4]/20 text-sm text-[#6B7280] hover:border-[#00FFD4]/50 hover:text-[#E8E8F0] transition-all"
                 >
                   {reason}
                 </button>
@@ -290,7 +290,7 @@ export function OnboardingWizard() {
             </div>
             <Button
               variant="outline"
-              className="w-full border-[#7B61FF]/30 text-[#A7ACB8]"
+              className="w-full border-[#00FFD4]/30 text-[#6B7280]"
               onClick={() => setShowSkipModal(false)}
             >
               Continue Setup
@@ -307,7 +307,7 @@ export function OnboardingWizard() {
             <Button
               variant="outline"
               onClick={handleBack}
-              className="min-h-[48px] px-4 border-[#7B61FF]/30 text-[#A7ACB8]"
+              className="min-h-[48px] px-4 border-[#00FFD4]/30 text-[#6B7280]"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -318,7 +318,7 @@ export function OnboardingWizard() {
             <Button
               onClick={handleNext}
               disabled={!canAdvance() || isSaving}
-              className="flex-1 min-h-[48px] bg-gradient-to-r from-[#7B61FF] to-[#6B51EF] hover:opacity-90 text-white font-medium"
+              className="flex-1 min-h-[48px] bg-gradient-to-r from-[#00FFD4] to-[#00D4B0] hover:opacity-90 text-white font-medium"
             >
               {isSaving ? (
                 <>
@@ -336,7 +336,7 @@ export function OnboardingWizard() {
             <Button
               onClick={handleLaunch}
               disabled={isLaunching}
-              className="flex-1 min-h-[48px] bg-gradient-to-r from-[#61FF7B] to-[#51EF6B] text-[#0B0B10] hover:opacity-90 font-bold"
+              className="flex-1 min-h-[48px] bg-gradient-to-r from-[#00FF88] to-[#51EF6B] text-[#0A0A0F] hover:opacity-90 font-bold"
             >
               {isLaunching ? (
                 <>
@@ -358,15 +358,15 @@ export function OnboardingWizard() {
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={() => setShowSkipModal(true)}
-              className="text-sm text-[#A7ACB8] hover:text-[#7B61FF] transition-colors flex items-center gap-1"
+              className="text-sm text-[#6B7280] hover:text-[#00FFD4] transition-colors flex items-center gap-1"
             >
               <SkipForward className="w-4 h-4" />
               Skip this step
             </button>
-            <span className="text-[#A7ACB8]/30">|</span>
+            <span className="text-[#6B7280]/30">|</span>
             <button
               onClick={() => handleSkip(true)}
-              className="text-sm text-[#A7ACB8] hover:text-[#FF6161] transition-colors"
+              className="text-sm text-[#6B7280] hover:text-[#FF3366] transition-colors"
             >
               Skip all setup
             </button>
@@ -374,7 +374,7 @@ export function OnboardingWizard() {
         )}
 
         {/* Step indicator text */}
-        <p className="text-center text-xs text-[#A7ACB8]/50">
+        <p className="text-center text-xs text-[#6B7280]/50">
           {step === 0 && "Let's start with the basics"}
           {step === 1 && "This helps others understand what you do"}
           {step === 2 && "Choose an AI personality that fits you"}

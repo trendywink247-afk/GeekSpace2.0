@@ -400,15 +400,15 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       <div
         className={`${
           isMobile
-            ? 'fixed inset-0 z-[70] bg-[#0B0B10] flex flex-col'
-            : `fixed right-0 top-0 h-full w-full md:w-[420px] bg-[#0B0B10] border-l border-[#7B61FF]/20 shadow-2xl shadow-[#7B61FF]/10 z-[61] flex flex-col`
+            ? 'fixed inset-0 z-[70] bg-[#0A0A0F] flex flex-col'
+            : `fixed right-0 top-0 h-full w-full md:w-[420px] bg-[#0A0A0F] border-l border-[#00FFD4]/20 shadow-2xl shadow-[#00FFD4]/10 z-[61] flex flex-col`
         } transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between p-4 border-b border-[#7B61FF]/20 bg-[#05050A] safe-area-pt"
+          className="flex items-center justify-between p-4 border-b border-[#00FFD4]/20 bg-[#030304] safe-area-pt"
           onTouchStart={handleHeaderTouchStart}
           onTouchEnd={handleHeaderTouchEnd}
         >
@@ -417,22 +417,22 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
                 premiumSession
                   ? 'bg-gradient-to-br from-[#F59E0B] to-[#EF4444]'
-                  : 'bg-gradient-to-br from-[#7B61FF] to-[#FF61DC]'
+                  : 'bg-gradient-to-br from-[#00FFD4] to-[#FF0080]'
               }`}>
                 {avatarEmoji}
               </div>
-              <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#05050A] ${
-                premiumSession ? 'bg-[#F59E0B] animate-pulse' : 'bg-[#61FF7B]'
+              <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#030304] ${
+                premiumSession ? 'bg-[#F59E0B] animate-pulse' : 'bg-[#00FF88]'
               }`} />
             </div>
             <div>
-              <div className="font-semibold text-sm text-[#F4F6FF]">{headerName}</div>
+              <div className="font-semibold text-sm text-[#E8E8F0]">{headerName}</div>
               {premiumSession ? (
                 <div className="text-xs text-[#F59E0B] flex items-center gap-1">
                   <Zap className="w-3 h-3" /> Session active &middot; {premiumSession.creditsUsed} credits
                 </div>
               ) : (
-                <div className="text-xs text-[#61FF7B] flex items-center gap-1">
+                <div className="text-xs text-[#00FF88] flex items-center gap-1">
                   <Sparkles className="w-3 h-3" /> Online
                 </div>
               )}
@@ -450,17 +450,17 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             ) : (
               <button
                 onClick={resetChat}
-                className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors"
+                className="p-2 rounded-lg hover:bg-[#00FFD4]/10 transition-colors"
                 title="Reset chat"
               >
-                <RotateCcw className="w-4 h-4 text-[#A7ACB8]" />
+                <RotateCcw className="w-4 h-4 text-[#6B7280]" />
               </button>
             )}
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors"
+              className="p-2 rounded-lg hover:bg-[#00FFD4]/10 transition-colors"
             >
-              <X className="w-5 h-5 text-[#A7ACB8]" />
+              <X className="w-5 h-5 text-[#6B7280]" />
             </button>
           </div>
         </div>
@@ -474,14 +474,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               style={{ animation: 'page-enter 0.2s ease-out' }}
             >
               {msg.role === 'system' ? (
-                <div className="px-3 py-1.5 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/20 text-[10px] text-[#A7ACB8]">
+                <div className="px-3 py-1.5 rounded-full bg-[#00FFD4]/10 border border-[#00FFD4]/20 text-[10px] text-[#6B7280]">
                   {msg.content}
                 </div>
               ) : (
                 <>
                   {msg.role === 'agent' && (
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center mr-2 flex-shrink-0 mt-1 text-sm ${
-                      premiumSession ? 'bg-[#F59E0B]/20' : 'bg-[#7B61FF]/20'
+                      premiumSession ? 'bg-[#F59E0B]/20' : 'bg-[#00FFD4]/20'
                     }`}>
                       {avatarEmoji}
                     </div>
@@ -489,14 +489,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                   <div
                     className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed overflow-x-auto ${
                       msg.role === 'user'
-                        ? 'bg-[#7B61FF] text-white rounded-br-md'
-                        : 'bg-[#05050A] text-[#F4F6FF] border border-[#7B61FF]/20 rounded-bl-md'
+                        ? 'bg-[#00FFD4] text-white rounded-br-md'
+                        : 'bg-[#030304] text-[#E8E8F0] border border-[#00FFD4]/20 rounded-bl-md'
                     }`}
                   >
                     {msg.content}
-                    {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-[#7B61FF] ml-0.5 animate-pulse rounded-sm" />}
+                    {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-[#00FFD4] ml-0.5 animate-pulse rounded-sm" />}
                     {msg.provider && !msg.isStreaming && (
-                      <span className="block mt-1.5 text-[10px] text-[#A7ACB8]/60 flex items-center gap-1">
+                      <span className="block mt-1.5 text-[10px] text-[#6B7280]/60 flex items-center gap-1">
                         <Zap className="w-2.5 h-2.5" /> {providerLabels[msg.provider!] ?? msg.provider}
                         {msg.model && formatModelName(msg.model) && (
                           <span className="text-[#555]">· via {formatModelName(msg.model)}</span>
@@ -526,13 +526,13 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                             href={receipt.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#61FF7B]/10 border border-[#61FF7B]/20 text-sm hover:bg-[#61FF7B]/15 transition-colors"
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20 text-sm hover:bg-[#00FF88]/15 transition-colors"
                           >
                             <span className="text-lg">{receipt.icon}</span>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-[#61FF7B]">{receipt.text}</p>
+                              <p className="font-medium text-[#00FF88]">{receipt.text}</p>
                               {receipt.details && (
-                                <p className="text-xs text-[#A7ACB8] truncate">{receipt.details}</p>
+                                <p className="text-xs text-[#6B7280] truncate">{receipt.details}</p>
                               )}
                             </div>
                           </a>
@@ -562,16 +562,16 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           {isTyping && (
             <div className="flex justify-start">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center mr-2 flex-shrink-0 mt-1 text-sm ${
-                premiumSession ? 'bg-[#F59E0B]/20' : 'bg-[#7B61FF]/20'
+                premiumSession ? 'bg-[#F59E0B]/20' : 'bg-[#00FFD4]/20'
               }`}>
                 {avatarEmoji}
               </div>
-              <div className="bg-[#05050A] border border-[#7B61FF]/20 px-4 py-3 rounded-2xl rounded-bl-md">
+              <div className="bg-[#030304] border border-[#00FFD4]/20 px-4 py-3 rounded-2xl rounded-bl-md">
                 <div className="flex gap-1.5">
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
-                      className="w-2 h-2 rounded-full bg-[#7B61FF]/60"
+                      className="w-2 h-2 rounded-full bg-[#00FFD4]/60"
                       style={{ animation: `typing-dot 1.2s ease-in-out ${i * 0.2}s infinite` }}
                     />
                   ))}
@@ -583,12 +583,12 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           {/* Suggested prompts (show when only greeting) */}
           {messages.length <= 1 && !isTyping && !premiumSession && !agentOwner && (
             <div className="space-y-2 pt-2">
-              <p className="text-xs text-[#A7ACB8] uppercase tracking-wider">Suggestions</p>
+              <p className="text-xs text-[#6B7280] uppercase tracking-wider">Suggestions</p>
               {suggestedPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => sendMessage(prompt)}
-                  className="block w-full text-left px-4 py-2.5 min-h-[44px] rounded-xl bg-[#05050A] border border-[#7B61FF]/20 text-sm text-[#A7ACB8] hover:text-[#F4F6FF] hover:border-[#7B61FF]/40 transition-colors"
+                  className="block w-full text-left px-4 py-2.5 min-h-[44px] rounded-xl bg-[#030304] border border-[#00FFD4]/20 text-sm text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00FFD4]/40 transition-colors"
                 >
                   {prompt}
                 </button>
@@ -602,16 +602,16 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         {/* Deploy Dialog Overlay */}
         {showDeployDialog && (
           <div className="absolute inset-0 bg-black/60 z-10 flex items-center justify-center p-6">
-            <div className="bg-[#0B0B10] border border-[#7B61FF]/30 rounded-2xl p-5 w-full max-w-sm space-y-4">
+            <div className="bg-[#0A0A0F] border border-[#00FFD4]/30 rounded-2xl p-5 w-full max-w-sm space-y-4">
               <div className="flex items-center gap-2">
                 <Rocket className="w-5 h-5 text-[#F59E0B]" />
-                <h3 className="text-sm font-semibold text-[#F4F6FF]">Deploy Specialist</h3>
+                <h3 className="text-sm font-semibold text-[#E8E8F0]">Deploy Specialist</h3>
               </div>
               <textarea
                 value={deployTask}
                 onChange={(e) => setDeployTask(e.target.value)}
                 placeholder="Describe the task for the specialist..."
-                className="w-full h-24 px-3 py-2 bg-[#05050A] border border-[#7B61FF]/30 rounded-xl text-sm text-[#F4F6FF] placeholder-[#A7ACB8]/50 resize-none focus:outline-none focus:border-[#7B61FF]/60"
+                className="w-full h-24 px-3 py-2 bg-[#030304] border border-[#00FFD4]/30 rounded-xl text-sm text-[#E8E8F0] placeholder-[#6B7280]/50 resize-none focus:outline-none focus:border-[#00FFD4]/60"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -620,11 +620,11 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                   }
                 }}
               />
-              <p className="text-[11px] text-[#A7ACB8]/60">Costs 100 credits to deploy. Uses premium reasoning engine.</p>
+              <p className="text-[11px] text-[#6B7280]/60">Costs 100 credits to deploy. Uses premium reasoning engine.</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => { setShowDeployDialog(false); setDeployTask(''); }}
-                  className="flex-1 px-4 py-2 rounded-xl border border-[#7B61FF]/20 text-sm text-[#A7ACB8] hover:text-[#F4F6FF] transition-colors"
+                  className="flex-1 px-4 py-2 rounded-xl border border-[#00FFD4]/20 text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
                 >
                   Cancel
                 </button>
@@ -641,7 +641,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         )}
 
         {/* Input */}
-        <div className="p-4 border-t border-[#7B61FF]/20 bg-[#05050A] safe-area-pb">
+        <div className="p-4 border-t border-[#00FFD4]/20 bg-[#030304] safe-area-pb">
           <div className="flex items-center gap-2">
             {!premiumSession && !agentOwner && (
               <button
@@ -658,15 +658,15 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={premiumSession ? `Ask ${premiumSession.codename}...` : 'Ask anything...'}
-              className="flex-1 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF] rounded-xl"
+              className="flex-1 bg-[#0A0A0F] border-[#00FFD4]/30 text-[#E8E8F0] rounded-xl"
             />
             {speechSupported && (
               <button
                 onClick={handleVoiceInput}
-                className={`p-2 rounded-lg transition-colors ${isListening ? 'bg-[#7B61FF]/20 hover:bg-[#7B61FF]/30' : 'hover:bg-[#7B61FF]/10'}`}
+                className={`p-2 rounded-lg transition-colors ${isListening ? 'bg-[#00FFD4]/20 hover:bg-[#00FFD4]/30' : 'hover:bg-[#00FFD4]/10'}`}
                 title={isListening ? 'Stop listening' : 'Voice input'}
               >
-                <Mic className={`w-4 h-4 ${isListening ? 'text-[#7B61FF]' : 'text-[#A7ACB8]'}`} />
+                <Mic className={`w-4 h-4 ${isListening ? 'text-[#00FFD4]' : 'text-[#6B7280]'}`} />
               </button>
             )}
             <Button
@@ -675,16 +675,16 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               className={`rounded-xl px-3 press-scale ${
                 premiumSession
                   ? 'bg-[#F59E0B] hover:bg-[#D97706]'
-                  : 'bg-[#7B61FF] hover:bg-[#6B51EF]'
+                  : 'bg-[#00FFD4] hover:bg-[#00D4B0]'
               }`}
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
-          <p className="text-[10px] text-[#A7ACB8]/50 text-center mt-2">
+          <p className="text-[10px] text-[#6B7280]/50 text-center mt-2">
             {premiumSession
               ? `${premiumSession.codename} · Premium Engine · ${premiumSession.messagesCount} messages`
-              : <>Powered by GeekSpace &middot; {agent.primaryModel}</>
+              : <>Powered by Agentin &middot; {agent.primaryModel}</>
             }
           </p>
         </div>

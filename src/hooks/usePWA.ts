@@ -181,7 +181,7 @@ export function usePWA() {
       return;
     }
 
-    new Notification('GeekSpace Test', {
+    new Notification('Agentin Test', {
       body: 'Push notifications are working! 🎉',
       icon: '/icon-192x192.png',
       badge: '/badge-72x72.png',

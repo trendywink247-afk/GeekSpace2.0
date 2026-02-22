@@ -1,6 +1,6 @@
 import 'apminsight';
 // ============================================================
-// GeekSpace Core API — Production Entry Point
+// Agentin Core API — Production Entry Point
 // Express + SQLite + JWT, production-hardened
 // ============================================================
 
@@ -40,7 +40,7 @@ app.listen(config.port, () => {
     env: config.env,
     corsOrigins: config.corsOrigins,
     ollamaUrl: config.ollamaBaseUrl,
-  }, `GeekSpace API v${APP_VERSION} running on :${config.port}`);
+  }, `Agentin API v${APP_VERSION} running on :${config.port}`);
 
   // Idempotent table migrations — safe to run in every cluster worker
   initMemoryTables();

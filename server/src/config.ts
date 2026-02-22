@@ -135,7 +135,7 @@ export const config = {
 
   // Resend email
   resendApiKey: process.env.RESEND_API_KEY || '',
-  resendFromEmail: optional('RESEND_FROM_EMAIL', 'agent@geekspace.space'),
+  resendFromEmail: optional('RESEND_FROM_EMAIL', 'agent@agentin.chat'),
 
   // Admin dashboard
   adminDashboardPassword: process.env.ADMIN_DASHBOARD_PASSWORD || '',

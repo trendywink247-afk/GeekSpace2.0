@@ -1,5 +1,5 @@
 // ============================================================
-// GeekSpace Core Types — the single source of truth for the
+// Agentin Core Types — the single source of truth for the
 // 4-layer AI OS architecture.
 // ============================================================
 

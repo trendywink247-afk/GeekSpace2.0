@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Play, Sparkles } from 'lucide-react';
+import { ArrowRight, Play, Hexagon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface HeroSectionProps {
@@ -12,109 +12,167 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
   const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [typedText, setTypedText] = useState('');
+  const [orbHover, setOrbHover] = useState(false);
+
+  const fullText = 'YOUR AGENTS. YOUR RULES.';
 
   useEffect(() => {
-    // Trigger entrance animation after mount
     const timer = setTimeout(() => setIsLoaded(true), 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // Typewriter effect for subtext
+  useEffect(() => {
+    if (!isLoaded) return;
+    const phrases = ['Build autonomous agents.', 'Deploy in seconds.', 'Scale without limits.', 'Chat with intelligence.'];
+    let phraseIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    let timeout: ReturnType<typeof setTimeout>;
+
+    const tick = () => {
+      const current = phrases[phraseIndex];
+      if (isDeleting) {
+        setTypedText(current.substring(0, charIndex - 1));
+        charIndex--;
+        if (charIndex === 0) {
+          isDeleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          timeout = setTimeout(tick, 500);
+          return;
+        }
+        timeout = setTimeout(tick, 40);
+      } else {
+        setTypedText(current.substring(0, charIndex + 1));
+        charIndex++;
+        if (charIndex === current.length) {
+          isDeleting = true;
+          timeout = setTimeout(tick, 2000);
+          return;
+        }
+        timeout = setTimeout(tick, 70);
+      }
+    };
+
+    const startDelay = setTimeout(() => tick(), 800);
+    return () => {
+      clearTimeout(startDelay);
+      clearTimeout(timeout);
+    };
+  }, [isLoaded]);
 
   return (
     <section
       ref={sectionRef}
       id="hero"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden scanlines"
     >
-      {/* Central Glow Effect */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div 
-          className={`w-[300px] h-[300px] md:w-[600px] md:h-[600px] rounded-full transition-all duration-1000 ${
-            isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-          }`}
-          style={{
-            background: 'radial-gradient(circle, rgba(123, 97, 255, 0.15) 0%, transparent 70%)',
-          }}
-        />
-      </div>
+      {/* Gradient Mesh Background */}
+      <div className="absolute inset-0 gradient-mesh pointer-events-none" />
 
-      {/* Central 3D Node Cluster */}
-      <div 
-        className={`absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 delay-300 ${
-          isLoaded ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-75 -rotate-12'
+      {/* Central Orb — Plasma Core */}
+      <div
+        className={`absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 delay-300 ${
+          isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
         }`}
+        onMouseEnter={() => setOrbHover(true)}
+        onMouseLeave={() => setOrbHover(false)}
       >
-        <div className="relative w-48 h-48 md:w-64 md:h-64">
-          {/* Outer ring */}
-          <div className="absolute inset-0 border border-[#7B61FF]/30 rounded-full animate-pulse" />
-          <div className="absolute inset-4 border border-[#7B61FF]/20 rounded-full rotate-slow" />
-          
-          {/* Central brain/node icon */}
+        <div className="relative w-48 h-48 md:w-72 md:h-72">
+          {/* Outer plasma ring */}
+          <div
+            className="absolute inset-0 rounded-full plasma-border"
+            style={{
+              background: 'transparent',
+              borderRadius: '50%',
+            }}
+          />
+          {/* Spinning dashed ring */}
+          <div className="absolute inset-[-8px] border border-dashed border-[#00FFD4]/20 rounded-full animate-spin" style={{ animationDuration: '25s' }} />
+          <div className="absolute inset-[-20px] border border-dashed border-[#FF0080]/10 rounded-full" style={{ animation: 'spin 35s linear infinite reverse' }} />
+
+          {/* Inner glow */}
+          <div
+            className={`absolute inset-4 rounded-full transition-all duration-700 ${
+              orbHover ? 'scale-110' : 'scale-100'
+            }`}
+            style={{
+              background: `radial-gradient(circle, rgba(0, 255, 212, ${orbHover ? 0.15 : 0.08}) 0%, rgba(255, 0, 128, ${orbHover ? 0.08 : 0.04}) 50%, transparent 70%)`,
+            }}
+          />
+
+          {/* Center icon */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative">
-              <Sparkles className="w-20 h-20 md:w-28 md:h-28 text-[#7B61FF]" />
-              <div className="absolute inset-0 bg-[#7B61FF]/40 blur-2xl rounded-full" />
+              <Hexagon
+                className={`w-16 h-16 md:w-24 md:h-24 transition-all duration-500 ${
+                  orbHover ? 'text-[#00FFD4] drop-shadow-[0_0_20px_rgba(0,255,212,0.6)]' : 'text-[#00FFD4]/70'
+                }`}
+              />
+              <div className="absolute inset-0 bg-[#00FFD4]/20 blur-3xl rounded-full" />
             </div>
           </div>
 
-          {/* Orbiting nodes */}
-          {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-3 h-3 bg-[#7B61FF] rounded-full"
-              style={{
-                top: `${50 + 40 * Math.sin((i * Math.PI) / 3)}%`,
-                left: `${50 + 40 * Math.cos((i * Math.PI) / 3)}%`,
-                transform: 'translate(-50%, -50%)',
-                boxShadow: '0 0 10px rgba(123, 97, 255, 0.8)',
-                animation: `pulse 2s ease-in-out ${i * 0.3}s infinite`,
-              }}
-            />
-          ))}
+          {/* Orbiting particles */}
+          {[...Array(8)].map((_, i) => {
+            const isCyan = i % 2 === 0;
+            return (
+              <div
+                key={i}
+                className="absolute w-2 h-2 rounded-full"
+                style={{
+                  top: `${50 + 42 * Math.sin((i * Math.PI) / 4)}%`,
+                  left: `${50 + 42 * Math.cos((i * Math.PI) / 4)}%`,
+                  transform: 'translate(-50%, -50%)',
+                  background: isCyan ? '#00FFD4' : '#FF0080',
+                  boxShadow: `0 0 12px ${isCyan ? 'rgba(0, 255, 212, 0.8)' : 'rgba(255, 0, 128, 0.8)'}`,
+                  animation: `pulse 2.5s ease-in-out ${i * 0.3}s infinite`,
+                }}
+              />
+            );
+          })}
         </div>
       </div>
 
       {/* Content */}
       <div className="relative z-10 text-center px-4 sm:px-6 md:px-8 max-w-5xl mx-auto mt-[28vh] sm:mt-[30vh] md:mt-[35vh] animate-page-enter">
         {/* Micro Label */}
-        <div 
+        <div
           className={`mb-6 transition-all duration-700 delay-100 ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          <span className="font-mono text-xs tracking-[0.2em] uppercase text-[#7B61FF]">
-            Multi-Tenant AI Platform
+          <span className="font-mono text-xs tracking-[0.3em] uppercase text-[#00FFD4]/80 px-4 py-1.5 border border-[#00FFD4]/20 rounded-full bg-[#00FFD4]/5">
+            Autonomous AI Platform
           </span>
         </div>
 
-        {/* Main Headline */}
-        <h1 
-          className={`text-3xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-8xl font-bold mb-4 transition-all duration-700 delay-200 ${
+        {/* Main Headline — Glitch Effect */}
+        <h1
+          className={`text-4xl sm:text-5xl md:text-6xl lg:text-8xl xl:text-9xl font-extrabold mb-4 transition-all duration-700 delay-200 glitch-text ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
-          style={{ fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1.05 }}
+          style={{ fontFamily: 'Syne, sans-serif', lineHeight: 1.0 }}
+          data-text={fullText}
         >
-          <span className="text-gradient">YOUR AI</span>
-        </h1>
-        <h1 
-          className={`text-3xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-8xl font-bold mb-6 sm:mb-8 transition-all duration-700 delay-300 ${
-            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-          }`}
-          style={{ fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1.05 }}
-        >
-          <span className="text-[#F4F6FF]">YOUR DOMAIN</span>
+          <span className="text-gradient">{fullText}</span>
         </h1>
 
-        {/* Subheadline */}
-        <p 
-          className={`text-base sm:text-lg md:text-xl text-[#A7ACB8] max-w-2xl mx-auto mb-8 sm:mb-10 transition-all duration-700 delay-400 ${
+        {/* Typewriter Subline */}
+        <div
+          className={`h-8 mb-8 transition-all duration-700 delay-400 ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          One neural network. Infinite company personalities. Each subdomain is a living assistant—connected, secure, and always on.
-        </p>
+          <span className="font-mono text-base md:text-lg text-[#6B7280]">
+            {typedText}
+            <span className="typewriter-cursor ml-0.5">&nbsp;</span>
+          </span>
+        </div>
 
         {/* CTA Buttons */}
-        <div 
+        <div
           className={`flex flex-col sm:flex-row items-center justify-center gap-4 transition-all duration-700 delay-500 ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
@@ -122,25 +180,27 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
           <Button
             size="lg"
             onClick={onEnterDashboard}
-            className="w-full sm:w-auto bg-[#7B61FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#7B61FF]/30 group"
+            className="w-full sm:w-auto relative overflow-hidden bg-gradient-to-r from-[#00FFD4] to-[#00D4B0] text-[#030304] px-8 py-6 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,212,0.3)] group"
           >
-            {onEnterDashboard ? 'Enter Dashboard' : 'Explore the Network'}
-            <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+            <span className="relative z-10 flex items-center">
+              {onEnterDashboard ? 'Enter Dashboard' : 'Explore the Network'}
+              <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+            </span>
           </Button>
           <Button
             size="lg"
             variant="outline"
             onClick={() => onWatchDemo ? onWatchDemo() : navigate('/login?demo=true')}
-            className="w-full sm:w-auto border-[#7B61FF]/50 text-[#F4F6FF] hover:bg-[#7B61FF]/10 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
+            className="w-full sm:w-auto border-[#FF0080]/40 text-[#E8E8F0] hover:bg-[#FF0080]/5 hover:border-[#FF0080]/60 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
           >
-            <Play className="mr-2 w-5 h-5 text-[#7B61FF]" />
+            <Play className="mr-2 w-5 h-5 text-[#FF0080]" />
             Watch Demo
           </Button>
         </div>
       </div>
 
       {/* Bottom Gradient Fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#05050A] to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#030304] to-transparent pointer-events-none" />
     </section>
   );
 }

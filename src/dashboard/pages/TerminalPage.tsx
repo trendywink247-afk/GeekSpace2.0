@@ -6,8 +6,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { useTerminalStore } from '@/stores/terminalStore';
 import { agentService } from '@/services/api';
 
-const welcomeMessage = `GeekSpace Terminal v2.0.0
-Powered by GeekSpace AI Engine
+const welcomeMessage = `Agentin Terminal v2.0.0
+Powered by Agentin AI Engine
 Type 'help' to see available commands.
 `;
 
@@ -105,7 +105,7 @@ ${reminders.filter((r) => !r.completed).slice(0, 5).map((r) => `  - ${r.text} ($
   Use "gs reminders add" to add tasks.`,
 
     'gs portfolio': `Opening portfolio...
-URL: https://${user?.username || 'user'}.geekspace.space
+URL: https://${user?.username || 'user'}.agentin.chat
 Status: Published`,
 
     'gs status': `Agent Status: ${agent.status === 'online' ? 'Online' : agent.status === 'error' ? 'Error' : 'Offline'}
@@ -175,7 +175,7 @@ Building... done (2.1s)
 Optimizing assets... done
 Publishing to CDN... done
 
-Portfolio live at: https://${user?.username || 'user'}.geekspace.space
+Portfolio live at: https://${user?.username || 'user'}.agentin.chat
 Deploy ID: dep_${Date.now().toString(36)}`,
 
     'help': helpText,
@@ -310,19 +310,19 @@ Deploy ID: dep_${Date.now().toString(36)}`,
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Terminal</h1>
-          <p className="text-[#A7ACB8] flex items-center gap-2 text-sm">
-            <Bot className="w-4 h-4 text-[#7B61FF]" />
-            <span className="hidden sm:inline">Direct CLI access to GeekSpace API + AI Agent</span>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>Terminal</h1>
+          <p className="text-[#6B7280] flex items-center gap-2 text-sm">
+            <Bot className="w-4 h-4 text-[#00FFD4]" />
+            <span className="hidden sm:inline">Direct CLI access to Agentin API + AI Agent</span>
             <span className="sm:hidden">CLI + AI Agent</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="px-3 py-1.5 rounded-lg bg-[#61FF7B]/10 border border-[#61FF7B]/20 flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-[#61FF7B]" />
-            <span className="text-xs text-[#61FF7B] font-mono">AI Ready</span>
+          <div className="px-3 py-1.5 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20 flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#00FF88]" />
+            <span className="text-xs text-[#00FF88] font-mono">AI Ready</span>
           </div>
-          <Button variant="outline" size="sm" onClick={clearTerminal} className="border-[#7B61FF]/30 text-[#A7ACB8]">
+          <Button variant="outline" size="sm" onClick={clearTerminal} className="border-[#00FFD4]/30 text-[#6B7280]">
             <Trash2 className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Clear</span>
           </Button>
         </div>
@@ -330,18 +330,18 @@ Deploy ID: dep_${Date.now().toString(36)}`,
 
       {/* Terminal Window */}
       <div
-        className="flex-1 rounded-2xl bg-[#0B0B10] border border-[#7B61FF]/30 overflow-hidden flex flex-col"
+        className="flex-1 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/30 overflow-hidden flex flex-col"
         onClick={() => inputRef.current?.focus()}
       >
         {/* Terminal Header */}
-        <div className="h-10 bg-[#05050A] border-b border-[#7B61FF]/20 flex items-center px-4 gap-2">
+        <div className="h-10 bg-[#030304] border-b border-[#00FFD4]/20 flex items-center px-4 gap-2">
           <div className="w-3 h-3 rounded-full bg-[#FF6161]" />
-          <div className="w-3 h-3 rounded-full bg-[#FFD761]" />
-          <div className="w-3 h-3 rounded-full bg-[#61FF7B]" />
+          <div className="w-3 h-3 rounded-full bg-[#FFB800]" />
+          <div className="w-3 h-3 rounded-full bg-[#00FF88]" />
           <div className="flex-1 text-center">
-            <span className="text-xs text-[#A7ACB8] font-mono">{user?.username || 'user'}@geekspace ~ terminal</span>
+            <span className="text-xs text-[#6B7280] font-mono">{user?.username || 'user'}@geekspace ~ terminal</span>
           </div>
-          <TerminalIcon className="w-4 h-4 text-[#A7ACB8]" />
+          <TerminalIcon className="w-4 h-4 text-[#6B7280]" />
         </div>
 
         {/* Terminal Content */}
@@ -350,29 +350,29 @@ Deploy ID: dep_${Date.now().toString(36)}`,
             <div key={cmd.id} className="mb-4">
               {cmd.input && (
                 <div className="flex items-center gap-2">
-                  <span className="text-[#61FF7B]">➜</span>
-                  <span className="text-[#7B61FF]">~</span>
-                  <span className="text-[#F4F6FF]">{cmd.input}</span>
+                  <span className="text-[#00FF88]">➜</span>
+                  <span className="text-[#00FFD4]">~</span>
+                  <span className="text-[#E8E8F0]">{cmd.input}</span>
                 </div>
               )}
               {cmd.isLoading ? (
-                <div className="mt-1 flex items-center gap-2 text-[#7B61FF]">
-                  <div className="w-3 h-3 border-2 border-[#7B61FF]/30 border-t-[#7B61FF] rounded-full animate-spin" />
-                  <span className="text-[#A7ACB8]">Thinking...</span>
+                <div className="mt-1 flex items-center gap-2 text-[#00FFD4]">
+                  <div className="w-3 h-3 border-2 border-[#00FFD4]/30 border-t-[#00FFD4] rounded-full animate-spin" />
+                  <span className="text-[#6B7280]">Thinking...</span>
                 </div>
               ) : cmd.output ? (
                 <div className="mt-1 relative group">
-                  <pre className={`whitespace-pre-wrap ${cmd.isError ? 'text-[#FF6161]' : 'text-[#F4F6FF]'}`}>
+                  <pre className={`whitespace-pre-wrap ${cmd.isError ? 'text-[#FF6161]' : 'text-[#E8E8F0]'}`}>
                     {cmd.output}
                   </pre>
                   <button
                     onClick={() => copyToClipboard(cmd.output, cmd.id)}
-                    className="absolute top-0 right-0 p-1.5 rounded bg-[#05050A] border border-[#7B61FF]/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-0 right-0 p-1.5 rounded bg-[#030304] border border-[#00FFD4]/20 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     {copiedId === cmd.id ? (
-                      <Check className="w-3 h-3 text-[#61FF7B]" />
+                      <Check className="w-3 h-3 text-[#00FF88]" />
                     ) : (
-                      <Copy className="w-3 h-3 text-[#A7ACB8]" />
+                      <Copy className="w-3 h-3 text-[#6B7280]" />
                     )}
                   </button>
                 </div>
@@ -382,15 +382,15 @@ Deploy ID: dep_${Date.now().toString(36)}`,
 
           {/* Input Line */}
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <span className="text-[#61FF7B]">➜</span>
-            <span className="text-[#7B61FF]">~</span>
+            <span className="text-[#00FF88]">➜</span>
+            <span className="text-[#00FFD4]">~</span>
             <input
               ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent border-none outline-none text-[#F4F6FF] font-mono"
+              className="flex-1 bg-transparent border-none outline-none text-[#E8E8F0] font-mono"
               placeholder="Type a command..."
               autoComplete="off"
               spellCheck={false}
@@ -410,8 +410,8 @@ Deploy ID: dep_${Date.now().toString(36)}`,
             onClick={() => executeCommand(cmd)}
             className={`px-3 py-2.5 min-h-[44px] rounded-lg border text-xs transition-colors ${
               cmd.startsWith('ai ')
-                ? 'bg-[#7B61FF]/10 border-[#7B61FF]/30 text-[#7B61FF] hover:bg-[#7B61FF]/20'
-                : 'bg-[#0B0B10] border-[#7B61FF]/20 text-[#A7ACB8] hover:border-[#7B61FF]/50 hover:text-[#F4F6FF]'
+                ? 'bg-[#00FFD4]/10 border-[#00FFD4]/30 text-[#00FFD4] hover:bg-[#00FFD4]/20'
+                : 'bg-[#0A0A0F] border-[#00FFD4]/20 text-[#6B7280] hover:border-[#00FFD4]/50 hover:text-[#E8E8F0]'
             }`}
           >
             {cmd}

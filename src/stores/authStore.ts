@@ -51,7 +51,7 @@ const demoUser: User = {
   location: 'San Francisco, CA',
   website: 'alexchen.dev',
   tags: ['AI Engineer', 'Full-stack', 'Open Source'],
-  theme: { mode: 'dark', accentColor: '#7B61FF' },
+  theme: { mode: 'dark', accentColor: '#00FFD4' },
   plan: 'pro',
   createdAt: '2026-01-15T00:00:00Z',
 };

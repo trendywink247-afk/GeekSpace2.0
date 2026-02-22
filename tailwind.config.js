@@ -48,6 +48,14 @@ module.exports = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        agentin: {
+          cyan: '#00FFD4',
+          magenta: '#FF0080',
+          violet: '#7000FF',
+          black: '#030304',
+          surface: '#0A0A0F',
+          card: '#0D0D14',
+        },
       },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",
@@ -58,6 +66,14 @@ module.exports = {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        'glow-cyan': '0 0 20px rgba(0, 255, 212, 0.15), 0 0 40px rgba(0, 255, 212, 0.05)',
+        'glow-magenta': '0 0 20px rgba(255, 0, 128, 0.15), 0 0 40px rgba(255, 0, 128, 0.05)',
+        'glow-dual': '0 0 20px rgba(0, 255, 212, 0.12), 0 0 40px rgba(255, 0, 128, 0.08)',
+      },
+      fontFamily: {
+        heading: ['Syne', 'sans-serif'],
+        body: ['Plus Jakarta Sans', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       keyframes: {
         "accordion-down": {

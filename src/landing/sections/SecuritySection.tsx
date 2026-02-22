@@ -53,19 +53,19 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
             <path
               d="M100 20 L170 50 L170 110 Q170 150 100 180 Q30 150 30 110 L30 50 Z"
               fill="none"
-              stroke="rgba(123, 97, 255, 0.4)"
+              stroke="rgba(0, 255, 212, 0.4)"
               strokeWidth="0.5"
             />
             <path
               d="M100 35 L155 58 L155 105 Q155 138 100 162 Q45 138 45 105 L45 58 Z"
               fill="none"
-              stroke="rgba(123, 97, 255, 0.25)"
+              stroke="rgba(0, 255, 212, 0.25)"
               strokeWidth="0.5"
             />
             <path
               d="M100 50 L140 67 L140 100 Q140 125 100 145 Q60 125 60 100 L60 67 Z"
               fill="none"
-              stroke="rgba(123, 97, 255, 0.15)"
+              stroke="rgba(0, 255, 212, 0.15)"
               strokeWidth="0.5"
             />
           </svg>
@@ -79,7 +79,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
             isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
           }`}
           style={{
-            background: 'radial-gradient(circle, rgba(123, 97, 255, 0.1) 0%, transparent 60%)',
+            background: 'radial-gradient(circle, rgba(0, 255, 212, 0.1) 0%, transparent 60%)',
           }}
         />
       </div>
@@ -94,9 +94,9 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
           >
             <div className="relative w-72 h-72 md:w-96 md:h-96">
               {/* Outer rings */}
-              <div className="absolute inset-0 border border-[#7B61FF]/20 rounded-full animate-pulse" />
-              <div className="absolute inset-8 border border-[#7B61FF]/15 rounded-full" style={{ animation: 'pulse 3s ease-in-out 0.5s infinite' }} />
-              <div className="absolute inset-16 border border-[#7B61FF]/10 rounded-full" style={{ animation: 'pulse 3s ease-in-out 1s infinite' }} />
+              <div className="absolute inset-0 border border-[#00FFD4]/20 rounded-full animate-pulse" />
+              <div className="absolute inset-8 border border-[#00FFD4]/15 rounded-full" style={{ animation: 'pulse 3s ease-in-out 0.5s infinite' }} />
+              <div className="absolute inset-16 border border-[#00FFD4]/10 rounded-full" style={{ animation: 'pulse 3s ease-in-out 1s infinite' }} />
               
               {/* Central Shield */}
               <div className="absolute inset-0 flex items-center justify-center">
@@ -107,14 +107,14 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                       <svg viewBox="0 0 100 120" className="w-32 h-40 md:w-40 md:h-48">
                         <defs>
                           <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="rgba(123, 97, 255, 0.4)" />
-                            <stop offset="100%" stopColor="rgba(123, 97, 255, 0.1)" />
+                            <stop offset="0%" stopColor="rgba(0, 255, 212, 0.4)" />
+                            <stop offset="100%" stopColor="rgba(0, 255, 212, 0.1)" />
                           </linearGradient>
                         </defs>
                         <path
                           d="M50 10 L85 25 L85 60 Q85 85 50 105 Q15 85 15 60 L15 25 Z"
                           fill="url(#shieldGrad)"
-                          stroke="rgba(123, 97, 255, 0.5)"
+                          stroke="rgba(0, 255, 212, 0.5)"
                           strokeWidth="2"
                           className="pulse-glow"
                         />
@@ -122,7 +122,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                       
                       {/* Lock icon in center */}
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <Lock className="w-12 h-12 md:w-16 md:h-16 text-[#7B61FF]" />
+                        <Lock className="w-12 h-12 md:w-16 md:h-16 text-[#00FFD4]" />
                       </div>
                     </div>
                   </div>
@@ -131,7 +131,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                   {[...Array(4)].map((_, i) => (
                     <div
                       key={i}
-                      className="absolute w-10 h-10 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/30 flex items-center justify-center"
+                      className="absolute w-10 h-10 rounded-lg bg-[#0A0A0F] border border-[#00FFD4]/30 flex items-center justify-center"
                       style={{
                         top: `${50 + 48 * Math.sin((i * Math.PI) / 2)}%`,
                         left: `${50 + 48 * Math.cos((i * Math.PI) / 2)}%`,
@@ -139,10 +139,10 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                         animation: `float 4s ease-in-out ${i * 0.5}s infinite`,
                       }}
                     >
-                      {i === 0 && <Lock className="w-5 h-5 text-[#7B61FF]" />}
-                      {i === 1 && <Eye className="w-5 h-5 text-[#FF61DC]" />}
-                      {i === 2 && <AlertTriangle className="w-5 h-5 text-[#FFD761]" />}
-                      {i === 3 && <Server className="w-5 h-5 text-[#61FF7B]" />}
+                      {i === 0 && <Lock className="w-5 h-5 text-[#00FFD4]" />}
+                      {i === 1 && <Eye className="w-5 h-5 text-[#FF0080]" />}
+                      {i === 2 && <AlertTriangle className="w-5 h-5 text-[#FFB800]" />}
+                      {i === 3 && <Server className="w-5 h-5 text-[#00FF88]" />}
                     </div>
                   ))}
                 </div>
@@ -156,19 +156,19 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
               isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'
             }`}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B61FF]/10 border border-[#7B61FF]/30 mb-6">
-              <Shield className="w-4 h-4 text-[#7B61FF]" />
-              <span className="text-sm font-mono text-[#7B61FF]">ENTERPRISE GRADE</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00FFD4]/10 border border-[#00FFD4]/30 mb-6">
+              <Shield className="w-4 h-4 text-[#00FFD4]" />
+              <span className="text-sm font-mono text-[#00FFD4]">ENTERPRISE GRADE</span>
             </div>
 
             <h2 
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
-              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+              style={{ fontFamily: 'Syne, sans-serif' }}
             >
               SECURITY <span className="text-gradient">& CONTROL</span>
             </h2>
             
-            <p className="text-lg text-[#A7ACB8] mb-8 leading-relaxed">
+            <p className="text-lg text-[#6B7280] mb-8 leading-relaxed">
               Tenant isolation, audit logs, and emergency stop. Your data stays in your subdomain—encrypted, observable, and yours.
             </p>
 
@@ -177,11 +177,11 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
               {securityFeatures.map((feature, i) => (
                 <div
                   key={i}
-                  className="p-4 rounded-xl bg-[#0B0B10] border border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all duration-300 group"
+                  className="p-4 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all duration-300 group"
                 >
-                  <feature.icon className="w-6 h-6 text-[#7B61FF] mb-2 group-hover:scale-110 transition-transform" />
-                  <div className="font-medium text-[#F4F6FF]">{feature.label}</div>
-                  <div className="text-sm text-[#A7ACB8]">{feature.description}</div>
+                  <feature.icon className="w-6 h-6 text-[#00FFD4] mb-2 group-hover:scale-110 transition-transform" />
+                  <div className="font-medium text-[#E8E8F0]">{feature.label}</div>
+                  <div className="text-sm text-[#6B7280]">{feature.description}</div>
                 </div>
               ))}
             </div>
@@ -195,7 +195,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                   navigate('/docs');
                 }
               }}
-              className="bg-[#7B61FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#7B61FF]/30 group"
+              className="bg-[#00FFD4] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#00FFD4]/30 group"
             >
               Review Security
               <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />

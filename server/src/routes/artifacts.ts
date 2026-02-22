@@ -55,7 +55,7 @@ artifactsRouter.get('/preview/:userId/:artifactId', (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(artifact.title)} — GeekSpace Preview</title>
+  <title>${escapeHtml(artifact.title)} — Agentin Preview</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; padding: 0; }
@@ -65,8 +65,8 @@ artifactsRouter.get('/preview/:userId/:artifactId', (req, res) => {
 <body>
   ${artifact.html || ''}
   <script>
-    // GeekSpace Preview Environment
-    console.log('🔧 GeekSpace Preview — Project: ${escapeJs(artifact.title)}');
+    // Agentin Preview Environment
+    console.log('🔧 Agentin Preview — Project: ${escapeJs(artifact.title)}');
     try {
       ${artifact.js || ''}
     } catch (err) {
@@ -305,7 +305,7 @@ artifactsRouter.post('/:id/export/zip', requireAuth, async (req: AuthRequest, re
       'index.html': buildHtmlFile(artifact.title, artifact.html, artifact.css, artifact.js),
       'style.css': artifact.css || '',
       'script.js': artifact.js || '',
-      'README.md': `# ${artifact.title}\n\nGenerated with GeekSpace`,
+      'README.md': `# ${artifact.title}\n\nGenerated with Agentin`,
     });
 
     res.setHeader('Content-Type', 'application/zip');

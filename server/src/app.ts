@@ -1,5 +1,5 @@
 // ============================================================
-// GeekSpace App Factory — Express app without server start
+// Agentin App Factory — Express app without server start
 // Used by both production (index.ts) and tests
 // ============================================================
 
