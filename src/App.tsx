@@ -6,6 +6,7 @@ import { PortfolioView } from './portfolio/PortfolioView';
 import { OnboardingPage } from './onboarding/OnboardingPage';
 import { ExplorePage } from './explore/ExplorePage';
 import { LoginPage } from './onboarding/LoginPage';
+import { ForgotPasswordPage } from './onboarding/ForgotPasswordPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import { StatusPage } from './pages/StatusPage';
@@ -28,6 +29,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/portfolio/:username" element={<PortfolioView />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />

@@ -97,6 +97,15 @@ export const authService = {
 
   completeOnboarding: () =>
     api.post('/auth/onboarding/complete'),
+
+  requestPasswordReset: (email: string, channel?: 'email' | 'telegram' | 'auto') =>
+    api.post<{ success: boolean; message: string; channel?: string }>('/auth/forgot-password', { email, channel }),
+
+  verifyResetOTP: (email: string, otp: string) =>
+    api.post<{ success: boolean; resetToken?: string; error?: string }>('/auth/verify-reset-otp', { email, otp }),
+
+  resetPassword: (resetToken: string, newPassword: string) =>
+    api.post<{ success: boolean; message?: string; error?: string }>('/auth/reset-password', { resetToken, newPassword }),
 };
 
 // ----- Users -------------------------------------------------

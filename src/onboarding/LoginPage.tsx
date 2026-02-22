@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Sparkles, Mail, Lock, ArrowRight, Github, User, Chrome, Zap } from 'lucide-react';
+import { Sparkles, Mail, Lock, ArrowRight, Github, User, Chrome, Zap, KeyRound } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/authStore';
@@ -153,6 +154,18 @@ export function LoginPage() {
                 />
               </div>
             </div>
+
+            {!isSignup && (
+              <div className="flex justify-end -mt-1">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-[#A7ACB8] hover:text-[#7B61FF] transition-colors inline-flex items-center gap-1 py-1"
+                >
+                  <KeyRound className="w-3 h-3" />
+                  Forgot password?
+                </Link>
+              </div>
+            )}
 
             {error && (
               <p className="text-sm text-[#FF6161]" data-testid="login-error">{error}</p>
