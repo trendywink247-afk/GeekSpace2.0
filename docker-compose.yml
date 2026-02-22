@@ -18,6 +18,7 @@ services:
       - caddy_config:/config
     networks:
       - geekspace-net
+      - geekspace-shared
     depends_on:
       - geekspace
   # ---- GeekSpace API + Frontend ----
@@ -49,6 +50,7 @@ services:
     volumes:
       - geekspace-data:/app/data
       - apm-data:/app/apminsightdata
+      - /root/GeekSpace2.0:/repo
     networks:
       - geekspace-net
       - geekspace-shared

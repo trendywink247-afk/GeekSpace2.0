@@ -41,6 +41,9 @@ function getSafeEnv(): Record<string, string> {
   }
   // Always set TEST_MODE for test commands
   env.TEST_MODE = 'true';
+  // Dummy secrets so config.ts doesn't crash — never real production values
+  env.JWT_SECRET = 'devclaw-test-jwt-secret-not-for-production';
+  env.ENCRYPTION_KEY = 'a'.repeat(64);
   return env;
 }
 
@@ -69,7 +72,7 @@ export function runAllowlistedCommand(key: string): Promise<RunResult> {
 
   return new Promise((resolve) => {
     const child = exec(command, {
-      cwd: process.cwd(),
+      cwd: '/repo',
       env: getSafeEnv(),
       timeout: timeoutMs,
       maxBuffer: 1024 * 1024, // 1MB

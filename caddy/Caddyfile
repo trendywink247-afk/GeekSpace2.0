@@ -14,6 +14,10 @@
 ai.geekspace.space {
 	import common_headers
 
+	basic_auth {
+		admin $2a$14$aCcYMHMGBLWC/uq2iV/vAezsazNWaeloGU./JP/3mT1slPOr7YYcW
+	}
+
 	handle /api/* {
 		reverse_proxy geekspace:3001
 	}
@@ -36,4 +40,10 @@ api.geekspace.space {
 	import common_headers
 
 	reverse_proxy geekspace:3001
+}
+
+dev.geekspace.space {
+	import common_headers
+
+	reverse_proxy openclaw-tnq7-openclaw-1:58049
 }
