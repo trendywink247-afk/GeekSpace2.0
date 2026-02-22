@@ -14,6 +14,7 @@ import {
   isTestMode,
   recordAgentStatus,
 } from '../test/test-mode.js';
+import { signToken } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -101,6 +102,7 @@ router.post('/seed', async (req, res) => {
     credits = 1000,
     agentActive = true,
     agentPersonality = 'jarvis',
+    onboardingCompleted = false,
   } = req.body as {
     email?: string;
     name?: string;
@@ -108,6 +110,7 @@ router.post('/seed', async (req, res) => {
     credits?: number;
     agentActive?: boolean;
     agentPersonality?: string;
+    onboardingCompleted?: boolean;
   };
 
   try {
@@ -123,9 +126,9 @@ router.post('/seed', async (req, res) => {
     const passwordHash = await bcrypt.hash('test-password-123', 10);
 
     db.prepare(`
-      INSERT INTO users (id, email, username, password_hash, name, plan, credits)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(userId, email, username, passwordHash, name, plan, credits);
+      INSERT INTO users (id, email, username, password_hash, name, plan, credits, onboarding_completed)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(userId, email, username, passwordHash, name, plan, credits, onboardingCompleted ? 1 : 0);
 
     // Create agent config
     const agentId = uuid();
@@ -269,6 +272,47 @@ router.post('/agent/status', (req, res) => {
   } catch (err) {
     logger.error({ err }, 'Error updating agent status');
     res.status(500).json({ error: 'Status update failed', details: String(err) });
+  }
+});
+
+/**
+ * POST /test/auth/token
+ * Generate a valid JWT token for a test user (for E2E test authentication)
+ */
+router.post('/auth/token', async (req, res) => {
+  const { userId, email } = req.body as { userId?: string; email?: string };
+
+  try {
+    let user;
+
+    if (userId) {
+      user = db.prepare('SELECT id, email FROM users WHERE id = ?').get(userId) as
+        | { id: string; email: string }
+        | undefined;
+    } else if (email) {
+      user = db.prepare('SELECT id, email FROM users WHERE email = ?').get(email) as
+        | { id: string; email: string }
+        | undefined;
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Generate a valid JWT token
+    const token = signToken(user.id);
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    logger.error({ err }, 'Error generating test auth token');
+    res.status(500).json({ error: 'Token generation failed', details: String(err) });
   }
 });
 

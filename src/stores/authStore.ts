@@ -3,6 +3,13 @@ import { persist } from 'zustand/middleware';
 import type { User, OnboardingState, AgentMode } from '@/types';
 import { authService } from '@/services/api';
 
+// Extend Window interface for test helpers
+declare global {
+  interface Window {
+    __TEST_SET_AUTH__?: (token: string, user?: Record<string, unknown>) => void;
+  }
+}
+
 interface AuthStore {
   user: User | null;
   token: string | null;
@@ -170,3 +177,22 @@ export const useAuthStore = create<AuthStore>()(
     },
   ),
 );
+
+// Test-only: Expose helper to set auth from E2E tests
+// Available when VITE_TEST_MODE is set during build
+if (import.meta.env.VITE_TEST_MODE === 'true') {
+  window.__TEST_SET_AUTH__ = (token: string, user?: Record<string, unknown>) => {
+    const newState = {
+      token,
+      user: user ? (user as unknown as User) : null,
+      isAuthenticated: true,
+      isLoading: false,
+      onboarding: { ...defaultOnboarding, completed: true },
+    };
+    // Set state in Zustand
+    useAuthStore.setState(newState);
+    // Also directly update localStorage to ensure persist works
+    const existingData = JSON.parse(localStorage.getItem('gs-auth') || '{}');
+    localStorage.setItem('gs-auth', JSON.stringify({ ...existingData, state: { ...existingData.state, ...newState } }));
+  };
+}

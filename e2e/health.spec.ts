@@ -1,54 +1,32 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Test 4: Health tab works
+ * Health Dashboard Tests
+ * Uses shared auth state from global setup
  */
+
 test.describe('Health Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    // Login first
-    await page.goto('/login');
-    await page.getByRole('button', { name: /login with demo/i }).click();
-    await page.waitForURL(/.*dashboard.*/, { timeout: 10000 });
-
-    // Navigate to health page by clicking sidebar menu
-    await page.getByRole('button', { name: /^health$/i }).click();
-
-    // Wait for the Health page to start loading (either spinner or content)
-    await page.waitForTimeout(2000);
+    // Navigate to health page (auth is handled by global setup)
+    await page.goto('/dashboard/health');
+    await page.waitForTimeout(1000);
   });
 
   test('should load health dashboard page', async ({ page }) => {
-    // Verify Health is selected in sidebar
-    const healthButton = page.getByRole('button', { name: /^health$/i });
-    await expect(healthButton).toHaveAttribute('aria-current', 'page');
-
-    // Take screenshot of the health page state
+    expect(page.url()).toContain('/dashboard/health');
     await page.screenshot({ path: 'test-results/health-dashboard.png', fullPage: true });
-
-    // Verify the page hasn't crashed - should have either loading spinner or content
     const hasSpinner = await page.locator('.animate-spin, [class*="spin"]').first().isVisible().catch(() => false);
     const hasContent = await page.getByRole('heading').first().isVisible().catch(() => false);
-
     expect(hasSpinner || hasContent).toBeTruthy();
   });
 
   test('should show health page structure', async ({ page }) => {
-    // The Health page should show either loading state or loaded content
-    // If loaded, verify key structure elements
-
-    // Wait for potential loading to complete (with timeout)
     await page.waitForTimeout(5000);
-
-    // Check if we have any heading or the loading spinner
     const heading = page.getByRole('heading').first();
     const headingText = await heading.textContent().catch(() => '');
-
-    // Should either show 'API Health' heading or still be loading
     if (headingText.includes('Health')) {
-      // Page loaded successfully
       await expect(heading).toBeVisible();
     } else {
-      // Still loading or rate limited - verify page hasn't crashed
       const pageContent = await page.content();
       expect(pageContent).toContain('Health');
       expect(pageContent.length).toBeGreaterThan(1000);

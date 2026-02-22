@@ -146,6 +146,10 @@ export const config = {
   windmillUrl: optional('WINDMILL_URL', 'http://windmill-95s4-windmill_server-1:8000'),
   windmillToken: process.env.WINDMILL_TOKEN || '',
 
+  // DevClaw Bridge
+  githubDevToken: process.env.GITHUB_DEV_TOKEN || '',
+  devRunnerTimeoutMs: optionalInt('DEV_RUNNER_TIMEOUT_MS', 300000), // 5 min
+
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',
 } as const;

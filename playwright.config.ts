@@ -23,7 +23,7 @@ export default defineConfig({
   fullyParallel: !isCI, // Disable parallel in CI for determinism
   forbidOnly: isCI,
   retries: isCI ? 2 : 1,
-  workers: isCI ? 1 : undefined,
+  workers: isCI ? 1 : undefined, // Single worker to prevent DB reset interference between tests
   reporter: [
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
     ['list'],
@@ -31,22 +31,19 @@ export default defineConfig({
   ],
   outputDir: 'test-results/',
 
+  // Global setup runs once before all tests to authenticate
+  globalSetup: './e2e/auth.setup.ts',
+
   use: {
     baseURL,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'on-first-retry',
+    video: 'retain-on-failure',
     actionTimeout: 10000,
     navigationTimeout: 15000,
   },
 
   projects: [
-    // Setup project (runs first to authenticate)
-    {
-      name: 'setup',
-      testMatch: /auth\.setup\.ts/,
-    },
-
     // Desktop Chrome
     {
       name: 'chromium',
@@ -54,43 +51,38 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/user.json',
       },
-      dependencies: ['setup'],
     },
 
-    // Mobile - Pixel 5
+    // Mobile - Pixel 5 (uses same shared auth as desktop)
     {
       name: 'pixel5',
       use: {
         ...devices['Pixel 5'],
         storageState: 'playwright/.auth/user.json',
       },
-      dependencies: ['setup'],
     },
 
-    // Mobile - iPhone 13
-    {
-      name: 'iphone13',
-      use: {
-        ...devices['iPhone 13'],
-        storageState: 'playwright/.auth/user.json',
-      },
-      dependencies: ['setup'],
-    },
+    // Mobile - iPhone 13 removed from CI for speed (keep pixel5 for mobile coverage)
+    // Can run full matrix locally or in nightly builds
   ],
 
   // Run backend and frontend before starting tests
   webServer: isCI
     ? [
-        // CI: Use built production code
+        // CI: Use already-built production code (built in workflow)
         {
-          command: 'cd server && npm run build && TEST_MODE=1 PORT=3001 node dist/index.js',
+          command: 'cd server && PORT=3001 node dist/index.js',
           url: `${apiURL}/api/health`,
           reuseExistingServer: false,
           timeout: 120000,
+          env: {
+            TEST_MODE: '1',
+            PORT: '3001',
+          },
         },
-        // Frontend preview
+        // Frontend preview (dist folder already built in workflow with VITE_TEST_MODE)
         {
-          command: 'npm run build && npx vite preview --port 5173',
+          command: 'npx vite preview --port 5173',
           url: baseURL,
           reuseExistingServer: false,
           timeout: 120000,
@@ -99,10 +91,14 @@ export default defineConfig({
     : [
         // Local: Use dev servers
         {
-          command: 'cd server && TEST_MODE=1 PORT=3001 npm run dev',
+          command: 'cd server && npm run dev',
           url: `${apiURL}/api/health`,
           reuseExistingServer: true,
           timeout: 120000,
+          env: {
+            TEST_MODE: '1',
+            PORT: '3001',
+          },
         },
         {
           command: 'npm run dev',

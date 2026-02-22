@@ -343,6 +343,7 @@ export function DashboardApp() {
         }`}
         role="navigation"
         aria-label="Main navigation"
+        data-testid="dashboard-sidebar-desktop"
       >
         {sidebarContent}
       </aside>
@@ -354,6 +355,7 @@ export function DashboardApp() {
         }`}
         role="navigation"
         aria-label="Mobile navigation"
+        data-testid="dashboard-sidebar-mobile"
       >
         {sidebarContent}
       </aside>
@@ -363,6 +365,7 @@ export function DashboardApp() {
         className={`flex-1 transition-all duration-300 pb-20 md:pb-0 ${
           sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'
         }`}
+        data-testid="dashboard-shell"
       >
         {/* Header */}
         <header className="h-14 bg-[#0B0B10]/80 backdrop-blur-xl border-b border-[#7B61FF]/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
@@ -372,6 +375,7 @@ export function DashboardApp() {
               onClick={() => setSidebarOpen(true)}
               className="md:hidden p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Open menu"
+              data-testid="mobile-nav-toggle"
             >
               <Menu className="w-5 h-5 text-[#A7ACB8]" />
             </button>

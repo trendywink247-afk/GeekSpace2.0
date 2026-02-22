@@ -60,6 +60,7 @@ export function resetDatabase(): void {
       'integrations',
       'api_keys',
       'automations',
+      'dev_audit_log',
       'users',
     ];
 

@@ -654,6 +654,25 @@ try {
   `);
 } catch { /* table already exists */ }
 
+// DevClaw Bridge — audit log for admin dev actions
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dev_audit_log (
+      id TEXT PRIMARY KEY,
+      action TEXT NOT NULL,
+      actor TEXT NOT NULL DEFAULT 'admin',
+      params TEXT DEFAULT '{}',
+      status TEXT NOT NULL DEFAULT 'started',
+      started_at TEXT NOT NULL DEFAULT (datetime('now')),
+      finished_at TEXT,
+      output_summary TEXT,
+      pr_url TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_dev_audit_log_action ON dev_audit_log(action);
+    CREATE INDEX IF NOT EXISTS idx_dev_audit_log_started ON dev_audit_log(started_at);
+  `);
+} catch { /* table already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
