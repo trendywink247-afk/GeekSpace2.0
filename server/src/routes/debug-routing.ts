@@ -5,8 +5,8 @@
 // ============================================================
 
 import { Router } from 'express';
-import { getRoutingTraces, clearRoutingTraces, type RoutingTrace } from '../services/llm';
-import { config } from '../config';
+import { getRoutingTraces, clearRoutingTraces, type RoutingTrace } from '../services/llm.js';
+import { config } from '../config.js';
 
 const router = Router();
 
