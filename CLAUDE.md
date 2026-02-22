@@ -171,6 +171,18 @@ Multi-stage (`node:20-alpine`): installs deps → builds frontend (`dist/`) + se
 
 **Telegram messages:** `sanitizeForTelegram()` strips markdown before sending (no `parse_mode` set). The sanitizer is the safety net since lightweight models ignore "no markdown" in the system prompt.
 
+## Project Files
+
+- `README.md` — Public-facing docs with Mermaid architecture, badges, feature grid
+- `CONTRIBUTING.md` — Dev setup, coding standards, PR process
+- `SECURITY.md` — Vulnerability reporting policy
+- `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1
+- `LICENSE` — MIT
+- `docs/` — Public reference docs (API, DEPLOYMENT, ENV_VARS, RUNBOOK, TROUBLESHOOTING, ARCHITECTURE)
+- `docs/internal/` — Internal plans, audit reports, archive (not public-facing)
+- `docs/assets/` — SVG banner and visual assets
+- `.github/` — CI workflows + issue/PR templates
+
 ## Environment
 
 - `.env` is gitignored. `.env.example` is tracked with all variables documented.
@@ -181,3 +193,4 @@ Multi-stage (`node:20-alpine`): installs deps → builds frontend (`dist/`) + se
 - Production: `ai.geekspace.space` (frontend), `api.geekspace.space` (API + admin dashboard), via Caddy reverse proxy
 - Demo users: alex/sarah/marcus (password: `demo123`)
 - Production branch: `live-production`
+- App version: `3.0.0` (in `server/src/app.ts`)
