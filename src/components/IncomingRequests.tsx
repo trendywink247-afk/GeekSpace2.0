@@ -1,0 +1,214 @@
+// ============================================================
+// Incoming Contact Requests
+// Shows pending requests for user (Y) to accept/decline
+// Used in Weebo tab
+// ============================================================
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { User, Check, X, Clock, MessageSquare, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { useAuthStore } from '@/stores/authStore';
+
+interface ContactRequest {
+  id: string;
+  fromName: string;
+  fromUser: {
+    name: string;
+    avatar: string;
+  } | null;
+  source: string;
+  intention: string | null;
+  initialMessage: string | null;
+  createdAt: string;
+  expiresAt: string;
+  channelNotified: string;
+}
+
+export function IncomingRequests() {
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const [requests, setRequests] = useState<ContactRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadRequests();
+    // Poll every 30 seconds
+    const interval = setInterval(loadRequests, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadRequests = async () => {
+    try {
+      const response = await fetch('/api/contact/incoming');
+      if (response.ok) {
+        const data = await response.json();
+        setRequests(data.requests);
+      }
+    } catch (err) {
+      console.error('Failed to load requests:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAccept = async (requestId: string) => {
+    setProcessing(requestId);
+    try {
+      const response = await fetch(`/api/contact/${requestId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Navigate to conversation
+        navigate(`/dashboard/agent?conversation=${data.conversationId}`);
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to accept request');
+      }
+    } catch (err) {
+      alert('Something went wrong');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleDecline = async (requestId: string) => {
+    if (!confirm('Are you sure you want to decline this request?')) return;
+
+    setProcessing(requestId);
+    try {
+      const response = await fetch(`/api/contact/${requestId}/decline`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        // Remove from list
+        setRequests(requests.filter(r => r.id !== requestId));
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to decline request');
+      }
+    } catch (err) {
+      alert('Something went wrong');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="w-6 h-6 border-2 border-[#7B61FF] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (requests.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <MessageSquare className="w-12 h-12 text-[#7B61FF]/30 mx-auto mb-3" />
+        <p className="text-[#A7ACB8]">No pending contact requests</p>
+        <p className="text-xs text-[#A7ACB8]/70 mt-1">
+          When someone wants to reach you, they'll appear here
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-[#F4F6FF]">
+          Incoming Requests ({requests.length})
+        </h3>
+        <Button variant="outline" size="sm" onClick={loadRequests} className="border-[#7B61FF]/30">
+          Refresh
+        </Button>
+      </div>
+
+      {requests.map((request) => (
+        <Card key={request.id} className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              {/* Avatar */}
+              <div className="w-10 h-10 rounded-full bg-[#7B61FF]/20 flex items-center justify-center flex-shrink-0">
+                {request.fromUser?.avatar ? (
+                  <img
+                    src={request.fromUser.avatar}
+                    alt={request.fromName}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <User className="w-5 h-5 text-[#7B61FF]" />
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-[#F4F6FF]">{request.fromName}</span>
+                  <span className="text-xs text-[#A7ACB8]">via {request.source}</span>
+                </div>
+
+                {request.intention && (
+                  <p className="text-sm text-[#A7ACB8] mb-2 line-clamp-2">
+                    {request.intention}
+                  </p>
+                )}
+
+                {request.initialMessage && (
+                  <div className="p-2 rounded-lg bg-[#05050A] text-sm text-[#A7ACB8] mb-3 line-clamp-2">
+                    "{request.initialMessage}"
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 text-xs text-[#A7ACB8] mb-3">
+                  <Clock className="w-3.5 h-3.5" />
+                  Expires {new Date(request.expiresAt).toLocaleDateString()}
+                  {request.channelNotified !== 'none' && (
+                    <span className="text-[#61FF7B]">• Notified on {request.channelNotified}</span>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleAccept(request.id)}
+                    disabled={processing === request.id}
+                    className="flex-1 bg-[#61FF7B] hover:bg-[#51EF6B] text-[#0B0B10]"
+                  >
+                    {processing === request.id ? (
+                      <div className="w-4 h-4 border-2 border-[#0B0B10] border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4 mr-1.5" />
+                        Accept
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDecline(request.id)}
+                    disabled={processing === request.id}
+                    className="flex-1 border-[#FF6161]/30 text-[#FF6161] hover:bg-[#FF6161]/10"
+                  >
+                    <X className="w-4 h-4 mr-1.5" />
+                    Decline
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
