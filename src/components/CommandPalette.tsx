@@ -2,7 +2,7 @@
 // Command Palette - Searchable command interface (Ctrl+K)
 // ============================================================
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -229,7 +229,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   const flatCommands = Object.values(groupedCommands).flat();
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -250,7 +250,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         onClose();
         break;
     }
-  }, [flatCommands, selectedIndex, onClose]);
+  };
 
   useEffect(() => {
     if (isOpen) {
