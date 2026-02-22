@@ -4,6 +4,7 @@ import { createApp } from '../../app.js';
 import { resetDatabase } from '../setup.js';
 import { config } from '../../config.js';
 import { isAllowedCommand } from '../../services/dev-runner.js';
+import { validateBranchName } from '../../services/dev-github.js';
 
 const app = createApp();
 const ADMIN_TOKEN = config.adminToken || 'test-admin-token';
@@ -163,6 +164,94 @@ describe('Dev API Endpoints', () => {
       expect(isAllowedCommand('')).toBe(false);
       expect(isAllowedCommand('cat /etc/passwd')).toBe(false);
       expect(isAllowedCommand('lint && rm -rf /')).toBe(false);
+    });
+  });
+
+  // ---- Create PR endpoint ----
+  describe('POST /api/dev/create-pr', () => {
+    describe('validateBranchName', () => {
+      it('should accept valid branch names', () => {
+        expect(validateBranchName('feature/my-branch')).toBeNull();
+        expect(validateBranchName('devclaw/test-123')).toBeNull();
+        expect(validateBranchName('fix_something')).toBeNull();
+        expect(validateBranchName('abc')).toBeNull();
+      });
+
+      it('should reject protected branches', () => {
+        expect(validateBranchName('main')).toMatch(/protected/i);
+        expect(validateBranchName('master')).toMatch(/protected/i);
+        expect(validateBranchName('live-production')).toMatch(/protected/i);
+      });
+
+      it('should reject invalid characters', () => {
+        expect(validateBranchName('branch name')).toMatch(/alphanumeric/i);
+        expect(validateBranchName('branch..name')).toMatch(/alphanumeric/i);
+        expect(validateBranchName('$(whoami)')).toMatch(/alphanumeric/i);
+        expect(validateBranchName('; rm -rf /')).toMatch(/alphanumeric/i);
+      });
+
+      it('should reject empty names', () => {
+        expect(validateBranchName('')).toMatch(/empty/i);
+        expect(validateBranchName('  ')).toMatch(/empty/i);
+      });
+
+      it('should reject names that are too long', () => {
+        const longName = 'a'.repeat(101);
+        expect(validateBranchName(longName)).toMatch(/too long/i);
+      });
+    });
+
+    it('should require auth', async () => {
+      await request(app)
+        .post('/api/dev/create-pr')
+        .send({ branchName: 'test-branch', title: 'Test PR' })
+        .expect(401);
+    });
+
+    it('should reject invalid branch name', async () => {
+      // Set a token so we get past the 503 check
+      const original = config.githubDevToken;
+      Object.defineProperty(config, 'githubDevToken', { value: 'fake-token', writable: true, configurable: true });
+
+      const res = await request(app)
+        .post('/api/dev/create-pr')
+        .set('Authorization', authHeader())
+        .send({ branchName: 'main', title: 'Test PR' })
+        .expect(400);
+
+      expect(res.body.error).toMatch(/protected/i);
+
+      Object.defineProperty(config, 'githubDevToken', { value: original, writable: true, configurable: true });
+    });
+
+    it('should reject missing title', async () => {
+      const original = config.githubDevToken;
+      Object.defineProperty(config, 'githubDevToken', { value: 'fake-token', writable: true, configurable: true });
+
+      const res = await request(app)
+        .post('/api/dev/create-pr')
+        .set('Authorization', authHeader())
+        .send({ branchName: 'test/valid-branch' })
+        .expect(400);
+
+      expect(res.body.error).toMatch(/title/i);
+
+      Object.defineProperty(config, 'githubDevToken', { value: original, writable: true, configurable: true });
+    });
+
+    it('should return 503 when GITHUB_DEV_TOKEN is not configured', async () => {
+      const original = config.githubDevToken;
+      Object.defineProperty(config, 'githubDevToken', { value: '', writable: true, configurable: true });
+
+      const res = await request(app)
+        .post('/api/dev/create-pr')
+        .set('Authorization', authHeader())
+        .send({ branchName: 'test/some-branch', title: 'Test PR' })
+        .expect(503);
+
+      expect(res.body.error).toMatch(/GITHUB_DEV_TOKEN/);
+
+      Object.defineProperty(config, 'githubDevToken', { value: original, writable: true, configurable: true });
     });
   });
 });
