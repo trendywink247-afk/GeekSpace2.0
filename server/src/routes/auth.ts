@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { validateBody, signupSchema, loginSchema, onboardingSchema } from '../middleware/validate.js';
 import { cacheDel } from '../services/cache.js';
 import { logSecurityEvent } from '../services/security-log.js';
+import { requestPasswordReset, verifyResetOTP, resetPassword } from '../services/passwordReset.js';
 
 export const authRouter = Router();
 
@@ -302,4 +303,56 @@ authRouter.post('/onboarding/complete', requireAuth, (req: AuthRequest, res) => 
   const logActivity = db.prepare('INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, ?, ?, ?)');
   logActivity.run(uuid(), req.userId, 'Completed onboarding', 'Profile set up', 'rocket');
   res.json({ success: true });
+});
+
+// ── Password Reset ──────────────────────────────────────────
+
+authRouter.post('/forgot-password', async (req, res) => {
+  const { email, channel } = req.body;
+  if (!email) {
+    res.status(400).json({ error: 'Email is required' });
+    return;
+  }
+
+  const result = await requestPasswordReset(
+    email,
+    channel || 'auto',
+    req.ip || '0.0.0.0'
+  );
+
+  res.json(result);
+});
+
+authRouter.post('/verify-reset-otp', async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    res.status(400).json({ error: 'Email and OTP are required' });
+    return;
+  }
+
+  const result = await verifyResetOTP(email, otp, req.ip || '0.0.0.0');
+
+  if (!result.success) {
+    res.status(400).json(result);
+    return;
+  }
+
+  res.json(result);
+});
+
+authRouter.post('/reset-password', async (req, res) => {
+  const { resetToken, newPassword } = req.body;
+  if (!resetToken || !newPassword) {
+    res.status(400).json({ error: 'Reset token and new password are required' });
+    return;
+  }
+
+  const result = await resetPassword(resetToken, newPassword, req.ip || '0.0.0.0');
+
+  if (!result.success) {
+    res.status(400).json(result);
+    return;
+  }
+
+  res.json({ success: true, message: 'Password reset successfully' });
 });
