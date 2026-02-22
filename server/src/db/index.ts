@@ -749,13 +749,16 @@ function seedDefaultIntegrations(userId: string) {
 }
 
 function seedDemoData() {
-  // Guard: never seed if real production users exist (exclude demo and test users)
-  const realUserCount = (db.prepare(
-    "SELECT count(*) as cnt FROM users WHERE id NOT LIKE 'demo-%' AND email NOT LIKE '%test-e2e-%' AND email NOT LIKE '%e2etest%'"
-  ).get() as { cnt: number }).cnt;
-  if (realUserCount > 0) {
-    logger.info({ realUserCount }, 'seedDemoData: Real users detected, skipping seed to protect production data');
-    return;
+  // Guard: in production (non-test), never seed if real users exist
+  const isTestMode = process.env.TEST_MODE === 'true' || process.env.TEST_MODE === '1';
+  if (!isTestMode) {
+    const realUserCount = (db.prepare(
+      "SELECT count(*) as cnt FROM users WHERE id NOT LIKE 'demo-%'"
+    ).get() as { cnt: number }).cnt;
+    if (realUserCount > 0) {
+      logger.info({ realUserCount }, 'seedDemoData: Real users detected, skipping seed to protect production data');
+      return;
+    }
   }
 
   const hasOriginal = db.prepare('SELECT id FROM users WHERE id = ?').get('demo-1');
