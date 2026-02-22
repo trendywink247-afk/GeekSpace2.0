@@ -35,6 +35,7 @@ import { artifactsRouter } from './routes/artifacts.js';
 import { templatesRouter } from './routes/templates.js';
 import { healthRouter } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
+import { devRouter } from './routes/dev.js';
 import { metricsMiddleware, getMetricsSnapshot } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
 import {
@@ -201,6 +202,7 @@ export function createApp(): express.Application {
   app.use('/api/recipes', recipesRouter);
   app.use('/api/health', healthRouter);
   app.use('/api/admin', adminRouter);
+  app.use('/api/dev', devRouter);
   app.use('/api/artifacts', artifactsRouter);
   app.use('/api/templates', templatesRouter);
 
