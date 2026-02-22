@@ -1,603 +1,400 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { memoryService } from '@/services/api';
-import type { MemoryEntry, ConversationEntry } from '@/types';
+// ============================================================
+// Memory Manager - Search, browse, and manage agent memories
+// ============================================================
+
+import { useState, useEffect } from 'react';
+import {
+  Brain,
+  Search,
+  Trash2,
+  Clock,
+  Tag,
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
+  Download,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Slider } from '@/components/ui/slider';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import {
-  Brain, Database, Heart, Target, Search, Plus, Pencil, Trash2,
-  MessageSquare, Bot, User, Clock, Filter,
-} from 'lucide-react';
 
-// ---- Helpers ----
-
-const CATEGORIES = ['all', 'preference', 'fact', 'project', 'pattern', 'reminder'] as const;
-type CategoryFilter = (typeof CATEGORIES)[number];
-
-const SORTS = [
-  { value: 'newest', label: 'Newest' },
-  { value: 'oldest', label: 'Oldest' },
-  { value: 'confident', label: 'Most Confident' },
-  { value: 'accessed', label: 'Most Accessed' },
-] as const;
-type SortKey = (typeof SORTS)[number]['value'];
-
-function sortMemories(memories: MemoryEntry[], sort: SortKey): MemoryEntry[] {
-  const arr = [...memories];
-  switch (sort) {
-    case 'newest': return arr.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-    case 'oldest': return arr.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
-    case 'confident': return arr.sort((a, b) => b.confidence - a.confidence);
-    case 'accessed': return arr.sort((a, b) => b.accessCount - a.accessCount);
-    default: return arr;
-  }
+interface MemoryEntry {
+  id: string;
+  category: string;
+  key: string;
+  value: string;
+  confidence: number;
+  source: string;
+  accessCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
-
-function categoryColor(cat: string): string {
-  switch (cat) {
-    case 'preference': return '#7B61FF';
-    case 'fact': return '#61FF7B';
-    case 'project': return '#FFD761';
-    case 'pattern': return '#FF61DC';
-    case 'reminder': return '#61D0FF';
-    default: return '#7B61FF';
-  }
-}
-
-function relativeTime(iso: string): string {
-  const d = new Date(iso + (iso.endsWith('Z') ? '' : 'Z'));
-  const diff = Date.now() - d.getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return d.toLocaleDateString();
-}
-
-// ---- Component ----
 
 export function MemoryManagerPage() {
-  // Data state
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
-  const [conversations, setConversations] = useState<ConversationEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [convLoading, setConvLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'recent' | 'confidence' | 'accessed'>('recent');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Filter / search state
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<CategoryFilter>('all');
-  const [sort, setSort] = useState<SortKey>('newest');
-  const [convSearch, setConvSearch] = useState('');
-
-  // Dialog state
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingMemory, setEditingMemory] = useState<MemoryEntry | null>(null);
-  const [formCategory, setFormCategory] = useState('fact');
-  const [formKey, setFormKey] = useState('');
-  const [formValue, setFormValue] = useState('');
-  const [formConfidence, setFormConfidence] = useState(100);
-  const [saving, setSaving] = useState(false);
-
-  // Inline toast state
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    clearTimeout(toastTimer.current);
-    setToast({ message, type });
-    toastTimer.current = setTimeout(() => setToast(null), 3000);
-  };
-
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  // ---- Data fetching ----
-
-  const fetchMemories = useCallback(async (cat?: CategoryFilter, q?: string) => {
-    try {
-      setLoadError(null);
-      const catParam = cat && cat !== 'all' ? cat : undefined;
-      const res = await memoryService.list(catParam, q || undefined);
-      setMemories(res.data);
-    } catch {
-      setLoadError('Failed to load memories. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  // Load memories from API
+  useEffect(() => {
+    loadMemories();
   }, []);
 
-  const fetchConversations = useCallback(async () => {
+  const loadMemories = async () => {
+    setIsLoading(true);
     try {
-      const res = await memoryService.conversations(100);
-      setConversations(res.data);
-    } catch {
-      // conversations are secondary — don't overwrite primary error
-    } finally {
-      setConvLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    Promise.allSettled([fetchMemories(), fetchConversations()]);
-  }, [fetchMemories, fetchConversations]);
-
-  // Debounced search
-  useEffect(() => {
-    setLoading(true);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      fetchMemories(category, search);
-    }, 300);
-    return () => clearTimeout(debounceRef.current);
-  }, [search, category, fetchMemories]);
-
-  // ---- CRUD handlers ----
-
-  const openCreate = () => {
-    setEditingMemory(null);
-    setFormCategory('fact');
-    setFormKey('');
-    setFormValue('');
-    setFormConfidence(100);
-    setDialogOpen(true);
-  };
-
-  const openEdit = (mem: MemoryEntry) => {
-    setEditingMemory(mem);
-    setFormCategory(mem.category);
-    setFormKey(mem.key);
-    setFormValue(mem.value);
-    setFormConfidence(Math.round(mem.confidence * 100));
-    setDialogOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!formKey.trim() || !formValue.trim()) return;
-    setSaving(true);
-    try {
-      if (editingMemory) {
-        await memoryService.update(editingMemory.id, {
-          category: formCategory,
-          key: formKey.trim(),
-          value: formValue.trim(),
-          confidence: formConfidence / 100,
-        });
+      // Try API first
+      const response = await fetch('/api/memory');
+      if (response.ok) {
+        const data = await response.json();
+        setMemories(data.memories || []);
       } else {
-        await memoryService.create({
-          category: formCategory,
-          key: formKey.trim(),
-          value: formValue.trim(),
-          confidence: formConfidence / 100,
-          source: 'manual',
-        });
+        // Fallback to localStorage for demo
+        const stored = localStorage.getItem('geekspace-memories');
+        if (stored) {
+          setMemories(JSON.parse(stored));
+        }
       }
-      setDialogOpen(false);
-      setLoading(true);
-      fetchMemories(category, search);
     } catch {
-      // silent
+      // Fallback
+      const stored = localStorage.getItem('geekspace-memories');
+      if (stored) {
+        setMemories(JSON.parse(stored));
+      }
     } finally {
-      setSaving(false);
+      setIsLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      await memoryService.delete(id);
-      setMemories(prev => prev.filter(m => m.id !== id));
-      showToast('Memory deleted');
+      await fetch(`/api/memory/${id}`, { method: 'DELETE' });
+      setMemories(memories.filter((m) => m.id !== id));
     } catch {
-      showToast('Failed to delete memory', 'error');
+      // Fallback: just update local state
+      setMemories(memories.filter((m) => m.id !== id));
     }
   };
 
-  // ---- Derived stats ----
+  const handleDeleteByCategory = async (category: string) => {
+    if (!confirm(`Delete all memories in category "${category}"?`)) return;
+    
+    const toDelete = memories.filter((m) => m.category === category);
+    for (const memory of toDelete) {
+      await handleDelete(memory.id);
+    }
+  };
 
-  const totalMemories = memories.length;
-  const facts = memories.filter(m => m.category === 'fact').length;
-  const preferences = memories.filter(m => m.category === 'preference').length;
-  const avgConfidence = totalMemories > 0
-    ? Math.round((memories.reduce((s, m) => s + m.confidence, 0) / totalMemories) * 100)
-    : 0;
+  const handleExport = () => {
+    const data = JSON.stringify(memories, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `geekspace-memories-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-  const sorted = sortMemories(memories, sort);
+  // Filter and sort memories
+  const filteredMemories = memories
+    .filter((m) => {
+      const matchesSearch = 
+        m.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.category.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = selectedCategory === 'all' || m.category === selectedCategory;
+      
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'recent':
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        case 'confidence':
+          return b.confidence - a.confidence;
+        case 'accessed':
+          return b.accessCount - a.accessCount;
+        default:
+          return 0;
+      }
+    });
 
-  // Client-side conversation filter
-  const filteredConvs = convSearch
-    ? conversations.filter(c => c.content.toLowerCase().includes(convSearch.toLowerCase()))
-    : conversations;
+  // Get unique categories
+  const categories = ['all', ...new Set(memories.map((m) => m.category))];
 
-  // ---- Render ----
+  // Stats
+  const stats = {
+    total: memories.length,
+    categories: new Set(memories.map((m) => m.category)).size,
+    avgConfidence: memories.length > 0 
+      ? (memories.reduce((a, m) => a + m.confidence, 0) / memories.length * 100).toFixed(0)
+      : 0,
+    thisWeek: memories.filter((m) => {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return new Date(m.createdAt) > weekAgo;
+    }).length,
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-[#7B61FF] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4 md:space-y-6 max-w-6xl mx-auto relative px-1 md:px-0">
-      {/* Inline toast */}
-      {toast && (
-        <div
-          className={`fixed top-6 right-6 z-50 px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all ${
-            toast.type === 'success'
-              ? 'bg-[#61FF7B]/15 text-[#61FF7B] border border-[#61FF7B]/30'
-              : 'bg-red-500/15 text-red-400 border border-red-500/30'
-          }`}
-        >
-          {toast.message}
-        </div>
-      )}
-
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-[#F4F6FF]" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Memory Manager
           </h1>
-          <p className="text-xs md:text-sm text-[#A7ACB8] mt-1">Browse, search, and manage your agent's memories</p>
+          <p className="text-[#A7ACB8]">
+            {stats.total} memories across {stats.categories} categories
+          </p>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-xl bg-[#7B61FF] hover:bg-[#6B51EF] text-white text-sm font-medium transition-colors min-h-[44px] press-scale shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Add Memory</span>
-          <span className="sm:hidden">Add</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={handleExport} className="border-[#7B61FF]/30">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+          <Button onClick={loadMemories} variant="outline" className="border-[#7B61FF]/30">
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { label: 'Total Memories', value: totalMemories, icon: Brain, color: '#7B61FF' },
-          { label: 'Facts', value: facts, icon: Database, color: '#61FF7B' },
-          { label: 'Preferences', value: preferences, icon: Heart, color: '#FF61DC' },
-          { label: 'Avg Confidence', value: `${avgConfidence}%`, icon: Target, color: '#FFD761' },
-        ].map(stat => (
-          <Card key={stat.label} className="bg-[#0B0B10] border-[#7B61FF]/20">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${stat.color}15` }}>
-                  <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-[#F4F6FF] font-mono">{stat.value}</div>
-                  <div className="text-xs text-[#A7ACB8]">{stat.label}</div>
-                </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#7B61FF]/10 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-[#7B61FF]" />
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              <div>
+                <div className="text-2xl font-bold text-[#F4F6FF]">{stats.total}</div>
+                <div className="text-xs text-[#A7ACB8]">Total Memories</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#61FF7B]/10 flex items-center justify-center">
+                <Tag className="w-5 h-5 text-[#61FF7B]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[#F4F6FF]">{stats.categories}</div>
+                <div className="text-xs text-[#A7ACB8]">Categories</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#FFD761]/10 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-[#FFD761]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[#F4F6FF]">{stats.avgConfidence}%</div>
+                <div className="text-xs text-[#A7ACB8]">Avg Confidence</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#FF61DC]/10 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-[#FF61DC]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[#F4F6FF]">{stats.thisWeek}</div>
+                <div className="text-xs text-[#A7ACB8]">This Week</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="memories" className="space-y-4">
-        <TabsList className="bg-[#0B0B10] border border-[#7B61FF]/20">
-          <TabsTrigger value="memories" className="data-[state=active]:bg-[#7B61FF]/20 data-[state=active]:text-[#7B61FF]">
-            <Brain className="w-4 h-4 mr-1.5" />
-            Memories
-          </TabsTrigger>
-          <TabsTrigger value="conversations" className="data-[state=active]:bg-[#7B61FF]/20 data-[state=active]:text-[#7B61FF]">
-            <MessageSquare className="w-4 h-4 mr-1.5" />
-            Conversations
-          </TabsTrigger>
-        </TabsList>
-
-        {/* ---- Memories Tab ---- */}
-        <TabsContent value="memories" className="space-y-4">
-          {/* Filter bar */}
-          <div className="sticky top-0 z-10 bg-[#05050A] py-2 -mx-1 px-1 md:mx-0 md:px-0 space-y-3">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
-                <Input
-                  placeholder="Search memories..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="pl-10 bg-[#0B0B10] border-[#7B61FF]/20 text-[#F4F6FF] placeholder:text-[#A7ACB8]/50 min-h-[44px]"
-                />
-              </div>
-
+      {/* Search and Filters */}
+      <Card className="bg-[#0B0B10] border-[#7B61FF]/20">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
+              <Input
+                placeholder="Search memories..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-[#05050A] border-[#7B61FF]/20"
+              />
+            </div>
+            <div className="flex gap-2">
               <select
-                value={sort}
-                onChange={e => setSort(e.target.value as SortKey)}
-                className="px-3 py-1.5 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 text-[#F4F6FF] text-xs min-h-[44px]"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-[#05050A] border border-[#7B61FF]/20 text-[#F4F6FF] text-sm"
               >
-                {SORTS.map(s => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat === 'all' ? 'All Categories' : cat}
+                  </option>
                 ))}
               </select>
-            </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto flex-nowrap pb-1 -mb-1 scrollbar-none">
-              <Filter className="w-4 h-4 text-[#A7ACB8] hidden sm:block shrink-0" />
-              {CATEGORIES.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setCategory(cat)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap press-scale shrink-0 ${
-                    category === cat
-                      ? 'bg-[#7B61FF] text-white'
-                      : 'bg-transparent text-[#A7ACB8] hover:text-[#F4F6FF]'
-                  }`}
-                >
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                </button>
-              ))}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="px-3 py-2 rounded-lg bg-[#05050A] border border-[#7B61FF]/20 text-[#F4F6FF] text-sm"
+              >
+                <option value="recent">Most Recent</option>
+                <option value="confidence">Highest Confidence</option>
+                <option value="accessed">Most Accessed</option>
+              </select>
             </div>
           </div>
 
-          {/* Memory list */}
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <Skeleton key={i} className="h-24 bg-[#7B61FF]/5 rounded-xl" />
+          {/* Category quick filters */}
+          {categories.length > 1 && (
+            <div className="flex flex-wrap gap-2">
+              {categories.filter(c => c !== 'all').map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(selectedCategory === cat ? 'all' : cat)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                    selectedCategory === cat
+                      ? 'bg-[#7B61FF] text-white'
+                      : 'bg-[#05050A] text-[#A7ACB8] hover:text-white'
+                  }`}
+                >
+                  {cat}
+                </button>
               ))}
             </div>
-          ) : sorted.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#7B61FF]/10 flex items-center justify-center mb-4">
-                <Brain className="w-8 h-8 text-[#7B61FF]/50" />
-              </div>
-              {loadError ? (
-                <>
-                  <h3 className="text-lg font-medium text-[#FF6161] mb-1">Unable to load memories</h3>
-                  <p className="text-sm text-[#A7ACB8] max-w-sm">{loadError}</p>
-                  <button
-                    onClick={() => { setLoading(true); fetchMemories(category, search); }}
-                    className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7B61FF]/20 hover:bg-[#7B61FF]/30 text-[#7B61FF] text-sm font-medium transition-colors"
-                  >
-                    Retry
-                  </button>
-                </>
-              ) : (
-                <>
-                  <h3 className="text-lg font-medium text-[#F4F6FF] mb-1">No memories yet</h3>
-                  <p className="text-sm text-[#A7ACB8] max-w-sm">
-                    Memories are automatically extracted from conversations, or you can add them manually.
-                  </p>
-                  <button
-                    onClick={openCreate}
-                    className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7B61FF]/20 hover:bg-[#7B61FF]/30 text-[#7B61FF] text-sm font-medium transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add your first memory
-                  </button>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {sorted.map(mem => (
-                <Card key={mem.id} className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-colors group press-scale">
-                  <CardContent className="p-3 md:p-4">
-                    <div className="flex items-start justify-between gap-3 md:gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                          <span className="text-sm font-semibold text-[#F4F6FF] break-all">{mem.key}</span>
-                          <Badge
-                            className="text-[10px] px-1.5 py-0 border-0"
-                            style={{ background: `${categoryColor(mem.category)}20`, color: categoryColor(mem.category) }}
-                          >
-                            {mem.category}
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Memories List */}
+      {filteredMemories.length === 0 ? (
+        <div className="text-center py-16">
+          <Brain className="w-16 h-16 text-[#7B61FF]/30 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-[#F4F6FF] mb-2">No memories found</h3>
+          <p className="text-[#A7ACB8] max-w-sm mx-auto">
+            Your agent will build memories as you chat. They'll appear here for you to review and manage.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredMemories.map((memory) => (
+            <Card
+              key={memory.id}
+              className="bg-[#0B0B10] border-[#7B61FF]/20 hover:border-[#7B61FF]/40 transition-all"
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start gap-4">
+                  {/* Confidence indicator */}
+                  <div className="flex-shrink-0">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold"
+                      style={{
+                        backgroundColor: `${memory.confidence > 0.8 ? '#61FF7B' : memory.confidence > 0.5 ? '#FFD761' : '#FF6161'}20`,
+                        color: memory.confidence > 0.8 ? '#61FF7B' : memory.confidence > 0.5 ? '#FFD761' : '#FF6161',
+                      }}
+                    >
+                      {(memory.confidence * 100).toFixed(0)}
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge className="bg-[#7B61FF]/20 text-[#7B61FF]">
+                            {memory.category}
                           </Badge>
-                          <Badge className="text-[10px] px-1.5 py-0 bg-[#7B61FF]/10 text-[#A7ACB8] border-0">
-                            {mem.source}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-[#A7ACB8] break-words">{mem.value}</p>
-                        <div className="flex items-center gap-4 mt-2 text-[10px] text-[#A7ACB8]/70">
-                          {/* Confidence bar */}
-                          <div className="flex items-center gap-1.5">
-                            <Target className="w-3 h-3" />
-                            <div className="w-16 h-1.5 bg-[#0B0B10] rounded-full overflow-hidden border border-[#7B61FF]/10">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${mem.confidence * 100}%`,
-                                  background: mem.confidence > 0.7 ? '#61FF7B' : mem.confidence > 0.4 ? '#FFD761' : '#FF6161',
-                                }}
-                              />
-                            </div>
-                            <span>{Math.round(mem.confidence * 100)}%</span>
-                          </div>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {relativeTime(mem.updatedAt)}
+                          <span className="text-xs text-[#A7ACB8]">
+                            {memory.accessCount} accesses
                           </span>
-                          <span>{mem.accessCount} accesses</span>
+                        </div>
+                        
+                        <h4 className="font-medium text-[#F4F6FF] mb-1">{memory.key}</h4>
+                        
+                        {expandedId === memory.id ? (
+                          <p className="text-sm text-[#A7ACB8] whitespace-pre-wrap">{memory.value}</p>
+                        ) : (
+                          <p className="text-sm text-[#A7ACB8] line-clamp-2">{memory.value}</p>
+                        )}
+                        
+                        <div className="flex items-center gap-3 mt-2 text-xs text-[#A7ACB8]">
+                          <span>Created: {formatDate(memory.createdAt)}</span>
+                          <span>Updated: {formatDate(memory.updatedAt)}</span>
+                          <span>Source: {memory.source}</span>
                         </div>
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1">
                         <button
-                          onClick={() => openEdit(mem)}
-                          className="p-2 rounded-lg hover:bg-[#7B61FF]/10 text-[#A7ACB8] hover:text-[#7B61FF] transition-colors press-scale min-h-[44px] min-w-[44px] flex items-center justify-center"
-                          title="Edit"
+                          onClick={() => setExpandedId(expandedId === memory.id ? null : memory.id)}
+                          className="p-2 rounded-lg bg-[#05050A] text-[#A7ACB8] hover:text-white transition-colors"
                         >
-                          <Pencil className="w-4 h-4" />
+                          {expandedId === memory.id ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
                         </button>
                         <button
-                          onClick={() => handleDelete(mem.id)}
-                          className="p-2 rounded-lg hover:bg-red-500/10 text-[#A7ACB8] hover:text-red-400 transition-colors press-scale min-h-[44px] min-w-[44px] flex items-center justify-center"
-                          title="Delete"
+                          onClick={() => handleDelete(memory.id)}
+                          className="p-2 rounded-lg bg-[#05050A] text-[#A7ACB8] hover:text-[#FF6161] transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* ---- Conversations Tab ---- */}
-        <TabsContent value="conversations" className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A7ACB8]" />
-            <Input
-              placeholder="Search conversations..."
-              value={convSearch}
-              onChange={e => setConvSearch(e.target.value)}
-              className="pl-10 bg-[#0B0B10] border-[#7B61FF]/20 text-[#F4F6FF] placeholder:text-[#A7ACB8]/50"
-            />
-          </div>
-
-          {convLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <Skeleton key={i} className="h-16 bg-[#7B61FF]/5 rounded-xl" />
-              ))}
-            </div>
-          ) : filteredConvs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#7B61FF]/10 flex items-center justify-center mb-4">
-                <MessageSquare className="w-8 h-8 text-[#7B61FF]/50" />
-              </div>
-              <h3 className="text-lg font-medium text-[#F4F6FF] mb-1">No conversations yet</h3>
-              <p className="text-sm text-[#A7ACB8]">Chat with your agent to see conversation history here.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredConvs.map(conv => (
-                <div
-                  key={conv.id}
-                  className={`flex gap-2.5 md:gap-3 p-3 md:p-3.5 rounded-xl ${
-                    conv.role === 'user'
-                      ? 'bg-[#0B0B10] border border-[#7B61FF]/10'
-                      : 'bg-[#7B61FF]/5 border border-[#7B61FF]/20'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                    conv.role === 'user'
-                      ? 'bg-[#A7ACB8]/10'
-                      : 'bg-[#7B61FF]/20'
-                  }`}>
-                    {conv.role === 'user' ? <User className="w-4 h-4 text-[#A7ACB8]" /> : <Bot className="w-4 h-4 text-[#7B61FF]" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-[#F4F6FF]">
-                        {conv.role === 'user' ? 'You' : 'Agent'}
-                      </span>
-                      {conv.provider && (
-                        <Badge className="text-[10px] px-1.5 py-0 bg-[#7B61FF]/10 text-[#A7ACB8] border-0">
-                          {conv.provider}
-                        </Badge>
-                      )}
-                      {conv.model && (
-                        <Badge className="text-[10px] px-1.5 py-0 bg-[#7B61FF]/10 text-[#A7ACB8] border-0">
-                          {conv.model}
-                        </Badge>
-                      )}
-                      <span className="text-[10px] text-[#A7ACB8]/50 ml-auto flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {relativeTime(conv.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-[#A7ACB8] break-words whitespace-pre-wrap line-clamp-4">{conv.content}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      {/* ---- Add/Edit Memory Dialog ---- */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-[#0B0B10] border-[#7B61FF]/20 text-[#F4F6FF] sm:max-w-md mx-2 md:mx-auto p-4 md:p-6">
-          <DialogHeader>
-            <DialogTitle>{editingMemory ? 'Edit Memory' : 'Add Memory'}</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            {/* Category */}
-            <div>
-              <label className="text-xs text-[#A7ACB8] mb-1.5 block">Category</label>
-              <div className="flex gap-2">
-                {(['preference', 'fact', 'project', 'pattern'] as const).map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setFormCategory(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors press-scale min-h-[40px] ${
-                      formCategory === cat
-                        ? 'border border-[#7B61FF]/30'
-                        : 'text-[#A7ACB8] hover:bg-[#7B61FF]/10 border border-transparent'
-                    }`}
-                    style={formCategory === cat ? { background: `${categoryColor(cat)}20`, color: categoryColor(cat) } : undefined}
-                  >
-                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Key */}
-            <div>
-              <label className="text-xs text-[#A7ACB8] mb-1.5 block">Key</label>
-              <Input
-                placeholder="e.g., favorite_language"
-                value={formKey}
-                onChange={e => setFormKey(e.target.value)}
-                className="bg-[#05050A] border-[#7B61FF]/20 text-[#F4F6FF]"
-              />
-            </div>
-
-            {/* Value */}
-            <div>
-              <label className="text-xs text-[#A7ACB8] mb-1.5 block">Value</label>
-              <Textarea
-                placeholder="e.g., TypeScript"
-                value={formValue}
-                onChange={e => setFormValue(e.target.value)}
-                rows={3}
-                className="bg-[#05050A] border-[#7B61FF]/20 text-[#F4F6FF] resize-none"
-              />
-            </div>
-
-            {/* Confidence */}
-            <div>
-              <label className="text-xs text-[#A7ACB8] mb-1.5 block">
-                Confidence: <span className="text-[#F4F6FF] font-mono">{formConfidence}%</span>
-              </label>
-              <Slider
-                value={[formConfidence]}
-                onValueChange={v => setFormConfidence(v[0])}
-                min={0}
-                max={100}
-                step={5}
-                className="py-2"
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2">
-            <button
-              onClick={() => setDialogOpen(false)}
-              className="px-4 py-2 rounded-xl text-sm text-[#A7ACB8] hover:bg-[#7B61FF]/10 transition-colors min-h-[44px] press-scale"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || !formKey.trim() || !formValue.trim()}
-              className="px-4 py-2 rounded-xl bg-[#7B61FF] hover:bg-[#6B51EF] text-white text-sm font-medium transition-colors disabled:opacity-50 min-h-[44px] press-scale"
-            >
-              {saving ? 'Saving...' : editingMemory ? 'Update' : 'Create'}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Bulk Actions */}
+      {selectedCategory !== 'all' && memories.some(m => m.category === selectedCategory) && (
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            onClick={() => handleDeleteByCategory(selectedCategory)}
+            className="border-[#FF6161]/30 text-[#FF6161] hover:bg-[#FF6161]/10"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete all in {selectedCategory}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
