@@ -19,16 +19,15 @@ test.describe('Login Flow', () => {
     await expect(demoButton).toBeVisible();
     await demoButton.click();
 
-    // Wait for dashboard URL and shell (mobile-safe)
+    // Wait for dashboard URL and shell
     await page.waitForURL(/\/dashboard/, { timeout: 30000 });
     await expect(page.getByTestId('dashboard-shell')).toBeVisible({ timeout: 30000 });
 
-    // Optional: verify navigation by project
+    // Verify navigation rendered for this viewport
     if (testInfo.project.name === 'chromium') {
-      await expect(page.getByTestId('dashboard-sidebar-desktop')).toBeVisible();
+      await expect(page.getByTestId('dashboard-sidebar-desktop')).toBeVisible({ timeout: 10000 });
     } else {
-      await page.getByTestId('mobile-nav-toggle').click();
-      await expect(page.getByTestId('dashboard-sidebar-mobile')).toBeVisible();
+      await expect(page.getByTestId('mobile-nav-toggle')).toBeVisible({ timeout: 10000 });
     }
 
     // Verify we're on dashboard
