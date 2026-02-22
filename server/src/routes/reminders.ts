@@ -23,8 +23,10 @@ remindersRouter.post('/', requireAuth, validateBody(reminderCreateSchema), (req:
   const { text, datetime, channel, category, recurring } = req.body;
 
   const id = uuid();
-  db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
-    id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', 'user'
+  const scheduledFor = datetime ? new Date(datetime).getTime() : Date.now();
+
+  db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, created_by, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+    id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', 'user', scheduledFor
   );
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`).run(uuid(), req.userId, text);
 

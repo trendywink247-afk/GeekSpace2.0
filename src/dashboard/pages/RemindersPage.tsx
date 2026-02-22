@@ -117,7 +117,7 @@ export function RemindersPage() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
+    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0" data-testid="reminders-page">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         <div>
@@ -140,7 +140,7 @@ export function RemindersPage() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button onClick={() => setIsAddDialogOpen(true)} className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale min-h-[44px]">
+          <Button onClick={() => setIsAddDialogOpen(true)} className="bg-[#7B61FF] hover:bg-[#6B51EF] press-scale min-h-[44px]" data-testid="create-reminder-button">
             <Plus className="w-4 h-4 mr-2" />New
           </Button>
         </div>
@@ -232,6 +232,7 @@ export function RemindersPage() {
                         <button
                           onClick={() => handleDelete(reminder.id)}
                           className="p-2 rounded-lg hover:bg-[#FF6161]/10 text-[#A7ACB8] hover:text-[#FF6161] transition-colors press-scale min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          data-testid="delete-reminder-button"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -335,6 +336,7 @@ export function RemindersPage() {
                 onChange={(e) => setNewReminder({ ...newReminder, text: e.target.value })}
                 placeholder="e.g., Call mom, Submit report..."
                 className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]"
+                data-testid="reminder-text"
               />
             </div>
             <div>
@@ -344,6 +346,7 @@ export function RemindersPage() {
                 value={newReminder.datetime}
                 onChange={(e) => setNewReminder({ ...newReminder, datetime: e.target.value })}
                 className="bg-[#05050A] border-[#7B61FF]/30 text-[#F4F6FF]"
+                data-testid="reminder-datetime"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -400,6 +403,7 @@ export function RemindersPage() {
                 onClick={handleAdd}
                 disabled={!newReminder.text || !newReminder.datetime}
                 className="flex-1 bg-[#7B61FF] hover:bg-[#6B51EF] min-h-[44px] press-scale"
+                data-testid="save-reminder-button"
               >
                 Add Reminder
               </Button>

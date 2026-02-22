@@ -49,3 +49,10 @@ playwright/.auth
 .cache
 .temp
 .tmp
+.worktrees/
+
+# SQLite databases (local dev and test)
+*.db
+*.db-shm
+*.db-wal
+server/data/*.db*

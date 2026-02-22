@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 test('chat receipts display in UI', async ({ page }) => {
+  // Skip this test in CI - it tests production, not the local build
+  if (process.env.CI) {
+    test.skip();
+    return;
+  }
+
   // Navigate to production GeekSpace
   await page.goto('https://ai.geekspace.space/login');
 
@@ -25,7 +31,7 @@ test('chat receipts display in UI', async ({ page }) => {
         const body = await response.json();
         console.log('Response has receipts:', !!body.receipts);
         console.log('Response has actions:', !!(body.actions && body.actions.length));
-      } catch (e) {
+      } catch {
         const text = await response.text();
         console.log('Response text:', text.substring(0, 200));
       }

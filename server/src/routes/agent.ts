@@ -701,7 +701,8 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
     const text = cmd.slice(17).replace(/^["']|["']$/g, '');
     if (!text || text.length > 500) { res.json({ output: 'Reminder text required (max 500 chars)', isError: true }); return; }
     const id = uuid();
-    db.prepare('INSERT INTO reminders (id, user_id, text, channel, category, created_by) VALUES (?, ?, ?, ?, ?, ?)').run(id, userId, text, 'push', 'general', 'terminal');
+    const scheduledFor = Date.now() + 3600_000; // Default 1 hour from now
+    db.prepare('INSERT INTO reminders (id, user_id, text, channel, category, created_by, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?)').run(id, userId, text, 'push', 'general', 'terminal', scheduledFor);
     db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`).run(uuid(), userId, text);
     res.json({ output: `Reminder added! ID: ${id.slice(0, 8)}\nText: ${text}`, isError: false });
     return;
@@ -982,7 +983,8 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
       return;
     }
     const remId = uuid();
-    db.prepare("INSERT INTO reminders (id, user_id, text, channel, category, created_by) VALUES (?, ?, ?, 'push', 'general', 'terminal')").run(remId, userId, reminderText);
+    const scheduledFor = Date.now() + 3600_000; // Default 1 hour from now
+    db.prepare("INSERT INTO reminders (id, user_id, text, channel, category, created_by, scheduled_for) VALUES (?, ?, ?, 'push', 'general', 'terminal', ?)").run(remId, userId, reminderText, scheduledFor);
     res.json({ output: `<span style="color:#61FF7B">Reminder created:</span> ${reminderText}`, isError: false });
     return;
   }
@@ -1548,4 +1550,56 @@ agentRouter.get('/messages', requireAuth, (req: AuthRequest, res) => {
 agentRouter.get('/can-chat/:username', requireAuth, (req: AuthRequest, res) => {
   const canChat = canChatWithAgent(req.userId!, req.params.username);
   res.json({ canChat });
+});
+
+// ---- Agent Status Endpoints (for testing and UI state management) ----
+
+agentRouter.get('/status', requireAuth, (req: AuthRequest, res) => {
+  const agent = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(req.userId!) as {
+    status: string;
+    name: string;
+    mode: string;
+    personality: string;
+  } | undefined;
+
+  if (!agent) {
+    res.status(404).json({ error: 'Agent not found' });
+    return;
+  }
+
+  const isActive = agent.status === 'online';
+
+  res.json({
+    status: isActive ? 'active' : 'inactive',
+    agent: {
+      name: agent.name,
+      mode: agent.mode,
+      personality: agent.personality || 'jarvis',
+      isActive,
+    },
+  });
+});
+
+agentRouter.post('/activate', requireAuth, (req: AuthRequest, res) => {
+  db.prepare('UPDATE agent_configs SET status = ? WHERE user_id = ?').run('online', req.userId!);
+
+  // Log activity
+  db.prepare(`
+    INSERT INTO activity_log (id, user_id, action, details, icon)
+    VALUES (?, ?, 'Agent activated', 'Agent is now online', 'power')
+  `).run(uuid(), req.userId!);
+
+  res.json({ success: true, status: 'active' });
+});
+
+agentRouter.post('/deactivate', requireAuth, (req: AuthRequest, res) => {
+  db.prepare('UPDATE agent_configs SET status = ? WHERE user_id = ?').run('offline', req.userId!);
+
+  // Log activity
+  db.prepare(`
+    INSERT INTO activity_log (id, user_id, action, details, icon)
+    VALUES (?, ?, 'Agent deactivated', 'Agent is now offline', 'power-off')
+  `).run(uuid(), req.userId!);
+
+  res.json({ success: true, status: 'inactive' });
 });

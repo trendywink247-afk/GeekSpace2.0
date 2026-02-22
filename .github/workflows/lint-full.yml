@@ -1,0 +1,47 @@
+name: Lint Full (Optional)
+
+# This workflow runs the full lint check across the entire repo.
+# It is non-blocking and runs on schedule or manual trigger.
+# Use this to gradually pay down lint debt.
+
+on:
+  schedule:
+    # Run nightly at 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-full:
+    name: Full Lint Check
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install server dependencies
+        run: npm --prefix server ci
+
+      - name: Run full lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Generate lint report
+        if: always()
+        run: |
+          echo "## Full Lint Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This workflow checks the entire codebase for lint errors." >> $GITHUB_STEP_SUMMARY
+          echo "It is non-blocking and runs on a schedule to track lint debt." >> $GITHUB_STEP_SUMMARY

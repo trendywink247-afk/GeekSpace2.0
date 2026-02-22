@@ -17,6 +17,14 @@ interface PortfolioData extends Portfolio {
   personality?: string;
 }
 
+interface AgentStatus {
+  status: 'active' | 'inactive';
+  enabled: boolean;
+  lastActive: number | null;
+  inactiveSince: number | null;
+  reason?: string;
+}
+
 type PersonalityKey = 'edith' | 'jarvis' | 'weebo';
 
 const personalityMeta: Record<PersonalityKey, {
@@ -52,6 +60,8 @@ export function PortfolioView() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
+  const [isStatusLoading, setIsStatusLoading] = useState(false);
 
   // Fetch portfolio data from API
   useEffect(() => {
@@ -62,6 +72,28 @@ export function PortfolioView() {
       .catch(() => {})
       .finally(() => setIsLoading(false));
   }, [username]);
+
+  // Fetch agent status when portfolio is loaded
+  useEffect(() => {
+    if (!username || !portfolio?.agentEnabled) return;
+
+    setIsStatusLoading(true);
+    portfolioService.getAgentStatus(username)
+      .then(({ data }) => setAgentStatus(data))
+      .catch(() => setAgentStatus({ status: 'inactive', enabled: false, lastActive: null, inactiveSince: null, reason: 'Unable to check status' }))
+      .finally(() => setIsStatusLoading(false));
+
+    // Poll status every 60 seconds when chat is open
+    if (!chatOpen) return;
+
+    const interval = setInterval(() => {
+      portfolioService.getAgentStatus(username)
+        .then(({ data }) => setAgentStatus(data))
+        .catch(() => {});
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [username, portfolio?.agentEnabled, chatOpen]);
 
   const displayName = portfolio?.name || username || 'User';
   const firstName = displayName.split(' ')[0];
@@ -75,6 +107,7 @@ export function PortfolioView() {
     setChatHistory([
       { role: 'agent', message: pMeta.greeting(firstName) },
     ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolio, firstName, pKey]);
 
   useEffect(() => {
@@ -84,6 +117,15 @@ export function PortfolioView() {
   const handleSendMessage = async (text?: string) => {
     const msg = text || chatMessage.trim();
     if (!msg || !username) return;
+
+    // Gate: Don't send if agent is inactive
+    if (agentStatus?.status === 'inactive') {
+      setChatHistory((prev) => [
+        ...prev,
+        { role: 'agent', message: 'Sorry, this agent is currently inactive. Please try again later.' },
+      ]);
+      return;
+    }
 
     setChatHistory((prev) => [...prev, { role: 'user', message: msg }]);
     setChatMessage('');
@@ -303,11 +345,25 @@ export function PortfolioView() {
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center font-bold text-sm">{portfolio.avatar || displayName?.[0] || '?'}</div>
                     )}
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#61FF7B] border-2 border-[#05050A]" />
+                    <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#05050A] ${agentStatus?.status === 'active' ? 'bg-[#61FF7B]' : 'bg-[#A7ACB8]'}`} />
                   </div>
                   <div>
                     <div className="font-semibold text-sm">{pMeta.emoji} {firstName}'s Agent</div>
-                    <div className="text-xs text-[#61FF7B]">Online</div>
+                    <div className="flex items-center gap-2" data-testid="portfolio-agent-status">
+                      {isStatusLoading ? (
+                        <div className="text-xs text-[#A7ACB8]">Checking...</div>
+                      ) : agentStatus?.status === 'active' ? (
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-[#61FF7B] animate-pulse" />
+                          <div className="text-xs text-[#61FF7B]">Active</div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-[#A7ACB8]" />
+                          <div className="text-xs text-[#A7ACB8]">Inactive</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-lg hover:bg-[#7B61FF]/10 transition-colors">
@@ -348,8 +404,8 @@ export function PortfolioView() {
                   </div>
                 )}
 
-                {/* Suggested questions */}
-                {chatHistory.length <= 1 && !isTyping && (
+                {/* Suggested questions - disabled when agent is inactive */}
+                {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'active' && (
                   <div className="space-y-1.5 pt-1">
                     <p className="text-[10px] text-[#A7ACB8] uppercase tracking-wider">Try asking</p>
                     {pMeta.questions.map((q) => (
@@ -357,6 +413,13 @@ export function PortfolioView() {
                         {q}
                       </button>
                     ))}
+                  </div>
+                )}
+                {/* Inactive state message */}
+                {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'inactive' && (
+                  <div className="p-3 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 text-center">
+                    <p className="text-xs text-[#A7ACB8]">Agent is currently inactive</p>
+                    <p className="text-[10px] text-[#A7ACB8]/70 mt-1">Chat functionality is disabled</p>
                   </div>
                 )}
                 <div ref={chatEndRef} />
@@ -368,10 +431,16 @@ export function PortfolioView() {
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Ask anything..."
-                  className="flex-1 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF]"
+                  placeholder={agentStatus?.status === 'inactive' ? 'Agent is inactive' : 'Ask anything...'}
+                  disabled={agentStatus?.status === 'inactive'}
+                  className="flex-1 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <Button onClick={() => handleSendMessage()} disabled={!chatMessage.trim() || isTyping} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+                <Button
+                  onClick={() => handleSendMessage()}
+                  disabled={!chatMessage.trim() || isTyping || agentStatus?.status === 'inactive'}
+                  className="bg-[#7B61FF] hover:bg-[#6B51EF] disabled:opacity-50"
+                  title={agentStatus?.status === 'inactive' ? 'Agent is currently inactive' : ''}
+                >
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
@@ -403,11 +472,25 @@ export function PortfolioView() {
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7B61FF] to-[#FF61DC] flex items-center justify-center font-bold text-sm">{portfolio.avatar || displayName?.[0] || '?'}</div>
                     )}
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#61FF7B] border-2 border-[#05050A]" />
+                <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#05050A] ${agentStatus?.status === 'active' ? 'bg-[#61FF7B]' : 'bg-[#A7ACB8]'}`} />
               </div>
               <div>
                 <div className="font-semibold text-sm">{pMeta.emoji} {firstName}'s Agent</div>
-                <div className="text-xs text-[#61FF7B]">Online</div>
+                <div className="flex items-center gap-2" data-testid="portfolio-agent-status">
+                    {isStatusLoading ? (
+                      <div className="text-xs text-[#A7ACB8]">Checking...</div>
+                    ) : agentStatus?.status === 'active' ? (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-[#61FF7B] animate-pulse" />
+                        <div className="text-xs text-[#61FF7B]">Active</div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-[#A7ACB8]" />
+                        <div className="text-xs text-[#A7ACB8]">Inactive</div>
+                      </div>
+                    )}
+                  </div>
               </div>
             </div>
             <button onClick={() => setChatOpen(false)} className="p-2 rounded-lg hover:bg-[#7B61FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
@@ -448,8 +531,8 @@ export function PortfolioView() {
               </div>
             )}
 
-            {/* Suggested questions */}
-            {chatHistory.length <= 1 && !isTyping && (
+            {/* Suggested questions - disabled when agent is inactive */}
+            {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'active' && (
               <div className="space-y-1.5 pt-1">
                 <p className="text-[10px] text-[#A7ACB8] uppercase tracking-wider">Try asking</p>
                 {pMeta.questions.map((q) => (
@@ -457,6 +540,13 @@ export function PortfolioView() {
                     {q}
                   </button>
                 ))}
+              </div>
+            )}
+            {/* Inactive state message */}
+            {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'inactive' && (
+              <div className="p-3 rounded-lg bg-[#0B0B10] border border-[#7B61FF]/20 text-center">
+                <p className="text-sm text-[#A7ACB8]">Agent is currently inactive</p>
+                <p className="text-xs text-[#A7ACB8]/70 mt-1">Chat functionality is disabled</p>
               </div>
             )}
             <div ref={chatEndRef} />
@@ -468,10 +558,16 @@ export function PortfolioView() {
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Ask anything..."
-              className="flex-1 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF]"
+              placeholder={agentStatus?.status === 'inactive' ? 'Agent is inactive' : 'Ask anything...'}
+              disabled={agentStatus?.status === 'inactive'}
+              className="flex-1 bg-[#0B0B10] border-[#7B61FF]/30 text-[#F4F6FF] disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            <Button onClick={() => handleSendMessage()} disabled={!chatMessage.trim() || isTyping} className="bg-[#7B61FF] hover:bg-[#6B51EF]">
+            <Button
+              onClick={() => handleSendMessage()}
+              disabled={!chatMessage.trim() || isTyping || agentStatus?.status === 'inactive'}
+              className="bg-[#7B61FF] hover:bg-[#6B51EF] disabled:opacity-50"
+              title={agentStatus?.status === 'inactive' ? 'Agent is currently inactive' : ''}
+            >
               <Send className="w-4 h-4" />
             </Button>
           </div>

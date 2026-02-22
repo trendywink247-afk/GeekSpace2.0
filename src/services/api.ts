@@ -317,6 +317,16 @@ export const portfolioService = {
       created_at: string;
       from_username: string;
     }>>('/portfolio/agent-messages'),
+
+  // Agent status for portfolio view (Active/Inactive)
+  getAgentStatus: (username: string) =>
+    api.get<{
+      status: 'active' | 'inactive';
+      enabled: boolean;
+      lastActive: number | null;
+      inactiveSince: number | null;
+      reason?: string;
+    }>(`/portfolio/${username}/agent-status`),
 };
 
 // ----- Automations -------------------------------------------
@@ -422,7 +432,7 @@ export const publicAgentService = {
     api.post<{ reply: string; agentName: string; ownerName: string; personality: string; personalityEmoji: string }>(`/agent/chat/public/${username}`, { message }),
 };
 
-// ----- Pico Fleet (Weebo's) --------------------------------
+// ----- Weebo Fleet ----------------------------------------
 
 export const picoService = {
   getAgents: () =>

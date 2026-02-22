@@ -1,10 +1,13 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Test 1: Login -> Dashboard loads
+ * Login Flow Tests
+ * These tests don't use the authenticated storage state since they test the login flow
  */
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Login Flow', () => {
-  test('should login with demo credentials and load dashboard', async ({ page }) => {
+  test('should login with demo credentials and load dashboard', async ({ page }, testInfo) => {
     // Navigate to login
     await page.goto('/login');
 
@@ -16,15 +19,20 @@ test.describe('Login Flow', () => {
     await expect(demoButton).toBeVisible();
     await demoButton.click();
 
-    // Wait for navigation to dashboard (or onboarding for new users)
-    await page.waitForURL(/.*(dashboard|onboarding).*/, { timeout: 10000 });
+    // Wait for dashboard URL and shell (mobile-safe)
+    await page.waitForURL(/\/dashboard/, { timeout: 30000 });
+    await expect(page.getByTestId('dashboard-shell')).toBeVisible({ timeout: 30000 });
 
-    // Verify dashboard/onboarding loaded - look for key elements
-    await expect(page.locator('text=/overview|good|welcome/i').first()).toBeVisible();
+    // Optional: verify navigation by project
+    if (testInfo.project.name === 'chromium') {
+      await expect(page.getByTestId('dashboard-sidebar-desktop')).toBeVisible();
+    } else {
+      await page.getByTestId('mobile-nav-toggle').click();
+      await expect(page.getByTestId('dashboard-sidebar-mobile')).toBeVisible();
+    }
 
-    // Verify navigation sidebar/tabs are present
-    const navElements = page.locator('nav, [class*="sidebar"], [class*="navigation"]').first();
-    await expect(navElements).toBeVisible();
+    // Verify we're on dashboard
+    expect(page.url()).toContain('/dashboard');
 
     // Take screenshot of successful dashboard load
     await page.screenshot({ path: 'test-results/dashboard-loaded.png', fullPage: true });

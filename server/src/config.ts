@@ -24,10 +24,12 @@ function optionalInt(key: string, fallback: number): number {
 }
 
 const isProduction = optional('NODE_ENV', 'development') === 'production';
+const isTestMode = process.env.TEST_MODE === 'true' || process.env.TEST_MODE === '1';
 
 export const config = {
   env: optional('NODE_ENV', 'development'),
   isProduction,
+  isTestMode,
   port: optionalInt('PORT', 3001),
 
   // JWT — required in production, has dev fallback
@@ -143,6 +145,10 @@ export const config = {
   crawl4aiUrl: optional('CRAWL4AI_URL', 'http://crawl4ai-ykgs-crawl4ai-1:11235'),
   windmillUrl: optional('WINDMILL_URL', 'http://windmill-95s4-windmill_server-1:8000'),
   windmillToken: process.env.WINDMILL_TOKEN || '',
+
+  // DevClaw Bridge
+  githubDevToken: process.env.GITHUB_DEV_TOKEN || '',
+  devRunnerTimeoutMs: optionalInt('DEV_RUNNER_TIMEOUT_MS', 300000), // 5 min
 
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',

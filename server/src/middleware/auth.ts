@@ -46,6 +46,27 @@ export function signToken(userId: string): string {
   });
 }
 
+// Bearer token middleware — checks Authorization: Bearer <ADMIN_TOKEN>
+export function requireAdminToken(req: Request, res: Response, next: NextFunction): void {
+  if (!config.adminToken) {
+    res.status(503).json({ error: 'Admin token not configured' });
+    return;
+  }
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!token) {
+    res.status(401).json({ error: 'Missing admin token' });
+    return;
+  }
+  const expected = Buffer.from(config.adminToken, 'utf8');
+  const provided = Buffer.from(token, 'utf8');
+  if (expected.length !== provided.length || !timingSafeEqual(expected, provided)) {
+    res.status(401).json({ error: 'Invalid admin token' });
+    return;
+  }
+  next();
+}
+
 // Admin middleware - checks for admin password header
 export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
   const adminPassword = req.headers['x-admin-password'];

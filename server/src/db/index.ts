@@ -439,6 +439,11 @@ try {
   db.exec("ALTER TABLE agent_configs ADD COLUMN preferred_free_model TEXT DEFAULT 'auto'");
 } catch { /* already exists */ }
 
+// Agent status tracking - for active/inactive status on portfolio
+try {
+  db.exec(`ALTER TABLE agent_configs ADD COLUMN last_active INTEGER`);
+} catch { /* column already exists */ }
+
 // Portfolio connection counter (Task 13)
 try { db.exec(`ALTER TABLE portfolios ADD COLUMN connection_count INTEGER DEFAULT 0`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE portfolios ADD COLUMN last_connected_at TEXT`); } catch { /* column already exists */ }
@@ -505,6 +510,19 @@ try {
 
 try {
   db.exec(`ALTER TABLE subscriptions ADD COLUMN tokens_used_this_cycle INTEGER DEFAULT 0`);
+} catch { /* column already exists */ }
+
+// Reminder scheduling tracking - for drift monitoring and accuracy
+try {
+  db.exec(`ALTER TABLE reminders ADD COLUMN scheduled_for INTEGER`);
+} catch { /* column already exists */ }
+
+try {
+  db.exec(`ALTER TABLE reminders ADD COLUMN delivered_at INTEGER`);
+} catch { /* column already exists */ }
+
+try {
+  db.exec(`ALTER TABLE reminders ADD COLUMN drift_ms INTEGER`);
 } catch { /* column already exists */ }
 
 // Templates for code artifacts (official + community)
@@ -633,6 +651,25 @@ try {
     );
     CREATE INDEX IF NOT EXISTS idx_agent_messages_to ON agent_messages(to_user_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_agent_messages_conversation ON agent_messages(from_user_id, to_user_id);
+  `);
+} catch { /* table already exists */ }
+
+// DevClaw Bridge — audit log for admin dev actions
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dev_audit_log (
+      id TEXT PRIMARY KEY,
+      action TEXT NOT NULL,
+      actor TEXT NOT NULL DEFAULT 'admin',
+      params TEXT DEFAULT '{}',
+      status TEXT NOT NULL DEFAULT 'started',
+      started_at TEXT NOT NULL DEFAULT (datetime('now')),
+      finished_at TEXT,
+      output_summary TEXT,
+      pr_url TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_dev_audit_log_action ON dev_audit_log(action);
+    CREATE INDEX IF NOT EXISTS idx_dev_audit_log_started ON dev_audit_log(started_at);
   `);
 } catch { /* table already exists */ }
 

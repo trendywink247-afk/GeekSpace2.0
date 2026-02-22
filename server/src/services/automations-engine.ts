@@ -161,8 +161,9 @@ async function executeAction(
 
       case 'create_reminder': {
         const text = actionConfig.reminder_text || `Auto-reminder from ${automation.name}`;
-        db.prepare('INSERT INTO reminders (id, user_id, text, channel, category, created_by) VALUES (?, ?, ?, ?, ?, ?)')
-          .run(uuid(), automation.user_id, text, 'push', 'general', 'automation');
+        const scheduledFor = Date.now() + 3600_000; // Default 1 hour from now
+        db.prepare('INSERT INTO reminders (id, user_id, text, channel, category, created_by, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?)')
+          .run(uuid(), automation.user_id, text, 'push', 'general', 'automation', scheduledFor);
         output = `Reminder created: ${text}`;
         break;
       }
