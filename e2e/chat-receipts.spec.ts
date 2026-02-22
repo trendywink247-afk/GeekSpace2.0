@@ -25,7 +25,7 @@ test('chat receipts display in UI', async ({ page }) => {
         const body = await response.json();
         console.log('Response has receipts:', !!body.receipts);
         console.log('Response has actions:', !!(body.actions && body.actions.length));
-      } catch (e) {
+      } catch {
         const text = await response.text();
         console.log('Response text:', text.substring(0, 200));
       }

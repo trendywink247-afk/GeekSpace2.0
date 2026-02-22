@@ -3,6 +3,23 @@
 # the geekspace-shared network using their container names.
 
 services:
+#-----caddy------------
+  caddy:
+    image: caddy:2
+    container_name: geekspace-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /var/www/geekspace:/srv:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - geekspace-net
+    depends_on:
+      - geekspace
   # ---- GeekSpace API + Frontend ----
   geekspace:
     build: .
@@ -10,7 +27,7 @@ services:
     restart: unless-stopped
     env_file: .env
     ports:
-      - "${PORT:-3001}:3001"
+      - "127.0.0.1:${PORT:-3001}:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -177,6 +194,10 @@ volumes:
   redis-data:
     driver: local
   n8n-data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
     driver: local
 
 networks:
