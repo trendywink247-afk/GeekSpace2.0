@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
-  LogOut, ChevronRight, Hexagon, DollarSign, Compass, Palette,
+  LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
   Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal
 } from 'lucide-react';
@@ -53,19 +53,22 @@ type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'con
 
 interface MenuGroup {
   label: string | null;
+  icon: typeof LayoutDashboard | null;
   items: { id: PageType; label: string; icon: typeof LayoutDashboard }[];
 }
 
 const menuGroups: MenuGroup[] = [
   {
     label: null,
+    icon: null,
     items: [
       { id: 'overview', label: 'Overview', icon: LayoutDashboard },
       { id: 'portfolio', label: 'Portfolio', icon: Palette },
     ],
   },
   {
-    label: 'AI SPECIALIST',
+    label: 'AI Specialist',
+    icon: Code,
     items: [
       { id: 'website-builder', label: 'Website Builder', icon: Code },
       { id: 'image-gen', label: 'Image Generator', icon: ImageIcon },
@@ -73,7 +76,8 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    label: 'AGENT',
+    label: 'Agent',
+    icon: Bot,
     items: [
       { id: 'agent', label: 'Agent Settings', icon: Bot },
       { id: 'memory', label: 'Memory', icon: Brain },
@@ -81,21 +85,24 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    label: 'WEEBO FLEET',
+    label: 'Weebo Fleet',
+    icon: Cpu,
     items: [
       { id: 'pico', label: 'Fleet', icon: Cpu },
       { id: 'planner', label: 'Planner', icon: CalendarCheck },
     ],
   },
   {
-    label: 'PRODUCTIVITY',
+    label: 'Productivity',
+    icon: Zap,
     items: [
       { id: 'reminders', label: 'Reminders', icon: Bell },
       { id: 'automations', label: 'Automations', icon: Zap },
     ],
   },
   {
-    label: 'ACCOUNT',
+    label: 'Account',
+    icon: Settings,
     items: [
       { id: 'usage', label: 'Usage', icon: BarChart3 },
       { id: 'billing', label: 'Billing', icon: CreditCard },
@@ -104,7 +111,8 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    label: 'SYSTEM',
+    label: 'System',
+    icon: Terminal,
     items: [
       { id: 'terminal', label: 'Terminal', icon: Terminal },
       { id: 'health', label: 'Health', icon: Activity },
@@ -143,6 +151,7 @@ export function DashboardApp() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const usage = useDashboardStore((s) => s.usage);
@@ -263,6 +272,19 @@ export function DashboardApp() {
   // Helper to check if a page is active (for grouped sidebar highlighting)
   const isPageActive = (id: PageType) => currentPage === id;
 
+  const groupHasActivePage = (group: MenuGroup) => group.items.some(item => item.id === currentPage);
+
+  const isGroupExpanded = (label: string) => expandedGroups.has(label) || menuGroups.find(g => g.label === label && groupHasActivePage(g)) !== undefined;
+
+  const toggleGroup = (label: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
+
   // Sidebar content — shared between mobile drawer and desktop sidebar
   const sidebarContent = (
     <>
@@ -292,57 +314,94 @@ export function DashboardApp() {
       <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">
         {menuGroups.map((group, groupIdx) => (
           <div key={group.label ?? 'ungrouped'}>
-            {/* Group label or divider */}
-            {group.label ? (
-              sidebarCollapsed ? (
-                <div className="h-px bg-[#00F0FF]/10 my-2 mx-2" />
-              ) : (
-                <div className="px-3 pt-4 pb-1.5 text-[10px] font-semibold tracking-widest text-[#6B7280]/60 uppercase select-none">
-                  {group.label}
-                </div>
-              )
-            ) : null}
-
-            {group.items.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => navigate(item.id === 'overview' ? '/dashboard' : `/dashboard/${item.id}`)}
-                aria-current={isPageActive(item.id) ? 'page' : undefined}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
-                  isPageActive(item.id)
-                    ? 'text-[#00F0FF]'
-                    : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
-                }`}
-              >
-                {/* Active pill indicator */}
-                {isPageActive(item.id) && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
+            {group.label && group.icon ? (
+              <>
+                {/* Collapsible group header */}
+                <button
+                  onClick={() => toggleGroup(group.label!)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] mt-1 relative ${
+                    groupHasActivePage(group)
+                      ? 'text-[#00F0FF]'
+                      : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
+                  }`}
+                >
+                  {groupHasActivePage(group) && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
+                  )}
+                  <group.icon className="w-5 h-5 flex-shrink-0" />
+                  {!sidebarCollapsed && (
+                    <>
+                      <span className="text-sm font-medium flex-1 text-left">{group.label}</span>
+                      {isGroupExpanded(group.label) ? (
+                        <ChevronDown className="w-4 h-4 flex-shrink-0 opacity-50" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 flex-shrink-0 opacity-50" />
+                      )}
+                    </>
+                  )}
+                </button>
+                {/* Expandable sub-items */}
+                {!sidebarCollapsed && isGroupExpanded(group.label) && (
+                  <div className="ml-4 border-l border-[#00F0FF]/10 pl-2 space-y-0.5">
+                    {group.items.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => navigate(`/dashboard/${item.id}`)}
+                        aria-current={isPageActive(item.id) ? 'page' : undefined}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 min-h-[38px] ${
+                          isPageActive(item.id)
+                            ? 'text-[#00F0FF] bg-[#00F0FF]/5'
+                            : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0]'
+                        }`}
+                      >
+                        <item.icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-sm">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 )}
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!sidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
-              </button>
-            ))}
+                {/* Collapsed sidebar: show sub-items as icons on hover handled by tooltip later; for now just the group icon */}
+              </>
+            ) : (
+              <>
+                {/* Ungrouped top-level items (Overview, Portfolio) */}
+                {group.items.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.id === 'overview' ? '/dashboard' : `/dashboard/${item.id}`)}
+                    aria-current={isPageActive(item.id) ? 'page' : undefined}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
+                      isPageActive(item.id)
+                        ? 'text-[#00F0FF]'
+                        : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
+                    }`}
+                  >
+                    {isPageActive(item.id) && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
+                    )}
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    {!sidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+                  </button>
+                ))}
 
-            {/* Explore button after the first ungrouped section */}
-            {groupIdx === 0 && (
-              <button
-                onClick={() => navigate('/explore')}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] transition-all min-h-[44px]"
-              >
-                <Compass className="w-5 h-5 flex-shrink-0" />
-                {!sidebarCollapsed && <span className="text-sm font-medium">Explore</span>}
-              </button>
+                {/* Explore after ungrouped */}
+                {groupIdx === 0 && (
+                  <button
+                    onClick={() => navigate('/explore')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] transition-all min-h-[44px]"
+                  >
+                    <Compass className="w-5 h-5 flex-shrink-0" />
+                    {!sidebarCollapsed && <span className="text-sm font-medium">Explore</span>}
+                  </button>
+                )}
+              </>
             )}
           </div>
         ))}
 
         {/* Agentin Roadmap — standalone footer link */}
-        <div className={sidebarCollapsed ? 'mt-2' : 'mt-3'}>
-          {sidebarCollapsed ? (
-            <div className="h-px bg-[#00F0FF]/10 my-2 mx-2" />
-          ) : (
-            <div className="h-px bg-[#00F0FF]/10 my-2" />
-          )}
+        <div className="mt-2">
+          <div className="h-px bg-[#00F0FF]/10 my-2 mx-2" />
           <button
             onClick={() => navigate('/dashboard/roadmap')}
             aria-current={isPageActive('roadmap') ? 'page' : undefined}
