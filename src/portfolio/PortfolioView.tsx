@@ -268,24 +268,29 @@ export function PortfolioView() {
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4">Projects</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {portfolio.projects.map((project, i) => (
-                    <a key={i} href={project.url} className="p-5 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all group press-scale block w-full">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors">{project.name}</h3>
-                        {project.aiGenerated && (
-                          <Badge variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF] text-xs shrink-0">AI Generated</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-[#6B7280] mt-1">{project.description}</p>
-                      {project.tags && (
-                        <div className="flex flex-wrap gap-1 mt-3">
-                          {project.tags.map((tag) => (
-                            <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#06060B] text-[#6B7280]">{tag}</span>
-                          ))}
+                  {portfolio.projects.map((project, i) => {
+                    const hasUrl = project.url && project.url !== '#';
+                    const Wrapper = hasUrl ? 'a' : 'div';
+                    const wrapperProps = hasUrl ? { href: project.url, target: '_blank', rel: 'noopener noreferrer' } : {};
+                    return (
+                      <Wrapper key={i} {...wrapperProps} className={`p-5 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all group press-scale block w-full${hasUrl ? ' cursor-pointer' : ''}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-semibold text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors">{project.name}</h3>
+                          {project.aiGenerated && (
+                            <Badge variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF] text-xs shrink-0">AI Generated</Badge>
+                          )}
                         </div>
-                      )}
-                    </a>
-                  ))}
+                        <p className="text-sm text-[#6B7280] mt-1">{project.description}</p>
+                        {project.tags && (
+                          <div className="flex flex-wrap gap-1 mt-3">
+                            {project.tags.map((tag) => (
+                              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#06060B] text-[#6B7280]">{tag}</span>
+                            ))}
+                          </div>
+                        )}
+                      </Wrapper>
+                    );
+                  })}
                 </div>
               </div>
             )}
