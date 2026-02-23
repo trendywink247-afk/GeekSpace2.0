@@ -40,6 +40,7 @@ export function MemoryManagerPage() {
   const [sortBy, setSortBy] = useState<'recent' | 'confidence' | 'accessed'>('recent');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Load memories from API
   useEffect(() => {
@@ -48,11 +49,22 @@ export function MemoryManagerPage() {
 
   const loadMemories = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const { data } = await memoryService.list();
-      setMemories(data);
-    } catch {
-      // API failed — show empty state
+      if (Array.isArray(data)) {
+        setMemories(data);
+      } else {
+        setLoadError('Unexpected response format');
+        setMemories([]);
+      }
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401) {
+        setLoadError('Session expired — please log in again');
+      } else {
+        setLoadError('Failed to load memories — try refreshing');
+      }
       setMemories([]);
     } finally {
       setIsLoading(false);
@@ -287,10 +299,17 @@ export function MemoryManagerPage() {
       {filteredMemories.length === 0 ? (
         <div className="text-center py-16">
           <Brain className="w-16 h-16 text-[#00F0FF]/30 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No memories found</h3>
+          <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">
+            {loadError ? 'Could not load memories' : 'No memories found'}
+          </h3>
           <p className="text-[#6B7280] max-w-sm mx-auto">
-            Your agent will build memories as you chat. They'll appear here for you to review and manage.
+            {loadError || 'Your agent will build memories as you chat. They\'ll appear here for you to review and manage.'}
           </p>
+          {loadError && (
+            <Button onClick={loadMemories} className="mt-4 bg-[#00F0FF] hover:bg-[#00D4B0]">
+              <RefreshCw className="w-4 h-4 mr-2" /> Retry
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

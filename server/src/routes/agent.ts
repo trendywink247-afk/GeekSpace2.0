@@ -445,8 +445,22 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
         deductSubscriptionCredits(userId, creditCost);
         const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? 0;
 
-        res.json({
-          text: edithResult.text,
+        // Parse and execute any tool actions from LLM response
+        const { text: cleanEdithReply, actions: edithActions } = parseActions(edithResult.text);
+        const edithActionResults: ActionResult[] = [];
+
+        for (const action of edithActions) {
+          if (action.tool === 'generate_code') {
+            action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
+          }
+          const actionResult = await executeAction(userId, action);
+          edithActionResults.push(actionResult);
+        }
+
+        logConversation(userId, 'assistant', cleanEdithReply || edithResult.text, 'edith', config.moonshotReasoningModel);
+
+        const edithResponse: Record<string, unknown> = {
+          text: cleanEdithReply || edithResult.text,
           route: 'premium',
           tier: 'premium',
           latencyMs: edithResult.latencyMs,
@@ -454,7 +468,20 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
           model: config.moonshotReasoningModel,
           creditsUsed: creditCost,
           creditsRemaining: updatedCredits,
-        });
+        };
+
+        if (edithActionResults.length > 0) {
+          edithResponse.actions = edithActionResults;
+          const receipts: ReceiptItem[] = edithActionResults
+            .filter(ar => ar.receipt)
+            .map(ar => ar.receipt!);
+          if (receipts.length > 0) {
+            edithResponse.receiptText = formatReceiptCompact(receipts);
+            edithResponse.receipts = receipts;
+          }
+        }
+
+        res.json(edithResponse);
         return;
       } catch (err) {
         logger.warn({ err, userId }, 'Premium (Moonshot) call failed, falling back to local');
