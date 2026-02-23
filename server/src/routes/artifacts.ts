@@ -95,18 +95,23 @@ artifactsRouter.get('/:userId/:artifactId', (req, res) => {
 // ---- List User's Artifacts (auth required) ----
 artifactsRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   const artifacts = db.prepare(
-    'SELECT id, title, type, created_at FROM generated_artifacts WHERE user_id = ? ORDER BY created_at DESC'
+    'SELECT id, title, type, created_at, expires_at FROM generated_artifacts WHERE user_id = ? ORDER BY created_at DESC'
   ).all(req.userId!) as Array<{
     id: string;
     title: string;
     type: string;
     created_at: string;
+    expires_at: string | null;
   }>;
 
   const baseUrl = `${req.protocol}://${req.get('host')}`;
   res.json({
     artifacts: artifacts.map(a => ({
-      ...a,
+      id: a.id,
+      title: a.title,
+      type: a.type,
+      createdAt: a.created_at,
+      expiresAt: a.expires_at,
       previewUrl: `${baseUrl}/preview/${req.userId}/${a.id}`,
     })),
   });

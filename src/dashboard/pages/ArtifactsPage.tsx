@@ -114,8 +114,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
   const handleExportZip = async (artifact: Artifact) => {
     try {
       const res = await artifactService.exportZip(artifact.id);
-      const blob = new Blob([res.data], { type: 'application/zip' });
-      const url = window.URL.createObjectURL(blob);
+      // res.data is already a Blob from responseType: 'blob'
+      const url = window.URL.createObjectURL(res.data as Blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `${artifact.title.replace(/\s+/g, '_')}.zip`;
@@ -124,6 +124,23 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
     } catch (err) {
       console.error('Export failed:', err);
     }
+  };
+
+  const formatExpiry = (expiresAt: string | null | undefined): string => {
+    if (!expiresAt) return 'Saved';
+    const diff = new Date(expiresAt).getTime() - Date.now();
+    if (diff <= 0) return 'Expiring soon';
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    if (hours < 1) {
+      const mins = Math.floor(diff / (1000 * 60));
+      return `Expires in ${mins}m`;
+    }
+    if (hours >= 24) {
+      const days = Math.floor(hours / 24);
+      const remainHours = hours % 24;
+      return `Expires in ${days}d ${remainHours}h`;
+    }
+    return `Expires in ${hours}h`;
   };
 
   if (loading) {
@@ -183,7 +200,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   <h3 className="text-[#E8E8F0] font-medium truncate">{artifact.title}</h3>
                   <div className="flex items-center gap-2 text-xs text-[#6B7280]">
                     <Clock className="w-3 h-3" />
-                    <span>{new Date(artifact.createdAt).toLocaleDateString()}</span>
+                    <span>{formatExpiry(artifact.expiresAt)}</span>
                   </div>
                 </div>
               </div>
