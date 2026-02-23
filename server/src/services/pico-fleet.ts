@@ -32,7 +32,7 @@ const PLAN_AGENT_SLOTS: Record<string, number> = {
 // ---- Types ----
 
 export const ALLOWED_TASK_TYPES = [
-  'create_reminder', 'telegram_message', 'call_api', 'n8n_webhook', 'portfolio_deploy',
+  'create_reminder', 'telegram_message', 'call_api', 'n8n_webhook', 'portfolio_deploy', 'social_media_post',
 ] as const;
 export type TaskType = typeof ALLOWED_TASK_TYPES[number];
 
@@ -52,6 +52,30 @@ interface PicoAgent {
   status: string;
   tasks_completed: number;
   tasks_failed: number;
+  created_at: string;
+  system_prompt: string;
+  mode: string;
+  voice: string;
+  creativity: number;
+  formality: number;
+  model_preference: string;
+  custom_commands: string;
+  assigned_tools: string;
+  enabled: number;
+}
+
+export interface PicoCronJob {
+  id: string;
+  user_id: string;
+  agent_slot: number;
+  name: string;
+  task_type: string;
+  task_config: string;
+  interval_minutes: number;
+  enabled: number;
+  last_run_at: string | null;
+  next_run_at: string | null;
+  run_count: number;
   created_at: string;
 }
 
@@ -161,6 +185,41 @@ export function initPicoFleetTables(): void {
     db.exec("ALTER TABLE pico_tasks ADD COLUMN retry_after TEXT");
   } catch { /* column already exists */ }
 
+  // Migration: add per-agent config columns
+  const agentCols: [string, string][] = [
+    ['system_prompt', "TEXT DEFAULT ''"],
+    ['mode', "TEXT DEFAULT 'builder'"],
+    ['voice', "TEXT DEFAULT 'friendly'"],
+    ['creativity', 'INTEGER DEFAULT 70'],
+    ['formality', 'INTEGER DEFAULT 50'],
+    ['model_preference', "TEXT DEFAULT 'auto'"],
+    ['custom_commands', "TEXT DEFAULT ''"],
+    ['assigned_tools', "TEXT DEFAULT '[]'"],
+    ['enabled', 'INTEGER DEFAULT 1'],
+  ];
+  for (const [col, def] of agentCols) {
+    try { db.exec(`ALTER TABLE pico_agents ADD COLUMN ${col} ${def}`); } catch { /* exists */ }
+  }
+
+  // Create pico_cron_jobs table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pico_cron_jobs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      agent_slot INTEGER NOT NULL DEFAULT 2,
+      name TEXT NOT NULL,
+      task_type TEXT NOT NULL,
+      task_config TEXT NOT NULL DEFAULT '{}',
+      interval_minutes INTEGER NOT NULL DEFAULT 60,
+      enabled INTEGER DEFAULT 1,
+      last_run_at TEXT,
+      next_run_at TEXT,
+      run_count INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_pico_cron_user ON pico_cron_jobs(user_id);
+  `);
+
   logger.info('Pico Fleet tables initialized');
 }
 
@@ -219,15 +278,44 @@ export function createAgent(userId: string, name: string, personality = 'weebo')
   return db.prepare('SELECT * FROM pico_agents WHERE id = ?').get(id) as PicoAgent;
 }
 
-export function updateAgent(agentId: string, userId: string, updates: { name?: string; status?: string }): PicoAgent {
+export interface AgentUpdateFields {
+  name?: string;
+  status?: string;
+  system_prompt?: string;
+  mode?: string;
+  voice?: string;
+  creativity?: number;
+  formality?: number;
+  model_preference?: string;
+  custom_commands?: string;
+  assigned_tools?: string[];
+  enabled?: boolean;
+}
+
+export function updateAgent(agentId: string, userId: string, updates: AgentUpdateFields): PicoAgent {
   const agent = db.prepare('SELECT * FROM pico_agents WHERE id = ? AND user_id = ?')
     .get(agentId, userId) as PicoAgent | undefined;
   if (!agent) throw new Error('Agent not found');
 
   const fields: string[] = [];
   const values: unknown[] = [];
-  if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
-  if (updates.status !== undefined) { fields.push('status = ?'); values.push(updates.status); }
+
+  const stringFields = ['name', 'status', 'system_prompt', 'mode', 'voice', 'model_preference', 'custom_commands'] as const;
+  for (const f of stringFields) {
+    if (updates[f] !== undefined) { fields.push(`${f} = ?`); values.push(updates[f]); }
+  }
+  const numFields = ['creativity', 'formality'] as const;
+  for (const f of numFields) {
+    if (updates[f] !== undefined) { fields.push(`${f} = ?`); values.push(updates[f]); }
+  }
+  if (updates.assigned_tools !== undefined) {
+    fields.push('assigned_tools = ?');
+    values.push(JSON.stringify(updates.assigned_tools));
+  }
+  if (updates.enabled !== undefined) {
+    fields.push('enabled = ?');
+    values.push(updates.enabled ? 1 : 0);
+  }
 
   if (fields.length) {
     values.push(agentId);
@@ -251,6 +339,90 @@ export function deleteAgent(agentId: string, userId: string): void {
   }
 
   db.prepare('DELETE FROM pico_agents WHERE id = ?').run(agentId);
+}
+
+// ---- Cron Job CRUD ----
+
+export function getUserCronJobs(userId: string): PicoCronJob[] {
+  return db.prepare('SELECT * FROM pico_cron_jobs WHERE user_id = ? ORDER BY created_at DESC')
+    .all(userId) as PicoCronJob[];
+}
+
+export function createCronJob(userId: string, data: {
+  name: string; task_type: string; task_config?: Record<string, unknown>;
+  interval_minutes: number; agent_slot?: number;
+}): PicoCronJob {
+  const id = uuid();
+  const nextRun = new Date(Date.now() + data.interval_minutes * 60_000).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+  db.prepare(`INSERT INTO pico_cron_jobs (id, user_id, agent_slot, name, task_type, task_config, interval_minutes, next_run_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    id, userId, data.agent_slot ?? 2, data.name, data.task_type,
+    JSON.stringify(data.task_config ?? {}), data.interval_minutes, nextRun,
+  );
+  return db.prepare('SELECT * FROM pico_cron_jobs WHERE id = ?').get(id) as PicoCronJob;
+}
+
+export function updateCronJob(jobId: string, userId: string, updates: {
+  name?: string; task_type?: string; task_config?: Record<string, unknown>;
+  interval_minutes?: number; agent_slot?: number; enabled?: boolean;
+}): PicoCronJob {
+  const job = db.prepare('SELECT * FROM pico_cron_jobs WHERE id = ? AND user_id = ?')
+    .get(jobId, userId) as PicoCronJob | undefined;
+  if (!job) throw new Error('Cron job not found');
+
+  const fields: string[] = [];
+  const values: unknown[] = [];
+  if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
+  if (updates.task_type !== undefined) { fields.push('task_type = ?'); values.push(updates.task_type); }
+  if (updates.task_config !== undefined) { fields.push('task_config = ?'); values.push(JSON.stringify(updates.task_config)); }
+  if (updates.interval_minutes !== undefined) {
+    fields.push('interval_minutes = ?'); values.push(updates.interval_minutes);
+    // Recalculate next_run_at from now
+    const nextRun = new Date(Date.now() + updates.interval_minutes * 60_000).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+    fields.push('next_run_at = ?'); values.push(nextRun);
+  }
+  if (updates.agent_slot !== undefined) { fields.push('agent_slot = ?'); values.push(updates.agent_slot); }
+  if (updates.enabled !== undefined) { fields.push('enabled = ?'); values.push(updates.enabled ? 1 : 0); }
+
+  if (fields.length) {
+    values.push(jobId);
+    db.prepare(`UPDATE pico_cron_jobs SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  }
+  return db.prepare('SELECT * FROM pico_cron_jobs WHERE id = ?').get(jobId) as PicoCronJob;
+}
+
+export function deleteCronJob(jobId: string, userId: string): void {
+  const job = db.prepare('SELECT * FROM pico_cron_jobs WHERE id = ? AND user_id = ?')
+    .get(jobId, userId) as PicoCronJob | undefined;
+  if (!job) throw new Error('Cron job not found');
+  db.prepare('DELETE FROM pico_cron_jobs WHERE id = ?').run(jobId);
+}
+
+function checkPicoCronJobs(): void {
+  const now = new Date().toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+  const dueJobs = db.prepare(
+    "SELECT * FROM pico_cron_jobs WHERE enabled = 1 AND next_run_at <= ?"
+  ).all(now) as PicoCronJob[];
+
+  for (const job of dueJobs) {
+    try {
+      const config = JSON.parse(job.task_config || '{}') as Record<string, unknown>;
+      const task: PlannedTask = {
+        task_type: job.task_type as TaskType,
+        description: `[cron] ${job.name}`,
+        config,
+        agent_slot: job.agent_slot,
+      };
+      queueTasks(job.user_id, [task], 'cron');
+
+      // Bump next_run_at and run_count
+      const nextRun = new Date(Date.now() + job.interval_minutes * 60_000).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+      db.prepare("UPDATE pico_cron_jobs SET last_run_at = ?, next_run_at = ?, run_count = run_count + 1 WHERE id = ?")
+        .run(now, nextRun, job.id);
+    } catch (err) {
+      logger.error({ err, cronJobId: job.id }, 'Cron job execution failed');
+    }
+  }
 }
 
 // ---- Complexity Estimator ----
@@ -685,6 +857,7 @@ async function processNextTask(): Promise<boolean> {
     JOIN pico_agents a ON a.id = t.agent_id
     WHERE t.status = 'queued'
       AND a.status = 'active'
+      AND a.enabled = 1
       AND (t.retry_after IS NULL OR t.retry_after <= ?)
       AND NOT EXISTS (
         SELECT 1 FROM pico_tasks r
@@ -807,6 +980,12 @@ async function executeTask(task: PicoTask): Promise<void> {
         db.prepare('UPDATE portfolios SET is_public = 1 WHERE user_id = ?').run(task.user_id);
         const user = db.prepare('SELECT username FROM users WHERE id = ?').get(task.user_id) as { username: string } | undefined;
         output = `Portfolio deployed for ${user?.username || 'user'}`;
+        break;
+      }
+
+      case 'social_media_post': {
+        const { executeSocialMediaPostTask } = await import('./social-media.js');
+        output = await executeSocialMediaPostTask(task.user_id, taskConfig);
         break;
       }
 
@@ -949,6 +1128,13 @@ async function tick() {
     refreshModelsIfStale().catch(() => {});
     await checkDailySummarization();
     await checkAndRunRecipes();
+    try {
+      const { checkDueSocialPosts } = await import('./social-media.js');
+      await checkDueSocialPosts();
+    } catch (err) {
+      logger.error({ err }, 'Social media post check failed');
+    }
+    checkPicoCronJobs();
     const worked = await processNextTask();
     if (worked) {
       idleStreak = 0;

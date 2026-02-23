@@ -4,6 +4,8 @@ import { defineConfig } from "vite"
 import { inspectAttr } from 'kimi-plugin-inspect-react'
 
 // https://vite.dev/config/
+const apiTarget = process.env.VITE_API_TARGET || 'http://localhost:3001';
+
 export default defineConfig({
   base: '/',
   plugins: [inspectAttr(), react()],
@@ -15,7 +17,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: apiTarget,
         changeOrigin: true,
       },
     },
@@ -23,7 +25,7 @@ export default defineConfig({
   preview: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: apiTarget,
         changeOrigin: true,
       },
     },

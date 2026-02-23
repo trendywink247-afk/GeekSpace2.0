@@ -719,6 +719,48 @@ try {
   `);
 } catch { /* tables already exist */ }
 
+// User-generated images (Image Generator)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_images (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      prompt TEXT NOT NULL DEFAULT '',
+      model TEXT NOT NULL DEFAULT 'pollinations',
+      image_url TEXT DEFAULT '',
+      width INTEGER DEFAULT 1024,
+      height INTEGER DEFAULT 1024,
+      source TEXT NOT NULL DEFAULT 'generated',
+      created_at TEXT DEFAULT (datetime('now')),
+      expires_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_images_user ON user_images(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_images_expires ON user_images(expires_at);
+  `);
+} catch { /* table already exists */ }
+
+// User-generated videos (Video Generator)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_videos (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      prompt TEXT NOT NULL DEFAULT '',
+      model TEXT NOT NULL DEFAULT 'pollinations',
+      video_url TEXT DEFAULT '',
+      width INTEGER DEFAULT 1280,
+      height INTEGER DEFAULT 720,
+      duration INTEGER DEFAULT 5,
+      status TEXT NOT NULL DEFAULT 'processing',
+      source TEXT NOT NULL DEFAULT 'generated',
+      created_at TEXT DEFAULT (datetime('now')),
+      expires_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_videos_user ON user_videos(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_videos_expires ON user_videos(expires_at);
+  `);
+} catch { /* table already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {

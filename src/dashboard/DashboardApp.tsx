@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
-  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal
+  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2
 } from 'lucide-react';
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
@@ -48,8 +48,9 @@ const RoadmapPage = lazy(() => import('./pages/RoadmapPage').then(m => ({ defaul
 const ImageGenPage = lazy(() => import('./pages/ImageGenPage').then(m => ({ default: m.ImageGenPage })));
 const VideoGenPage = lazy(() => import('./pages/VideoGenPage').then(m => ({ default: m.VideoGenPage })));
 const PlannerPage = lazy(() => import('./pages/PlannerPage').then(m => ({ default: m.PlannerPage })));
+const SocialMediaPage = lazy(() => import('./pages/SocialMediaPage').then(m => ({ default: m.SocialMediaPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media';
 
 interface MenuGroup {
   label: string | null;
@@ -98,6 +99,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: 'reminders', label: 'Reminders', icon: Bell },
       { id: 'automations', label: 'Automations', icon: Zap },
+      { id: 'social-media', label: 'Social Media', icon: Share2 },
     ],
   },
   {
@@ -201,7 +203,7 @@ export function DashboardApp() {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -258,6 +260,8 @@ export function DashboardApp() {
         return <VideoGenPage />;
       case 'planner':
         return <PlannerPage />;
+      case 'social-media':
+        return <SocialMediaPage />;
       case 'terminal':
         return <TerminalPage />;
       case 'settings':

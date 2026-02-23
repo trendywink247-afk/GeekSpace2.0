@@ -8,6 +8,8 @@
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { v4 as uuid } from 'uuid';
+import { cleanupExpiredImages } from '../routes/images.js';
+import { cleanupExpiredVideos } from '../routes/videos.js';
 
 let cleanupInterval: ReturnType<typeof setInterval> | null = null;
 let warningInterval: ReturnType<typeof setInterval> | null = null;
@@ -119,13 +121,19 @@ export function saveArtifactPermanently(artifactId: string, userId: string): boo
  */
 export function startArtifactCleanupScheduler(): void {
   // Run cleanup every 5 minutes
-  cleanupInterval = setInterval(cleanupExpiredArtifacts, 5 * 60 * 1000);
+  cleanupInterval = setInterval(() => {
+    cleanupExpiredArtifacts();
+    cleanupExpiredImages();
+    cleanupExpiredVideos();
+  }, 5 * 60 * 1000);
 
   // Send warnings every 5 minutes
   warningInterval = setInterval(sendExpirationWarnings, 5 * 60 * 1000);
 
   // Run immediately on start
   cleanupExpiredArtifacts();
+  cleanupExpiredImages();
+  cleanupExpiredVideos();
   sendExpirationWarnings();
 
   logger.info('Artifact cleanup scheduler started');

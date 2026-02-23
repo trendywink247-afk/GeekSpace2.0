@@ -14,6 +14,7 @@ import { initMemoryTables, startMemorySyncScheduler } from './services/memory.js
 import { initWorkflowTables } from './services/workflow-engine.js';
 import { initTelegramBot } from './services/telegram.js';
 import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
+import { initSocialMediaTables } from './services/social-media.js';
 import { seedDefaultTemplates } from './routes/templates.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
 import { startReminderScheduler } from './services/reminder-scheduler.js';
@@ -47,6 +48,7 @@ app.listen(config.port, () => {
   initMemoryTables();
   initWorkflowTables();
   initPicoFleetTables();
+  initSocialMediaTables();
   ensureDefaultAgents();
   seedDefaultTemplates();
 

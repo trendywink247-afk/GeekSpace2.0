@@ -282,6 +282,15 @@ export const picoAgentCreateSchema = z.object({
 export const picoAgentUpdateSchema = z.object({
   name: z.string().min(1).max(30).optional(),
   status: z.enum(['active', 'paused']).optional(),
+  system_prompt: z.string().max(2000).optional(),
+  mode: z.enum(['minimal', 'builder', 'operator']).optional(),
+  voice: z.enum(['professional', 'friendly', 'witty']).optional(),
+  creativity: z.number().int().min(0).max(100).optional(),
+  formality: z.number().int().min(0).max(100).optional(),
+  model_preference: z.enum(['auto', 'local', 'cloud', 'premium']).optional(),
+  custom_commands: z.string().max(2000).optional(),
+  assigned_tools: z.array(z.enum(['recipes', 'image-gen', 'video-gen', 'website-builder', 'social-media'])).optional(),
+  enabled: z.boolean().optional(),
 }).strict();
 
 export const picoTaskPlanSchema = z.object({
@@ -292,4 +301,66 @@ export const picoTaskQuerySchema = z.object({
   status: z.enum(['queued', 'running', 'completed', 'failed']).optional(),
   slot: z.coerce.number().int().min(1).max(6).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+export const picoCronJobCreateSchema = z.object({
+  name: z.string().min(1).max(100),
+  task_type: z.enum(['create_reminder', 'telegram_message', 'call_api', 'n8n_webhook', 'portfolio_deploy', 'social_media_post']),
+  task_config: z.record(z.string(), z.unknown()).default({}),
+  interval_minutes: z.number().int().min(5).max(10080),
+  agent_slot: z.number().int().min(2).max(6).default(2),
+});
+
+export const picoCronJobUpdateSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  task_type: z.enum(['create_reminder', 'telegram_message', 'call_api', 'n8n_webhook', 'portfolio_deploy', 'social_media_post']).optional(),
+  task_config: z.record(z.string(), z.unknown()).optional(),
+  interval_minutes: z.number().int().min(5).max(10080).optional(),
+  agent_slot: z.number().int().min(2).max(6).optional(),
+  enabled: z.boolean().optional(),
+}).strict();
+
+// ---- Social Media schemas ----
+
+export const socialAccountCreateSchema = z.object({
+  platform: z.enum(['instagram', 'facebook']),
+  account_name: z.string().min(1).max(100),
+  posting_method: z.enum(['webhook', 'api']),
+  webhook_url: z.string().url().max(2000).optional(),
+  page_id: z.string().max(200).optional(),
+  access_token: z.string().max(2000).optional(),
+}).refine(
+  (data) => {
+    if (data.posting_method === 'webhook') return !!data.webhook_url;
+    if (data.posting_method === 'api') return !!data.page_id && !!data.access_token;
+    return true;
+  },
+  { message: 'Webhook method requires webhook_url; API method requires page_id and access_token' },
+);
+
+export const socialAccountUpdateSchema = z.object({
+  account_name: z.string().min(1).max(100).optional(),
+  posting_method: z.enum(['webhook', 'api']).optional(),
+  webhook_url: z.string().url().max(2000).optional(),
+  page_id: z.string().max(200).optional(),
+  access_token: z.string().max(2000).optional(),
+  status: z.enum(['active', 'paused']).optional(),
+});
+
+export const contentPlanGenerateSchema = z.object({
+  topic: z.string().min(1).max(200),
+  niche: z.string().min(1).max(200),
+  social_account_id: z.string().max(100).optional(),
+});
+
+export const contentPlanActivateSchema = z.object({
+  start_date: z.string().min(1).max(50),
+  social_account_id: z.string().min(1).max(100),
+  posting_times: z.array(z.string().regex(/^\d{2}:\d{2}$/, 'Time must be HH:MM')).max(2).optional(),
+});
+
+export const contentPlanItemUpdateSchema = z.object({
+  caption: z.string().max(2200).optional(),
+  media_id: z.string().max(200).optional(),
+  enabled: z.boolean().optional(),
 });

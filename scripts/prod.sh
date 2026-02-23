@@ -29,7 +29,13 @@ echo ">> Starting containers..."
 docker compose up -d
 echo ""
 
-# ── 4. Wait for startup ─────────────────
+# ── 4. Sync frontend to Caddy serve dir ─
+echo ">> Syncing frontend assets to Caddy..."
+docker cp geekspace-app:/app/dist/. /var/www/geekspace/
+echo "   Frontend synced to /var/www/geekspace/"
+echo ""
+
+# ── 5. Wait for startup ─────────────────
 echo ">> Waiting for services to start..."
 for i in $(seq 1 30); do
     if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
@@ -43,7 +49,7 @@ for i in $(seq 1 30); do
 done
 echo ""
 
-# ── 5. Health check ──────────────────────
+# ── 6. Health check ──────────────────────
 echo ">> Running health check..."
 echo ""
 if bash "$SCRIPT_DIR/healthcheck.sh"; then
@@ -55,7 +61,7 @@ else
     echo "Check logs: docker compose logs --tail=50"
 fi
 
-# ── 6. Container status ─────────────────
+# ── 7. Container status ─────────────────
 echo ""
 echo "-- Container Status --"
 docker compose ps
