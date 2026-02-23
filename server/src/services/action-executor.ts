@@ -46,9 +46,9 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
         const selfDestruct = params.selfDestruct as boolean | undefined;
         const id = uuid();
 
-        // Calculate expiration (24 hours for self-destruct, null for saved)
+        // Calculate expiration (48 hours for self-destruct, null for saved)
         const expiresAt = selfDestruct !== false
-          ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+          ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
           : null;
 
         db.prepare(
