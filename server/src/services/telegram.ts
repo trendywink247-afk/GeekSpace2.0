@@ -357,6 +357,59 @@ export async function initTelegramBot(): Promise<void> {
   await registerTelegramWebhook(webhookUrl);
 }
 
+// ---- HTML Notification (for system-generated messages, NOT LLM output) ----
+
+/** Escape user-provided strings for safe Telegram HTML */
+export function escapeTelegramHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Send a pre-formatted HTML notification. Caller must ensure safe HTML. */
+export async function sendTelegramNotification(
+  chatId: string | number,
+  html: string,
+): Promise<{ messageId: number; success: boolean }> {
+  const chunks = splitMessage(html, 4096);
+  let lastMessageId = 0;
+
+  for (const chunk of chunks) {
+    const body: Record<string, unknown> = {
+      chat_id: chatId,
+      text: chunk,
+      parse_mode: 'HTML',
+    };
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(15000),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          logger.warn({ chatId, status: res.status, error: errText, attempt }, 'Telegram notification failed');
+          if (res.status >= 400 && res.status < 500) {
+            return { messageId: 0, success: false };
+          }
+          continue;
+        }
+
+        const data = await res.json() as { result?: { message_id: number } };
+        lastMessageId = data.result?.message_id || 0;
+        break;
+      } catch (err) {
+        logger.warn({ err, chatId, attempt }, 'Telegram notification attempt failed');
+        if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+      }
+    }
+  }
+
+  return { messageId: lastMessageId, success: lastMessageId > 0 };
+}
+
 // ---- Helpers ----
 
 function splitMessage(text: string, maxLen: number): string[] {

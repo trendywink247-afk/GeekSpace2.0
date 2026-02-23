@@ -39,6 +39,19 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
 }
 
+export function optionalAuth(req: AuthRequest, _res: Response, next: NextFunction) {
+  const header = req.headers.authorization;
+  if (header?.startsWith('Bearer ')) {
+    try {
+      const payload = verify(header.slice(7), config.jwtSecret, {
+        algorithms: ['HS256'],
+      }) as { sub: string };
+      req.userId = payload.sub;
+    } catch { /* invalid/expired token — proceed as anonymous */ }
+  }
+  next();
+}
+
 export function signToken(userId: string): string {
   return sign({ sub: userId }, config.jwtSecret, {
     algorithm: 'HS256',

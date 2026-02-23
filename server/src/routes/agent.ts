@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
-import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { requireAuth, optionalAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema, memoryCreateSchema, memoryUpdateSchema, deployPremiumSchema, premiumChatSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { routeChat, classifyIntent, computeCreditCost, deductSubscriptionCredits, streamOllama, pickProvider, type ChatMessage, type Provider } from '../services/llm.js';
@@ -21,7 +21,7 @@ import { parseActions } from '../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
 import { formatReceiptCompact, type ReceiptItem } from '../services/receipts.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
-import { sendTelegramMessage } from '../services/telegram.js';
+import { sendTelegramNotification, escapeTelegramHtml } from '../services/telegram.js';
 import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../services/agent-chat.js';
 
 export const agentRouter = Router();
@@ -1327,12 +1327,20 @@ agentRouter.delete('/premium-session/:sessionId', requireAuth, (req: AuthRequest
 
 // ---- Public Portfolio Chat (real LLM-powered) ----
 
-agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req, res) => {
+agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
   const { message, messageCount } = req.body as { message: string; messageCount?: number };
   const { username } = req.params;
 
   const user = db.prepare('SELECT id, name, location, role, company FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+
+  // Resolve visitor identity from optional JWT
+  let visitorName: string | undefined;
+  if (req.userId) {
+    const visitor = db.prepare('SELECT name, username FROM users WHERE id = ?')
+      .get(req.userId) as { name: string; username: string } | undefined;
+    visitorName = visitor?.name || visitor?.username;
+  }
 
   const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(user.id as string) as Record<string, unknown> | undefined;
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(user.id as string) as Record<string, unknown> | undefined;
@@ -1376,6 +1384,9 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
     }
   }
 
+  // Load owner memories for agent context
+  const ownerMemories = buildMemoryContext(user.id as string, message);
+
   const basePrompt = buildPortfolioVisitorPrompt({
     ownerName,
     agentName,
@@ -1386,6 +1397,8 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
     role: (user.role as string) || undefined,
     company: (user.company as string) || undefined,
     visitorIntent,
+    ownerMemories: ownerMemories || undefined,
+    visitorName,
   });
 
   const systemPrompt = `${basePrompt}\n\n--- PERSONALITY ---\n${personality.promptAddition}`;
@@ -1407,7 +1420,10 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
 
     // Save visitor interaction to owner's memory
     const snippet = message.slice(0, 80);
-    upsertMemory(user.id as string, 'visitor', `portfolio-chat:${Date.now()}`, `Visitor asked about: "${snippet}"`, 0.8, 'portfolio-chat');
+    const memoryValue = visitorName
+      ? `${visitorName} asked about: "${snippet}"`
+      : `Anonymous visitor asked about: "${snippet}"`;
+    upsertMemory(user.id as string, 'visitor', `portfolio-chat:${Date.now()}`, memoryValue, 0.8, 'portfolio-chat');
 
     // Increment connection counter
     db.prepare(`
@@ -1428,8 +1444,9 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
     `).get(user.id as string) as { external_id: string } | undefined;
 
     if (telegramLink) {
-      void sendTelegramMessage(telegramLink.external_id,
-        `Someone just chatted with your agent about: <i>"${snippet}"</i>\n\nCheck your dashboard for the conversation.`
+      const who = visitorName ? `<b>${escapeTelegramHtml(visitorName)}</b> from Agentin` : 'Someone';
+      void sendTelegramNotification(telegramLink.external_id,
+        `${who} chatted with your agent:\n<i>"${escapeTelegramHtml(snippet)}"</i>\n\nCheck your dashboard for the conversation.`
       ).catch(() => { /* non-fatal */ });
     }
 
@@ -1518,7 +1535,7 @@ agentRouter.post('/bridge-preview', requireAuth, validateBody(chatSchema), (req:
 
 // ---- Agent-to-Agent Messaging ----
 
-agentRouter.post('/send-message', requireAuth, (req: AuthRequest, res) => {
+agentRouter.post('/send-message', requireAuth, async (req: AuthRequest, res) => {
   const { recipientAgentId, message } = req.body as { recipientAgentId?: string; message?: string };
 
   if (!recipientAgentId || !message) {
@@ -1531,7 +1548,7 @@ agentRouter.post('/send-message', requireAuth, (req: AuthRequest, res) => {
     return;
   }
 
-  const success = sendAgentMessage(req.userId!, recipientAgentId, message);
+  const success = await sendAgentMessage(req.userId!, recipientAgentId, message);
 
   if (!success) {
     res.status(400).json({ error: 'Cannot send message to this agent. They may have agent chat disabled or not exist.' });

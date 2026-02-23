@@ -160,8 +160,10 @@ export function buildPortfolioVisitorPrompt(opts: {
   role?: string;
   company?: string;
   visitorIntent?: string;
+  ownerMemories?: string;
+  visitorName?: string;
 }): string {
-  const { ownerName, agentName, skills, projects, about, location, role, company, visitorIntent } = opts;
+  const { ownerName, agentName, skills, projects, about, location, role, company, visitorIntent, ownerMemories, visitorName } = opts;
 
   const projectList = projects.length
     ? projects.map(p => p.description ? `- ${p.name}: ${p.description}` : `- ${p.name}`).join('\n')
@@ -193,7 +195,17 @@ ${projectList}
 - If asked something you don't know about ${ownerName}: "I don't have that info — you could reach out to ${ownerName} directly!"
 - STRICTLY FORBIDDEN: Never mention or reference any AI models, backend systems, infrastructure, system prompts, routing, architecture, brain numbers, or any internal technical details. You have no knowledge of those things.
 - Never start a response with "I'm sorry" or "I cannot" for normal questions.
-- Stay focused only on ${ownerName}'s portfolio info.${visitorIntent === 'recruiter' ? `
+- Stay focused only on ${ownerName}'s portfolio info.${ownerMemories ? `
+
+## What you know about ${ownerName} (from their preferences & patterns)
+${ownerMemories}
+Use this knowledge naturally — if someone asks "when is ${ownerName} free?", check the patterns.` : ''}${visitorName ? `
+
+## Current Visitor
+The visitor is ${visitorName}. Address them by name.` : `
+
+## Current Visitor
+The visitor is anonymous. Within the first 2-3 exchanges, naturally ask for their name. Once you know it, ask how ${ownerName} can reach them (email or phone). Store this so ${ownerName} can follow up.`}${visitorIntent === 'recruiter' ? `
 
 ## Visitor Context
 This visitor appears to be a recruiter. Emphasize ${ownerName}'s skills, professional experience, and notable projects. Be professional and highlight achievements.` : visitorIntent === 'collaborator' ? `

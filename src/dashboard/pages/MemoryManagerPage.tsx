@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { memoryService } from '@/services/api';
 
 interface MemoryEntry {
   id: string;
@@ -48,24 +49,11 @@ export function MemoryManagerPage() {
   const loadMemories = async () => {
     setIsLoading(true);
     try {
-      // Try API first
-      const response = await fetch('/api/memory');
-      if (response.ok) {
-        const data = await response.json();
-        setMemories(data.memories || []);
-      } else {
-        // Fallback to localStorage for demo
-        const stored = localStorage.getItem('geekspace-memories');
-        if (stored) {
-          setMemories(JSON.parse(stored));
-        }
-      }
+      const { data } = await memoryService.list();
+      setMemories(data);
     } catch {
-      // Fallback
-      const stored = localStorage.getItem('geekspace-memories');
-      if (stored) {
-        setMemories(JSON.parse(stored));
-      }
+      // API failed — show empty state
+      setMemories([]);
     } finally {
       setIsLoading(false);
     }
@@ -73,12 +61,11 @@ export function MemoryManagerPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await fetch(`/api/memory/${id}`, { method: 'DELETE' });
-      setMemories(memories.filter((m) => m.id !== id));
+      await memoryService.delete(id);
     } catch {
-      // Fallback: just update local state
-      setMemories(memories.filter((m) => m.id !== id));
+      // non-fatal — still remove from UI
     }
+    setMemories(memories.filter((m) => m.id !== id));
   };
 
   const handleDeleteByCategory = async (category: string) => {

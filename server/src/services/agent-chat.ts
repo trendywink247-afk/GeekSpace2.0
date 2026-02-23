@@ -1,5 +1,7 @@
 import { db } from '../db/index.js';
 import { v4 as uuid } from 'uuid';
+import { sendTelegramNotification, escapeTelegramHtml } from './telegram.js';
+import { logger } from '../logger.js';
 
 export function initAgentChatTables(): void {
   db.exec(`
@@ -16,7 +18,7 @@ export function initAgentChatTables(): void {
   `);
 }
 
-export function sendAgentMessage(fromUserId: string, toUsername: string, content: string): boolean {
+export async function sendAgentMessage(fromUserId: string, toUsername: string, content: string): Promise<boolean> {
   const recipient = db.prepare('SELECT id, agent_chat_enabled FROM users WHERE username = ?').get(toUsername) as {
     id: string;
     agent_chat_enabled: number;
@@ -38,6 +40,25 @@ export function sendAgentMessage(fromUserId: string, toUsername: string, content
     ON CONFLICT(user_id, connected_user_id) DO UPDATE SET
       last_interaction = datetime('now')
   `).run(recipient.id, fromUserId);
+
+  // Notify recipient via Telegram (non-blocking)
+  try {
+    const sender = db.prepare('SELECT name, username FROM users WHERE id = ?')
+      .get(fromUserId) as { name: string; username: string } | undefined;
+    const senderName = sender?.name || sender?.username || 'Someone';
+    const telegramLink = db.prepare(
+      "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' ORDER BY linked_at DESC LIMIT 1"
+    ).get(recipient.id) as { external_id: string } | undefined;
+
+    if (telegramLink) {
+      const snippet = content.slice(0, 120);
+      void sendTelegramNotification(telegramLink.external_id,
+        `<b>${escapeTelegramHtml(senderName)}</b> sent you a message:\n<i>"${escapeTelegramHtml(snippet)}"</i>\n\nCheck your dashboard to reply.`
+      ).catch(() => {});
+    }
+  } catch (err) {
+    logger.debug({ err }, 'Non-fatal: failed to send agent message notification');
+  }
 
   return true;
 }

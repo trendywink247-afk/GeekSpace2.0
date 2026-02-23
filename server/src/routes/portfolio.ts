@@ -195,7 +195,7 @@ portfolioRouter.post('/:username/chat', requireAuth, async (req: AuthRequest, re
   const { sendAgentMessage } = await import('../services/agent-chat.js');
   const { message } = req.body;
 
-  const success = sendAgentMessage(req.userId!, req.params.username, message);
+  const success = await sendAgentMessage(req.userId!, req.params.username, message);
   if (success) {
     res.json({ success: true });
   } else {
