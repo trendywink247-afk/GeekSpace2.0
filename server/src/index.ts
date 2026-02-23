@@ -20,6 +20,7 @@ import { startReminderScheduler } from './services/reminder-scheduler.js';
 import { startHealthProbeCache } from './routes/health.js';
 import { startModelSyncScheduler } from './services/model-sync.js';
 import { startArtifactCleanupScheduler } from './services/artifact-cleanup.js';
+import { startOllamaKeepalive } from './services/llm.js';
 
 // Create the Express app using the factory
 const app = createApp();
@@ -58,6 +59,7 @@ app.listen(config.port, () => {
     initAutomationsEngine();
     startPicoWorker();
     initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)'));
+    startOllamaKeepalive();
     startBriefingScheduler();
     startReminderScheduler();
     startMemorySyncScheduler();

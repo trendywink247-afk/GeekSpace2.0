@@ -17,7 +17,7 @@ export const artifactsRouter = Router();
 
 // ---- Public Preview Route (no auth required) ----
 // Serves the artifact as a full HTML page with inline CSS/JS
-artifactsRouter.get('/preview/:userId/:artifactId', (req, res) => {
+artifactsRouter.get('/:userId/:artifactId', (req, res) => {
   const { userId, artifactId } = req.params;
 
   try {

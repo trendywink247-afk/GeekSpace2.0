@@ -1095,14 +1095,14 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     }
   } catch (err) {
     logger.error({ err, userId }, 'Stream chat error');
-    // Try non-streaming fallback even on stream error
+    // Fallback to cloud (skip Ollama — it just failed)
     try {
       const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
       const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
       const fallbackHistory = getConversationContext(userId);
       const result = await routeChat(
         [...fallbackHistory, { role: 'user', content: message }],
-        { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0, userId },
+        { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0, userId, forceProvider: 'openrouter-free' as Provider },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
       res.write(`data: ${JSON.stringify({ text: '', done: true, provider: result.provider, model: result.model })}\n\n`);

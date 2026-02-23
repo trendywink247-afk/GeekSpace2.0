@@ -332,7 +332,7 @@ export function tierToProvider(tier: ModelTier): string {
   switch (tier) {
     case 'local': return 'ollama';
     case 'cloud-free': return 'openrouter-free';
-    case 'cloud': return 'openrouter';
+    case 'cloud': return 'openrouter-free';
     case 'premium': return 'edith';
     default: return 'ollama';
   }
