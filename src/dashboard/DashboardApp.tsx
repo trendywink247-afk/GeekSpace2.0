@@ -61,7 +61,7 @@ const mobileTabs: { id: PageType; label: string; icon: typeof LayoutDashboard }[
 function PageLoader() {
   return (
     <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }
@@ -204,21 +204,21 @@ export function DashboardApp() {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="h-14 flex items-center px-4 border-b border-[#00FFD4]/10">
+      <div className="h-14 flex items-center px-4 border-b border-[#00F0FF]/10">
         <div className="flex items-center gap-3 flex-1">
-          <div className="w-8 h-8 rounded-lg bg-[#00FFD4]/10 border border-[#00FFD4]/15 flex items-center justify-center flex-shrink-0">
-            <Hexagon className="w-5 h-5 text-[#00FFD4]" />
+          <div className="w-8 h-8 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/15 flex items-center justify-center flex-shrink-0 pulse-glow" style={{ boxShadow: '0 0 12px rgba(0, 240, 255, 0.1)' }}>
+            <Hexagon className="w-5 h-5 text-[#00F0FF]" />
           </div>
           {!sidebarCollapsed && (
             <span className="font-bold text-lg" style={{ fontFamily: 'Syne, sans-serif' }}>
-              <span className="text-[#E8E8F0]">Agent</span><span className="text-[#00FFD4]">in</span>
+              <span className="text-[#E8E8F0]">Agent</span><span className="text-[#00F0FF]">in</span>
             </span>
           )}
         </div>
         {/* Close button — mobile only */}
         <button
           onClick={() => setSidebarOpen(false)}
-          className="md:hidden p-2 rounded-lg hover:bg-[#00FFD4]/10"
+          className="md:hidden p-2 rounded-lg hover:bg-[#00F0FF]/10"
           aria-label="Close menu"
         >
           <X className="w-5 h-5 text-[#6B7280]" />
@@ -232,12 +232,16 @@ export function DashboardApp() {
             key={item.id}
             onClick={() => setCurrentPage(item.id)}
             aria-current={currentPage === item.id ? 'page' : undefined}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 min-h-[44px] ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
               currentPage === item.id
-                ? 'bg-[#00FFD4]/20 text-[#00FFD4] border border-[#00FFD4]/30'
-                : 'text-[#6B7280] hover:bg-[#00FFD4]/10 hover:text-[#E8E8F0] active:bg-[#00FFD4]/20'
+                ? 'text-[#00F0FF]'
+                : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
             }`}
           >
+            {/* Active pill indicator */}
+            {currentPage === item.id && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
+            )}
             <item.icon className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
           </button>
@@ -245,7 +249,7 @@ export function DashboardApp() {
 
         <button
           onClick={() => navigate('/explore')}
-          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[#6B7280] hover:bg-[#00FFD4]/10 hover:text-[#E8E8F0] transition-all min-h-[44px]"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] transition-all min-h-[44px]"
         >
           <Compass className="w-5 h-5 flex-shrink-0" />
           {!sidebarCollapsed && <span className="text-sm font-medium">Explore</span>}
@@ -257,10 +261,10 @@ export function DashboardApp() {
         <div className="mx-3 mt-2">
           <button
             onClick={() => setWizardOpen(true)}
-            className="w-full p-3 rounded-xl bg-gradient-to-r from-[#00FFD4]/20 to-[#FF0080]/10 border border-[#00FFD4]/30 hover:border-[#00FFD4]/50 transition-all group min-h-[44px]"
+            className="w-full p-3 rounded-xl bg-gradient-to-r from-[#00F0FF]/10 to-[#FF2D78]/10 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all group min-h-[44px]"
           >
             <div className="flex items-center gap-2">
-              <Palette className="w-4 h-4 text-[#FF0080] group-hover:scale-110 transition-transform" />
+              <Palette className="w-4 h-4 text-[#FF2D78] group-hover:scale-110 transition-transform" />
               <span className="text-xs font-medium text-[#E8E8F0]">Design Assistant</span>
             </div>
             <p className="text-[10px] text-[#6B7280] mt-1 text-left">
@@ -272,18 +276,18 @@ export function DashboardApp() {
 
       {/* Spend indicator */}
       {!sidebarCollapsed && (
-        <div className="mx-3 mt-3 mb-3 p-3 rounded-xl bg-[#030304] border border-[#00FFD4]/20">
+        <div className="mx-3 mt-3 mb-3 p-3 rounded-xl bg-[#06060B]/80 border border-[#00F0FF]/15">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-4 h-4 text-[#61FF7B]" />
+            <DollarSign className="w-4 h-4 text-[#ADFF2F]" />
             <span className="text-xs text-[#6B7280]">This month</span>
           </div>
           <div className="text-lg font-bold text-[#E8E8F0] font-mono">${usage.totalCostUSD.toFixed(2)}</div>
           <div className="text-xs text-[#6B7280]">
-            Forecast: <span className="text-[#FFD761]">${usage.forecastUSD.toFixed(2)}</span>
+            Forecast: <span className="text-[#FFD700]">${usage.forecastUSD.toFixed(2)}</span>
           </div>
-          <div className="mt-2 h-1.5 bg-[#0A0A0F] rounded-full overflow-hidden">
+          <div className="mt-2 h-1.5 bg-[#0C0C18] rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#00FFD4] to-[#61FF7B]"
+              className="h-full rounded-full bg-gradient-to-r from-[#00F0FF] to-[#ADFF2F]"
               style={{ width: `${Math.min((usage.totalCostUSD / 5) * 100, 100)}%` }}
             />
           </div>
@@ -291,10 +295,10 @@ export function DashboardApp() {
       )}
 
       {/* Logout */}
-      <div className="p-3 border-t border-[#00FFD4]/20">
+      <div className="p-3 border-t border-[#00F0FF]/10">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[#6B7280] hover:bg-[#00FFD4]/10 hover:text-[#E8E8F0] transition-all min-h-[44px]"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] transition-all min-h-[44px]"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {!sidebarCollapsed && <span className="text-sm font-medium">Sign Out</span>}
@@ -304,17 +308,17 @@ export function DashboardApp() {
   );
 
   return (
-    <div className="min-h-screen bg-[#030304] flex flex-col md:flex-row" style={{ background: background || undefined }}>
+    <div className="min-h-screen bg-[#06060B] flex flex-col md:flex-row" style={{ background: background || undefined }}>
       {/* ---- Session idle warning ---- */}
       {showIdleWarning && (
-        <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-3 bg-[#FFD761]/10 border-b border-[#FFD761]/30 backdrop-blur-sm">
-          <Clock className="w-4 h-4 text-[#FFD761] shrink-0" />
-          <span className="text-sm text-[#FFD761]">
+        <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-3 bg-[#FFD700]/10 border-b border-[#FFD700]/30 backdrop-blur-sm">
+          <Clock className="w-4 h-4 text-[#FFD700] shrink-0" />
+          <span className="text-sm text-[#FFD700]">
             Session expiring in <span className="font-mono font-bold">{Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, '0')}</span> due to inactivity
           </span>
           <button
             onClick={dismissWarning}
-            className="ml-2 px-3 py-1 text-xs font-medium rounded-md bg-[#FFD761] text-[#030304] hover:bg-[#FFD761]/80 transition-colors"
+            className="ml-2 px-3 py-1 text-xs font-medium rounded-md bg-[#FFD700] text-[#06060B] hover:bg-[#FFD700]/80 transition-colors"
           >
             Stay logged in
           </button>
@@ -324,8 +328,8 @@ export function DashboardApp() {
       {/* ---- Welcome toast ---- */}
       {showWelcome && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-welcome-in">
-          <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-[#0A0A0F]/90 backdrop-blur-sm border border-[#00FFD4]/40 shadow-2xl shadow-[#00FFD4]/10">
-            <Hexagon className="w-5 h-5 text-[#00FFD4] shrink-0" />
+          <div className="flex items-center gap-3 px-5 py-3 rounded-xl glass-card-v2 shadow-2xl shadow-[#00F0FF]/10">
+            <Hexagon className="w-5 h-5 text-[#00F0FF] shrink-0" />
             <span className="text-sm text-[#E8E8F0] font-medium">
               Welcome to Agentin! Your AI command center is ready.
             </span>
@@ -345,11 +349,17 @@ export function DashboardApp() {
         />
       )}
 
-      {/* ---- Desktop Sidebar (hidden on mobile) ---- */}
+      {/* ---- Desktop Sidebar — floating glass panel ---- */}
       <aside
-        className={`hidden md:flex fixed left-0 top-0 h-full bg-[#0A0A0F] border-r border-[#00FFD4]/20 transition-all duration-300 z-50 flex-col ${
+        className={`hidden md:flex fixed top-3 left-3 bottom-3 rounded-2xl transition-all duration-300 z-50 flex-col ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         }`}
+        style={{
+          background: 'linear-gradient(180deg, rgba(12, 12, 24, 0.85), rgba(16, 16, 30, 0.75))',
+          backdropFilter: 'blur(24px) saturate(1.3)',
+          border: '1px solid rgba(0, 240, 255, 0.1)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 240, 255, 0.03)',
+        }}
         role="navigation"
         aria-label="Main navigation"
         data-testid="dashboard-sidebar-desktop"
@@ -359,9 +369,14 @@ export function DashboardApp() {
 
       {/* ---- Mobile Sidebar Drawer ---- */}
       <aside
-        className={`md:hidden fixed left-0 top-0 h-full w-64 bg-[#0A0A0F] border-r border-[#00FFD4]/20 z-50 flex flex-col transition-transform duration-300 ${
+        className={`md:hidden fixed left-0 top-0 h-full w-64 z-50 flex flex-col transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{
+          background: 'linear-gradient(180deg, rgba(12, 12, 24, 0.95), rgba(16, 16, 30, 0.9))',
+          backdropFilter: 'blur(24px)',
+          borderRight: '1px solid rgba(0, 240, 255, 0.1)',
+        }}
         role="navigation"
         aria-label="Mobile navigation"
         data-testid="dashboard-sidebar-mobile"
@@ -372,17 +387,23 @@ export function DashboardApp() {
       {/* ---- Main Content ---- */}
       <main
         className={`flex-1 transition-all duration-300 pb-20 md:pb-0 ${
-          sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'
+          sidebarCollapsed ? 'md:ml-[82px]' : 'md:ml-[272px]'
         }`}
         data-testid="dashboard-shell"
       >
-        {/* Header */}
-        <header className="h-14 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-[#00FFD4]/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
+        {/* Header — transparent with gradient border */}
+        <header
+          className="h-14 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 sticky top-0 z-30"
+          style={{
+            background: 'rgba(6, 6, 11, 0.6)',
+            borderBottom: '1px solid rgba(0, 240, 255, 0.08)',
+          }}
+        >
           <div className="flex items-center gap-3">
             {/* Mobile hamburger */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 rounded-lg hover:bg-[#00FFD4]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="md:hidden p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Open menu"
               data-testid="mobile-nav-toggle"
             >
@@ -391,7 +412,7 @@ export function DashboardApp() {
             {/* Desktop collapse toggle */}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden md:flex p-2 rounded-lg hover:bg-[#00FFD4]/10 transition-colors items-center justify-center"
+              className="hidden md:flex p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors items-center justify-center"
               aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <ChevronRight
@@ -406,15 +427,22 @@ export function DashboardApp() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <div className="px-2 md:px-3 py-1.5 rounded-full bg-[#00FFD4]/10 border border-[#00FFD4]/30">
-              <span className="text-xs text-[#00FFD4] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
+            {/* Credits badge with shimmer */}
+            <div
+              className="px-2 md:px-3 py-1.5 rounded-full border border-[#00F0FF]/20"
+              style={{
+                background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.08), rgba(173, 255, 47, 0.05))',
+              }}
+            >
+              <span className="text-xs text-[#00F0FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
             </div>
+            {/* User avatar with hover glow */}
             <button
               onClick={() => setCurrentPage('settings')}
-              className="flex items-center p-1.5 rounded-xl hover:bg-[#00FFD4]/10 transition-colors min-w-[44px] min-h-[44px] justify-center"
+              className="flex items-center p-1.5 rounded-xl hover:bg-[#00F0FF]/10 transition-all duration-300 min-w-[44px] min-h-[44px] justify-center group"
               aria-label="User settings"
             >
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-[#00FFD4] to-[#FF0080] flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center flex-shrink-0 group-hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-shadow duration-300">
                 {user?.avatar ? (
                   <img src={user.avatar} alt={user.name || user.username || ''} className="w-full h-full object-cover" />
                 ) : (
@@ -437,9 +465,14 @@ export function DashboardApp() {
         </div>
       </main>
 
-      {/* ---- Mobile Bottom Tab Bar ---- */}
+      {/* ---- Mobile Bottom Tab Bar — pill-shaped floating ---- */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 h-16 backdrop-blur-xl bg-background/80 border-t border-[#00FFD4]/20 z-30 flex items-center justify-around px-2 safe-area-pb"
+        className="md:hidden fixed bottom-3 left-3 right-3 h-16 backdrop-blur-xl rounded-2xl z-30 flex items-center justify-around px-2 safe-area-pb"
+        style={{
+          background: 'linear-gradient(180deg, rgba(12, 12, 24, 0.85), rgba(16, 16, 30, 0.8))',
+          border: '1px solid rgba(0, 240, 255, 0.1)',
+          boxShadow: '0 -4px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 240, 255, 0.03)',
+        }}
         role="tablist"
         aria-label="Main tabs"
       >
@@ -453,13 +486,13 @@ export function DashboardApp() {
               onClick={() => setCurrentPage(tab.id)}
               className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-lg transition-colors touch-highlight ${
                 isActive
-                  ? 'text-[#00FFD4]'
+                  ? 'text-[#00F0FF]'
                   : 'text-[#6B7280] active:text-[#E8E8F0]'
               }`}
             >
-              <tab.icon className="w-5 h-5" />
+              <tab.icon className={`w-5 h-5 ${isActive ? 'drop-shadow-[0_0_6px_rgba(0,240,255,0.4)]' : ''}`} />
               <span className="text-[10px] font-medium">{tab.label}</span>
-              {isActive && <div className="w-1 h-1 rounded-full bg-primary mt-0.5" />}
+              {isActive && <div className="w-4 h-1 rounded-full bg-gradient-to-r from-[#00F0FF] to-[#ADFF2F] mt-0.5" />}
             </button>
           );
         })}
@@ -474,7 +507,7 @@ export function DashboardApp() {
       <div className="fixed bottom-24 left-4 md:hidden z-40">
         <button
           onClick={() => setShowQuickActions(true)}
-          className="w-12 h-12 rounded-full bg-[#61FF7B] text-[#0A0A0F] flex items-center justify-center shadow-lg shadow-[#61FF7B]/30"
+          className="w-12 h-12 rounded-full bg-[#ADFF2F] text-[#06060B] flex items-center justify-center shadow-lg shadow-[#ADFF2F]/30"
         >
           <span className="text-xl">⚡</span>
         </button>
@@ -490,22 +523,11 @@ export function DashboardApp() {
       <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
 
       {/* Quick Actions Widget */}
-      {/* Mobile Quick Actions Button */}
-      <div className="fixed bottom-24 left-4 md:hidden z-40">
-        <button
-          onClick={() => setShowQuickActions(true)}
-          className="w-12 h-12 rounded-full bg-[#61FF7B] text-[#0A0A0F] flex items-center justify-center shadow-lg shadow-[#61FF7B]/30"
-        >
-          <span className="text-xl">⚡</span>
-        </button>
-      </div>
-
-      {/* Quick Actions Widget */}
       {showQuickActions && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4 md:p-0">
           <div className="w-full md:w-80 md:absolute md:bottom-24 md:right-8">
-            <QuickActionsWidget 
-              onToggleCollapse={() => setShowQuickActions(false)} 
+            <QuickActionsWidget
+              onToggleCollapse={() => setShowQuickActions(false)}
             />
           </div>
         </div>
