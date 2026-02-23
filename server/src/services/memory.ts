@@ -275,6 +275,45 @@ Assistant said: "${assistantResponse.slice(0, 500)}"`;
   }
 }
 
+// ---- Build owner context for portfolio visitor chat ----
+
+const SCHEDULE_KEYWORDS = ['schedule', 'availability', 'free', 'busy', 'meeting', 'calendar', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'morning', 'afternoon', 'evening', 'timezone', 'hours', 'available', 'unavailable', 'slot', 'appointment', 'office hours', 'work hours'];
+
+export function buildOwnerContextForVisitor(userId: string, query?: string): { general: string; schedule: string } {
+  const allMemories = getMemories(userId, undefined, 30);
+  const relevant = query ? getRelevantMemories(userId, query, 10) : [];
+
+  // Merge and deduplicate
+  const seen = new Set<string>();
+  const merged: MemoryEntry[] = [];
+  for (const m of [...relevant, ...allMemories]) {
+    if (!seen.has(m.id)) {
+      seen.add(m.id);
+      merged.push(m);
+    }
+  }
+
+  const generalLines: string[] = [];
+  const scheduleLines: string[] = [];
+
+  for (const m of merged) {
+    const text = `${m.key} ${m.value} ${m.category}`.toLowerCase();
+    const isSchedule = SCHEDULE_KEYWORDS.some(kw => text.includes(kw));
+    const line = `- [${m.category}] ${m.key}: ${m.value}`;
+
+    if (isSchedule) {
+      scheduleLines.push(line);
+    } else {
+      generalLines.push(line);
+    }
+  }
+
+  return {
+    general: generalLines.length ? generalLines.join('\n') : '',
+    schedule: scheduleLines.length ? scheduleLines.join('\n') : '',
+  };
+}
+
 // ---- Build memory context for system prompt ----
 
 export function buildMemoryContext(userId: string, userMessage?: string): string {

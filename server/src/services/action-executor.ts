@@ -15,6 +15,8 @@ import type { ParsedAction } from './action-parser.js';
 import { config } from '../config.js';
 import { RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
 import { generateImage, generateVideo, generateAvatar } from './media-generation.js';
+import { cacheSet, cacheGet } from './cache.js';
+import { sendTelegramNotification, escapeTelegramHtml } from './telegram.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -391,6 +393,73 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           message: `Avatar generated and saved`,
           data: { url: result.url, style },
           receipt: RECEIPT_TEMPLATES.avatar(),
+        };
+      }
+
+      // ── escalate_to_owner ──────────────────────────────────
+      case 'escalate_to_owner': {
+        const question = params.question as string;
+        const context = (params.context as string) || '';
+        const ownerUserId = params._ownerUserId as string;
+        const ownerUsername = params._ownerUsername as string;
+        const visitorName = (params._visitorName as string) || 'A visitor';
+
+        if (!ownerUserId) {
+          return { tool, success: false, message: 'Missing owner context for escalation' };
+        }
+
+        // Look up owner's Telegram chat ID
+        const telegramLink = db.prepare(
+          "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' ORDER BY linked_at DESC LIMIT 1"
+        ).get(ownerUserId) as { external_id: string } | undefined;
+
+        if (!telegramLink) {
+          return { tool, success: false, message: 'Owner has no Telegram connected for escalation' };
+        }
+
+        const escalationId = `esc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+        // Store escalation state in Redis (24h TTL)
+        try {
+          const escalationData = JSON.stringify({
+            id: escalationId,
+            ownerUserId,
+            ownerUsername,
+            visitorName,
+            question,
+            context,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+          });
+          await cacheSet(`escalation:${escalationId}`, escalationData, 86400);
+
+          // Track pending escalations per owner
+          const pendingKey = `escalations:owner:${ownerUserId}`;
+          const existing = await cacheGet(pendingKey);
+          const ids: string[] = existing ? JSON.parse(existing) : [];
+          ids.push(escalationId);
+          await cacheSet(pendingKey, JSON.stringify(ids), 86400);
+        } catch {
+          // Redis down — still send notification, just won't track response
+        }
+
+        // Send Telegram notification
+        try {
+          const escapedName = escapeTelegramHtml(visitorName);
+          const escapedQuestion = escapeTelegramHtml(question.slice(0, 300));
+          await sendTelegramNotification(
+            telegramLink.external_id,
+            `<b>${escapedName}</b> on your portfolio asked:\n<i>"${escapedQuestion}"</i>\n\nReply to this message with your answer and I'll relay it.`
+          );
+        } catch {
+          return { tool, success: false, message: 'Failed to send escalation notification' };
+        }
+
+        return {
+          tool,
+          success: true,
+          message: `Escalated to ${ownerUsername} via Telegram`,
+          data: { escalationId, question },
         };
       }
 

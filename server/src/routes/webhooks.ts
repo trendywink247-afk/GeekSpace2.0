@@ -33,6 +33,7 @@ import {
   voiceCreditCost,
 } from '../services/voice.js';
 import { db } from '../db/index.js';
+import { cacheGet, cacheSet } from '../services/cache.js';
 
 // Extend Express Request to include requestId for pipeline tracing
 interface RequestWithId {
@@ -127,6 +128,10 @@ webhooksRouter.post('/telegram', async (req, res) => {
     // Handle regular text messages
     const normalized = parseTelegramUpdate(update);
     if (normalized) {
+      // Check if this is a reply to an escalation before normal routing
+      const escalationHandled = await handleEscalationReply(normalized.externalId, normalized.text);
+      if (escalationHandled) return;
+
       await handleIncomingMessage({ ...normalized, requestId });
 
       // After handling, send action chips for agentic feel
@@ -574,6 +579,54 @@ async function handleTelegramCommand(
       }
       break;
     }
+  }
+}
+
+// ---- Escalation Reply Handler ----
+
+async function handleEscalationReply(telegramChatId: string, text: string): Promise<boolean> {
+  try {
+    // Find user by Telegram chat ID
+    const link = db.prepare(
+      "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+    ).get(telegramChatId) as { user_id: string } | undefined;
+
+    if (!link) return false;
+
+    // Check for pending escalations for this owner
+    const pendingKey = `escalations:owner:${link.user_id}`;
+    const pendingRaw = await cacheGet(pendingKey);
+    if (!pendingRaw) return false;
+
+    const ids: string[] = JSON.parse(pendingRaw);
+    if (!ids.length) return false;
+
+    // Find most recent pending escalation
+    for (let i = ids.length - 1; i >= 0; i--) {
+      const escRaw = await cacheGet(`escalation:${ids[i]}`);
+      if (!escRaw) continue;
+
+      const escalation = JSON.parse(escRaw);
+      if (escalation.status !== 'pending') continue;
+
+      // Mark as answered
+      escalation.status = 'answered';
+      escalation.ownerResponse = text;
+      escalation.answeredAt = new Date().toISOString();
+      await cacheSet(`escalation:${ids[i]}`, JSON.stringify(escalation), 86400);
+
+      // Confirm to owner via Telegram
+      await sendTelegramMessage(
+        Number(telegramChatId),
+        "Got it! I'll relay your answer next time they message."
+      );
+
+      return true;
+    }
+
+    return false;
+  } catch {
+    return false;
   }
 }
 

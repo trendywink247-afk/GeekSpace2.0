@@ -80,6 +80,11 @@ const generateAvatarSchema = z.object({
   style: z.enum(['professional', 'creative', 'fun']).optional(),
 });
 
+const escalateToOwnerSchema = z.object({
+  question: z.string().min(1).max(1000),
+  context: z.string().max(500).optional(),
+});
+
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -94,6 +99,7 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_image: generateImageSchema,
   generate_video: generateVideoSchema,
   generate_avatar: generateAvatarSchema,
+  escalate_to_owner: escalateToOwnerSchema,
 };
 
 // ── Types ───────────────────────────────────────────────────

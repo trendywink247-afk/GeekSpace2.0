@@ -10,7 +10,7 @@ import { config } from '../config.js';
 import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openclaw-system.js';
 import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
-import { buildMemoryContext, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations } from '../services/memory.js';
+import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations } from '../services/memory.js';
 import { loadPicoContext, formatContextBlock } from '../services/pico-context.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
 import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeRequest } from '../services/pico-kimi-bridge.js';
@@ -1355,7 +1355,7 @@ agentRouter.delete('/premium-session/:sessionId', requireAuth, (req: AuthRequest
 // ---- Public Portfolio Chat (real LLM-powered) ----
 
 agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
-  const { message, messageCount } = req.body as { message: string; messageCount?: number };
+  const { message, messageCount, history } = req.body as { message: string; messageCount?: number; history?: Array<{ role: string; content: string }> };
   const { username } = req.params;
 
   const user = db.prepare('SELECT id, name, location, role, company FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
@@ -1392,6 +1392,15 @@ agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema
     return;
   }
 
+  // ---- Check for Telegram escalation (for hasTelegramEscalation flag) ----
+  const telegramLink = db.prepare(`
+    SELECT external_id FROM channel_links
+    WHERE user_id = ? AND channel = 'telegram'
+    ORDER BY linked_at DESC LIMIT 1
+  `).get(user.id as string) as { external_id: string } | undefined;
+
+  const hasTelegramEscalation = !!telegramLink;
+
   // ---- Visitor intent detection (first message only, non-fatal) ----
   let visitorIntent = 'curious';
   if (!messageCount || messageCount === 0) {
@@ -1411,8 +1420,8 @@ agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema
     }
   }
 
-  // Load owner memories for agent context
-  const ownerMemories = buildMemoryContext(user.id as string, message);
+  // Load owner memories with schedule separation
+  const ownerContext = buildOwnerContextForVisitor(user.id as string, message);
 
   const basePrompt = buildPortfolioVisitorPrompt({
     ownerName,
@@ -1424,8 +1433,10 @@ agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema
     role: (user.role as string) || undefined,
     company: (user.company as string) || undefined,
     visitorIntent,
-    ownerMemories: ownerMemories || undefined,
+    ownerMemories: ownerContext.general || undefined,
+    ownerScheduleMemories: ownerContext.schedule || undefined,
     visitorName,
+    hasTelegramEscalation,
   });
 
   const systemPrompt = `${basePrompt}\n\n--- PERSONALITY ---\n${personality.promptAddition}`;
@@ -1439,11 +1450,35 @@ agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema
     // Non-fatal — don't block the chat response
   }
 
+  // ---- Build multi-turn message array ----
+  const chatMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+  if (history?.length) {
+    for (const h of history.slice(-10)) {
+      chatMessages.push({ role: h.role === 'assistant' ? 'assistant' : 'user', content: h.content });
+    }
+  }
+  chatMessages.push({ role: 'user', content: message });
+
   try {
     const result = await routeChat(
-      [{ role: 'user', content: message }],
+      chatMessages,
       { systemPrompt, agentName, forceProvider: 'ollama' },
     );
+
+    // Parse for escalation actions
+    let finalReply = result.reply;
+    const { text: cleanReply, actions } = parseActions(result.reply);
+    if (actions.length > 0) {
+      finalReply = cleanReply;
+      for (const action of actions) {
+        if (action.tool === 'escalate_to_owner') {
+          action.params._ownerUserId = user.id as string;
+          action.params._ownerUsername = username;
+          action.params._visitorName = visitorName || 'A visitor';
+          await executeAction(user.id as string, action);
+        }
+      }
+    }
 
     // Save visitor interaction to owner's memory
     const snippet = message.slice(0, 80);
@@ -1463,24 +1498,18 @@ agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema
     // Invalidate portfolio cache
     void cacheDel(`portfolio:${req.params.username}`);
 
-    // Send Telegram notification if connected (non-blocking, non-fatal)
-    const telegramLink = db.prepare(`
-      SELECT external_id FROM channel_links
-      WHERE user_id = ? AND channel = 'telegram'
-      ORDER BY linked_at DESC LIMIT 1
-    `).get(user.id as string) as { external_id: string } | undefined;
-
-    if (telegramLink) {
+    // Send Telegram notification if connected (non-blocking, non-fatal, only on first message)
+    if (telegramLink && (!messageCount || messageCount === 0)) {
       const who = visitorName ? `<b>${escapeTelegramHtml(visitorName)}</b> from Agentin` : 'Someone';
       void sendTelegramNotification(telegramLink.external_id,
-        `${who} chatted with your agent:\n<i>"${escapeTelegramHtml(snippet)}"</i>\n\nCheck your dashboard for the conversation.`
+        `${who} started chatting with your agent:\n<i>"${escapeTelegramHtml(snippet)}"</i>\n\nCheck your dashboard for the conversation.`
       ).catch(() => { /* non-fatal */ });
     }
 
-    res.json({ reply: result.reply, agentName, ownerName, personality: personalityId, personalityEmoji: personality.emoji });
+    res.json({ reply: finalReply, agentName, ownerName, personality: personalityId, personalityEmoji: personality.emoji });
   } catch {
     res.json({
-      reply: `Hi! I'm ${agentName}, ${ownerName}'s AI assistant. I'm having trouble connecting right now, but you can learn more from the portfolio above.`,
+      reply: `Hi! I'm ${agentName}, ${ownerName}'s assistant. I'm having trouble connecting right now, but you can learn more from the portfolio above.`,
       agentName,
       ownerName,
       personality: personalityId,

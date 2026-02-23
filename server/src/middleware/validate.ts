@@ -58,6 +58,10 @@ export const chatSchema = z.object({
   messageCount: z.number().int().min(0).optional(),
   channel: z.string().max(50).optional(),
   context: z.string().max(50).optional(),
+  history: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string().max(4000),
+  })).max(20).optional(),
 });
 
 export const commandSchema = z.object({
