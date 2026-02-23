@@ -122,6 +122,15 @@ export function DashboardApp() {
     }
   }, []);
 
+  // Sync URL pathname → currentPage (so navigate() calls update the view)
+  useEffect(() => {
+    const segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'artifacts', 'templates', 'roadmap'];
+    if (validPages.includes(segment as PageType) && segment !== currentPage) {
+      setCurrentPage(segment as PageType);
+    }
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Close mobile sidebar when page changes
   useEffect(() => {
     setSidebarOpen(false);
@@ -162,7 +171,7 @@ export function DashboardApp() {
   const renderPage = () => {
     switch (currentPage) {
       case 'overview':
-        return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => setCurrentPage(page as PageType)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
+        return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
       case 'portfolio':
         return <PortfolioPage />;
       case 'usage':
@@ -186,7 +195,7 @@ export function DashboardApp() {
       case 'health':
         return <HealthDashboardPage />;
       case 'artifacts':
-        return <ArtifactsPage onNavigate={(page: string) => setCurrentPage(page as PageType)} />;
+        return <ArtifactsPage onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} />;
       case 'templates':
         return <TemplateGalleryPage />;
       case 'terminal':
@@ -196,7 +205,7 @@ export function DashboardApp() {
       case 'roadmap':
         return <RoadmapPage />;
       default:
-        return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => setCurrentPage(page as PageType)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
+        return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
     }
   };
 
@@ -230,7 +239,7 @@ export function DashboardApp() {
         {menuItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => setCurrentPage(item.id)}
+            onClick={() => navigate(item.id === 'overview' ? '/dashboard' : `/dashboard/${item.id}`)}
             aria-current={currentPage === item.id ? 'page' : undefined}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
               currentPage === item.id
@@ -438,7 +447,7 @@ export function DashboardApp() {
             </div>
             {/* User avatar with hover glow */}
             <button
-              onClick={() => setCurrentPage('settings')}
+              onClick={() => navigate('/dashboard/settings')}
               className="flex items-center p-1.5 rounded-xl hover:bg-[#00F0FF]/10 transition-all duration-300 min-w-[44px] min-h-[44px] justify-center group"
               aria-label="User settings"
             >
@@ -483,7 +492,7 @@ export function DashboardApp() {
               key={tab.id}
               role="tab"
               aria-selected={isActive}
-              onClick={() => setCurrentPage(tab.id)}
+              onClick={() => navigate(tab.id === 'overview' ? '/dashboard' : `/dashboard/${tab.id}`)}
               className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-lg transition-colors touch-highlight ${
                 isActive
                   ? 'text-[#00F0FF]'
