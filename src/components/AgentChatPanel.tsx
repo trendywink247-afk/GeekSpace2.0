@@ -243,8 +243,12 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     // Helper: non-streaming chat call
     const doRegularChat = async () => {
       if (agentOwner) {
-        // Visitor mode: call the public portfolio endpoint
-        const { data } = await publicAgentService.chat(agentOwner, content);
+        // Visitor mode: call the public portfolio endpoint with history
+        const history = messages
+          .filter(m => m.role !== 'system' && m.id !== 'greeting')
+          .map(m => ({ role: m.role === 'agent' ? 'assistant' : 'user', content: m.content }));
+        const count = messages.filter(m => m.role === 'user').length;
+        const { data } = await publicAgentService.chat(agentOwner, content, history, count);
         const text = data.reply || '';
         if (!text) throw new Error('Empty response');
         setAgentMsg({ content: text, isStreaming: false, provider: 'ollama' });
