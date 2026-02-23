@@ -103,7 +103,7 @@ export function IncomingRequests() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="w-6 h-6 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -111,7 +111,7 @@ export function IncomingRequests() {
   if (requests.length === 0) {
     return (
       <div className="text-center py-8">
-        <MessageSquare className="w-12 h-12 text-[#00FFD4]/30 mx-auto mb-3" />
+        <MessageSquare className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-3" />
         <p className="text-[#6B7280]">No pending contact requests</p>
         <p className="text-xs text-[#6B7280]/70 mt-1">
           When someone wants to reach you, they'll appear here
@@ -126,17 +126,17 @@ export function IncomingRequests() {
         <h3 className="font-semibold text-[#E8E8F0]">
           Incoming Requests ({requests.length})
         </h3>
-        <Button variant="outline" size="sm" onClick={loadRequests} className="border-[#00FFD4]/30">
+        <Button variant="outline" size="sm" onClick={loadRequests} className="border-[#00F0FF]/30">
           Refresh
         </Button>
       </div>
 
       {requests.map((request) => (
-        <Card key={request.id} className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card key={request.id} className="glass-card-v2 border-[#00F0FF]/20">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-[#00FFD4]/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#00F0FF]/20 flex items-center justify-center flex-shrink-0">
                 {request.fromUser?.avatar ? (
                   <img
                     src={request.fromUser.avatar}
@@ -144,7 +144,7 @@ export function IncomingRequests() {
                     className="w-10 h-10 rounded-full object-cover"
                   />
                 ) : (
-                  <User className="w-5 h-5 text-[#00FFD4]" />
+                  <User className="w-5 h-5 text-[#00F0FF]" />
                 )}
               </div>
 
@@ -162,7 +162,7 @@ export function IncomingRequests() {
                 )}
 
                 {request.initialMessage && (
-                  <div className="p-2 rounded-lg bg-[#030304] text-sm text-[#6B7280] mb-3 line-clamp-2">
+                  <div className="p-2 rounded-lg bg-[#06060B] text-sm text-[#6B7280] mb-3 line-clamp-2">
                     "{request.initialMessage}"
                   </div>
                 )}
@@ -181,10 +181,10 @@ export function IncomingRequests() {
                     size="sm"
                     onClick={() => handleAccept(request.id)}
                     disabled={processing === request.id}
-                    className="flex-1 bg-[#00FF88] hover:bg-[#51EF6B] text-[#0A0A0F]"
+                    className="flex-1 bg-[#00FF88] hover:bg-[#51EF6B] text-[#0C0C18]"
                   >
                     {processing === request.id ? (
-                      <div className="w-4 h-4 border-2 border-[#0A0A0F] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-[#0C0C18] border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <>
                         <Check className="w-4 h-4 mr-1.5" />

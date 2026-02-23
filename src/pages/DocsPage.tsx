@@ -99,7 +99,7 @@ export function DocsPage() {
     : docs;
 
   return (
-    <div className="min-h-screen bg-[#030304] text-[#E8E8F0]">
+    <div className="min-h-screen bg-[#06060B] text-[#E8E8F0]">
       <div className="max-w-4xl mx-auto px-6 py-12">
         <Button
           variant="ghost"
@@ -123,7 +123,7 @@ export function DocsPage() {
             placeholder="Search documentation..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 py-6 text-lg bg-[#0A0A0F] border-[#00FFD4]/30 text-[#E8E8F0]"
+            className="pl-12 py-6 text-lg bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0]"
           />
         </div>
 
@@ -132,13 +132,13 @@ export function DocsPage() {
           {filtered.map((section) => (
             <Card
               key={section.id}
-              className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all duration-300 cursor-pointer"
+              className="glass-card-v2 border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 cursor-pointer"
               onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
             >
               <CardContent className="p-5">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center flex-shrink-0">
-                    <section.icon className="w-5 h-5 text-[#00FFD4]" />
+                  <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center flex-shrink-0">
+                    <section.icon className="w-5 h-5 text-[#00F0FF]" />
                   </div>
                   <div className="flex-1">
                     <h2 className="font-semibold text-[#E8E8F0]">{section.title}</h2>
@@ -152,11 +152,11 @@ export function DocsPage() {
                 </div>
 
                 {expandedSection === section.id && (
-                  <div className="mt-4 ml-14 space-y-3 border-t border-[#00FFD4]/10 pt-4">
+                  <div className="mt-4 ml-14 space-y-3 border-t border-[#00F0FF]/10 pt-4">
                     {section.articles.map((article) => (
                       <div
                         key={article.title}
-                        className="p-3 rounded-lg bg-[#030304] border border-[#00FFD4]/10 hover:border-[#00FFD4]/30 transition-colors"
+                        className="p-3 rounded-lg bg-[#06060B] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30 transition-colors"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <h3 className="font-medium text-sm text-[#E8E8F0] mb-1">{article.title}</h3>
@@ -172,15 +172,15 @@ export function DocsPage() {
 
         {filtered.length === 0 && (
           <div className="text-center py-12">
-            <BookOpen className="w-12 h-12 text-[#00FFD4]/30 mx-auto mb-4" />
+            <BookOpen className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
             <p className="text-[#6B7280]">No docs match your search</p>
           </div>
         )}
 
-        <div className="mt-12 p-6 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20">
+        <div className="mt-12 p-6 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
           <p className="text-sm text-[#6B7280]">
             Need help? Contact us at{' '}
-            <span className="text-[#00FFD4]">support@agentin.chat</span>
+            <span className="text-[#00F0FF]">support@agentin.chat</span>
           </p>
         </div>
       </div>

@@ -312,7 +312,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>Terminal</h1>
           <p className="text-[#6B7280] flex items-center gap-2 text-sm">
-            <Bot className="w-4 h-4 text-[#00FFD4]" />
+            <Bot className="w-4 h-4 text-[#00F0FF]" />
             <span className="hidden sm:inline">Direct CLI access to Agentin API + AI Agent</span>
             <span className="sm:hidden">CLI + AI Agent</span>
           </p>
@@ -322,7 +322,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
             <Sparkles className="w-3.5 h-3.5 text-[#00FF88]" />
             <span className="text-xs text-[#00FF88] font-mono">AI Ready</span>
           </div>
-          <Button variant="outline" size="sm" onClick={clearTerminal} className="border-[#00FFD4]/30 text-[#6B7280]">
+          <Button variant="outline" size="sm" onClick={clearTerminal} className="border-[#00F0FF]/30 text-[#6B7280]">
             <Trash2 className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Clear</span>
           </Button>
         </div>
@@ -330,11 +330,11 @@ Deploy ID: dep_${Date.now().toString(36)}`,
 
       {/* Terminal Window */}
       <div
-        className="flex-1 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/30 overflow-hidden flex flex-col"
+        className="flex-1 rounded-2xl glass-card-v2 border border-[#00F0FF]/30 overflow-hidden flex flex-col"
         onClick={() => inputRef.current?.focus()}
       >
         {/* Terminal Header */}
-        <div className="h-10 bg-[#030304] border-b border-[#00FFD4]/20 flex items-center px-4 gap-2">
+        <div className="h-10 bg-[#06060B] border-b border-[#00F0FF]/20 flex items-center px-4 gap-2">
           <div className="w-3 h-3 rounded-full bg-[#FF6161]" />
           <div className="w-3 h-3 rounded-full bg-[#FFB800]" />
           <div className="w-3 h-3 rounded-full bg-[#00FF88]" />
@@ -351,13 +351,13 @@ Deploy ID: dep_${Date.now().toString(36)}`,
               {cmd.input && (
                 <div className="flex items-center gap-2">
                   <span className="text-[#00FF88]">➜</span>
-                  <span className="text-[#00FFD4]">~</span>
+                  <span className="text-[#00F0FF]">~</span>
                   <span className="text-[#E8E8F0]">{cmd.input}</span>
                 </div>
               )}
               {cmd.isLoading ? (
-                <div className="mt-1 flex items-center gap-2 text-[#00FFD4]">
-                  <div className="w-3 h-3 border-2 border-[#00FFD4]/30 border-t-[#00FFD4] rounded-full animate-spin" />
+                <div className="mt-1 flex items-center gap-2 text-[#00F0FF]">
+                  <div className="w-3 h-3 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
                   <span className="text-[#6B7280]">Thinking...</span>
                 </div>
               ) : cmd.output ? (
@@ -367,7 +367,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
                   </pre>
                   <button
                     onClick={() => copyToClipboard(cmd.output, cmd.id)}
-                    className="absolute top-0 right-0 p-1.5 rounded bg-[#030304] border border-[#00FFD4]/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-0 right-0 p-1.5 rounded bg-[#06060B] border border-[#00F0FF]/20 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     {copiedId === cmd.id ? (
                       <Check className="w-3 h-3 text-[#00FF88]" />
@@ -383,7 +383,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
           {/* Input Line */}
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <span className="text-[#00FF88]">➜</span>
-            <span className="text-[#00FFD4]">~</span>
+            <span className="text-[#00F0FF]">~</span>
             <input
               ref={inputRef}
               type="text"
@@ -410,8 +410,8 @@ Deploy ID: dep_${Date.now().toString(36)}`,
             onClick={() => executeCommand(cmd)}
             className={`px-3 py-2.5 min-h-[44px] rounded-lg border text-xs transition-colors ${
               cmd.startsWith('ai ')
-                ? 'bg-[#00FFD4]/10 border-[#00FFD4]/30 text-[#00FFD4] hover:bg-[#00FFD4]/20'
-                : 'bg-[#0A0A0F] border-[#00FFD4]/20 text-[#6B7280] hover:border-[#00FFD4]/50 hover:text-[#E8E8F0]'
+                ? 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/20'
+                : 'bg-[#0C0C18] border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/50 hover:text-[#E8E8F0]'
             }`}
           >
             {cmd}

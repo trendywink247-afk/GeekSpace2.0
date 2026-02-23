@@ -113,12 +113,12 @@ export function MediaGallery({
       {/* Header with filters */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-[#0A0A0F] border border-[#00FFD4]/20 rounded-lg p-1">
+          <div className="flex items-center gap-2 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
             <button
               onClick={() => setFilter('all')}
               className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                 filter === 'all' 
-                  ? 'bg-[#00FFD4] text-white' 
+                  ? 'bg-[#00F0FF] text-white' 
                   : 'text-[#6B7280] hover:text-white'
               }`}
             >
@@ -128,7 +128,7 @@ export function MediaGallery({
               onClick={() => setFilter('images')}
               className={`px-3 py-1.5 rounded-md text-sm transition-colors flex items-center gap-1 ${
                 filter === 'images' 
-                  ? 'bg-[#00FFD4] text-white' 
+                  ? 'bg-[#00F0FF] text-white' 
                   : 'text-[#6B7280] hover:text-white'
               }`}
             >
@@ -139,7 +139,7 @@ export function MediaGallery({
               onClick={() => setFilter('videos')}
               className={`px-3 py-1.5 rounded-md text-sm transition-colors flex items-center gap-1 ${
                 filter === 'videos' 
-                  ? 'bg-[#00FFD4] text-white' 
+                  ? 'bg-[#00F0FF] text-white' 
                   : 'text-[#6B7280] hover:text-white'
               }`}
             >
@@ -150,7 +150,7 @@ export function MediaGallery({
               onClick={() => setFilter('favorites')}
               className={`px-3 py-1.5 rounded-md text-sm transition-colors flex items-center gap-1 ${
                 filter === 'favorites' 
-                  ? 'bg-[#00FFD4] text-white' 
+                  ? 'bg-[#00F0FF] text-white' 
                   : 'text-[#6B7280] hover:text-white'
               }`}
             >
@@ -169,16 +169,16 @@ export function MediaGallery({
               placeholder="Search prompts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#0A0A0F] border border-[#00FFD4]/20 rounded-lg text-sm text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00FFD4]/40"
+              className="w-full pl-10 pr-4 py-2 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg text-sm text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/40"
             />
           </div>
 
           {/* View mode toggle */}
-          <div className="flex items-center bg-[#0A0A0F] border border-[#00FFD4]/20 rounded-lg p-1">
+          <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
             <button
               onClick={() => setViewMode('grid')}
               className={`p-1.5 rounded transition-colors ${
-                viewMode === 'grid' ? 'bg-[#00FFD4]/20 text-[#00FFD4]' : 'text-[#6B7280]'
+                viewMode === 'grid' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'
               }`}
             >
               <Grid3X3 className="w-4 h-4" />
@@ -186,7 +186,7 @@ export function MediaGallery({
             <button
               onClick={() => setViewMode('masonry')}
               className={`p-1.5 rounded transition-colors ${
-                viewMode === 'masonry' ? 'bg-[#00FFD4]/20 text-[#00FFD4]' : 'text-[#6B7280]'
+                viewMode === 'masonry' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'
               }`}
             >
               <Grid2X2 className="w-4 h-4" />
@@ -204,8 +204,8 @@ export function MediaGallery({
       {/* Gallery Grid */}
       {filteredItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-[#00FFD4]/10 flex items-center justify-center mb-4">
-            <Sparkles className="w-10 h-10 text-[#00FFD4]" />
+          <div className="w-20 h-20 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mb-4">
+            <Sparkles className="w-10 h-10 text-[#00F0FF]" />
           </div>
           <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No media yet</h3>
           <p className="text-[#6B7280] max-w-sm">
@@ -225,7 +225,7 @@ export function MediaGallery({
                 setSelectedItem(item);
                 setSelectedIndex(index);
               }}
-              className="group relative aspect-square bg-[#0A0A0F] border border-[#00FFD4]/10 rounded-xl overflow-hidden cursor-pointer hover:border-[#00FFD4]/40 transition-all"
+              className="group relative aspect-square bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl overflow-hidden cursor-pointer hover:border-[#00F0FF]/40 transition-all"
             >
               {item.type === 'image' ? (
                 <img
@@ -235,8 +235,8 @@ export function MediaGallery({
                   loading="lazy"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#00FFD4]/20 to-[#FF0080]/20">
-                  <Video className="w-12 h-12 text-[#00FFD4]" />
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#00F0FF]/20 to-[#FF2D78]/20">
+                  <Video className="w-12 h-12 text-[#00F0FF]" />
                 </div>
               )}
               
@@ -322,7 +322,7 @@ export function MediaGallery({
             )}
 
             {/* Info bar */}
-            <div className="w-full mt-4 p-4 bg-[#0A0A0F] rounded-xl">
+            <div className="w-full mt-4 p-4 glass-card-v2 rounded-xl">
               <p className="text-white mb-3">{selectedItem.prompt}</p>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-[#6B7280]">
@@ -334,14 +334,14 @@ export function MediaGallery({
                     className={`p-2 rounded-lg transition-colors ${
                       selectedItem.isFavorite 
                         ? 'bg-[#FF3366]/20 text-[#FF3366]' 
-                        : 'bg-[#00FFD4]/20 text-[#6B7280] hover:text-[#FF3366]'
+                        : 'bg-[#00F0FF]/20 text-[#6B7280] hover:text-[#FF3366]'
                     }`}
                   >
                     <Heart className={`w-5 h-5 ${selectedItem.isFavorite ? 'fill-current' : ''}`} />
                   </button>
                   <button
                     onClick={() => onDownload?.(selectedItem)}
-                    className="p-2 rounded-lg bg-[#00FFD4]/20 text-[#00FFD4] hover:bg-[#00FFD4]/30"
+                    className="p-2 rounded-lg bg-[#00F0FF]/20 text-[#00F0FF] hover:bg-[#00F0FF]/30"
                   >
                     <Download className="w-5 h-5" />
                   </button>

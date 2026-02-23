@@ -12,7 +12,7 @@ export function ProfileStep({ name, username, onNameChange, onUsernameChange }: 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <User className="w-6 h-6 text-[#00FFD4]" />
+        <User className="w-6 h-6 text-[#00F0FF]" />
         <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
           Profile Basics
         </h2>
@@ -27,7 +27,7 @@ export function ProfileStep({ name, username, onNameChange, onUsernameChange }: 
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             placeholder="Alex Chen"
-            className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
+            className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
             required
           />
         </div>
@@ -37,11 +37,11 @@ export function ProfileStep({ name, username, onNameChange, onUsernameChange }: 
             value={username}
             onChange={(e) => onUsernameChange(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
             placeholder="alex"
-            className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
+            className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
             required
           />
           <p className="text-xs text-[#6B7280] mt-1">
-            Your URL: <span className="text-[#00FFD4]">{username || 'you'}.agentin.chat</span>
+            Your URL: <span className="text-[#00F0FF]">{username || 'you'}.agentin.chat</span>
           </p>
         </div>
       </div>

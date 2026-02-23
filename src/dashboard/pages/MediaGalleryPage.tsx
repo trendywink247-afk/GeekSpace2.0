@@ -61,7 +61,7 @@ export function MediaGalleryPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -79,8 +79,8 @@ export function MediaGalleryPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="px-3 py-1.5 rounded-full bg-[#00FFD4]/10 border border-[#00FFD4]/30">
-            <span className="text-sm text-[#00FFD4]">
+          <div className="px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30">
+            <span className="text-sm text-[#00F0FF]">
               {items.length} items
             </span>
           </div>
@@ -98,8 +98,8 @@ export function MediaGalleryPage() {
       {/* Empty State */}
       {items.length === 0 && !isLoading && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-[#00FFD4]/10 flex items-center justify-center mb-4">
-            <Sparkles className="w-10 h-10 text-[#00FFD4]" />
+          <div className="w-20 h-20 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mb-4">
+            <Sparkles className="w-10 h-10 text-[#00F0FF]" />
           </div>
           <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No media yet</h3>
           <p className="text-[#6B7280] max-w-sm mb-6">
@@ -107,7 +107,7 @@ export function MediaGalleryPage() {
           </p>
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-agent-chat'))}
-            className="px-6 py-3 rounded-xl bg-[#00FFD4] hover:bg-[#00D4B0] text-white font-medium transition-colors"
+            className="px-6 py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-white font-medium transition-colors"
           >
             Open Agent Chat
           </button>

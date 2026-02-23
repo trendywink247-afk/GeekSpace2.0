@@ -6,12 +6,12 @@ import type { AgentMode } from '@/types';
 
 const personalities = [
   { id: 'edith' as const, name: 'Edith', role: 'CTO', description: 'Sharp, efficient, no-nonsense technical partner', color: '#FF3366', price: '$3/mo | \u20B9300/mo', premium: true },
-  { id: 'jarvis' as const, name: 'Jarvis', role: 'Butler', description: 'Polished, helpful, anticipates your needs', color: '#00FFD4', price: '$1/mo | \u20B9100/mo', premium: false },
+  { id: 'jarvis' as const, name: 'Jarvis', role: 'Butler', description: 'Polished, helpful, anticipates your needs', color: '#00F0FF', price: '$1/mo | \u20B9100/mo', premium: false },
   { id: 'weebo' as const, name: 'Weebo', role: 'Enthusiastic', description: 'Energetic, creative, loves learning together', color: '#00FF88', price: '$1/mo | \u20B9100/mo', premium: false },
 ];
 
 const agentModes: { id: AgentMode; name: string; description: string; icon: typeof Bot; features: string[]; color: string }[] = [
-  { id: 'minimal', name: 'Minimal', description: 'Clean, simple -- reminders and Q&A', icon: MessageSquare, features: ['Reminders', 'Q&A', 'Quick facts'], color: '#00FFD4' },
+  { id: 'minimal', name: 'Minimal', description: 'Clean, simple -- reminders and Q&A', icon: MessageSquare, features: ['Reminders', 'Q&A', 'Quick facts'], color: '#00F0FF' },
   { id: 'builder', name: 'Builder', description: 'Coding-focused with automation', icon: Code, features: ['Code help', 'API calls', 'Automation', 'Terminal'], color: '#00FF88' },
   { id: 'operator', name: 'Operator', description: 'Daily planning and life management', icon: Briefcase, features: ['Planning', 'Routines', 'Scheduling', 'Goals'], color: '#FFB800' },
 ];
@@ -35,7 +35,7 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <Bot className="w-6 h-6 text-[#00FFD4]" />
+        <Bot className="w-6 h-6 text-[#00F0FF]" />
         <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
           Agent Preferences
         </h2>
@@ -52,8 +52,8 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
               onClick={() => onPersonalityChange(p.id)}
               className={`p-4 rounded-xl border-2 transition-all text-left ${
                 personality === p.id
-                  ? 'border-[#00FFD4] bg-[#00FFD4]/10'
-                  : 'border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40'
+                  ? 'border-[#00F0FF] bg-[#00F0FF]/10'
+                  : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -61,7 +61,7 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
                   <span className="text-sm font-bold" style={{ color: p.color }}>{p.name[0]}</span>
                 </div>
                 {personality === p.id && (
-                  <div className="w-5 h-5 rounded-full bg-[#00FFD4] flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-[#00F0FF] flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
                   </div>
                 )}
@@ -69,7 +69,7 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
               <h3 className="font-semibold text-[#E8E8F0] text-sm">{p.name}</h3>
               <p className="text-xs text-[#6B7280] mt-0.5">{p.role}</p>
               <p className="text-xs text-[#6B7280]/70 mt-1">{p.description}</p>
-              <div className="mt-2 pt-2 border-t border-[#00FFD4]/10">
+              <div className="mt-2 pt-2 border-t border-[#00F0FF]/10">
                 <span className={`text-[10px] font-medium ${p.premium ? 'text-[#FFB800]' : 'text-[#00FF88]'}`}>
                   {p.price}
                 </span>
@@ -90,8 +90,8 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
                 onClick={() => onAgentModeChange(mode.id)}
                 className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
                   agentMode === mode.id
-                    ? 'border-[#00FFD4] bg-[#00FFD4]/10'
-                    : 'border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40'
+                    ? 'border-[#00F0FF] bg-[#00F0FF]/10'
+                    : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -99,7 +99,7 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
                     <mode.icon className="w-4 h-4" style={{ color: mode.color }} />
                   </div>
                   {agentMode === mode.id && (
-                    <div className="w-5 h-5 rounded-full bg-[#00FFD4] flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-full bg-[#00F0FF] flex items-center justify-center">
                       <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
@@ -108,7 +108,7 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
                 <p className="text-xs text-[#6B7280] mt-0.5">{mode.description}</p>
                 <div className="flex flex-wrap gap-1 mt-2">
                   {mode.features.map((f) => (
-                    <span key={f} className="px-2 py-0.5 text-[10px] rounded-full bg-[#0A0A0F] text-[#6B7280]">{f}</span>
+                    <span key={f} className="px-2 py-0.5 text-[10px] rounded-full bg-[#0C0C18] text-[#6B7280]">{f}</span>
                   ))}
                 </div>
               </button>
@@ -118,7 +118,7 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
       </div>
 
       {/* API Key section */}
-      <div className="border border-[#00FFD4]/10 rounded-xl overflow-hidden">
+      <div className="border border-[#00F0FF]/10 rounded-xl overflow-hidden">
         <button
           type="button"
           onClick={() => setShowApiKey(!showApiKey)}
@@ -138,7 +138,7 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="sk-or-v1-..."
               type="password"
-              className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0] text-sm"
+              className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] text-sm"
             />
             <p className="text-[10px] text-[#6B7280]/50">Get a free key at openrouter.ai/keys</p>
           </div>

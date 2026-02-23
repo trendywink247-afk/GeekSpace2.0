@@ -145,14 +145,14 @@ export function ForgotPasswordPage() {
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse at top, rgba(0, 255, 212, 0.15), transparent 50%),
+            radial-gradient(ellipse at top, rgba(0, 240, 255, 0.15), transparent 50%),
             radial-gradient(ellipse at bottom, rgba(255, 97, 220, 0.1), transparent 50%),
-            #030304
+            #06060B
           `,
         }}
       />
-      <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-[#00FFD4]/8 blur-[120px]" />
-      <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] rounded-full bg-[#FF0080]/8 blur-[100px]" />
+      <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-[#00F0FF]/8 blur-[120px]" />
+      <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] rounded-full bg-[#FF2D78]/8 blur-[100px]" />
 
       <div
         className={`w-full max-w-sm sm:max-w-md relative z-10 mx-auto transition-all duration-700 ${
@@ -162,11 +162,11 @@ export function ForgotPasswordPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <button onClick={() => navigate('/')} className="inline-flex items-center gap-2 mb-6 group">
-            <div className="w-10 h-10 rounded-xl bg-[#00FFD4]/20 flex items-center justify-center group-hover:bg-[#00FFD4]/30 transition-colors">
-              <Hexagon className="w-6 h-6 text-[#00FFD4]" />
+            <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/20 flex items-center justify-center group-hover:bg-[#00F0FF]/30 transition-colors">
+              <Hexagon className="w-6 h-6 text-[#00F0FF]" />
             </div>
             <span className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
-              <span className="text-white">Agent</span><span className="text-[#00FFD4]">in</span>
+              <span className="text-white">Agent</span><span className="text-[#00F0FF]">in</span>
             </span>
           </button>
 
@@ -178,7 +178,7 @@ export function ForgotPasswordPage() {
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                       step === s
-                        ? 'bg-[#00FFD4] text-white scale-110'
+                        ? 'bg-[#00F0FF] text-white scale-110'
                         : (['email', 'otp', 'password'].indexOf(step) > i)
                         ? 'bg-[#00FF88]/20 text-[#00FF88]'
                         : 'bg-[#1A1A2E] text-[#6B7280]'
@@ -214,7 +214,7 @@ export function ForgotPasswordPage() {
           style={{
             background: 'rgba(11, 11, 16, 0.8)',
             backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(0, 255, 212, 0.2)',
+            border: '1px solid rgba(0, 240, 255, 0.2)',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           }}
         >
@@ -230,7 +230,7 @@ export function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="pl-10 bg-[#030304]/60 border-[#00FFD4]/30 text-[#E8E8F0]"
+                    className="pl-10 bg-[#06060B]/60 border-[#00F0FF]/30 text-[#E8E8F0]"
                     required
                     autoFocus
                   />
@@ -239,7 +239,7 @@ export function ForgotPasswordPage() {
 
               {error && <p className="text-sm text-[#FF3366]">{error}</p>}
 
-              <Button type="submit" disabled={isLoading} className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] h-12 text-base">
+              <Button type="submit" disabled={isLoading} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base">
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
@@ -268,7 +268,7 @@ export function ForgotPasswordPage() {
                       value={digit}
                       onChange={(e) => handleOtpChange(i, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                      className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl bg-[#030304]/60 border border-[#00FFD4]/30 text-[#E8E8F0] focus:border-[#00FFD4] focus:ring-1 focus:ring-[#00FFD4] outline-none transition-all"
+                      className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl bg-[#06060B]/60 border border-[#00F0FF]/30 text-[#E8E8F0] focus:border-[#00F0FF] focus:ring-1 focus:ring-[#00F0FF] outline-none transition-all"
                     />
                   ))}
                 </div>
@@ -279,7 +279,7 @@ export function ForgotPasswordPage() {
 
               {error && <p className="text-sm text-[#FF3366]">{error}</p>}
 
-              <Button type="submit" disabled={isLoading || otp.join('').length !== 6} className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] h-12 text-base">
+              <Button type="submit" disabled={isLoading || otp.join('').length !== 6} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base">
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
@@ -297,7 +297,7 @@ export function ForgotPasswordPage() {
                   setError('');
                   setStep('email');
                 }}
-                className="w-full text-sm text-[#6B7280] hover:text-[#00FFD4] transition-colors py-2"
+                className="w-full text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors py-2"
               >
                 Didn't receive a code? Try again
               </button>
@@ -316,7 +316,7 @@ export function ForgotPasswordPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Min 8 characters"
-                    className="pl-10 bg-[#030304]/60 border-[#00FFD4]/30 text-[#E8E8F0]"
+                    className="pl-10 bg-[#06060B]/60 border-[#00F0FF]/30 text-[#E8E8F0]"
                     required
                     minLength={8}
                     autoFocus
@@ -332,7 +332,7 @@ export function ForgotPasswordPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
-                    className="pl-10 bg-[#030304]/60 border-[#00FFD4]/30 text-[#E8E8F0]"
+                    className="pl-10 bg-[#06060B]/60 border-[#00F0FF]/30 text-[#E8E8F0]"
                     required
                     minLength={8}
                   />
@@ -356,7 +356,7 @@ export function ForgotPasswordPage() {
 
               {error && <p className="text-sm text-[#FF3366]">{error}</p>}
 
-              <Button type="submit" disabled={isLoading} className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] h-12 text-base">
+              <Button type="submit" disabled={isLoading} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base">
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
@@ -380,7 +380,7 @@ export function ForgotPasswordPage() {
               </p>
               <Button
                 onClick={() => navigate('/login')}
-                className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] h-12 text-base"
+                className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base"
               >
                 <ArrowRight className="w-4 h-4 mr-2" />
                 Go to Sign In
@@ -394,7 +394,7 @@ export function ForgotPasswordPage() {
           <p className="text-center text-sm text-[#6B7280] mt-6">
             <button
               onClick={() => navigate('/login')}
-              className="text-[#00FFD4] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center"
+              className="text-[#00F0FF] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center"
             >
               <ArrowLeft className="w-3.5 h-3.5 mr-1" />
               Back to Sign In

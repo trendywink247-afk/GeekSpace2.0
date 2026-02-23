@@ -386,7 +386,7 @@ export function DashboardApp() {
 
       {/* ---- Main Content ---- */}
       <main
-        className={`flex-1 transition-all duration-300 pb-20 md:pb-0 ${
+        className={`flex-1 transition-all duration-300 pb-24 md:pb-0 ${
           sidebarCollapsed ? 'md:ml-[82px]' : 'md:ml-[272px]'
         }`}
         data-testid="dashboard-shell"

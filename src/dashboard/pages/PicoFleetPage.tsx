@@ -50,7 +50,7 @@ const statusColors: Record<string, string> = {
   cancelled: '#6B7280',
   disabled: '#FF6161',
   failed: '#FF6161',
-  queued: '#00FFD4',
+  queued: '#00F0FF',
   running: '#FFB800',
 };
 
@@ -257,7 +257,7 @@ export function PicoFleetPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -268,7 +268,7 @@ export function PicoFleetPage() {
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top duration-300">
           <div
-            className="flex items-center gap-3 px-5 py-3 rounded-xl bg-[#0A0A0F]/95 backdrop-blur-sm border shadow-2xl"
+            className="flex items-center gap-3 px-5 py-3 rounded-xl bg-[#0C0C18]/95 backdrop-blur-sm border shadow-2xl"
             style={{
               borderColor: toast.type === 'success' ? '#00FF8840' : '#FF616140',
             }}
@@ -295,14 +295,14 @@ export function PicoFleetPage() {
           <p className="text-[#6B7280]">
             <span className="text-[#00FF88] font-medium">{agents.length}</span> agent{agents.length !== 1 ? 's' : ''} deployed
             {' '}&middot;{' '}
-            <span className="text-[#00FFD4] font-medium">{totalCompleted}</span> tasks completed
+            <span className="text-[#00F0FF] font-medium">{totalCompleted}</span> tasks completed
           </p>
         </div>
         <Button
           onClick={() => loadData()}
           disabled={refreshing}
           variant="outline"
-          className="border-[#00FFD4]/30 hover:bg-[#00FFD4]/10 text-[#6B7280] hover:text-[#E8E8F0]"
+          className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 text-[#6B7280] hover:text-[#E8E8F0]"
         >
           <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           Refresh
@@ -316,7 +316,7 @@ export function PicoFleetPage() {
             const color = getStatusColor(agent.status);
             const isPermanent = slotNum === 1;
             return (
-              <Card key={slotNum} className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all press-scale">
+              <Card key={slotNum} className="border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all press-scale">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg text-[#E8E8F0] flex items-center gap-2">
@@ -347,11 +347,11 @@ export function PicoFleetPage() {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-lg bg-[#030304] border border-[#00FFD4]/10">
+                    <div className="p-3 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
                       <div className="text-xs text-[#6B7280] mb-1">Completed</div>
                       <div className="text-xl font-bold text-[#00FF88] font-mono">{agent.tasks_completed}</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-[#030304] border border-[#00FFD4]/10">
+                    <div className="p-3 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
                       <div className="text-xs text-[#6B7280] mb-1">Failed</div>
                       <div className="text-xl font-bold text-[#FF6161] font-mono">{agent.tasks_failed}</div>
                     </div>
@@ -369,11 +369,11 @@ export function PicoFleetPage() {
           if (creatingSlot === slotNum) {
             const personalities = [
               { id: 'weebo' as const, emoji: '🤖', label: 'Weebo', desc: 'Enthusiastic helper', color: '#00FF88' },
-              { id: 'jarvis' as const, emoji: '🎩', label: 'Jarvis', desc: 'Professional butler', color: '#00FFD4' },
+              { id: 'jarvis' as const, emoji: '🎩', label: 'Jarvis', desc: 'Professional butler', color: '#00F0FF' },
               { id: 'edith' as const, emoji: '⚡', label: 'Edith', desc: 'Sharp CTO', color: '#FFB800' },
             ];
             return (
-              <Card key={slotNum} className="bg-[#0A0A0F] border-[#00FFD4]/30 border-dashed">
+              <Card key={slotNum} className="border-[#00F0FF]/30 border-dashed">
                 <CardContent className={`flex flex-col items-center gap-3 min-h-[180px] ${isMobile ? 'p-3' : 'p-4'}`}>
                   <p className="text-sm text-[#6B7280]">Choose personality</p>
                   <div className="flex gap-2">
@@ -396,7 +396,7 @@ export function PicoFleetPage() {
                     value={newAgentName}
                     onChange={(e) => setNewAgentName(e.target.value)}
                     placeholder="Agent name..."
-                    className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0] max-w-[200px]"
+                    className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] max-w-[200px]"
                     onKeyDown={(e) => e.key === 'Enter' && handleCreateAgent()}
                     autoFocus
                   />
@@ -405,7 +405,7 @@ export function PicoFleetPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => { setCreatingSlot(null); setNewAgentName(''); setNewAgentPersonality('weebo'); }}
-                      className="border-[#00FFD4]/30 text-[#6B7280]"
+                      className="border-[#00F0FF]/30 text-[#6B7280]"
                     >
                       Cancel
                     </Button>
@@ -413,7 +413,7 @@ export function PicoFleetPage() {
                       size="sm"
                       onClick={handleCreateAgent}
                       disabled={!newAgentName.trim() || savingAgent}
-                      className="bg-[#00FFD4] hover:bg-[#00D4B0]"
+                      className="bg-[#00F0FF] hover:bg-[#00D4B0]"
                     >
                       {savingAgent ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Deploy'}
                     </Button>
@@ -426,12 +426,12 @@ export function PicoFleetPage() {
           return (
             <Card
               key={slotNum}
-              className="bg-[#0A0A0F] border-[#00FFD4]/20 border-dashed hover:border-[#00FFD4]/40 transition-all cursor-pointer group press-scale"
+              className="bg-[#0C0C18] border-[#00F0FF]/20 border-dashed hover:border-[#00F0FF]/40 transition-all cursor-pointer group press-scale"
               onClick={() => setCreatingSlot(slotNum)}
             >
               <CardContent className="p-6 flex flex-col items-center justify-center gap-3 min-h-[180px]">
-                <div className="w-12 h-12 rounded-xl bg-[#00FFD4]/10 flex items-center justify-center group-hover:bg-[#00FFD4]/20 transition-colors">
-                  <Plus className="w-6 h-6 text-[#00FFD4]" />
+                <div className="w-12 h-12 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center group-hover:bg-[#00F0FF]/20 transition-colors">
+                  <Plus className="w-6 h-6 text-[#00F0FF]" />
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-medium text-[#E8E8F0]">Deploy Agent</p>
@@ -444,10 +444,10 @@ export function PicoFleetPage() {
       </div>
 
       {/* Quick Task */}
-      <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+      <Card className="border-[#00F0FF]/20">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg text-[#E8E8F0] flex items-center gap-2">
-            <Send className="w-4 h-4 text-[#00FFD4]" />
+            <Send className="w-4 h-4 text-[#00F0FF]" />
             Quick Task
           </CardTitle>
         </CardHeader>
@@ -457,14 +457,14 @@ export function PicoFleetPage() {
               value={taskInput}
               onChange={(e) => setTaskInput(e.target.value)}
               placeholder="Describe a task in natural language..."
-              className="flex-1 bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
+              className="flex-1 bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
               onKeyDown={(e) => e.key === 'Enter' && !planning && handlePlanTask()}
               disabled={planning}
             />
             <Button
               onClick={handlePlanTask}
               disabled={!taskInput.trim() || planning}
-              className="bg-[#00FFD4] hover:bg-[#00D4B0] min-w-[100px]"
+              className="bg-[#00F0FF] hover:bg-[#00D4B0] min-w-[100px]"
             >
               {planning ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -509,7 +509,7 @@ export function PicoFleetPage() {
             </button>
             <button
               onClick={() => setShowEscalateDialog(false)}
-              className="px-3 py-1.5 rounded-lg border border-[#00FFD4]/30 text-[#6B7280] text-sm"
+              className="px-3 py-1.5 rounded-lg border border-[#00F0FF]/30 text-[#6B7280] text-sm"
             >
               Cancel
             </button>
@@ -518,12 +518,12 @@ export function PicoFleetPage() {
       )}
 
       {/* Weebo Activity Card — last 10 tasks, polled every 30s */}
-      <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+      <Card className="border-[#00F0FF]/20">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg text-[#E8E8F0] flex items-center gap-2">
             <Activity className="w-4 h-4 text-[#00FF88]" />
             Recent Activity
-            <Badge variant="outline" className="ml-2 border-[#00FFD4]/20 text-[#6B7280] text-xs">
+            <Badge variant="outline" className="ml-2 border-[#00F0FF]/20 text-[#6B7280] text-xs">
               {recentTasks.length}
             </Badge>
           </CardTitle>
@@ -538,7 +538,7 @@ export function PicoFleetPage() {
               {recentTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="flex items-center gap-3 p-3 sm:p-2.5 rounded-lg bg-[#030304] border border-[#00FFD4]/10 min-h-[44px]"
+                  className="flex items-center gap-3 p-3 sm:p-2.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/10 min-h-[44px]"
                 >
                   {/* Colored status dot */}
                   <span
@@ -568,12 +568,12 @@ export function PicoFleetPage() {
       </Card>
 
       {/* Task History */}
-      <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+      <Card className="border-[#00F0FF]/20">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg text-[#E8E8F0] flex items-center gap-2">
             <Clock className="w-4 h-4 text-[#6B7280]" />
             Task History
-            <Badge variant="outline" className="ml-2 border-[#00FFD4]/20 text-[#6B7280] text-xs">
+            <Badge variant="outline" className="ml-2 border-[#00F0FF]/20 text-[#6B7280] text-xs">
               {tasks.length}
             </Badge>
           </CardTitle>
@@ -581,7 +581,7 @@ export function PicoFleetPage() {
         <CardContent className="pt-0">
           {tasks.length === 0 ? (
             <div className="text-center py-10">
-              <AlertCircle className="w-10 h-10 text-[#00FFD4]/30 mx-auto mb-3" />
+              <AlertCircle className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
               <p className="text-[#6B7280] text-sm">No tasks yet. Use Quick Task above to get started.</p>
             </div>
           ) : (
@@ -592,7 +592,7 @@ export function PicoFleetPage() {
                   <div key={task.id}>
                     <button
                       onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                      className="w-full text-left p-3 sm:p-3 py-4 rounded-lg bg-[#030304] border border-[#00FFD4]/10 hover:border-[#00FFD4]/30 transition-all min-h-[44px]"
+                      className="w-full text-left p-3 sm:p-3 py-4 rounded-lg bg-[#06060B] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30 transition-all min-h-[44px]"
                     >
                       <div className="flex items-center gap-3">
                         {/* Status icon */}
@@ -652,7 +652,7 @@ export function PicoFleetPage() {
 
                     {/* Expanded detail */}
                     {isExpanded && (
-                      <div className="mt-1 ml-4 p-4 rounded-lg bg-[#030304]/80 border border-[#00FFD4]/10 animate-in slide-in-from-top-2 duration-200">
+                      <div className="mt-1 ml-4 p-4 rounded-lg bg-[#06060B]/80 border border-[#00F0FF]/10 animate-in slide-in-from-top-2 duration-200">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                           <div>
                             <div className="text-xs text-[#6B7280]">Status</div>
@@ -676,7 +676,7 @@ export function PicoFleetPage() {
                         {task.result && (
                           <div>
                             <div className="text-xs text-[#6B7280] mb-1">Result</div>
-                            <pre className="text-sm text-[#E8E8F0] bg-[#0A0A0F] p-3 rounded-lg border border-[#00FFD4]/10 overflow-x-auto whitespace-pre-wrap font-mono text-xs">
+                            <pre className="text-sm text-[#E8E8F0] bg-[#0C0C18] p-3 rounded-lg border border-[#00F0FF]/10 overflow-x-auto whitespace-pre-wrap font-mono text-xs">
                               {task.result}
                             </pre>
                           </div>

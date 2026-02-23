@@ -273,9 +273,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-2xl mx-4 bg-[#0A0A0F] border border-[#00FFD4]/20 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+      <div className="w-full max-w-2xl mx-4 glass-card-v2 border border-[#00F0FF]/20 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3 p-4 border-b border-[#00FFD4]/10">
+        <div className="flex items-center gap-3 p-4 border-b border-[#00F0FF]/10">
           <Search className="w-5 h-5 text-[#6B7280]" />
           <input
             ref={inputRef}
@@ -286,7 +286,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             onKeyDown={handleKeyDown}
             className="flex-1 bg-transparent text-[#E8E8F0] placeholder-[#6B7280] outline-none text-base"
           />
-          <kbd className="hidden sm:inline-block px-2 py-1 text-xs bg-[#030304] rounded text-[#6B7280]">
+          <kbd className="hidden sm:inline-block px-2 py-1 text-xs bg-[#06060B] rounded text-[#6B7280]">
             ESC
           </kbd>
         </div>
@@ -316,12 +316,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       onMouseEnter={() => setSelectedIndex(globalIdx)}
                       className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
                         isSelected
-                          ? 'bg-[#00FFD4]/20 border border-[#00FFD4]/30'
-                          : 'hover:bg-[#00FFD4]/10'
+                          ? 'bg-[#00F0FF]/20 border border-[#00F0FF]/30'
+                          : 'hover:bg-[#00F0FF]/10'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        isSelected ? 'bg-[#00FFD4]/30 text-[#00FFD4]' : 'bg-[#030304] text-[#6B7280]'
+                        isSelected ? 'bg-[#00F0FF]/30 text-[#00F0FF]' : 'bg-[#06060B] text-[#6B7280]'
                       }`}>
                         {cmd.icon}
                       </div>
@@ -336,7 +336,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       {cmd.shortcut && (
                         <div className="flex items-center gap-1">
                           {cmd.shortcut.split(' ').map((key, i) => (
-                            <kbd key={i} className="px-1.5 py-0.5 text-xs bg-[#030304] rounded text-[#6B7280]">
+                            <kbd key={i} className="px-1.5 py-0.5 text-xs bg-[#06060B] rounded text-[#6B7280]">
                               {key}
                             </kbd>
                           ))}
@@ -351,19 +351,19 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-[#00FFD4]/10 text-xs text-[#6B7280]">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-[#00F0FF]/10 text-xs text-[#6B7280]">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-[#030304] rounded">↑↓</kbd>
+              <kbd className="px-1.5 py-0.5 bg-[#06060B] rounded">↑↓</kbd>
               to navigate
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-[#030304] rounded">↵</kbd>
+              <kbd className="px-1.5 py-0.5 bg-[#06060B] rounded">↵</kbd>
               to select
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 bg-[#030304] rounded">ESC</kbd>
+            <kbd className="px-1.5 py-0.5 bg-[#06060B] rounded">ESC</kbd>
             to close
           </div>
         </div>

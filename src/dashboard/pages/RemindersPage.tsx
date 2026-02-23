@@ -29,9 +29,9 @@ import { parseNaturalLanguageReminder } from '@/utils/reminderParser';
 import type { ReminderChannel, ReminderCategory } from '@/types';
 
 const categoryColors: Record<string, string> = {
-  personal: '#00FFD4',
+  personal: '#00F0FF',
   work: '#00FF88',
-  health: '#FF0080',
+  health: '#FF2D78',
   other: '#FFB800',
 };
 
@@ -194,10 +194,10 @@ export function RemindersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="px-3 py-1.5 rounded-full bg-[#00FFD4]/10 border border-[#00FFD4]/30">
-            <span className="text-sm text-[#00FFD4]">{activeReminders.length} active</span>
+          <div className="px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30">
+            <span className="text-sm text-[#00F0FF]">{activeReminders.length} active</span>
           </div>
-          <Button data-testid="create-reminder-button" onClick={() => setIsAddDialogOpen(true)} className="bg-[#00FFD4] hover:bg-[#00D4B0]">
+          <Button data-testid="create-reminder-button" onClick={() => setIsAddDialogOpen(true)} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
             <Plus className="w-4 h-4 mr-2" />
             Add Reminder
           </Button>
@@ -205,10 +205,10 @@ export function RemindersPage() {
       </div>
 
       {/* Quick Add - Natural Language */}
-      <Card className="bg-gradient-to-r from-[#00FFD4]/10 to-[#FF0080]/5 border-[#00FFD4]/20">
+      <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-[#FF2D78]/5 border-[#00F0FF]/20">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-5 h-5 text-[#00FFD4]" />
+            <Sparkles className="w-5 h-5 text-[#00F0FF]" />
             <span className="text-sm font-medium text-[#E8E8F0]">Quick Add</span>
             <span className="text-xs text-[#6B7280]">Type naturally like "tomorrow at 3pm call mom"</span>
           </div>
@@ -225,7 +225,7 @@ export function RemindersPage() {
                     handleNaturalAdd();
                   }
                 }}
-                className="w-full px-4 py-3 bg-[#030304] border border-[#00FFD4]/20 rounded-xl text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00FFD4]/40"
+                className="w-full px-4 py-3 bg-[#06060B] border border-[#00F0FF]/20 rounded-xl text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/40"
               />
               {parsedReminder && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -238,7 +238,7 @@ export function RemindersPage() {
               className={`p-3 rounded-xl transition-colors ${
                 isListening 
                   ? 'bg-[#FF6161]/20 text-[#FF6161]' 
-                  : 'bg-[#030304] border border-[#00FFD4]/20 text-[#6B7280] hover:text-white'
+                  : 'bg-[#06060B] border border-[#00F0FF]/20 text-[#6B7280] hover:text-white'
               }`}
             >
               <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
@@ -246,7 +246,7 @@ export function RemindersPage() {
             <Button
               onClick={handleNaturalAdd}
               disabled={!parsedReminder}
-              className="bg-[#00FFD4] hover:bg-[#00D4B0] disabled:opacity-50"
+              className="bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50"
             >
               <Wand2 className="w-4 h-4 mr-2" />
               Add
@@ -255,7 +255,7 @@ export function RemindersPage() {
           
           {/* Parsed preview */}
           {parsedReminder && (
-            <div className="mt-3 p-3 rounded-lg bg-[#030304] border border-[#00FF88]/20">
+            <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[#00FF88]/20">
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-[#00FF88]">✓</span>
                 <span className="text-[#E8E8F0]">{parsedReminder.text}</span>
@@ -270,7 +270,7 @@ export function RemindersPage() {
                   })}
                 </span>
                 {parsedReminder.recurring && (
-                  <Badge className="bg-[#00FFD4]/20 text-[#00FFD4]">
+                  <Badge className="bg-[#00F0FF]/20 text-[#00F0FF]">
                     <Repeat className="w-3 h-3 mr-1" />
                     {parsedReminder.recurring}
                   </Badge>
@@ -283,7 +283,7 @@ export function RemindersPage() {
           <div className="mt-3">
             <button
               onClick={() => setShowExamples(!showExamples)}
-              className="text-xs text-[#6B7280] hover:text-[#00FFD4] transition-colors"
+              className="text-xs text-[#6B7280] hover:text-[#00F0FF] transition-colors"
             >
               {showExamples ? 'Hide' : 'Show'} examples
             </button>
@@ -293,7 +293,7 @@ export function RemindersPage() {
                   <button
                     key={example}
                     onClick={() => handleExampleClick(example)}
-                    className="text-xs px-3 py-1.5 rounded-full bg-[#030304] border border-[#00FFD4]/20 text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00FFD4]/40 transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-full bg-[#06060B] border border-[#00F0FF]/20 text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors"
                   >
                     {example}
                   </button>
@@ -312,26 +312,26 @@ export function RemindersPage() {
             placeholder="Search reminders..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[#0A0A0F] border-[#00FFD4]/20"
+            className="pl-10 bg-[#0C0C18] border-[#00F0FF]/20"
           />
         </div>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <TabsList className="bg-[#0A0A0F] border border-[#00FFD4]/20">
+          <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/20">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="completed">Completed</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="flex items-center bg-[#0A0A0F] border border-[#00FFD4]/20 rounded-lg p-1">
+        <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded transition-colors ${viewMode === 'list' ? 'bg-[#00FFD4]/20 text-[#00FFD4]' : 'text-[#6B7280]'}`}
+            className={`p-2 rounded transition-colors ${viewMode === 'list' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
           >
             <List className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode('calendar')}
-            className={`p-2 rounded transition-colors ${viewMode === 'calendar' ? 'bg-[#00FFD4]/20 text-[#00FFD4]' : 'text-[#6B7280]'}`}
+            className={`p-2 rounded transition-colors ${viewMode === 'calendar' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
@@ -343,7 +343,7 @@ export function RemindersPage() {
         <div className="space-y-3">
           {filteredReminders.length === 0 ? (
             <div className="text-center py-12">
-              <Bell className="w-12 h-12 text-[#00FFD4]/30 mx-auto mb-4" />
+              <Bell className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
               <p className="text-[#6B7280]">No reminders yet</p>
               <p className="text-sm text-[#6B7280]/70 mt-1">Use the quick add above to create your first reminder</p>
             </div>
@@ -355,12 +355,12 @@ export function RemindersPage() {
               return (
                 <Card
                   key={reminder.id}
-                  className={`bg-[#0A0A0F] border transition-all ${
+                  className={`bg-[#0C0C18] border transition-all ${
                     reminder.completed
-                      ? 'border-[#00FFD4]/10 opacity-60'
+                      ? 'border-[#00F0FF]/10 opacity-60'
                       : overdue
                       ? 'border-[#FF6161]/30'
-                      : 'border-[#00FFD4]/20'
+                      : 'border-[#00F0FF]/20'
                   }`}
                 >
                   <CardContent className="p-4">
@@ -368,12 +368,12 @@ export function RemindersPage() {
                       {/* Date badge */}
                       <div className={`flex-shrink-0 w-14 text-center p-2 rounded-xl ${
                         reminder.completed
-                          ? 'bg-[#00FFD4]/10'
+                          ? 'bg-[#00F0FF]/10'
                           : overdue
                           ? 'bg-[#FF6161]/10'
-                          : 'bg-[#00FFD4]/10'
+                          : 'bg-[#00F0FF]/10'
                       }`}>
-                        <div className={`text-xs ${overdue ? 'text-[#FF6161]' : 'text-[#00FFD4]'}`}>
+                        <div className={`text-xs ${overdue ? 'text-[#FF6161]' : 'text-[#00F0FF]'}`}>
                           {formatted.month}
                         </div>
                         <div className={`text-xl font-bold ${overdue ? 'text-[#FF6161]' : 'text-[#E8E8F0]'}`}>
@@ -401,7 +401,7 @@ export function RemindersPage() {
                                 {reminder.category}
                               </Badge>
                               {reminder.recurring && (
-                                <Badge className="bg-[#00FFD4]/20 text-[#00FFD4] text-xs">
+                                <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] text-xs">
                                   <Repeat className="w-3 h-3 mr-1" />
                                   {reminder.recurring}
                                 </Badge>
@@ -414,14 +414,14 @@ export function RemindersPage() {
                               className={`p-2 rounded-lg transition-colors ${
                                 reminder.completed
                                   ? 'bg-[#00FF88]/20 text-[#00FF88]'
-                                  : 'bg-[#030304] text-[#6B7280] hover:text-[#00FF88]'
+                                  : 'bg-[#06060B] text-[#6B7280] hover:text-[#00FF88]'
                               }`}
                             >
                               <Check className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(reminder.id)}
-                              className="p-2 rounded-lg bg-[#030304] text-[#6B7280] hover:text-[#FF6161] transition-colors"
+                              className="p-2 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FF6161] transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -437,10 +437,10 @@ export function RemindersPage() {
         </div>
       ) : (
         // Calendar view
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#00FFD4]" />
+              <Calendar className="w-5 h-5 text-[#00F0FF]" />
               Calendar View
             </CardTitle>
           </CardHeader>
@@ -454,7 +454,7 @@ export function RemindersPage() {
               {Array.from({ length: 35 }).map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-square rounded-lg bg-[#030304] border border-[#00FFD4]/10 p-1 text-xs text-[#6B7280]"
+                  className="aspect-square rounded-lg bg-[#06060B] border border-[#00F0FF]/10 p-1 text-xs text-[#6B7280]"
                 >
                   {i + 1}
                 </div>
@@ -466,7 +466,7 @@ export function RemindersPage() {
 
       {/* Add Reminder Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="bg-[#0A0A0F] border-[#00FFD4]/20 max-w-lg">
+        <DialogContent className="glass-card-v2 border-[#00F0FF]/20 max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-xl">Add Reminder</DialogTitle>
           </DialogHeader>
@@ -484,12 +484,12 @@ export function RemindersPage() {
                   placeholder="Remind me..."
                   value={naturalInput}
                   onChange={(e) => setNaturalInput(e.target.value)}
-                  className="flex-1 bg-[#030304] border-[#00FFD4]/20"
+                  className="flex-1 bg-[#06060B] border-[#00F0FF]/20"
                 />
                 <Button
                   onClick={handleNaturalAdd}
                   disabled={!parsedReminder}
-                  className="bg-[#00FFD4] hover:bg-[#00D4B0]"
+                  className="bg-[#00F0FF] hover:bg-[#00D4B0]"
                 >
                   <Wand2 className="w-4 h-4" />
                 </Button>
@@ -508,10 +508,10 @@ export function RemindersPage() {
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#00FFD4]/20" />
+                <div className="w-full border-t border-[#00F0FF]/20" />
               </div>
               <div className="relative flex justify-center">
-                <span className="px-2 bg-[#0A0A0F] text-xs text-[#6B7280]">Or manually</span>
+                <span className="px-2 bg-[#0C0C18] text-xs text-[#6B7280]">Or manually</span>
               </div>
             </div>
 
@@ -523,7 +523,7 @@ export function RemindersPage() {
                   placeholder="Enter reminder text..."
                   value={newReminder.text}
                   onChange={(e) => setNewReminder({ ...newReminder, text: e.target.value })}
-                  className="bg-[#030304] border-[#00FFD4]/20"
+                  className="bg-[#06060B] border-[#00F0FF]/20"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -533,7 +533,7 @@ export function RemindersPage() {
                     type="datetime-local"
                     value={newReminder.datetime}
                     onChange={(e) => setNewReminder({ ...newReminder, datetime: e.target.value })}
-                    className="bg-[#030304] border-[#00FFD4]/20"
+                    className="bg-[#06060B] border-[#00F0FF]/20"
                   />
                 </div>
                 <div>
@@ -541,7 +541,7 @@ export function RemindersPage() {
                   <select
                     value={newReminder.category}
                     onChange={(e) => setNewReminder({ ...newReminder, category: e.target.value as ReminderCategory })}
-                    className="w-full px-3 py-2 rounded-md bg-[#030304] border border-[#00FFD4]/20 text-[#E8E8F0] text-sm"
+                    className="w-full px-3 py-2 rounded-md bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm"
                   >
                     <option value="personal">Personal</option>
                     <option value="work">Work</option>
@@ -559,8 +559,8 @@ export function RemindersPage() {
                       onClick={() => setNewReminder({ ...newReminder, recurring: rec })}
                       className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                         newReminder.recurring === rec
-                          ? 'bg-[#00FFD4] text-white'
-                          : 'bg-[#030304] text-[#6B7280] hover:text-white'
+                          ? 'bg-[#00F0FF] text-white'
+                          : 'bg-[#06060B] text-[#6B7280] hover:text-white'
                       }`}
                     >
                       {rec || 'Once'}

@@ -34,7 +34,7 @@ export function PrivacyPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#030304] text-[#E8E8F0]">
+    <div className="min-h-screen bg-[#06060B] text-[#E8E8F0]">
       <div className="max-w-3xl mx-auto px-6 py-12">
         <Button
           variant="ghost"
@@ -52,8 +52,8 @@ export function PrivacyPage() {
         <div className="space-y-8">
           {sections.map((section) => (
             <div key={section.title} className="flex gap-4">
-              <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center flex-shrink-0 mt-1">
-                <section.icon className="w-5 h-5 text-[#00FFD4]" />
+              <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center flex-shrink-0 mt-1">
+                <section.icon className="w-5 h-5 text-[#00F0FF]" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-[#E8E8F0] mb-2">{section.title}</h2>
@@ -63,10 +63,10 @@ export function PrivacyPage() {
           ))}
         </div>
 
-        <div className="mt-12 p-6 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20">
+        <div className="mt-12 p-6 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
           <p className="text-sm text-[#6B7280]">
             Questions about privacy? Reach us at{' '}
-            <span className="text-[#00FFD4]">privacy@agentin.chat</span>
+            <span className="text-[#00F0FF]">privacy@agentin.chat</span>
           </p>
         </div>
       </div>

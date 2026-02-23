@@ -67,8 +67,8 @@ export function MessageReactions({
             onClick={() => handleReact(reaction.id)}
             className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all ${
               isActive
-                ? 'bg-[#00FFD4]/20 border border-[#00FFD4]/40'
-                : 'bg-[#030304] border border-[#00FFD4]/10 hover:border-[#00FFD4]/30'
+                ? 'bg-[#00F0FF]/20 border border-[#00F0FF]/40'
+                : 'bg-[#06060B] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
             }`}
             title={reaction.label}
           >
@@ -83,7 +83,7 @@ export function MessageReactions({
       <div className="relative">
         <button
           onClick={() => setShowAll(!showAll)}
-          className="p-1.5 rounded-full bg-[#030304] border border-[#00FFD4]/10 hover:border-[#00FFD4]/30 text-[#6B7280] transition-all"
+          className="p-1.5 rounded-full bg-[#06060B] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30 text-[#6B7280] transition-all"
         >
           <MoreHorizontal className="w-3.5 h-3.5" />
         </button>
@@ -94,13 +94,13 @@ export function MessageReactions({
               className="fixed inset-0 z-40"
               onClick={() => setShowAll(false)}
             />
-            <div className="absolute left-0 top-full mt-1 p-2 bg-[#0A0A0F] border border-[#00FFD4]/20 rounded-xl shadow-xl z-50 min-w-[140px]">
+            <div className="absolute left-0 top-full mt-1 p-2 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-xl shadow-xl z-50 min-w-[140px]">
               <button
                 onClick={() => {
                   handleCopy(messageId);
                   setShowAll(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#6B7280] hover:bg-[#00FFD4]/10 hover:text-[#E8E8F0] transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#6B7280] hover:bg-[#00F0FF]/10 hover:text-[#E8E8F0] transition-colors"
               >
                 {copied ? '✓ Copied!' : '📋 Copy'}
               </button>
@@ -109,7 +109,7 @@ export function MessageReactions({
                   handleReact('share');
                   setShowAll(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#6B7280] hover:bg-[#00FFD4]/10 hover:text-[#E8E8F0] transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#6B7280] hover:bg-[#00F0FF]/10 hover:text-[#E8E8F0] transition-colors"
               >
                 🔗 Share
               </button>
@@ -137,7 +137,7 @@ export function MessageReactionsCompact({
             key={reaction.id}
             onClick={() => onReact?.(messageId, reaction.id)}
             className={`p-1 rounded transition-colors ${
-              isActive ? 'bg-[#00FFD4]/20' : 'hover:bg-[#00FFD4]/10'
+              isActive ? 'bg-[#00F0FF]/20' : 'hover:bg-[#00F0FF]/10'
             }`}
             title={reaction.label}
           >

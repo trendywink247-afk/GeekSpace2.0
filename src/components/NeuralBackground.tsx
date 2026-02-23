@@ -69,14 +69,14 @@ export function NeuralBackground() {
         // Draw subtle aurora bands
         const auroraGrad1 = ctx.createLinearGradient(0, waveY1 - 100, 0, waveY1 + 100);
         auroraGrad1.addColorStop(0, 'transparent');
-        auroraGrad1.addColorStop(0.5, 'rgba(0, 255, 212, 0.012)');
+        auroraGrad1.addColorStop(0.5, 'rgba(0, 240, 255, 0.012)');
         auroraGrad1.addColorStop(1, 'transparent');
         ctx.fillStyle = auroraGrad1;
         ctx.fillRect(0, waveY1 - 100, canvas.width, 200);
 
         const auroraGrad2 = ctx.createLinearGradient(0, waveY2 - 80, 0, waveY2 + 80);
         auroraGrad2.addColorStop(0, 'transparent');
-        auroraGrad2.addColorStop(0.5, 'rgba(255, 0, 128, 0.008)');
+        auroraGrad2.addColorStop(0.5, 'rgba(255, 45, 120, 0.008)');
         auroraGrad2.addColorStop(1, 'transparent');
         ctx.fillStyle = auroraGrad2;
         ctx.fillRect(0, waveY2 - 80, canvas.width, 160);
@@ -108,8 +108,8 @@ export function NeuralBackground() {
 
           // Draw particle with glow
           const isCyan = p.hue === 168;
-          const color = isCyan ? `rgba(0, 255, 212, ${particleAlpha})` : `rgba(255, 0, 128, ${particleAlpha * 0.8})`;
-          const glowColor = isCyan ? `rgba(0, 255, 212, ${particleAlpha * 0.15})` : `rgba(255, 0, 128, ${particleAlpha * 0.1})`;
+          const color = isCyan ? `rgba(0, 240, 255, ${particleAlpha})` : `rgba(255, 45, 120, ${particleAlpha * 0.8})`;
+          const glowColor = isCyan ? `rgba(0, 240, 255, ${particleAlpha * 0.15})` : `rgba(255, 45, 120, ${particleAlpha * 0.1})`;
 
           // Glow
           ctx.beginPath();
@@ -138,11 +138,11 @@ export function NeuralBackground() {
                 let lineColor: string;
                 if (mixCyan && mixMagenta) {
                   // Cross-color connection — violet tint
-                  lineColor = `rgba(112, 0, 255, ${lineAlpha})`;
+                  lineColor = `rgba(139, 92, 246, ${lineAlpha})`;
                 } else if (mixCyan) {
-                  lineColor = `rgba(0, 255, 212, ${lineAlpha})`;
+                  lineColor = `rgba(0, 240, 255, ${lineAlpha})`;
                 } else {
-                  lineColor = `rgba(255, 0, 128, ${lineAlpha})`;
+                  lineColor = `rgba(255, 45, 120, ${lineAlpha})`;
                 }
 
                 ctx.beginPath();
@@ -161,7 +161,7 @@ export function NeuralBackground() {
     };
 
     // Initial full clear
-    ctx.fillStyle = '#030304';
+    ctx.fillStyle = '#06060B';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     animate();
@@ -178,7 +178,7 @@ export function NeuralBackground() {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 z-0"
-      style={{ background: '#030304' }}
+      style={{ background: '#06060B' }}
     />
   );
 }

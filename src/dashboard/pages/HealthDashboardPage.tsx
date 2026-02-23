@@ -209,7 +209,7 @@ export function HealthDashboardPage() {
   if (!snapshot) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-[#00FFD4] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin" />
       </div>
     );
   }
@@ -244,7 +244,7 @@ export function HealthDashboardPage() {
                     variant="outline"
                     size="sm"
                     onClick={handleRetry}
-                    className="ml-2 h-6 px-2 text-xs border-[#00FFD4]/30 hover:bg-[#00FFD4]/10"
+                    className="ml-2 h-6 px-2 text-xs border-[#00F0FF]/30 hover:bg-[#00F0FF]/10"
                   >
                     Retry
                   </Button>
@@ -255,7 +255,7 @@ export function HealthDashboardPage() {
         </div>
         <Badge
           variant="outline"
-          className="border-[#00FFD4]/40 text-[#00FFD4] shrink-0 text-xs"
+          className="border-[#00F0FF]/40 text-[#00F0FF] shrink-0 text-xs"
         >
           {new Date(snapshot.timestamp).toLocaleTimeString()}
         </Badge>
@@ -264,13 +264,13 @@ export function HealthDashboardPage() {
       {/* Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { label: 'Requests', value: snapshot.metrics.totalRequests, icon: Activity, color: '#00FFD4' },
+          { label: 'Requests', value: snapshot.metrics.totalRequests, icon: Activity, color: '#00F0FF' },
           { label: 'Errors', value: snapshot.metrics.totalErrors, icon: AlertTriangle, color: snapshot.metrics.totalErrors > 0 ? '#FF6161' : '#00FF88' },
           { label: 'Avg Latency', value: `${snapshot.metrics.avgLatencyMs}ms`, icon: Clock, color: snapshot.metrics.avgLatencyMs > 1000 ? '#FFB800' : '#00FF88' },
-          { label: 'Req/min', value: snapshot.metrics.requestsPerMinute, icon: Zap, color: '#00FFD4' },
+          { label: 'Req/min', value: snapshot.metrics.requestsPerMinute, icon: Zap, color: '#00F0FF' },
           { label: 'Uptime', value: formatUptime(snapshot.system.uptime), icon: Server, color: '#00FF88' },
         ].map((stat) => (
-          <Card key={stat.label} className="bg-[#0A0A0F] border-[#00FFD4]/20 press-scale">
+          <Card key={stat.label} className="border-[#00F0FF]/20 press-scale">
             <CardContent className="p-3 md:p-4">
               <div className="flex items-center gap-2 mb-1">
                 <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
@@ -290,7 +290,7 @@ export function HealthDashboardPage() {
             const Icon = componentIcons[key] || Wifi;
             const color = statusColor(status);
             return (
-              <Card key={key} className="bg-[#0A0A0F] transition-all hover:border-[#00FFD4]/40 press-scale" style={{ borderColor: `${color}40` }}>
+              <Card key={key} className="transition-all hover:border-[#00F0FF]/40 press-scale" style={{ borderColor: `${color}40` }}>
                 <CardContent className="p-3 md:p-4 flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}15` }}>
                     <Icon className="w-4 h-4" style={{ color }} />
@@ -308,7 +308,7 @@ export function HealthDashboardPage() {
 
       {/* Error Rate + Memory */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20">
           <CardContent className="p-5">
             <h3 className="text-sm text-[#6B7280] mb-2">Error Rate (5-min window)</h3>
             <div className="flex items-end gap-3">
@@ -321,11 +321,11 @@ export function HealthDashboardPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20">
           <CardContent className="p-5">
             <h3 className="text-sm text-[#6B7280] mb-2">Memory Usage</h3>
             <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-[#00FFD4]">{snapshot.system.memoryMb} MB</span>
+              <span className="text-3xl font-bold text-[#00F0FF]">{snapshot.system.memoryMb} MB</span>
               <span className="text-sm text-[#6B7280] mb-1">heap used</span>
             </div>
           </CardContent>
@@ -336,11 +336,11 @@ export function HealthDashboardPage() {
       {snapshot.topEndpoints.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-[#E8E8F0] mb-3">Hot Endpoints (5-min window)</h2>
-          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20 overflow-hidden">
+          <Card className="border-[#00F0FF]/20 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#00FFD4]/10">
+                  <tr className="border-b border-[#00F0FF]/10">
                     <th className="text-left text-[#6B7280] font-medium px-4 py-3">Endpoint</th>
                     <th className="text-right text-[#6B7280] font-medium px-4 py-3">Hits</th>
                     <th className="text-right text-[#6B7280] font-medium px-4 py-3">Errors</th>
@@ -349,7 +349,7 @@ export function HealthDashboardPage() {
                 </thead>
                 <tbody>
                   {snapshot.topEndpoints.map((ep) => (
-                    <tr key={ep.path} className="border-b border-[#00FFD4]/5 hover:bg-[#00FFD4]/5 transition-colors">
+                    <tr key={ep.path} className="border-b border-[#00F0FF]/5 hover:bg-[#00F0FF]/5 transition-colors">
                       <td className="px-4 py-2.5 font-mono text-[#E8E8F0] text-xs whitespace-nowrap">{ep.path}</td>
                       <td className="px-4 py-2.5 text-right text-[#E8E8F0]">{ep.count}</td>
                       <td className="px-4 py-2.5 text-right" style={{ color: ep.errors > 0 ? '#FF6161' : '#00FF88' }}>{ep.errors}</td>

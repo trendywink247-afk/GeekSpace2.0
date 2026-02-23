@@ -154,7 +154,7 @@ export function MemoryManagerPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -172,11 +172,11 @@ export function MemoryManagerPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleExport} className="border-[#00FFD4]/30">
+          <Button variant="outline" onClick={handleExport} className="border-[#00F0FF]/30">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button onClick={loadMemories} variant="outline" className="border-[#00FFD4]/30">
+          <Button onClick={loadMemories} variant="outline" className="border-[#00F0FF]/30">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
@@ -184,11 +184,11 @@ export function MemoryManagerPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center">
-                <Brain className="w-5 h-5 text-[#00FFD4]" />
+              <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-[#00F0FF]" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">{stats.total}</div>
@@ -197,7 +197,7 @@ export function MemoryManagerPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center">
@@ -210,7 +210,7 @@ export function MemoryManagerPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#FFB800]/10 flex items-center justify-center">
@@ -223,11 +223,11 @@ export function MemoryManagerPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FF0080]/10 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-[#FF0080]" />
+              <div className="w-10 h-10 rounded-lg bg-[#FF2D78]/10 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-[#FF2D78]" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">{stats.thisWeek}</div>
@@ -239,7 +239,7 @@ export function MemoryManagerPage() {
       </div>
 
       {/* Search and Filters */}
-      <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+      <Card className="border-[#00F0FF]/20">
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
@@ -248,14 +248,14 @@ export function MemoryManagerPage() {
                 placeholder="Search memories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#030304] border-[#00FFD4]/20"
+                className="pl-10 bg-[#06060B] border-[#00F0FF]/20"
               />
             </div>
             <div className="flex gap-2">
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-[#030304] border border-[#00FFD4]/20 text-[#E8E8F0] text-sm"
+                className="px-3 py-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm"
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -266,7 +266,7 @@ export function MemoryManagerPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="px-3 py-2 rounded-lg bg-[#030304] border border-[#00FFD4]/20 text-[#E8E8F0] text-sm"
+                className="px-3 py-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm"
               >
                 <option value="recent">Most Recent</option>
                 <option value="confidence">Highest Confidence</option>
@@ -284,8 +284,8 @@ export function MemoryManagerPage() {
                   onClick={() => setSelectedCategory(selectedCategory === cat ? 'all' : cat)}
                   className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     selectedCategory === cat
-                      ? 'bg-[#00FFD4] text-white'
-                      : 'bg-[#030304] text-[#6B7280] hover:text-white'
+                      ? 'bg-[#00F0FF] text-white'
+                      : 'bg-[#06060B] text-[#6B7280] hover:text-white'
                   }`}
                 >
                   {cat}
@@ -299,7 +299,7 @@ export function MemoryManagerPage() {
       {/* Memories List */}
       {filteredMemories.length === 0 ? (
         <div className="text-center py-16">
-          <Brain className="w-16 h-16 text-[#00FFD4]/30 mx-auto mb-4" />
+          <Brain className="w-16 h-16 text-[#00F0FF]/30 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No memories found</h3>
           <p className="text-[#6B7280] max-w-sm mx-auto">
             Your agent will build memories as you chat. They'll appear here for you to review and manage.
@@ -310,7 +310,7 @@ export function MemoryManagerPage() {
           {filteredMemories.map((memory) => (
             <Card
               key={memory.id}
-              className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all"
+              className="bg-[#0C0C18] border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all"
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
@@ -332,7 +332,7 @@ export function MemoryManagerPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <Badge className="bg-[#00FFD4]/20 text-[#00FFD4]">
+                          <Badge className="bg-[#00F0FF]/20 text-[#00F0FF]">
                             {memory.category}
                           </Badge>
                           <span className="text-xs text-[#6B7280]">
@@ -358,7 +358,7 @@ export function MemoryManagerPage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setExpandedId(expandedId === memory.id ? null : memory.id)}
-                          className="p-2 rounded-lg bg-[#030304] text-[#6B7280] hover:text-white transition-colors"
+                          className="p-2 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-white transition-colors"
                         >
                           {expandedId === memory.id ? (
                             <ChevronUp className="w-4 h-4" />
@@ -368,7 +368,7 @@ export function MemoryManagerPage() {
                         </button>
                         <button
                           onClick={() => handleDelete(memory.id)}
-                          className="p-2 rounded-lg bg-[#030304] text-[#6B7280] hover:text-[#FF6161] transition-colors"
+                          className="p-2 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FF6161] transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

@@ -136,7 +136,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <Link2 className="w-6 h-6 text-[#00FFD4]" />
+        <Link2 className="w-6 h-6 text-[#00F0FF]" />
         <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
           Connect Integrations
         </h2>
@@ -148,7 +148,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
       {/* WhatsApp QR Modal */}
       {whatsappState === 'waiting' && whatsappQR && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0A0A0F] border border-[#25d366]/40 rounded-2xl p-6 max-w-sm w-full">
+          <div className="glass-card-v2 border border-[#25d366]/40 rounded-2xl p-6 max-w-sm w-full">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Smartphone className="w-5 h-5 text-[#25d366]" />
@@ -200,8 +200,8 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
                 onClick={() => toggle(opt.id)}
                 className={`w-full p-4 min-h-[44px] rounded-xl border transition-all flex items-center justify-between ${
                   isConnected
-                    ? 'border-[#00FFD4] bg-[#00FFD4]/10'
-                    : 'border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40'
+                    ? 'border-[#00F0FF] bg-[#00F0FF]/10'
+                    : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
                 }`}
               >
                 <div className="text-left">
@@ -210,10 +210,10 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
                 </div>
                 {isConnected ? (
                   <div className="w-6 h-6 rounded-full bg-[#00FF88] flex items-center justify-center flex-shrink-0">
-                    <Check className="w-4 h-4 text-[#0A0A0F]" />
+                    <Check className="w-4 h-4 text-[#0C0C18]" />
                   </div>
                 ) : isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-[#00FFD4]" />
+                  <Loader2 className="w-5 h-5 animate-spin text-[#00F0FF]" />
                 ) : isWaiting ? (
                   <div className="w-2 h-2 rounded-full bg-[#FFB800] animate-pulse" />
                 ) : null}
@@ -317,7 +317,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm text-[#6B7280] hover:text-[#00FFD4] transition-colors min-h-[44px] px-4"
+          className="text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors min-h-[44px] px-4"
         >
           I'll do this later
         </button>

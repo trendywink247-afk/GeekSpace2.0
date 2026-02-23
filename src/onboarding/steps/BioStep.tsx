@@ -50,7 +50,7 @@ export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChan
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <FileText className="w-6 h-6 text-[#00FFD4]" />
+        <FileText className="w-6 h-6 text-[#00F0FF]" />
         <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
           Bio & Headline
         </h2>
@@ -70,8 +70,8 @@ export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChan
               onClick={() => toggleTag(tag)}
               className={`px-4 py-2 min-h-[44px] rounded-full text-sm transition-all ${
                 tags.includes(tag)
-                  ? 'bg-[#00FFD4]/20 border border-[#00FFD4] text-[#00FFD4]'
-                  : 'bg-[#030304] border border-[#00FFD4]/20 text-[#6B7280] hover:border-[#00FFD4]/50'
+                  ? 'bg-[#00F0FF]/20 border border-[#00F0FF] text-[#00F0FF]'
+                  : 'bg-[#06060B] border border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/50'
               }`}
             >
               {tag}
@@ -86,7 +86,7 @@ export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChan
           type="button"
           onClick={handleMagic}
           disabled={magicLoading}
-          className="w-full py-3 min-h-[44px] rounded-xl border-2 border-dashed border-[#00FFD4]/40 text-[#00FFD4] hover:bg-[#00FFD4]/10 hover:border-[#00FFD4] transition-all flex items-center justify-center gap-2 text-sm font-medium"
+          className="w-full py-3 min-h-[44px] rounded-xl border-2 border-dashed border-[#00F0FF]/40 text-[#00F0FF] hover:bg-[#00F0FF]/10 hover:border-[#00F0FF] transition-all flex items-center justify-center gap-2 text-sm font-medium"
         >
           {magicLoading ? (
             <>
@@ -108,7 +108,7 @@ export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChan
           value={headline}
           onChange={(e) => onHeadlineChange(e.target.value)}
           placeholder="Developer & Builder"
-          className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
+          className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
         />
       </div>
       <div>
@@ -117,7 +117,7 @@ export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChan
           value={bio}
           onChange={(e) => onBioChange(e.target.value)}
           placeholder="What do you do? What are you into?"
-          className="w-full p-3 rounded-xl bg-[#030304] border border-[#00FFD4]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00FFD4] placeholder:text-[#6B7280]/50"
+          className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF] placeholder:text-[#6B7280]/50"
         />
         {bio.length > 0 && bio.length < 10 && (
           <p className="text-xs text-[#FF3366] mt-1">Bio must be at least 10 characters</p>
@@ -129,7 +129,7 @@ export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChan
         <button
           type="button"
           onClick={() => { setMagicDone(false); }}
-          className="text-xs text-[#6B7280] hover:text-[#00FFD4] transition-colors flex items-center gap-1"
+          className="text-xs text-[#6B7280] hover:text-[#00F0FF] transition-colors flex items-center gap-1"
         >
           <Sparkles className="w-3 h-3" />
           Try the magic trick again

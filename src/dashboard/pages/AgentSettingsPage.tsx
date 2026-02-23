@@ -39,7 +39,7 @@ const styleOptions: StyleOption[] = [
     description: 'Clean, simple responses focused on reminders and Q&A',
     icon: MessageSquare,
     features: ['Reminders', 'Q&A', 'Quick facts'],
-    color: '#00FFD4',
+    color: '#00F0FF',
   },
   {
     id: 'builder',
@@ -172,9 +172,9 @@ export function AgentSettingsPage() {
       </div>
 
       {/* Agent Identity */}
-      <div className="p-6 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/20">
+      <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Bot className="w-5 h-5 text-[#00FFD4]" />
+          <Bot className="w-5 h-5 text-[#00F0FF]" />
           Agent Identity
         </h2>
         <div className="grid md:grid-cols-2 gap-4">
@@ -183,7 +183,7 @@ export function AgentSettingsPage() {
             <Input
               value={agentName}
               onChange={(e) => setAgentName(e.target.value)}
-              className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
+              className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
               placeholder="What should I call your agent?"
             />
           </div>
@@ -192,7 +192,7 @@ export function AgentSettingsPage() {
             <Input
               value={agent.displayName || `${agentName}'s AI`}
               disabled
-              className="bg-[#030304] border-[#00FFD4]/20 text-[#6B7280]"
+              className="bg-[#06060B] border-[#00F0FF]/20 text-[#6B7280]"
             />
           </div>
         </div>
@@ -200,9 +200,9 @@ export function AgentSettingsPage() {
 
       {/* AI Personality */}
       {Object.keys(personalities).length > 0 && (
-        <div className="p-6 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/20">
+        <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5 text-[#00FFD4]" />
+            <Users className="w-5 h-5 text-[#00F0FF]" />
             Choose Your AI Personality
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
@@ -212,15 +212,15 @@ export function AgentSettingsPage() {
                   onClick={() => handlePersonalitySwitch(p.id as AgentPersonality)}
                   className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-center ${
                     selectedPersonality === p.id
-                      ? 'border-[#00FFD4] bg-[#00FFD4]/10 shadow-[0_0_20px_rgba(123,97,255,0.15)]'
-                      : 'border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40'
+                      ? 'border-[#00F0FF] bg-[#00F0FF]/10 shadow-[0_0_20px_rgba(123,97,255,0.15)]'
+                      : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
                   }`}
                 >
                   <div className="text-4xl mb-3">{p.emoji}</div>
                   <h3 className="font-semibold text-[#E8E8F0] mb-1">{p.name}</h3>
                   <p className="text-sm text-[#6B7280]">{p.description}</p>
                   {selectedPersonality === p.id && (
-                    <div className="mt-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00FFD4]/20 text-[#00FFD4] text-xs">
+                    <div className="mt-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00F0FF]/20 text-[#00F0FF] text-xs">
                       <Check className="w-3 h-3" /> Active
                     </div>
                   )}
@@ -229,8 +229,8 @@ export function AgentSettingsPage() {
             ))}
           </div>
           {personalityToast && (
-            <div className="mt-4 px-4 py-2.5 rounded-xl bg-[#00FFD4]/10 border border-[#00FFD4]/30 text-sm text-[#E8E8F0] flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#00FFD4]" />
+            <div className="mt-4 px-4 py-2.5 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-sm text-[#E8E8F0] flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#00F0FF]" />
               {personalityToast}
             </div>
           )}
@@ -238,9 +238,9 @@ export function AgentSettingsPage() {
       )}
 
       {/* Model Preference */}
-      <div className="p-6 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/20">
+      <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Brain className="w-5 h-5 text-[#00FFD4]" />
+          <Brain className="w-5 h-5 text-[#00F0FF]" />
           AI Engine Preference
         </h2>
         <div className="grid grid-cols-2 gap-2">
@@ -255,8 +255,8 @@ export function AgentSettingsPage() {
               onClick={() => handleSavePref('model_preference', opt.value)}
               className={`p-3 rounded-xl border text-left transition-all ${
                 selectedModelPref === opt.value
-                  ? 'border-[#00FFD4] bg-[#00FFD4]/10'
-                  : 'border-[#00FFD4]/20 hover:border-[#00FFD4]/40'
+                  ? 'border-[#00F0FF] bg-[#00F0FF]/10'
+                  : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
               }`}
             >
               <div className="text-sm font-medium text-[#E8E8F0]">{opt.label}</div>
@@ -267,9 +267,9 @@ export function AgentSettingsPage() {
       </div>
 
       {/* Agent Style Selection */}
-      <div className="p-6 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/20">
+      <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-[#00FFD4]" />
+          <Sparkles className="w-5 h-5 text-[#00F0FF]" />
           Agent Style
         </h2>
         <div className="grid md:grid-cols-3 gap-4">
@@ -279,8 +279,8 @@ export function AgentSettingsPage() {
               onClick={() => setSelectedStyle(style.id)}
               className={`p-5 rounded-xl border-2 transition-all duration-300 text-left ${
                 selectedStyle === style.id
-                  ? 'border-[#00FFD4] bg-[#00FFD4]/10'
-                  : 'border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40'
+                  ? 'border-[#00F0FF] bg-[#00F0FF]/10'
+                  : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
               }`}
             >
               <div className="flex items-center justify-between mb-3">
@@ -291,7 +291,7 @@ export function AgentSettingsPage() {
                   <style.icon className="w-5 h-5" style={{ color: style.color }} />
                 </div>
                 {selectedStyle === style.id && (
-                  <div className="w-6 h-6 rounded-full bg-[#00FFD4] flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full bg-[#00F0FF] flex items-center justify-center">
                     <Check className="w-4 h-4 text-white" />
                   </div>
                 )}
@@ -302,7 +302,7 @@ export function AgentSettingsPage() {
                 {style.features.map((feature, i) => (
                   <span
                     key={i}
-                    className="px-2 py-0.5 text-xs rounded-full bg-[#0A0A0F] text-[#6B7280]"
+                    className="px-2 py-0.5 text-xs rounded-full bg-[#06060B] text-[#6B7280]"
                   >
                     {feature}
                   </span>
@@ -316,9 +316,9 @@ export function AgentSettingsPage() {
       {/* Personality Settings */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Voice/Tone */}
-        <div className="p-6 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/20">
+        <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Volume2 className="w-5 h-5 text-[#00FFD4]" />
+            <Volume2 className="w-5 h-5 text-[#00F0FF]" />
             Voice & Tone
           </h2>
           <div className="space-y-2">
@@ -328,8 +328,8 @@ export function AgentSettingsPage() {
                 onClick={() => setSelectedVoice(voice.id as 'professional' | 'friendly' | 'witty')}
                 className={`w-full p-4 rounded-xl border transition-all duration-300 flex items-center justify-between ${
                   selectedVoice === voice.id
-                    ? 'border-[#00FFD4] bg-[#00FFD4]/10'
-                    : 'border-[#00FFD4]/20 bg-[#030304] hover:border-[#00FFD4]/40'
+                    ? 'border-[#00F0FF] bg-[#00F0FF]/10'
+                    : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
                 }`}
               >
                 <div className="text-left">
@@ -337,7 +337,7 @@ export function AgentSettingsPage() {
                   <div className="text-sm text-[#6B7280]">{voice.description}</div>
                 </div>
                 {selectedVoice === voice.id && (
-                  <div className="w-5 h-5 rounded-full bg-[#00FFD4] flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-[#00F0FF] flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
                   </div>
                 )}
@@ -347,9 +347,9 @@ export function AgentSettingsPage() {
         </div>
 
         {/* Sliders */}
-        <div className="p-6 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/20 space-y-6">
+        <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20 space-y-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Brain className="w-5 h-5 text-[#00FFD4]" />
+            <Brain className="w-5 h-5 text-[#00F0FF]" />
             Behavior
           </h2>
 
@@ -392,15 +392,15 @@ export function AgentSettingsPage() {
       </div>
 
       {/* System Prompt */}
-      <div className="p-6 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/20">
+      <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Image className="w-5 h-5 text-[#00FFD4]" />
+          <Image className="w-5 h-5 text-[#00F0FF]" />
           System Instructions
         </h2>
         <Textarea
           value={systemPrompt}
           onChange={(e) => setSystemPrompt(e.target.value)}
-          className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0] min-h-[120px] resize-none"
+          className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[120px] resize-none"
           placeholder="Instructions for how your agent should behave..."
         />
         <p className="text-xs text-[#6B7280] mt-2">
@@ -419,7 +419,7 @@ export function AgentSettingsPage() {
           size="lg"
           onClick={handleSave}
           disabled={isSaving}
-          className="bg-[#00FFD4] hover:bg-[#00D4B0] px-8"
+          className="bg-[#00F0FF] hover:bg-[#00D4B0] px-8"
         >
           {isSaving ? (
             <>

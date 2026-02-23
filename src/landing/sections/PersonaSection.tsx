@@ -49,7 +49,7 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
             isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
           }`}
           style={{
-            background: 'radial-gradient(circle, rgba(0, 255, 212, 0.12) 0%, transparent 60%)',
+            background: 'radial-gradient(circle, rgba(0, 240, 255, 0.12) 0%, transparent 60%)',
           }}
         />
       </div>
@@ -59,7 +59,7 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
         {[...Array(20)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-1 h-1 bg-[#00FFD4]/40 rounded-full"
+            className="absolute w-1 h-1 bg-[#00F0FF]/40 rounded-full"
             style={{
               left: `${10 + (i % 5) * 20}%`,
               top: `${15 + Math.floor(i / 5) * 20}%`,
@@ -79,9 +79,9 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
           >
             <div className="relative w-72 h-72 md:w-96 md:h-96">
               {/* Outer glow rings */}
-              <div className="absolute inset-0 border-2 border-[#00FFD4]/20 rounded-full animate-pulse" />
-              <div className="absolute inset-8 border border-[#00FFD4]/15 rounded-full rotate-slow" />
-              <div className="absolute inset-16 border border-[#00FFD4]/10 rounded-full" style={{ animation: 'rotate-slow 15s linear infinite reverse' }} />
+              <div className="absolute inset-0 border-2 border-[#00F0FF]/20 rounded-full animate-pulse" />
+              <div className="absolute inset-8 border border-[#00F0FF]/15 rounded-full rotate-slow" />
+              <div className="absolute inset-16 border border-[#00F0FF]/10 rounded-full" style={{ animation: 'rotate-slow 15s linear infinite reverse' }} />
               
               {/* Central Persona Form */}
               <div className="absolute inset-0 flex items-center justify-center">
@@ -90,7 +90,7 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
                   <div 
                     className="absolute inset-0 opacity-30"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(0, 255, 212, 0.3) 0%, transparent 50%)',
+                      background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.3) 0%, transparent 50%)',
                       clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
                     }}
                   />
@@ -99,11 +99,11 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
                       <div className="relative inline-block">
-                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-[#00FFD4]/30 to-[#00FFD4]/10 border-2 border-[#00FFD4]/40 flex items-center justify-center float-animation">
-                          <div className="text-4xl md:text-5xl font-bold text-[#00FFD4]">AI</div>
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-[#00F0FF]/30 to-[#00F0FF]/10 border-2 border-[#00F0FF]/40 flex items-center justify-center float-animation">
+                          <div className="text-4xl md:text-5xl font-bold text-[#00F0FF]">AI</div>
                         </div>
                         {/* Status indicator */}
-                        <div className="absolute bottom-2 right-2 w-4 h-4 bg-[#00FF88] rounded-full border-2 border-[#030304]" />
+                        <div className="absolute bottom-2 right-2 w-4 h-4 bg-[#00FF88] rounded-full border-2 border-[#06060B]" />
                       </div>
                     </div>
                   </div>
@@ -112,7 +112,7 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
                   {[...Array(4)].map((_, i) => (
                     <div
                       key={i}
-                      className="absolute w-8 h-8 rounded-lg bg-[#0A0A0F] border border-[#00FFD4]/30 flex items-center justify-center"
+                      className="absolute w-8 h-8 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 flex items-center justify-center"
                       style={{
                         top: `${50 + 45 * Math.sin((i * Math.PI) / 2)}%`,
                         left: `${50 + 45 * Math.cos((i * Math.PI) / 2)}%`,
@@ -120,8 +120,8 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
                         animation: `float 4s ease-in-out ${i * 0.5}s infinite`,
                       }}
                     >
-                      {i === 0 && <Mic className="w-4 h-4 text-[#00FFD4]" />}
-                      {i === 1 && <MessageSquare className="w-4 h-4 text-[#FF0080]" />}
+                      {i === 0 && <Mic className="w-4 h-4 text-[#00F0FF]" />}
+                      {i === 1 && <MessageSquare className="w-4 h-4 text-[#FF2D78]" />}
                       {i === 2 && <Image className="w-4 h-4 text-[#00FF88]" />}
                       {i === 3 && <Settings className="w-4 h-4 text-[#FFB800]" />}
                     </div>
@@ -153,9 +153,9 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
               {personaFeatures.map((feature, i) => (
                 <div
                   key={i}
-                  className="p-4 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all duration-300 group"
+                  className="p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 group"
                 >
-                  <feature.icon className="w-6 h-6 text-[#00FFD4] mb-2 group-hover:scale-110 transition-transform" />
+                  <feature.icon className="w-6 h-6 text-[#00F0FF] mb-2 group-hover:scale-110 transition-transform" />
                   <div className="font-medium text-[#E8E8F0]">{feature.label}</div>
                   <div className="text-sm text-[#6B7280]">{feature.description}</div>
                 </div>
@@ -165,7 +165,7 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
             <Button
               size="lg"
               onClick={() => onDesignAssistant ? onDesignAssistant() : navigate('/login?redirect=design')}
-              className="bg-[#00FFD4] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#00FFD4]/30 group"
+              className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#00F0FF]/30 group"
             >
               Design Your Assistant
               <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />

@@ -256,7 +256,7 @@ export function PortfolioPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -277,13 +277,13 @@ export function PortfolioPage() {
               href={`/portfolio/${user.username}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#00FFD4] border border-[#00FFD4]/30 hover:bg-[#00FFD4]/10 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
               View Live
             </a>
           )}
-          <Button onClick={handleSave} disabled={isSaving} className="bg-[#00FFD4] hover:bg-[#00D4B0] press-scale">
+          <Button onClick={handleSave} disabled={isSaving} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">
             {isSaving ? (
               <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
             ) : (
@@ -306,26 +306,26 @@ export function PortfolioPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
-          <TabsList className="bg-[#0A0A0F] border border-[#00FFD4]/20 p-1 flex flex-nowrap w-max md:w-auto">
-            <TabsTrigger value="profile" data-testid="portfolio-tab-profile" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white whitespace-nowrap press-scale">
+          <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/20 p-1 flex flex-nowrap w-max md:w-auto">
+            <TabsTrigger value="profile" data-testid="portfolio-tab-profile" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <User className="w-4 h-4 mr-2" />Profile
             </TabsTrigger>
-            <TabsTrigger value="skills" data-testid="portfolio-tab-skills" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="skills" data-testid="portfolio-tab-skills" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Code2 className="w-4 h-4 mr-2" />Skills
             </TabsTrigger>
-            <TabsTrigger value="projects" data-testid="portfolio-tab-projects" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="projects" data-testid="portfolio-tab-projects" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <FolderGit2 className="w-4 h-4 mr-2" />Projects
             </TabsTrigger>
-            <TabsTrigger value="milestones" data-testid="portfolio-tab-milestones" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="milestones" data-testid="portfolio-tab-milestones" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Award className="w-4 h-4 mr-2" />Milestones
             </TabsTrigger>
-            <TabsTrigger value="social" data-testid="portfolio-tab-social" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="social" data-testid="portfolio-tab-social" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Share2 className="w-4 h-4 mr-2" />Social
             </TabsTrigger>
-            <TabsTrigger value="ai" data-testid="portfolio-tab-ai" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="ai" data-testid="portfolio-tab-ai" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Bot className="w-4 h-4 mr-2" />AI Edit
             </TabsTrigger>
-            <TabsTrigger value="suggestions" data-testid="portfolio-tab-suggestions" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="suggestions" data-testid="portfolio-tab-suggestions" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Lightbulb className="w-4 h-4 mr-2" />Suggestions
               {suggestions.length > 0 && (
                 <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-[#FF6161] text-white rounded-full">
@@ -333,7 +333,7 @@ export function PortfolioPage() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="analytics" data-testid="portfolio-tab-analytics" className="data-[state=active]:bg-[#00FFD4] data-[state=active]:text-white whitespace-nowrap press-scale">
+            <TabsTrigger value="analytics" data-testid="portfolio-tab-analytics" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <BarChart3 className="w-4 h-4 mr-2" />Analytics
             </TabsTrigger>
           </TabsList>
@@ -341,7 +341,7 @@ export function PortfolioPage() {
 
         {/* ── Profile Tab ─────────────────────────────────────── */}
         <TabsContent value="profile" className="space-y-6">
-          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+          <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Profile Details</CardTitle>
               <CardDescription className="text-[#6B7280]">Your public portfolio headline, bio, and layout</CardDescription>
@@ -353,7 +353,7 @@ export function PortfolioPage() {
                   <button
                     onClick={() => handleGenerate('headline', `${about}\n${skills.join(', ')}`, setHeadline)}
                     disabled={generatingField === 'headline'}
-                    className="text-xs flex items-center gap-1 text-[#00FFD4] hover:text-[#00D4B0] disabled:opacity-50"
+                    className="text-xs flex items-center gap-1 text-[#00F0FF] hover:text-[#00D4B0] disabled:opacity-50"
                   >
                     {generatingField === 'headline' ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -367,7 +367,7 @@ export function PortfolioPage() {
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
                   placeholder="Full-Stack Developer & AI Enthusiast"
-                  className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
+                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
                 />
               </div>
               <div>
@@ -376,7 +376,7 @@ export function PortfolioPage() {
                   <button
                     onClick={() => handleGenerate('about', `${headline}\n${skills.join(', ')}`, setAbout)}
                     disabled={generatingField === 'about'}
-                    className="text-xs flex items-center gap-1 text-[#00FFD4] hover:text-[#00D4B0] disabled:opacity-50"
+                    className="text-xs flex items-center gap-1 text-[#00F0FF] hover:text-[#00D4B0] disabled:opacity-50"
                   >
                     {generatingField === 'about' ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -390,7 +390,7 @@ export function PortfolioPage() {
                   value={about}
                   onChange={(e) => setAbout(e.target.value)}
                   placeholder="Tell visitors about yourself..."
-                  className="w-full p-3 rounded-xl bg-[#030304] border border-[#00FFD4]/30 text-[#E8E8F0] min-h-[120px] resize-none focus:outline-none focus:border-[#00FFD4]"
+                  className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[120px] resize-none focus:outline-none focus:border-[#00F0FF]"
                 />
               </div>
               <div>
@@ -399,7 +399,7 @@ export function PortfolioPage() {
                   value={avatar}
                   onChange={(e) => setAvatar(e.target.value)}
                   placeholder="https://example.com/avatar.jpg or initials"
-                  className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
+                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
                 />
               </div>
               <div>
@@ -411,8 +411,8 @@ export function PortfolioPage() {
                       onClick={() => setLayout(l)}
                       className={`flex-1 p-4 min-h-[44px] rounded-xl border-2 capitalize transition-all press-scale ${
                         layout === l
-                          ? 'border-[#00FFD4] bg-[#00FFD4]/10 text-[#00FFD4]'
-                          : 'border-[#00FFD4]/20 text-[#6B7280] hover:border-[#00FFD4]/40'
+                          ? 'border-[#00F0FF] bg-[#00F0FF]/10 text-[#00F0FF]'
+                          : 'border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/40'
                       }`}
                     >
                       {l}
@@ -426,7 +426,7 @@ export function PortfolioPage() {
 
         {/* ── Skills Tab ──────────────────────────────────────── */}
         <TabsContent value="skills" className="space-y-6">
-          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+          <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -456,7 +456,7 @@ export function PortfolioPage() {
                   }}
                   disabled={generatingField === 'skills' || !headline}
                   variant="outline"
-                  className="border-[#00FFD4]/30"
+                  className="border-[#00F0FF]/30"
                 >
                   {generatingField === 'skills' ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -474,16 +474,16 @@ export function PortfolioPage() {
                   onChange={(e) => setNewSkill(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addSkill()}
                   placeholder="e.g. TypeScript, React, Docker..."
-                  className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
+                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
                 />
-                <Button onClick={addSkill} disabled={!newSkill.trim()} className="bg-[#00FFD4] hover:bg-[#00D4B0]">
+                <Button onClick={addSkill} disabled={!newSkill.trim()} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
                   <Plus className="w-4 h-4 mr-2" />Add
                 </Button>
               </div>
 
               {skills.length === 0 ? (
                 <div className="text-center py-8">
-                  <Code2 className="w-10 h-10 text-[#00FFD4]/30 mx-auto mb-3" />
+                  <Code2 className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
                   <p className="text-[#6B7280]">No skills added yet</p>
                 </div>
               ) : (
@@ -492,7 +492,7 @@ export function PortfolioPage() {
                     <button
                       key={skill}
                       onClick={() => removeSkill(skill)}
-                      className="group flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full bg-[#00FFD4]/10 border border-[#00FFD4]/30 text-[#00FFD4] hover:bg-[#FF6161]/10 hover:border-[#FF6161]/30 hover:text-[#FF6161] transition-all press-scale"
+                      className="group flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#FF6161]/10 hover:border-[#FF6161]/30 hover:text-[#FF6161] transition-all press-scale"
                     >
                       {skill}
                       <X className="w-3 h-3 opacity-0 group-hover:opacity-100 md:opacity-0 max-md:opacity-60 transition-opacity" />
@@ -506,7 +506,7 @@ export function PortfolioPage() {
 
         {/* ── Projects Tab ────────────────────────────────────── */}
         <TabsContent value="projects" className="space-y-6">
-          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+          <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -515,7 +515,7 @@ export function PortfolioPage() {
                 </div>
                 <Button
                   onClick={() => { setEditingProject({ ...emptyProject }); setEditingProjectIdx(null); }}
-                  className="bg-[#00FFD4] hover:bg-[#00D4B0]"
+                  className="bg-[#00F0FF] hover:bg-[#00D4B0]"
                 >
                   <Plus className="w-4 h-4 mr-2" />Add Project
                 </Button>
@@ -524,7 +524,7 @@ export function PortfolioPage() {
             <CardContent className="space-y-4">
               {/* Inline project form */}
               {editingProject && (
-                <div className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/30 space-y-3">
+                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 space-y-3">
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm text-[#6B7280] mb-1 block">Name *</label>
@@ -532,7 +532,7 @@ export function PortfolioPage() {
                         value={editingProject.name}
                         onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
                         placeholder="Project name"
-                        className="bg-[#0A0A0F] border-[#00FFD4]/30 text-[#E8E8F0]"
+                        className="bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0]"
                       />
                     </div>
                     <div>
@@ -541,7 +541,7 @@ export function PortfolioPage() {
                         value={editingProject.url}
                         onChange={(e) => setEditingProject({ ...editingProject, url: e.target.value })}
                         placeholder="https://..."
-                        className="bg-[#0A0A0F] border-[#00FFD4]/30 text-[#E8E8F0]"
+                        className="bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0]"
                       />
                     </div>
                   </div>
@@ -551,7 +551,7 @@ export function PortfolioPage() {
                       value={editingProject.description}
                       onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
                       placeholder="What does this project do?"
-                      className="w-full p-3 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/30 text-[#E8E8F0] min-h-[80px] resize-none focus:outline-none focus:border-[#00FFD4]"
+                      className="w-full p-3 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[80px] resize-none focus:outline-none focus:border-[#00F0FF]"
                     />
                   </div>
                   <div>
@@ -562,9 +562,9 @@ export function PortfolioPage() {
                         onChange={(e) => setTagInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                         placeholder="Add tag..."
-                        className="bg-[#0A0A0F] border-[#00FFD4]/30 text-[#E8E8F0]"
+                        className="bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0]"
                       />
-                      <Button onClick={addTag} variant="outline" className="border-[#00FFD4]/30">
+                      <Button onClick={addTag} variant="outline" className="border-[#00F0FF]/30">
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
@@ -574,7 +574,7 @@ export function PortfolioPage() {
                           <Badge
                             key={tag}
                             variant="outline"
-                            className="border-[#00FFD4]/30 text-[#6B7280] cursor-pointer hover:border-[#FF6161]/30 hover:text-[#FF6161] min-h-[44px] px-3 py-1.5 press-scale"
+                            className="border-[#00F0FF]/30 text-[#6B7280] cursor-pointer hover:border-[#FF6161]/30 hover:text-[#FF6161] min-h-[44px] px-3 py-1.5 press-scale"
                             onClick={() => setEditingProject({ ...editingProject, tags: editingProject.tags!.filter((t) => t !== tag) })}
                           >
                             {tag} <X className="w-3 h-3 ml-1" />
@@ -584,10 +584,10 @@ export function PortfolioPage() {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => { setEditingProject(null); setEditingProjectIdx(null); setTagInput(''); }} className="border-[#00FFD4]/30">
+                    <Button variant="outline" onClick={() => { setEditingProject(null); setEditingProjectIdx(null); setTagInput(''); }} className="border-[#00F0FF]/30">
                       Cancel
                     </Button>
-                    <Button onClick={saveProject} disabled={!editingProject.name.trim()} className="bg-[#00FFD4] hover:bg-[#00D4B0]">
+                    <Button onClick={saveProject} disabled={!editingProject.name.trim()} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
                       {editingProjectIdx !== null ? 'Update' : 'Add'}
                     </Button>
                   </div>
@@ -596,22 +596,22 @@ export function PortfolioPage() {
 
               {projects.length === 0 && !editingProject && (
                 <div className="text-center py-8">
-                  <FolderGit2 className="w-10 h-10 text-[#00FFD4]/30 mx-auto mb-3" />
+                  <FolderGit2 className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
                   <p className="text-[#6B7280]">No projects yet</p>
                 </div>
               )}
 
               {projects.map((project, idx) => (
-                <div key={idx} className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/20 group hover:border-[#00FFD4]/40 transition-all press-scale w-full">
+                <div key={idx} className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 group hover:border-[#00F0FF]/40 transition-all press-scale w-full">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-[#E8E8F0]">{project.name}</h3>
                       {project.description && <p className="text-sm text-[#6B7280] mt-1">{project.description}</p>}
-                      {project.url && <p className="text-xs text-[#00FFD4] mt-1 truncate">{project.url}</p>}
+                      {project.url && <p className="text-xs text-[#00F0FF] mt-1 truncate">{project.url}</p>}
                       {(project.tags || []).length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
                           {project.tags!.map((tag) => (
-                            <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#0A0A0F] text-[#6B7280]">{tag}</span>
+                            <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#0C0C18] text-[#6B7280]">{tag}</span>
                           ))}
                         </div>
                       )}
@@ -621,7 +621,7 @@ export function PortfolioPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => { setEditingProject({ ...project }); setEditingProjectIdx(idx); }}
-                        className="text-[#00FFD4] hover:text-[#00FFD4] min-h-[44px] min-w-[44px] press-scale"
+                        className="text-[#00F0FF] hover:text-[#00F0FF] min-h-[44px] min-w-[44px] press-scale"
                       >
                         Edit
                       </Button>
@@ -643,7 +643,7 @@ export function PortfolioPage() {
 
         {/* ── Milestones Tab ──────────────────────────────────── */}
         <TabsContent value="milestones" className="space-y-6">
-          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+          <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -652,7 +652,7 @@ export function PortfolioPage() {
                 </div>
                 <Button
                   onClick={() => { setEditingMilestone({ ...emptyMilestone }); setEditingMilestoneIdx(null); }}
-                  className="bg-[#00FFD4] hover:bg-[#00D4B0]"
+                  className="bg-[#00F0FF] hover:bg-[#00D4B0]"
                 >
                   <Plus className="w-4 h-4 mr-2" />Add Milestone
                 </Button>
@@ -661,7 +661,7 @@ export function PortfolioPage() {
             <CardContent className="space-y-4">
               {/* Inline milestone form */}
               {editingMilestone && (
-                <div className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/30 space-y-3">
+                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 space-y-3">
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm text-[#6B7280] mb-1 block">Title *</label>
@@ -669,7 +669,7 @@ export function PortfolioPage() {
                         value={editingMilestone.title}
                         onChange={(e) => setEditingMilestone({ ...editingMilestone, title: e.target.value })}
                         placeholder="e.g. Launched SaaS product"
-                        className="bg-[#0A0A0F] border-[#00FFD4]/30 text-[#E8E8F0]"
+                        className="bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0]"
                       />
                     </div>
                     <div>
@@ -678,7 +678,7 @@ export function PortfolioPage() {
                         value={editingMilestone.date}
                         onChange={(e) => setEditingMilestone({ ...editingMilestone, date: e.target.value })}
                         placeholder="2025-01 or Jan 2025"
-                        className="bg-[#0A0A0F] border-[#00FFD4]/30 text-[#E8E8F0]"
+                        className="bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0]"
                       />
                     </div>
                   </div>
@@ -688,14 +688,14 @@ export function PortfolioPage() {
                       value={editingMilestone.description}
                       onChange={(e) => setEditingMilestone({ ...editingMilestone, description: e.target.value })}
                       placeholder="What happened and why it matters"
-                      className="w-full p-3 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/30 text-[#E8E8F0] min-h-[80px] resize-none focus:outline-none focus:border-[#00FFD4]"
+                      className="w-full p-3 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[80px] resize-none focus:outline-none focus:border-[#00F0FF]"
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => { setEditingMilestone(null); setEditingMilestoneIdx(null); }} className="border-[#00FFD4]/30">
+                    <Button variant="outline" onClick={() => { setEditingMilestone(null); setEditingMilestoneIdx(null); }} className="border-[#00F0FF]/30">
                       Cancel
                     </Button>
-                    <Button onClick={saveMilestone} disabled={!editingMilestone.title.trim()} className="bg-[#00FFD4] hover:bg-[#00D4B0]">
+                    <Button onClick={saveMilestone} disabled={!editingMilestone.title.trim()} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
                       {editingMilestoneIdx !== null ? 'Update' : 'Add'}
                     </Button>
                   </div>
@@ -704,7 +704,7 @@ export function PortfolioPage() {
 
               {milestones.length === 0 && !editingMilestone && (
                 <div className="text-center py-8">
-                  <Award className="w-10 h-10 text-[#00FFD4]/30 mx-auto mb-3" />
+                  <Award className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
                   <p className="text-[#6B7280]">No milestones yet</p>
                 </div>
               )}
@@ -714,13 +714,13 @@ export function PortfolioPage() {
                 {milestones.map((milestone, idx) => (
                   <div key={idx} className="flex gap-3 md:gap-4 group">
                     <div className="flex flex-col items-center shrink-0">
-                      <div className="w-3 h-3 rounded-full bg-[#00FFD4] mt-1.5" />
-                      {idx < milestones.length - 1 && <div className="w-0.5 flex-1 bg-[#00FFD4]/20" />}
+                      <div className="w-3 h-3 rounded-full bg-[#00F0FF] mt-1.5" />
+                      {idx < milestones.length - 1 && <div className="w-0.5 flex-1 bg-[#00F0FF]/20" />}
                     </div>
                     <div className="flex-1 pb-6 min-w-0">
                       <div className="flex flex-col md:flex-row md:items-start justify-between gap-1">
                         <div className="min-w-0">
-                          <div className="text-xs text-[#00FFD4] font-mono mb-1">{milestone.date}</div>
+                          <div className="text-xs text-[#00F0FF] font-mono mb-1">{milestone.date}</div>
                           <div className="font-medium text-[#E8E8F0]">{milestone.title}</div>
                           {milestone.description && <div className="text-sm text-[#6B7280] mt-1">{milestone.description}</div>}
                         </div>
@@ -729,7 +729,7 @@ export function PortfolioPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => { setEditingMilestone({ ...milestone }); setEditingMilestoneIdx(idx); }}
-                            className="text-[#00FFD4] hover:text-[#00FFD4] min-h-[44px] min-w-[44px] press-scale"
+                            className="text-[#00F0FF] hover:text-[#00F0FF] min-h-[44px] min-w-[44px] press-scale"
                           >
                             Edit
                           </Button>
@@ -753,7 +753,7 @@ export function PortfolioPage() {
 
         {/* ── Social Links Tab ────────────────────────────────── */}
         <TabsContent value="social" className="space-y-6">
-          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+          <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Social Links</CardTitle>
               <CardDescription className="text-[#6B7280]">Connect your online presence — all fields are optional</CardDescription>
@@ -772,7 +772,7 @@ export function PortfolioPage() {
                     value={social[field.key] || ''}
                     onChange={(e) => setSocial({ ...social, [field.key]: e.target.value })}
                     placeholder={field.placeholder}
-                    className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
+                    className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
                   />
                 </div>
               ))}
@@ -782,10 +782,10 @@ export function PortfolioPage() {
 
         {/* ── AI Edit Tab ─────────────────────────────────────── */}
         <TabsContent value="ai" className="space-y-6">
-          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+          <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#00FFD4]" />
+                <Sparkles className="w-5 h-5 text-[#00F0FF]" />
                 AI Portfolio Editor
               </CardTitle>
               <CardDescription className="text-[#6B7280]">
@@ -797,12 +797,12 @@ export function PortfolioPage() {
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="e.g. Make my bio more professional, add a React project, rewrite my headline to focus on AI engineering..."
-                className="w-full p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/30 text-[#E8E8F0] min-h-[140px] resize-none focus:outline-none focus:border-[#00FFD4]"
+                className="w-full p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[140px] resize-none focus:outline-none focus:border-[#00F0FF]"
               />
               <Button
                 onClick={handleAiEdit}
                 disabled={aiLoading || !aiPrompt.trim()}
-                className="bg-[#00FFD4] hover:bg-[#00D4B0] w-full"
+                className="bg-[#00F0FF] hover:bg-[#00D4B0] w-full"
               >
                 {aiLoading ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Applying...</>
@@ -819,10 +819,10 @@ export function PortfolioPage() {
 
         {/* ── Suggestions Tab ─────────────────────────────────── */}
         <TabsContent value="suggestions" className="space-y-6">
-          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+          <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="w-5 h-5 text-[#00FFD4]" />
+                <Lightbulb className="w-5 h-5 text-[#00F0FF]" />
                 Memory-Driven Suggestions
               </CardTitle>
               <CardDescription className="text-[#6B7280]">
@@ -832,11 +832,11 @@ export function PortfolioPage() {
             <CardContent className="space-y-4">
               {loadingSuggestions ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-6 h-6 text-[#00FFD4] animate-spin" />
+                  <Loader2 className="w-6 h-6 text-[#00F0FF] animate-spin" />
                 </div>
               ) : suggestions.length === 0 ? (
                 <div className="text-center py-12">
-                  <Lightbulb className="w-12 h-12 text-[#00FFD4]/30 mx-auto mb-4" />
+                  <Lightbulb className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
                   <p className="text-[#6B7280] mb-2">No suggestions yet</p>
                   <p className="text-sm text-[#6B7280]/70">
                     Chat with your agent about projects and accomplishments — suggestions will appear here.
@@ -847,12 +847,12 @@ export function PortfolioPage() {
                   {suggestions.map((suggestion) => (
                     <div
                       key={suggestion.id}
-                      className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all"
+                      className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline" className="border-[#00FFD4]/30 text-[#00FFD4]">
+                            <Badge variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF]">
                               {suggestion.field}
                             </Badge>
                             <span className="text-xs text-[#6B7280]">
@@ -888,10 +888,10 @@ export function PortfolioPage() {
 
         {/* ── Analytics Tab ──────────────────────────────────── */}
         <TabsContent value="analytics" className="space-y-6">
-          <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+          <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-[#00FFD4]" />
+                <BarChart3 className="w-5 h-5 text-[#00F0FF]" />
                 Portfolio Analytics
               </CardTitle>
               <CardDescription className="text-[#6B7280]">
@@ -901,15 +901,15 @@ export function PortfolioPage() {
             <CardContent className="space-y-6">
               {/* Stats Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/10">
+                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
                   <div className="flex items-center gap-2 mb-2">
-                    <Eye className="w-4 h-4 text-[#00FFD4]" />
+                    <Eye className="w-4 h-4 text-[#00F0FF]" />
                     <span className="text-xs text-[#6B7280]">Total Views</span>
                   </div>
                   <div className="text-2xl font-bold text-[#E8E8F0]">1,234</div>
                   <div className="text-xs text-[#00FF88]">↑ 12% this week</div>
                 </div>
-                <div className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/10">
+                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
                   <div className="flex items-center gap-2 mb-2">
                     <MousePointer className="w-4 h-4 text-[#00FF88]" />
                     <span className="text-xs text-[#6B7280]">Click Rate</span>
@@ -917,15 +917,15 @@ export function PortfolioPage() {
                   <div className="text-2xl font-bold text-[#E8E8F0]">8.5%</div>
                   <div className="text-xs text-[#6B7280]">Industry avg: 5.2%</div>
                 </div>
-                <div className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/10">
+                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
                   <div className="flex items-center gap-2 mb-2">
-                    <Globe className="w-4 h-4 text-[#FF0080]" />
+                    <Globe className="w-4 h-4 text-[#FF2D78]" />
                     <span className="text-xs text-[#6B7280]">Countries</span>
                   </div>
                   <div className="text-2xl font-bold text-[#E8E8F0]">12</div>
                   <div className="text-xs text-[#6B7280]">Top: US, India, UK</div>
                 </div>
-                <div className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/10">
+                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="w-4 h-4 text-[#FFB800]" />
                     <span className="text-xs text-[#6B7280]">Connections</span>
@@ -936,8 +936,8 @@ export function PortfolioPage() {
               </div>
 
               {/* Coming Soon Notice */}
-              <div className="p-6 rounded-xl bg-[#00FFD4]/5 border border-[#00FFD4]/20 text-center">
-                <BarChart3 className="w-12 h-12 text-[#00FFD4]/50 mx-auto mb-3" />
+              <div className="p-6 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 text-center">
+                <BarChart3 className="w-12 h-12 text-[#00F0FF]/50 mx-auto mb-3" />
                 <h4 className="text-lg font-medium text-[#E8E8F0] mb-2">Detailed Analytics Coming Soon</h4>
                 <p className="text-sm text-[#6B7280] max-w-md mx-auto">
                   We're building comprehensive analytics including referrer tracking, 
@@ -952,25 +952,25 @@ export function PortfolioPage() {
       {/* Generated Preview Modal */}
       {generatedPreview && generateTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0A0A0F] border border-[#00FFD4]/30 rounded-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
+          <div className="glass-card-v2 border border-[#00F0FF]/30 rounded-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center gap-2">
-              <Wand2 className="w-5 h-5 text-[#00FFD4]" />
+              <Wand2 className="w-5 h-5 text-[#00F0FF]" />
               <h3 className="text-lg font-semibold text-[#E8E8F0]">Generated {generateTarget.field}</h3>
             </div>
-            <div className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/20">
+            <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20">
               <p className="text-[#E8E8F0] whitespace-pre-wrap">{generatedPreview}</p>
             </div>
             <div className="flex gap-3">
               <Button
                 onClick={discardGenerated}
                 variant="outline"
-                className="flex-1 border-[#00FFD4]/30"
+                className="flex-1 border-[#00F0FF]/30"
               >
                 Discard
               </Button>
               <Button
                 onClick={applyGenerated}
-                className="flex-1 bg-[#00FFD4] hover:bg-[#00D4B0]"
+                className="flex-1 bg-[#00F0FF] hover:bg-[#00D4B0]"
               >
                 <CheckCircle2 className="w-4 h-4 mr-2" />
                 Apply

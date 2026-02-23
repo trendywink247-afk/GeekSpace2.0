@@ -52,7 +52,7 @@ export function ReviewStep({ onboarding, onLaunch, isLaunching }: ReviewStepProp
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <Rocket className="w-6 h-6 text-[#00FFD4]" />
+        <Rocket className="w-6 h-6 text-[#00F0FF]" />
         <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
           Review & Launch
         </h2>
@@ -63,8 +63,8 @@ export function ReviewStep({ onboarding, onLaunch, isLaunching }: ReviewStepProp
 
       <div className="space-y-3">
         {sections.map((section) => (
-          <div key={section.label} className="p-4 rounded-xl bg-[#030304] border border-[#00FFD4]/20">
-            <h3 className="text-sm font-medium text-[#00FFD4] mb-2">{section.label}</h3>
+          <div key={section.label} className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20">
+            <h3 className="text-sm font-medium text-[#00F0FF] mb-2">{section.label}</h3>
             <div className="space-y-1">
               {section.items.map((item) => (
                 <div key={item.key} className="flex justify-between text-sm">
@@ -89,7 +89,7 @@ export function ReviewStep({ onboarding, onLaunch, isLaunching }: ReviewStepProp
       <Button
         onClick={onLaunch}
         disabled={isLaunching}
-        className="w-full h-12 min-h-[44px] bg-[#00FFD4] hover:bg-[#00D4B0] text-base font-semibold pulse-glow"
+        className="w-full h-12 min-h-[44px] bg-[#00F0FF] hover:bg-[#00D4B0] text-base font-semibold pulse-glow"
       >
         {isLaunching ? (
           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -50,7 +50,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
               <polygon
                 points="24.8,22 37.3,29.2 37.3,43.4 24.8,50.6 12.3,43.4 12.3,29.2"
                 fill="none"
-                stroke="rgba(0, 255, 212, 0.3)"
+                stroke="rgba(0, 240, 255, 0.3)"
                 strokeWidth="0.5"
                 transform="translate(0, -21.7)"
               />
@@ -67,7 +67,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
             isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
           }`}
           style={{
-            background: 'radial-gradient(circle, rgba(0, 255, 212, 0.15) 0%, transparent 55%)',
+            background: 'radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, transparent 55%)',
           }}
         />
       </div>
@@ -80,9 +80,9 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
               isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'
             }`}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00FFD4]/10 border border-[#00FFD4]/30 mb-6">
-              <Zap className="w-4 h-4 text-[#00FFD4]" />
-              <span className="text-sm font-mono text-[#00FFD4]">WEEBO ENGINE</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 mb-6">
+              <Zap className="w-4 h-4 text-[#00F0FF]" />
+              <span className="text-sm font-mono text-[#00F0FF]">WEEBO ENGINE</span>
             </div>
 
             <h2 
@@ -101,9 +101,9 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
               {engineFeatures.map((feature, i) => (
                 <div
                   key={i}
-                  className="p-4 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all duration-300 group"
+                  className="p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 group"
                 >
-                  <feature.icon className="w-6 h-6 text-[#00FFD4] mb-2 group-hover:scale-110 transition-transform" />
+                  <feature.icon className="w-6 h-6 text-[#00F0FF] mb-2 group-hover:scale-110 transition-transform" />
                   <div className="font-medium text-[#E8E8F0]">{feature.label}</div>
                   <div className="text-sm text-[#6B7280]">{feature.description}</div>
                 </div>
@@ -113,7 +113,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
             <Button
               size="lg"
               onClick={() => onBuildWorkflow ? onBuildWorkflow() : navigate('/login?redirect=automations')}
-              className="bg-[#00FFD4] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#00FFD4]/30 group"
+              className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#00F0FF]/30 group"
             >
               Build a Workflow
               <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
@@ -128,9 +128,9 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
           >
             <div className="relative w-72 h-72 md:w-96 md:h-96">
               {/* Outer gear rings */}
-              <div className="absolute inset-0 border-2 border-dashed border-[#00FFD4]/30 rounded-full animate-spin" style={{ animationDuration: '30s' }} />
-              <div className="absolute inset-8 border border-[#00FFD4]/20 rounded-full" style={{ animation: 'spin 20s linear infinite reverse' }} />
-              <div className="absolute inset-16 border border-[#00FFD4]/15 rounded-full animate-spin" style={{ animationDuration: '15s' }} />
+              <div className="absolute inset-0 border-2 border-dashed border-[#00F0FF]/30 rounded-full animate-spin" style={{ animationDuration: '30s' }} />
+              <div className="absolute inset-8 border border-[#00F0FF]/20 rounded-full" style={{ animation: 'spin 20s linear infinite reverse' }} />
+              <div className="absolute inset-16 border border-[#00F0FF]/15 rounded-full animate-spin" style={{ animationDuration: '15s' }} />
               
               {/* Central Engine */}
               <div className="absolute inset-0 flex items-center justify-center">
@@ -139,15 +139,15 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="relative">
                       {/* Main gear body */}
-                      <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-gradient-to-br from-[#00FFD4]/40 to-[#00FFD4]/10 border-2 border-[#00FFD4]/50 flex items-center justify-center float-animation">
-                        <Zap className="w-12 h-12 md:w-16 md:h-16 text-[#00FFD4]" />
+                      <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-gradient-to-br from-[#00F0FF]/40 to-[#00F0FF]/10 border-2 border-[#00F0FF]/50 flex items-center justify-center float-animation">
+                        <Zap className="w-12 h-12 md:w-16 md:h-16 text-[#00F0FF]" />
                       </div>
                       
                       {/* Gear teeth */}
                       {[...Array(8)].map((_, i) => (
                         <div
                           key={i}
-                          className="absolute w-4 h-6 bg-[#00FFD4]/40 rounded-sm"
+                          className="absolute w-4 h-6 bg-[#00F0FF]/40 rounded-sm"
                           style={{
                             top: '50%',
                             left: '50%',
@@ -162,7 +162,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
                   {[...Array(5)].map((_, i) => (
                     <div
                       key={i}
-                      className="absolute w-10 h-10 rounded-full bg-[#0A0A0F] border border-[#00FFD4]/40 flex items-center justify-center"
+                      className="absolute w-10 h-10 rounded-full bg-[#0C0C18] border border-[#00F0FF]/40 flex items-center justify-center"
                       style={{
                         top: `${50 + 42 * Math.sin((i * Math.PI * 2) / 5)}%`,
                         left: `${50 + 42 * Math.cos((i * Math.PI * 2) / 5)}%`,
@@ -170,11 +170,11 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
                         animation: `float 3s ease-in-out ${i * 0.4}s infinite`,
                       }}
                     >
-                      {i === 0 && <Webhook className="w-5 h-5 text-[#00FFD4]" />}
-                      {i === 1 && <Database className="w-5 h-5 text-[#FF0080]" />}
-                      {i === 2 && <Bot className="w-5 h-5 text-[#61FF7B]" />}
+                      {i === 0 && <Webhook className="w-5 h-5 text-[#00F0FF]" />}
+                      {i === 1 && <Database className="w-5 h-5 text-[#FF2D78]" />}
+                      {i === 2 && <Bot className="w-5 h-5 text-[#ADFF2F]" />}
                       {i === 3 && <Workflow className="w-5 h-5 text-[#FFB800]" />}
-                      {i === 4 && <Zap className="w-5 h-5 text-[#00FFD4]" />}
+                      {i === 4 && <Zap className="w-5 h-5 text-[#00F0FF]" />}
                     </div>
                   ))}
                 </div>
@@ -195,7 +195,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
                       y1={`${y1}%`}
                       x2={`${x2}%`}
                       y2={`${y2}%`}
-                      stroke="rgba(0, 255, 212, 0.4)"
+                      stroke="rgba(0, 240, 255, 0.4)"
                       strokeWidth="1"
                       strokeDasharray="4 4"
                     />

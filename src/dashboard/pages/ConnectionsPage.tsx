@@ -61,9 +61,9 @@ const colorMap: Record<string, string> = {
   n8n: '#ff6d5a',
   manychat: '#0084ff',
   whatsapp: '#25d366',
-  'custom-webhook': '#00FFD4',
+  'custom-webhook': '#00F0FF',
   email: '#00FF88',
-  image: '#FF0080',
+  image: '#FF2D78',
 };
 
 type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error';
@@ -241,7 +241,7 @@ export function ConnectionsPage() {
   };
 
   const getIcon = (type: string) => iconMap[type] || Zap;
-  const getColor = (type: string) => colorMap[type] || '#00FFD4';
+  const getColor = (type: string) => colorMap[type] || '#00F0FF';
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -252,7 +252,7 @@ export function ConnectionsPage() {
             Connections
           </h1>
           <p className="text-[#6B7280]">
-            <span className="text-[#00FFD4] font-medium">{connectedCount}</span> of {integrations.length} services connected
+            <span className="text-[#00F0FF] font-medium">{connectedCount}</span> of {integrations.length} services connected
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -260,7 +260,7 @@ export function ConnectionsPage() {
             <Shield className="w-4 h-4 mr-2" />
             End-to-end encrypted
           </Badge>
-          <Button onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })} className="bg-[#00FFD4] hover:bg-[#00D4B0]">
+          <Button onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
             <Plus className="w-4 h-4 mr-2" />
             Add New
           </Button>
@@ -269,7 +269,7 @@ export function ConnectionsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all">
+        <Card className="border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center">
@@ -282,11 +282,11 @@ export function ConnectionsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all">
+        <Card className="border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-[#00FFD4]" />
+              <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-[#00F0FF]" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">{totalRequests}</div>
@@ -295,7 +295,7 @@ export function ConnectionsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all">
+        <Card className="border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#FFB800]/10 flex items-center justify-center">
@@ -308,11 +308,11 @@ export function ConnectionsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all">
+        <Card className="border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FF0080]/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-[#FF0080]" />
+              <div className="w-10 h-10 rounded-lg bg-[#FF2D78]/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-[#FF2D78]" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">100%</div>
@@ -325,7 +325,7 @@ export function ConnectionsPage() {
 
       {/* Telegram Link Wizard */}
       {telegramDialog && (
-        <Card className="bg-[#0A0A0F] border-[#0088cc]/40 relative overflow-hidden">
+        <Card className="border-[#0088cc]/40 relative overflow-hidden">
           <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
             <button onClick={closeTelegramDialog} className="absolute top-4 right-4 text-[#6B7280] hover:text-white z-10">
               <X className="w-5 h-5" />
@@ -350,7 +350,7 @@ export function ConnectionsPage() {
 
             {telegramStep === 'open-bot' && telegramLink?.deepLink && (
               <div className="space-y-4">
-                <div className="bg-[#030304] rounded-lg p-4 border border-[#0088cc]/20">
+                <div className="bg-[#06060B] rounded-lg p-4 border border-[#0088cc]/20">
                   <p className="text-sm text-[#E8E8F0] font-medium mb-2">Step 1: Open Telegram</p>
                   <p className="text-xs text-[#6B7280]">Click below to open our bot, then send the start command.</p>
                 </div>
@@ -367,7 +367,7 @@ export function ConnectionsPage() {
               <div className="flex flex-col items-center gap-4 py-6">
                 <CheckCircle2 className="w-12 h-12 text-[#00FF88]" />
                 <p className="text-sm text-[#E8E8F0] font-medium">Telegram connected!</p>
-                <Button className="bg-[#00FF88] hover:bg-[#51EF6B] text-[#0A0A0F]" onClick={closeTelegramDialog}>
+                <Button className="bg-[#00FF88] hover:bg-[#51EF6B] text-[#0C0C18]" onClick={closeTelegramDialog}>
                   Done
                 </Button>
               </div>
@@ -386,7 +386,7 @@ export function ConnectionsPage() {
 
       {/* WhatsApp Link Wizard with QR */}
       {whatsappDialog && (
-        <Card className="bg-[#0A0A0F] border-[#25d366]/40 relative overflow-hidden">
+        <Card className="border-[#25d366]/40 relative overflow-hidden">
           <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
             <button onClick={closeWhatsAppDialog} className="absolute top-4 right-4 text-[#6B7280] hover:text-white z-10">
               <X className="w-5 h-5" />
@@ -431,7 +431,7 @@ export function ConnectionsPage() {
               <div className="flex flex-col items-center gap-4 py-6">
                 <CheckCircle2 className="w-12 h-12 text-[#00FF88]" />
                 <p className="text-sm text-[#E8E8F0] font-medium">WhatsApp connected!</p>
-                <Button className="bg-[#00FF88] hover:bg-[#51EF6B] text-[#0A0A0F]" onClick={closeWhatsAppDialog}>
+                <Button className="bg-[#00FF88] hover:bg-[#51EF6B] text-[#0C0C18]" onClick={closeWhatsAppDialog}>
                   Done
                 </Button>
               </div>
@@ -450,7 +450,7 @@ export function ConnectionsPage() {
 
       {/* Email Dialog */}
       {emailDialog && (
-        <Card className="bg-[#0A0A0F] border-[#00FF88]/40 relative overflow-hidden">
+        <Card className="border-[#00FF88]/40 relative overflow-hidden">
           <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
             <button onClick={() => setEmailDialog(false)} className="absolute top-4 right-4 text-[#6B7280] hover:text-white z-10">
               <X className="w-5 h-5" />
@@ -478,10 +478,10 @@ export function ConnectionsPage() {
                   placeholder="you@example.com"
                   value={emailAddress}
                   onChange={(e) => setEmailAddress(e.target.value)}
-                  className="bg-[#030304] border-[#00FFD4]/20 text-[#E8E8F0]"
+                  className="bg-[#06060B] border-[#00F0FF]/20 text-[#E8E8F0]"
                 />
                 <Button
-                  className="w-full bg-[#00FF88] hover:bg-[#51EF6B] text-[#0A0A0F]"
+                  className="w-full bg-[#00FF88] hover:bg-[#51EF6B] text-[#0C0C18]"
                   onClick={handleEmailSave}
                   disabled={emailSaving}
                 >
@@ -502,7 +502,7 @@ export function ConnectionsPage() {
           return (
             <Card
               key={connection.id}
-              className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all duration-300 group"
+              className="bg-[#0C0C18] border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 group"
             >
               <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
                 <div className="flex items-start justify-between mb-4">
@@ -534,7 +534,7 @@ export function ConnectionsPage() {
                       size={isMobile ? 'default' : 'sm'}
                       onClick={() => handleConnect(connection.type)}
                       disabled={isLoading}
-                      className="bg-[#00FFD4] hover:bg-[#00D4B0]"
+                      className="bg-[#00F0FF] hover:bg-[#00D4B0]"
                     >
                       Connect
                     </Button>
@@ -551,7 +551,7 @@ export function ConnectionsPage() {
                       <span className="text-[#6B7280]">Health</span>
                       <span className="text-[#E8E8F0]">{connection.health}%</span>
                     </div>
-                    <div className="h-1.5 bg-[#030304] rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-[#06060B] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
@@ -565,13 +565,13 @@ export function ConnectionsPage() {
 
                 <div className="flex flex-wrap gap-2 mb-4">
                   {connection.features.map((feature, i) => (
-                    <Badge key={i} variant="outline" className="border-[#00FFD4]/20 text-[#6B7280] text-xs">
+                    <Badge key={i} variant="outline" className="border-[#00F0FF]/20 text-[#6B7280] text-xs">
                       {feature}
                     </Badge>
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-[#00FFD4]/10 text-xs text-[#6B7280]">
+                <div className="flex items-center justify-between pt-4 border-t border-[#00F0FF]/10 text-xs text-[#6B7280]">
                   {connection.lastSync ? (
                     <span>Last synced: {connection.lastSync}</span>
                   ) : (
@@ -588,10 +588,10 @@ export function ConnectionsPage() {
       </div>
 
       {/* Privacy Note */}
-      <Card className="bg-gradient-to-r from-[#00FFD4]/10 to-transparent border-[#00FFD4]/20">
+      <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-[#00FFD4] flex-shrink-0 mt-0.5" />
+            <Shield className="w-5 h-5 text-[#00F0FF] flex-shrink-0 mt-0.5" />
             <div>
               <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Privacy First</h4>
               <p className="text-xs text-[#6B7280]">

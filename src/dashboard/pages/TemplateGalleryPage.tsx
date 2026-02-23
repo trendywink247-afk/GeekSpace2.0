@@ -108,7 +108,7 @@ export function TemplateGalleryPage() {
             placeholder="Search templates..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-[#0A0A0F] border border-[#00FFD4]/30 rounded-lg text-[#E8E8F0] placeholder-[#6B7280] focus:border-[#00FFD4] outline-none"
+            className="w-full pl-10 pr-4 py-2 bg-[#0C0C18] border border-[#00F0FF]/30 rounded-lg text-[#E8E8F0] placeholder-[#6B7280] focus:border-[#00F0FF] outline-none"
           />
         </div>
 
@@ -117,8 +117,8 @@ export function TemplateGalleryPage() {
             onClick={() => setSelectedCategory('all')}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition-colors ${
               selectedCategory === 'all'
-                ? 'bg-[#00FFD4] text-white'
-                : 'bg-[#0A0A0F] text-[#6B7280] hover:text-[#E8E8F0] border border-[#00FFD4]/30'
+                ? 'bg-[#00F0FF] text-white'
+                : 'bg-[#0C0C18] text-[#6B7280] hover:text-[#E8E8F0] border border-[#00F0FF]/30'
             }`}
           >
             <LayoutTemplate className="w-4 h-4" />
@@ -133,8 +133,8 @@ export function TemplateGalleryPage() {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition-colors ${
                   selectedCategory === cat.id
-                    ? 'bg-[#00FFD4] text-white'
-                    : 'bg-[#0A0A0F] text-[#6B7280] hover:text-[#E8E8F0] border border-[#00FFD4]/30'
+                    ? 'bg-[#00F0FF] text-white'
+                    : 'bg-[#0C0C18] text-[#6B7280] hover:text-[#E8E8F0] border border-[#00F0FF]/30'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -148,11 +148,11 @@ export function TemplateGalleryPage() {
       {/* Templates Grid */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-2 border-[#00FFD4] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : templates.length === 0 ? (
-        <div className="text-center py-16 bg-[#0A0A0F] rounded-xl border border-[#00FFD4]/20">
-          <LayoutTemplate className="w-16 h-16 text-[#00FFD4]/40 mx-auto mb-4" />
+        <div className="text-center py-16 glass-card-v2 rounded-xl border border-[#00F0FF]/20">
+          <LayoutTemplate className="w-16 h-16 text-[#00F0FF]/40 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No templates found</h3>
           <p className="text-[#6B7280]">Try adjusting your search or filters</p>
         </div>
@@ -161,7 +161,7 @@ export function TemplateGalleryPage() {
           {templates.map((template) => (
             <div
               key={template.id}
-              className="bg-[#0A0A0F] rounded-xl border border-[#00FFD4]/20 overflow-hidden hover:border-[#00FFD4]/40 transition-all group"
+              className="glass-card-v2 rounded-xl border border-[#00F0FF]/20 overflow-hidden hover:border-[#00F0FF]/40 transition-all group"
             >
               {/* Thumbnail */}
               <div className="aspect-video bg-gradient-to-br from-[#1a1a2e] to-[#16213e] relative overflow-hidden">
@@ -173,21 +173,21 @@ export function TemplateGalleryPage() {
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Code className="w-16 h-16 text-[#00FFD4]/20" />
+                    <Code className="w-16 h-16 text-[#00F0FF]/20" />
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0C0C18] via-transparent to-transparent" />
 
                 {/* Official badge */}
                 {template.isOfficial && (
-                  <div className="absolute top-3 left-3 px-2 py-1 bg-[#00FFD4]/80 text-white text-xs rounded-full flex items-center gap-1">
+                  <div className="absolute top-3 left-3 px-2 py-1 bg-[#00F0FF]/80 text-white text-xs rounded-full flex items-center gap-1">
                     <Check className="w-3 h-3" />
                     <span>Official</span>
                   </div>
                 )}
 
                 {/* Category badge */}
-                <div className="absolute top-3 right-3 px-2 py-1 bg-[#0A0A0F]/80 text-[#6B7280] text-xs rounded-full capitalize">
+                <div className="absolute top-3 right-3 px-2 py-1 bg-[#0C0C18]/80 text-[#6B7280] text-xs rounded-full capitalize">
                   {template.category}
                 </div>
 
@@ -195,7 +195,7 @@ export function TemplateGalleryPage() {
                   <h3 className="text-[#E8E8F0] font-medium text-lg">{template.name}</h3>
                   <div className="flex items-center gap-3 text-xs text-[#6B7280] mt-1">
                     <span>{template.cloneCount} uses</span>
-                    {template.isOfficial && <span className="text-[#00FFD4]">Agentin</span>}
+                    {template.isOfficial && <span className="text-[#00F0FF]">Agentin</span>}
                   </div>
                 </div>
               </div>
@@ -209,7 +209,7 @@ export function TemplateGalleryPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handlePreview(template)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#00FFD4]/20 text-[#00FFD4] rounded-lg hover:bg-[#00FFD4]/30 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#00F0FF]/20 text-[#00F0FF] rounded-lg hover:bg-[#00F0FF]/30 transition-colors"
                   >
                     <Globe className="w-4 h-4" />
                     <span>Preview</span>
@@ -218,7 +218,7 @@ export function TemplateGalleryPage() {
                   <button
                     onClick={() => handleClone(template)}
                     disabled={cloningId === template.id}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#00FFD4] text-white rounded-lg hover:bg-[#00FFD4]/80 transition-colors disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/80 transition-colors disabled:opacity-50"
                   >
                     {cloningId === template.id ? (
                       <>

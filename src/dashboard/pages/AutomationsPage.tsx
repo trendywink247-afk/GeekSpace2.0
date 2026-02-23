@@ -53,9 +53,9 @@ const triggerLabels: Record<AutomationTrigger, string> = {
 const triggerColors: Record<AutomationTrigger, string> = {
   time: '#FFB800',
   event: '#00FF88',
-  webhook: '#00FFD4',
+  webhook: '#00F0FF',
   manual: '#6B7280',
-  keyword: '#FF0080',
+  keyword: '#FF2D78',
   health_down: '#FF6161',
 };
 
@@ -206,21 +206,21 @@ export function AutomationsPage() {
             Automations
           </h1>
           <p className="text-sm md:text-base text-[#6B7280]">
-            <span className="text-[#00FFD4] font-medium">{enabledCount}</span> active of {automations.length} total
+            <span className="text-[#00F0FF] font-medium">{enabledCount}</span> active of {automations.length} total
           </p>
         </div>
-        <Button onClick={handleOpenAdd} className="bg-[#00FFD4] hover:bg-[#00D4B0] press-scale min-h-[44px]">
+        <Button onClick={handleOpenAdd} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale min-h-[44px]">
           <Plus className="w-4 h-4 mr-2" />New Automation
         </Button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-[#00FFD4]" />
+              <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-[#00F0FF]" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">{automations.length}</div>
@@ -229,7 +229,7 @@ export function AutomationsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center">
@@ -242,7 +242,7 @@ export function AutomationsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#FFB800]/10 flex items-center justify-center">
@@ -255,11 +255,11 @@ export function AutomationsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FF0080]/10 flex items-center justify-center">
-                <Webhook className="w-5 h-5 text-[#FF0080]" />
+              <div className="w-10 h-10 rounded-lg bg-[#FF2D78]/10 flex items-center justify-center">
+                <Webhook className="w-5 h-5 text-[#FF2D78]" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">
@@ -280,14 +280,14 @@ export function AutomationsPage() {
             placeholder="Search automations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[#0A0A0F] border-[#00FFD4]/30 text-[#E8E8F0] min-h-[44px]"
+            className="pl-10 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[44px]"
           />
         </div>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <TabsList className="bg-[#0A0A0F] border border-[#00FFD4]/20 overflow-x-auto flex-nowrap w-auto">
-            <TabsTrigger value="all" className="data-[state=active]:bg-[#00FFD4] min-h-[44px] flex-none">All</TabsTrigger>
-            <TabsTrigger value="active" className="data-[state=active]:bg-[#00FFD4] min-h-[44px] flex-none">Active</TabsTrigger>
-            <TabsTrigger value="inactive" className="data-[state=active]:bg-[#00FFD4] min-h-[44px] flex-none">Inactive</TabsTrigger>
+          <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/20 overflow-x-auto flex-nowrap w-auto">
+            <TabsTrigger value="all" className="data-[state=active]:bg-[#00F0FF] min-h-[44px] flex-none">All</TabsTrigger>
+            <TabsTrigger value="active" className="data-[state=active]:bg-[#00F0FF] min-h-[44px] flex-none">Active</TabsTrigger>
+            <TabsTrigger value="inactive" className="data-[state=active]:bg-[#00F0FF] min-h-[44px] flex-none">Inactive</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -302,7 +302,7 @@ export function AutomationsPage() {
             return (
               <Card
                 key={auto.id}
-                className={`bg-[#0A0A0F] border-[#00FFD4]/20 transition-all duration-300 hover:border-[#00FFD4]/40 press-scale ${
+                className={`bg-[#0C0C18] border-[#00F0FF]/20 transition-all duration-300 hover:border-[#00F0FF]/40 press-scale ${
                   !auto.enabled ? 'opacity-60' : ''
                 }`}
               >
@@ -344,13 +344,13 @@ export function AutomationsPage() {
                         <span className="text-[#6B7280]">&rarr;</span>
 
                         {/* Action badge */}
-                        <Badge variant="outline" className="border-[#00FFD4]/30 text-[#6B7280]">
+                        <Badge variant="outline" className="border-[#00F0FF]/30 text-[#6B7280]">
                           <ActionIcon className="w-3 h-3 mr-1" />
                           {actionLabels[auto.actionType]}
                         </Badge>
 
                         {/* Run count */}
-                        <Badge variant="outline" className="border-[#00FFD4]/20 text-[#6B7280]">
+                        <Badge variant="outline" className="border-[#00F0FF]/20 text-[#6B7280]">
                           <Play className="w-3 h-3 mr-1" />
                           {auto.runCount} runs
                         </Badge>
@@ -379,7 +379,7 @@ export function AutomationsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleOpenEdit(auto.id)}
-                        className="text-[#00FFD4] hover:text-[#00FFD4] hover:bg-[#00FFD4]/10 h-10 w-10 md:h-8 md:w-8 p-0 press-scale"
+                        className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 md:h-8 md:w-8 p-0 press-scale"
                         title="Edit"
                       >
                         <Edit3 className="w-4 h-4" />
@@ -401,12 +401,12 @@ export function AutomationsPage() {
           })
         ) : (
           <div className="text-center py-12">
-            <Zap className="w-12 h-12 text-[#00FFD4]/30 mx-auto mb-4" />
+            <Zap className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
             <p className="text-[#6B7280] mb-4">
               {searchQuery || filter !== 'all' ? 'No automations match your filters' : 'No automations yet'}
             </p>
             {!searchQuery && filter === 'all' && (
-              <Button onClick={handleOpenAdd} variant="outline" className="border-[#00FFD4]/30 hover:bg-[#00FFD4]/10">
+              <Button onClick={handleOpenAdd} variant="outline" className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10">
                 Create your first automation
               </Button>
             )}
@@ -416,10 +416,10 @@ export function AutomationsPage() {
 
       {/* Add / Edit Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="bg-[#0A0A0F] border border-[#00FFD4]/30 text-[#E8E8F0] max-w-md mx-2 md:mx-auto p-4 md:p-6">
+        <DialogContent className="glass-card-v2 border border-[#00F0FF]/30 text-[#E8E8F0] max-w-md mx-2 md:mx-auto p-4 md:p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <Zap className="w-5 h-5 text-[#00FFD4]" />
+              <Zap className="w-5 h-5 text-[#00F0FF]" />
               {editingId ? 'Edit Automation' : 'New Automation'}
             </DialogTitle>
           </DialogHeader>
@@ -430,7 +430,7 @@ export function AutomationsPage() {
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="e.g., Morning briefing, Deploy webhook..."
-                className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
+                className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
               />
             </div>
             <div>
@@ -439,7 +439,7 @@ export function AutomationsPage() {
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="What does this automation do?"
-                className="bg-[#030304] border-[#00FFD4]/30 text-[#E8E8F0]"
+                className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -448,7 +448,7 @@ export function AutomationsPage() {
                 <select
                   value={form.triggerType}
                   onChange={(e) => setForm({ ...form, triggerType: e.target.value as AutomationTrigger })}
-                  className="w-full p-2 rounded-lg bg-[#030304] border border-[#00FFD4]/30 text-[#E8E8F0]"
+                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0]"
                 >
                   <option value="time">Scheduled (Time)</option>
                   <option value="event">Event-based</option>
@@ -463,7 +463,7 @@ export function AutomationsPage() {
                 <select
                   value={form.actionType}
                   onChange={(e) => setForm({ ...form, actionType: e.target.value as AutomationAction })}
-                  className="w-full p-2 rounded-lg bg-[#030304] border border-[#00FFD4]/30 text-[#E8E8F0]"
+                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0]"
                 >
                   <option value="telegram-message">Telegram Message</option>
                   <option value="n8n-webhook">n8n Webhook</option>
@@ -482,14 +482,14 @@ export function AutomationsPage() {
               <Button
                 variant="outline"
                 onClick={() => { setIsAddDialogOpen(false); resetForm(); }}
-                className="flex-1 border-[#00FFD4]/30 min-h-[44px] press-scale"
+                className="flex-1 border-[#00F0FF]/30 min-h-[44px] press-scale"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={!form.name}
-                className="flex-1 bg-[#00FFD4] hover:bg-[#00D4B0] min-h-[44px] press-scale"
+                className="flex-1 bg-[#00F0FF] hover:bg-[#00D4B0] min-h-[44px] press-scale"
               >
                 {editingId ? 'Save Changes' : 'Create'}
               </Button>

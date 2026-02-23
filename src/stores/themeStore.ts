@@ -26,9 +26,9 @@ export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
       mode: 'dark',
-      accentColor: '#00FFD4',
+      accentColor: '#00F0FF',
       accentPresets: [
-        '#00FFD4', '#FF0080', '#7000FF', '#00B4FF',
+        '#00F0FF', '#FF2D78', '#8B5CF6', '#00B4FF',
         '#FFB800', '#FF3366', '#00FF88', '#FF6B2B',
       ],
       background: null,

@@ -89,8 +89,8 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
             }}
           />
           {/* Spinning dashed ring */}
-          <div className="absolute inset-[-8px] border border-dashed border-[#00FFD4]/20 rounded-full animate-spin" style={{ animationDuration: '25s' }} />
-          <div className="absolute inset-[-20px] border border-dashed border-[#FF0080]/10 rounded-full" style={{ animation: 'spin 35s linear infinite reverse' }} />
+          <div className="absolute inset-[-8px] border border-dashed border-[#00F0FF]/20 rounded-full animate-spin" style={{ animationDuration: '25s' }} />
+          <div className="absolute inset-[-20px] border border-dashed border-[#FF2D78]/10 rounded-full" style={{ animation: 'spin 35s linear infinite reverse' }} />
 
           {/* Inner glow */}
           <div
@@ -98,7 +98,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
               orbHover ? 'scale-110' : 'scale-100'
             }`}
             style={{
-              background: `radial-gradient(circle, rgba(0, 255, 212, ${orbHover ? 0.15 : 0.08}) 0%, rgba(255, 0, 128, ${orbHover ? 0.08 : 0.04}) 50%, transparent 70%)`,
+              background: `radial-gradient(circle, rgba(0, 240, 255, ${orbHover ? 0.15 : 0.08}) 0%, rgba(255, 45, 120, ${orbHover ? 0.08 : 0.04}) 50%, transparent 70%)`,
             }}
           />
 
@@ -107,10 +107,10 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
             <div className="relative">
               <Hexagon
                 className={`w-16 h-16 md:w-24 md:h-24 transition-all duration-500 ${
-                  orbHover ? 'text-[#00FFD4] drop-shadow-[0_0_20px_rgba(0,255,212,0.6)]' : 'text-[#00FFD4]/70'
+                  orbHover ? 'text-[#00F0FF] drop-shadow-[0_0_20px_rgba(0,255,212,0.6)]' : 'text-[#00F0FF]/70'
                 }`}
               />
-              <div className="absolute inset-0 bg-[#00FFD4]/20 blur-3xl rounded-full" />
+              <div className="absolute inset-0 bg-[#00F0FF]/20 blur-3xl rounded-full" />
             </div>
           </div>
 
@@ -125,8 +125,8 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
                   top: `${50 + 42 * Math.sin((i * Math.PI) / 4)}%`,
                   left: `${50 + 42 * Math.cos((i * Math.PI) / 4)}%`,
                   transform: 'translate(-50%, -50%)',
-                  background: isCyan ? '#00FFD4' : '#FF0080',
-                  boxShadow: `0 0 12px ${isCyan ? 'rgba(0, 255, 212, 0.8)' : 'rgba(255, 0, 128, 0.8)'}`,
+                  background: isCyan ? '#00F0FF' : '#FF2D78',
+                  boxShadow: `0 0 12px ${isCyan ? 'rgba(0, 240, 255, 0.8)' : 'rgba(255, 45, 120, 0.8)'}`,
                   animation: `pulse 2.5s ease-in-out ${i * 0.3}s infinite`,
                 }}
               />
@@ -143,7 +143,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          <span className="font-mono text-xs tracking-[0.3em] uppercase text-[#00FFD4]/80 px-4 py-1.5 border border-[#00FFD4]/20 rounded-full bg-[#00FFD4]/5">
+          <span className="font-mono text-xs tracking-[0.3em] uppercase text-[#00F0FF]/80 px-4 py-1.5 border border-[#00F0FF]/20 rounded-full bg-[#00F0FF]/5">
             Autonomous AI Platform
           </span>
         </div>
@@ -180,7 +180,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
           <Button
             size="lg"
             onClick={onEnterDashboard}
-            className="w-full sm:w-auto relative overflow-hidden bg-gradient-to-r from-[#00FFD4] to-[#00D4B0] text-[#030304] px-8 py-6 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,212,0.3)] group"
+            className="w-full sm:w-auto relative overflow-hidden bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] px-8 py-6 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,212,0.3)] group"
           >
             <span className="relative z-10 flex items-center">
               {onEnterDashboard ? 'Enter Dashboard' : 'Explore the Network'}
@@ -191,16 +191,16 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
             size="lg"
             variant="outline"
             onClick={() => onWatchDemo ? onWatchDemo() : navigate('/login?demo=true')}
-            className="w-full sm:w-auto border-[#FF0080]/40 text-[#E8E8F0] hover:bg-[#FF0080]/5 hover:border-[#FF0080]/60 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
+            className="w-full sm:w-auto border-[#FF2D78]/40 text-[#E8E8F0] hover:bg-[#FF2D78]/5 hover:border-[#FF2D78]/60 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
           >
-            <Play className="mr-2 w-5 h-5 text-[#FF0080]" />
+            <Play className="mr-2 w-5 h-5 text-[#FF2D78]" />
             Watch Demo
           </Button>
         </div>
       </div>
 
       {/* Bottom Gradient Fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#030304] to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#06060B] to-transparent pointer-events-none" />
     </section>
   );
 }

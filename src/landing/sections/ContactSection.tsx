@@ -80,7 +80,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
         {[...Array(15)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-1.5 h-1.5 bg-[#00FFD4]/50 rounded-full"
+            className="absolute w-1.5 h-1.5 bg-[#00F0FF]/50 rounded-full"
             style={{
               left: `${5 + (i % 5) * 22}%`,
               top: `${10 + Math.floor(i / 5) * 35}%`,
@@ -111,9 +111,9 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
 
             {/* Contact Info */}
             <div className="space-y-4 mb-8">
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20">
-                <div className="w-12 h-12 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center">
-                  <Mail className="w-6 h-6 text-[#00FFD4]" />
+              <div className="flex items-center gap-4 p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
+                <div className="w-12 h-12 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
+                  <Mail className="w-6 h-6 text-[#00F0FF]" />
                 </div>
                 <div>
                   <div className="text-sm text-[#6B7280]">Email us at</div>
@@ -121,9 +121,9 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20">
-                <div className="w-12 h-12 rounded-lg bg-[#61FF7B]/10 flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-[#61FF7B]" />
+              <div className="flex items-center gap-4 p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
+                <div className="w-12 h-12 rounded-lg bg-[#ADFF2F]/10 flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-[#ADFF2F]" />
                 </div>
                 <div>
                   <div className="text-sm text-[#6B7280]">Typical response time</div>
@@ -137,7 +137,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
               {['SOC 2 Compliant', 'GDPR Ready', '99.99% Uptime'].map((badge, i) => (
                 <span
                   key={i}
-                  className="px-3 py-1.5 rounded-full bg-[#0A0A0F] border border-[#00FFD4]/30 text-sm text-[#6B7280]"
+                  className="px-3 py-1.5 rounded-full bg-[#0C0C18] border border-[#00F0FF]/30 text-sm text-[#6B7280]"
                 >
                   {badge}
                 </span>
@@ -149,7 +149,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
               <Button
                 onClick={onEnterDashboard}
                 variant="outline"
-                className="mt-6 border-[#00FFD4]/50 text-[#E8E8F0] hover:bg-[#00FFD4]/10"
+                className="mt-6 border-[#00F0FF]/50 text-[#E8E8F0] hover:bg-[#00F0FF]/10"
               >
                 Try Demo Dashboard
               </Button>
@@ -165,8 +165,8 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
             <div className="glass-card rounded-2xl p-5 sm:p-8">
               {isSubmitted ? (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-[#61FF7B]/20 flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="w-8 h-8 text-[#61FF7B]" />
+                  <div className="w-16 h-16 rounded-full bg-[#ADFF2F]/20 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8 text-[#ADFF2F]" />
                   </div>
                   <h3 className="text-2xl font-bold text-[#E8E8F0] mb-2">Request Sent!</h3>
                   <p className="text-[#6B7280]">We'll be in touch within 24 hours.</p>
@@ -180,7 +180,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
                         placeholder="John Doe"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="bg-[#0A0A0F] border-[#00FFD4]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00FFD4] focus:ring-[#00FFD4]/20"
+                        className="bg-[#0C0C18] border-[#00F0FF]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00F0FF] focus:ring-[#00F0FF]/20"
                         required
                       />
                     </div>
@@ -191,7 +191,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
                         placeholder="john@company.com"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="bg-[#0A0A0F] border-[#00FFD4]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00FFD4] focus:ring-[#00FFD4]/20"
+                        className="bg-[#0C0C18] border-[#00F0FF]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00F0FF] focus:ring-[#00F0FF]/20"
                         required
                       />
                     </div>
@@ -203,7 +203,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
                       placeholder="Acme Inc."
                       value={formData.company}
                       onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                      className="bg-[#0A0A0F] border-[#00FFD4]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00FFD4] focus:ring-[#00FFD4]/20"
+                      className="bg-[#0C0C18] border-[#00F0FF]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00F0FF] focus:ring-[#00F0FF]/20"
                     />
                   </div>
 
@@ -213,7 +213,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
                       placeholder="Tell us about your use case..."
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      className="bg-[#0A0A0F] border-[#00FFD4]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00FFD4] focus:ring-[#00FFD4]/20 min-h-[120px] resize-none"
+                      className="bg-[#0C0C18] border-[#00F0FF]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00F0FF] focus:ring-[#00F0FF]/20 min-h-[120px] resize-none"
                       rows={4}
                     />
                   </div>
@@ -228,7 +228,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-[#00FFD4] hover:bg-[#6B51EF] text-white py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#00FFD4]/25 group disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full bg-[#00F0FF] hover:bg-[#6B51EF] text-white py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#00F0FF]/25 group disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <>
@@ -254,10 +254,10 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
         </div>
 
         {/* Footer */}
-        <footer className="mt-24 pt-8 border-t border-[#00FFD4]/10">
+        <footer className="mt-24 pt-8 border-t border-[#00F0FF]/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Hexagon className="w-6 h-6 text-[#00FFD4]" />
+              <Hexagon className="w-6 h-6 text-[#00F0FF]" />
               <span className="font-bold text-lg" style={{ fontFamily: 'Syne, sans-serif' }}>
                 Agentin
               </span>

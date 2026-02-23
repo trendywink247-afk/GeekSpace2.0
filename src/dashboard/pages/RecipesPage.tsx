@@ -28,10 +28,10 @@ const iconMap: Record<string, typeof Sunrise> = {
 
 // ----- Category colours ----------------------------------------
 const categoryColors: Record<string, string> = {
-  productivity: '#00FFD4',
+  productivity: '#00F0FF',
   monitoring: '#FFB800',
   communication: '#00FF88',
-  analytics: '#FF0080',
+  analytics: '#FF2D78',
 };
 
 // ----- Types ---------------------------------------------------
@@ -119,7 +119,7 @@ export function RecipesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-[#00FFD4] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin" />
       </div>
     );
   }
@@ -131,8 +131,8 @@ export function RecipesPage() {
         <div
           className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-5 py-3 rounded-xl backdrop-blur-sm border shadow-2xl animate-in fade-in slide-in-from-top-2 duration-300 ${
             toast.type === 'success'
-              ? 'bg-[#0A0A0F]/90 border-[#00FF88]/40 shadow-[#00FF88]/10'
-              : 'bg-[#0A0A0F]/90 border-[#FF6161]/40 shadow-[#FF6161]/10'
+              ? 'bg-[#0C0C18]/90 border-[#00FF88]/40 shadow-[#00FF88]/10'
+              : 'bg-[#0C0C18]/90 border-[#FF6161]/40 shadow-[#FF6161]/10'
           }`}
         >
           {toast.type === 'success' ? (
@@ -153,7 +153,7 @@ export function RecipesPage() {
           Recipes
         </h1>
         <p className="text-[#6B7280]">
-          <span className="text-[#00FFD4] font-medium">{activeCount}</span> active of{' '}
+          <span className="text-[#00F0FF] font-medium">{activeCount}</span> active of{' '}
           {recipes.length} recipes
         </p>
       </div>
@@ -161,20 +161,20 @@ export function RecipesPage() {
       {/* Recipe Grid */}
       {recipes.length === 0 ? (
         <div className="text-center py-12">
-          <BookOpen className="w-12 h-12 text-[#00FFD4]/30 mx-auto mb-4" />
+          <BookOpen className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
           <p className="text-[#6B7280]">No recipes available yet</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {recipes.map((recipe) => {
             const IconComponent = iconMap[recipe.icon] || BookOpen;
-            const catColor = categoryColors[recipe.category] || '#00FFD4';
+            const catColor = categoryColors[recipe.category] || '#00F0FF';
             const isActionInProgress = actionLoading === recipe.id;
 
             return (
               <Card
                 key={recipe.id}
-                className={`bg-[#0A0A0F] border-[#00FFD4]/20 transition-all duration-300 hover:border-[#00FFD4]/40 ${
+                className={`bg-[#0C0C18] border-[#00F0FF]/20 transition-all duration-300 hover:border-[#00F0FF]/40 ${
                   recipe.installed ? 'ring-1 ring-[#00FF88]/20' : ''
                 }`}
               >
@@ -221,7 +221,7 @@ export function RecipesPage() {
                         <Badge
                           key={int}
                           variant="outline"
-                          className="text-[10px] border-[#00FFD4]/20 text-[#6B7280] mr-1"
+                          className="text-[10px] border-[#00F0FF]/20 text-[#6B7280] mr-1"
                         >
                           {int}
                         </Badge>
@@ -244,7 +244,7 @@ export function RecipesPage() {
                     </Button>
                   ) : (
                     <Button
-                      className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] text-white transition-colors"
+                      className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-white transition-colors"
                       onClick={() => handleInstall(recipe.id)}
                       disabled={isActionInProgress}
                     >

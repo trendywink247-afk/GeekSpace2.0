@@ -134,7 +134,7 @@ export function RoadmapPage() {
       case 'in-progress':
         return <Badge className="bg-[#FFB800]/20 text-[#FFB800] border-[#FFB800]/30">In Progress</Badge>;
       default:
-        return <Badge className="bg-[#00FFD4]/20 text-[#00FFD4] border-[#00FFD4]/30">Planned</Badge>;
+        return <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] border-[#00F0FF]/30">Planned</Badge>;
     }
   };
 
@@ -142,9 +142,9 @@ export function RoadmapPage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00FFD4]/10 border border-[#00FFD4]/30 mb-4">
-          <Rocket className="w-4 h-4 text-[#00FFD4]" />
-          <span className="text-sm text-[#00FFD4] font-medium">Our Vision</span>
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 mb-4">
+          <Rocket className="w-4 h-4 text-[#00F0FF]" />
+          <span className="text-sm text-[#00F0FF] font-medium">Our Vision</span>
         </div>
         <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
           Agentin Roadmap
@@ -155,15 +155,15 @@ export function RoadmapPage() {
       </div>
 
       {/* Progress */}
-      <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+      <Card className="border-[#00F0FF]/20">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-[#6B7280]">Overall Progress</span>
             <span className="text-sm font-medium text-[#E8E8F0]">{Math.round(progressPercent)}%</span>
           </div>
-          <div className="h-3 bg-[#030304] rounded-full overflow-hidden mb-4">
+          <div className="h-3 bg-[#06060B] rounded-full overflow-hidden mb-4">
             <div 
-              className="h-full bg-gradient-to-r from-[#00FFD4] to-[#FF0080] rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-[#00F0FF] to-[#FF2D78] rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -177,7 +177,7 @@ export function RoadmapPage() {
               <span className="text-[#6B7280]">0 In Progress</span>
             </div>
             <div className="flex items-center gap-2">
-              <Circle className="w-4 h-4 text-[#00FFD4]" />
+              <Circle className="w-4 h-4 text-[#00F0FF]" />
               <span className="text-[#6B7280]">{plannedCount} Planned</span>
             </div>
           </div>
@@ -200,7 +200,7 @@ export function RoadmapPage() {
           
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter === 'Q1 2026').map(item => (
-              <Card key={item.id} className="bg-[#0A0A0F] border-[#00FF88]/30">
+              <Card key={item.id} className="border-[#00FF88]/30">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center text-[#00FF88]">
@@ -212,7 +212,7 @@ export function RoadmapPage() {
                         {getStatusBadge(item.status)}
                       </div>
                       <p className="text-sm text-[#6B7280]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00FFD4]/20 text-[#6B7280]">
+                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#6B7280]">
                         {item.category}
                       </Badge>
                     </div>
@@ -226,8 +226,8 @@ export function RoadmapPage() {
         {/* 2026 Q2 */}
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#00FFD4]/20 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-[#00FFD4]" />
+            <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/20 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-[#00F0FF]" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-[#E8E8F0]">Q2 2026</h2>
@@ -237,10 +237,10 @@ export function RoadmapPage() {
           
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter === 'Q2 2026').map(item => (
-              <Card key={item.id} className="bg-[#0A0A0F] border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all">
+              <Card key={item.id} className="border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center text-[#00FFD4]">
+                    <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center text-[#00F0FF]">
                       {item.icon}
                     </div>
                     <div className="flex-1">
@@ -249,7 +249,7 @@ export function RoadmapPage() {
                         {getStatusBadge(item.status)}
                       </div>
                       <p className="text-sm text-[#6B7280]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00FFD4]/20 text-[#6B7280]">
+                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#6B7280]">
                         {item.category}
                       </Badge>
                     </div>
@@ -274,7 +274,7 @@ export function RoadmapPage() {
           
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter.startsWith('Q3') || i.quarter.startsWith('Q4')).map(item => (
-              <Card key={item.id} className="bg-[#0A0A0F] border-[#00FFD4]/10 hover:border-[#00FFD4]/30 transition-all opacity-80">
+              <Card key={item.id} className="border-[#00F0FF]/10 hover:border-[#00F0FF]/30 transition-all opacity-80">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#6B7280]/10 flex items-center justify-center text-[#6B7280]">
@@ -286,7 +286,7 @@ export function RoadmapPage() {
                         {getStatusBadge(item.status)}
                       </div>
                       <p className="text-sm text-[#6B7280]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00FFD4]/20 text-[#6B7280]">
+                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#6B7280]">
                         {item.category}
                       </Badge>
                     </div>
@@ -299,16 +299,16 @@ export function RoadmapPage() {
       </div>
 
       {/* CTA */}
-      <Card className="bg-gradient-to-r from-[#00FFD4]/10 to-[#FF0080]/5 border-[#00FFD4]/20">
+      <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-[#FF2D78]/5 border-[#00F0FF]/20">
         <CardContent className="p-6 text-center">
-          <Sparkles className="w-8 h-8 text-[#00FFD4] mx-auto mb-3" />
+          <Sparkles className="w-8 h-8 text-[#00F0FF] mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-[#E8E8F0] mb-2">
             Have a feature request?
           </h3>
           <p className="text-sm text-[#6B7280] mb-4">
             We're building Agentin for you. Let us know what you'd like to see next.
           </p>
-          <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00FFD4] hover:bg-[#00D4B0] text-white font-medium transition-colors">
+          <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-white font-medium transition-colors">
             Share Feedback
             <ArrowRight className="w-4 h-4" />
           </button>

@@ -11,14 +11,14 @@ interface Activity {
 }
 
 const activities: Activity[] = [
-  { id: 1, company: 'TechCorp', action: 'scheduled 12 meetings', icon: Calendar, time: '2s ago', color: '#00FFD4' },
-  { id: 2, company: 'DesignStudio', action: 'sent 3 Telegram reminders', icon: Send, time: '5s ago', color: '#FF0080' },
+  { id: 1, company: 'TechCorp', action: 'scheduled 12 meetings', icon: Calendar, time: '2s ago', color: '#00F0FF' },
+  { id: 2, company: 'DesignStudio', action: 'sent 3 Telegram reminders', icon: Send, time: '5s ago', color: '#FF2D78' },
   { id: 3, company: 'ConsultX', action: 'updated portfolio pricing', icon: TrendingUp, time: '12s ago', color: '#00FF88' },
   { id: 4, company: 'SupportAI', action: 'resolved a ticket in 18s', icon: CheckCircle, time: '18s ago', color: '#FFB800' },
-  { id: 5, company: 'TechCorp', action: 'generated quarterly report', icon: MessageSquare, time: '34s ago', color: '#00FFD4' },
+  { id: 5, company: 'TechCorp', action: 'generated quarterly report', icon: MessageSquare, time: '34s ago', color: '#00F0FF' },
   { id: 6, company: 'SecureNet', action: 'blocked 247 threats', icon: CheckCircle, time: '45s ago', color: '#FF6161' },
   { id: 7, company: 'BuildCo', action: 'processed 89 invoices', icon: Clock, time: '1m ago', color: '#FFB800' },
-  { id: 8, company: 'DesignStudio', action: 'delivered 5 design drafts', icon: MessageSquare, time: '2m ago', color: '#FF0080' },
+  { id: 8, company: 'DesignStudio', action: 'delivered 5 design drafts', icon: MessageSquare, time: '2m ago', color: '#FF2D78' },
 ];
 
 const stats = [
@@ -102,11 +102,11 @@ export function ActivitySection() {
               {stats.map((stat, i) => (
                 <div
                   key={i}
-                  className="p-5 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20 hover:border-[#00FFD4]/40 transition-all duration-300"
+                  className="p-5 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-[#00FFD4]/10 flex items-center justify-center">
-                      <stat.icon className="w-6 h-6 text-[#00FFD4]" />
+                    <div className="w-12 h-12 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
+                      <stat.icon className="w-6 h-6 text-[#00F0FF]" />
                     </div>
                     <div>
                       <div className="text-3xl font-bold text-[#E8E8F0]">{stat.value}</div>
@@ -124,7 +124,7 @@ export function ActivitySection() {
               {activities.map((activity, i) => (
                 <div
                   key={activity.id}
-                  className={`p-4 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/10 hover:border-[#00FFD4]/30 transition-all duration-500 flex items-center gap-4 ${
+                  className={`p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/10 hover:border-[#00F0FF]/30 transition-all duration-500 flex items-center gap-4 ${
                     visibleActivities.includes(i)
                       ? 'opacity-100 translate-x-0'
                       : 'opacity-0 translate-x-12'

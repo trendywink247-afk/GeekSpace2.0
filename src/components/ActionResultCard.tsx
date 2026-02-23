@@ -30,7 +30,7 @@ export function ActionResultCard({ tool, success, message }: ActionResultCardPro
   const iconComponent = getToolIcon(tool);
 
   const colorClasses = success
-    ? 'border-[#61FF7B]/30 bg-[#61FF7B]/5 text-[#61FF7B]'
+    ? 'border-[#ADFF2F]/30 bg-[#ADFF2F]/5 text-[#ADFF2F]'
     : 'border-[#FF6161]/30 bg-[#FF6161]/5 text-[#FF6161]';
 
   return (

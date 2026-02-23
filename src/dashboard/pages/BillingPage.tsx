@@ -13,7 +13,7 @@ import type { Subscription, PlanDefinition, DailyUsage } from '@/types';
 // Plan display metadata for sale styling
 const PLAN_DISPLAY: Record<string, { oldPrice: number; badge: string; badgeColor?: string; agentSlots: number; tokenBudget: string; hasKimi: boolean }> = {
   free: { oldPrice: 99, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false },
-  intro: { oldPrice: 1499, badge: 'Most Popular', badgeColor: '#00FFD4', agentSlots: 2, tokenBudget: '300K', hasKimi: true },
+  intro: { oldPrice: 1499, badge: 'Most Popular', badgeColor: '#00F0FF', agentSlots: 2, tokenBudget: '300K', hasKimi: true },
   monthly: { oldPrice: 1499, badge: 'Popular', badgeColor: '#FFB800', agentSlots: 2, tokenBudget: '300K', hasKimi: true },
   halfyear: { oldPrice: 5999, badge: '', agentSlots: 3, tokenBudget: '750K', hasKimi: true },
   yearly: { oldPrice: 9999, badge: 'Best Value', badgeColor: '#00FF88', agentSlots: 3, tokenBudget: '1M', hasKimi: true },
@@ -114,7 +114,7 @@ export function BillingPage() {
         {/* Plan cards grid skeleton */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="p-6 rounded-xl border border-[#00FFD4]/10 space-y-4">
+            <div key={i} className="p-6 rounded-xl border border-[#00F0FF]/10 space-y-4">
               <Skeleton className="h-5 w-20" />
               <Skeleton className="h-8 w-24" />
               <Skeleton className="h-4 w-full" />
@@ -153,14 +153,14 @@ export function BillingPage() {
         </div>
 
         {/* Currency toggle */}
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-[#0A0A0F] border border-[#00FFD4]/20">
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20">
           {(['USD', 'INR'] as const).map((c) => (
             <button
               key={c}
               onClick={() => setCurrency(c)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 currency === c
-                  ? 'bg-[#00FFD4] text-white'
+                  ? 'bg-[#00F0FF] text-white'
                   : 'text-[#6B7280] hover:text-[#E8E8F0]'
               }`}
             >
@@ -172,12 +172,12 @@ export function BillingPage() {
 
       {/* Current Plan Card */}
       {subscription && (
-        <Card className="bg-[#0A0A0F] border-[#00FFD4]/20 overflow-hidden">
-          <div className="p-6 bg-gradient-to-br from-[#00FFD4]/20 to-[#0A0A0F] border-b border-[#00FFD4]/20">
+        <Card className="border-[#00F0FF]/20 overflow-hidden">
+          <div className="p-6 bg-gradient-to-br from-[#00F0FF]/20 to-[#0C0C18] border-b border-[#00F0FF]/20">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-[#00FFD4]/20 flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-[#00FFD4]" />
+                <div className="w-12 h-12 rounded-xl bg-[#00F0FF]/20 flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-[#00F0FF]" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-[#E8E8F0] capitalize">{subscription.plan} Plan</h2>
@@ -195,9 +195,9 @@ export function BillingPage() {
 
             {/* Stats row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-[#030304]/80 border border-[#00FFD4]/10">
+              <div className="p-4 rounded-xl bg-[#06060B]/80 border border-[#00F0FF]/10">
                 <div className="flex items-center gap-2 mb-2">
-                  <Zap className="w-4 h-4 text-[#00FFD4]" />
+                  <Zap className="w-4 h-4 text-[#00F0FF]" />
                   <span className="text-xs text-[#6B7280]">Credits Remaining</span>
                 </div>
                 <div className="text-2xl font-bold text-[#E8E8F0] font-mono">
@@ -205,7 +205,7 @@ export function BillingPage() {
                 </div>
                 <div className="text-xs text-[#6B7280]">of {formatCredits(subscription.monthly_credits)}</div>
               </div>
-              <div className="p-4 rounded-xl bg-[#030304]/80 border border-[#00FFD4]/10">
+              <div className="p-4 rounded-xl bg-[#06060B]/80 border border-[#00F0FF]/10">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-[#FFB800]" />
                   <span className="text-xs text-[#6B7280]">Credits Used</span>
@@ -215,7 +215,7 @@ export function BillingPage() {
                 </div>
                 <div className="text-xs text-[#6B7280]">this cycle</div>
               </div>
-              <div className="p-4 rounded-xl bg-[#030304]/80 border border-[#00FFD4]/10">
+              <div className="p-4 rounded-xl bg-[#06060B]/80 border border-[#00F0FF]/10">
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="w-4 h-4 text-[#00FF88]" />
                   <span className="text-xs text-[#6B7280]">Cycle Ends</span>
@@ -233,10 +233,10 @@ export function BillingPage() {
                 <span className="text-xs text-[#6B7280]">Credit usage</span>
                 <span className="text-xs text-[#6B7280] font-mono">{usedPercent.toFixed(1)}%</span>
               </div>
-              <div className="h-3 sm:h-2 bg-[#030304] rounded-full overflow-hidden">
+              <div className="h-3 sm:h-2 bg-[#06060B] rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
-                    usedPercent > 90 ? 'bg-[#FF6161]' : usedPercent > 70 ? 'bg-[#FFB800]' : 'bg-gradient-to-r from-[#00FFD4] to-[#00FF88]'
+                    usedPercent > 90 ? 'bg-[#FF6161]' : usedPercent > 70 ? 'bg-[#FFB800]' : 'bg-gradient-to-r from-[#00F0FF] to-[#00FF88]'
                   }`}
                   style={{ width: `${usedPercent}%` }}
                 />
@@ -260,10 +260,10 @@ export function BillingPage() {
               return (
                 <div key={plan.id} className="min-w-[280px] snap-center flex-shrink-0">
                   <Card
-                    className={`bg-[#0A0A0F] transition-all h-full relative overflow-hidden ${
+                    className={`bg-[#0C0C18] transition-all h-full relative overflow-hidden ${
                       isCurrent
-                        ? 'border-[#00FFD4] ring-1 ring-[#00FFD4]/30'
-                        : 'border-[#00FFD4]/20 hover:border-[#00FFD4]/40'
+                        ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/30'
+                        : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
                     } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
                   >
                     {/* Badge */}
@@ -284,7 +284,7 @@ export function BillingPage() {
                       <div className="flex items-center justify-between">
                         <CardTitle className="capitalize text-[#E8E8F0]">{plan.id}</CardTitle>
                         {isCurrent && (
-                          <Badge className="bg-[#00FFD4]/20 text-[#00FFD4] border-[#00FFD4]/30">
+                          <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] border-[#00F0FF]/30">
                             Current
                           </Badge>
                         )}
@@ -304,7 +304,7 @@ export function BillingPage() {
                       <div className="text-sm text-[#6B7280]">{plan.description}</div>
 
                       {/* Features */}
-                      <div className="space-y-2 py-2 border-t border-[#00FFD4]/10">
+                      <div className="space-y-2 py-2 border-t border-[#00F0FF]/10">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-[#6B7280]">Agent Slots</span>
                           <span className="text-[#E8E8F0] font-medium">{display.agentSlots}</span>
@@ -324,11 +324,11 @@ export function BillingPage() {
                       </div>
 
                       <div className="flex items-center gap-2 text-sm text-[#E8E8F0]">
-                        <Zap className="w-4 h-4 text-[#00FFD4]" />
+                        <Zap className="w-4 h-4 text-[#00F0FF]" />
                         {formatCredits(plan.credits)} credits
                       </div>
                       {isCurrent ? (
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00FFD4]/10 text-sm text-[#00FFD4]">
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00F0FF]/10 text-sm text-[#00F0FF]">
                           <Check className="w-4 h-4" />
                           Active plan
                         </div>
@@ -336,7 +336,7 @@ export function BillingPage() {
                         <Button
                           onClick={() => handleUpgrade(plan.id)}
                           disabled={upgrading === plan.id || isFree}
-                          className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] disabled:opacity-50 min-h-[44px]"
+                          className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-h-[44px]"
                         >
                           {upgrading === plan.id ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
@@ -349,7 +349,7 @@ export function BillingPage() {
                       {subscription?.plan === 'free' && plan.id === 'free' && (
                         <button
                           onClick={handleDayPass}
-                          className="w-full mt-2 py-2 px-3 rounded-lg border border-[#00FFD4]/30 text-[#00FFD4] text-xs hover:bg-[#00FFD4]/10 transition-colors min-h-[44px]"
+                          className="w-full mt-2 py-2 px-3 rounded-lg border border-[#00F0FF]/30 text-[#00F0FF] text-xs hover:bg-[#00F0FF]/10 transition-colors min-h-[44px]"
                         >
                           Try Weebo for $1/day →
                         </button>
@@ -369,10 +369,10 @@ export function BillingPage() {
               return (
                 <Card
                   key={plan.id}
-                  className={`bg-[#0A0A0F] transition-all relative overflow-hidden ${
+                  className={`bg-[#0C0C18] transition-all relative overflow-hidden ${
                     isCurrent
-                      ? 'border-[#00FFD4] ring-1 ring-[#00FFD4]/30'
-                      : 'border-[#00FFD4]/20 hover:border-[#00FFD4]/40'
+                      ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/30'
+                      : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
                   } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
                 >
                   {/* Badge */}
@@ -393,7 +393,7 @@ export function BillingPage() {
                     <div className="flex items-center justify-between">
                       <CardTitle className="capitalize text-[#E8E8F0]">{plan.id}</CardTitle>
                       {isCurrent && (
-                        <Badge className="bg-[#00FFD4]/20 text-[#00FFD4] border-[#00FFD4]/30">
+                        <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] border-[#00F0FF]/30">
                           Current
                         </Badge>
                       )}
@@ -413,7 +413,7 @@ export function BillingPage() {
                     <div className="text-sm text-[#6B7280]">{plan.description}</div>
 
                     {/* Features */}
-                    <div className="space-y-2 py-2 border-t border-[#00FFD4]/10">
+                    <div className="space-y-2 py-2 border-t border-[#00F0FF]/10">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-[#6B7280]">Agent Slots</span>
                         <span className="text-[#E8E8F0] font-medium">{display.agentSlots}</span>
@@ -433,11 +433,11 @@ export function BillingPage() {
                     </div>
 
                     <div className="flex items-center gap-2 text-sm text-[#E8E8F0]">
-                      <Zap className="w-4 h-4 text-[#00FFD4]" />
+                      <Zap className="w-4 h-4 text-[#00F0FF]" />
                       {formatCredits(plan.credits)} credits
                     </div>
                     {isCurrent ? (
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00FFD4]/10 text-sm text-[#00FFD4]">
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00F0FF]/10 text-sm text-[#00F0FF]">
                         <Check className="w-4 h-4" />
                         Active plan
                       </div>
@@ -445,7 +445,7 @@ export function BillingPage() {
                       <Button
                         onClick={() => handleUpgrade(plan.id)}
                         disabled={upgrading === plan.id || isFree}
-                        className="w-full bg-[#00FFD4] hover:bg-[#00D4B0] disabled:opacity-50"
+                        className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50"
                       >
                         {upgrading === plan.id ? (
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
@@ -458,7 +458,7 @@ export function BillingPage() {
                     {subscription?.plan === 'free' && plan.id === 'free' && (
                       <button
                         onClick={handleDayPass}
-                        className="w-full mt-2 py-1.5 px-3 rounded-lg border border-[#00FFD4]/30 text-[#00FFD4] text-xs hover:bg-[#00FFD4]/10 transition-colors"
+                        className="w-full mt-2 py-1.5 px-3 rounded-lg border border-[#00F0FF]/30 text-[#00F0FF] text-xs hover:bg-[#00F0FF]/10 transition-colors"
                       >
                         Try Weebo for $1/day →
                       </button>
@@ -472,7 +472,7 @@ export function BillingPage() {
       </div>
 
       {/* Plan Comparison Table */}
-      <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+      <Card className="border-[#00F0FF]/20">
         <CardHeader>
           <CardTitle className="text-[#E8E8F0] flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-[#FFB800]" />
@@ -484,7 +484,7 @@ export function BillingPage() {
           <div className="overflow-x-auto -mx-4 px-4">
             <table className="w-full min-w-[500px]">
               <thead>
-                <tr className="border-b border-[#00FFD4]/20">
+                <tr className="border-b border-[#00F0FF]/20">
                   <th className="text-left py-3 px-2 text-sm font-medium text-[#6B7280]">Feature</th>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
@@ -510,7 +510,7 @@ export function BillingPage() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-[#00FFD4]/10">
+                <tr className="border-b border-[#00F0FF]/10">
                   <td className="py-3 px-2 text-sm text-[#6B7280]">Agent Slots</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
@@ -521,7 +521,7 @@ export function BillingPage() {
                     );
                   })}
                 </tr>
-                <tr className="border-b border-[#00FFD4]/10">
+                <tr className="border-b border-[#00F0FF]/10">
                   <td className="py-3 px-2 text-sm text-[#6B7280]">Token Budget</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
@@ -532,7 +532,7 @@ export function BillingPage() {
                     );
                   })}
                 </tr>
-                <tr className="border-b border-[#00FFD4]/10">
+                <tr className="border-b border-[#00F0FF]/10">
                   <td className="py-3 px-2 text-sm text-[#6B7280]">Kimi Access</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
@@ -547,7 +547,7 @@ export function BillingPage() {
                     );
                   })}
                 </tr>
-                <tr className="border-b border-[#00FFD4]/10">
+                <tr className="border-b border-[#00F0FF]/10">
                   <td className="py-3 px-2 text-sm text-[#6B7280]">Credits / Cycle</td>
                   {plans.map((plan) => (
                     <td key={plan.id} className="text-center py-3 px-2 text-sm text-[#E8E8F0]">
@@ -578,7 +578,7 @@ export function BillingPage() {
       </Card>
 
       {/* Usage History Table */}
-      <Card className="bg-[#0A0A0F] border-[#00FFD4]/20">
+      <Card className="border-[#00F0FF]/20">
         <CardHeader>
           <CardTitle className="text-[#E8E8F0]">Usage History</CardTitle>
           <p className="text-sm text-[#6B7280]">Last 30 days of daily usage</p>
@@ -586,7 +586,7 @@ export function BillingPage() {
         <CardContent>
           {usage.length === 0 ? (
             <div className="text-center py-8">
-              <TrendingUp className="w-10 h-10 text-[#00FFD4]/30 mx-auto mb-3" />
+              <TrendingUp className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
               <p className="text-[#6B7280]">No usage data yet</p>
               <p className="text-sm text-[#6B7280]">Start chatting and usage will appear here</p>
             </div>

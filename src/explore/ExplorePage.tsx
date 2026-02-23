@@ -15,14 +15,14 @@ import type { DirectoryProfile } from '@/types';
 const allTags = ['All', 'AI Engineer', 'Designer', 'Founder', 'DevOps', 'No-Code', 'Content', 'Web3', 'ML', 'Data Science'];
 
 const avatarGradients = [
-  'from-[#00FFD4] to-[#FF0080]',
-  'from-[#00FF88] to-[#00FFD4]',
+  'from-[#00F0FF] to-[#FF2D78]',
+  'from-[#00FF88] to-[#00F0FF]',
   'from-[#FFB800] to-[#FF3366]',
-  'from-[#FF0080] to-[#00FFD4]',
-  'from-[#61B5FF] to-[#00FFD4]',
+  'from-[#FF2D78] to-[#00F0FF]',
+  'from-[#61B5FF] to-[#00F0FF]',
   'from-[#00FF88] to-[#FFB800]',
-  'from-[#FF3366] to-[#FF0080]',
-  'from-[#00FFD4] to-[#61B5FF]',
+  'from-[#FF3366] to-[#FF2D78]',
+  'from-[#00F0FF] to-[#61B5FF]',
 ];
 
 export function ExplorePage() {
@@ -68,19 +68,19 @@ export function ExplorePage() {
   return (
     <div className="min-h-screen">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#030304]/80 backdrop-blur-xl border-b border-[#00FFD4]/20">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#06060B]/80 backdrop-blur-xl border-b border-[#00F0FF]/20">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')} className="p-2 rounded-lg hover:bg-[#00FFD4]/10 transition-colors">
+            <button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')} className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors">
               <ArrowLeft className="w-5 h-5 text-[#6B7280]" />
             </button>
             <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-[#00FFD4]" />
+              <Sparkles className="w-6 h-6 text-[#00F0FF]" />
               <span className="font-bold text-lg" style={{ fontFamily: 'Syne, sans-serif' }}>Explore</span>
             </div>
           </div>
           {!isAuthenticated && (
-            <Button onClick={() => navigate('/login')} className="bg-[#00FFD4] hover:bg-[#00D4B0]">
+            <Button onClick={() => navigate('/login')} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
               Get Your Space
             </Button>
           )}
@@ -106,7 +106,7 @@ export function ExplorePage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name, skill, or tag..."
-              className="pl-12 h-14 md:h-12 bg-[#0A0A0F] border-[#00FFD4]/30 text-[#E8E8F0] rounded-xl text-base"
+              className="pl-12 h-14 md:h-12 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] rounded-xl text-base"
             />
             <Filter className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
           </div>
@@ -119,8 +119,8 @@ export function ExplorePage() {
                   onClick={() => setActiveTag(tag)}
                   className={`px-4 py-1.5 min-h-[44px] md:min-h-[36px] rounded-full text-sm transition-all whitespace-nowrap shrink-0 press-scale ${
                     activeTag === tag
-                      ? 'bg-[#00FFD4] text-white'
-                      : 'bg-[#0A0A0F] border border-[#00FFD4]/20 text-[#6B7280] hover:border-[#00FFD4]/50'
+                      ? 'bg-[#00F0FF] text-white'
+                      : 'bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/50'
                   }`}
                 >
                   {tag}
@@ -144,7 +144,7 @@ export function ExplorePage() {
         {isLoading && profiles.length === 0 && (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="p-6 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/10 space-y-4">
+              <div key={i} className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/10 space-y-4">
                 <Skeleton className="w-16 h-16 rounded-full" />
                 <Skeleton className="h-5 w-28" />
                 <Skeleton className="h-4 w-full" />
@@ -163,29 +163,29 @@ export function ExplorePage() {
             {profiles.map((profile, i) => (
               <div
                 key={profile.username}
-                className="p-6 rounded-2xl bg-[#0A0A0F] border border-[#00FFD4]/20 hover:border-[#00FFD4]/50 transition-all group relative overflow-hidden press-scale"
+                className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 transition-all group relative overflow-hidden press-scale"
               >
                 {/* Subtle gradient overlay on hover */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#00FFD4]/0 to-[#00FFD4]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#00F0FF]/0 to-[#00F0FF]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
                 {/* Avatar + status */}
                 <div className="relative mb-4">
                   {profile.avatar && profile.avatar.startsWith('http') ? (
-                    <img src={profile.avatar} alt={profile.name} className="w-16 h-16 rounded-full bg-[#0A0A0F] group-hover:scale-110 transition-transform" />
+                    <img src={profile.avatar} alt={profile.name} className="w-16 h-16 rounded-full bg-[#0C0C18] group-hover:scale-110 transition-transform" />
                   ) : (
                     <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${avatarGradients[i % avatarGradients.length]} flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform`}>
                       {profile.avatar || profile.name?.[0] || '?'}
                     </div>
                   )}
                   {profile.agentEnabled && (
-                    <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-[#00FF88] border-2 border-[#0A0A0F] flex items-center justify-center">
-                      <Bot className="w-3 h-3 text-[#0A0A0F]" />
+                    <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-[#00FF88] border-2 border-[#0C0C18] flex items-center justify-center">
+                      <Bot className="w-3 h-3 text-[#0C0C18]" />
                     </div>
                   )}
                 </div>
 
                 {/* Info */}
-                <h3 className="font-semibold text-[#E8E8F0] text-lg group-hover:text-[#00FFD4] transition-colors">
+                <h3 className="font-semibold text-[#E8E8F0] text-lg group-hover:text-[#00F0FF] transition-colors">
                   {profile.name}
                 </h3>
                 <p className="text-sm text-[#6B7280] mt-1 line-clamp-2">{profile.tagline}</p>
@@ -201,7 +201,7 @@ export function ExplorePage() {
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1 mt-3">
                   {profile.tags.slice(0, 3).map((tag) => (
-                    <Badge key={tag} variant="outline" className="border-[#00FFD4]/20 text-[#6B7280] text-xs">
+                    <Badge key={tag} variant="outline" className="border-[#00F0FF]/20 text-[#6B7280] text-xs">
                       {tag}
                     </Badge>
                   ))}
@@ -210,12 +210,12 @@ export function ExplorePage() {
                 {/* Skills */}
                 <div className="flex flex-wrap gap-1 mt-2">
                   {profile.skills.slice(0, 4).map((skill) => (
-                    <span key={skill} className="text-xs text-[#00FFD4]/60">{skill}</span>
+                    <span key={skill} className="text-xs text-[#00F0FF]/60">{skill}</span>
                   ))}
                 </div>
 
                 {/* Action buttons */}
-                <div className="mt-4 pt-3 border-t border-[#00FFD4]/10 flex gap-2">
+                <div className="mt-4 pt-3 border-t border-[#00F0FF]/10 flex gap-2">
                   {isAuthenticated && profile.agentEnabled && (
                     <button
                       onClick={(e) => handleAgentChat(e, profile)}
@@ -228,7 +228,7 @@ export function ExplorePage() {
                   )}
                   <button
                     onClick={() => navigate(`/portfolio/${profile.username}`)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] rounded-lg bg-[#030304] border border-[#00FFD4]/20 text-xs text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00FFD4]/40 transition-colors press-scale"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-xs text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors press-scale"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     View
@@ -241,12 +241,12 @@ export function ExplorePage() {
 
         {!isLoading && profiles.length === 0 && (
           <div className="text-center py-20">
-            <Search className="w-12 h-12 text-[#00FFD4]/30 mx-auto mb-4" />
+            <Search className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
             <p className="text-[#6B7280]">{loadError || 'No people found matching your search'}</p>
             {loadError && (
               <button
                 onClick={fetchProfiles}
-                className="mt-4 px-4 py-2 rounded-xl bg-[#00FFD4]/20 hover:bg-[#00FFD4]/30 text-[#00FFD4] text-sm font-medium transition-colors"
+                className="mt-4 px-4 py-2 rounded-xl bg-[#00F0FF]/20 hover:bg-[#00F0FF]/30 text-[#00F0FF] text-sm font-medium transition-colors"
               >
                 Retry
               </button>

@@ -59,14 +59,14 @@ export function StatusPage() {
   useEffect(() => { fetchHealth(); }, [fetchHealth]);
 
   const getStatusIcon = (s: 'operational' | 'degraded' | 'down') => {
-    if (s === 'operational') return <CheckCircle2 className="w-5 h-5 text-[#61FF7B]" />;
-    if (s === 'degraded') return <AlertTriangle className="w-5 h-5 text-[#FFD761]" />;
+    if (s === 'operational') return <CheckCircle2 className="w-5 h-5 text-[#ADFF2F]" />;
+    if (s === 'degraded') return <AlertTriangle className="w-5 h-5 text-[#FFD700]" />;
     return <XCircle className="w-5 h-5 text-[#FF6161]" />;
   };
 
   const getStatusColor = (s: 'operational' | 'degraded' | 'down') => {
-    if (s === 'operational') return 'text-[#61FF7B]';
-    if (s === 'degraded') return 'text-[#FFD761]';
+    if (s === 'operational') return 'text-[#ADFF2F]';
+    if (s === 'degraded') return 'text-[#FFD700]';
     return 'text-[#FF6161]';
   };
 
@@ -75,7 +75,7 @@ export function StatusPage() {
   const allOk = entries.every(([, v]) => componentStatus(v) === 'operational');
 
   return (
-    <div className="min-h-screen bg-[#030304] text-[#E8E8F0]">
+    <div className="min-h-screen bg-[#06060B] text-[#E8E8F0]">
       <div className="max-w-3xl mx-auto px-6 py-12">
         <Button variant="ghost" onClick={() => navigate(-1)} className="text-[#6B7280] hover:text-[#E8E8F0] mb-8">
           <ArrowLeft className="w-4 h-4 mr-2" />Back
@@ -95,7 +95,7 @@ export function StatusPage() {
             variant="outline"
             onClick={fetchHealth}
             disabled={checking}
-            className="border-[#00FFD4]/30 hover:bg-[#00FFD4]/10"
+            className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
             Refresh
@@ -114,18 +114,18 @@ export function StatusPage() {
 
         {health && (
           <>
-            <Card className={`mb-8 border ${allOk ? 'bg-[#61FF7B]/5 border-[#61FF7B]/30' : 'bg-[#FFD761]/5 border-[#FFD761]/30'}`}>
+            <Card className={`mb-8 border ${allOk ? 'bg-[#ADFF2F]/5 border-[#ADFF2F]/30' : 'bg-[#FFD700]/5 border-[#FFD700]/30'}`}>
               <CardContent className="p-6 text-center">
                 {allOk ? (
                   <>
-                    <CheckCircle2 className="w-10 h10 text-[#61FF7B] mx-auto mb-3" />
-                    <h2 className="text-xl font-bold text-[#61FF7B]">All Systems Operational</h2>
+                    <CheckCircle2 className="w-10 h10 text-[#ADFF2F] mx-auto mb-3" />
+                    <h2 className="text-xl font-bold text-[#ADFF2F]">All Systems Operational</h2>
                     <p className="text-sm text-[#6B7280] mt-1">Everything is running smoothly</p>
                   </>
                 ) : (
                   <>
-                    <AlertTriangle className="w-10 h-10 text-[#FFD761] mx-auto mb-3" />
-                    <h2 className="text-xl font-bold text-[#FFD761]">Partial Degradation</h2>
+                    <AlertTriangle className="w-10 h-10 text-[#FFD700] mx-auto mb-3" />
+                    <h2 className="text-xl font-bold text-[#FFD700]">Partial Degradation</h2>
                     <p className="text-sm text-[#6B7280] mt-1">Some services are experiencing issues</p>
                   </>
                 )}
@@ -136,7 +136,7 @@ export function StatusPage() {
               {entries.map(([key, value]) => {
                 const status = componentStatus(value);
                 return (
-                  <Card key={key} className="bg-[#0A0A0F] border-[#00FFD4]/20">
+                  <Card key={key} className="glass-card-v2 border-[#00F0FF]/20">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -159,10 +159,10 @@ export function StatusPage() {
           <div className="text-center text-[#6B7280] py-12">Checking system status…</div>
         )}
 
-        <div className="mt-12 p-6 rounded-xl bg-[#0A0A0F] border border-[#00FFD4]/20">
+        <div className="mt-12 p-6 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
           <p className="text-sm text-[#6B7280]">
             Experiencing issues? Contact us at{' '}
-            <span className="text-[#00FFD4]">support@agentin.chat</span>
+            <span className="text-[#00F0FF]">support@agentin.chat</span>
           </p>
         </div>
       </div>
