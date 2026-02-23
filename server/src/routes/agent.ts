@@ -17,7 +17,7 @@ import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeReque
 import { getUserWorkflows, getWorkflowStatus, getWorkflowAnalytics } from '../services/workflow-engine.js';
 import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } from '../services/agent-registry.js';
 import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
-import { parseActions } from '../services/action-parser.js';
+import { parseActions, type ParsedAction } from '../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
 import { formatReceiptCompact, type ReceiptItem } from '../services/receipts.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
@@ -1478,6 +1478,22 @@ agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema
           await executeAction(user.id as string, action);
         }
       }
+    }
+
+    // Fallback escalation: if LLM says it'll check/ask the owner but didn't emit an action block
+    const escalationPhrases = /\b(let me check with|i'll ask|i'll check with|let me reach out to|i'll reach out to|check with .+ directly|ask .+ directly)\b/i;
+    if (hasTelegramEscalation && actions.length === 0 && escalationPhrases.test(finalReply)) {
+      const fallbackAction: ParsedAction = {
+        tool: 'escalate_to_owner',
+        params: {
+          question: message,
+          context: `Visitor conversation — agent indicated it would check with owner`,
+          _ownerUserId: user.id as string,
+          _ownerUsername: username,
+          _visitorName: visitorName || 'A visitor',
+        },
+      };
+      await executeAction(user.id as string, fallbackAction).catch(() => { /* non-fatal */ });
     }
 
     // Save visitor interaction to owner's memory
