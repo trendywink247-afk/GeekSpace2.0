@@ -1352,14 +1352,24 @@ agentRouter.delete('/premium-session/:sessionId', requireAuth, (req: AuthRequest
   });
 });
 
+// ---- Public can-chat check (no auth required) ----
+
+agentRouter.get('/can-chat-public/:username', (_req, res) => {
+  const { username } = _req.params;
+  const target = db.prepare('SELECT agent_chat_enabled FROM users WHERE username = ?').get(username) as { agent_chat_enabled: number } | undefined;
+  if (!target) { res.json({ canChat: false }); return; }
+  res.json({ canChat: !!target.agent_chat_enabled });
+});
+
 // ---- Public Portfolio Chat (real LLM-powered) ----
 
 agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
   const { message, messageCount, history } = req.body as { message: string; messageCount?: number; history?: Array<{ role: string; content: string }> };
   const { username } = req.params;
 
-  const user = db.prepare('SELECT id, name, location, role, company FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
+  const user = db.prepare('SELECT id, name, location, role, company, agent_chat_enabled FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+  if (!user.agent_chat_enabled) { res.status(403).json({ error: 'Agent chat is not enabled for this user' }); return; }
 
   // Resolve visitor identity from optional JWT
   let visitorName: string | undefined;
@@ -1493,7 +1503,11 @@ agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema
           _visitorName: visitorName || 'A visitor',
         },
       };
-      await executeAction(user.id as string, fallbackAction).catch(() => { /* non-fatal */ });
+      try {
+        await executeAction(user.id as string, fallbackAction);
+      } catch (escErr) {
+        logger.warn({ err: (escErr as Error).message }, 'Fallback escalation failed');
+      }
     }
 
     // Save visitor interaction to owner's memory

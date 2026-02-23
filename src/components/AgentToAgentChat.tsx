@@ -3,7 +3,6 @@ import { X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { publicAgentService } from '@/services/api';
-import { portfolioService } from '@/services/api';
 
 interface AgentToAgentChatProps {
   isOpen: boolean;
@@ -34,7 +33,7 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
   // Check if we can chat with this agent
   useEffect(() => {
     if (isOpen && targetUsername) {
-      portfolioService.canChat(targetUsername)
+      publicAgentService.canChat(targetUsername)
         .then(({ data }) => {
           setCanChat(data.canChat);
           if (!data.canChat) {

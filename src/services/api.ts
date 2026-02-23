@@ -441,6 +441,8 @@ export const premiumAgentService = {
 // ----- Public Agent Chat -------------------------------------
 
 export const publicAgentService = {
+  canChat: (username: string) =>
+    api.get<{ canChat: boolean }>(`/agent/can-chat-public/${username}`),
   chat: (username: string, message: string, history?: Array<{ role: string; content: string }>, messageCount?: number) =>
     api.post<{ reply: string; agentName: string; ownerName: string; personality: string; personalityEmoji: string }>(`/agent/chat/public/${username}`, { message, history, messageCount }),
 };
