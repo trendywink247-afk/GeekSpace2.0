@@ -1,7 +1,7 @@
 // ============================================================
 // PicoClaw Fleet — REST API
 //
-// Endpoints for managing Pico agents (slot-based, max 3) and
+// Endpoints for managing Pico agents (slot-based, max 6) and
 // tasks (plan via Kimi, list, cancel).
 // ============================================================
 

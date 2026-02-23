@@ -1,7 +1,7 @@
 // ============================================================
 // PicoClaw Fleet Engine — Slot-Based Per-User Task Agents
 //
-// Each user gets up to 3 Pico agents (slots 1-3). Slot 1 is
+// Each user gets up to 6 Pico agents (slots 1-6). Slot 1 is
 // auto-created on signup/backfill. Kimi (Moonshot) plans tasks
 // as strict JSON; an in-process worker executes them with fair
 // round-robin scheduling and 1-concurrent-per-agent limits.
@@ -22,11 +22,11 @@ import { eventBus } from './event-bus.js';
 import { upsertMemory } from './memory.js';
 
 const PLAN_AGENT_SLOTS: Record<string, number> = {
-  free: 1,
-  intro: 2,
-  monthly: 2,
-  halfyear: 3,
-  yearly: 3,
+  free: 2,
+  intro: 4,
+  monthly: 4,
+  halfyear: 6,
+  yearly: 6,
 };
 
 // ---- Types ----
@@ -207,7 +207,7 @@ export function createAgent(userId: string, name: string, personality = 'weebo')
   }
 
   const usedSlots = existing.map(a => a.slot);
-  const nextSlot = [1, 2, 3].find(s => !usedSlots.includes(s));
+  const nextSlot = [1, 2, 3, 4, 5, 6].find(s => !usedSlots.includes(s));
   if (!nextSlot) {
     throw new Error('No free agent slots available');
   }
@@ -480,7 +480,7 @@ ALLOWED task_type values (ONLY these):
 - n8n_webhook: config needs { "url": "string", "body": "string" }
 - portfolio_deploy: config needs {} (no params needed)
 
-Each task can target a specific agent slot (1-3). Default is 1.
+Each task can target a specific agent slot (1-6). Default is 1.
 
 Respond with ONLY a JSON array. No markdown fences, no explanation, no extra text.
 Example: [{"task_type":"create_reminder","description":"Set morning standup reminder","config":{"reminder_text":"Daily standup at 9am"},"agent_slot":1}]
@@ -536,7 +536,7 @@ export async function planWithKimi(userId: string, userRequest: string): Promise
       task_type: taskType as TaskType,
       description: String(t.description || ''),
       config: (typeof t.config === 'object' && t.config !== null) ? t.config as Record<string, unknown> : {},
-      agent_slot: typeof t.agent_slot === 'number' ? Math.min(3, Math.max(1, Math.round(t.agent_slot))) : 1,
+      agent_slot: typeof t.agent_slot === 'number' ? Math.min(6, Math.max(1, Math.round(t.agent_slot))) : 1,
     });
   }
 

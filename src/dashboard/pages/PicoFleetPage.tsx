@@ -245,7 +245,7 @@ export function PicoFleetPage() {
 
   // ---- Build slot data ----
 
-  const slots = [1, 2, 3].map((slotNum) => {
+  const slots = [1, 2, 3, 4, 5, 6].map((slotNum) => {
     const agent = agents.find((a) => a.slot === slotNum);
     return { slotNum, agent };
   });

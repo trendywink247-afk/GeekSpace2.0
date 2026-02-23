@@ -290,6 +290,6 @@ export const picoTaskPlanSchema = z.object({
 
 export const picoTaskQuerySchema = z.object({
   status: z.enum(['queued', 'running', 'completed', 'failed']).optional(),
-  slot: z.coerce.number().int().min(1).max(3).optional(),
+  slot: z.coerce.number().int().min(1).max(6).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
