@@ -1462,7 +1462,7 @@ agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema
   try {
     const result = await routeChat(
       chatMessages,
-      { systemPrompt, agentName, forceProvider: 'ollama' },
+      { systemPrompt, agentName },
     );
 
     // Parse for escalation actions
