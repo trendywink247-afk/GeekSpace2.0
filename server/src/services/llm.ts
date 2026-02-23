@@ -725,6 +725,23 @@ export async function routeChat(
         tokensOut = reply.length;
         provider = 'builtin';
       }
+    } else if (provider === 'ollama' && isOpenRouterFreeAvailable()) {
+      // Ollama failed → try OpenRouter Free before giving up
+      try {
+        const result = await callOpenRouterFree(fullMessages, opts?.userId);
+        reply = result.content;
+        tokensIn = result.tokensIn;
+        tokensOut = result.tokensOut;
+        model = config.openrouterFreeModel;
+        finalProvider = 'openrouter-free';
+        routingReason = 'ollama_timeout';
+      } catch {
+        reply = 'I had trouble processing your request. Please try again shortly.';
+        model = 'error-fallback';
+        tokensIn = userMessage.length;
+        tokensOut = reply.length;
+        provider = 'builtin';
+      }
     } else {
       reply = 'I had trouble processing your request. Please try again shortly.';
       model = 'error-fallback';
