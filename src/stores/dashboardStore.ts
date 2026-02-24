@@ -67,6 +67,7 @@ interface DashboardStore {
   updateAgent: (data: Partial<AgentConfig>) => Promise<void>;
   addReminder: (data: { text: string; datetime: string; channel: ReminderChannel; recurring?: string; category: ReminderCategory }) => Promise<void>;
   toggleReminder: (id: string) => Promise<void>;
+  snoozeReminder: (id: string, newDatetime: string) => Promise<void>;
   deleteReminder: (id: string) => Promise<void>;
   connectIntegration: (type: string) => Promise<void>;
   disconnectIntegration: (id: string) => Promise<void>;
@@ -171,6 +172,20 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     try {
       await reminderService.update(id, { completed: !reminder.completed });
     } catch { /* keep optimistic update */ }
+  },
+
+  snoozeReminder: async (id, newDatetime) => {
+    // Optimistic update
+    set((s) => ({
+      reminders: s.reminders.map((r) => r.id === id ? { ...r, datetime: newDatetime } : r),
+    }));
+    try {
+      await reminderService.update(id, { datetime: newDatetime });
+    } catch {
+      // Revert on failure — reload from server
+      const { data } = await reminderService.list();
+      set({ reminders: data });
+    }
   },
 
   deleteReminder: async (id) => {

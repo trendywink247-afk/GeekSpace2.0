@@ -155,16 +155,22 @@ healthRouter.get('/stream', (req: Request, res: Response) => {
   }
 
   // Send first snapshot immediately (served from cache — instant)
+  let lastSentJson = '';
   try {
-    res.write(`data: ${JSON.stringify(buildPayload())}\n\n`);
+    const payload = JSON.stringify(buildPayload());
+    res.write(`data: ${payload}\n\n`);
+    lastSentJson = payload;
   } catch (err) {
     logger.error({ err }, 'SSE health stream initial push error');
   }
 
-  // Push cached snapshot every 15 seconds (no probing — just read cache)
+  // Push cached snapshot every 15 seconds — skip write if nothing changed
   const interval = setInterval(() => {
     try {
-      res.write(`data: ${JSON.stringify(buildPayload())}\n\n`);
+      const payload = JSON.stringify(buildPayload());
+      if (payload === lastSentJson) return; // delta: no change, skip write
+      res.write(`data: ${payload}\n\n`);
+      lastSentJson = payload;
     } catch (err) {
       logger.error({ err }, 'SSE health stream error');
     }

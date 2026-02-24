@@ -17,6 +17,7 @@ import {
   Sparkles,
   Mic,
   Wand2,
+  AlarmClock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,7 +45,7 @@ const examples = [
 ];
 
 export function RemindersPage() {
-  const { reminders, addReminder, toggleReminder, deleteReminder, loadDashboard } = useDashboardStore();
+  const { reminders, addReminder, toggleReminder, snoozeReminder, deleteReminder, loadDashboard } = useDashboardStore();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -152,12 +153,32 @@ export function RemindersPage() {
     setIsAddDialogOpen(false);
   };
 
+  const [snoozeOpenId, setSnoozeOpenId] = useState<string | null>(null);
+
   const handleComplete = async (id: string) => {
     await toggleReminder(id);
   };
 
   const handleDelete = async (id: string) => {
     await deleteReminder(id);
+  };
+
+  const handleSnooze = async (id: string, preset: '1h' | 'tomorrow' | 'next-week') => {
+    const now = new Date();
+    let next: Date;
+    if (preset === '1h') {
+      next = new Date(now.getTime() + 60 * 60 * 1000);
+    } else if (preset === 'tomorrow') {
+      next = new Date(now);
+      next.setDate(next.getDate() + 1);
+      next.setHours(9, 0, 0, 0);
+    } else {
+      next = new Date(now);
+      next.setDate(next.getDate() + 7);
+      next.setHours(9, 0, 0, 0);
+    }
+    await snoozeReminder(id, next.toISOString());
+    setSnoozeOpenId(null);
   };
 
   const filteredReminders = reminders.filter(r => {
@@ -425,6 +446,24 @@ export function RemindersPage() {
                             >
                               <Check className="w-4 h-4" />
                             </button>
+                            {!reminder.completed && (
+                              <div className="relative">
+                                <button
+                                  onClick={() => setSnoozeOpenId(snoozeOpenId === reminder.id ? null : reminder.id)}
+                                  aria-label="Snooze reminder"
+                                  className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FFB800] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                >
+                                  <AlarmClock className="w-4 h-4" />
+                                </button>
+                                {snoozeOpenId === reminder.id && (
+                                  <div className="absolute right-0 top-full mt-1 z-10 bg-[#0C0C18] border border-[#FFB800]/30 rounded-xl shadow-lg p-2 flex flex-col gap-1 min-w-[120px]">
+                                    <button onClick={() => handleSnooze(reminder.id, '1h')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">+1 hour</button>
+                                    <button onClick={() => handleSnooze(reminder.id, 'tomorrow')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Tomorrow 9am</button>
+                                    <button onClick={() => handleSnooze(reminder.id, 'next-week')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Next week</button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                             <button
                               onClick={() => handleDelete(reminder.id)}
                               aria-label="Delete reminder"
