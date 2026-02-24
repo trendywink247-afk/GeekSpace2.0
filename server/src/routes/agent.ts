@@ -104,6 +104,7 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     accentColor: 'accent_color', bubbleStyle: 'bubble_style', status: 'status',
     personality: 'personality', model_preference: 'model_preference',
     preferred_free_model: 'preferred_free_model',
+    briefing_time: 'briefing_time',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {

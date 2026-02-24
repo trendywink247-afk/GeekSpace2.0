@@ -18,6 +18,7 @@ import {
   Mic,
   Wand2,
   AlarmClock,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +28,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { parseNaturalLanguageReminder } from '@/utils/reminderParser';
-import type { ReminderChannel, ReminderCategory } from '@/types';
+import type { ReminderChannel, ReminderCategory, Reminder } from '@/types';
 
 const categoryColors: Record<string, string> = {
   personal: '#00F0FF',
@@ -45,7 +46,7 @@ const examples = [
 ];
 
 export function RemindersPage() {
-  const { reminders, addReminder, toggleReminder, snoozeReminder, deleteReminder, loadDashboard } = useDashboardStore();
+  const { reminders, addReminder, updateReminder, toggleReminder, snoozeReminder, deleteReminder, loadDashboard } = useDashboardStore();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -154,6 +155,7 @@ export function RemindersPage() {
   };
 
   const [snoozeOpenId, setSnoozeOpenId] = useState<string | null>(null);
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
 
   const handleComplete = async (id: string) => {
     await toggleReminder(id);
@@ -179,6 +181,37 @@ export function RemindersPage() {
     }
     await snoozeReminder(id, next.toISOString());
     setSnoozeOpenId(null);
+  };
+
+  const handleEditClick = (reminder: Reminder) => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const d = new Date(reminder.datetime);
+    const localStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    setEditingReminder(reminder);
+    setNewReminder({
+      text: reminder.text,
+      datetime: localStr,
+      channel: reminder.channel,
+      recurring: reminder.recurring || '',
+      category: reminder.category,
+    });
+    setNaturalInput('');
+    setParsedReminder(null);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editingReminder || !newReminder.text || !newReminder.datetime) return;
+    await updateReminder(editingReminder.id, {
+      text: newReminder.text,
+      datetime: new Date(newReminder.datetime).toISOString(),
+      channel: newReminder.channel,
+      recurring: (newReminder.recurring || undefined) as Reminder['recurring'],
+      category: newReminder.category,
+    });
+    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal' });
+    setEditingReminder(null);
+    setIsAddDialogOpen(false);
   };
 
   const filteredReminders = reminders.filter(r => {
@@ -220,7 +253,7 @@ export function RemindersPage() {
           <div className="px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30">
             <span className="text-sm text-[#00F0FF]">{activeReminders.length} active</span>
           </div>
-          <Button data-testid="create-reminder-button" onClick={() => setIsAddDialogOpen(true)} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
+          <Button data-testid="create-reminder-button" onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
             <Plus className="w-4 h-4 mr-2" />
             Add Reminder
           </Button>
@@ -465,6 +498,13 @@ export function RemindersPage() {
                               </div>
                             )}
                             <button
+                              onClick={() => handleEditClick(reminder)}
+                              aria-label="Edit reminder"
+                              className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#BF5FFF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
                               onClick={() => handleDelete(reminder.id)}
                               aria-label="Delete reminder"
                               className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FF6161] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -510,56 +550,66 @@ export function RemindersPage() {
         </Card>
       )}
 
-      {/* Add Reminder Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      {/* Add / Edit Reminder Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+        setIsAddDialogOpen(open);
+        if (!open) {
+          setEditingReminder(null);
+          setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal' });
+        }
+      }}>
         <DialogContent className="glass-card-v2 border-[#00F0FF]/20 max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl">Add Reminder</DialogTitle>
+            <DialogTitle className="text-xl">{editingReminder ? 'Edit Reminder' : 'Add Reminder'}</DialogTitle>
           </DialogHeader>
-          
-          {/* Natural Language Input */}
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm text-[#6B7280] mb-2 block">
-                Type naturally (e.g., "tomorrow at 3pm call mom")
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  ref={inputRef}
-                  data-testid="reminder-text"
-                  placeholder="Remind me..."
-                  value={naturalInput}
-                  onChange={(e) => setNaturalInput(e.target.value)}
-                  className="flex-1 bg-[#06060B] border-[#00F0FF]/20"
-                />
-                <Button
-                  onClick={handleNaturalAdd}
-                  disabled={!parsedReminder}
-                  className="bg-[#00F0FF] hover:bg-[#00D4B0]"
-                >
-                  <Wand2 className="w-4 h-4" />
-                </Button>
-              </div>
-              
-              {parsedReminder && (
-                <div className="mt-2 p-3 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20">
-                  <p className="text-sm text-[#E8E8F0]">{parsedReminder.text}</p>
-                  <p className="text-xs text-[#00FF88] mt-1">
-                    {parsedReminder.datetime.toLocaleString()}
-                    {parsedReminder.recurring && ` • ${parsedReminder.recurring}`}
-                  </p>
-                </div>
-              )}
-            </div>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#00F0FF]/20" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="px-2 bg-[#0C0C18] text-xs text-[#6B7280]">Or manually</span>
-              </div>
-            </div>
+          {/* Natural Language Input — hidden in edit mode */}
+          <div className="space-y-4">
+            {!editingReminder && (
+              <>
+                <div>
+                  <label className="text-sm text-[#6B7280] mb-2 block">
+                    Type naturally (e.g., "tomorrow at 3pm call mom")
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      ref={inputRef}
+                      data-testid="reminder-text"
+                      placeholder="Remind me..."
+                      value={naturalInput}
+                      onChange={(e) => setNaturalInput(e.target.value)}
+                      className="flex-1 bg-[#06060B] border-[#00F0FF]/20"
+                    />
+                    <Button
+                      onClick={handleNaturalAdd}
+                      disabled={!parsedReminder}
+                      className="bg-[#00F0FF] hover:bg-[#00D4B0]"
+                    >
+                      <Wand2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {parsedReminder && (
+                    <div className="mt-2 p-3 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20">
+                      <p className="text-sm text-[#E8E8F0]">{parsedReminder.text}</p>
+                      <p className="text-xs text-[#00FF88] mt-1">
+                        {parsedReminder.datetime.toLocaleString()}
+                        {parsedReminder.recurring && ` • ${parsedReminder.recurring}`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[#00F0FF]/20" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="px-2 bg-[#0C0C18] text-xs text-[#6B7280]">Or manually</span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Manual Form */}
             <div className="space-y-3">
@@ -621,8 +671,11 @@ export function RemindersPage() {
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleLegacyAdd} disabled={!newReminder.text || !newReminder.datetime}>
-              Add Reminder
+            <Button
+              onClick={editingReminder ? handleEditSave : handleLegacyAdd}
+              disabled={!newReminder.text || !newReminder.datetime}
+            >
+              {editingReminder ? 'Save Changes' : 'Add Reminder'}
             </Button>
           </div>
         </DialogContent>

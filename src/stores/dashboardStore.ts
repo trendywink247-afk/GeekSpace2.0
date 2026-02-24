@@ -68,6 +68,7 @@ interface DashboardStore {
   addReminder: (data: { text: string; datetime: string; channel: ReminderChannel; recurring?: string; category: ReminderCategory }) => Promise<void>;
   toggleReminder: (id: string) => Promise<void>;
   snoozeReminder: (id: string, newDatetime: string) => Promise<void>;
+  updateReminder: (id: string, data: Partial<Pick<Reminder, 'text' | 'datetime' | 'channel' | 'recurring' | 'category'>>) => Promise<void>;
   deleteReminder: (id: string) => Promise<void>;
   connectIntegration: (type: string) => Promise<void>;
   disconnectIntegration: (id: string) => Promise<void>;
@@ -175,6 +176,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   },
 
   snoozeReminder: async (id, newDatetime) => {
+    const prev = get().reminders;
     // Optimistic update
     set((s) => ({
       reminders: s.reminders.map((r) => r.id === id ? { ...r, datetime: newDatetime } : r),
@@ -182,9 +184,25 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     try {
       await reminderService.update(id, { datetime: newDatetime });
     } catch {
-      // Revert on failure — reload from server
-      const { data } = await reminderService.list();
-      set({ reminders: data });
+      // Revert on PATCH failure — try to reload from server, fall back to pre-update state
+      try {
+        const { data } = await reminderService.list();
+        set({ reminders: data });
+      } catch {
+        set({ reminders: prev });
+      }
+    }
+  },
+
+  updateReminder: async (id, data) => {
+    const prev = get().reminders;
+    set((s) => ({
+      reminders: s.reminders.map((r) => r.id === id ? { ...r, ...data } : r),
+    }));
+    try {
+      await reminderService.update(id, data);
+    } catch {
+      set({ reminders: prev }); // Revert on failure
     }
   },
 

@@ -102,6 +102,8 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const [preferredModel, setPreferredModel] = useState<string>('auto');
   const [showChangelog, setShowChangelog] = useState(false);
   const [modelSaving, setModelSaving] = useState<string | null>(null);
+  const [briefingTime, setBriefingTime] = useState('08:00');
+  const [briefingSaving, setBriefingSaving] = useState(false);
 
   const user = useAuthStore((s) => s.user);
   const { stats, integrations, agent, reminders, chartData, hourlyData } = useDashboardStore();
@@ -172,7 +174,17 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   useEffect(() => {
     const pref = (agent as unknown as Record<string, unknown>)?.preferred_free_model as string | undefined;
     if (pref) setPreferredModel(pref);
+    if (agent.briefing_time) setBriefingTime(agent.briefing_time);
   }, [agent]);
+
+  const handleBriefingTimeChange = async (time: string) => {
+    setBriefingTime(time);
+    setBriefingSaving(true);
+    try {
+      await agentService.updateConfig({ briefing_time: time } as any);
+    } catch { /* ignore */ }
+    setBriefingSaving(false);
+  };
 
   const handleSelectModel = async (modelId: string) => {
     setModelSaving(modelId);
@@ -402,35 +414,54 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
       </div>
 
       {/* Daily Briefing */}
-      {latestBriefing && (
-        <Card
-          style={{
-            background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
-            border: '1px solid rgba(255, 215, 0, 0.15)',
-          }}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#FFD700]" />
-              Daily Briefing
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-[#E8E8F0] leading-relaxed whitespace-pre-line">
-              {latestBriefing.content}
+      <Card
+        style={{
+          background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
+          border: '1px solid rgba(255, 215, 0, 0.15)',
+        }}
+      >
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-[#FFD700]" />
+            Daily Briefing
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {latestBriefing ? (
+            <>
+              <p className="text-sm text-[#E8E8F0] leading-relaxed whitespace-pre-line">
+                {latestBriefing.content}
+              </p>
+              <p className="text-xs text-[#6B7280] mt-3 font-mono">
+                {new Date(latestBriefing.created_at).toLocaleString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-[#6B7280]">
+              No briefing yet — your first will arrive at the scheduled time below.
             </p>
-            <p className="text-xs text-[#6B7280] mt-3 font-mono">
-              {new Date(latestBriefing.created_at).toLocaleString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+          )}
+          <div className="mt-3 flex items-center gap-2 border-t border-[#FFD700]/10 pt-3">
+            <Clock className="w-4 h-4 text-[#6B7280] shrink-0" />
+            <span className="text-xs text-[#6B7280]">Deliver daily at</span>
+            <input
+              type="time"
+              value={briefingTime}
+              onChange={(e) => handleBriefingTimeChange(e.target.value)}
+              className="bg-[#06060B] border border-[#FFD700]/20 text-[#E8E8F0] text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-[#FFD700]/40"
+            />
+            <span className={`text-xs ${briefingSaving ? 'text-[#6B7280]' : 'text-[#00FF88]'}`}>
+              {briefingSaving ? 'Saving…' : 'Saved'}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ─── Bento Charts Row ─── */}
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">

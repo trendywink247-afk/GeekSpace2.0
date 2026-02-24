@@ -5,9 +5,9 @@
 
 ## Current State
 
-**Branch:** `main` (all phases merged and deployed)
-**Phase:** 2 — Complete ✅ deployed to live-production
-**Status:** ✅ Production healthy — start Phase 3
+**Branch:** `ai/phase-20260224-reminders-ratelimit-coverage` (worktree at `.worktrees/phase-4`)
+**Phase:** 4 — Implementation Complete ✅ — PR #33 open (not yet merged)
+**Status:** 147/147 tests passing, lint/typecheck/build green — ready to merge
 
 ## Deployment History
 
@@ -16,43 +16,63 @@
 | Phase 1 | Reliability, image gen, connections polish | #29 | 45c2f02 | ✅ live |
 | Phase 2 | Onboarding, video gen, channel cleanup | #30 | 965f0ac | ✅ live |
 | E2E Fix | Portfolio mobile scroll hotfix | #31 | cab754b | ✅ live |
+| Phase 3 | Snooze, CSP, sparklines, tests | #32 | 2e2ab52 | ✅ live |
+| Phase 4 | Reminders polish, rate limit, coverage, briefing | #33 | b2fbf1b | 🟡 PR open |
 
-## Phase 2 Items Status
+## Phase 4 Items Status
 
 | # | Item | Status |
 |---|------|--------|
-| 1 | WhatsApp security fix (webhook + send stub) | ✅ Done |
-| 2 | Onboarding escape hatch ("Not X? Sign in as someone else") | ✅ Done |
-| 3 | Stale channel link cleanup (90-day TTL cron) | ✅ Done |
-| 4 | Video generation wiring (videoUrl + channel reply) | ✅ Done |
-| 5 | Chat rate limit 30→60 per 15min | ✅ Done |
-| + | E2E portfolio mobile scroll fix (hotfix PR #31) | ✅ Done |
+| 1 | Fix snooze double-failure error handling | ✅ Done |
+| 2 | Reminder edit modal (pencil icon + prefilled dialog) | ✅ Done |
+| 3 | Telegram per-chat rate limit (20 req/60s Redis counter) | ✅ Done |
+| 4 | Test coverage gate (@vitest/coverage-v8 + thresholds + phase-gate.sh) | ✅ Done |
+| 5 | AI briefing schedule picker (time input → agent_configs.briefing_time) | ✅ Done |
 
-## Resume Steps for Phase 3
+## Phase 4 Changes Summary
+
+### Bug Fix (Item 1)
+- `src/stores/dashboardStore.ts` — `snoozeReminder` captures `prev` state; nested try/catch: if PATCH fails, reload from server; if reload also fails, revert to `prev`
+
+### Reminder Edit Modal (Item 2)
+- `src/stores/dashboardStore.ts` — added `updateReminder(id, data)` action with optimistic update + revert
+- `src/dashboard/pages/RemindersPage.tsx` — pencil icon on every card; `handleEditClick` prefills form with local datetime; `handleEditSave` calls `updateReminder`; dialog title/button changes to "Edit Reminder" / "Save Changes" in edit mode; NL input section hidden in edit mode
+
+### Telegram Rate Limit (Item 3)
+- `server/src/routes/webhooks.ts` — Redis counter `telegram:ratelimit:<chatId>` max 20/60s; checked after 200 response; try/catch wraps Redis so unavailability doesn't block
+
+### Coverage Gate (Item 4)
+- `server/package.json` — `test:coverage` script: `TEST_MODE=true vitest run --coverage`
+- `server/vitest.config.ts` — coverage config: v8 provider, html+text reporters, thresholds (lines 15%, branches 60%, functions 10%, statements 15%)
+- `ops/phase-gate.sh` — step 7 runs `npm run test:coverage` and checks for threshold errors
+
+### Briefing Schedule Picker (Item 5)
+- `src/types/index.ts` — added `briefing_time?: string` to `AgentConfig`
+- `server/src/routes/agent.ts` — added `briefing_time` to PATCH `allowedFields`
+- `src/dashboard/pages/OverviewPage.tsx` — briefing card always visible (no longer `{latestBriefing && ...}`); inline `<input type="time">` saves via `agentService.updateConfig({ briefing_time })`; `useEffect` syncs from `agent.briefing_time`
+
+## Resume Steps for Phase 4 PR
 
 ```bash
-cd ~/GeekSpace2.0
-git checkout main && git pull origin main
-cd server && npm test                      # should be 113+/113 passing
-cat ops/AI_BACKLOG.md
-cat ops/AI_PHASE_PLAN.md                   # Phase 3 plan (update this file)
-git worktree add .worktrees/phase-3 -b ai/phase-$(date +%Y%m%d)-<topic>
+cd ~/GeekSpace2.0/.worktrees/phase-4
+git log --oneline -3
+# PR #33: https://github.com/trendywink247-afk/GeekSpace2.0/pull/33
+gh pr merge 33 --merge   # or ask user to merge
 ```
 
 ## Open Issues / Decisions
 
-- CSP still allows `unsafe-inline` for scripts — should use nonce-based CSP
-- WhatsApp integration is still a stub (no API keys) — warn is now clear, but not functional
-- Health SSE sends full snapshot every 15s even if unchanged
-- Plan file `/root/.claude/plans/dapper-hatching-hopcroft.md` — Smart Escalation was completed in a prior phase; verify all items are actually implemented
+- Coverage thresholds set conservatively (lines 15%, branches 60%) — raise incrementally as tests grow
+- WhatsApp integration still a stub — no API keys
+- 3 pre-existing ESLint warnings (useCallback/useEffect deps) in untouched files — safe to ignore
 
-## Phase 3 Proposal (preliminary)
+## Phase 5 Proposal (preliminary)
 
-1. **Bug Fix:** Verify escalation Tier 1/2/3 logic is fully wired in webhooks.ts (plan file exists)
-2. **UI/UX:** Dashboard overview cards — add sparkline trend charts for usage/credits/reminders
-3. **Hardening:** CSP nonce-based policy for script-src (removes unsafe-inline)
-4. **Ops:** Unit test coverage for escalation logic + message-router action dedup
-5. **Feature:** Reminder snooze UI (1h/tomorrow/custom) in the reminders page
+1. **Bug Fix:** `snoozeReminder` UI — close the snooze dropdown when clicking outside (currently only closes when a preset is selected)
+2. **UI/UX:** Quick-action chips on Telegram: after each agent response, send 3 context-aware action chips (Radix-style inline buttons)
+3. **Hardening:** Input sanitisation on PATCH /api/reminders — validate `datetime` is a parseable ISO string, prevent SQL errors from malformed input
+4. **Ops:** OpenTelemetry span IDs in Pino logs — attach `requestId` to every log line in the chat handler pipeline for easier tracing
+5. **Feature:** Reminder recurring delivery via Telegram — for `recurring` reminders, actually re-fire the Telegram notification on each recurrence (currently DB stores recurring but no re-notification fires)
 
 ## Production Health
 
