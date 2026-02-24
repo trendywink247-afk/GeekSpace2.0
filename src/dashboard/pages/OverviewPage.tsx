@@ -114,6 +114,14 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     ? hourlyData.map(d => ({ hour: `${d.hour}:00`, activity: d.requests }))
     : emptyHourlyData;
 
+  // 7-day sparkline data per stat card (parallel to quickStats array)
+  const statSparklines = [
+    chartData.length > 1 ? chartData.map(d => ({ v: d.requests })) : [],             // Messages Sent
+    chartData.length > 1 ? chartData.map(d => ({ v: Math.max(0, d.requests / 4) })) : [], // Reminders proxy
+    chartData.length > 1 ? chartData.map(d => ({ v: d.tokens })) : [],               // API Calls
+    hourlyData.length > 1 ? hourlyData.slice(-7).map(d => ({ v: d.requests })) : [], // Response Time proxy
+  ];
+
   // Derive reminder breakdown from actual reminders
   const completedCount = reminders.filter(r => r.completed).length;
   const pendingCount = reminders.filter(r => !r.completed && new Date(r.datetime) >= new Date()).length;
@@ -373,6 +381,21 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 {stat.value}
               </div>
               <div className="text-sm text-[#6B7280]">{stat.label}</div>
+              {statSparklines[i].length > 1 && (
+                <div className="mt-2 h-8 -mx-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={statSparklines[i]} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id={`spark${i}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={stat.color} stopOpacity={0.25} />
+                          <stop offset="95%" stopColor={stat.color} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="v" stroke={stat.color} strokeWidth={1.5} fill={`url(#spark${i})`} dot={false} isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

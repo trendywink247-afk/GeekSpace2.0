@@ -124,6 +124,48 @@ Channel: ${channel}. This is a messaging app — keep responses SHORT and mobile
 IMPORTANT: Max 2-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain text only. Be concise.`;
 }
 
+// ---- Channel Reply Builder (exported for testing) ----
+
+/**
+ * Appends action summaries to the LLM reply text for channel delivery.
+ * Deduplicates: skips messages already present in finalReply.
+ */
+export function buildActionChannelSuffix(finalReply: string, actionResults: ActionResult[]): string {
+  let channelReply = finalReply;
+  const seenSummaries = new Set<string>();
+  for (const ar of actionResults) {
+    if (!ar.success) continue;
+    if (ar.tool === 'generate_code') {
+      if (ar.artifactId) {
+        if (ar.previewUrl) {
+          channelReply += `\n🔗 Preview: ${ar.previewUrl}`;
+          channelReply += `\nAlso saved to your Projects.`;
+        } else {
+          channelReply += `\nSaved to your Projects — open your dashboard to preview.`;
+        }
+      }
+      continue;
+    }
+    if (ar.tool === 'generate_image' && ar.imageUrl) {
+      channelReply += `\n🖼️ ${ar.imageUrl}`;
+      continue;
+    }
+    if (ar.tool === 'generate_video' && ar.videoUrl) {
+      channelReply += `\n🎬 Video: ${ar.videoUrl}`;
+      if ((ar.data?.estimatedTime as number) > 0) {
+        channelReply += ` (renders in ~${ar.data?.estimatedTime}s)`;
+      }
+      continue;
+    }
+    // For all other actions: append confirmation only if not already in the reply
+    if (ar.message && !seenSummaries.has(ar.message) && !finalReply.includes(ar.message)) {
+      channelReply += `\n\n✅ ${ar.message}`;
+      seenSummaries.add(ar.message);
+    }
+  }
+  return channelReply;
+}
+
 // ---- Main Handler ----
 
 export async function handleIncomingMessage(msg: NormalizedMessage): Promise<void> {
@@ -306,41 +348,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   }
 
   // Build action summary for channel (no iframe possible).
-  // Only append action summaries when actions actually succeeded,
-  // and skip messages already echoed in the LLM reply (dedup).
-  let channelReply = taskConfirmation + finalReply;
-  const seenSummaries = new Set<string>();
-  for (const ar of actionResults) {
-    if (!ar.success) continue;
-    if (ar.tool === 'generate_code') {
-      // For generated artifacts: show preview link, not the generic ✅ message
-      if (ar.artifactId) {
-        if (ar.previewUrl) {
-          channelReply += `\n🔗 Preview: ${ar.previewUrl}`;
-          channelReply += `\nAlso saved to your Projects.`;
-        } else {
-          channelReply += `\nSaved to your Projects — open your dashboard to preview.`;
-        }
-      }
-      continue;
-    }
-    if (ar.tool === 'generate_image' && ar.imageUrl) {
-      channelReply += `\n🖼️ ${ar.imageUrl}`;
-      continue;
-    }
-    if (ar.tool === 'generate_video' && ar.videoUrl) {
-      channelReply += `\n🎬 Video: ${ar.videoUrl}`;
-      if ((ar.data?.estimatedTime as number) > 0) {
-        channelReply += ` (renders in ~${ar.data?.estimatedTime}s)`;
-      }
-      continue;
-    }
-    // For all other actions: append confirmation only if not already in the reply
-    if (ar.message && !seenSummaries.has(ar.message) && !finalReply.includes(ar.message)) {
-      channelReply += `\n\n✅ ${ar.message}`;
-      seenSummaries.add(ar.message);
-    }
-  }
+  const channelReply = taskConfirmation + buildActionChannelSuffix(finalReply, actionResults);
 
   // 8. Log usage with correct channel
   db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
