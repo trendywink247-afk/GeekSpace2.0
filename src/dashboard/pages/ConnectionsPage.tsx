@@ -70,8 +70,11 @@ type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting'
 type WhatsAppStep = 'idle' | 'generating' | 'show-qr' | 'waiting' | 'success' | 'error';
 
 export function ConnectionsPage() {
-  const { integrations, connectIntegration, disconnectIntegration, isLoading, loadDashboard } = useDashboardStore();
+  const { integrations, connectIntegration, disconnectIntegration, loadDashboard } = useDashboardStore();
   const isMobile = useMobileDetect();
+
+  // Per-integration connecting state — avoids blocking ALL buttons when one is connecting
+  const [connectingId, setConnectingId] = useState<string | null>(null);
 
   const [telegramDialog, setTelegramDialog] = useState(false);
   const [telegramStep, setTelegramStep] = useState<TelegramStep>('idle');
@@ -83,6 +86,7 @@ export function ConnectionsPage() {
     linked?: boolean;
   } | null>(null);
   const [polling, setPolling] = useState(false);
+  const [telegramPollAttempts, setTelegramPollAttempts] = useState(0);
 
   // WhatsApp dialog state
   const [whatsappDialog, setWhatsappDialog] = useState(false);
@@ -90,6 +94,7 @@ export function ConnectionsPage() {
   const [whatsappQR, setWhatsappQR] = useState<string | null>(null);
   const [whatsappSessionId, setWhatsappSessionId] = useState<string | null>(null);
   const [whatsappPolling, setWhatsappPolling] = useState(false);
+  const [whatsappPollAttempts, setWhatsappPollAttempts] = useState(0);
 
   // Email dialog state
   const [emailDialog, setEmailDialog] = useState(false);
@@ -114,9 +119,16 @@ export function ConnectionsPage() {
 
   useEffect(() => {
     if (!polling) return;
-    const interval = setInterval(pollTelegramStatus, 3000);
-    return () => clearInterval(interval);
-  }, [polling, pollTelegramStatus]);
+    // Exponential backoff: 1s → 2s → 4s, capped at 5s, with ±500ms jitter
+    const base = Math.min(1000 * Math.pow(2, telegramPollAttempts), 5000);
+    const jitter = Math.random() * 500 - 250;
+    const delay = Math.max(500, base + jitter);
+    const timer = setTimeout(() => {
+      pollTelegramStatus();
+      setTelegramPollAttempts(a => a + 1);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [polling, telegramPollAttempts, pollTelegramStatus]);
 
   // Poll for WhatsApp link status
   const pollWhatsAppStatus = useCallback(async () => {
@@ -132,9 +144,15 @@ export function ConnectionsPage() {
 
   useEffect(() => {
     if (!whatsappPolling) return;
-    const interval = setInterval(pollWhatsAppStatus, 3000);
-    return () => clearInterval(interval);
-  }, [whatsappPolling, pollWhatsAppStatus]);
+    const base = Math.min(1000 * Math.pow(2, whatsappPollAttempts), 5000);
+    const jitter = Math.random() * 500 - 250;
+    const delay = Math.max(500, base + jitter);
+    const timer = setTimeout(() => {
+      pollWhatsAppStatus();
+      setWhatsappPollAttempts(a => a + 1);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [whatsappPolling, whatsappPollAttempts, pollWhatsAppStatus]);
 
   const handleEmailSave = async () => {
     setEmailSaving(true);
@@ -148,50 +166,56 @@ export function ConnectionsPage() {
   };
 
   const handleConnect = async (type: IntegrationType) => {
-    if (type === 'whatsapp') {
-      setWhatsappDialog(true);
-      setWhatsappStep('generating');
-      try {
-        const res = await integrationService.linkWhatsAppQR();
-        if (res.data.success && res.data.qrCodeDataUrl) {
-          setWhatsappQR(res.data.qrCodeDataUrl);
-          setWhatsappSessionId(res.data.sessionId);
-          setWhatsappStep('show-qr');
-          setWhatsappPolling(true);
-        } else {
+    setConnectingId(type);
+    try {
+      if (type === 'whatsapp') {
+        setWhatsappDialog(true);
+        setWhatsappStep('generating');
+        setWhatsappPollAttempts(0);
+        try {
+          const res = await integrationService.linkWhatsAppQR();
+          if (res.data.success && res.data.qrCodeDataUrl) {
+            setWhatsappQR(res.data.qrCodeDataUrl);
+            setWhatsappSessionId(res.data.sessionId);
+            setWhatsappStep('show-qr');
+            setWhatsappPolling(true);
+          } else {
+            setWhatsappStep('error');
+          }
+        } catch {
           setWhatsappStep('error');
         }
-      } catch {
-        setWhatsappStep('error');
+        return;
       }
-      return;
-    }
-    if (type === 'email') {
-      setEmailAddress('');
-      setEmailSaved(false);
-      setEmailDialog(true);
-      return;
-    }
-    if (type === 'telegram') {
-      setTelegramDialog(true);
-      setTelegramStep('generating');
-      try {
-        const res = await integrationService.linkTelegram();
-        setTelegramLink(res.data);
-        if (res.data.linked) {
-          setTelegramStep('success');
-        } else {
-          setTelegramStep('open-bot');
-          setPolling(true);
+      if (type === 'email') {
+        setEmailAddress('');
+        setEmailSaved(false);
+        setEmailDialog(true);
+        return;
+      }
+      if (type === 'telegram') {
+        setTelegramDialog(true);
+        setTelegramStep('generating');
+        setTelegramPollAttempts(0);
+        try {
+          const res = await integrationService.linkTelegram();
+          setTelegramLink(res.data);
+          if (res.data.linked) {
+            setTelegramStep('success');
+          } else {
+            setTelegramStep('open-bot');
+            setPolling(true);
+          }
+        } catch {
+          setTelegramLink({ message: 'Telegram bot is not configured on this server. Contact the admin.' });
+          setTelegramStep('error');
         }
-      } catch {
-        setTelegramLink({ message: 'Telegram bot is not configured on this server. Contact the admin.' });
-        setTelegramStep('error');
+        return;
       }
-      return;
+      await connectIntegration(type);
+    } finally {
+      setConnectingId(null);
     }
-
-    connectIntegration(type);
   };
 
   const handleDisconnect = async (id: string) => {
@@ -210,6 +234,9 @@ export function ConnectionsPage() {
     setTelegramLink(null);
     setTelegramStep('idle');
     setPolling(false);
+    setTelegramPollAttempts(0);
+    setConnectingId(null);
+    // Only reload integrations, not the full dashboard
     loadDashboard();
   };
 
@@ -219,6 +246,8 @@ export function ConnectionsPage() {
     setWhatsappSessionId(null);
     setWhatsappStep('idle');
     setWhatsappPolling(false);
+    setWhatsappPollAttempts(0);
+    setConnectingId(null);
     loadDashboard();
   };
 
@@ -533,10 +562,12 @@ export function ConnectionsPage() {
                     <Button
                       size={isMobile ? 'default' : 'sm'}
                       onClick={() => handleConnect(connection.type)}
-                      disabled={isLoading}
+                      disabled={connectingId === connection.type}
                       className="bg-[#00F0FF] hover:bg-[#00D4B0]"
                     >
-                      Connect
+                      {connectingId === connection.type ? (
+                        <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Connecting…</>
+                      ) : 'Connect'}
                     </Button>
                   )}
                 </div>

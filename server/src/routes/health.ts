@@ -95,19 +95,23 @@ export function startHealthProbeCache(): void {
   };
 
   // Immediate first probe so cache is warm before first request
-  refresh();
+  const probeStart = Date.now();
+  refresh().then(() => {
+    logger.info({ firstProbeDurationMs: Date.now() - probeStart }, 'Health probe cache warmed');
+  }).catch(() => { /* already logged in refresh() */ });
   setInterval(refresh, 30_000);
   logger.info('Health probe cache started (30s interval, parallel probes)');
 }
 
 // ---- Max SSE connections to prevent runaway resource use ----
-const MAX_SSE_CONNECTIONS = 5;
+const MAX_SSE_CONNECTIONS = 25; // Supports admin dashboard + monitoring tools simultaneously
 let activeSSECount = 0;
 
 // ---- SSE Stream ----
 
 healthRouter.get('/stream', (req: Request, res: Response) => {
   if (activeSSECount >= MAX_SSE_CONNECTIONS) {
+    logger.warn({ activeSSECount, limit: MAX_SSE_CONNECTIONS }, 'SSE connection limit reached — rejecting new stream');
     res.status(429).json({ error: 'Too many health stream connections' });
     return;
   }

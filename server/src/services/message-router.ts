@@ -305,12 +305,16 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       .trim();
   }
 
-  // Build action summary for channel (no iframe possible)
+  // Build action summary for channel (no iframe possible).
+  // Only append action summaries when actions actually succeeded,
+  // and skip messages already echoed in the LLM reply (dedup).
   let channelReply = taskConfirmation + finalReply;
+  const seenSummaries = new Set<string>();
   for (const ar of actionResults) {
-    if (ar.success) {
-      channelReply += `\n\n✅ ${ar.message}`;
-      if (ar.tool === 'generate_code' && ar.artifactId) {
+    if (!ar.success) continue;
+    if (ar.tool === 'generate_code') {
+      // For generated artifacts: show preview link, not the generic ✅ message
+      if (ar.artifactId) {
         if (ar.previewUrl) {
           channelReply += `\n🔗 Preview: ${ar.previewUrl}`;
           channelReply += `\nAlso saved to your Projects.`;
@@ -318,6 +322,16 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
           channelReply += `\nSaved to your Projects — open your dashboard to preview.`;
         }
       }
+      continue;
+    }
+    if (ar.tool === 'generate_image' && ar.imageUrl) {
+      channelReply += `\n🖼️ ${ar.imageUrl}`;
+      continue;
+    }
+    // For all other actions: append confirmation only if not already in the reply
+    if (ar.message && !seenSummaries.has(ar.message) && !finalReply.includes(ar.message)) {
+      channelReply += `\n\n✅ ${ar.message}`;
+      seenSummaries.add(ar.message);
     }
   }
 
