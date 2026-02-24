@@ -27,6 +27,7 @@ export interface ActionResult {
   artifactId?: string;
   previewUrl?: string;
   imageUrl?: string;  // Set by generate_image / generate_avatar actions
+  videoUrl?: string;  // Set by generate_video action
   data?: Record<string, unknown>;
   receipt?: ReceiptItem; // Visual confirmation of action taken
 }
@@ -385,6 +386,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           tool,
           success: true,
           message: `Video generation started. ETA: ~${result.estimatedTime}s`,
+          videoUrl: result.url,
           data: { url: result.url, prompt, estimatedTime: result.estimatedTime },
         };
       }

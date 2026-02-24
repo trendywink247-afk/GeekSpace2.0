@@ -117,6 +117,26 @@ export function saveArtifactPermanently(artifactId: string, userId: string): boo
 }
 
 /**
+ * Purge channel links that have been inactive for 90+ days.
+ * Runs daily. Safe: only removes links with no recent activity.
+ */
+export function purgeStaleChannelLinks(): void {
+  try {
+    const result = db.prepare(`
+      DELETE FROM channel_links
+      WHERE last_message_at IS NOT NULL
+        AND datetime(last_message_at) < datetime('now', '-90 days')
+    `).run();
+
+    if (result.changes > 0) {
+      logger.info({ purged: result.changes }, 'Stale channel links purged (90-day TTL)');
+    }
+  } catch (err) {
+    logger.error({ err }, 'Stale channel link purge failed');
+  }
+}
+
+/**
  * Start the cleanup scheduler
  */
 export function startArtifactCleanupScheduler(): void {
@@ -130,11 +150,15 @@ export function startArtifactCleanupScheduler(): void {
   // Send warnings every 5 minutes
   warningInterval = setInterval(sendExpirationWarnings, 5 * 60 * 1000);
 
+  // Purge stale channel links daily (90-day TTL)
+  setInterval(purgeStaleChannelLinks, 24 * 60 * 60 * 1000);
+
   // Run immediately on start
   cleanupExpiredArtifacts();
   cleanupExpiredImages();
   cleanupExpiredVideos();
   sendExpirationWarnings();
+  purgeStaleChannelLinks(); // run once on startup to catch any existing stale links
 
   logger.info('Artifact cleanup scheduler started');
 }
