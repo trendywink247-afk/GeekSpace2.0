@@ -70,7 +70,7 @@ type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting'
 type WhatsAppStep = 'idle' | 'generating' | 'show-qr' | 'waiting' | 'success' | 'error';
 
 export function ConnectionsPage() {
-  const { integrations, connectIntegration, disconnectIntegration, loadDashboard } = useDashboardStore();
+  const { integrations, connectIntegration, disconnectIntegration, loadIntegrations } = useDashboardStore();
   const isMobile = useMobileDetect();
 
   // Per-integration connecting state — avoids blocking ALL buttons when one is connecting
@@ -237,7 +237,7 @@ export function ConnectionsPage() {
     setTelegramPollAttempts(0);
     setConnectingId(null);
     // Only reload integrations, not the full dashboard
-    loadDashboard();
+    loadIntegrations();
   };
 
   const closeWhatsAppDialog = () => {
@@ -248,7 +248,7 @@ export function ConnectionsPage() {
     setWhatsappPolling(false);
     setWhatsappPollAttempts(0);
     setConnectingId(null);
-    loadDashboard();
+    loadIntegrations();
   };
 
   const getStatusIcon = (status: string) => {
