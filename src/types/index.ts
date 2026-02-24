@@ -93,6 +93,7 @@ export interface AgentConfig {
   status: 'online' | 'offline' | 'error';
   accentColor?: string;   // camelCase for PATCH requests
   accent_color?: string;  // snake_case returned by GET (raw DB row)
+  briefing_time?: string; // HH:MM format, e.g. "08:00"
 }
 
 export interface Personality {
