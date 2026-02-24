@@ -164,6 +164,7 @@ jobs:
         run: npm run build
         env:
           VITE_TEST_MODE: 'true'
+          VITE_API_URL: /api
 
       - name: Build server
         run: npm --prefix server run build
@@ -171,6 +172,9 @@ jobs:
       # Run Playwright tests
       - name: Run Playwright tests
         run: npm run test:e2e
+        env:
+          API_URL: http://localhost:3001
+          VITE_API_TARGET: http://localhost:3001
 
       # Upload test results on failure
       - name: Upload Playwright report

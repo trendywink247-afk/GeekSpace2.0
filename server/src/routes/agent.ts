@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
-import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { requireAuth, optionalAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, chatSchema, commandSchema, agentConfigUpdateSchema, memoryCreateSchema, memoryUpdateSchema, deployPremiumSchema, premiumChatSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { routeChat, classifyIntent, computeCreditCost, deductSubscriptionCredits, streamOllama, pickProvider, type ChatMessage, type Provider } from '../services/llm.js';
@@ -10,18 +10,18 @@ import { config } from '../config.js';
 import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openclaw-system.js';
 import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
-import { buildMemoryContext, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations } from '../services/memory.js';
+import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations } from '../services/memory.js';
 import { loadPicoContext, formatContextBlock } from '../services/pico-context.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
 import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeRequest } from '../services/pico-kimi-bridge.js';
 import { getUserWorkflows, getWorkflowStatus, getWorkflowAnalytics } from '../services/workflow-engine.js';
 import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } from '../services/agent-registry.js';
 import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
-import { parseActions } from '../services/action-parser.js';
+import { parseActions, type ParsedAction } from '../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
 import { formatReceiptCompact, type ReceiptItem } from '../services/receipts.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
-import { sendTelegramMessage } from '../services/telegram.js';
+import { sendTelegramNotification, escapeTelegramHtml } from '../services/telegram.js';
 import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../services/agent-chat.js';
 
 export const agentRouter = Router();
@@ -445,8 +445,22 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
         deductSubscriptionCredits(userId, creditCost);
         const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? 0;
 
-        res.json({
-          text: edithResult.text,
+        // Parse and execute any tool actions from LLM response
+        const { text: cleanEdithReply, actions: edithActions } = parseActions(edithResult.text);
+        const edithActionResults: ActionResult[] = [];
+
+        for (const action of edithActions) {
+          if (action.tool === 'generate_code') {
+            action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
+          }
+          const actionResult = await executeAction(userId, action);
+          edithActionResults.push(actionResult);
+        }
+
+        logConversation(userId, 'assistant', cleanEdithReply || edithResult.text, 'edith', config.moonshotReasoningModel);
+
+        const edithResponse: Record<string, unknown> = {
+          text: cleanEdithReply || edithResult.text,
           route: 'premium',
           tier: 'premium',
           latencyMs: edithResult.latencyMs,
@@ -454,7 +468,20 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
           model: config.moonshotReasoningModel,
           creditsUsed: creditCost,
           creditsRemaining: updatedCredits,
-        });
+        };
+
+        if (edithActionResults.length > 0) {
+          edithResponse.actions = edithActionResults;
+          const receipts: ReceiptItem[] = edithActionResults
+            .filter(ar => ar.receipt)
+            .map(ar => ar.receipt!);
+          if (receipts.length > 0) {
+            edithResponse.receiptText = formatReceiptCompact(receipts);
+            edithResponse.receipts = receipts;
+          }
+        }
+
+        res.json(edithResponse);
         return;
       } catch (err) {
         logger.warn({ err, userId }, 'Premium (Moonshot) call failed, falling back to local');
@@ -845,7 +872,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
   if (cmd.startsWith('gs pico pause ')) {
     const slotStr = cmd.slice(14).trim();
     const slot = parseInt(slotStr, 10);
-    if (isNaN(slot) || slot < 1 || slot > 3) { res.json({ output: 'Usage: gs pico pause <slot> (1-3)', isError: true }); return; }
+    if (isNaN(slot) || slot < 1 || slot > 6) { res.json({ output: 'Usage: gs pico pause <slot> (1-6)', isError: true }); return; }
     const { getAgentBySlot, updateAgent } = await import('../services/pico-fleet.js');
     const agent = getAgentBySlot(userId, slot);
     if (!agent) { res.json({ output: `No agent at slot ${slot}`, isError: true }); return; }
@@ -857,7 +884,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
   if (cmd.startsWith('gs pico resume ')) {
     const slotStr = cmd.slice(15).trim();
     const slot = parseInt(slotStr, 10);
-    if (isNaN(slot) || slot < 1 || slot > 3) { res.json({ output: 'Usage: gs pico resume <slot> (1-3)', isError: true }); return; }
+    if (isNaN(slot) || slot < 1 || slot > 6) { res.json({ output: 'Usage: gs pico resume <slot> (1-6)', isError: true }); return; }
     const { getAgentBySlot, updateAgent } = await import('../services/pico-fleet.js');
     const agent = getAgentBySlot(userId, slot);
     if (!agent) { res.json({ output: `No agent at slot ${slot}`, isError: true }); return; }
@@ -996,7 +1023,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
   }
 
   if (cmd === 'help') {
-    res.json({ output: `Agentin Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs remind <text>          Quick reminder shortcut\n  gs credits                Check subscription credits\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs health                 System health check\n  gs brief                  Daily briefing summary\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs deploy portfolio       Deploy portfolio (alias)\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  gs pico list              List Weebo agents\n  gs pico create "Name"     Create a new Weebo agent (max 3)\n  gs pico pause <slot>      Pause agent at slot (1-3)\n  gs pico resume <slot>     Resume agent at slot\n  gs pico tasks             List recent tasks\n  gs task "description"     Plan and queue tasks via Kimi\n  ai "prompt"               Ask your AI agent (real LLM)\n  clear                     Clear terminal\n  help                      Show this help\n\nChat Prefixes:\n  /bridge <msg>             Multi-agent orchestration\n  /workflow <msg>           Alias for /bridge\n  /agent:<role> <msg>       Force specific agent (coder, planner, analyst, etc.)\n  /premium <msg>            Force Kimi premium reasoning\n  /local <msg>              Force local Ollama\n  /pico <msg>               Force Weebo Engine\n  /task <description>       Plan and queue tasks via Kimi`, isError: false });
+    res.json({ output: `Agentin Terminal Commands:\n  gs me                     Show your profile\n  gs reminders list         List reminders\n  gs reminders add "text"   Create a reminder\n  gs remind <text>          Quick reminder shortcut\n  gs credits                Check subscription credits\n  gs usage today|month      Usage reports\n  gs integrations           List integrations\n  gs connect <service>      Connect integration\n  gs disconnect <service>   Disconnect integration\n  gs automations            List automations\n  gs status                 Agent status\n  gs health                 System health check\n  gs brief                  Daily briefing summary\n  gs portfolio              Portfolio URL\n  gs deploy                 Deploy portfolio\n  gs deploy portfolio       Deploy portfolio (alias)\n  gs profile set <f> <v>    Update profile field\n  gs export                 Export all data as JSON\n  gs pico list              List Weebo agents\n  gs pico create "Name"     Create a new Weebo agent (max 6)\n  gs pico pause <slot>      Pause agent at slot (1-6)\n  gs pico resume <slot>     Resume agent at slot\n  gs pico tasks             List recent tasks\n  gs task "description"     Plan and queue tasks via Kimi\n  ai "prompt"               Ask your AI agent (real LLM)\n  clear                     Clear terminal\n  help                      Show this help\n\nChat Prefixes:\n  /bridge <msg>             Multi-agent orchestration\n  /workflow <msg>           Alias for /bridge\n  /agent:<role> <msg>       Force specific agent (coder, planner, analyst, etc.)\n  /premium <msg>            Force Kimi premium reasoning\n  /local <msg>              Force local Ollama\n  /pico <msg>               Force Weebo Engine\n  /task <description>       Plan and queue tasks via Kimi`, isError: false });
     return;
   }
 
@@ -1095,14 +1122,14 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     }
   } catch (err) {
     logger.error({ err, userId }, 'Stream chat error');
-    // Try non-streaming fallback even on stream error
+    // Fallback to cloud (skip Ollama — it just failed)
     try {
       const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
       const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
       const fallbackHistory = getConversationContext(userId);
       const result = await routeChat(
         [...fallbackHistory, { role: 'user', content: message }],
-        { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0, userId },
+        { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0, userId, forceProvider: 'openrouter-free' as Provider },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
       res.write(`data: ${JSON.stringify({ text: '', done: true, provider: result.provider, model: result.model })}\n\n`);
@@ -1325,14 +1352,32 @@ agentRouter.delete('/premium-session/:sessionId', requireAuth, (req: AuthRequest
   });
 });
 
+// ---- Public can-chat check (no auth required) ----
+
+agentRouter.get('/can-chat-public/:username', (_req, res) => {
+  const { username } = _req.params;
+  const target = db.prepare('SELECT agent_chat_enabled FROM users WHERE username = ?').get(username) as { agent_chat_enabled: number } | undefined;
+  if (!target) { res.json({ canChat: false }); return; }
+  res.json({ canChat: !!target.agent_chat_enabled });
+});
+
 // ---- Public Portfolio Chat (real LLM-powered) ----
 
-agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req, res) => {
-  const { message, messageCount } = req.body as { message: string; messageCount?: number };
+agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
+  const { message, messageCount, history } = req.body as { message: string; messageCount?: number; history?: Array<{ role: string; content: string }> };
   const { username } = req.params;
 
-  const user = db.prepare('SELECT id, name, location, role, company FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
+  const user = db.prepare('SELECT id, name, location, role, company, agent_chat_enabled FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+  if (!user.agent_chat_enabled) { res.status(403).json({ error: 'Agent chat is not enabled for this user' }); return; }
+
+  // Resolve visitor identity from optional JWT
+  let visitorName: string | undefined;
+  if (req.userId) {
+    const visitor = db.prepare('SELECT name, username FROM users WHERE id = ?')
+      .get(req.userId) as { name: string; username: string } | undefined;
+    visitorName = visitor?.name || visitor?.username;
+  }
 
   const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(user.id as string) as Record<string, unknown> | undefined;
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(user.id as string) as Record<string, unknown> | undefined;
@@ -1357,6 +1402,15 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
     return;
   }
 
+  // ---- Check for Telegram escalation (for hasTelegramEscalation flag) ----
+  const telegramLink = db.prepare(`
+    SELECT external_id FROM channel_links
+    WHERE user_id = ? AND channel = 'telegram'
+    ORDER BY linked_at DESC LIMIT 1
+  `).get(user.id as string) as { external_id: string } | undefined;
+
+  const hasTelegramEscalation = !!telegramLink;
+
   // ---- Visitor intent detection (first message only, non-fatal) ----
   let visitorIntent = 'curious';
   if (!messageCount || messageCount === 0) {
@@ -1376,6 +1430,9 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
     }
   }
 
+  // Load owner memories with schedule separation
+  const ownerContext = buildOwnerContextForVisitor(user.id as string, message);
+
   const basePrompt = buildPortfolioVisitorPrompt({
     ownerName,
     agentName,
@@ -1386,6 +1443,10 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
     role: (user.role as string) || undefined,
     company: (user.company as string) || undefined,
     visitorIntent,
+    ownerMemories: ownerContext.general || undefined,
+    ownerScheduleMemories: ownerContext.schedule || undefined,
+    visitorName,
+    hasTelegramEscalation,
   });
 
   const systemPrompt = `${basePrompt}\n\n--- PERSONALITY ---\n${personality.promptAddition}`;
@@ -1399,15 +1460,62 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
     // Non-fatal — don't block the chat response
   }
 
+  // ---- Build multi-turn message array ----
+  const chatMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+  if (history?.length) {
+    for (const h of history.slice(-10)) {
+      chatMessages.push({ role: h.role === 'assistant' ? 'assistant' : 'user', content: h.content });
+    }
+  }
+  chatMessages.push({ role: 'user', content: message });
+
   try {
     const result = await routeChat(
-      [{ role: 'user', content: message }],
-      { systemPrompt, agentName, forceProvider: 'ollama' },
+      chatMessages,
+      { systemPrompt, agentName, forceProvider: 'openrouter-free' },
     );
+
+    // Parse for escalation actions
+    let finalReply = result.reply;
+    const { text: cleanReply, actions } = parseActions(result.reply);
+    if (actions.length > 0) {
+      finalReply = cleanReply;
+      for (const action of actions) {
+        if (action.tool === 'escalate_to_owner') {
+          action.params._ownerUserId = user.id as string;
+          action.params._ownerUsername = username;
+          action.params._visitorName = visitorName || 'A visitor';
+          await executeAction(user.id as string, action);
+        }
+      }
+    }
+
+    // Fallback escalation: if LLM says it'll check/ask the owner but didn't emit an action block
+    const escalationPhrases = /\b(let me check with|i'll ask|i'll check with|let me reach out to|i'll reach out to|check with .+ directly|ask .+ directly)\b/i;
+    if (hasTelegramEscalation && actions.length === 0 && escalationPhrases.test(finalReply)) {
+      const fallbackAction: ParsedAction = {
+        tool: 'escalate_to_owner',
+        params: {
+          question: message,
+          context: `Visitor conversation — agent indicated it would check with owner`,
+          _ownerUserId: user.id as string,
+          _ownerUsername: username,
+          _visitorName: visitorName || 'A visitor',
+        },
+      };
+      try {
+        await executeAction(user.id as string, fallbackAction);
+      } catch (escErr) {
+        logger.warn({ err: (escErr as Error).message }, 'Fallback escalation failed');
+      }
+    }
 
     // Save visitor interaction to owner's memory
     const snippet = message.slice(0, 80);
-    upsertMemory(user.id as string, 'visitor', `portfolio-chat:${Date.now()}`, `Visitor asked about: "${snippet}"`, 0.8, 'portfolio-chat');
+    const memoryValue = visitorName
+      ? `${visitorName} asked about: "${snippet}"`
+      : `Anonymous visitor asked about: "${snippet}"`;
+    upsertMemory(user.id as string, 'visitor', `portfolio-chat:${Date.now()}`, memoryValue, 0.8, 'portfolio-chat');
 
     // Increment connection counter
     db.prepare(`
@@ -1420,23 +1528,18 @@ agentRouter.post('/chat/public/:username', validateBody(chatSchema), async (req,
     // Invalidate portfolio cache
     void cacheDel(`portfolio:${req.params.username}`);
 
-    // Send Telegram notification if connected (non-blocking, non-fatal)
-    const telegramLink = db.prepare(`
-      SELECT external_id FROM channel_links
-      WHERE user_id = ? AND channel = 'telegram'
-      ORDER BY linked_at DESC LIMIT 1
-    `).get(user.id as string) as { external_id: string } | undefined;
-
-    if (telegramLink) {
-      void sendTelegramMessage(telegramLink.external_id,
-        `Someone just chatted with your agent about: <i>"${snippet}"</i>\n\nCheck your dashboard for the conversation.`
+    // Send Telegram notification if connected (non-blocking, non-fatal, only on first message)
+    if (telegramLink && (!messageCount || messageCount === 0)) {
+      const who = visitorName ? `<b>${escapeTelegramHtml(visitorName)}</b> from Agentin` : 'Someone';
+      void sendTelegramNotification(telegramLink.external_id,
+        `${who} started chatting with your agent:\n<i>"${escapeTelegramHtml(snippet)}"</i>\n\nCheck your dashboard for the conversation.`
       ).catch(() => { /* non-fatal */ });
     }
 
-    res.json({ reply: result.reply, agentName, ownerName, personality: personalityId, personalityEmoji: personality.emoji });
+    res.json({ reply: finalReply, agentName, ownerName, personality: personalityId, personalityEmoji: personality.emoji });
   } catch {
     res.json({
-      reply: `Hi! I'm ${agentName}, ${ownerName}'s AI assistant. I'm having trouble connecting right now, but you can learn more from the portfolio above.`,
+      reply: `Hi! I'm ${agentName}, ${ownerName}'s assistant. I'm having trouble connecting right now, but you can learn more from the portfolio above.`,
       agentName,
       ownerName,
       personality: personalityId,
@@ -1518,7 +1621,7 @@ agentRouter.post('/bridge-preview', requireAuth, validateBody(chatSchema), (req:
 
 // ---- Agent-to-Agent Messaging ----
 
-agentRouter.post('/send-message', requireAuth, (req: AuthRequest, res) => {
+agentRouter.post('/send-message', requireAuth, async (req: AuthRequest, res) => {
   const { recipientAgentId, message } = req.body as { recipientAgentId?: string; message?: string };
 
   if (!recipientAgentId || !message) {
@@ -1531,7 +1634,7 @@ agentRouter.post('/send-message', requireAuth, (req: AuthRequest, res) => {
     return;
   }
 
-  const success = sendAgentMessage(req.userId!, recipientAgentId, message);
+  const success = await sendAgentMessage(req.userId!, recipientAgentId, message);
 
   if (!success) {
     res.status(400).json({ error: 'Cannot send message to this agent. They may have agent chat disabled or not exist.' });

@@ -80,6 +80,11 @@ const generateAvatarSchema = z.object({
   style: z.enum(['professional', 'creative', 'fun']).optional(),
 });
 
+const escalateToOwnerSchema = z.object({
+  question: z.string().min(1).max(1000),
+  context: z.string().max(500).optional(),
+});
+
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -94,6 +99,7 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_image: generateImageSchema,
   generate_video: generateVideoSchema,
   generate_avatar: generateAvatarSchema,
+  escalate_to_owner: escalateToOwnerSchema,
 };
 
 // ── Types ───────────────────────────────────────────────────
@@ -176,7 +182,8 @@ function parseJsonLlm(jsonStr: string): unknown {
     return JSON.parse(fixed);
   }
 }
-const TOOL_CALL_REGEX = /<tool_call>\s*<function=(\w+)>\s*<parameter=(\w+)>([\s\S]*?)<\/parameter>\s*<\/function>\s*<\/tool_call>/g;
+const TOOL_CALL_REGEX = /<tool_call>\s*<function=(\w+)>([\s\S]*?)<\/function>\s*<\/tool_call>/g;
+const PARAM_REGEX = /<parameter=(\w+)>([\s\S]*?)<\/parameter>/g;
 
 export function parseActions(llmResponse: string): ParseResult {
   const actions: ParsedAction[] = [];
@@ -239,36 +246,21 @@ export function parseActions(llmResponse: string): ParseResult {
   // Parse <tool_call><function=name><parameter=key>value</parameter></function></tool_call> format
   while ((match = TOOL_CALL_REGEX.exec(llmResponse)) !== null) {
     const toolName = match[1];
-    const paramName = match[2];
-    const paramValue = match[3].trim();
+    const body = match[2];
 
-    // Map function names to tool names
-    const toolMapping: Record<string, string> = {
-      generate_code: 'generate_code',
-      portfolio_add_project: 'portfolio_add_project',
-      portfolio_update_bio: 'portfolio_update_bio',
-      portfolio_update_skills: 'portfolio_update_skills',
-      portfolio_remove_project: 'portfolio_remove_project',
-      portfolio_update_theme: 'portfolio_update_theme',
-      send_email: 'send_email',
-      set_reminder: 'set_reminder',
-      crawl_url: 'crawl_url',
-      trigger_workflow: 'trigger_workflow',
-    };
-
-    const tool = toolMapping[toolName];
-    if (!tool) {
-      logger.warn({ toolName }, 'Unknown function in tool_call — skipping');
-      continue;
+    // Extract all parameters from the function body
+    const params: Record<string, unknown> = {};
+    PARAM_REGEX.lastIndex = 0;
+    let paramMatch: RegExpExecArray | null;
+    while ((paramMatch = PARAM_REGEX.exec(body)) !== null) {
+      params[paramMatch[1]] = paramMatch[2].trim();
     }
 
-    // Build params object from XML parameters
-    const params: Record<string, unknown> = { [paramName]: paramValue };
-
-    // Validate tool name
+    // Tool name is used directly — all registered tools are valid
+    const tool = toolName;
     const schema = TOOL_SCHEMAS[tool];
     if (!schema) {
-      logger.warn({ tool }, 'Unknown tool in action block — skipping');
+      logger.warn({ toolName }, 'Unknown function in tool_call — skipping');
       continue;
     }
 

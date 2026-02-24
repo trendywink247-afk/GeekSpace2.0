@@ -3,9 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
-  LogOut, ChevronRight, Hexagon, DollarSign, Compass, Palette,
+  LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
-  Code, LayoutTemplate, Rocket
+  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles
 } from 'lucide-react';
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
@@ -13,6 +13,7 @@ import { AgentDesignWizard } from '@/components/AgentDesignWizard';
 import { CommandPalette } from '@/components/CommandPalette';
 import { QuickActionsWidget } from '@/components/QuickActionsWidget';
 import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPrompt';
+import { DashboardTour } from '@/components/DashboardTour';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
@@ -43,19 +44,96 @@ const PicoFleetPage = lazy(() =>
   import('./pages/PicoFleetPage').then(m => ({ default: m.PicoFleetPage }))
 );
 const HealthDashboardPage = lazy(() => import('./pages/HealthDashboardPage').then(m => ({ default: m.HealthDashboardPage })));
-const ArtifactsPage = lazy(() => import('./pages/ArtifactsPage').then(m => ({ default: m.ArtifactsPage })));
+const WebsiteBuilderPage = lazy(() => import('./pages/WebsiteBuilderPage').then(m => ({ default: m.WebsiteBuilderPage })));
 const RoadmapPage = lazy(() => import('./pages/RoadmapPage').then(m => ({ default: m.RoadmapPage })));
-const TemplateGalleryPage = lazy(() => import('./pages/TemplateGalleryPage').then(m => ({ default: m.TemplateGalleryPage })));
+const ImageGenPage = lazy(() => import('./pages/ImageGenPage').then(m => ({ default: m.ImageGenPage })));
+const VideoGenPage = lazy(() => import('./pages/VideoGenPage').then(m => ({ default: m.VideoGenPage })));
+const PlannerPage = lazy(() => import('./pages/PlannerPage').then(m => ({ default: m.PlannerPage })));
+const SocialMediaPage = lazy(() => import('./pages/SocialMediaPage').then(m => ({ default: m.SocialMediaPage })));
+const CapabilitiesPage = lazy(() => import('./pages/CapabilitiesPage').then(m => ({ default: m.CapabilitiesPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'artifacts' | 'templates' | 'roadmap';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities';
+
+interface MenuGroup {
+  label: string | null;
+  icon: typeof LayoutDashboard | null;
+  items: { id: PageType; label: string; icon: typeof LayoutDashboard }[];
+}
+
+const menuGroups: MenuGroup[] = [
+  {
+    label: null,
+    icon: null,
+    items: [
+      { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+      { id: 'portfolio', label: 'Portfolio', icon: Palette },
+    ],
+  },
+  {
+    label: 'AI Specialist',
+    icon: Code,
+    items: [
+      { id: 'website-builder', label: 'Website Builder', icon: Code },
+      { id: 'image-gen', label: 'Image Generator', icon: ImageIcon },
+      { id: 'video-gen', label: 'Video Generator', icon: Film },
+    ],
+  },
+  {
+    label: 'Agent',
+    icon: Bot,
+    items: [
+      { id: 'agent', label: 'Agent Settings', icon: Bot },
+      { id: 'memory', label: 'Memory', icon: Brain },
+      { id: 'recipes', label: 'Recipes', icon: BookOpen },
+      { id: 'capabilities', label: 'What Can I Do?', icon: Sparkles },
+    ],
+  },
+  {
+    label: 'Weebo Fleet',
+    icon: Cpu,
+    items: [
+      { id: 'pico', label: 'Fleet', icon: Cpu },
+      { id: 'planner', label: 'Planner', icon: CalendarCheck },
+    ],
+  },
+  {
+    label: 'Productivity',
+    icon: Zap,
+    items: [
+      { id: 'reminders', label: 'Reminders', icon: Bell },
+      { id: 'automations', label: 'Automations', icon: Zap },
+      { id: 'social-media', label: 'Social Media', icon: Share2 },
+    ],
+  },
+  {
+    label: 'Account',
+    icon: Settings,
+    items: [
+      { id: 'usage', label: 'Usage', icon: BarChart3 },
+      { id: 'billing', label: 'Billing', icon: CreditCard },
+      { id: 'connections', label: 'Connections', icon: Link2 },
+      { id: 'settings', label: 'Settings', icon: Settings },
+    ],
+  },
+  {
+    label: 'System',
+    icon: Terminal,
+    items: [
+      { id: 'terminal', label: 'Terminal', icon: Terminal },
+      { id: 'health', label: 'Health', icon: Activity },
+    ],
+  },
+];
 
 // Bottom tabs for mobile (5 max for thumb reach)
-const mobileTabs: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
+// "more" is a special ID that opens the sidebar drawer instead of navigating
+type MobileTabId = PageType | 'more';
+const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Home', icon: LayoutDashboard },
   { id: 'portfolio', label: 'Portfolio', icon: Palette },
-  { id: 'terminal', label: 'Terminal', icon: Terminal },
+  { id: 'website-builder', label: 'AI', icon: Code },
   { id: 'agent', label: 'Agent', icon: Bot },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'more', label: 'More', icon: MoreHorizontal },
 ];
 
 function PageLoader() {
@@ -78,6 +156,7 @@ export function DashboardApp() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const usage = useDashboardStore((s) => s.usage);
@@ -124,8 +203,10 @@ export function DashboardApp() {
 
   // Sync URL pathname → currentPage (so navigate() calls update the view)
   useEffect(() => {
-    const segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'artifacts', 'templates', 'roadmap'];
+    let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
+    // Backward compat: map old page IDs to new ones
+    if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -135,26 +216,6 @@ export function DashboardApp() {
   useEffect(() => {
     setSidebarOpen(false);
   }, [currentPage]);
-
-  const menuItems: { id: PageType; label: string; icon: typeof LayoutDashboard }[] = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'artifacts', label: 'My Projects', icon: Code },
-    { id: 'templates', label: 'Templates', icon: LayoutTemplate },
-    { id: 'portfolio', label: 'Portfolio', icon: Palette },
-    { id: 'usage', label: 'Usage', icon: BarChart3 },
-    { id: 'billing', label: 'Billing', icon: CreditCard },
-    { id: 'memory', label: 'Memory', icon: Brain },
-    { id: 'connections', label: 'Connections', icon: Link2 },
-    { id: 'agent', label: 'Agent Settings', icon: Bot },
-    { id: 'reminders', label: 'Reminders', icon: Bell },
-    { id: 'automations', label: 'Automations', icon: Zap },
-    { id: 'recipes', label: 'Recipes', icon: BookOpen },
-    { id: 'pico', label: "Weebo's", icon: Cpu },
-    { id: 'health', label: 'Health', icon: Activity },
-    { id: 'terminal', label: 'Terminal', icon: Terminal },
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'roadmap', label: 'Roadmap', icon: Rocket },
-  ];
 
   const handleLogout = useCallback(() => {
     logout();
@@ -194,19 +255,46 @@ export function DashboardApp() {
         return <PicoFleetPage />;
       case 'health':
         return <HealthDashboardPage />;
-      case 'artifacts':
-        return <ArtifactsPage onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} />;
-      case 'templates':
-        return <TemplateGalleryPage />;
+      case 'website-builder':
+        return <WebsiteBuilderPage />;
+      case 'image-gen':
+        return <ImageGenPage />;
+      case 'video-gen':
+        return <VideoGenPage />;
+      case 'planner':
+        return <PlannerPage />;
+      case 'social-media':
+        return <SocialMediaPage />;
       case 'terminal':
         return <TerminalPage />;
       case 'settings':
         return <SettingsPage />;
       case 'roadmap':
         return <RoadmapPage />;
+      case 'capabilities':
+        return <CapabilitiesPage
+          onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)}
+          onOpenChat={() => setChatOpen(true)}
+        />;
       default:
         return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
     }
+  };
+
+  // Helper to check if a page is active (for grouped sidebar highlighting)
+  const isPageActive = (id: PageType) => currentPage === id;
+
+  const groupHasActivePage = (group: MenuGroup) => group.items.some(item => item.id === currentPage);
+
+  const isGroupExpanded = (label: string) => expandedGroups.has(label) || menuGroups.find(g => g.label === label && groupHasActivePage(g)) !== undefined;
+
+  const toggleGroup = (label: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
   };
 
   // Sidebar content — shared between mobile drawer and desktop sidebar
@@ -235,34 +323,113 @@ export function DashboardApp() {
       </div>
 
       {/* Navigation */}
-      <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
-        {menuItems.map((item) => (
+      <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">
+        {menuGroups.map((group, groupIdx) => (
+          <div key={group.label ?? 'ungrouped'}>
+            {group.label && group.icon ? (
+              <>
+                {/* Collapsible group header */}
+                <button
+                  onClick={() => toggleGroup(group.label!)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] mt-1 relative ${
+                    groupHasActivePage(group)
+                      ? 'text-[#00F0FF]'
+                      : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
+                  }`}
+                >
+                  {groupHasActivePage(group) && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
+                  )}
+                  <group.icon className="w-5 h-5 flex-shrink-0" />
+                  {!sidebarCollapsed && (
+                    <>
+                      <span className="text-sm font-medium flex-1 text-left">{group.label}</span>
+                      {isGroupExpanded(group.label) ? (
+                        <ChevronDown className="w-4 h-4 flex-shrink-0 opacity-50" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 flex-shrink-0 opacity-50" />
+                      )}
+                    </>
+                  )}
+                </button>
+                {/* Expandable sub-items */}
+                {!sidebarCollapsed && isGroupExpanded(group.label) && (
+                  <div className="ml-4 border-l border-[#00F0FF]/10 pl-2 space-y-0.5">
+                    {group.items.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => navigate(`/dashboard/${item.id}`)}
+                        aria-current={isPageActive(item.id) ? 'page' : undefined}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 min-h-[38px] ${
+                          isPageActive(item.id)
+                            ? 'text-[#00F0FF] bg-[#00F0FF]/5'
+                            : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0]'
+                        }`}
+                      >
+                        <item.icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-sm">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Collapsed sidebar: show sub-items as icons on hover handled by tooltip later; for now just the group icon */}
+              </>
+            ) : (
+              <>
+                {/* Ungrouped top-level items (Overview, Portfolio) */}
+                {group.items.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.id === 'overview' ? '/dashboard' : `/dashboard/${item.id}`)}
+                    aria-current={isPageActive(item.id) ? 'page' : undefined}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
+                      isPageActive(item.id)
+                        ? 'text-[#00F0FF]'
+                        : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
+                    }`}
+                  >
+                    {isPageActive(item.id) && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
+                    )}
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    {!sidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+                  </button>
+                ))}
+
+                {/* Explore after ungrouped */}
+                {groupIdx === 0 && (
+                  <button
+                    onClick={() => navigate('/explore')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] transition-all min-h-[44px]"
+                  >
+                    <Compass className="w-5 h-5 flex-shrink-0" />
+                    {!sidebarCollapsed && <span className="text-sm font-medium">Explore</span>}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+
+        {/* Agentin Roadmap — standalone footer link */}
+        <div className="mt-2">
+          <div className="h-px bg-[#00F0FF]/10 my-2 mx-2" />
           <button
-            key={item.id}
-            onClick={() => navigate(item.id === 'overview' ? '/dashboard' : `/dashboard/${item.id}`)}
-            aria-current={currentPage === item.id ? 'page' : undefined}
+            onClick={() => navigate('/dashboard/roadmap')}
+            aria-current={isPageActive('roadmap') ? 'page' : undefined}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
-              currentPage === item.id
+              isPageActive('roadmap')
                 ? 'text-[#00F0FF]'
                 : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
             }`}
           >
-            {/* Active pill indicator */}
-            {currentPage === item.id && (
+            {isPageActive('roadmap') && (
               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
             )}
-            <item.icon className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+            <Rocket className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Agentin Roadmap</span>}
           </button>
-        ))}
-
-        <button
-          onClick={() => navigate('/explore')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] transition-all min-h-[44px]"
-        >
-          <Compass className="w-5 h-5 flex-shrink-0" />
-          {!sidebarCollapsed && <span className="text-sm font-medium">Explore</span>}
-        </button>
+        </div>
       </nav>
 
       {/* Design Assistant CTA */}
@@ -486,13 +653,19 @@ export function DashboardApp() {
         aria-label="Main tabs"
       >
         {mobileTabs.map((tab) => {
-          const isActive = currentPage === tab.id;
+          const isActive = tab.id !== 'more' && currentPage === tab.id;
           return (
             <button
               key={tab.id}
               role="tab"
               aria-selected={isActive}
-              onClick={() => navigate(tab.id === 'overview' ? '/dashboard' : `/dashboard/${tab.id}`)}
+              onClick={() => {
+                if (tab.id === 'more') {
+                  setSidebarOpen(true);
+                } else {
+                  navigate(tab.id === 'overview' ? '/dashboard' : `/dashboard/${tab.id}`);
+                }
+              }}
               className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-lg transition-colors touch-highlight ${
                 isActive
                   ? 'text-[#00F0FF]'
@@ -530,6 +703,12 @@ export function DashboardApp() {
 
       {/* Command Palette (Ctrl+K) */}
       <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+
+      {/* First-use guided tour */}
+      <DashboardTour
+        onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)}
+        onOpenChat={() => setChatOpen(true)}
+      />
 
       {/* Quick Actions Widget */}
       {showQuickActions && (

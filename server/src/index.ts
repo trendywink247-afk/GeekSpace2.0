@@ -14,12 +14,14 @@ import { initMemoryTables, startMemorySyncScheduler } from './services/memory.js
 import { initWorkflowTables } from './services/workflow-engine.js';
 import { initTelegramBot } from './services/telegram.js';
 import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
+import { initSocialMediaTables } from './services/social-media.js';
 import { seedDefaultTemplates } from './routes/templates.js';
 import { startBriefingScheduler } from './services/daily-briefing.js';
 import { startReminderScheduler } from './services/reminder-scheduler.js';
 import { startHealthProbeCache } from './routes/health.js';
 import { startModelSyncScheduler } from './services/model-sync.js';
 import { startArtifactCleanupScheduler } from './services/artifact-cleanup.js';
+import { startOllamaKeepalive } from './services/llm.js';
 
 // Create the Express app using the factory
 const app = createApp();
@@ -27,6 +29,12 @@ const app = createApp();
 // ---- Graceful shutdown ----
 function shutdown(signal: string) {
   logger.info(`Received ${signal}, shutting down gracefully...`);
+  // Force-exit after 10s to prevent hung processes during restart
+  const forceExit = setTimeout(() => {
+    logger.error('Graceful shutdown timeout (10s exceeded) — forcing exit');
+    process.exit(1);
+  }, 10_000);
+  forceExit.unref(); // Don't let this timer prevent normal exit
   db.close();
   process.exit(0);
 }
@@ -46,6 +54,7 @@ app.listen(config.port, () => {
   initMemoryTables();
   initWorkflowTables();
   initPicoFleetTables();
+  initSocialMediaTables();
   ensureDefaultAgents();
   seedDefaultTemplates();
 
@@ -53,17 +62,33 @@ app.listen(config.port, () => {
   startHealthProbeCache();
 
   // Schedulers, Telegram bot, and cron jobs — run ONLY in the primary worker
-  const isMainWorker = !process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === '0';
+  const instanceId = process.env.NODE_APP_INSTANCE ?? 'standalone';
+  const isMainWorker = instanceId === 'standalone' || instanceId === '0';
+  logger.info({ instanceId, isMainWorker }, 'Cluster init');
+
   if (isMainWorker) {
-    initAutomationsEngine();
-    startPicoWorker();
-    initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)'));
-    startBriefingScheduler();
-    startReminderScheduler();
-    startMemorySyncScheduler();
-    startModelSyncScheduler();
-    startArtifactCleanupScheduler();
+    // Named wrappers so failures are logged with the scheduler name
+    const safeStart = (name: string, fn: () => void | Promise<void>) => {
+      try {
+        const result = fn();
+        if (result && typeof result.catch === 'function') {
+          result.catch((err: unknown) => logger.error({ err, scheduler: name }, 'Scheduler startup failed'));
+        }
+      } catch (err) {
+        logger.error({ err, scheduler: name }, 'Scheduler startup failed (sync)');
+      }
+    };
+
+    safeStart('automations-engine', initAutomationsEngine);
+    safeStart('pico-worker', startPicoWorker);
+    safeStart('telegram-bot', () => initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)')));
+    safeStart('ollama-keepalive', startOllamaKeepalive);
+    safeStart('briefing-scheduler', startBriefingScheduler);
+    safeStart('reminder-scheduler', startReminderScheduler);
+    safeStart('memory-sync', startMemorySyncScheduler);
+    safeStart('model-sync', startModelSyncScheduler);
+    safeStart('artifact-cleanup', startArtifactCleanupScheduler);
   } else {
-    logger.info({ worker: process.env.NODE_APP_INSTANCE }, 'Cluster worker — schedulers skipped');
+    logger.info({ worker: instanceId }, 'Cluster worker — schedulers skipped');
   }
 });

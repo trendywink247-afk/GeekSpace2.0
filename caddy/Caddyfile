@@ -19,6 +19,11 @@ ai.geekspace.space {
 		reverse_proxy geekspace:3001
 	}
 
+	# Artifact preview (public, served by Express)
+	handle /preview/* {
+		reverse_proxy geekspace:3001
+	}
+
 	# Assets always pass through
 	handle /assets/* {
 		root * /srv

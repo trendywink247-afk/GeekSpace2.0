@@ -290,19 +290,55 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   }
 
   // Strip any remaining action-like patterns the parser missed (malformed tags, PicoClaw inline format)
-  const finalReply = (cleanReply || replyText)
+  let finalReply = (cleanReply || replyText)
     .replace(/<<<?\w[\s\S]*?>>>?/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  // Build action summary for channel (no iframe possible)
+  // If a generate_code action succeeded, strip raw code blocks — the artifact holds the code;
+  // the user gets a preview link instead.
+  const hasCodeAction = actionResults.some(ar => ar.tool === 'generate_code' && ar.success);
+  if (hasCodeAction) {
+    finalReply = finalReply
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  // Build action summary for channel (no iframe possible).
+  // Only append action summaries when actions actually succeeded,
+  // and skip messages already echoed in the LLM reply (dedup).
   let channelReply = taskConfirmation + finalReply;
+  const seenSummaries = new Set<string>();
   for (const ar of actionResults) {
-    if (ar.success) {
-      channelReply += `\n\n✅ ${ar.message}`;
-      if (ar.tool === 'generate_code' && ar.artifactId) {
-        channelReply += `\nOpen your dashboard to preview the project.`;
+    if (!ar.success) continue;
+    if (ar.tool === 'generate_code') {
+      // For generated artifacts: show preview link, not the generic ✅ message
+      if (ar.artifactId) {
+        if (ar.previewUrl) {
+          channelReply += `\n🔗 Preview: ${ar.previewUrl}`;
+          channelReply += `\nAlso saved to your Projects.`;
+        } else {
+          channelReply += `\nSaved to your Projects — open your dashboard to preview.`;
+        }
       }
+      continue;
+    }
+    if (ar.tool === 'generate_image' && ar.imageUrl) {
+      channelReply += `\n🖼️ ${ar.imageUrl}`;
+      continue;
+    }
+    if (ar.tool === 'generate_video' && ar.videoUrl) {
+      channelReply += `\n🎬 Video: ${ar.videoUrl}`;
+      if ((ar.data?.estimatedTime as number) > 0) {
+        channelReply += ` (renders in ~${ar.data?.estimatedTime}s)`;
+      }
+      continue;
+    }
+    // For all other actions: append confirmation only if not already in the reply
+    if (ar.message && !seenSummaries.has(ar.message) && !finalReply.includes(ar.message)) {
+      channelReply += `\n\n✅ ${ar.message}`;
+      seenSummaries.add(ar.message);
     }
   }
 

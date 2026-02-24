@@ -33,6 +33,7 @@ import {
   voiceCreditCost,
 } from '../services/voice.js';
 import { db } from '../db/index.js';
+import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 
 // Extend Express Request to include requestId for pipeline tracing
 interface RequestWithId {
@@ -125,8 +126,14 @@ webhooksRouter.post('/telegram', async (req, res) => {
     }
 
     // Handle regular text messages
+    // Extract native reply context BEFORE parsing normalized message
+    const replyToMessageId = update.message?.reply_to_message?.message_id;
     const normalized = parseTelegramUpdate(update);
     if (normalized) {
+      // Check if this is a reply to an escalation before normal routing
+      const escalationHandled = await handleEscalationReply(normalized.externalId, normalized.text, replyToMessageId);
+      if (escalationHandled) return;
+
       await handleIncomingMessage({ ...normalized, requestId });
 
       // After handling, send action chips for agentic feel
@@ -577,6 +584,145 @@ async function handleTelegramCommand(
   }
 }
 
+// ---- Escalation Reply Handler ----
+
+interface EscalationData {
+  id: string;
+  ownerUserId: string;
+  ownerUsername: string;
+  visitorName: string;
+  question: string;
+  context: string;
+  status: string;
+  createdAt: string;
+  notifMessageId?: number;
+  ownerResponse?: string;
+  answeredAt?: string;
+}
+
+async function handleEscalationReply(
+  telegramChatId: string,
+  text: string,
+  replyToMessageId?: number,
+): Promise<boolean> {
+  try {
+    // Find user by Telegram chat ID
+    const link = db.prepare(
+      "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+    ).get(telegramChatId) as { user_id: string } | undefined;
+
+    if (!link) return false;
+
+    // Check for pending escalations for this owner
+    const pendingKey = `escalations:owner:${link.user_id}`;
+    const pendingRaw = await cacheGet(pendingKey);
+    if (!pendingRaw) return false;
+
+    const ids: string[] = JSON.parse(pendingRaw);
+    if (!ids.length) return false;
+
+    const escalations: Array<{ raw: string; data: EscalationData; idx: number }> = [];
+    for (let i = 0; i < ids.length; i++) {
+      const escRaw = await cacheGet(`escalation:${ids[i]}`);
+      if (!escRaw) continue;
+      const data = JSON.parse(escRaw) as EscalationData;
+      if (data.status !== 'pending') continue;
+      escalations.push({ raw: escRaw, data, idx: i });
+    }
+
+    if (!escalations.length) return false;
+
+    // ── TIER 1: Native Telegram reply (exact, zero false positives) ──────────
+    if (replyToMessageId) {
+      const matched = escalations.find(e => e.data.notifMessageId === replyToMessageId);
+      if (matched) {
+        await markEscalationAnswered(matched.data, ids, matched.idx, link.user_id, pendingKey, telegramChatId, text);
+        return true;
+      }
+      // Replied to a non-escalation bot message → fall through to normal chat
+      return false;
+    }
+
+    // ── TIER 2: Keyword/context match (medium confidence) ────────────────────
+    // Only runs if no native reply. Short directional replies are candidates.
+    const wordCount = text.trim().split(/\s+/).length;
+    if (wordCount <= 50) {
+      const lowerText = text.toLowerCase();
+      let bestMatch: typeof escalations[0] | null = null;
+      let bestScore = 0;
+
+      for (const esc of escalations) {
+        let score = 0;
+
+        // Score by visitor name tokens
+        const nameTokens = esc.data.visitorName.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+        for (const token of nameTokens) {
+          if (lowerText.includes(token)) score++;
+        }
+
+        // Score by key question nouns (3+ char words, excluding stop words)
+        const stopWords = new Set(['the', 'and', 'for', 'are', 'you', 'was', 'can', 'will', 'with', 'this', 'that', 'have', 'from', 'they', 'what', 'when', 'your']);
+        const questionTokens = esc.data.question
+          .toLowerCase()
+          .split(/\W+/)
+          .filter(t => t.length > 3 && !stopWords.has(t));
+
+        for (const token of questionTokens) {
+          if (lowerText.includes(token)) score++;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = esc;
+        }
+      }
+
+      if (bestMatch && bestScore >= 1) {
+        await markEscalationAnswered(bestMatch.data, ids, bestMatch.idx, link.user_id, pendingKey, telegramChatId, text);
+        return true;
+      }
+    }
+
+    // ── TIER 3: No match → normal chat ────────────────────────────────────────
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+async function markEscalationAnswered(
+  escalation: EscalationData,
+  ids: string[],
+  idx: number,
+  ownerUserId: string,
+  pendingKey: string,
+  telegramChatId: string,
+  ownerResponse: string,
+): Promise<void> {
+  const updated = {
+    ...escalation,
+    status: 'answered',
+    ownerResponse,
+    answeredAt: new Date().toISOString(),
+  };
+  await cacheSet(`escalation:${escalation.id}`, JSON.stringify(updated), 86400);
+
+  // Remove this ID from the pending list
+  const updatedIds = ids.filter((_, i) => i !== idx);
+  if (updatedIds.length === 0) {
+    await cacheDel(pendingKey);
+  } else {
+    await cacheSet(pendingKey, JSON.stringify(updatedIds), 86400);
+  }
+
+  // Confirm to owner with context
+  const snippet = ownerResponse.length > 80 ? ownerResponse.slice(0, 80) + '…' : ownerResponse;
+  await sendTelegramMessage(
+    Number(telegramChatId),
+    `Got it! I'll tell ${escalation.visitorName}: "${snippet}"`
+  );
+}
+
 // ---- Link Code Handler ----
 
 async function handleLinkCode(
@@ -632,14 +778,17 @@ async function handleLinkCode(
 // ================================================================
 
 webhooksRouter.post('/n8n/callback', async (req, res) => {
-  // Verify n8n webhook secret if configured
-  if (config.n8nWebhookSecret) {
-    const secret = req.headers['x-n8n-secret'] as string;
-    if (secret !== config.n8nWebhookSecret) {
-      logger.warn('n8n webhook: invalid or missing secret');
-      res.sendStatus(401);
-      return;
-    }
+  // Require n8n webhook secret — reject if not configured or mismatch
+  if (!config.n8nWebhookSecret) {
+    logger.warn('n8n webhook: N8N_WEBHOOK_SECRET not configured — rejecting request');
+    res.status(503).json({ error: 'n8n webhook not configured' });
+    return;
+  }
+  const secret = req.headers['x-n8n-secret'] as string;
+  if (secret !== config.n8nWebhookSecret) {
+    logger.warn('n8n webhook: invalid or missing secret');
+    res.sendStatus(401);
+    return;
   }
 
   const { userId, channel, externalId, message } = req.body;

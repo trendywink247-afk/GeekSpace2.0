@@ -10,13 +10,19 @@ test.describe('Reminders', () => {
     // Navigate to dashboard first (auth is handled by global setup)
     await page.goto('/dashboard');
     await expect(page.getByTestId('dashboard-shell')).toBeVisible();
-    // Navigate to Reminders by project type
+    // Navigate to Reminders — must expand the Productivity accordion group first
     if (testInfo.project.name === 'chromium') {
-      await page.getByTestId('dashboard-sidebar-desktop').getByText('Reminders').click();
+      const sidebar = page.getByTestId('dashboard-sidebar-desktop');
+      // Expand the Productivity group (collapsed by default)
+      await sidebar.getByText('Productivity').click();
+      await sidebar.getByText('Reminders').click();
     } else {
-      // Mobile: open nav drawer and click
+      // Mobile: open nav drawer first
       await page.getByTestId('mobile-nav-toggle').click();
-      await page.getByTestId('dashboard-sidebar-mobile').getByText('Reminders').click();
+      const sidebar = page.getByTestId('dashboard-sidebar-mobile');
+      // Expand the Productivity group (collapsed by default)
+      await sidebar.getByText('Productivity').click();
+      await sidebar.getByText('Reminders').click();
     }
     // Wait for page to load
     await expect(page.getByTestId('reminders-page')).toBeVisible();

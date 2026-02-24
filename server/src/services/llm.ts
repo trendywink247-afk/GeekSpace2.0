@@ -593,13 +593,8 @@ export async function routeChat(
       else if (isOpenRouterFreeAvailable()) {
         provider = 'openrouter-free';
         routingReason = ollamaAvailable ? 'ollama_healthy' : 'openrouter_free_available';
-      } 
-      // 3. Try OpenRouter paid if free not available
-      else if (hasCredits && isOpenRouterAvailable()) {
-        provider = 'openrouter';
-        routingReason = 'openrouter_free_available';
-      } 
-      // 4. Last resort: Ollama
+      }
+      // 3. Last resort: Ollama (openrouter paid is NEVER auto-selected — only via explicit /premium prefix)
       else if (ollamaAvailable) {
         provider = 'ollama';
         routingReason = 'fallback_chain';
@@ -730,6 +725,23 @@ export async function routeChat(
         tokensOut = reply.length;
         provider = 'builtin';
       }
+    } else if (provider === 'ollama' && isOpenRouterFreeAvailable()) {
+      // Ollama failed → try OpenRouter Free before giving up
+      try {
+        const result = await callOpenRouterFree(fullMessages, opts?.userId);
+        reply = result.content;
+        tokensIn = result.tokensIn;
+        tokensOut = result.tokensOut;
+        model = config.openrouterFreeModel;
+        finalProvider = 'openrouter-free';
+        routingReason = 'ollama_timeout';
+      } catch {
+        reply = 'I had trouble processing your request. Please try again shortly.';
+        model = 'error-fallback';
+        tokensIn = userMessage.length;
+        tokensOut = reply.length;
+        provider = 'builtin';
+      }
     } else {
       reply = 'I had trouble processing your request. Please try again shortly.';
       model = 'error-fallback';
@@ -760,6 +772,42 @@ export async function routeChat(
   }, 'LLM response');
 
   return { reply, provider, model, tokensIn, tokensOut, latencyMs, costEstimate, creditCost, intent };
+}
+
+// ---- Ollama Keepalive ----
+// Pings Ollama every 3 minutes to keep the model loaded in memory,
+// preventing cold-start timeouts (model reload takes 30-60s on this VPS).
+
+let keepaliveInterval: ReturnType<typeof setInterval> | null = null;
+
+async function pingOllama(): Promise<void> {
+  try {
+    const res = await fetch(`${config.ollamaBaseUrl}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: config.ollamaModel,
+        prompt: 'ping',
+        stream: false,
+        options: { num_predict: 1 },
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (res.ok) {
+      logger.debug({ model: config.ollamaModel }, 'Ollama keepalive ping OK');
+    }
+  } catch {
+    logger.debug('Ollama keepalive ping failed (non-fatal)');
+  }
+}
+
+export function startOllamaKeepalive(): void {
+  if (keepaliveInterval) return;
+  // Initial warmup
+  pingOllama().catch(() => {});
+  // Ping every 3 minutes
+  keepaliveInterval = setInterval(() => pingOllama().catch(() => {}), 3 * 60 * 1000);
+  logger.info('Ollama keepalive started (every 3 minutes)');
 }
 
 // ---- Smart Provider Picker ----

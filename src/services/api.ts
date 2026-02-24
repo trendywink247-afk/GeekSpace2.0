@@ -441,25 +441,43 @@ export const premiumAgentService = {
 // ----- Public Agent Chat -------------------------------------
 
 export const publicAgentService = {
-  chat: (username: string, message: string) =>
-    api.post<{ reply: string; agentName: string; ownerName: string; personality: string; personalityEmoji: string }>(`/agent/chat/public/${username}`, { message }),
+  canChat: (username: string) =>
+    api.get<{ canChat: boolean }>(`/agent/can-chat-public/${username}`),
+  chat: (username: string, message: string, history?: Array<{ role: string; content: string }>, messageCount?: number) =>
+    api.post<{ reply: string; agentName: string; ownerName: string; personality: string; personalityEmoji: string }>(`/agent/chat/public/${username}`, { message, history, messageCount }),
 };
 
 // ----- Weebo Fleet ----------------------------------------
 
+export interface PicoAgentFull {
+  id: string; user_id: string; slot: number; name: string; personality: string;
+  status: string; tasks_completed: number; tasks_failed: number;
+  created_at: string;
+  system_prompt: string; mode: string; voice: string;
+  creativity: number; formality: number; model_preference: string;
+  custom_commands: string; assigned_tools: string; enabled: number;
+}
+
+export interface PicoCronJob {
+  id: string; user_id: string; agent_slot: number; name: string;
+  task_type: string; task_config: string; interval_minutes: number;
+  enabled: number; last_run_at: string | null; next_run_at: string | null;
+  run_count: number; created_at: string;
+}
+
 export const picoService = {
   getAgents: () =>
-    api.get<Array<{
-      id: string; user_id: string; slot: number; name: string; personality: string;
-      status: string; tasks_completed: number; tasks_failed: number;
-      created_at: string;
-    }>>('/pico/agents'),
+    api.get<PicoAgentFull[]>('/pico/agents'),
 
   createAgent: (name: string, personality: string = 'weebo') =>
-    api.post<{ id: string; slot: number; name: string; personality: string }>('/pico/agents', { name, personality }),
+    api.post<PicoAgentFull>('/pico/agents', { name, personality }),
 
-  updateAgent: (id: string, data: { name?: string; status?: string }) =>
-    api.patch(`/pico/agents/${id}`, data),
+  updateAgent: (id: string, data: {
+    name?: string; status?: string; system_prompt?: string;
+    mode?: string; voice?: string; creativity?: number; formality?: number;
+    model_preference?: string; custom_commands?: string;
+    assigned_tools?: string[]; enabled?: boolean;
+  }) => api.patch<PicoAgentFull>(`/pico/agents/${id}`, data),
 
   deleteAgent: (id: string) =>
     api.delete(`/pico/agents/${id}`),
@@ -499,6 +517,23 @@ export const picoService = {
 
   cancelTask: (id: string) =>
     api.delete(`/pico/tasks/${id}`),
+
+  // Cron Jobs
+  getCronJobs: () =>
+    api.get<PicoCronJob[]>('/pico/cron-jobs'),
+
+  createCronJob: (data: {
+    name: string; task_type: string; task_config?: Record<string, unknown>;
+    interval_minutes: number; agent_slot?: number;
+  }) => api.post<PicoCronJob>('/pico/cron-jobs', data),
+
+  updateCronJob: (id: string, data: {
+    name?: string; task_type?: string; task_config?: Record<string, unknown>;
+    interval_minutes?: number; agent_slot?: number; enabled?: boolean;
+  }) => api.patch<PicoCronJob>(`/pico/cron-jobs/${id}`, data),
+
+  deleteCronJob: (id: string) =>
+    api.delete(`/pico/cron-jobs/${id}`),
 };
 
 // ----- Briefings -------------------------------------------
@@ -587,6 +622,188 @@ export const templateService = {
 
   getCategories: () =>
     api.get<{ categories: TemplateCategory[] }>('/templates/categories/list'),
+};
+
+// ----- Images (Image Generator) --------------------------------
+
+export interface UserImage {
+  id: string;
+  prompt: string;
+  model: string;
+  image_url: string;
+  width: number;
+  height: number;
+  source: 'generated' | 'edited' | 'uploaded';
+  created_at: string;
+  expires_at: string;
+}
+
+export interface ImageModel {
+  id: string;
+  name: string;
+  description: string;
+  cost: string;
+  credits: number;
+  tier: 'auto' | 'free' | 'standard' | 'premium';
+}
+
+export const imageService = {
+  list: () =>
+    api.get<{ images: UserImage[]; count: number; max: number }>('/images'),
+
+  get: (id: string) =>
+    api.get<UserImage>(`/images/${id}`),
+
+  generate: (prompt: string, model?: string, width?: number, height?: number) =>
+    api.post<UserImage>('/images/generate', { prompt, model, width, height }),
+
+  edit: (prompt: string, referenceUrl?: string, model?: string) =>
+    api.post<UserImage>('/images/edit', { prompt, reference_url: referenceUrl, model }),
+
+  delete: (id: string) =>
+    api.delete<{ deleted: boolean }>(`/images/${id}`),
+
+  getModels: () =>
+    api.get<{ models: ImageModel[] }>('/images/models/available'),
+};
+
+// ----- Videos (Video Generator) --------------------------------
+
+export interface UserVideo {
+  id: string;
+  prompt: string;
+  model: string;
+  video_url: string;
+  width: number;
+  height: number;
+  duration: number;
+  status: 'processing' | 'ready';
+  source: 'generated';
+  created_at: string;
+  expires_at: string;
+}
+
+export interface VideoModel {
+  id: string;
+  name: string;
+  description: string;
+  cost: string;
+  credits: number;
+  tier: 'auto' | 'free' | 'standard' | 'premium';
+}
+
+export const videoService = {
+  list: () =>
+    api.get<{ videos: UserVideo[]; count: number; max: number }>('/videos'),
+
+  get: (id: string) =>
+    api.get<UserVideo>(`/videos/${id}`),
+
+  generate: (prompt: string, model?: string, width?: number, height?: number, duration?: number) =>
+    api.post<UserVideo & { estimated_time: number }>('/videos/generate', { prompt, model, width, height, duration }),
+
+  checkStatus: (id: string) =>
+    api.get<{ status: string; video_url: string }>(`/videos/${id}/status`),
+
+  delete: (id: string) =>
+    api.delete<{ deleted: boolean }>(`/videos/${id}`),
+
+  getModels: () =>
+    api.get<{ models: VideoModel[] }>('/videos/models/available'),
+};
+
+// ----- Social Media (Social Media Handler) ---------------------
+
+export interface SocialAccount {
+  id: string;
+  user_id: string;
+  platform: 'instagram' | 'facebook';
+  account_name: string;
+  posting_method: 'webhook' | 'api';
+  webhook_url: string;
+  page_id: string;
+  access_token_encrypted: string;
+  status: 'active' | 'paused';
+  posts_count: number;
+  last_post_at: string | null;
+  created_at: string;
+}
+
+export interface ContentPlan {
+  id: string;
+  user_id: string;
+  title: string;
+  topic: string;
+  niche: string;
+  status: 'draft' | 'active' | 'completed' | 'cancelled';
+  social_account_id: string | null;
+  start_date: string | null;
+  created_at: string;
+  items?: ContentPlanItem[];
+}
+
+export interface ContentPlanItem {
+  id: string;
+  plan_id: string;
+  day_number: number;
+  slot: number;
+  caption: string;
+  media_id: string;
+  media_type: string;
+  media_url: string;
+  scheduled_at: string | null;
+  status: 'draft' | 'scheduled' | 'posting' | 'posted' | 'failed';
+  enabled: number;
+  posted_at: string | null;
+  error_message: string;
+  created_at: string;
+}
+
+export const socialMediaService = {
+  // Accounts
+  getAccounts: () =>
+    api.get<SocialAccount[]>('/social-media/accounts'),
+
+  createAccount: (data: {
+    platform: string; account_name: string; posting_method: string;
+    webhook_url?: string; page_id?: string; access_token?: string;
+  }) => api.post<SocialAccount>('/social-media/accounts', data),
+
+  updateAccount: (id: string, data: {
+    account_name?: string; posting_method?: string; webhook_url?: string;
+    page_id?: string; access_token?: string; status?: string;
+  }) => api.patch<SocialAccount>(`/social-media/accounts/${id}`, data),
+
+  deleteAccount: (id: string) =>
+    api.delete<{ deleted: boolean }>(`/social-media/accounts/${id}`),
+
+  testAccount: (id: string) =>
+    api.post<{ success: boolean; message: string }>(`/social-media/accounts/${id}/test`),
+
+  // Plans
+  getPlans: () =>
+    api.get<ContentPlan[]>('/social-media/plans'),
+
+  getPlan: (id: string) =>
+    api.get<ContentPlan>(`/social-media/plans/${id}`),
+
+  generatePlan: (topic: string, niche: string, social_account_id?: string) =>
+    api.post<ContentPlan>('/social-media/plans/generate', { topic, niche, social_account_id }),
+
+  deletePlan: (id: string) =>
+    api.delete<{ deleted: boolean }>(`/social-media/plans/${id}`),
+
+  activatePlan: (id: string, data: {
+    start_date: string; social_account_id: string; posting_times?: string[];
+  }) => api.post<ContentPlan>(`/social-media/plans/${id}/activate`, data),
+
+  // Plan Items
+  updatePlanItem: (planId: string, itemId: string, data: {
+    caption?: string; media_id?: string; enabled?: boolean;
+  }) => api.patch<ContentPlanItem>(`/social-media/plans/${planId}/items/${itemId}`, data),
+
+  postItem: (planId: string, itemId: string) =>
+    api.post<{ success: boolean; result: string }>(`/social-media/plans/${planId}/items/${itemId}/post`),
 };
 
 export default api;

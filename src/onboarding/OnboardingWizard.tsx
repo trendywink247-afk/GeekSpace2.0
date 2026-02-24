@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Zap, Clock, SkipForward } from 'lucide-react';
+import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Zap, Clock, SkipForward, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/authStore';
 import { ProfileStep } from './steps/ProfileStep';
@@ -30,7 +30,7 @@ const SKIP_REASONS = [
 
 export function OnboardingWizard() {
   const navigate = useNavigate();
-  const { onboarding, updateOnboarding, saveOnboardingStep, completeOnboarding, user, fetchUser } = useAuthStore();
+  const { onboarding, updateOnboarding, saveOnboardingStep, completeOnboarding, user, fetchUser, logout } = useAuthStore();
   const [step, setStep] = useState(Math.min(onboarding.step, 5));
   const [stepAnimClass, setStepAnimClass] = useState('animate-step-slide-in');
   const [isLaunching, setIsLaunching] = useState(false);
@@ -382,6 +382,19 @@ export function OnboardingWizard() {
           {step === 4 && "Connect apps to supercharge your agent"}
           {step === 5 && "Review everything before launching"}
         </p>
+
+        {/* Escape hatch — sign in as a different account */}
+        {user?.name && (
+          <div className="flex items-center justify-center pt-2">
+            <button
+              onClick={logout}
+              className="flex items-center gap-1.5 text-xs text-[#6B7280]/40 hover:text-[#6B7280] transition-colors"
+            >
+              <LogOut className="w-3 h-3" />
+              Not {user.name.split(' ')[0]}? Sign in as someone else
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -15,7 +15,8 @@ test.describe('Authentication', () => {
   test('should login with valid credentials', async ({ page, request }, testInfo) => {
     // Seed a test user via API with unique email to avoid conflicts
     const uniqueId = Date.now();
-    const seedResponse = await request.post('http://localhost:3001/api/test/seed', {
+    const apiURL = process.env.API_URL || 'http://localhost:3001';
+    const seedResponse = await request.post(`${apiURL}/api/test/seed`, {
       data: {
         email: `auth-test-${uniqueId}@example.com`,
         name: 'Auth Test User',

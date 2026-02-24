@@ -1,7 +1,7 @@
 // ============================================================
 // PicoClaw Fleet — REST API
 //
-// Endpoints for managing Pico agents (slot-based, max 3) and
+// Endpoints for managing Pico agents (slot-based, max 6) and
 // tasks (plan via Kimi, list, cancel).
 // ============================================================
 
@@ -14,6 +14,8 @@ import {
   picoAgentUpdateSchema,
   picoTaskPlanSchema,
   picoTaskQuerySchema,
+  picoCronJobCreateSchema,
+  picoCronJobUpdateSchema,
 } from '../middleware/validate.js';
 import {
   getUserAgents,
@@ -26,6 +28,10 @@ import {
   planTasks,
   planWithKimi,
   queueTasks,
+  getUserCronJobs,
+  createCronJob,
+  updateCronJob,
+  deleteCronJob,
 } from '../services/pico-fleet.js';
 import { db } from '../db/index.js';
 
@@ -67,7 +73,8 @@ picoRouter.patch('/agents/:id', requireAuth, validateBody(picoAgentUpdateSchema)
     res.json(agent);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to update agent';
-    res.status(400).json({ error: msg });
+    const status = msg.includes('not found') ? 404 : 400;
+    res.status(status).json({ error: msg });
   }
 });
 
@@ -77,7 +84,8 @@ picoRouter.delete('/agents/:id', requireAuth, (req: AuthRequest, res) => {
     res.json({ ok: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to delete agent';
-    res.status(400).json({ error: msg });
+    const status = msg.includes('not found') ? 404 : 400;
+    res.status(status).json({ error: msg });
   }
 });
 
@@ -191,6 +199,44 @@ picoRouter.delete('/tasks/:id', requireAuth, (req: AuthRequest, res) => {
     res.json({ ok: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to cancel task';
+    const status = msg.includes('not found') ? 404 : 400;
+    res.status(status).json({ error: msg });
+  }
+});
+
+// ---- Cron Jobs ----
+
+picoRouter.get('/cron-jobs', requireAuth, (req: AuthRequest, res) => {
+  const jobs = getUserCronJobs(req.userId!);
+  res.json(jobs);
+});
+
+picoRouter.post('/cron-jobs', requireAuth, validateBody(picoCronJobCreateSchema), (req: AuthRequest, res) => {
+  try {
+    const job = createCronJob(req.userId!, req.body);
+    res.status(201).json(job);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to create cron job';
+    res.status(400).json({ error: msg });
+  }
+});
+
+picoRouter.patch('/cron-jobs/:id', requireAuth, validateBody(picoCronJobUpdateSchema), (req: AuthRequest, res) => {
+  try {
+    const job = updateCronJob(req.params.id, req.userId!, req.body);
+    res.json(job);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to update cron job';
+    res.status(400).json({ error: msg });
+  }
+});
+
+picoRouter.delete('/cron-jobs/:id', requireAuth, (req: AuthRequest, res) => {
+  try {
+    deleteCronJob(req.params.id, req.userId!);
+    res.json({ ok: true });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to delete cron job';
     res.status(400).json({ error: msg });
   }
 });

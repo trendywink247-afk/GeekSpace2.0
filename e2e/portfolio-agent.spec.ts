@@ -36,14 +36,18 @@ test.describe('Portfolio Page', () => {
   });
 
   test('should show skills tab', async ({ page }) => {
-    // Click skills tab
-    await page.getByTestId('portfolio-tab-skills').click();
+    // Scroll into view first — on mobile the tab bar is overflow-x-auto
+    const skillsTab = page.getByTestId('portfolio-tab-skills');
+    await skillsTab.scrollIntoViewIfNeeded();
+    await skillsTab.click();
     await expect(page.getByText('Add technologies and skills')).toBeVisible();
   });
 
   test('should show projects tab', async ({ page }) => {
-    // Click projects tab
-    await page.getByTestId('portfolio-tab-projects').click();
+    // Scroll into view first — on mobile the tab bar is overflow-x-auto
+    const projectsTab = page.getByTestId('portfolio-tab-projects');
+    await projectsTab.scrollIntoViewIfNeeded();
+    await projectsTab.click();
     await expect(page.getByText('Showcase your best work')).toBeVisible();
   });
 

@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { memoryService } from '@/services/api';
 
 interface MemoryEntry {
   id: string;
@@ -39,6 +40,7 @@ export function MemoryManagerPage() {
   const [sortBy, setSortBy] = useState<'recent' | 'confidence' | 'accessed'>('recent');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Load memories from API
   useEffect(() => {
@@ -47,25 +49,23 @@ export function MemoryManagerPage() {
 
   const loadMemories = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
-      // Try API first
-      const response = await fetch('/api/memory');
-      if (response.ok) {
-        const data = await response.json();
-        setMemories(data.memories || []);
+      const { data } = await memoryService.list();
+      if (Array.isArray(data)) {
+        setMemories(data);
       } else {
-        // Fallback to localStorage for demo
-        const stored = localStorage.getItem('geekspace-memories');
-        if (stored) {
-          setMemories(JSON.parse(stored));
-        }
+        setLoadError('Unexpected response format');
+        setMemories([]);
       }
-    } catch {
-      // Fallback
-      const stored = localStorage.getItem('geekspace-memories');
-      if (stored) {
-        setMemories(JSON.parse(stored));
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401) {
+        setLoadError('Session expired — please log in again');
+      } else {
+        setLoadError('Failed to load memories — try refreshing');
       }
+      setMemories([]);
     } finally {
       setIsLoading(false);
     }
@@ -73,12 +73,11 @@ export function MemoryManagerPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await fetch(`/api/memory/${id}`, { method: 'DELETE' });
-      setMemories(memories.filter((m) => m.id !== id));
+      await memoryService.delete(id);
     } catch {
-      // Fallback: just update local state
-      setMemories(memories.filter((m) => m.id !== id));
+      // non-fatal — still remove from UI
     }
+    setMemories(memories.filter((m) => m.id !== id));
   };
 
   const handleDeleteByCategory = async (category: string) => {
@@ -300,10 +299,17 @@ export function MemoryManagerPage() {
       {filteredMemories.length === 0 ? (
         <div className="text-center py-16">
           <Brain className="w-16 h-16 text-[#00F0FF]/30 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No memories found</h3>
+          <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">
+            {loadError ? 'Could not load memories' : 'No memories found'}
+          </h3>
           <p className="text-[#6B7280] max-w-sm mx-auto">
-            Your agent will build memories as you chat. They'll appear here for you to review and manage.
+            {loadError || 'Your agent will build memories as you chat. They\'ll appear here for you to review and manage.'}
           </p>
+          {loadError && (
+            <Button onClick={loadMemories} className="mt-4 bg-[#00F0FF] hover:bg-[#00D4B0]">
+              <RefreshCw className="w-4 h-4 mr-2" /> Retry
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

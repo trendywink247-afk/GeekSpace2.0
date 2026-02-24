@@ -1,7 +1,7 @@
 // ============================================================
 // PicoClaw Fleet Engine — Slot-Based Per-User Task Agents
 //
-// Each user gets up to 3 Pico agents (slots 1-3). Slot 1 is
+// Each user gets up to 6 Pico agents (slots 1-6). Slot 1 is
 // auto-created on signup/backfill. Kimi (Moonshot) plans tasks
 // as strict JSON; an in-process worker executes them with fair
 // round-robin scheduling and 1-concurrent-per-agent limits.
@@ -22,17 +22,17 @@ import { eventBus } from './event-bus.js';
 import { upsertMemory } from './memory.js';
 
 const PLAN_AGENT_SLOTS: Record<string, number> = {
-  free: 1,
-  intro: 2,
-  monthly: 2,
-  halfyear: 3,
-  yearly: 3,
+  free: 2,
+  intro: 4,
+  monthly: 4,
+  halfyear: 6,
+  yearly: 6,
 };
 
 // ---- Types ----
 
 export const ALLOWED_TASK_TYPES = [
-  'create_reminder', 'telegram_message', 'call_api', 'n8n_webhook', 'portfolio_deploy',
+  'create_reminder', 'telegram_message', 'call_api', 'n8n_webhook', 'portfolio_deploy', 'social_media_post',
 ] as const;
 export type TaskType = typeof ALLOWED_TASK_TYPES[number];
 
@@ -52,6 +52,30 @@ interface PicoAgent {
   status: string;
   tasks_completed: number;
   tasks_failed: number;
+  created_at: string;
+  system_prompt: string;
+  mode: string;
+  voice: string;
+  creativity: number;
+  formality: number;
+  model_preference: string;
+  custom_commands: string;
+  assigned_tools: string;
+  enabled: number;
+}
+
+export interface PicoCronJob {
+  id: string;
+  user_id: string;
+  agent_slot: number;
+  name: string;
+  task_type: string;
+  task_config: string;
+  interval_minutes: number;
+  enabled: number;
+  last_run_at: string | null;
+  next_run_at: string | null;
+  run_count: number;
   created_at: string;
 }
 
@@ -161,6 +185,41 @@ export function initPicoFleetTables(): void {
     db.exec("ALTER TABLE pico_tasks ADD COLUMN retry_after TEXT");
   } catch { /* column already exists */ }
 
+  // Migration: add per-agent config columns
+  const agentCols: [string, string][] = [
+    ['system_prompt', "TEXT DEFAULT ''"],
+    ['mode', "TEXT DEFAULT 'builder'"],
+    ['voice', "TEXT DEFAULT 'friendly'"],
+    ['creativity', 'INTEGER DEFAULT 70'],
+    ['formality', 'INTEGER DEFAULT 50'],
+    ['model_preference', "TEXT DEFAULT 'auto'"],
+    ['custom_commands', "TEXT DEFAULT ''"],
+    ['assigned_tools', "TEXT DEFAULT '[]'"],
+    ['enabled', 'INTEGER DEFAULT 1'],
+  ];
+  for (const [col, def] of agentCols) {
+    try { db.exec(`ALTER TABLE pico_agents ADD COLUMN ${col} ${def}`); } catch { /* exists */ }
+  }
+
+  // Create pico_cron_jobs table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pico_cron_jobs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      agent_slot INTEGER NOT NULL DEFAULT 2,
+      name TEXT NOT NULL,
+      task_type TEXT NOT NULL,
+      task_config TEXT NOT NULL DEFAULT '{}',
+      interval_minutes INTEGER NOT NULL DEFAULT 60,
+      enabled INTEGER DEFAULT 1,
+      last_run_at TEXT,
+      next_run_at TEXT,
+      run_count INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_pico_cron_user ON pico_cron_jobs(user_id);
+  `);
+
   logger.info('Pico Fleet tables initialized');
 }
 
@@ -207,7 +266,7 @@ export function createAgent(userId: string, name: string, personality = 'weebo')
   }
 
   const usedSlots = existing.map(a => a.slot);
-  const nextSlot = [1, 2, 3].find(s => !usedSlots.includes(s));
+  const nextSlot = [1, 2, 3, 4, 5, 6].find(s => !usedSlots.includes(s));
   if (!nextSlot) {
     throw new Error('No free agent slots available');
   }
@@ -219,15 +278,53 @@ export function createAgent(userId: string, name: string, personality = 'weebo')
   return db.prepare('SELECT * FROM pico_agents WHERE id = ?').get(id) as PicoAgent;
 }
 
-export function updateAgent(agentId: string, userId: string, updates: { name?: string; status?: string }): PicoAgent {
+export interface AgentUpdateFields {
+  name?: string;
+  status?: string;
+  system_prompt?: string;
+  mode?: string;
+  voice?: string;
+  creativity?: number;
+  formality?: number;
+  model_preference?: string;
+  custom_commands?: string;
+  assigned_tools?: string[];
+  enabled?: boolean;
+}
+
+export function updateAgent(agentId: string, userId: string, updates: AgentUpdateFields): PicoAgent {
   const agent = db.prepare('SELECT * FROM pico_agents WHERE id = ? AND user_id = ?')
     .get(agentId, userId) as PicoAgent | undefined;
   if (!agent) throw new Error('Agent not found');
 
   const fields: string[] = [];
   const values: unknown[] = [];
-  if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
-  if (updates.status !== undefined) { fields.push('status = ?'); values.push(updates.status); }
+
+  const stringFields = ['name', 'status', 'system_prompt', 'mode', 'voice', 'model_preference', 'custom_commands'] as const;
+  for (const f of stringFields) {
+    if (updates[f] !== undefined) { fields.push(`${f} = ?`); values.push(updates[f]); }
+  }
+  const numFields = ['creativity', 'formality'] as const;
+  for (const f of numFields) {
+    if (updates[f] !== undefined) { fields.push(`${f} = ?`); values.push(updates[f]); }
+  }
+  if (updates.assigned_tools !== undefined) {
+    fields.push('assigned_tools = ?');
+    values.push(JSON.stringify(updates.assigned_tools));
+  }
+  if (updates.enabled !== undefined) {
+    // Enforce: at least 1 Weebo must always remain active
+    if (!updates.enabled) {
+      const enabledCount = (db.prepare(
+        'SELECT COUNT(*) as cnt FROM pico_agents WHERE user_id = ? AND enabled = 1'
+      ).get(userId) as { cnt: number }).cnt;
+      if (enabledCount <= 1 && agent.enabled) {
+        throw new Error('Cannot disable the last active Weebo. At least one agent must remain active.');
+      }
+    }
+    fields.push('enabled = ?');
+    values.push(updates.enabled ? 1 : 0);
+  }
 
   if (fields.length) {
     values.push(agentId);
@@ -251,6 +348,146 @@ export function deleteAgent(agentId: string, userId: string): void {
   }
 
   db.prepare('DELETE FROM pico_agents WHERE id = ?').run(agentId);
+}
+
+// ---- Cron Job CRUD ----
+
+export function getUserCronJobs(userId: string): PicoCronJob[] {
+  return db.prepare('SELECT * FROM pico_cron_jobs WHERE user_id = ? ORDER BY created_at DESC')
+    .all(userId) as PicoCronJob[];
+}
+
+export function createCronJob(userId: string, data: {
+  name: string; task_type: string; task_config?: Record<string, unknown>;
+  interval_minutes: number; agent_slot?: number;
+}): PicoCronJob {
+  const id = uuid();
+  const nextRun = new Date(Date.now() + data.interval_minutes * 60_000).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+  db.prepare(`INSERT INTO pico_cron_jobs (id, user_id, agent_slot, name, task_type, task_config, interval_minutes, next_run_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    id, userId, data.agent_slot ?? 2, data.name, data.task_type,
+    JSON.stringify(data.task_config ?? {}), data.interval_minutes, nextRun,
+  );
+  return db.prepare('SELECT * FROM pico_cron_jobs WHERE id = ?').get(id) as PicoCronJob;
+}
+
+export function updateCronJob(jobId: string, userId: string, updates: {
+  name?: string; task_type?: string; task_config?: Record<string, unknown>;
+  interval_minutes?: number; agent_slot?: number; enabled?: boolean;
+}): PicoCronJob {
+  const job = db.prepare('SELECT * FROM pico_cron_jobs WHERE id = ? AND user_id = ?')
+    .get(jobId, userId) as PicoCronJob | undefined;
+  if (!job) throw new Error('Cron job not found');
+
+  const fields: string[] = [];
+  const values: unknown[] = [];
+  if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
+  if (updates.task_type !== undefined) { fields.push('task_type = ?'); values.push(updates.task_type); }
+  if (updates.task_config !== undefined) { fields.push('task_config = ?'); values.push(JSON.stringify(updates.task_config)); }
+  if (updates.interval_minutes !== undefined) {
+    fields.push('interval_minutes = ?'); values.push(updates.interval_minutes);
+    // Recalculate next_run_at from now
+    const nextRun = new Date(Date.now() + updates.interval_minutes * 60_000).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+    fields.push('next_run_at = ?'); values.push(nextRun);
+  }
+  if (updates.agent_slot !== undefined) { fields.push('agent_slot = ?'); values.push(updates.agent_slot); }
+  if (updates.enabled !== undefined) { fields.push('enabled = ?'); values.push(updates.enabled ? 1 : 0); }
+
+  if (fields.length) {
+    values.push(jobId);
+    db.prepare(`UPDATE pico_cron_jobs SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  }
+  return db.prepare('SELECT * FROM pico_cron_jobs WHERE id = ?').get(jobId) as PicoCronJob;
+}
+
+export function deleteCronJob(jobId: string, userId: string): void {
+  const job = db.prepare('SELECT * FROM pico_cron_jobs WHERE id = ? AND user_id = ?')
+    .get(jobId, userId) as PicoCronJob | undefined;
+  if (!job) throw new Error('Cron job not found');
+  db.prepare('DELETE FROM pico_cron_jobs WHERE id = ?').run(jobId);
+}
+
+function checkPicoCronJobs(): void {
+  const now = new Date().toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+  const dueJobs = db.prepare(
+    "SELECT * FROM pico_cron_jobs WHERE enabled = 1 AND next_run_at <= ?"
+  ).all(now) as PicoCronJob[];
+
+  for (const job of dueJobs) {
+    try {
+      const config = JSON.parse(job.task_config || '{}') as Record<string, unknown>;
+      const task: PlannedTask = {
+        task_type: job.task_type as TaskType,
+        description: `[cron] ${job.name}`,
+        config,
+        agent_slot: job.agent_slot,
+      };
+      queueTasks(job.user_id, [task], 'cron');
+
+      // Bump next_run_at and run_count
+      const nextRun = new Date(Date.now() + job.interval_minutes * 60_000).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+      db.prepare("UPDATE pico_cron_jobs SET last_run_at = ?, next_run_at = ?, run_count = run_count + 1 WHERE id = ?")
+        .run(now, nextRun, job.id);
+    } catch (err) {
+      logger.error({ err, cronJobId: job.id }, 'Cron job execution failed');
+    }
+  }
+}
+
+// ---- SSRF Protection ----
+
+const BLOCKED_HOSTNAMES = new Set([
+  'localhost', 'redis', 'picoclaw', 'geekspace', 'geekspace-app',
+  'geekspace-redis', 'geekspace-picoclaw', 'geekspace-caddy',
+  'ollama', 'ollama-qtzz-ollama-1', 'openclaw', 'openclaw-e3n5-openclaw-1',
+  'caddy', 'n8n', 'edith-bridge', 'metadata.google.internal',
+  'instance-data', '169.254.169.254',
+]);
+
+/**
+ * Validate that a URL is safe for external HTTP requests.
+ * Blocks: private IPs, Docker-internal hostnames, non-http(s) protocols.
+ */
+export function validateExternalUrl(rawUrl: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error('Invalid URL format');
+  }
+
+  // Only allow http(s)
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`Blocked protocol: ${parsed.protocol} — only http/https allowed`);
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  // Block known internal hostnames
+  if (BLOCKED_HOSTNAMES.has(hostname)) {
+    throw new Error(`Blocked internal hostname: ${hostname}`);
+  }
+
+  // Block private/reserved IPv4 ranges
+  const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const [, a, b] = ipv4Match.map(Number);
+    if (
+      a === 10 ||                          // 10.0.0.0/8
+      a === 127 ||                         // 127.0.0.0/8
+      (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
+      (a === 192 && b === 168) ||          // 192.168.0.0/16
+      a === 0 ||                           // 0.0.0.0/8
+      (a === 169 && b === 254)             // 169.254.0.0/16 (link-local)
+    ) {
+      throw new Error(`Blocked private/reserved IP: ${hostname}`);
+    }
+  }
+
+  // Block IPv6 loopback and link-local
+  if (hostname === '::1' || hostname === '[::1]' || hostname.startsWith('fe80')) {
+    throw new Error(`Blocked IPv6 address: ${hostname}`);
+  }
 }
 
 // ---- Complexity Estimator ----
@@ -480,7 +717,7 @@ ALLOWED task_type values (ONLY these):
 - n8n_webhook: config needs { "url": "string", "body": "string" }
 - portfolio_deploy: config needs {} (no params needed)
 
-Each task can target a specific agent slot (1-3). Default is 1.
+Each task can target a specific agent slot (1-6). Default is 1.
 
 Respond with ONLY a JSON array. No markdown fences, no explanation, no extra text.
 Example: [{"task_type":"create_reminder","description":"Set morning standup reminder","config":{"reminder_text":"Daily standup at 9am"},"agent_slot":1}]
@@ -536,7 +773,7 @@ export async function planWithKimi(userId: string, userRequest: string): Promise
       task_type: taskType as TaskType,
       description: String(t.description || ''),
       config: (typeof t.config === 'object' && t.config !== null) ? t.config as Record<string, unknown> : {},
-      agent_slot: typeof t.agent_slot === 'number' ? Math.min(3, Math.max(1, Math.round(t.agent_slot))) : 1,
+      agent_slot: typeof t.agent_slot === 'number' ? Math.min(6, Math.max(1, Math.round(t.agent_slot))) : 1,
     });
   }
 
@@ -685,6 +922,7 @@ async function processNextTask(): Promise<boolean> {
     JOIN pico_agents a ON a.id = t.agent_id
     WHERE t.status = 'queued'
       AND a.status = 'active'
+      AND a.enabled = 1
       AND (t.retry_after IS NULL OR t.retry_after <= ?)
       AND NOT EXISTS (
         SELECT 1 FROM pico_tasks r
@@ -780,6 +1018,7 @@ async function executeTask(task: PicoTask): Promise<void> {
       case 'n8n_webhook': {
         const url = String(taskConfig.url || '');
         if (!url) throw new Error('No URL configured');
+        validateExternalUrl(url);
         const method = String(taskConfig.method || 'POST');
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
@@ -807,6 +1046,12 @@ async function executeTask(task: PicoTask): Promise<void> {
         db.prepare('UPDATE portfolios SET is_public = 1 WHERE user_id = ?').run(task.user_id);
         const user = db.prepare('SELECT username FROM users WHERE id = ?').get(task.user_id) as { username: string } | undefined;
         output = `Portfolio deployed for ${user?.username || 'user'}`;
+        break;
+      }
+
+      case 'social_media_post': {
+        const { executeSocialMediaPostTask } = await import('./social-media.js');
+        output = await executeSocialMediaPostTask(task.user_id, taskConfig);
         break;
       }
 
@@ -949,6 +1194,13 @@ async function tick() {
     refreshModelsIfStale().catch(() => {});
     await checkDailySummarization();
     await checkAndRunRecipes();
+    try {
+      const { checkDueSocialPosts } = await import('./social-media.js');
+      await checkDueSocialPosts();
+    } catch (err) {
+      logger.error({ err }, 'Social media post check failed');
+    }
+    checkPicoCronJobs();
     const worked = await processNextTask();
     if (worked) {
       idleStreak = 0;

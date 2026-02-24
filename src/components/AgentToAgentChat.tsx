@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Send, Bot, User, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { portfolioService } from '@/services/api';
+import { publicAgentService } from '@/services/api';
 
 interface AgentToAgentChatProps {
   isOpen: boolean;
@@ -22,15 +22,18 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [canChat, setCanChat] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [agentName, setAgentName] = useState<string | null>(null);
+  const [messageCount, setMessageCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Check if we can chat with this agent
   useEffect(() => {
     if (isOpen && targetUsername) {
-      portfolioService.canChat(targetUsername)
+      publicAgentService.canChat(targetUsername)
         .then(({ data }) => {
           setCanChat(data.canChat);
           if (!data.canChat) {
@@ -44,29 +47,49 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
     }
   }, [isOpen, targetUsername]);
 
-  // Initialize with greeting
+  // Initialize with greeting from the agent
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([
         {
           id: 'greeting',
           role: 'agent',
-          content: `Hi! I'm reaching out to ${targetName}'s agent. What would you like to say?`,
+          content: `Hey! I'm ${targetName}'s assistant. What would you like to know?`,
           timestamp: new Date(),
         },
       ]);
     }
   }, [isOpen, messages.length, targetName]);
 
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setMessages([]);
+      setMessageCount(0);
+      setAgentName(null);
+      setError(null);
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isTyping]);
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [isOpen]);
+
+  // Build history array from messages (excluding greeting and system)
+  function buildHistory(): Array<{ role: string; content: string }> {
+    return messages
+      .filter(m => m.role !== 'system' && m.id !== 'greeting')
+      .map(m => ({
+        role: m.role === 'agent' ? 'assistant' : 'user',
+        content: m.content,
+      }));
+  }
 
   const sendMessage = async () => {
     const content = input.trim();
@@ -82,27 +105,36 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setIsSending(true);
+    setIsTyping(true);
     setError(null);
 
     try {
-      await portfolioService.sendAgentMessage(targetUsername, content);
+      const history = buildHistory();
+      const { data } = await publicAgentService.chat(targetUsername, content, history, messageCount);
+      setMessageCount(prev => prev + 1);
+
+      if (data.agentName) {
+        setAgentName(data.agentName);
+      }
+
       setMessages((prev) => [...prev, {
-        id: `confirm-${Date.now()}`,
-        role: 'system',
-        content: 'Message sent successfully!',
+        id: `agent-${Date.now()}`,
+        role: 'agent',
+        content: data.reply,
         timestamp: new Date(),
       }]);
     } catch (err: unknown) {
-      const errorMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to send message';
+      const errorMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to get response';
       setError(errorMsg);
       setMessages((prev) => [...prev, {
         id: `error-${Date.now()}`,
         role: 'system',
-        content: `Error: ${errorMsg}`,
+        content: `Connection issue — try again in a moment`,
         timestamp: new Date(),
       }]);
     } finally {
       setIsSending(false);
+      setIsTyping(false);
     }
   };
 
@@ -114,6 +146,8 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
   };
 
   if (!isOpen) return null;
+
+  const displayName = agentName || `${targetName}'s Agent`;
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
@@ -132,9 +166,9 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
               <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#00FF88] border-2 border-[#06060B]" />
             </div>
             <div>
-              <div className="font-semibold text-sm text-[#E8E8F0]">Agent Chat</div>
+              <div className="font-semibold text-sm text-[#E8E8F0]">{displayName}</div>
               <div className="text-xs text-[#00FF88] flex items-center gap-1">
-                Messaging {targetName}
+                {isTyping ? 'typing...' : 'online'}
               </div>
             </div>
           </div>
@@ -154,12 +188,7 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
               className={`flex ${msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start'}`}
             >
               {msg.role === 'system' ? (
-                <div className={`px-3 py-1.5 rounded-full text-[10px] flex items-center gap-1 ${
-                  msg.content.includes('Error') || msg.content.includes('Unable') || msg.content.includes('not enabled')
-                    ? 'bg-[#FF3366]/10 border border-[#FF3366]/20 text-[#FF3366]'
-                    : 'bg-[#00FF88]/10 border border-[#00FF88]/20 text-[#00FF88]'
-                }`}>
-                  {msg.content.includes('sent') && <CheckCircle2 className="w-3 h-3" />}
+                <div className="px-3 py-1.5 rounded-full text-[10px] flex items-center gap-1 bg-[#FF3366]/10 border border-[#FF3366]/20 text-[#FF3366]">
                   {msg.content}
                 </div>
               ) : (
@@ -187,6 +216,20 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
               )}
             </div>
           ))}
+          {isTyping && (
+            <div className="flex justify-start">
+              <div className="w-7 h-7 rounded-full bg-[#00FF88]/20 flex items-center justify-center mr-2 flex-shrink-0 mt-1">
+                <Bot className="w-4 h-4 text-[#00FF88]" />
+              </div>
+              <div className="bg-[#06060B] border border-[#00F0FF]/20 rounded-2xl rounded-bl-md px-4 py-3">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-[#00F0FF]/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 bg-[#00F0FF]/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 bg-[#00F0FF]/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
 
@@ -221,7 +264,7 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
             </div>
           )}
           <p className="text-[10px] text-[#6B7280]/50 text-center mt-2">
-            Messages are stored and delivered to the recipient&apos;s agent inbox
+            Powered by Agentin
           </p>
         </div>
       </div>

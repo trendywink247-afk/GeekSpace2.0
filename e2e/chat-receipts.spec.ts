@@ -1,11 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test('chat receipts display in UI', async ({ page }) => {
-  // Skip this test in CI - it tests production, not the local build
-  if (process.env.CI) {
-    test.skip();
-    return;
-  }
+  // Skip this test unless explicitly running against production
+  // It navigates to the production URL, so it's not suitable for CI or local E2E
+  test.skip(!process.env.TEST_PRODUCTION, 'Skipped: production-only test (set TEST_PRODUCTION=1 to run)');
 
   // Navigate to production GeekSpace
   await page.goto('https://ai.geekspace.space/login');
