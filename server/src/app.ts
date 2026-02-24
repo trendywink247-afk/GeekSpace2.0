@@ -135,10 +135,10 @@ export function createApp(): express.Application {
     app.use('/api/auth/signup', authLimiter);
     app.use('/api/auth/demo', authLimiter);
 
-    // Rate limit on LLM chat endpoints
+    // Rate limit on LLM chat endpoints — 60 req/15min (4/min) balances protection with usability
     const chatLimiter = rateLimit({
       windowMs: 15 * 60 * 1000,
-      max: 30,
+      max: 60,
       standardHeaders: true,
       legacyHeaders: false,
       message: { error: 'Too many chat requests. Please slow down.' },

@@ -328,6 +328,13 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       channelReply += `\n🖼️ ${ar.imageUrl}`;
       continue;
     }
+    if (ar.tool === 'generate_video' && ar.videoUrl) {
+      channelReply += `\n🎬 Video: ${ar.videoUrl}`;
+      if ((ar.data?.estimatedTime as number) > 0) {
+        channelReply += ` (renders in ~${ar.data?.estimatedTime}s)`;
+      }
+      continue;
+    }
     // For all other actions: append confirmation only if not already in the reply
     if (ar.message && !seenSummaries.has(ar.message) && !finalReply.includes(ar.message)) {
       channelReply += `\n\n✅ ${ar.message}`;
