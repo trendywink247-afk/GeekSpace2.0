@@ -311,6 +311,7 @@ export function AutomationsPage() {
                     {/* Toggle */}
                     <button
                       onClick={() => handleToggle(auto.id, auto.enabled)}
+                      aria-label={auto.enabled ? `Disable ${auto.name}` : `Enable ${auto.name}`}
                       className="flex-shrink-0 mt-1 press-scale min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       {auto.enabled ? (
@@ -370,8 +371,8 @@ export function AutomationsPage() {
                         size="sm"
                         onClick={() => handleTrigger(auto.id)}
                         disabled={!auto.enabled || isLoading}
-                        className="text-[#00FF88] hover:text-[#00FF88] hover:bg-[#00FF88]/10 h-10 w-10 md:h-8 md:w-8 p-0 press-scale"
-                        title="Run now"
+                        aria-label={`Run ${auto.name}`}
+                        className="text-[#00FF88] hover:text-[#00FF88] hover:bg-[#00FF88]/10 h-10 w-10 p-0 press-scale"
                       >
                         <Play className="w-4 h-4" />
                       </Button>
@@ -379,8 +380,8 @@ export function AutomationsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleOpenEdit(auto.id)}
-                        className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 md:h-8 md:w-8 p-0 press-scale"
-                        title="Edit"
+                        aria-label={`Edit ${auto.name}`}
+                        className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 p-0 press-scale"
                       >
                         <Edit3 className="w-4 h-4" />
                       </Button>
@@ -388,8 +389,8 @@ export function AutomationsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(auto.id)}
-                        className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 md:h-8 md:w-8 p-0 press-scale"
-                        title="Delete"
+                        aria-label={`Delete ${auto.name}`}
+                        className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 press-scale"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
