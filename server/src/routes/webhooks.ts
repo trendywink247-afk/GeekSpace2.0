@@ -68,6 +68,24 @@ webhooksRouter.post('/telegram', async (req, res) => {
   res.sendStatus(200);
 
   const update = req.body as TelegramUpdate;
+
+  // Per-chat rate limiting — max 20 requests / 60s per chat_id
+  // Must happen after 200 response (Telegram needs instant ACK)
+  const rlChatId = String(
+    update.message?.chat?.id ?? update.callback_query?.message?.chat?.id ?? 'unknown'
+  );
+  try {
+    const rlKey = `telegram:ratelimit:${rlChatId}`;
+    const rlCount = Number(await cacheGet(rlKey) || 0) + 1;
+    await cacheSet(rlKey, String(rlCount), 60);
+    if (rlCount > 20) {
+      logger.warn({ requestId, chatId: rlChatId, count: rlCount }, 'Telegram rate limit exceeded — dropping update');
+      return;
+    }
+  } catch {
+    // Redis unavailable — allow request through, do not block
+  }
+
   logger.info({ requestId, updateId: update.update_id }, 'Telegram webhook received');
 
   try {
