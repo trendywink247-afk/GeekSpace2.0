@@ -223,6 +223,10 @@ export function ConnectionsPage() {
     if (integration?.type === 'email') {
       await integrationService.updateNotificationEmail({ enabled: false });
     }
+    if (integration?.type === 'telegram') {
+      // Must delete channel_links row so reconnect starts fresh (not showing "already linked")
+      try { await integrationService.unlinkTelegram(); } catch { /* ignore if not linked */ }
+    }
     if (integration?.type === 'whatsapp') {
       await integrationService.unlinkWhatsApp();
     }
