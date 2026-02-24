@@ -125,7 +125,8 @@ export function HealthDashboardPage() {
       const res = await fetch(`${apiBase}/api/health`);
       if (res.ok) {
         const data = await res.json();
-        setSnapshot(data);
+        // Ensure topEndpoints is always an array (REST endpoint may be older)
+        setSnapshot({ ...data, topEndpoints: data.topEndpoints ?? [] });
         setConnected(false); // Not using SSE, but we have data
         setError(null);
       } else {
@@ -333,7 +334,7 @@ export function HealthDashboardPage() {
       </div>
 
       {/* Top Endpoints */}
-      {snapshot.topEndpoints.length > 0 && (
+      {(snapshot.topEndpoints ?? []).length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-[#E8E8F0] mb-3">Hot Endpoints (5-min window)</h2>
           <Card className="border-[#00F0FF]/20 overflow-hidden">
@@ -348,7 +349,7 @@ export function HealthDashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {snapshot.topEndpoints.map((ep) => (
+                  {(snapshot.topEndpoints ?? []).map((ep) => (
                     <tr key={ep.path} className="border-b border-[#00F0FF]/5 hover:bg-[#00F0FF]/5 transition-colors">
                       <td className="px-4 py-2.5 font-mono text-[#E8E8F0] text-xs whitespace-nowrap">{ep.path}</td>
                       <td className="px-4 py-2.5 text-right text-[#E8E8F0]">{ep.count}</td>
