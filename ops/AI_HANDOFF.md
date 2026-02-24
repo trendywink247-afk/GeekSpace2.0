@@ -5,8 +5,8 @@
 
 ## Current State
 
-**Branch:** `ai/phase-20260224-health-connections-recovery` (worktree at `.worktrees/phase-5`)
-**Phase:** 5 — Implementation Complete ✅ — PR #34 open (draft)
+**Branch:** `ai/phase-20260224-usage-snooze-csp` (worktree at `.worktrees/phase-6`)
+**Phase:** 6 — Implementation Complete ✅ — PR #35 open (draft)
 **Status:** 147/147 tests passing, lint/typecheck/build green — ready to merge
 
 ## Deployment History
@@ -18,7 +18,7 @@
 | E2E Fix | Portfolio mobile scroll hotfix | #31 | cab754b | ✅ live |
 | Phase 3 | Snooze, CSP, sparklines, tests | #32 | 2e2ab52 | ✅ live |
 | Phase 4 | Reminders polish, rate limit, coverage, briefing | #33 | b2fbf1b | ✅ merged |
-| Phase 5 | Health stream, connections lifecycle, forgot-pw | #34 | dfc5cd2 | 🟡 PR open |
+| Phase 5 | Health stream, connections lifecycle, forgot-pw | #34 | dfc5cd2 | ✅ merged |
 
 ## Phase 5 Items Status
 
@@ -58,3 +58,4 @@
 ### src/services/api.ts + src/onboarding/ForgotPasswordPage.tsx
 - Added `error?` to `requestPasswordReset` response type
 - `handleRequestReset` now checks `!res.data.success && res.data.error` before `setStep('otp')`
+| Phase 6 | SSE delta fix, admin CSP, targeted store actions | #35 | 72b971c | 🟡 PR open |
