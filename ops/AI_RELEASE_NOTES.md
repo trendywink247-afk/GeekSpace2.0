@@ -1,0 +1,33 @@
+# Release Notes — GeekSpace 2.0
+
+> User-facing changes by phase. Written before each merge to live-production.
+
+---
+
+## Phase 1 (2026-02-24) — Reliability + Image Generation
+
+*Status: In Progress*
+
+### What's New
+- **Image generation**: Ask your agent to generate any image — "draw a cyberpunk city at night", "create a logo for my SaaS" — and get a live image back instantly. Powered by Pollinations.AI (free, no limits).
+
+### What's Fixed
+- **Cleaner Telegram/WhatsApp replies**: Action confirmations (like "Reminder set!" or "Site generated!") now only appear when an action actually ran. Previously they appeared on every message.
+- **Connections page responsiveness**: Clicking "Connect" no longer freezes all other buttons on the page. Each integration now has its own loading state.
+- **More stable server startup**: Scheduler failures are now logged with clear error messages instead of being silently swallowed.
+
+### Under the Hood
+- Health monitoring now supports up to 25 concurrent SSE connections (was 5)
+- Server startup logs cluster/worker information for easier debugging
+- Exponential backoff on connection status polling (reduces unnecessary API calls)
+
+---
+
+## Previous Phases
+
+### Smart Escalation + Capabilities (2026-02-24)
+- Telegram now uses native swipe-reply detection to route answers to the right visitor question
+- Added "What Can I Do?" page showing all 20+ agent capabilities
+- First-use guided tour walks new users through key features
+- Generated websites now send a direct preview link in chat instead of "open your dashboard"
+
