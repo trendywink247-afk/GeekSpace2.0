@@ -10,11 +10,10 @@
 import { useState } from 'react';
 import {
   MessageSquare, Code, Zap, Brain, Globe, Mic, ImageIcon, Film,
-  User, Bell, Mail, Cpu, ChevronRight, Sparkles, Eye, TrendingUp,
+  User, Bell, Mail, ChevronRight, Sparkles, Eye, TrendingUp,
   Shield, ArrowRight, CheckCircle2, ExternalLink, Star, Lock,
   Workflow, Play, Copy, Check, Layers, Telescope, Activity
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 // ── Types ────────────────────────────────────────────────────

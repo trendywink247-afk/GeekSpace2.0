@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react';
 import {
   X, ChevronRight, MessageSquare, Code, Bell, Link2,
-  Sparkles, CheckCircle2, Brain, Cpu, Zap
+  Sparkles, CheckCircle2, Brain, Zap
 } from 'lucide-react';
 
 interface TourStep {
