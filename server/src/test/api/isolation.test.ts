@@ -117,8 +117,7 @@ describe('Multi-User Data Isolation', () => {
         .patch(`/api/pico/agents/${agentA.id}`)
         .set('Authorization', userB.token)
         .send({ name: 'Hijacked' });
-      // updateAgent throws "Agent not found" → route returns 400
-      expect(res.status).toBeGreaterThanOrEqual(400);
+      expect(res.status).toBe(404);
       expect(res.body.error).toMatch(/not found/i);
     });
 
@@ -134,8 +133,7 @@ describe('Multi-User Data Isolation', () => {
         const res = await request(app)
           .delete(`/api/pico/agents/${agentId}`)
           .set('Authorization', userB.token);
-        // deleteAgent throws "Agent not found" → route returns 400
-        expect(res.status).toBeGreaterThanOrEqual(400);
+        expect(res.status).toBe(404);
         expect(res.body.error).toMatch(/not found/i);
       }
     });
@@ -168,8 +166,7 @@ describe('Multi-User Data Isolation', () => {
         const res = await request(app)
           .delete(`/api/pico/tasks/${taskId}`)
           .set('Authorization', userB.token);
-        // cancelTask throws "Task not found" → route returns 400
-        expect(res.status).toBeGreaterThanOrEqual(400);
+        expect(res.status).toBe(404);
         expect(res.body.error).toMatch(/not found/i);
 
         // Cleanup
@@ -225,15 +222,8 @@ describe('Multi-User Data Isolation', () => {
       const res = await request(app)
         .post(`/api/automations/${automationIdA}/trigger`)
         .set('Authorization', userB.token);
-      // executeManualTrigger returns {success: false} when not found for user
-      // Route currently returns 200 with success:false (bug — should be 404)
-      // The key assertion: isolation is enforced (automation not executed for wrong user)
-      if (res.status === 200) {
-        expect(res.body.success).toBe(false);
-        expect(res.body.output).toMatch(/not found/i);
-      } else {
-        expect(res.status).toBeGreaterThanOrEqual(400);
-      }
+      expect(res.status).toBe(404);
+      expect(res.body.success).toBe(false);
     });
   });
 

@@ -73,7 +73,8 @@ picoRouter.patch('/agents/:id', requireAuth, validateBody(picoAgentUpdateSchema)
     res.json(agent);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to update agent';
-    res.status(400).json({ error: msg });
+    const status = msg.includes('not found') ? 404 : 400;
+    res.status(status).json({ error: msg });
   }
 });
 
@@ -83,7 +84,8 @@ picoRouter.delete('/agents/:id', requireAuth, (req: AuthRequest, res) => {
     res.json({ ok: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to delete agent';
-    res.status(400).json({ error: msg });
+    const status = msg.includes('not found') ? 404 : 400;
+    res.status(status).json({ error: msg });
   }
 });
 
@@ -197,7 +199,8 @@ picoRouter.delete('/tasks/:id', requireAuth, (req: AuthRequest, res) => {
     res.json({ ok: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to cancel task';
-    res.status(400).json({ error: msg });
+    const status = msg.includes('not found') ? 404 : 400;
+    res.status(status).json({ error: msg });
   }
 });
 
