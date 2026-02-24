@@ -292,12 +292,21 @@ export function PicoFleetPage() {
   };
 
   const handleToggleEnabled = async (agent: PicoAgentFull) => {
+    // Block disabling the last active agent
+    if (agent.enabled) {
+      const activeCount = agents.filter(a => a.enabled).length;
+      if (activeCount <= 1) {
+        showToast('At least one Weebo must remain active', 'error');
+        return;
+      }
+    }
     try {
       await picoService.updateAgent(agent.id, { enabled: !agent.enabled });
       showToast(`${agent.name} ${agent.enabled ? 'disabled' : 'enabled'}`, 'success');
       await loadData();
-    } catch {
-      showToast('Failed to toggle agent', 'error');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to toggle agent';
+      showToast(msg.includes('last active') ? 'At least one Weebo must remain active' : msg, 'error');
     }
   };
 
@@ -546,7 +555,9 @@ export function PicoFleetPage() {
                           <Switch
                             checked={!!agent.enabled}
                             onCheckedChange={() => handleToggleEnabled(agent)}
-                            className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40"
+                            disabled={!!agent.enabled && agents.filter(a => a.enabled).length <= 1}
+                            title={!!agent.enabled && agents.filter(a => a.enabled).length <= 1 ? 'At least one Weebo must remain active' : ''}
+                            className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40 disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                           <Badge
                             variant="outline"
@@ -1188,15 +1199,25 @@ export function PicoFleetPage() {
                   <div className="flex items-center gap-3">
                     <Switch
                       checked={cfgEnabled}
-                      onCheckedChange={(v) => { setCfgEnabled(v); setConfigDirty(true); }}
-                      className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40"
+                      onCheckedChange={(v) => {
+                        if (!v && cfgEnabled && agents.filter(a => a.enabled).length <= 1) {
+                          showToast('At least one Weebo must remain active', 'error');
+                          return;
+                        }
+                        setCfgEnabled(v);
+                        setConfigDirty(true);
+                      }}
+                      disabled={cfgEnabled && agents.filter(a => a.enabled).length <= 1}
+                      className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <div>
                       <div className="text-sm font-medium text-[#E8E8F0]">
                         Agent {cfgEnabled ? 'Enabled' : 'Disabled'}
                       </div>
                       <div className="text-xs text-[#6B7280]">
-                        {cfgEnabled ? 'This agent will process tasks' : 'This agent is paused and will not process tasks'}
+                        {cfgEnabled && agents.filter(a => a.enabled).length <= 1
+                          ? 'Last active agent — cannot be disabled'
+                          : cfgEnabled ? 'This agent will process tasks' : 'This agent is paused and will not process tasks'}
                       </div>
                     </div>
                   </div>

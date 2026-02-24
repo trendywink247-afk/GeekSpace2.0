@@ -313,6 +313,15 @@ export function updateAgent(agentId: string, userId: string, updates: AgentUpdat
     values.push(JSON.stringify(updates.assigned_tools));
   }
   if (updates.enabled !== undefined) {
+    // Enforce: at least 1 Weebo must always remain active
+    if (!updates.enabled) {
+      const enabledCount = (db.prepare(
+        'SELECT COUNT(*) as cnt FROM pico_agents WHERE user_id = ? AND enabled = 1'
+      ).get(userId) as { cnt: number }).cnt;
+      if (enabledCount <= 1 && agent.enabled) {
+        throw new Error('Cannot disable the last active Weebo. At least one agent must remain active.');
+      }
+    }
     fields.push('enabled = ?');
     values.push(updates.enabled ? 1 : 0);
   }
