@@ -1,69 +1,79 @@
-# Phase 2 Plan — Onboarding + Video Gen + Channel Cleanup
+# Phase 3 Plan — Escalation Verification + UX Polish + Hardening
 
-**Branch:** `ai/phase-20260224-onboarding-cleanup`
-**Started:** 2026-02-24
-**Status:** 🔄 In Progress
+**Branch:** `ai/phase-YYYYMMDD-<topic>` (create when ready)
+**Status:** 📋 Planning
 
 ---
 
-## Phase 2 Items (5)
+## Phase 3 Items (5)
 
-### 1. 🐛 Critical Fix — WhatsApp Silent Drop + Webhook Security
-**File:** `server/src/services/whatsapp.ts`
-**Problem:**
-- `sendWhatsAppMessage()` silently drops all messages (no-op stub)
-- `verifyWhatsAppWebhook()` returns `true` when token not configured (security hole)
-**Fix:**
-- Replace stub with logger.warn + informative error so callers handle gracefully
-- Require webhook token in production; only bypass in explicit dev/test mode
-**Risk:** Low — no API keys available; makes silent failure explicit and observable.
+### 1. 🐛 Critical Fix — Verify Escalation Wiring End-to-End
+**Files:** `server/src/routes/webhooks.ts`
+**Context:** The plan file `dapper-hatching-hopcroft.md` describes 3-tier escalation:
+- Tier 1: native Telegram reply (match by notifMessageId)
+- Tier 2: keyword match from pending escalations
+- Tier 3: fallthrough to normal chat
+**Verification:** Audit `handleEscalationReply()` in webhooks.ts — confirm all 3 tiers implemented,
+notifMessageId is read from Redis, and real chat requests (like "build me a page") are NOT
+swallowed as escalation answers.
+**Risk:** Exploratory. May be already complete (per previous session summary). If already done, skip
+to next item.
 
-### 2. 🎨 UI/UX — Onboarding Polish
-**Files:** `src/onboarding/OnboardingWizard.tsx` (or whichever file has the wizard steps)
-**Problem:** No step progress indicator, no escape hatch, no visual progress feedback.
-**Fix:**
-- Add "Step X of Y" header with animated progress bar
-- Add "Sign in as a different account" link at bottom → calls logout()
-**Risk:** Low — UI-only, no auth logic changes.
+### 2. 🎨 UI/UX — Reminder Snooze Buttons
+**File:** `src/dashboard/pages/RemindersPage.tsx`
+**Problem:** No snooze option — users can only complete or dismiss a reminder, not defer it.
+**Fix:** Add snooze dropdown on each reminder card:
+- "1 hour" → update datetime to now+1h
+- "Tomorrow" → update datetime to tomorrow at same time
+- "Custom" → open time picker
+**Risk:** Medium — requires API endpoint `PATCH /api/reminders/:id` with `datetime` update, plus UI change.
 
-### 3. 🛡 Edge-Case Hardening — Stale Channel Link Cleanup
-**Files:** `server/src/services/artifact-cleanup.ts` OR new scheduler function
-**Problem:** Channel links in DB accumulate indefinitely — no TTL, no inactive cleanup.
-**Fix:**
-- Add `purgeStaleChannelLinks()`: DELETE WHERE `last_message_at < 90 days ago`
-- Run daily alongside existing artifact cleanup scheduler
-- Log count of purged records
-**Risk:** Very low — read-first, only deletes old inactive links.
-
-### 4. 🎬 New Feature — Video Generation (Pollinations.AI)
-**Files:**
-- `server/src/prompts/openclaw-system.ts` — document `generate_video` tool
-- `server/src/services/action-executor.ts` — add `videoUrl` to ActionResult
-- `server/src/services/message-router.ts` — handle video URL in channel reply
-**Implementation:** Schema + executor already exist. Mirrors generate_image pattern exactly.
-**Risk:** Low — additive only, graceful error on failure.
-
-### 5. 🔧 Dev/Ops — Chat Rate Limit Relaxation + Backlog Update
+### 3. 🛡 Edge-Case Hardening — CSP Nonce Policy
 **File:** `server/src/app.ts`
-**Problem:** Chat rate limit is 30/15min (2/min) — blocks power users testing features.
-**Fix:** Increase to 60/15min (4/min) — still protective, less friction for legitimate use.
-**Also:** Update ops/AI_BACKLOG.md to mark Phase 1+2 items complete.
+**Problem:** Helmet CSP uses `unsafe-inline` for script-src — bypasses XSS protection.
+**Fix:** Use `nonce-based` CSP:
+- Generate per-request nonce via `crypto.randomBytes(16).toString('base64')`
+- Pass to Helmet `scriptSrc: ["'self'", (req, res) => \`'nonce-${res.locals.nonce}'\`]`
+- Note: Frontend is SPA — inline scripts in index.html need nonce attribute or must move to external scripts
+**Risk:** High — may break frontend rendering if any inline scripts exist. Requires careful audit first.
+  Consider doing static audit first and only implementing if no inline scripts found.
+
+### 4. 🔧 Dev/Ops — Unit Tests for Action Dedup + Message Router
+**File:** `server/src/test/api/` (new test file: `message-router.test.ts`)
+**Problem:** action dedup logic (Phase 1) and video/image channel handling have no unit coverage.
+**Fix:** Add tests for:
+- Action dedup: same message in finalReply → not appended again
+- `generate_code` → preview URL appended
+- `generate_image` → 🖼️ URL appended
+- `generate_video` → 🎬 Video: URL appended
+**Risk:** Low — test-only, no production code changes.
+
+### 5. 🌟 Feature — Dashboard Overview Sparklines
+**File:** `src/dashboard/pages/OverviewPage.tsx`
+**Problem:** Overview stats cards show single numbers with no trend — hard to know if things are improving.
+**Fix:** Add 7-day sparkline chart (recharts, already in deps) to each stat card:
+- Messages sent per day (7d)
+- Credits used per day (7d)
+- Reminders completed per day (7d)
+**Backend:** Use existing `/api/usage` data, aggregate by day in frontend.
+**Risk:** Low — additive UI change, existing recharts dep.
 
 ---
 
 ## Verification Plan
 
 ```bash
-cd server && npm test                            # must stay 113/113
+cd server && npm test                            # must stay 113+ passing
 npm run lint && npx tsc --noEmit && npm run build
 cd server && npx tsc --noEmit && npm run build
+./ops/phase-gate.sh --skip-e2e
 ```
 
 ## Definition of Done
 
-- [ ] All 5 items implemented
-- [ ] 113+ tests passing
+- [ ] All items implemented (or skipped with documented reason)
+- [ ] 113+ unit tests passing
 - [ ] lint/typecheck/build green
-- [ ] PR opened with evidence
+- [ ] PR #32 opened with evidence
 - [ ] AI_HANDOFF.md updated
-- [ ] Phase 3 proposed
+- [ ] Phase 4 proposed

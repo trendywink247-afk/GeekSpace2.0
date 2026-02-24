@@ -5,64 +5,58 @@
 
 ## Current State
 
-**Branch:** `ai/phase-20260224-reliability-onboarding`
-**Worktree:** `/root/GeekSpace2.0/.worktrees/phase-1`
-**Phase:** 1 — Reliability + Image Gen + Connections Polish
-**Status:** 🔄 In Progress — implementing items
+**Branch:** `main` (all phases merged and deployed)
+**Phase:** 2 — Complete ✅ deployed to live-production
+**Status:** ✅ Production healthy — start Phase 3
 
-## Baseline
+## Deployment History
 
-- Unit tests: 113/113 passing ✅
-- Last commit on main: `6709dd8 fix(ci): restore Cpu import`
-- Worktree created from main HEAD
+| Phase | Description | PR | Commit | Status |
+|-------|-------------|-----|--------|--------|
+| Phase 1 | Reliability, image gen, connections polish | #29 | 45c2f02 | ✅ live |
+| Phase 2 | Onboarding, video gen, channel cleanup | #30 | 965f0ac | ✅ live |
+| E2E Fix | Portfolio mobile scroll hotfix | #31 | cab754b | ✅ live |
 
-## Items Status
+## Phase 2 Items Status
 
 | # | Item | Status |
 |---|------|--------|
-| 1 | Action button spamming fix | ✅ Done |
-| 2 | Connections tab polish | ✅ Done |
-| 3 | Server startup hardening | ✅ Done |
-| 4 | Image generation (Pollinations.AI) | ✅ Done |
-| 5 | SSE limit + health logging | ✅ Done |
+| 1 | WhatsApp security fix (webhook + send stub) | ✅ Done |
+| 2 | Onboarding escape hatch ("Not X? Sign in as someone else") | ✅ Done |
+| 3 | Stale channel link cleanup (90-day TTL cron) | ✅ Done |
+| 4 | Video generation wiring (videoUrl + channel reply) | ✅ Done |
+| 5 | Chat rate limit 30→60 per 15min | ✅ Done |
+| + | E2E portfolio mobile scroll fix (hotfix PR #31) | ✅ Done |
 
-## Phase 1 Complete ✅
-
-**Commit:** `45c2f02`
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/29 (draft)
-**Tests:** 113/113 passing
-**Lint/Typecheck/Build:** All green
-
-## Files Changed
-
-- `CLAUDE.md` — merged with autonomous ops framework
-- `ops/` — all 9 files created (5 docs + 4 scripts)
-- `server/src/services/message-router.ts` — action dedup + image URL handling
-- `server/src/services/action-executor.ts` — imageUrl field added to ActionResult
-- `server/src/prompts/openclaw-system.ts` — generate_image documented in prompts
-- `server/src/routes/health.ts` — SSE limit 5→25, probe timing logged
-- `server/src/index.ts` — graceful shutdown timeout, safeStart(), cluster logging
-- `src/dashboard/pages/ConnectionsPage.tsx` — per-integration state, exp backoff
-
-## Resume Steps for Phase 2
+## Resume Steps for Phase 3
 
 ```bash
-cd ~/GeekSpace2.0/.worktrees/phase-1   # or create new worktree
-git log --oneline -5
-cd server && npm test                   # should be 113/113
-cat ops/AI_PHASE_PLAN.md               # read phase 2 plan
+cd ~/GeekSpace2.0
+git checkout main && git pull origin main
+cd server && npm test                      # should be 113+/113 passing
+cat ops/AI_BACKLOG.md
+cat ops/AI_PHASE_PLAN.md                   # Phase 3 plan (update this file)
+git worktree add .worktrees/phase-3 -b ai/phase-$(date +%Y%m%d)-<topic>
 ```
 
 ## Open Issues / Decisions
 
-- WhatsApp sending is a no-op stub — needs WA Business API keys
-- Two WhatsApp linking flows exist (legacy + QR) — consolidate in Phase 2
-- Phase 1 PR needs review + merge to main before prod push
+- CSP still allows `unsafe-inline` for scripts — should use nonce-based CSP
+- WhatsApp integration is still a stub (no API keys) — warn is now clear, but not functional
+- Health SSE sends full snapshot every 15s even if unchanged
+- Plan file `/root/.claude/plans/dapper-hatching-hopcroft.md` — Smart Escalation was completed in a prior phase; verify all items are actually implemented
 
-## Phase 2 Proposal (preliminary)
+## Phase 3 Proposal (preliminary)
 
-1. Image generation: voice-to-image (speak prompt → generate image)
-2. WhatsApp stub implementation OR clear "coming soon" state in UI
-3. Stale channel link cleanup (90-day TTL cron)
-4. Onboarding improvements (step progress, escape hatch)
-5. Video generation via Pollinations.AI
+1. **Bug Fix:** Verify escalation Tier 1/2/3 logic is fully wired in webhooks.ts (plan file exists)
+2. **UI/UX:** Dashboard overview cards — add sparkline trend charts for usage/credits/reminders
+3. **Hardening:** CSP nonce-based policy for script-src (removes unsafe-inline)
+4. **Ops:** Unit test coverage for escalation logic + message-router action dedup
+5. **Feature:** Reminder snooze UI (1h/tomorrow/custom) in the reminders page
+
+## Production Health
+
+```bash
+curl localhost:3001/api/health | jq '{status, version, ok}'
+# → { status: "ok", version: "3.0.0", ok: true }
+```
