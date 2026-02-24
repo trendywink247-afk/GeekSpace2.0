@@ -685,14 +685,17 @@ async function handleLinkCode(
 // ================================================================
 
 webhooksRouter.post('/n8n/callback', async (req, res) => {
-  // Verify n8n webhook secret if configured
-  if (config.n8nWebhookSecret) {
-    const secret = req.headers['x-n8n-secret'] as string;
-    if (secret !== config.n8nWebhookSecret) {
-      logger.warn('n8n webhook: invalid or missing secret');
-      res.sendStatus(401);
-      return;
-    }
+  // Require n8n webhook secret — reject if not configured or mismatch
+  if (!config.n8nWebhookSecret) {
+    logger.warn('n8n webhook: N8N_WEBHOOK_SECRET not configured — rejecting request');
+    res.status(503).json({ error: 'n8n webhook not configured' });
+    return;
+  }
+  const secret = req.headers['x-n8n-secret'] as string;
+  if (secret !== config.n8nWebhookSecret) {
+    logger.warn('n8n webhook: invalid or missing secret');
+    res.sendStatus(401);
+    return;
   }
 
   const { userId, channel, externalId, message } = req.body;

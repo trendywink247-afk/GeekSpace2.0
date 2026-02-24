@@ -113,7 +113,9 @@ export function RemindersPage() {
 
   const handleVoiceInput = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert('Voice input not supported in this browser');
+      // Voice not supported — show inline feedback instead of alert()
+      setNaturalInput('(Voice input not supported in this browser)');
+      return;
       return;
     }
     
@@ -235,9 +237,10 @@ export function RemindersPage() {
             </div>
             <button
               onClick={handleVoiceInput}
-              className={`p-3 rounded-xl transition-colors ${
-                isListening 
-                  ? 'bg-[#FF6161]/20 text-[#FF6161]' 
+              aria-label={isListening ? 'Listening... tap to stop' : 'Voice input'}
+              className={`p-3 rounded-xl transition-colors min-h-[44px] min-w-[44px] ${
+                isListening
+                  ? 'bg-[#FF6161]/20 text-[#FF6161]'
                   : 'bg-[#06060B] border border-[#00F0FF]/20 text-[#6B7280] hover:text-white'
               }`}
             >
@@ -325,13 +328,15 @@ export function RemindersPage() {
         <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded transition-colors ${viewMode === 'list' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
+            aria-label="List view"
+            className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'list' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
           >
             <List className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode('calendar')}
-            className={`p-2 rounded transition-colors ${viewMode === 'calendar' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
+            aria-label="Calendar view"
+            className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'calendar' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
@@ -411,7 +416,8 @@ export function RemindersPage() {
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleComplete(reminder.id)}
-                              className={`p-2 rounded-lg transition-colors ${
+                              aria-label={reminder.completed ? 'Mark as incomplete' : 'Mark as complete'}
+                              className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                                 reminder.completed
                                   ? 'bg-[#00FF88]/20 text-[#00FF88]'
                                   : 'bg-[#06060B] text-[#6B7280] hover:text-[#00FF88]'
@@ -421,7 +427,8 @@ export function RemindersPage() {
                             </button>
                             <button
                               onClick={() => handleDelete(reminder.id)}
-                              className="p-2 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FF6161] transition-colors"
+                              aria-label="Delete reminder"
+                              className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FF6161] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

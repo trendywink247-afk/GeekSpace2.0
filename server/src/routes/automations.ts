@@ -69,7 +69,11 @@ automationsRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
 
 automationsRouter.post('/:id/trigger', requireAuth, async (req: AuthRequest, res) => {
   const result = await executeManualTrigger(req.params.id, req.userId!);
-  res.json(result);
+  if (!result.success && result.output.includes('not found')) {
+    res.status(404).json(result);
+  } else {
+    res.json(result);
+  }
 });
 
 // ---- Execution logs ----

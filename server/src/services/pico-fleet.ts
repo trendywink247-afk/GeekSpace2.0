@@ -313,6 +313,15 @@ export function updateAgent(agentId: string, userId: string, updates: AgentUpdat
     values.push(JSON.stringify(updates.assigned_tools));
   }
   if (updates.enabled !== undefined) {
+    // Enforce: at least 1 Weebo must always remain active
+    if (!updates.enabled) {
+      const enabledCount = (db.prepare(
+        'SELECT COUNT(*) as cnt FROM pico_agents WHERE user_id = ? AND enabled = 1'
+      ).get(userId) as { cnt: number }).cnt;
+      if (enabledCount <= 1 && agent.enabled) {
+        throw new Error('Cannot disable the last active Weebo. At least one agent must remain active.');
+      }
+    }
     fields.push('enabled = ?');
     values.push(updates.enabled ? 1 : 0);
   }
@@ -422,6 +431,62 @@ function checkPicoCronJobs(): void {
     } catch (err) {
       logger.error({ err, cronJobId: job.id }, 'Cron job execution failed');
     }
+  }
+}
+
+// ---- SSRF Protection ----
+
+const BLOCKED_HOSTNAMES = new Set([
+  'localhost', 'redis', 'picoclaw', 'geekspace', 'geekspace-app',
+  'geekspace-redis', 'geekspace-picoclaw', 'geekspace-caddy',
+  'ollama', 'ollama-qtzz-ollama-1', 'openclaw', 'openclaw-e3n5-openclaw-1',
+  'caddy', 'n8n', 'edith-bridge', 'metadata.google.internal',
+  'instance-data', '169.254.169.254',
+]);
+
+/**
+ * Validate that a URL is safe for external HTTP requests.
+ * Blocks: private IPs, Docker-internal hostnames, non-http(s) protocols.
+ */
+export function validateExternalUrl(rawUrl: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error('Invalid URL format');
+  }
+
+  // Only allow http(s)
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`Blocked protocol: ${parsed.protocol} — only http/https allowed`);
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  // Block known internal hostnames
+  if (BLOCKED_HOSTNAMES.has(hostname)) {
+    throw new Error(`Blocked internal hostname: ${hostname}`);
+  }
+
+  // Block private/reserved IPv4 ranges
+  const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const [, a, b] = ipv4Match.map(Number);
+    if (
+      a === 10 ||                          // 10.0.0.0/8
+      a === 127 ||                         // 127.0.0.0/8
+      (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
+      (a === 192 && b === 168) ||          // 192.168.0.0/16
+      a === 0 ||                           // 0.0.0.0/8
+      (a === 169 && b === 254)             // 169.254.0.0/16 (link-local)
+    ) {
+      throw new Error(`Blocked private/reserved IP: ${hostname}`);
+    }
+  }
+
+  // Block IPv6 loopback and link-local
+  if (hostname === '::1' || hostname === '[::1]' || hostname.startsWith('fe80')) {
+    throw new Error(`Blocked IPv6 address: ${hostname}`);
   }
 }
 
@@ -953,6 +1018,7 @@ async function executeTask(task: PicoTask): Promise<void> {
       case 'n8n_webhook': {
         const url = String(taskConfig.url || '');
         if (!url) throw new Error('No URL configured');
+        validateExternalUrl(url);
         const method = String(taskConfig.method || 'POST');
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',

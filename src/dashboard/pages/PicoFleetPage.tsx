@@ -292,12 +292,21 @@ export function PicoFleetPage() {
   };
 
   const handleToggleEnabled = async (agent: PicoAgentFull) => {
+    // Block disabling the last active agent
+    if (agent.enabled) {
+      const activeCount = agents.filter(a => a.enabled).length;
+      if (activeCount <= 1) {
+        showToast('At least one Weebo must remain active', 'error');
+        return;
+      }
+    }
     try {
       await picoService.updateAgent(agent.id, { enabled: !agent.enabled });
       showToast(`${agent.name} ${agent.enabled ? 'disabled' : 'enabled'}`, 'success');
       await loadData();
-    } catch {
-      showToast('Failed to toggle agent', 'error');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to toggle agent';
+      showToast(msg.includes('last active') ? 'At least one Weebo must remain active' : msg, 'error');
     }
   };
 
@@ -546,7 +555,9 @@ export function PicoFleetPage() {
                           <Switch
                             checked={!!agent.enabled}
                             onCheckedChange={() => handleToggleEnabled(agent)}
-                            className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40"
+                            disabled={!!agent.enabled && agents.filter(a => a.enabled).length <= 1}
+                            title={!!agent.enabled && agents.filter(a => a.enabled).length <= 1 ? 'At least one Weebo must remain active' : ''}
+                            className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40 disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                           <Badge
                             variant="outline"
@@ -560,8 +571,8 @@ export function PicoFleetPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteAgent(agent)}
+                              aria-label={`Remove ${agent.name}`}
                               className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 press-scale"
-                              title="Remove agent"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -607,7 +618,8 @@ export function PicoFleetPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => { setSelectedAgentId(agent.id); setActiveTab('config'); }}
-                          className="text-xs text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-7 px-2"
+                          aria-label={`Configure ${agent.name}`}
+                          className="text-xs text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 px-3"
                         >
                           <Settings2 className="w-3 h-3 mr-1" />
                           Config
@@ -1090,10 +1102,11 @@ export function PicoFleetPage() {
               <div className="p-6 rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/20 space-y-6">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm text-[#6B7280]">Creativity</label>
+                    <label htmlFor="slider-creativity" className="text-sm text-[#6B7280]">Creativity</label>
                     <span className="text-sm text-[#E8E8F0] font-mono">{cfgCreativity[0]}%</span>
                   </div>
                   <Slider
+                    id="slider-creativity"
                     value={cfgCreativity}
                     onValueChange={(v) => { setCfgCreativity(v); setConfigDirty(true); }}
                     max={100}
@@ -1107,10 +1120,11 @@ export function PicoFleetPage() {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm text-[#6B7280]">Formality</label>
+                    <label htmlFor="slider-formality" className="text-sm text-[#6B7280]">Formality</label>
                     <span className="text-sm text-[#E8E8F0] font-mono">{cfgFormality[0]}%</span>
                   </div>
                   <Slider
+                    id="slider-formality"
                     value={cfgFormality}
                     onValueChange={(v) => { setCfgFormality(v); setConfigDirty(true); }}
                     max={100}
@@ -1188,15 +1202,25 @@ export function PicoFleetPage() {
                   <div className="flex items-center gap-3">
                     <Switch
                       checked={cfgEnabled}
-                      onCheckedChange={(v) => { setCfgEnabled(v); setConfigDirty(true); }}
-                      className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40"
+                      onCheckedChange={(v) => {
+                        if (!v && cfgEnabled && agents.filter(a => a.enabled).length <= 1) {
+                          showToast('At least one Weebo must remain active', 'error');
+                          return;
+                        }
+                        setCfgEnabled(v);
+                        setConfigDirty(true);
+                      }}
+                      disabled={cfgEnabled && agents.filter(a => a.enabled).length <= 1}
+                      className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <div>
                       <div className="text-sm font-medium text-[#E8E8F0]">
                         Agent {cfgEnabled ? 'Enabled' : 'Disabled'}
                       </div>
                       <div className="text-xs text-[#6B7280]">
-                        {cfgEnabled ? 'This agent will process tasks' : 'This agent is paused and will not process tasks'}
+                        {cfgEnabled && agents.filter(a => a.enabled).length <= 1
+                          ? 'Last active agent — cannot be disabled'
+                          : cfgEnabled ? 'This agent will process tasks' : 'This agent is paused and will not process tasks'}
                       </div>
                     </div>
                   </div>
@@ -1378,7 +1402,8 @@ export function PicoFleetPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditCron(job)}
-                            className="text-[#6B7280] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-8 w-8 p-0"
+                            aria-label={`Edit cron job ${job.name}`}
+                            className="text-[#6B7280] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 p-0"
                           >
                             <Edit3 className="w-4 h-4" />
                           </Button>
@@ -1386,7 +1411,8 @@ export function PicoFleetPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteCron(job.id)}
-                            className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-8 w-8 p-0"
+                            aria-label={`Delete cron job ${job.name}`}
+                            className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
