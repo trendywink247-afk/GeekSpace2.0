@@ -65,6 +65,7 @@ interface DashboardStore {
 
   loadDashboard: () => Promise<void>;
   loadIntegrations: () => Promise<void>;
+  loadReminders: () => Promise<void>;
   updateAgent: (data: Partial<AgentConfig>) => Promise<void>;
   addReminder: (data: { text: string; datetime: string; channel: ReminderChannel; recurring?: string; category: ReminderCategory }) => Promise<void>;
   toggleReminder: (id: string) => Promise<void>;
@@ -132,6 +133,13 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       const { data } = await integrationService.list();
       set({ integrations: data });
     } catch { /* keep existing integrations on failure */ }
+  },
+
+  loadReminders: async () => {
+    try {
+      const { data } = await reminderService.list();
+      set({ reminders: data });
+    } catch { /* keep existing reminders on failure */ }
   },
 
   updateAgent: async (data) => {

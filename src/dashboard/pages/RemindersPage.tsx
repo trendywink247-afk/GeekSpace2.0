@@ -46,7 +46,7 @@ const examples = [
 ];
 
 export function RemindersPage() {
-  const { reminders, addReminder, updateReminder, toggleReminder, snoozeReminder, deleteReminder, loadDashboard } = useDashboardStore();
+  const { reminders, addReminder, updateReminder, toggleReminder, snoozeReminder, deleteReminder, loadReminders } = useDashboardStore();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,13 +74,13 @@ export function RemindersPage() {
     category: 'personal',
   });
 
-  // Poll for reminders every 10 seconds
+  // Poll for reminders every 30 seconds (targeted — only re-fetches reminders)
   useEffect(() => {
     const interval = setInterval(() => {
-      loadDashboard();
-    }, 10000);
+      loadReminders();
+    }, 30000);
     return () => clearInterval(interval);
-  }, [loadDashboard]);
+  }, [loadReminders]);
 
   // Parse natural language as user types
   useEffect(() => {
