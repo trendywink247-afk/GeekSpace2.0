@@ -28,6 +28,10 @@ export interface TelegramUpdate {
       file_size?: number;
     };
     entities?: Array<{ type: string; offset: number; length: number }>;
+    reply_to_message?: {
+      message_id: number;
+      text?: string;
+    };
   };
   callback_query?: {
     id: string;

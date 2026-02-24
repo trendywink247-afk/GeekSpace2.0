@@ -248,16 +248,24 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
   // Quick actions wired to navigation
   const quickActions = [
-    { label: 'Set a reminder', icon: Bell, color: '#00F0FF', action: () => onNavigate?.('reminders') },
-    { label: 'Check schedule', icon: Calendar, color: '#ADFF2F', action: () => onNavigate?.('reminders') },
-    { label: 'Send message', icon: MessageSquare, color: '#FFD700', action: () => onOpenChat?.() },
-    { label: 'Open terminal', icon: Terminal, color: '#FF2D78', action: () => onNavigate?.('terminal') },
+    { label: 'Build a website', icon: Terminal, color: '#BF5FFF', desc: 'AI-generated live page', action: () => onNavigate?.('website-builder') },
+    { label: 'Set reminder', icon: Bell, color: '#00FF88', desc: 'Natural language time', action: () => onNavigate?.('reminders') },
+    { label: 'Chat with agent', icon: MessageSquare, color: '#00F0FF', desc: 'Ask anything', action: () => onOpenChat?.() },
+    { label: 'See all powers', icon: Sparkles, color: '#F59E0B', desc: `20+ capabilities`, action: () => onNavigate?.('capabilities') },
   ];
 
   const handlePullRefresh = async () => {
     handleRefresh();
     await new Promise(resolve => setTimeout(resolve, 1500));
   };
+
+  // Capability spotlight items for the "what's possible" strip
+  const capabilitySpotlight = [
+    { emoji: '🌐', label: 'Build a website', sub: 'Full HTML/CSS/JS + preview link', color: '#BF5FFF', page: 'website-builder' },
+    { emoji: '🔔', label: 'Natural reminders', sub: '"Remind me in 2 hours..."', color: '#00FF88', page: 'reminders' },
+    { emoji: '🤖', label: 'Portfolio AI', sub: 'Visitors chat with your AI twin', color: '#00F0FF', page: 'portfolio' },
+    { emoji: '⚡', label: 'Automations', sub: 'Cron, webhook & health triggers', color: '#F59E0B', page: 'automations' },
+  ];
 
   return (
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
@@ -292,6 +300,44 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           </div>
         </div>
       </div>
+
+      {/* ─── Capability Spotlight (new users) ─── */}
+      {stats.messagesSent < 10 && (
+        <div
+          className="rounded-2xl border border-white/8 overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, rgba(10,10,20,0.9), rgba(8,8,16,0.95))' }}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/6">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#00F0FF]" />
+              <span className="text-xs font-semibold text-[#E8E8F0]">What your agent can do</span>
+            </div>
+            <button
+              onClick={() => onNavigate?.('capabilities')}
+              className="flex items-center gap-1 text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+            >
+              See all 20+ powers
+              <ChevronDown className="w-3 h-3 -rotate-90" />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5">
+            {capabilitySpotlight.map((item, i) => (
+              <button
+                key={i}
+                onClick={() => onNavigate?.(item.page)}
+                className="flex flex-col items-start gap-2 p-4 bg-[#070710] hover:bg-[#0D0D1A] transition-colors text-left group"
+              >
+                <span className="text-2xl">{item.emoji}</span>
+                <div>
+                  <div className="text-xs font-semibold text-[#E8E8F0] group-hover:text-white transition-colors">{item.label}</div>
+                  <div className="text-[10px] text-[#6B7280] mt-0.5 leading-tight">{item.sub}</div>
+                </div>
+                <div className="w-full h-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: item.color }} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ─── Bento Stats Grid ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -634,11 +680,20 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           <Card
             style={{
               background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
-              border: '1px solid rgba(173, 255, 47, 0.1)',
+              border: '1px solid rgba(0, 240, 255, 0.1)',
             }}
           >
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+                <button
+                  onClick={() => onNavigate?.('capabilities')}
+                  className="flex items-center gap-1 text-xs text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  All powers
+                </button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-2">
@@ -646,16 +701,19 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   <button
                     key={i}
                     onClick={action.action}
-                    className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 text-center group press-scale touch-highlight hover:scale-[1.03]"
-                    style={{ background: `${action.color}08` }}
+                    className="flex flex-col items-start gap-1.5 p-3 rounded-xl transition-all duration-300 text-left group press-scale touch-highlight hover:scale-[1.02] border border-white/5 hover:border-white/12"
+                    style={{ background: `${action.color}06` }}
                   >
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                      className="w-9 h-9 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
                       style={{ backgroundColor: `${action.color}15` }}
                     >
-                      <action.icon className="w-5 h-5" style={{ color: action.color }} />
+                      <action.icon className="w-4 h-4" style={{ color: action.color }} />
                     </div>
-                    <span className="text-xs text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors font-medium">{action.label}</span>
+                    <div>
+                      <div className="text-xs text-[#E8E8F0] font-semibold leading-tight">{action.label}</div>
+                      <div className="text-[10px] text-[#6B7280] mt-0.5">{(action as { desc?: string }).desc}</div>
+                    </div>
                   </button>
                 ))}
               </div>

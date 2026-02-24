@@ -290,10 +290,20 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   }
 
   // Strip any remaining action-like patterns the parser missed (malformed tags, PicoClaw inline format)
-  const finalReply = (cleanReply || replyText)
+  let finalReply = (cleanReply || replyText)
     .replace(/<<<?\w[\s\S]*?>>>?/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+
+  // If a generate_code action succeeded, strip raw code blocks — the artifact holds the code;
+  // the user gets a preview link instead.
+  const hasCodeAction = actionResults.some(ar => ar.tool === 'generate_code' && ar.success);
+  if (hasCodeAction) {
+    finalReply = finalReply
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
 
   // Build action summary for channel (no iframe possible)
   let channelReply = taskConfirmation + finalReply;
@@ -301,7 +311,12 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     if (ar.success) {
       channelReply += `\n\n✅ ${ar.message}`;
       if (ar.tool === 'generate_code' && ar.artifactId) {
-        channelReply += `\nOpen your dashboard to preview the project.`;
+        if (ar.previewUrl) {
+          channelReply += `\n🔗 Preview: ${ar.previewUrl}`;
+          channelReply += `\nAlso saved to your Projects.`;
+        } else {
+          channelReply += `\nSaved to your Projects — open your dashboard to preview.`;
+        }
       }
     }
   }
