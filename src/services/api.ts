@@ -99,7 +99,7 @@ export const authService = {
     api.post('/auth/onboarding/complete'),
 
   requestPasswordReset: (email: string, channel?: 'email' | 'telegram' | 'auto') =>
-    api.post<{ success: boolean; message: string; channel?: string }>('/auth/forgot-password', { email, channel }),
+    api.post<{ success: boolean; message: string; channel?: string; error?: string }>('/auth/forgot-password', { email, channel }),
 
   verifyResetOTP: (email: string, otp: string) =>
     api.post<{ success: boolean; resetToken?: string; error?: string }>('/auth/verify-reset-otp', { email, otp }),

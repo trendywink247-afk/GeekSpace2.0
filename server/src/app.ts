@@ -39,7 +39,7 @@ import { templatesRouter } from './routes/templates.js';
 import { imagesRouter } from './routes/images.js';
 import { videosRouter } from './routes/videos.js';
 import { socialMediaRouter } from './routes/social-media.js';
-import { healthRouter } from './routes/health.js';
+import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
 import { metricsMiddleware, getMetricsSnapshot } from './middleware/metrics.js';
@@ -160,12 +160,24 @@ export function createApp(): express.Application {
 
   // ---- Health check ----
   app.get('/api/health', (_req, res) => {
-    const components = { database: 'ok' };
+    const components = getCachedComponents(); // use warmed probe cache (all 8 components)
     const metrics = getMetricsSnapshot();
     const allOk = components.database === 'ok';
 
+    // Build topEndpoints so the REST fallback gives HealthDashboardPage the same shape as SSE
+    const topEndpoints = Object.entries(metrics.endpoints)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 10)
+      .map(([path, stats]) => ({
+        path,
+        count: stats.count,
+        errors: stats.errors,
+        avgMs: stats.count > 0 ? Math.round(stats.totalLatencyMs / stats.count) : 0,
+      }));
+
     res.status(allOk ? 200 : 503).json({
       timestamp: new Date().toISOString(),
+      cacheAgeMs: null, // not available in REST context
       components,
       metrics: {
         totalRequests: metrics.totalRequests,
@@ -178,6 +190,7 @@ export function createApp(): express.Application {
         uptime: metrics.uptime,
         memoryMb: metrics.memoryMb,
       },
+      topEndpoints,
       ok: allOk,
       status: allOk ? 'ok' : 'degraded',
       version: APP_VERSION,
