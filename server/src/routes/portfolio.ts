@@ -467,7 +467,7 @@ portfolioRouter.get('/:username', async (req, res) => {
   if (cached) {
     // Record visit even for cached responses
     try {
-      const cachedData = JSON.parse(cached) as { userId?: string };
+      const cachedData = JSON.parse(cached) as { userId?: string; viewCount?: number };
       if (cachedData.userId) {
         const visitorIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || null;
         const recentVisit = db.prepare(
@@ -477,6 +477,15 @@ portfolioRouter.get('/:username', async (req, res) => {
           db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(cachedData.userId, visitorIp);
           firePortfolioVisitAutomations(cachedData.userId, visitorIp);
         }
+      }
+
+      // 45.8: ETag + Cache-Control for cached responses
+      const etag = `"${Buffer.from(JSON.stringify({ id: cachedData.userId, vc: cachedData.viewCount ?? 0 })).toString('base64')}"`;
+      res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+      res.set('ETag', etag);
+      if (req.headers['if-none-match'] === etag) {
+        res.status(304).end();
+        return;
       }
     } catch { /* non-fatal */ }
     res.json(JSON.parse(cached));
@@ -517,5 +526,15 @@ portfolioRouter.get('/:username', async (req, res) => {
   } catch { /* non-fatal */ }
 
   await cacheSet(cacheKey, JSON.stringify(responseData), 300);
+
+  // 45.8: ETag + Cache-Control for fresh responses
+  const etag = `"${Buffer.from(JSON.stringify({ id: responseData.userId, vc: responseData.viewCount })).toString('base64')}"`;
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+  res.set('ETag', etag);
+  if (req.headers['if-none-match'] === etag) {
+    res.status(304).end();
+    return;
+  }
+
   res.json(responseData);
 });

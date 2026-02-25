@@ -150,3 +150,62 @@ describe('Phase 45.2 — duplicate reminders index cleanup', () => {
     }
   });
 });
+
+// ── 45.8: ETag caching for portfolio public endpoint ──────────────────────
+
+describe('Phase 45.8 — ETag caching for portfolio public endpoint', () => {
+  beforeAll(() => { resetDatabase(); });
+  afterEach(() => { resetDatabase(); });
+
+  it('returns ETag header on GET /portfolio/:username', async () => {
+    const user = createTestUser(`etag-${Date.now()}@example.com`);
+    const username = `etag-user-${Date.now()}`;
+    db.prepare(
+      `INSERT INTO portfolios (user_id, username, headline, about, skills, projects, milestones, agent_enabled)
+       VALUES (?, ?, ?, ?, '[]', '[]', '[]', 0)`
+    ).run(user.id, username, 'ETag Test Headline', 'About me');
+
+    const res = await request(app)
+      .get(`/api/portfolio/${username}`)
+      .set('User-Agent', 'Mozilla/5.0 (compatible browser)')
+      .expect(200);
+
+    // ETag header must be present and non-empty
+    expect(res.headers['etag']).toBeDefined();
+    expect(typeof res.headers['etag']).toBe('string');
+    expect(res.headers['etag'].length).toBeGreaterThan(0);
+
+    // Cache-Control must be set for public caching
+    expect(res.headers['cache-control']).toBeDefined();
+    expect(res.headers['cache-control']).toContain('public');
+    expect(res.headers['cache-control']).toContain('max-age=300');
+  });
+
+  it('returns 304 when ETag matches (If-None-Match)', async () => {
+    const user = createTestUser(`etag304-${Date.now()}@example.com`);
+    const username = `etag304-user-${Date.now()}`;
+    db.prepare(
+      `INSERT INTO portfolios (user_id, username, headline, about, skills, projects, milestones, agent_enabled)
+       VALUES (?, ?, ?, ?, '[]', '[]', '[]', 0)`
+    ).run(user.id, username, 'ETag 304 Headline', 'About 304');
+
+    // First request — get the ETag
+    const firstRes = await request(app)
+      .get(`/api/portfolio/${username}`)
+      .set('User-Agent', 'Mozilla/5.0 (compatible browser)')
+      .expect(200);
+
+    const etag = firstRes.headers['etag'] as string;
+    expect(etag).toBeDefined();
+
+    // Second request — send the ETag back via If-None-Match → expect 304
+    const secondRes = await request(app)
+      .get(`/api/portfolio/${username}`)
+      .set('User-Agent', 'Mozilla/5.0 (compatible browser)')
+      .set('If-None-Match', etag)
+      .expect(304);
+
+    // 304 must have no body
+    expect(secondRes.text).toBe('');
+  });
+});
