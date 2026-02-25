@@ -7,6 +7,7 @@ import { db } from '../db/index.js';
 import { getBotUsername } from '../services/telegram.js';
 import { config } from '../config.js';
 import { logger } from '../logger.js';
+import { generateWhatsAppLinkToken, generateWhatsAppQRSession, checkWhatsAppSession } from '../services/whatsapp.js';
 
 export const integrationsRouter = Router();
 
@@ -160,44 +161,11 @@ integrationsRouter.delete('/telegram/link', requireAuth, (req: AuthRequest, res)
 // WhatsApp Account Linking
 // ================================================================
 
-// Generate a link code and return a WhatsApp wa.me link
-integrationsRouter.post('/whatsapp/link', requireAuth, async (req: AuthRequest, res) => {
-  const userId = req.userId!;
-  logger.warn({ userId }, 'whatsapp/link (deprecated wa.me): use /whatsapp/qr instead');
-  res.setHeader('X-Deprecated', 'true');
-
-  if (!config.whatsappBusinessNumber) {
-    res.status(503).json({ error: 'WhatsApp is not configured on this server.' });
-    return;
-  }
-
-  // Check if already linked
-  const existing = db.prepare(
-    "SELECT id, external_id FROM channel_links WHERE user_id = ? AND channel = 'whatsapp'"
-  ).get(userId) as { id: string; external_id: string } | undefined;
-
-  if (existing) {
-    res.json({
-      linked: true,
-      externalId: existing.external_id,
-      message: 'WhatsApp is already linked.',
-    });
-    return;
-  }
-
-  // Generate link token
-  const { generateWhatsAppLinkToken } = await import('../services/whatsapp.js');
-  const token = await generateWhatsAppLinkToken(userId);
-
-  // Generate wa.me link with pre-filled message
-  const waMeUrl = `https://wa.me/${config.whatsappBusinessNumber}?text=LINK%20${token}`;
-
-  res.json({
-    linked: false,
-    token,
-    qrUrl: waMeUrl,
-    expiresIn: 3600,
-    message: 'Scan the QR code or click the link to open WhatsApp and send the connect message.',
+// Deprecated: use POST /whatsapp/qr instead
+integrationsRouter.post('/whatsapp/link', requireAuth, (req: AuthRequest, res) => {
+  logger.warn({ userId: req.userId }, 'whatsapp/link (gone): client must use /whatsapp/qr');
+  res.status(410).json({
+    error: 'This endpoint has been removed. Use POST /api/integrations/whatsapp/qr to link WhatsApp.',
   });
 });
 
@@ -263,19 +231,14 @@ integrationsRouter.post('/whatsapp/qr', requireAuth, async (req: AuthRequest, re
   }
 
   try {
-    const { generateWhatsAppQRSession } = await import('../services/whatsapp-new.js');
     const result = await generateWhatsAppQRSession(userId, 'dashboard');
-
     if (result.success) {
-      res.json({
-        success: true,
-        sessionId: result.sessionId,
-        qrCodeDataUrl: result.qrCodeDataUrl,
-      });
+      res.json({ success: true, sessionId: result.sessionId, qrCodeDataUrl: result.qrCodeDataUrl });
     } else {
       res.status(500).json({ success: false, error: result.error });
     }
   } catch (err) {
+    logger.error({ err }, 'Failed to generate WhatsApp QR code');
     res.status(500).json({ success: false, error: 'Failed to generate QR code' });
   }
 });
@@ -285,11 +248,10 @@ integrationsRouter.get('/whatsapp/qr/:sessionId/status', requireAuth, async (req
   const { sessionId } = req.params;
 
   try {
-    const { checkWhatsAppSession } = await import('../services/whatsapp-new.js');
     const result = await checkWhatsAppSession(sessionId);
-
     res.json(result);
   } catch (err) {
+    logger.error({ err }, 'Failed to check WhatsApp session status');
     res.status(500).json({ linked: false, error: 'Failed to check status' });
   }
 });

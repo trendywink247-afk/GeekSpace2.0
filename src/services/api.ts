@@ -376,9 +376,9 @@ export const portfolioService = {
       reason?: string;
     }>(`/portfolio/${username}/agent-status`),
 
-  // Portfolio visit stats
+  // Portfolio visit stats (includes 30-day daily breakdown)
   getStats: () =>
-    api.get<{ totalViews: number; recentViews: number }>('/portfolio/stats'),
+    api.get<{ totalViews: number; recentViews: number; dailyBreakdown: { date: string; count: number }[] }>('/portfolio/stats'),
 };
 
 // ----- Automations -------------------------------------------

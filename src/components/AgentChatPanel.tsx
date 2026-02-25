@@ -3,7 +3,7 @@ import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Downloa
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { agentService, premiumAgentService, publicAgentService, memoryService } from '@/services/api';
+import { agentService, premiumAgentService, publicAgentService, memoryService, billingService } from '@/services/api';
 import type { AgentPersonality, PremiumSession } from '@/types';
 import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
@@ -111,6 +111,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
   // Credits remaining from last successful regular chat
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
+  const [creditsTotal, setCreditsTotal] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   // Premium session state
@@ -142,6 +143,16 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 300);
+    }
+  }, [isOpen]);
+
+  // Fetch subscription plan to show credits progress bar
+  useEffect(() => {
+    if (isOpen) {
+      billingService.getPlan().then(({ data }) => {
+        setCreditsTotal(data.monthly_credits);
+        setCreditsRemaining(data.credits_remaining);
+      }).catch(() => { /* ignore billing fetch errors */ });
     }
   }, [isOpen]);
 
@@ -515,6 +526,25 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             </button>
           </div>
         </div>
+
+        {/* Credits progress bar */}
+        {creditsTotal !== null && creditsRemaining !== null && creditsTotal > 0 && (
+          <div
+            className="h-1 w-full bg-[#0A0A12]"
+            title={`${creditsRemaining} of ${creditsTotal} credits remaining`}
+          >
+            <div
+              className={`h-full transition-all duration-500 ${
+                creditsRemaining / creditsTotal > 0.5
+                  ? 'bg-[#00FF88]'
+                  : creditsRemaining / creditsTotal > 0.2
+                  ? 'bg-[#F59E0B]'
+                  : 'bg-[#EF4444]'
+              }`}
+              style={{ width: `${Math.min(100, (creditsRemaining / creditsTotal) * 100)}%` }}
+            />
+          </div>
+        )}
 
         {/* Search bar */}
         {searchOpen && (
