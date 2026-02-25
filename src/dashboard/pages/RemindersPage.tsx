@@ -10,6 +10,7 @@ import {
   Clock,
   Trash2,
   Check,
+  CheckCheck,
   Repeat,
   LayoutGrid,
   List,
@@ -192,6 +193,7 @@ export function RemindersPage() {
   // Bulk snooze state (29.4)
   const [selectedActiveIds, setSelectedActiveIds] = useState<Set<string>>(new Set());
   const [isBulkSnoozing, setIsBulkSnoozing] = useState(false);
+  const [isBulkCompleting, setIsBulkCompleting] = useState(false);
 
   // 36.1: Snooze history popover
   const [snoozeHistoryId, setSnoozeHistoryId] = useState<string | null>(null);
@@ -323,6 +325,18 @@ export function RemindersPage() {
       setSelectedActiveIds(new Set());
     } finally {
       setIsBulkSnoozing(false);
+    }
+  };
+
+  const handleBulkComplete = async () => {
+    if (selectedActiveIds.size === 0) return;
+    setIsBulkCompleting(true);
+    try {
+      await reminderService.bulkComplete(Array.from(selectedActiveIds));
+      setSelectedActiveIds(new Set());
+      await loadReminders();
+    } finally {
+      setIsBulkCompleting(false);
     }
   };
 
@@ -667,6 +681,14 @@ export function RemindersPage() {
                 className="text-xs px-3 py-1.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] hover:bg-[#FFB800]/20 disabled:opacity-50 transition-colors"
               >
                 Next week
+              </button>
+              <button
+                onClick={handleBulkComplete}
+                disabled={isBulkCompleting}
+                className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/30 text-[#00FF88] hover:bg-[#00FF88]/20 disabled:opacity-50 transition-colors"
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                Mark Done
               </button>
               {isBulkSnoozing && (
                 <div className="w-4 h-4 border-2 border-[#FFB800]/30 border-t-[#FFB800] rounded-full animate-spin" />

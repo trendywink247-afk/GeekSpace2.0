@@ -58,6 +58,10 @@ export function SettingsPage() {
       });
       // 39.4: preferred free model
       if (cfg.preferred_free_model) setPreferredFreeModel(cfg.preferred_free_model as string);
+      // 41.6: snooze presets
+      if (cfg.snooze_presets) {
+        try { setSnoozePresets(JSON.parse(cfg.snooze_presets as string) as string[]); } catch { /* ignore */ }
+      }
     }).catch(() => {});
   }, []);
   const setUser = useAuthStore((s) => s.setUser);
@@ -95,6 +99,8 @@ export function SettingsPage() {
     notif_daily_briefing: 1,
     notif_connections: 1,
   });
+  // 41.6: snooze presets
+  const [snoozePresets, setSnoozePresets] = useState<string[]>(['1h', 'tomorrow', 'next-week']);
 
   const [privacy, setPrivacy] = useState({
     showInDirectory: true,
@@ -526,6 +532,37 @@ export function SettingsPage() {
                   />
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          {/* 41.6: Snooze Presets Card */}
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle>Snooze Presets</CardTitle>
+              <CardDescription className="text-[#6B7280]">Choose which snooze options appear when delaying a reminder</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {(['1h', '3h', 'tomorrow', 'next-week'] as const).map((preset) => {
+                const labels: Record<string, string> = { '1h': '1 hour', '3h': '3 hours', 'tomorrow': 'Tomorrow 9am', 'next-week': 'Next week 9am' };
+                const enabled = snoozePresets.includes(preset);
+                return (
+                  <div key={preset} className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-[#E8E8F0] text-sm">{labels[preset]}</div>
+                    </div>
+                    <Switch
+                      checked={enabled}
+                      onCheckedChange={(checked) => {
+                        const updated = checked
+                          ? [...snoozePresets, preset]
+                          : snoozePresets.filter((p) => p !== preset);
+                        setSnoozePresets(updated);
+                        void agentService.updateConfig({ snooze_presets: JSON.stringify(updated) }).catch(() => {});
+                      }}
+                    />
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         </TabsContent>

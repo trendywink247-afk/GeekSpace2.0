@@ -127,6 +127,7 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     notif_daily_briefing: 'notif_daily_briefing',
     notif_connections: 'notif_connections',
     greeting: 'greeting',
+    snooze_presets: 'snooze_presets',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {

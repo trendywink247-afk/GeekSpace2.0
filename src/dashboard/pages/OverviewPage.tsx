@@ -576,6 +576,55 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         </div>
       )}
 
+      {/* ─── Upcoming Today Strip (41.2) ─── */}
+      {(() => {
+        const now = Date.now();
+        const in24h = now + 24 * 60 * 60 * 1000;
+        const upcoming = reminders
+          .filter(r => !r.completed && r.datetime && Date.parse(r.datetime) >= now && Date.parse(r.datetime) <= in24h)
+          .slice(0, 3);
+        if (upcoming.length === 0) return null;
+        const catColors: Record<string, string> = {
+          personal: '#00F0FF', work: '#00FF88', health: '#FF2D78', other: '#FFB800',
+        };
+        return (
+          <div className="rounded-2xl border border-white/8 px-4 py-3" style={{ background: 'rgba(0,240,255,0.03)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Bell className="w-3.5 h-3.5 text-[#00F0FF]" />
+                <span className="text-xs font-semibold text-[#E8E8F0]">Upcoming Today</span>
+              </div>
+              <button
+                onClick={() => onNavigate?.('reminders')}
+                className="text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+              >
+                View all
+              </button>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {upcoming.map((r) => {
+                const t = new Date(r.datetime);
+                const timeStr = t.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                const dot = catColors[r.category] || '#6B7280';
+                return (
+                  <div
+                    key={r.id}
+                    className="flex-shrink-0 rounded-xl border border-white/8 px-3 py-2 min-w-[140px] max-w-[180px]"
+                    style={{ background: 'rgba(255,255,255,0.03)' }}
+                  >
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dot }} />
+                      <span className="text-[11px] text-[#6B7280] flex-shrink-0">{timeStr}</span>
+                    </div>
+                    <p className="text-xs text-[#E8E8F0] truncate">{r.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ─── Capability Spotlight (new users) ─── */}
       {stats.messagesSent < 10 && (
         <div

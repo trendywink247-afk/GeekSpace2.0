@@ -1298,3 +1298,6 @@ try { db.exec(`CREATE INDEX IF NOT EXISTS idx_snooze_log_reminder ON snooze_log(
 
 // Phase 40.6: Track when the 5-min early Telegram alert was sent for each reminder
 try { db.exec(`ALTER TABLE reminders ADD COLUMN remind_before_sent_at INTEGER`); } catch { /* column already exists */ }
+
+// Phase 41.6: Custom snooze presets for agent config
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN snooze_presets TEXT DEFAULT '[]'`); } catch { /* column already exists */ }
