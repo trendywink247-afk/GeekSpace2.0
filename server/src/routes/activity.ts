@@ -13,16 +13,21 @@ export const activityRouter = Router();
 activityRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
   const limit = Math.min(Number(req.query.limit) || 50, 100);
+  const offset = Math.max(Number(req.query.offset) || 0, 0);
 
   const entries = db.prepare(`
     SELECT id, action, details, icon, created_at
     FROM activity_log
     WHERE user_id = ?
     ORDER BY created_at DESC
-    LIMIT ?
-  `).all(userId, limit);
+    LIMIT ? OFFSET ?
+  `).all(userId, limit, offset);
 
-  res.json({ activity: entries });
+  const { total } = db.prepare(
+    'SELECT COUNT(*) AS total FROM activity_log WHERE user_id = ?'
+  ).get(userId) as { total: number };
+
+  res.json({ activity: entries, total });
 });
 
 // ---- 34.2: 7-day daily activity stats (messages sent + reminders created) ----

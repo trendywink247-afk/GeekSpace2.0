@@ -159,8 +159,8 @@ export const userService = {
   setPreferredModel: (model: string) =>
     api.put<{ preferredModel: string }>('/users/me/model', { model }),
 
-  getActivity: (limit = 50) =>
-    api.get<{ activity: ActivityEntry[] }>(`/activity?limit=${limit}`),
+  getActivity: (limit = 50, offset = 0) =>
+    api.get<{ activity: ActivityEntry[]; total: number }>(`/activity?limit=${limit}&offset=${offset}`),
 
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post<{ success: boolean; message: string }>('/users/me/change-password', {
