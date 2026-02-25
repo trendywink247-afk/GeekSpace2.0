@@ -104,6 +104,19 @@ const httpServer = app.listen(config.port, () => {
       ollama: config.ollamaBaseUrl,
       version: APP_VERSION,
     }, 'GeekSpace subsystem startup complete');
+
+    // 49.9: Log DB row counts for key tables on startup — quick sanity check in operator logs
+    try {
+      const tables = ['users', 'reminders', 'automations', 'integrations', 'portfolios', 'activity_log'] as const;
+      const counts: Record<string, number> = {};
+      for (const table of tables) {
+        const row = db.prepare(`SELECT count(*) as cnt FROM ${table}`).get() as { cnt: number } | undefined;
+        counts[table] = row?.cnt ?? 0;
+      }
+      logger.info({ dbRows: counts }, 'DB row counts at startup');
+    } catch (err) {
+      logger.warn({ err }, 'Could not read startup DB row counts (non-fatal)');
+    }
   } else {
     logger.info({ worker: instanceId }, 'Cluster worker — schedulers skipped');
   }

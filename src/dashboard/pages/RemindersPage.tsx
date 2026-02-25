@@ -431,6 +431,21 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
 
   const activeReminders = reminders.filter(r => !r.completed);
   const completedReminders = reminders.filter(r => r.completed);
+  // 49.3: Overdue = active reminders whose datetime is in the past
+  const overdueReminders = activeReminders.filter(r => new Date(r.datetime) < new Date());
+
+  // 49.3: "Mark all overdue complete" batch handler
+  const [isMarkingAllOverdue, setIsMarkingAllOverdue] = useState(false);
+  const handleMarkAllOverdueComplete = async () => {
+    if (overdueReminders.length === 0) return;
+    setIsMarkingAllOverdue(true);
+    try {
+      await reminderService.bulkComplete(overdueReminders.map(r => r.id));
+      await loadReminders();
+    } finally {
+      setIsMarkingAllOverdue(false);
+    }
+  };
 
   const formatDateTime = (datetime: string) => {
     const date = new Date(datetime);
@@ -470,6 +485,26 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             aria-label="Dismiss"
           >
             ×
+          </button>
+        </div>
+      )}
+      {/* 49.3: Mark all overdue complete banner — shown when 4+ overdue items accumulate */}
+      {!showCelebration && overdueReminders.length > 3 && (
+        <div
+          className="flex items-center justify-between px-4 py-3 rounded-2xl border"
+          style={{ background: 'rgba(255,45,120,0.08)', borderColor: 'rgba(255,45,120,0.35)' }}
+        >
+          <span className="text-sm font-medium" style={{ color: '#FF2D78' }}>
+            <AlarmClock className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+            {overdueReminders.length} overdue reminders
+          </span>
+          <button
+            onClick={handleMarkAllOverdueComplete}
+            disabled={isMarkingAllOverdue}
+            className="text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors disabled:opacity-50"
+            style={{ background: 'rgba(255,45,120,0.18)', color: '#FF2D78', border: '1px solid rgba(255,45,120,0.4)' }}
+          >
+            {isMarkingAllOverdue ? 'Marking…' : 'Mark all complete'}
           </button>
         </div>
       )}

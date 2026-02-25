@@ -482,8 +482,12 @@ export const portfolioService = {
     api.post<{ ok: boolean }>(`/portfolio/${username}/view`),
 
   // 37.1: Contact portfolio owner (public)
-  contact: (username: string, data: { senderName: string; senderEmail?: string; message: string }) =>
+  contact: (username: string, data: { senderName: string; senderEmail?: string; message: string; nonce?: string }) =>
     api.post<{ success: boolean }>(`/portfolio/${username}/contact`, data),
+
+  // 49.7: Fetch a one-time nonce token for the contact form (prevents replay attacks)
+  contactNonce: (username: string) =>
+    api.get<{ nonce: string }>(`/portfolio/${username}/contact-nonce`),
 
   // 37.1: Get contact messages (authenticated, owner only)
   getContacts: () =>

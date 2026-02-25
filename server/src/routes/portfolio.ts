@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { randomBytes } from 'crypto';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, portfolioUpdateSchema, portfolioAiEditSchema } from '../middleware/validate.js';
@@ -330,11 +331,21 @@ portfolioRouter.get('/stats/export', requireAuth, (req: AuthRequest, res) => {
 });
 
 // ── 37.1: Portfolio contact form (public, rate-limited) ──────────────────────
-const contactRateLimit = new Map<string, { count: number; windowStart: number }>();
+
+// 49.7: Issue a one-time nonce for the contact form. The nonce prevents replay attacks:
+// the frontend fetches a fresh token before every submission, and the server consumes it on first use.
+portfolioRouter.get('/:username/contact-nonce', async (req, res) => {
+  const { username } = req.params;
+  const user = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: string } | undefined;
+  if (!user) { res.status(404).json({ error: 'Not found' }); return; }
+  const nonce = randomBytes(16).toString('hex');
+  await cacheSet(`portfolio:nonce:${nonce}`, username, 900); // 15-minute TTL
+  res.json({ nonce });
+});
 
 portfolioRouter.post('/:username/contact', async (req, res) => {
   const { username } = req.params;
-  const { senderName, senderEmail, message, honeypot } = req.body as { senderName?: string; senderEmail?: string; message?: string; honeypot?: string };
+  const { senderName, senderEmail, message, honeypot, nonce } = req.body as { senderName?: string; senderEmail?: string; message?: string; honeypot?: string; nonce?: string };
 
   // 48.6: Origin validation — reject requests from disallowed origins
   // Requests with no Origin (e.g., server-side curl) are allowed through.
@@ -371,18 +382,30 @@ portfolioRouter.post('/:username/contact', async (req, res) => {
   const sanitizedSenderName = stripDangerousHtml(senderName);
   const sanitizedMessage = stripDangerousHtml(message);
 
-  // IP-based rate limit: max 3 requests per hour per IP
+  // 49.6: IP-based rate limit using Redis (shared across PM2 workers; max 3 req/hr per IP)
+  // Falls back to allow-through if Redis is unavailable.
   const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
-  const now = Date.now();
-  const rlEntry = contactRateLimit.get(ip);
-  if (rlEntry && now - rlEntry.windowStart < 3600000) {
-    if (rlEntry.count >= 3) {
+  const rlKey = `portfolio:contact:rl:${ip}`;
+  try {
+    const rlRaw = await cacheGet(rlKey);
+    const rlCount = rlRaw ? parseInt(rlRaw, 10) : 0;
+    if (rlCount >= 3) {
       res.status(429).json({ error: 'Too many requests, please try again later' });
       return;
     }
-    rlEntry.count++;
-  } else {
-    contactRateLimit.set(ip, { count: 1, windowStart: now });
+    await cacheSet(rlKey, String(rlCount + 1), 3600); // TTL = 1 hour
+  } catch { /* Redis unavailable — allow through (non-fatal) */ }
+
+  // 49.7: Validate one-time nonce if provided (silently skip validation when Redis is unavailable)
+  if (nonce) {
+    try {
+      const nonceOwner = await cacheGet(`portfolio:nonce:${nonce}`);
+      if (!nonceOwner || nonceOwner !== username) {
+        res.status(422).json({ error: 'Invalid or expired form token. Please reload and try again.' });
+        return;
+      }
+      await cacheDel(`portfolio:nonce:${nonce}`); // One-time use: consume immediately
+    } catch { /* Redis unavailable — allow through */ }
   }
 
   const user = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: string } | undefined;

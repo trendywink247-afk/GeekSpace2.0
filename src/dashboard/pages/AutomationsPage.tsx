@@ -179,6 +179,9 @@ export function AutomationsPage() {
 
   const handleTrigger = async (id: string) => {
     await triggerAutomation(id);
+    // 49.2/49.5: Refresh logs and dead-letters after trigger so the panel shows the new log entry
+    automationLogService.list(20).then((r) => setLogs(r.data)).catch(() => {});
+    automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => {});
   };
 
   const handleTestFire = async (id: string) => {

@@ -103,6 +103,12 @@ export function createApp(): express.Application {
     next();
   });
 
+  // 49.1: Prevent search engines from indexing API endpoints
+  app.use('/api', (_req, res, next) => {
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    next();
+  });
+
   // ---- CORS ----
   app.use(cors({
     origin: config.corsOrigins,
