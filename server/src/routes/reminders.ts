@@ -208,28 +208,43 @@ remindersRouter.post('/bulk-snooze', requireAuth, (req: AuthRequest, res) => {
   res.json({ snoozed: owned.length, newDatetime });
 });
 
-// ── Individual Snooze (36.1) — logs event, mirrors bulk-snooze for one reminder ──
+// ── Individual Snooze (36.1 + 37.2) — preset or custom datetime ──────────────
 remindersRouter.post('/:id/snooze', requireAuth, (req: AuthRequest, res) => {
-  const { preset } = req.body as { preset: '1h' | 'tomorrow' | 'next-week' };
-  if (!['1h', 'tomorrow', 'next-week'].includes(preset)) {
+  const { preset, customDatetime } = req.body as { preset?: string; customDatetime?: string };
+
+  if (!preset && !customDatetime) {
+    res.status(400).json({ error: 'preset or customDatetime required' });
+    return;
+  }
+  if (preset && !['1h', 'tomorrow', 'next-week'].includes(preset)) {
     res.status(400).json({ error: 'Invalid preset' });
     return;
   }
+
   const existing = db.prepare('SELECT id FROM reminders WHERE id = ? AND user_id = ? AND completed = 0').get(req.params.id, req.userId!) as { id: string } | undefined;
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
 
-  const now = new Date();
   let newDatetime: string;
-  if (preset === '1h') {
-    newDatetime = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
-  } else if (preset === 'tomorrow') {
-    const d = new Date(now); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); newDatetime = d.toISOString();
+  if (customDatetime) {
+    const parsed = new Date(customDatetime);
+    if (isNaN(parsed.getTime()) || parsed <= new Date()) {
+      res.status(400).json({ error: 'customDatetime must be a valid future datetime' });
+      return;
+    }
+    newDatetime = parsed.toISOString();
   } else {
-    const d = new Date(now); d.setDate(d.getDate() + 7); d.setHours(9, 0, 0, 0); newDatetime = d.toISOString();
+    const now = new Date();
+    if (preset === '1h') {
+      newDatetime = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+    } else if (preset === 'tomorrow') {
+      const d = new Date(now); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); newDatetime = d.toISOString();
+    } else {
+      const d = new Date(now); d.setDate(d.getDate() + 7); d.setHours(9, 0, 0, 0); newDatetime = d.toISOString();
+    }
   }
 
   db.prepare(`UPDATE reminders SET datetime = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id = ? AND user_id = ?`).run(newDatetime, req.params.id, req.userId!);
-  db.prepare('INSERT INTO snooze_log (id, reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?, ?)').run(uuid(), req.params.id, req.userId!, Date.now(), preset, newDatetime);
+  db.prepare('INSERT INTO snooze_log (id, reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?, ?)').run(uuid(), req.params.id, req.userId!, Date.now(), preset || 'custom', newDatetime);
 
   res.json({ snoozed: true, newDatetime });
 });

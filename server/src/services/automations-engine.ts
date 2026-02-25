@@ -212,6 +212,15 @@ async function executeAction(
     db.prepare('INSERT INTO automation_logs (id, automation_id, user_id, status, output, duration_ms) VALUES (?, ?, ?, ?, ?, ?)')
       .run(uuid(), automation.id, automation.user_id, 'error', errorMsg, durationMs);
 
+    // 37.4: Log webhook failures to dead-letter table for debugging
+    if (['n8n-webhook', 'call_api'].includes(automation.action_type)) {
+      try {
+        const actionCfg = JSON.parse(automation.action_config || '{}') as { url?: string };
+        db.prepare('INSERT INTO webhook_dead_letters (id, automation_id, user_id, url, error, payload) VALUES (?, ?, ?, ?, ?, ?)')
+          .run(uuid(), automation.id, automation.user_id, actionCfg.url || '', errorMsg, triggerContext || null);
+      } catch { /* ignore dead-letter insert failures */ }
+    }
+
     logger.warn({ automationId: automation.id, error: errorMsg }, 'Automation execution failed');
 
     return { success: false, output: errorMsg, durationMs };

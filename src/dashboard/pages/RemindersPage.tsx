@@ -194,6 +194,10 @@ export function RemindersPage() {
   const [snoozeHistory, setSnoozeHistory] = useState<Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }>>([]);
   const [snoozeHistoryLoading, setSnoozeHistoryLoading] = useState(false);
 
+  // 37.2: Custom snooze datetime picker
+  const [snoozeCustomId, setSnoozeCustomId] = useState<string | null>(null);
+  const [snoozeCustomValue, setSnoozeCustomValue] = useState('');
+
   const handleShowSnoozeHistory = async (id: string) => {
     if (snoozeHistoryId === id) { setSnoozeHistoryId(null); return; }
     setSnoozeHistoryId(id);
@@ -202,6 +206,18 @@ export function RemindersPage() {
       const res = await reminderService.getSnoozeHistory(id);
       setSnoozeHistory(res.data.history);
     } catch { setSnoozeHistory([]); } finally { setSnoozeHistoryLoading(false); }
+  };
+
+  // 37.2: Custom snooze submit
+  const handleSnoozeCustom = async (id: string) => {
+    if (!snoozeCustomValue) return;
+    try {
+      const res = await reminderService.snooze(id, undefined, snoozeCustomValue);
+      await snoozeReminder(id, res.data.newDatetime);
+      setSnoozeCustomId(null);
+      setSnoozeCustomValue('');
+      setSnoozeOpenId(null);
+    } catch { /* ignore */ }
   };
 
   const handleComplete = async (id: string) => {
@@ -780,6 +796,21 @@ export function RemindersPage() {
                                     <button onClick={() => handleSnooze(reminder.id, '1h')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">+1 hour</button>
                                     <button onClick={() => handleSnooze(reminder.id, 'tomorrow')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Tomorrow 9am</button>
                                     <button onClick={() => handleSnooze(reminder.id, 'next-week')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Next week</button>
+                                    <button onClick={() => setSnoozeCustomId(snoozeCustomId === reminder.id ? null : reminder.id)} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#FFB800] whitespace-nowrap">Custom time…</button>
+                                    {snoozeCustomId === reminder.id && (
+                                      <div className="flex gap-1 mt-1 px-1">
+                                        <input
+                                          type="datetime-local"
+                                          className="text-xs bg-[#06060B] border border-[#FFB800]/30 rounded-lg px-2 py-1 text-[#E8E8F0] flex-1 min-w-0"
+                                          value={snoozeCustomValue}
+                                          onChange={(e) => setSnoozeCustomValue(e.target.value)}
+                                        />
+                                        <button
+                                          onClick={() => handleSnoozeCustom(reminder.id)}
+                                          className="text-xs px-2 py-1 rounded-lg bg-[#FFB800]/20 text-[#FFB800] hover:bg-[#FFB800]/30 whitespace-nowrap"
+                                        >Set</button>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
