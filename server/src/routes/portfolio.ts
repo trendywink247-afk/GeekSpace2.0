@@ -8,6 +8,17 @@ import { firePortfolioVisitAutomations } from '../services/automations-engine.js
 
 export const portfolioRouter = Router();
 
+/** Strip dangerous HTML while preserving basic formatting. */
+function stripDangerousHtml(input: unknown): string {
+  if (typeof input !== 'string') return String(input ?? '');
+  return input
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<iframe[\s\S]*?\/?\s*>/gi, '')
+    .replace(/javascript\s*:/gi, '')
+    .replace(/on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '')
+    .replace(/<(?!\/?(?:b|i|em|strong|p|br|ul|ol|li|a)\b)[^>]+>/gi, '');
+}
+
 // In-memory view dedup: prevents same IP from inflating view_count within 1h
 const recentViewers = new Map<string, number>(); // `${ip}:${username}` → expires_at
 const VIEW_DEDUP_MS = 60 * 60 * 1000; // 1 hour
@@ -76,11 +87,27 @@ portfolioRouter.patch('/me', requireAuth, validateBody(portfolioUpdateSchema), a
   const fields: string[] = [];
   const values: unknown[] = [];
 
+  // Sanitize free-text fields before storing
   for (const f of ['headline', 'about', 'avatar', 'location', 'role', 'company', 'layout']) {
-    if (updates[f] !== undefined) { fields.push(`${f} = ?`); values.push(updates[f]); }
+    if (updates[f] !== undefined) {
+      const sanitized = typeof updates[f] === 'string' ? stripDangerousHtml(updates[f]) : updates[f];
+      fields.push(`${f} = ?`); values.push(sanitized);
+    }
   }
   for (const [k, col] of Object.entries({ skills: 'skills', projects: 'projects', milestones: 'milestones', social: 'social', visibility: 'visibility' })) {
-    if (updates[k] !== undefined) { fields.push(`${col} = ?`); values.push(JSON.stringify(updates[k])); }
+    if (updates[k] !== undefined) {
+      let val = updates[k];
+      // Sanitize project name, title (alias), and description fields
+      if (k === 'projects' && Array.isArray(val)) {
+        val = val.map((proj: Record<string, unknown>) => ({
+          ...proj,
+          name: typeof proj.name === 'string' ? stripDangerousHtml(proj.name) : proj.name,
+          title: typeof proj.title === 'string' ? stripDangerousHtml(proj.title) : proj.title,
+          description: typeof proj.description === 'string' ? stripDangerousHtml(proj.description) : proj.description,
+        }));
+      }
+      fields.push(`${col} = ?`); values.push(JSON.stringify(val));
+    }
   }
   if (updates.agentEnabled !== undefined) { fields.push('agent_enabled = ?'); values.push(updates.agentEnabled ? 1 : 0); }
   if (updates.isPublic !== undefined) { fields.push('is_public = ?'); values.push(updates.isPublic ? 1 : 0); }
@@ -312,6 +339,10 @@ portfolioRouter.post('/:username/contact', async (req, res) => {
     return;
   }
 
+  // Sanitize user-supplied fields to prevent XSS in stored content
+  const sanitizedSenderName = stripDangerousHtml(senderName);
+  const sanitizedMessage = stripDangerousHtml(message);
+
   // IP-based rate limit: max 3 requests per hour per IP
   const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
   const now = Date.now();
@@ -335,7 +366,7 @@ portfolioRouter.post('/:username/contact', async (req, res) => {
   const id = uuid();
   db.prepare(
     'INSERT INTO portfolio_contacts (id, username, user_id, sender_name, sender_email, message) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(id, username, user.id, senderName.trim(), senderEmail?.trim() || null, message.trim());
+  ).run(id, username, user.id, sanitizedSenderName.trim(), senderEmail?.trim() || null, sanitizedMessage.trim());
 
   // Notify owner via Telegram if linked
   const link = db.prepare(
@@ -345,7 +376,7 @@ portfolioRouter.post('/:username/contact', async (req, res) => {
     const { sendTelegramMessage } = await import('../services/telegram.js');
     sendTelegramMessage(
       link.external_id,
-      `📩 Portfolio message from ${senderName.trim()}: "${message.slice(0, 200)}${message.length > 200 ? '…' : ''}"`
+      `📩 Portfolio message from ${sanitizedSenderName.trim()}: "${sanitizedMessage.slice(0, 200)}${sanitizedMessage.length > 200 ? '…' : ''}"`
     ).catch(() => {});
   }
 

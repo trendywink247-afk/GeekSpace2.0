@@ -2,6 +2,7 @@
 // Phase 43 — Unit tests for:
 //   43.3 PATCH /reminders/:id — resets remind_before_sent_at when due_at (datetime) is rescheduled
 //   43.7 POST /portfolio/:username/view — deduplicates view_count within 1h per IP
+//   43.8 XSS hardening — strip HTML in portfolio fields + contact form
 // ============================================================
 
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
@@ -134,5 +135,122 @@ describe('Portfolio view dedup — POST /api/portfolio/:username/view (Phase 43.
     await request(app)
       .post('/api/portfolio/nonexistent_user_xyz/view')
       .expect(404);
+  });
+});
+
+// ── 43.8: XSS hardening — stripDangerousHtml in portfolio fields ───────────
+
+describe('XSS hardening — portfolio bio + projects + contact form (Phase 43.8)', () => {
+  beforeAll(() => { resetDatabase(); });
+  afterEach(() => { resetDatabase(); });
+
+  it('strips script tags from portfolio bio (about field)', async () => {
+    const user = createTestUser();
+    // Insert portfolio row so PATCH /me has something to update
+    db.prepare(
+      'INSERT INTO portfolios (user_id, username, about, headline, skills, projects, milestones, social, layout, agent_enabled, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(user.id, user.username, '', '', '[]', '[]', '[]', '{}', 'classic', 0, '{}');
+
+    // Send bio containing a script block
+    const res = await request(app)
+      .patch('/api/portfolio/me')
+      .set('Authorization', makeAuthHeader(user.id))
+      .send({ about: 'Hello <script>alert(1)</script> World' })
+      .expect(200);
+
+    const about: string = res.body.about ?? '';
+    // Script tags (and the entire block) must be stripped — no executable markup
+    expect(about).not.toContain('<script>');
+    expect(about).not.toContain('</script>');
+    // Surrounding plain text should survive
+    expect(about).toContain('Hello');
+    expect(about).toContain('World');
+  });
+
+  it('strips onclick event handlers from project description', async () => {
+    const user = createTestUser();
+    db.prepare(
+      'INSERT INTO portfolios (user_id, username, about, headline, skills, projects, milestones, social, layout, agent_enabled, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(user.id, user.username, '', '', '[]', '[]', '[]', '{}', 'classic', 0, '{}');
+
+    const maliciousProject = {
+      name: 'MyProject',
+      description: '<div onclick="evil()">Click me</div>',
+    };
+
+    const res = await request(app)
+      .patch('/api/portfolio/me')
+      .set('Authorization', makeAuthHeader(user.id))
+      .send({ projects: [maliciousProject] })
+      .expect(200);
+
+    const projects: Array<{ name: string; description?: string }> = res.body.projects ?? [];
+    expect(projects).toHaveLength(1);
+    const desc = projects[0].description ?? '';
+    expect(desc).not.toContain('onclick');
+    expect(desc).not.toContain('evil()');
+    // The text content should be preserved
+    expect(desc).toContain('Click me');
+  });
+
+  it('preserves safe HTML tags in bio (strong, em, b)', async () => {
+    const user = createTestUser();
+    db.prepare(
+      'INSERT INTO portfolios (user_id, username, about, headline, skills, projects, milestones, social, layout, agent_enabled, visibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(user.id, user.username, '', '', '[]', '[]', '[]', '{}', 'classic', 0, '{}');
+
+    // Note: the Zod schema already runs a basic stripHtml on 'about', so we test via
+    // project description (not stripped by Zod) to verify stripDangerousHtml preserves safe tags
+    const safeProject = {
+      name: 'SafeProject',
+      description: '<strong>Bold text</strong> and <em>italic</em>',
+    };
+
+    const res = await request(app)
+      .patch('/api/portfolio/me')
+      .set('Authorization', makeAuthHeader(user.id))
+      .send({ projects: [safeProject] })
+      .expect(200);
+
+    const projects: Array<{ name: string; description?: string }> = res.body.projects ?? [];
+    expect(projects).toHaveLength(1);
+    const desc = projects[0].description ?? '';
+    expect(desc).toContain('<strong>');
+    expect(desc).toContain('<em>');
+    expect(desc).toContain('Bold text');
+    expect(desc).toContain('italic');
+  });
+
+  it('strips script from contact form message', async () => {
+    const user = createTestUser();
+    // Portfolio must be public for contact form to accept submissions
+    db.prepare(
+      'INSERT INTO portfolios (user_id, username, is_public) VALUES (?, ?, ?)'
+    ).run(user.id, user.username, 1);
+
+    const contactId = uuid();
+    // Send message with embedded script tag
+    const res = await request(app)
+      .post(`/api/portfolio/${user.username}/contact`)
+      .send({
+        senderName: 'Alice<script>evil()</script>',
+        message: 'Hello <script>alert("xss")</script> there',
+      })
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+
+    // Verify stored record in DB does NOT contain <script>
+    const stored = db.prepare(
+      'SELECT sender_name, message FROM portfolio_contacts WHERE user_id = ?'
+    ).get(user.id) as { sender_name: string; message: string } | undefined;
+
+    expect(stored).toBeDefined();
+    expect(stored!.message).not.toContain('<script>');
+    expect(stored!.message).not.toContain('alert(');
+    expect(stored!.message).toContain('Hello');
+    expect(stored!.message).toContain('there');
+    expect(stored!.sender_name).not.toContain('<script>');
+    expect(stored!.sender_name).toContain('Alice');
   });
 });
