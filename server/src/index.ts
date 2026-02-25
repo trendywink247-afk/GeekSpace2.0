@@ -88,6 +88,15 @@ app.listen(config.port, () => {
     safeStart('memory-sync', startMemorySyncScheduler);
     safeStart('model-sync', startModelSyncScheduler);
     safeStart('artifact-cleanup', startArtifactCleanupScheduler);
+
+    // Startup subsystem summary — visible in Docker logs for quick operator verification
+    logger.info({
+      telegram: !!config.telegramBotToken,
+      whatsapp: !!(config.whatsappToken && config.whatsappBusinessId),
+      email: !!(config.resendApiKey || config.smtpHost),
+      ollama: config.ollamaBaseUrl,
+      version: APP_VERSION,
+    }, 'GeekSpace subsystem startup complete');
   } else {
     logger.info({ worker: instanceId }, 'Cluster worker — schedulers skipped');
   }
