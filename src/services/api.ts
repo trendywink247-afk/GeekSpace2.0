@@ -36,6 +36,7 @@ import type {
   ArtifactDeployment,
   Template,
   TemplateCategory,
+  UsageEvent,
 } from '@/types';
 
 // ----- Axios instance ----------------------------------------
@@ -258,6 +259,8 @@ export const billingService = {
   getUsage: () => api.get<DailyUsage[]>('/billing/usage'),
 
   activateDayPass: () => api.post<{ message: string; expiresAt: string }>('/billing/day-pass'),
+
+  getEvents: () => api.get<UsageEvent[]>('/billing/events'),
 };
 
 // ----- Integrations ------------------------------------------

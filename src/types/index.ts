@@ -343,7 +343,7 @@ export interface PortfolioSocial {
   email?: string;
 }
 
-export type PortfolioLayout = 'classic' | 'timeline' | 'grid';
+export type PortfolioLayout = 'minimal' | 'modern' | 'grid' | 'classic' | 'timeline';
 
 export interface Portfolio {
   userId: string;
