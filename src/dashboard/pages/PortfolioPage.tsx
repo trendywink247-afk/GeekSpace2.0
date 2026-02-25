@@ -309,6 +309,19 @@ export function PortfolioPage() {
     );
   }
 
+  // ---- Profile completion calculation ----
+  const completionItems: Array<{ label: string; done: boolean; tab: string }> = [
+    { label: 'Add your headline', done: !!headline.trim(), tab: 'profile' },
+    { label: 'Write your bio', done: !!about.trim(), tab: 'profile' },
+    { label: 'Set your avatar URL', done: !!avatar.trim(), tab: 'profile' },
+    { label: 'Add your skills', done: skills.length > 0, tab: 'skills' },
+    { label: 'Add a project', done: projects.length > 0, tab: 'projects' },
+    { label: 'Add a social link', done: Object.values(social || {}).some((v) => !!v), tab: 'social' },
+    { label: 'Add a milestone', done: milestones.length > 0, tab: 'milestones' },
+  ];
+  const completedCount = completionItems.filter((i) => i.done).length;
+  const completionPct = Math.round((completedCount / completionItems.length) * 100);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
@@ -366,6 +379,49 @@ export function PortfolioPage() {
             : 'bg-[#FF6161]/10 border border-[#FF6161]/30 text-[#FF6161]'
         }`}>
           {message.text}
+        </div>
+      )}
+
+      {/* Profile Completion Progress Bar */}
+      {completionPct < 100 && (
+        <div
+          className="p-4 rounded-2xl border"
+          style={{ background: '#0C0C18', borderColor: 'rgba(0,240,255,0.2)' }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-[#E8E8F0]">
+              Profile {completionPct}% complete
+            </span>
+            <span className="text-xs text-[#6B7280]">{completedCount}/{completionItems.length} fields</span>
+          </div>
+          <div className="w-full bg-[#06060B] rounded-full h-2 mb-3">
+            <div
+              className="h-2 rounded-full transition-all duration-500"
+              style={{
+                width: `${completionPct}%`,
+                background: completionPct >= 80
+                  ? '#00FF88'
+                  : completionPct >= 50
+                    ? '#00F0FF'
+                    : '#F59E0B',
+              }}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {completionItems
+              .filter((item) => !item.done)
+              .slice(0, 3)
+              .map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => setActiveTab(item.tab)}
+                  className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/20 hover:bg-[#00F0FF]/20 transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  {item.label} →
+                </button>
+              ))}
+          </div>
         </div>
       )}
 

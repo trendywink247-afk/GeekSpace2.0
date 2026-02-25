@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { LandingPage } from './landing/LandingPage';
 import { DashboardApp } from './dashboard/DashboardApp';
 import { PortfolioView } from './portfolio/PortfolioView';
@@ -60,6 +61,16 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#0C0C18',
+            border: '1px solid rgba(0,240,255,0.2)',
+            color: '#F4F6FF',
+          },
+        }}
+      />
     </BrowserRouter>
   );
 }

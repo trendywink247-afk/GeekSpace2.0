@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
@@ -20,6 +20,7 @@ import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { agentService, userService, type ActivityEntry } from '@/services/api';
+import { notify } from '@/services/notifications';
 import type { AgentPersonality } from '@/types';
 
 const personalityEmojis: Record<AgentPersonality, string> = {
@@ -242,6 +243,27 @@ export function DashboardApp() {
   useEffect(() => {
     setSidebarOpen(false);
   }, [currentPage]);
+
+  // Toast when a reminder becomes due (check every 60s)
+  const notifiedReminderIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const checkDue = () => {
+      const now = Date.now();
+      reminders
+        .filter((r) => !r.completed && !notifiedReminderIds.current.has(r.id))
+        .forEach((r) => {
+          const dueAt = new Date(r.datetime).getTime();
+          // Fire if due within the past 60s (catches the current check window)
+          if (dueAt <= now && dueAt >= now - 60_000) {
+            notify(`Reminder due: ${r.text}`, 'info');
+            notifiedReminderIds.current.add(r.id);
+          }
+        });
+    };
+    checkDue();
+    const interval = setInterval(checkDue, 60_000);
+    return () => clearInterval(interval);
+  }, [reminders]);
 
   const handleLogout = useCallback(() => {
     logout();

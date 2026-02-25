@@ -10,14 +10,16 @@ import {
   Image,
   Brain,
   Save,
-  Users
+  Users,
+  ChevronRight
 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { agentService } from '@/services/api';
+import { agentService, memoryService } from '@/services/api';
 import { useTilt } from '@/hooks/useTilt';
 import type { Personality, AgentPersonality, ModelPreference } from '@/types';
 
@@ -89,9 +91,19 @@ export function AgentSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // Memory summary state
+  const [topMemories, setTopMemories] = useState<Array<{ id: string; category: string; key: string; value: string }>>([]);
+
   // Fetch personalities on mount
   useEffect(() => {
     agentService.getPersonalities().then(({ data }) => setPersonalities(data)).catch(() => {});
+  }, []);
+
+  // Fetch top memory entries for summary card
+  useEffect(() => {
+    memoryService.list().then(({ data }) => {
+      if (Array.isArray(data)) setTopMemories(data.slice(0, 5));
+    }).catch(() => {});
   }, []);
 
   // Sync from store when agent data loads/changes
@@ -407,6 +419,41 @@ export function AgentSettingsPage() {
           These instructions guide your agent's behavior. Be specific about what you want.
         </p>
       </div>
+
+      {/* Memory Summary Card */}
+      {topMemories.length > 0 && (
+        <div className="p-6 rounded-2xl glass-card-v2 border border-[#BF5FFF]/20">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Brain className="w-5 h-5 text-[#BF5FFF]" />
+            What Your Agent Remembers
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {topMemories.map((mem) => (
+              <Popover key={mem.id}>
+                <PopoverTrigger asChild>
+                  <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-[#BF5FFF]/10 border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/20 transition-colors">
+                    {mem.key.length > 24 ? mem.key.slice(0, 24) + '…' : mem.key}
+                    <ChevronRight className="w-3 h-3 opacity-60" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 bg-[#0C0C18] border border-[#BF5FFF]/30 text-[#E8E8F0] p-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#BF5FFF]/20 text-[#BF5FFF]">{mem.category}</span>
+                      <span className="text-sm font-medium">{mem.key}</span>
+                    </div>
+                    <p className="text-sm text-[#6B7280] leading-relaxed">{mem.value}</p>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            ))}
+          </div>
+          <p className="text-xs text-[#6B7280] mt-3">
+            Click any tag to see the full memory. Manage all memories in{' '}
+            <a href="/dashboard/memory" className="text-[#BF5FFF] hover:underline">Memory Manager</a>.
+          </p>
+        </div>
+      )}
 
       {/* Save Button */}
       <div className="flex justify-end items-center gap-3">

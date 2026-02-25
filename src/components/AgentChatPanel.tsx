@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { notify } from '@/services/notifications';
 import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -156,6 +157,19 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       }).catch(() => { /* ignore billing fetch errors */ });
     }
   }, [isOpen]);
+
+  // Show toast notification when a new agent message arrives while panel is closed
+  const prevAgentMsgCountRef = useRef(0);
+  useEffect(() => {
+    const agentMsgs = messages.filter((m) => m.role === 'agent' && !m.isStreaming && m.id !== 'greeting');
+    const count = agentMsgs.length;
+    if (!isOpen && count > prevAgentMsgCountRef.current && count > 0) {
+      const last = agentMsgs[agentMsgs.length - 1];
+      const preview = last.content.slice(0, 60) + (last.content.length > 60 ? '…' : '');
+      notify(`${pMeta.name}: ${preview}`, 'info');
+    }
+    prevAgentMsgCountRef.current = count;
+  }, [messages, isOpen, pMeta.name]);
 
   // Deploy specialist
   const handleDeploy = useCallback(async () => {
