@@ -180,8 +180,14 @@ if (config.githubClientId && config.githubClientSecret) {
 // Google OAuth routes
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login?error=oauth' }),
+router.get('/google/callback', (req, res, next) => {
+  // User denied OAuth consent — redirect to login with a human-readable error message
+  if (req.query.error) {
+    logger.info({ oauthError: req.query.error }, 'Google OAuth cancelled by user');
+    return res.redirect(`${config.publicUrl}/login?error=${encodeURIComponent('Google sign-in was cancelled')}`);
+  }
+  next();
+}, passport.authenticate('google', { failureRedirect: `${config.publicUrl}/login?error=${encodeURIComponent('Google sign-in failed')}` }),
   (req, res) => {
     const user = req.user as any;
     const token = generateToken(user.id);
@@ -192,8 +198,14 @@ router.get('/google/callback',
 // GitHub OAuth routes
 router.get('/github', passport.authenticate('github', { scope: ['user:email', 'read:user'] }));
 
-router.get('/github/callback',
-  passport.authenticate('github', { failureRedirect: '/login?error=oauth' }),
+router.get('/github/callback', (req, res, next) => {
+  // User denied OAuth consent — redirect to login with a human-readable error message
+  if (req.query.error) {
+    logger.info({ oauthError: req.query.error }, 'GitHub OAuth cancelled by user');
+    return res.redirect(`${config.publicUrl}/login?error=${encodeURIComponent('GitHub sign-in was cancelled')}`);
+  }
+  next();
+}, passport.authenticate('github', { failureRedirect: `${config.publicUrl}/login?error=${encodeURIComponent('GitHub sign-in failed')}` }),
   (req, res) => {
     const user = req.user as any;
     const token = generateToken(user.id);

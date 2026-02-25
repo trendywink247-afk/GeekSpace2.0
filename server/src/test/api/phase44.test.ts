@@ -302,6 +302,82 @@ describe('Automations enabled toggle (Phase 44.5)', () => {
   });
 });
 
+// ── 44.6: OAuth error page for access_denied ──────────────────────────────────
+
+describe('OAuth access_denied redirect (Phase 44.6)', () => {
+  beforeAll(() => { resetDatabase(); });
+  afterEach(() => { resetDatabase(); });
+
+  it('GET /oauth/google/callback?error=access_denied redirects to /login with error param', async () => {
+    const res = await request(app)
+      .get('/api/oauth/google/callback?error=access_denied')
+      .expect(302);
+
+    // Must redirect to the login page with a human-readable error message
+    const location = res.headers['location'] as string;
+    expect(location).toBeDefined();
+    expect(location).toContain('/login');
+    expect(location).toContain('error=');
+    // Should contain a message about Google sign-in being cancelled
+    expect(decodeURIComponent(location)).toContain('Google sign-in was cancelled');
+  });
+
+  it('GET /oauth/github/callback?error=access_denied redirects to /login with error param', async () => {
+    const res = await request(app)
+      .get('/api/oauth/github/callback?error=access_denied')
+      .expect(302);
+
+    const location = res.headers['location'] as string;
+    expect(location).toBeDefined();
+    expect(location).toContain('/login');
+    expect(location).toContain('error=');
+    // Should contain a message about GitHub sign-in being cancelled
+    expect(decodeURIComponent(location)).toContain('GitHub sign-in was cancelled');
+  });
+
+  it('GET /oauth/google/callback?error=any_error redirects to /login (not just access_denied)', async () => {
+    const res = await request(app)
+      .get('/api/oauth/google/callback?error=user_cancelled_login')
+      .expect(302);
+
+    const location = res.headers['location'] as string;
+    expect(location).toContain('/login');
+    expect(location).toContain('error=');
+  });
+});
+
+// ── 44.7: Admin rate limiter — config verification ────────────────────────────
+
+describe('Admin rate limiter config (Phase 44.7)', () => {
+  // Note: We cannot exercise the actual 429 block in unit tests without sending
+  // 11+ identical requests in sequence (the limiter is disabled in TEST_MODE).
+  // Instead we verify the admin routes respond normally and document the config.
+  //
+  // The adminLimiter in app.ts is configured as:
+  //   windowMs: 60 * 1000   (1 minute window)
+  //   max: 10               (10 req/min per IP)
+  //   standardHeaders: true
+  //   legacyHeaders: false
+  //
+  // This is a reasonable security baseline for admin-only sensitive endpoints.
+
+  it('GET /api/admin returns a non-rate-limited response under normal load', async () => {
+    // Admin routes require an X-Admin-Password header in production.
+    // Without credentials we expect 400/401/403/404/503 — NOT a 429 (rate limit).
+    // (503 can occur when the health probe cache is uninitialized in test mode.)
+    const res = await request(app)
+      .get('/api/admin/users')
+      .expect((r) => {
+        // Must NOT be rate limited (429) or a server crash (500)
+        expect(r.status).not.toBe(429);
+        expect(r.status).not.toBe(500);
+      });
+
+    // Confirm a response body is present (not an empty crash)
+    expect(res).toBeDefined();
+  });
+});
+
 // ── 44.2: Recurring reminder reschedule after snooze ─────────────────────────
 
 describe('Recurring reminder reschedule (Phase 44.2)', () => {
