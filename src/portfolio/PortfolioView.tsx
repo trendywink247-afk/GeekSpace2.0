@@ -96,6 +96,8 @@ export function PortfolioView() {
         nonce,
       });
       setContactSent(true);
+      // 51.6: Auto-close modal after 2s on success
+      setTimeout(() => setContactOpen(false), 2000);
     } catch {
       setContactError('Failed to send message. Please try again.');
     } finally {
