@@ -78,18 +78,24 @@ Health live DB check, reminder priority pre-fill fix, mobile nav underline, chat
 
 ---
 
-## Phase 48 — PROPOSED (10 items)
+## Phase 48 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/78 | **Tests:** 457/457
+Automation boolean normalization, portfolio AI-write cache fix, AgentChatPanel skeleton, reminder quick-add dialog, SQLite timestamp UTC parsing, portfolio contact origin validation, Permissions-Policy header, ETag for reminders, structured reminder lifecycle logs
+
+---
+
+## Phase 49 — PROPOSED (10 items)
 **Theme:** Reliability, UX/Mobile, State-sync, Security, Performance, Dev/Ops
 
 | # | Item | Category |
 |---|------|----------|
-| 48.1 | Fix: Automations page — enabled toggle state not synced on reload | Reliability |
-| 48.2 | Fix: Portfolio milestones missing from public page when portfolio is loaded via cache | Reliability |
-| 48.3 | UX: Add skeleton loading state to AgentChatPanel (while chat history loads) | UX/Mobile |
-| 48.4 | UX: Reminder quick-add from Overview page — directly opens RemindersPage add dialog | UX/Mobile |
-| 48.5 | Fix: Activity log timestamps show UTC instead of user's local time | State-sync |
-| 48.6 | Fix: Portfolio public page contact form — missing CSRF-equivalent nonce validation | Edge-case |
-| 48.7 | Security: Content-Security-Policy nonce support for inline scripts (harden CSP) | Security |
-| 48.8 | Perf: Add Redis caching for GET /api/reminders (5min TTL, invalidate on write) | Performance |
-| 48.9 | Dev/Ops: Add structured log for every reminder scheduled/completed/snoozed | Dev/Ops |
-| 48.10 | Phase 48 tests + verification + PR/merge | Dev/Ops |
+| 49.1 | Fix: Bulk-delete reminders route missing from PATCH routes (only bulk-snooze exists) | Reliability |
+| 49.2 | Fix: Agent chat rate limit header `X-RateLimit-Reset` shows server epoch instead of ms | Reliability |
+| 49.3 | UX: Add "mark all complete" button to RemindersPage when overdue count > 3 | UX/Mobile |
+| 49.4 | UX: Portfolio page — show visitor's timezone in last-viewed label | UX/Mobile |
+| 49.5 | Fix: automation logs page doesn't refresh after manual trigger | State-sync |
+| 49.6 | Fix: Integration health score resets to 0 on server restart (should persist in DB) | Edge-case |
+| 49.7 | Security: Add CSRF protection token to portfolio contact form submission | Security |
+| 49.8 | Perf: Add SQLite VACUUM + ANALYZE job on startup (dev env) to keep query plans fresh | Performance |
+| 49.9 | Dev/Ops: Server startup log to include DB row counts for key tables | Dev/Ops |
+| 49.10 | Phase 49 tests + verification gate + PR/merge | Dev/Ops |

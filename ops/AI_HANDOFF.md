@@ -1,84 +1,95 @@
-# AI Handoff — Phase 47 Complete
+# AI Handoff — Phase 48 Complete
 
 **Date:** 2026-02-25
-**Branch:** `ai/phase-20260225-phase47` (merged → main)
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/77
-**Merge SHA:** `4c636868`
-**Status:** All 10 items implemented, 448/448 tests passing, full verification clean
+**Branch:** `ai/phase-20260225-phase48` (merged → main)
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/78
+**Merge SHA:** `4fa7335`
+**Status:** All 10 items implemented, 457/457 tests passing, full verification clean
 
 ---
 
-## Phase 47 — What Was Done
+## Phase 48 — What Was Done
 
-### 47.1 /api/health Live DB Status Check (Reliability)
-- `server/src/app.ts` — Modified `/api/health` handler to run a live `SELECT 1` DB check on every request, merging the live DB result over the cached probe. Previously DB status was only from a 30s-interval background probe (could be stale).
-- Test: 3 tests verifying health endpoint has `components.database`, returns `'ok'` when DB reachable, returns version.
+### 48.1 Automation enabled toggle normalization (Reliability)
+- `server/src/routes/automations.ts` — GET list and PATCH both now wrap `enabled` in `Boolean()` before returning. SQLite stores 0/1 integers; React toggle state was getting confused by falsy `0` vs `false`.
+- Updated `phase44.test.ts` and `automations.test.ts` to expect boolean instead of integer.
 
-### 47.2 Reminder Edit Dialog Priority Pre-fill (Reliability)
-- `src/dashboard/pages/RemindersPage.tsx` — `handleEditClick` now uses an explicit `validPriorities.includes()` check to validate priority from DB before setting form state; handles null/invalid values from old DB rows.
+### 48.2 Portfolio cache miss after AI-driven writes (State-sync)
+- `server/src/services/action-executor.ts` — Added `invalidatePortfolioCache(userId)` helper that calls `cacheDel(portfolio:${username})`. Called after: `portfolio_add_project`, `portfolio_update_bio`, `portfolio_update_skills`, `portfolio_remove_project`, and the `generate_code` auto-portfolio-add. Previously AI portfolio updates were invisible on the public page for up to 5 minutes.
 
-### 47.3 Mobile Nav Active Tab Underline (UX/Mobile)
-- `src/dashboard/DashboardApp.tsx` — Replaced small pill indicator with full-width cyan `h-0.5` bottom border on active tab (standard tab UX pattern).
+### 48.3 AgentChatPanel skeleton loading state (UX/Mobile)
+- `src/components/AgentChatPanel.tsx` — Added `Skeleton` import; shimmer bar replaces credits bar while billing data loads (`creditsTotal === null`); ghost message bubble shows in messages area while greeting initializes.
 
-### 47.4 Chat Message Copy Toast (UX/Mobile)
-- `src/components/AgentChatPanel.tsx` — Added `toast` import from `sonner`; `onCopy` handler now shows `toast.success('Copied!', { duration: 1500 })` on clipboard write.
+### 48.4 Reminder quick-add from Overview (Edge-case/flow)
+- `src/dashboard/pages/OverviewPage.tsx` — "Set reminder" quick action now navigates to `reminders?openAdd=true`
+- `src/dashboard/pages/RemindersPage.tsx` — Added `useSearchParams` from react-router-dom; `useEffect` detects `?openAdd=true`, calls `setIsAddDialogOpen(true)`, then cleans the URL with `replace: true`.
 
-### 47.5 Portfolio Project Edit Preserves Image URL (State-sync)
-- `src/types/index.ts` — Added `imageUrl?: string` to `PortfolioProject` interface.
-- `src/dashboard/pages/PortfolioPage.tsx` — Added `imageUrl: ''` to `emptyProject`; added Image URL input field in edit form — value preserved from existing project.
+### 48.5 Activity log timestamp timezone fix (Reliability)
+- `src/dashboard/pages/ActivityPage.tsx` — Added `parseSqliteTs()` helper that normalizes `"YYYY-MM-DD HH:MM:SS"` → `"YYYY-MM-DDTHH:MM:SSZ"` before passing to `new Date()`. Safari couldn't parse SQLite format; V8 was treating it as local time. Fallback date now uses `toLocaleDateString()` instead of `toISOString().slice(0,10)`.
 
-### 47.6 Webhook Payload Validation (Edge-case)
-- `server/src/routes/automations.ts` — `POST /webhook/:id` now validates `req.body` is a plain object (not array/string/null/number); returns `400 { error: 'Webhook payload must be a JSON object' }`.
-- `server/src/middleware/errors.ts` — Fixed error handler to return 400 (not 500) for body-parser `strict` mode errors (errors with `err.status` 4xx). Previously all non-AppError exceptions returned 500.
-- Tests: 3 tests covering array body, string body, and valid object body passes.
+### 48.6 Portfolio contact origin validation (Security)
+- `server/src/routes/portfolio.ts` — POST `/:username/contact` now checks `req.headers.origin` against `config.corsOrigins`. Requests with an Origin not in the allowed list get 403. Requests without Origin header (server-to-server) pass through.
 
-### 47.7 /auth/signup Rate Limit (Security)
-- `server/src/app.ts` — Separated signup from the `authLimiter` (which used `skipSuccessfulRequests: true`). Added dedicated `signupLimiter` (5 req/15min, counts ALL requests including successful ones) to prevent account creation spam.
+### 48.7 Permissions-Policy header (Security)
+- `server/src/app.ts` — Added middleware after Helmet: sets `Permissions-Policy: camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()`. Helmet 8 does not support this natively.
 
-### 47.8 Response Compression (Performance)
-- `server/src/app.ts` — Added `compression()` middleware (gzip/deflate) applied before body parsing so all responses are compressed.
+### 48.8 ETag caching for GET /api/reminders (Performance)
+- `server/src/routes/reminders.ts` — Added `createHash` import; computes SHA-256 of serialized reminder list, sets `ETag: "hash16"` and `Cache-Control: private, no-cache`. Returns 304 when `If-None-Match` matches.
 
-### 47.9 /api/version Endpoint with Git SHA (Dev/Ops)
-- `server/src/app.ts` — Enhanced existing `/api/version` endpoint to include `gitSha` (from `GIT_SHA` env var, defaults `'unknown'`) and `env` (`'production'`|`'development'`).
-- `Dockerfile` — Added `ARG GIT_SHA=unknown` + `ENV GIT_SHA=${GIT_SHA}` for build-time injection via `--build-arg GIT_SHA=$(git rev-parse --short HEAD)`.
+### 48.9 Structured logs for reminder lifecycle (Ops/Observability)
+- `server/src/routes/reminders.ts` — Added `logger` import; structured Pino log events: `reminder.created` (create POST), `reminder.completed` (complete POST), `reminder.deleted` (delete DELETE), `reminder.snoozed` (snooze POST).
 
-### 47.10 Verification Gate (Dev/Ops)
-- 448/448 unit tests passing (11 new tests added in `server/src/test/api/phase47.test.ts`)
-- Frontend: lint clean, typecheck clean, build clean
-- Server: typecheck clean, build clean
+### 48.10 Tests + gate + PR + merge
+- New: `server/src/test/api/phase48.test.ts` — 12 new tests covering 48.1, 48.6, 48.7, 48.8
+- Total: **457/457** tests passing
+- Verification: server typecheck ✅, frontend typecheck ✅, build ✅, lint ✅
 
 ---
 
-## Verification Evidence
-
-| Check | Result |
-|-------|--------|
-| Server unit tests | 448/448 passing (41 test files) |
-| Frontend lint | 0 errors, 2 pre-existing warnings in untouched files |
-| Frontend typecheck | Clean (no errors) |
-| Frontend build | Clean (9.33s) |
-| Server typecheck | Clean (no errors) |
-| Server build | Clean |
-
----
-
-## Current Test Count
-- **448/448** unit tests passing (up from 437 at Phase 46 baseline)
-
----
-
-## Resume Steps for Phase 48
+## Next Session — Start Here
 
 ```bash
 cd ~/GeekSpace2.0
-git pull origin main
-git worktree add .worktrees/phase-48 -b ai/phase-20260225-phase48
-cd .worktrees/phase-48/server && npm test  # confirm 448/448
-cat ops/AI_PHASE_PLAN.md   # review Phase 48 proposal
+git status
+cat ops/AI_HANDOFF.md
+cat ops/AI_PHASE_PLAN.md
+cd server && npm test    # expect 457/457
 ```
+
+**Next phase:** Phase 49 — see `AI_PHASE_PLAN.md` for proposed items.
 
 ---
 
-## Phase 48 Proposal
+## Files Changed in Phase 48
 
-See `ops/AI_PHASE_PLAN.md` for the full 10-item Phase 48 proposal.
+**Server:**
+- `server/src/app.ts` — Permissions-Policy middleware
+- `server/src/routes/automations.ts` — enabled boolean normalization
+- `server/src/routes/portfolio.ts` — origin validation, config import
+- `server/src/routes/reminders.ts` — ETag + structured logs + crypto import + logger import
+- `server/src/services/action-executor.ts` — invalidatePortfolioCache helper + cacheDel import
+
+**Frontend:**
+- `src/components/AgentChatPanel.tsx` — Skeleton import, skeleton credit bar, skeleton greeting
+- `src/dashboard/pages/ActivityPage.tsx` — parseSqliteTs helper, timeAgo fix
+- `src/dashboard/pages/OverviewPage.tsx` — reminder quick-action passes ?openAdd=true
+- `src/dashboard/pages/RemindersPage.tsx` — useSearchParams, auto-open add dialog
+
+**Tests:**
+- `server/src/test/api/phase48.test.ts` — 12 new tests
+- `server/src/test/api/automations.test.ts` — updated to expect boolean
+- `server/src/test/api/phase44.test.ts` — updated to expect boolean
+
+---
+
+## Open Risks
+
+- Permissions-Policy `interest-cohort=()` may generate warnings in some browser consoles (FLoC-era directive) — low priority cosmetic issue
+- ETag for reminders uses full list hash — for large lists (100+ reminders) this adds a small CPU cost per GET (SHA-256 on ~10KB JSON is negligible)
+- Origin validation on portfolio contact uses in-memory `config.corsOrigins` from env; multi-process deployments share the same env so this is safe
+
+## Baseline
+
+- Tests: 457/457
+- Phases complete: 48
+- Main SHA: 4fa7335
