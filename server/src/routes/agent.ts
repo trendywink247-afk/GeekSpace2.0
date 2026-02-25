@@ -108,6 +108,7 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     notif_reminders: 'notif_reminders',
     notif_escalations: 'notif_escalations',
     notif_agents: 'notif_agents',
+    greeting: 'greeting',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {

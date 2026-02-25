@@ -26,7 +26,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { reminderService } from '@/services/api';
 import { parseNaturalLanguageReminder } from '@/utils/reminderParser';
 import type { ReminderChannel, ReminderCategory, Reminder } from '@/types';
 
@@ -158,6 +160,10 @@ export function RemindersPage() {
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
 
+  // Bulk delete state (25.5)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   const handleComplete = async (id: string) => {
     setCompletingIds((prev) => new Set(prev).add(id));
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -216,6 +222,34 @@ export function RemindersPage() {
     setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal' });
     setEditingReminder(null);
     setIsAddDialogOpen(false);
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      return next;
+    });
+  };
+
+  const handleSelectAllCompleted = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(completedReminders.map((r) => r.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      await reminderService.bulkDelete(Array.from(selectedIds));
+      setSelectedIds(new Set());
+      await loadReminders();
+    } finally {
+      setIsBulkDeleting(false);
+    }
   };
 
   const filteredReminders = reminders.filter(r => {
@@ -402,6 +436,37 @@ export function RemindersPage() {
       </div>
 
       {/* Reminders List */}
+      {/* Bulk delete bar — shown when viewing completed reminders */}
+      {completedReminders.length > 0 && (filter === 'completed' || filter === 'all') && (
+        <div className="flex items-center gap-3 px-1">
+          <Checkbox
+            id="select-all-completed"
+            checked={selectedIds.size > 0 && completedReminders.every((r) => selectedIds.has(r.id))}
+            onCheckedChange={handleSelectAllCompleted}
+            aria-label="Select all completed reminders"
+          />
+          <label htmlFor="select-all-completed" className="text-sm text-[#6B7280] cursor-pointer select-none">
+            Select all completed ({completedReminders.length})
+          </label>
+          {selectedIds.size > 0 && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="ml-auto bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
+            >
+              {isBulkDeleting ? (
+                <div className="w-4 h-4 border-2 border-[#FF6161]/30 border-t-[#FF6161] rounded-full animate-spin mr-2" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Delete Selected ({selectedIds.size})
+            </Button>
+          )}
+        </div>
+      )}
+
       {viewMode === 'list' ? (
         <div className="space-y-3">
           {filteredReminders.length === 0 ? (
@@ -430,6 +495,16 @@ export function RemindersPage() {
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
+                      {/* Bulk select checkbox — only for completed reminders */}
+                      {reminder.completed && (
+                        <Checkbox
+                          checked={selectedIds.has(reminder.id)}
+                          onCheckedChange={() => handleToggleSelect(reminder.id)}
+                          aria-label="Select reminder for bulk delete"
+                          className="mt-1 flex-shrink-0"
+                        />
+                      )}
+
                       {/* Date badge */}
                       <div className={`flex-shrink-0 w-14 text-center p-2 rounded-xl ${
                         reminder.completed

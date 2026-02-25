@@ -1,7 +1,8 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { validateBody, userUpdateSchema, notificationEmailSchema } from '../middleware/validate.js';
+import { validateBody, userUpdateSchema, notificationEmailSchema, changePasswordSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { cacheDel } from '../services/cache.js';
 
@@ -192,4 +193,24 @@ usersRouter.get('/me/model', requireAuth, (req: AuthRequest, res) => {
   const agentModel = agentCfg?.model_preference ?? 'auto';
   const preferredModel = AGENT_TO_UI_MODEL[agentModel] ?? agentModel;
   res.json({ preferredModel });
+});
+
+// ── Change Password (25.3 — JWT rotation on password change) ────────────────
+usersRouter.post('/me/change-password', requireAuth, validateBody(changePasswordSchema), async (req: AuthRequest, res) => {
+  const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string };
+
+  const user = db.prepare('SELECT id, password_hash FROM users WHERE id = ?').get(req.userId!) as { id: string; password_hash: string } | undefined;
+  if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+
+  const valid = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!valid) { res.status(400).json({ error: 'Current password is incorrect' }); return; }
+
+  const newHash = await bcrypt.hash(newPassword, 12);
+  const now = Math.floor(Date.now() / 1000); // Unix seconds — matches JWT iat precision
+
+  db.prepare('UPDATE users SET password_hash = ?, password_changed_at = ? WHERE id = ?').run(newHash, now, req.userId);
+
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Changed password', 'Password updated, all sessions invalidated', 'shield')`).run(uuid(), req.userId);
+
+  res.json({ success: true, message: 'Password changed. Please log in again.' });
 });

@@ -117,7 +117,8 @@ export const onboardingSchema = z.object({
 
 export const agentConfigUpdateSchema = z.object({
   name: z.string().min(1).max(50).optional(),
-  displayName: z.string().max(100).optional(),
+  displayName: z.string().max(50).optional(),
+  greeting: z.string().max(200).optional(),
   mode: z.enum(['builder', 'creative', 'analyst', 'minimal', 'operator']).optional(),
   voice: z.enum(['friendly', 'professional', 'casual', 'formal', 'witty']).optional(),
   systemPrompt: z.string().max(2000).optional(),
@@ -370,4 +371,18 @@ export const contentPlanItemUpdateSchema = z.object({
   caption: z.string().max(2200).optional(),
   media_id: z.string().max(200).optional(),
   enabled: z.boolean().optional(),
+});
+
+
+// ---- Bulk Reminder Delete schema (25.5) ----
+
+export const bulkReminderDeleteSchema = z.object({
+  ids: z.array(z.string().min(1).max(100)).min(1).max(100),
+});
+
+// ---- Change Password schema (25.3) ----
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: z.string().min(8).max(128),
 });
