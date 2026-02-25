@@ -8,7 +8,6 @@ import {
   Smartphone,
   Key,
   Save,
-  Check,
   Sparkles,
   Eye,
   Palette,
@@ -17,7 +16,9 @@ import {
   Brain,
   Tag,
   Clock,
-  Loader2
+  Loader2,
+  Monitor,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
-import { userService, apiKeyService, memoryService, agentService } from '@/services/api';
+import { userService, apiKeyService, memoryService, agentService, type UserSession } from '@/services/api';
 import type { ApiProvider, MemoryEntry } from '@/types';
 
 export function SettingsPage() {
@@ -71,6 +72,23 @@ export function SettingsPage() {
   const [showAddKey, setShowAddKey] = useState(false);
 
   // AI Background Generator state
+  const handleRevokeSession = async (sessionId: string) => {
+    await userService.revokeSession(sessionId).catch(() => {});
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+  };
+
+  const handleSaveModel = async (model: string) => {
+    setModelSaving(true);
+    try {
+      await userService.setPreferredModel(model);
+      setPreferredModel(model);
+    } catch {
+      // ignore
+    } finally {
+      setModelSaving(false);
+    }
+  };
+
   const [bgVibe, setBgVibe] = useState('');
   const [bgPreview, setBgPreview] = useState<{ gradient: string; name: string; accent: string } | null>(null);
   const [isGeneratingBg, setIsGeneratingBg] = useState(false);
@@ -87,6 +105,14 @@ export function SettingsPage() {
     }).catch(() => {});
   }, []);
 
+  // Session management state
+  const [sessions, setSessions] = useState<UserSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  // Model preference state
+  const [preferredModel, setPreferredModel] = useState('auto');
+  const [modelSaving, setModelSaving] = useState(false);
+
   // Load memories when memory tab is active
   useEffect(() => {
     if (activeTab === 'memory') {
@@ -97,6 +123,20 @@ export function SettingsPage() {
         .finally(() => setMemoriesLoading(false));
     }
   }, [activeTab, memoryFilter]);
+
+  // Load sessions and model preference when security tab is active
+  useEffect(() => {
+    if (activeTab === 'security') {
+      setSessionsLoading(true);
+      userService.getSessions()
+        .then(({ data }) => setSessions(data.sessions))
+        .catch(() => {})
+        .finally(() => setSessionsLoading(false));
+      userService.getPreferredModel()
+        .then(({ data }) => setPreferredModel(data.preferredModel))
+        .catch(() => {});
+    }
+  }, [activeTab]);
 
   const handleDeleteMemory = async (memoryId: string) => {
     try {
@@ -345,28 +385,104 @@ export function SettingsPage() {
 
         {/* Security Tab */}
         <TabsContent value="security" className="space-y-6">
+          {/* Active Sessions Card */}
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription className="text-[#6B7280]">Manage your account security</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#00FF88]/10 border border-[#00FF88]/30 flex items-center gap-3">
-                <Check className="w-5 h-5 text-[#00FF88]" />
+              <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-[#E8E8F0]">Two-Factor Authentication</div>
-                  <div className="text-sm text-[#6B7280]">Enabled via authenticator app</div>
+                  <CardTitle>Active Sessions</CardTitle>
+                  <CardDescription className="text-[#6B7280]">Devices where you are currently signed in</CardDescription>
                 </div>
+                {sessions.length > 1 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/10"
+                    onClick={async () => {
+                      await userService.revokeAllSessions().catch(() => {});
+                      setSessions([]);
+                    }}
+                  >
+                    <LogOut className="w-3 h-3 mr-1" />
+                    Revoke all
+                  </Button>
+                )}
               </div>
-              <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20">
-                <div className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-[#00FF88]" />
-                  <div>
-                    <div className="font-medium text-[#E8E8F0]">Active Sessions</div>
-                    <div className="text-sm text-[#6B7280]">Current session active</div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {sessionsLoading ? (
+                <div className="flex items-center gap-2 py-4 text-[#6B7280]">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Loading sessions...</span>
+                </div>
+              ) : sessions.length === 0 ? (
+                <div className="text-center py-6">
+                  <Monitor className="w-8 h-8 text-[#00F0FF]/30 mx-auto mb-2" />
+                  <p className="text-sm text-[#6B7280]">No active sessions found</p>
+                </div>
+              ) : (
+                sessions.map((s) => (
+                  <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/20">
+                    <div className="flex items-center gap-3">
+                      <Monitor className="w-5 h-5 text-[#00F0FF] flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-[#E8E8F0] truncate max-w-[200px]">
+                          {s.user_agent.slice(0, 40) || 'Unknown browser'}
+                        </div>
+                        <div className="text-xs text-[#6B7280]">
+                          {s.ip || 'Unknown IP'} · Last seen {new Date(s.last_seen).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-[#FF6161] hover:text-[#FF6161] hover:bg-[#FF6161]/10 flex-shrink-0"
+                      onClick={() => handleRevokeSession(s.id)}
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </Button>
                   </div>
+                ))
+              )}
+              <p className="text-xs text-[#6B7280] pt-1">
+                Note: Revoking a session marks it inactive in the database but existing tokens remain valid until they expire.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Preferred AI Engine Card */}
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle>Preferred AI Engine</CardTitle>
+              <CardDescription className="text-[#6B7280]">Choose which AI model powers your assistant</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[
+                { value: 'auto', label: 'Auto (Recommended)', desc: 'GeekSpace picks the best engine for each task' },
+                { value: 'ollama', label: 'Local Engine (Ollama)', desc: 'Fastest, no cloud — runs on-device' },
+                { value: 'openrouter', label: 'Cloud Engine (OpenRouter)', desc: 'More capable, uses your credits' },
+                { value: 'edith', label: 'Premium (Edith / Kimi K2)', desc: 'Most powerful — highest credit cost' },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => handleSaveModel(opt.value)}
+                  disabled={modelSaving}
+                  className={`w-full text-left p-3 rounded-xl border transition-all ${
+                    preferredModel === opt.value
+                      ? 'bg-[#00F0FF]/10 border-[#00F0FF] text-[#00F0FF]'
+                      : 'bg-[#06060B] border-[#00F0FF]/20 text-[#E8E8F0] hover:border-[#00F0FF]/50'
+                  }`}
+                >
+                  <div className="font-medium text-sm">{opt.label}</div>
+                  <div className="text-xs text-[#6B7280] mt-0.5">{opt.desc}</div>
+                </button>
+              ))}
+              {modelSaving && (
+                <div className="flex items-center gap-2 text-[#6B7280] text-sm">
+                  <Loader2 className="w-3 h-3 animate-spin" />Saving...
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

@@ -18,7 +18,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
-import { agentService } from '@/services/api';
+import { agentService, userService, type ActivityEntry } from '@/services/api';
 import type { AgentPersonality } from '@/types';
 
 const personalityEmojis: Record<AgentPersonality, string> = {
@@ -147,6 +147,9 @@ function PageLoader() {
 export function DashboardApp() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
   const swipeHandlers = useSwipeNavigation(location.pathname);
   const [currentPage, setCurrentPage] = useState<PageType>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
@@ -612,6 +615,57 @@ export function DashboardApp() {
             >
               <span className="text-xs text-[#00F0FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
             </div>
+            {/* Notification Bell */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setNotifOpen((o) => !o);
+                  if (!notifOpen) {
+                    setActivityLoading(true);
+                    userService.getActivity(20)
+                      .then(({ data }) => setActivity(data.activity))
+                      .catch(() => {})
+                      .finally(() => setActivityLoading(false));
+                  }
+                }}
+                className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center relative"
+                aria-label="Activity log"
+              >
+                <Bell className="w-5 h-5 text-[#6B7280]" />
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-12 w-80 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-xl shadow-2xl z-50 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10">
+                    <span className="text-sm font-semibold text-[#E8E8F0]">Recent Activity</span>
+                    <button onClick={() => setNotifOpen(false)} className="text-[#6B7280] hover:text-[#E8E8F0]">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto">
+                    {activityLoading ? (
+                      <div className="flex items-center justify-center py-8 text-[#6B7280]">
+                        <div className="w-4 h-4 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin mr-2" />
+                        Loading...
+                      </div>
+                    ) : activity.length === 0 ? (
+                      <div className="py-8 text-center text-sm text-[#6B7280]">No recent activity</div>
+                    ) : (
+                      activity.map((entry) => (
+                        <div key={entry.id} className="flex items-start gap-3 px-4 py-3 border-b border-[#00F0FF]/05 hover:bg-[#00F0FF]/05 transition-colors">
+                          <Activity className="w-4 h-4 text-[#00F0FF] flex-shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <div className="text-sm text-[#E8E8F0] font-medium">{entry.action}</div>
+                            {entry.details && <div className="text-xs text-[#6B7280] truncate">{entry.details}</div>}
+                            <div className="text-xs text-[#6B7280]/70 mt-0.5">{new Date(entry.created_at).toLocaleString()}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* User avatar with hover glow */}
             <button
               onClick={() => navigate('/dashboard/settings')}

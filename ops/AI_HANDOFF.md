@@ -5,70 +5,68 @@
 
 ## Current State
 
-**Branch:** `ai/phase-20260225-portfolio-sharing-reminders-streaming` (worktree at `.worktrees/phase-9`)
-**Phase:** 9 — Implementation Complete ✅ — PR open (draft)
+**Branch:** `ai/phase-20260225-session-mgmt-notifications-lm` (worktree at `.worktrees/phase-10`)
+**Phase:** 10 — Implementation Complete ✅ — PR open (draft)
 **Status:** 154/154 tests passing (no regressions), lint/typecheck/build green — ready to merge
 
 ## Deployment History
 
-| Phase | Description | PR | Commit | Status |
-|-------|-------------|-----|--------|--------|
-| Phase 1 | Reliability, image gen, connections polish | #29 | 45c2f02 | ✅ live |
-| Phase 2 | Onboarding, video gen, channel cleanup | #30 | 965f0ac | ✅ live |
-| E2E Fix | Portfolio mobile scroll hotfix | #31 | cab754b | ✅ live |
-| Phase 3 | Snooze, CSP, sparklines, tests | #32 | 2e2ab52 | ✅ live |
-| Phase 4 | Reminders polish, rate limit, coverage, briefing | #33 | b2fbf1b | ✅ merged |
-| Phase 5 | Health stream, connections lifecycle, forgot-pw | #34 | dfc5cd2 | ✅ merged |
-| Phase 6 | SSE delta fix, admin CSP, targeted store actions | #35 | 72b971c | ✅ merged |
-| Phase 7 | Escalation service, webhook hardening, build info, chat search | #36 | — | 🟡 PR open |
-| Phase 8 | Chat retry, credits display, export, WA deprecation, reactions | #37 | — | 🟡 PR open |
-| Phase 9 | Portfolio share, response feedback (👎), ops | — | — | 🟡 PR open |
+| Phase | Description | PR | Status |
+|-------|-------------|-----|--------|
+| Phase 1 | Reliability, image gen, connections polish | #29 | ✅ live |
+| Phase 2 | Onboarding, video gen, channel cleanup | #30 | ✅ live |
+| E2E Fix | Portfolio mobile scroll hotfix | #31 | ✅ live |
+| Phase 3 | Snooze, CSP, sparklines, tests | #32 | ✅ live |
+| Phase 4 | Reminders polish, rate limit, coverage, briefing | #33 | ✅ merged |
+| Phase 5 | Health stream, connections lifecycle, forgot-pw | #34 | ✅ merged |
+| Phase 6 | SSE delta fix, admin CSP, targeted store actions | #35 | ✅ merged |
+| Phase 7 | Escalation service, webhook hardening, build info, chat search | #36 | 🟡 PR open |
+| Phase 8 | Chat retry, credits display, export, WA deprecation, reactions | #37 | 🟡 PR open |
+| Phase 9 | Portfolio share, response feedback, health stream fixes | — | 🟡 PR open |
+| Phase 10 | Session mgmt, model picker, activity log, roadmap | — | 🟡 PR open |
 
-## Phase 9 Items Status
+## Phase 10 Items Status
 
 | # | Item | Status |
 |---|------|--------|
-| 9.1 | Portfolio public sharing button | ✅ Done |
-| 9.2 | Recurring reminders | ✅ Already done (recurring column exists) |
-| 9.3 | Auth session management | ⏭️ Skipped (too risky) |
-| 9.4 | Chat streaming UX | ✅ Already done (typing indicator exists) |
-| 9.5 | Response feedback thumbs up/down | ✅ Done |
-| 9.6 | Ops files updated | ✅ Done |
+| 10.1 | Auth session management — user_sessions table, GET/DELETE /api/auth/sessions | ✅ Done |
+| 10.2 | Activity log notification bell — GET /api/activity, bell icon in DashboardApp header | ✅ Done |
+| 10.3 | LLM model preference — users.preferred_model column, PUT/GET /api/users/me/model, Settings UI | ✅ Done |
+| 10.4 | RoadmapPage Recent Changes section — last 3 phases as release notes | ✅ Done |
+| 10.5 | Test count 154/154, lessons updated, backlog updated, old worktrees removed | ✅ Done |
 
-## Resume Steps (Next Session)
+## Files Changed (Phase 10)
 
-1. `cd ~/GeekSpace2.0 && git worktree list`
-2. Review and merge open PRs (#36, #37, phase-9 PR)
-3. Start Phase 10 — see ops/AI_BACKLOG.md for next priorities
+### Backend
+- `server/src/db/index.ts` — Added `user_sessions` table migration + `preferred_model` column on users
+- `server/src/middleware/auth.ts` — Upsert session on each authenticated request (using `createHash` sync)
+- `server/src/routes/auth.ts` — Added GET/DELETE /sessions endpoints
+- `server/src/routes/users.ts` — Added PUT/GET /me/model endpoints
+- `server/src/routes/activity.ts` — NEW: GET /api/activity returns last 50 activity_log entries
+- `server/src/app.ts` — Mounted activityRouter at /api/activity
 
-## Key Changes in Phase 9
+### Frontend
+- `src/services/api.ts` — Added UserSession, ActivityEntry types + getSessions, revokeSession, revokeAllSessions, getPreferredModel, setPreferredModel, getActivity
+- `src/dashboard/pages/SettingsPage.tsx` — Active Sessions panel + Preferred AI Engine picker in Security tab
+- `src/dashboard/DashboardApp.tsx` — Notification bell icon with activity dropdown in header
+- `src/dashboard/pages/RoadmapPage.tsx` — Recent Changes section with last 3 phases
 
-### src/dashboard/pages/PortfolioPage.tsx
-- Added `linkCopied` state (boolean, auto-resets after 2s)
-- Added `handleCopyLink()` async handler: copies `/portfolio/<username>` URL to clipboard
-- Added "Copy Link" button in header (next to "View Live"), shows "Copied!" confirmation
-  with green styling while active, purple-accented when idle
-- Falls back to `setMessage()` if clipboard API unavailable
+### Ops
+- `ops/AI_LESSONS.md` — Phase 10 patterns added
+- `ops/AI_BACKLOG.md` — Phase 10 items marked complete
+- Cleaned up worktrees: phase-1, phase-2, phase-4, phase-5, phase-6 removed
 
-### src/components/MessageReactions.tsx
-- Added `ThumbsDown` to lucide-react imports
-- Added `'dislike'` to `ReactionType` union type
-- Added `{ id: 'dislike', icon: ThumbsDown, emoji: '👎', label: 'Not helpful', color: '#FF6161' }` to reactions array (appears between like and love)
-- Updated `ReactionSummary` to render 👎 when `reactions.dislike > 0`
+## Known Limitations
 
-## Verification Evidence
+- **Session revocation is NOT real-time**: JWT tokens remain valid until expiry. Session DB records are marked inactive but can't stop valid tokens. Token blacklist in Redis would be needed for immediate invalidation.
+- **model_preference on agent_configs vs users**: The existing `model_preference` on `agent_configs` affects the LLM router directly. The new `users.preferred_model` is a user-level preference that needs to be wired into the LLM router in a future phase.
 
-```
-Tests:  154/154 passing (no new tests added; no regressions)
-TSC:    npx tsc --noEmit → clean (frontend)
-        cd server && npx tsc --noEmit → clean (backend, run from /server)
-Build:  npm run build → success
-        cd server && npm run build → success
-ESLint: npx eslint src/dashboard/pages/PortfolioPage.tsx --max-warnings=0 → clean
-        npx eslint src/components/MessageReactions.tsx --max-warnings=0 → clean
-```
+## Next Session Resume Steps
 
-## Notes for Next Phase
-- Auth session management (9.3) deferred — good candidate for a dedicated security/hardening phase
-- Consider adding thumbs-down analytics to admin dashboard
-- Phase 10 suggestions: notification preferences UI, portfolio analytics, agent personality customization
+1. Read this file
+2. Merge Phase 10 PR
+3. Start Phase 11 — suggested items:
+   - Wire `users.preferred_model` into the LLM router (routeChat function)
+   - Token blacklist for real session invalidation
+   - Dashboard trend sparklines (credits over time)
+   - Unit tests for activity endpoint + sessions endpoint

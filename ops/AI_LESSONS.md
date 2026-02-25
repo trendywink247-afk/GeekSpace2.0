@@ -69,3 +69,29 @@ curl localhost:3001/api/health
 ### Port 3001 conflicts
 - Stale Node process causes "Invalid token" after JWT secret resets
 - Fix: `fuser -k 3001/tcp` before starting
+
+## Phase 10 Lessons
+
+### Dynamic import in synchronous middleware
+- `requireAuth` middleware is NOT async — cannot use `await import()`
+- The `createHash` from Node's `crypto` module must be imported statically at the top of the file
+- Pattern: always check if a function is async before using dynamic imports inside it
+
+### Frontend TypeScript: noUnusedLocals catches removed JSX
+- Removing UI elements that used a specific icon import leaves the import dangling
+- `tsc -b` catches this but ESLint does NOT (no-unused-vars is off)
+- Always run `npm run build` (not just `tsc --noEmit`) to catch these; the Vite build uses strict tsconfig.app.json
+
+### Session tracking without token blacklist
+- JWT is stateless — revoking a session DB record does not invalidate the token
+- The correct pattern: mark sessions inactive in DB; accept the limitation in a comment
+- For real invalidation, a Redis token blacklist with TTL matching JWT expiry is needed
+
+### userService additions pattern
+- New API service methods follow the pattern: `methodName: () => api.verb<ReturnType>('/path')`  
+- Always export new interface types (like `UserSession`, `ActivityEntry`) from `api.ts` so pages can import them without circular deps
+- Use `type` imports (`type UserSession`) in page components to help tree-shaking
+
+### Worktree cleanup
+- Old worktrees with `node_modules/` require `--force` to remove
+- Safe to force-remove completed phase worktrees (phase-1 through phase-6 removed in Phase 10)
