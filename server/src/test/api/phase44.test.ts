@@ -5,6 +5,10 @@
 //        - retries up to maxAttempts on 5xx (server errors)
 //        - retries on network errors (connection refused)
 //        - run_count + last_run updated even when webhook URL is unreachable
+//   44.2 Recurring reminder reschedule after snooze
+//        - scheduler creates next occurrence with recurrence field preserved
+//        - snooze does NOT reschedule (it is a deferral, not completion)
+//        - snooze endpoint happy path returns { snoozed: true }
 // ============================================================
 
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
@@ -14,6 +18,7 @@ import { createTestUser, resetDatabase, makeAuthHeader } from '../setup.js';
 import { db } from '../../db/index.js';
 import { v4 as uuid } from 'uuid';
 import { fetchWithRetry, initAutomationsEngine } from '../../services/automations-engine.js';
+import { scheduleNextRecurrence } from '../../services/reminder-scheduler.js';
 
 const app = createApp();
 
@@ -216,5 +221,137 @@ describe('Webhook automation — run_count + last_run updated on failure (Phase 
     expect(logEntry).toBeDefined();
     expect(logEntry!.status).toBe('success');
     expect(logEntry!.output).toContain('Phase 44 test log');
+  });
+});
+
+// ── 44.2: Recurring reminder reschedule after snooze ─────────────────────────
+
+describe('Recurring reminder reschedule (Phase 44.2)', () => {
+  beforeAll(() => { resetDatabase(); });
+  afterEach(() => { resetDatabase(); });
+
+  // Test 1: When the scheduler fires a recurring reminder, the next occurrence
+  // is created with the correct next-day datetime AND preserves both recurring
+  // and recurrence fields so the full chain continues.
+  it('scheduleNextRecurrence creates next occurrence with recurrence field preserved', () => {
+    const user = createTestUser();
+    const remId = uuid();
+
+    // Create a reminder with a past datetime so the "next" is clearly in the future.
+    // Use 23 hours ago: adding 24h interval puts the next occurrence ~1 hour from now.
+    const twentyThreeHoursAgo = new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString();
+
+    db.prepare(`
+      INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, recurrence, priority, completed, created_by, scheduled_for)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'user', ?)
+    `).run(remId, user.id, 'Daily standup', twentyThreeHoursAgo, 'push', 'work', 'daily', 'daily', 'high', Date.now() - 23 * 60 * 60 * 1000);
+
+    const firedReminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(remId) as {
+      id: string;
+      user_id: string;
+      text: string;
+      datetime: string;
+      channel: string;
+      category: string;
+      recurring: string;
+      recurrence: string | null;
+      scheduled_for: number | null;
+      priority: string | null;
+    };
+
+    // Simulate scheduler calling scheduleNextRecurrence after delivery
+    scheduleNextRecurrence(firedReminder);
+
+    // Verify the new occurrence was created
+    const nextOccurrences = db.prepare(
+      "SELECT * FROM reminders WHERE user_id = ? AND id != ? AND created_by = 'scheduler'"
+    ).all(user.id, remId) as Array<{
+      id: string;
+      datetime: string;
+      recurring: string;
+      recurrence: string | null;
+      priority: string | null;
+      completed: number;
+    }>;
+
+    expect(nextOccurrences).toHaveLength(1);
+    const next = nextOccurrences[0]!;
+
+    // Next datetime should be ~1 hour from now (23 hours ago + 24h interval)
+    const nextDate = new Date(next.datetime);
+    const expectedDate = new Date(Date.now() - 23 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000);
+    expect(Math.abs(nextDate.getTime() - expectedDate.getTime())).toBeLessThan(60_000); // within 1 minute
+
+    // recurrence field must be preserved (this was the bug — it was missing)
+    expect(next.recurrence).toBe('daily');
+
+    // recurring field also preserved
+    expect(next.recurring).toBe('daily');
+
+    // priority preserved
+    expect(next.priority).toBe('high');
+
+    // Not completed
+    expect(next.completed).toBe(0);
+  });
+
+  // Test 2: Snoozing a recurring reminder does NOT reschedule it — it is a
+  // temporary deferral. The snooze endpoint updates datetime and snooze_count
+  // but leaves completed = 0 and does NOT insert a new occurrence.
+  it('snooze does NOT create a new occurrence (snooze is deferral, not completion)', async () => {
+    const user = createTestUser();
+    const remId = uuid();
+
+    // Create a past-due recurring reminder
+    const pastDatetime = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // 1 hour ago
+    db.prepare(`
+      INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, recurrence, priority, completed, created_by, scheduled_for)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'user', ?)
+    `).run(remId, user.id, 'Weekly review', pastDatetime, 'push', 'work', 'weekly', 'weekly', 'normal', Date.now() - 60 * 60 * 1000);
+
+    // Snooze the reminder
+    await request(app)
+      .post(`/api/reminders/${remId}/snooze`)
+      .set('Authorization', makeAuthHeader(user.id))
+      .send({ preset: '1h' })
+      .expect(200);
+
+    // Only the original reminder should exist — no new occurrence
+    const allReminders = db.prepare('SELECT * FROM reminders WHERE user_id = ?').all(user.id) as Array<{
+      id: string;
+      completed: number;
+    }>;
+    expect(allReminders).toHaveLength(1);
+    expect(allReminders[0]!.completed).toBe(0); // still pending, not completed
+
+    // No scheduler-created occurrences
+    const schedulerRows = db.prepare(
+      "SELECT * FROM reminders WHERE user_id = ? AND created_by = 'scheduler'"
+    ).all(user.id);
+    expect(schedulerRows).toHaveLength(0);
+  });
+
+  // Test 3: Basic snooze endpoint happy path — returns 200 with snoozed: true
+  it('POST /:id/snooze returns 200 with { snoozed: true, newDatetime }', async () => {
+    const user = createTestUser();
+    const remId = uuid();
+
+    const futureDatetime = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 min from now
+    db.prepare(`
+      INSERT INTO reminders (id, user_id, text, datetime, channel, category, completed, created_by, scheduled_for)
+      VALUES (?, ?, ?, ?, ?, ?, 0, 'user', ?)
+    `).run(remId, user.id, 'Test reminder', futureDatetime, 'push', 'general', Date.now() + 30 * 60 * 1000);
+
+    const res = await request(app)
+      .post(`/api/reminders/${remId}/snooze`)
+      .set('Authorization', makeAuthHeader(user.id))
+      .send({ preset: 'tomorrow' })
+      .expect(200);
+
+    expect(res.body.snoozed).toBe(true);
+    expect(typeof res.body.newDatetime).toBe('string');
+
+    // newDatetime should be in the future
+    expect(new Date(res.body.newDatetime).getTime()).toBeGreaterThan(Date.now());
   });
 });
