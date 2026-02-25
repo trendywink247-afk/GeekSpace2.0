@@ -71,6 +71,9 @@ export function createApp(): express.Application {
   app.set('trust proxy', 1);
 
   // ---- Security headers ----
+  // NOTE (Risk R11): script-src uses 'self' without nonces. Nonce-based CSP would require
+  // frontend templating changes that are out of scope. style-src uses 'unsafe-inline' for
+  // Tailwind/shadcn inline styles. Both are documented in the risk register as accepted risks.
   app.use(helmet({
     contentSecurityPolicy: config.isProduction ? {
       directives: {
@@ -81,8 +84,12 @@ export function createApp(): express.Application {
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'", "https://openrouter.ai", "wss:"],
         frameSrc: ["'none'"],
+        // Prevent embedding in iframes — defence-in-depth alongside X-Frame-Options: DENY
+        frameAncestors: ["'none'"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
+        // Force HTTP resources to upgrade to HTTPS (safe, widely supported)
+        upgradeInsecureRequests: [],
       },
     } : false,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
