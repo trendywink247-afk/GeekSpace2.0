@@ -354,3 +354,67 @@ integrationsRouter.get('/invites', requireAuth, (req: AuthRequest, res) => {
 
   res.json(result);
 });
+
+// ── Phase 29.1: Connection Invite Accept Flow ─────────────────────────────────
+
+// Public endpoint — get invite info by token (no auth required)
+integrationsRouter.get('/invite/:token/info', (req, res) => {
+  const { token } = req.params;
+  const invite = db.prepare(
+    'SELECT ci.id, ci.token, ci.email, ci.expires_at, ci.used_at, u.name as owner_name, u.username as owner_username, u.avatar as owner_avatar FROM connection_invites ci JOIN users u ON u.id = ci.user_id WHERE ci.token = ?'
+  ).get(token) as { id: string; token: string; email: string | null; expires_at: number; used_at: number | null; owner_name: string; owner_username: string; owner_avatar: string | null } | undefined;
+
+  if (!invite) {
+    res.status(404).json({ error: 'Invite not found' });
+    return;
+  }
+  if (invite.expires_at < Date.now()) {
+    res.status(410).json({ error: 'Invite expired' });
+    return;
+  }
+  if (invite.used_at) {
+    res.status(409).json({ error: 'Invite already used' });
+    return;
+  }
+
+  res.json({
+    token: invite.token,
+    email: invite.email,
+    ownerName: invite.owner_name,
+    ownerUsername: invite.owner_username,
+    ownerAvatar: invite.owner_avatar,
+    expiresAt: invite.expires_at,
+  });
+});
+
+// Public endpoint — accept invite (mark as used, optionally record acceptor email)
+integrationsRouter.post('/invite/:token/accept', (req, res) => {
+  const { token } = req.params;
+  const { acceptorEmail, acceptorName } = req.body as { acceptorEmail?: string; acceptorName?: string };
+
+  const invite = db.prepare(
+    'SELECT id, user_id, expires_at, used_at FROM connection_invites WHERE token = ?'
+  ).get(token) as { id: string; user_id: string; expires_at: number; used_at: number | null } | undefined;
+
+  if (!invite) {
+    res.status(404).json({ error: 'Invite not found' });
+    return;
+  }
+  if (invite.expires_at < Date.now()) {
+    res.status(410).json({ error: 'Invite expired' });
+    return;
+  }
+  if (invite.used_at) {
+    res.status(409).json({ error: 'Invite already used' });
+    return;
+  }
+
+  // Mark invite as used
+  db.prepare('UPDATE connection_invites SET used_at = ? WHERE id = ?').run(Date.now(), invite.id);
+
+  // Log activity for the invite owner
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Connection accepted', ?, 'user-check')`)
+    .run(crypto.randomUUID(), invite.user_id, acceptorName ? `${acceptorName} accepted your connection invite` : acceptorEmail ? `${acceptorEmail} accepted your connection invite` : 'Someone accepted your connection invite');
+
+  res.json({ success: true, message: 'Connection established' });
+});

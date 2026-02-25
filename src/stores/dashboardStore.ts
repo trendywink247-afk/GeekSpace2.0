@@ -72,6 +72,7 @@ interface DashboardStore {
   snoozeReminder: (id: string, newDatetime: string) => Promise<void>;
   updateReminder: (id: string, data: Partial<Pick<Reminder, 'text' | 'datetime' | 'channel' | 'recurring' | 'category' | 'priority'>>) => Promise<void>;
   deleteReminder: (id: string) => Promise<void>;
+  bulkSnoozeReminders: (ids: string[], preset: '1h' | 'tomorrow' | 'next-week') => Promise<void>;
   connectIntegration: (type: string) => Promise<void>;
   disconnectIntegration: (id: string) => Promise<void>;
   addAutomation: (data: Omit<Automation, 'id' | 'userId' | 'lastRun' | 'runCount' | 'createdAt'>) => Promise<void>;
@@ -229,6 +230,17 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       await reminderService.delete(id);
     } catch {
       set({ reminders: prev }); // Revert
+    }
+  },
+
+  bulkSnoozeReminders: async (ids, preset) => {
+    const { data } = await reminderService.bulkSnooze(ids, preset);
+    if (data.snoozed > 0) {
+      set((s) => ({
+        reminders: s.reminders.map((r) =>
+          ids.includes(r.id) ? { ...r, datetime: data.newDatetime } : r
+        ),
+      }));
     }
   },
 

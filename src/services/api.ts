@@ -354,6 +354,9 @@ export const reminderService = {
 
   bulkDelete: (ids: string[]) =>
     api.delete<{ deleted: number }>('/reminders/bulk', { data: { ids } }),
+
+  bulkSnooze: (ids: string[], preset: '1h' | 'tomorrow' | 'next-week') =>
+    api.post<{ snoozed: number; newDatetime: string }>('/reminders/bulk-snooze', { ids, preset }),
 };
 
 // ----- Portfolio ---------------------------------------------

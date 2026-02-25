@@ -62,6 +62,52 @@ remindersRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
   res.json({ success: true });
 });
 
+// ── Bulk Snooze (29.4) ─────────────────────────────────────────────────────
+remindersRouter.post('/bulk-snooze', requireAuth, (req: AuthRequest, res) => {
+  const { ids, preset } = req.body as { ids: string[]; preset: '1h' | 'tomorrow' | 'next-week' };
+
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 100) {
+    res.status(400).json({ error: 'ids must be a non-empty array of max 100' });
+    return;
+  }
+  if (!['1h', 'tomorrow', 'next-week'].includes(preset)) {
+    res.status(400).json({ error: 'Invalid preset' });
+    return;
+  }
+
+  const now = new Date();
+  let newDatetime: string;
+  if (preset === '1h') {
+    newDatetime = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+  } else if (preset === 'tomorrow') {
+    const d = new Date(now);
+    d.setDate(d.getDate() + 1);
+    d.setHours(9, 0, 0, 0);
+    newDatetime = d.toISOString();
+  } else {
+    const d = new Date(now);
+    d.setDate(d.getDate() + 7);
+    d.setHours(9, 0, 0, 0);
+    newDatetime = d.toISOString();
+  }
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const owned = db.prepare(
+    `SELECT id FROM reminders WHERE id IN (${placeholders}) AND user_id = ? AND completed = 0`
+  ).all(...ids, req.userId!) as Array<{ id: string }>;
+
+  if (owned.length === 0) {
+    res.json({ snoozed: 0 });
+    return;
+  }
+
+  const ownedIds = owned.map((r) => r.id);
+  const updPlaceholders = ownedIds.map(() => '?').join(', ');
+  db.prepare(`UPDATE reminders SET datetime = ? WHERE id IN (${updPlaceholders})`).run(newDatetime, ...ownedIds);
+
+  res.json({ snoozed: owned.length, newDatetime });
+});
+
 // ── Bulk Delete (25.5) ─────────────────────────────────────────────────────
 remindersRouter.delete('/bulk', requireAuth, validateBody(bulkReminderDeleteSchema), (req: AuthRequest, res) => {
   const { ids } = req.body as { ids: string[] };

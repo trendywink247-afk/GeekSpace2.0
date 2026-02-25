@@ -55,7 +55,7 @@ const examples = [
 ];
 
 export function RemindersPage() {
-  const { reminders, addReminder, updateReminder, toggleReminder, snoozeReminder, deleteReminder, loadReminders } = useDashboardStore();
+  const { reminders, addReminder, updateReminder, toggleReminder, snoozeReminder, deleteReminder, loadReminders, bulkSnoozeReminders } = useDashboardStore();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -174,6 +174,10 @@ export function RemindersPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+  // Bulk snooze state (29.4)
+  const [selectedActiveIds, setSelectedActiveIds] = useState<Set<string>>(new Set());
+  const [isBulkSnoozing, setIsBulkSnoozing] = useState(false);
+
   const handleComplete = async (id: string) => {
     setCompletingIds((prev) => new Set(prev).add(id));
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -261,6 +265,25 @@ export function RemindersPage() {
       await loadReminders();
     } finally {
       setIsBulkDeleting(false);
+    }
+  };
+
+  const handleToggleSelectActive = (id: string) => {
+    setSelectedActiveIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      return next;
+    });
+  };
+
+  const handleBulkSnooze = async (preset: '1h' | 'tomorrow' | 'next-week') => {
+    if (selectedActiveIds.size === 0) return;
+    setIsBulkSnoozing(true);
+    try {
+      await bulkSnoozeReminders(Array.from(selectedActiveIds), preset);
+      setSelectedActiveIds(new Set());
+    } finally {
+      setIsBulkSnoozing(false);
     }
   };
 
@@ -455,6 +478,56 @@ export function RemindersPage() {
       </div>
 
       {/* Reminders List */}
+      {/* Bulk snooze bar — shown when viewing active reminders (29.4) */}
+      {activeReminders.length > 0 && (filter === 'active' || filter === 'all') && (
+        <div className="flex items-center gap-3 px-1" data-testid="bulk-snooze-bar">
+          <Checkbox
+            id="select-all-active"
+            checked={selectedActiveIds.size > 0 && activeReminders.every((r) => selectedActiveIds.has(r.id))}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                setSelectedActiveIds(new Set(activeReminders.map((r) => r.id)));
+              } else {
+                setSelectedActiveIds(new Set());
+              }
+            }}
+            aria-label="Select all active reminders"
+          />
+          <label htmlFor="select-all-active" className="text-sm text-[#6B7280] cursor-pointer select-none">
+            Select active ({activeReminders.length})
+          </label>
+          {selectedActiveIds.size > 0 && (
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-xs text-[#6B7280]">Snooze {selectedActiveIds.size} selected:</span>
+              <button
+                onClick={() => handleBulkSnooze('1h')}
+                disabled={isBulkSnoozing}
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] hover:bg-[#FFB800]/20 disabled:opacity-50 transition-colors"
+              >
+                +1h
+              </button>
+              <button
+                onClick={() => handleBulkSnooze('tomorrow')}
+                disabled={isBulkSnoozing}
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] hover:bg-[#FFB800]/20 disabled:opacity-50 transition-colors"
+              >
+                Tomorrow
+              </button>
+              <button
+                onClick={() => handleBulkSnooze('next-week')}
+                disabled={isBulkSnoozing}
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] hover:bg-[#FFB800]/20 disabled:opacity-50 transition-colors"
+              >
+                Next week
+              </button>
+              {isBulkSnoozing && (
+                <div className="w-4 h-4 border-2 border-[#FFB800]/30 border-t-[#FFB800] rounded-full animate-spin" />
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Bulk delete bar — shown when viewing completed reminders */}
       {completedReminders.length > 0 && (filter === 'completed' || filter === 'all') && (
         <div className="flex items-center gap-3 px-1">
@@ -514,7 +587,15 @@ export function RemindersPage() {
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
-                      {/* Bulk select checkbox — only for completed reminders */}
+                      {/* Bulk select checkbox — active for snooze, completed for delete */}
+                      {!reminder.completed && (
+                        <Checkbox
+                          checked={selectedActiveIds.has(reminder.id)}
+                          onCheckedChange={() => handleToggleSelectActive(reminder.id)}
+                          aria-label="Select reminder for bulk snooze"
+                          className="mt-1 flex-shrink-0"
+                        />
+                      )}
                       {reminder.completed && (
                         <Checkbox
                           checked={selectedIds.has(reminder.id)}
