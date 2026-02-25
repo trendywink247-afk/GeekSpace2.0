@@ -118,6 +118,24 @@ export async function createBriefing(userId: string): Promise<string> {
     });
   }
 
+  // 37.3: Send via Telegram if user has opted in and has a linked account
+  const agentCfg = db.prepare('SELECT notif_daily_briefing FROM agent_configs WHERE user_id = ?').get(userId) as { notif_daily_briefing: number } | undefined;
+  if (agentCfg?.notif_daily_briefing !== 0) {
+    const tgLink = db.prepare(
+      "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+    ).get(userId) as { external_id: string } | undefined;
+    if (tgLink) {
+      const preview = content.length > 400 ? content.slice(0, 400) + '…' : content;
+      import('./telegram.js').then(({ sendTelegramMessage }) => {
+        sendTelegramMessage(tgLink.external_id, `📋 Daily Briefing\n\n${preview}`).then(() => {
+          db.prepare("UPDATE briefings SET channels_sent = json_insert(channels_sent, '$[#]', 'telegram') WHERE id = ?").run(id);
+        }).catch((err: Error) => {
+          logger.warn({ userId, briefingId: id, error: err.message }, 'Briefing Telegram send failed');
+        });
+      }).catch(() => {});
+    }
+  }
+
   return content;
 }
 

@@ -244,6 +244,70 @@ portfolioRouter.get('/stats/export', requireAuth, (req: AuthRequest, res) => {
   res.send(csv);
 });
 
+// ── 37.1: Portfolio contact form (public, rate-limited) ──────────────────────
+const contactRateLimit = new Map<string, { count: number; windowStart: number }>();
+
+portfolioRouter.post('/:username/contact', async (req, res) => {
+  const { username } = req.params;
+  const { senderName, senderEmail, message } = req.body as { senderName?: string; senderEmail?: string; message?: string };
+
+  if (!senderName?.trim() || !message?.trim()) {
+    res.status(400).json({ error: 'Name and message are required' });
+    return;
+  }
+  if (message.length > 1000) {
+    res.status(400).json({ error: 'Message too long (max 1000 characters)' });
+    return;
+  }
+
+  // IP-based rate limit: max 3 requests per hour per IP
+  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+  const now = Date.now();
+  const rlEntry = contactRateLimit.get(ip);
+  if (rlEntry && now - rlEntry.windowStart < 3600000) {
+    if (rlEntry.count >= 3) {
+      res.status(429).json({ error: 'Too many requests, please try again later' });
+      return;
+    }
+    rlEntry.count++;
+  } else {
+    contactRateLimit.set(ip, { count: 1, windowStart: now });
+  }
+
+  const user = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: string } | undefined;
+  if (!user) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const portfolio = db.prepare('SELECT is_public FROM portfolios WHERE user_id = ?').get(user.id) as { is_public: number } | undefined;
+  if (!portfolio?.is_public) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const id = uuid();
+  db.prepare(
+    'INSERT INTO portfolio_contacts (id, username, user_id, sender_name, sender_email, message) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(id, username, user.id, senderName.trim(), senderEmail?.trim() || null, message.trim());
+
+  // Notify owner via Telegram if linked
+  const link = db.prepare(
+    "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+  ).get(user.id) as { external_id: string } | undefined;
+  if (link) {
+    const { sendTelegramMessage } = await import('../services/telegram.js');
+    sendTelegramMessage(
+      link.external_id,
+      `📩 Portfolio message from ${senderName.trim()}: "${message.slice(0, 200)}${message.length > 200 ? '…' : ''}"`
+    ).catch(() => {});
+  }
+
+  res.json({ success: true });
+});
+
+// GET portfolio contacts (authenticated — owner only)
+portfolioRouter.get('/contacts', requireAuth, (req: AuthRequest, res) => {
+  const contacts = db.prepare(
+    'SELECT id, sender_name, sender_email, message, created_at FROM portfolio_contacts WHERE user_id = ? ORDER BY created_at DESC LIMIT 50'
+  ).all(req.userId!) as Array<{ id: string; sender_name: string; sender_email: string | null; message: string; created_at: string }>;
+  res.json(contacts);
+});
+
 // ── 34.3: Public view counter (no auth — fire-and-forget on portfolio page load) ──
 portfolioRouter.post('/:username/view', (req, res) => {
   const { username } = req.params;

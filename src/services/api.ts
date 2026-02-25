@@ -371,8 +371,9 @@ export const reminderService = {
   getStreak: () =>
     api.get<{ streak: number; longestStreak: number; completedToday: boolean }>('/reminders/streak'),
 
-  snooze: (id: string, preset: '1h' | 'tomorrow' | 'next-week') =>
-    api.post<{ snoozed: boolean; newDatetime: string }>(`/reminders/${id}/snooze`, { preset }),
+  snooze: (id: string, preset?: '1h' | 'tomorrow' | 'next-week', customDatetime?: string) =>
+    api.post<{ snoozed: boolean; newDatetime: string }>(`/reminders/${id}/snooze`,
+      preset ? { preset } : { customDatetime }),
 
   getSnoozeHistory: (id: string) =>
     api.get<{ history: Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }> }>(`/reminders/${id}/snooze-history`),
@@ -452,6 +453,14 @@ export const portfolioService = {
   // 34.3: Increment view count for a portfolio (public, no auth)
   recordView: (username: string) =>
     api.post<{ ok: boolean }>(`/portfolio/${username}/view`),
+
+  // 37.1: Contact portfolio owner (public)
+  contact: (username: string, data: { senderName: string; senderEmail?: string; message: string }) =>
+    api.post<{ success: boolean }>(`/portfolio/${username}/contact`, data),
+
+  // 37.1: Get contact messages (authenticated, owner only)
+  getContacts: () =>
+    api.get<Array<{ id: string; sender_name: string; sender_email: string | null; message: string; created_at: string }>>('/portfolio/contacts'),
 };
 
 // ----- Activity Stats ----------------------------------------
@@ -479,6 +488,10 @@ export const automationService = {
   // 34.5: Test-fire a webhook automation
   testFire: (id: string) =>
     api.post<{ success: boolean; statusCode: number; message: string }>(`/automations/${id}/test`),
+
+  // 37.4: Dead-letter log for failed webhook deliveries
+  getDeadLetters: () =>
+    api.get<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>>('/automations/dead-letters'),
 };
 
 // ----- Dashboard (aggregated) --------------------------------

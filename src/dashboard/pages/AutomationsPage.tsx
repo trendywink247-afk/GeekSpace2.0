@@ -107,6 +107,8 @@ export function AutomationsPage() {
   const [logs, setLogs] = useState<AutomationLog[]>([]);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string } | null>(null);
+  // 37.4: Dead-letter log
+  const [deadLetters, setDeadLetters] = useState<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>>([]);
 
   const resetForm = () => {
     setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true });
@@ -116,6 +118,7 @@ export function AutomationsPage() {
 
   useEffect(() => {
     automationLogService.list(20).then((r) => setLogs(r.data)).catch(() => setLogs([]));
+    automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => setDeadLetters([]));
   }, []);
 
   const handleOpenAdd = () => {
@@ -627,6 +630,34 @@ export function AutomationsPage() {
                 </tbody>
               </table>
             </div>
+          </Card>
+        )}
+
+        {/* 37.4: Dead-letter panel — only shown when there are failures */}
+        {deadLetters.length > 0 && (
+          <Card style={{ background: 'rgba(255,97,97,0.04)', border: '1px solid rgba(255,97,97,0.2)' }}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Bell className="w-4 h-4 text-[#FF6161]" />
+                <span className="text-sm font-semibold text-[#FF6161]">Failed Webhook Deliveries</span>
+                <Badge style={{ background: 'rgba(255,97,97,0.15)', color: '#FF6161', border: '1px solid rgba(255,97,97,0.3)' }}>{deadLetters.length}</Badge>
+              </div>
+              <div className="space-y-2">
+                {deadLetters.slice(0, 5).map((dl) => {
+                  const auto = automations.find((a) => a.id === dl.automation_id);
+                  return (
+                    <div key={dl.id} className="flex flex-col gap-0.5 bg-[#0C0C18] rounded-lg px-3 py-2 border border-[#FF6161]/10">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-[#E8E8F0] truncate">{auto?.name ?? dl.automation_id.slice(0, 8)}</span>
+                        <span className="text-xs text-[#6B7280] whitespace-nowrap">{new Date(dl.failed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <span className="text-xs text-[#FF6161] truncate">{dl.error}</span>
+                      <span className="text-xs text-[#6B7280] truncate font-mono">{dl.url}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
           </Card>
         )}
       </div>

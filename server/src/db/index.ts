@@ -827,6 +827,51 @@ try { db.exec(`ALTER TABLE reminders ADD COLUMN completed_at INTEGER`); } catch 
 // Phase 12: Index for portfolio_visits queries (user_id + date range scans)
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_portfolio_visits_user_date ON portfolio_visits(user_id, visited_at)`); } catch { /* index already exists */ }
 
+// Phase 36.1: Snooze event log
+db.exec(`
+  CREATE TABLE IF NOT EXISTS snooze_log (
+    id TEXT PRIMARY KEY,
+    reminder_id TEXT NOT NULL REFERENCES reminders(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    snoozed_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+    preset TEXT NOT NULL,
+    new_datetime TEXT NOT NULL
+  )
+`);
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_snooze_log_reminder ON snooze_log(reminder_id, snoozed_at DESC)`); } catch { /* already exists */ }
+
+// Phase 37.1: Portfolio contact messages
+db.exec(`
+  CREATE TABLE IF NOT EXISTS portfolio_contacts (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    sender_name TEXT NOT NULL,
+    sender_email TEXT,
+    message TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
+// Phase 37.3: Daily briefing Telegram opt-in/out
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_daily_briefing INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+
+// Phase 37.4: Webhook dead-letter log
+db.exec(`
+  CREATE TABLE IF NOT EXISTS webhook_dead_letters (
+    id TEXT PRIMARY KEY,
+    automation_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    url TEXT NOT NULL,
+    error TEXT NOT NULL,
+    payload TEXT,
+    failed_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
+  )
+`);
+
+// Phase 37.5: Connection alert opt-in/out
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_connections INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {

@@ -121,6 +121,14 @@ automationsRouter.post('/:id/test', requireAuth, async (req: AuthRequest, res) =
   }
 });
 
+// ── 37.4: Webhook dead-letter log ─────────────────────────────────────────────
+automationsRouter.get('/dead-letters', requireAuth, (req: AuthRequest, res) => {
+  const entries = db.prepare(
+    'SELECT id, automation_id, url, error, payload, failed_at FROM webhook_dead_letters WHERE user_id = ? ORDER BY failed_at DESC LIMIT 20'
+  ).all(req.userId!) as Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>;
+  res.json(entries);
+});
+
 // ---- Webhook endpoint (no auth — triggered by external services) ----
 
 automationsRouter.post('/webhook/:id', async (req, res) => {

@@ -418,12 +418,15 @@ integrationsRouter.post('/invite/:token/accept', (req, res) => {
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Connection accepted', ?, 'user-check')`)
     .run(crypto.randomUUID(), invite.user_id, `${acceptorDisplay} accepted your connection invite`);
 
-  // 36.2: Notify invite owner via Telegram if linked
-  const tgLink = db.prepare(
-    "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
-  ).get(invite.user_id) as { external_id: string } | undefined;
-  if (tgLink) {
-    sendTelegramMessage(tgLink.external_id, `🤝 ${acceptorDisplay} accepted your connection invite!`).catch(() => {});
+  // 36.2 + 37.5: Notify invite owner via Telegram if linked and opted in (notif_connections)
+  const agentCfg = db.prepare('SELECT notif_connections FROM agent_configs WHERE user_id = ?').get(invite.user_id) as { notif_connections: number } | undefined;
+  if (agentCfg?.notif_connections !== 0) {
+    const tgLink = db.prepare(
+      "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+    ).get(invite.user_id) as { external_id: string } | undefined;
+    if (tgLink) {
+      sendTelegramMessage(tgLink.external_id, `🤝 ${acceptorDisplay} accepted your connection invite!`).catch(() => {});
+    }
   }
 
   res.json({ success: true, message: 'Connection established' });
