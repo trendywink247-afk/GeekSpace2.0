@@ -183,6 +183,18 @@ export function createApp(): express.Application {
     });
     app.use('/api/agent/chat/public', publicLimiter);
     app.use('/api/dashboard/contact', publicLimiter);
+
+    // Strict rate limit on admin endpoints — 10 requests per minute
+    // Admin routes are sensitive (user management, system ops) so apply a tight window
+    const adminLimiter = rateLimit({
+      windowMs: 60 * 1000,
+      max: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many admin requests, please slow down' },
+      handler: rateLimitHandler,
+    });
+    app.use('/api/admin', adminLimiter);
   }
 
   // ---- Health check ----
