@@ -14,7 +14,8 @@ import {
   Clock,
   CheckCircle2,
   Circle,
-  ArrowRight
+  ArrowRight,
+  History
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,53 @@ interface RoadmapItem {
   quarter: string;
   category: string;
 }
+
+interface ReleaseNote {
+  phase: string;
+  title: string;
+  date: string;
+  items: string[];
+  color: string;
+}
+
+const releaseNotes: ReleaseNote[] = [
+  {
+    phase: 'Phase 10',
+    title: 'Session Management & Model Picker',
+    date: 'Feb 2026',
+    color: '#00F0FF',
+    items: [
+      'Active Sessions panel in Settings — view and revoke devices',
+      'Preferred AI Engine picker — choose Auto, Local, Cloud, or Premium',
+      'Notification Activity Log — bell icon in header shows recent events',
+      'Roadmap now includes Recent Changes section',
+    ],
+  },
+  {
+    phase: 'Phase 9',
+    title: 'Health Stream & Connection Lifecycle',
+    date: 'Feb 2026',
+    color: '#BF5FFF',
+    items: [
+      'Real-time health stream endpoint with SSE',
+      'Connection lifecycle improvements',
+      'Forgot password flow with OTP verification',
+      'Rate limiting hardening for auth routes',
+    ],
+  },
+  {
+    phase: 'Phase 8',
+    title: 'Coverage Gate & AI Briefing Scheduler',
+    date: 'Feb 2026',
+    color: '#00FF88',
+    items: [
+      'Test coverage gate in CI (minimum coverage enforcement)',
+      'AI daily briefing schedule picker in agent settings',
+      'Snooze error handling for reminders',
+      'Reminder edit modal for in-place editing',
+    ],
+  },
+];
 
 const roadmapItems: RoadmapItem[] = [
   {
@@ -65,6 +113,15 @@ const roadmapItems: RoadmapItem[] = [
     status: 'completed',
     quarter: 'Q1 2026',
     category: 'UX'
+  },
+  {
+    id: 'session-mgmt',
+    title: 'Session Management',
+    description: 'View and revoke active sessions; preferred AI engine picker',
+    icon: <Shield className="w-5 h-5" />,
+    status: 'completed',
+    quarter: 'Q1 2026',
+    category: 'Security'
   },
   {
     id: 'team-workspaces',
@@ -152,6 +209,53 @@ export function RoadmapPage() {
         <p className="text-[#6B7280]">
           Building the future of AI-powered personal workspaces. Here's what we're working on.
         </p>
+      </div>
+
+      {/* Recent Changes */}
+      <div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/20 flex items-center justify-center">
+            <History className="w-5 h-5 text-[#F59E0B]" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-[#E8E8F0]">Recent Changes</h2>
+            <p className="text-sm text-[#6B7280]">Latest shipped improvements</p>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {releaseNotes.map((note) => (
+            <Card key={note.phase} className="border-[#00F0FF]/10">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div
+                    className="w-2 h-full min-h-[40px] rounded-full flex-shrink-0"
+                    style={{ backgroundColor: note.color, opacity: 0.7 }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <Badge
+                        className="text-xs"
+                        style={{ backgroundColor: `${note.color}20`, color: note.color, borderColor: `${note.color}40` }}
+                      >
+                        {note.phase}
+                      </Badge>
+                      <span className="font-semibold text-[#E8E8F0] text-sm">{note.title}</span>
+                      <span className="text-xs text-[#6B7280] ml-auto">{note.date}</span>
+                    </div>
+                    <ul className="space-y-1">
+                      {note.items.map((item, i) => (
+                        <li key={i} className="text-xs text-[#6B7280] flex items-start gap-1.5">
+                          <span className="text-[#00FF88] mt-0.5 flex-shrink-0">+</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {/* Progress */}

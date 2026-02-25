@@ -356,3 +356,38 @@ authRouter.post('/reset-password', async (req, res) => {
 
   res.json({ success: true, message: 'Password reset successfully' });
 });
+
+// ── Session Management ──────────────────────────────────────
+// NOTE: JWT is stateless — revoking a session only marks the DB record inactive.
+// Existing tokens remain valid until they expire. A token blacklist would be
+// required for immediate invalidation but is out of scope here.
+
+authRouter.get('/sessions', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const sessions = db.prepare(`
+    SELECT id, created_at, last_seen, user_agent, ip, is_active
+    FROM user_sessions
+    WHERE user_id = ? AND is_active = 1
+    ORDER BY last_seen DESC
+    LIMIT 20
+  `).all(userId);
+  res.json({ sessions });
+});
+
+authRouter.delete('/sessions/:id', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const sessionId = req.params.id;
+  db.prepare(`
+    UPDATE user_sessions SET is_active = 0 WHERE id = ? AND user_id = ?
+  `).run(sessionId, userId);
+  res.json({ success: true });
+});
+
+authRouter.delete('/sessions', requireAuth, (req: AuthRequest, res) => {
+  // Revoke all sessions for this user (used for "sign out everywhere")
+  const userId = req.userId!;
+  db.prepare(`
+    UPDATE user_sessions SET is_active = 0 WHERE user_id = ?
+  `).run(userId);
+  res.json({ success: true });
+});

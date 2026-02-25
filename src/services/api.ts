@@ -110,6 +110,23 @@ export const authService = {
 
 // ----- Users -------------------------------------------------
 
+export interface UserSession {
+  id: string;
+  created_at: string;
+  last_seen: string;
+  user_agent: string;
+  ip: string;
+  is_active: number;
+}
+
+export interface ActivityEntry {
+  id: string;
+  action: string;
+  details: string;
+  icon: string;
+  created_at: string;
+}
+
 export const userService = {
   getProfile: () => api.get<User>('/users/me'),
 
@@ -118,6 +135,24 @@ export const userService = {
 
   getPublicProfile: (username: string) =>
     api.get<User>(`/users/${username}/public`),
+
+  getSessions: () =>
+    api.get<{ sessions: UserSession[] }>('/auth/sessions'),
+
+  revokeSession: (id: string) =>
+    api.delete<{ success: boolean }>(`/auth/sessions/${id}`),
+
+  revokeAllSessions: () =>
+    api.delete<{ success: boolean }>('/auth/sessions'),
+
+  getPreferredModel: () =>
+    api.get<{ preferredModel: string }>('/users/me/model'),
+
+  setPreferredModel: (model: string) =>
+    api.put<{ preferredModel: string }>('/users/me/model', { model }),
+
+  getActivity: (limit = 50) =>
+    api.get<{ activity: ActivityEntry[] }>(`/activity?limit=${limit}`),
 };
 
 // ----- Agent -------------------------------------------------

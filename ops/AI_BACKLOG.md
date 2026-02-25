@@ -62,3 +62,13 @@ _Updated Phase 9 (2026-02-25):_
 - [ ] Auth session management — deferred from Phase 9 (too complex); needs dedicated security phase
 - [ ] Admin dashboard: thumbs-down analytics visualization
 - [ ] Phase 10 candidates: notification preferences UI, portfolio view analytics, personality customization
+
+- [x] **Phase 9** — Health SSE streaming endpoint improvements
+- [x] **Phase 9** — Connection lifecycle fixes
+- [x] **Phase 9** — Forgot password / OTP flow
+- [x] **Phase 10** — user_sessions table + active sessions panel in Settings Security tab
+- [x] **Phase 10** — Preferred AI Engine picker in Settings (users.preferred_model column)
+- [x] **Phase 10** — Activity log endpoint GET /api/activity + notification bell in DashboardApp header
+- [x] **Phase 10** — RoadmapPage: Recent Changes section with last 3 phases of improvements
+- [x] **Phase 10** — Old worktrees (phase-1 through phase-6) cleaned up
+- [x] **Phase 10** — AI_LESSONS.md updated with Phase 7-10 patterns

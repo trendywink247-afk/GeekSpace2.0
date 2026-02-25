@@ -776,6 +776,26 @@ try {
   `);
 } catch { /* table already exists */ }
 
+// Phase 10: Auth session tracking table
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TEXT DEFAULT (datetime('now')),
+      last_seen TEXT DEFAULT (datetime('now')),
+      user_agent TEXT DEFAULT '',
+      ip TEXT DEFAULT '',
+      is_active INTEGER DEFAULT 1
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_active ON user_sessions(user_id, is_active);
+  `);
+} catch { /* table already exists */ }
+
+// Phase 10: preferred_model column on users table (for model picker)
+try { db.exec(`ALTER TABLE users ADD COLUMN preferred_model TEXT DEFAULT 'auto'`); } catch { /* column already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {

@@ -148,3 +148,24 @@ usersRouter.get('/:username/public', (req, res) => {
     plan: user.plan, createdAt: user.created_at,
   });
 });
+
+// ── Model Preference ─────────────────────────────────────────
+usersRouter.put('/me/model', requireAuth, (req: AuthRequest, res) => {
+  const allowed = ['auto', 'ollama', 'openrouter', 'edith'];
+  const model: string = req.body.model ?? 'auto';
+  if (!allowed.includes(model)) {
+    res.status(400).json({ error: 'Invalid model. Allowed: auto, ollama, openrouter, edith' });
+    return;
+  }
+  try {
+    db.prepare('UPDATE users SET preferred_model = ? WHERE id = ?').run(model, req.userId);
+  } catch {
+    // Column may not exist on older deployments — non-fatal
+  }
+  res.json({ preferredModel: model });
+});
+
+usersRouter.get('/me/model', requireAuth, (req: AuthRequest, res) => {
+  const user = db.prepare('SELECT preferred_model FROM users WHERE id = ?').get(req.userId!) as { preferred_model: string | null } | undefined;
+  res.json({ preferredModel: user?.preferred_model ?? 'auto' });
+});
