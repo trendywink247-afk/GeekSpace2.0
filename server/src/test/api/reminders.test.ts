@@ -164,3 +164,71 @@ describe('Reminders Endpoints', () => {
       cleanupTestUser(other.id);
     });
   });
+
+
+  describe('POST /api/reminders — priority field', () => {
+    it('should accept priority: high', async () => {
+      const user = createTestUser();
+
+      const response = await request(app)
+        .post('/api/reminders')
+        .set('Authorization', makeAuthHeader(user.id))
+        .send({
+          text: 'High priority task',
+          datetime: new Date(Date.now() + 3600000).toISOString(),
+          channel: 'push',
+          priority: 'high',
+        })
+        .expect('Content-Type', /json/)
+        .expect(201);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body).toHaveProperty('priority', 'high');
+
+      cleanupTestUser(user.id);
+    });
+
+    it('should reject invalid priority critical with 400', async () => {
+      const user = createTestUser();
+
+      const response = await request(app)
+        .post('/api/reminders')
+        .set('Authorization', makeAuthHeader(user.id))
+        .send({
+          text: 'Critical task',
+          datetime: new Date(Date.now() + 3600000).toISOString(),
+          channel: 'push',
+          priority: 'critical',
+        })
+        .expect('Content-Type', /json/)
+        .expect(400);
+
+      expect(response.body).toHaveProperty('error');
+
+      cleanupTestUser(user.id);
+    });
+  });
+
+  describe('PATCH /api/reminders/:id — priority update', () => {
+    it('should update priority on existing reminder', async () => {
+      const user = createTestUser();
+
+      const reminderId = uuid();
+      db.prepare(`
+        INSERT INTO reminders (id, user_id, text, datetime, channel, category, completed, created_by, priority)
+        VALUES (?, ?, ?, datetime('now', '+1 hour'), 'push', 'work', 0, 'test', 'normal')
+      `).run(reminderId, user.id, 'Update priority test');
+
+      const response = await request(app)
+        .patch(`/api/reminders/${reminderId}`)
+        .set('Authorization', makeAuthHeader(user.id))
+        .send({ priority: 'high' })
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('id', reminderId);
+      expect(response.body).toHaveProperty('priority', 'high');
+
+      cleanupTestUser(user.id);
+    });
+  });

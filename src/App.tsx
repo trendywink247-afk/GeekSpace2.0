@@ -24,6 +24,13 @@ function App() {
 
   return (
     <BrowserRouter>
+      {/* Skip to main content — accessibility for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-md focus:bg-[#00F0FF] focus:text-[#05050A] focus:font-semibold focus:text-sm focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
       <div className="min-h-screen bg-[#05050A] text-[#F4F6FF]">
         <Routes>
           {/* Public routes */}
