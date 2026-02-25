@@ -28,6 +28,9 @@ import {
   Mail,
   Smartphone,
   Image as ImageIcon,
+  Link,
+  Copy,
+  Check as CheckIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -105,6 +108,31 @@ export function ConnectionsPage() {
   const [emailAddress, setEmailAddress] = useState('');
   const [emailSaving, setEmailSaving] = useState(false);
   const [emailSaved, setEmailSaved] = useState(false);
+
+  // Invite link state (27.3)
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
+
+  const handleGenerateInvite = async () => {
+    setInviteLoading(true);
+    try {
+      const res = await integrationService.createInvite();
+      setInviteUrl(res.data.inviteUrl);
+    } catch { /* ignore */ } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const handleCopyInvite = async () => {
+    if (!inviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setInviteCopied(true);
+      notify('Invite link copied!', 'success');
+      setTimeout(() => setInviteCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
 
   // Run health check for all connected integrations on mount and every 60s
   useEffect(() => {
@@ -332,6 +360,15 @@ export function ConnectionsPage() {
             <Shield className="w-4 h-4 mr-2" />
             End-to-end encrypted
           </Badge>
+          <Button
+            onClick={handleGenerateInvite}
+            disabled={inviteLoading}
+            variant="outline"
+            className="border-[#BF5FFF]/40 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
+          >
+            {inviteLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link className="w-4 h-4 mr-2" />}
+            Invite
+          </Button>
           <Button onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
             <Plus className="w-4 h-4 mr-2" />
             Add New
@@ -394,6 +431,41 @@ export function ConnectionsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Invite Link Card (27.3) */}
+      {inviteUrl && (
+        <Card className="border-[#BF5FFF]/40 relative overflow-hidden">
+          <CardContent className="p-4">
+            <button
+              onClick={() => setInviteUrl(null)}
+              className="absolute top-4 right-4 text-[#6B7280] hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#BF5FFF]/20 flex items-center justify-center">
+                <Link className="w-5 h-5 text-[#BF5FFF]" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-[#E8E8F0]">Invite Link Generated</h3>
+                <p className="text-xs text-[#6B7280]">Valid for 7 days — share with anyone to connect</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-[#06060B] rounded-lg px-3 py-2 text-xs text-[#6B7280] font-mono truncate border border-[#BF5FFF]/20">
+                {inviteUrl}
+              </div>
+              <Button
+                size="sm"
+                onClick={handleCopyInvite}
+                className={inviteCopied ? 'bg-[#00FF88] text-[#0C0C18]' : 'bg-[#BF5FFF] hover:bg-[#A855F7]'}
+              >
+                {inviteCopied ? <CheckIcon className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Telegram Link Wizard */}
       {telegramDialog && (

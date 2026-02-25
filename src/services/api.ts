@@ -329,6 +329,13 @@ export const integrationService = {
   // Health check for a connected integration (24.1)
   testIntegration: (type: string) =>
     api.post<{ healthy: boolean; reason: string; type: string }>(`/integrations/${type}/test`),
+
+  // 27.3: Connection invite links
+  createInvite: (email?: string) =>
+    api.post<{ inviteUrl: string; token: string; expiresAt: number }>('/integrations/invite', { email }),
+
+  listInvites: () =>
+    api.get<{ id: string; token: string; email: string | null; inviteUrl: string; expired: boolean; used: boolean; created_at: number }[]>('/integrations/invites'),
 };
 
 // ----- Reminders ---------------------------------------------

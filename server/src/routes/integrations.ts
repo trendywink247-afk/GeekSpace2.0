@@ -320,3 +320,37 @@ integrationsRouter.post('/:type/test', requireAuth, (req: AuthRequest, res) => {
 
   res.json({ healthy, reason, type });
 });
+
+// ── Phase 27.3: Connection Invite Links ──────────────────────────────────────
+
+integrationsRouter.post('/invite', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { email } = req.body as { email?: string };
+
+  const token = crypto.randomBytes(24).toString('hex');
+  const id = uuid();
+  const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  db.prepare(
+    'INSERT INTO connection_invites (id, user_id, token, email, expires_at) VALUES (?, ?, ?, ?, ?)'
+  ).run(id, userId, token, email ?? null, expiresAt);
+
+  const inviteUrl = `https://ai.geekspace.space/connect/${token}`;
+  res.json({ inviteUrl, token, expiresAt });
+});
+
+integrationsRouter.get('/invites', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const invites = db.prepare(
+    'SELECT id, token, email, expires_at, used_at, created_at FROM connection_invites WHERE user_id = ? ORDER BY created_at DESC LIMIT 20'
+  ).all(userId) as { id: string; token: string; email: string | null; expires_at: number; used_at: number | null; created_at: number }[];
+
+  const result = invites.map((inv) => ({
+    ...inv,
+    inviteUrl: `https://ai.geekspace.space/connect/${inv.token}`,
+    expired: inv.expires_at < Date.now(),
+    used: !!inv.used_at,
+  }));
+
+  res.json(result);
+});

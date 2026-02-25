@@ -245,7 +245,51 @@ portfolioRouter.get('/stats/export', requireAuth, (req: AuthRequest, res) => {
 });
 
 // Public portfolio view - MUST be last as it catches any /:username pattern
+// 27.2: Detect crawlers/bots for social preview meta tags
+function isCrawler(userAgent: string): boolean {
+  return /bot|spider|crawler|slack|discord|telegram|whatsapp|facebook|twitter|linkedinbot|preview|unfurl/i.test(userAgent);
+}
+
 portfolioRouter.get('/:username', async (req, res) => {
+  // 27.2: Return OG HTML for social crawlers instead of JSON
+  const ua = req.headers['user-agent'] || '';
+  if (isCrawler(ua)) {
+    const username = req.params.username;
+    const row = db.prepare(
+      'SELECT p.headline, p.about, p.avatar, u.name FROM portfolios p JOIN users u ON u.id = p.user_id WHERE p.username = ?'
+    ).get(username) as { headline: string; about: string; avatar: string; name: string } | undefined;
+    if (!row) { res.status(404).send('<html><body>Portfolio not found</body></html>'); return; }
+    const title = `${row.name || username} — GeekSpace Portfolio`;
+    const description = row.headline || row.about?.slice(0, 160) || 'View this portfolio on GeekSpace.';
+    const imageUrl = row.avatar && !row.avatar.match(/^[A-Z]{1,2}$/)
+      ? row.avatar
+      : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name || username)}&background=00F0FF&color=05050A&size=256`;
+    const pageUrl = `https://ai.geekspace.space/p/${username}`;
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${title}</title>
+  <meta name="description" content="${description}" />
+  <meta property="og:title" content="${title}" />
+  <meta property="og:description" content="${description}" />
+  <meta property="og:image" content="${imageUrl}" />
+  <meta property="og:url" content="${pageUrl}" />
+  <meta property="og:type" content="profile" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${title}" />
+  <meta name="twitter:description" content="${description}" />
+  <meta name="twitter:image" content="${imageUrl}" />
+</head>
+<body>
+  <h1>${title}</h1>
+  <p>${description}</p>
+</body>
+</html>`);
+    return;
+  }
+
   const cacheKey = `portfolio:${req.params.username}`;
   const cached = await cacheGet(cacheKey);
   if (cached) {
