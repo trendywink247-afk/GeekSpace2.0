@@ -11,6 +11,7 @@ import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
 import { MessageReactions } from './MessageReactions';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Browser SpeechRecognition (Chrome/Edge — not in @types/dom by default)
 declare global {
@@ -676,24 +677,27 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           </div>
         </div>
 
-        {/* Credits progress bar */}
-        {creditsTotal !== null && creditsRemaining !== null && creditsTotal > 0 && (
-          <div
-            className="h-1 w-full bg-[#0A0A12]"
-            title={`${creditsRemaining} of ${creditsTotal} credits remaining`}
-          >
+        {/* Credits progress bar — skeleton while loading, real bar once data arrives (48.3) */}
+        {creditsTotal === null
+          ? <Skeleton className="h-1 w-full rounded-none" />
+          : creditsTotal > 0 && creditsRemaining !== null && (
             <div
-              className={`h-full transition-all duration-500 ${
-                creditsRemaining / creditsTotal > 0.5
-                  ? 'bg-[#00FF88]'
-                  : creditsRemaining / creditsTotal > 0.2
-                  ? 'bg-[#F59E0B]'
-                  : 'bg-[#EF4444]'
-              }`}
-              style={{ width: `${Math.min(100, (creditsRemaining / creditsTotal) * 100)}%` }}
-            />
-          </div>
-        )}
+              className="h-1 w-full bg-[#0A0A12]"
+              title={`${creditsRemaining} of ${creditsTotal} credits remaining`}
+            >
+              <div
+                className={`h-full transition-all duration-500 ${
+                  creditsRemaining / creditsTotal > 0.5
+                    ? 'bg-[#00FF88]'
+                    : creditsRemaining / creditsTotal > 0.2
+                    ? 'bg-[#F59E0B]'
+                    : 'bg-[#EF4444]'
+                }`}
+                style={{ width: `${Math.min(100, (creditsRemaining / creditsTotal) * 100)}%` }}
+              />
+            </div>
+          )
+        }
 
         {/* Rate limit warning — shown when fewer than 10 chat requests remain in the window (33.4, 36.4) */}
         {chatRateLimitRemaining !== null && chatRateLimitRemaining < 10 && (
@@ -755,6 +759,16 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
         {/* Messages */}
         <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 relative">
+          {/* 48.3: Skeleton loading state while greeting initializes */}
+          {messages.length === 0 && (
+            <div className="flex justify-start gap-2">
+              <Skeleton className="w-7 h-7 rounded-full flex-shrink-0 mt-1" />
+              <div className="space-y-2 max-w-[75%]">
+                <Skeleton className="h-4 w-48 rounded-xl" />
+                <Skeleton className="h-4 w-36 rounded-xl" />
+              </div>
+            </div>
+          )}
           {(searchOpen && searchTerm
             ? messages.filter(m => m.content.toLowerCase().includes(searchTerm.toLowerCase()))
             : messages

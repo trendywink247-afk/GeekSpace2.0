@@ -248,7 +248,8 @@ describe('Automations enabled toggle (Phase 44.5)', () => {
       .send({ enabled: false })
       .expect(200);
 
-    expect(res.body.enabled).toBe(0);
+    // 48.1: API now normalizes SQLite 0/1 → boolean; raw DB column still stores integer
+    expect(res.body.enabled).toBe(false);
 
     const row = db.prepare('SELECT enabled FROM automations WHERE id = ?').get(autoId) as { enabled: number };
     expect(row.enabled).toBe(0);
@@ -269,7 +270,8 @@ describe('Automations enabled toggle (Phase 44.5)', () => {
       .send({ enabled: true })
       .expect(200);
 
-    expect(res.body.enabled).toBe(1);
+    // 48.1: API now normalizes SQLite 0/1 → boolean
+    expect(res.body.enabled).toBe(true);
 
     const row = db.prepare('SELECT enabled FROM automations WHERE id = ?').get(autoId) as { enabled: number };
     expect(row.enabled).toBe(1);

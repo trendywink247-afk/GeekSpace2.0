@@ -5,6 +5,7 @@ import { validateBody, portfolioUpdateSchema, portfolioAiEditSchema } from '../m
 import { db } from '../db/index.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { firePortfolioVisitAutomations } from '../services/automations-engine.js';
+import { config } from '../config.js';
 
 export const portfolioRouter = Router();
 
@@ -334,6 +335,17 @@ const contactRateLimit = new Map<string, { count: number; windowStart: number }>
 portfolioRouter.post('/:username/contact', async (req, res) => {
   const { username } = req.params;
   const { senderName, senderEmail, message, honeypot } = req.body as { senderName?: string; senderEmail?: string; message?: string; honeypot?: string };
+
+  // 48.6: Origin validation — reject requests from disallowed origins
+  // Requests with no Origin (e.g., server-side curl) are allowed through.
+  const requestOrigin = req.headers.origin;
+  if (requestOrigin) {
+    const allowedOrigins = config.corsOrigins;
+    if (!allowedOrigins.includes(requestOrigin)) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+  }
 
   // 40.2: Honeypot — bots fill hidden fields; silently accept and discard
   if (honeypot) {

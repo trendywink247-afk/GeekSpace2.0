@@ -394,7 +394,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   // Quick actions wired to navigation
   const quickActions = [
     { label: 'Build a website', icon: Terminal, color: '#BF5FFF', desc: 'AI-generated live page', action: () => onNavigate?.('website-builder') },
-    { label: 'Set reminder', icon: Bell, color: '#00FF88', desc: 'Natural language time', action: () => onNavigate?.('reminders') },
+    { label: 'Set reminder', icon: Bell, color: '#00FF88', desc: 'Natural language time', action: () => onNavigate?.('reminders?openAdd=true') },
     { label: 'Chat with agent', icon: MessageSquare, color: '#00F0FF', desc: 'Ask anything', action: () => onOpenChat?.() },
     { label: 'See all powers', icon: Sparkles, color: '#F59E0B', desc: `20+ capabilities`, action: () => onNavigate?.('capabilities') },
   ];

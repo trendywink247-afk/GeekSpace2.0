@@ -93,7 +93,8 @@ describe('Automations', () => {
         .set('Authorization', user.token)
         .send({ enabled: false });
       expect(res.status).toBe(200);
-      expect(res.body.enabled).toBe(0);
+      // 48.1: API normalizes SQLite 0/1 → boolean
+      expect(res.body.enabled).toBe(false);
     });
 
     it('returns 404 for non-existent automation', async () => {

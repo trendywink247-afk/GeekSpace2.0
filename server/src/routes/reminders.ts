@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
+import { createHash } from 'crypto';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, reminderCreateSchema, reminderUpdateSchema, bulkReminderDeleteSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
+import { logger } from '../logger.js';
 
 export const remindersRouter = Router();
 
@@ -16,6 +18,16 @@ remindersRouter.get('/', requireAuth, (req: AuthRequest, res) => {
     userId: r.user_id,
     picoTaskId: r.pico_task_id,
   }));
+
+  // 48.8: ETag-based conditional GET — avoid re-sending unchanged reminder lists
+  const etag = `"${createHash('sha256').update(JSON.stringify(reminders)).digest('hex').slice(0, 16)}"`;
+  res.set('ETag', etag);
+  res.set('Cache-Control', 'private, no-cache');
+  if (req.headers['if-none-match'] === etag) {
+    res.status(304).end();
+    return;
+  }
+
   res.json(reminders);
 });
 
@@ -29,6 +41,8 @@ remindersRouter.post('/', requireAuth, validateBody(reminderCreateSchema), (req:
     id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', recurrence || null, 'user', scheduledFor, priority || 'normal'
   );
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`).run(uuid(), req.userId, text);
+  // 48.9: Structured lifecycle log
+  logger.info({ event: 'reminder.created', userId: req.userId, reminderId: id, channel: channel || 'push', priority: priority || 'normal' });
 
   const reminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(id);
   res.status(201).json(reminder);
@@ -68,6 +82,8 @@ remindersRouter.post('/:id/complete', requireAuth, (req: AuthRequest, res) => {
 
   // Mark this reminder as completed (with timestamp for streak tracking)
   db.prepare('UPDATE reminders SET completed = 1, completed_at = ? WHERE id = ? AND user_id = ?').run(Date.now(), req.params.id, req.userId!);
+  // 48.9: Structured lifecycle log
+  logger.info({ event: 'reminder.completed', userId: req.userId, reminderId: req.params.id });
 
   // If it has a recurrence, create the next occurrence
   const recurrence = existing.recurrence as string | null | undefined;
@@ -157,6 +173,8 @@ remindersRouter.get('/streak', requireAuth, (req: AuthRequest, res) => {
 remindersRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
   const result = db.prepare('DELETE FROM reminders WHERE id = ? AND user_id = ?').run(req.params.id, req.userId);
   if (result.changes === 0) { res.status(404).json({ error: 'Not found' }); return; }
+  // 48.9: Structured lifecycle log
+  logger.info({ event: 'reminder.deleted', userId: req.userId, reminderId: req.params.id });
   res.json({ success: true });
 });
 
@@ -250,6 +268,8 @@ remindersRouter.post('/:id/snooze', requireAuth, (req: AuthRequest, res) => {
 
   db.prepare(`UPDATE reminders SET datetime = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id = ? AND user_id = ?`).run(newDatetime, req.params.id, req.userId!);
   db.prepare('INSERT INTO snooze_log (id, reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?, ?)').run(uuid(), req.params.id, req.userId!, Date.now(), preset || 'custom', newDatetime);
+  // 48.9: Structured lifecycle log
+  logger.info({ event: 'reminder.snoozed', userId: req.userId, reminderId: req.params.id, preset: preset || 'custom', newDatetime });
 
   res.json({ snoozed: true, newDatetime });
 });
