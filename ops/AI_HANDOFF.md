@@ -1,52 +1,49 @@
-# AI Handoff — Phase 46 Complete
+# AI Handoff — Phase 47 Complete
 
 **Date:** 2026-02-25
-**Branch:** `ai/phase-20260225-phase46` (merged → main)
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/76
-**Merge SHA:** `8409ea6`
-**Status:** All 10 items implemented, 437/437 tests passing, full verification clean
+**Branch:** `ai/phase-20260225-phase47` (merged → main)
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/77
+**Merge SHA:** `4c636868`
+**Status:** All 10 items implemented, 448/448 tests passing, full verification clean
 
 ---
 
-## Phase 46 — What Was Done
+## Phase 47 — What Was Done
 
-### 46.1 Admin Routes Auth Middleware Audit (Reliability)
-- `server/src/routes/admin.ts` — Added auth coverage comment documenting every endpoint's middleware: all routes use `requireAdminToken` or `requireAdminPassword`; `/stream` implements inline token check for EventSource compatibility. No auth gaps found.
-- Test: 4 tests verifying unauthenticated callers receive 401/503 (never 200).
+### 47.1 /api/health Live DB Status Check (Reliability)
+- `server/src/app.ts` — Modified `/api/health` handler to run a live `SELECT 1` DB check on every request, merging the live DB result over the cached probe. Previously DB status was only from a 30s-interval background probe (could be stale).
+- Test: 3 tests verifying health endpoint has `components.database`, returns `'ok'` when DB reachable, returns version.
 
-### 46.2 Webhook Test-Fire URL Validation (Reliability)
-- `server/src/routes/automations.ts` — Added `isValidWebhookUrl()` helper using `new URL()` parser; validates `http:` or `https:` protocol. Returns `400 { message: 'Invalid webhook URL' }` before attempting HTTP request for invalid/non-http URLs.
-- Test: 3 tests covering garbage string, `javascript:` scheme, and missing URL cases.
+### 47.2 Reminder Edit Dialog Priority Pre-fill (Reliability)
+- `src/dashboard/pages/RemindersPage.tsx` — `handleEditClick` now uses an explicit `validPriorities.includes()` check to validate priority from DB before setting form state; handles null/invalid values from old DB rows.
 
-### 46.3 Connections Page Empty State (UX/Mobile)
-- `src/dashboard/pages/ConnectionsPage.tsx` — Added empty state div inside the integration grid when `integrations.length === 0`: centered Plug icon, heading, and instructional copy for Telegram/WhatsApp/webhooks.
+### 47.3 Mobile Nav Active Tab Underline (UX/Mobile)
+- `src/dashboard/DashboardApp.tsx` — Replaced small pill indicator with full-width cyan `h-0.5` bottom border on active tab (standard tab UX pattern).
 
-### 46.4 Settings Page Unsaved Changes Warning (UX/Mobile)
-- `src/dashboard/pages/SettingsPage.tsx` — Added `hasUnsavedChanges` boolean state; profile field `onChange` handlers set it to `true`; `handleSave` resets it to `false` on success. Added amber banner `"You have unsaved changes"` near Save button. Added `beforeunload` event listener guard.
+### 47.4 Chat Message Copy Toast (UX/Mobile)
+- `src/components/AgentChatPanel.tsx` — Added `toast` import from `sonner`; `onCopy` handler now shows `toast.success('Copied!', { duration: 1500 })` on clipboard write.
 
-### 46.5 Automation Run Log Pretty-Print (State-sync)
-- `src/dashboard/pages/AutomationsPage.tsx` — Output cell in the run log table now tries `JSON.parse(output)` and renders `<pre>` with formatted JSON on success; falls back to truncated plain text on parse failure.
+### 47.5 Portfolio Project Edit Preserves Image URL (State-sync)
+- `src/types/index.ts` — Added `imageUrl?: string` to `PortfolioProject` interface.
+- `src/dashboard/pages/PortfolioPage.tsx` — Added `imageUrl: ''` to `emptyProject`; added Image URL input field in edit form — value preserved from existing project.
 
-### 46.6 Portfolio Contact Form Email Validation (Edge-case)
-- `src/portfolio/PortfolioView.tsx` — Added `isValidEmail()` regex validator. Inline error `"Please enter a valid email address"` shown below email input; Submit button disabled when `emailInvalid` is true.
-- `server/src/routes/portfolio.ts` — Added backend email format validation in `POST /:username/contact`; returns `400 { error: 'Invalid email address' }` for malformed email when provided.
-- Test: 4 tests covering invalid format, missing TLD, valid email, and empty email (optional).
+### 47.6 Webhook Payload Validation (Edge-case)
+- `server/src/routes/automations.ts` — `POST /webhook/:id` now validates `req.body` is a plain object (not array/string/null/number); returns `400 { error: 'Webhook payload must be a JSON object' }`.
+- `server/src/middleware/errors.ts` — Fixed error handler to return 400 (not 500) for body-parser `strict` mode errors (errors with `err.status` 4xx). Previously all non-AppError exceptions returned 500.
+- Tests: 3 tests covering array body, string body, and valid object body passes.
 
-### 46.7 X-Frame-Options DENY Explicit (Security)
-- `server/src/app.ts` — Confirmed `helmet({ frameguard: { action: 'deny' } })` was already present (added comment for defence-in-depth alongside CSP `frame-ancestors: none`).
-- `ops/AI_RISK_REGISTER.md` — Updated R11 (CSP unsafe-inline) to "Partially Mitigated"; added R14 (clickjacking) as "Mitigated" with both X-Frame-Options DENY + CSP frame-ancestors:none confirmed.
+### 47.7 /auth/signup Rate Limit (Security)
+- `server/src/app.ts` — Separated signup from the `authLimiter` (which used `skipSuccessfulRequests: true`). Added dedicated `signupLimiter` (5 req/15min, counts ALL requests including successful ones) to prevent account creation spam.
 
-### 46.8 Paginate /activity Default Limit 50→25 (Performance)
-- `server/src/routes/activity.ts` — Changed default `limit` from `50` to `25`.
-- `src/dashboard/pages/ActivityPage.tsx` — Changed `PAGE_SIZE` constant from `50` to `25`.
-- Test: 2 tests verifying ≤25 entries with 30 inserted, and explicit limit param override.
+### 47.8 Response Compression (Performance)
+- `server/src/app.ts` — Added `compression()` middleware (gzip/deflate) applied before body parsing so all responses are compressed.
 
-### 46.9 /api/ready Endpoint (Dev/Ops)
-- `server/src/app.ts` — Added `GET /api/ready` endpoint: runs `SELECT 1` against SQLite; returns `200 { status: 'ready', db: 'ok' }` when DB is reachable, `503 { status: 'not ready', db: 'error', message }` otherwise. Unauthenticated by design for readiness probes.
-- Test: 2 tests verifying 200 response and unauthenticated access.
+### 47.9 /api/version Endpoint with Git SHA (Dev/Ops)
+- `server/src/app.ts` — Enhanced existing `/api/version` endpoint to include `gitSha` (from `GIT_SHA` env var, defaults `'unknown'`) and `env` (`'production'`|`'development'`).
+- `Dockerfile` — Added `ARG GIT_SHA=unknown` + `ENV GIT_SHA=${GIT_SHA}` for build-time injection via `--build-arg GIT_SHA=$(git rev-parse --short HEAD)`.
 
-### 46.10 Verification Gate (Dev/Ops)
-- 437/437 unit tests passing (15 new tests added in `server/src/test/api/phase46.test.ts`)
+### 47.10 Verification Gate (Dev/Ops)
+- 448/448 unit tests passing (11 new tests added in `server/src/test/api/phase47.test.ts`)
 - Frontend: lint clean, typecheck clean, build clean
 - Server: typecheck clean, build clean
 
@@ -56,32 +53,32 @@
 
 | Check | Result |
 |-------|--------|
-| Server unit tests | 437/437 passing (40 test files) |
+| Server unit tests | 448/448 passing (41 test files) |
 | Frontend lint | 0 errors, 2 pre-existing warnings in untouched files |
 | Frontend typecheck | Clean (no errors) |
-| Frontend build | Clean (9.93s) |
+| Frontend build | Clean (9.33s) |
 | Server typecheck | Clean (no errors) |
 | Server build | Clean |
 
 ---
 
 ## Current Test Count
-- **437/437** unit tests passing (up from 422 at Phase 45 baseline)
+- **448/448** unit tests passing (up from 437 at Phase 46 baseline)
 
 ---
 
-## Resume Steps for Phase 47
+## Resume Steps for Phase 48
 
 ```bash
 cd ~/GeekSpace2.0
 git pull origin main
-git worktree add .worktrees/phase-47 -b ai/phase-20260225-phase47
-cd .worktrees/phase-47/server && npm test  # confirm 437/437
-cat ops/AI_PHASE_PLAN.md   # review Phase 47 proposal
+git worktree add .worktrees/phase-48 -b ai/phase-20260225-phase48
+cd .worktrees/phase-48/server && npm test  # confirm 448/448
+cat ops/AI_PHASE_PLAN.md   # review Phase 48 proposal
 ```
 
 ---
 
-## Phase 47 Proposal
+## Phase 48 Proposal
 
-See `ops/AI_PHASE_PLAN.md` for the full 10-item Phase 47 proposal.
+See `ops/AI_PHASE_PLAN.md` for the full 10-item Phase 48 proposal.

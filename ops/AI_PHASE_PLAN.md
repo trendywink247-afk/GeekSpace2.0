@@ -72,18 +72,24 @@ Admin auth audit, webhook URL validation, connections empty state, settings unsa
 
 ---
 
-## Phase 47 — PROPOSED (10 items)
-**Theme:** Reliability fixes, UX polish, performance, security, dev/ops observability
+## Phase 47 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/77 | **Tests:** 448/448
+Health live DB check, reminder priority pre-fill fix, mobile nav underline, chat copy toast, portfolio imageUrl field, webhook non-object rejection + error handler 400 fix, signup rate limit (5/15min), compression middleware, /api/version with gitSha + env
+
+---
+
+## Phase 48 — PROPOSED (10 items)
+**Theme:** Reliability, UX/Mobile, State-sync, Security, Performance, Dev/Ops
 
 | # | Item | Category |
 |---|------|----------|
-| 47.1 | Fix: GET /api/health should include DB status check (not just uptime) | Reliability |
-| 47.2 | Fix: Reminder edit dialog — priority field not pre-filled on open | Reliability |
-| 47.3 | UX: Mobile nav — active tab indicator uses text only; add colored underline | UX/Mobile |
-| 47.4 | UX: Chat message copy shows "Copied!" toast confirmation | UX/Mobile |
-| 47.5 | Fix: Portfolio project edit doesn't preserve existing image URL | State-sync |
-| 47.6 | Fix: Webhook payload validation — reject non-object body gracefully | Edge-case |
-| 47.7 | Security: Add rate limit to /auth/register to prevent account spam (5 req/15min) | Security |
-| 47.8 | Perf: Add response compression (compression middleware) to Express | Performance |
-| 47.9 | Dev/Ops: Add /api/version endpoint returning app version + git SHA | Dev/Ops |
-| 47.10 | Phase 47 tests + verification + PR/merge | Dev/Ops |
+| 48.1 | Fix: Automations page — enabled toggle state not synced on reload | Reliability |
+| 48.2 | Fix: Portfolio milestones missing from public page when portfolio is loaded via cache | Reliability |
+| 48.3 | UX: Add skeleton loading state to AgentChatPanel (while chat history loads) | UX/Mobile |
+| 48.4 | UX: Reminder quick-add from Overview page — directly opens RemindersPage add dialog | UX/Mobile |
+| 48.5 | Fix: Activity log timestamps show UTC instead of user's local time | State-sync |
+| 48.6 | Fix: Portfolio public page contact form — missing CSRF-equivalent nonce validation | Edge-case |
+| 48.7 | Security: Content-Security-Policy nonce support for inline scripts (harden CSP) | Security |
+| 48.8 | Perf: Add Redis caching for GET /api/reminders (5min TTL, invalidate on write) | Performance |
+| 48.9 | Dev/Ops: Add structured log for every reminder scheduled/completed/snoozed | Dev/Ops |
+| 48.10 | Phase 48 tests + verification + PR/merge | Dev/Ops |
