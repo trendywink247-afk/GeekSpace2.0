@@ -71,6 +71,13 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+    // Propagate requestId from response headers (33.5)
+    if (err.response?.headers) {
+      const reqId = err.response.headers['x-request-id'] ?? err.response.data?.requestId;
+      if (reqId && err.response.data && typeof err.response.data === 'object') {
+        err.response.data.requestId = reqId;
+      }
+    }
     return Promise.reject(err);
   },
 );
@@ -224,6 +231,9 @@ export const agentService = {
       trend: 'up' | 'down' | 'neutral';
       hasEnoughData: boolean;
     }>('/agent/quality'),
+
+  getRateLimitStatus: () =>
+    api.get<{ remaining: number; limit: number; resetAt: string; windowMinutes: number }>('/agent/rate-limit-status'),
 };
 
 // ----- Version -----------------------------------------------

@@ -176,8 +176,21 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     localStorage.setItem('gs_onboarding_dismissed', 'true');
   };
 
+  // Telegram connect banner state (33.3)
+  const [telegramBannerDismissed, setTelegramBannerDismissed] = useState(() =>
+    localStorage.getItem('gs_telegram_banner_dismissed') === 'true'
+  );
+  const dismissTelegramBanner = () => {
+    setTelegramBannerDismissed(true);
+    localStorage.setItem('gs_telegram_banner_dismissed', 'true');
+  };
+
   const user = useAuthStore((s) => s.user);
   const { stats, integrations, agent, reminders, chartData, hourlyData } = useDashboardStore();
+
+  // Detect Telegram connection for banner (33.3)
+  const isTelegramConnected = integrations.some(i => i.type === 'telegram' && i.status === 'connected');
+  const showTelegramBanner = !telegramBannerDismissed && !isTelegramConnected;
 
   // Map real chart data to weekly format (use API data if available, else fallback)
   const weeklyChartData = chartData.length > 0
@@ -467,6 +480,38 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Telegram Connect Banner (33.3) ─── */}
+      {showTelegramBanner && (
+        <div
+          className="rounded-2xl border flex items-center gap-4 px-4 py-3"
+          style={{ background: 'rgba(0,136,204,0.06)', borderColor: 'rgba(0,136,204,0.25)' }}
+        >
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,136,204,0.15)' }}>
+            <MessageSquare className="w-4 h-4 text-[#0088cc]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#E8E8F0]">Get reminders on Telegram</p>
+            <p className="text-xs text-[#6B7280] mt-0.5">Connect Telegram to receive reminders and agent alerts directly in your chat.</p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              size="sm"
+              onClick={() => onNavigate?.('connections')}
+              className="bg-[#0088cc] hover:bg-[#0077b3] text-white text-xs h-8 px-3"
+            >
+              Connect
+            </Button>
+            <button
+              onClick={dismissTelegramBanner}
+              className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors"
+              aria-label="Dismiss banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}

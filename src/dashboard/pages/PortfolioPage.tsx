@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Save, Plus, Trash2, X, ExternalLink, Sparkles, Loader2,
   User, Code2, FolderGit2, Award, Share2, Bot, Wand2, Lightbulb, CheckCircle2,
-  BarChart3, Eye, TrendingUp, Copy, Link, Download
+  BarChart3, Eye, TrendingUp, Copy, Link, Download, GripVertical
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -88,6 +88,9 @@ export function PortfolioPage() {
   const [generatingField, setGeneratingField] = useState<string | null>(null);
   const [generatedPreview, setGeneratedPreview] = useState<string | null>(null);
   const [generateTarget, setGenerateTarget] = useState<{ field: string; setter: (val: string) => void } | null>(null);
+
+  // Drag-to-reorder state (33.2)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   // Suggestions state
   const [suggestions, setSuggestions] = useState<Array<{
@@ -861,19 +864,37 @@ export function PortfolioPage() {
               )}
 
               {projects.map((project, idx) => (
-                <div key={idx} className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 group hover:border-[#00F0FF]/40 transition-all press-scale w-full">
+                <div
+                  key={idx}
+                  draggable={true}
+                  onDragStart={() => setDraggedIndex(idx)}
+                  onDragOver={(e) => { e.preventDefault(); }}
+                  onDrop={() => {
+                    if (draggedIndex === null || draggedIndex === idx) return;
+                    const reordered = [...projects];
+                    const [moved] = reordered.splice(draggedIndex, 1);
+                    reordered.splice(idx, 0, moved);
+                    setProjects(reordered);
+                    setDraggedIndex(null);
+                  }}
+                  onDragEnd={() => setDraggedIndex(null)}
+                  className={`p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 group hover:border-[#00F0FF]/40 transition-all press-scale w-full cursor-grab active:cursor-grabbing ${draggedIndex === idx ? 'opacity-50' : ''}`}
+                >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-[#E8E8F0]">{project.name}</h3>
-                      {project.description && <p className="text-sm text-[#6B7280] mt-1">{project.description}</p>}
-                      {project.url && <p className="text-xs text-[#00F0FF] mt-1 truncate">{project.url}</p>}
-                      {(project.tags || []).length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {project.tags!.map((tag) => (
-                            <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#0C0C18] text-[#6B7280]">{tag}</span>
-                          ))}
-                        </div>
-                      )}
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                      <GripVertical className="w-4 h-4 text-[#6B7280]/40 mt-0.5 flex-shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-[#E8E8F0]">{project.name}</h3>
+                        {project.description && <p className="text-sm text-[#6B7280] mt-1">{project.description}</p>}
+                        {project.url && <p className="text-xs text-[#00F0FF] mt-1 truncate">{project.url}</p>}
+                        {(project.tags || []).length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {project.tags!.map((tag) => (
+                              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#0C0C18] text-[#6B7280]">{tag}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
                       <Button
