@@ -46,6 +46,17 @@ export function SettingsPage() {
 
   useEffect(() => {
     versionService.get().then(({ data }) => setAppVersion(data.version)).catch(() => {});
+    // 38.2: Load real notif preferences from server on mount
+    agentService.getConfig().then(({ data }) => {
+      const cfg = data as unknown as Record<string, number>;
+      setAgentNotifs({
+        notif_reminders: cfg.notif_reminders ?? 1,
+        notif_escalations: cfg.notif_escalations ?? 1,
+        notif_agents: cfg.notif_agents ?? 1,
+        notif_daily_briefing: cfg.notif_daily_briefing ?? 1,
+        notif_connections: cfg.notif_connections ?? 1,
+      });
+    }).catch(() => {});
   }, []);
   const setUser = useAuthStore((s) => s.setUser);
   const compactMode = useAuthStore((s) => s.compactMode);

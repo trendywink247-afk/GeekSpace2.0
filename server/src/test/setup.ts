@@ -61,6 +61,9 @@ export function resetDatabase(): void {
       'api_keys',
       'automations',
       'dev_audit_log',
+      'snooze_log',
+      'portfolio_contacts',
+      'webhook_dead_letters',
       'users',
     ];
 

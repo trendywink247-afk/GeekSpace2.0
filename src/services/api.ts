@@ -377,9 +377,21 @@ export const reminderService = {
 
   getSnoozeHistory: (id: string) =>
     api.get<{ history: Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }> }>(`/reminders/${id}/snooze-history`),
+
+  // 38.3: CSV export — returns raw CSV text (authenticated via Axios interceptor)
+  exportCsv: (status: 'all' | 'active' | 'completed' = 'all') =>
+    api.get<string>(`/reminders/export.csv?status=${status}`),
 };
 
 // ----- Portfolio ---------------------------------------------
+
+export type PortfolioContact = {
+  id: string;
+  sender_name: string;
+  sender_email: string | null;
+  message: string;
+  created_at: string;
+};
 
 export const portfolioService = {
   get: () => api.get<Portfolio>('/portfolio/me'),
@@ -460,7 +472,7 @@ export const portfolioService = {
 
   // 37.1: Get contact messages (authenticated, owner only)
   getContacts: () =>
-    api.get<Array<{ id: string; sender_name: string; sender_email: string | null; message: string; created_at: string }>>('/portfolio/contacts'),
+    api.get<PortfolioContact[]>('/portfolio/contacts'),
 };
 
 // ----- Activity Stats ----------------------------------------
