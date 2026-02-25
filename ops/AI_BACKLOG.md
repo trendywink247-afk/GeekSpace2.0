@@ -49,3 +49,8 @@ _(none currently — all P0 items resolved in Phase 1/2)_
 - [x] **Phase 7** — Build info in /api/health REST response (version, nodeVersion, platform)
 - [x] **Phase 7** — Chat history search in AgentChatPanel (toggle + filter + X-results indicator)
 - [x] **Phase 7** — Backend search: getRecentConversations accepts search? param
+- [x] **Phase 8** — Chat error recovery + retry button (retryContent in ChatMessage, RotateCcw button)
+- [x] **Phase 8** — Credits remaining display in regular chat header
+- [x] **Phase 8** — Conversation export: GET /conversations/export + download button in chat UI
+- [x] **Phase 8** — WhatsApp old endpoint deprecation log + X-Deprecated header
+- [x] **Phase 8** — Message reactions persistence (message_reactions table + API + frontend wired)
