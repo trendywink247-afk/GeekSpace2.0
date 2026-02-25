@@ -164,4 +164,72 @@ describe('Billing', () => {
       expect(res.body.error).toMatch(/free plan/i);
     });
   });
+
+  // ---- Billing Events (Phase 19) ----
+
+  describe('GET /api/billing/events', () => {
+    it('requires authentication', async () => {
+      const res = await request(app).get('/api/billing/events');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns an array', async () => {
+      const res = await request(app)
+        .get('/api/billing/events')
+        .set('Authorization', user.token);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('returns empty array for new user with no usage', async () => {
+      const freshUser = createTestUser('events-new@test.com');
+      const res = await request(app)
+        .get('/api/billing/events')
+        .set('Authorization', makeAuthHeader(freshUser.id));
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('each event has expected shape when data exists', async () => {
+      // Insert a synthetic usage event for the main user
+      db.prepare(`
+        INSERT OR IGNORE INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `).run('test-event-shape-001', user.id, 'ollama', 'llama3.1:8b', 100, 50, 0.001, 'web', null);
+
+      const res = await request(app)
+        .get('/api/billing/events')
+        .set('Authorization', user.token);
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThan(0);
+
+      const event = res.body[0];
+      expect(event).toHaveProperty('id');
+      expect(event).toHaveProperty('provider');
+      expect(event).toHaveProperty('model');
+      expect(event).toHaveProperty('tokens_in');
+      expect(event).toHaveProperty('tokens_out');
+      expect(event).toHaveProperty('cost_usd');
+      expect(event).toHaveProperty('channel');
+      expect(event).toHaveProperty('created_at');
+    });
+
+    it('returns at most 20 events', async () => {
+      // Insert 25 events
+      const insertMany = db.prepare(`
+        INSERT OR IGNORE INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `);
+      for (let i = 0; i < 25; i++) {
+        insertMany.run(`bulk-event-${i}`, user.id, 'ollama', 'llama3.1:8b', 10, 5, 0.0001, 'web', null);
+      }
+
+      const res = await request(app)
+        .get('/api/billing/events')
+        .set('Authorization', user.token);
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeLessThanOrEqual(20);
+    });
+  });
+
 });

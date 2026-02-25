@@ -154,17 +154,30 @@ healthRouter.get('/stream', (req: Request, res: Response) => {
     };
   }
 
+  // Delta fingerprint excludes timestamp/cacheAgeMs which change every tick
+  // even when nothing meaningful has changed — prevents defeating the delta check
+  function fingerprint(p: ReturnType<typeof buildPayload>): string {
+    return JSON.stringify({ components: p.components, metrics: p.metrics, system: p.system, topEndpoints: p.topEndpoints });
+  }
+
   // Send first snapshot immediately (served from cache — instant)
+  let lastFingerprint = '';
   try {
-    res.write(`data: ${JSON.stringify(buildPayload())}\n\n`);
+    const p = buildPayload();
+    res.write(`data: ${JSON.stringify(p)}\n\n`);
+    lastFingerprint = fingerprint(p);
   } catch (err) {
     logger.error({ err }, 'SSE health stream initial push error');
   }
 
-  // Push cached snapshot every 15 seconds (no probing — just read cache)
+  // Push cached snapshot every 15 seconds — skip write if nothing meaningful changed
   const interval = setInterval(() => {
     try {
-      res.write(`data: ${JSON.stringify(buildPayload())}\n\n`);
+      const p = buildPayload();
+      const fp = fingerprint(p);
+      if (fp === lastFingerprint) return; // no meaningful change — save bandwidth
+      res.write(`data: ${JSON.stringify(p)}\n\n`);
+      lastFingerprint = fp;
     } catch (err) {
       logger.error({ err }, 'SSE health stream error');
     }

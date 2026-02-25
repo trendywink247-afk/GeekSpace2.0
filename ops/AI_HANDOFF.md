@@ -1,68 +1,60 @@
-# AI Handoff — GeekSpace 2.0
+# AI Handoff — Phase 30 In Progress
 
-> Last updated: 2026-02-24
-> Resume from here in next session.
+**Date:** 2026-02-25
+**Branch:** `ai/phase-20260225-phase30-notifications-export-reliability`
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/59
+**Status:** All 5 items implemented, 277/277 tests passing, builds clean; CI in progress
 
-## Current State
+---
 
-**Branch:** `ai/phase-20260224-reliability-onboarding`
-**Worktree:** `/root/GeekSpace2.0/.worktrees/phase-1`
-**Phase:** 1 — Reliability + Image Gen + Connections Polish
-**Status:** 🔄 In Progress — implementing items
+## Phase 30 — What Was Done
 
-## Baseline
+### 30.1 Notification Preference Center
+- `src/dashboard/pages/SettingsPage.tsx` — Added "Reminder Notifications" toggle surfacing hidden `notification_reminders` DB column
+- Added `reminderNotifs` to `notifications` state, `notificationFieldMap: reminderNotifs: 'reminders'`
 
-- Unit tests: 113/113 passing ✅
-- Last commit on main: `6709dd8 fix(ci): restore Cpu import`
-- Worktree created from main HEAD
+### 30.2 Export Chat as Markdown
+- `server/src/routes/agent.ts` — `GET /conversations/export?format=md` returns `text/markdown` with role headers
+- `src/services/api.ts` — `memoryService.getConversationsMarkdownExport()` method
+- `src/dashboard/pages/SettingsPage.tsx` — "Export as Markdown" button + `isExportingMarkdown` state + `handleExportMarkdown` handler
 
-## Items Status
+### 30.3 DB Index for Reminders by Datetime
+- `server/src/db/index.ts` — `idx_reminders_datetime ON reminders(user_id, datetime)` (idempotent CREATE INDEX IF NOT EXISTS)
 
-| # | Item | Status |
-|---|------|--------|
-| 1 | Action button spamming fix | ✅ Done |
-| 2 | Connections tab polish | ✅ Done |
-| 3 | Server startup hardening | ✅ Done |
-| 4 | Image generation (Pollinations.AI) | ✅ Done |
-| 5 | SSE limit + health logging | ✅ Done |
+### 30.4 Snooze History UI
+- `server/src/db/index.ts` — `ALTER TABLE reminders ADD COLUMN snooze_count INTEGER DEFAULT 0`
+- `server/src/routes/reminders.ts` — bulk-snooze increments via `COALESCE(snooze_count, 0) + 1`
+- `src/types/index.ts` — `snoozeCount?: number` added to `Reminder` interface
+- `src/dashboard/pages/RemindersPage.tsx` — "Snoozed N×" amber badge when `snoozeCount > 0`
 
-## Phase 1 Complete ✅
+### 30.5 E2E Test for /connect/:token
+- `e2e/connect.spec.ts` — 2 tests: invalid token shows "Invalid Invite" error; public route doesn't redirect to `/login`
+- `src/pages/ConnectPage.tsx` — Added `data-testid="connect-page"` to root div
 
-**Commit:** `45c2f02`
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/29 (draft)
-**Tests:** 113/113 passing
-**Lint/Typecheck/Build:** All green
+### Unit Tests (+6)
+- `server/src/test/api/phase30.test.ts` — markdown export (3 tests) + snooze_count (2 tests) + datetime sort (1 test)
 
-## Files Changed
+---
 
-- `CLAUDE.md` — merged with autonomous ops framework
-- `ops/` — all 9 files created (5 docs + 4 scripts)
-- `server/src/services/message-router.ts` — action dedup + image URL handling
-- `server/src/services/action-executor.ts` — imageUrl field added to ActionResult
-- `server/src/prompts/openclaw-system.ts` — generate_image documented in prompts
-- `server/src/routes/health.ts` — SSE limit 5→25, probe timing logged
-- `server/src/index.ts` — graceful shutdown timeout, safeStart(), cluster logging
-- `src/dashboard/pages/ConnectionsPage.tsx` — per-integration state, exp backoff
+## Verification Evidence
+- Tests: 277 passing (was 271, +6)
+- `npx tsc --noEmit` — clean (frontend + server)
+- `npm run build` — clean (frontend + server)
+- `npm run lint` — 0 errors on changed files
 
-## Resume Steps for Phase 2
+---
 
-```bash
-cd ~/GeekSpace2.0/.worktrees/phase-1   # or create new worktree
-git log --oneline -5
-cd server && npm test                   # should be 113/113
-cat ops/AI_PHASE_PLAN.md               # read phase 2 plan
-```
+## Resume Steps (Next Phase)
+1. Monitor PR #59 CI — if all green, merge
+2. `cd ~/GeekSpace2.0 && git reset --hard origin/main && git pull origin main`
+3. Check `ops/AI_BACKLOG.md` for next priority items
+4. Create new worktree: `git worktree add .worktrees/phase-31 -b ai/phase-YYYYMMDD-topic`
 
-## Open Issues / Decisions
+---
 
-- WhatsApp sending is a no-op stub — needs WA Business API keys
-- Two WhatsApp linking flows exist (legacy + QR) — consolidate in Phase 2
-- Phase 1 PR needs review + merge to main before prod push
-
-## Phase 2 Proposal (preliminary)
-
-1. Image generation: voice-to-image (speak prompt → generate image)
-2. WhatsApp stub implementation OR clear "coming soon" state in UI
-3. Stale channel link cleanup (90-day TTL cron)
-4. Onboarding improvements (step progress, escape hatch)
-5. Video generation via Pollinations.AI
+## Suggested Phase 31 Items
+- E2E stability: add `data-testid` to more interactive elements (forms, dialogs)
+- Push notification preference per-channel matrix (email × type toggles)
+- Reminder recurrence editor (edit recurring pattern in-place)
+- Chat search UX improvements (highlight matches, sticky search bar)
+- Admin dashboard: export users CSV + activity summary

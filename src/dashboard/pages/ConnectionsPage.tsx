@@ -28,6 +28,9 @@ import {
   Mail,
   Smartphone,
   Image as ImageIcon,
+  Link,
+  Copy,
+  Check as CheckIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -38,6 +41,7 @@ import { useDashboardStore } from '@/stores/dashboardStore';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { integrationService } from '@/services/api';
 import type { IntegrationType } from '@/types';
+import { notify } from '@/services/notifications';
 
 const iconMap: Record<string, typeof MessageSquare> = {
   telegram: Send,
@@ -70,7 +74,7 @@ type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting'
 type WhatsAppStep = 'idle' | 'generating' | 'show-qr' | 'waiting' | 'success' | 'error';
 
 export function ConnectionsPage() {
-  const { integrations, connectIntegration, disconnectIntegration, loadDashboard } = useDashboardStore();
+  const { integrations, connectIntegration, disconnectIntegration, loadIntegrations } = useDashboardStore();
   const isMobile = useMobileDetect();
 
   // Per-integration connecting state — avoids blocking ALL buttons when one is connecting
@@ -96,11 +100,71 @@ export function ConnectionsPage() {
   const [whatsappPolling, setWhatsappPolling] = useState(false);
   const [whatsappPollAttempts, setWhatsappPollAttempts] = useState(0);
 
+  // Health poll state (24.1) — keyed by integration type
+  const [healthStatus, setHealthStatus] = useState<Record<string, 'healthy' | 'unhealthy' | 'checking'>>({});
+
   // Email dialog state
   const [emailDialog, setEmailDialog] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
   const [emailSaving, setEmailSaving] = useState(false);
   const [emailSaved, setEmailSaved] = useState(false);
+
+  // Invite link state (27.3)
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
+
+  const handleGenerateInvite = async () => {
+    setInviteLoading(true);
+    try {
+      const res = await integrationService.createInvite();
+      setInviteUrl(res.data.inviteUrl);
+    } catch { /* ignore */ } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const handleCopyInvite = async () => {
+    if (!inviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setInviteCopied(true);
+      notify('Invite link copied!', 'success');
+      setTimeout(() => setInviteCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
+
+  // Run health check for all connected integrations on mount and every 60s
+  useEffect(() => {
+    const runHealthChecks = async () => {
+      const connected = integrations.filter(c => c.status === 'connected');
+      if (connected.length === 0) return;
+      setHealthStatus(prev => {
+        const next = { ...prev };
+        for (const c of connected) next[c.type] = 'checking';
+        return next;
+      });
+      const results = await Promise.allSettled(
+        connected.map(c => integrationService.testIntegration(c.type))
+      );
+      setHealthStatus(prev => {
+        const next = { ...prev };
+        results.forEach((r, i) => {
+          const type = connected[i].type;
+          if (r.status === 'fulfilled') {
+            next[type] = r.value.data.healthy ? 'healthy' : 'unhealthy';
+          } else {
+            next[type] = 'unhealthy';
+          }
+        });
+        return next;
+      });
+    };
+
+    runHealthChecks();
+    const interval = setInterval(runHealthChecks, 60_000);
+    return () => clearInterval(interval);
+  }, [integrations]);
 
   const connectedCount = integrations.filter(c => c.status === 'connected').length;
   const totalRequests = integrations.reduce((acc, c) => acc + c.requestsToday, 0);
@@ -160,6 +224,7 @@ export function ConnectionsPage() {
       await integrationService.updateNotificationEmail({ enabled: true, address: emailAddress || undefined });
       await connectIntegration('email');
       setEmailSaved(true);
+      notify('Email notifications enabled!', 'success');
     } catch { /* ignore */ } finally {
       setEmailSaving(false);
     }
@@ -213,6 +278,7 @@ export function ConnectionsPage() {
         return;
       }
       await connectIntegration(type);
+      notify(`${type.charAt(0).toUpperCase() + type.slice(1)} connected!`, 'success');
     } finally {
       setConnectingId(null);
     }
@@ -223,9 +289,14 @@ export function ConnectionsPage() {
     if (integration?.type === 'email') {
       await integrationService.updateNotificationEmail({ enabled: false });
     }
+    if (integration?.type === 'telegram') {
+      // Must delete channel_links row so reconnect starts fresh (not showing "already linked")
+      try { await integrationService.unlinkTelegram(); } catch { /* ignore if not linked */ }
+    }
     if (integration?.type === 'whatsapp') {
       await integrationService.unlinkWhatsApp();
     }
+    notify(`${integration?.name || 'Integration'} disconnected`, 'info');
     disconnectIntegration(id);
   };
 
@@ -237,7 +308,7 @@ export function ConnectionsPage() {
     setTelegramPollAttempts(0);
     setConnectingId(null);
     // Only reload integrations, not the full dashboard
-    loadDashboard();
+    loadIntegrations();
   };
 
   const closeWhatsAppDialog = () => {
@@ -248,7 +319,7 @@ export function ConnectionsPage() {
     setWhatsappPolling(false);
     setWhatsappPollAttempts(0);
     setConnectingId(null);
-    loadDashboard();
+    loadIntegrations();
   };
 
   const getStatusIcon = (status: string) => {
@@ -289,6 +360,15 @@ export function ConnectionsPage() {
             <Shield className="w-4 h-4 mr-2" />
             End-to-end encrypted
           </Badge>
+          <Button
+            onClick={handleGenerateInvite}
+            disabled={inviteLoading}
+            variant="outline"
+            className="border-[#BF5FFF]/40 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
+          >
+            {inviteLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link className="w-4 h-4 mr-2" />}
+            Invite
+          </Button>
           <Button onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
             <Plus className="w-4 h-4 mr-2" />
             Add New
@@ -351,6 +431,41 @@ export function ConnectionsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Invite Link Card (27.3) */}
+      {inviteUrl && (
+        <Card className="border-[#BF5FFF]/40 relative overflow-hidden">
+          <CardContent className="p-4">
+            <button
+              onClick={() => setInviteUrl(null)}
+              className="absolute top-4 right-4 text-[#6B7280] hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#BF5FFF]/20 flex items-center justify-center">
+                <Link className="w-5 h-5 text-[#BF5FFF]" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-[#E8E8F0]">Invite Link Generated</h3>
+                <p className="text-xs text-[#6B7280]">Valid for 7 days — share with anyone to connect</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-[#06060B] rounded-lg px-3 py-2 text-xs text-[#6B7280] font-mono truncate border border-[#BF5FFF]/20">
+                {inviteUrl}
+              </div>
+              <Button
+                size="sm"
+                onClick={handleCopyInvite}
+                className={inviteCopied ? 'bg-[#00FF88] text-[#0C0C18]' : 'bg-[#BF5FFF] hover:bg-[#A855F7]'}
+              >
+                {inviteCopied ? <CheckIcon className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Telegram Link Wizard */}
       {telegramDialog && (
@@ -549,6 +664,24 @@ export function ConnectionsPage() {
                         <span className={`text-xs ${getStatusColor(connection.status)} capitalize`}>
                           {connection.status}
                         </span>
+                        {connection.status === 'connected' && healthStatus[connection.type] && (
+                          <span
+                            className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${
+                              healthStatus[connection.type] === 'healthy'
+                                ? 'bg-[#00FF88]'
+                                : healthStatus[connection.type] === 'checking'
+                                ? 'bg-[#F59E0B] animate-pulse'
+                                : 'bg-[#FF6161]'
+                            }`}
+                            title={
+                              healthStatus[connection.type] === 'healthy'
+                                ? 'Integration is healthy'
+                                : healthStatus[connection.type] === 'checking'
+                                ? 'Checking health...'
+                                : 'Integration may have issues'
+                            }
+                          />
+                        )}
                       </div>
                     </div>
                   </div>

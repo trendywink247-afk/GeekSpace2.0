@@ -575,3 +575,28 @@ html, body {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ─── Compact Mode ─── */
+/* Applied via .gs-compact class on dashboard root when compactMode is enabled */
+.gs-compact .card,
+.gs-compact [class*="CardContent"] {
+  padding: 0.75rem !important;
+}
+.gs-compact .space-y-6 > * + * {
+  margin-top: 0.75rem !important;
+}
+.gs-compact .space-y-4 > * + * {
+  margin-top: 0.5rem !important;
+}
+.gs-compact .p-6 {
+  padding: 0.75rem !important;
+}
+.gs-compact .p-4 {
+  padding: 0.5rem !important;
+}
+.gs-compact .gap-6 {
+  gap: 0.75rem !important;
+}
+.gs-compact .gap-4 {
+  gap: 0.5rem !important;
+}

@@ -8,7 +8,7 @@ import { PageProgress } from '@/components/ui/page-progress';
 import { MobileTable } from '@/components/ui/mobile-table';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { billingService } from '@/services/api';
-import type { Subscription, PlanDefinition, DailyUsage } from '@/types';
+import type { Subscription, PlanDefinition, DailyUsage, UsageEvent } from '@/types';
 
 // Plan display metadata for sale styling
 const PLAN_DISPLAY: Record<string, { oldPrice: number; badge: string; badgeColor?: string; agentSlots: number; tokenBudget: string; hasKimi: boolean }> = {
@@ -39,6 +39,7 @@ export function BillingPage() {
   const [currency, setCurrency] = useState<'USD' | 'INR'>('USD');
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState<string | null>(null);
+  const [events, setEvents] = useState<UsageEvent[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
@@ -46,10 +47,12 @@ export function BillingPage() {
       billingService.getPlan().then(r => r.data),
       billingService.getPlans().then(r => r.data),
       billingService.getUsage().then(r => r.data),
-    ]).then(([sub, planList, usageData]) => {
+      billingService.getEvents().then(r => r.data).catch(() => [] as UsageEvent[]),
+    ]).then(([sub, planList, usageData, eventsData]) => {
       setSubscription(sub);
       setPlans(planList);
       setUsage(usageData);
+      setEvents(eventsData as UsageEvent[]);
       if (sub.currency === 'INR') setCurrency('INR');
     }).catch(() => {
       setToast({ message: 'Failed to load billing data', type: 'error' });
@@ -254,7 +257,7 @@ export function BillingPage() {
         {isMobile ? (
           <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4">
             {plans.map((plan) => {
-              const isCurrent = subscription?.plan === plan.id;
+              const isCurrent = subscription?.plan?.toLowerCase() === plan.id?.toLowerCase();
               const isFree = plan.priceUsd === 0;
               const display = PLAN_DISPLAY[plan.id] || { oldPrice: 0, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false };
               return (
@@ -267,7 +270,7 @@ export function BillingPage() {
                     } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
                   >
                     {/* Badge */}
-                    {display.badge && (
+                    {display.badge && !isCurrent && (
                       <div
                         className="absolute top-0 right-0 px-3 py-1 text-xs font-bold rounded-bl-lg"
                         style={{
@@ -278,6 +281,18 @@ export function BillingPage() {
                         }}
                       >
                         {display.badge}
+                      </div>
+                    )}
+                    {isCurrent && (
+                      <div
+                        className="absolute top-0 left-0 right-0 px-3 py-1 text-xs font-bold text-center"
+                        style={{
+                          backgroundColor: 'rgba(0,240,255,0.15)',
+                          color: '#00F0FF',
+                          borderBottom: '1px solid rgba(0,240,255,0.3)',
+                        }}
+                      >
+                        Your Current Plan
                       </div>
                     )}
                     <CardHeader className="pb-3 pt-6">
@@ -363,7 +378,7 @@ export function BillingPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {plans.map((plan) => {
-              const isCurrent = subscription?.plan === plan.id;
+              const isCurrent = subscription?.plan?.toLowerCase() === plan.id?.toLowerCase();
               const isFree = plan.priceUsd === 0;
               const display = PLAN_DISPLAY[plan.id] || { oldPrice: 0, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false };
               return (
@@ -376,7 +391,7 @@ export function BillingPage() {
                   } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
                 >
                   {/* Badge */}
-                  {display.badge && (
+                  {display.badge && !isCurrent && (
                     <div
                       className="absolute top-0 right-0 px-3 py-1 text-xs font-bold rounded-bl-lg"
                       style={{
@@ -387,6 +402,18 @@ export function BillingPage() {
                       }}
                     >
                       {display.badge}
+                    </div>
+                  )}
+                  {isCurrent && (
+                    <div
+                      className="absolute top-0 left-0 right-0 px-3 py-1 text-xs font-bold text-center"
+                      style={{
+                        backgroundColor: 'rgba(0,240,255,0.15)',
+                        color: '#00F0FF',
+                        borderBottom: '1px solid rgba(0,240,255,0.3)',
+                      }}
+                    >
+                      Your Current Plan
                     </div>
                   )}
                   <CardHeader className="pb-3 pt-6">
@@ -601,6 +628,72 @@ export function BillingPage() {
               data={usage}
               keyExtractor={(row) => row.day}
               emptyMessage="No usage data yet"
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Credit History — per-event detail */}
+      <Card className="border-[#00F0FF]/20">
+        <CardHeader>
+          <CardTitle className="text-[#E8E8F0]">Credit History</CardTitle>
+          <p className="text-sm text-[#6B7280]">Last 20 AI requests with cost breakdown</p>
+        </CardHeader>
+        <CardContent>
+          {events.length === 0 ? (
+            <div className="text-center py-8">
+              <Zap className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
+              <p className="text-[#6B7280]">No credit events yet</p>
+              <p className="text-sm text-[#6B7280]">Credit usage will appear here after your first AI request</p>
+            </div>
+          ) : (
+            <MobileTable<UsageEvent>
+              columns={[
+                {
+                  key: 'created_at',
+                  label: 'Date',
+                  primary: true,
+                  render: (row) => (
+                    <span className="text-[#E8E8F0] text-xs whitespace-nowrap">
+                      {formatDate((row as unknown as Record<string, string>).created_at || row.createdAt)}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'channel',
+                  label: 'Channel',
+                  render: (row) => <span className="text-[#6B7280] capitalize">{row.channel || '—'}</span>,
+                },
+                {
+                  key: 'model',
+                  label: 'Model',
+                  render: (row) => (
+                    <span className="text-[#6B7280] font-mono text-xs truncate max-w-[100px] block">
+                      {row.model || row.provider || '—'}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'tokens_in',
+                  label: 'Tokens',
+                  render: (row) => {
+                    const tokensIn = (row as unknown as Record<string, number>).tokens_in ?? row.tokensIn ?? 0;
+                    const tokensOut = (row as unknown as Record<string, number>).tokens_out ?? row.tokensOut ?? 0;
+                    return <span className="text-[#6B7280] font-mono">{(tokensIn + tokensOut).toLocaleString()}</span>;
+                  },
+                },
+                {
+                  key: 'cost_usd',
+                  label: 'Cost',
+                  render: (row) => {
+                    const cost = (row as unknown as Record<string, number>).cost_usd ?? row.costUSD ?? 0;
+                    return <span className="text-[#E8E8F0] font-mono">${cost.toFixed(4)}</span>;
+                  },
+                },
+              ]}
+              data={events}
+              keyExtractor={(row) => row.id}
+              emptyMessage="No credit events yet"
             />
           )}
         </CardContent>

@@ -10,6 +10,7 @@ import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
+import { retryWithBackoff } from '../utils/retry.js';
 
 // ---- Types ----
 
@@ -99,18 +100,26 @@ async function executeAction(
           } catch { /* ignore parse errors */ }
         }
 
-        const res = await fetch(url, {
-          method,
-          headers,
-          body: method !== 'GET' ? JSON.stringify(bodyPayload) : undefined,
-          signal: AbortSignal.timeout(30000),
-        });
-        output = `HTTP ${res.status} ${res.statusText}`;
-        if (!res.ok) throw new Error(output);
+        const fetchResult = await retryWithBackoff(
+          async () => {
+            const r = await fetch(url, {
+              method,
+              headers,
+              body: method !== 'GET' ? JSON.stringify(bodyPayload) : undefined,
+              signal: AbortSignal.timeout(30000),
+            });
+            if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
+            return r;
+          },
+          3,      // maxAttempts
+          1000,   // baseDelayMs (1s -> 2s -> 4s)
+          `webhook:${automation.name}`,
+        );
+        output = `HTTP ${fetchResult.status} ${fetchResult.statusText}`;
 
         // Capture response body if n8n returns a reply
         try {
-          const responseBody = await res.json() as { reply?: string; message?: string };
+          const responseBody = await fetchResult.json() as { reply?: string; message?: string };
           if (responseBody.reply || responseBody.message) {
             output = responseBody.reply || responseBody.message || output;
           }
@@ -377,4 +386,121 @@ export function getAutomationLogs(userId: string, automationId?: string, limit =
   return db.prepare(
     'SELECT * FROM automation_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
   ).all(userId, limit);
+}
+
+// ---- Portfolio Visit Trigger (called from portfolio route) ----
+
+export function firePortfolioVisitAutomations(userId: string, visitorIp: string | null): void {
+  // Fire-and-forget: run in background without blocking the response
+  Promise.resolve().then(async () => {
+    const automations = db.prepare(
+      "SELECT * FROM automations WHERE user_id = ? AND trigger_type = 'portfolio_visit' AND enabled = 1"
+    ).all(userId) as Automation[];
+
+    for (const auto of automations) {
+      await executeAction(auto, `portfolio_visit:${visitorIp || 'unknown'}`);
+    }
+  }).catch((err) => {
+    logger.error({ err, userId }, 'Error firing portfolio_visit automations');
+  });
+}
+
+// ================================================================
+// Weekly Usage Report (24.2)
+// Runs every Monday at 9am — opt-in via notif_agents flag
+// ================================================================
+
+let weeklyReportTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function sendWeeklyUsageReport(userId: string, chatId: string): Promise<void> {
+  try {
+    // Stats window: 7 days ago → now
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const msgCount = (db.prepare(
+      "SELECT COUNT(*) as cnt FROM usage_events WHERE user_id = ? AND created_at >= ?"
+    ).get(userId, weekAgo) as { cnt: number }).cnt;
+
+    const creditsUsed = (db.prepare(
+      "SELECT COALESCE(SUM(cost_usd * 100), 0) as total FROM usage_events WHERE user_id = ? AND created_at >= ?"
+    ).get(userId, weekAgo) as { total: number }).total;
+
+    const automationsRun = (db.prepare(
+      "SELECT COUNT(*) as cnt FROM automation_logs WHERE user_id = ? AND created_at >= ?"
+    ).get(userId, weekAgo) as { cnt: number }).cnt;
+
+    const portfolioVisits = (db.prepare(
+      "SELECT COUNT(*) as cnt FROM portfolio_visits WHERE user_id = ? AND visited_at >= ?"
+    ).get(userId, weekAgo) as { cnt: number }).cnt;
+
+    const report = [
+      `<b>📊 Your Weekly GeekSpace Report</b>`,
+      ``,
+      `<b>Week ending:</b> ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`,
+      ``,
+      `💬 <b>Messages sent:</b> ${msgCount}`,
+      `⚡ <b>Credits used:</b> ${Math.round(creditsUsed)}`,
+      `🤖 <b>Automations triggered:</b> ${automationsRun}`,
+      `👁️ <b>Portfolio visits:</b> ${portfolioVisits}`,
+      ``,
+      `Keep building! 🚀`,
+    ].join('\n');
+
+    const { sendTelegramNotification } = await import('./telegram.js');
+    await sendTelegramNotification(chatId, report);
+
+    logger.info({ userId }, 'Weekly usage report sent via Telegram');
+  } catch (err) {
+    logger.error({ err, userId }, 'Failed to send weekly usage report');
+  }
+}
+
+function scheduleWeeklyReports(): void {
+  if (weeklyReportTimer) {
+    clearTimeout(weeklyReportTimer);
+    weeklyReportTimer = null;
+  }
+
+  // Calculate ms until next Monday 9am (server local time)
+  const now = new Date();
+  const next = new Date(now);
+  // getDay(): 0=Sun, 1=Mon … 6=Sat
+  const daysUntilMonday = (1 - now.getDay() + 7) % 7 || 7; // 0 means today is Monday, make it next Monday
+  next.setDate(now.getDate() + daysUntilMonday);
+  next.setHours(9, 0, 0, 0);
+
+  const msUntilNext = next.getTime() - now.getTime();
+
+  weeklyReportTimer = setTimeout(async () => {
+    // Send to all opt-in users who have Telegram linked
+    const users = db.prepare(`
+      SELECT ac.user_id, cl.external_id
+      FROM agent_configs ac
+      JOIN channel_links cl ON cl.user_id = ac.user_id AND cl.channel = 'telegram'
+      WHERE ac.notif_agents = 1
+    `).all() as Array<{ user_id: string; external_id: string }>;
+
+    for (const u of users) {
+      await sendWeeklyUsageReport(u.user_id, u.external_id);
+    }
+
+    // Schedule the next one (7 days)
+    weeklyReportTimer = setInterval(async () => {
+      const freshUsers = db.prepare(`
+        SELECT ac.user_id, cl.external_id
+        FROM agent_configs ac
+        JOIN channel_links cl ON cl.user_id = ac.user_id AND cl.channel = 'telegram'
+        WHERE ac.notif_agents = 1
+      `).all() as Array<{ user_id: string; external_id: string }>;
+      for (const u of freshUsers) {
+        await sendWeeklyUsageReport(u.user_id, u.external_id);
+      }
+    }, 7 * 24 * 60 * 60 * 1000);
+  }, msUntilNext);
+
+  logger.info({ msUntilNext, nextRun: next.toISOString() }, 'Weekly report scheduler initialized');
+}
+
+export function initWeeklyReportScheduler(): void {
+  scheduleWeeklyReports();
 }

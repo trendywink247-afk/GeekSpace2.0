@@ -93,6 +93,8 @@ export interface AgentConfig {
   status: 'online' | 'offline' | 'error';
   accentColor?: string;   // camelCase for PATCH requests
   accent_color?: string;  // snake_case returned by GET (raw DB row)
+  briefing_time?: string; // HH:MM format, e.g. "08:00"
+  greeting?: string;      // Custom greeting shown at chat start (max 200 chars)
 }
 
 export interface Personality {
@@ -303,6 +305,7 @@ export interface Integration {
 export type ReminderChannel = 'telegram' | 'email' | 'push' | 'whatsapp';
 export type ReminderCategory = 'personal' | 'work' | 'health' | 'other';
 export type ReminderCreatedBy = 'user' | 'agent' | 'automation' | 'pico-fleet';
+export type ReminderPriority = 'low' | 'normal' | 'high' | 'urgent';
 
 export interface Reminder {
   id: string;
@@ -313,8 +316,10 @@ export interface Reminder {
   recurring?: 'daily' | 'weekly' | 'monthly';
   completed: boolean;
   category: ReminderCategory;
+  priority?: ReminderPriority;
   createdBy: ReminderCreatedBy;
   createdAt: string;
+  snoozeCount?: number;
 }
 
 // ----- Portfolio ---------------------------------------------
@@ -342,7 +347,7 @@ export interface PortfolioSocial {
   email?: string;
 }
 
-export type PortfolioLayout = 'classic' | 'timeline' | 'grid';
+export type PortfolioLayout = 'minimal' | 'modern' | 'grid' | 'classic' | 'timeline';
 
 export interface Portfolio {
   userId: string;

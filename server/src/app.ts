@@ -6,7 +6,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { type Options as RateLimitOptions } from 'express-rate-limit';
 import passport from 'passport';
 
 import { config } from './config.js';
@@ -39,7 +39,9 @@ import { templatesRouter } from './routes/templates.js';
 import { imagesRouter } from './routes/images.js';
 import { videosRouter } from './routes/videos.js';
 import { socialMediaRouter } from './routes/social-media.js';
-import { healthRouter } from './routes/health.js';
+import { activityRouter } from './routes/activity.js';
+import { routesListRouter } from './routes/routes-list.js';
+import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
 import { metricsMiddleware, getMetricsSnapshot } from './middleware/metrics.js';
@@ -73,7 +75,7 @@ export function createApp(): express.Application {
     contentSecurityPolicy: config.isProduction ? {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "https:"],
@@ -101,6 +103,16 @@ export function createApp(): express.Application {
   // ---- Passport initialization (for OAuth) ----
   app.use(passport.initialize());
 
+  // ---- Request timeout (29.3) — 30s for all routes ----
+  app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => {
+    res.setTimeout(30000, () => {
+      if (!res.headersSent) {
+        res.status(503).json({ error: 'Request timeout' });
+      }
+    });
+    next();
+  });
+
   // ---- Request logging ----
   app.use(requestLogger);
 
@@ -111,6 +123,17 @@ export function createApp(): express.Application {
   const enableRateLimiting = !config.isTestMode;
 
   if (enableRateLimiting) {
+    // Shared handler: adds Retry-After header to all 429 responses
+    const rateLimitHandler = (_req: express.Request, res: express.Response, _next: express.NextFunction, options: RateLimitOptions) => {
+      // RateLimit-Reset is epoch seconds (express-rate-limit v8 standardHeaders)
+      const resetEpochSec = (res.getHeader('RateLimit-Reset') as number) || 0;
+      const retryAfterSecs = resetEpochSec
+        ? Math.max(1, Math.ceil(resetEpochSec - Date.now() / 1000))
+        : Math.ceil((options.windowMs ?? 60000) / 1000);
+      res.setHeader('Retry-After', retryAfterSecs);
+      res.status(options.statusCode ?? 429).json(typeof options.message === 'object' ? options.message : { error: options.message });
+    };
+
     // Global rate limiting
     const globalLimiter = rateLimit({
       windowMs: config.rateLimitWindowMs,
@@ -118,6 +141,7 @@ export function createApp(): express.Application {
       standardHeaders: true,
       legacyHeaders: false,
       message: { error: 'Too many requests. Please slow down.' },
+      handler: rateLimitHandler,
       skip: (req) =>
         req.path === '/health/stream' ||
         req.path === '/health',
@@ -130,6 +154,7 @@ export function createApp(): express.Application {
       max: config.rateLimitAuthMax,
       skipSuccessfulRequests: true,
       message: { error: 'Too many login attempts. Try again in 15 minutes.' },
+      handler: rateLimitHandler,
     });
     app.use('/api/auth/login', authLimiter);
     app.use('/api/auth/signup', authLimiter);
@@ -142,6 +167,7 @@ export function createApp(): express.Application {
       standardHeaders: true,
       legacyHeaders: false,
       message: { error: 'Too many chat requests. Please slow down.' },
+      handler: rateLimitHandler,
     });
     app.use('/api/agent/chat', chatLimiter);
     app.use('/api/agent/chat/stream', chatLimiter);
@@ -153,6 +179,7 @@ export function createApp(): express.Application {
       standardHeaders: true,
       legacyHeaders: false,
       message: { error: 'Too many requests. Please try again later.' },
+      handler: rateLimitHandler,
     });
     app.use('/api/agent/chat/public', publicLimiter);
     app.use('/api/dashboard/contact', publicLimiter);
@@ -160,12 +187,24 @@ export function createApp(): express.Application {
 
   // ---- Health check ----
   app.get('/api/health', (_req, res) => {
-    const components = { database: 'ok' };
+    const components = getCachedComponents(); // use warmed probe cache (all 8 components)
     const metrics = getMetricsSnapshot();
     const allOk = components.database === 'ok';
 
+    // Build topEndpoints so the REST fallback gives HealthDashboardPage the same shape as SSE
+    const topEndpoints = Object.entries(metrics.endpoints)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 10)
+      .map(([path, stats]) => ({
+        path,
+        count: stats.count,
+        errors: stats.errors,
+        avgMs: stats.count > 0 ? Math.round(stats.totalLatencyMs / stats.count) : 0,
+      }));
+
     res.status(allOk ? 200 : 503).json({
       timestamp: new Date().toISOString(),
+      cacheAgeMs: null, // not available in REST context
       components,
       metrics: {
         totalRequests: metrics.totalRequests,
@@ -178,9 +217,24 @@ export function createApp(): express.Application {
         uptime: metrics.uptime,
         memoryMb: metrics.memoryMb,
       },
+      topEndpoints,
       ok: allOk,
       status: allOk ? 'ok' : 'degraded',
       version: APP_VERSION,
+      build: {
+        version: process.env.npm_package_version ?? '3.0.0',
+        nodeVersion: process.versions.node,
+        platform: process.platform,
+      },
+    });
+  });
+
+  // ---- Version endpoint ----
+  app.get('/api/version', (_req, res) => {
+    res.json({
+      version: APP_VERSION,
+      buildTime: process.env.BUILD_TIME ?? new Date().toISOString(),
+      nodeVersion: process.versions.node,
     });
   });
 
@@ -219,6 +273,8 @@ export function createApp(): express.Application {
   app.use('/api/images', imagesRouter);
   app.use('/api/videos', videosRouter);
   app.use('/api/social-media', socialMediaRouter);
+  app.use('/api/activity', activityRouter);
+  app.use('/api/routes', routesListRouter);
 
   // ---- Test routes (only in test mode) ----
   if (config.isTestMode) {

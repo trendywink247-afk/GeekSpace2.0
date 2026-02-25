@@ -1,69 +1,57 @@
-# Phase 2 Plan — Onboarding + Video Gen + Channel Cleanup
+# AI Phase Plan
 
-**Branch:** `ai/phase-20260224-onboarding-cleanup`
-**Started:** 2026-02-24
-**Status:** 🔄 In Progress
+## Phase 28 — COMPLETE ✓
+**Branch:** `ai/phase-20260225-polish-accessibility-final`
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/57
+**Tests:** 262/262 passing
 
----
-
-## Phase 2 Items (5)
-
-### 1. 🐛 Critical Fix — WhatsApp Silent Drop + Webhook Security
-**File:** `server/src/services/whatsapp.ts`
-**Problem:**
-- `sendWhatsAppMessage()` silently drops all messages (no-op stub)
-- `verifyWhatsAppWebhook()` returns `true` when token not configured (security hole)
-**Fix:**
-- Replace stub with logger.warn + informative error so callers handle gracefully
-- Require webhook token in production; only bypass in explicit dev/test mode
-**Risk:** Low — no API keys available; makes silent failure explicit and observable.
-
-### 2. 🎨 UI/UX — Onboarding Polish
-**Files:** `src/onboarding/OnboardingWizard.tsx` (or whichever file has the wizard steps)
-**Problem:** No step progress indicator, no escape hatch, no visual progress feedback.
-**Fix:**
-- Add "Step X of Y" header with animated progress bar
-- Add "Sign in as a different account" link at bottom → calls logout()
-**Risk:** Low — UI-only, no auth logic changes.
-
-### 3. 🛡 Edge-Case Hardening — Stale Channel Link Cleanup
-**Files:** `server/src/services/artifact-cleanup.ts` OR new scheduler function
-**Problem:** Channel links in DB accumulate indefinitely — no TTL, no inactive cleanup.
-**Fix:**
-- Add `purgeStaleChannelLinks()`: DELETE WHERE `last_message_at < 90 days ago`
-- Run daily alongside existing artifact cleanup scheduler
-- Log count of purged records
-**Risk:** Very low — read-first, only deletes old inactive links.
-
-### 4. 🎬 New Feature — Video Generation (Pollinations.AI)
-**Files:**
-- `server/src/prompts/openclaw-system.ts` — document `generate_video` tool
-- `server/src/services/action-executor.ts` — add `videoUrl` to ActionResult
-- `server/src/services/message-router.ts` — handle video URL in channel reply
-**Implementation:** Schema + executor already exist. Mirrors generate_image pattern exactly.
-**Risk:** Low — additive only, graceful error on failure.
-
-### 5. 🔧 Dev/Ops — Chat Rate Limit Relaxation + Backlog Update
-**File:** `server/src/app.ts`
-**Problem:** Chat rate limit is 30/15min (2/min) — blocks power users testing features.
-**Fix:** Increase to 60/15min (4/min) — still protective, less friction for legitimate use.
-**Also:** Update ops/AI_BACKLOG.md to mark Phase 1+2 items complete.
+| Item | Description | Status |
+|------|-------------|--------|
+| 28.1 | Accessibility: Skip-to-main link + id="main-content" | Done |
+| 28.2 | Portfolio Template Gallery: richer previews + 2 coming-soon cards | Done |
+| 28.3 | Server Graceful Shutdown: httpServer.close() drains in-flight requests | Done |
+| 28.4 | Unit Tests: invites.test.ts (5 tests) + reminder priority tests (3 tests) | Done |
+| 28.5 | Dashboard Compact Mode: authStore + gs-compact CSS + Settings toggle | Done |
 
 ---
 
-## Verification Plan
+## Phase 29 — COMPLETE ✓
+**Branch:** `ai/phase-20260225-phase29-connect-preview-reliability`
+**Tests:** 271/271 passing
 
-```bash
-cd server && npm test                            # must stay 113/113
-npm run lint && npx tsc --noEmit && npm run build
-cd server && npx tsc --noEmit && npm run build
-```
+| # | Item | Type | Status |
+|---|------|------|--------|
+| 29.1 | Connection invite accept UI (`/connect/:token` page) | Feature | Done |
+| 29.2 | Portfolio live preview tab (iframe side-by-side) | UX | Done |
+| 29.3 | Request timeout middleware (30s all routes) | Hardening | Done |
+| 29.4 | Reminder bulk-snooze from dashboard | UX | Done |
+| 29.5 | E2E tests for compact mode + skip-link | Dev/Ops | Done |
 
-## Definition of Done
+---
 
-- [ ] All 5 items implemented
-- [ ] 113+ tests passing
-- [ ] lint/typecheck/build green
-- [ ] PR opened with evidence
-- [ ] AI_HANDOFF.md updated
-- [ ] Phase 3 proposed
+## Phase 30 — IN PROGRESS
+**Theme:** Notifications + export polish + reliability
+**Branch:** `ai/phase-20260225-phase30-notifications-export-reliability`
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/59
+**Tests:** 277/277 passing
+
+| # | Item | Type | Status |
+|---|------|------|--------|
+| 30.1 | Notification preference center (Reminder Notifications toggle) | UX | Done |
+| 30.2 | Export chat as Markdown from Settings | Feature | Done |
+| 30.3 | DB index on reminders(user_id, datetime) | Hardening | Done |
+| 30.4 | Snooze history UI (snooze_count badge on reminder cards) | UX | Done |
+| 30.5 | E2E test for connect invite flow (/connect/:token) | Dev/Ops | Done |
+
+---
+
+## Phase 31 — PROPOSED
+**Theme:** Polish + search + recurrence
+
+| # | Item | Type | Priority |
+|---|------|------|----------|
+| 31.1 | E2E stability: data-testid on key interactive elements | Dev/Ops | High |
+| 31.2 | Reminder recurrence editor (edit pattern in-place) | Feature | Medium |
+| 31.3 | Chat search UX (highlight matches, sticky search bar) | UX | Medium |
+| 31.4 | Admin dashboard export (users CSV + activity summary) | Dev/Ops | Low |
+| 31.5 | Push notification matrix (per-type per-channel toggles) | UX | Low |

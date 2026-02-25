@@ -17,6 +17,8 @@ import {
   Sparkles,
   Mic,
   Wand2,
+  AlarmClock,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,15 +26,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { reminderService } from '@/services/api';
 import { parseNaturalLanguageReminder } from '@/utils/reminderParser';
-import type { ReminderChannel, ReminderCategory } from '@/types';
+import type { ReminderChannel, ReminderCategory, ReminderPriority, Reminder } from '@/types';
 
 const categoryColors: Record<string, string> = {
   personal: '#00F0FF',
   work: '#00FF88',
   health: '#FF2D78',
   other: '#FFB800',
+};
+
+const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
+  low:    { label: 'Low',    color: '#6B7280', bg: '#6B728020' },
+  normal: { label: 'Normal', color: '#00F0FF', bg: '#00F0FF20' },
+  high:   { label: 'High',   color: '#F59E0B', bg: '#F59E0B20' },
+  urgent: { label: 'Urgent', color: '#FF2D78', bg: '#FF2D7820' },
 };
 
 const examples = [
@@ -44,7 +55,7 @@ const examples = [
 ];
 
 export function RemindersPage() {
-  const { reminders, addReminder, toggleReminder, deleteReminder, loadDashboard } = useDashboardStore();
+  const { reminders, addReminder, updateReminder, toggleReminder, snoozeReminder, deleteReminder, loadReminders, bulkSnoozeReminders } = useDashboardStore();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,21 +75,23 @@ export function RemindersPage() {
     channel: ReminderChannel;
     recurring: string;
     category: ReminderCategory;
+    priority: ReminderPriority;
   }>({
     text: '',
     datetime: '',
     channel: 'telegram',
     recurring: '',
     category: 'personal',
+    priority: 'normal',
   });
 
-  // Poll for reminders every 10 seconds
+  // Poll for reminders every 30 seconds (targeted — only re-fetches reminders)
   useEffect(() => {
     const interval = setInterval(() => {
-      loadDashboard();
-    }, 10000);
+      loadReminders();
+    }, 30000);
     return () => clearInterval(interval);
-  }, [loadDashboard]);
+  }, [loadReminders]);
 
   // Parse natural language as user types
   useEffect(() => {
@@ -147,24 +160,145 @@ export function RemindersPage() {
       channel: newReminder.channel,
       recurring: newReminder.recurring || undefined,
       category: newReminder.category,
+      priority: newReminder.priority,
     });
-    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal' });
+    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
     setIsAddDialogOpen(false);
   };
 
+  const [snoozeOpenId, setSnoozeOpenId] = useState<string | null>(null);
+  const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+
+  // Bulk delete state (25.5)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk snooze state (29.4)
+  const [selectedActiveIds, setSelectedActiveIds] = useState<Set<string>>(new Set());
+  const [isBulkSnoozing, setIsBulkSnoozing] = useState(false);
+
   const handleComplete = async (id: string) => {
+    setCompletingIds((prev) => new Set(prev).add(id));
+    await new Promise((resolve) => setTimeout(resolve, 400));
     await toggleReminder(id);
+    setCompletingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
   };
 
   const handleDelete = async (id: string) => {
     await deleteReminder(id);
   };
 
+  const handleSnooze = async (id: string, preset: '1h' | 'tomorrow' | 'next-week') => {
+    const now = new Date();
+    let next: Date;
+    if (preset === '1h') {
+      next = new Date(now.getTime() + 60 * 60 * 1000);
+    } else if (preset === 'tomorrow') {
+      next = new Date(now);
+      next.setDate(next.getDate() + 1);
+      next.setHours(9, 0, 0, 0);
+    } else {
+      next = new Date(now);
+      next.setDate(next.getDate() + 7);
+      next.setHours(9, 0, 0, 0);
+    }
+    await snoozeReminder(id, next.toISOString());
+    setSnoozeOpenId(null);
+  };
+
+  const handleEditClick = (reminder: Reminder) => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const d = new Date(reminder.datetime);
+    const localStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    setEditingReminder(reminder);
+    setNewReminder({
+      text: reminder.text,
+      datetime: localStr,
+      channel: reminder.channel,
+      recurring: reminder.recurring || '',
+      category: reminder.category,
+      priority: reminder.priority || 'normal',
+    });
+    setNaturalInput('');
+    setParsedReminder(null);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editingReminder || !newReminder.text || !newReminder.datetime) return;
+    await updateReminder(editingReminder.id, {
+      text: newReminder.text,
+      datetime: new Date(newReminder.datetime).toISOString(),
+      channel: newReminder.channel,
+      recurring: (newReminder.recurring || undefined) as Reminder['recurring'],
+      category: newReminder.category,
+      priority: newReminder.priority,
+    });
+    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
+    setEditingReminder(null);
+    setIsAddDialogOpen(false);
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      return next;
+    });
+  };
+
+  const handleSelectAllCompleted = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(completedReminders.map((r) => r.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      await reminderService.bulkDelete(Array.from(selectedIds));
+      setSelectedIds(new Set());
+      await loadReminders();
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const handleToggleSelectActive = (id: string) => {
+    setSelectedActiveIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      return next;
+    });
+  };
+
+  const handleBulkSnooze = async (preset: '1h' | 'tomorrow' | 'next-week') => {
+    if (selectedActiveIds.size === 0) return;
+    setIsBulkSnoozing(true);
+    try {
+      await bulkSnoozeReminders(Array.from(selectedActiveIds), preset);
+      setSelectedActiveIds(new Set());
+    } finally {
+      setIsBulkSnoozing(false);
+    }
+  };
+
+  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+
   const filteredReminders = reminders.filter(r => {
     if (filter === 'active') return !r.completed;
     if (filter === 'completed') return r.completed;
     return true;
-  }).filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase()));
+  }).filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      const pa = priorityOrder[a.priority ?? 'normal'] ?? 2;
+      const pb = priorityOrder[b.priority ?? 'normal'] ?? 2;
+      return pa - pb;
+    });
 
   const activeReminders = reminders.filter(r => !r.completed);
   const completedReminders = reminders.filter(r => r.completed);
@@ -199,7 +333,7 @@ export function RemindersPage() {
           <div className="px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30">
             <span className="text-sm text-[#00F0FF]">{activeReminders.length} active</span>
           </div>
-          <Button data-testid="create-reminder-button" onClick={() => setIsAddDialogOpen(true)} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
+          <Button data-testid="create-reminder-button" onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
             <Plus className="w-4 h-4 mr-2" />
             Add Reminder
           </Button>
@@ -344,6 +478,87 @@ export function RemindersPage() {
       </div>
 
       {/* Reminders List */}
+      {/* Bulk snooze bar — shown when viewing active reminders (29.4) */}
+      {activeReminders.length > 0 && (filter === 'active' || filter === 'all') && (
+        <div className="flex items-center gap-3 px-1" data-testid="bulk-snooze-bar">
+          <Checkbox
+            id="select-all-active"
+            checked={selectedActiveIds.size > 0 && activeReminders.every((r) => selectedActiveIds.has(r.id))}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                setSelectedActiveIds(new Set(activeReminders.map((r) => r.id)));
+              } else {
+                setSelectedActiveIds(new Set());
+              }
+            }}
+            aria-label="Select all active reminders"
+          />
+          <label htmlFor="select-all-active" className="text-sm text-[#6B7280] cursor-pointer select-none">
+            Select active ({activeReminders.length})
+          </label>
+          {selectedActiveIds.size > 0 && (
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-xs text-[#6B7280]">Snooze {selectedActiveIds.size} selected:</span>
+              <button
+                onClick={() => handleBulkSnooze('1h')}
+                disabled={isBulkSnoozing}
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] hover:bg-[#FFB800]/20 disabled:opacity-50 transition-colors"
+              >
+                +1h
+              </button>
+              <button
+                onClick={() => handleBulkSnooze('tomorrow')}
+                disabled={isBulkSnoozing}
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] hover:bg-[#FFB800]/20 disabled:opacity-50 transition-colors"
+              >
+                Tomorrow
+              </button>
+              <button
+                onClick={() => handleBulkSnooze('next-week')}
+                disabled={isBulkSnoozing}
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] hover:bg-[#FFB800]/20 disabled:opacity-50 transition-colors"
+              >
+                Next week
+              </button>
+              {isBulkSnoozing && (
+                <div className="w-4 h-4 border-2 border-[#FFB800]/30 border-t-[#FFB800] rounded-full animate-spin" />
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Bulk delete bar — shown when viewing completed reminders */}
+      {completedReminders.length > 0 && (filter === 'completed' || filter === 'all') && (
+        <div className="flex items-center gap-3 px-1">
+          <Checkbox
+            id="select-all-completed"
+            checked={selectedIds.size > 0 && completedReminders.every((r) => selectedIds.has(r.id))}
+            onCheckedChange={handleSelectAllCompleted}
+            aria-label="Select all completed reminders"
+          />
+          <label htmlFor="select-all-completed" className="text-sm text-[#6B7280] cursor-pointer select-none">
+            Select all completed ({completedReminders.length})
+          </label>
+          {selectedIds.size > 0 && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="ml-auto bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
+            >
+              {isBulkDeleting ? (
+                <div className="w-4 h-4 border-2 border-[#FF6161]/30 border-t-[#FF6161] rounded-full animate-spin mr-2" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Delete Selected ({selectedIds.size})
+            </Button>
+          )}
+        </div>
+      )}
+
       {viewMode === 'list' ? (
         <div className="space-y-3">
           {filteredReminders.length === 0 ? (
@@ -360,8 +575,10 @@ export function RemindersPage() {
               return (
                 <Card
                   key={reminder.id}
-                  className={`bg-[#0C0C18] border transition-all ${
-                    reminder.completed
+                  className={`bg-[#0C0C18] border transition-all duration-300 ${
+                    completingIds.has(reminder.id)
+                      ? 'border-[#00FF88] bg-[#00FF88]/10'
+                      : reminder.completed
                       ? 'border-[#00F0FF]/10 opacity-60'
                       : overdue
                       ? 'border-[#FF6161]/30'
@@ -370,6 +587,24 @@ export function RemindersPage() {
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
+                      {/* Bulk select checkbox — active for snooze, completed for delete */}
+                      {!reminder.completed && (
+                        <Checkbox
+                          checked={selectedActiveIds.has(reminder.id)}
+                          onCheckedChange={() => handleToggleSelectActive(reminder.id)}
+                          aria-label="Select reminder for bulk snooze"
+                          className="mt-1 flex-shrink-0"
+                        />
+                      )}
+                      {reminder.completed && (
+                        <Checkbox
+                          checked={selectedIds.has(reminder.id)}
+                          onCheckedChange={() => handleToggleSelect(reminder.id)}
+                          aria-label="Select reminder for bulk delete"
+                          className="mt-1 flex-shrink-0"
+                        />
+                      )}
+
                       {/* Date badge */}
                       <div className={`flex-shrink-0 w-14 text-center p-2 rounded-xl ${
                         reminder.completed
@@ -411,6 +646,23 @@ export function RemindersPage() {
                                   {reminder.recurring}
                                 </Badge>
                               )}
+                              {reminder.priority && reminder.priority !== 'normal' && (
+                                <Badge
+                                  className="text-xs"
+                                  style={{
+                                    backgroundColor: priorityConfig[reminder.priority]?.bg,
+                                    color: priorityConfig[reminder.priority]?.color,
+                                    borderColor: `${priorityConfig[reminder.priority]?.color}40`,
+                                  }}
+                                >
+                                  {priorityConfig[reminder.priority]?.label}
+                                </Badge>
+                              )}
+                              {(reminder.snoozeCount ?? 0) > 0 && (
+                                <Badge className="text-xs bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30">
+                                  Snoozed {reminder.snoozeCount}×
+                                </Badge>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
@@ -424,6 +676,31 @@ export function RemindersPage() {
                               }`}
                             >
                               <Check className="w-4 h-4" />
+                            </button>
+                            {!reminder.completed && (
+                              <div className="relative">
+                                <button
+                                  onClick={() => setSnoozeOpenId(snoozeOpenId === reminder.id ? null : reminder.id)}
+                                  aria-label="Snooze reminder"
+                                  className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FFB800] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                >
+                                  <AlarmClock className="w-4 h-4" />
+                                </button>
+                                {snoozeOpenId === reminder.id && (
+                                  <div className="absolute right-0 top-full mt-1 z-10 bg-[#0C0C18] border border-[#FFB800]/30 rounded-xl shadow-lg p-2 flex flex-col gap-1 min-w-[120px]">
+                                    <button onClick={() => handleSnooze(reminder.id, '1h')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">+1 hour</button>
+                                    <button onClick={() => handleSnooze(reminder.id, 'tomorrow')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Tomorrow 9am</button>
+                                    <button onClick={() => handleSnooze(reminder.id, 'next-week')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Next week</button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <button
+                              onClick={() => handleEditClick(reminder)}
+                              aria-label="Edit reminder"
+                              className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#BF5FFF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            >
+                              <Pencil className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(reminder.id)}
@@ -471,56 +748,66 @@ export function RemindersPage() {
         </Card>
       )}
 
-      {/* Add Reminder Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      {/* Add / Edit Reminder Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+        setIsAddDialogOpen(open);
+        if (!open) {
+          setEditingReminder(null);
+          setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
+        }
+      }}>
         <DialogContent className="glass-card-v2 border-[#00F0FF]/20 max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl">Add Reminder</DialogTitle>
+            <DialogTitle className="text-xl">{editingReminder ? 'Edit Reminder' : 'Add Reminder'}</DialogTitle>
           </DialogHeader>
-          
-          {/* Natural Language Input */}
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm text-[#6B7280] mb-2 block">
-                Type naturally (e.g., "tomorrow at 3pm call mom")
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  ref={inputRef}
-                  data-testid="reminder-text"
-                  placeholder="Remind me..."
-                  value={naturalInput}
-                  onChange={(e) => setNaturalInput(e.target.value)}
-                  className="flex-1 bg-[#06060B] border-[#00F0FF]/20"
-                />
-                <Button
-                  onClick={handleNaturalAdd}
-                  disabled={!parsedReminder}
-                  className="bg-[#00F0FF] hover:bg-[#00D4B0]"
-                >
-                  <Wand2 className="w-4 h-4" />
-                </Button>
-              </div>
-              
-              {parsedReminder && (
-                <div className="mt-2 p-3 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20">
-                  <p className="text-sm text-[#E8E8F0]">{parsedReminder.text}</p>
-                  <p className="text-xs text-[#00FF88] mt-1">
-                    {parsedReminder.datetime.toLocaleString()}
-                    {parsedReminder.recurring && ` • ${parsedReminder.recurring}`}
-                  </p>
-                </div>
-              )}
-            </div>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#00F0FF]/20" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="px-2 bg-[#0C0C18] text-xs text-[#6B7280]">Or manually</span>
-              </div>
-            </div>
+          {/* Natural Language Input — hidden in edit mode */}
+          <div className="space-y-4">
+            {!editingReminder && (
+              <>
+                <div>
+                  <label className="text-sm text-[#6B7280] mb-2 block">
+                    Type naturally (e.g., "tomorrow at 3pm call mom")
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      ref={inputRef}
+                      data-testid="reminder-text"
+                      placeholder="Remind me..."
+                      value={naturalInput}
+                      onChange={(e) => setNaturalInput(e.target.value)}
+                      className="flex-1 bg-[#06060B] border-[#00F0FF]/20"
+                    />
+                    <Button
+                      onClick={handleNaturalAdd}
+                      disabled={!parsedReminder}
+                      className="bg-[#00F0FF] hover:bg-[#00D4B0]"
+                    >
+                      <Wand2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {parsedReminder && (
+                    <div className="mt-2 p-3 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20">
+                      <p className="text-sm text-[#E8E8F0]">{parsedReminder.text}</p>
+                      <p className="text-xs text-[#00FF88] mt-1">
+                        {parsedReminder.datetime.toLocaleString()}
+                        {parsedReminder.recurring && ` • ${parsedReminder.recurring}`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[#00F0FF]/20" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="px-2 bg-[#0C0C18] text-xs text-[#6B7280]">Or manually</span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Manual Form */}
             <div className="space-y-3">
@@ -542,6 +829,54 @@ export function RemindersPage() {
                     onChange={(e) => setNewReminder({ ...newReminder, datetime: e.target.value })}
                     className="bg-[#06060B] border-[#00F0FF]/20"
                   />
+                  {/* 27.5: Quick date preset buttons */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {[
+                      {
+                        label: 'In 1 hour',
+                        getDatetime: () => {
+                          const d = new Date(Date.now() + 60 * 60 * 1000);
+                          return d.toISOString().slice(0, 16);
+                        },
+                      },
+                      {
+                        label: 'Tomorrow 9am',
+                        getDatetime: () => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 1);
+                          d.setHours(9, 0, 0, 0);
+                          return d.toISOString().slice(0, 16);
+                        },
+                      },
+                      {
+                        label: 'Next Monday',
+                        getDatetime: () => {
+                          const d = new Date();
+                          const day = d.getDay();
+                          const daysUntilMonday = day === 0 ? 1 : 8 - day;
+                          d.setDate(d.getDate() + daysUntilMonday);
+                          d.setHours(9, 0, 0, 0);
+                          return d.toISOString().slice(0, 16);
+                        },
+                      },
+                      {
+                        label: 'In 1 week',
+                        getDatetime: () => {
+                          const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                          return d.toISOString().slice(0, 16);
+                        },
+                      },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => setNewReminder({ ...newReminder, datetime: preset.getDatetime() })}
+                        className="px-2 py-1 rounded text-xs bg-[#06060B] border border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/60 hover:text-[#00F0FF] transition-colors"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs text-[#6B7280] mb-1 block">Category</label>
@@ -575,6 +910,32 @@ export function RemindersPage() {
                   ))}
                 </div>
               </div>
+              <div data-testid="priority-selector">
+                <label className="text-xs text-[#6B7280] mb-1 block">Priority</label>
+                <div className="flex gap-2">
+                  {(['low', 'normal', 'high', 'urgent'] as const).map((p) => {
+                    const cfg = priorityConfig[p];
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => setNewReminder({ ...newReminder, priority: p })}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
+                        style={{
+                          background: newReminder.priority === p ? cfg.bg : 'transparent',
+                          border: `1px solid ${newReminder.priority === p ? cfg.color : '#374151'}`,
+                          color: newReminder.priority === p ? cfg.color : '#6B7280',
+                        }}
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: cfg.color }}
+                        />
+                        {cfg.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -582,8 +943,12 @@ export function RemindersPage() {
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleLegacyAdd} disabled={!newReminder.text || !newReminder.datetime}>
-              Add Reminder
+            <Button
+              data-testid="submit-reminder-btn"
+              onClick={editingReminder ? handleEditSave : handleLegacyAdd}
+              disabled={!newReminder.text || !newReminder.datetime}
+            >
+              {editingReminder ? 'Save Changes' : 'Add Reminder'}
             </Button>
           </div>
         </DialogContent>

@@ -4,6 +4,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, portfolioUpdateSchema, portfolioAiEditSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
+import { firePortfolioVisitAutomations } from '../services/automations-engine.js';
 
 export const portfolioRouter = Router();
 
@@ -203,11 +204,112 @@ portfolioRouter.post('/:username/chat', requireAuth, async (req: AuthRequest, re
   }
 });
 
+// ── Portfolio Visit Stats ─────────────────────────────────────
+portfolioRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const totalViews = (db.prepare('SELECT COUNT(*) as cnt FROM portfolio_visits WHERE user_id = ?').get(userId) as { cnt: number }).cnt;
+  const recentViews = (db.prepare(
+    "SELECT COUNT(*) as cnt FROM portfolio_visits WHERE user_id = ? AND visited_at >= datetime('now', '-7 days')"
+  ).get(userId) as { cnt: number }).cnt;
+  // Daily breakdown for the last 30 days
+  const dailyBreakdown = db.prepare(`
+    SELECT date(visited_at) as date, COUNT(*) as count
+    FROM portfolio_visits
+    WHERE user_id = ? AND visited_at >= datetime('now', '-30 days')
+    GROUP BY date(visited_at)
+    ORDER BY date ASC
+  `).all(userId) as { date: string; count: number }[];
+  res.json({ totalViews, recentViews, dailyBreakdown });
+});
+
+// ── Portfolio Stats CSV Export ────────────────────────────────
+portfolioRouter.get('/stats/export', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const dailyBreakdown = db.prepare(`
+    SELECT date(visited_at) as date, COUNT(*) as count
+    FROM portfolio_visits
+    WHERE user_id = ? AND visited_at >= datetime('now', '-90 days')
+    GROUP BY date(visited_at)
+    ORDER BY date ASC
+  `).all(userId) as { date: string; count: number }[];
+
+  const lines: string[] = ['date,visits'];
+  for (const row of dailyBreakdown) {
+    lines.push(`${row.date},${row.count}`);
+  }
+  const csv = lines.join('\n');
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="portfolio-visits.csv"');
+  res.send(csv);
+});
+
 // Public portfolio view - MUST be last as it catches any /:username pattern
+// 27.2: Detect crawlers/bots for social preview meta tags
+function isCrawler(userAgent: string): boolean {
+  return /bot|spider|crawler|slack|discord|telegram|whatsapp|facebook|twitter|linkedinbot|preview|unfurl/i.test(userAgent);
+}
+
 portfolioRouter.get('/:username', async (req, res) => {
+  // 27.2: Return OG HTML for social crawlers instead of JSON
+  const ua = req.headers['user-agent'] || '';
+  if (isCrawler(ua)) {
+    const username = req.params.username;
+    const row = db.prepare(
+      'SELECT p.headline, p.about, p.avatar, u.name FROM portfolios p JOIN users u ON u.id = p.user_id WHERE p.username = ?'
+    ).get(username) as { headline: string; about: string; avatar: string; name: string } | undefined;
+    if (!row) { res.status(404).send('<html><body>Portfolio not found</body></html>'); return; }
+    const title = `${row.name || username} — GeekSpace Portfolio`;
+    const description = row.headline || row.about?.slice(0, 160) || 'View this portfolio on GeekSpace.';
+    const imageUrl = row.avatar && !row.avatar.match(/^[A-Z]{1,2}$/)
+      ? row.avatar
+      : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name || username)}&background=00F0FF&color=05050A&size=256`;
+    const pageUrl = `https://ai.geekspace.space/p/${username}`;
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${title}</title>
+  <meta name="description" content="${description}" />
+  <meta property="og:title" content="${title}" />
+  <meta property="og:description" content="${description}" />
+  <meta property="og:image" content="${imageUrl}" />
+  <meta property="og:url" content="${pageUrl}" />
+  <meta property="og:type" content="profile" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${title}" />
+  <meta name="twitter:description" content="${description}" />
+  <meta name="twitter:image" content="${imageUrl}" />
+</head>
+<body>
+  <h1>${title}</h1>
+  <p>${description}</p>
+</body>
+</html>`);
+    return;
+  }
+
   const cacheKey = `portfolio:${req.params.username}`;
   const cached = await cacheGet(cacheKey);
-  if (cached) { res.json(JSON.parse(cached)); return; }
+  if (cached) {
+    // Record visit even for cached responses
+    try {
+      const cachedData = JSON.parse(cached) as { userId?: string };
+      if (cachedData.userId) {
+        const visitorIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || null;
+        const recentVisit = db.prepare(
+          "SELECT id FROM portfolio_visits WHERE user_id = ? AND visitor_ip = ? AND visited_at >= datetime('now', '-30 minutes')"
+        ).get(cachedData.userId, visitorIp);
+        if (!recentVisit) {
+          db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(cachedData.userId, visitorIp);
+          firePortfolioVisitAutomations(cachedData.userId, visitorIp);
+        }
+      }
+    } catch { /* non-fatal */ }
+    res.json(JSON.parse(cached));
+    return;
+  }
 
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE username = ?').get(req.params.username) as Record<string, unknown> | undefined;
   if (!portfolio) { res.status(404).json({ error: 'Portfolio not found' }); return; }
@@ -228,6 +330,18 @@ portfolioRouter.get('/:username', async (req, res) => {
     personality: (agentConfig?.personality as string) || 'jarvis',
     connectionCount: (portfolio.connection_count as number) || 0,
   };
+
+  // Record visit (deduplicated: same IP within 30 minutes counts as one visit)
+  try {
+    const visitorIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || null;
+    const recentVisit = db.prepare(
+      "SELECT id FROM portfolio_visits WHERE user_id = ? AND visitor_ip = ? AND visited_at >= datetime('now', '-30 minutes')"
+    ).get(portfolio.user_id, visitorIp);
+    if (!recentVisit) {
+      db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(portfolio.user_id, visitorIp);
+      firePortfolioVisitAutomations(portfolio.user_id as string, visitorIp);
+    }
+  } catch { /* non-fatal */ }
 
   await cacheSet(cacheKey, JSON.stringify(responseData), 300);
   res.json(responseData);

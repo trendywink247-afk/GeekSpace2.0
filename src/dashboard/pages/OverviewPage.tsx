@@ -17,7 +17,8 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  Check
+  Check,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,11 +36,13 @@ import {
   Bar,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  LineChart,
+  Line
 } from 'recharts';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { briefingService, modelService, agentService } from '@/services/api';
+import { briefingService, modelService, agentService, usageService } from '@/services/api';
 import type { FreeModel, ModelChangelogEntry } from '@/types';
 
 interface OverviewPageProps {
@@ -102,6 +105,48 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const [preferredModel, setPreferredModel] = useState<string>('auto');
   const [showChangelog, setShowChangelog] = useState(false);
   const [modelSaving, setModelSaving] = useState<string | null>(null);
+  const [briefingTime, setBriefingTime] = useState('08:00');
+  const [briefingSaving, setBriefingSaving] = useState(false);
+  const [dailyUsage, setDailyUsage] = useState<Array<{ day: string; label: string; messages: number; credits: number }>>([]);
+  const [agentQuality, setAgentQuality] = useState<{
+    satisfactionRate: number | null;
+    trend: 'up' | 'down' | 'neutral';
+    hasEnoughData: boolean;
+  } | null>(null);
+
+  // Onboarding checklist state
+  const ONBOARDING_ITEMS = [
+    { id: 'profile', label: 'Complete your profile', page: 'settings' },
+    { id: 'skill', label: 'Add a skill', page: 'portfolio' },
+    { id: 'project', label: 'Create a project', page: 'portfolio' },
+    { id: 'portfolio', label: 'Enable your portfolio', page: 'portfolio' },
+    { id: 'telegram', label: 'Connect Telegram', page: 'connections' },
+  ] as const;
+  type OnboardingItemId = typeof ONBOARDING_ITEMS[number]['id'];
+  const [onboardingDone, setOnboardingDone] = useState<OnboardingItemId[]>(() => {
+    try {
+      const stored = localStorage.getItem('gs_onboarding_done');
+      return stored ? (JSON.parse(stored) as OnboardingItemId[]) : [];
+    } catch { return []; }
+  });
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() =>
+    localStorage.getItem('gs_onboarding_dismissed') === 'true'
+  );
+  const allOnboardingDone = onboardingDone.length >= ONBOARDING_ITEMS.length;
+  const showOnboarding = !onboardingDismissed && !allOnboardingDone;
+
+  const toggleOnboardingItem = (id: OnboardingItemId) => {
+    setOnboardingDone(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      localStorage.setItem('gs_onboarding_done', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const dismissOnboarding = () => {
+    setOnboardingDismissed(true);
+    localStorage.setItem('gs_onboarding_dismissed', 'true');
+  };
 
   const user = useAuthStore((s) => s.user);
   const { stats, integrations, agent, reminders, chartData, hourlyData } = useDashboardStore();
@@ -113,6 +158,14 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const hourlyActivityData = hourlyData.length > 0
     ? hourlyData.map(d => ({ hour: `${d.hour}:00`, activity: d.requests }))
     : emptyHourlyData;
+
+  // 7-day sparkline data per stat card (parallel to quickStats array)
+  const statSparklines = [
+    chartData.length > 1 ? chartData.map(d => ({ v: d.requests })) : [],             // Messages Sent
+    chartData.length > 1 ? chartData.map(d => ({ v: Math.max(0, d.requests / 4) })) : [], // Reminders proxy
+    chartData.length > 1 ? chartData.map(d => ({ v: d.tokens })) : [],               // API Calls
+    hourlyData.length > 1 ? hourlyData.slice(-7).map(d => ({ v: d.requests })) : [], // Response Time proxy
+  ];
 
   // Derive reminder breakdown from actual reminders
   const completedCount = reminders.filter(r => r.completed).length;
@@ -152,6 +205,12 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   }, []);
 
   useEffect(() => {
+    usageService.daily(7).then(res => {
+      setDailyUsage(res.data);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     modelService.getFreeModels().then(res => {
       setFreeModels(res.data.models);
       setModelsLastUpdated(res.data.lastUpdated);
@@ -162,9 +221,29 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   }, []);
 
   useEffect(() => {
+    agentService.getQuality().then(res => {
+      setAgentQuality({
+        satisfactionRate: res.data.satisfactionRate,
+        trend: res.data.trend,
+        hasEnoughData: res.data.hasEnoughData,
+      });
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     const pref = (agent as unknown as Record<string, unknown>)?.preferred_free_model as string | undefined;
     if (pref) setPreferredModel(pref);
+    if (agent.briefing_time) setBriefingTime(agent.briefing_time);
   }, [agent]);
+
+  const handleBriefingTimeChange = async (time: string) => {
+    setBriefingTime(time);
+    setBriefingSaving(true);
+    try {
+      await agentService.updateConfig({ briefing_time: time } as any);
+    } catch { /* ignore */ }
+    setBriefingSaving(false);
+  };
 
   const handleSelectModel = async (modelId: string) => {
     setModelSaving(modelId);
@@ -301,6 +380,69 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         </div>
       </div>
 
+      {/* ─── Getting Started Checklist ─── */}
+      {showOnboarding && (
+        <div
+          className="rounded-2xl border overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, rgba(10,10,20,0.95), rgba(8,8,16,0.98))', borderColor: 'rgba(0,240,255,0.15)' }}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-[#00FF88]" />
+              <span className="text-sm font-semibold text-[#E8E8F0]">Getting Started</span>
+              <span className="text-xs text-[#6B7280]">({onboardingDone.length}/{ONBOARDING_ITEMS.length} done)</span>
+            </div>
+            <button
+              onClick={dismissOnboarding}
+              className="p-1 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 transition-colors"
+              aria-label="Dismiss checklist"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {ONBOARDING_ITEMS.map((item) => {
+              const done = onboardingDone.includes(item.id);
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none"
+                  style={{
+                    borderColor: done ? 'rgba(0,255,136,0.2)' : 'rgba(0,240,255,0.1)',
+                    background: done ? 'rgba(0,255,136,0.04)' : 'rgba(0,240,255,0.02)',
+                  }}
+                  onClick={() => toggleOnboardingItem(item.id)}
+                >
+                  <div
+                    className="w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all"
+                    style={{
+                      borderColor: done ? '#00FF88' : 'rgba(0,240,255,0.3)',
+                      background: done ? 'rgba(0,255,136,0.15)' : 'transparent',
+                    }}
+                  >
+                    {done && <Check className="w-3 h-3 text-[#00FF88]" />}
+                  </div>
+                  <span
+                    className="text-sm flex-1"
+                    style={{ color: done ? '#6B7280' : '#E8E8F0', textDecoration: done ? 'line-through' : 'none' }}
+                  >
+                    {item.label}
+                  </span>
+                  {!done && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onNavigate?.(item.page); }}
+                      className="text-[10px] text-[#00F0FF] hover:underline flex-shrink-0"
+                    >
+                      Go →
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ─── Capability Spotlight (new users) ─── */}
       {stats.messagesSent < 10 && (
         <div
@@ -373,41 +515,103 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 {stat.value}
               </div>
               <div className="text-sm text-[#6B7280]">{stat.label}</div>
+              {statSparklines[i].length > 1 && (
+                <div className="mt-2 h-8 -mx-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={statSparklines[i]} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id={`spark${i}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={stat.color} stopOpacity={0.25} />
+                          <stop offset="95%" stopColor={stat.color} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="v" stroke={stat.color} strokeWidth={1.5} fill={`url(#spark${i})`} dot={false} isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Daily Briefing */}
-      {latestBriefing && (
+      {/* Agent Quality Card — only shown when there are >= 5 reactions */}
+      {agentQuality?.hasEnoughData && agentQuality.satisfactionRate !== null && (
         <Card
           style={{
             background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
-            border: '1px solid rgba(255, 215, 0, 0.15)',
+            border: '1px solid rgba(0, 255, 136, 0.15)',
           }}
         >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#FFD700]" />
-              Daily Briefing
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-[#E8E8F0] leading-relaxed whitespace-pre-line">
-              {latestBriefing.content}
-            </p>
-            <p className="text-xs text-[#6B7280] mt-3 font-mono">
-              {new Date(latestBriefing.created_at).toLocaleString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </p>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00FF88]/10 flex-shrink-0">
+              <TrendingUp className="w-5 h-5 text-[#00FF88]" />
+            </div>
+            <div className="flex-1">
+              <div className="text-sm text-[#6B7280]">Agent Satisfaction</div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xl font-bold text-[#00FF88]">{agentQuality.satisfactionRate}%</span>
+                {agentQuality.trend === 'up' && <ArrowUpRight className="w-4 h-4 text-[#00FF88]" />}
+                {agentQuality.trend === 'down' && <ArrowDownRight className="w-4 h-4 text-[#FF2D78]" />}
+                <span className="text-xs text-[#6B7280]">
+                  {agentQuality.trend === 'up' ? 'improving' : agentQuality.trend === 'down' ? 'declining' : 'stable'}
+                </span>
+              </div>
+            </div>
+            <div className="text-xs text-[#6B7280]">Based on your reactions</div>
           </CardContent>
         </Card>
       )}
+
+      {/* Daily Briefing */}
+      <Card
+        style={{
+          background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
+          border: '1px solid rgba(255, 215, 0, 0.15)',
+        }}
+      >
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-[#FFD700]" />
+            Daily Briefing
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {latestBriefing ? (
+            <>
+              <p className="text-sm text-[#E8E8F0] leading-relaxed whitespace-pre-line">
+                {latestBriefing.content}
+              </p>
+              <p className="text-xs text-[#6B7280] mt-3 font-mono">
+                {new Date(latestBriefing.created_at).toLocaleString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-[#6B7280]">
+              No briefing yet — your first will arrive at the scheduled time below.
+            </p>
+          )}
+          <div className="mt-3 flex items-center gap-2 border-t border-[#FFD700]/10 pt-3">
+            <Clock className="w-4 h-4 text-[#6B7280] shrink-0" />
+            <span className="text-xs text-[#6B7280]">Deliver daily at</span>
+            <input
+              type="time"
+              value={briefingTime}
+              onChange={(e) => handleBriefingTimeChange(e.target.value)}
+              className="bg-[#06060B] border border-[#FFD700]/20 text-[#E8E8F0] text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-[#FFD700]/40"
+            />
+            <span className={`text-xs ${briefingSaving ? 'text-[#6B7280]' : 'text-[#00FF88]'}`}>
+              {briefingSaving ? 'Saving…' : 'Saved'}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ─── Bento Charts Row ─── */}
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
@@ -797,6 +1001,54 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
         </div>
       </div>
+
+      {/* ─── Credits & Messages Trend ─── */}
+      <Card
+        style={{
+          background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
+          border: '1px solid rgba(0, 255, 136, 0.12)',
+        }}
+      >
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-[#00FF88]" />
+              7-Day Activity Trend
+            </CardTitle>
+            <Badge variant="outline" className="border-[#00FF88]/30 text-[#6B7280]">
+              Messages &amp; Tokens
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[160px]">
+            {mounted && (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dailyUsage.length > 0 ? dailyUsage : [{ label: 'Mon', messages: 0, credits: 0 }, { label: 'Tue', messages: 0, credits: 0 }, { label: 'Wed', messages: 0, credits: 0 }, { label: 'Thu', messages: 0, credits: 0 }, { label: 'Fri', messages: 0, credits: 0 }, { label: 'Sat', messages: 0, credits: 0 }, { label: 'Sun', messages: 0, credits: 0 }]} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,136,0.06)" />
+                  <XAxis dataKey="label" stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} width={35} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#10101E',
+                      border: '1px solid rgba(0,255,136,0.2)',
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                    }}
+                    itemStyle={{ color: '#E8E8F0' }}
+                  />
+                  <Line type="monotone" dataKey="messages" stroke="#00FF88" strokeWidth={2} dot={{ fill: '#00FF88', r: 3 }} name="Messages" />
+                  <Line type="monotone" dataKey="credits" stroke="#BF5FFF" strokeWidth={2} dot={{ fill: '#BF5FFF', r: 3 }} name="Tokens" />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+          <div className="flex items-center gap-4 mt-2 text-xs text-[#6B7280]">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-[#00FF88] rounded inline-block" />Messages sent</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-[#BF5FFF] rounded inline-block" />Tokens used</span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Available AI Models — full-width grid below the 3-col section */}
       {freeModels.length > 0 && (

@@ -104,6 +104,11 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     accentColor: 'accent_color', bubbleStyle: 'bubble_style', status: 'status',
     personality: 'personality', model_preference: 'model_preference',
     preferred_free_model: 'preferred_free_model',
+    briefing_time: 'briefing_time',
+    notif_reminders: 'notif_reminders',
+    notif_escalations: 'notif_escalations',
+    notif_agents: 'notif_agents',
+    greeting: 'greeting',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {
@@ -1234,8 +1239,143 @@ agentRouter.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
 
 agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-  const conversations = getRecentConversations(req.userId!, limit);
+  const search = req.query.search as string | undefined;
+  const conversations = getRecentConversations(req.userId!, limit, search);
   res.json((conversations as unknown as Record<string, unknown>[]).map(mapConversation));
+});
+
+// ---- Conversation Export ----
+
+agentRouter.get('/conversations/export', requireAuth, (req: AuthRequest, res) => {
+  try {
+    const conversations = getRecentConversations(req.userId!, 1000);
+    const format = (req.query.format as string | undefined) ?? 'json';
+
+    if (format === 'md') {
+      // Render as Markdown — oldest first, role headers, blank line between turns
+      const sorted = [...conversations].reverse();
+      const lines: string[] = ['# GeekSpace Chat Export\n'];
+      for (const c of sorted) {
+        const role = c.role === 'user' ? '**You**' : '**Assistant**';
+        const ts = c.created_at ? `  \n_${c.created_at}_` : '';
+        lines.push(`### ${role}${ts}\n\n${c.content}\n`);
+      }
+      const md = lines.join('\n---\n\n');
+      res.setHeader('Content-Disposition', 'attachment; filename="geekspace-chat.md"');
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      res.send(md);
+      return;
+    }
+
+    const data = (conversations as unknown as Record<string, unknown>[]).map(mapConversation);
+    res.setHeader('Content-Disposition', 'attachment; filename="conversations.json"');
+    res.setHeader('Content-Type', 'application/json');
+    res.json(data);
+  } catch (err) {
+    logger.error({ err }, 'conversations/export failed');
+    res.status(500).json({ error: 'Failed to export conversations' });
+  }
+});
+
+// ---- Message Reactions ----
+
+agentRouter.post('/conversations/reactions', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { messageId, reaction } = req.body as { messageId?: string; reaction?: string };
+  if (!messageId || !reaction) {
+    res.status(400).json({ error: 'messageId and reaction are required' });
+    return;
+  }
+  try {
+    db.prepare(
+      'INSERT OR REPLACE INTO message_reactions (id, user_id, message_id, reaction, created_at) VALUES (?, ?, ?, ?, datetime(\'now\'))'
+    ).run(`${userId}-${messageId}`, userId, messageId, reaction);
+    res.json({ success: true });
+  } catch (err) {
+    logger.error({ err, userId }, 'Failed to save reaction');
+    res.status(500).json({ error: 'Failed to save reaction' });
+  }
+});
+
+// ---- Reactions Summary ----
+
+agentRouter.get('/conversations/reactions/summary', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  try {
+    // Get top reactions grouped by reaction emoji with count
+    const rows = db.prepare(
+      `SELECT reaction, COUNT(*) as count
+       FROM message_reactions
+       WHERE user_id = ?
+       GROUP BY reaction
+       ORDER BY count DESC
+       LIMIT 10`
+    ).all(userId) as { reaction: string; count: number }[];
+    res.json({ reactions: rows });
+  } catch (err) {
+    logger.error({ err, userId }, 'Failed to get reaction summary');
+    res.status(500).json({ error: 'Failed to get reaction summary' });
+  }
+});
+
+// ---- Agent Quality Metrics (Phase 26.5) ----
+
+agentRouter.get('/quality', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  try {
+    // Total messages sent by this user
+    const totalRow = db.prepare(
+      `SELECT COUNT(*) as count FROM conversation_log WHERE user_id = ?`
+    ).get(userId) as { count: number };
+
+    // Positive reactions: 👍 ❤️ 🔥
+    const positiveRow = db.prepare(
+      `SELECT COUNT(*) as count FROM message_reactions WHERE user_id = ? AND reaction IN ('👍', '❤️', '🔥')`
+    ).get(userId) as { count: number };
+
+    // Negative reactions: 👎
+    const negativeRow = db.prepare(
+      `SELECT COUNT(*) as count FROM message_reactions WHERE user_id = ? AND reaction = '👎'`
+    ).get(userId) as { count: number };
+
+    const positive = positiveRow.count;
+    const negative = negativeRow.count;
+    const total = totalRow.count;
+    const totalReacted = positive + negative;
+    const satisfactionRate = totalReacted > 0 ? Math.round((positive / totalReacted) * 100) : null;
+
+    // Trend: compare this week vs last week (reaction counts)
+    const now = Date.now();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const thisWeekStart = new Date(now - weekMs).toISOString();
+    const lastWeekStart = new Date(now - 2 * weekMs).toISOString();
+
+    const thisWeekPositive = (db.prepare(
+      `SELECT COUNT(*) as count FROM message_reactions WHERE user_id = ? AND reaction IN ('👍', '❤️', '🔥') AND created_at >= ?`
+    ).get(userId, thisWeekStart) as { count: number }).count;
+
+    const lastWeekPositive = (db.prepare(
+      `SELECT COUNT(*) as count FROM message_reactions WHERE user_id = ? AND reaction IN ('👍', '❤️', '🔥') AND created_at >= ? AND created_at < ?`
+    ).get(userId, lastWeekStart, thisWeekStart) as { count: number }).count;
+
+    const trend = lastWeekPositive === 0
+      ? (thisWeekPositive > 0 ? 'up' : 'neutral')
+      : thisWeekPositive > lastWeekPositive ? 'up'
+      : thisWeekPositive < lastWeekPositive ? 'down'
+      : 'neutral';
+
+    res.json({
+      totalMessages: total,
+      positiveReactions: positive,
+      negativeReactions: negative,
+      satisfactionRate,
+      trend,
+      hasEnoughData: totalReacted >= 5,
+    });
+  } catch (err) {
+    logger.error({ err, userId }, 'Failed to get agent quality metrics');
+    res.status(500).json({ error: 'Failed to get quality metrics' });
+  }
 });
 
 // ---- Premium Agent (Specialist Sessions) ----

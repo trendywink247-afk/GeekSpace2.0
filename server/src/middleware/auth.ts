@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwtPkg from 'jsonwebtoken';
 import type { SignOptions } from 'jsonwebtoken';
-import { timingSafeEqual } from 'crypto';
+import { timingSafeEqual, createHash } from 'crypto';
 import { config } from '../config.js';
 import { db } from '../db/index.js';
 
@@ -21,8 +21,22 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   try {
     const payload = verify(header.slice(7), config.jwtSecret, {
       algorithms: ['HS256'],
-    }) as { sub: string };
+    }) as { sub: string; iat?: number };
     req.userId = payload.sub;
+
+    // Prevent caching of authenticated responses
+    res.set('Cache-Control', 'no-store');
+
+    // 25.3: Reject tokens issued before the user's last password change
+    try {
+      const tokenIat = payload.iat ?? 0;
+      const row = db.prepare('SELECT password_changed_at FROM users WHERE id = ?').get(payload.sub) as { password_changed_at?: number } | undefined;
+      const changedAt = row?.password_changed_at ?? 0;
+      if (changedAt > 0 && tokenIat < changedAt) {
+        res.status(401).json({ error: 'Session expired after password change. Please log in again.' });
+        return;
+      }
+    } catch { /* ignore — column may not exist on first deploy */ }
 
     // Update last_active timestamp (non-blocking, fire-and-forget)
     try {
@@ -31,6 +45,25 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
         payload.sub,
       );
     } catch { /* ignore — column may not exist on first deploy */ }
+
+    // Upsert session record for lightweight session tracking
+    // NOTE: JWT tokens are stateless — revoking a session record does not
+    // invalidate the token; existing tokens stay valid until expiry.
+    try {
+      const ua = (req.headers['user-agent'] || '').slice(0, 255);
+      const ip = req.ip || req.socket?.remoteAddress || '';
+      // Derive a stable session ID from user + user-agent fingerprint using the
+      // already-imported createHash from crypto (sync, no await needed)
+      const sessionId = createHash('sha256')
+        .update(`${payload.sub}:${ua}`)
+        .digest('hex')
+        .slice(0, 32);
+      db.prepare(`
+        INSERT INTO user_sessions (id, user_id, user_agent, ip, created_at, last_seen, is_active)
+        VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), 1)
+        ON CONFLICT(id) DO UPDATE SET last_seen = datetime('now'), ip = excluded.ip, is_active = 1
+      `).run(sessionId, payload.sub, ua, ip);
+    } catch { /* ignore — table may not exist on first deploy */ }
 
     next();
   } catch (err) {

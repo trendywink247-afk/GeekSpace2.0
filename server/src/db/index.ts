@@ -761,6 +761,59 @@ try {
   `);
 } catch { /* table already exists */ }
 
+// Message reactions (for agent message reactions)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS message_reactions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      message_id TEXT NOT NULL,
+      reaction TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_message_reactions_user ON message_reactions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_message_reactions_msg ON message_reactions(message_id);
+  `);
+} catch { /* table already exists */ }
+
+// Phase 10: Auth session tracking table
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TEXT DEFAULT (datetime('now')),
+      last_seen TEXT DEFAULT (datetime('now')),
+      user_agent TEXT DEFAULT '',
+      ip TEXT DEFAULT '',
+      is_active INTEGER DEFAULT 1
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_active ON user_sessions(user_id, is_active);
+  `);
+} catch { /* table already exists */ }
+
+// Phase 10: preferred_model column on users table (for model picker)
+try { db.exec(`ALTER TABLE users ADD COLUMN preferred_model TEXT DEFAULT 'auto'`); } catch { /* column already exists */ }
+
+// Phase 11: Portfolio visit analytics table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS portfolio_visits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    visited_at TEXT DEFAULT (datetime('now')),
+    visitor_ip TEXT
+  )
+`);
+
+// Phase 11: Telegram notification preference columns on agent_configs
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_reminders INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_escalations INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_agents INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+
+// Phase 12: Index for portfolio_visits queries (user_id + date range scans)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_portfolio_visits_user_date ON portfolio_visits(user_id, visited_at)`); } catch { /* index already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
@@ -1136,3 +1189,38 @@ if (shouldSeed) {
 }
 
 export { db, seedDemoData };
+
+// Phase 13: snooze_until column for reminder snooze expiry cleanup
+try { db.exec(`ALTER TABLE reminders ADD COLUMN snooze_until INTEGER`); } catch { /* column already exists */ }
+
+// Phase 16: Performance indexes for hot-path queries
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_activity_log_user_date ON activity_log(user_id, created_at)`); } catch { /* index already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reminders_scheduler ON reminders(user_id, completed, remind_at)`); } catch { /* index already exists */ }
+
+// Phase 25.1: Custom greeting message for agent persona
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN greeting TEXT DEFAULT ''`); } catch { /* column already exists */ }
+
+// Phase 25.3: JWT invalidation on password change — track when password was last changed
+try { db.exec(`ALTER TABLE users ADD COLUMN password_changed_at INTEGER DEFAULT 0`); } catch { /* column already exists */ }
+
+// Phase 26.2: Reminder priority levels
+try { db.exec(`ALTER TABLE reminders ADD COLUMN priority TEXT DEFAULT 'normal'`); } catch { /* column already exists */ }
+
+// Phase 27.3: Connection invite links
+db.exec(`
+  CREATE TABLE IF NOT EXISTS connection_invites (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    email TEXT,
+    expires_at INTEGER NOT NULL,
+    used_at INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
+  )
+`);
+
+// Phase 30.3: DB index for reminders ordered by datetime (covers the /reminders GET sort)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reminders_datetime ON reminders(user_id, datetime)`); } catch { /* index already exists */ }
+
+// Phase 30.4: Track how many times each reminder has been snoozed
+try { db.exec(`ALTER TABLE reminders ADD COLUMN snooze_count INTEGER DEFAULT 0`); } catch { /* column already exists */ }

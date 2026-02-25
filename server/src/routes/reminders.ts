@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { validateBody, reminderCreateSchema, reminderUpdateSchema } from '../middleware/validate.js';
+import { validateBody, reminderCreateSchema, reminderUpdateSchema, bulkReminderDeleteSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 
 export const remindersRouter = Router();
@@ -20,13 +20,13 @@ remindersRouter.get('/', requireAuth, (req: AuthRequest, res) => {
 });
 
 remindersRouter.post('/', requireAuth, validateBody(reminderCreateSchema), (req: AuthRequest, res) => {
-  const { text, datetime, channel, category, recurring } = req.body;
+  const { text, datetime, channel, category, recurring, priority } = req.body;
 
   const id = uuid();
   const scheduledFor = datetime ? new Date(datetime).getTime() : Date.now();
 
-  db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, created_by, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
-    id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', 'user', scheduledFor
+  db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, created_by, scheduled_for, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+    id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', 'user', scheduledFor, priority || 'normal'
   );
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`).run(uuid(), req.userId, text);
 
@@ -41,7 +41,7 @@ remindersRouter.patch('/:id', requireAuth, validateBody(reminderUpdateSchema), (
   const updates = req.body as Record<string, unknown>;
   const fields: string[] = [];
   const values: unknown[] = [];
-  for (const key of ['text', 'datetime', 'channel', 'category', 'recurring', 'completed']) {
+  for (const key of ['text', 'datetime', 'channel', 'category', 'recurring', 'completed', 'priority']) {
     if (updates[key] !== undefined) {
       fields.push(`${key} = ?`);
       values.push(typeof updates[key] === 'boolean' ? (updates[key] ? 1 : 0) : updates[key]);
@@ -60,4 +60,72 @@ remindersRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
   const result = db.prepare('DELETE FROM reminders WHERE id = ? AND user_id = ?').run(req.params.id, req.userId);
   if (result.changes === 0) { res.status(404).json({ error: 'Not found' }); return; }
   res.json({ success: true });
+});
+
+// ── Bulk Snooze (29.4) ─────────────────────────────────────────────────────
+remindersRouter.post('/bulk-snooze', requireAuth, (req: AuthRequest, res) => {
+  const { ids, preset } = req.body as { ids: string[]; preset: '1h' | 'tomorrow' | 'next-week' };
+
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 100) {
+    res.status(400).json({ error: 'ids must be a non-empty array of max 100' });
+    return;
+  }
+  if (!['1h', 'tomorrow', 'next-week'].includes(preset)) {
+    res.status(400).json({ error: 'Invalid preset' });
+    return;
+  }
+
+  const now = new Date();
+  let newDatetime: string;
+  if (preset === '1h') {
+    newDatetime = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+  } else if (preset === 'tomorrow') {
+    const d = new Date(now);
+    d.setDate(d.getDate() + 1);
+    d.setHours(9, 0, 0, 0);
+    newDatetime = d.toISOString();
+  } else {
+    const d = new Date(now);
+    d.setDate(d.getDate() + 7);
+    d.setHours(9, 0, 0, 0);
+    newDatetime = d.toISOString();
+  }
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const owned = db.prepare(
+    `SELECT id FROM reminders WHERE id IN (${placeholders}) AND user_id = ? AND completed = 0`
+  ).all(...ids, req.userId!) as Array<{ id: string }>;
+
+  if (owned.length === 0) {
+    res.json({ snoozed: 0 });
+    return;
+  }
+
+  const ownedIds = owned.map((r) => r.id);
+  const updPlaceholders = ownedIds.map(() => '?').join(', ');
+  db.prepare(`UPDATE reminders SET datetime = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id IN (${updPlaceholders})`).run(newDatetime, ...ownedIds);
+
+  res.json({ snoozed: owned.length, newDatetime });
+});
+
+// ── Bulk Delete (25.5) ─────────────────────────────────────────────────────
+remindersRouter.delete('/bulk', requireAuth, validateBody(bulkReminderDeleteSchema), (req: AuthRequest, res) => {
+  const { ids } = req.body as { ids: string[] };
+
+  // Validate all IDs belong to the requesting user before deleting
+  const placeholders = ids.map(() => '?').join(', ');
+  const owned = db.prepare(
+    `SELECT id FROM reminders WHERE id IN (${placeholders}) AND user_id = ?`
+  ).all(...ids, req.userId!) as Array<{ id: string }>;
+
+  if (owned.length === 0) {
+    res.json({ deleted: 0 });
+    return;
+  }
+
+  const ownedIds = owned.map((r) => r.id);
+  const delPlaceholders = ownedIds.map(() => '?').join(', ');
+  const result = db.prepare(`DELETE FROM reminders WHERE id IN (${delPlaceholders})`).run(...ownedIds);
+
+  res.json({ deleted: result.changes });
 });

@@ -8,7 +8,6 @@ import {
   Smartphone,
   Key,
   Save,
-  Check,
   Sparkles,
   Eye,
   Palette,
@@ -17,7 +16,10 @@ import {
   Brain,
   Tag,
   Clock,
-  Loader2
+  Loader2,
+  Monitor,
+  LogOut,
+  Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,14 +30,23 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
-import { userService, apiKeyService, memoryService, agentService } from '@/services/api';
+import { userService, apiKeyService, memoryService, agentService, versionService, type UserSession } from '@/services/api';
 import type { ApiProvider, MemoryEntry } from '@/types';
 
 export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingConversations, setIsExportingConversations] = useState(false);
+  const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const user = useAuthStore((s) => s.user);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    versionService.get().then(({ data }) => setAppVersion(data.version)).catch(() => {});
+  }, []);
   const setUser = useAuthStore((s) => s.setUser);
+  const compactMode = useAuthStore((s) => s.compactMode);
+  const setCompactMode = useAuthStore((s) => s.setCompactMode);
   const { mode: themeMode, accentColor, accentPresets, setMode: setThemeMode, setAccentColor, setBackground } = useThemeStore();
   const isMobile = useMobileDetect();
 
@@ -55,6 +66,14 @@ export function SettingsPage() {
     weeklyDigest: user?.notifications?.weeklyDigest ?? true,
     marketingEmails: false,
     securityAlerts: user?.notifications?.agentUpdates ?? true,
+    reminderNotifs: user?.notifications?.reminders ?? true,
+  });
+
+  // Agent-level notification preferences (saved to agent_configs via PATCH /agent/config)
+  const [agentNotifs, setAgentNotifs] = useState({
+    notif_reminders: 1,
+    notif_escalations: 1,
+    notif_agents: 1,
   });
 
   const [privacy, setPrivacy] = useState({
@@ -71,6 +90,23 @@ export function SettingsPage() {
   const [showAddKey, setShowAddKey] = useState(false);
 
   // AI Background Generator state
+  const handleRevokeSession = async (sessionId: string) => {
+    await userService.revokeSession(sessionId).catch(() => {});
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+  };
+
+  const handleSaveModel = async (model: string) => {
+    setModelSaving(true);
+    try {
+      await userService.setPreferredModel(model);
+      setPreferredModel(model);
+    } catch {
+      // ignore
+    } finally {
+      setModelSaving(false);
+    }
+  };
+
   const [bgVibe, setBgVibe] = useState('');
   const [bgPreview, setBgPreview] = useState<{ gradient: string; name: string; accent: string } | null>(null);
   const [isGeneratingBg, setIsGeneratingBg] = useState(false);
@@ -79,6 +115,7 @@ export function SettingsPage() {
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
   const [memoryFilter, setMemoryFilter] = useState<string>('all');
   const [memoriesLoading, setMemoriesLoading] = useState(false);
+  const [reactionSummary, setReactionSummary] = useState<{ reaction: string; count: number }[]>([]);
 
   // Load API keys from backend on mount
   useEffect(() => {
@@ -87,9 +124,18 @@ export function SettingsPage() {
     }).catch(() => {});
   }, []);
 
-  // Load memories when memory tab is active
+  // Session management state
+  const [sessions, setSessions] = useState<UserSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  // Model preference state
+  const [preferredModel, setPreferredModel] = useState('auto');
+  const [modelSaving, setModelSaving] = useState(false);
+
+  // Load memories and reaction summary when memory tab is active
   useEffect(() => {
     if (activeTab === 'memory') {
+      memoryService.getReactionSummary().then(({ data }) => setReactionSummary(data.reactions)).catch(() => {});
       setMemoriesLoading(true);
       memoryService.list(memoryFilter === 'all' ? undefined : memoryFilter)
         .then(({ data }) => setMemories(data))
@@ -97,6 +143,61 @@ export function SettingsPage() {
         .finally(() => setMemoriesLoading(false));
     }
   }, [activeTab, memoryFilter]);
+
+  // Load sessions and model preference when security tab is active
+  useEffect(() => {
+    if (activeTab === 'security') {
+      setSessionsLoading(true);
+      userService.getSessions()
+        .then(({ data }) => setSessions(data.sessions))
+        .catch(() => {})
+        .finally(() => setSessionsLoading(false));
+      userService.getPreferredModel()
+        .then(({ data }) => setPreferredModel(data.preferredModel))
+        .catch(() => {});
+    }
+  }, [activeTab]);
+
+
+  const handleExportConversations = async () => {
+    setIsExportingConversations(true);
+    try {
+      const { data } = await memoryService.getConversationsExport(1000);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `geekspace-conversations-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // silent — export is best-effort
+    } finally {
+      setIsExportingConversations(false);
+    }
+  };
+
+  const handleExportMarkdown = async () => {
+    setIsExportingMarkdown(true);
+    try {
+      const { data } = await memoryService.getConversationsMarkdownExport();
+      const blob = new Blob([data as unknown as string], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `geekspace-chat-${new Date().toISOString().slice(0, 10)}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // silent — export is best-effort
+    } finally {
+      setIsExportingMarkdown(false);
+    }
+  };
 
   const handleDeleteMemory = async (memoryId: string) => {
     try {
@@ -112,6 +213,7 @@ export function SettingsPage() {
     pushNotifications: 'push',
     weeklyDigest: 'weeklyDigest',
     securityAlerts: 'agentUpdates',
+    reminderNotifs: 'reminders',
   };
 
   const saveNotification = async (field: string, value: boolean) => {
@@ -317,6 +419,7 @@ export function SettingsPage() {
               {[
                 { key: 'emailReminders', icon: Mail, title: 'Email Reminders', desc: 'Get reminders via email' },
                 { key: 'pushNotifications', icon: Smartphone, title: 'Push Notifications', desc: 'Browser push notifications' },
+                { key: 'reminderNotifs', icon: Bell, title: 'Reminder Notifications', desc: 'Alerts when reminders are due' },
                 { key: 'weeklyDigest', icon: Globe, title: 'Weekly Digest', desc: 'Weekly summary of activity' },
                 { key: 'securityAlerts', icon: Shield, title: 'Security Alerts', desc: 'Important security notifications' },
               ].map((item) => (
@@ -341,32 +444,138 @@ export function SettingsPage() {
               ))}
             </CardContent>
           </Card>
+
+          {/* Telegram Notification Preferences Card */}
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle>Telegram Alerts</CardTitle>
+              <CardDescription className="text-[#6B7280]">Choose which alerts are sent to your Telegram</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {([
+                { key: 'notif_reminders' as const, title: 'Reminder alerts', desc: 'Get notified when a reminder fires' },
+                { key: 'notif_escalations' as const, title: 'Escalation alerts', desc: 'Receive replies to Telegram escalations' },
+                { key: 'notif_agents' as const, title: 'Agent activity alerts', desc: 'Notifications for agent actions and tasks' },
+              ] as const).map((item) => (
+                <div key={item.key} className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-[#E8E8F0] text-sm">{item.title}</div>
+                    <div className="text-xs text-[#6B7280] mt-0.5">{item.desc}</div>
+                  </div>
+                  <Switch
+                    checked={agentNotifs[item.key] === 1}
+                    onCheckedChange={(checked) => {
+                      const updated = { ...agentNotifs, [item.key]: checked ? 1 : 0 };
+                      setAgentNotifs(updated);
+                      void agentService.updateConfig({ [item.key]: checked ? 1 : 0 }).catch(() => {});
+                    }}
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Security Tab */}
         <TabsContent value="security" className="space-y-6">
+          {/* Active Sessions Card */}
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription className="text-[#6B7280]">Manage your account security</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#00FF88]/10 border border-[#00FF88]/30 flex items-center gap-3">
-                <Check className="w-5 h-5 text-[#00FF88]" />
+              <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-[#E8E8F0]">Two-Factor Authentication</div>
-                  <div className="text-sm text-[#6B7280]">Enabled via authenticator app</div>
+                  <CardTitle>Active Sessions</CardTitle>
+                  <CardDescription className="text-[#6B7280]">Devices where you are currently signed in</CardDescription>
                 </div>
+                {sessions.length > 1 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/10"
+                    onClick={async () => {
+                      await userService.revokeAllSessions().catch(() => {});
+                      setSessions([]);
+                    }}
+                  >
+                    <LogOut className="w-3 h-3 mr-1" />
+                    Revoke all
+                  </Button>
+                )}
               </div>
-              <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20">
-                <div className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-[#00FF88]" />
-                  <div>
-                    <div className="font-medium text-[#E8E8F0]">Active Sessions</div>
-                    <div className="text-sm text-[#6B7280]">Current session active</div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {sessionsLoading ? (
+                <div className="flex items-center gap-2 py-4 text-[#6B7280]">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Loading sessions...</span>
+                </div>
+              ) : sessions.length === 0 ? (
+                <div className="text-center py-6">
+                  <Monitor className="w-8 h-8 text-[#00F0FF]/30 mx-auto mb-2" />
+                  <p className="text-sm text-[#6B7280]">No active sessions found</p>
+                </div>
+              ) : (
+                sessions.map((s) => (
+                  <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/20">
+                    <div className="flex items-center gap-3">
+                      <Monitor className="w-5 h-5 text-[#00F0FF] flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-[#E8E8F0] truncate max-w-[200px]">
+                          {s.user_agent.slice(0, 40) || 'Unknown browser'}
+                        </div>
+                        <div className="text-xs text-[#6B7280]">
+                          {s.ip || 'Unknown IP'} · Last seen {new Date(s.last_seen).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-[#FF6161] hover:text-[#FF6161] hover:bg-[#FF6161]/10 flex-shrink-0"
+                      onClick={() => handleRevokeSession(s.id)}
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </Button>
                   </div>
+                ))
+              )}
+              <p className="text-xs text-[#6B7280] pt-1">
+                Note: Revoking a session marks it inactive in the database but existing tokens remain valid until they expire.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Preferred AI Engine Card */}
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle>Preferred AI Engine</CardTitle>
+              <CardDescription className="text-[#6B7280]">Choose which AI model powers your assistant</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[
+                { value: 'auto', label: 'Auto (Recommended)', desc: 'GeekSpace picks the best engine for each task' },
+                { value: 'local', label: 'Local Engine (Ollama)', desc: 'Fastest, no cloud — runs on-device' },
+                { value: 'cloud', label: 'Cloud Engine (OpenRouter)', desc: 'More capable, uses your credits' },
+                { value: 'premium', label: 'Premium (Edith / Kimi K2)', desc: 'Most powerful — highest credit cost' },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => handleSaveModel(opt.value)}
+                  disabled={modelSaving}
+                  className={`w-full text-left p-3 rounded-xl border transition-all ${
+                    preferredModel === opt.value
+                      ? 'bg-[#00F0FF]/10 border-[#00F0FF] text-[#00F0FF]'
+                      : 'bg-[#06060B] border-[#00F0FF]/20 text-[#E8E8F0] hover:border-[#00F0FF]/50'
+                  }`}
+                >
+                  <div className="font-medium text-sm">{opt.label}</div>
+                  <div className="text-xs text-[#6B7280] mt-0.5">{opt.desc}</div>
+                </button>
+              ))}
+              {modelSaving && (
+                <div className="flex items-center gap-2 text-[#6B7280] text-sm">
+                  <Loader2 className="w-3 h-3 animate-spin" />Saving...
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -531,6 +740,32 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
+          {reactionSummary.length > 0 && (
+            <Card className="border-[#00F0FF]/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <span className="text-base">✨</span> Top Reactions
+                </CardTitle>
+                <CardDescription className="text-[#6B7280] text-xs">
+                  Your most-used reactions on agent messages
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {reactionSummary.map(({ reaction, count }) => (
+                    <div
+                      key={reaction}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-colors"
+                    >
+                      <span className="text-base leading-none">{reaction}</span>
+                      <span className="text-xs font-bold text-[#00F0FF]">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
@@ -542,6 +777,51 @@ export function SettingsPage() {
                     Memories improve response quality over time. You can delete any memory at any time.
                   </p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-[#00F0FF]/20">
+            <CardContent className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Chat History Export</h4>
+                  <p className="text-xs text-[#6B7280]">Download your full conversation history as a JSON file.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportConversations}
+                  disabled={isExportingConversations}
+                  className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10"
+                >
+                  {isExportingConversations ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Export as JSON
+                </Button>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Export as Markdown</h4>
+                  <p className="text-xs text-[#6B7280]">Download chat history as a readable Markdown (.md) file.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportMarkdown}
+                  disabled={isExportingMarkdown}
+                  className="border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
+                >
+                  {isExportingMarkdown ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Export as Markdown
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -646,6 +926,19 @@ export function SettingsPage() {
                 </div>
               </div>
 
+              {/* Compact Mode */}
+              <div className="flex items-center justify-between py-3 border-t border-[#00F0FF]/10">
+                <div>
+                  <p className="text-sm font-medium text-[#E8E8F0]">Compact Mode</p>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Reduce card padding and spacing for a denser layout</p>
+                </div>
+                <Switch
+                  checked={compactMode}
+                  onCheckedChange={setCompactMode}
+                  aria-label="Compact Mode"
+                />
+              </div>
+
               {/* AI Background Generator */}
               <div className="space-y-3">
                 <label className="text-sm text-[#6B7280] block">AI-Generated Background</label>
@@ -679,6 +972,13 @@ export function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* App Version Footer */}
+      {appVersion && (
+        <div className="mt-6 text-center">
+          <p className="text-xs text-[#4B5563]">GeekSpace v{appVersion}</p>
+        </div>
+      )}
     </div>
   );
 }

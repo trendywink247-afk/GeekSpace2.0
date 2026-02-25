@@ -34,14 +34,20 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
 
   res.on('finish', () => {
     const duration = Date.now() - start;
-    const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
+    // Slow requests (>500ms) at warn regardless of status, errors always at error level
+    const level = res.statusCode >= 500
+      ? 'error'
+      : res.statusCode >= 400 || duration > 500
+        ? 'warn'
+        : 'info';
     logger[level]({
       requestId,
       method,
       url,
       status: res.statusCode,
       durationMs: duration,
-    }, `${method} ${url} ${res.statusCode} ${duration}ms`);
+      slow: duration > 500,
+    }, `${method} ${url} ${res.statusCode} ${duration}ms${duration > 500 ? ' [SLOW]' : ''}`);
   });
 
   next();

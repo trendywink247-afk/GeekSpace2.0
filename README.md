@@ -55,6 +55,10 @@ GeekSpace is a personal AI platform that gives every user their own intelligent 
 - SSE streaming responses
 - Specialist sessions for deep tasks
 - Memory, context extraction, chat summarization
+- Chat search (filter messages by keyword)
+- Chat export (download full conversation history as JSON)
+- Message reactions (emoji reactions on any message)
+- AI model preference setting (per-user routing override)
 
 </td>
 <td width="50%">
@@ -65,6 +69,7 @@ GeekSpace is a personal AI platform that gives every user their own intelligent 
 - Project showcase with AI-generated descriptions
 - Connection tracking and social links
 - Multiple layout themes
+- Portfolio public sharing with visit analytics
 
 </td>
 </tr>
@@ -77,6 +82,7 @@ GeekSpace is a personal AI platform that gives every user their own intelligent 
 - Cron, webhook, and health-check triggers
 - Telegram & WhatsApp integration
 - Reminders via push, email, or Telegram
+- Recurring reminders (daily, weekly, monthly schedules)
 
 </td>
 <td>
@@ -87,6 +93,9 @@ GeekSpace is a personal AI platform that gives every user their own intelligent 
 - API key management with AES-256-GCM encryption
 - Billing with INR/USD pricing (Free → Yearly plans)
 - PWA — installable on mobile and desktop
+- Auth session management (view and revoke active sessions)
+- Activity notification log
+- Build info in health endpoint
 
 </td>
 </tr>

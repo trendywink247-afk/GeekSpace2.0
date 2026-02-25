@@ -6,6 +6,8 @@ import { validateBody, permissionsUpdateSchema } from '../middleware/validate.js
 import { db } from '../db/index.js';
 import { getBotUsername } from '../services/telegram.js';
 import { config } from '../config.js';
+import { logger } from '../logger.js';
+import { generateWhatsAppLinkToken, generateWhatsAppQRSession, checkWhatsAppSession } from '../services/whatsapp.js';
 
 export const integrationsRouter = Router();
 
@@ -159,42 +161,11 @@ integrationsRouter.delete('/telegram/link', requireAuth, (req: AuthRequest, res)
 // WhatsApp Account Linking
 // ================================================================
 
-// Generate a link code and return a WhatsApp wa.me link
-integrationsRouter.post('/whatsapp/link', requireAuth, async (req: AuthRequest, res) => {
-  const userId = req.userId!;
-
-  if (!config.whatsappBusinessNumber) {
-    res.status(503).json({ error: 'WhatsApp is not configured on this server.' });
-    return;
-  }
-
-  // Check if already linked
-  const existing = db.prepare(
-    "SELECT id, external_id FROM channel_links WHERE user_id = ? AND channel = 'whatsapp'"
-  ).get(userId) as { id: string; external_id: string } | undefined;
-
-  if (existing) {
-    res.json({
-      linked: true,
-      externalId: existing.external_id,
-      message: 'WhatsApp is already linked.',
-    });
-    return;
-  }
-
-  // Generate link token
-  const { generateWhatsAppLinkToken } = await import('../services/whatsapp.js');
-  const token = await generateWhatsAppLinkToken(userId);
-
-  // Generate wa.me link with pre-filled message
-  const waMeUrl = `https://wa.me/${config.whatsappBusinessNumber}?text=LINK%20${token}`;
-
-  res.json({
-    linked: false,
-    token,
-    qrUrl: waMeUrl,
-    expiresIn: 3600,
-    message: 'Scan the QR code or click the link to open WhatsApp and send the connect message.',
+// Deprecated: use POST /whatsapp/qr instead
+integrationsRouter.post('/whatsapp/link', requireAuth, (req: AuthRequest, res) => {
+  logger.warn({ userId: req.userId }, 'whatsapp/link (gone): client must use /whatsapp/qr');
+  res.status(410).json({
+    error: 'This endpoint has been removed. Use POST /api/integrations/whatsapp/qr to link WhatsApp.',
   });
 });
 
@@ -260,19 +231,14 @@ integrationsRouter.post('/whatsapp/qr', requireAuth, async (req: AuthRequest, re
   }
 
   try {
-    const { generateWhatsAppQRSession } = await import('../services/whatsapp-new.js');
     const result = await generateWhatsAppQRSession(userId, 'dashboard');
-
     if (result.success) {
-      res.json({
-        success: true,
-        sessionId: result.sessionId,
-        qrCodeDataUrl: result.qrCodeDataUrl,
-      });
+      res.json({ success: true, sessionId: result.sessionId, qrCodeDataUrl: result.qrCodeDataUrl });
     } else {
       res.status(500).json({ success: false, error: result.error });
     }
   } catch (err) {
+    logger.error({ err }, 'Failed to generate WhatsApp QR code');
     res.status(500).json({ success: false, error: 'Failed to generate QR code' });
   }
 });
@@ -282,11 +248,173 @@ integrationsRouter.get('/whatsapp/qr/:sessionId/status', requireAuth, async (req
   const { sessionId } = req.params;
 
   try {
-    const { checkWhatsAppSession } = await import('../services/whatsapp-new.js');
     const result = await checkWhatsAppSession(sessionId);
-
     res.json(result);
   } catch (err) {
+    logger.error({ err }, 'Failed to check WhatsApp session status');
     res.status(500).json({ linked: false, error: 'Failed to check status' });
   }
+});
+
+// ================================================================
+// Integration Health Check (24.1)
+// POST /integrations/:type/test — quick liveness check per type
+// ================================================================
+
+integrationsRouter.post('/:type/test', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const type = req.params.type;
+
+  // Only check connected integrations
+  const integration = db.prepare(
+    "SELECT * FROM integrations WHERE user_id = ? AND type = ? AND status = 'connected'"
+  ).get(userId, type) as Record<string, unknown> | undefined;
+
+  if (!integration) {
+    res.json({ healthy: false, reason: 'not_connected' });
+    return;
+  }
+
+  let healthy = false;
+  let reason = 'unknown';
+
+  switch (type) {
+    case 'telegram': {
+      // Healthy if bot token is configured AND the user has a linked channel
+      const hasToken = !!config.telegramBotToken;
+      const link = db.prepare(
+        "SELECT id FROM channel_links WHERE user_id = ? AND channel = 'telegram'"
+      ).get(userId);
+      healthy = hasToken && !!link;
+      reason = !hasToken ? 'bot_not_configured' : !link ? 'not_linked' : 'ok';
+      break;
+    }
+    case 'whatsapp': {
+      const link = db.prepare(
+        "SELECT id FROM channel_links WHERE user_id = ? AND channel = 'whatsapp'"
+      ).get(userId);
+      healthy = !!link;
+      reason = link ? 'ok' : 'not_linked';
+      break;
+    }
+    case 'email': {
+      const cfg = db.prepare(
+        "SELECT notification_email_enabled, notification_email_address FROM agent_configs WHERE user_id = ?"
+      ).get(userId) as { notification_email_enabled?: number; notification_email_address?: string } | undefined;
+      healthy = !!(cfg?.notification_email_enabled && cfg?.notification_email_address);
+      reason = healthy ? 'ok' : 'no_email_set';
+      break;
+    }
+    default: {
+      // For any other integration, status=connected is enough
+      healthy = true;
+      reason = 'ok';
+      break;
+    }
+  }
+
+  // Optionally update health column in integrations table
+  const healthValue = healthy ? 100 : 0;
+  db.prepare('UPDATE integrations SET health = ? WHERE user_id = ? AND type = ?')
+    .run(healthValue, userId, type);
+
+  res.json({ healthy, reason, type });
+});
+
+// ── Phase 27.3: Connection Invite Links ──────────────────────────────────────
+
+integrationsRouter.post('/invite', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { email } = req.body as { email?: string };
+
+  const token = crypto.randomBytes(24).toString('hex');
+  const id = uuid();
+  const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  db.prepare(
+    'INSERT INTO connection_invites (id, user_id, token, email, expires_at) VALUES (?, ?, ?, ?, ?)'
+  ).run(id, userId, token, email ?? null, expiresAt);
+
+  const inviteUrl = `https://ai.geekspace.space/connect/${token}`;
+  res.json({ inviteUrl, token, expiresAt });
+});
+
+integrationsRouter.get('/invites', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const invites = db.prepare(
+    'SELECT id, token, email, expires_at, used_at, created_at FROM connection_invites WHERE user_id = ? ORDER BY created_at DESC LIMIT 20'
+  ).all(userId) as { id: string; token: string; email: string | null; expires_at: number; used_at: number | null; created_at: number }[];
+
+  const result = invites.map((inv) => ({
+    ...inv,
+    inviteUrl: `https://ai.geekspace.space/connect/${inv.token}`,
+    expired: inv.expires_at < Date.now(),
+    used: !!inv.used_at,
+  }));
+
+  res.json(result);
+});
+
+// ── Phase 29.1: Connection Invite Accept Flow ─────────────────────────────────
+
+// Public endpoint — get invite info by token (no auth required)
+integrationsRouter.get('/invite/:token/info', (req, res) => {
+  const { token } = req.params;
+  const invite = db.prepare(
+    'SELECT ci.id, ci.token, ci.email, ci.expires_at, ci.used_at, u.name as owner_name, u.username as owner_username, u.avatar as owner_avatar FROM connection_invites ci JOIN users u ON u.id = ci.user_id WHERE ci.token = ?'
+  ).get(token) as { id: string; token: string; email: string | null; expires_at: number; used_at: number | null; owner_name: string; owner_username: string; owner_avatar: string | null } | undefined;
+
+  if (!invite) {
+    res.status(404).json({ error: 'Invite not found' });
+    return;
+  }
+  if (invite.expires_at < Date.now()) {
+    res.status(410).json({ error: 'Invite expired' });
+    return;
+  }
+  if (invite.used_at) {
+    res.status(409).json({ error: 'Invite already used' });
+    return;
+  }
+
+  res.json({
+    token: invite.token,
+    email: invite.email,
+    ownerName: invite.owner_name,
+    ownerUsername: invite.owner_username,
+    ownerAvatar: invite.owner_avatar,
+    expiresAt: invite.expires_at,
+  });
+});
+
+// Public endpoint — accept invite (mark as used, optionally record acceptor email)
+integrationsRouter.post('/invite/:token/accept', (req, res) => {
+  const { token } = req.params;
+  const { acceptorEmail, acceptorName } = req.body as { acceptorEmail?: string; acceptorName?: string };
+
+  const invite = db.prepare(
+    'SELECT id, user_id, expires_at, used_at FROM connection_invites WHERE token = ?'
+  ).get(token) as { id: string; user_id: string; expires_at: number; used_at: number | null } | undefined;
+
+  if (!invite) {
+    res.status(404).json({ error: 'Invite not found' });
+    return;
+  }
+  if (invite.expires_at < Date.now()) {
+    res.status(410).json({ error: 'Invite expired' });
+    return;
+  }
+  if (invite.used_at) {
+    res.status(409).json({ error: 'Invite already used' });
+    return;
+  }
+
+  // Mark invite as used
+  db.prepare('UPDATE connection_invites SET used_at = ? WHERE id = ?').run(Date.now(), invite.id);
+
+  // Log activity for the invite owner
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Connection accepted', ?, 'user-check')`)
+    .run(crypto.randomUUID(), invite.user_id, acceptorName ? `${acceptorName} accepted your connection invite` : acceptorEmail ? `${acceptorEmail} accepted your connection invite` : 'Someone accepted your connection invite');
+
+  res.json({ success: true, message: 'Connection established' });
 });

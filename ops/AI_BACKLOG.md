@@ -4,39 +4,71 @@
 
 ## 🔴 Critical (P0)
 
-- [ ] WhatsApp sending is a no-op stub (`whatsapp.ts:5-18`) — messaging to WhatsApp users never delivered
-- [ ] Webhook verification bypass in dev mode (`whatsapp.ts:24`) — any request can forge WhatsApp events
-- [ ] SSE connection limit is 5 (`health.ts:104`) — admin dashboard + monitoring tools exhaust it fast
+_(none currently — all P0 items resolved in Phase 1/2)_
 
 ## 🟠 High (P1)
 
-- [ ] Message-router sends action summaries on every reply, even when zero actions fired ("button spamming")
-- [ ] Connections page uses global `isLoading` state — all Connect buttons disabled during any dashboard fetch
-- [ ] Cluster detection relies on `NODE_APP_INSTANCE` env var — fragile if PM2 misconfigured
-- [ ] Server scheduler failures swallowed silently — Telegram bot crash invisible to ops
+- [x] Verify escalation Tier 1/2/3 wiring in `webhooks.ts` — extracted to service + full unit test coverage (Phase 7)
+- [x] Health SSE sends full snapshot every 15s even if unchanged — delta encoding added (Phase 6)
 
 ## 🟡 Medium (P2)
 
-- [ ] Image generation via Pollinations.AI (free, no API key) — users can't generate images from chat
-- [ ] Connections polling is 3s hardcoded — should use exponential backoff to avoid hammering API
+- [ ] CSP `unsafe-inline` for scripts — should use nonce-based policy in production
 - [ ] Duplicate WhatsApp linking implementations (old wa.me link + new QR) — confusing UX
-- [ ] Stale channel links never purged — grow indefinitely, no 90-day TTL cleanup
-- [ ] Graceful shutdown timeout missing — hung processes possible during restart
-- [ ] Video generation via Pollinations.AI (free, no API key)
+- [ ] Reminder snooze UI (1h/tomorrow/custom) — currently no snooze option in dashboard
+- [ ] Dashboard overview trend charts — sparklines for usage, credits, reminders over time
+- [ ] Unit test coverage for message-router action dedup and escalation path
 
 ## 🟢 Low (P3)
 
-- [ ] CSP allows `unsafe-inline` for scripts — should use nonce-based CSP in production
-- [ ] Health SSE sends full snapshot every 15s even if unchanged — no delta encoding
-- [ ] Onboarding has no step progress indicator or escape hatch
-- [ ] Chat rate limit (2 req/min) may be too strict for power users
+- [ ] WhatsApp sending is still a stub — needs WA Business API keys to be functional
+- [ ] Portfolio tab bar scroll on mobile — already hardened in E2E; consider adding CSS scroll-snap
+- [ ] AI backlog grooming — review all completed items and remove stale ones
 
 ## ✅ Completed
 
+- [x] **Phase 1** — Action button spamming fix (dedup + per-action handling)
+- [x] **Phase 1** — Connections page per-integration loading + exponential backoff polling
+- [x] **Phase 1** — Server startup hardening (safeStart, cluster detect, 10s shutdown timeout)
+- [x] **Phase 1** — Image generation wiring (imageUrl on ActionResult + Pollinations.AI)
+- [x] **Phase 1** — SSE connection limit 5→25 + probe timing log
+- [x] **Phase 2** — WhatsApp webhook security (reject in prod when token not set)
+- [x] **Phase 2** — Onboarding escape hatch ("Not X? Sign in as someone else")
+- [x] **Phase 2** — Stale channel link cleanup (90-day TTL DELETE + daily cron)
+- [x] **Phase 2** — Video generation wiring (videoUrl + channel reply 🎬)
+- [x] **Phase 2** — Chat rate limit 30→60 per 15min
+- [x] **Hotfix** — E2E portfolio mobile scroll (scrollIntoViewIfNeeded before tab click)
 - [x] Smart escalation 3-tier matching (Tier1 native reply / Tier2 keyword / Tier3 fallthrough)
 - [x] Preview URLs sent directly in Telegram after generate_code
 - [x] Code blocks stripped from Telegram replies when artifact generated
-- [x] CapabilitiesPage — 20+ capabilities, pipeline visualizer, hidden powers
-- [x] DashboardTour — 6-step guided first-use flow
+- [x] CapabilitiesPage, DashboardTour, ImageGenPage, VideoGenPage, WebsiteBuilderPage, SocialMediaPage
 - [x] notifMessageId stored in Redis escalation data for Tier1 matching
 - [x] Auto-save generate_code artifacts to portfolios.projects
+- [x] **Phase 7** — Escalation service extraction + unit tests (7 tests covering all tiers)
+- [x] **Phase 7** — Webhook bot-message filtering + oversized text guard
+- [x] **Phase 7** — Build info in /api/health REST response (version, nodeVersion, platform)
+- [x] **Phase 7** — Chat history search in AgentChatPanel (toggle + filter + X-results indicator)
+- [x] **Phase 7** — Backend search: getRecentConversations accepts search? param
+- [x] **Phase 8** — Chat error recovery + retry button (retryContent in ChatMessage, RotateCcw button)
+- [x] **Phase 8** — Credits remaining display in regular chat header
+- [x] **Phase 8** — Conversation export: GET /conversations/export + download button in chat UI
+- [x] **Phase 8** — WhatsApp old endpoint deprecation log + X-Deprecated header
+- [x] **Phase 8** — Message reactions persistence (message_reactions table + API + frontend wired)
+
+---
+_Updated Phase 9 (2026-02-25):_
+- [x] Portfolio share/copy link button — added to PortfolioPage header (Phase 9)
+- [x] Response feedback (👎 thumbs-down) — added dislike reaction to MessageReactions (Phase 9)
+- [ ] Auth session management — deferred from Phase 9 (too complex); needs dedicated security phase
+- [ ] Admin dashboard: thumbs-down analytics visualization
+- [ ] Phase 10 candidates: notification preferences UI, portfolio view analytics, personality customization
+
+- [x] **Phase 9** — Health SSE streaming endpoint improvements
+- [x] **Phase 9** — Connection lifecycle fixes
+- [x] **Phase 9** — Forgot password / OTP flow
+- [x] **Phase 10** — user_sessions table + active sessions panel in Settings Security tab
+- [x] **Phase 10** — Preferred AI Engine picker in Settings (users.preferred_model column)
+- [x] **Phase 10** — Activity log endpoint GET /api/activity + notification bell in DashboardApp header
+- [x] **Phase 10** — RoadmapPage: Recent Changes section with last 3 phases of improvements
+- [x] **Phase 10** — Old worktrees (phase-1 through phase-6) cleaned up
+- [x] **Phase 10** — AI_LESSONS.md updated with Phase 7-10 patterns

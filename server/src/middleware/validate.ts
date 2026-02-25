@@ -75,6 +75,7 @@ export const reminderCreateSchema = z.object({
   recurring: z.enum(['', 'daily', 'weekly', 'monthly']).optional(),
   category: z.enum(['personal', 'work', 'health', 'other', 'general']).optional().default('personal'),
   completed: z.boolean().optional().default(false),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional().default('normal'),
 });
 
 export const automationCreateSchema = z.object({
@@ -117,10 +118,11 @@ export const onboardingSchema = z.object({
 
 export const agentConfigUpdateSchema = z.object({
   name: z.string().min(1).max(50).optional(),
-  displayName: z.string().max(100).optional(),
+  displayName: z.string().max(50).optional(),
+  greeting: z.string().max(200).optional(),
   mode: z.enum(['builder', 'creative', 'analyst', 'minimal', 'operator']).optional(),
   voice: z.enum(['friendly', 'professional', 'casual', 'formal', 'witty']).optional(),
-  systemPrompt: z.string().max(4000).optional(),
+  systemPrompt: z.string().max(2000).optional(),
   primaryModel: z.string().max(100).optional(),
   fallbackModel: z.string().max(100).optional(),
   creativity: z.number().min(0).max(1).optional(),
@@ -134,6 +136,10 @@ export const agentConfigUpdateSchema = z.object({
   personality: z.enum(['edith', 'jarvis', 'weebo']).optional(),
   model_preference: z.enum(['auto', 'local', 'cloud', 'premium']).optional(),
   preferred_free_model: z.string().max(200).optional(),
+  briefing_time: z.string().max(10).optional(),
+  notif_reminders: z.number().int().min(0).max(1).optional(),
+  notif_escalations: z.number().int().min(0).max(1).optional(),
+  notif_agents: z.number().int().min(0).max(1).optional(),
 }).strict();
 
 export const userUpdateSchema = z.object({
@@ -165,13 +171,16 @@ export const userUpdateSchema = z.object({
   }).optional(),
 });
 
+// HTML tag stripper for plain-text fields (XSS hardening — 24.3)
+const stripHtml = (s: string) => s.replace(/<[^>]*>/g, '').trim();
+
 export const portfolioUpdateSchema = z.object({
-  headline: z.string().max(200).optional(),
-  about: z.string().max(5000).optional(),
+  headline: z.string().max(200).transform(stripHtml).optional(),
+  about: z.string().max(2000).transform(stripHtml).optional(),
   avatar: z.string().max(2048).optional(),
-  location: z.string().max(100).optional(),
-  role: z.string().max(100).optional(),
-  company: z.string().max(100).optional(),
+  location: z.string().max(100).transform(stripHtml).optional(),
+  role: z.string().max(100).transform(stripHtml).optional(),
+  company: z.string().max(100).transform(stripHtml).optional(),
   layout: z.string().max(50).optional(),
   skills: z.array(z.string().max(50)).max(50).optional(),
   projects: z.array(z.object({
@@ -202,6 +211,7 @@ export const reminderUpdateSchema = z.object({
   category: z.enum(['personal', 'work', 'health', 'other', 'general']).optional(),
   recurring: z.enum(['', 'daily', 'weekly', 'monthly']).optional(),
   completed: z.boolean().optional(),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
 });
 
 export const automationUpdateSchema = z.object({
@@ -363,4 +373,18 @@ export const contentPlanItemUpdateSchema = z.object({
   caption: z.string().max(2200).optional(),
   media_id: z.string().max(200).optional(),
   enabled: z.boolean().optional(),
+});
+
+
+// ---- Bulk Reminder Delete schema (25.5) ----
+
+export const bulkReminderDeleteSchema = z.object({
+  ids: z.array(z.string().min(1).max(100)).min(1).max(100),
+});
+
+// ---- Change Password schema (25.3) ----
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: z.string().min(8).max(128),
 });

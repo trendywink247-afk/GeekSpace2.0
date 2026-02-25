@@ -50,6 +50,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const commands: CommandItem[] = [
     // Navigation
@@ -247,14 +248,20 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
-      case 'ArrowDown':
+      case 'ArrowDown': {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % flatCommands.length);
+        const nextIdx = (selectedIndex + 1) % flatCommands.length;
+        setSelectedIndex(nextIdx);
+        itemRefs.current[nextIdx]?.scrollIntoView({ block: 'nearest' });
         break;
-      case 'ArrowUp':
+      }
+      case 'ArrowUp': {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev - 1 + flatCommands.length) % flatCommands.length);
+        const prevIdx = (selectedIndex - 1 + flatCommands.length) % flatCommands.length;
+        setSelectedIndex(prevIdx);
+        itemRefs.current[prevIdx]?.scrollIntoView({ block: 'nearest' });
         break;
+      }
       case 'Enter':
         e.preventDefault();
         if (flatCommands[selectedIndex]) {
@@ -328,6 +335,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   return (
                     <button
                       key={cmd.id}
+                      ref={(el) => { itemRefs.current[globalIdx] = el; }}
                       onClick={cmd.action}
                       onMouseEnter={() => setSelectedIndex(globalIdx)}
                       className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${

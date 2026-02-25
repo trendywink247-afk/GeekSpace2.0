@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
@@ -14,11 +14,13 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { QuickActionsWidget } from '@/components/QuickActionsWidget';
 import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPrompt';
 import { DashboardTour } from '@/components/DashboardTour';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
-import { agentService } from '@/services/api';
+import { agentService, userService, type ActivityEntry } from '@/services/api';
+import { notify } from '@/services/notifications';
 import type { AgentPersonality } from '@/types';
 
 const personalityEmojis: Record<AgentPersonality, string> = {
@@ -51,8 +53,9 @@ const VideoGenPage = lazy(() => import('./pages/VideoGenPage').then(m => ({ defa
 const PlannerPage = lazy(() => import('./pages/PlannerPage').then(m => ({ default: m.PlannerPage })));
 const SocialMediaPage = lazy(() => import('./pages/SocialMediaPage').then(m => ({ default: m.SocialMediaPage })));
 const CapabilitiesPage = lazy(() => import('./pages/CapabilitiesPage').then(m => ({ default: m.CapabilitiesPage })));
+const ActivityPage = lazy(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity';
 
 interface MenuGroup {
   label: string | null;
@@ -121,6 +124,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: 'terminal', label: 'Terminal', icon: Terminal },
       { id: 'health', label: 'Health', icon: Activity },
+      { id: 'activity', label: 'Activity Log', icon: Clock },
     ],
   },
 ];
@@ -147,6 +151,9 @@ function PageLoader() {
 export function DashboardApp() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
   const swipeHandlers = useSwipeNavigation(location.pathname);
   const [currentPage, setCurrentPage] = useState<PageType>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
@@ -159,14 +166,25 @@ export function DashboardApp() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const compactMode = useAuthStore((s) => s.compactMode);
   const usage = useDashboardStore((s) => s.usage);
   const agent = useDashboardStore((s) => s.agent);
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
+  const reminders = useDashboardStore((s) => s.reminders);
+  const integrations = useDashboardStore((s) => s.integrations);
   const applyTheme = useThemeStore((s) => s.applyTheme);
   const setThemeMode = useThemeStore((s) => s.setMode);
   const setAccentColor = useThemeStore((s) => s.setAccentColor);
   const background = useThemeStore((s) => s.background);
   const themeMode = user?.theme?.mode as 'dark' | 'light' | 'system' | undefined;
+
+  // Due/overdue reminders count for sidebar badge
+  const dueReminderCount = reminders.filter(
+    (r) => !r.completed && new Date(r.datetime).getTime() <= Date.now()
+  ).length;
+
+  // Pending integrations count for nav badge
+  const pendingConnectionCount = integrations.filter((i) => i.status === 'pending').length;
 
   useEffect(() => {
     loadDashboard();
@@ -201,12 +219,24 @@ export function DashboardApp() {
     }
   }, []);
 
+  // Cmd+K / Ctrl+K global shortcut opens command palette
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   // Sync URL pathname → currentPage (so navigate() calls update the view)
   useEffect(() => {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -216,6 +246,27 @@ export function DashboardApp() {
   useEffect(() => {
     setSidebarOpen(false);
   }, [currentPage]);
+
+  // Toast when a reminder becomes due (check every 60s)
+  const notifiedReminderIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const checkDue = () => {
+      const now = Date.now();
+      reminders
+        .filter((r) => !r.completed && !notifiedReminderIds.current.has(r.id))
+        .forEach((r) => {
+          const dueAt = new Date(r.datetime).getTime();
+          // Fire if due within the past 60s (catches the current check window)
+          if (dueAt <= now && dueAt >= now - 60_000) {
+            notify(`Reminder due: ${r.text}`, 'info');
+            notifiedReminderIds.current.add(r.id);
+          }
+        });
+    };
+    checkDue();
+    const interval = setInterval(checkDue, 60_000);
+    return () => clearInterval(interval);
+  }, [reminders]);
 
   const handleLogout = useCallback(() => {
     logout();
@@ -276,6 +327,8 @@ export function DashboardApp() {
           onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)}
           onOpenChat={() => setChatOpen(true)}
         />;
+      case 'activity':
+        return <ActivityPage />;
       default:
         return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
     }
@@ -367,7 +420,17 @@ export function DashboardApp() {
                         }`}
                       >
                         <item.icon className="w-4 h-4 flex-shrink-0" />
-                        <span className="text-sm">{item.label}</span>
+                        <span className="text-sm flex-1 text-left">{item.label}</span>
+                        {item.id === 'reminders' && dueReminderCount > 0 && (
+                          <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none px-1">
+                            {dueReminderCount > 9 ? '9+' : dueReminderCount}
+                          </span>
+                        )}
+                        {item.id === 'connections' && pendingConnectionCount > 0 && (
+                          <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none px-1">
+                            {pendingConnectionCount > 9 ? '9+' : pendingConnectionCount}
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -484,7 +547,7 @@ export function DashboardApp() {
   );
 
   return (
-    <div className="min-h-screen bg-[#06060B] flex flex-col md:flex-row" style={{ background: background || undefined }}>
+    <div className={`min-h-screen bg-[#06060B] flex flex-col md:flex-row${compactMode ? ' gs-compact' : ''}`} style={{ background: background || undefined }}>
       {/* ---- Session idle warning ---- */}
       {showIdleWarning && (
         <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-3 bg-[#FFD700]/10 border-b border-[#FFD700]/30 backdrop-blur-sm">
@@ -565,6 +628,7 @@ export function DashboardApp() {
         className={`flex-1 transition-all duration-300 pb-24 md:pb-0 ${
           sidebarCollapsed ? 'md:ml-[82px]' : 'md:ml-[272px]'
         }`}
+        id="main-content"
         data-testid="dashboard-shell"
       >
         {/* Header — transparent with gradient border */}
@@ -612,6 +676,57 @@ export function DashboardApp() {
             >
               <span className="text-xs text-[#00F0FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
             </div>
+            {/* Notification Bell */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setNotifOpen((o) => !o);
+                  if (!notifOpen) {
+                    setActivityLoading(true);
+                    userService.getActivity(20)
+                      .then(({ data }) => setActivity(data.activity))
+                      .catch(() => {})
+                      .finally(() => setActivityLoading(false));
+                  }
+                }}
+                className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center relative"
+                aria-label="Activity log"
+              >
+                <Bell className="w-5 h-5 text-[#6B7280]" />
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-12 w-80 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-xl shadow-2xl z-50 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10">
+                    <span className="text-sm font-semibold text-[#E8E8F0]">Recent Activity</span>
+                    <button onClick={() => setNotifOpen(false)} className="text-[#6B7280] hover:text-[#E8E8F0]">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto">
+                    {activityLoading ? (
+                      <div className="flex items-center justify-center py-8 text-[#6B7280]">
+                        <div className="w-4 h-4 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin mr-2" />
+                        Loading...
+                      </div>
+                    ) : activity.length === 0 ? (
+                      <div className="py-8 text-center text-sm text-[#6B7280]">No recent activity</div>
+                    ) : (
+                      activity.map((entry) => (
+                        <div key={entry.id} className="flex items-start gap-3 px-4 py-3 border-b border-[#00F0FF]/05 hover:bg-[#00F0FF]/05 transition-colors">
+                          <Activity className="w-4 h-4 text-[#00F0FF] flex-shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <div className="text-sm text-[#E8E8F0] font-medium">{entry.action}</div>
+                            {entry.details && <div className="text-xs text-[#6B7280] truncate">{entry.details}</div>}
+                            <div className="text-xs text-[#6B7280]/70 mt-0.5">{new Date(entry.created_at).toLocaleString()}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* User avatar with hover glow */}
             <button
               onClick={() => navigate('/dashboard/settings')}
@@ -633,11 +748,13 @@ export function DashboardApp() {
 
         {/* Page Content */}
         <div className="p-4 md:p-6" {...swipeHandlers}>
+          <ErrorBoundary>
           <Suspense fallback={<PageLoader />}>
             <div key={currentPage} className="animate-page-enter">
               {renderPage()}
             </div>
           </Suspense>
+          </ErrorBoundary>
         </div>
       </main>
 
@@ -672,7 +789,19 @@ export function DashboardApp() {
                   : 'text-[#6B7280] active:text-[#E8E8F0]'
               }`}
             >
-              <tab.icon className={`w-5 h-5 ${isActive ? 'drop-shadow-[0_0_6px_rgba(0,240,255,0.4)]' : ''}`} />
+              <div className="relative">
+                <tab.icon className={`w-5 h-5 ${isActive ? 'drop-shadow-[0_0_6px_rgba(0,240,255,0.4)]' : ''}`} />
+                {tab.id === 'reminders' && dueReminderCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#FF2D78] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                    {dueReminderCount > 9 ? '9+' : dueReminderCount}
+                  </span>
+                )}
+                {tab.id === 'connections' && pendingConnectionCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#F59E0B] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                    {pendingConnectionCount > 9 ? '9+' : pendingConnectionCount}
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] font-medium">{tab.label}</span>
               {isActive && <div className="w-4 h-1 rounded-full bg-gradient-to-r from-[#00F0FF] to-[#ADFF2F] mt-0.5" />}
             </button>

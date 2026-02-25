@@ -88,7 +88,21 @@ else
   ok "Server build"
 fi
 
-# 7. E2E (optional)
+# 7. Coverage gate
+echo ""
+echo "▶ Server coverage gate..."
+cd "$ROOT/server"
+COV_OUTPUT=$(npm run test:coverage 2>&1)
+if echo "$COV_OUTPUT" | grep -q "ERROR: Coverage"; then
+  echo "$COV_OUTPUT" | grep -A 3 "ERROR: Coverage" | head -5
+  fail "Server coverage — thresholds not met"
+elif echo "$COV_OUTPUT" | grep -q "Tests.*passed"; then
+  ok "Server coverage — thresholds met"
+else
+  fail "Server coverage — unexpected output"
+fi
+
+# 8. E2E (optional)
 if [ "$SKIP_E2E" != "--skip-e2e" ]; then
   echo ""
   echo "▶ E2E smoke (chromium, --skip-e2e to skip)..."

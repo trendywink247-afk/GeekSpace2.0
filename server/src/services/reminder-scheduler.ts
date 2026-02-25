@@ -6,12 +6,17 @@
 //
 // Drift tracking: logs drift_ms = actual_fire_time - scheduled_time
 // Target: reminders fire within 30 seconds of scheduled time
+//
+// Snooze expiry: each tick first resumes reminders whose
+// snooze_until has passed (clears snooze_until so the main
+// query picks them up on the next tick).
 // ============================================================
 
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { sendTelegramMessage } from './telegram.js';
+import { sendReminderEmail, resolveEmailAddress } from './email.js';
 
 // ---- Types ----
 
@@ -24,6 +29,13 @@ interface DueReminder {
   category: string;
   recurring: string;
   scheduled_for: number | null;
+}
+
+interface SnoozedReminder {
+  id: string;
+  user_id: string;
+  text: string;
+  snooze_until: number;
 }
 
 interface ChannelLink {
@@ -55,16 +67,37 @@ export function stopReminderScheduler(): void {
 // ---- Core Logic ----
 
 async function checkAndDeliverReminders(): Promise<void> {
-  const tickStart = Date.now();
-
   try {
-    // Use epoch milliseconds for precise comparison (avoids SQLite timezone issues)
     const now = Date.now();
 
+    // Step 1: Resume expired snoozes — clear snooze_until so the main
+    // query picks them up on the next tick.
+    const expiredSnoozes = db.prepare(`
+      SELECT id, user_id, text, snooze_until
+      FROM reminders
+      WHERE completed = 0
+        AND snooze_until IS NOT NULL
+        AND snooze_until <= ?
+    `).all(now) as SnoozedReminder[];
+
+    if (expiredSnoozes.length > 0) {
+      const resumeStmt = db.prepare(`UPDATE reminders SET snooze_until = NULL WHERE id = ?`);
+      for (const r of expiredSnoozes) {
+        resumeStmt.run(r.id);
+        logger.debug(
+          { reminderId: r.id, userId: r.user_id, snoozedUntil: r.snooze_until },
+          'Reminder snooze expired — resumed',
+        );
+      }
+      logger.info({ count: expiredSnoozes.length }, 'Snooze expiry cleanup: reminders resumed');
+    }
+
+    // Step 2: Fetch due reminders (skip still-snoozed ones)
     const dueReminders = db.prepare(`
       SELECT id, user_id, text, datetime, channel, category, recurring, scheduled_for
       FROM reminders
       WHERE completed = 0
+        AND snooze_until IS NULL
         AND (
           (scheduled_for IS NOT NULL AND scheduled_for <= ?)
           OR
@@ -128,6 +161,13 @@ async function deliverReminder(reminder: DueReminder): Promise<void> {
 
   switch (reminder.channel) {
     case 'telegram': {
+      // Check if user has disabled reminder notifications
+      const notifPref = db.prepare('SELECT notif_reminders FROM agent_configs WHERE user_id = ?').get(reminder.user_id) as { notif_reminders?: number } | undefined;
+      if (notifPref && notifPref.notif_reminders === 0) {
+        logger.info({ reminderId: reminder.id }, 'Telegram reminder skipped: notif_reminders disabled');
+        break;
+      }
+
       const link = db.prepare(
         "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
       ).get(reminder.user_id) as ChannelLink | undefined;
@@ -142,6 +182,14 @@ async function deliverReminder(reminder: DueReminder): Promise<void> {
       } else {
         logger.warn({ reminderId: reminder.id, userId: reminder.user_id }, 'No Telegram link for reminder delivery');
       }
+
+      // Also send email if user has an address configured (best-effort)
+      await tryEmailDelivery(reminder);
+      break;
+    }
+
+    case 'email': {
+      await tryEmailDelivery(reminder);
       break;
     }
 
@@ -150,6 +198,25 @@ async function deliverReminder(reminder: DueReminder): Promise<void> {
       // Push notifications not yet implemented — log and complete
       logger.debug({ reminderId: reminder.id, channel: reminder.channel }, 'Reminder completed (no delivery channel)');
       break;
+  }
+}
+
+/**
+ * Attempt email delivery for a reminder. Resolves the user's email address
+ * from agent_configs (notification_email_address) or users.email.
+ * Gracefully no-ops if no address or Resend not configured.
+ */
+async function tryEmailDelivery(reminder: DueReminder): Promise<void> {
+  try {
+    const emailAddress = resolveEmailAddress(reminder.user_id);
+    if (!emailAddress) return;
+
+    const sent = await sendReminderEmail(reminder.user_id, reminder.text);
+    if (sent) {
+      logger.info({ reminderId: reminder.id, userId: reminder.user_id }, 'Reminder delivered via email');
+    }
+  } catch (err) {
+    logger.warn({ reminderId: reminder.id, err: (err as Error).message }, 'Email delivery failed for reminder (non-fatal)');
   }
 }
 

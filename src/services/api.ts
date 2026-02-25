@@ -36,6 +36,7 @@ import type {
   ArtifactDeployment,
   Template,
   TemplateCategory,
+  UsageEvent,
 } from '@/types';
 
 // ----- Axios instance ----------------------------------------
@@ -99,7 +100,7 @@ export const authService = {
     api.post('/auth/onboarding/complete'),
 
   requestPasswordReset: (email: string, channel?: 'email' | 'telegram' | 'auto') =>
-    api.post<{ success: boolean; message: string; channel?: string }>('/auth/forgot-password', { email, channel }),
+    api.post<{ success: boolean; message: string; channel?: string; error?: string }>('/auth/forgot-password', { email, channel }),
 
   verifyResetOTP: (email: string, otp: string) =>
     api.post<{ success: boolean; resetToken?: string; error?: string }>('/auth/verify-reset-otp', { email, otp }),
@@ -110,6 +111,23 @@ export const authService = {
 
 // ----- Users -------------------------------------------------
 
+export interface UserSession {
+  id: string;
+  created_at: string;
+  last_seen: string;
+  user_agent: string;
+  ip: string;
+  is_active: number;
+}
+
+export interface ActivityEntry {
+  id: string;
+  action: string;
+  details: string;
+  icon: string;
+  created_at: string;
+}
+
 export const userService = {
   getProfile: () => api.get<User>('/users/me'),
 
@@ -118,6 +136,30 @@ export const userService = {
 
   getPublicProfile: (username: string) =>
     api.get<User>(`/users/${username}/public`),
+
+  getSessions: () =>
+    api.get<{ sessions: UserSession[] }>('/auth/sessions'),
+
+  revokeSession: (id: string) =>
+    api.delete<{ success: boolean }>(`/auth/sessions/${id}`),
+
+  revokeAllSessions: () =>
+    api.delete<{ success: boolean }>('/auth/sessions'),
+
+  getPreferredModel: () =>
+    api.get<{ preferredModel: string }>('/users/me/model'),
+
+  setPreferredModel: (model: string) =>
+    api.put<{ preferredModel: string }>('/users/me/model', { model }),
+
+  getActivity: (limit = 50) =>
+    api.get<{ activity: ActivityEntry[] }>(`/activity?limit=${limit}`),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post<{ success: boolean; message: string }>('/users/me/change-password', {
+      currentPassword,
+      newPassword,
+    }),
 };
 
 // ----- Agent -------------------------------------------------
@@ -172,6 +214,23 @@ export const agentService = {
 
   generateBackground: (vibe?: string) =>
     api.post<{ gradient: string; name: string; accent: string }>('/agent/generate-background', { vibe }),
+
+  getQuality: () =>
+    api.get<{
+      totalMessages: number;
+      positiveReactions: number;
+      negativeReactions: number;
+      satisfactionRate: number | null;
+      trend: 'up' | 'down' | 'neutral';
+      hasEnoughData: boolean;
+    }>('/agent/quality'),
+};
+
+// ----- Version -----------------------------------------------
+
+export const versionService = {
+  get: () =>
+    api.get<{ version: string; buildTime: string; nodeVersion: string }>('/version'),
 };
 
 // ----- API Keys ----------------------------------------------
@@ -208,6 +267,9 @@ export const usageService = {
     api.get<ProviderBreakdown[]>(`/usage/providers?days=${days}`),
 
   latency: () => api.get<HourlyActivity[]>('/usage/latency'),
+
+  daily: (days = 7) =>
+    api.get<Array<{ day: string; label: string; messages: number; credits: number }>>(`/usage/daily?days=${days}`),
 };
 
 // ----- Billing -----------------------------------------------
@@ -223,6 +285,8 @@ export const billingService = {
   getUsage: () => api.get<DailyUsage[]>('/billing/usage'),
 
   activateDayPass: () => api.post<{ message: string; expiresAt: string }>('/billing/day-pass'),
+
+  getEvents: () => api.get<UsageEvent[]>('/billing/events'),
 };
 
 // ----- Integrations ------------------------------------------
@@ -261,6 +325,17 @@ export const integrationService = {
   // Email notification settings
   updateNotificationEmail: (data: { enabled?: boolean; address?: string }) =>
     api.patch<{ enabled: boolean; address: string | null }>('/users/notification-email', data),
+
+  // Health check for a connected integration (24.1)
+  testIntegration: (type: string) =>
+    api.post<{ healthy: boolean; reason: string; type: string }>(`/integrations/${type}/test`),
+
+  // 27.3: Connection invite links
+  createInvite: (email?: string) =>
+    api.post<{ inviteUrl: string; token: string; expiresAt: number }>('/integrations/invite', { email }),
+
+  listInvites: () =>
+    api.get<{ id: string; token: string; email: string | null; inviteUrl: string; expired: boolean; used: boolean; created_at: number }[]>('/integrations/invites'),
 };
 
 // ----- Reminders ---------------------------------------------
@@ -276,6 +351,12 @@ export const reminderService = {
     api.patch<Reminder>(`/reminders/${id}`, data),
 
   delete: (id: string) => api.delete(`/reminders/${id}`),
+
+  bulkDelete: (ids: string[]) =>
+    api.delete<{ deleted: number }>('/reminders/bulk', { data: { ids } }),
+
+  bulkSnooze: (ids: string[], preset: '1h' | 'tomorrow' | 'next-week') =>
+    api.post<{ snoozed: number; newDatetime: string }>('/reminders/bulk-snooze', { ids, preset }),
 };
 
 // ----- Portfolio ---------------------------------------------
@@ -340,6 +421,14 @@ export const portfolioService = {
       inactiveSince: number | null;
       reason?: string;
     }>(`/portfolio/${username}/agent-status`),
+
+  // Portfolio visit stats (includes 30-day daily breakdown)
+  getStats: () =>
+    api.get<{ totalViews: number; recentViews: number; dailyBreakdown: { date: string; count: number }[] }>('/portfolio/stats'),
+
+  // Portfolio visit stats CSV export (last 90 days)
+  exportStats: () =>
+    api.get<Blob>('/portfolio/stats/export', { responseType: 'blob' }),
 };
 
 // ----- Automations -------------------------------------------
@@ -412,6 +501,18 @@ export const memoryService = {
 
   conversations: (limit = 20) =>
     api.get<ConversationEntry[]>(`/agent/conversations?limit=${limit}`),
+
+  getConversationsExport: (limit = 1000) =>
+    api.get<ConversationEntry[]>(`/agent/conversations?limit=${limit}`),
+
+  getConversationsMarkdownExport: () =>
+    api.get<string>('/agent/conversations/export?format=md', { responseType: 'text' }),
+
+  addReaction: (messageId: string, reaction: string) =>
+    api.post<{ success: boolean }>('/agent/conversations/reactions', { messageId, reaction }),
+
+  getReactionSummary: () =>
+    api.get<{ reactions: { reaction: string; count: number }[] }>('/agent/conversations/reactions/summary'),
 };
 
 // ----- Automation Logs ---------------------------------------

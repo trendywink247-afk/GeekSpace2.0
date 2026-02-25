@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Zap,
   Plus,
@@ -30,7 +30,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import type { AutomationTrigger, AutomationAction } from '@/types';
+import { automationLogService } from '@/services/api';
+import type { AutomationTrigger, AutomationAction, AutomationLog } from '@/types';
 
 const triggerIcons: Record<AutomationTrigger, typeof Clock> = {
   time: CalendarClock,
@@ -103,12 +104,17 @@ export function AutomationsPage() {
     enabled: true,
   });
   const [saveError, setSaveError] = useState('');
+  const [logs, setLogs] = useState<AutomationLog[]>([]);
 
   const resetForm = () => {
     setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true });
     setEditingId(null);
     setSaveError('');
   };
+
+  useEffect(() => {
+    automationLogService.list(20).then((r) => setLogs(r.data)).catch(() => setLogs([]));
+  }, []);
 
   const handleOpenAdd = () => {
     resetForm();
@@ -195,6 +201,19 @@ export function AutomationsPage() {
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) return `${diffHours}h ago`;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+
+  // Extract HTTP status code from output string like "HTTP 200 OK" or "HTTP 404 Not Found"
+  const parseHttpStatus = (output: string): number | null => {
+    const match = output.match(/^HTTP (\d{3})/);
+    return match ? parseInt(match[1], 10) : null;
+  };
+
+  const getHttpStatusBg = (status: number): string => {
+    if (status >= 200 && status < 300) return 'bg-[#00FF88]/10 border-[#00FF88]/20 text-[#00FF88]';
+    if (status >= 400) return 'bg-[#FF6161]/10 border-[#FF6161]/20 text-[#FF6161]';
+    return 'bg-[#6B7280]/10 border-[#6B7280]/20 text-[#6B7280]';
   };
 
   return (
@@ -498,6 +517,80 @@ export function AutomationsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Recent Runs */}
+      <div className="mt-6">
+        <h2 className="text-lg font-bold text-[#E8E8F0] mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>
+          Recent Runs
+        </h2>
+        {logs.length === 0 ? (
+          <Card className="border-[#00F0FF]/20">
+            <CardContent className="py-10 text-center">
+              <Clock className="w-10 h-10 text-[#00F0FF]/20 mx-auto mb-3" />
+              <p className="text-[#6B7280]">No automation runs yet</p>
+              <p className="text-sm text-[#6B7280]">Trigger an automation to see its history here</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-[#00F0FF]/20 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#00F0FF]/10 bg-[#06060B]">
+                    <th className="text-left px-4 py-3 text-[#6B7280] font-medium">Status</th>
+                    <th className="text-left px-4 py-3 text-[#6B7280] font-medium">Output</th>
+                    <th className="text-left px-4 py-3 text-[#6B7280] font-medium">Duration</th>
+                    <th className="text-left px-4 py-3 text-[#6B7280] font-medium">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((log) => {
+                    const rawLog = log as unknown as Record<string, unknown>;
+                    const status = (rawLog.status as string) ?? log.status ?? 'unknown';
+                    const output = (rawLog.output as string) ?? log.output ?? '';
+                    const durationMs = (rawLog.duration_ms as number) ?? log.durationMs ?? 0;
+                    const createdAt = (rawLog.created_at as string) ?? log.createdAt ?? '';
+                    return (
+                      <tr key={log.id} className="border-b border-[#00F0FF]/10 hover:bg-[#00F0FF]/5 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                            status === 'success'
+                              ? 'bg-[#00FF88]/10 text-[#00FF88] border border-[#00FF88]/20'
+                              : 'bg-[#FF6161]/10 text-[#FF6161] border border-[#FF6161]/20'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${status === 'success' ? 'bg-[#00FF88]' : 'bg-[#FF6161]'}`} />
+                            {status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 hidden sm:table-cell">
+                          {(() => {
+                            const httpCode = parseHttpStatus(output);
+                            if (!httpCode) return <span className="text-[#6B7280] text-xs">—</span>;
+                            return (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold border ${getHttpStatusBg(httpCode)}`}>
+                                {httpCode}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-4 py-3 text-[#6B7280] max-w-[200px] truncate text-xs">
+                          {output || '—'}
+                        </td>
+                        <td className="px-4 py-3 text-[#6B7280] font-mono text-xs hidden md:table-cell">
+                          {durationMs > 0 ? `${durationMs}ms` : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-[#6B7280] text-xs whitespace-nowrap">
+                          {createdAt ? new Date(createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

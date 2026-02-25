@@ -2,15 +2,17 @@ import { useState, useEffect } from 'react';
 import {
   Save, Plus, Trash2, X, ExternalLink, Sparkles, Loader2,
   User, Code2, FolderGit2, Award, Share2, Bot, Wand2, Lightbulb, CheckCircle2,
-  BarChart3, Eye, MousePointer, TrendingUp, Globe
+  BarChart3, Eye, TrendingUp, Copy, Link, Download
 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
-import { portfolioService } from '@/services/api';
+import { portfolioService, agentService } from '@/services/api';
+import type { AgentPersonality } from '@/types';
 import type { Portfolio, PortfolioProject, PortfolioMilestone, PortfolioLayout } from '@/types';
 
 const emptyProject: PortfolioProject = { name: '', description: '', url: '', tags: [] };
@@ -22,6 +24,35 @@ export function PortfolioPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const handleCopyLink = async () => {
+    if (!user?.username) return;
+    const url = `${window.location.origin}/portfolio/${user.username}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // Fallback: show the URL in message
+      setMessage({ type: 'success', text: `Share this link: ${url}` });
+    }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const response = await portfolioService.exportStats();
+      const blob = new Blob([response.data as unknown as BlobPart], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `portfolio-visits-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to export CSV' });
+    }
+  };
 
   // Portfolio state
   const [headline, setHeadline] = useState('');
@@ -45,6 +76,14 @@ export function PortfolioPage() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
 
+  // Portfolio personality selector state
+  const [portfolioPersonality, setPortfolioPersonality] = useState<AgentPersonality>('weebo');
+  const [personalitySaving, setPersonalitySaving] = useState(false);
+  const [personalitySaved, setPersonalitySaved] = useState(false);
+
+  // Portfolio visit stats
+  const [portfolioStats, setPortfolioStats] = useState<{ totalViews: number; recentViews: number; dailyBreakdown: { date: string; count: number }[] } | null>(null);
+
   // Magic Generate state
   const [generatingField, setGeneratingField] = useState<string | null>(null);
   const [generatedPreview, setGeneratedPreview] = useState<string | null>(null);
@@ -64,6 +103,11 @@ export function PortfolioPage() {
 
   // Load portfolio and suggestions
   useEffect(() => {
+    // Load current agent personality for portfolio selector
+    agentService.getConfig().then(({ data }) => {
+      if (data.personality) setPortfolioPersonality(data.personality);
+    }).catch(() => { /* non-fatal */ });
+
     portfolioService.get()
       .then(({ data }) => {
         setHeadline(data.headline || '');
@@ -80,6 +124,11 @@ export function PortfolioPage() {
 
     // Load suggestions
     loadSuggestions();
+
+    // Load portfolio visit stats
+    portfolioService.getStats()
+      .then(({ data }) => setPortfolioStats(data))
+      .catch(() => { /* non-fatal */ });
   }, []);
 
   const loadSuggestions = async () => {
@@ -97,6 +146,20 @@ export function PortfolioPage() {
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 3000);
+  };
+
+  const handlePersonalitySave = async (p: AgentPersonality) => {
+    setPortfolioPersonality(p);
+    setPersonalitySaving(true);
+    try {
+      await agentService.updateConfig({ personality: p });
+      setPersonalitySaved(true);
+      setTimeout(() => setPersonalitySaved(false), 2000);
+    } catch {
+      // revert on failure
+    } finally {
+      setPersonalitySaving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -261,6 +324,19 @@ export function PortfolioPage() {
     );
   }
 
+  // ---- Profile completion calculation ----
+  const completionItems: Array<{ label: string; done: boolean; tab: string }> = [
+    { label: 'Add your headline', done: !!headline.trim(), tab: 'profile' },
+    { label: 'Write your bio', done: !!about.trim(), tab: 'profile' },
+    { label: 'Set your avatar URL', done: !!avatar.trim(), tab: 'profile' },
+    { label: 'Add your skills', done: skills.length > 0, tab: 'skills' },
+    { label: 'Add a project', done: projects.length > 0, tab: 'projects' },
+    { label: 'Add a social link', done: Object.values(social || {}).some((v) => !!v), tab: 'social' },
+    { label: 'Add a milestone', done: milestones.length > 0, tab: 'milestones' },
+  ];
+  const completedCount = completionItems.filter((i) => i.done).length;
+  const completionPct = Math.round((completedCount / completionItems.length) * 100);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
@@ -270,18 +346,35 @@ export function PortfolioPage() {
             Portfolio
           </h1>
           <p className="text-[#6B7280]">Manage your public portfolio</p>
+          {portfolioStats !== null && (
+            <p className="text-xs text-[#6B7280] mt-1">
+              <Eye className="w-3 h-3 inline mr-1 text-[#00F0FF]" />
+              {portfolioStats.totalViews} total views · {portfolioStats.recentViews} this week
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           {user?.username && (
-            <a
-              href={`/portfolio/${user.username}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-              View Live
-            </a>
+            <>
+              <button
+                onClick={handleCopyLink}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-colors min-h-[36px]"
+                style={linkCopied ? { color: '#00FF88', borderColor: 'rgba(0,255,136,0.4)', background: 'rgba(0,255,136,0.1)' } : { color: '#BF5FFF', borderColor: 'rgba(191,95,255,0.3)' }}
+                title="Copy portfolio link"
+              >
+                <Share2 className="w-4 h-4" />
+                {linkCopied ? 'Copied!' : 'Copy Link'}
+              </button>
+              <a
+                href={`/portfolio/${user.username}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                View Live
+              </a>
+            </>
           )}
           <Button onClick={handleSave} disabled={isSaving} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">
             {isSaving ? (
@@ -301,6 +394,90 @@ export function PortfolioPage() {
             : 'bg-[#FF6161]/10 border border-[#FF6161]/30 text-[#FF6161]'
         }`}>
           {message.text}
+        </div>
+      )}
+
+      {/* Profile Completion Progress Bar */}
+      {completionPct < 100 && (
+        <div
+          className="p-4 rounded-2xl border"
+          style={{ background: '#0C0C18', borderColor: 'rgba(0,240,255,0.2)' }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-[#E8E8F0]">
+              Profile {completionPct}% complete
+            </span>
+            <span className="text-xs text-[#6B7280]">{completedCount}/{completionItems.length} fields</span>
+          </div>
+          <div className="w-full bg-[#06060B] rounded-full h-2 mb-3">
+            <div
+              className="h-2 rounded-full transition-all duration-500"
+              style={{
+                width: `${completionPct}%`,
+                background: completionPct >= 80
+                  ? '#00FF88'
+                  : completionPct >= 50
+                    ? '#00F0FF'
+                    : '#F59E0B',
+              }}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {completionItems
+              .filter((item) => !item.done)
+              .slice(0, 3)
+              .map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => setActiveTab(item.tab)}
+                  className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/20 hover:bg-[#00F0FF]/20 transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  {item.label} →
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Share Your Portfolio Card */}
+      {user?.username && (
+        <div
+          className="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center gap-4"
+          style={{ background: '#0C0C18', borderColor: 'rgba(0,240,255,0.25)' }}
+        >
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Link className="w-4 h-4 text-[#00F0FF]" />
+              <span className="text-sm font-semibold text-[#E8E8F0]">Share Your Portfolio</span>
+            </div>
+            <p className="text-xs text-[#6B7280] truncate">
+              {`${window.location.origin}/portfolio/${user.username}`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={handleCopyLink}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-colors"
+              style={linkCopied
+                ? { color: '#00FF88', borderColor: 'rgba(0,255,136,0.4)', background: 'rgba(0,255,136,0.1)' }
+                : { color: '#00F0FF', borderColor: 'rgba(0,240,255,0.3)', background: 'transparent' }
+              }
+            >
+              <Copy className="w-4 h-4" />
+              {linkCopied ? 'Copied!' : 'Copy Link'}
+            </button>
+            <a
+              href={`/portfolio/${user.username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-colors"
+              style={{ color: '#BF5FFF', borderColor: 'rgba(191,95,255,0.3)' }}
+            >
+              <ExternalLink className="w-4 h-4" />
+              View Live
+            </a>
+          </div>
         </div>
       )}
 
@@ -335,6 +512,9 @@ export function PortfolioPage() {
             </TabsTrigger>
             <TabsTrigger value="analytics" data-testid="portfolio-tab-analytics" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <BarChart3 className="w-4 h-4 mr-2" />Analytics
+            </TabsTrigger>
+            <TabsTrigger value="preview" data-testid="portfolio-tab-preview" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+              <Eye className="w-4 h-4 mr-2" />Preview
             </TabsTrigger>
           </TabsList>
         </div>
@@ -403,20 +583,99 @@ export function PortfolioPage() {
                 />
               </div>
               <div>
-                <label className="text-sm text-[#6B7280] mb-3 block">Layout</label>
-                <div className="flex gap-3">
-                  {(['classic', 'timeline', 'grid'] as PortfolioLayout[]).map((l) => (
+                <label className="text-sm text-[#6B7280] mb-3 block">Theme Layout</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {/* Active layout options */}
+                  {([
+                    { id: 'minimal' as PortfolioLayout, label: 'Minimal', desc: 'Clean, focused' },
+                    { id: 'modern' as PortfolioLayout, label: 'Modern', desc: 'Bold, vivid' },
+                    { id: 'grid' as PortfolioLayout, label: 'Grid', desc: 'Card mosaic' },
+                  ]).map((opt) => (
                     <button
-                      key={l}
-                      onClick={() => setLayout(l)}
-                      className={`flex-1 p-4 min-h-[44px] rounded-xl border-2 capitalize transition-all press-scale ${
-                        layout === l
+                      key={opt.id}
+                      onClick={() => setLayout(opt.id)}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all press-scale ${
+                        layout === opt.id
                           ? 'border-[#00F0FF] bg-[#00F0FF]/10 text-[#00F0FF]'
                           : 'border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/40'
                       }`}
                     >
-                      {l}
+                      {/* Visual preview thumbnail */}
+                      <div className={`w-full h-16 rounded-lg overflow-hidden border ${layout === opt.id ? 'border-[#00F0FF]/40' : 'border-[#00F0FF]/10'} bg-[#06060B] flex flex-col gap-1 p-2`}>
+                        {opt.id === 'minimal' && (
+                          <>
+                            {/* Minimal: centered avatar + text lines */}
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="h-3 w-3 rounded-full bg-[#00F0FF]/50" />
+                              <div className="h-1 w-2/3 rounded bg-[#00F0FF]/40" />
+                            </div>
+                            <div className="h-px w-full bg-[#6B7280]/20 mt-0.5" />
+                            <div className="h-1 w-4/5 rounded bg-[#6B7280]/20" />
+                            <div className="h-1 w-3/5 rounded bg-[#6B7280]/15" />
+                          </>
+                        )}
+                        {opt.id === 'modern' && (
+                          <>
+                            {/* Modern: hero banner + two-col content */}
+                            <div className="h-5 w-full rounded bg-gradient-to-r from-[#00F0FF]/30 to-[#BF5FFF]/30 flex items-center px-1 gap-1">
+                              <div className="h-2 w-2 rounded-full bg-[#00F0FF]/60" />
+                              <div className="h-1 w-1/2 rounded bg-white/30" />
+                            </div>
+                            <div className="flex gap-1 mt-1">
+                              <div className="h-4 flex-1 rounded bg-[#00F0FF]/15 flex flex-col justify-center gap-0.5 p-0.5">
+                                <div className="h-0.5 w-full rounded bg-[#00F0FF]/30" />
+                                <div className="h-0.5 w-3/4 rounded bg-[#00F0FF]/20" />
+                              </div>
+                              <div className="h-4 flex-1 rounded bg-[#BF5FFF]/15 flex flex-col justify-center gap-0.5 p-0.5">
+                                <div className="h-0.5 w-full rounded bg-[#BF5FFF]/30" />
+                                <div className="h-0.5 w-2/3 rounded bg-[#BF5FFF]/20" />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        {opt.id === 'grid' && (
+                          <>
+                            {/* Grid: masonry card layout */}
+                            <div className="grid grid-cols-3 gap-0.5 flex-1">
+                              {[...Array(3)].map((_, i) => (
+                                <div key={i} className={`rounded bg-[#00F0FF]/${i === 0 ? '25' : '15'} flex flex-col justify-end p-0.5`}>
+                                  <div className="h-0.5 w-full rounded bg-[#00F0FF]/30" />
+                                </div>
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-2 gap-0.5 mt-0.5">
+                              {[...Array(2)].map((_, i) => (
+                                <div key={i} className="h-2 rounded bg-[#6B7280]/20" />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs font-semibold">{opt.label}</div>
+                        <div className={`text-[10px] ${layout === opt.id ? 'text-[#00F0FF]/70' : 'text-[#6B7280]/70'}`}>{opt.desc}</div>
+                      </div>
                     </button>
+                  ))}
+                </div>
+                {/* Coming soon layouts */}
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  {([
+                    { id: 'classic', label: 'Classic', desc: 'Traditional résumé' },
+                    { id: 'creative', label: 'Creative', desc: 'Artistic flair' },
+                  ]).map((opt) => (
+                    <div
+                      key={opt.id}
+                      className="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-dashed border-[#6B7280]/20 text-[#6B7280]/50 opacity-60 cursor-not-allowed"
+                    >
+                      <div className="w-full h-12 rounded-lg bg-[#06060B] border border-[#6B7280]/10 flex items-center justify-center">
+                        <span className="text-[9px] font-semibold uppercase tracking-wider text-[#6B7280]/40">Soon</span>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs font-semibold">{opt.label}</div>
+                        <div className="text-[10px] text-[#6B7280]/40">{opt.desc}</div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -815,6 +1074,55 @@ export function PortfolioPage() {
               </p>
             </CardContent>
           </Card>
+          {/* Portfolio Agent Personality */}
+          <Card className="border-[#BF5FFF]/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="w-5 h-5 text-[#BF5FFF]" />
+                Portfolio Agent Personality
+              </CardTitle>
+              <CardDescription className="text-[#6B7280]">
+                Choose how your public portfolio agent greets and responds to visitors
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-3 flex-wrap">
+                {(
+                  [
+                    { id: 'jarvis' as AgentPersonality, label: 'Jarvis', emoji: '🟣', desc: 'Professional butler' },
+                    { id: 'edith' as AgentPersonality, label: 'Edith', emoji: '🔷', desc: 'Sharp CTO' },
+                    { id: 'weebo' as AgentPersonality, label: 'Weebo', emoji: '💚', desc: 'Enthusiastic' },
+                  ] as const
+                ).map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handlePersonalitySave(p.id)}
+                    disabled={personalitySaving}
+                    className={`flex-1 min-w-[100px] flex flex-col items-center gap-2 px-4 py-4 rounded-xl border transition-all ${
+                      portfolioPersonality === p.id
+                        ? 'border-[#BF5FFF]/60 bg-[#BF5FFF]/10'
+                        : 'border-[#BF5FFF]/20 bg-[#06060B] hover:border-[#BF5FFF]/40'
+                    }`}
+                  >
+                    <span className="text-2xl">{p.emoji}</span>
+                    <span className="text-sm font-medium text-[#E8E8F0]">{p.label}</span>
+                    <span className="text-xs text-[#6B7280]">{p.desc}</span>
+                    {portfolioPersonality === p.id && !personalitySaving && (
+                      <span className="text-xs text-[#BF5FFF]">
+                        {personalitySaved ? 'Saved!' : 'Active'}
+                      </span>
+                    )}
+                    {personalitySaving && portfolioPersonality === p.id && (
+                      <Loader2 className="w-3 h-3 animate-spin text-[#BF5FFF]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-[#6B7280] mt-4 text-center">
+                This also applies to your agent in the dashboard. Change it anytime in Agent Settings.
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ── Suggestions Tab ─────────────────────────────────── */}
@@ -890,60 +1198,148 @@ export function PortfolioPage() {
         <TabsContent value="analytics" className="space-y-6">
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-[#00F0FF]" />
-                Portfolio Analytics
-              </CardTitle>
-              <CardDescription className="text-[#6B7280]">
-                Track views, engagement, and visitor insights
-              </CardDescription>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-[#00F0FF]" />
+                    Portfolio Analytics
+                  </CardTitle>
+                  <CardDescription className="text-[#6B7280]">
+                    Track views and visitor insights
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportCsv}
+                  className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 shrink-0"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
                   <div className="flex items-center gap-2 mb-2">
                     <Eye className="w-4 h-4 text-[#00F0FF]" />
                     <span className="text-xs text-[#6B7280]">Total Views</span>
                   </div>
-                  <div className="text-2xl font-bold text-[#E8E8F0]">1,234</div>
-                  <div className="text-xs text-[#00FF88]">↑ 12% this week</div>
+                  <div className="text-2xl font-bold text-[#E8E8F0]">
+                    {portfolioStats ? portfolioStats.totalViews.toLocaleString() : '—'}
+                  </div>
+                  <div className="text-xs text-[#6B7280]">all time</div>
                 </div>
                 <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
                   <div className="flex items-center gap-2 mb-2">
-                    <MousePointer className="w-4 h-4 text-[#00FF88]" />
-                    <span className="text-xs text-[#6B7280]">Click Rate</span>
+                    <TrendingUp className="w-4 h-4 text-[#00FF88]" />
+                    <span className="text-xs text-[#6B7280]">Views This Week</span>
                   </div>
-                  <div className="text-2xl font-bold text-[#E8E8F0]">8.5%</div>
-                  <div className="text-xs text-[#6B7280]">Industry avg: 5.2%</div>
-                </div>
-                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Globe className="w-4 h-4 text-[#FF2D78]" />
-                    <span className="text-xs text-[#6B7280]">Countries</span>
+                  <div className="text-2xl font-bold text-[#E8E8F0]">
+                    {portfolioStats ? portfolioStats.recentViews.toLocaleString() : '—'}
                   </div>
-                  <div className="text-2xl font-bold text-[#E8E8F0]">12</div>
-                  <div className="text-xs text-[#6B7280]">Top: US, India, UK</div>
-                </div>
-                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-4 h-4 text-[#FFB800]" />
-                    <span className="text-xs text-[#6B7280]">Connections</span>
-                  </div>
-                  <div className="text-2xl font-bold text-[#E8E8F0]">47</div>
-                  <div className="text-xs text-[#00FF88]">↑ 5 new this week</div>
+                  <div className="text-xs text-[#00FF88]">last 7 days</div>
                 </div>
               </div>
 
-              {/* Coming Soon Notice */}
-              <div className="p-6 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 text-center">
-                <BarChart3 className="w-12 h-12 text-[#00F0FF]/50 mx-auto mb-3" />
-                <h4 className="text-lg font-medium text-[#E8E8F0] mb-2">Detailed Analytics Coming Soon</h4>
-                <p className="text-sm text-[#6B7280] max-w-md mx-auto">
-                  We're building comprehensive analytics including referrer tracking, 
-                  project engagement heatmaps, and visitor demographics.
-                </p>
+              {/* 30-day bar chart */}
+              {portfolioStats && portfolioStats.dailyBreakdown.length > 0 ? (
+                <div>
+                  <p className="text-xs text-[#6B7280] mb-3">Daily views — last 30 days</p>
+                  <ResponsiveContainer width="100%" height={140}>
+                    <BarChart data={portfolioStats.dailyBreakdown} barSize={8}>
+                      <XAxis
+                        dataKey="date"
+                        tickFormatter={(d: string) => d.slice(5)} // MM-DD
+                        tick={{ fill: '#6B7280', fontSize: 10 }}
+                        axisLine={false}
+                        tickLine={false}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis hide allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{ background: '#0C0C18', border: '1px solid #00F0FF33', borderRadius: 8 }}
+                        labelStyle={{ color: '#6B7280', fontSize: 11 }}
+                        itemStyle={{ color: '#00F0FF' }}
+                      />
+                      <Bar dataKey="count" fill="#00F0FF" radius={[3, 3, 0, 0]} name="Views" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                portfolioStats && portfolioStats.totalViews === 0 ? (
+                  <div className="p-6 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 text-center">
+                    <BarChart3 className="w-12 h-12 text-[#00F0FF]/50 mx-auto mb-3" />
+                    <h4 className="text-base font-medium text-[#E8E8F0] mb-1">No visits yet</h4>
+                    <p className="text-sm text-[#6B7280]">
+                      Share your portfolio link to start tracking visitors.
+                    </p>
+                  </div>
+                ) : null
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Preview Tab (29.2) ──────────────────────────────── */}
+        <TabsContent value="preview" className="space-y-4">
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="w-5 h-5 text-[#00F0FF]" />
+                    Live Preview
+                  </CardTitle>
+                  <CardDescription className="text-[#6B7280]">
+                    This is how your public portfolio looks to visitors
+                  </CardDescription>
+                </div>
+                {user?.username && (
+                  <a
+                    href={`/portfolio/${user.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-[#00F0FF] hover:text-[#00D4B0] transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Open in new tab
+                  </a>
+                )}
               </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {user?.username ? (
+                <div className="relative w-full rounded-b-xl overflow-hidden border-t border-[#00F0FF]/10">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-[#06060B] border-b border-[#00F0FF]/10">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-[#FF6161]/40" />
+                      <div className="w-3 h-3 rounded-full bg-[#FFB800]/40" />
+                      <div className="w-3 h-3 rounded-full bg-[#00FF88]/40" />
+                    </div>
+                    <span className="text-xs text-[#6B7280] font-mono truncate">
+                      {window.location.origin}/portfolio/{user.username}
+                    </span>
+                  </div>
+                  <iframe
+                    src={`/portfolio/${user.username}`}
+                    title="Portfolio preview"
+                    className="w-full"
+                    style={{ height: '600px', border: 'none' }}
+                    loading="lazy"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                  <Eye className="w-12 h-12 text-[#00F0FF]/30 mb-4" />
+                  <p className="text-[#6B7280] mb-2">No username set</p>
+                  <p className="text-sm text-[#6B7280]/70">
+                    Set a username in your profile to see a preview
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

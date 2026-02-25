@@ -110,6 +110,34 @@ export function PortfolioView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolio, firstName, pKey]);
 
+
+  // SEO meta tags — set document.title + og: tags when portfolio loads
+  useEffect(() => {
+    if (!portfolio) return;
+    const name = portfolio.name || username || 'Portfolio';
+    const headline = (portfolio as PortfolioData & { headline?: string }).headline || 'GeekSpace Portfolio';
+    const prevTitle = document.title;
+    document.title = `${name} | GeekSpace`;
+
+    const metas: HTMLMetaElement[] = [];
+    const addMeta = (property: string, content: string) => {
+      const meta = document.createElement('meta');
+      meta.setAttribute('property', property);
+      meta.setAttribute('content', content);
+      document.head.appendChild(meta);
+      metas.push(meta);
+    };
+
+    addMeta('og:title', `${name} — ${headline}`);
+    addMeta('og:description', portfolio.about || `${name}'s professional portfolio on GeekSpace`);
+    addMeta('og:type', 'profile');
+
+    return () => {
+      document.title = prevTitle;
+      metas.forEach((m) => m.parentNode?.removeChild(m));
+    };
+  }, [portfolio, username]);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
@@ -199,17 +227,19 @@ export function PortfolioView() {
         <div className={`max-w-7xl mx-auto ${chatOpen ? 'flex gap-6' : ''}`}>
           {/* Portfolio content */}
           <div className={chatOpen ? 'flex-1 max-w-3xl' : 'max-w-4xl mx-auto'}>
-            {/* Profile Header */}
-            <div className="text-center mb-12">
+            {/* Profile Hero */}
+            <div className="relative text-center mb-12 pb-8">
+              {/* Background glow */}
+              <div className="absolute inset-0 top-0 h-48 bg-gradient-to-b from-[#00F0FF]/5 to-transparent rounded-3xl pointer-events-none" />
               {portfolio.avatar && portfolio.avatar.startsWith('http') ? (
-                <img src={portfolio.avatar} alt={displayName} className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 rounded-full bg-[#0C0C18]" />
+                <img src={portfolio.avatar} alt={displayName} className="w-28 h-28 md:w-36 md:h-36 mx-auto mb-5 md:mb-7 rounded-full ring-4 ring-[#00F0FF]/30 ring-offset-4 ring-offset-[#05050A] object-cover shadow-[0_0_40px_rgba(0,240,255,0.15)]" />
               ) : (
-                <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center text-2xl md:text-3xl font-bold">
+                <div className="w-28 h-28 md:w-36 md:h-36 mx-auto mb-5 md:mb-7 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center text-3xl md:text-5xl font-bold ring-4 ring-[#00F0FF]/30 ring-offset-4 ring-offset-[#05050A] shadow-[0_0_40px_rgba(0,240,255,0.15)]">
                   {portfolio.avatar || displayName?.[0] || '?'}
                 </div>
               )}
-              <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>{displayName}</h1>
-              <p className="text-lg md:text-xl text-[#00F0FF] mb-4 px-2">{portfolio.headline}</p>
+              <h1 className="text-4xl md:text-5xl font-bold mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>{displayName}</h1>
+              <p className="text-lg md:text-2xl text-[#00F0FF] mb-5 px-2 font-medium">{portfolio.headline}</p>
               <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-sm text-[#6B7280]">
                 {portfolio.role && portfolio.company && (
                   <span className="flex items-center gap-1"><Briefcase className="w-4 h-4 shrink-0" />{portfolio.role} @ {portfolio.company}</span>
@@ -224,21 +254,21 @@ export function PortfolioView() {
                 )}
               </div>
               {/* Social Links */}
-              <div className="flex items-center justify-center gap-3 mt-6">
+              <div className="flex items-center justify-center gap-3 mt-6 flex-wrap">
                 {portfolio.social?.github && (
-                  <a href={`https://${portfolio.social.github}`} target="_blank" rel="noopener noreferrer" className="p-3 md:p-2 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center press-scale"><Github className="w-5 h-5 text-[#6B7280]" /></a>
+                  <a href={`https://${portfolio.social.github}`} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#E8E8F0]/10 hover:border-[#E8E8F0]/40 hover:bg-[#E8E8F0]/5 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="GitHub"><Github className="w-5 h-5 text-[#E8E8F0]/70 hover:text-[#E8E8F0]" /></a>
                 )}
                 {portfolio.social?.twitter && (
-                  <a href={`https://${portfolio.social.twitter}`} target="_blank" rel="noopener noreferrer" className="p-3 md:p-2 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center press-scale"><Twitter className="w-5 h-5 text-[#6B7280]" /></a>
+                  <a href={`https://${portfolio.social.twitter}`} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#1DA1F2]/20 hover:border-[#1DA1F2]/50 hover:bg-[#1DA1F2]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Twitter"><Twitter className="w-5 h-5 text-[#1DA1F2]/70 hover:text-[#1DA1F2]" /></a>
                 )}
                 {portfolio.social?.linkedin && (
-                  <a href={`https://${portfolio.social.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-3 md:p-2 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center press-scale"><Linkedin className="w-5 h-5 text-[#6B7280]" /></a>
+                  <a href={`https://${portfolio.social.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#0A66C2]/20 hover:border-[#0A66C2]/50 hover:bg-[#0A66C2]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="LinkedIn"><Linkedin className="w-5 h-5 text-[#0A66C2]/70 hover:text-[#0A66C2]" /></a>
                 )}
                 {portfolio.social?.website && (
-                  <a href={`https://${portfolio.social.website}`} target="_blank" rel="noopener noreferrer" className="p-3 md:p-2 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center press-scale"><Globe className="w-5 h-5 text-[#6B7280]" /></a>
+                  <a href={`https://${portfolio.social.website}`} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 hover:bg-[#00F0FF]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Website"><Globe className="w-5 h-5 text-[#00F0FF]/70 hover:text-[#00F0FF]" /></a>
                 )}
                 {portfolio.social?.email && (
-                  <a href={`mailto:${portfolio.social.email}`} className="p-3 md:p-2 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center press-scale"><Mail className="w-5 h-5 text-[#6B7280]" /></a>
+                  <a href={`mailto:${portfolio.social.email}`} className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/50 hover:bg-[#BF5FFF]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Email"><Mail className="w-5 h-5 text-[#BF5FFF]/70 hover:text-[#BF5FFF]" /></a>
                 )}
               </div>
             </div>
@@ -253,12 +283,21 @@ export function PortfolioView() {
             {portfolio.skills?.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4">Skills</h2>
-                <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-                  <div className="flex flex-nowrap md:flex-wrap gap-2 pb-2 md:pb-0">
-                    {portfolio.skills.map((skill, i) => (
-                      <span key={i} className="px-4 py-2 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] whitespace-nowrap shrink-0">{skill}</span>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  {portfolio.skills.map((skill, i) => {
+                    const palette = [
+                      { bg: 'bg-[#00F0FF]/10', border: 'border-[#00F0FF]/30', text: 'text-[#00F0FF]' },
+                      { bg: 'bg-[#BF5FFF]/10', border: 'border-[#BF5FFF]/30', text: 'text-[#BF5FFF]' },
+                      { bg: 'bg-[#00FF88]/10', border: 'border-[#00FF88]/30', text: 'text-[#00FF88]' },
+                      { bg: 'bg-[#F59E0B]/10', border: 'border-[#F59E0B]/30', text: 'text-[#F59E0B]' },
+                      { bg: 'bg-[#EC4899]/10', border: 'border-[#EC4899]/30', text: 'text-[#EC4899]' },
+                      { bg: 'bg-[#60A5FA]/10', border: 'border-[#60A5FA]/30', text: 'text-[#60A5FA]' },
+                    ];
+                    const c = palette[i % palette.length];
+                    return (
+                      <span key={i} className={`px-4 py-1.5 rounded-full border text-sm font-medium ${c.bg} ${c.border} ${c.text}`}>{skill}</span>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -273,18 +312,21 @@ export function PortfolioView() {
                     const Wrapper = hasUrl ? 'a' : 'div';
                     const wrapperProps = hasUrl ? { href: project.url, target: '_blank', rel: 'noopener noreferrer' } : {};
                     return (
-                      <Wrapper key={i} {...wrapperProps} className={`p-5 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all group press-scale block w-full${hasUrl ? ' cursor-pointer' : ''}`}>
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-semibold text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors">{project.name}</h3>
-                          {project.aiGenerated && (
-                            <Badge variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF] text-xs shrink-0">AI Generated</Badge>
-                          )}
+                      <Wrapper key={i} {...wrapperProps} className={`p-5 rounded-2xl glass-card-v2 border border-[#00F0FF]/15 hover:border-[#00F0FF]/40 hover:shadow-[0_0_20px_rgba(0,240,255,0.08)] transition-all duration-300 group press-scale block w-full${hasUrl ? ' cursor-pointer' : ''}`}>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors text-base">{project.name}</h3>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {project.aiGenerated && (
+                              <Badge variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF] text-xs">AI</Badge>
+                            )}
+                            {hasUrl && <Globe className="w-3.5 h-3.5 text-[#6B7280] group-hover:text-[#00F0FF] transition-colors" />}
+                          </div>
                         </div>
-                        <p className="text-sm text-[#6B7280] mt-1">{project.description}</p>
-                        {project.tags && (
-                          <div className="flex flex-wrap gap-1 mt-3">
+                        <p className="text-sm text-[#6B7280] leading-relaxed">{project.description}</p>
+                        {project.tags && project.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-3">
                             {project.tags.map((tag) => (
-                              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#06060B] text-[#6B7280]">{tag}</span>
+                              <span key={tag} className="text-xs px-2.5 py-1 rounded-full bg-[#BF5FFF]/10 border border-[#BF5FFF]/20 text-[#BF5FFF]/80">{tag}</span>
                             ))}
                           </div>
                         )}
