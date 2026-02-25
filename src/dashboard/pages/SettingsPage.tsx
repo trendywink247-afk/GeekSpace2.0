@@ -32,8 +32,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
-import { userService, apiKeyService, memoryService, agentService, versionService, type UserSession } from '@/services/api';
-import type { ApiProvider, MemoryEntry } from '@/types';
+import { userService, apiKeyService, memoryService, agentService, versionService, modelService, type UserSession } from '@/services/api';
+import type { ApiProvider, MemoryEntry, FreeModel } from '@/types';
 
 export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
@@ -48,14 +48,16 @@ export function SettingsPage() {
     versionService.get().then(({ data }) => setAppVersion(data.version)).catch(() => {});
     // 38.2: Load real notif preferences from server on mount
     agentService.getConfig().then(({ data }) => {
-      const cfg = data as unknown as Record<string, number>;
+      const cfg = data as unknown as Record<string, unknown>;
       setAgentNotifs({
-        notif_reminders: cfg.notif_reminders ?? 1,
-        notif_escalations: cfg.notif_escalations ?? 1,
-        notif_agents: cfg.notif_agents ?? 1,
-        notif_daily_briefing: cfg.notif_daily_briefing ?? 1,
-        notif_connections: cfg.notif_connections ?? 1,
+        notif_reminders: (cfg.notif_reminders as number) ?? 1,
+        notif_escalations: (cfg.notif_escalations as number) ?? 1,
+        notif_agents: (cfg.notif_agents as number) ?? 1,
+        notif_daily_briefing: (cfg.notif_daily_briefing as number) ?? 1,
+        notif_connections: (cfg.notif_connections as number) ?? 1,
       });
+      // 39.4: preferred free model
+      if (cfg.preferred_free_model) setPreferredFreeModel(cfg.preferred_free_model as string);
     }).catch(() => {});
   }, []);
   const setUser = useAuthStore((s) => s.setUser);
@@ -149,6 +151,10 @@ export function SettingsPage() {
   // Model preference state
   const [preferredModel, setPreferredModel] = useState('auto');
   const [modelSaving, setModelSaving] = useState(false);
+  // 39.4: preferred free model picker
+  const [preferredFreeModel, setPreferredFreeModel] = useState('auto');
+  const [freeModels, setFreeModels] = useState<FreeModel[]>([]);
+  const [freeModelSaving, setFreeModelSaving] = useState(false);
 
   // Load memories and reaction summary when memory tab is active
   useEffect(() => {
@@ -172,6 +178,10 @@ export function SettingsPage() {
         .finally(() => setSessionsLoading(false));
       userService.getPreferredModel()
         .then(({ data }) => setPreferredModel(data.preferredModel))
+        .catch(() => {});
+      // 39.4: Load available free models for picker
+      modelService.getFreeModels()
+        .then(({ data }) => setFreeModels(data.models.filter((m) => m.status === 'active' || m.status === 'new')))
         .catch(() => {});
     }
   }, [activeTab]);
@@ -620,6 +630,45 @@ export function SettingsPage() {
                   <Loader2 className="w-3 h-3 animate-spin" />Saving...
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* 39.4: Preferred Free Model Card */}
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle>Preferred Free Model</CardTitle>
+              <CardDescription className="text-[#6B7280]">
+                Pick which OpenRouter free model to use when cloud mode is selected
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <select
+                value={preferredFreeModel}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  setPreferredFreeModel(val);
+                  setFreeModelSaving(true);
+                  try {
+                    await agentService.updateConfig({ preferred_free_model: val });
+                  } catch { /* ignore */ } finally {
+                    setFreeModelSaving(false);
+                  }
+                }}
+                className="w-full px-3 py-2 bg-[#06060B] border border-[#00F0FF]/20 rounded-xl text-[#E8E8F0] text-sm focus:outline-none focus:border-[#00F0FF]/40"
+              >
+                <option value="auto">Auto (GeekSpace selects best available)</option>
+                {freeModels.map((m) => (
+                  <option key={m.id} value={m.id}>{m.displayName}</option>
+                ))}
+              </select>
+              {freeModelSaving && (
+                <div className="flex items-center gap-2 text-[#6B7280] text-sm">
+                  <Loader2 className="w-3 h-3 animate-spin" />Saving...
+                </div>
+              )}
+              <p className="text-xs text-[#6B7280]">
+                Only applies when your engine is set to Cloud or Auto. Free models have usage limits.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>

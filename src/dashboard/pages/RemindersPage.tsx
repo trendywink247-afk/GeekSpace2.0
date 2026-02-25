@@ -232,21 +232,12 @@ export function RemindersPage() {
     await deleteReminder(id);
   };
 
+  // 39.1: Use proper snooze endpoint so every preset is logged to snooze_log
   const handleSnooze = async (id: string, preset: '1h' | 'tomorrow' | 'next-week') => {
-    const now = new Date();
-    let next: Date;
-    if (preset === '1h') {
-      next = new Date(now.getTime() + 60 * 60 * 1000);
-    } else if (preset === 'tomorrow') {
-      next = new Date(now);
-      next.setDate(next.getDate() + 1);
-      next.setHours(9, 0, 0, 0);
-    } else {
-      next = new Date(now);
-      next.setDate(next.getDate() + 7);
-      next.setHours(9, 0, 0, 0);
-    }
-    await snoozeReminder(id, next.toISOString());
+    try {
+      const res = await reminderService.snooze(id, preset);
+      await snoozeReminder(id, res.data.newDatetime);
+    } catch { /* ignore */ }
     setSnoozeOpenId(null);
   };
 
@@ -364,6 +355,13 @@ export function RemindersPage() {
 
   const isOverdue = (datetime: string) => {
     return new Date(datetime) < new Date() && !reminders.find(r => r.datetime === datetime)?.completed;
+  };
+
+  // 39.2: "due soon" = active reminder within the next 24h but not yet overdue
+  const isDueSoon = (datetime: string, completed: boolean) => {
+    if (completed) return false;
+    const ms = new Date(datetime).getTime() - Date.now();
+    return ms > 0 && ms <= 24 * 60 * 60 * 1000;
   };
 
   return (
@@ -671,6 +669,7 @@ export function RemindersPage() {
             filteredReminders.map((reminder) => {
               const formatted = formatDateTime(reminder.datetime);
               const overdue = isOverdue(reminder.datetime);
+              const dueSoon = isDueSoon(reminder.datetime, reminder.completed);
               
               return (
                 <Card
@@ -734,6 +733,11 @@ export function RemindersPage() {
                                 {formatted.time}
                                 {overdue && ' (overdue)'}
                               </span>
+                              {dueSoon && (
+                                <Badge className="text-[10px] px-1.5 py-0 bg-[#00FF88]/15 text-[#00FF88] border-[#00FF88]/30">
+                                  due in {Math.ceil((new Date(reminder.datetime).getTime() - Date.now()) / 3600000)}h
+                                </Badge>
+                              )}
                               <Badge
                                 style={{ backgroundColor: `${categoryColors[reminder.category]}20`, color: categoryColors[reminder.category], borderColor: `${categoryColors[reminder.category]}40` }}
                                 className="text-xs"
@@ -751,17 +755,25 @@ export function RemindersPage() {
                                   🔁 {reminder.recurrence}
                                 </Badge>
                               )}
-                              {reminder.priority && reminder.priority !== 'normal' && (
-                                <Badge
-                                  className="text-xs"
+                              {/* 39.5: priority quick-edit — click to cycle low→normal→high→urgent */}
+                              {!reminder.completed && (
+                                <button
+                                  onClick={() => {
+                                    const order: ReminderPriority[] = ['low', 'normal', 'high', 'urgent'];
+                                    const cur = order.indexOf((reminder.priority || 'normal') as ReminderPriority);
+                                    const next = order[(cur + 1) % order.length];
+                                    void updateReminder(reminder.id, { priority: next });
+                                  }}
+                                  title="Click to change priority"
+                                  className="text-xs px-1.5 py-0 rounded-full border transition-colors hover:opacity-80"
                                   style={{
-                                    backgroundColor: priorityConfig[reminder.priority]?.bg,
-                                    color: priorityConfig[reminder.priority]?.color,
-                                    borderColor: `${priorityConfig[reminder.priority]?.color}40`,
+                                    backgroundColor: priorityConfig[reminder.priority ?? 'normal']?.bg,
+                                    color: priorityConfig[reminder.priority ?? 'normal']?.color,
+                                    borderColor: `${priorityConfig[reminder.priority ?? 'normal']?.color}40`,
                                   }}
                                 >
-                                  {priorityConfig[reminder.priority]?.label}
-                                </Badge>
+                                  {priorityConfig[reminder.priority ?? 'normal']?.label}
+                                </button>
                               )}
                               {(reminder.snoozeCount ?? 0) > 0 && (
                                 <div className="relative">
