@@ -387,3 +387,20 @@ export function getAutomationLogs(userId: string, automationId?: string, limit =
     'SELECT * FROM automation_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
   ).all(userId, limit);
 }
+
+// ---- Portfolio Visit Trigger (called from portfolio route) ----
+
+export function firePortfolioVisitAutomations(userId: string, visitorIp: string | null): void {
+  // Fire-and-forget: run in background without blocking the response
+  Promise.resolve().then(async () => {
+    const automations = db.prepare(
+      "SELECT * FROM automations WHERE user_id = ? AND trigger_type = 'portfolio_visit' AND enabled = 1"
+    ).all(userId) as Automation[];
+
+    for (const auto of automations) {
+      await executeAction(auto, `portfolio_visit:${visitorIp || 'unknown'}`);
+    }
+  }).catch((err) => {
+    logger.error({ err, userId }, 'Error firing portfolio_visit automations');
+  });
+}

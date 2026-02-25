@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Save, Plus, Trash2, X, ExternalLink, Sparkles, Loader2,
   User, Code2, FolderGit2, Award, Share2, Bot, Wand2, Lightbulb, CheckCircle2,
-  BarChart3, Eye, TrendingUp, Copy, Link
+  BarChart3, Eye, TrendingUp, Copy, Link, Download
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,21 @@ export function PortfolioPage() {
     } catch {
       // Fallback: show the URL in message
       setMessage({ type: 'success', text: `Share this link: ${url}` });
+    }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const response = await portfolioService.exportStats();
+      const blob = new Blob([response.data as unknown as BlobPart], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `portfolio-visits-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to export CSV' });
     }
   };
 
@@ -1135,13 +1150,26 @@ export function PortfolioPage() {
         <TabsContent value="analytics" className="space-y-6">
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-[#00F0FF]" />
-                Portfolio Analytics
-              </CardTitle>
-              <CardDescription className="text-[#6B7280]">
-                Track views and visitor insights
-              </CardDescription>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-[#00F0FF]" />
+                    Portfolio Analytics
+                  </CardTitle>
+                  <CardDescription className="text-[#6B7280]">
+                    Track views and visitor insights
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportCsv}
+                  className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 shrink-0"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Stats Grid */}

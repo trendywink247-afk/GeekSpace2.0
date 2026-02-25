@@ -385,6 +385,10 @@ export const portfolioService = {
   // Portfolio visit stats (includes 30-day daily breakdown)
   getStats: () =>
     api.get<{ totalViews: number; recentViews: number; dailyBreakdown: { date: string; count: number }[] }>('/portfolio/stats'),
+
+  // Portfolio visit stats CSV export (last 90 days)
+  exportStats: () =>
+    api.get<Blob>('/portfolio/stats/export', { responseType: 'blob' }),
 };
 
 // ----- Automations -------------------------------------------

@@ -72,6 +72,7 @@ export function MemoryManagerPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm('Delete this memory entry?')) return;
     try {
       await memoryService.delete(id);
     } catch {

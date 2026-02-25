@@ -4,6 +4,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, portfolioUpdateSchema, portfolioAiEditSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
+import { firePortfolioVisitAutomations } from '../services/automations-engine.js';
 
 export const portfolioRouter = Router();
 
@@ -221,6 +222,28 @@ portfolioRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
   res.json({ totalViews, recentViews, dailyBreakdown });
 });
 
+// ── Portfolio Stats CSV Export ────────────────────────────────
+portfolioRouter.get('/stats/export', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const dailyBreakdown = db.prepare(`
+    SELECT date(visited_at) as date, COUNT(*) as count
+    FROM portfolio_visits
+    WHERE user_id = ? AND visited_at >= datetime('now', '-90 days')
+    GROUP BY date(visited_at)
+    ORDER BY date ASC
+  `).all(userId) as { date: string; count: number }[];
+
+  const lines: string[] = ['date,visits'];
+  for (const row of dailyBreakdown) {
+    lines.push(`${row.date},${row.count}`);
+  }
+  const csv = lines.join('\n');
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="portfolio-visits.csv"');
+  res.send(csv);
+});
+
 // Public portfolio view - MUST be last as it catches any /:username pattern
 portfolioRouter.get('/:username', async (req, res) => {
   const cacheKey = `portfolio:${req.params.username}`;
@@ -236,6 +259,7 @@ portfolioRouter.get('/:username', async (req, res) => {
         ).get(cachedData.userId, visitorIp);
         if (!recentVisit) {
           db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(cachedData.userId, visitorIp);
+          firePortfolioVisitAutomations(cachedData.userId, visitorIp);
         }
       }
     } catch { /* non-fatal */ }
@@ -271,6 +295,7 @@ portfolioRouter.get('/:username', async (req, res) => {
     ).get(portfolio.user_id, visitorIp);
     if (!recentVisit) {
       db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(portfolio.user_id, visitorIp);
+      firePortfolioVisitAutomations(portfolio.user_id as string, visitorIp);
     }
   } catch { /* non-fatal */ }
 

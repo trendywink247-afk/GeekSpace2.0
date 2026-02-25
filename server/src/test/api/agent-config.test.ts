@@ -146,3 +146,121 @@ describe('Agent Config Endpoints', () => {
     });
   });
 });
+
+describe('Agent Config Validation — 23.2', () => {
+  beforeAll(() => {
+    resetDatabase();
+  });
+
+  afterEach(() => {
+    resetDatabase();
+  });
+
+  describe('PATCH /api/agent/config — invalid personality', () => {
+    it('should return 400 for invalid personality value', async () => {
+      const user = createTestUser();
+
+      const response = await request(app)
+        .patch('/api/agent/config')
+        .set('Authorization', makeAuthHeader(user.id))
+        .send({ personality: 'hacker' })
+        .expect('Content-Type', /json/)
+        .expect(400);
+
+      expect(response.body).toHaveProperty('error');
+
+      cleanupTestUser(user.id);
+    });
+
+    it('should return 400 for empty string personality', async () => {
+      const user = createTestUser();
+
+      const response = await request(app)
+        .patch('/api/agent/config')
+        .set('Authorization', makeAuthHeader(user.id))
+        .send({ personality: '' })
+        .expect('Content-Type', /json/)
+        .expect(400);
+
+      expect(response.body).toHaveProperty('error');
+
+      cleanupTestUser(user.id);
+    });
+
+    it('should accept valid personality values: jarvis, edith, weebo', async () => {
+      for (const personality of ['jarvis', 'edith', 'weebo']) {
+        const user = createTestUser(`val-${personality}-${Date.now()}@example.com`);
+
+        await request(app)
+          .patch('/api/agent/config')
+          .set('Authorization', makeAuthHeader(user.id))
+          .send({ personality })
+          .expect(200);
+
+        cleanupTestUser(user.id);
+      }
+    });
+  });
+
+  describe('PATCH /api/agent/config — invalid model_preference', () => {
+    it('should return 400 for invalid model_preference value', async () => {
+      const user = createTestUser();
+
+      const response = await request(app)
+        .patch('/api/agent/config')
+        .set('Authorization', makeAuthHeader(user.id))
+        .send({ model_preference: 'turbo' })
+        .expect('Content-Type', /json/)
+        .expect(400);
+
+      expect(response.body).toHaveProperty('error');
+
+      cleanupTestUser(user.id);
+    });
+
+    it('should accept valid model_preference values: auto, local, cloud, premium', async () => {
+      for (const pref of ['auto', 'local', 'cloud', 'premium']) {
+        const user = createTestUser(`pref-${pref}-${Date.now()}@example.com`);
+
+        await request(app)
+          .patch('/api/agent/config')
+          .set('Authorization', makeAuthHeader(user.id))
+          .send({ model_preference: pref })
+          .expect(200);
+
+        cleanupTestUser(user.id);
+      }
+    });
+  });
+
+  describe('PATCH /api/agent/config — systemPrompt length', () => {
+    it('should return 400 for systemPrompt longer than 2000 chars', async () => {
+      const user = createTestUser();
+      const longPrompt = 'a'.repeat(2001);
+
+      const response = await request(app)
+        .patch('/api/agent/config')
+        .set('Authorization', makeAuthHeader(user.id))
+        .send({ systemPrompt: longPrompt })
+        .expect('Content-Type', /json/)
+        .expect(400);
+
+      expect(response.body).toHaveProperty('error');
+
+      cleanupTestUser(user.id);
+    });
+
+    it('should accept systemPrompt of exactly 2000 chars', async () => {
+      const user = createTestUser();
+      const exactPrompt = 'b'.repeat(2000);
+
+      await request(app)
+        .patch('/api/agent/config')
+        .set('Authorization', makeAuthHeader(user.id))
+        .send({ systemPrompt: exactPrompt })
+        .expect(200);
+
+      cleanupTestUser(user.id);
+    });
+  });
+});
