@@ -66,9 +66,51 @@ export function stopReminderScheduler(): void {
 
 // ---- Core Logic ----
 
+// 40.6: 5-minute remind-before alert
+const REMIND_BEFORE_MS = 5 * 60 * 1000; // 5 minutes
+
 async function checkAndDeliverReminders(): Promise<void> {
   try {
     const now = Date.now();
+
+    // Step 0 (40.6): Send early "heads-up" for reminders due in the next 5–10 minutes
+    // Only for users with Telegram linked; only sent once per reminder.
+    try {
+      const horizon = now + REMIND_BEFORE_MS + POLL_INTERVAL_MS; // 5min + 5s lookahead
+      const upcoming = db.prepare(`
+        SELECT id, user_id, text, scheduled_for, datetime
+        FROM reminders
+        WHERE completed = 0
+          AND snooze_until IS NULL
+          AND remind_before_sent_at IS NULL
+          AND (
+            (scheduled_for IS NOT NULL AND scheduled_for > ? AND scheduled_for <= ?)
+            OR
+            (scheduled_for IS NULL AND datetime IS NOT NULL
+             AND REPLACE(REPLACE(datetime, 'T', ' '), 'Z', '') > datetime('now')
+             AND REPLACE(REPLACE(datetime, 'T', ' '), 'Z', '') <= datetime('now', '+5 minutes'))
+          )
+        LIMIT 20
+      `).all(now, horizon) as Array<{ id: string; user_id: string; text: string; scheduled_for: number | null; datetime: string }>;
+
+      for (const rem of upcoming) {
+        try {
+          const link = db.prepare(
+            "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+          ).get(rem.user_id) as { external_id: string } | undefined;
+          if (link) {
+            const notifPref = db.prepare('SELECT notif_reminders FROM agent_configs WHERE user_id = ?').get(rem.user_id) as { notif_reminders?: number } | undefined;
+            if (!notifPref || notifPref.notif_reminders !== 0) {
+              await sendTelegramMessage(link.external_id, `⏳ Heads up! Reminder in ~5 min: ${rem.text}`);
+              logger.info({ reminderId: rem.id }, 'Remind-before alert sent');
+            }
+          }
+          db.prepare('UPDATE reminders SET remind_before_sent_at = ? WHERE id = ?').run(now, rem.id);
+        } catch (err) {
+          logger.debug({ reminderId: rem.id, err: (err as Error).message }, 'Remind-before send failed');
+        }
+      }
+    } catch { /* non-fatal — don't block main delivery */ }
 
     // Step 1: Resume expired snoozes — clear snooze_until so the main
     // query picks them up on the next tick.

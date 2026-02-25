@@ -249,7 +249,13 @@ const contactRateLimit = new Map<string, { count: number; windowStart: number }>
 
 portfolioRouter.post('/:username/contact', async (req, res) => {
   const { username } = req.params;
-  const { senderName, senderEmail, message } = req.body as { senderName?: string; senderEmail?: string; message?: string };
+  const { senderName, senderEmail, message, honeypot } = req.body as { senderName?: string; senderEmail?: string; message?: string; honeypot?: string };
+
+  // 40.2: Honeypot — bots fill hidden fields; silently accept and discard
+  if (honeypot) {
+    res.json({ success: true });
+    return;
+  }
 
   if (!senderName?.trim() || !message?.trim()) {
     res.status(400).json({ error: 'Name and message are required' });

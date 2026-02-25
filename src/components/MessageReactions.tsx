@@ -9,6 +9,7 @@ export type ReactionType = 'like' | 'dislike' | 'love' | 'save' | 'copy' | 'shar
 
 interface MessageReactionsProps {
   messageId: string;
+  content?: string; // 40.3: actual message text to copy to clipboard
   onReact?: (messageId: string, reaction: ReactionType) => void;
   onSave?: (messageId: string) => void;
   onCopy?: (messageId: string, content: string) => void;
@@ -26,6 +27,7 @@ const reactions = [
 
 export function MessageReactions({
   messageId,
+  content,
   onReact,
   onSave,
   onCopy,
@@ -98,7 +100,7 @@ export function MessageReactions({
             <div className="absolute left-0 top-full mt-1 p-2 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-xl shadow-xl z-50 min-w-[140px]">
               <button
                 onClick={() => {
-                  handleCopy(messageId);
+                  handleCopy(content || messageId);
                   setShowAll(false);
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#6B7280] hover:bg-[#00F0FF]/10 hover:text-[#E8E8F0] transition-colors"

@@ -765,10 +765,13 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                     {msg.role === 'agent' && !msg.isStreaming && (
                       <MessageReactions
                         messageId={msg.id}
+                        content={msg.content}
                         onReact={(id, reaction) => {
                           memoryService.addReaction(id, reaction).catch(() => {});
                         }}
-                        onCopy={(_id) => {}}
+                        onCopy={(_id, text) => {
+                          navigator.clipboard.writeText(text).catch(() => {});
+                        }}
                       />
                     )}
                     {/* Retry button for failed messages */}

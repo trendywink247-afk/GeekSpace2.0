@@ -30,6 +30,13 @@ activityRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   res.json({ activity: entries, total });
 });
 
+// ---- 40.4: DELETE /activity — clear all activity log entries for user ----
+activityRouter.delete('/', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const result = db.prepare('DELETE FROM activity_log WHERE user_id = ?').run(userId);
+  res.json({ deleted: result.changes });
+});
+
 // ---- 34.2: 7-day daily activity stats (messages sent + reminders created) ----
 activityRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;

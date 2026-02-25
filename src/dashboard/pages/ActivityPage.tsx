@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter } from 'lucide-react';
+import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { userService, type ActivityEntry } from '@/services/api';
 
 // Map icon field values to event categories
@@ -69,6 +70,9 @@ export function ActivityPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
+  // 40.4: Clear all with confirmation
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -84,6 +88,18 @@ export function ActivityPage() {
       .then(({ data }) => { setEntries((prev) => [...prev, ...data.activity]); setTotal(data.total ?? (entries.length + data.activity.length)); })
       .catch(() => {})
       .finally(() => setLoadingMore(false));
+  };
+
+  const handleClearAll = async () => {
+    setIsClearing(true);
+    try {
+      await userService.clearActivity();
+      setEntries([]);
+      setTotal(0);
+      setShowClearConfirm(false);
+    } catch { /* ignore */ } finally {
+      setIsClearing(false);
+    }
   };
 
   const filtered = entries.filter((entry) => {
@@ -110,13 +126,44 @@ export function ActivityPage() {
   return (
     <div data-testid="activity-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Activity Log
-        </h1>
-        <p className="text-sm md:text-base text-[#6B7280]">
-          <span className="text-[#00F0FF] font-medium">{total || entries.length}</span> total events recorded
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
+            Activity Log
+          </h1>
+          <p className="text-sm md:text-base text-[#6B7280]">
+            <span className="text-[#00F0FF] font-medium">{total || entries.length}</span> total events recorded
+          </p>
+        </div>
+        {/* 40.4: Clear all with confirmation */}
+        {entries.length > 0 && (
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {showClearConfirm ? (
+              <>
+                <span className="text-xs text-[#FF6161]">Clear all activity?</span>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleClearAll}
+                  disabled={isClearing}
+                  className="h-8 bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
+                >
+                  {isClearing ? 'Clearing…' : 'Yes, clear'}
+                </Button>
+                <button onClick={() => setShowClearConfirm(false)} className="text-xs text-[#6B7280] hover:text-[#E8E8F0]">Cancel</button>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowClearConfirm(true)}
+                className="h-8 border-[#FF6161]/30 text-[#FF6161]/70 hover:text-[#FF6161] hover:border-[#FF6161]/50"
+              >
+                <Trash2 className="w-3 h-3 mr-1" />Clear all
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Search */}

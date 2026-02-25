@@ -1295,3 +1295,6 @@ db.exec(`
   )
 `);
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_snooze_log_reminder ON snooze_log(reminder_id, snoozed_at DESC)`); } catch { /* already exists */ }
+
+// Phase 40.6: Track when the 5-min early Telegram alert was sent for each reminder
+try { db.exec(`ALTER TABLE reminders ADD COLUMN remind_before_sent_at INTEGER`); } catch { /* column already exists */ }
