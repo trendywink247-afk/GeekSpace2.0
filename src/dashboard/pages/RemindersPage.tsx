@@ -270,6 +270,11 @@ export function RemindersPage() {
     const pad = (n: number) => String(n).padStart(2, '0');
     const d = new Date(reminder.datetime);
     const localStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    // 47.2: Validate priority from DB explicitly — old rows may have null/invalid value
+    const validPriorities: ReminderPriority[] = ['low', 'normal', 'high', 'urgent'];
+    const safePriority: ReminderPriority = validPriorities.includes(reminder.priority as ReminderPriority)
+      ? (reminder.priority as ReminderPriority)
+      : 'normal';
     setEditingReminder(reminder);
     setNewReminder({
       text: reminder.text,
@@ -278,7 +283,7 @@ export function RemindersPage() {
       recurring: reminder.recurring || '',
       recurrence: (reminder.recurrence as 'daily' | 'weekly' | 'monthly' | undefined) || '',
       category: reminder.category,
-      priority: reminder.priority || 'normal',
+      priority: safePriority,
     });
     setNaturalInput('');
     setParsedReminder(null);

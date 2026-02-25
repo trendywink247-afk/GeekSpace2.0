@@ -4,6 +4,7 @@
 // ============================================================
 
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit, { type Options as RateLimitOptions } from 'express-rate-limit';
@@ -104,6 +105,11 @@ export function createApp(): express.Application {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'X-Admin-Password'],
   }));
 
+  // ---- 47.8: Response compression (gzip/deflate) ----
+  // Applied before body parsing so all responses (JSON, HTML, SSE) can be compressed.
+  // SSE streams are excluded automatically because they flush headers before compression kicks in.
+  app.use(compression());
+
   // ---- Body parsing ----
   app.use(express.json({ limit: `${config.maxRequestBodyBytes}` }));
 
@@ -164,8 +170,19 @@ export function createApp(): express.Application {
       handler: rateLimitHandler,
     });
     app.use('/api/auth/login', authLimiter);
-    app.use('/api/auth/signup', authLimiter);
     app.use('/api/auth/demo', authLimiter);
+
+    // 47.7: Signup rate limit — 5 req/15min including successful requests to prevent account spam
+    // Intentionally does NOT use skipSuccessfulRequests so successful account creations are counted.
+    const signupLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 5,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many registration attempts. Try again in 15 minutes.' },
+      handler: rateLimitHandler,
+    });
+    app.use('/api/auth/signup', signupLimiter);
 
     // Rate limit on LLM chat endpoints — 60 req/15min (4/min) balances protection with usability
     const chatLimiter = rateLimit({
@@ -206,7 +223,15 @@ export function createApp(): express.Application {
 
   // ---- Health check ----
   app.get('/api/health', (_req, res) => {
-    const components = getCachedComponents(); // use warmed probe cache (all 8 components)
+    // 47.1: Live DB check on every call so db status is always fresh (not just cached probe)
+    let liveDbStatus = 'ok';
+    try {
+      const row = db.prepare('SELECT 1 as ok').get() as { ok: number } | undefined;
+      liveDbStatus = row?.ok === 1 ? 'ok' : 'error';
+    } catch {
+      liveDbStatus = 'error';
+    }
+    const components = { ...getCachedComponents(), database: liveDbStatus }; // merge live DB over cached
     const metrics = getMetricsSnapshot();
     const allOk = components.database === 'ok';
 
@@ -248,10 +273,13 @@ export function createApp(): express.Application {
     });
   });
 
-  // ---- Version endpoint ----
+  // ---- 47.9: Version endpoint — app version + git SHA + env ----
+  // Unauthenticated by design (used by deployment tooling and health dashboards).
   app.get('/api/version', (_req, res) => {
     res.json({
       version: APP_VERSION,
+      gitSha: process.env.GIT_SHA ?? 'unknown',
+      env: config.isProduction ? 'production' : 'development',
       buildTime: process.env.BUILD_TIME ?? new Date().toISOString(),
       nodeVersion: process.versions.node,
     });

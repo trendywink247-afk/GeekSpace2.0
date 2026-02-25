@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { notify } from '@/services/notifications';
 import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -847,7 +848,10 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                           memoryService.addReaction(id, reaction).catch(() => {});
                         }}
                         onCopy={(_id, text) => {
-                          navigator.clipboard.writeText(text).catch(() => {});
+                          // 47.4: Show "Copied!" toast on copy
+                          navigator.clipboard.writeText(text)
+                            .then(() => toast.success('Copied!', { duration: 1500 }))
+                            .catch(() => {});
                         }}
                       />
                     )}

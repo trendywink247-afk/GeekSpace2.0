@@ -17,7 +17,7 @@ export class AppError extends Error {
 }
 
 /** Catch-all error handler — must be registered LAST */
-export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction) {
+export function errorHandler(err: Error & { status?: number; type?: string }, req: Request, res: Response, _next: NextFunction) {
   const requestId = req.requestId || 'unknown';
 
   if (err instanceof AppError) {
@@ -26,6 +26,14 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
       error: err.message,
       requestId,
     });
+    return;
+  }
+
+  // body-parser / express.json errors (e.g. strict mode rejects JSON primitives, malformed JSON)
+  // These have err.status set to 400 and err.type like 'entity.parse.failed'
+  if (typeof err.status === 'number' && err.status >= 400 && err.status < 500) {
+    logger.warn({ requestId, status: err.status, err: err.message }, 'Request parse/validation error');
+    res.status(err.status).json({ error: err.message || 'Bad request', requestId });
     return;
   }
 

@@ -148,7 +148,13 @@ automationsRouter.get('/dead-letters', requireAuth, (req: AuthRequest, res) => {
 // ---- Webhook endpoint (no auth — triggered by external services) ----
 
 automationsRouter.post('/webhook/:id', async (req, res) => {
-  const result = await executeWebhookTrigger(req.params.id, req.body);
+  // 47.6: Reject non-object payloads (arrays, strings, null, numbers)
+  const body = req.body;
+  if (body === null || body === undefined || typeof body !== 'object' || Array.isArray(body)) {
+    res.status(400).json({ error: 'Webhook payload must be a JSON object' });
+    return;
+  }
+  const result = await executeWebhookTrigger(req.params.id, body);
   if (!result.success && result.output.includes('not found')) {
     res.status(404).json(result);
   } else {

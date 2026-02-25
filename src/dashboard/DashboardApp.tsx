@@ -828,7 +828,8 @@ export function DashboardApp() {
                 )}
               </div>
               <span className="text-[10px] font-medium">{tab.label}</span>
-              {isActive && <div className="w-4 h-1 rounded-full bg-gradient-to-r from-[#00F0FF] to-[#ADFF2F] mt-0.5" />}
+              {/* 47.3: Colored underline for active tab — full-width bottom border */}
+              <div className={`h-0.5 w-full rounded-full transition-all ${isActive ? 'bg-[#00F0FF]' : 'bg-transparent'}`} />
             </button>
           );
         })}
