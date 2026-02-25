@@ -1511,6 +1511,15 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* 45.4: Mobile Quick-Add FAB — visible only on mobile, clears above bottom nav */}
+      <button
+        onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }}
+        className="md:hidden fixed bottom-20 right-4 w-12 h-12 rounded-full bg-[#00F0FF] text-black flex items-center justify-center shadow-lg z-40 text-xl font-bold"
+        aria-label="Add reminder"
+      >
+        +
+      </button>
     </div>
   );
 }
