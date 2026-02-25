@@ -58,6 +58,7 @@ export function RemindersPage() {
   const { reminders, addReminder, updateReminder, toggleReminder, snoozeReminder, deleteReminder, loadReminders, bulkSnoozeReminders } = useDashboardStore();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'recurring' | 'one-off'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
@@ -298,6 +299,10 @@ export function RemindersPage() {
     if (filter === 'active') return !r.completed;
     if (filter === 'completed') return r.completed;
     return true;
+  }).filter(r => {
+    if (recurrenceFilter === 'recurring') return !!r.recurrence;
+    if (recurrenceFilter === 'one-off') return !r.recurrence;
+    return true;
   }).filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       const pa = priorityOrder[a.priority ?? 'normal'] ?? 2;
@@ -457,13 +462,32 @@ export function RemindersPage() {
             className="pl-10 bg-[#0C0C18] border-[#00F0FF]/20"
           />
         </div>
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/20">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-col gap-2">
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+            <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/20">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="flex items-center gap-1.5">
+            {(['all', 'recurring', 'one-off'] as const).map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setRecurrenceFilter(opt)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                  recurrenceFilter === opt
+                    ? opt === 'recurring'
+                      ? 'bg-[#F59E0B]/15 border-[#F59E0B]/40 text-[#F59E0B]'
+                      : 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[#00F0FF]'
+                    : 'border-[#00F0FF]/10 text-[#6B7280] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+                }`}
+              >
+                {opt === 'all' ? 'All types' : opt === 'recurring' ? '↺ Recurring' : '• One-off'}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
           <button
             onClick={() => setViewMode('list')}

@@ -93,6 +93,34 @@ const emptyHourlyData = [
 // Accent colors per stat for bento visual variety
 const statAccents = ['#00F0FF', '#ADFF2F', '#FFD700', '#FF2D78'];
 
+// Mock sparkline data shown when no real time-series data is available yet
+const MOCK_SPARKLINES = [
+  [2, 5, 3, 8, 6, 9, 12],   // Messages: upward trend (cyan)
+  [1, 3, 2, 4, 3, 5, 4],    // Reminders: steady (lime)
+  [100, 95, 88, 80, 75, 70, 65], // Credits: descending (amber)
+  [320, 280, 310, 290, 260, 270, 240], // Response time proxy (pink)
+];
+
+// Sparkline: pure SVG polyline from an array of numbers
+function Sparkline({ data, color = '#00F0FF', width = 80, height = 28 }: {
+  data: number[]; color?: string; width?: number; height?: number;
+}) {
+  if (data.length < 2) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((v - min) / range) * (height - 2) - 1;
+    return `${x},${y}`;
+  }).join(' ');
+  return (
+    <svg width={width} height={height} className="overflow-visible" aria-hidden="true">
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.7" />
+    </svg>
+  );
+}
+
 export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenChat }: OverviewPageProps) {
   const [greeting, setGreeting] = useState('Good evening');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -515,7 +543,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 {stat.value}
               </div>
               <div className="text-sm text-[#6B7280]">{stat.label}</div>
-              {statSparklines[i].length > 1 && (
+              {statSparklines[i].length > 1 ? (
                 <div className="mt-2 h-8 -mx-1">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={statSparklines[i]} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
@@ -528,6 +556,10 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                       <Area type="monotone" dataKey="v" stroke={stat.color} strokeWidth={1.5} fill={`url(#spark${i})`} dot={false} isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="mt-2 flex items-end" style={{ height: 28 }}>
+                  <Sparkline data={MOCK_SPARKLINES[i]} color={stat.color} width={80} height={28} />
                 </div>
               )}
             </CardContent>

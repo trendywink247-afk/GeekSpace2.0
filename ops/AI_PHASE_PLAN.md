@@ -45,7 +45,7 @@
 
 ---
 
-## Phase 31 — IN PROGRESS
+## Phase 31 — COMPLETE ✓
 **Theme:** Polish + search + recurrence
 **Branch:** `ai/phase-20260225-phase31-polish-search-recurrence`
 **PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/60
@@ -61,13 +61,29 @@
 
 ---
 
-## Phase 32 — PROPOSED
+## Phase 32 — IN PROGRESS
 **Theme:** Mobile polish + analytics + session management
+**Branch:** `ai/phase-20260225-phase32-sparklines-badges-analytics`
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/61
+**Tests:** 290/290 passing
+
+| # | Item | Type | Status |
+|---|------|------|--------|
+| 32.1 | Overview sparklines (SVG trend charts on stat cards) | UX | Done |
+| 32.2 | Mobile bottom nav badge counts (pending reminders) | UX | Done |
+| 32.3 | Reminder filter by recurrence type (All/Recurring/One-off) | UX | Done |
+| 32.4 | Admin feedback analytics endpoint (thumbs-down counts) | Dev/Ops | Done |
+| 32.5 | Session revoke unit test (endpoint already existed) | Hardening | Done |
+
+---
+
+## Phase 33 — PROPOSED
+**Theme:** AI improvements + portfolio + onboarding
 
 | # | Item | Type | Priority |
 |---|------|------|----------|
-| 32.1 | Overview sparklines (usage/credits/reminders trend charts) | UX | High |
-| 32.2 | Mobile bottom nav badge counts (unread reminders, activity) | UX | High |
-| 32.3 | Reminder filter by recurrence type (all/recurring/one-off) | UX | Medium |
-| 32.4 | Admin thumbs-down analytics visualization | Dev/Ops | Medium |
-| 32.5 | Session management UI (revoke sessions from Settings Security tab) | Hardening | Low |
+| 33.1 | Reminder NLP input (parse "tomorrow 3pm" → datetime) | UX | High |
+| 33.2 | Portfolio project drag-to-reorder | UX | Medium |
+| 33.3 | Onboarding wizard step for connecting Telegram | UX | Medium |
+| 33.4 | LLM response streaming (SSE) for chat messages | Feature | Medium |
+| 33.5 | Rate limit dashboard (show remaining requests per window) | Dev/Ops | Low |
