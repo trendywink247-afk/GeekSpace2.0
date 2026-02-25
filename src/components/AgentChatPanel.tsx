@@ -348,7 +348,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         setIsTyping(false);
       }
     })();
-  }, [input, isTyping, premiumSession, agentOwner]);
+  }, [input, isTyping, premiumSession, agentOwner, messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
