@@ -99,6 +99,9 @@ async function globalSetup() {
     }
     console.log('Auth verified, current URL:', url);
 
+    // Dismiss first-use tour so it doesn't intercept clicks in any spec
+    await page.evaluate(() => localStorage.setItem('gs_dashboard_tour_seen', '1'));
+
     // Ensure directory exists before saving
     ensureDir(authFile);
 
