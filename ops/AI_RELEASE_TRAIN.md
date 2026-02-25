@@ -29,3 +29,4 @@
 - **Target phases:** 43–65 (approximately)
 - **Phase 43 complete:** 396/396 tests. 401 loop fix, remind_before reset, date grouping, relative timestamps, automations run_count wiring, XSS hardening, DB indexes.
 - **Phase 44 complete:** 414/414 tests. Webhook retry, recurring reminder fix, notification badge, OAuth error handling, admin rate limit, structured logs, page skeleton.
+- **Phase 45 complete:** 422/422 tests. OG entity-encode, duplicate index removal, mobile FAB, auth logout localStorage fix, UTC sparklines, CSP hardening (frame-ancestors + upgrade-insecure-requests), ETag/Cache-Control on public portfolio, feature matrix refresh.

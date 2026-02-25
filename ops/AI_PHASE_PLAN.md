@@ -60,18 +60,24 @@ Webhook retry, recurrence fix, notification badge, OAuth error, admin rate limit
 
 ---
 
-## Phase 45 — PROPOSED (10 items)
-**Theme:** Mobile polish, security hardening, state-sync fixes, performance headers
+## Phase 45 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/75 | **Tests:** 422/422
+OG entity-encode, dedup index, mobile fixes, auth logout, CSP hardening, ETag caching, feature matrix
+
+---
+
+## Phase 46 — PROPOSED (10 items)
+**Theme:** Admin hardening, webhook validation, UX polish, observability, pagination
 
 | # | Item | Category |
 |---|------|----------|
-| 45.1 | Fix: OG HTML template entity-escape title + description in portfolio crawler response | Reliability/Security |
-| 45.2 | Fix: Remove duplicate idx_reminders_user_due DB index (same cols as idx_reminders_datetime) | Reliability/Cleanup |
-| 45.3 | UX: Portfolio public page — mobile responsiveness audit + fix (test on 375px) | UX/Mobile |
-| 45.4 | UX: Reminder creation form — mobile-friendly floating FAB button (quick-add) | UX/Mobile |
-| 45.5 | Fix: authService.logout() should also clear gs-auth from localStorage | State-sync |
-| 45.6 | Fix: Dashboard activity sparklines — verify correct date bucketing (off-by-one check) | State-sync |
-| 45.7 | Security: Add Content-Security-Policy nonce for inline styles (reduce unsafe-inline surface) | Security |
-| 45.8 | Perf: Add ETag/Cache-Control headers to static portfolio public endpoint | Performance |
-| 45.9 | Dev/Ops: Update ops/AI_FEATURE_MATRIX.md to mark all Phase 44 fixes + add Phase 45 gaps | Dev/Ops |
-| 45.10 | Phase 45 unit tests + full verification gate + PR/merge | Dev/Ops |
+| 46.1 | Fix: admin routes missing auth middleware check (verify requireAdmin on all /admin/* endpoints) | Reliability |
+| 46.2 | Fix: webhook test-fire should validate URL format before sending | Reliability |
+| 46.3 | UX: Connections page — better empty state when no integrations connected | UX/Mobile |
+| 46.4 | UX: Settings page — unsaved changes warning before navigation | UX/Mobile |
+| 46.5 | Fix: Automation run log shows raw JSON in trigger_data; pretty-print it | State-sync |
+| 46.6 | Fix: Portfolio contact form submit button remains disabled if email is invalid — fix validation | Edge-case |
+| 46.7 | Security: Add X-Frame-Options DENY explicitly (defence-in-depth alongside CSP frame-ancestors) | Security |
+| 46.8 | Perf: Paginate GET /activity default limit from 50 to 25 to reduce initial page payload | Performance |
+| 46.9 | Dev/Ops: Add /api/ready endpoint (checks DB connection + returns 200/503) separate from /api/health | Dev/Ops |
+| 46.10 | Phase 46 unit tests + full verification gate + PR/merge | Dev/Ops |
