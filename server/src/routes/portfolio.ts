@@ -8,6 +8,17 @@ import { firePortfolioVisitAutomations } from '../services/automations-engine.js
 
 export const portfolioRouter = Router();
 
+/** Encode characters that have special meaning in HTML to prevent XSS and broken markup. */
+function htmlEncode(str: string | null | undefined): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 /** Strip dangerous HTML while preserving basic formatting. */
 function stripDangerousHtml(input: unknown): string {
   if (typeof input !== 'string') return String(input ?? '');
@@ -424,26 +435,28 @@ portfolioRouter.get('/:username', async (req, res) => {
       ? row.avatar
       : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name || username)}&background=00F0FF&color=05050A&size=256`;
     const pageUrl = `https://ai.geekspace.space/p/${username}`;
+    const safeTitle = htmlEncode(title);
+    const safeDescription = htmlEncode(description);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(`<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>${title}</title>
-  <meta name="description" content="${description}" />
-  <meta property="og:title" content="${title}" />
-  <meta property="og:description" content="${description}" />
-  <meta property="og:image" content="${imageUrl}" />
-  <meta property="og:url" content="${pageUrl}" />
+  <title>${safeTitle}</title>
+  <meta name="description" content="${safeDescription}" />
+  <meta property="og:title" content="${safeTitle}" />
+  <meta property="og:description" content="${safeDescription}" />
+  <meta property="og:image" content="${htmlEncode(imageUrl)}" />
+  <meta property="og:url" content="${htmlEncode(pageUrl)}" />
   <meta property="og:type" content="profile" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${title}" />
-  <meta name="twitter:description" content="${description}" />
-  <meta name="twitter:image" content="${imageUrl}" />
+  <meta name="twitter:title" content="${safeTitle}" />
+  <meta name="twitter:description" content="${safeDescription}" />
+  <meta name="twitter:image" content="${htmlEncode(imageUrl)}" />
 </head>
 <body>
-  <h1>${title}</h1>
-  <p>${description}</p>
+  <h1>${safeTitle}</h1>
+  <p>${safeDescription}</p>
 </body>
 </html>`);
     return;
