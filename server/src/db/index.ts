@@ -26,6 +26,11 @@ db.pragma('temp_store = MEMORY');      // Temp tables in RAM not disk
 db.pragma('mmap_size = 134217728');    // 128MB memory-mapped I/O
 db.pragma('foreign_keys = ON');
 
+// 49.8: Run ANALYZE on startup to keep query plans fresh.
+// ANALYZE scans table/index statistics so SQLite can choose optimal query plans.
+// It is a read-only table scan (no writes to user tables) and completes in <100ms for typical DBs.
+db.exec('ANALYZE');
+
 // ── Schema ──────────────────────────────────────────────────
 
 db.exec(`

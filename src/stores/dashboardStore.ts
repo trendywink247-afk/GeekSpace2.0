@@ -319,12 +319,17 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     try {
       const { data } = await automationService.trigger(id);
       if (data.success) {
+        // Optimistic update for immediate UI feedback
         const auto = get().automations.find((a) => a.id === id);
         set((s) => ({
           automations: s.automations.map((a) =>
             a.id === id ? { ...a, lastRun: new Date().toISOString(), runCount: (auto?.runCount ?? 0) + 1 } : a
           ),
         }));
+        // 49.5: Re-fetch from server so runCount is authoritative (not just optimistic)
+        automationService.list().then(({ data: fresh }) => {
+          set({ automations: fresh });
+        }).catch(() => { /* keep optimistic update on failure */ });
       }
     } catch { /* ignore trigger failures */ }
   },

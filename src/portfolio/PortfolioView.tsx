@@ -82,10 +82,18 @@ export function PortfolioView() {
     setContactSending(true);
     setContactError('');
     try {
+      // 49.7: Fetch a one-time nonce token before submitting (anti-replay)
+      let nonce: string | undefined;
+      try {
+        const nonceRes = await portfolioService.contactNonce(username);
+        nonce = nonceRes.data.nonce;
+      } catch { /* Non-fatal: proceed without nonce if fetch fails */ }
+
       await portfolioService.contact(username, {
         senderName: contactName.trim(),
         senderEmail: contactEmail.trim() || undefined,
         message: contactMessage.trim(),
+        nonce,
       });
       setContactSent(true);
     } catch {

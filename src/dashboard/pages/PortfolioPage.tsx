@@ -87,6 +87,8 @@ export function PortfolioPage() {
   const [portfolioStats, setPortfolioStats] = useState<{ totalViews: number; recentViews: number; dailyBreakdown: { date: string; count: number }[] } | null>(null);
   // 42.2: Portfolio view_count from the portfolio record itself
   const [portfolioViewCount, setPortfolioViewCount] = useState<number>(0);
+  // 49.4: Last viewed timestamp (UTC from server) shown in visitor's local timezone
+  const [lastViewedAt, setLastViewedAt] = useState<string | null>(null);
 
   // Magic Generate state
   const [generatingField, setGeneratingField] = useState<string | null>(null);
@@ -137,6 +139,11 @@ export function PortfolioPage() {
     // Load portfolio visit stats
     portfolioService.getStats()
       .then(({ data }) => setPortfolioStats(data))
+      .catch(() => { /* non-fatal */ });
+
+    // 49.4: Load last_viewed_at for local-timezone display
+    portfolioService.getMeStats()
+      .then(({ data }) => setLastViewedAt(data.last_viewed_at))
       .catch(() => { /* non-fatal */ });
 
     // 38.5: Load portfolio contact messages
@@ -364,6 +371,15 @@ export function PortfolioPage() {
             <p className="text-xs text-[#6B7280] mt-1">
               <Eye className="w-3 h-3 inline mr-1 text-[#00F0FF]" />
               {portfolioStats.totalViews} total views · {portfolioStats.recentViews} this week
+              {/* 49.4: Show last-viewed in visitor's local timezone */}
+              {lastViewedAt && (
+                <span
+                  className="ml-2"
+                  title={`Last viewed: ${new Date(lastViewedAt).toLocaleString(undefined, { timeZoneName: 'short' })}`}
+                >
+                  · last seen {new Date(lastViewedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </span>
+              )}
             </p>
           )}
           {/* 42.2: Public view_count badge */}
