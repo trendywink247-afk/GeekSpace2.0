@@ -811,6 +811,19 @@ try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_reminders INTEGER DEFA
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_escalations INTEGER DEFAULT 1`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_agents INTEGER DEFAULT 1`); } catch { /* column already exists */ }
 
+// Phase 31: Per-type notification toggles (connections + weekly digest)
+try { db.exec(`ALTER TABLE users ADD COLUMN notification_connections INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE users ADD COLUMN notification_digest INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+
+// Phase 31: Reminder recurrence column (daily/weekly/monthly)
+try { db.exec(`ALTER TABLE reminders ADD COLUMN recurrence TEXT`); } catch { /* column already exists */ }
+
+// Phase 34.3: Portfolio view_count column
+try { db.exec(`ALTER TABLE portfolios ADD COLUMN view_count INTEGER DEFAULT 0`); } catch { /* column already exists */ }
+
+// Phase 35.1: completed_at timestamp for streak tracking
+try { db.exec(`ALTER TABLE reminders ADD COLUMN completed_at INTEGER`); } catch { /* column already exists */ }
+
 // Phase 12: Index for portfolio_visits queries (user_id + date range scans)
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_portfolio_visits_user_date ON portfolio_visits(user_id, visited_at)`); } catch { /* index already exists */ }
 
@@ -1224,3 +1237,16 @@ try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reminders_datetime ON reminders(us
 
 // Phase 30.4: Track how many times each reminder has been snoozed
 try { db.exec(`ALTER TABLE reminders ADD COLUMN snooze_count INTEGER DEFAULT 0`); } catch { /* column already exists */ }
+
+// Phase 36.1: Snooze event log — per-event history for each reminder snooze
+db.exec(`
+  CREATE TABLE IF NOT EXISTS snooze_log (
+    id TEXT PRIMARY KEY,
+    reminder_id TEXT NOT NULL REFERENCES reminders(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    snoozed_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+    preset TEXT NOT NULL,
+    new_datetime TEXT NOT NULL
+  )
+`);
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_snooze_log_reminder ON snooze_log(reminder_id, snoozed_at DESC)`); } catch { /* already exists */ }

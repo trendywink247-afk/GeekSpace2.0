@@ -29,6 +29,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { reminderService } from '@/services/api';
+import { Flame } from 'lucide-react';
 import { parseNaturalLanguageReminder } from '@/utils/reminderParser';
 import type { ReminderChannel, ReminderCategory, ReminderPriority, Reminder } from '@/types';
 
@@ -58,6 +59,7 @@ export function RemindersPage() {
   const { reminders, addReminder, updateReminder, toggleReminder, snoozeReminder, deleteReminder, loadReminders, bulkSnoozeReminders } = useDashboardStore();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'recurring' | 'one-off'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
@@ -74,6 +76,7 @@ export function RemindersPage() {
     datetime: string;
     channel: ReminderChannel;
     recurring: string;
+    recurrence: 'daily' | 'weekly' | 'monthly' | '';
     category: ReminderCategory;
     priority: ReminderPriority;
   }>({
@@ -81,9 +84,16 @@ export function RemindersPage() {
     datetime: '',
     channel: 'telegram',
     recurring: '',
+    recurrence: '',
     category: 'personal',
     priority: 'normal',
   });
+
+  // 35.1: Streak counter
+  const [streak, setStreak] = useState<{ streak: number; longestStreak: number; completedToday: boolean } | null>(null);
+  useEffect(() => {
+    reminderService.getStreak().then(res => setStreak(res.data)).catch(() => {});
+  }, []);
 
   // Poll for reminders every 30 seconds (targeted — only re-fetches reminders)
   useEffect(() => {
@@ -159,10 +169,11 @@ export function RemindersPage() {
       datetime: newReminder.datetime,
       channel: newReminder.channel,
       recurring: newReminder.recurring || undefined,
+      recurrence: newReminder.recurrence || undefined,
       category: newReminder.category,
       priority: newReminder.priority,
     });
-    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
+    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', recurrence: '', category: 'personal', priority: 'normal' });
     setIsAddDialogOpen(false);
   };
 
@@ -177,6 +188,21 @@ export function RemindersPage() {
   // Bulk snooze state (29.4)
   const [selectedActiveIds, setSelectedActiveIds] = useState<Set<string>>(new Set());
   const [isBulkSnoozing, setIsBulkSnoozing] = useState(false);
+
+  // 36.1: Snooze history popover
+  const [snoozeHistoryId, setSnoozeHistoryId] = useState<string | null>(null);
+  const [snoozeHistory, setSnoozeHistory] = useState<Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }>>([]);
+  const [snoozeHistoryLoading, setSnoozeHistoryLoading] = useState(false);
+
+  const handleShowSnoozeHistory = async (id: string) => {
+    if (snoozeHistoryId === id) { setSnoozeHistoryId(null); return; }
+    setSnoozeHistoryId(id);
+    setSnoozeHistoryLoading(true);
+    try {
+      const res = await reminderService.getSnoozeHistory(id);
+      setSnoozeHistory(res.data.history);
+    } catch { setSnoozeHistory([]); } finally { setSnoozeHistoryLoading(false); }
+  };
 
   const handleComplete = async (id: string) => {
     setCompletingIds((prev) => new Set(prev).add(id));
@@ -217,6 +243,7 @@ export function RemindersPage() {
       datetime: localStr,
       channel: reminder.channel,
       recurring: reminder.recurring || '',
+      recurrence: (reminder.recurrence as 'daily' | 'weekly' | 'monthly' | undefined) || '',
       category: reminder.category,
       priority: reminder.priority || 'normal',
     });
@@ -232,10 +259,11 @@ export function RemindersPage() {
       datetime: new Date(newReminder.datetime).toISOString(),
       channel: newReminder.channel,
       recurring: (newReminder.recurring || undefined) as Reminder['recurring'],
+      recurrence: (newReminder.recurrence || undefined) as Reminder['recurrence'],
       category: newReminder.category,
       priority: newReminder.priority,
     });
-    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
+    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', recurrence: '', category: 'personal', priority: 'normal' });
     setEditingReminder(null);
     setIsAddDialogOpen(false);
   };
@@ -293,6 +321,10 @@ export function RemindersPage() {
     if (filter === 'active') return !r.completed;
     if (filter === 'completed') return r.completed;
     return true;
+  }).filter(r => {
+    if (recurrenceFilter === 'recurring') return !!r.recurrence;
+    if (recurrenceFilter === 'one-off') return !r.recurrence;
+    return true;
   }).filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       const pa = priorityOrder[a.priority ?? 'normal'] ?? 2;
@@ -330,6 +362,13 @@ export function RemindersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {streak && streak.streak > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.3)' }}>
+              <Flame className="w-3.5 h-3.5 text-[#F59E0B]" />
+              <span className="text-sm font-semibold text-[#F59E0B]">{streak.streak}</span>
+              <span className="text-xs text-[#6B7280]">day streak</span>
+            </div>
+          )}
           <div className="px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30">
             <span className="text-sm text-[#00F0FF]">{activeReminders.length} active</span>
           </div>
@@ -452,13 +491,32 @@ export function RemindersPage() {
             className="pl-10 bg-[#0C0C18] border-[#00F0FF]/20"
           />
         </div>
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/20">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-col gap-2">
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+            <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/20">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="flex items-center gap-1.5">
+            {(['all', 'recurring', 'one-off'] as const).map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setRecurrenceFilter(opt)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                  recurrenceFilter === opt
+                    ? opt === 'recurring'
+                      ? 'bg-[#F59E0B]/15 border-[#F59E0B]/40 text-[#F59E0B]'
+                      : 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[#00F0FF]'
+                    : 'border-[#00F0FF]/10 text-[#6B7280] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+                }`}
+              >
+                {opt === 'all' ? 'All types' : opt === 'recurring' ? '↺ Recurring' : '• One-off'}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
           <button
             onClick={() => setViewMode('list')}
@@ -646,6 +704,11 @@ export function RemindersPage() {
                                   {reminder.recurring}
                                 </Badge>
                               )}
+                              {reminder.recurrence && (
+                                <Badge className="bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs">
+                                  🔁 {reminder.recurrence}
+                                </Badge>
+                              )}
                               {reminder.priority && reminder.priority !== 'normal' && (
                                 <Badge
                                   className="text-xs"
@@ -659,9 +722,35 @@ export function RemindersPage() {
                                 </Badge>
                               )}
                               {(reminder.snoozeCount ?? 0) > 0 && (
-                                <Badge className="text-xs bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30">
-                                  Snoozed {reminder.snoozeCount}×
-                                </Badge>
+                                <div className="relative">
+                                  <button
+                                    onClick={() => handleShowSnoozeHistory(reminder.id)}
+                                    className="text-xs px-2 py-0.5 rounded-full bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 hover:bg-[#F59E0B]/20 transition-colors"
+                                    aria-label="Show snooze history"
+                                  >
+                                    Snoozed {reminder.snoozeCount}×
+                                  </button>
+                                  {snoozeHistoryId === reminder.id && (
+                                    <div className="absolute left-0 top-full mt-1 z-20 bg-[#0C0C18] border border-[#F59E0B]/30 rounded-xl shadow-lg p-3 min-w-[200px]">
+                                      <p className="text-xs font-medium text-[#F59E0B] mb-2">Snooze history</p>
+                                      {snoozeHistoryLoading ? (
+                                        <div className="w-4 h-4 border-2 border-[#F59E0B]/30 border-t-[#F59E0B] rounded-full animate-spin mx-auto" />
+                                      ) : snoozeHistory.length === 0 ? (
+                                        <p className="text-xs text-[#6B7280]">No history yet</p>
+                                      ) : (
+                                        <div className="space-y-1.5">
+                                          {snoozeHistory.map((h) => (
+                                            <div key={h.id} className="text-xs text-[#6B7280]">
+                                              <span className="text-[#E8E8F0]">{h.preset}</span>
+                                              {' → '}
+                                              {new Date(h.new_datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -753,7 +842,7 @@ export function RemindersPage() {
         setIsAddDialogOpen(open);
         if (!open) {
           setEditingReminder(null);
-          setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
+          setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', recurrence: '', category: 'personal', priority: 'normal' });
         }
       }}>
         <DialogContent className="glass-card-v2 border-[#00F0FF]/20 max-w-lg">
@@ -909,6 +998,19 @@ export function RemindersPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div>
+                <label className="text-xs text-[#6B7280] mb-1 block">Repeat</label>
+                <select
+                  value={newReminder.recurrence}
+                  onChange={(e) => setNewReminder({ ...newReminder, recurrence: e.target.value as 'daily' | 'weekly' | 'monthly' | '' })}
+                  className="w-full px-3 py-2 rounded-md bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm"
+                >
+                  <option value="">None</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
               </div>
               <div data-testid="priority-selector">
                 <label className="text-xs text-[#6B7280] mb-1 block">Priority</label>

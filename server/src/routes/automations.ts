@@ -90,6 +90,37 @@ automationsRouter.get('/:id/logs', requireAuth, (req: AuthRequest, res) => {
   res.json(logs);
 });
 
+// ---- 34.5: Webhook test-fire ----
+automationsRouter.post('/:id/test', requireAuth, async (req: AuthRequest, res) => {
+  const auto = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId) as {
+    id: string; name: string; trigger_type: string; action_config: string; action_type: string;
+  } | undefined;
+
+  if (!auto) { res.status(404).json({ error: 'Automation not found' }); return; }
+
+  // Extract webhook URL from action_config
+  const actionConfig: Record<string, unknown> = JSON.parse(auto.action_config || '{}');
+  const url = (actionConfig.url as string | undefined) || (actionConfig.webhook_url as string | undefined);
+
+  if (!url) {
+    res.status(400).json({ success: false, statusCode: 0, message: 'No URL configured on this automation' });
+    return;
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ test: true, timestamp: new Date().toISOString(), automation_id: auto.id }),
+      signal: AbortSignal.timeout(5000),
+    });
+    res.json({ success: response.ok, statusCode: response.status, message: response.ok ? 'Test successful' : `Test failed with status ${response.status}` });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Request failed';
+    res.json({ success: false, statusCode: 0, message: `Test failed: ${msg}` });
+  }
+});
+
 // ---- Webhook endpoint (no auth — triggered by external services) ----
 
 automationsRouter.post('/webhook/:id', async (req, res) => {

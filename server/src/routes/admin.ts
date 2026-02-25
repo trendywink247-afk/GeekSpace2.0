@@ -219,6 +219,78 @@ adminRouter.get('/stream', (req: Request, res: Response): void => {
   });
 });
 
+// ---- /export/users endpoint — CSV export of all users ----
+adminRouter.get('/export/users', requireAdminToken, (_req: Request, res: Response): void => {
+  try {
+    const users = db.prepare(
+      `SELECT u.id, u.email, u.plan, u.created_at,
+              u.last_active AS last_active_at,
+              COALESCE(
+                (SELECT SUM(ue.tokens_in + ue.tokens_out)
+                 FROM usage_events ue WHERE ue.user_id = u.id), 0
+              ) AS messages_sent
+       FROM users u
+       ORDER BY u.created_at DESC`
+    ).all() as Array<{
+      id: string; email: string; plan: string;
+      created_at: string; last_active_at: string; messages_sent: number;
+    }>;
+
+    const header = 'id,email,plan,created_at,last_active_at,messages_sent\n';
+    const rows = users.map((u) => [
+      u.id,
+      `"${(u.email || '').replace(/"/g, '""')}"`,
+      u.plan,
+      u.created_at || '',
+      u.last_active_at || '',
+      u.messages_sent,
+    ].join(',')).join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="geekspace-users.csv"');
+    res.send(header + rows);
+  } catch (err) {
+    logger.error({ err }, 'Admin export/users failed');
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+// ---- /export/activity endpoint — JSON activity summary ----
+adminRouter.get('/export/activity', requireAdminToken, (_req: Request, res: Response): void => {
+  try {
+    const totalUsers = (db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;
+
+    const activeSevenDays = (db.prepare(
+      "SELECT COUNT(*) as c FROM users WHERE last_active >= datetime('now', '-7 days')"
+    ).get() as { c: number }).c;
+
+    const totalMessages = (db.prepare(
+      'SELECT COALESCE(SUM(tokens_in + tokens_out), 0) as c FROM usage_events'
+    ).get() as { c: number }).c;
+
+    const topUsers = db.prepare(
+      `SELECT u.id, u.email, u.plan,
+              COALESCE(SUM(ue.tokens_in + ue.tokens_out), 0) AS message_count
+       FROM users u
+       LEFT JOIN usage_events ue ON ue.user_id = u.id
+       GROUP BY u.id
+       ORDER BY message_count DESC
+       LIMIT 5`
+    ).all() as Array<{ id: string; email: string; plan: string; message_count: number }>;
+
+    res.json({
+      totalUsers,
+      activeLastSevenDays: activeSevenDays,
+      totalMessages,
+      topUsersByMessageCount: topUsers,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.error({ err }, 'Admin export/activity failed');
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
 // ---- Main dashboard endpoint (legacy) ----
 adminRouter.get('/dashboard', requireAdminPassword, (_req: Request, res: Response) => {
   try {
@@ -447,6 +519,54 @@ adminRouter.get('/audit', requireAdminToken, (req: Request, res: Response): void
   } catch (err) {
     logger.error({ err }, 'Admin audit query failed');
     res.status(500).json({ error: 'Audit query failed' });
+  }
+});
+
+// ---- /analytics/feedback endpoint — thumbs-down analytics ----
+adminRouter.get('/analytics/feedback', requireAdminToken, (_req: Request, res: Response): void => {
+  try {
+    // Total disliked reactions (👎 emoji)
+    const totalDisliked = (db.prepare(
+      "SELECT COUNT(*) as c FROM message_reactions WHERE reaction = '👎'"
+    ).get() as { c: number }).c;
+
+    // Recent dislikes — message_id is a string key; return id + message_id + created_at
+    const recentRows = db.prepare(
+      `SELECT id, user_id, message_id, reaction, created_at
+       FROM message_reactions
+       WHERE reaction = '👎'
+       ORDER BY created_at DESC
+       LIMIT 5`
+    ).all() as { id: string; user_id: string; message_id: string; reaction: string; created_at: string }[];
+
+    // Derive "topics" from message_id — extract first 3-5 words (simple string split)
+    const topicCounts: Record<string, number> = {};
+    for (const row of recentRows) {
+      // message_id is typically a UUID or short key; use first words as topic label
+      const words = row.message_id.replace(/[-_]/g, ' ').split(/\s+/).slice(0, 4).join(' ').trim();
+      if (words) {
+        topicCounts[words] = (topicCounts[words] || 0) + 1;
+      }
+    }
+    const topDislikedTopics = Object.entries(topicCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([topic]) => topic);
+
+    res.json({
+      totalDisliked,
+      topDislikedTopics,
+      recentDislikes: recentRows.map(r => ({
+        id: r.id,
+        messageId: r.message_id,
+        userId: r.user_id,
+        reaction: r.reaction,
+        created_at: r.created_at,
+      })),
+    });
+  } catch (err) {
+    logger.error({ err }, 'Admin feedback analytics query failed');
+    res.status(500).json({ error: 'Feedback analytics query failed' });
   }
 });
 

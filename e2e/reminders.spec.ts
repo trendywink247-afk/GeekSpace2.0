@@ -13,6 +13,13 @@ import { test, expect } from '@playwright/test';
  *
  * Uses data-testid="submit-reminder-btn" for the dialog submit button
  * to avoid the ambiguous .last() locator which is fragile on mobile viewport.
+ *
+ * Cancel button clicks use { force: true } because the Phase 31 "Repeat"
+ * select makes the dialog taller on pixel5, causing layout instability.
+ *
+ * Submit button clicks always await toBeEnabled() before { force: true } to
+ * prevent hitting the disabled button before React state has committed the
+ * controlled-input fill — which caused the dialog to stay open on CI retries.
  */
 
 test.describe('Reminders Page', () => {
@@ -36,8 +43,8 @@ test.describe('Reminders Page', () => {
     // Dialog should open with "Add Reminder" title
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Add Reminder' })).toBeVisible();
-    // Cancel should close it
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    // Cancel should close it; force:true bypasses layout instability on pixel5
+    await page.getByRole('button', { name: 'Cancel' }).click({ force: true });
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
@@ -53,7 +60,7 @@ test.describe('Reminders Page', () => {
     const datetimeInput = page.locator('input[type="datetime-local"]');
     await datetimeInput.fill('2030-01-15T10:00');
 
-    // Click submit via data-testid; force:true bypasses animation instability on mobile
+    // Wait for React state to commit both fills before clicking submit
     const addBtn = page.getByTestId('submit-reminder-btn');
     await expect(addBtn).toBeEnabled();
     await addBtn.click({ force: true });
@@ -73,10 +80,19 @@ test.describe('Reminders Page', () => {
     await textInput.fill('Complete me E2E');
     const datetimeInput = page.locator('input[type="datetime-local"]');
     await datetimeInput.fill('2030-06-01T09:00');
-    await page.getByTestId('submit-reminder-btn').click({ force: true });
+
+    // Must wait for button to be enabled before forcing the click —
+    // { force: true } bypasses disabled-state checks so without this guard
+    // the click fires while newReminder state is still empty, the handler
+    // returns early, and the dialog never closes (seen on chromium CI retries).
+    const submitBtn = page.getByTestId('submit-reminder-btn');
+    await expect(submitBtn).toBeEnabled();
+    await submitBtn.click({ force: true });
+
     await expect(page.getByRole('dialog')).not.toBeVisible();
     // Use .first() to avoid strict mode violation if reminder was created before
-    await expect(page.getByText('Complete me E2E').first()).toBeVisible();
+    // timeout:8000 gives extra time for store update after dialog close
+    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 8000 });
 
     // Click the "Mark as complete" button using its aria-label
     // Get the button associated with the most recently visible 'Complete me E2E' reminder
@@ -86,7 +102,8 @@ test.describe('Reminders Page', () => {
     // Switch to "completed" tab/filter to verify the reminder moved there
     // TabsTrigger renders as role="tab"
     await page.getByRole('tab', { name: 'Completed' }).click();
-    await expect(page.getByText('Complete me E2E').first()).toBeVisible();
+    // timeout:5000 gives the tab switch + store re-render time to settle
+    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should show priority selector in create form', async ({ page }) => {
@@ -102,8 +119,8 @@ test.describe('Reminders Page', () => {
     await expect(page.getByTestId('priority-selector').getByText('High')).toBeVisible();
     await expect(page.getByTestId('priority-selector').getByText('Urgent')).toBeVisible();
 
-    // Cancel to close
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    // Cancel to close; force:true bypasses layout instability on pixel5
+    await page.getByRole('button', { name: 'Cancel' }).click({ force: true });
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
@@ -113,7 +130,12 @@ test.describe('Reminders Page', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByPlaceholder('Enter reminder text...').fill('Bulk delete E2E test');
     await page.locator('input[type="datetime-local"]').fill('2030-03-01T10:00');
-    await page.getByTestId('submit-reminder-btn').click({ force: true });
+
+    // Wait for button enabled before forcing click (same guard as other submit clicks)
+    const submitBtn = page.getByTestId('submit-reminder-btn');
+    await expect(submitBtn).toBeEnabled();
+    await submitBtn.click({ force: true });
+
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText('Bulk delete E2E test').first()).toBeVisible();
 

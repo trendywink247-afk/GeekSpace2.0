@@ -183,6 +183,9 @@ export function DashboardApp() {
     (r) => !r.completed && new Date(r.datetime).getTime() <= Date.now()
   ).length;
 
+  // All pending (non-completed) reminders count for mobile badge
+  const pendingReminderCount = reminders.filter((r) => !r.completed).length;
+
   // Pending integrations count for nav badge
   const pendingConnectionCount = integrations.filter((i) => i.status === 'pending').length;
 
@@ -799,6 +802,11 @@ export function DashboardApp() {
                 {tab.id === 'connections' && pendingConnectionCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#F59E0B] text-white text-[9px] font-bold flex items-center justify-center leading-none">
                     {pendingConnectionCount > 9 ? '9+' : pendingConnectionCount}
+                  </span>
+                )}
+                {tab.id === 'more' && pendingReminderCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#F59E0B] text-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                    {pendingReminderCount > 9 ? '9+' : pendingReminderCount}
                   </span>
                 )}
               </div>

@@ -98,6 +98,8 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const [isListening, setIsListening] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchMatchIndex, setSearchMatchIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const speechSupported = typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
@@ -115,6 +117,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const [creditsTotal, setCreditsTotal] = useState<number | null>(null);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [chatRateLimitRemaining, setChatRateLimitRemaining] = useState<number | null>(null);
+  const [chatRateLimitResetAt, setChatRateLimitResetAt] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   // Premium session state
@@ -159,6 +162,47 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       }).catch(() => { /* ignore billing fetch errors */ });
     }
   }, [isOpen]);
+
+  // Fetch rate limit status on open and refresh every 60s (33.4)
+  useEffect(() => {
+    if (!isOpen || agentOwner) return;
+    const fetchRL = () => {
+      agentService.getRateLimitStatus().then(({ data }) => {
+        setChatRateLimitRemaining(data.remaining);
+        if (data.resetAt) setChatRateLimitResetAt(new Date(data.resetAt).getTime());
+      }).catch(() => { /* ignore */ });
+    };
+    fetchRL();
+    const rlTimer = setInterval(fetchRL, 60000);
+    return () => clearInterval(rlTimer);
+  }, [isOpen, agentOwner]);
+
+  // Ctrl+F / Cmd+F to open search
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setSearchOpen(true);
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
+      if (e.key === 'Escape' && searchOpen) {
+        setSearchOpen(false);
+        setSearchTerm('');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, searchOpen]);
+
+  // Auto-focus search input when search opens
+  useEffect(() => {
+    if (searchOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    } else {
+      setSearchMatchIndex(0);
+    }
+  }, [searchOpen]);
 
   // Show toast notification when a new agent message arrives while panel is closed
   const prevAgentMsgCountRef = useRef(0);
@@ -382,9 +426,11 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         try {
           setIsTyping(true);
           await doRegularChat();
-        } catch {
+        } catch (innerErr: unknown) {
+          const reqId = (innerErr as { response?: { headers?: Record<string, string>; data?: { requestId?: string } } })?.response?.data?.requestId
+            ?? (innerErr as { response?: { headers?: Record<string, string> } })?.response?.headers?.['x-request-id'];
           setAgentMsg({
-            content: "Sorry, I couldn't process that right now. Please try again.",
+            content: "Sorry, I couldn't process that right now. Please try again." + (reqId ? ` (Error ID: ${reqId})` : ''),
             isStreaming: false,
             retryContent: content,
           });
@@ -571,33 +617,60 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           </div>
         )}
 
-        {/* Rate limit warning — shown when fewer than 5 chat requests remain in the window */}
-        {chatRateLimitRemaining !== null && chatRateLimitRemaining < 5 && (
-          <div className="px-4 py-1.5 bg-[#F59E0B]/10 border-b border-[#F59E0B]/20 flex items-center gap-2">
-            <span className="text-xs text-[#F59E0B]">
-              ⚠ {chatRateLimitRemaining} chat request{chatRateLimitRemaining !== 1 ? 's' : ''} remaining in this window
+        {/* Rate limit warning — shown when fewer than 10 chat requests remain in the window (33.4, 36.4) */}
+        {chatRateLimitRemaining !== null && chatRateLimitRemaining < 10 && (
+          <div className={`px-4 py-1.5 border-b flex items-center gap-2 ${chatRateLimitRemaining < 5 ? 'bg-[#EF4444]/10 border-[#EF4444]/20' : 'bg-[#F59E0B]/10 border-[#F59E0B]/20'}`}>
+            <span className={`text-xs ${chatRateLimitRemaining < 5 ? 'text-[#EF4444]' : 'text-[#F59E0B]'}`}>
+              ⚠ {chatRateLimitRemaining} chat request{chatRateLimitRemaining !== 1 ? 's' : ''} remaining
+              {chatRateLimitResetAt && chatRateLimitResetAt > Date.now() && (
+                <> · resets in {Math.ceil((chatRateLimitResetAt - Date.now()) / 60000)}m</>
+              )}
             </span>
           </div>
         )}
 
-        {/* Search bar */}
+        {/* Search bar — sticky at top of messages area */}
         {searchOpen && (
-          <div className="px-4 py-2 border-b border-[#00F0FF]/10 bg-[#06060B]">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6B7280]" />
-              <input
-                autoFocus
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search messages…"
-                className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0A0A12] border border-[#00F0FF]/20 text-sm text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/50"
-              />
-              {searchTerm && (
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#6B7280]">
-                  {messages.filter(m => m.content.toLowerCase().includes(searchTerm.toLowerCase())).length} results
-                </span>
-              )}
+          <div className="sticky top-0 z-10 px-4 py-2 border-b border-[#00F0FF]/10 bg-[#06060B]">
+            <div className="relative flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6B7280]" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => { setSearchTerm(e.target.value); setSearchMatchIndex(0); }}
+                  onKeyDown={(e) => {
+                    const matchCount = messages.filter(m => m.content.toLowerCase().includes(searchTerm.toLowerCase())).length;
+                    if (e.key === 'Enter') {
+                      e.shiftKey
+                        ? setSearchMatchIndex(i => (i - 1 + matchCount) % Math.max(matchCount, 1))
+                        : setSearchMatchIndex(i => (i + 1) % Math.max(matchCount, 1));
+                    }
+                  }}
+                  placeholder="Search messages… (Enter to cycle)"
+                  className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0A0A12] border border-[#00F0FF]/20 text-sm text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/50"
+                />
+                {searchTerm && (() => {
+                  const matchCount = messages.filter(m => m.content.toLowerCase().includes(searchTerm.toLowerCase())).length;
+                  return matchCount > 0 ? (
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#00F0FF]">
+                      {Math.min(searchMatchIndex + 1, matchCount)} of {matchCount}
+                    </span>
+                  ) : (
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#6B7280]">
+                      0 results
+                    </span>
+                  );
+                })()}
+              </div>
+              <button
+                onClick={() => { setSearchOpen(false); setSearchTerm(''); }}
+                className="p-1 rounded text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+                title="Close search (Esc)"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         )}
@@ -633,7 +706,16 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         : 'bg-[#06060B] text-[#E8E8F0] border border-[#00F0FF]/20 rounded-bl-md'
                     }`}
                   >
-                    {msg.content}
+                    {searchOpen && searchTerm && msg.content.toLowerCase().includes(searchTerm.toLowerCase())
+                      ? (() => {
+                          const parts = msg.content.split(new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+                          return parts.map((part, i) =>
+                            part.toLowerCase() === searchTerm.toLowerCase()
+                              ? <mark key={i} className="bg-[#F59E0B]/40 text-[#F59E0B] rounded px-0.5">{part}</mark>
+                              : part
+                          );
+                        })()
+                      : msg.content}
                     {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-[#00F0FF] ml-0.5 animate-pulse rounded-sm" />}
                     {msg.provider && !msg.isStreaming && (
                       <span className="block mt-1.5 text-[10px] text-[#6B7280]/60 flex items-center gap-1">
@@ -871,20 +953,37 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 : <>Powered by Agentin &middot; {agent.primaryModel}</>
               }
             </p>
-            {messages.length > 0 && (
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded ${
-                  messages.length > 50
-                    ? 'text-[#FF6161] bg-[#FF6161]/10'
-                    : messages.length > 20
-                    ? 'text-[#F59E0B] bg-[#F59E0B]/10'
-                    : 'text-[#6B7280]/50'
-                }`}
-                title={messages.length > 50 ? 'Older messages may be truncated' : messages.length > 20 ? 'Context window filling up' : undefined}
-              >
-                {messages.length > 50 ? `Context: ${messages.length} ⚠` : `Context: ${messages.length}`}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Rate limit indicator (33.4, 36.4) */}
+              {chatRateLimitRemaining !== null && !premiumSession && !agentOwner && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded ${
+                    chatRateLimitRemaining < 5
+                      ? 'text-[#EF4444] bg-[#EF4444]/10'
+                      : chatRateLimitRemaining < 10
+                      ? 'text-[#F59E0B] bg-[#F59E0B]/10'
+                      : 'text-[#6B7280]/50'
+                  }`}
+                  title={`${chatRateLimitRemaining}/60 requests remaining${chatRateLimitResetAt && chatRateLimitResetAt > Date.now() ? ` · resets in ${Math.ceil((chatRateLimitResetAt - Date.now()) / 60000)}m` : ''}`}
+                >
+                  {chatRateLimitRemaining}/60 reqs
+                </span>
+              )}
+              {messages.length > 0 && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded ${
+                    messages.length > 50
+                      ? 'text-[#FF6161] bg-[#FF6161]/10'
+                      : messages.length > 20
+                      ? 'text-[#F59E0B] bg-[#F59E0B]/10'
+                      : 'text-[#6B7280]/50'
+                  }`}
+                  title={messages.length > 50 ? 'Older messages may be truncated' : messages.length > 20 ? 'Context window filling up' : undefined}
+                >
+                  {messages.length > 50 ? `Context: ${messages.length} ⚠` : `Context: ${messages.length}`}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, permissionsUpdateSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
-import { getBotUsername } from '../services/telegram.js';
+import { getBotUsername, sendTelegramMessage } from '../services/telegram.js';
 import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { generateWhatsAppLinkToken, generateWhatsAppQRSession, checkWhatsAppSession } from '../services/whatsapp.js';
@@ -412,9 +412,19 @@ integrationsRouter.post('/invite/:token/accept', (req, res) => {
   // Mark invite as used
   db.prepare('UPDATE connection_invites SET used_at = ? WHERE id = ?').run(Date.now(), invite.id);
 
+  const acceptorDisplay = acceptorName || acceptorEmail || 'Someone';
+
   // Log activity for the invite owner
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Connection accepted', ?, 'user-check')`)
-    .run(crypto.randomUUID(), invite.user_id, acceptorName ? `${acceptorName} accepted your connection invite` : acceptorEmail ? `${acceptorEmail} accepted your connection invite` : 'Someone accepted your connection invite');
+    .run(crypto.randomUUID(), invite.user_id, `${acceptorDisplay} accepted your connection invite`);
+
+  // 36.2: Notify invite owner via Telegram if linked
+  const tgLink = db.prepare(
+    "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+  ).get(invite.user_id) as { external_id: string } | undefined;
+  if (tgLink) {
+    sendTelegramMessage(tgLink.external_id, `🤝 ${acceptorDisplay} accepted your connection invite!`).catch(() => {});
+  }
 
   res.json({ success: true, message: 'Connection established' });
 });

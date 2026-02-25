@@ -26,6 +26,22 @@ import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../service
 
 export const agentRouter = Router();
 
+// ---- Rate Limit Status tracker (33.4) ----
+// In-memory tracker mirroring the chat rate limiter (60 req / 15 min)
+const _rateLimitTracker = new Map<number, { count: number; windowStart: number }>();
+const RL_WINDOW_MS = 15 * 60 * 1000;
+const RL_LIMIT = 60;
+
+function incrementRateLimitTracker(userId: number): void {
+  const now = Date.now();
+  const entry = _rateLimitTracker.get(userId);
+  if (!entry || now - entry.windowStart > RL_WINDOW_MS) {
+    _rateLimitTracker.set(userId, { count: 1, windowStart: now });
+  } else {
+    _rateLimitTracker.set(userId, { count: entry.count + 1, windowStart: entry.windowStart });
+  }
+}
+
 // ---- Helper: Detect task intent in natural chat ----
 // Returns true if the message looks like a task request (remind, telegram, deploy)
 function detectAndHandleTaskIntent(message: string): boolean {
@@ -680,6 +696,9 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     // Background AI memory extraction (non-blocking)
     extractMemoriesWithAI(userId, message, cleanReply || result.reply).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
 
+    // Increment rate limit tracker for UI display
+    incrementRateLimitTracker(userId as unknown as number);
+
     res.json(response);
   } catch (err) {
     logger.error({ err, userId }, 'Chat handler error');
@@ -1248,7 +1267,15 @@ agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
 
 agentRouter.get('/conversations/export', requireAuth, (req: AuthRequest, res) => {
   try {
-    const conversations = getRecentConversations(req.userId!, 1000);
+    const allConversations = getRecentConversations(req.userId!, 1000);
+    const days = parseInt(req.query.days as string) || 0;
+    const conversations = days > 0
+      ? allConversations.filter(c => {
+          if (!c.created_at) return false;
+          const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+          return c.created_at >= cutoff;
+        })
+      : allConversations;
     const format = (req.query.format as string | undefined) ?? 'json';
 
     if (format === 'md') {
@@ -1845,4 +1872,25 @@ agentRouter.post('/deactivate', requireAuth, (req: AuthRequest, res) => {
   `).run(uuid(), req.userId!);
 
   res.json({ success: true, status: 'inactive' });
+});
+
+agentRouter.get('/rate-limit-status', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId! as unknown as number;
+  const now = Date.now();
+  const entry = _rateLimitTracker.get(userId);
+  if (!entry || now - entry.windowStart > RL_WINDOW_MS) {
+    res.json({
+      remaining: RL_LIMIT,
+      limit: RL_LIMIT,
+      resetAt: new Date(now + RL_WINDOW_MS).toISOString(),
+      windowMinutes: 15,
+    });
+    return;
+  }
+  res.json({
+    remaining: Math.max(0, RL_LIMIT - entry.count),
+    limit: RL_LIMIT,
+    resetAt: new Date(entry.windowStart + RL_WINDOW_MS).toISOString(),
+    windowMinutes: 15,
+  });
 });

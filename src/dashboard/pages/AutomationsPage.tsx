@@ -30,7 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { automationLogService } from '@/services/api';
+import { automationLogService, automationService } from '@/services/api';
 import type { AutomationTrigger, AutomationAction, AutomationLog } from '@/types';
 
 const triggerIcons: Record<AutomationTrigger, typeof Clock> = {
@@ -105,6 +105,8 @@ export function AutomationsPage() {
   });
   const [saveError, setSaveError] = useState('');
   const [logs, setLogs] = useState<AutomationLog[]>([]);
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string } | null>(null);
 
   const resetForm = () => {
     setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true });
@@ -176,6 +178,20 @@ export function AutomationsPage() {
     await triggerAutomation(id);
   };
 
+  const handleTestFire = async (id: string) => {
+    setTestingId(id);
+    setTestResult(null);
+    try {
+      const res = await automationService.testFire(id);
+      setTestResult({ id, success: res.data.success, message: res.data.message });
+    } catch {
+      setTestResult({ id, success: false, message: 'Test request failed' });
+    } finally {
+      setTestingId(null);
+      setTimeout(() => setTestResult(null), 5000);
+    }
+  };
+
   const filtered = automations
     .filter((a) => {
       if (filter === 'active') return a.enabled;
@@ -217,7 +233,7 @@ export function AutomationsPage() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
+    <div data-testid="automations-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         <div>
@@ -384,7 +400,29 @@ export function AutomationsPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-1 flex-shrink-0">
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      {testResult?.id === auto.id && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${testResult.success ? 'bg-[#00FF88]/10 border-[#00FF88]/30 text-[#00FF88]' : 'bg-[#FF6161]/10 border-[#FF6161]/30 text-[#FF6161]'}`}>
+                          {testResult.message}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-1">
+                      {auto.triggerType === 'webhook' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleTestFire(auto.id)}
+                          disabled={testingId === auto.id}
+                          aria-label={`Test ${auto.name}`}
+                          className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 p-0 press-scale"
+                        >
+                          {testingId === auto.id ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -413,6 +451,7 @@ export function AutomationsPage() {
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

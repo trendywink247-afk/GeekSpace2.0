@@ -314,6 +314,7 @@ export interface Reminder {
   datetime: string;
   channel: ReminderChannel;
   recurring?: 'daily' | 'weekly' | 'monthly';
+  recurrence?: 'daily' | 'weekly' | 'monthly' | null;
   completed: boolean;
   category: ReminderCategory;
   priority?: ReminderPriority;

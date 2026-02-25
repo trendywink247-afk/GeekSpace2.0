@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   MessageSquare,
   Calendar,
@@ -18,7 +18,9 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
-  X
+  X,
+  GripVertical,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,7 +44,7 @@ import {
 } from 'recharts';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { briefingService, modelService, agentService, usageService } from '@/services/api';
+import { briefingService, modelService, agentService, usageService, activityService } from '@/services/api';
 import type { FreeModel, ModelChangelogEntry } from '@/types';
 
 interface OverviewPageProps {
@@ -93,6 +95,34 @@ const emptyHourlyData = [
 // Accent colors per stat for bento visual variety
 const statAccents = ['#00F0FF', '#ADFF2F', '#FFD700', '#FF2D78'];
 
+// Mock sparkline data shown when no real time-series data is available yet
+const MOCK_SPARKLINES = [
+  [2, 5, 3, 8, 6, 9, 12],   // Messages: upward trend (cyan)
+  [1, 3, 2, 4, 3, 5, 4],    // Reminders: steady (lime)
+  [100, 95, 88, 80, 75, 70, 65], // Credits: descending (amber)
+  [320, 280, 310, 290, 260, 270, 240], // Response time proxy (pink)
+];
+
+// Sparkline: pure SVG polyline from an array of numbers
+function Sparkline({ data, color = '#00F0FF', width = 80, height = 28 }: {
+  data: number[]; color?: string; width?: number; height?: number;
+}) {
+  if (data.length < 2) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((v - min) / range) * (height - 2) - 1;
+    return `${x},${y}`;
+  }).join(' ');
+  return (
+    <svg width={width} height={height} className="overflow-visible" aria-hidden="true">
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.7" />
+    </svg>
+  );
+}
+
 export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenChat }: OverviewPageProps) {
   const [greeting, setGreeting] = useState('Good evening');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -113,6 +143,20 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     trend: 'up' | 'down' | 'neutral';
     hasEnoughData: boolean;
   } | null>(null);
+  const [activityStats, setActivityStats] = useState<{ date: string; messages: number; reminders: number }[]>([]);
+
+  // 35.2: Stat card reorder (drag-to-reorder, persisted in localStorage)
+  const [statOrder, setStatOrder] = useState<number[]>(() => {
+    try {
+      const stored = localStorage.getItem('gs_stat_order');
+      if (stored) {
+        const parsed = JSON.parse(stored) as number[];
+        if (Array.isArray(parsed) && parsed.length === 4) return parsed;
+      }
+    } catch { /* ignore */ }
+    return [0, 1, 2, 3];
+  });
+  const dragSrcIdx = useRef<number | null>(null);
 
   // Onboarding checklist state
   const ONBOARDING_ITEMS = [
@@ -148,8 +192,24 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     localStorage.setItem('gs_onboarding_dismissed', 'true');
   };
 
+  // Telegram connect banner state (33.3)
+  const [telegramBannerDismissed, setTelegramBannerDismissed] = useState(() =>
+    localStorage.getItem('gs_telegram_banner_dismissed') === 'true'
+  );
+  const dismissTelegramBanner = () => {
+    setTelegramBannerDismissed(true);
+    localStorage.setItem('gs_telegram_banner_dismissed', 'true');
+  };
+
+  // 36.3: Overdue reminder alert (session-only dismiss)
+  const [overdueAlertDismissed, setOverdueAlertDismissed] = useState(false);
+
   const user = useAuthStore((s) => s.user);
   const { stats, integrations, agent, reminders, chartData, hourlyData } = useDashboardStore();
+
+  // Detect Telegram connection for banner (33.3)
+  const isTelegramConnected = integrations.some(i => i.type === 'telegram' && i.status === 'connected');
+  const showTelegramBanner = !telegramBannerDismissed && !isTelegramConnected;
 
   // Map real chart data to weekly format (use API data if available, else fallback)
   const weeklyChartData = chartData.length > 0
@@ -227,6 +287,12 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         trend: res.data.trend,
         hasEnoughData: res.data.hasEnoughData,
       });
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    activityService.getStats().then(res => {
+      setActivityStats(res.data.days);
     }).catch(() => {});
   }, []);
 
@@ -348,7 +414,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
   return (
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div data-testid="dashboard-overview" className="space-y-6 animate-in fade-in duration-500">
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -443,6 +509,73 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         </div>
       )}
 
+      {/* ─── Telegram Connect Banner (33.3) ─── */}
+      {showTelegramBanner && (
+        <div
+          className="rounded-2xl border flex items-center gap-4 px-4 py-3"
+          style={{ background: 'rgba(0,136,204,0.06)', borderColor: 'rgba(0,136,204,0.25)' }}
+        >
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,136,204,0.15)' }}>
+            <MessageSquare className="w-4 h-4 text-[#0088cc]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#E8E8F0]">Get reminders on Telegram</p>
+            <p className="text-xs text-[#6B7280] mt-0.5">Connect Telegram to receive reminders and agent alerts directly in your chat.</p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              size="sm"
+              onClick={() => onNavigate?.('connections')}
+              className="bg-[#0088cc] hover:bg-[#0077b3] text-white text-xs h-8 px-3"
+            >
+              Connect
+            </Button>
+            <button
+              onClick={dismissTelegramBanner}
+              className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors"
+              aria-label="Dismiss banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Overdue Reminder Alert (36.3) ─── */}
+      {overdueCount > 0 && !overdueAlertDismissed && (
+        <div
+          className="rounded-2xl border flex items-center gap-4 px-4 py-3"
+          style={{ background: 'rgba(255,45,120,0.06)', borderColor: 'rgba(255,45,120,0.25)' }}
+        >
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,45,120,0.12)' }}>
+            <AlertTriangle className="w-4 h-4 text-[#FF2D78]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#E8E8F0]">
+              {overdueCount} overdue reminder{overdueCount !== 1 ? 's' : ''}
+            </p>
+            <p className="text-xs text-[#6B7280] mt-0.5">You have reminders that have passed their due time.</p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              size="sm"
+              onClick={() => onNavigate?.('reminders')}
+              className="text-xs h-8 px-3"
+              style={{ background: 'rgba(255,45,120,0.15)', color: '#FF2D78', border: '1px solid rgba(255,45,120,0.3)' }}
+            >
+              View
+            </Button>
+            <button
+              onClick={() => setOverdueAlertDismissed(true)}
+              className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors"
+              aria-label="Dismiss alert"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ─── Capability Spotlight (new users) ─── */}
       {stats.messagesSent < 10 && (
         <div
@@ -483,10 +616,24 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
       {/* ─── Bento Stats Grid ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {quickStats.map((stat, i) => (
+        {statOrder.map((origIdx, i) => {
+          const stat = quickStats[origIdx];
+          return (
           <Card
-            key={i}
-            className="group press-scale touch-highlight transition-all duration-300 hover:scale-[1.02]"
+            key={origIdx}
+            draggable
+            onDragStart={() => { dragSrcIdx.current = i; }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => {
+              const src = dragSrcIdx.current;
+              if (src === null || src === i) return;
+              const next = [...statOrder];
+              [next[src], next[i]] = [next[i], next[src]];
+              setStatOrder(next);
+              localStorage.setItem('gs_stat_order', JSON.stringify(next));
+              dragSrcIdx.current = null;
+            }}
+            className="group press-scale touch-highlight transition-all duration-300 hover:scale-[1.02] relative cursor-grab active:cursor-grabbing"
             style={{
               background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
               border: `1px solid ${stat.color}20`,
@@ -515,24 +662,44 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 {stat.value}
               </div>
               <div className="text-sm text-[#6B7280]">{stat.label}</div>
-              {statSparklines[i].length > 1 && (
+              {statSparklines[origIdx].length > 1 ? (
                 <div className="mt-2 h-8 -mx-1">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={statSparklines[i]} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                    <AreaChart data={statSparklines[origIdx]} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
                       <defs>
-                        <linearGradient id={`spark${i}`} x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id={`spark${origIdx}`} x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor={stat.color} stopOpacity={0.25} />
                           <stop offset="95%" stopColor={stat.color} stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <Area type="monotone" dataKey="v" stroke={stat.color} strokeWidth={1.5} fill={`url(#spark${i})`} dot={false} isAnimationActive={false} />
+                      <Area type="monotone" dataKey="v" stroke={stat.color} strokeWidth={1.5} fill={`url(#spark${origIdx})`} dot={false} isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
+              ) : (
+                <div className="mt-2 flex items-end" style={{ height: 28 }}>
+                  <Sparkline
+                    data={
+                      origIdx === 0 && activityStats.length > 0
+                        ? activityStats.map(d => d.messages)
+                        : origIdx === 1 && activityStats.length > 0
+                        ? activityStats.map(d => d.reminders)
+                        : MOCK_SPARKLINES[origIdx]
+                    }
+                    color={stat.color}
+                    width={80}
+                    height={28}
+                  />
+                </div>
               )}
+              {/* Drag handle indicator */}
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-30 transition-opacity">
+                <GripVertical className="w-3 h-3 text-[#6B7280]" />
+              </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {/* Agent Quality Card — only shown when there are >= 5 reactions */}

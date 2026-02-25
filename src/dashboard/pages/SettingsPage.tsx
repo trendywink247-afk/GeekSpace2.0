@@ -19,7 +19,9 @@ import {
   Loader2,
   Monitor,
   LogOut,
-  Download
+  Download,
+  Users,
+  CalendarDays
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +39,7 @@ export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isExportingConversations, setIsExportingConversations] = useState(false);
   const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
+  const [isExportingMarkdown7Days, setIsExportingMarkdown7Days] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const user = useAuthStore((s) => s.user);
   const [appVersion, setAppVersion] = useState<string | null>(null);
@@ -67,6 +70,8 @@ export function SettingsPage() {
     marketingEmails: false,
     securityAlerts: user?.notifications?.agentUpdates ?? true,
     reminderNotifs: user?.notifications?.reminders ?? true,
+    connectionAlerts: (user?.notifications as Record<string, boolean> | undefined)?.connections ?? true,
+    weeklyDigestToggle: (user?.notifications as Record<string, boolean> | undefined)?.digest ?? true,
   });
 
   // Agent-level notification preferences (saved to agent_configs via PATCH /agent/config)
@@ -179,6 +184,26 @@ export function SettingsPage() {
     }
   };
 
+  const handleExportMarkdown7Days = async () => {
+    setIsExportingMarkdown7Days(true);
+    try {
+      const { data } = await memoryService.getConversationsMarkdownExport7Days();
+      const blob = new Blob([data as unknown as string], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `geekspace-chat-7days-${new Date().toISOString().slice(0, 10)}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // silent — export is best-effort
+    } finally {
+      setIsExportingMarkdown7Days(false);
+    }
+  };
+
   const handleExportMarkdown = async () => {
     setIsExportingMarkdown(true);
     try {
@@ -214,6 +239,8 @@ export function SettingsPage() {
     weeklyDigest: 'weeklyDigest',
     securityAlerts: 'agentUpdates',
     reminderNotifs: 'reminders',
+    connectionAlerts: 'connections',
+    weeklyDigestToggle: 'digest',
   };
 
   const saveNotification = async (field: string, value: boolean) => {
@@ -292,7 +319,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div data-testid="settings-page" className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
@@ -422,6 +449,8 @@ export function SettingsPage() {
                 { key: 'reminderNotifs', icon: Bell, title: 'Reminder Notifications', desc: 'Alerts when reminders are due' },
                 { key: 'weeklyDigest', icon: Globe, title: 'Weekly Digest', desc: 'Weekly summary of activity' },
                 { key: 'securityAlerts', icon: Shield, title: 'Security Alerts', desc: 'Important security notifications' },
+                { key: 'connectionAlerts', icon: Users, title: 'Connection Request Alerts', desc: 'Notifications for new connection requests' },
+                { key: 'weeklyDigestToggle', icon: CalendarDays, title: 'Weekly Digest Email', desc: 'Weekly activity digest delivered to your inbox' },
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -808,20 +837,36 @@ export function SettingsPage() {
                   <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Export as Markdown</h4>
                   <p className="text-xs text-[#6B7280]">Download chat history as a readable Markdown (.md) file.</p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportMarkdown}
-                  disabled={isExportingMarkdown}
-                  className="border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
-                >
-                  {isExportingMarkdown ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4 mr-2" />
-                  )}
-                  Export as Markdown
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportMarkdown7Days}
+                    disabled={isExportingMarkdown7Days}
+                    className="border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
+                  >
+                    {isExportingMarkdown7Days ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <CalendarDays className="w-4 h-4 mr-2" />
+                    )}
+                    Last 7 days
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportMarkdown}
+                    disabled={isExportingMarkdown}
+                    className="border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
+                  >
+                    {isExportingMarkdown ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
+                    All time
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

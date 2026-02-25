@@ -20,13 +20,13 @@ remindersRouter.get('/', requireAuth, (req: AuthRequest, res) => {
 });
 
 remindersRouter.post('/', requireAuth, validateBody(reminderCreateSchema), (req: AuthRequest, res) => {
-  const { text, datetime, channel, category, recurring, priority } = req.body;
+  const { text, datetime, channel, category, recurring, recurrence, priority } = req.body;
 
   const id = uuid();
   const scheduledFor = datetime ? new Date(datetime).getTime() : Date.now();
 
-  db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, created_by, scheduled_for, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
-    id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', 'user', scheduledFor, priority || 'normal'
+  db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, recurrence, created_by, scheduled_for, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+    id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', recurrence || null, 'user', scheduledFor, priority || 'normal'
   );
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`).run(uuid(), req.userId, text);
 
@@ -41,7 +41,7 @@ remindersRouter.patch('/:id', requireAuth, validateBody(reminderUpdateSchema), (
   const updates = req.body as Record<string, unknown>;
   const fields: string[] = [];
   const values: unknown[] = [];
-  for (const key of ['text', 'datetime', 'channel', 'category', 'recurring', 'completed', 'priority']) {
+  for (const key of ['text', 'datetime', 'channel', 'category', 'recurring', 'completed', 'priority', 'recurrence']) {
     if (updates[key] !== undefined) {
       fields.push(`${key} = ?`);
       values.push(typeof updates[key] === 'boolean' ? (updates[key] ? 1 : 0) : updates[key]);
@@ -54,6 +54,99 @@ remindersRouter.patch('/:id', requireAuth, validateBody(reminderUpdateSchema), (
 
   const reminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(req.params.id);
   res.json(reminder);
+});
+
+// ── Complete endpoint with recurrence support ───────────────────────────────
+remindersRouter.post('/:id/complete', requireAuth, (req: AuthRequest, res) => {
+  const existing = db.prepare('SELECT * FROM reminders WHERE id = ? AND user_id = ?').get(req.params.id, req.userId!) as Record<string, unknown> | undefined;
+  if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
+
+  // Mark this reminder as completed (with timestamp for streak tracking)
+  db.prepare('UPDATE reminders SET completed = 1, completed_at = ? WHERE id = ? AND user_id = ?').run(Date.now(), req.params.id, req.userId!);
+
+  // If it has a recurrence, create the next occurrence
+  const recurrence = existing.recurrence as string | null | undefined;
+  if (recurrence && ['daily', 'weekly', 'monthly'].includes(recurrence)) {
+    const currentDatetime = new Date((existing.datetime as string) || new Date().toISOString());
+    let nextDatetime: Date;
+    if (recurrence === 'daily') {
+      nextDatetime = new Date(currentDatetime.getTime() + 1 * 24 * 60 * 60 * 1000);
+    } else if (recurrence === 'weekly') {
+      nextDatetime = new Date(currentDatetime.getTime() + 7 * 24 * 60 * 60 * 1000);
+    } else {
+      // monthly: +30 days
+      nextDatetime = new Date(currentDatetime.getTime() + 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const newId = uuid();
+    const scheduledFor = nextDatetime.getTime();
+    db.prepare(
+      'INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, recurrence, created_by, scheduled_for, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(
+      newId,
+      req.userId!,
+      existing.text,
+      nextDatetime.toISOString(),
+      existing.channel || 'push',
+      existing.category || 'general',
+      existing.recurring || '',
+      recurrence,
+      'user',
+      scheduledFor,
+      existing.priority || 'normal',
+    );
+
+    const nextReminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(newId);
+    res.json({ completed: true, nextReminder });
+    return;
+  }
+
+  res.json({ completed: true, nextReminder: null });
+});
+
+// ── Streak endpoint (35.1) ──────────────────────────────────────────────────
+remindersRouter.get('/streak', requireAuth, (req: AuthRequest, res) => {
+  // Get distinct completion days (YYYY-MM-DD) in descending order
+  const rows = db.prepare(`
+    SELECT DISTINCT date(completed_at / 1000, 'unixepoch') AS day
+    FROM reminders
+    WHERE user_id = ? AND completed = 1 AND completed_at IS NOT NULL
+    ORDER BY day DESC
+  `).all(req.userId!) as Array<{ day: string }>;
+
+  if (rows.length === 0) {
+    res.json({ streak: 0, longestStreak: 0, completedToday: false });
+    return;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const completedToday = rows[0].day === today;
+
+  // Walk backwards counting consecutive days
+  let streak = 0;
+  let longestStreak = 0;
+  let currentStreak = 0;
+  let expectedDate = completedToday ? today : yesterday;
+
+  for (const row of rows) {
+    if (row.day === expectedDate) {
+      currentStreak++;
+      if (streak === 0 || completedToday || expectedDate !== today) streak = currentStreak;
+      // Move to previous day
+      const d = new Date(expectedDate + 'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate() - 1);
+      expectedDate = d.toISOString().slice(0, 10);
+    } else {
+      if (currentStreak > longestStreak) longestStreak = currentStreak;
+      currentStreak = 0;
+      break;
+    }
+  }
+  if (currentStreak > longestStreak) longestStreak = currentStreak;
+  streak = completedToday ? currentStreak : (rows[0].day === yesterday ? currentStreak : 0);
+
+  res.json({ streak, longestStreak, completedToday });
 });
 
 remindersRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
@@ -105,7 +198,52 @@ remindersRouter.post('/bulk-snooze', requireAuth, (req: AuthRequest, res) => {
   const updPlaceholders = ownedIds.map(() => '?').join(', ');
   db.prepare(`UPDATE reminders SET datetime = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id IN (${updPlaceholders})`).run(newDatetime, ...ownedIds);
 
+  // 36.1: Log each snooze event
+  const logStmt = db.prepare('INSERT INTO snooze_log (id, reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?, ?)');
+  const snoozedAt = Date.now();
+  for (const rid of ownedIds) {
+    logStmt.run(uuid(), rid, req.userId!, snoozedAt, preset, newDatetime);
+  }
+
   res.json({ snoozed: owned.length, newDatetime });
+});
+
+// ── Individual Snooze (36.1) — logs event, mirrors bulk-snooze for one reminder ──
+remindersRouter.post('/:id/snooze', requireAuth, (req: AuthRequest, res) => {
+  const { preset } = req.body as { preset: '1h' | 'tomorrow' | 'next-week' };
+  if (!['1h', 'tomorrow', 'next-week'].includes(preset)) {
+    res.status(400).json({ error: 'Invalid preset' });
+    return;
+  }
+  const existing = db.prepare('SELECT id FROM reminders WHERE id = ? AND user_id = ? AND completed = 0').get(req.params.id, req.userId!) as { id: string } | undefined;
+  if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const now = new Date();
+  let newDatetime: string;
+  if (preset === '1h') {
+    newDatetime = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+  } else if (preset === 'tomorrow') {
+    const d = new Date(now); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); newDatetime = d.toISOString();
+  } else {
+    const d = new Date(now); d.setDate(d.getDate() + 7); d.setHours(9, 0, 0, 0); newDatetime = d.toISOString();
+  }
+
+  db.prepare(`UPDATE reminders SET datetime = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id = ? AND user_id = ?`).run(newDatetime, req.params.id, req.userId!);
+  db.prepare('INSERT INTO snooze_log (id, reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?, ?)').run(uuid(), req.params.id, req.userId!, Date.now(), preset, newDatetime);
+
+  res.json({ snoozed: true, newDatetime });
+});
+
+// ── Snooze History (36.1) ────────────────────────────────────────────────────
+remindersRouter.get('/:id/snooze-history', requireAuth, (req: AuthRequest, res) => {
+  const existing = db.prepare('SELECT id FROM reminders WHERE id = ? AND user_id = ?').get(req.params.id, req.userId!) as { id: string } | undefined;
+  if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const history = db.prepare(
+    'SELECT id, snoozed_at, preset, new_datetime FROM snooze_log WHERE reminder_id = ? ORDER BY snoozed_at DESC LIMIT 10'
+  ).all(req.params.id) as Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }>;
+
+  res.json({ history });
 });
 
 // ── Bulk Delete (25.5) ─────────────────────────────────────────────────────

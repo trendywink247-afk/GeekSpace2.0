@@ -1,60 +1,59 @@
-# AI Handoff — Phase 30 In Progress
+# AI Handoff — Phase 36 Complete
 
 **Date:** 2026-02-25
-**Branch:** `ai/phase-20260225-phase30-notifications-export-reliability`
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/59
-**Status:** All 5 items implemented, 277/277 tests passing, builds clean; CI in progress
+**Branch:** `ai/phase-20260225-phase36-notifications-reliability` (merged → main)
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/66
+**Status:** All 5 items implemented, 317/317 tests passing, CI all green, merged
 
 ---
 
-## Phase 30 — What Was Done
+## Phase 36 — What Was Done
 
-### 30.1 Notification Preference Center
-- `src/dashboard/pages/SettingsPage.tsx` — Added "Reminder Notifications" toggle surfacing hidden `notification_reminders` DB column
-- Added `reminderNotifs` to `notifications` state, `notificationFieldMap: reminderNotifs: 'reminders'`
+### 36.1 Snooze Event Log
+- `server/src/db/index.ts` — New `snooze_log` table (`CREATE TABLE IF NOT EXISTS`) with `ON DELETE CASCADE`; index on `reminder_id, snoozed_at DESC`
+- `server/src/routes/reminders.ts` — `bulk-snooze` now logs each event to `snooze_log`
+- `server/src/routes/reminders.ts` — New `POST /:id/snooze` individual snooze endpoint with logging + `snooze_count` increment
+- `server/src/routes/reminders.ts` — New `GET /:id/snooze-history` endpoint returning last 10 snooze events
+- `src/services/api.ts` — Added `reminderService.snooze()` and `reminderService.getSnoozeHistory()`
+- `src/dashboard/pages/RemindersPage.tsx` — "Snoozed N×" badge is now clickable; shows history popover with dates and presets
 
-### 30.2 Export Chat as Markdown
-- `server/src/routes/agent.ts` — `GET /conversations/export?format=md` returns `text/markdown` with role headers
-- `src/services/api.ts` — `memoryService.getConversationsMarkdownExport()` method
-- `src/dashboard/pages/SettingsPage.tsx` — "Export as Markdown" button + `isExportingMarkdown` state + `handleExportMarkdown` handler
+### 36.2 Telegram Invite Notification
+- `server/src/routes/integrations.ts` — Added `sendTelegramMessage` import
+- `POST /invite/:token/accept` — After marking invite used, sends `🤝 X accepted your connection invite!` to invite owner's Telegram if they have a verified linked account
 
-### 30.3 DB Index for Reminders by Datetime
-- `server/src/db/index.ts` — `idx_reminders_datetime ON reminders(user_id, datetime)` (idempotent CREATE INDEX IF NOT EXISTS)
+### 36.3 Overdue Reminder Alert
+- `src/dashboard/pages/OverviewPage.tsx` — Session-dismissable pink alert banner when `overdueCount > 0`
+- Added `AlertTriangle` icon; links to Reminders page via `onNavigate?.('reminders')`
 
-### 30.4 Snooze History UI
-- `server/src/db/index.ts` — `ALTER TABLE reminders ADD COLUMN snooze_count INTEGER DEFAULT 0`
-- `server/src/routes/reminders.ts` — bulk-snooze increments via `COALESCE(snooze_count, 0) + 1`
-- `src/types/index.ts` — `snoozeCount?: number` added to `Reminder` interface
-- `src/dashboard/pages/RemindersPage.tsx` — "Snoozed N×" amber badge when `snoozeCount > 0`
+### 36.4 Rate Limit Reset Countdown
+- `src/components/AgentChatPanel.tsx` — Added `chatRateLimitResetAt` state (stores as timestamp)
+- Rate limit fetch now also stores `resetAt` parsed to ms timestamp
+- Warning banner now shows "resets in Nm" when `resetAt > Date.now()`
+- Footer tooltip also updated with countdown
 
-### 30.5 E2E Test for /connect/:token
-- `e2e/connect.spec.ts` — 2 tests: invalid token shows "Invalid Invite" error; public route doesn't redirect to `/login`
-- `src/pages/ConnectPage.tsx` — Added `data-testid="connect-page"` to root div
-
-### Unit Tests (+6)
-- `server/src/test/api/phase30.test.ts` — markdown export (3 tests) + snooze_count (2 tests) + datetime sort (1 test)
-
----
-
-## Verification Evidence
-- Tests: 277 passing (was 271, +6)
-- `npx tsc --noEmit` — clean (frontend + server)
-- `npm run build` — clean (frontend + server)
-- `npm run lint` — 0 errors on changed files
+### 36.5 App Version in Settings Footer
+- Already present from prior work: `src/dashboard/pages/SettingsPage.tsx` shows `GeekSpace vX.Y.Z` via `versionService`
 
 ---
 
-## Resume Steps (Next Phase)
-1. Monitor PR #59 CI — if all green, merge
-2. `cd ~/GeekSpace2.0 && git reset --hard origin/main && git pull origin main`
-3. Check `ops/AI_BACKLOG.md` for next priority items
-4. Create new worktree: `git worktree add .worktrees/phase-31 -b ai/phase-YYYYMMDD-topic`
+## Session Resume Steps
+
+```bash
+cd ~/GeekSpace2.0
+git pull origin main          # should already be up to date
+cat ops/AI_PHASE_PLAN.md      # review Phase 37 proposal
+cd server && npm test         # verify baseline (317 tests)
+```
 
 ---
 
-## Suggested Phase 31 Items
-- E2E stability: add `data-testid` to more interactive elements (forms, dialogs)
-- Push notification preference per-channel matrix (email × type toggles)
-- Reminder recurrence editor (edit recurring pattern in-place)
-- Chat search UX improvements (highlight matches, sticky search bar)
-- Admin dashboard: export users CSV + activity summary
+## Phase 37 — Proposed
+**Theme:** AI quality, polish, data export, resilience
+
+| # | Item | Type | Priority |
+|---|------|------|----------|
+| 37.1 | Portfolio contact form (send email/Telegram to portfolio owner) | Feature | High |
+| 37.2 | Reminder snooze "until time" picker (exact datetime) | UX | Medium |
+| 37.3 | AI briefing: per-user opt-in/out for daily briefing Telegram push | Feature | Medium |
+| 37.4 | Chat export: per-conversation markdown/JSON export | UX | Medium |
+| 37.5 | Webhook retry/backoff: dead-letter log for failed webhook calls | Hardening | Low |

@@ -71,6 +71,13 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+    // Propagate requestId from response headers (33.5)
+    if (err.response?.headers) {
+      const reqId = err.response.headers['x-request-id'] ?? err.response.data?.requestId;
+      if (reqId && err.response.data && typeof err.response.data === 'object') {
+        err.response.data.requestId = reqId;
+      }
+    }
     return Promise.reject(err);
   },
 );
@@ -224,6 +231,9 @@ export const agentService = {
       trend: 'up' | 'down' | 'neutral';
       hasEnoughData: boolean;
     }>('/agent/quality'),
+
+  getRateLimitStatus: () =>
+    api.get<{ remaining: number; limit: number; resetAt: string; windowMinutes: number }>('/agent/rate-limit-status'),
 };
 
 // ----- Version -----------------------------------------------
@@ -357,6 +367,15 @@ export const reminderService = {
 
   bulkSnooze: (ids: string[], preset: '1h' | 'tomorrow' | 'next-week') =>
     api.post<{ snoozed: number; newDatetime: string }>('/reminders/bulk-snooze', { ids, preset }),
+
+  getStreak: () =>
+    api.get<{ streak: number; longestStreak: number; completedToday: boolean }>('/reminders/streak'),
+
+  snooze: (id: string, preset: '1h' | 'tomorrow' | 'next-week') =>
+    api.post<{ snoozed: boolean; newDatetime: string }>(`/reminders/${id}/snooze`, { preset }),
+
+  getSnoozeHistory: (id: string) =>
+    api.get<{ history: Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }> }>(`/reminders/${id}/snooze-history`),
 };
 
 // ----- Portfolio ---------------------------------------------
@@ -429,6 +448,16 @@ export const portfolioService = {
   // Portfolio visit stats CSV export (last 90 days)
   exportStats: () =>
     api.get<Blob>('/portfolio/stats/export', { responseType: 'blob' }),
+
+  // 34.3: Increment view count for a portfolio (public, no auth)
+  recordView: (username: string) =>
+    api.post<{ ok: boolean }>(`/portfolio/${username}/view`),
+};
+
+// ----- Activity Stats ----------------------------------------
+
+export const activityService = {
+  getStats: () => api.get<{ days: { date: string; messages: number; reminders: number }[] }>('/activity/stats'),
 };
 
 // ----- Automations -------------------------------------------
@@ -446,6 +475,10 @@ export const automationService = {
 
   trigger: (id: string) =>
     api.post<{ success: boolean }>(`/automations/${id}/trigger`),
+
+  // 34.5: Test-fire a webhook automation
+  testFire: (id: string) =>
+    api.post<{ success: boolean; statusCode: number; message: string }>(`/automations/${id}/test`),
 };
 
 // ----- Dashboard (aggregated) --------------------------------
@@ -507,6 +540,9 @@ export const memoryService = {
 
   getConversationsMarkdownExport: () =>
     api.get<string>('/agent/conversations/export?format=md', { responseType: 'text' }),
+
+  getConversationsMarkdownExport7Days: () =>
+    api.get<string>('/agent/conversations/export?format=md&days=7', { responseType: 'text' }),
 
   addReaction: (messageId: string, reaction: string) =>
     api.post<{ success: boolean }>('/agent/conversations/reactions', { messageId, reaction }),
