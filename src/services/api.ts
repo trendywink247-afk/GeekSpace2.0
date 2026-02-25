@@ -63,11 +63,13 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       const url = err.config?.url || '';
-      const isAuthEndpoint = ['/auth/login', '/auth/signup', '/auth/demo'].some(
+      const isAuthEndpoint = ['/auth/login', '/auth/signup', '/auth/demo', '/auth/google', '/auth/github'].some(
         (p) => url.includes(p),
       );
       if (!isAuthEndpoint) {
+        // Clear raw token and Zustand persisted auth state so UI resets cleanly
         localStorage.removeItem('gs_token');
+        localStorage.removeItem('gs-auth');
         window.location.href = '/login';
       }
     }
