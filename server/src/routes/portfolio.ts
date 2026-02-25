@@ -231,7 +231,12 @@ portfolioRouter.get('/:username', async (req, res) => {
       const cachedData = JSON.parse(cached) as { userId?: string };
       if (cachedData.userId) {
         const visitorIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || null;
-        db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(cachedData.userId, visitorIp);
+        const recentVisit = db.prepare(
+          "SELECT id FROM portfolio_visits WHERE user_id = ? AND visitor_ip = ? AND visited_at >= datetime('now', '-30 minutes')"
+        ).get(cachedData.userId, visitorIp);
+        if (!recentVisit) {
+          db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(cachedData.userId, visitorIp);
+        }
       }
     } catch { /* non-fatal */ }
     res.json(JSON.parse(cached));
@@ -258,10 +263,15 @@ portfolioRouter.get('/:username', async (req, res) => {
     connectionCount: (portfolio.connection_count as number) || 0,
   };
 
-  // Record visit
+  // Record visit (deduplicated: same IP within 30 minutes counts as one visit)
   try {
     const visitorIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || null;
-    db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(portfolio.user_id, visitorIp);
+    const recentVisit = db.prepare(
+      "SELECT id FROM portfolio_visits WHERE user_id = ? AND visitor_ip = ? AND visited_at >= datetime('now', '-30 minutes')"
+    ).get(portfolio.user_id, visitorIp);
+    if (!recentVisit) {
+      db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(portfolio.user_id, visitorIp);
+    }
   } catch { /* non-fatal */ }
 
   await cacheSet(cacheKey, JSON.stringify(responseData), 300);

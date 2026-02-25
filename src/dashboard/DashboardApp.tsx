@@ -165,11 +165,17 @@ export function DashboardApp() {
   const usage = useDashboardStore((s) => s.usage);
   const agent = useDashboardStore((s) => s.agent);
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
+  const reminders = useDashboardStore((s) => s.reminders);
   const applyTheme = useThemeStore((s) => s.applyTheme);
   const setThemeMode = useThemeStore((s) => s.setMode);
   const setAccentColor = useThemeStore((s) => s.setAccentColor);
   const background = useThemeStore((s) => s.background);
   const themeMode = user?.theme?.mode as 'dark' | 'light' | 'system' | undefined;
+
+  // Due/overdue reminders count for sidebar badge
+  const dueReminderCount = reminders.filter(
+    (r) => !r.completed && new Date(r.datetime).getTime() <= Date.now()
+  ).length;
 
   useEffect(() => {
     loadDashboard();
@@ -370,7 +376,12 @@ export function DashboardApp() {
                         }`}
                       >
                         <item.icon className="w-4 h-4 flex-shrink-0" />
-                        <span className="text-sm">{item.label}</span>
+                        <span className="text-sm flex-1 text-left">{item.label}</span>
+                        {item.id === 'reminders' && dueReminderCount > 0 && (
+                          <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none px-1">
+                            {dueReminderCount > 9 ? '9+' : dueReminderCount}
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
