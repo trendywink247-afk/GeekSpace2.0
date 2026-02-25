@@ -11,8 +11,9 @@ interface BriefingData {
   pendingReminders: number;
   dueToday: number;
   completedYesterday: number;
-  failedYesterday: number;
-  activeAgents: number;
+  recentMessages: number;
+  streak: number;
+  overdueCount: number;
 }
 
 function gatherBriefingData(userId: string): BriefingData {
@@ -20,47 +21,63 @@ function gatherBriefingData(userId: string): BriefingData {
   const todayStr = now.toISOString().slice(0, 10);
   const yesterdayStr = new Date(now.getTime() - 86400000).toISOString().slice(0, 10);
 
+  // Fix: use completed = 0 (correct schema) instead of status = 'pending'
   const pendingReminders = (db.prepare(
-    "SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND status = 'pending'"
+    "SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 0"
   ).get(userId) as { c: number })?.c || 0;
 
   const dueToday = (db.prepare(
-    "SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND status = 'pending' AND due_at <= ? || 'T23:59:59'"
+    "SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 0 AND datetime LIKE ? || '%'"
   ).get(userId, todayStr) as { c: number })?.c || 0;
 
-  let completedYesterday = 0;
-  let failedYesterday = 0;
-  try {
-    completedYesterday = (db.prepare(
-      "SELECT COUNT(*) as c FROM pico_tasks WHERE user_id = ? AND status = 'completed' AND completed_at >= ? || 'T00:00:00'"
-    ).get(userId, yesterdayStr) as { c: number })?.c || 0;
-    failedYesterday = (db.prepare(
-      "SELECT COUNT(*) as c FROM pico_tasks WHERE user_id = ? AND status = 'failed' AND completed_at >= ? || 'T00:00:00'"
-    ).get(userId, yesterdayStr) as { c: number })?.c || 0;
-  } catch {
-    // pico_tasks table might not exist yet
+  const overdueCount = (db.prepare(
+    "SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 0 AND datetime < ?"
+  ).get(userId, now.toISOString()) as { c: number })?.c || 0;
+
+  // Reminders completed yesterday (using completed_at timestamp)
+  const completedYesterday = (db.prepare(
+    "SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 1 AND date(completed_at / 1000, 'unixepoch') = ?"
+  ).get(userId, yesterdayStr) as { c: number })?.c || 0;
+
+  // Recent messages sent in last 24 hours (from activity_log)
+  const recentMessages = (db.prepare(
+    "SELECT COUNT(*) as c FROM activity_log WHERE user_id = ? AND action LIKE '%message%' AND created_at >= ?"
+  ).get(userId, now.getTime() - 86400000) as { c: number })?.c || 0;
+
+  // Current completion streak
+  const streakRows = (db.prepare(
+    "SELECT DISTINCT date(completed_at / 1000, 'unixepoch') AS day FROM reminders WHERE user_id = ? AND completed = 1 AND completed_at IS NOT NULL ORDER BY day DESC LIMIT 30"
+  ).all(userId) as Array<{ day: string }>);
+  let streak = 0;
+  const todayDate = todayStr;
+  const yesterdayDate = yesterdayStr;
+  const startDay = streakRows[0]?.day === todayDate ? todayDate : (streakRows[0]?.day === yesterdayDate ? yesterdayDate : null);
+  if (startDay) {
+    let expected = startDay;
+    for (const row of streakRows) {
+      if (row.day === expected) {
+        streak++;
+        const d = new Date(expected + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() - 1);
+        expected = d.toISOString().slice(0, 10);
+      } else break;
+    }
   }
 
-  let activeAgents = 0;
-  try {
-    activeAgents = (db.prepare(
-      "SELECT COUNT(*) as c FROM pico_agents WHERE user_id = ? AND status = 'active'"
-    ).get(userId) as { c: number })?.c || 0;
-  } catch {
-    // pico_agents table might not exist yet
-  }
-
-  return { pendingReminders, dueToday, completedYesterday, failedYesterday, activeAgents };
+  return { pendingReminders, dueToday, completedYesterday, recentMessages, streak, overdueCount };
 }
 
 async function generateBriefing(userId: string): Promise<string> {
   const data = gatherBriefingData(userId);
 
+  const streakNote = data.streak > 0 ? `${data.streak}-day completion streak` : 'no active streak';
+  const overdueNote = data.overdueCount > 0 ? ` (${data.overdueCount} overdue)` : '';
   const prompt = `Generate a concise daily briefing (3-5 sentences) based on this data:
-- ${data.pendingReminders} pending reminders (${data.dueToday} due today)
-- ${data.completedYesterday} tasks completed yesterday, ${data.failedYesterday} failed
-- ${data.activeAgents} active Weebo agents
-Be conversational and helpful. If there are failed tasks, mention them. If nothing notable, keep it short and encouraging.`;
+- ${data.pendingReminders} pending reminders${overdueNote}, ${data.dueToday} due today
+- ${data.completedYesterday} reminders completed yesterday
+- ${data.recentMessages} AI messages sent in the last 24h
+- Completion streak: ${streakNote}
+Be conversational and upbeat. Mention the streak if > 1. If there are overdue items, gently remind. Keep it short and actionable.`;
 
   const picoAvailable = await isPicoClawAvailable();
 

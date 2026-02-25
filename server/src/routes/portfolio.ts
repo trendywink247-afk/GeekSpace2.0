@@ -338,6 +338,7 @@ portfolioRouter.get('/:username', async (req, res) => {
     visibility: JSON.parse(portfolio.visibility as string || '{}'),
     personality: (agentConfig?.personality as string) || 'jarvis',
     connectionCount: (portfolio.connection_count as number) || 0,
+    viewCount: (portfolio.view_count as number) || 0,
   };
 
   // Record visit (deduplicated: same IP within 30 minutes counts as one visit)

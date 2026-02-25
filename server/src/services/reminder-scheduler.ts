@@ -195,9 +195,34 @@ async function deliverReminder(reminder: DueReminder): Promise<void> {
 
     case 'push':
     default:
-      // Push notifications not yet implemented — log and complete
-      logger.debug({ reminderId: reminder.id, channel: reminder.channel }, 'Reminder completed (no delivery channel)');
+      // 35.3: Auto-push to Telegram if user has it connected + notif_reminders enabled
+      await tryTelegramAutoDelivery(reminder);
+      logger.debug({ reminderId: reminder.id, channel: reminder.channel }, 'Reminder completed (push channel)');
       break;
+  }
+}
+
+/**
+ * 35.3: Auto-deliver reminders via Telegram for push/default-channel reminders.
+ * Sends if: user has a verified Telegram channel link AND notif_reminders != 0.
+ */
+async function tryTelegramAutoDelivery(reminder: DueReminder): Promise<void> {
+  try {
+    const notifPref = db.prepare('SELECT notif_reminders FROM agent_configs WHERE user_id = ?').get(reminder.user_id) as { notif_reminders?: number } | undefined;
+    if (notifPref && notifPref.notif_reminders === 0) return;
+
+    const link = db.prepare(
+      "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+    ).get(reminder.user_id) as ChannelLink | undefined;
+
+    if (!link) return;
+
+    const result = await sendTelegramMessage(link.external_id, `⏰ Reminder: ${reminder.text}`);
+    if (result.success) {
+      logger.info({ reminderId: reminder.id, userId: reminder.user_id }, 'Reminder auto-delivered via Telegram (push channel)');
+    }
+  } catch (err) {
+    logger.warn({ reminderId: reminder.id, err: (err as Error).message }, 'Telegram auto-delivery failed for reminder (non-fatal)');
   }
 }
 

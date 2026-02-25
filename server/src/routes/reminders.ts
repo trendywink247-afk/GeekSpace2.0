@@ -61,8 +61,8 @@ remindersRouter.post('/:id/complete', requireAuth, (req: AuthRequest, res) => {
   const existing = db.prepare('SELECT * FROM reminders WHERE id = ? AND user_id = ?').get(req.params.id, req.userId!) as Record<string, unknown> | undefined;
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
 
-  // Mark this reminder as completed
-  db.prepare('UPDATE reminders SET completed = 1 WHERE id = ? AND user_id = ?').run(req.params.id, req.userId!);
+  // Mark this reminder as completed (with timestamp for streak tracking)
+  db.prepare('UPDATE reminders SET completed = 1, completed_at = ? WHERE id = ? AND user_id = ?').run(Date.now(), req.params.id, req.userId!);
 
   // If it has a recurrence, create the next occurrence
   const recurrence = existing.recurrence as string | null | undefined;
@@ -102,6 +102,51 @@ remindersRouter.post('/:id/complete', requireAuth, (req: AuthRequest, res) => {
   }
 
   res.json({ completed: true, nextReminder: null });
+});
+
+// ── Streak endpoint (35.1) ──────────────────────────────────────────────────
+remindersRouter.get('/streak', requireAuth, (req: AuthRequest, res) => {
+  // Get distinct completion days (YYYY-MM-DD) in descending order
+  const rows = db.prepare(`
+    SELECT DISTINCT date(completed_at / 1000, 'unixepoch') AS day
+    FROM reminders
+    WHERE user_id = ? AND completed = 1 AND completed_at IS NOT NULL
+    ORDER BY day DESC
+  `).all(req.userId!) as Array<{ day: string }>;
+
+  if (rows.length === 0) {
+    res.json({ streak: 0, longestStreak: 0, completedToday: false });
+    return;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const completedToday = rows[0].day === today;
+
+  // Walk backwards counting consecutive days
+  let streak = 0;
+  let longestStreak = 0;
+  let currentStreak = 0;
+  let expectedDate = completedToday ? today : yesterday;
+
+  for (const row of rows) {
+    if (row.day === expectedDate) {
+      currentStreak++;
+      if (streak === 0 || completedToday || expectedDate !== today) streak = currentStreak;
+      // Move to previous day
+      const d = new Date(expectedDate + 'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate() - 1);
+      expectedDate = d.toISOString().slice(0, 10);
+    } else {
+      if (currentStreak > longestStreak) longestStreak = currentStreak;
+      currentStreak = 0;
+      break;
+    }
+  }
+  if (currentStreak > longestStreak) longestStreak = currentStreak;
+  streak = completedToday ? currentStreak : (rows[0].day === yesterday ? currentStreak : 0);
+
+  res.json({ streak, longestStreak, completedToday });
 });
 
 remindersRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {

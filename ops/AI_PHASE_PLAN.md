@@ -1,9 +1,5 @@
 # AI Phase Plan
 
-## Phase 31 — COMPLETE ✓
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/60 | **Tests:** 287/287
-data-testid stability, recurrence editor, chat search UX, admin export, notification matrix
-
 ## Phase 32 — COMPLETE ✓
 **PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/61 | **Tests:** 290/290
 Sparklines, mobile badges, recurrence filter, feedback analytics, session revoke test
@@ -12,31 +8,34 @@ Sparklines, mobile badges, recurrence filter, feedback analytics, session revoke
 **PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/62 | **Tests:** 290/290
 Portfolio drag-reorder, Telegram banner, rate limit indicator, request ID propagation
 
+## Phase 34 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/63 | **Tests:** 299/299
+Activity sparklines (real data), portfolio view count, date-filtered chat export, webhook test-fire
+
 ---
 
-## Phase 34 — IN PROGRESS
-**Theme:** Data, snooze UX, automation improvements
-**Branch:** `ai/phase-20260225-phase34-snooze-sparklines-analytics`
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/63
-**Tests:** 299/299 passing
+## Phase 35 — IN PROGRESS
+**Theme:** Dashboard customization + streaks + AI quality
+**Branch:** `ai/phase-20260225-phase35-streaks-widgets-telegram`
+**Tests:** 306/306 passing
 
 | # | Item | Type | Status |
 |---|------|------|--------|
-| 34.1 | Per-card snooze quick-actions (already existed) | UX | Done |
-| 34.2 | Real 7-day sparkline data from activity log | UX | Done |
-| 34.3 | Portfolio view count tracking (portfolios.view_count) | Feature | Done |
-| 34.4 | Date-filtered chat export (?days=N + "Last 7 days" button) | Feature | Done |
-| 34.5 | Webhook test-fire endpoint + Test button in Automations | Dev/Ops | Done |
+| 35.1 | Reminder completion streak counter (🔥 badge, /streak endpoint, completed_at) | UX | Done |
+| 35.2 | Dashboard stat card drag-to-reorder (HTML5 DnD, localStorage) | UX | Done |
+| 35.3 | Telegram auto-push for all reminder channels (if Telegram connected) | Feature | Done |
+| 35.4 | AI briefing quality: fixed SQL + activity context + streak + overdue | AI | Done |
+| 35.5 | Portfolio view count on public page (Eye icon + count display) | UX | Done |
 
 ---
 
-## Phase 35 — PROPOSED
-**Theme:** Dashboard customization + streaks + AI quality
+## Phase 36 — PROPOSED
+**Theme:** Notifications, reliability, AI persona improvements
 
 | # | Item | Type | Priority |
 |---|------|------|----------|
-| 35.1 | Reminder completion streak counter (daily streak display) | UX | High |
-| 35.2 | Dashboard widget reorder (drag overview cards) | UX | Medium |
-| 35.3 | Telegram reminder push notifications (send via bot on due time) | Feature | Medium |
-| 35.4 | AI response quality: smarter briefing with activity context | AI | Medium |
-| 35.5 | Portfolio share stats (view count shown on public portfolio page) | UX | Low |
+| 36.1 | Reminder snooze history (snooze_until log + modal in RemindersPage) | UX | High |
+| 36.2 | Connection request notifications (push/Telegram on new connection invite) | Feature | Medium |
+| 36.3 | AI memory summarizer quality (better context window management) | AI | Medium |
+| 36.4 | Portfolio contact form (send email to portfolio owner via agent) | Feature | Medium |
+| 36.5 | Rate limit per-endpoint granularity (separate limits for chat vs API) | Hardening | Low |

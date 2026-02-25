@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import {
   Sparkles, MessageSquare, Github, Twitter, Linkedin, Globe,
-  Mail, ArrowLeft, Send, Bot, MapPin, Briefcase, Award, X, Loader2
+  Mail, ArrowLeft, Send, Bot, MapPin, Briefcase, Award, X, Loader2, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -252,6 +252,12 @@ export function PortfolioView() {
                 {(portfolio.connectionCount ?? 0) > 0 && (
                   <span className="text-xs text-[#6B7280] flex items-center gap-1">
                     {portfolio.connectionCount} connection{portfolio.connectionCount !== 1 ? 's' : ''}
+                  </span>
+                )}
+                {((portfolio as PortfolioData & { viewCount?: number }).viewCount ?? 0) > 0 && (
+                  <span className="flex items-center gap-1 text-xs text-[#6B7280]">
+                    <Eye className="w-3.5 h-3.5 shrink-0" />
+                    {(portfolio as PortfolioData & { viewCount?: number }).viewCount?.toLocaleString()} view{(portfolio as PortfolioData & { viewCount?: number }).viewCount !== 1 ? 's' : ''}
                   </span>
                 )}
               </div>
