@@ -439,6 +439,16 @@ export const portfolioService = {
   // Portfolio visit stats CSV export (last 90 days)
   exportStats: () =>
     api.get<Blob>('/portfolio/stats/export', { responseType: 'blob' }),
+
+  // 34.3: Increment view count for a portfolio (public, no auth)
+  recordView: (username: string) =>
+    api.post<{ ok: boolean }>(`/portfolio/${username}/view`),
+};
+
+// ----- Activity Stats ----------------------------------------
+
+export const activityService = {
+  getStats: () => api.get<{ days: { date: string; messages: number; reminders: number }[] }>('/activity/stats'),
 };
 
 // ----- Automations -------------------------------------------
@@ -456,6 +466,10 @@ export const automationService = {
 
   trigger: (id: string) =>
     api.post<{ success: boolean }>(`/automations/${id}/trigger`),
+
+  // 34.5: Test-fire a webhook automation
+  testFire: (id: string) =>
+    api.post<{ success: boolean; statusCode: number; message: string }>(`/automations/${id}/test`),
 };
 
 // ----- Dashboard (aggregated) --------------------------------
@@ -517,6 +531,9 @@ export const memoryService = {
 
   getConversationsMarkdownExport: () =>
     api.get<string>('/agent/conversations/export?format=md', { responseType: 'text' }),
+
+  getConversationsMarkdownExport7Days: () =>
+    api.get<string>('/agent/conversations/export?format=md&days=7', { responseType: 'text' }),
 
   addReaction: (messageId: string, reaction: string) =>
     api.post<{ success: boolean }>('/agent/conversations/reactions', { messageId, reaction }),

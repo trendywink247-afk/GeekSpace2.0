@@ -42,7 +42,7 @@ import {
 } from 'recharts';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { briefingService, modelService, agentService, usageService } from '@/services/api';
+import { briefingService, modelService, agentService, usageService, activityService } from '@/services/api';
 import type { FreeModel, ModelChangelogEntry } from '@/types';
 
 interface OverviewPageProps {
@@ -141,6 +141,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     trend: 'up' | 'down' | 'neutral';
     hasEnoughData: boolean;
   } | null>(null);
+  const [activityStats, setActivityStats] = useState<{ date: string; messages: number; reminders: number }[]>([]);
 
   // Onboarding checklist state
   const ONBOARDING_ITEMS = [
@@ -268,6 +269,12 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         trend: res.data.trend,
         hasEnoughData: res.data.hasEnoughData,
       });
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    activityService.getStats().then(res => {
+      setActivityStats(res.data.days);
     }).catch(() => {});
   }, []);
 
@@ -604,7 +611,18 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 </div>
               ) : (
                 <div className="mt-2 flex items-end" style={{ height: 28 }}>
-                  <Sparkline data={MOCK_SPARKLINES[i]} color={stat.color} width={80} height={28} />
+                  <Sparkline
+                    data={
+                      i === 0 && activityStats.length > 0
+                        ? activityStats.map(d => d.messages)
+                        : i === 1 && activityStats.length > 0
+                        ? activityStats.map(d => d.reminders)
+                        : MOCK_SPARKLINES[i]
+                    }
+                    color={stat.color}
+                    width={80}
+                    height={28}
+                  />
                 </div>
               )}
             </CardContent>

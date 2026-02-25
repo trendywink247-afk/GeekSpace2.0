@@ -244,6 +244,15 @@ portfolioRouter.get('/stats/export', requireAuth, (req: AuthRequest, res) => {
   res.send(csv);
 });
 
+// ── 34.3: Public view counter (no auth — fire-and-forget on portfolio page load) ──
+portfolioRouter.post('/:username/view', (req, res) => {
+  const { username } = req.params;
+  const user = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: string } | undefined;
+  if (!user) { res.status(404).json({ error: 'Not found' }); return; }
+  db.prepare('UPDATE portfolios SET view_count = view_count + 1 WHERE user_id = ?').run(user.id);
+  res.json({ ok: true });
+});
+
 // Public portfolio view - MUST be last as it catches any /:username pattern
 // 27.2: Detect crawlers/bots for social preview meta tags
 function isCrawler(userAgent: string): boolean {
