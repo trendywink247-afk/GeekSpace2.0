@@ -325,7 +325,7 @@ export function PortfolioView() {
 
             {/* Skills */}
             {portfolio.skills?.length > 0 && (
-              <div className="mb-8">
+              <div className="mb-8" data-testid="portfolio-skills">
                 <h2 className="text-lg font-semibold mb-4">Skills</h2>
                 <div className="flex flex-wrap gap-2">
                   {portfolio.skills.map((skill, i) => {
@@ -339,7 +339,7 @@ export function PortfolioView() {
                     ];
                     const c = palette[i % palette.length];
                     return (
-                      <span key={i} className={`px-4 py-1.5 rounded-full border text-sm font-medium ${c.bg} ${c.border} ${c.text}`}>{skill}</span>
+                      <span key={skill} className={`px-4 py-1.5 rounded-full border text-sm font-medium ${c.bg} ${c.border} ${c.text}`}>{skill}</span>
                     );
                   })}
                 </div>
