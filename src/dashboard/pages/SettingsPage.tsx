@@ -39,6 +39,7 @@ export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isExportingConversations, setIsExportingConversations] = useState(false);
   const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
+  const [isExportingMarkdown7Days, setIsExportingMarkdown7Days] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const user = useAuthStore((s) => s.user);
   const [appVersion, setAppVersion] = useState<string | null>(null);
@@ -180,6 +181,26 @@ export function SettingsPage() {
       // silent — export is best-effort
     } finally {
       setIsExportingConversations(false);
+    }
+  };
+
+  const handleExportMarkdown7Days = async () => {
+    setIsExportingMarkdown7Days(true);
+    try {
+      const { data } = await memoryService.getConversationsMarkdownExport7Days();
+      const blob = new Blob([data as unknown as string], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `geekspace-chat-7days-${new Date().toISOString().slice(0, 10)}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // silent — export is best-effort
+    } finally {
+      setIsExportingMarkdown7Days(false);
     }
   };
 
@@ -816,20 +837,36 @@ export function SettingsPage() {
                   <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Export as Markdown</h4>
                   <p className="text-xs text-[#6B7280]">Download chat history as a readable Markdown (.md) file.</p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportMarkdown}
-                  disabled={isExportingMarkdown}
-                  className="border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
-                >
-                  {isExportingMarkdown ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4 mr-2" />
-                  )}
-                  Export as Markdown
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportMarkdown7Days}
+                    disabled={isExportingMarkdown7Days}
+                    className="border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
+                  >
+                    {isExportingMarkdown7Days ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <CalendarDays className="w-4 h-4 mr-2" />
+                    )}
+                    Last 7 days
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportMarkdown}
+                    disabled={isExportingMarkdown}
+                    className="border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
+                  >
+                    {isExportingMarkdown ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
+                    All time
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -1267,7 +1267,15 @@ agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
 
 agentRouter.get('/conversations/export', requireAuth, (req: AuthRequest, res) => {
   try {
-    const conversations = getRecentConversations(req.userId!, 1000);
+    const allConversations = getRecentConversations(req.userId!, 1000);
+    const days = parseInt(req.query.days as string) || 0;
+    const conversations = days > 0
+      ? allConversations.filter(c => {
+          if (!c.created_at) return false;
+          const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+          return c.created_at >= cutoff;
+        })
+      : allConversations;
     const format = (req.query.format as string | undefined) ?? 'json';
 
     if (format === 'md') {

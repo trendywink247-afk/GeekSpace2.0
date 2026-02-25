@@ -1,6 +1,7 @@
 // ============================================================
 // Activity Log Route — GET /api/activity
 // Returns recent activity_log entries for the authenticated user
+// GET /api/activity/stats — 7-day daily counts (Phase 34.2)
 // ============================================================
 
 import { Router } from 'express';
@@ -22,4 +23,23 @@ activityRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   `).all(userId, limit);
 
   res.json({ activity: entries });
+});
+
+// ---- 34.2: 7-day daily activity stats (messages sent + reminders created) ----
+activityRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const days: { date: string; messages: number; reminders: number }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10); // YYYY-MM-DD
+    const msgs = db.prepare(
+      `SELECT COUNT(*) as c FROM conversation_log WHERE user_id = ? AND role = 'user' AND created_at LIKE ?`
+    ).get(userId, `${dateStr}%`) as { c: number };
+    const rems = db.prepare(
+      `SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND created_at LIKE ?`
+    ).get(userId, `${dateStr}%`) as { c: number };
+    days.push({ date: dateStr, messages: msgs.c, reminders: rems.c });
+  }
+  res.json({ days });
 });

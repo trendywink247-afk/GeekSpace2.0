@@ -818,6 +818,9 @@ try { db.exec(`ALTER TABLE users ADD COLUMN notification_digest INTEGER DEFAULT 
 // Phase 31: Reminder recurrence column (daily/weekly/monthly)
 try { db.exec(`ALTER TABLE reminders ADD COLUMN recurrence TEXT`); } catch { /* column already exists */ }
 
+// Phase 34.3: Portfolio view_count column
+try { db.exec(`ALTER TABLE portfolios ADD COLUMN view_count INTEGER DEFAULT 0`); } catch { /* column already exists */ }
+
 // Phase 12: Index for portfolio_visits queries (user_id + date range scans)
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_portfolio_visits_user_date ON portfolio_visits(user_id, visited_at)`); } catch { /* index already exists */ }
 

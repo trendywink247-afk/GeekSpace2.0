@@ -71,6 +71,8 @@ export function PortfolioView() {
       .then(({ data }) => setPortfolio(data as PortfolioData))
       .catch(() => {})
       .finally(() => setIsLoading(false));
+    // 34.3: Fire-and-forget view count increment
+    portfolioService.recordView(username).catch(() => {});
   }, [username]);
 
   // Fetch agent status when portfolio is loaded
