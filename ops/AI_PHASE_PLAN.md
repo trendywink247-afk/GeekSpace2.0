@@ -54,18 +54,24 @@ LLM fallback chain fix, mobile nav polish, contact import CSV, agent config vali
 
 ---
 
-## Phase 44 — PROPOSED (10 items)
-**Theme:** Integration reliability, UX polish, security hardening, performance
+## Phase 44 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/74 | **Tests:** 414/414
+Webhook retry, recurrence fix, notification badge, OAuth error, admin rate limit, structured logs, page skeleton
+
+---
+
+## Phase 45 — PROPOSED (10 items)
+**Theme:** Mobile polish, security hardening, state-sync fixes, performance headers
 
 | # | Item | Category |
 |---|------|----------|
-| 44.1 | Webhook delivery retry on 5xx (exponential backoff, max 3 retries) | Reliability |
-| 44.2 | Recurring reminder snooze fix (snoozed recurring reminders re-schedule correctly) | Reliability |
-| 44.3 | Portfolio skills section rendered on public page | UX |
-| 44.4 | Dashboard notification bell shows unread count badge | UX |
-| 44.5 | Automations: is_active toggle actually enables/disables cron/webhook trigger | State-sync |
-| 44.6 | Auth: OAuth error page — handle /auth/google/callback?error=access_denied gracefully | Edge-case |
-| 44.7 | Rate limit admin endpoints /admin/* (10 req/min separate limiter) | Security |
-| 44.8 | Structured logs for LLM routing + action execution | Dev/Ops |
-| 44.9 | Lazy-load heavy pages (Portfolio, Automations) with Suspense skeleton | Performance |
-| 44.10 | Phase 44 unit tests + full verification | Dev/Ops |
+| 45.1 | Fix: OG HTML template entity-escape title + description in portfolio crawler response | Reliability/Security |
+| 45.2 | Fix: Remove duplicate idx_reminders_user_due DB index (same cols as idx_reminders_datetime) | Reliability/Cleanup |
+| 45.3 | UX: Portfolio public page — mobile responsiveness audit + fix (test on 375px) | UX/Mobile |
+| 45.4 | UX: Reminder creation form — mobile-friendly floating FAB button (quick-add) | UX/Mobile |
+| 45.5 | Fix: authService.logout() should also clear gs-auth from localStorage | State-sync |
+| 45.6 | Fix: Dashboard activity sparklines — verify correct date bucketing (off-by-one check) | State-sync |
+| 45.7 | Security: Add Content-Security-Policy nonce for inline styles (reduce unsafe-inline surface) | Security |
+| 45.8 | Perf: Add ETag/Cache-Control headers to static portfolio public endpoint | Performance |
+| 45.9 | Dev/Ops: Update ops/AI_FEATURE_MATRIX.md to mark all Phase 44 fixes + add Phase 45 gaps | Dev/Ops |
+| 45.10 | Phase 45 unit tests + full verification gate + PR/merge | Dev/Ops |
