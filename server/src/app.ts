@@ -103,6 +103,16 @@ export function createApp(): express.Application {
   // ---- Passport initialization (for OAuth) ----
   app.use(passport.initialize());
 
+  // ---- Request timeout (29.3) — 30s for all routes ----
+  app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => {
+    res.setTimeout(30000, () => {
+      if (!res.headersSent) {
+        res.status(503).json({ error: 'Request timeout' });
+      }
+    });
+    next();
+  });
+
   // ---- Request logging ----
   app.use(requestLogger);
 

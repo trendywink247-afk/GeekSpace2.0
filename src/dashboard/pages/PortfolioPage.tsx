@@ -513,6 +513,9 @@ export function PortfolioPage() {
             <TabsTrigger value="analytics" data-testid="portfolio-tab-analytics" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <BarChart3 className="w-4 h-4 mr-2" />Analytics
             </TabsTrigger>
+            <TabsTrigger value="preview" data-testid="portfolio-tab-preview" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
+              <Eye className="w-4 h-4 mr-2" />Preview
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -1275,6 +1278,67 @@ export function PortfolioPage() {
                     </p>
                   </div>
                 ) : null
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Preview Tab (29.2) ──────────────────────────────── */}
+        <TabsContent value="preview" className="space-y-4">
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="w-5 h-5 text-[#00F0FF]" />
+                    Live Preview
+                  </CardTitle>
+                  <CardDescription className="text-[#6B7280]">
+                    This is how your public portfolio looks to visitors
+                  </CardDescription>
+                </div>
+                {user?.username && (
+                  <a
+                    href={`/portfolio/${user.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-[#00F0FF] hover:text-[#00D4B0] transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Open in new tab
+                  </a>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {user?.username ? (
+                <div className="relative w-full rounded-b-xl overflow-hidden border-t border-[#00F0FF]/10">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-[#06060B] border-b border-[#00F0FF]/10">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-[#FF6161]/40" />
+                      <div className="w-3 h-3 rounded-full bg-[#FFB800]/40" />
+                      <div className="w-3 h-3 rounded-full bg-[#00FF88]/40" />
+                    </div>
+                    <span className="text-xs text-[#6B7280] font-mono truncate">
+                      {window.location.origin}/portfolio/{user.username}
+                    </span>
+                  </div>
+                  <iframe
+                    src={`/portfolio/${user.username}`}
+                    title="Portfolio preview"
+                    className="w-full"
+                    style={{ height: '600px', border: 'none' }}
+                    loading="lazy"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                  <Eye className="w-12 h-12 text-[#00F0FF]/30 mb-4" />
+                  <p className="text-[#6B7280] mb-2">No username set</p>
+                  <p className="text-sm text-[#6B7280]/70">
+                    Set a username in your profile to see a preview
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>

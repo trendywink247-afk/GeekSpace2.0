@@ -12,6 +12,7 @@ import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import { StatusPage } from './pages/StatusPage';
 import { DocsPage } from './pages/DocsPage';
+import { ConnectPage } from './pages/ConnectPage';
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 
@@ -43,6 +44,7 @@ function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/status" element={<StatusPage />} />
           <Route path="/docs" element={<DocsPage />} />
+          <Route path="/connect/:token" element={<ConnectPage />} />
 
           {/* Onboarding — only show if logged in but not completed */}
           <Route
