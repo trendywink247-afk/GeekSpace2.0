@@ -267,8 +267,8 @@ export function PortfolioView() {
                   {portfolio.avatar || displayName?.[0] || '?'}
                 </div>
               )}
-              <h1 className="text-4xl md:text-5xl font-bold mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>{displayName}</h1>
-              <p className="text-lg md:text-2xl text-[#00F0FF] mb-5 px-2 font-medium">{portfolio.headline}</p>
+              <h1 className="text-3xl md:text-5xl font-bold mb-3 break-words" style={{ fontFamily: 'Syne, sans-serif', textWrap: 'balance' }}>{displayName}</h1>
+              <p className="text-base md:text-2xl text-[#00F0FF] mb-5 px-2 font-medium break-words">{portfolio.headline}</p>
               <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-sm text-[#6B7280]">
                 {portfolio.role && portfolio.company && (
                   <span className="flex items-center gap-1"><Briefcase className="w-4 h-4 shrink-0" />{portfolio.role} @ {portfolio.company}</span>
@@ -320,7 +320,7 @@ export function PortfolioView() {
             {/* Bio */}
             <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20 mb-8">
               <h2 className="text-lg font-semibold mb-3">About</h2>
-              <p className="text-[#6B7280] leading-relaxed">{portfolio.about}</p>
+              <p className="text-[#6B7280] leading-relaxed break-words">{portfolio.about}</p>
             </div>
 
             {/* Skills */}
@@ -366,7 +366,7 @@ export function PortfolioView() {
                             {hasUrl && <Globe className="w-3.5 h-3.5 text-[#6B7280] group-hover:text-[#00F0FF] transition-colors" />}
                           </div>
                         </div>
-                        <p className="text-sm text-[#6B7280] leading-relaxed">{project.description}</p>
+                        <p className="text-sm text-[#6B7280] leading-relaxed break-words">{project.description}</p>
                         {project.tags && project.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-3">
                             {project.tags.map((tag) => (
