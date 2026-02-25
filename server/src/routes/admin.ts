@@ -421,6 +421,35 @@ adminRouter.get('/usage', requireAdminToken, (_req: Request, res: Response): voi
   }
 });
 
+
+// ---- /audit endpoint (cross-user activity log) ----
+adminRouter.get('/audit', requireAdminToken, (req: Request, res: Response): void => {
+  try {
+    const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit || '100'), 10)));
+
+    const entries = db.prepare(
+      `SELECT al.id, al.user_id, u.username, al.action, al.details, al.icon, al.created_at
+       FROM activity_log al
+       LEFT JOIN users u ON u.id = al.user_id
+       ORDER BY al.created_at DESC
+       LIMIT ?`
+    ).all(limit) as {
+      id: string;
+      user_id: string;
+      username: string | null;
+      action: string;
+      details: string;
+      icon: string;
+      created_at: string;
+    }[];
+
+    res.json({ entries, total: entries.length, limit });
+  } catch (err) {
+    logger.error({ err }, 'Admin audit query failed');
+    res.status(500).json({ error: 'Audit query failed' });
+  }
+});
+
 // ---- serveAdminDashboard — GET /admin (HTML page) ----
 export function serveAdminDashboard(_req: Request, res: Response): void {
   // Admin dashboard is a standalone HTML file with inline scripts.
