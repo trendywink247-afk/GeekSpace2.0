@@ -24,7 +24,10 @@ test.describe('Model Preference', () => {
   });
 
   test('should show all model preference options', async ({ page }) => {
-    await expect(page.getByText('Auto')).toBeVisible();
+    // Use exact:true for 'Auto' to avoid strict-mode violation:
+    // AgentSettingsPage also has a 'Builder' style feature tag 'Automation'
+    // which Playwright's case-insensitive getByText matches as containing 'Auto'
+    await expect(page.getByText('Auto', { exact: true })).toBeVisible();
     await expect(page.getByText('Local AI Engine')).toBeVisible();
     await expect(page.getByText('Cloud Engine')).toBeVisible();
     await expect(page.getByText('Premium Engine')).toBeVisible();
@@ -40,8 +43,8 @@ test.describe('Model Preference', () => {
     // We verify by checking the page doesn't error and the button is still visible
     await expect(localBtn).toBeVisible();
 
-    // Switch back to Auto
-    await page.getByText('Auto').first().click();
-    await expect(page.getByText('Auto')).toBeVisible();
+    // Switch back to Auto — use exact:true to target only the model preference label
+    await page.getByText('Auto', { exact: true }).click();
+    await expect(page.getByText('Auto', { exact: true })).toBeVisible();
   });
 });
