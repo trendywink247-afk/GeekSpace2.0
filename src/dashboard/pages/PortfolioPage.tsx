@@ -1397,7 +1397,18 @@ export function PortfolioPage() {
                     <div key={c.id} className="rounded-xl border border-[#00F0FF]/10 bg-[#0C0C18] p-4 space-y-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-[#E8E8F0] text-sm">{c.sender_name}</span>
-                        <span className="text-xs text-[#6B7280]">{new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        <div className="flex items-center gap-2">
+                          {/* 39.6: Reply button — opens mailto: when sender provided email */}
+                          {c.sender_email && (
+                            <a
+                              href={`mailto:${c.sender_email}?subject=Re%3A%20Your%20message%20on%20my%20portfolio`}
+                              className="text-xs px-2 py-1 rounded-lg bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/20 hover:bg-[#00F0FF]/20 transition-colors"
+                            >
+                              Reply
+                            </a>
+                          )}
+                          <span className="text-xs text-[#6B7280]">{new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        </div>
                       </div>
                       {c.sender_email && <span className="text-xs text-[#6B7280]">{c.sender_email}</span>}
                       <p className="text-sm text-[#E8E8F0] mt-1 whitespace-pre-wrap">{c.message}</p>

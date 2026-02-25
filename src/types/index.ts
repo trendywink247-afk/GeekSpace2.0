@@ -95,6 +95,13 @@ export interface AgentConfig {
   accent_color?: string;  // snake_case returned by GET (raw DB row)
   briefing_time?: string; // HH:MM format, e.g. "08:00"
   greeting?: string;      // Custom greeting shown at chat start (max 200 chars)
+  preferred_free_model?: string; // 39.4: preferred OpenRouter free model
+  // notification flags (0/1)
+  notif_reminders?: number;
+  notif_escalations?: number;
+  notif_agents?: number;
+  notif_daily_briefing?: number;
+  notif_connections?: number;
 }
 
 export interface Personality {

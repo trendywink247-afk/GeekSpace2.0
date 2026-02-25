@@ -60,19 +60,31 @@ function timeAgo(dateStr: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+const PAGE_SIZE = 50;
+
 export function ActivityPage() {
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
 
   useEffect(() => {
     setLoading(true);
-    userService.getActivity(200)
-      .then(({ data }) => setEntries(data.activity))
+    userService.getActivity(PAGE_SIZE, 0)
+      .then(({ data }) => { setEntries(data.activity); setTotal(data.total ?? data.activity.length); })
       .catch(() => setEntries([]))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleLoadMore = () => {
+    setLoadingMore(true);
+    userService.getActivity(PAGE_SIZE, entries.length)
+      .then(({ data }) => { setEntries((prev) => [...prev, ...data.activity]); setTotal(data.total ?? (entries.length + data.activity.length)); })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false));
+  };
 
   const filtered = entries.filter((entry) => {
     const matchesSearch =
@@ -103,7 +115,7 @@ export function ActivityPage() {
           Activity Log
         </h1>
         <p className="text-sm md:text-base text-[#6B7280]">
-          <span className="text-[#00F0FF] font-medium">{entries.length}</span> total events recorded
+          <span className="text-[#00F0FF] font-medium">{total || entries.length}</span> total events recorded
         </p>
       </div>
 
@@ -200,9 +212,23 @@ export function ActivityPage() {
         </CardContent>
       </Card>
 
+      {entries.length > 0 && entries.length < total && !searchQuery && activeFilter === 'All' && (
+        <div className="flex justify-center">
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#00F0FF]/30 text-[#00F0FF] text-sm hover:bg-[#00F0FF]/10 disabled:opacity-50 transition-colors"
+          >
+            {loadingMore ? (
+              <div className="w-4 h-4 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
+            ) : null}
+            {loadingMore ? 'Loading…' : `Load more (${total - entries.length} remaining)`}
+          </button>
+        </div>
+      )}
       {filtered.length > 0 && (
         <p className="text-xs text-[#6B7280] text-center">
-          Showing {filtered.length} of {entries.length} events
+          Showing {filtered.length} of {total} events
         </p>
       )}
     </div>
