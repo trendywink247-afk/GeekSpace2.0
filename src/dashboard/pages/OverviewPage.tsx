@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   MessageSquare,
   Calendar,
@@ -18,7 +18,8 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
-  X
+  X,
+  GripVertical
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -142,6 +143,19 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     hasEnoughData: boolean;
   } | null>(null);
   const [activityStats, setActivityStats] = useState<{ date: string; messages: number; reminders: number }[]>([]);
+
+  // 35.2: Stat card reorder (drag-to-reorder, persisted in localStorage)
+  const [statOrder, setStatOrder] = useState<number[]>(() => {
+    try {
+      const stored = localStorage.getItem('gs_stat_order');
+      if (stored) {
+        const parsed = JSON.parse(stored) as number[];
+        if (Array.isArray(parsed) && parsed.length === 4) return parsed;
+      }
+    } catch { /* ignore */ }
+    return [0, 1, 2, 3];
+  });
+  const dragSrcIdx = useRef<number | null>(null);
 
   // Onboarding checklist state
   const ONBOARDING_ITEMS = [
@@ -563,10 +577,24 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
       {/* ─── Bento Stats Grid ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {quickStats.map((stat, i) => (
+        {statOrder.map((origIdx, i) => {
+          const stat = quickStats[origIdx];
+          return (
           <Card
-            key={i}
-            className="group press-scale touch-highlight transition-all duration-300 hover:scale-[1.02]"
+            key={origIdx}
+            draggable
+            onDragStart={() => { dragSrcIdx.current = i; }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => {
+              const src = dragSrcIdx.current;
+              if (src === null || src === i) return;
+              const next = [...statOrder];
+              [next[src], next[i]] = [next[i], next[src]];
+              setStatOrder(next);
+              localStorage.setItem('gs_stat_order', JSON.stringify(next));
+              dragSrcIdx.current = null;
+            }}
+            className="group press-scale touch-highlight transition-all duration-300 hover:scale-[1.02] relative cursor-grab active:cursor-grabbing"
             style={{
               background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
               border: `1px solid ${stat.color}20`,
@@ -595,17 +623,17 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 {stat.value}
               </div>
               <div className="text-sm text-[#6B7280]">{stat.label}</div>
-              {statSparklines[i].length > 1 ? (
+              {statSparklines[origIdx].length > 1 ? (
                 <div className="mt-2 h-8 -mx-1">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={statSparklines[i]} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                    <AreaChart data={statSparklines[origIdx]} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
                       <defs>
-                        <linearGradient id={`spark${i}`} x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id={`spark${origIdx}`} x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor={stat.color} stopOpacity={0.25} />
                           <stop offset="95%" stopColor={stat.color} stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <Area type="monotone" dataKey="v" stroke={stat.color} strokeWidth={1.5} fill={`url(#spark${i})`} dot={false} isAnimationActive={false} />
+                      <Area type="monotone" dataKey="v" stroke={stat.color} strokeWidth={1.5} fill={`url(#spark${origIdx})`} dot={false} isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -613,11 +641,11 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 <div className="mt-2 flex items-end" style={{ height: 28 }}>
                   <Sparkline
                     data={
-                      i === 0 && activityStats.length > 0
+                      origIdx === 0 && activityStats.length > 0
                         ? activityStats.map(d => d.messages)
-                        : i === 1 && activityStats.length > 0
+                        : origIdx === 1 && activityStats.length > 0
                         ? activityStats.map(d => d.reminders)
-                        : MOCK_SPARKLINES[i]
+                        : MOCK_SPARKLINES[origIdx]
                     }
                     color={stat.color}
                     width={80}
@@ -625,9 +653,14 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   />
                 </div>
               )}
+              {/* Drag handle indicator */}
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-30 transition-opacity">
+                <GripVertical className="w-3 h-3 text-[#6B7280]" />
+              </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {/* Agent Quality Card — only shown when there are >= 5 reactions */}

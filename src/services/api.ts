@@ -367,6 +367,9 @@ export const reminderService = {
 
   bulkSnooze: (ids: string[], preset: '1h' | 'tomorrow' | 'next-week') =>
     api.post<{ snoozed: number; newDatetime: string }>('/reminders/bulk-snooze', { ids, preset }),
+
+  getStreak: () =>
+    api.get<{ streak: number; longestStreak: number; completedToday: boolean }>('/reminders/streak'),
 };
 
 // ----- Portfolio ---------------------------------------------

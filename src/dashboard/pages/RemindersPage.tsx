@@ -29,6 +29,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { reminderService } from '@/services/api';
+import { Flame } from 'lucide-react';
 import { parseNaturalLanguageReminder } from '@/utils/reminderParser';
 import type { ReminderChannel, ReminderCategory, ReminderPriority, Reminder } from '@/types';
 
@@ -87,6 +88,12 @@ export function RemindersPage() {
     category: 'personal',
     priority: 'normal',
   });
+
+  // 35.1: Streak counter
+  const [streak, setStreak] = useState<{ streak: number; longestStreak: number; completedToday: boolean } | null>(null);
+  useEffect(() => {
+    reminderService.getStreak().then(res => setStreak(res.data)).catch(() => {});
+  }, []);
 
   // Poll for reminders every 30 seconds (targeted — only re-fetches reminders)
   useEffect(() => {
@@ -340,6 +347,13 @@ export function RemindersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {streak && streak.streak > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.3)' }}>
+              <Flame className="w-3.5 h-3.5 text-[#F59E0B]" />
+              <span className="text-sm font-semibold text-[#F59E0B]">{streak.streak}</span>
+              <span className="text-xs text-[#6B7280]">day streak</span>
+            </div>
+          )}
           <div className="px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30">
             <span className="text-sm text-[#00F0FF]">{activeReminders.length} active</span>
           </div>
