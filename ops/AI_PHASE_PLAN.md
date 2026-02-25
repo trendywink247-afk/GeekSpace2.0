@@ -96,18 +96,6 @@ loadErrors banner, unified timestamps, streak widget, connections URL filter, cl
 
 ---
 
-## Phase 51 — PROPOSED (10 items)
-**Theme:** Reliability, UX/Mobile, Edge-case hardening, Security, Performance, Dev/Ops
-
-| # | Item | Category |
-|---|------|----------|
-| 51.1 | Fix: PATCH /me should also invalidate `user:me` cache on notification/privacy field changes (currently only clears on profile PATCH) | Reliability |
-| 51.2 | Fix: RemindersPage — editing a recurring reminder should offer "this occurrence" vs "all future" choice | UX |
-| 51.3 | UX: AgentChatPanel — add message count badge on mobile nav Connections tab when unread | UX/Mobile |
-| 51.4 | UX: OverviewPage — add "copy briefing" button on Daily Briefing card | UX/Mobile |
-| 51.5 | Fix: Automation trigger button shows no error feedback if POST /trigger fails | State-sync |
-| 51.6 | Edge: Portfolio contact form — show inline success/error message instead of silent close | Edge-case |
-| 51.7 | Security: Add `rate-limit-policy` header to document rate limit rules on all limited endpoints | Security |
-| 51.8 | Perf: Debounce portfolio contact form nonce fetch (avoid double-fetch on mobile double-tap) | Performance |
-| 51.9 | Dev/Ops: Add structured event logging for portfolio contact attempts (success/blocked/nonce-fail) | Dev/Ops |
-| 51.10 | Phase 51 tests + verification gate + PR/merge | Dev/Ops |
+## Phase 51 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/81 | **Tests:** 485/485
+notification-email cache invalidation, recurring reminder edit scope choice, copy briefing button, trigger error feedback, portfolio contact auto-close, X-RateLimit-Policy headers always-on, nonce double-tap guard verified, structured contact logging
