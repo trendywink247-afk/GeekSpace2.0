@@ -36,6 +36,7 @@ import { userService, apiKeyService, memoryService, agentService, versionService
 import type { ApiProvider, MemoryEntry, FreeModel } from '@/types';
 
 export function SettingsPage() {
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExportingConversations, setIsExportingConversations] = useState(false);
   const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
@@ -300,6 +301,15 @@ export function SettingsPage() {
     await userService.updateProfile({ theme_background: bgPreview.gradient } as Parameters<typeof userService.updateProfile>[0]);
   };
 
+  // 46.4: beforeunload guard — warn when navigating away with unsaved profile changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsavedChanges]);
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -309,6 +319,7 @@ export function SettingsPage() {
         // and any fields not returned by PATCH /me (server omits some on update)
         setUser({ ...user, ...updatedUser });
       }
+      setHasUnsavedChanges(false);
     } catch (err) {
       console.error('[settings] save failed:', err);
     } finally {
@@ -356,13 +367,21 @@ export function SettingsPage() {
           </h1>
           <p className="text-[#6B7280]">Manage your account preferences</p>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">
-          {isSaving ? (
-            <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
-          ) : (
-            <><Save className="w-4 h-4 mr-2" />Save Changes</>
+        <div className="flex flex-col items-end gap-2">
+          {/* 46.4: Unsaved changes warning banner */}
+          {hasUnsavedChanges && !isSaving && (
+            <div className="px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">
+              You have unsaved changes
+            </div>
           )}
-        </Button>
+          <Button onClick={handleSave} disabled={isSaving} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">
+            {isSaving ? (
+              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
+            ) : (
+              <><Save className="w-4 h-4 mr-2" />Save Changes</>
+            )}
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -431,32 +450,32 @@ export function SettingsPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-[#6B7280] mb-2 block">Display Name</label>
-                    <Input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                    <Input value={profile.name} onChange={(e) => { setProfile({ ...profile, name: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                   </div>
                   <div>
                     <label className="text-sm text-[#6B7280] mb-2 block">Username</label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]">@</span>
-                      <Input value={profile.username} onChange={(e) => setProfile({ ...profile, username: e.target.value })} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] pl-8" />
+                      <Input value={profile.username} onChange={(e) => { setProfile({ ...profile, username: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] pl-8" />
                     </div>
                   </div>
                 </div>
                 <div>
                   <label className="text-sm text-[#6B7280] mb-2 block">Email</label>
-                  <Input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                  <Input type="email" value={profile.email} onChange={(e) => { setProfile({ ...profile, email: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                 </div>
                 <div>
                   <label className="text-sm text-[#6B7280] mb-2 block">Bio</label>
-                  <textarea value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF]" />
+                  <textarea value={profile.bio} onChange={(e) => { setProfile({ ...profile, bio: e.target.value }); setHasUnsavedChanges(true); }} className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF]" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-[#6B7280] mb-2 block">Location</label>
-                    <Input value={profile.location} onChange={(e) => setProfile({ ...profile, location: e.target.value })} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                    <Input value={profile.location} onChange={(e) => { setProfile({ ...profile, location: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                   </div>
                   <div>
                     <label className="text-sm text-[#6B7280] mb-2 block">Website</label>
-                    <Input value={profile.website} onChange={(e) => setProfile({ ...profile, website: e.target.value })} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                    <Input value={profile.website} onChange={(e) => { setProfile({ ...profile, website: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                   </div>
                 </div>
               </CardContent>

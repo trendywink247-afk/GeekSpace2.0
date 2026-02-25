@@ -61,7 +61,8 @@ function timeAgo(ts: string | number): string {
   return new Date(ms).toISOString().slice(0, 10);
 }
 
-const PAGE_SIZE = 50;
+// 46.8: Reduced from 50 to 25 to match server default and lower initial payload
+const PAGE_SIZE = 25;
 
 export function ActivityPage() {
   const [entries, setEntries] = useState<ActivityEntry[]>([]);

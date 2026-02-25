@@ -652,6 +652,14 @@ export function ConnectionsPage() {
 
       {/* Connection Grid */}
       <div id="integration-grid" className="grid md:grid-cols-2 gap-4">
+        {/* 46.3: Empty state when no integrations are available */}
+        {integrations.length === 0 && (
+          <div className="md:col-span-2 text-center py-12 text-[#8888AA]">
+            <Plug className="w-12 h-12 mx-auto mb-4 text-[#8888AA]/40" />
+            <p className="text-lg font-medium mb-2">No integrations connected yet</p>
+            <p className="text-sm">Connect Telegram, WhatsApp, or webhooks to receive notifications and automate your workflows.</p>
+          </div>
+        )}
         {integrations.map((connection) => {
           const Icon = getIcon(connection.type);
           const color = getColor(connection.type);

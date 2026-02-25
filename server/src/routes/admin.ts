@@ -33,6 +33,13 @@ function getAdminDashboardHtml(): string | null {
 
 export const adminRouter = Router();
 
+// ---- Auth coverage (46.1) ----
+// Every route below requires one of two auth guards:
+//   - requireAdminToken   : validates Authorization: Bearer <ADMIN_TOKEN> header (new style)
+//   - requireAdminPassword: validates X-Admin-Password header (legacy dashboard route)
+// The /stream endpoint implements its own inline token check to support EventSource query-param auth.
+// Unauthenticated callers receive 401 or 503 (token not configured).
+
 // ---- Password middleware (legacy X-Admin-Password) ----
 function requireAdminPassword(req: Request, res: Response, next: NextFunction): void {
   if (!config.adminDashboardPassword) {

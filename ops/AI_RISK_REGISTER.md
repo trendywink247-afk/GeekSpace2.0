@@ -1,7 +1,7 @@
 # AI Risk Register — GeekSpace 2.0
 
 > Updated each phase. Tracks medium/high risks and mitigation status.
-> Last updated: Phase 43 (2026-02-25)
+> Last updated: Phase 46 (2026-02-25)
 
 ## Risk Levels
 - 🔴 High — may break production or user data
@@ -21,5 +21,7 @@
 | R09 | Large number of worktrees (30+) consuming disk space | 🟡 | Ops | Action: prune old merged worktrees | Open | Phase 43 |
 | R10 | WhatsApp integration is a stub | 🟡 | Feature | Accept: documented; not advertised as working | Open | Phase 1 |
 | R11 | CSP still uses unsafe-inline for scripts | 🟠 | Security | Plan: nonce-based policy in dedicated security phase | Open | Phase 3 |
-| R12 | No rate limiting on admin endpoints (/admin/*) | 🟠 | Security | Plan: add rate limit to admin router in Phase 44 | Open | Phase 43 |
+| R11 | CSP still uses unsafe-inline for scripts | 🟠 | Security | Partially mitigated: `frame-ancestors 'none'` in CSP + `X-Frame-Options: DENY` via Helmet frameguard (Phase 46.7 confirmed). Script nonce still pending. | Partially Mitigated | Phase 3 |
+| R12 | No rate limiting on admin endpoints (/admin/*) | 🟠 | Security | Mitigated: adminLimiter added in app.ts (10 req/min), confirmed Phase 46.1 audit | Mitigated | Phase 43 |
 | R13 | Missing DB indexes on high-frequency query paths | 🟡 | Performance | Fix: Phase 43.9 | In Progress | Phase 43 |
+| R14 | Clickjacking risk from iframeable content | 🟡 | Security | Mitigated: Helmet frameguard({ action: 'deny' }) sends X-Frame-Options: DENY; CSP frame-ancestors: none also in production. Double-mitigation confirmed Phase 46.7. | Mitigated | Phase 46 |

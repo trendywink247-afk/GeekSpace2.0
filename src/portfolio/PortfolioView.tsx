@@ -72,8 +72,13 @@ export function PortfolioView() {
   const [contactSent, setContactSent] = useState(false);
   const [contactError, setContactError] = useState('');
 
+  // 46.6: Email format validation
+  const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  const emailInvalid = contactEmail.trim().length > 0 && !isValidEmail(contactEmail.trim());
+
   const handleSendContact = async () => {
     if (!contactName.trim() || !contactMessage.trim() || !username) return;
+    if (emailInvalid) return;
     setContactSending(true);
     setContactError('');
     try {
@@ -710,8 +715,12 @@ export function PortfolioView() {
                     onChange={(e) => setContactEmail(e.target.value)}
                     placeholder="jane@example.com"
                     type="email"
-                    className="bg-[#0C0C18] border-[#00F0FF]/20"
+                    className={`bg-[#0C0C18] ${emailInvalid ? 'border-red-500/50' : 'border-[#00F0FF]/20'}`}
                   />
+                  {/* 46.6: Inline email validation error */}
+                  {emailInvalid && (
+                    <p className="text-red-400 text-xs mt-1">Please enter a valid email address</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs text-[#6B7280] mb-1 block">Message * <span className="text-[#4B5563]">({contactMessage.length}/1000)</span></label>
@@ -726,7 +735,7 @@ export function PortfolioView() {
                 {contactError && <p className="text-xs text-[#FF6161]">{contactError}</p>}
                 <button
                   onClick={handleSendContact}
-                  disabled={contactSending || !contactName.trim() || !contactMessage.trim()}
+                  disabled={contactSending || !contactName.trim() || !contactMessage.trim() || emailInvalid}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold text-sm transition-colors disabled:opacity-50"
                 >
                   {contactSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
