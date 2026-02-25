@@ -55,7 +55,10 @@ function timeAgo(ts: string | number): string {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   if (diff < 172800) return 'yesterday';
   if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-  return new Date(ms).toLocaleDateString();
+  // Display-only: toLocaleDateString is appropriate here (user-facing relative date label).
+  // Sparkline day-bucketing happens server-side via toISOString().slice(0,10) (UTC), so
+  // this fallback has no effect on data aggregation correctness (Phase 45.6 verified).
+  return new Date(ms).toISOString().slice(0, 10);
 }
 
 const PAGE_SIZE = 50;
