@@ -61,10 +61,19 @@ git push origin main
 # Wait for CI + Test workflows green (GitHub Actions)
 git push origin main:live-production
 # Wait for CI green on live-production
-# Docker rebuild happens automatically via webhook or:
-docker compose up -d --build geekspace
+# ALWAYS use prod.sh — it includes the static file sync step
+cd ~/GeekSpace2.0 && ./scripts/prod.sh
 curl localhost:3001/api/health
 ```
+
+### Caddy serves static files from HOST path, NOT the container
+- `docker-compose.yml` mounts `/var/www/geekspace:/srv:ro` into the Caddy container
+- When geekspace-app is rebuilt, the new `/app/dist/` assets stay INSIDE the container
+- Caddy keeps serving the old files from `/var/www/geekspace/` on the host
+- **CRITICAL:** Always run `docker cp geekspace-app:/app/dist/. /var/www/geekspace/` after a build
+- `./scripts/prod.sh` does this automatically — do NOT run `docker compose up -d --build` directly
+- Symptom: users don't see updates even though containers are healthy and API is working
+- After sync, bump `public/sw.js` CACHE_NAME version to force browser SW cache clear
 
 ### Port 3001 conflicts
 - Stale Node process causes "Invalid token" after JWT secret resets
