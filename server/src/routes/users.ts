@@ -151,6 +151,9 @@ usersRouter.patch('/notification-email', requireAuth, validateBody(notificationE
       .run(trimmed || null, req.userId);
   }
 
+  // 51.1: Invalidate /me cache so notification field reflects immediately
+  cacheDel(`user:me:${req.userId!}`).catch(() => {});
+
   const user = db.prepare('SELECT notification_email FROM users WHERE id = ?').get(req.userId!) as { notification_email: number };
   const cfg = db.prepare('SELECT notification_email_address FROM agent_configs WHERE user_id = ?').get(req.userId!) as { notification_email_address: string | null } | undefined;
 
