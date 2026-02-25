@@ -10,6 +10,7 @@
 // Flow: Intent classify → Route → Call → Log usage
 // ============================================================
 
+import { createHash } from 'crypto';
 import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
@@ -72,6 +73,51 @@ export function getRoutingTraces(limit = 100): RoutingTrace[] {
 export function clearRoutingTraces(): void {
   routingTraces.length = 0;
 }
+
+// ---- Simple In-Memory LLM Response Cache ----
+// Only for simple, single-turn queries. Max 100 entries (LRU). TTL: 5 minutes.
+
+const LLM_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const LLM_CACHE_MAX = 100;
+
+interface LLMCacheEntry {
+  reply: string;
+  timestamp: number;
+}
+
+const llmCache = new Map<string, LLMCacheEntry>();
+
+function makeCacheKey(messages: ChatMessage[], systemPrompt?: string): string {
+  return createHash('md5')
+    .update(JSON.stringify({ messages, systemPrompt: systemPrompt ?? '' }))
+    .digest('hex');
+}
+
+function getCached(key: string): string | null {
+  const entry = llmCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > LLM_CACHE_TTL_MS) {
+    llmCache.delete(key);
+    return null;
+  }
+  return entry.reply;
+}
+
+function setCached(key: string, reply: string): void {
+  if (!reply) return; // never cache empty replies
+  // LRU eviction: delete oldest when full
+  if (llmCache.size >= LLM_CACHE_MAX) {
+    const oldestKey = llmCache.keys().next().value;
+    if (oldestKey) llmCache.delete(oldestKey);
+  }
+  llmCache.set(key, { reply, timestamp: Date.now() });
+}
+
+export function getLLMCacheStats(): { size: number; maxSize: number; ttlMs: number } {
+  return { size: llmCache.size, maxSize: LLM_CACHE_MAX, ttlMs: LLM_CACHE_TTL_MS };
+}
+
+
 
 function recordRoutingTrace(trace: RoutingTrace): void {
   routingTraces.push(trace);
@@ -540,6 +586,33 @@ export async function routeChat(
   }
   fullMessages.push(...messages);
 
+
+  // ---- Cache check (simple / single-turn queries only) ----
+  const isCacheable =
+    !opts?.forceProvider &&
+    messages.length === 1 &&
+    messages[0].role === 'user';
+
+  const cacheKey = isCacheable ? makeCacheKey(messages, opts?.systemPrompt) : '';
+
+  if (isCacheable && cacheKey) {
+    const cached = getCached(cacheKey);
+    if (cached) {
+      logger.debug({ cacheKey }, 'LLM cache hit');
+      return {
+        reply: cached,
+        provider: 'builtin' as Provider,
+        model: 'cache',
+        tokensIn: 0,
+        tokensOut: 0,
+        latencyMs: 0,
+        costEstimate: 0,
+        creditCost: 0,
+        intent: classifyIntent(messages[0].content),
+      };
+    }
+  }
+
   // Check manual override (TEST_MODE only)
   let manualOverride: Provider | null = null;
   if (config.isTestMode) {
@@ -770,6 +843,11 @@ export async function routeChat(
     costEstimate,
     creditCost,
   }, 'LLM response');
+
+  // Store in cache for simple single-turn queries (not errors, not fallbacks)
+  if (isCacheable && cacheKey && reply && model !== 'error-fallback' && finalProvider !== 'builtin') {
+    setCached(cacheKey, reply);
+  }
 
   return { reply, provider, model, tokensIn, tokensOut, latencyMs, costEstimate, creditCost, intent };
 }
