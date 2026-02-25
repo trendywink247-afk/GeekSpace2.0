@@ -36,11 +36,13 @@ import {
   Bar,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  LineChart,
+  Line
 } from 'recharts';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { briefingService, modelService, agentService } from '@/services/api';
+import { briefingService, modelService, agentService, usageService } from '@/services/api';
 import type { FreeModel, ModelChangelogEntry } from '@/types';
 
 interface OverviewPageProps {
@@ -105,6 +107,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const [modelSaving, setModelSaving] = useState<string | null>(null);
   const [briefingTime, setBriefingTime] = useState('08:00');
   const [briefingSaving, setBriefingSaving] = useState(false);
+  const [dailyUsage, setDailyUsage] = useState<Array<{ day: string; label: string; messages: number; credits: number }>>([]);
 
   // Onboarding checklist state
   const ONBOARDING_ITEMS = [
@@ -193,6 +196,12 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   useEffect(() => {
     briefingService.getRecent(1).then(res => {
       if (res.data.length > 0) setLatestBriefing(res.data[0]);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    usageService.daily(7).then(res => {
+      setDailyUsage(res.data);
     }).catch(() => {});
   }, []);
 
@@ -949,6 +958,54 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
         </div>
       </div>
+
+      {/* ─── Credits & Messages Trend ─── */}
+      <Card
+        style={{
+          background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
+          border: '1px solid rgba(0, 255, 136, 0.12)',
+        }}
+      >
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-[#00FF88]" />
+              7-Day Activity Trend
+            </CardTitle>
+            <Badge variant="outline" className="border-[#00FF88]/30 text-[#6B7280]">
+              Messages &amp; Tokens
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[160px]">
+            {mounted && (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dailyUsage.length > 0 ? dailyUsage : [{ label: 'Mon', messages: 0, credits: 0 }, { label: 'Tue', messages: 0, credits: 0 }, { label: 'Wed', messages: 0, credits: 0 }, { label: 'Thu', messages: 0, credits: 0 }, { label: 'Fri', messages: 0, credits: 0 }, { label: 'Sat', messages: 0, credits: 0 }, { label: 'Sun', messages: 0, credits: 0 }]} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,136,0.06)" />
+                  <XAxis dataKey="label" stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#6B7280" fontSize={12} tickLine={false} axisLine={false} width={35} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#10101E',
+                      border: '1px solid rgba(0,255,136,0.2)',
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                    }}
+                    itemStyle={{ color: '#E8E8F0' }}
+                  />
+                  <Line type="monotone" dataKey="messages" stroke="#00FF88" strokeWidth={2} dot={{ fill: '#00FF88', r: 3 }} name="Messages" />
+                  <Line type="monotone" dataKey="credits" stroke="#BF5FFF" strokeWidth={2} dot={{ fill: '#BF5FFF', r: 3 }} name="Tokens" />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+          <div className="flex items-center gap-4 mt-2 text-xs text-[#6B7280]">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-[#00FF88] rounded inline-block" />Messages sent</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-[#BF5FFF] rounded inline-block" />Tokens used</span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Available AI Models — full-width grid below the 3-col section */}
       {freeModels.length > 0 && (

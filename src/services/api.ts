@@ -244,6 +244,9 @@ export const usageService = {
     api.get<ProviderBreakdown[]>(`/usage/providers?days=${days}`),
 
   latency: () => api.get<HourlyActivity[]>('/usage/latency'),
+
+  daily: (days = 7) =>
+    api.get<Array<{ day: string; label: string; messages: number; credits: number }>>(`/usage/daily?days=${days}`),
 };
 
 // ----- Billing -----------------------------------------------
