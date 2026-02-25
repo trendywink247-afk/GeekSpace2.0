@@ -150,22 +150,46 @@ usersRouter.get('/:username/public', (req, res) => {
 });
 
 // ── Model Preference ─────────────────────────────────────────
+// Maps UI values (users.preferred_model) → ModelPreference values (agent_configs.model_preference)
+const UI_TO_AGENT_MODEL: Record<string, string> = {
+  auto: 'auto',
+  local: 'local',
+  cloud: 'cloud',
+  premium: 'premium',
+};
+const AGENT_TO_UI_MODEL: Record<string, string> = {
+  auto: 'auto',
+  local: 'local',
+  cloud: 'cloud',
+  premium: 'premium',
+};
+
 usersRouter.put('/me/model', requireAuth, (req: AuthRequest, res) => {
-  const allowed = ['auto', 'ollama', 'openrouter', 'edith'];
+  const allowed = Object.keys(UI_TO_AGENT_MODEL);
   const model: string = req.body.model ?? 'auto';
   if (!allowed.includes(model)) {
-    res.status(400).json({ error: 'Invalid model. Allowed: auto, ollama, openrouter, edith' });
+    res.status(400).json({ error: `Invalid model. Allowed: ${allowed.join(', ')}` });
     return;
   }
+  const agentModel = UI_TO_AGENT_MODEL[model] ?? 'auto';
   try {
     db.prepare('UPDATE users SET preferred_model = ? WHERE id = ?').run(model, req.userId);
   } catch {
     // Column may not exist on older deployments — non-fatal
   }
+  try {
+    db.prepare('UPDATE agent_configs SET model_preference = ? WHERE user_id = ?').run(agentModel, req.userId);
+  } catch {
+    // Non-fatal if column not present
+  }
   res.json({ preferredModel: model });
 });
 
 usersRouter.get('/me/model', requireAuth, (req: AuthRequest, res) => {
-  const user = db.prepare('SELECT preferred_model FROM users WHERE id = ?').get(req.userId!) as { preferred_model: string | null } | undefined;
-  res.json({ preferredModel: user?.preferred_model ?? 'auto' });
+  // Read from agent_configs.model_preference (source of truth for routing),
+  // but fall back to users.preferred_model for backward compatibility.
+  const agentCfg = db.prepare('SELECT model_preference FROM agent_configs WHERE user_id = ?').get(req.userId!) as { model_preference: string | null } | undefined;
+  const agentModel = agentCfg?.model_preference ?? 'auto';
+  const preferredModel = AGENT_TO_UI_MODEL[agentModel] ?? agentModel;
+  res.json({ preferredModel });
 });

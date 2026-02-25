@@ -203,11 +203,32 @@ portfolioRouter.post('/:username/chat', requireAuth, async (req: AuthRequest, re
   }
 });
 
+// ── Portfolio Visit Stats ─────────────────────────────────────
+portfolioRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const totalViews = (db.prepare('SELECT COUNT(*) as cnt FROM portfolio_visits WHERE user_id = ?').get(userId) as { cnt: number }).cnt;
+  const recentViews = (db.prepare(
+    "SELECT COUNT(*) as cnt FROM portfolio_visits WHERE user_id = ? AND visited_at >= datetime('now', '-7 days')"
+  ).get(userId) as { cnt: number }).cnt;
+  res.json({ totalViews, recentViews });
+});
+
 // Public portfolio view - MUST be last as it catches any /:username pattern
 portfolioRouter.get('/:username', async (req, res) => {
   const cacheKey = `portfolio:${req.params.username}`;
   const cached = await cacheGet(cacheKey);
-  if (cached) { res.json(JSON.parse(cached)); return; }
+  if (cached) {
+    // Record visit even for cached responses
+    try {
+      const cachedData = JSON.parse(cached) as { userId?: string };
+      if (cachedData.userId) {
+        const visitorIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || null;
+        db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(cachedData.userId, visitorIp);
+      }
+    } catch { /* non-fatal */ }
+    res.json(JSON.parse(cached));
+    return;
+  }
 
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE username = ?').get(req.params.username) as Record<string, unknown> | undefined;
   if (!portfolio) { res.status(404).json({ error: 'Portfolio not found' }); return; }
@@ -228,6 +249,12 @@ portfolioRouter.get('/:username', async (req, res) => {
     personality: (agentConfig?.personality as string) || 'jarvis',
     connectionCount: (portfolio.connection_count as number) || 0,
   };
+
+  // Record visit
+  try {
+    const visitorIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || null;
+    db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(portfolio.user_id, visitorIp);
+  } catch { /* non-fatal */ }
 
   await cacheSet(cacheKey, JSON.stringify(responseData), 300);
   res.json(responseData);

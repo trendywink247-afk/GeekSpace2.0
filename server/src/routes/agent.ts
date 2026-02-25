@@ -105,6 +105,9 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     personality: 'personality', model_preference: 'model_preference',
     preferred_free_model: 'preferred_free_model',
     briefing_time: 'briefing_time',
+    notif_reminders: 'notif_reminders',
+    notif_escalations: 'notif_escalations',
+    notif_agents: 'notif_agents',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {
@@ -1243,11 +1246,16 @@ agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
 // ---- Conversation Export ----
 
 agentRouter.get('/conversations/export', requireAuth, (req: AuthRequest, res) => {
-  const conversations = getRecentConversations(req.userId!, 1000);
-  const data = (conversations as unknown as Record<string, unknown>[]).map(mapConversation);
-  res.setHeader('Content-Disposition', 'attachment; filename="conversations.json"');
-  res.setHeader('Content-Type', 'application/json');
-  res.json(data);
+  try {
+    const conversations = getRecentConversations(req.userId!, 1000);
+    const data = (conversations as unknown as Record<string, unknown>[]).map(mapConversation);
+    res.setHeader('Content-Disposition', 'attachment; filename="conversations.json"');
+    res.setHeader('Content-Type', 'application/json');
+    res.json(data);
+  } catch (err) {
+    logger.error({ err }, 'conversations/export failed');
+    res.status(500).json({ error: 'Failed to export conversations' });
+  }
 });
 
 // ---- Message Reactions ----

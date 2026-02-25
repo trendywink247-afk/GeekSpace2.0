@@ -128,6 +128,13 @@ async function deliverReminder(reminder: DueReminder): Promise<void> {
 
   switch (reminder.channel) {
     case 'telegram': {
+      // Check if user has disabled reminder notifications
+      const notifPref = db.prepare('SELECT notif_reminders FROM agent_configs WHERE user_id = ?').get(reminder.user_id) as { notif_reminders?: number } | undefined;
+      if (notifPref && notifPref.notif_reminders === 0) {
+        logger.info({ reminderId: reminder.id }, 'Telegram reminder skipped: notif_reminders disabled');
+        break;
+      }
+
       const link = db.prepare(
         "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
       ).get(reminder.user_id) as ChannelLink | undefined;

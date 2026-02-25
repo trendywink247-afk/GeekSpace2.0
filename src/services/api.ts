@@ -375,6 +375,10 @@ export const portfolioService = {
       inactiveSince: number | null;
       reason?: string;
     }>(`/portfolio/${username}/agent-status`),
+
+  // Portfolio visit stats
+  getStats: () =>
+    api.get<{ totalViews: number; recentViews: number }>('/portfolio/stats'),
 };
 
 // ----- Automations -------------------------------------------

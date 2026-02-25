@@ -11,6 +11,8 @@ test.describe('Portfolio Page', () => {
     // Navigate to dashboard first (auth is handled by global setup)
     await page.goto('/dashboard');
     await expect(page.getByTestId('dashboard-shell')).toBeVisible();
+    // Dismiss first-use tour so it doesn't intercept clicks
+    await page.evaluate(() => localStorage.setItem('gs_dashboard_tour_seen', '1'));
     // Navigate to Portfolio by project type
     if (testInfo.project.name === 'chromium') {
       await page.getByTestId('dashboard-sidebar-desktop').getByText('Portfolio').click();
