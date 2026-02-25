@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
-import { portfolioService, agentService } from '@/services/api';
+import { portfolioService, agentService, type PortfolioContact } from '@/services/api';
 import type { AgentPersonality } from '@/types';
 import type { Portfolio, PortfolioProject, PortfolioMilestone, PortfolioLayout } from '@/types';
 
@@ -23,6 +23,8 @@ export function PortfolioPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  // 38.5: Portfolio contacts (messages from visitors)
+  const [contacts, setContacts] = useState<PortfolioContact[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -131,6 +133,11 @@ export function PortfolioPage() {
     // Load portfolio visit stats
     portfolioService.getStats()
       .then(({ data }) => setPortfolioStats(data))
+      .catch(() => { /* non-fatal */ });
+
+    // 38.5: Load portfolio contact messages
+    portfolioService.getContacts()
+      .then(({ data }) => setContacts(data))
       .catch(() => { /* non-fatal */ });
   }, []);
 
@@ -518,6 +525,15 @@ export function PortfolioPage() {
             </TabsTrigger>
             <TabsTrigger value="preview" data-testid="portfolio-tab-preview" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale">
               <Eye className="w-4 h-4 mr-2" />Preview
+            </TabsTrigger>
+            {/* 38.5: Messages tab */}
+            <TabsTrigger value="messages" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale relative">
+              Messages
+              {contacts.length > 0 && (
+                <span className="ml-1.5 bg-[#FF2D78] text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
+                  {contacts.length}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -1359,6 +1375,34 @@ export function PortfolioPage() {
                   <p className="text-sm text-[#6B7280]/70">
                     Set a username in your profile to see a preview
                   </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── 38.5: Messages Tab ─────────────────────────────── */}
+        <TabsContent value="messages" className="space-y-4">
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle>Portfolio Messages</CardTitle>
+              <CardDescription className="text-[#6B7280]">Messages sent by visitors to your public portfolio</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {contacts.length === 0 ? (
+                <p className="text-sm text-[#6B7280] text-center py-8">No messages yet. Share your portfolio to get started.</p>
+              ) : (
+                <div className="space-y-3">
+                  {contacts.map((c) => (
+                    <div key={c.id} className="rounded-xl border border-[#00F0FF]/10 bg-[#0C0C18] p-4 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-[#E8E8F0] text-sm">{c.sender_name}</span>
+                        <span className="text-xs text-[#6B7280]">{new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </div>
+                      {c.sender_email && <span className="text-xs text-[#6B7280]">{c.sender_email}</span>}
+                      <p className="text-sm text-[#E8E8F0] mt-1 whitespace-pre-wrap">{c.message}</p>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>

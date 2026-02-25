@@ -262,6 +262,36 @@ remindersRouter.get('/:id/snooze-history', requireAuth, (req: AuthRequest, res) 
 });
 
 // ── Bulk Delete (25.5) ─────────────────────────────────────────────────────
+// ── 38.3: CSV Export ─────────────────────────────────────────────────────────
+remindersRouter.get('/export.csv', requireAuth, (req: AuthRequest, res) => {
+  const status = (req.query.status as string) || 'all';
+  let query = 'SELECT text, datetime, category, priority, channel, recurring, completed FROM reminders WHERE user_id = ?';
+  const params: unknown[] = [req.userId!];
+  if (status === 'active') { query += ' AND completed = 0'; }
+  else if (status === 'completed') { query += ' AND completed = 1'; }
+  query += ' ORDER BY datetime ASC';
+
+  const rows = db.prepare(query).all(...params) as Array<{
+    text: string; datetime: string; category: string; priority: string;
+    channel: string; recurring: string; completed: number;
+  }>;
+
+  const header = 'text,datetime,category,priority,channel,recurring,completed';
+  const lines = rows.map((r) => [
+    `"${r.text.replace(/"/g, '""')}"`,
+    r.datetime,
+    r.category,
+    r.priority,
+    r.channel,
+    r.recurring || '',
+    r.completed ? 'true' : 'false',
+  ].join(','));
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="reminders-${new Date().toISOString().slice(0, 10)}.csv"`);
+  res.send([header, ...lines].join('\n'));
+});
+
 remindersRouter.delete('/bulk', requireAuth, validateBody(bulkReminderDeleteSchema), (req: AuthRequest, res) => {
   const { ids } = req.body as { ids: string[] };
 

@@ -19,6 +19,7 @@ import {
   Wand2,
   AlarmClock,
   Pencil,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -515,7 +516,8 @@ export function RemindersPage() {
               <TabsTrigger value="completed">Completed</TabsTrigger>
             </TabsList>
           </Tabs>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
             {(['all', 'recurring', 'one-off'] as const).map((opt) => (
               <button
                 key={opt}
@@ -531,6 +533,30 @@ export function RemindersPage() {
                 {opt === 'all' ? 'All types' : opt === 'recurring' ? '↺ Recurring' : '• One-off'}
               </button>
             ))}
+            </div>
+            {/* 38.3: CSV export button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs border-[#00F0FF]/20 text-[#6B7280] hover:text-[#00F0FF] hover:border-[#00F0FF]/40"
+              onClick={async () => {
+                try {
+                  const { data } = await reminderService.exportCsv(filter);
+                  const blob = new Blob([data], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `reminders-${new Date().toISOString().slice(0, 10)}.csv`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                } catch { /* ignore */ }
+              }}
+              aria-label="Export reminders as CSV"
+            >
+              <Download className="w-3 h-3 mr-1" />CSV
+            </Button>
           </div>
         </div>
         <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">

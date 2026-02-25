@@ -124,6 +124,8 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     notif_reminders: 'notif_reminders',
     notif_escalations: 'notif_escalations',
     notif_agents: 'notif_agents',
+    notif_daily_briefing: 'notif_daily_briefing',
+    notif_connections: 'notif_connections',
     greeting: 'greeting',
   };
 
