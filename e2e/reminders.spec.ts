@@ -6,20 +6,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Reminders Page', () => {
-  test.beforeEach(async ({ page }, testInfo) => {
-    // Navigate to dashboard first (auth is handled by global setup)
-    await page.goto('/dashboard');
-    await expect(page.getByTestId('dashboard-shell')).toBeVisible();
+  test.beforeEach(async ({ page }) => {
+    // Navigate directly to the reminders page via URL (same pattern as connections/health specs)
+    await page.goto('/dashboard/reminders');
     // Dismiss first-use tour so it doesn't intercept clicks
     await page.evaluate(() => localStorage.setItem('gs_dashboard_tour_seen', '1'));
-    // Navigate to Reminders
-    if (testInfo.project.name === 'chromium') {
-      await page.getByTestId('dashboard-sidebar-desktop').getByText('Reminders').click();
-    } else {
-      await page.getByTestId('mobile-nav-toggle').click();
-      await page.getByTestId('dashboard-sidebar-mobile').getByText('Reminders').click();
-    }
-    // Wait for the page to load
+    // Wait for the dashboard shell and reminders page to load
+    await expect(page.getByTestId('dashboard-shell')).toBeVisible();
     await expect(page.getByTestId('reminders-page')).toBeVisible();
   });
 
