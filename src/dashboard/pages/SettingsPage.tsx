@@ -18,7 +18,8 @@ import {
   Clock,
   Loader2,
   Monitor,
-  LogOut
+  LogOut,
+  Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,7 @@ import type { ApiProvider, MemoryEntry } from '@/types';
 
 export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingConversations, setIsExportingConversations] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
@@ -144,6 +146,27 @@ export function SettingsPage() {
         .catch(() => {});
     }
   }, [activeTab]);
+
+
+  const handleExportConversations = async () => {
+    setIsExportingConversations(true);
+    try {
+      const { data } = await memoryService.getConversationsExport(1000);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `geekspace-conversations-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // silent — export is best-effort
+    } finally {
+      setIsExportingConversations(false);
+    }
+  };
 
   const handleDeleteMemory = async (memoryId: string) => {
     try {
@@ -695,6 +718,31 @@ export function SettingsPage() {
                     Memories improve response quality over time. You can delete any memory at any time.
                   </p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-[#00F0FF]/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Chat History Export</h4>
+                  <p className="text-xs text-[#6B7280]">Download your full conversation history as a JSON file.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportConversations}
+                  disabled={isExportingConversations}
+                  className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10"
+                >
+                  {isExportingConversations ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Export Chat History
+                </Button>
               </div>
             </CardContent>
           </Card>

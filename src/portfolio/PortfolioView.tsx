@@ -110,6 +110,34 @@ export function PortfolioView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolio, firstName, pKey]);
 
+
+  // SEO meta tags — set document.title + og: tags when portfolio loads
+  useEffect(() => {
+    if (!portfolio) return;
+    const name = portfolio.name || username || 'Portfolio';
+    const headline = (portfolio as PortfolioData & { headline?: string }).headline || 'GeekSpace Portfolio';
+    const prevTitle = document.title;
+    document.title = `${name} | GeekSpace`;
+
+    const metas: HTMLMetaElement[] = [];
+    const addMeta = (property: string, content: string) => {
+      const meta = document.createElement('meta');
+      meta.setAttribute('property', property);
+      meta.setAttribute('content', content);
+      document.head.appendChild(meta);
+      metas.push(meta);
+    };
+
+    addMeta('og:title', `${name} — ${headline}`);
+    addMeta('og:description', portfolio.about || `${name}'s professional portfolio on GeekSpace`);
+    addMeta('og:type', 'profile');
+
+    return () => {
+      document.title = prevTitle;
+      metas.forEach((m) => m.parentNode?.removeChild(m));
+    };
+  }, [portfolio, username]);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);

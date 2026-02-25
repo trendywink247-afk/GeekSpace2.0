@@ -341,6 +341,86 @@ adminRouter.get('/dashboard', requireAdminPassword, (_req: Request, res: Respons
   }
 });
 
+
+// ---- /users endpoint (paginated user list) ----
+adminRouter.get('/users', requireAdminToken, (req: Request, res: Response): void => {
+  try {
+    const page = Math.max(1, parseInt(String(req.query.page || '1'), 10));
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit || '20'), 10)));
+    const offset = (page - 1) * limit;
+
+    const users = db.prepare(
+      `SELECT u.id, u.username, u.email, u.created_at, u.plan,
+              COALESCE(s.plan, u.plan, 'free') AS subscription_plan,
+              s.credits_remaining, s.monthly_credits
+       FROM users u
+       LEFT JOIN subscriptions s ON s.user_id = u.id
+       ORDER BY u.created_at DESC
+       LIMIT ? OFFSET ?`
+    ).all(limit, offset) as {
+      id: string; username: string; email: string; created_at: string;
+      plan: string; subscription_plan: string;
+      credits_remaining: number | null; monthly_credits: number | null;
+    }[];
+
+    const total = (db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;
+
+    res.json({ users, total, page, limit, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    logger.error({ err }, 'Admin users query failed');
+    res.status(500).json({ error: 'Users query failed' });
+  }
+});
+
+// ---- /usage endpoint (aggregate LLM usage stats) ----
+adminRouter.get('/usage', requireAdminToken, (_req: Request, res: Response): void => {
+  try {
+    // Total tokens + cost
+    const totals = db.prepare(
+      `SELECT
+         COALESCE(SUM(tokens_in), 0) AS total_tokens_in,
+         COALESCE(SUM(tokens_out), 0) AS total_tokens_out,
+         COALESCE(SUM(cost_usd), 0) AS total_cost_usd
+       FROM usage_events`
+    ).get() as { total_tokens_in: number; total_tokens_out: number; total_cost_usd: number };
+
+    // Breakdown by provider
+    const byProvider = db.prepare(
+      `SELECT provider,
+         COUNT(*) AS event_count,
+         COALESCE(SUM(tokens_in), 0) AS tokens_in,
+         COALESCE(SUM(tokens_out), 0) AS tokens_out,
+         COALESCE(SUM(cost_usd), 0) AS cost_usd
+       FROM usage_events
+       GROUP BY provider
+       ORDER BY cost_usd DESC`
+    ).all() as { provider: string; event_count: number; tokens_in: number; tokens_out: number; cost_usd: number }[];
+
+    // Top 10 users by usage cost
+    const topUsers = db.prepare(
+      `SELECT u.username,
+         COUNT(ue.id) AS event_count,
+         COALESCE(SUM(ue.tokens_in + ue.tokens_out), 0) AS total_tokens,
+         COALESCE(SUM(ue.cost_usd), 0) AS total_cost_usd
+       FROM usage_events ue
+       JOIN users u ON u.id = ue.user_id
+       GROUP BY ue.user_id
+       ORDER BY total_cost_usd DESC
+       LIMIT 10`
+    ).all() as { username: string; event_count: number; total_tokens: number; total_cost_usd: number }[];
+
+    res.json({
+      timestamp: new Date().toISOString(),
+      totals,
+      byProvider,
+      topUsers,
+    });
+  } catch (err) {
+    logger.error({ err }, 'Admin usage query failed');
+    res.status(500).json({ error: 'Usage query failed' });
+  }
+});
+
 // ---- serveAdminDashboard — GET /admin (HTML page) ----
 export function serveAdminDashboard(_req: Request, res: Response): void {
   // Admin dashboard is a standalone HTML file with inline scripts.
