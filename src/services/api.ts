@@ -154,6 +154,12 @@ export const userService = {
 
   getActivity: (limit = 50) =>
     api.get<{ activity: ActivityEntry[] }>(`/activity?limit=${limit}`),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post<{ success: boolean; message: string }>('/users/me/change-password', {
+      currentPassword,
+      newPassword,
+    }),
 };
 
 // ----- Agent -------------------------------------------------
@@ -321,6 +327,9 @@ export const reminderService = {
     api.patch<Reminder>(`/reminders/${id}`, data),
 
   delete: (id: string) => api.delete(`/reminders/${id}`),
+
+  bulkDelete: (ids: string[]) =>
+    api.delete<{ deleted: number }>('/reminders/bulk', { data: { ids } }),
 };
 
 // ----- Portfolio ---------------------------------------------

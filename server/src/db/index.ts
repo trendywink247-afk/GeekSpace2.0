@@ -1196,3 +1196,9 @@ try { db.exec(`ALTER TABLE reminders ADD COLUMN snooze_until INTEGER`); } catch 
 // Phase 16: Performance indexes for hot-path queries
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_activity_log_user_date ON activity_log(user_id, created_at)`); } catch { /* index already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reminders_scheduler ON reminders(user_id, completed, remind_at)`); } catch { /* index already exists */ }
+
+// Phase 25.1: Custom greeting message for agent persona
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN greeting TEXT DEFAULT ''`); } catch { /* column already exists */ }
+
+// Phase 25.3: JWT invalidation on password change — track when password was last changed
+try { db.exec(`ALTER TABLE users ADD COLUMN password_changed_at INTEGER DEFAULT 0`); } catch { /* column already exists */ }

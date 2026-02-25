@@ -124,19 +124,20 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
   const pMeta = personalityMeta[(agent.personality as AgentPersonality) || 'jarvis'] || personalityMeta.jarvis;
 
-  // Initialize with greeting
+  // Initialize with greeting — prefer custom agent greeting if set
+  const resolvedGreeting = agent.greeting?.trim() || pMeta.greeting;
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([
         {
           id: 'greeting',
           role: 'agent',
-          content: pMeta.greeting,
+          content: resolvedGreeting,
           timestamp: new Date(),
         },
       ]);
     }
-  }, [isOpen, messages.length, pMeta.greeting]);
+  }, [isOpen, messages.length, resolvedGreeting]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

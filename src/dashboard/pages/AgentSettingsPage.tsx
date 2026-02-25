@@ -84,6 +84,8 @@ export function AgentSettingsPage() {
     agent.systemPrompt || `You are a helpful personal AI assistant. Be helpful, concise, and proactive. When uncertain, ask for clarification.`
   );
   const [agentName, setAgentName] = useState(agent.name || 'Geek');
+  const [displayName, setDisplayName] = useState(agent.displayName || '');
+  const [greeting, setGreeting] = useState(agent.greeting || '');
   const [selectedPersonality, setSelectedPersonality] = useState<AgentPersonality>(agent.personality || 'jarvis');
   const [selectedModelPref, setSelectedModelPref] = useState<ModelPreference>(agent.model_preference || 'auto');
   const [personalities, setPersonalities] = useState<Record<string, Personality>>({});
@@ -115,10 +117,12 @@ export function AgentSettingsPage() {
       setFormality([agent.formality ?? 50]);
       setSystemPrompt(agent.systemPrompt || '');
       setAgentName(agent.name || 'Geek');
+      setDisplayName(agent.displayName || '');
+      setGreeting(agent.greeting || '');
       setSelectedPersonality(agent.personality || 'jarvis');
       setSelectedModelPref(agent.model_preference || 'auto');
     }
-  }, [agent.id, agent.mode, agent.voice, agent.creativity, agent.formality, agent.systemPrompt, agent.name, agent.personality, agent.model_preference]);
+  }, [agent.id, agent.mode, agent.voice, agent.creativity, agent.formality, agent.systemPrompt, agent.name, agent.personality, agent.model_preference, agent.displayName, agent.greeting]);
 
   const handlePersonalitySwitch = async (id: AgentPersonality) => {
     const prev = selectedPersonality;
@@ -156,6 +160,8 @@ export function AgentSettingsPage() {
     try {
       await updateAgent({
         name: agentName,
+        displayName: displayName || undefined,
+        greeting: greeting || undefined,
         mode: selectedStyle,
         voice: selectedVoice as 'professional' | 'friendly' | 'witty',
         creativity: creativity[0],
@@ -200,13 +206,28 @@ export function AgentSettingsPage() {
             />
           </div>
           <div>
-            <label className="text-sm text-[#6B7280] mb-2 block">Public Display Name</label>
+            <label className="text-sm text-[#6B7280] mb-2 block">Display Name</label>
             <Input
-              value={agent.displayName || `${agentName}'s AI`}
-              disabled
-              className="bg-[#06060B] border-[#00F0FF]/20 text-[#6B7280]"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={50}
+              className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+              placeholder="e.g. GS Assistant (max 50 chars)"
             />
           </div>
+        </div>
+        <div className="mt-4">
+          <label className="text-sm text-[#6B7280] mb-2 block">Custom Greeting</label>
+          <Input
+            value={greeting}
+            onChange={(e) => setGreeting(e.target.value)}
+            maxLength={200}
+            className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+            placeholder="e.g. Hey! Ready to help you today. (max 200 chars)"
+          />
+          <p className="text-xs text-[#6B7280] mt-1">
+            Shown at the start of every new chat session.
+          </p>
         </div>
       </div>
 

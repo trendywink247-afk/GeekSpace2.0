@@ -94,6 +94,7 @@ export interface AgentConfig {
   accentColor?: string;   // camelCase for PATCH requests
   accent_color?: string;  // snake_case returned by GET (raw DB row)
   briefing_time?: string; // HH:MM format, e.g. "08:00"
+  greeting?: string;      // Custom greeting shown at chat start (max 200 chars)
 }
 
 export interface Personality {

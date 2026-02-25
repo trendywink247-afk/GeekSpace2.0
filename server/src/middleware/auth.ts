@@ -21,11 +21,22 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   try {
     const payload = verify(header.slice(7), config.jwtSecret, {
       algorithms: ['HS256'],
-    }) as { sub: string };
+    }) as { sub: string; iat?: number };
     req.userId = payload.sub;
 
     // Prevent caching of authenticated responses
     res.set('Cache-Control', 'no-store');
+
+    // 25.3: Reject tokens issued before the user's last password change
+    try {
+      const tokenIat = payload.iat ?? 0;
+      const row = db.prepare('SELECT password_changed_at FROM users WHERE id = ?').get(payload.sub) as { password_changed_at?: number } | undefined;
+      const changedAt = row?.password_changed_at ?? 0;
+      if (changedAt > 0 && tokenIat < changedAt) {
+        res.status(401).json({ error: 'Session expired after password change. Please log in again.' });
+        return;
+      }
+    } catch { /* ignore — column may not exist on first deploy */ }
 
     // Update last_active timestamp (non-blocking, fire-and-forget)
     try {
