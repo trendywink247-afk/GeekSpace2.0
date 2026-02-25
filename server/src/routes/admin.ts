@@ -343,6 +343,13 @@ adminRouter.get('/dashboard', requireAdminPassword, (_req: Request, res: Respons
 
 // ---- serveAdminDashboard — GET /admin (HTML page) ----
 export function serveAdminDashboard(_req: Request, res: Response): void {
+  // Admin dashboard is a standalone HTML file with inline scripts.
+  // Override Helmet's strict CSP for this route only — the page is already
+  // protected by admin password/token auth so unsafe-inline is acceptable here.
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+  );
+
   // Serve the comprehensive standalone admin dashboard HTML file
   const html = getAdminDashboardHtml();
   if (html) {

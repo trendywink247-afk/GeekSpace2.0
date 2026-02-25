@@ -1,79 +1,45 @@
-# Phase 3 Plan — Escalation Verification + UX Polish + Hardening
+# Phase 6 Plan — GeekSpace 2.0
 
-**Branch:** `ai/phase-YYYYMMDD-<topic>` (create when ready)
-**Status:** 📋 Planning
+> Branch: `ai/phase-20260224-usage-snooze-csp`
+> Worktree: `.worktrees/phase-6`
+> Baseline: 147/147 tests passing
 
----
+## Items
 
-## Phase 3 Items (5)
+### 6.1 — Reminder snooze UI
+**Problem:** No snooze option in Reminders dashboard. Users can only delete or edit — can't defer.
+**Fix:** Add snooze popover to each reminder card: 1h / Tomorrow 9am / Custom (datetime-local)
+**Wire to:** existing `snoozeReminder` store action
+**Files:** `src/dashboard/pages/RemindersPage.tsx`
 
-### 1. 🐛 Critical Fix — Verify Escalation Wiring End-to-End
-**Files:** `server/src/routes/webhooks.ts`
-**Context:** The plan file `dapper-hatching-hopcroft.md` describes 3-tier escalation:
-- Tier 1: native Telegram reply (match by notifMessageId)
-- Tier 2: keyword match from pending escalations
-- Tier 3: fallthrough to normal chat
-**Verification:** Audit `handleEscalationReply()` in webhooks.ts — confirm all 3 tiers implemented,
-notifMessageId is read from Redis, and real chat requests (like "build me a page") are NOT
-swallowed as escalation answers.
-**Risk:** Exploratory. May be already complete (per previous session summary). If already done, skip
-to next item.
+### 6.2 — Overview sparklines
+**Problem:** Overview stats cards show single numbers with no trend direction.
+**Fix:** Mini AreaChart (Recharts already in deps) on each stat using `chartData` already in store — no new API call.
+**Files:** `src/dashboard/pages/OverviewPage.tsx`
 
-### 2. 🎨 UI/UX — Reminder Snooze Buttons
-**File:** `src/dashboard/pages/RemindersPage.tsx`
-**Problem:** No snooze option — users can only complete or dismiss a reminder, not defer it.
-**Fix:** Add snooze dropdown on each reminder card:
-- "1 hour" → update datetime to now+1h
-- "Tomorrow" → update datetime to tomorrow at same time
-- "Custom" → open time picker
-**Risk:** Medium — requires API endpoint `PATCH /api/reminders/:id` with `datetime` update, plus UI change.
+### 6.3 — Health SSE delta encoding
+**Problem:** Full snapshot pushed every 15s even if unchanged — bandwidth waste.
+**Fix:** Track `lastSnapshot` fingerprint; only push when data changes or >60s since last full push.
+**Files:** `server/src/routes/health.ts`
 
-### 3. 🛡 Edge-Case Hardening — CSP Nonce Policy
-**File:** `server/src/app.ts`
-**Problem:** Helmet CSP uses `unsafe-inline` for script-src — bypasses XSS protection.
-**Fix:** Use `nonce-based` CSP:
-- Generate per-request nonce via `crypto.randomBytes(16).toString('base64')`
-- Pass to Helmet `scriptSrc: ["'self'", (req, res) => \`'nonce-${res.locals.nonce}'\`]`
-- Note: Frontend is SPA — inline scripts in index.html need nonce attribute or must move to external scripts
-**Risk:** High — may break frontend rendering if any inline scripts exist. Requires careful audit first.
-  Consider doing static audit first and only implementing if no inline scripts found.
+### 6.4 — Admin dashboard inline-onclick audit
+**Problem:** CLAUDE.md notes "Helmet CSP blocks inline onclick — use addEventListener instead."
+Admin dashboard in `admin.ts` uses inline HTML strings — audit for inline handlers and fix.
+**Files:** `server/src/routes/admin.ts`
 
-### 4. 🔧 Dev/Ops — Unit Tests for Action Dedup + Message Router
-**File:** `server/src/test/api/` (new test file: `message-router.test.ts`)
-**Problem:** action dedup logic (Phase 1) and video/image channel handling have no unit coverage.
-**Fix:** Add tests for:
-- Action dedup: same message in finalReply → not appended again
-- `generate_code` → preview URL appended
-- `generate_image` → 🖼️ URL appended
-- `generate_video` → 🎬 Video: URL appended
-**Risk:** Low — test-only, no production code changes.
+### 6.5 — Message-router action dedup tests
+**Problem:** Action dedup path and Telegram channel handling have no unit coverage.
+**Fix:** New test file covering: dedup within 5s window, generate_code preview URL, generate_image URL.
+**Files:** `server/src/test/api/message-router.test.ts`
 
-### 5. 🌟 Feature — Dashboard Overview Sparklines
-**File:** `src/dashboard/pages/OverviewPage.tsx`
-**Problem:** Overview stats cards show single numbers with no trend — hard to know if things are improving.
-**Fix:** Add 7-day sparkline chart (recharts, already in deps) to each stat card:
-- Messages sent per day (7d)
-- Credits used per day (7d)
-- Reminders completed per day (7d)
-**Backend:** Use existing `/api/usage` data, aggregate by day in frontend.
-**Risk:** Low — additive UI change, existing recharts dep.
-
----
-
-## Verification Plan
-
-```bash
-cd server && npm test                            # must stay 113+ passing
-npm run lint && npx tsc --noEmit && npm run build
-cd server && npx tsc --noEmit && npm run build
-./ops/phase-gate.sh --skip-e2e
-```
+## Execution Order
+6.1 → 6.2 → 6.3 → 6.4 → 6.5
 
 ## Definition of Done
-
-- [ ] All items implemented (or skipped with documented reason)
-- [ ] 113+ unit tests passing
-- [ ] lint/typecheck/build green
-- [ ] PR #32 opened with evidence
-- [ ] AI_HANDOFF.md updated
-- [ ] Phase 4 proposed
+- [ ] All 5 items implemented
+- [ ] `cd server && npm test` — all tests pass (≥147 + new ones)
+- [ ] `npx tsc --noEmit` + `cd server && npx tsc --noEmit` — clean
+- [ ] `npm run build` + `cd server && npm run build` — clean
+- [ ] `eslint --max-warnings=0` on changed files — clean
+- [ ] PR #35 opened
+- [ ] `ops/AI_HANDOFF.md` updated
