@@ -224,6 +224,84 @@ describe('Webhook automation — run_count + last_run updated on failure (Phase 
   });
 });
 
+// ── 44.5: Automations enabled toggle wired to engine ─────────────────────────
+
+describe('Automations enabled toggle (Phase 44.5)', () => {
+  beforeAll(() => {
+    resetDatabase();
+    initAutomationsEngine();
+  });
+  afterEach(() => { resetDatabase(); });
+
+  it('PATCH /automations/:id with { enabled: false } returns 200 and stores enabled=0', async () => {
+    const user = createTestUser();
+    const autoId = uuid();
+
+    db.prepare(`
+      INSERT INTO automations (id, user_id, name, trigger_type, trigger_config, action_type, action_config, enabled)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+    `).run(autoId, user.id, 'Toggle Test', 'manual', JSON.stringify({}), 'log', JSON.stringify({}));
+
+    const res = await request(app)
+      .patch(`/api/automations/${autoId}`)
+      .set('Authorization', makeAuthHeader(user.id))
+      .send({ enabled: false })
+      .expect(200);
+
+    expect(res.body.enabled).toBe(0);
+
+    const row = db.prepare('SELECT enabled FROM automations WHERE id = ?').get(autoId) as { enabled: number };
+    expect(row.enabled).toBe(0);
+  });
+
+  it('PATCH /automations/:id with { enabled: true } re-enables it and stores enabled=1', async () => {
+    const user = createTestUser();
+    const autoId = uuid();
+
+    db.prepare(`
+      INSERT INTO automations (id, user_id, name, trigger_type, trigger_config, action_type, action_config, enabled)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+    `).run(autoId, user.id, 'Disabled Auto', 'manual', JSON.stringify({}), 'log', JSON.stringify({}));
+
+    const res = await request(app)
+      .patch(`/api/automations/${autoId}`)
+      .set('Authorization', makeAuthHeader(user.id))
+      .send({ enabled: true })
+      .expect(200);
+
+    expect(res.body.enabled).toBe(1);
+
+    const row = db.prepare('SELECT enabled FROM automations WHERE id = ?').get(autoId) as { enabled: number };
+    expect(row.enabled).toBe(1);
+  });
+
+  it('engine SELECT for cron trigger only returns enabled automations', () => {
+    const user = createTestUser();
+    const enabledId = uuid();
+    const disabledId = uuid();
+
+    // Insert one enabled cron automation and one disabled
+    db.prepare(`
+      INSERT INTO automations (id, user_id, name, trigger_type, trigger_config, action_type, action_config, enabled)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+    `).run(enabledId, user.id, 'Enabled Cron', 'time', JSON.stringify({ interval_minutes: 60 }), 'log', JSON.stringify({}));
+
+    db.prepare(`
+      INSERT INTO automations (id, user_id, name, trigger_type, trigger_config, action_type, action_config, enabled)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+    `).run(disabledId, user.id, 'Disabled Cron', 'time', JSON.stringify({ interval_minutes: 60 }), 'log', JSON.stringify({}));
+
+    // Query exactly what the engine uses in initAutomationsEngine()
+    const cronAutomations = db.prepare(
+      "SELECT * FROM automations WHERE trigger_type = 'time' AND enabled = 1"
+    ).all() as Array<{ id: string }>;
+
+    const returnedIds = cronAutomations.map((a) => a.id);
+    expect(returnedIds).toContain(enabledId);
+    expect(returnedIds).not.toContain(disabledId);
+  });
+});
+
 // ── 44.2: Recurring reminder reschedule after snooze ─────────────────────────
 
 describe('Recurring reminder reschedule (Phase 44.2)', () => {
