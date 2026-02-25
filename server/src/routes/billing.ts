@@ -116,3 +116,16 @@ billingRouter.get('/day-pass', requireAuth, (req: AuthRequest, res) => {
   ).get(req.userId!) as { expires_at: string } | undefined;
   res.json({ active: !!pass, expiresAt: pass?.expires_at || null });
 });
+
+
+// GET /api/billing/events — last 20 usage events for credit history table
+billingRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
+  const events = db.prepare(`
+    SELECT id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool, created_at
+    FROM usage_events
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 20
+  `).all(req.userId!);
+  res.json(events);
+});
