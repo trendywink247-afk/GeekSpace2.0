@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square } from 'lucide-react';
+import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -94,6 +94,8 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isListening, setIsListening] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const speechSupported = typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
@@ -461,6 +463,13 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               </button>
             )}
             <button
+              onClick={() => { setSearchOpen(v => !v); setSearchTerm(''); }}
+              className={`p-2 rounded-lg transition-colors ${searchOpen ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'hover:bg-[#00F0FF]/10 text-[#6B7280]'}`}
+              title="Search messages"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+            <button
               onClick={onClose}
               className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
             >
@@ -469,9 +478,34 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           </div>
         </div>
 
+        {/* Search bar */}
+        {searchOpen && (
+          <div className="px-4 py-2 border-b border-[#00F0FF]/10 bg-[#06060B]">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6B7280]" />
+              <input
+                autoFocus
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search messages…"
+                className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0A0A12] border border-[#00F0FF]/20 text-sm text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/50"
+              />
+              {searchTerm && (
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#6B7280]">
+                  {messages.filter(m => m.content.toLowerCase().includes(searchTerm.toLowerCase())).length} results
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((msg) => (
+          {(searchOpen && searchTerm
+            ? messages.filter(m => m.content.toLowerCase().includes(searchTerm.toLowerCase()))
+            : messages
+          ).map((msg) => (
             <div
               key={msg.id}
               className={`flex ${msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start'}`}

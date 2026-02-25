@@ -1235,7 +1235,8 @@ agentRouter.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
 
 agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-  const conversations = getRecentConversations(req.userId!, limit);
+  const search = req.query.search as string | undefined;
+  const conversations = getRecentConversations(req.userId!, limit, search);
   res.json((conversations as unknown as Record<string, unknown>[]).map(mapConversation));
 });
 

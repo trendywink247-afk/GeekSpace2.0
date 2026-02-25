@@ -8,8 +8,8 @@ _(none currently — all P0 items resolved in Phase 1/2)_
 
 ## 🟠 High (P1)
 
-- [ ] Verify escalation Tier 1/2/3 wiring in `webhooks.ts` — plan file exists (`dapper-hatching-hopcroft.md`); confirm native reply + keyword matching + fallthrough all work end-to-end
-- [ ] Health SSE sends full snapshot every 15s even if unchanged — no delta encoding (high bandwidth waste for dashboards)
+- [x] Verify escalation Tier 1/2/3 wiring in `webhooks.ts` — extracted to service + full unit test coverage (Phase 7)
+- [x] Health SSE sends full snapshot every 15s even if unchanged — delta encoding added (Phase 6)
 
 ## 🟡 Medium (P2)
 
@@ -44,3 +44,8 @@ _(none currently — all P0 items resolved in Phase 1/2)_
 - [x] CapabilitiesPage, DashboardTour, ImageGenPage, VideoGenPage, WebsiteBuilderPage, SocialMediaPage
 - [x] notifMessageId stored in Redis escalation data for Tier1 matching
 - [x] Auto-save generate_code artifacts to portfolios.projects
+- [x] **Phase 7** — Escalation service extraction + unit tests (7 tests covering all tiers)
+- [x] **Phase 7** — Webhook bot-message filtering + oversized text guard
+- [x] **Phase 7** — Build info in /api/health REST response (version, nodeVersion, platform)
+- [x] **Phase 7** — Chat history search in AgentChatPanel (toggle + filter + X-results indicator)
+- [x] **Phase 7** — Backend search: getRecentConversations accepts search? param

@@ -1,13 +1,13 @@
 # AI Handoff — GeekSpace 2.0
 
-> Last updated: 2026-02-24
+> Last updated: 2026-02-25
 > Resume from here in next session.
 
 ## Current State
 
-**Branch:** `ai/phase-20260224-usage-snooze-csp` (worktree at `.worktrees/phase-6`)
-**Phase:** 6 — Implementation Complete ✅ — PR #35 open (draft)
-**Status:** 147/147 tests passing, lint/typecheck/build green — ready to merge
+**Branch:** `ai/phase-20260225-escalation-search-hardening` (worktree at `.worktrees/phase-7`)
+**Phase:** 7 — Implementation Complete ✅ — PR open (draft)
+**Status:** 154/154 tests passing (+7 new), lint/typecheck/build green — ready to merge
 
 ## Deployment History
 
@@ -19,43 +19,47 @@
 | Phase 3 | Snooze, CSP, sparklines, tests | #32 | 2e2ab52 | ✅ live |
 | Phase 4 | Reminders polish, rate limit, coverage, briefing | #33 | b2fbf1b | ✅ merged |
 | Phase 5 | Health stream, connections lifecycle, forgot-pw | #34 | dfc5cd2 | ✅ merged |
+| Phase 6 | SSE delta fix, admin CSP, targeted store actions | #35 | 72b971c | ✅ merged |
+| Phase 7 | Escalation service, webhook hardening, build info, chat search | #36 | — | 🟡 PR open |
 
-## Phase 5 Items Status
+## Phase 7 Items Status
 
 | # | Item | Status |
 |---|------|--------|
-| 5.1 | Health tab + /stream hardening — REST returns all 8 components + topEndpoints | ✅ Done |
-| 5.2 | Memory/Reminders sync audit — traced set_reminder to DB, no bug found | ✅ Done |
-| 5.3 | Connections dashboard targeted refresh — loadIntegrations() replaces loadDashboard() | ✅ Done |
-| 5.4 | Telegram lifecycle fix — unlinkTelegram() on disconnect clears channel_links | ✅ Done |
-| 5.5 | Forgot-password flow — check res.data.success before advancing to OTP step | ✅ Done |
+| 7.1 | Escalation service extraction + 7 unit tests | ✅ Done |
+| 7.2 | Webhook bot-message + oversized text filtering | ✅ Done |
+| 7.3 | Build info in /api/health REST response | ✅ Done |
+| 7.4 | Chat history search in AgentChatPanel | ✅ Done |
+| 7.5 | Ops files updated | ✅ Done |
 
-## Resume Steps
+## Resume Steps (Next Session)
 
-1. `cd ~/GeekSpace2.0 && git worktree list` — confirm `.worktrees/phase-5` is still there
-2. Review PR #34: https://github.com/trendywink247-afk/GeekSpace2.0/pull/34
-3. Merge PR #34 when ready
-4. Start Phase 6 — see ops/AI_BACKLOG.md for next priorities
+1. `cd ~/GeekSpace2.0 && git worktree list`
+2. Review PR for phase-7 and merge when ready
+3. Start Phase 8 — see ops/AI_BACKLOG.md for next priorities
 
-## Key Changes in Phase 5
+## Key Changes in Phase 7
+
+### server/src/services/escalation.ts (NEW)
+- Extracted `EscalationData` interface, `handleEscalationReply()`, `markEscalationAnswered()`
+- `handleEscalationReply` implements 3-tier matching: Tier1 native reply, Tier2 keyword, Tier3 fallthrough
+
+### server/src/routes/webhooks.ts
+- Removed inline escalation code (interface + 2 functions) → now imports from `../services/escalation.js`
+- Added bot-message filter: skip if `update.message?.from?.is_bot === true`
+- Added oversized-text filter: skip if `update.message?.text?.length > 8000`
 
 ### server/src/app.ts
-- Import `getCachedComponents` from `./routes/health.js`
-- `/api/health` REST GET now returns full 8-component status + topEndpoints array
-  (was returning bare `{database:'ok'}` only — caused crash in HealthDashboardPage)
+- `/api/health` REST response now includes `build: { version, nodeVersion, platform }`
 
-### src/dashboard/pages/HealthDashboardPage.tsx
-- Added `?? []` null guards on `snapshot.topEndpoints` in section conditional and `.map()`
-- `fetchRestHealth` normalises `topEndpoints: data.topEndpoints ?? []`
+### server/src/services/memory.ts
+- `getRecentConversations(userId, limit, search?)` — adds `LIKE` filter when search provided
 
-### src/stores/dashboardStore.ts
-- Added `loadIntegrations()` action: targeted refresh of just integrations list
+### server/src/routes/agent.ts
+- `GET /api/conversations` passes `req.query.search` to `getRecentConversations`
 
-### src/dashboard/pages/ConnectionsPage.tsx
-- `closeTelegramDialog` + `closeWhatsAppDialog`: use `loadIntegrations()` not `loadDashboard()`
-- `handleDisconnect`: calls `unlinkTelegram()` for Telegram type to delete channel_links row
-
-### src/services/api.ts + src/onboarding/ForgotPasswordPage.tsx
-- Added `error?` to `requestPasswordReset` response type
-- `handleRequestReset` now checks `!res.data.success && res.data.error` before `setStep('otp')`
-| Phase 6 | SSE delta fix, admin CSP, targeted store actions | #35 | 72b971c | 🟡 PR open |
+### src/components/AgentChatPanel.tsx
+- Added `Search` icon import from lucide-react
+- Search toggle button in header (next to reset/close)
+- Search bar below header with real-time filtering and X-results indicator
+- Messages filtered client-side when search is active
