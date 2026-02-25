@@ -117,6 +117,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const [creditsTotal, setCreditsTotal] = useState<number | null>(null);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [chatRateLimitRemaining, setChatRateLimitRemaining] = useState<number | null>(null);
+  const [chatRateLimitResetAt, setChatRateLimitResetAt] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   // Premium session state
@@ -168,6 +169,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     const fetchRL = () => {
       agentService.getRateLimitStatus().then(({ data }) => {
         setChatRateLimitRemaining(data.remaining);
+        if (data.resetAt) setChatRateLimitResetAt(new Date(data.resetAt).getTime());
       }).catch(() => { /* ignore */ });
     };
     fetchRL();
@@ -615,11 +617,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           </div>
         )}
 
-        {/* Rate limit warning — shown when fewer than 10 chat requests remain in the window (33.4) */}
+        {/* Rate limit warning — shown when fewer than 10 chat requests remain in the window (33.4, 36.4) */}
         {chatRateLimitRemaining !== null && chatRateLimitRemaining < 10 && (
           <div className={`px-4 py-1.5 border-b flex items-center gap-2 ${chatRateLimitRemaining < 5 ? 'bg-[#EF4444]/10 border-[#EF4444]/20' : 'bg-[#F59E0B]/10 border-[#F59E0B]/20'}`}>
             <span className={`text-xs ${chatRateLimitRemaining < 5 ? 'text-[#EF4444]' : 'text-[#F59E0B]'}`}>
-              ⚠ {chatRateLimitRemaining} chat request{chatRateLimitRemaining !== 1 ? 's' : ''} remaining in this 15-min window
+              ⚠ {chatRateLimitRemaining} chat request{chatRateLimitRemaining !== 1 ? 's' : ''} remaining
+              {chatRateLimitResetAt && chatRateLimitResetAt > Date.now() && (
+                <> · resets in {Math.ceil((chatRateLimitResetAt - Date.now()) / 60000)}m</>
+              )}
             </span>
           </div>
         )}
@@ -949,7 +954,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               }
             </p>
             <div className="flex items-center gap-2">
-              {/* Rate limit indicator (33.4) */}
+              {/* Rate limit indicator (33.4, 36.4) */}
               {chatRateLimitRemaining !== null && !premiumSession && !agentOwner && (
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded ${
@@ -959,7 +964,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                       ? 'text-[#F59E0B] bg-[#F59E0B]/10'
                       : 'text-[#6B7280]/50'
                   }`}
-                  title={`${chatRateLimitRemaining}/60 requests remaining in this 15-minute window`}
+                  title={`${chatRateLimitRemaining}/60 requests remaining${chatRateLimitResetAt && chatRateLimitResetAt > Date.now() ? ` · resets in ${Math.ceil((chatRateLimitResetAt - Date.now()) / 60000)}m` : ''}`}
                 >
                   {chatRateLimitRemaining}/60 reqs
                 </span>

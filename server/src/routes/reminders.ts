@@ -198,7 +198,52 @@ remindersRouter.post('/bulk-snooze', requireAuth, (req: AuthRequest, res) => {
   const updPlaceholders = ownedIds.map(() => '?').join(', ');
   db.prepare(`UPDATE reminders SET datetime = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id IN (${updPlaceholders})`).run(newDatetime, ...ownedIds);
 
+  // 36.1: Log each snooze event
+  const logStmt = db.prepare('INSERT INTO snooze_log (id, reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?, ?)');
+  const snoozedAt = Date.now();
+  for (const rid of ownedIds) {
+    logStmt.run(uuid(), rid, req.userId!, snoozedAt, preset, newDatetime);
+  }
+
   res.json({ snoozed: owned.length, newDatetime });
+});
+
+// ── Individual Snooze (36.1) — logs event, mirrors bulk-snooze for one reminder ──
+remindersRouter.post('/:id/snooze', requireAuth, (req: AuthRequest, res) => {
+  const { preset } = req.body as { preset: '1h' | 'tomorrow' | 'next-week' };
+  if (!['1h', 'tomorrow', 'next-week'].includes(preset)) {
+    res.status(400).json({ error: 'Invalid preset' });
+    return;
+  }
+  const existing = db.prepare('SELECT id FROM reminders WHERE id = ? AND user_id = ? AND completed = 0').get(req.params.id, req.userId!) as { id: string } | undefined;
+  if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const now = new Date();
+  let newDatetime: string;
+  if (preset === '1h') {
+    newDatetime = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+  } else if (preset === 'tomorrow') {
+    const d = new Date(now); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); newDatetime = d.toISOString();
+  } else {
+    const d = new Date(now); d.setDate(d.getDate() + 7); d.setHours(9, 0, 0, 0); newDatetime = d.toISOString();
+  }
+
+  db.prepare(`UPDATE reminders SET datetime = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id = ? AND user_id = ?`).run(newDatetime, req.params.id, req.userId!);
+  db.prepare('INSERT INTO snooze_log (id, reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?, ?)').run(uuid(), req.params.id, req.userId!, Date.now(), preset, newDatetime);
+
+  res.json({ snoozed: true, newDatetime });
+});
+
+// ── Snooze History (36.1) ────────────────────────────────────────────────────
+remindersRouter.get('/:id/snooze-history', requireAuth, (req: AuthRequest, res) => {
+  const existing = db.prepare('SELECT id FROM reminders WHERE id = ? AND user_id = ?').get(req.params.id, req.userId!) as { id: string } | undefined;
+  if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const history = db.prepare(
+    'SELECT id, snoozed_at, preset, new_datetime FROM snooze_log WHERE reminder_id = ? ORDER BY snoozed_at DESC LIMIT 10'
+  ).all(req.params.id) as Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }>;
+
+  res.json({ history });
 });
 
 // ── Bulk Delete (25.5) ─────────────────────────────────────────────────────

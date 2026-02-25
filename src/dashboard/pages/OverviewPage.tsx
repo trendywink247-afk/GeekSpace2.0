@@ -19,7 +19,8 @@ import {
   ChevronUp,
   Check,
   X,
-  GripVertical
+  GripVertical,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -199,6 +200,9 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     setTelegramBannerDismissed(true);
     localStorage.setItem('gs_telegram_banner_dismissed', 'true');
   };
+
+  // 36.3: Overdue reminder alert (session-only dismiss)
+  const [overdueAlertDismissed, setOverdueAlertDismissed] = useState(false);
 
   const user = useAuthStore((s) => s.user);
   const { stats, integrations, agent, reminders, chartData, hourlyData } = useDashboardStore();
@@ -530,6 +534,41 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               onClick={dismissTelegramBanner}
               className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors"
               aria-label="Dismiss banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Overdue Reminder Alert (36.3) ─── */}
+      {overdueCount > 0 && !overdueAlertDismissed && (
+        <div
+          className="rounded-2xl border flex items-center gap-4 px-4 py-3"
+          style={{ background: 'rgba(255,45,120,0.06)', borderColor: 'rgba(255,45,120,0.25)' }}
+        >
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,45,120,0.12)' }}>
+            <AlertTriangle className="w-4 h-4 text-[#FF2D78]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#E8E8F0]">
+              {overdueCount} overdue reminder{overdueCount !== 1 ? 's' : ''}
+            </p>
+            <p className="text-xs text-[#6B7280] mt-0.5">You have reminders that have passed their due time.</p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              size="sm"
+              onClick={() => onNavigate?.('reminders')}
+              className="text-xs h-8 px-3"
+              style={{ background: 'rgba(255,45,120,0.15)', color: '#FF2D78', border: '1px solid rgba(255,45,120,0.3)' }}
+            >
+              View
+            </Button>
+            <button
+              onClick={() => setOverdueAlertDismissed(true)}
+              className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors"
+              aria-label="Dismiss alert"
             >
               <X className="w-4 h-4" />
             </button>
