@@ -134,6 +134,10 @@ export const agentConfigUpdateSchema = z.object({
   personality: z.enum(['edith', 'jarvis', 'weebo']).optional(),
   model_preference: z.enum(['auto', 'local', 'cloud', 'premium']).optional(),
   preferred_free_model: z.string().max(200).optional(),
+  briefing_time: z.string().max(10).optional(),
+  notif_reminders: z.number().int().min(0).max(1).optional(),
+  notif_escalations: z.number().int().min(0).max(1).optional(),
+  notif_agents: z.number().int().min(0).max(1).optional(),
 }).strict();
 
 export const userUpdateSchema = z.object({

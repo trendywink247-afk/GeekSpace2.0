@@ -105,6 +105,9 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     personality: 'personality', model_preference: 'model_preference',
     preferred_free_model: 'preferred_free_model',
     briefing_time: 'briefing_time',
+    notif_reminders: 'notif_reminders',
+    notif_escalations: 'notif_escalations',
+    notif_agents: 'notif_agents',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {

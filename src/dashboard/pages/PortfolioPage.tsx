@@ -59,6 +59,9 @@ export function PortfolioPage() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
 
+  // Portfolio visit stats
+  const [portfolioStats, setPortfolioStats] = useState<{ totalViews: number; recentViews: number } | null>(null);
+
   // Magic Generate state
   const [generatingField, setGeneratingField] = useState<string | null>(null);
   const [generatedPreview, setGeneratedPreview] = useState<string | null>(null);
@@ -94,6 +97,11 @@ export function PortfolioPage() {
 
     // Load suggestions
     loadSuggestions();
+
+    // Load portfolio visit stats
+    portfolioService.getStats()
+      .then(({ data }) => setPortfolioStats(data))
+      .catch(() => { /* non-fatal */ });
   }, []);
 
   const loadSuggestions = async () => {
@@ -284,6 +292,12 @@ export function PortfolioPage() {
             Portfolio
           </h1>
           <p className="text-[#6B7280]">Manage your public portfolio</p>
+          {portfolioStats !== null && (
+            <p className="text-xs text-[#6B7280] mt-1">
+              <Eye className="w-3 h-3 inline mr-1 text-[#00F0FF]" />
+              {portfolioStats.totalViews} total views · {portfolioStats.recentViews} this week
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           {user?.username && (

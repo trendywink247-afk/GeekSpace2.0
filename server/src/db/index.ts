@@ -796,6 +796,21 @@ try {
 // Phase 10: preferred_model column on users table (for model picker)
 try { db.exec(`ALTER TABLE users ADD COLUMN preferred_model TEXT DEFAULT 'auto'`); } catch { /* column already exists */ }
 
+// Phase 11: Portfolio visit analytics table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS portfolio_visits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    visited_at TEXT DEFAULT (datetime('now')),
+    visitor_ip TEXT
+  )
+`);
+
+// Phase 11: Telegram notification preference columns on agent_configs
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_reminders INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_escalations INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_agents INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {

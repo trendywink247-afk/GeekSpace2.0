@@ -439,6 +439,12 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           return { tool, success: false, message: 'Owner has no Telegram connected for escalation' };
         }
 
+        // Check escalation notification preference
+        const escalationPref = db.prepare('SELECT notif_escalations FROM agent_configs WHERE user_id = ?').get(ownerUserId) as { notif_escalations?: number } | undefined;
+        if (escalationPref && escalationPref.notif_escalations === 0) {
+          return { tool, success: false, message: 'Owner has disabled escalation notifications' };
+        }
+
         const escalationId = `esc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
         // Send Telegram notification first — we need the messageId for reply matching

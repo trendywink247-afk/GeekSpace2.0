@@ -58,6 +58,13 @@ export function SettingsPage() {
     securityAlerts: user?.notifications?.agentUpdates ?? true,
   });
 
+  // Agent-level notification preferences (saved to agent_configs via PATCH /agent/config)
+  const [agentNotifs, setAgentNotifs] = useState({
+    notif_reminders: 1,
+    notif_escalations: 1,
+    notif_agents: 1,
+  });
+
   const [privacy, setPrivacy] = useState({
     showInDirectory: true,
     showAvatar: true,
@@ -381,6 +388,36 @@ export function SettingsPage() {
               ))}
             </CardContent>
           </Card>
+
+          {/* Telegram Notification Preferences Card */}
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle>Telegram Alerts</CardTitle>
+              <CardDescription className="text-[#6B7280]">Choose which alerts are sent to your Telegram</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {([
+                { key: 'notif_reminders' as const, title: 'Reminder alerts', desc: 'Get notified when a reminder fires' },
+                { key: 'notif_escalations' as const, title: 'Escalation alerts', desc: 'Receive replies to Telegram escalations' },
+                { key: 'notif_agents' as const, title: 'Agent activity alerts', desc: 'Notifications for agent actions and tasks' },
+              ] as const).map((item) => (
+                <div key={item.key} className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-[#E8E8F0] text-sm">{item.title}</div>
+                    <div className="text-xs text-[#6B7280] mt-0.5">{item.desc}</div>
+                  </div>
+                  <Switch
+                    checked={agentNotifs[item.key] === 1}
+                    onCheckedChange={(checked) => {
+                      const updated = { ...agentNotifs, [item.key]: checked ? 1 : 0 };
+                      setAgentNotifs(updated);
+                      void agentService.updateConfig({ [item.key]: checked ? 1 : 0 }).catch(() => {});
+                    }}
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Security Tab */}
@@ -460,9 +497,9 @@ export function SettingsPage() {
             <CardContent className="space-y-3">
               {[
                 { value: 'auto', label: 'Auto (Recommended)', desc: 'GeekSpace picks the best engine for each task' },
-                { value: 'ollama', label: 'Local Engine (Ollama)', desc: 'Fastest, no cloud — runs on-device' },
-                { value: 'openrouter', label: 'Cloud Engine (OpenRouter)', desc: 'More capable, uses your credits' },
-                { value: 'edith', label: 'Premium (Edith / Kimi K2)', desc: 'Most powerful — highest credit cost' },
+                { value: 'local', label: 'Local Engine (Ollama)', desc: 'Fastest, no cloud — runs on-device' },
+                { value: 'cloud', label: 'Cloud Engine (OpenRouter)', desc: 'More capable, uses your credits' },
+                { value: 'premium', label: 'Premium (Edith / Kimi K2)', desc: 'Most powerful — highest credit cost' },
               ].map((opt) => (
                 <button
                   key={opt.value}
