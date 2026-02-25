@@ -103,7 +103,7 @@ remindersRouter.post('/bulk-snooze', requireAuth, (req: AuthRequest, res) => {
 
   const ownedIds = owned.map((r) => r.id);
   const updPlaceholders = ownedIds.map(() => '?').join(', ');
-  db.prepare(`UPDATE reminders SET datetime = ? WHERE id IN (${updPlaceholders})`).run(newDatetime, ...ownedIds);
+  db.prepare(`UPDATE reminders SET datetime = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id IN (${updPlaceholders})`).run(newDatetime, ...ownedIds);
 
   res.json({ snoozed: owned.length, newDatetime });
 });

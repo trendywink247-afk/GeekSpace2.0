@@ -36,6 +36,7 @@ import type { ApiProvider, MemoryEntry } from '@/types';
 export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isExportingConversations, setIsExportingConversations] = useState(false);
+  const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const user = useAuthStore((s) => s.user);
   const [appVersion, setAppVersion] = useState<string | null>(null);
@@ -65,6 +66,7 @@ export function SettingsPage() {
     weeklyDigest: user?.notifications?.weeklyDigest ?? true,
     marketingEmails: false,
     securityAlerts: user?.notifications?.agentUpdates ?? true,
+    reminderNotifs: user?.notifications?.reminders ?? true,
   });
 
   // Agent-level notification preferences (saved to agent_configs via PATCH /agent/config)
@@ -177,6 +179,26 @@ export function SettingsPage() {
     }
   };
 
+  const handleExportMarkdown = async () => {
+    setIsExportingMarkdown(true);
+    try {
+      const { data } = await memoryService.getConversationsMarkdownExport();
+      const blob = new Blob([data as unknown as string], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `geekspace-chat-${new Date().toISOString().slice(0, 10)}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // silent — export is best-effort
+    } finally {
+      setIsExportingMarkdown(false);
+    }
+  };
+
   const handleDeleteMemory = async (memoryId: string) => {
     try {
       await memoryService.delete(memoryId);
@@ -191,6 +213,7 @@ export function SettingsPage() {
     pushNotifications: 'push',
     weeklyDigest: 'weeklyDigest',
     securityAlerts: 'agentUpdates',
+    reminderNotifs: 'reminders',
   };
 
   const saveNotification = async (field: string, value: boolean) => {
@@ -396,6 +419,7 @@ export function SettingsPage() {
               {[
                 { key: 'emailReminders', icon: Mail, title: 'Email Reminders', desc: 'Get reminders via email' },
                 { key: 'pushNotifications', icon: Smartphone, title: 'Push Notifications', desc: 'Browser push notifications' },
+                { key: 'reminderNotifs', icon: Bell, title: 'Reminder Notifications', desc: 'Alerts when reminders are due' },
                 { key: 'weeklyDigest', icon: Globe, title: 'Weekly Digest', desc: 'Weekly summary of activity' },
                 { key: 'securityAlerts', icon: Shield, title: 'Security Alerts', desc: 'Important security notifications' },
               ].map((item) => (
@@ -758,7 +782,7 @@ export function SettingsPage() {
           </Card>
 
           <Card className="border-[#00F0FF]/20">
-            <CardContent className="p-4">
+            <CardContent className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Chat History Export</h4>
@@ -776,7 +800,27 @@ export function SettingsPage() {
                   ) : (
                     <Download className="w-4 h-4 mr-2" />
                   )}
-                  Export Chat History
+                  Export as JSON
+                </Button>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Export as Markdown</h4>
+                  <p className="text-xs text-[#6B7280]">Download chat history as a readable Markdown (.md) file.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportMarkdown}
+                  disabled={isExportingMarkdown}
+                  className="border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
+                >
+                  {isExportingMarkdown ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Export as Markdown
                 </Button>
               </div>
             </CardContent>

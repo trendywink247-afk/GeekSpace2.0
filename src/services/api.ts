@@ -505,6 +505,9 @@ export const memoryService = {
   getConversationsExport: (limit = 1000) =>
     api.get<ConversationEntry[]>(`/agent/conversations?limit=${limit}`),
 
+  getConversationsMarkdownExport: () =>
+    api.get<string>('/agent/conversations/export?format=md', { responseType: 'text' }),
+
   addReaction: (messageId: string, reaction: string) =>
     api.post<{ success: boolean }>('/agent/conversations/reactions', { messageId, reaction }),
 

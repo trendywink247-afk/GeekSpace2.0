@@ -319,6 +319,7 @@ export interface Reminder {
   priority?: ReminderPriority;
   createdBy: ReminderCreatedBy;
   createdAt: string;
+  snoozeCount?: number;
 }
 
 // ----- Portfolio ---------------------------------------------
