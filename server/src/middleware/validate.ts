@@ -75,6 +75,7 @@ export const reminderCreateSchema = z.object({
   recurring: z.enum(['', 'daily', 'weekly', 'monthly']).optional(),
   category: z.enum(['personal', 'work', 'health', 'other', 'general']).optional().default('personal'),
   completed: z.boolean().optional().default(false),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional().default('normal'),
 });
 
 export const automationCreateSchema = z.object({
@@ -210,6 +211,7 @@ export const reminderUpdateSchema = z.object({
   category: z.enum(['personal', 'work', 'health', 'other', 'general']).optional(),
   recurring: z.enum(['', 'daily', 'weekly', 'monthly']).optional(),
   completed: z.boolean().optional(),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
 });
 
 export const automationUpdateSchema = z.object({

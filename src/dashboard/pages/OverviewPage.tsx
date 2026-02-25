@@ -108,6 +108,11 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const [briefingTime, setBriefingTime] = useState('08:00');
   const [briefingSaving, setBriefingSaving] = useState(false);
   const [dailyUsage, setDailyUsage] = useState<Array<{ day: string; label: string; messages: number; credits: number }>>([]);
+  const [agentQuality, setAgentQuality] = useState<{
+    satisfactionRate: number | null;
+    trend: 'up' | 'down' | 'neutral';
+    hasEnoughData: boolean;
+  } | null>(null);
 
   // Onboarding checklist state
   const ONBOARDING_ITEMS = [
@@ -212,6 +217,16 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     }).catch(() => {});
     modelService.getChangelog().then(res => {
       setChangelog(res.data.entries);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    agentService.getQuality().then(res => {
+      setAgentQuality({
+        satisfactionRate: res.data.satisfactionRate,
+        trend: res.data.trend,
+        hasEnoughData: res.data.hasEnoughData,
+      });
     }).catch(() => {});
   }, []);
 
@@ -519,6 +534,34 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           </Card>
         ))}
       </div>
+
+      {/* Agent Quality Card — only shown when there are >= 5 reactions */}
+      {agentQuality?.hasEnoughData && agentQuality.satisfactionRate !== null && (
+        <Card
+          style={{
+            background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
+            border: '1px solid rgba(0, 255, 136, 0.15)',
+          }}
+        >
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00FF88]/10 flex-shrink-0">
+              <TrendingUp className="w-5 h-5 text-[#00FF88]" />
+            </div>
+            <div className="flex-1">
+              <div className="text-sm text-[#6B7280]">Agent Satisfaction</div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xl font-bold text-[#00FF88]">{agentQuality.satisfactionRate}%</span>
+                {agentQuality.trend === 'up' && <ArrowUpRight className="w-4 h-4 text-[#00FF88]" />}
+                {agentQuality.trend === 'down' && <ArrowDownRight className="w-4 h-4 text-[#FF2D78]" />}
+                <span className="text-xs text-[#6B7280]">
+                  {agentQuality.trend === 'up' ? 'improving' : agentQuality.trend === 'down' ? 'declining' : 'stable'}
+                </span>
+              </div>
+            </div>
+            <div className="text-xs text-[#6B7280]">Based on your reactions</div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Daily Briefing */}
       <Card

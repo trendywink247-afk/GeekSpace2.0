@@ -114,6 +114,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const [creditsTotal, setCreditsTotal] = useState<number | null>(null);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [chatRateLimitRemaining, setChatRateLimitRemaining] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   // Premium session state
@@ -309,6 +310,12 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         }
         // Attempt SSE streaming
         const res = await agentService.chatStream(content);
+
+        // Capture rate limit remaining from response headers
+        const rlRemaining = res.headers.get('RateLimit-Remaining') ?? res.headers.get('ratelimit-remaining');
+        if (rlRemaining !== null) {
+          setChatRateLimitRemaining(parseInt(rlRemaining, 10));
+        }
 
         if (!res.ok || !res.body) {
           // Stream not available — use regular chat
@@ -561,6 +568,15 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               }`}
               style={{ width: `${Math.min(100, (creditsRemaining / creditsTotal) * 100)}%` }}
             />
+          </div>
+        )}
+
+        {/* Rate limit warning — shown when fewer than 5 chat requests remain in the window */}
+        {chatRateLimitRemaining !== null && chatRateLimitRemaining < 5 && (
+          <div className="px-4 py-1.5 bg-[#F59E0B]/10 border-b border-[#F59E0B]/20 flex items-center gap-2">
+            <span className="text-xs text-[#F59E0B]">
+              ⚠ {chatRateLimitRemaining} chat request{chatRateLimitRemaining !== 1 ? 's' : ''} remaining in this window
+            </span>
           </div>
         )}
 

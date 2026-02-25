@@ -30,7 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
-import { userService, apiKeyService, memoryService, agentService, type UserSession } from '@/services/api';
+import { userService, apiKeyService, memoryService, agentService, versionService, type UserSession } from '@/services/api';
 import type { ApiProvider, MemoryEntry } from '@/types';
 
 export function SettingsPage() {
@@ -38,6 +38,11 @@ export function SettingsPage() {
   const [isExportingConversations, setIsExportingConversations] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const user = useAuthStore((s) => s.user);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    versionService.get().then(({ data }) => setAppVersion(data.version)).catch(() => {});
+  }, []);
   const setUser = useAuthStore((s) => s.setUser);
   const { mode: themeMode, accentColor, accentPresets, setMode: setThemeMode, setAccentColor, setBackground } = useThemeStore();
   const isMobile = useMobileDetect();
@@ -908,6 +913,13 @@ export function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* App Version Footer */}
+      {appVersion && (
+        <div className="mt-6 text-center">
+          <p className="text-xs text-[#4B5563]">GeekSpace v{appVersion}</p>
+        </div>
+      )}
     </div>
   );
 }

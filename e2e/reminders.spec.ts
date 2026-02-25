@@ -85,4 +85,49 @@ test.describe('Reminders Page', () => {
     await page.getByRole('tab', { name: 'Completed' }).click();
     await expect(page.getByText('Complete me E2E').first()).toBeVisible();
   });
+
+  test('should show priority selector in create form', async ({ page }) => {
+    await page.getByTestId('create-reminder-button').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    // Priority selector should be visible in the form
+    await expect(page.getByTestId('priority-selector')).toBeVisible();
+
+    // All 4 priority levels should be present
+    await expect(page.getByTestId('priority-selector').getByText('Low')).toBeVisible();
+    await expect(page.getByTestId('priority-selector').getByText('Normal')).toBeVisible();
+    await expect(page.getByTestId('priority-selector').getByText('High')).toBeVisible();
+    await expect(page.getByTestId('priority-selector').getByText('Urgent')).toBeVisible();
+
+    // Cancel to close
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+  });
+
+  test('should show Select All and Delete Selected for completed reminders', async ({ page }) => {
+    // Create a reminder and mark it as complete
+    await page.getByTestId('create-reminder-button').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByPlaceholder('Enter reminder text...').fill('Bulk delete E2E test');
+    await page.locator('input[type="datetime-local"]').fill('2030-03-01T10:00');
+    await page.getByRole('button', { name: 'Add Reminder' }).last().click();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+    await expect(page.getByText('Bulk delete E2E test').first()).toBeVisible();
+
+    // Mark it as complete
+    await page.getByRole('button', { name: 'Mark as complete' }).first().click();
+
+    // Switch to completed tab
+    await page.getByRole('tab', { name: 'Completed' }).click();
+
+    // The Select All checkbox label should be visible
+    await expect(page.getByText(/Select all completed/)).toBeVisible();
+
+    // Check the individual checkbox on the reminder
+    const bulkCheckbox = page.getByRole('checkbox', { name: 'Select reminder for bulk delete' }).first();
+    await bulkCheckbox.check();
+
+    // Delete Selected button should now appear
+    await expect(page.getByRole('button', { name: /Delete Selected/ })).toBeVisible();
+  });
 });

@@ -305,6 +305,7 @@ export interface Integration {
 export type ReminderChannel = 'telegram' | 'email' | 'push' | 'whatsapp';
 export type ReminderCategory = 'personal' | 'work' | 'health' | 'other';
 export type ReminderCreatedBy = 'user' | 'agent' | 'automation' | 'pico-fleet';
+export type ReminderPriority = 'low' | 'normal' | 'high' | 'urgent';
 
 export interface Reminder {
   id: string;
@@ -315,6 +316,7 @@ export interface Reminder {
   recurring?: 'daily' | 'weekly' | 'monthly';
   completed: boolean;
   category: ReminderCategory;
+  priority?: ReminderPriority;
   createdBy: ReminderCreatedBy;
   createdAt: string;
 }
