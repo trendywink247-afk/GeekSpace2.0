@@ -138,6 +138,22 @@ describe('Portfolio view dedup — POST /api/portfolio/:username/view (Phase 43.
   });
 });
 
+// ── 43.9: DB performance indexes ──────────────────────────────────────────
+
+describe('Phase 43.9 — DB indexes', () => {
+  it('all performance indexes exist', () => {
+    const indexes = db.prepare(
+      "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'"
+    ).all() as { name: string }[];
+    const names = new Set(indexes.map((i) => i.name));
+    expect(names.has('idx_reminders_user_due')).toBe(true);
+    expect(names.has('idx_activity_log_user_created')).toBe(true);
+    expect(names.has('idx_snooze_log_reminder')).toBe(true);
+    expect(names.has('idx_conversations_user_updated')).toBe(true);
+    expect(names.has('idx_automations_user_active')).toBe(true);
+  });
+});
+
 // ── 43.8: XSS hardening — stripDangerousHtml in portfolio fields ───────────
 
 describe('XSS hardening — portfolio bio + projects + contact form (Phase 43.8)', () => {

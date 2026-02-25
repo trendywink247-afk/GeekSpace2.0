@@ -1301,3 +1301,15 @@ try { db.exec(`ALTER TABLE reminders ADD COLUMN remind_before_sent_at INTEGER`);
 
 // Phase 41.6: Custom snooze presets for agent config
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN snooze_presets TEXT DEFAULT '[]'`); } catch { /* column already exists */ }
+
+// Phase 43.9: Performance indexes for hot-path compound queries
+// reminders: user + due-date compound lookup (column is "datetime", not "due_at")
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reminders_user_due ON reminders(user_id, datetime)`); } catch { /* already exists */ }
+// activity_log: user + created_at DESC for sorted activity feeds
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_activity_log_user_created ON activity_log(user_id, created_at DESC)`); } catch { /* already exists */ }
+// snooze_log: reminder + snoozed_at DESC (may already exist from Phase 36; IF NOT EXISTS is safe)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_snooze_log_reminder ON snooze_log(reminder_id, snoozed_at DESC)`); } catch { /* already exists */ }
+// generated_outputs: user + created_at DESC (conversations table does not exist; closest equivalent)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_conversations_user_updated ON generated_outputs(user_id, created_at DESC)`); } catch { /* already exists */ }
+// automations: user + enabled flag compound lookup (column is "enabled", not "is_active")
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_automations_user_active ON automations(user_id, enabled)`); } catch { /* already exists */ }
