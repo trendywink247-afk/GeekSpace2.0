@@ -811,6 +811,13 @@ try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_reminders INTEGER DEFA
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_escalations INTEGER DEFAULT 1`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_agents INTEGER DEFAULT 1`); } catch { /* column already exists */ }
 
+// Phase 31: Per-type notification toggles (connections + weekly digest)
+try { db.exec(`ALTER TABLE users ADD COLUMN notification_connections INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE users ADD COLUMN notification_digest INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+
+// Phase 31: Reminder recurrence column (daily/weekly/monthly)
+try { db.exec(`ALTER TABLE reminders ADD COLUMN recurrence TEXT`); } catch { /* column already exists */ }
+
 // Phase 12: Index for portfolio_visits queries (user_id + date range scans)
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_portfolio_visits_user_date ON portfolio_visits(user_id, visited_at)`); } catch { /* index already exists */ }
 

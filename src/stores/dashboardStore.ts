@@ -67,10 +67,10 @@ interface DashboardStore {
   loadIntegrations: () => Promise<void>;
   loadReminders: () => Promise<void>;
   updateAgent: (data: Partial<AgentConfig>) => Promise<void>;
-  addReminder: (data: { text: string; datetime: string; channel: ReminderChannel; recurring?: string; category: ReminderCategory; priority?: string }) => Promise<void>;
+  addReminder: (data: { text: string; datetime: string; channel: ReminderChannel; recurring?: string; recurrence?: string; category: ReminderCategory; priority?: string }) => Promise<void>;
   toggleReminder: (id: string) => Promise<void>;
   snoozeReminder: (id: string, newDatetime: string) => Promise<void>;
-  updateReminder: (id: string, data: Partial<Pick<Reminder, 'text' | 'datetime' | 'channel' | 'recurring' | 'category' | 'priority'>>) => Promise<void>;
+  updateReminder: (id: string, data: Partial<Pick<Reminder, 'text' | 'datetime' | 'channel' | 'recurring' | 'recurrence' | 'category' | 'priority'>>) => Promise<void>;
   deleteReminder: (id: string) => Promise<void>;
   bulkSnoozeReminders: (ids: string[], preset: '1h' | 'tomorrow' | 'next-week') => Promise<void>;
   connectIntegration: (type: string) => Promise<void>;

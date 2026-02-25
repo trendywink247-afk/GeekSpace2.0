@@ -19,7 +19,9 @@ import {
   Loader2,
   Monitor,
   LogOut,
-  Download
+  Download,
+  Users,
+  CalendarDays
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,6 +69,8 @@ export function SettingsPage() {
     marketingEmails: false,
     securityAlerts: user?.notifications?.agentUpdates ?? true,
     reminderNotifs: user?.notifications?.reminders ?? true,
+    connectionAlerts: (user?.notifications as Record<string, boolean> | undefined)?.connections ?? true,
+    weeklyDigestToggle: (user?.notifications as Record<string, boolean> | undefined)?.digest ?? true,
   });
 
   // Agent-level notification preferences (saved to agent_configs via PATCH /agent/config)
@@ -214,6 +218,8 @@ export function SettingsPage() {
     weeklyDigest: 'weeklyDigest',
     securityAlerts: 'agentUpdates',
     reminderNotifs: 'reminders',
+    connectionAlerts: 'connections',
+    weeklyDigestToggle: 'digest',
   };
 
   const saveNotification = async (field: string, value: boolean) => {
@@ -292,7 +298,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div data-testid="settings-page" className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
@@ -422,6 +428,8 @@ export function SettingsPage() {
                 { key: 'reminderNotifs', icon: Bell, title: 'Reminder Notifications', desc: 'Alerts when reminders are due' },
                 { key: 'weeklyDigest', icon: Globe, title: 'Weekly Digest', desc: 'Weekly summary of activity' },
                 { key: 'securityAlerts', icon: Shield, title: 'Security Alerts', desc: 'Important security notifications' },
+                { key: 'connectionAlerts', icon: Users, title: 'Connection Request Alerts', desc: 'Notifications for new connection requests' },
+                { key: 'weeklyDigestToggle', icon: CalendarDays, title: 'Weekly Digest Email', desc: 'Weekly activity digest delivered to your inbox' },
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

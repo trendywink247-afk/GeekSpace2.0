@@ -20,13 +20,13 @@ remindersRouter.get('/', requireAuth, (req: AuthRequest, res) => {
 });
 
 remindersRouter.post('/', requireAuth, validateBody(reminderCreateSchema), (req: AuthRequest, res) => {
-  const { text, datetime, channel, category, recurring, priority } = req.body;
+  const { text, datetime, channel, category, recurring, recurrence, priority } = req.body;
 
   const id = uuid();
   const scheduledFor = datetime ? new Date(datetime).getTime() : Date.now();
 
-  db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, created_by, scheduled_for, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
-    id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', 'user', scheduledFor, priority || 'normal'
+  db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, recurrence, created_by, scheduled_for, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+    id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', recurrence || null, 'user', scheduledFor, priority || 'normal'
   );
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`).run(uuid(), req.userId, text);
 
@@ -41,7 +41,7 @@ remindersRouter.patch('/:id', requireAuth, validateBody(reminderUpdateSchema), (
   const updates = req.body as Record<string, unknown>;
   const fields: string[] = [];
   const values: unknown[] = [];
-  for (const key of ['text', 'datetime', 'channel', 'category', 'recurring', 'completed', 'priority']) {
+  for (const key of ['text', 'datetime', 'channel', 'category', 'recurring', 'completed', 'priority', 'recurrence']) {
     if (updates[key] !== undefined) {
       fields.push(`${key} = ?`);
       values.push(typeof updates[key] === 'boolean' ? (updates[key] ? 1 : 0) : updates[key]);
@@ -54,6 +54,54 @@ remindersRouter.patch('/:id', requireAuth, validateBody(reminderUpdateSchema), (
 
   const reminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(req.params.id);
   res.json(reminder);
+});
+
+// ── Complete endpoint with recurrence support ───────────────────────────────
+remindersRouter.post('/:id/complete', requireAuth, (req: AuthRequest, res) => {
+  const existing = db.prepare('SELECT * FROM reminders WHERE id = ? AND user_id = ?').get(req.params.id, req.userId!) as Record<string, unknown> | undefined;
+  if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
+
+  // Mark this reminder as completed
+  db.prepare('UPDATE reminders SET completed = 1 WHERE id = ? AND user_id = ?').run(req.params.id, req.userId!);
+
+  // If it has a recurrence, create the next occurrence
+  const recurrence = existing.recurrence as string | null | undefined;
+  if (recurrence && ['daily', 'weekly', 'monthly'].includes(recurrence)) {
+    const currentDatetime = new Date((existing.datetime as string) || new Date().toISOString());
+    let nextDatetime: Date;
+    if (recurrence === 'daily') {
+      nextDatetime = new Date(currentDatetime.getTime() + 1 * 24 * 60 * 60 * 1000);
+    } else if (recurrence === 'weekly') {
+      nextDatetime = new Date(currentDatetime.getTime() + 7 * 24 * 60 * 60 * 1000);
+    } else {
+      // monthly: +30 days
+      nextDatetime = new Date(currentDatetime.getTime() + 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const newId = uuid();
+    const scheduledFor = nextDatetime.getTime();
+    db.prepare(
+      'INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, recurrence, created_by, scheduled_for, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(
+      newId,
+      req.userId!,
+      existing.text,
+      nextDatetime.toISOString(),
+      existing.channel || 'push',
+      existing.category || 'general',
+      existing.recurring || '',
+      recurrence,
+      'user',
+      scheduledFor,
+      existing.priority || 'normal',
+    );
+
+    const nextReminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(newId);
+    res.json({ completed: true, nextReminder });
+    return;
+  }
+
+  res.json({ completed: true, nextReminder: null });
 });
 
 remindersRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {

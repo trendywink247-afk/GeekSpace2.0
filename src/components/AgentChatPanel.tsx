@@ -98,6 +98,8 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const [isListening, setIsListening] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchMatchIndex, setSearchMatchIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const speechSupported = typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
@@ -159,6 +161,33 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       }).catch(() => { /* ignore billing fetch errors */ });
     }
   }, [isOpen]);
+
+  // Ctrl+F / Cmd+F to open search
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setSearchOpen(true);
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
+      if (e.key === 'Escape' && searchOpen) {
+        setSearchOpen(false);
+        setSearchTerm('');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, searchOpen]);
+
+  // Auto-focus search input when search opens
+  useEffect(() => {
+    if (searchOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    } else {
+      setSearchMatchIndex(0);
+    }
+  }, [searchOpen]);
 
   // Show toast notification when a new agent message arrives while panel is closed
   const prevAgentMsgCountRef = useRef(0);
@@ -580,24 +609,48 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           </div>
         )}
 
-        {/* Search bar */}
+        {/* Search bar — sticky at top of messages area */}
         {searchOpen && (
-          <div className="px-4 py-2 border-b border-[#00F0FF]/10 bg-[#06060B]">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6B7280]" />
-              <input
-                autoFocus
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search messages…"
-                className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0A0A12] border border-[#00F0FF]/20 text-sm text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/50"
-              />
-              {searchTerm && (
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#6B7280]">
-                  {messages.filter(m => m.content.toLowerCase().includes(searchTerm.toLowerCase())).length} results
-                </span>
-              )}
+          <div className="sticky top-0 z-10 px-4 py-2 border-b border-[#00F0FF]/10 bg-[#06060B]">
+            <div className="relative flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6B7280]" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => { setSearchTerm(e.target.value); setSearchMatchIndex(0); }}
+                  onKeyDown={(e) => {
+                    const matchCount = messages.filter(m => m.content.toLowerCase().includes(searchTerm.toLowerCase())).length;
+                    if (e.key === 'Enter') {
+                      e.shiftKey
+                        ? setSearchMatchIndex(i => (i - 1 + matchCount) % Math.max(matchCount, 1))
+                        : setSearchMatchIndex(i => (i + 1) % Math.max(matchCount, 1));
+                    }
+                  }}
+                  placeholder="Search messages… (Enter to cycle)"
+                  className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0A0A12] border border-[#00F0FF]/20 text-sm text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/50"
+                />
+                {searchTerm && (() => {
+                  const matchCount = messages.filter(m => m.content.toLowerCase().includes(searchTerm.toLowerCase())).length;
+                  return matchCount > 0 ? (
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#00F0FF]">
+                      {Math.min(searchMatchIndex + 1, matchCount)} of {matchCount}
+                    </span>
+                  ) : (
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#6B7280]">
+                      0 results
+                    </span>
+                  );
+                })()}
+              </div>
+              <button
+                onClick={() => { setSearchOpen(false); setSearchTerm(''); }}
+                className="p-1 rounded text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+                title="Close search (Esc)"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         )}
@@ -633,7 +686,16 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         : 'bg-[#06060B] text-[#E8E8F0] border border-[#00F0FF]/20 rounded-bl-md'
                     }`}
                   >
-                    {msg.content}
+                    {searchOpen && searchTerm && msg.content.toLowerCase().includes(searchTerm.toLowerCase())
+                      ? (() => {
+                          const parts = msg.content.split(new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+                          return parts.map((part, i) =>
+                            part.toLowerCase() === searchTerm.toLowerCase()
+                              ? <mark key={i} className="bg-[#F59E0B]/40 text-[#F59E0B] rounded px-0.5">{part}</mark>
+                              : part
+                          );
+                        })()
+                      : msg.content}
                     {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-[#00F0FF] ml-0.5 animate-pulse rounded-sm" />}
                     {msg.provider && !msg.isStreaming && (
                       <span className="block mt-1.5 text-[10px] text-[#6B7280]/60 flex items-center gap-1">

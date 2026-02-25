@@ -200,7 +200,7 @@ export function LoginPage() {
           </div>
 
           {/* Glass form card with plasma border */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form data-testid="login-form" onSubmit={handleSubmit} className="space-y-4">
             <div
               className="p-6 rounded-2xl space-y-4 plasma-border"
               style={{
