@@ -1,20 +1,5 @@
 # AI Phase Plan
 
-## Phase 28 — COMPLETE ✓
-**Branch:** `ai/phase-20260225-polish-accessibility-final`
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/57
-**Tests:** 262/262 passing
-
-| Item | Description | Status |
-|------|-------------|--------|
-| 28.1 | Accessibility: Skip-to-main link + id="main-content" | Done |
-| 28.2 | Portfolio Template Gallery: richer previews + 2 coming-soon cards | Done |
-| 28.3 | Server Graceful Shutdown: httpServer.close() drains in-flight requests | Done |
-| 28.4 | Unit Tests: invites.test.ts (5 tests) + reminder priority tests (3 tests) | Done |
-| 28.5 | Dashboard Compact Mode: authStore + gs-compact CSS + Settings toggle | Done |
-
----
-
 ## Phase 29 — COMPLETE ✓
 **Branch:** `ai/phase-20260225-phase29-connect-preview-reliability`
 **Tests:** 271/271 passing
@@ -31,9 +16,7 @@
 
 ## Phase 30 — COMPLETE ✓
 **Theme:** Notifications + export polish + reliability
-**Branch:** `ai/phase-20260225-phase30-notifications-export-reliability`
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/59
-**Tests:** 277/277 passing
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/59 | **Tests:** 277/277
 
 | # | Item | Type | Status |
 |---|------|------|--------|
@@ -47,9 +30,7 @@
 
 ## Phase 31 — COMPLETE ✓
 **Theme:** Polish + search + recurrence
-**Branch:** `ai/phase-20260225-phase31-polish-search-recurrence`
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/60
-**Tests:** 287/287 passing
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/60 | **Tests:** 287/287
 
 | # | Item | Type | Status |
 |---|------|------|--------|
@@ -61,11 +42,9 @@
 
 ---
 
-## Phase 32 — IN PROGRESS
+## Phase 32 — COMPLETE ✓
 **Theme:** Mobile polish + analytics + session management
-**Branch:** `ai/phase-20260225-phase32-sparklines-badges-analytics`
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/61
-**Tests:** 290/290 passing
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/61 | **Tests:** 290/290
 
 | # | Item | Type | Status |
 |---|------|------|--------|
@@ -77,13 +56,29 @@
 
 ---
 
-## Phase 33 — PROPOSED
+## Phase 33 — IN PROGRESS
 **Theme:** AI improvements + portfolio + onboarding
+**Branch:** `ai/phase-20260225-phase33-nlp-portfolio-onboarding`
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/62
+**Tests:** 290/290 passing
+
+| # | Item | Type | Status |
+|---|------|------|--------|
+| 33.1 | Reminder NLP input (already existed in reminderParser.ts) | UX | Done |
+| 33.2 | Portfolio project drag-to-reorder (HTML5 DnD, local state) | UX | Done |
+| 33.3 | Telegram connect banner on OverviewPage (dismissible) | UX | Done |
+| 33.4 | Rate limit status endpoint + chat footer indicator | Dev/Ops | Done |
+| 33.5 | Request ID propagated to error responses + chat errors | Hardening | Done |
+
+---
+
+## Phase 34 — PROPOSED
+**Theme:** Data, snooze UX, automation improvements
 
 | # | Item | Type | Priority |
 |---|------|------|----------|
-| 33.1 | Reminder NLP input (parse "tomorrow 3pm" → datetime) | UX | High |
-| 33.2 | Portfolio project drag-to-reorder | UX | Medium |
-| 33.3 | Onboarding wizard step for connecting Telegram | UX | Medium |
-| 33.4 | LLM response streaming (SSE) for chat messages | Feature | Medium |
-| 33.5 | Rate limit dashboard (show remaining requests per window) | Dev/Ops | Low |
+| 34.1 | Reminder snooze quick-actions (1h/tomorrow/next week from card) | UX | High |
+| 34.2 | Overview real sparkline data (7-day from activity log) | UX | High |
+| 34.3 | Portfolio view-count tracking (per-project analytics) | Feature | Medium |
+| 34.4 | Chat export per-conversation (not just all conversations) | Feature | Medium |
+| 34.5 | Webhook test-fire button in Automations page | Dev/Ops | Low |
