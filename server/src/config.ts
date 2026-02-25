@@ -137,6 +137,13 @@ export const config = {
   resendApiKey: process.env.RESEND_API_KEY || '',
   resendFromEmail: optional('RESEND_FROM_EMAIL', 'agent@agentin.chat'),
 
+  // SMTP (optional — used if Resend not configured)
+  smtpHost: process.env.SMTP_HOST || '',
+  smtpPort: optionalInt('SMTP_PORT', 587),
+  smtpUser: process.env.SMTP_USER || '',
+  smtpPass: process.env.SMTP_PASS || '',
+  smtpFrom: optional('SMTP_FROM', 'noreply@geekspace.app'),
+
   // Admin dashboard
   adminDashboardPassword: process.env.ADMIN_DASHBOARD_PASSWORD || '',
   adminToken: optional('ADMIN_TOKEN', ''),
