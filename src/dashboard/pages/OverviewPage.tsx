@@ -21,7 +21,8 @@ import {
   X,
   GripVertical,
   AlertTriangle,
-  Flame
+  Flame,
+  Copy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -147,6 +148,8 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const [activityStats, setActivityStats] = useState<{ date: string; messages: number; reminders: number }[]>([]);
   // 50.3: Reminder streak widget
   const [reminderStreak, setReminderStreak] = useState<{ streak: number; longestStreak: number; completedToday: boolean } | null>(null);
+  // 51.4: Copy briefing state
+  const [briefingCopied, setBriefingCopied] = useState(false);
 
   // 35.2: Stat card reorder (drag-to-reorder, persisted in localStorage)
   const [statOrder, setStatOrder] = useState<number[]>(() => {
@@ -830,9 +833,26 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         }}
       >
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#FFD700]" />
-            Daily Briefing
+          <CardTitle className="text-lg font-semibold flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#FFD700]" />
+              Daily Briefing
+            </span>
+            {/* 51.4: Copy briefing content to clipboard */}
+            {latestBriefing && (
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(latestBriefing.content).then(() => {
+                    setBriefingCopied(true);
+                    setTimeout(() => setBriefingCopied(false), 1500);
+                  }).catch(() => {});
+                }}
+                className="text-[#6B7280] hover:text-[#FFD700] transition-colors p-1 rounded"
+                aria-label="Copy briefing"
+              >
+                {briefingCopied ? <Check className="w-4 h-4 text-[#00FF88]" /> : <Copy className="w-4 h-4" />}
+              </button>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>

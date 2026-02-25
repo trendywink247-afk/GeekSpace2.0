@@ -241,6 +241,15 @@ export function createApp(): express.Application {
     app.use('/api/admin', adminLimiter);
   }
 
+  // 51.7: X-RateLimit-Policy headers — always present so clients can discover limits
+  // even in test/dev environments where actual rate limiting is disabled
+  app.use('/api/auth/login', (_req, res, next) => { res.set('X-RateLimit-Policy', `${config.rateLimitAuthMax};w=900`); next(); });
+  app.use('/api/auth/demo', (_req, res, next) => { res.set('X-RateLimit-Policy', `${config.rateLimitAuthMax};w=900`); next(); });
+  app.use('/api/auth/signup', (_req, res, next) => { res.set('X-RateLimit-Policy', '5;w=900'); next(); });
+  app.use('/api/agent/chat', (_req, res, next) => { res.set('X-RateLimit-Policy', '60;w=900'); next(); });
+  app.use('/api/agent/chat/public', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
+  app.use('/api/dashboard/contact', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
+
   // ---- Health check ----
   app.get('/api/health', (_req, res) => {
     // 47.1: Live DB check on every call so db status is always fresh (not just cached probe)

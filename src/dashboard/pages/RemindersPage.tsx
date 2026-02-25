@@ -216,6 +216,9 @@ export function RemindersPage() {
   const [snoozeOpenId, setSnoozeOpenId] = useState<string | null>(null);
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+  // 51.2: Recurring reminder edit — choice dialog state
+  const [recurringEditChoice, setRecurringEditChoice] = useState<Reminder | null>(null);
+  const [editAsOneOff, setEditAsOneOff] = useState(false);
 
   // Bulk delete state (25.5)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -277,7 +280,12 @@ export function RemindersPage() {
     setSnoozeOpenId(null);
   };
 
-  const handleEditClick = (reminder: Reminder) => {
+  const handleEditClick = (reminder: Reminder, skipChoiceDialog = false) => {
+    // 51.2: If recurring and user hasn't chosen yet, show the choice dialog first
+    if (reminder.recurrence && !skipChoiceDialog) {
+      setRecurringEditChoice(reminder);
+      return;
+    }
     const pad = (n: number) => String(n).padStart(2, '0');
     const d = new Date(reminder.datetime);
     const localStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -303,17 +311,29 @@ export function RemindersPage() {
 
   const handleEditSave = async () => {
     if (!editingReminder || !newReminder.text || !newReminder.datetime) return;
-    await updateReminder(editingReminder.id, {
-      text: newReminder.text,
-      datetime: new Date(newReminder.datetime).toISOString(),
-      channel: newReminder.channel,
-      recurring: (newReminder.recurring || undefined) as Reminder['recurring'],
-      recurrence: (newReminder.recurrence || undefined) as Reminder['recurrence'],
-      category: newReminder.category,
-      priority: newReminder.priority,
-    });
+    if (editAsOneOff) {
+      // 51.2: "This occurrence only" — create a new one-off reminder; original recurring reminder is untouched
+      await addReminder({
+        text: newReminder.text,
+        datetime: new Date(newReminder.datetime).toISOString(),
+        channel: newReminder.channel,
+        category: newReminder.category,
+        priority: newReminder.priority,
+      });
+    } else {
+      await updateReminder(editingReminder.id, {
+        text: newReminder.text,
+        datetime: new Date(newReminder.datetime).toISOString(),
+        channel: newReminder.channel,
+        recurring: (newReminder.recurring || undefined) as Reminder['recurring'],
+        recurrence: (newReminder.recurrence || undefined) as Reminder['recurrence'],
+        category: newReminder.category,
+        priority: newReminder.priority,
+      });
+    }
     setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', recurrence: '', category: 'personal', priority: 'normal' });
     setEditingReminder(null);
+    setEditAsOneOff(false);
     setIsAddDialogOpen(false);
   };
 
@@ -1587,6 +1607,46 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
       >
         +
       </button>
+
+      {/* 51.2: Recurring reminder edit — choose scope before opening edit dialog */}
+      {recurringEditChoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.72)' }}>
+          <div className="w-full max-w-sm rounded-2xl border border-[#BF5FFF]/30 p-6" style={{ background: '#06060B' }}>
+            <h3 className="text-base font-semibold text-[#E8E8F0] mb-1">Edit recurring reminder</h3>
+            <p className="text-sm text-[#6B7280] mb-5">This is a <span className="text-[#BF5FFF]">{recurringEditChoice.recurrence}</span> reminder. What would you like to edit?</p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  const r = recurringEditChoice;
+                  setRecurringEditChoice(null);
+                  setEditAsOneOff(true);
+                  handleEditClick(r, true);
+                }}
+                className="w-full py-2.5 rounded-xl bg-[#BF5FFF]/10 border border-[#BF5FFF]/30 hover:bg-[#BF5FFF]/20 text-[#BF5FFF] text-sm font-medium transition-colors"
+              >
+                This occurrence only
+              </button>
+              <button
+                onClick={() => {
+                  const r = recurringEditChoice;
+                  setRecurringEditChoice(null);
+                  setEditAsOneOff(false);
+                  handleEditClick(r, true);
+                }}
+                className="w-full py-2.5 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/30 hover:bg-[#00F0FF]/20 text-[#00F0FF] text-sm font-medium transition-colors"
+              >
+                All future occurrences
+              </button>
+              <button
+                onClick={() => setRecurringEditChoice(null)}
+                className="w-full py-2 text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

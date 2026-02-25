@@ -109,6 +109,8 @@ export function AutomationsPage() {
   const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string } | null>(null);
   // 37.4: Dead-letter log
   const [deadLetters, setDeadLetters] = useState<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>>([]);
+  // 51.5: Track per-automation trigger errors (auto-clear after 4s)
+  const [triggerErrors, setTriggerErrors] = useState<Record<string, string>>({});
 
   const resetForm = () => {
     setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true });
@@ -178,7 +180,13 @@ export function AutomationsPage() {
   };
 
   const handleTrigger = async (id: string) => {
-    await triggerAutomation(id);
+    try {
+      await triggerAutomation(id);
+    } catch {
+      // 51.5: Show per-automation error message for 4s
+      setTriggerErrors((prev) => ({ ...prev, [id]: 'Trigger failed — check webhook URL or retry' }));
+      setTimeout(() => setTriggerErrors((prev) => { const next = { ...prev }; delete next[id]; return next; }), 4000);
+    }
     // 49.2/49.5: Refresh logs and dead-letters after trigger so the panel shows the new log entry
     automationLogService.list(20).then((r) => setLogs(r.data)).catch(() => {});
     automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => {});
@@ -467,6 +475,10 @@ export function AutomationsPage() {
                       </Button>
                       </div>
                     </div>
+                    {/* 51.5: Trigger error feedback — auto-clears after 4s */}
+                    {triggerErrors[auto.id] && (
+                      <p className="text-xs text-[#FF6161] mt-2 pl-1">{triggerErrors[auto.id]}</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

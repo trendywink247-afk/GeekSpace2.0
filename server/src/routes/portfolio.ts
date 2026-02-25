@@ -7,6 +7,7 @@ import { db } from '../db/index.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { firePortfolioVisitAutomations } from '../services/automations-engine.js';
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 
 export const portfolioRouter = Router();
 
@@ -390,6 +391,8 @@ portfolioRouter.post('/:username/contact', async (req, res) => {
     const rlRaw = await cacheGet(rlKey);
     const rlCount = rlRaw ? parseInt(rlRaw, 10) : 0;
     if (rlCount >= 3) {
+      // 51.9: Log rate-limit block event
+      logger.warn({ event: 'portfolio_contact_blocked', username, ip, reason: 'rate_limit' }, 'Portfolio contact rate-limited');
       res.status(429).json({ error: 'Too many requests, please try again later' });
       return;
     }
@@ -401,6 +404,8 @@ portfolioRouter.post('/:username/contact', async (req, res) => {
     try {
       const nonceOwner = await cacheGet(`portfolio:nonce:${nonce}`);
       if (!nonceOwner || nonceOwner !== username) {
+        // 51.9: Log nonce failure event
+        logger.warn({ event: 'portfolio_contact_blocked', username, ip, reason: 'nonce_invalid' }, 'Portfolio contact nonce invalid or expired');
         res.status(422).json({ error: 'Invalid or expired form token. Please reload and try again.' });
         return;
       }
@@ -418,6 +423,9 @@ portfolioRouter.post('/:username/contact', async (req, res) => {
   db.prepare(
     'INSERT INTO portfolio_contacts (id, username, user_id, sender_name, sender_email, message) VALUES (?, ?, ?, ?, ?, ?)'
   ).run(id, username, user.id, sanitizedSenderName.trim(), senderEmail?.trim() || null, sanitizedMessage.trim());
+
+  // 51.9: Log successful contact submission
+  logger.info({ event: 'portfolio_contact_success', username, ip, hasEmail: !!senderEmail }, 'Portfolio contact message received');
 
   // Notify owner via Telegram if linked
   const link = db.prepare(
