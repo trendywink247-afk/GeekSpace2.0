@@ -360,7 +360,36 @@ export function RemindersPage() {
     }
   };
 
-  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+  // ── Date grouping helper ─────────────────────────────────────────────────────
+function groupRemindersByDate(reminders: Reminder[]) {
+  const now = Date.now();
+  const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
+  const tomorrowStart = new Date(todayEnd); tomorrowStart.setDate(tomorrowStart.getDate() + 1); tomorrowStart.setHours(0, 0, 0, 0);
+  const tomorrowEnd = new Date(tomorrowStart); tomorrowEnd.setHours(23, 59, 59, 999);
+  const weekEnd = new Date(todayEnd); weekEnd.setDate(weekEnd.getDate() + 7);
+
+  const groups: { label: string; items: Reminder[] }[] = [
+    { label: 'Overdue',    items: [] },
+    { label: 'Today',      items: [] },
+    { label: 'Tomorrow',   items: [] },
+    { label: 'This Week',  items: [] },
+    { label: 'Later',      items: [] },
+  ];
+
+  for (const r of reminders) {
+    const dueMs = new Date(r.datetime).getTime();
+    if (dueMs < now)                          groups[0].items.push(r);
+    else if (dueMs <= todayEnd.getTime())     groups[1].items.push(r);
+    else if (dueMs <= tomorrowEnd.getTime())  groups[2].items.push(r);
+    else if (dueMs <= weekEnd.getTime())      groups[3].items.push(r);
+    else                                       groups[4].items.push(r);
+  }
+
+  return groups.filter(g => g.items.length > 0);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
 
   const filteredReminders = reminders.filter(r => {
     if (filter === 'active') return !r.completed;
@@ -775,12 +804,246 @@ export function RemindersPage() {
               <p className="text-[#6B7280]">No reminders yet</p>
               <p className="text-sm text-[#6B7280]/70 mt-1">Use the quick add above to create your first reminder</p>
             </div>
+          ) : filter === 'active' ? (
+            // Grouped view for active reminders
+            groupRemindersByDate(filteredReminders).map(({ label, items }) => (
+              <div key={label} className="mb-4">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#8888AA]">{label}</span>
+                  <span className="text-xs font-medium text-[#BF5FFF] bg-[#BF5FFF]/10 px-1.5 py-0.5 rounded-full">{items.length}</span>
+                </div>
+                <div className="space-y-2">
+                  {items.map((reminder) => {
+                    const formatted = formatDateTime(reminder.datetime);
+                    const overdue = isOverdue(reminder.datetime);
+                    const dueSoon = isDueSoon(reminder.datetime, reminder.completed);
+                    return (
+                      <Card
+                        key={reminder.id}
+                        className={`bg-[#0C0C18] border transition-all duration-300 ${
+                          completingIds.has(reminder.id)
+                            ? 'border-[#00FF88] bg-[#00FF88]/10'
+                            : reminder.completed
+                            ? 'border-[#00F0FF]/10 opacity-60'
+                            : overdue
+                            ? 'border-[#FF6161]/30'
+                            : 'border-[#00F0FF]/20'
+                        }`}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-4">
+                            {/* Bulk select checkbox — active for snooze, completed for delete */}
+                            {!reminder.completed && (
+                              <Checkbox
+                                checked={selectedActiveIds.has(reminder.id)}
+                                onCheckedChange={() => handleToggleSelectActive(reminder.id)}
+                                aria-label="Select reminder for bulk snooze"
+                                className="mt-1 flex-shrink-0"
+                              />
+                            )}
+                            {reminder.completed && (
+                              <Checkbox
+                                checked={selectedIds.has(reminder.id)}
+                                onCheckedChange={() => handleToggleSelect(reminder.id)}
+                                aria-label="Select reminder for bulk delete"
+                                className="mt-1 flex-shrink-0"
+                              />
+                            )}
+
+                            {/* Date badge */}
+                            <div className={`flex-shrink-0 w-14 text-center p-2 rounded-xl ${
+                              reminder.completed
+                                ? 'bg-[#00F0FF]/10'
+                                : overdue
+                                ? 'bg-[#FF6161]/10'
+                                : 'bg-[#00F0FF]/10'
+                            }`}>
+                              <div className={`text-xs ${overdue ? 'text-[#FF6161]' : 'text-[#00F0FF]'}`}>
+                                {formatted.month}
+                              </div>
+                              <div className={`text-xl font-bold ${overdue ? 'text-[#FF6161]' : 'text-[#E8E8F0]'}`}>
+                                {formatted.day}
+                              </div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p className={`font-medium ${reminder.completed ? 'line-through text-[#6B7280]' : 'text-[#E8E8F0]'}`}>
+                                    {reminder.text}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-[#FF6161]' : 'text-[#6B7280]'}`}>
+                                      <Clock className="w-3 h-3" />
+                                      {formatted.time}
+                                      {overdue && ' (overdue)'}
+                                    </span>
+                                    {dueSoon && (
+                                      <Badge className="text-[10px] px-1.5 py-0 bg-[#00FF88]/15 text-[#00FF88] border-[#00FF88]/30">
+                                        due in {Math.ceil((new Date(reminder.datetime).getTime() - Date.now()) / 3600000)}h
+                                      </Badge>
+                                    )}
+                                    <Badge
+                                      style={{ backgroundColor: `${categoryColors[reminder.category]}20`, color: categoryColors[reminder.category], borderColor: `${categoryColors[reminder.category]}40` }}
+                                      className="text-xs"
+                                    >
+                                      {reminder.category}
+                                    </Badge>
+                                    {reminder.recurring && (
+                                      <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] text-xs">
+                                        <Repeat className="w-3 h-3 mr-1" />
+                                        {reminder.recurring}
+                                      </Badge>
+                                    )}
+                                    {reminder.recurrence && (
+                                      <Badge className="bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs">
+                                        🔁 {reminder.recurrence}
+                                      </Badge>
+                                    )}
+                                    {/* 39.5: priority quick-edit — click to cycle low→normal→high→urgent */}
+                                    {!reminder.completed && (
+                                      <button
+                                        onClick={() => {
+                                          const order: ReminderPriority[] = ['low', 'normal', 'high', 'urgent'];
+                                          const cur = order.indexOf((reminder.priority || 'normal') as ReminderPriority);
+                                          const next = order[(cur + 1) % order.length];
+                                          void updateReminder(reminder.id, { priority: next });
+                                        }}
+                                        title="Click to change priority"
+                                        className="text-xs px-1.5 py-0 rounded-full border transition-colors hover:opacity-80"
+                                        style={{
+                                          backgroundColor: priorityConfig[reminder.priority ?? 'normal']?.bg,
+                                          color: priorityConfig[reminder.priority ?? 'normal']?.color,
+                                          borderColor: `${priorityConfig[reminder.priority ?? 'normal']?.color}40`,
+                                        }}
+                                      >
+                                        {priorityConfig[reminder.priority ?? 'normal']?.label}
+                                      </button>
+                                    )}
+                                    {(reminder.snoozeCount ?? 0) > 0 && (
+                                      <div className="relative">
+                                        <button
+                                          onClick={() => handleShowSnoozeHistory(reminder.id)}
+                                          className="text-xs px-2 py-0.5 rounded-full bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 hover:bg-[#F59E0B]/20 transition-colors"
+                                          aria-label="Show snooze history"
+                                        >
+                                          Snoozed {reminder.snoozeCount}×
+                                        </button>
+                                        {snoozeHistoryId === reminder.id && (
+                                          <div className="absolute left-0 top-full mt-1 z-20 bg-[#0C0C18] border border-[#F59E0B]/30 rounded-xl shadow-lg p-3 min-w-[200px]">
+                                            <p className="text-xs font-medium text-[#F59E0B] mb-2">Snooze history</p>
+                                            {snoozeHistoryLoading ? (
+                                              <div className="w-4 h-4 border-2 border-[#F59E0B]/30 border-t-[#F59E0B] rounded-full animate-spin mx-auto" />
+                                            ) : snoozeHistory.length === 0 ? (
+                                              <p className="text-xs text-[#6B7280]">No history yet</p>
+                                            ) : (
+                                              <>
+                                                <div className="space-y-1.5">
+                                                  {snoozeHistory.map((h) => (
+                                                    <div key={h.id} className="text-xs text-[#6B7280]">
+                                                      <span className="text-[#E8E8F0]">{h.preset}</span>
+                                                      {' → '}
+                                                      {new Date(h.new_datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                                {/* 40.5: Snooze analytics summary */}
+                                                {(() => {
+                                                  const counts: Record<string, number> = {};
+                                                  snoozeHistory.forEach((h) => { counts[h.preset] = (counts[h.preset] ?? 0) + 1; });
+                                                  const mostUsed = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+                                                  return (
+                                                    <p className="text-[10px] text-[#6B7280]/70 border-t border-[#F59E0B]/20 pt-1.5 mt-1.5">
+                                                      Total {snoozeHistory.length} snooze{snoozeHistory.length !== 1 ? 's' : ''}
+                                                      {mostUsed ? <>{' · Most used: '}<span className="text-[#F59E0B]">{mostUsed}</span></> : null}
+                                                    </p>
+                                                  );
+                                                })()}
+                                              </>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => handleComplete(reminder.id)}
+                                    aria-label={reminder.completed ? 'Mark as incomplete' : 'Mark as complete'}
+                                    className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                                      reminder.completed
+                                        ? 'bg-[#00FF88]/20 text-[#00FF88]'
+                                        : 'bg-[#06060B] text-[#6B7280] hover:text-[#00FF88]'
+                                    }`}
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </button>
+                                  {!reminder.completed && (
+                                    <div className="relative">
+                                      <button
+                                        onClick={() => setSnoozeOpenId(snoozeOpenId === reminder.id ? null : reminder.id)}
+                                        aria-label="Snooze reminder"
+                                        className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FFB800] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                      >
+                                        <AlarmClock className="w-4 h-4" />
+                                      </button>
+                                      {snoozeOpenId === reminder.id && (
+                                        <div className="absolute right-0 top-full mt-1 z-10 bg-[#0C0C18] border border-[#FFB800]/30 rounded-xl shadow-lg p-2 flex flex-col gap-1 min-w-[120px]">
+                                          <button onClick={() => handleSnooze(reminder.id, '1h')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">+1 hour</button>
+                                          <button onClick={() => handleSnooze(reminder.id, 'tomorrow')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Tomorrow 9am</button>
+                                          <button onClick={() => handleSnooze(reminder.id, 'next-week')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Next week</button>
+                                          <button onClick={() => setSnoozeCustomId(snoozeCustomId === reminder.id ? null : reminder.id)} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#FFB800] whitespace-nowrap">Custom time…</button>
+                                          {snoozeCustomId === reminder.id && (
+                                            <div className="flex gap-1 mt-1 px-1">
+                                              <input
+                                                type="datetime-local"
+                                                className="text-xs bg-[#06060B] border border-[#FFB800]/30 rounded-lg px-2 py-1 text-[#E8E8F0] flex-1 min-w-0"
+                                                value={snoozeCustomValue}
+                                                onChange={(e) => setSnoozeCustomValue(e.target.value)}
+                                              />
+                                              <button
+                                                onClick={() => handleSnoozeCustom(reminder.id)}
+                                                className="text-xs px-2 py-1 rounded-lg bg-[#FFB800]/20 text-[#FFB800] hover:bg-[#FFB800]/30 whitespace-nowrap"
+                                              >Set</button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  <button
+                                    onClick={() => handleEditClick(reminder)}
+                                    aria-label="Edit reminder"
+                                    className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#BF5FFF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(reminder.id)}
+                                    aria-label="Delete reminder"
+                                    className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FF6161] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
           ) : (
             filteredReminders.map((reminder) => {
               const formatted = formatDateTime(reminder.datetime);
               const overdue = isOverdue(reminder.datetime);
               const dueSoon = isDueSoon(reminder.datetime, reminder.completed);
-              
+
               return (
                 <Card
                   key={reminder.id}
