@@ -153,7 +153,12 @@ export function logConversation(
   ).run(uuid(), userId, role, content, provider, model, requestId);
 }
 
-export function getRecentConversations(userId: string, limit = 10): ConversationEntry[] {
+export function getRecentConversations(userId: string, limit = 10, search?: string): ConversationEntry[] {
+  if (search) {
+    return db.prepare(
+      'SELECT * FROM conversation_log WHERE user_id = ? AND content LIKE ? ORDER BY created_at DESC LIMIT ?'
+    ).all(userId, `%${search}%`, limit) as ConversationEntry[];
+  }
   return db.prepare(
     'SELECT * FROM conversation_log WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
   ).all(userId, limit) as ConversationEntry[];

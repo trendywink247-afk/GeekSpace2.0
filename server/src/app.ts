@@ -194,6 +194,11 @@ export function createApp(): express.Application {
       ok: allOk,
       status: allOk ? 'ok' : 'degraded',
       version: APP_VERSION,
+      build: {
+        version: process.env.npm_package_version ?? '3.0.0',
+        nodeVersion: process.versions.node,
+        platform: process.platform,
+      },
     });
   });
 
