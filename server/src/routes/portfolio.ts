@@ -8,6 +8,26 @@ import { firePortfolioVisitAutomations } from '../services/automations-engine.js
 
 export const portfolioRouter = Router();
 
+// In-memory view dedup: prevents same IP from inflating view_count within 1h
+const recentViewers = new Map<string, number>(); // `${ip}:${username}` → expires_at
+const VIEW_DEDUP_MS = 60 * 60 * 1000; // 1 hour
+
+function isDuplicateView(ip: string, username: string): boolean {
+  const key = `${ip}:${username}`;
+  const expires = recentViewers.get(key);
+  if (expires && expires > Date.now()) return true;
+  // Record this view
+  recentViewers.set(key, Date.now() + VIEW_DEDUP_MS);
+  // Evict stale entries when Map grows large
+  if (recentViewers.size > 2000) {
+    const now = Date.now();
+    for (const [k, exp] of recentViewers.entries()) {
+      if (exp < now) recentViewers.delete(k);
+    }
+  }
+  return false;
+}
+
 const parsePortfolio = (row: Record<string, unknown>) => ({
   ...row,
   skills: JSON.parse(row.skills as string || '[]'),
@@ -345,7 +365,10 @@ portfolioRouter.post('/:username/view', (req, res) => {
   const { username } = req.params;
   const user = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: string } | undefined;
   if (!user) { res.status(404).json({ error: 'Not found' }); return; }
-  db.prepare('UPDATE portfolios SET view_count = view_count + 1 WHERE user_id = ?').run(user.id);
+  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+  if (!isDuplicateView(ip, username)) {
+    db.prepare('UPDATE portfolios SET view_count = view_count + 1 WHERE user_id = ?').run(user.id);
+  }
   res.json({ ok: true });
 });
 
