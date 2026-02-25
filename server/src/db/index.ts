@@ -1192,3 +1192,7 @@ export { db, seedDemoData };
 
 // Phase 13: snooze_until column for reminder snooze expiry cleanup
 try { db.exec(`ALTER TABLE reminders ADD COLUMN snooze_until INTEGER`); } catch { /* column already exists */ }
+
+// Phase 16: Performance indexes for hot-path queries
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_activity_log_user_date ON activity_log(user_id, created_at)`); } catch { /* index already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reminders_scheduler ON reminders(user_id, completed, remind_at)`); } catch { /* index already exists */ }
