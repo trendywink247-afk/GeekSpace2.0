@@ -100,6 +100,7 @@ export const authService = {
 
   logout: () => {
     localStorage.removeItem('gs_token');
+    localStorage.removeItem('gs-auth');
   },
 
   saveOnboardingStep: (step: number, data: Record<string, unknown>) =>
