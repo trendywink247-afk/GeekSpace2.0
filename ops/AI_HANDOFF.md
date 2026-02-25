@@ -1,59 +1,68 @@
-# AI Handoff — Phase 36 Complete
+# AI Handoff — Phase 39 Complete
 
 **Date:** 2026-02-25
-**Branch:** `ai/phase-20260225-phase36-notifications-reliability` (merged → main)
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/66
-**Status:** All 5 items implemented, 317/317 tests passing, CI all green, merged
+**Branch:** `ai/phase-20260225-phase39-multi-feature` (merged → main → live-production)
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/69
+**Status:** All 7 items implemented, 363/363 tests passing, CI all green, merged + deployed
 
 ---
 
-## Phase 36 — What Was Done
+## Phase 39 — What Was Done
 
-### 36.1 Snooze Event Log
-- `server/src/db/index.ts` — New `snooze_log` table (`CREATE TABLE IF NOT EXISTS`) with `ON DELETE CASCADE`; index on `reminder_id, snoozed_at DESC`
-- `server/src/routes/reminders.ts` — `bulk-snooze` now logs each event to `snooze_log`
-- `server/src/routes/reminders.ts` — New `POST /:id/snooze` individual snooze endpoint with logging + `snooze_count` increment
-- `server/src/routes/reminders.ts` — New `GET /:id/snooze-history` endpoint returning last 10 snooze events
-- `src/services/api.ts` — Added `reminderService.snooze()` and `reminderService.getSnoozeHistory()`
-- `src/dashboard/pages/RemindersPage.tsx` — "Snoozed N×" badge is now clickable; shows history popover with dates and presets
+### 39.1 Fix handleSnooze (bug fix)
+- `src/dashboard/pages/RemindersPage.tsx` — `handleSnooze` now calls `reminderService.snooze(id, preset)` (proper `/reminders/:id/snooze` endpoint) so every preset snooze is logged to `snooze_log`. Previously computed datetime locally and bypassed the endpoint.
 
-### 36.2 Telegram Invite Notification
-- `server/src/routes/integrations.ts` — Added `sendTelegramMessage` import
-- `POST /invite/:token/accept` — After marking invite used, sends `🤝 X accepted your connection invite!` to invite owner's Telegram if they have a verified linked account
+### 39.2 Due-soon badge (UX)
+- `src/dashboard/pages/RemindersPage.tsx` — Added `isDueSoon()` helper (active reminder within 24h). Green "due in Xh" chip shown on reminders within 24h but not yet overdue.
 
-### 36.3 Overdue Reminder Alert
-- `src/dashboard/pages/OverviewPage.tsx` — Session-dismissable pink alert banner when `overdueCount > 0`
-- Added `AlertTriangle` icon; links to Reminders page via `onNavigate?.('reminders')`
+### 39.3 Activity log load-more pagination (UX)
+- `src/dashboard/pages/ActivityPage.tsx` — Added `total`, `loadingMore`, `handleLoadMore`. "Load More (N remaining)" button fetches next page. Initial load is 50 entries.
+- `src/services/api.ts` — `userService.getActivity(limit, offset)` now accepts `offset` param; returns `{ activity, total }`.
 
-### 36.4 Rate Limit Reset Countdown
-- `src/components/AgentChatPanel.tsx` — Added `chatRateLimitResetAt` state (stores as timestamp)
-- Rate limit fetch now also stores `resetAt` parsed to ms timestamp
-- Warning banner now shows "resets in Nm" when `resetAt > Date.now()`
-- Footer tooltip also updated with countdown
+### 39.4 Preferred free model picker (Feature)
+- `src/dashboard/pages/SettingsPage.tsx` — New "Preferred Free Model" card in Security tab. Loads active free models from `modelService.getFreeModels()`, shows native `<select>`. Saves via `agentService.updateConfig({ preferred_free_model })`.
+- `src/types/index.ts` — Added `preferred_free_model`, `notif_*` fields to `AgentConfig` interface.
+- `src/services/api.ts` — Added `modelService` import in SettingsPage.
 
-### 36.5 App Version in Settings Footer
-- Already present from prior work: `src/dashboard/pages/SettingsPage.tsx` shows `GeekSpace vX.Y.Z` via `versionService`
+### 39.5 Priority quick-edit (UX)
+- `src/dashboard/pages/RemindersPage.tsx` — Priority badge is now a `<button>` that cycles low→normal→high→urgent on click via `updateReminder()`. Always visible (not just non-normal priorities).
 
----
+### 39.6 Portfolio reply button (Feature)
+- `src/dashboard/pages/PortfolioPage.tsx` — "Reply" `<a>` button added to Messages tab contact cards when `sender_email` is set. Opens `mailto:` link pre-filled with subject.
 
-## Session Resume Steps
+### 39.7 Backend activity offset (Dev/ops)
+- `server/src/routes/activity.ts` — `GET /activity` now accepts `?offset=` param, returns `total` count alongside `activity` array.
 
-```bash
-cd ~/GeekSpace2.0
-git pull origin main          # should already be up to date
-cat ops/AI_PHASE_PLAN.md      # review Phase 37 proposal
-cd server && npm test         # verify baseline (317 tests)
-```
+### Tests
+- `server/src/test/api/phase39.test.ts` — 15 new tests covering: activity offset/pagination, snooze endpoint log creation, preferred_free_model PATCH, priority PATCH cycling.
+- Total: 363/363 ✅
 
 ---
 
-## Phase 37 — Proposed
-**Theme:** AI quality, polish, data export, resilience
+## User preferences (standing)
+- **7 items per phase** from Phase 39 onward (user requested "add 2 more feature works on every loop")
+- Fully autonomous operation — no interruptions
 
-| # | Item | Type | Priority |
-|---|------|------|----------|
-| 37.1 | Portfolio contact form (send email/Telegram to portfolio owner) | Feature | High |
-| 37.2 | Reminder snooze "until time" picker (exact datetime) | UX | Medium |
-| 37.3 | AI briefing: per-user opt-in/out for daily briefing Telegram push | Feature | Medium |
-| 37.4 | Chat export: per-conversation markdown/JSON export | UX | Medium |
-| 37.5 | Webhook retry/backoff: dead-letter log for failed webhook calls | Hardening | Low |
+---
+
+## Resume Steps for Next Session (Phase 40)
+
+1. `cd ~/GeekSpace2.0 && git pull origin main`
+2. `git worktree add .worktrees/phase-40 -b ai/phase-20260225-phase40-multi-feature`
+3. `cd .worktrees/phase-40/server && npm test` — confirm 363/363
+4. Implement Phase 40 (7 items)
+5. Commit, push, PR, CI, merge, deploy live-production
+
+---
+
+## Proposed Phase 40
+
+| # | Item | Type |
+|---|------|------|
+| 40.1 | Reminder search by category + priority filter pills | UX |
+| 40.2 | Portfolio contact form honeypot (bot prevention) | Hardening |
+| 40.3 | Agent chat: message reactions (👍👎 on messages) stored + displayed | Feature |
+| 40.4 | Activity log: clear all button with confirmation dialog | UX |
+| 40.5 | Snooze log analytics: per-reminder snooze frequency shown in history popover | Feature |
+| 40.6 | Backend: remind-before alert (5 min Telegram push before reminder fires) | Feature |
+| 40.7 | Test: E2E smoke test for portfolio messages tab | Dev/ops |
