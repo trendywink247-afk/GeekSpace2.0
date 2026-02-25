@@ -8,22 +8,14 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Portfolio Stats', () => {
-  test.beforeEach(async ({ page }, testInfo) => {
-    await page.goto('/dashboard');
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/dashboard/portfolio');
     await expect(page.getByTestId('dashboard-shell')).toBeVisible();
     // Dismiss first-use tour
     await page.evaluate(() => localStorage.setItem('gs_dashboard_tour_seen', '1'));
 
-    // Navigate to Portfolio
-    if (testInfo.project.name === 'chromium') {
-      await page.getByTestId('dashboard-sidebar-desktop').getByText('Portfolio').click();
-    } else {
-      await page.getByTestId('mobile-nav-toggle').click();
-      await page.getByTestId('dashboard-sidebar-mobile').getByText('Portfolio').click();
-    }
-
     // Wait for profile tab to confirm page loaded
-    await expect(page.getByTestId('portfolio-tab-profile')).toBeVisible();
+    await expect(page.getByTestId('portfolio-tab-profile')).toBeVisible({ timeout: 10000 });
   });
 
   test('should show the analytics tab', async ({ page }) => {
@@ -38,8 +30,10 @@ test.describe('Portfolio Stats', () => {
     await analyticsTab.scrollIntoViewIfNeeded();
     await analyticsTab.click();
 
-    // Stats section must appear (contains "Total Views" label)
-    await expect(page.getByText('Total Views')).toBeVisible({ timeout: 5000 });
+    // Use exact:true to avoid strict-mode violation:
+    // The portfolio header also renders "X total views" (lowercase partial match)
+    // which Playwright's case-insensitive getByText would match without exact:true
+    await expect(page.getByText('Total Views', { exact: true })).toBeVisible({ timeout: 5000 });
   });
 
   test('should display Views This Week stat', async ({ page }) => {
@@ -47,7 +41,7 @@ test.describe('Portfolio Stats', () => {
     await analyticsTab.scrollIntoViewIfNeeded();
     await analyticsTab.click();
 
-    await expect(page.getByText('Views This Week')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Views This Week', { exact: true })).toBeVisible({ timeout: 5000 });
   });
 
   test('should show chart container or empty state', async ({ page }) => {
@@ -55,15 +49,13 @@ test.describe('Portfolio Stats', () => {
     await analyticsTab.scrollIntoViewIfNeeded();
     await analyticsTab.click();
 
-    // Either the chart renders or the "No visits yet" empty state is shown
-    const chartOrEmpty = page.locator(
-      '[class*="recharts"], [class*="chart"], text="No visits yet"'
-    ).first();
+    // Stats grid always renders after analytics API responds
+    await expect(page.getByText('Total Views', { exact: true })).toBeVisible({ timeout: 5000 });
 
-    // Also accepts the stats grid (which always renders)
-    const hasStats = await page.getByText('Total Views').isVisible().catch(() => false);
-    const hasChart = await chartOrEmpty.isVisible({ timeout: 3000 }).catch(() => false);
-
-    expect(hasStats || hasChart).toBeTruthy();
+    // Either a recharts bar chart (if user has visits) OR "No visits yet" empty state
+    // Both are valid; in CI with a fresh test user, "No visits yet" is expected
+    const hasChart = await page.locator('.recharts-wrapper').isVisible().catch(() => false);
+    const hasEmptyState = await page.getByText('No visits yet').isVisible().catch(() => false);
+    expect(hasChart || hasEmptyState).toBeTruthy();
   });
 });

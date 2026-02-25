@@ -8,24 +8,12 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Model Preference', () => {
-  test.beforeEach(async ({ page }, testInfo) => {
-    await page.goto('/dashboard');
+  test.beforeEach(async ({ page }) => {
+    // Navigate directly to Agent Settings page (avoids sidebar group collapse interaction)
+    await page.goto('/dashboard/agent');
     await expect(page.getByTestId('dashboard-shell')).toBeVisible();
     // Dismiss first-use tour
     await page.evaluate(() => localStorage.setItem('gs_dashboard_tour_seen', '1'));
-
-    // Navigate to Agent Settings via the Agent group
-    if (testInfo.project.name === 'chromium') {
-      const sidebar = page.getByTestId('dashboard-sidebar-desktop');
-      // Expand the Agent group if it's collapsed
-      await sidebar.getByText('Agent').first().click();
-      await sidebar.getByText('Agent Settings').click();
-    } else {
-      await page.getByTestId('mobile-nav-toggle').click();
-      const sidebar = page.getByTestId('dashboard-sidebar-mobile');
-      await sidebar.getByText('Agent').first().click();
-      await sidebar.getByText('Agent Settings').click();
-    }
 
     // Wait for AI Engine Preference section to load
     await expect(page.getByText('AI Engine Preference')).toBeVisible({ timeout: 10000 });
