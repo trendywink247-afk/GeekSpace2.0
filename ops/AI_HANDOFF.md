@@ -1,68 +1,59 @@
-# AI Handoff — Phase 35 Complete
+# AI Handoff — Phase 36 Complete
 
 **Date:** 2026-02-25
-**Branch:** `ai/phase-20260225-phase35-streaks-widgets-telegram`
-**Status:** All 5 items implemented, 306/306 tests passing, builds clean; CI in progress
+**Branch:** `ai/phase-20260225-phase36-notifications-reliability` (merged → main)
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/66
+**Status:** All 5 items implemented, 317/317 tests passing, CI all green, merged
 
 ---
 
-## Phase 35 — What Was Done
+## Phase 36 — What Was Done
 
-### 35.1 Reminder Completion Streak Counter
-- `server/src/db/index.ts` — `ALTER TABLE reminders ADD COLUMN completed_at INTEGER` (idempotent)
-- `server/src/routes/reminders.ts` — `POST /:id/complete` now sets `completed_at = Date.now()`
-- `server/src/routes/reminders.ts` — new `GET /api/reminders/streak` endpoint (consecutive days)
-- `src/services/api.ts` — `reminderService.getStreak()`
-- `src/dashboard/pages/RemindersPage.tsx` — 🔥 N day streak badge in header
+### 36.1 Snooze Event Log
+- `server/src/db/index.ts` — New `snooze_log` table (`CREATE TABLE IF NOT EXISTS`) with `ON DELETE CASCADE`; index on `reminder_id, snoozed_at DESC`
+- `server/src/routes/reminders.ts` — `bulk-snooze` now logs each event to `snooze_log`
+- `server/src/routes/reminders.ts` — New `POST /:id/snooze` individual snooze endpoint with logging + `snooze_count` increment
+- `server/src/routes/reminders.ts` — New `GET /:id/snooze-history` endpoint returning last 10 snooze events
+- `src/services/api.ts` — Added `reminderService.snooze()` and `reminderService.getSnoozeHistory()`
+- `src/dashboard/pages/RemindersPage.tsx` — "Snoozed N×" badge is now clickable; shows history popover with dates and presets
 
-### 35.2 Dashboard Widget Reorder
-- `src/dashboard/pages/OverviewPage.tsx` — stat cards are now HTML5 drag-and-droppable
-- Order persisted to `localStorage` key `gs_stat_order`
-- GripVertical handle visible on hover; drag-drop swaps card positions
+### 36.2 Telegram Invite Notification
+- `server/src/routes/integrations.ts` — Added `sendTelegramMessage` import
+- `POST /invite/:token/accept` — After marking invite used, sends `🤝 X accepted your connection invite!` to invite owner's Telegram if they have a verified linked account
 
-### 35.3 Telegram Auto-Push for Reminders
-- `server/src/services/reminder-scheduler.ts` — `tryTelegramAutoDelivery()` function
-- Push/default-channel reminders now auto-deliver to Telegram if user has it connected + notif_reminders enabled
-- No double-delivery for reminders already using channel='telegram'
+### 36.3 Overdue Reminder Alert
+- `src/dashboard/pages/OverviewPage.tsx` — Session-dismissable pink alert banner when `overdueCount > 0`
+- Added `AlertTriangle` icon; links to Reminders page via `onNavigate?.('reminders')`
 
-### 35.4 AI Briefing Quality
-- `server/src/services/daily-briefing.ts` — Fixed incorrect SQL (`status='pending'` → `completed=0`)
-- Added: overdue count, completedYesterday (from completed_at), recentMessages (activity_log), streak
-- Improved prompt: mentions streak if >1, flags overdue, uses actual DB data
+### 36.4 Rate Limit Reset Countdown
+- `src/components/AgentChatPanel.tsx` — Added `chatRateLimitResetAt` state (stores as timestamp)
+- Rate limit fetch now also stores `resetAt` parsed to ms timestamp
+- Warning banner now shows "resets in Nm" when `resetAt > Date.now()`
+- Footer tooltip also updated with countdown
 
-### 35.5 Portfolio View Count on Public Page
-- `server/src/routes/portfolio.ts` — `viewCount` added to public GET /:username response
-- `src/portfolio/PortfolioView.tsx` — Eye icon + formatted view count in profile hero section
-
-### Unit Tests (+7)
-- `server/src/test/api/phase35.test.ts` — streak endpoint (3), complete sets completed_at (1), legacy null safety (1), portfolio viewCount (2)
+### 36.5 App Version in Settings Footer
+- Already present from prior work: `src/dashboard/pages/SettingsPage.tsx` shows `GeekSpace vX.Y.Z` via `versionService`
 
 ---
 
-## Verification Evidence
-- Tests: 306/306 (was 299, +7)
-- `npx tsc --noEmit` — clean (frontend + server)
-- `npm run build` — clean (frontend + server)
-- `eslint --max-warnings=0` (changed files) — 0 warnings
+## Session Resume Steps
+
+```bash
+cd ~/GeekSpace2.0
+git pull origin main          # should already be up to date
+cat ops/AI_PHASE_PLAN.md      # review Phase 37 proposal
+cd server && npm test         # verify baseline (317 tests)
+```
 
 ---
 
-## Resume Steps (Next Phase)
-1. Monitor PR CI — if green, merge
-2. `cd ~/GeekSpace2.0 && git pull origin main`
-3. `./scripts/prod.sh` to deploy
-4. `git worktree add .worktrees/phase-36 -b ai/phase-YYYYMMDD-topic`
+## Phase 37 — Proposed
+**Theme:** AI quality, polish, data export, resilience
 
----
-
-## CRITICAL: Deployment
-**Always use `./scripts/prod.sh`** — syncs `/app/dist/` → `/var/www/geekspace/`.
-
----
-
-## Suggested Phase 36 Items
-- Reminder snooze history log + UI modal
-- Connection request Telegram/push notifications
-- AI memory summarizer quality improvements
-- Portfolio contact form (email via agent)
-- Per-endpoint rate limit granularity
+| # | Item | Type | Priority |
+|---|------|------|----------|
+| 37.1 | Portfolio contact form (send email/Telegram to portfolio owner) | Feature | High |
+| 37.2 | Reminder snooze "until time" picker (exact datetime) | UX | Medium |
+| 37.3 | AI briefing: per-user opt-in/out for daily briefing Telegram push | Feature | Medium |
+| 37.4 | Chat export: per-conversation markdown/JSON export | UX | Medium |
+| 37.5 | Webhook retry/backoff: dead-letter log for failed webhook calls | Hardening | Low |

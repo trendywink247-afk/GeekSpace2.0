@@ -14,28 +14,23 @@ Activity sparklines (real data), portfolio view count, date-filtered chat export
 
 ---
 
-## Phase 35 — IN PROGRESS
-**Theme:** Dashboard customization + streaks + AI quality
-**Branch:** `ai/phase-20260225-phase35-streaks-widgets-telegram`
-**Tests:** 306/306 passing
+## Phase 35 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/65 | **Tests:** 306/306
+Streak counter, drag-to-reorder widgets, Telegram auto-push, briefing SQL fix, portfolio view count
 
-| # | Item | Type | Status |
-|---|------|------|--------|
-| 35.1 | Reminder completion streak counter (🔥 badge, /streak endpoint, completed_at) | UX | Done |
-| 35.2 | Dashboard stat card drag-to-reorder (HTML5 DnD, localStorage) | UX | Done |
-| 35.3 | Telegram auto-push for all reminder channels (if Telegram connected) | Feature | Done |
-| 35.4 | AI briefing quality: fixed SQL + activity context + streak + overdue | AI | Done |
-| 35.5 | Portfolio view count on public page (Eye icon + count display) | UX | Done |
+## Phase 36 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/66 | **Tests:** 317/317
+Snooze event log, invite Telegram notification, overdue alert banner, rate limit countdown
 
 ---
 
-## Phase 36 — PROPOSED
-**Theme:** Notifications, reliability, AI persona improvements
+## Phase 37 — PROPOSED
+**Theme:** AI quality, polish, data export, resilience
 
 | # | Item | Type | Priority |
 |---|------|------|----------|
-| 36.1 | Reminder snooze history (snooze_until log + modal in RemindersPage) | UX | High |
-| 36.2 | Connection request notifications (push/Telegram on new connection invite) | Feature | Medium |
-| 36.3 | AI memory summarizer quality (better context window management) | AI | Medium |
-| 36.4 | Portfolio contact form (send email to portfolio owner via agent) | Feature | Medium |
-| 36.5 | Rate limit per-endpoint granularity (separate limits for chat vs API) | Hardening | Low |
+| 37.1 | Portfolio contact form (send email/Telegram to portfolio owner) | Feature | High |
+| 37.2 | Reminder snooze "until time" picker (exact datetime) | UX | Medium |
+| 37.3 | AI briefing: per-user opt-in/out for daily briefing Telegram push | Feature | Medium |
+| 37.4 | Chat export: per-conversation markdown/JSON export | UX | Medium |
+| 37.5 | Webhook retry/backoff: dead-letter log for failed webhook calls | Hardening | Low |
