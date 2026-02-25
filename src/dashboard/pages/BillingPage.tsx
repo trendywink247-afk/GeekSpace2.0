@@ -257,7 +257,7 @@ export function BillingPage() {
         {isMobile ? (
           <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4">
             {plans.map((plan) => {
-              const isCurrent = subscription?.plan === plan.id;
+              const isCurrent = subscription?.plan?.toLowerCase() === plan.id?.toLowerCase();
               const isFree = plan.priceUsd === 0;
               const display = PLAN_DISPLAY[plan.id] || { oldPrice: 0, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false };
               return (
@@ -270,7 +270,7 @@ export function BillingPage() {
                     } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
                   >
                     {/* Badge */}
-                    {display.badge && (
+                    {display.badge && !isCurrent && (
                       <div
                         className="absolute top-0 right-0 px-3 py-1 text-xs font-bold rounded-bl-lg"
                         style={{
@@ -281,6 +281,18 @@ export function BillingPage() {
                         }}
                       >
                         {display.badge}
+                      </div>
+                    )}
+                    {isCurrent && (
+                      <div
+                        className="absolute top-0 left-0 right-0 px-3 py-1 text-xs font-bold text-center"
+                        style={{
+                          backgroundColor: 'rgba(0,240,255,0.15)',
+                          color: '#00F0FF',
+                          borderBottom: '1px solid rgba(0,240,255,0.3)',
+                        }}
+                      >
+                        Your Current Plan
                       </div>
                     )}
                     <CardHeader className="pb-3 pt-6">
@@ -366,7 +378,7 @@ export function BillingPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {plans.map((plan) => {
-              const isCurrent = subscription?.plan === plan.id;
+              const isCurrent = subscription?.plan?.toLowerCase() === plan.id?.toLowerCase();
               const isFree = plan.priceUsd === 0;
               const display = PLAN_DISPLAY[plan.id] || { oldPrice: 0, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false };
               return (
@@ -379,7 +391,7 @@ export function BillingPage() {
                   } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
                 >
                   {/* Badge */}
-                  {display.badge && (
+                  {display.badge && !isCurrent && (
                     <div
                       className="absolute top-0 right-0 px-3 py-1 text-xs font-bold rounded-bl-lg"
                       style={{
@@ -390,6 +402,18 @@ export function BillingPage() {
                       }}
                     >
                       {display.badge}
+                    </div>
+                  )}
+                  {isCurrent && (
+                    <div
+                      className="absolute top-0 left-0 right-0 px-3 py-1 text-xs font-bold text-center"
+                      style={{
+                        backgroundColor: 'rgba(0,240,255,0.15)',
+                        color: '#00F0FF',
+                        borderBottom: '1px solid rgba(0,240,255,0.3)',
+                      }}
+                    >
+                      Your Current Plan
                     </div>
                   )}
                   <CardHeader className="pb-3 pt-6">

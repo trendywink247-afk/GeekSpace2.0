@@ -178,3 +178,44 @@ usageRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
 
   res.json({ events, total: (total.count as number) || 0 });
 });
+
+// ---- Daily usage for last 7 days (messages + credits burned) ----
+
+usageRouter.get('/daily', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const days = Math.min(parseInt(req.query.days as string) || 7, 30);
+
+  // Build a map of the last N days
+  const dayMap = new Map<string, { day: string; label: string; messages: number; credits: number }>();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    dayMap.set(key, {
+      day: key,
+      label: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      messages: 0,
+      credits: 0,
+    });
+  }
+
+  const rows = db.prepare(`
+    SELECT date(created_at) as day,
+           COUNT(*) as messages,
+           COALESCE(SUM(tokens_in + tokens_out), 0) as credits
+    FROM usage_events
+    WHERE user_id = ? AND created_at >= datetime('now', '-${days} days')
+    GROUP BY date(created_at)
+    ORDER BY day ASC
+  `).all(userId) as Array<{ day: string; messages: number; credits: number }>;
+
+  for (const row of rows) {
+    const entry = dayMap.get(row.day);
+    if (entry) {
+      entry.messages = row.messages;
+      entry.credits = row.credits;
+    }
+  }
+
+  res.json(Array.from(dayMap.values()));
+});

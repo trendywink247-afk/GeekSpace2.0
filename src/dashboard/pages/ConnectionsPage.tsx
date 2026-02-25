@@ -38,6 +38,7 @@ import { useDashboardStore } from '@/stores/dashboardStore';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { integrationService } from '@/services/api';
 import type { IntegrationType } from '@/types';
+import { notify } from '@/services/notifications';
 
 const iconMap: Record<string, typeof MessageSquare> = {
   telegram: Send,
@@ -160,6 +161,7 @@ export function ConnectionsPage() {
       await integrationService.updateNotificationEmail({ enabled: true, address: emailAddress || undefined });
       await connectIntegration('email');
       setEmailSaved(true);
+      notify('Email notifications enabled!', 'success');
     } catch { /* ignore */ } finally {
       setEmailSaving(false);
     }
@@ -213,6 +215,7 @@ export function ConnectionsPage() {
         return;
       }
       await connectIntegration(type);
+      notify(`${type.charAt(0).toUpperCase() + type.slice(1)} connected!`, 'success');
     } finally {
       setConnectingId(null);
     }
@@ -230,6 +233,7 @@ export function ConnectionsPage() {
     if (integration?.type === 'whatsapp') {
       await integrationService.unlinkWhatsApp();
     }
+    notify(`${integration?.name || 'Integration'} disconnected`, 'info');
     disconnectIntegration(id);
   };
 
