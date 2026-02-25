@@ -119,7 +119,7 @@ export function ActivityPage() {
       </div>
 
       {/* Filter chips */}
-      <div className="flex gap-2 flex-wrap">
+      <div data-testid="filter-chips" className="flex gap-2 flex-wrap">
         <Filter className="w-4 h-4 text-[#6B7280] self-center flex-shrink-0" />
         {FILTER_CHIPS.map((chip) => {
           const Icon = FILTER_ICONS[chip];

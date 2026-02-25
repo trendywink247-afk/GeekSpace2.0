@@ -23,8 +23,10 @@ test.describe('Activity Page', () => {
   });
 
   test('should show filter chips', async ({ page }) => {
-    // Filter chips are rendered as <button> elements
-    const allChip = page.getByRole('button', { name: /^All/i }).first();
+    // Filter chips are rendered as <button> elements inside the filter-chips container
+    const filterChips = page.locator('[data-testid="filter-chips"]');
+    await expect(filterChips).toBeVisible();
+    const allChip = filterChips.getByRole('button', { name: /^All/i }).first();
     await expect(allChip).toBeVisible();
   });
 
@@ -36,7 +38,9 @@ test.describe('Activity Page', () => {
   });
 
   test('should filter by category when chip is clicked', async ({ page }) => {
-    const agentChip = page.getByRole('button', { name: /^Agent/i }).first();
+    // Scope to the filter-chips container to avoid matching sidebar navigation buttons
+    const filterChips = page.locator('[data-testid="filter-chips"]');
+    const agentChip = filterChips.getByRole('button', { name: /^Agent/i }).first();
     const isVisible = await agentChip.isVisible().catch(() => false);
     if (isVisible) {
       await agentChip.click();
