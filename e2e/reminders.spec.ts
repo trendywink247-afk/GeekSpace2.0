@@ -10,6 +10,9 @@ import { test, expect } from '@playwright/test';
  *
  * Uses .first() on text locators and role='tab' for TabsTrigger to avoid
  * strict mode violations when tests share a persistent DB.
+ *
+ * Uses data-testid="submit-reminder-btn" for the dialog submit button
+ * to avoid the ambiguous .last() locator which is fragile on mobile viewport.
  */
 
 test.describe('Reminders Page', () => {
@@ -50,8 +53,8 @@ test.describe('Reminders Page', () => {
     const datetimeInput = page.locator('input[type="datetime-local"]');
     await datetimeInput.fill('2030-01-15T10:00');
 
-    // Click "Add Reminder" submit button (last button with that name in the dialog)
-    const addBtn = page.getByRole('button', { name: 'Add Reminder' }).last();
+    // Click submit via data-testid (stable, avoids .last() ambiguity on mobile)
+    const addBtn = page.getByTestId('submit-reminder-btn');
     await expect(addBtn).toBeEnabled();
     await addBtn.click();
 
@@ -70,7 +73,7 @@ test.describe('Reminders Page', () => {
     await textInput.fill('Complete me E2E');
     const datetimeInput = page.locator('input[type="datetime-local"]');
     await datetimeInput.fill('2030-06-01T09:00');
-    await page.getByRole('button', { name: 'Add Reminder' }).last().click();
+    await page.getByTestId('submit-reminder-btn').click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
     // Use .first() to avoid strict mode violation if reminder was created before
     await expect(page.getByText('Complete me E2E').first()).toBeVisible();
@@ -110,7 +113,7 @@ test.describe('Reminders Page', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByPlaceholder('Enter reminder text...').fill('Bulk delete E2E test');
     await page.locator('input[type="datetime-local"]').fill('2030-03-01T10:00');
-    await page.getByRole('button', { name: 'Add Reminder' }).last().click();
+    await page.getByTestId('submit-reminder-btn').click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText('Bulk delete E2E test').first()).toBeVisible();
 

@@ -939,6 +939,7 @@ export function RemindersPage() {
               Cancel
             </Button>
             <Button
+              data-testid="submit-reminder-btn"
               onClick={editingReminder ? handleEditSave : handleLegacyAdd}
               disabled={!newReminder.text || !newReminder.datetime}
             >
