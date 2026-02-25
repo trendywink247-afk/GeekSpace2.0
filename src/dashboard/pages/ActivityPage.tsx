@@ -47,18 +47,15 @@ function ActivityIcon({ icon }: { icon: string }) {
   );
 }
 
-function timeAgo(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+function timeAgo(ts: string | number): string {
+  const ms = typeof ts === 'string' ? new Date(ts).getTime() : ts;
+  const diff = Math.floor((Date.now() - ms) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 172800) return 'yesterday';
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return new Date(ms).toLocaleDateString();
 }
 
 const PAGE_SIZE = 50;
@@ -246,7 +243,7 @@ export function ActivityPage() {
                   </div>
                   <div className="flex-shrink-0 text-right flex items-start gap-2">
                     <div>
-                      <span className="text-[10px] text-[#6B7280] font-mono whitespace-nowrap">
+                      <span title={new Date(entry.created_at).toLocaleString()} className="text-xs text-[#8888AA] whitespace-nowrap">
                         {timeAgo(entry.created_at)}
                       </span>
                       <p className="text-[10px] text-[#6B7280]/60 mt-0.5">
