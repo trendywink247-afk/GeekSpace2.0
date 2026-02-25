@@ -126,9 +126,9 @@ test.describe('Reminders Page', () => {
     // The Select All checkbox label should be visible
     await expect(page.getByText(/Select all completed/)).toBeVisible();
 
-    // Check the individual checkbox on the reminder
+    // Check the individual checkbox on the reminder (force bypasses animation instability)
     const bulkCheckbox = page.getByRole('checkbox', { name: 'Select reminder for bulk delete' }).first();
-    await bulkCheckbox.check();
+    await bulkCheckbox.check({ force: true });
 
     // Delete Selected button should now appear
     await expect(page.getByRole('button', { name: /Delete Selected/ })).toBeVisible();

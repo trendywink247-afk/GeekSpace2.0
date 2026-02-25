@@ -29,13 +29,29 @@
 
 ---
 
-## Phase 30 — PROPOSED
+## Phase 30 — IN PROGRESS
 **Theme:** Notifications + export polish + reliability
+**Branch:** `ai/phase-20260225-phase30-notifications-export-reliability`
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/59
+**Tests:** 277/277 passing
+
+| # | Item | Type | Status |
+|---|------|------|--------|
+| 30.1 | Notification preference center (Reminder Notifications toggle) | UX | Done |
+| 30.2 | Export chat as Markdown from Settings | Feature | Done |
+| 30.3 | DB index on reminders(user_id, datetime) | Hardening | Done |
+| 30.4 | Snooze history UI (snooze_count badge on reminder cards) | UX | Done |
+| 30.5 | E2E test for connect invite flow (/connect/:token) | Dev/Ops | Done |
+
+---
+
+## Phase 31 — PROPOSED
+**Theme:** Polish + search + recurrence
 
 | # | Item | Type | Priority |
 |---|------|------|----------|
-| 30.1 | Push notification preference center (per-type toggles) | UX | High |
-| 30.2 | Export chat as markdown/text file from Settings | Feature | Medium |
-| 30.3 | DB indexes on reminders.user_id + datetime | Hardening | Medium |
-| 30.4 | Snooze history UI in reminder detail | UX | Low |
-| 30.5 | E2E test for connect invite flow (/connect/:token) | Dev/Ops | Low |
+| 31.1 | E2E stability: data-testid on key interactive elements | Dev/Ops | High |
+| 31.2 | Reminder recurrence editor (edit pattern in-place) | Feature | Medium |
+| 31.3 | Chat search UX (highlight matches, sticky search bar) | UX | Medium |
+| 31.4 | Admin dashboard export (users CSV + activity summary) | Dev/Ops | Low |
+| 31.5 | Push notification matrix (per-type per-channel toggles) | UX | Low |

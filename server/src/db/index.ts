@@ -1218,3 +1218,9 @@ db.exec(`
     created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
   )
 `);
+
+// Phase 30.3: DB index for reminders ordered by datetime (covers the /reminders GET sort)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reminders_datetime ON reminders(user_id, datetime)`); } catch { /* index already exists */ }
+
+// Phase 30.4: Track how many times each reminder has been snoozed
+try { db.exec(`ALTER TABLE reminders ADD COLUMN snooze_count INTEGER DEFAULT 0`); } catch { /* column already exists */ }

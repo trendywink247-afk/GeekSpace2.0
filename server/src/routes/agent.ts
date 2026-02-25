@@ -1249,6 +1249,24 @@ agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
 agentRouter.get('/conversations/export', requireAuth, (req: AuthRequest, res) => {
   try {
     const conversations = getRecentConversations(req.userId!, 1000);
+    const format = (req.query.format as string | undefined) ?? 'json';
+
+    if (format === 'md') {
+      // Render as Markdown — oldest first, role headers, blank line between turns
+      const sorted = [...conversations].reverse();
+      const lines: string[] = ['# GeekSpace Chat Export\n'];
+      for (const c of sorted) {
+        const role = c.role === 'user' ? '**You**' : '**Assistant**';
+        const ts = c.created_at ? `  \n_${c.created_at}_` : '';
+        lines.push(`### ${role}${ts}\n\n${c.content}\n`);
+      }
+      const md = lines.join('\n---\n\n');
+      res.setHeader('Content-Disposition', 'attachment; filename="geekspace-chat.md"');
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      res.send(md);
+      return;
+    }
+
     const data = (conversations as unknown as Record<string, unknown>[]).map(mapConversation);
     res.setHeader('Content-Disposition', 'attachment; filename="conversations.json"');
     res.setHeader('Content-Type', 'application/json');

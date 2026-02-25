@@ -658,6 +658,11 @@ export function RemindersPage() {
                                   {priorityConfig[reminder.priority]?.label}
                                 </Badge>
                               )}
+                              {(reminder.snoozeCount ?? 0) > 0 && (
+                                <Badge className="text-xs bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30">
+                                  Snoozed {reminder.snoozeCount}×
+                                </Badge>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
