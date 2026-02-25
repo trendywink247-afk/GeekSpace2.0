@@ -120,7 +120,7 @@ export const agentConfigUpdateSchema = z.object({
   displayName: z.string().max(100).optional(),
   mode: z.enum(['builder', 'creative', 'analyst', 'minimal', 'operator']).optional(),
   voice: z.enum(['friendly', 'professional', 'casual', 'formal', 'witty']).optional(),
-  systemPrompt: z.string().max(4000).optional(),
+  systemPrompt: z.string().max(2000).optional(),
   primaryModel: z.string().max(100).optional(),
   fallbackModel: z.string().max(100).optional(),
   creativity: z.number().min(0).max(1).optional(),

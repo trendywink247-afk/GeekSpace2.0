@@ -162,3 +162,111 @@ describe('Portfolio Visit Deduplication', () => {
     cleanupTestUser(user.id);
   });
 });
+
+describe('Portfolio Stats CSV Export', () => {
+  beforeAll(() => {
+    resetDatabase();
+  });
+
+  afterEach(() => {
+    try { db.prepare('DELETE FROM portfolio_visits').run(); } catch { /* ignore */ }
+    resetDatabase();
+  });
+
+  describe('GET /api/portfolio/stats/export', () => {
+    it('should return 401 without authentication', async () => {
+      const response = await request(app)
+        .get('/api/portfolio/stats/export')
+        .expect(401);
+
+      expect(response.body).toHaveProperty('error');
+    });
+
+    it('should return text/csv content type for authenticated user', async () => {
+      const user = createTestUser();
+
+      const response = await request(app)
+        .get('/api/portfolio/stats/export')
+        .set('Authorization', makeAuthHeader(user.id))
+        .expect(200);
+
+      expect(response.headers['content-type']).toMatch(/text\/csv/);
+      expect(response.headers['content-disposition']).toMatch(/attachment/);
+      expect(response.headers['content-disposition']).toMatch(/portfolio-visits\.csv/);
+
+      cleanupTestUser(user.id);
+    });
+
+    it('should return valid CSV format with header row', async () => {
+      const user = createTestUser();
+
+      const response = await request(app)
+        .get('/api/portfolio/stats/export')
+        .set('Authorization', makeAuthHeader(user.id))
+        .expect(200);
+
+      const csv = response.text;
+      const lines = csv.split('\n');
+      // Must have at least the header line
+      expect(lines.length).toBeGreaterThanOrEqual(1);
+      expect(lines[0]).toBe('date,visits');
+
+      cleanupTestUser(user.id);
+    });
+
+    it('should return CSV rows for existing visits', async () => {
+      const user = createTestUser();
+
+      // Insert some visits
+      db.prepare(`INSERT INTO portfolio_visits (user_id, visited_at, visitor_ip) VALUES (?, datetime('now'), '1.1.1.1')`).run(user.id);
+      db.prepare(`INSERT INTO portfolio_visits (user_id, visited_at, visitor_ip) VALUES (?, datetime('now'), '1.1.1.2')`).run(user.id);
+
+      const response = await request(app)
+        .get('/api/portfolio/stats/export')
+        .set('Authorization', makeAuthHeader(user.id))
+        .expect(200);
+
+      const csv = response.text;
+      const lines = csv.split('\n').filter((l) => l.trim().length > 0);
+      // Header + at least 1 data row
+      expect(lines.length).toBeGreaterThanOrEqual(2);
+
+      // First line is header
+      expect(lines[0]).toBe('date,visits');
+
+      // Data rows should match pattern: YYYY-MM-DD,N
+      for (let i = 1; i < lines.length; i++) {
+        const parts = lines[i].split(',');
+        expect(parts).toHaveLength(2);
+        expect(parts[0]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        expect(Number(parts[1])).toBeGreaterThan(0);
+      }
+
+      cleanupTestUser(user.id);
+    });
+
+    it('should only return data for the authenticated user', async () => {
+      const userA = createTestUser();
+      const userB = createTestUser(`csv-user-b-${Date.now()}@example.com`);
+      const otherId = uuid();
+
+      // Insert visits for userA and someone else (not userB)
+      db.prepare(`INSERT INTO portfolio_visits (user_id, visited_at, visitor_ip) VALUES (?, datetime('now'), '5.5.5.5')`).run(userA.id);
+      db.prepare(`INSERT INTO portfolio_visits (user_id, visited_at, visitor_ip) VALUES (?, datetime('now'), '6.6.6.6')`).run(otherId);
+
+      const response = await request(app)
+        .get('/api/portfolio/stats/export')
+        .set('Authorization', makeAuthHeader(userB.id))
+        .expect(200);
+
+      const csv = response.text;
+      const lines = csv.split('\n').filter((l) => l.trim().length > 0);
+      // userB has no visits — only the header row
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toBe('date,visits');
+
+      cleanupTestUser(userA.id);
+      cleanupTestUser(userB.id);
+    });
+  });
+});
