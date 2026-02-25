@@ -219,6 +219,78 @@ adminRouter.get('/stream', (req: Request, res: Response): void => {
   });
 });
 
+// ---- /export/users endpoint — CSV export of all users ----
+adminRouter.get('/export/users', requireAdminToken, (_req: Request, res: Response): void => {
+  try {
+    const users = db.prepare(
+      `SELECT u.id, u.email, u.plan, u.created_at,
+              u.last_active AS last_active_at,
+              COALESCE(
+                (SELECT SUM(ue.tokens_in + ue.tokens_out)
+                 FROM usage_events ue WHERE ue.user_id = u.id), 0
+              ) AS messages_sent
+       FROM users u
+       ORDER BY u.created_at DESC`
+    ).all() as Array<{
+      id: string; email: string; plan: string;
+      created_at: string; last_active_at: string; messages_sent: number;
+    }>;
+
+    const header = 'id,email,plan,created_at,last_active_at,messages_sent\n';
+    const rows = users.map((u) => [
+      u.id,
+      `"${(u.email || '').replace(/"/g, '""')}"`,
+      u.plan,
+      u.created_at || '',
+      u.last_active_at || '',
+      u.messages_sent,
+    ].join(',')).join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="geekspace-users.csv"');
+    res.send(header + rows);
+  } catch (err) {
+    logger.error({ err }, 'Admin export/users failed');
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+// ---- /export/activity endpoint — JSON activity summary ----
+adminRouter.get('/export/activity', requireAdminToken, (_req: Request, res: Response): void => {
+  try {
+    const totalUsers = (db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;
+
+    const activeSevenDays = (db.prepare(
+      "SELECT COUNT(*) as c FROM users WHERE last_active >= datetime('now', '-7 days')"
+    ).get() as { c: number }).c;
+
+    const totalMessages = (db.prepare(
+      'SELECT COALESCE(SUM(tokens_in + tokens_out), 0) as c FROM usage_events'
+    ).get() as { c: number }).c;
+
+    const topUsers = db.prepare(
+      `SELECT u.id, u.email, u.plan,
+              COALESCE(SUM(ue.tokens_in + ue.tokens_out), 0) AS message_count
+       FROM users u
+       LEFT JOIN usage_events ue ON ue.user_id = u.id
+       GROUP BY u.id
+       ORDER BY message_count DESC
+       LIMIT 5`
+    ).all() as Array<{ id: string; email: string; plan: string; message_count: number }>;
+
+    res.json({
+      totalUsers,
+      activeLastSevenDays: activeSevenDays,
+      totalMessages,
+      topUsersByMessageCount: topUsers,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.error({ err }, 'Admin export/activity failed');
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
 // ---- Main dashboard endpoint (legacy) ----
 adminRouter.get('/dashboard', requireAdminPassword, (_req: Request, res: Response) => {
   try {

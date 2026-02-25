@@ -13,6 +13,9 @@ import { test, expect } from '@playwright/test';
  *
  * Uses data-testid="submit-reminder-btn" for the dialog submit button
  * to avoid the ambiguous .last() locator which is fragile on mobile viewport.
+ *
+ * Cancel button clicks use { force: true } because the Phase 31 "Repeat"
+ * select makes the dialog taller on pixel5, causing layout instability.
  */
 
 test.describe('Reminders Page', () => {
@@ -36,8 +39,8 @@ test.describe('Reminders Page', () => {
     // Dialog should open with "Add Reminder" title
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Add Reminder' })).toBeVisible();
-    // Cancel should close it
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    // Cancel should close it; force:true bypasses layout instability on pixel5
+    await page.getByRole('button', { name: 'Cancel' }).click({ force: true });
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
@@ -76,7 +79,8 @@ test.describe('Reminders Page', () => {
     await page.getByTestId('submit-reminder-btn').click({ force: true });
     await expect(page.getByRole('dialog')).not.toBeVisible();
     // Use .first() to avoid strict mode violation if reminder was created before
-    await expect(page.getByText('Complete me E2E').first()).toBeVisible();
+    // timeout:8000 gives extra time for store update after dialog close
+    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 8000 });
 
     // Click the "Mark as complete" button using its aria-label
     // Get the button associated with the most recently visible 'Complete me E2E' reminder
@@ -102,8 +106,8 @@ test.describe('Reminders Page', () => {
     await expect(page.getByTestId('priority-selector').getByText('High')).toBeVisible();
     await expect(page.getByTestId('priority-selector').getByText('Urgent')).toBeVisible();
 
-    // Cancel to close
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    // Cancel to close; force:true bypasses layout instability on pixel5
+    await page.getByRole('button', { name: 'Cancel' }).click({ force: true });
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 

@@ -348,7 +348,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
   return (
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div data-testid="dashboard-overview" className="space-y-6 animate-in fade-in duration-500">
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

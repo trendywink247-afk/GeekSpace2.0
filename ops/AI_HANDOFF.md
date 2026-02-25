@@ -1,60 +1,70 @@
-# AI Handoff — Phase 30 In Progress
+# AI Handoff — Phase 31 Complete
 
 **Date:** 2026-02-25
-**Branch:** `ai/phase-20260225-phase30-notifications-export-reliability`
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/59
-**Status:** All 5 items implemented, 277/277 tests passing, builds clean; CI in progress
+**Branch:** `ai/phase-20260225-phase31-polish-search-recurrence`
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/60
+**Status:** All 5 items implemented, 287/287 tests passing, builds clean; CI in progress
 
 ---
 
-## Phase 30 — What Was Done
+## Phase 31 — What Was Done
 
-### 30.1 Notification Preference Center
-- `src/dashboard/pages/SettingsPage.tsx` — Added "Reminder Notifications" toggle surfacing hidden `notification_reminders` DB column
-- Added `reminderNotifs` to `notifications` state, `notificationFieldMap: reminderNotifs: 'reminders'`
+### 31.1 E2E Stability — data-testid additions
+Added `data-testid` root attributes to all major dashboard pages:
+- `settings-page`, `connections-page`, `health-page`, `automations-page`
+- `portfolio-page`, `activity-page`, `billing-page`, `dashboard-overview`
+- `login-form` on the login form element in `LoginPage.tsx`
 
-### 30.2 Export Chat as Markdown
-- `server/src/routes/agent.ts` — `GET /conversations/export?format=md` returns `text/markdown` with role headers
-- `src/services/api.ts` — `memoryService.getConversationsMarkdownExport()` method
-- `src/dashboard/pages/SettingsPage.tsx` — "Export as Markdown" button + `isExportingMarkdown` state + `handleExportMarkdown` handler
+### 31.2 Reminder Recurrence Editor
+- `server/src/db/index.ts` — `ALTER TABLE reminders ADD COLUMN recurrence TEXT` (idempotent)
+- `server/src/routes/reminders.ts` — POST + PATCH accept `recurrence`; complete endpoint auto-creates next occurrence for recurring reminders (+1d/+7d/+30d)
+- `src/types/index.ts` — `recurrence?: 'daily' | 'weekly' | 'monthly' | null` on Reminder
+- `src/dashboard/pages/RemindersPage.tsx` — "Repeat" select in form; 🔁 badge on cards
 
-### 30.3 DB Index for Reminders by Datetime
-- `server/src/db/index.ts` — `idx_reminders_datetime ON reminders(user_id, datetime)` (idempotent CREATE INDEX IF NOT EXISTS)
+### 31.3 Chat Search UX
+- `src/components/AgentChatPanel.tsx` — sticky search bar, "N of M matches" counter, amber `<mark>` highlight, Ctrl+F/Cmd+F shortcut, auto-focus, Enter/Shift+Enter to cycle
 
-### 30.4 Snooze History UI
-- `server/src/db/index.ts` — `ALTER TABLE reminders ADD COLUMN snooze_count INTEGER DEFAULT 0`
-- `server/src/routes/reminders.ts` — bulk-snooze increments via `COALESCE(snooze_count, 0) + 1`
-- `src/types/index.ts` — `snoozeCount?: number` added to `Reminder` interface
-- `src/dashboard/pages/RemindersPage.tsx` — "Snoozed N×" amber badge when `snoozeCount > 0`
+### 31.4 Admin Export Endpoints
+- `server/src/routes/admin.ts` — `GET /api/admin/export/users` (CSV) + `GET /api/admin/export/activity` (JSON summary); both require `Authorization: Bearer <ADMIN_TOKEN>`
 
-### 30.5 E2E Test for /connect/:token
-- `e2e/connect.spec.ts` — 2 tests: invalid token shows "Invalid Invite" error; public route doesn't redirect to `/login`
-- `src/pages/ConnectPage.tsx` — Added `data-testid="connect-page"` to root div
+### 31.5 Push Notification Matrix
+- `server/src/db/index.ts` — `notification_connections` + `notification_digest` columns (idempotent)
+- `server/src/routes/users.ts` — new fields in GET /users/me + PATCH /users/me
+- `src/dashboard/pages/SettingsPage.tsx` — "Connection Request Alerts" + "Weekly Digest Email" toggles
 
-### Unit Tests (+6)
-- `server/src/test/api/phase30.test.ts` — markdown export (3 tests) + snooze_count (2 tests) + datetime sort (1 test)
+### Unit Tests (+10)
+- `server/src/test/api/phase31.test.ts` — recurrence (4 tests) + admin export (3 tests) + notification matrix (3 tests)
 
 ---
 
 ## Verification Evidence
-- Tests: 277 passing (was 271, +6)
+- Tests: 287 passing (was 277, +10)
 - `npx tsc --noEmit` — clean (frontend + server)
 - `npm run build` — clean (frontend + server)
-- `npm run lint` — 0 errors on changed files
+- `npm run lint` — 0 errors
 
 ---
 
 ## Resume Steps (Next Phase)
-1. Monitor PR #59 CI — if all green, merge
-2. `cd ~/GeekSpace2.0 && git reset --hard origin/main && git pull origin main`
-3. Check `ops/AI_BACKLOG.md` for next priority items
-4. Create new worktree: `git worktree add .worktrees/phase-31 -b ai/phase-YYYYMMDD-topic`
+1. Monitor PR #60 CI — if all green, merge
+2. `cd ~/GeekSpace2.0 && git pull origin main`
+3. `./scripts/prod.sh` to deploy (syncs static files to /var/www/geekspace/)
+4. Check `ops/AI_PHASE_PLAN.md` for Phase 32 items
+5. `git worktree add .worktrees/phase-32 -b ai/phase-YYYYMMDD-topic`
 
 ---
 
-## Suggested Phase 31 Items
-- E2E stability: add `data-testid` to more interactive elements (forms, dialogs)
-- Push notification preference per-channel matrix (email × type toggles)
-- Reminder recurrence editor (edit recurring pattern in-place)
-- Chat search UX improvements (highlight matches, sticky search bar)
-- Admin dashboard: export users CSV + activity summary
+## CRITICAL: Deployment Note
+**Always use `./scripts/prod.sh`** — NOT `docker compose up -d --build` directly.
+`prod.sh` runs `docker cp geekspace-app:/app/dist/. /var/www/geekspace/` which syncs
+the new frontend assets to Caddy's static file directory. Skipping this step means
+users see old content even though the container is rebuilt.
+
+---
+
+## Suggested Phase 32 Items
+- Overview sparkline charts (usage/credits/reminders over time)
+- Mobile bottom nav badge counts (unread reminders, activity)
+- Reminder filter by recurrence type (all/recurring/one-off tabs)
+- Admin thumbs-down analytics visualization
+- Session management UI (revoke active sessions from Settings)

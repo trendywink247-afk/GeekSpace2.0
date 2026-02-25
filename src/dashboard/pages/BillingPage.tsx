@@ -134,7 +134,7 @@ export function BillingPage() {
     : 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div data-testid="billing-page" className="space-y-6 animate-in fade-in duration-500">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl border text-sm font-medium transition-all animate-in slide-in-from-top-2 ${

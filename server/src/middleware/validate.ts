@@ -73,6 +73,7 @@ export const reminderCreateSchema = z.object({
   datetime: z.string().max(50).optional(),
   channel: z.enum(['telegram', 'email', 'push']).optional().default('push'),
   recurring: z.enum(['', 'daily', 'weekly', 'monthly']).optional(),
+  recurrence: z.enum(['daily', 'weekly', 'monthly']).nullable().optional(),
   category: z.enum(['personal', 'work', 'health', 'other', 'general']).optional().default('personal'),
   completed: z.boolean().optional().default(false),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional().default('normal'),
@@ -210,6 +211,7 @@ export const reminderUpdateSchema = z.object({
   channel: z.enum(['telegram', 'email', 'push']).optional(),
   category: z.enum(['personal', 'work', 'health', 'other', 'general']).optional(),
   recurring: z.enum(['', 'daily', 'weekly', 'monthly']).optional(),
+  recurrence: z.enum(['daily', 'weekly', 'monthly']).nullable().optional(),
   completed: z.boolean().optional(),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
 });

@@ -74,6 +74,7 @@ export function RemindersPage() {
     datetime: string;
     channel: ReminderChannel;
     recurring: string;
+    recurrence: 'daily' | 'weekly' | 'monthly' | '';
     category: ReminderCategory;
     priority: ReminderPriority;
   }>({
@@ -81,6 +82,7 @@ export function RemindersPage() {
     datetime: '',
     channel: 'telegram',
     recurring: '',
+    recurrence: '',
     category: 'personal',
     priority: 'normal',
   });
@@ -159,10 +161,11 @@ export function RemindersPage() {
       datetime: newReminder.datetime,
       channel: newReminder.channel,
       recurring: newReminder.recurring || undefined,
+      recurrence: newReminder.recurrence || undefined,
       category: newReminder.category,
       priority: newReminder.priority,
     });
-    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
+    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', recurrence: '', category: 'personal', priority: 'normal' });
     setIsAddDialogOpen(false);
   };
 
@@ -217,6 +220,7 @@ export function RemindersPage() {
       datetime: localStr,
       channel: reminder.channel,
       recurring: reminder.recurring || '',
+      recurrence: (reminder.recurrence as 'daily' | 'weekly' | 'monthly' | undefined) || '',
       category: reminder.category,
       priority: reminder.priority || 'normal',
     });
@@ -232,10 +236,11 @@ export function RemindersPage() {
       datetime: new Date(newReminder.datetime).toISOString(),
       channel: newReminder.channel,
       recurring: (newReminder.recurring || undefined) as Reminder['recurring'],
+      recurrence: (newReminder.recurrence || undefined) as Reminder['recurrence'],
       category: newReminder.category,
       priority: newReminder.priority,
     });
-    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
+    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', recurrence: '', category: 'personal', priority: 'normal' });
     setEditingReminder(null);
     setIsAddDialogOpen(false);
   };
@@ -646,6 +651,11 @@ export function RemindersPage() {
                                   {reminder.recurring}
                                 </Badge>
                               )}
+                              {reminder.recurrence && (
+                                <Badge className="bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs">
+                                  🔁 {reminder.recurrence}
+                                </Badge>
+                              )}
                               {reminder.priority && reminder.priority !== 'normal' && (
                                 <Badge
                                   className="text-xs"
@@ -753,7 +763,7 @@ export function RemindersPage() {
         setIsAddDialogOpen(open);
         if (!open) {
           setEditingReminder(null);
-          setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
+          setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', recurrence: '', category: 'personal', priority: 'normal' });
         }
       }}>
         <DialogContent className="glass-card-v2 border-[#00F0FF]/20 max-w-lg">
@@ -909,6 +919,19 @@ export function RemindersPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div>
+                <label className="text-xs text-[#6B7280] mb-1 block">Repeat</label>
+                <select
+                  value={newReminder.recurrence}
+                  onChange={(e) => setNewReminder({ ...newReminder, recurrence: e.target.value as 'daily' | 'weekly' | 'monthly' | '' })}
+                  className="w-full px-3 py-2 rounded-md bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm"
+                >
+                  <option value="">None</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
               </div>
               <div data-testid="priority-selector">
                 <label className="text-xs text-[#6B7280] mb-1 block">Priority</label>

@@ -29,7 +29,7 @@
 
 ---
 
-## Phase 30 — IN PROGRESS
+## Phase 30 — COMPLETE ✓
 **Theme:** Notifications + export polish + reliability
 **Branch:** `ai/phase-20260225-phase30-notifications-export-reliability`
 **PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/59
@@ -45,13 +45,29 @@
 
 ---
 
-## Phase 31 — PROPOSED
+## Phase 31 — IN PROGRESS
 **Theme:** Polish + search + recurrence
+**Branch:** `ai/phase-20260225-phase31-polish-search-recurrence`
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/60
+**Tests:** 287/287 passing
+
+| # | Item | Type | Status |
+|---|------|------|--------|
+| 31.1 | E2E stability: data-testid on all dashboard pages + login | Dev/Ops | Done |
+| 31.2 | Reminder recurrence editor (daily/weekly/monthly + auto-next) | Feature | Done |
+| 31.3 | Chat search UX (sticky bar, match count, highlighting, Ctrl+F) | UX | Done |
+| 31.4 | Admin export: users CSV + activity JSON | Dev/Ops | Done |
+| 31.5 | Push notification matrix (connections + weekly digest toggles) | UX | Done |
+
+---
+
+## Phase 32 — PROPOSED
+**Theme:** Mobile polish + analytics + session management
 
 | # | Item | Type | Priority |
 |---|------|------|----------|
-| 31.1 | E2E stability: data-testid on key interactive elements | Dev/Ops | High |
-| 31.2 | Reminder recurrence editor (edit pattern in-place) | Feature | Medium |
-| 31.3 | Chat search UX (highlight matches, sticky search bar) | UX | Medium |
-| 31.4 | Admin dashboard export (users CSV + activity summary) | Dev/Ops | Low |
-| 31.5 | Push notification matrix (per-type per-channel toggles) | UX | Low |
+| 32.1 | Overview sparklines (usage/credits/reminders trend charts) | UX | High |
+| 32.2 | Mobile bottom nav badge counts (unread reminders, activity) | UX | High |
+| 32.3 | Reminder filter by recurrence type (all/recurring/one-off) | UX | Medium |
+| 32.4 | Admin thumbs-down analytics visualization | Dev/Ops | Medium |
+| 32.5 | Session management UI (revoke sessions from Settings Security tab) | Hardening | Low |
