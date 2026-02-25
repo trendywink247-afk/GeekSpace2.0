@@ -249,8 +249,10 @@ export const billingUpgradeSchema = z.object({
 });
 
 export const notificationEmailSchema = z.object({
-  enabled: z.boolean(),
+  enabled: z.boolean().optional(),
   address: z.string().email().max(254).nullable().optional(),
+}).refine((data) => data.enabled !== undefined || data.address !== undefined, {
+  message: 'At least one of enabled or address must be provided',
 });
 
 // ---- Premium agent schemas ----

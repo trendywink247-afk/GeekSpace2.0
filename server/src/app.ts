@@ -191,9 +191,6 @@ export function createApp(): express.Application {
     });
     app.use('/api/auth/login', authLimiter);
     app.use('/api/auth/demo', authLimiter);
-    // 51.7: Document auth rate limit policy for clients
-    app.use('/api/auth/login', (_req, res, next) => { res.set('X-RateLimit-Policy', `${config.rateLimitAuthMax};w=900`); next(); });
-    app.use('/api/auth/demo', (_req, res, next) => { res.set('X-RateLimit-Policy', `${config.rateLimitAuthMax};w=900`); next(); });
 
     // 47.7: Signup rate limit — 5 req/15min including successful requests to prevent account spam
     // Intentionally does NOT use skipSuccessfulRequests so successful account creations are counted.
@@ -206,8 +203,6 @@ export function createApp(): express.Application {
       handler: rateLimitHandler,
     });
     app.use('/api/auth/signup', signupLimiter);
-    // 51.7: Document signup rate limit policy
-    app.use('/api/auth/signup', (_req, res, next) => { res.set('X-RateLimit-Policy', '5;w=900'); next(); });
 
     // Rate limit on LLM chat endpoints — 60 req/15min (4/min) balances protection with usability
     const chatLimiter = rateLimit({
@@ -220,8 +215,6 @@ export function createApp(): express.Application {
     });
     app.use('/api/agent/chat', chatLimiter);
     app.use('/api/agent/chat/stream', chatLimiter);
-    // 51.7: Document chat rate limit policy
-    app.use('/api/agent/chat', (_req, res, next) => { res.set('X-RateLimit-Policy', '60;w=900'); next(); });
 
     // Strict rate limit on public endpoints
     const publicLimiter = rateLimit({
@@ -234,9 +227,6 @@ export function createApp(): express.Application {
     });
     app.use('/api/agent/chat/public', publicLimiter);
     app.use('/api/dashboard/contact', publicLimiter);
-    // 51.7: Document public endpoint rate limit policy
-    app.use('/api/agent/chat/public', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
-    app.use('/api/dashboard/contact', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
 
     // Strict rate limit on admin endpoints — 10 requests per minute
     // Admin routes are sensitive (user management, system ops) so apply a tight window
@@ -250,6 +240,15 @@ export function createApp(): express.Application {
     });
     app.use('/api/admin', adminLimiter);
   }
+
+  // 51.7: X-RateLimit-Policy headers — always present so clients can discover limits
+  // even in test/dev environments where actual rate limiting is disabled
+  app.use('/api/auth/login', (_req, res, next) => { res.set('X-RateLimit-Policy', `${config.rateLimitAuthMax};w=900`); next(); });
+  app.use('/api/auth/demo', (_req, res, next) => { res.set('X-RateLimit-Policy', `${config.rateLimitAuthMax};w=900`); next(); });
+  app.use('/api/auth/signup', (_req, res, next) => { res.set('X-RateLimit-Policy', '5;w=900'); next(); });
+  app.use('/api/agent/chat', (_req, res, next) => { res.set('X-RateLimit-Policy', '60;w=900'); next(); });
+  app.use('/api/agent/chat/public', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
+  app.use('/api/dashboard/contact', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
 
   // ---- Health check ----
   app.get('/api/health', (_req, res) => {
