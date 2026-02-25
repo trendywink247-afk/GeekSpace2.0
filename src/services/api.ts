@@ -214,6 +214,23 @@ export const agentService = {
 
   generateBackground: (vibe?: string) =>
     api.post<{ gradient: string; name: string; accent: string }>('/agent/generate-background', { vibe }),
+
+  getQuality: () =>
+    api.get<{
+      totalMessages: number;
+      positiveReactions: number;
+      negativeReactions: number;
+      satisfactionRate: number | null;
+      trend: 'up' | 'down' | 'neutral';
+      hasEnoughData: boolean;
+    }>('/agent/quality'),
+};
+
+// ----- Version -----------------------------------------------
+
+export const versionService = {
+  get: () =>
+    api.get<{ version: string; buildTime: string; nodeVersion: string }>('/version'),
 };
 
 // ----- API Keys ----------------------------------------------

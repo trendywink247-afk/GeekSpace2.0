@@ -219,6 +219,15 @@ export function createApp(): express.Application {
     });
   });
 
+  // ---- Version endpoint ----
+  app.get('/api/version', (_req, res) => {
+    res.json({
+      version: APP_VERSION,
+      buildTime: process.env.BUILD_TIME ?? new Date().toISOString(),
+      nodeVersion: process.versions.node,
+    });
+  });
+
   // ---- Redirect stale /api/api/* double-prefix requests ----
   app.use('/api/api', (req, res) => {
     const qs = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';

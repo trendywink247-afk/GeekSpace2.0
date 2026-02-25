@@ -1202,3 +1202,6 @@ try { db.exec(`ALTER TABLE agent_configs ADD COLUMN greeting TEXT DEFAULT ''`); 
 
 // Phase 25.3: JWT invalidation on password change — track when password was last changed
 try { db.exec(`ALTER TABLE users ADD COLUMN password_changed_at INTEGER DEFAULT 0`); } catch { /* column already exists */ }
+
+// Phase 26.2: Reminder priority levels
+try { db.exec(`ALTER TABLE reminders ADD COLUMN priority TEXT DEFAULT 'normal'`); } catch { /* column already exists */ }

@@ -1300,6 +1300,66 @@ agentRouter.get('/conversations/reactions/summary', requireAuth, (req: AuthReque
   }
 });
 
+// ---- Agent Quality Metrics (Phase 26.5) ----
+
+agentRouter.get('/quality', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  try {
+    // Total messages sent by this user
+    const totalRow = db.prepare(
+      `SELECT COUNT(*) as count FROM conversation_log WHERE user_id = ?`
+    ).get(userId) as { count: number };
+
+    // Positive reactions: 👍 ❤️ 🔥
+    const positiveRow = db.prepare(
+      `SELECT COUNT(*) as count FROM message_reactions WHERE user_id = ? AND reaction IN ('👍', '❤️', '🔥')`
+    ).get(userId) as { count: number };
+
+    // Negative reactions: 👎
+    const negativeRow = db.prepare(
+      `SELECT COUNT(*) as count FROM message_reactions WHERE user_id = ? AND reaction = '👎'`
+    ).get(userId) as { count: number };
+
+    const positive = positiveRow.count;
+    const negative = negativeRow.count;
+    const total = totalRow.count;
+    const totalReacted = positive + negative;
+    const satisfactionRate = totalReacted > 0 ? Math.round((positive / totalReacted) * 100) : null;
+
+    // Trend: compare this week vs last week (reaction counts)
+    const now = Date.now();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const thisWeekStart = new Date(now - weekMs).toISOString();
+    const lastWeekStart = new Date(now - 2 * weekMs).toISOString();
+
+    const thisWeekPositive = (db.prepare(
+      `SELECT COUNT(*) as count FROM message_reactions WHERE user_id = ? AND reaction IN ('👍', '❤️', '🔥') AND created_at >= ?`
+    ).get(userId, thisWeekStart) as { count: number }).count;
+
+    const lastWeekPositive = (db.prepare(
+      `SELECT COUNT(*) as count FROM message_reactions WHERE user_id = ? AND reaction IN ('👍', '❤️', '🔥') AND created_at >= ? AND created_at < ?`
+    ).get(userId, lastWeekStart, thisWeekStart) as { count: number }).count;
+
+    const trend = lastWeekPositive === 0
+      ? (thisWeekPositive > 0 ? 'up' : 'neutral')
+      : thisWeekPositive > lastWeekPositive ? 'up'
+      : thisWeekPositive < lastWeekPositive ? 'down'
+      : 'neutral';
+
+    res.json({
+      totalMessages: total,
+      positiveReactions: positive,
+      negativeReactions: negative,
+      satisfactionRate,
+      trend,
+      hasEnoughData: totalReacted >= 5,
+    });
+  } catch (err) {
+    logger.error({ err, userId }, 'Failed to get agent quality metrics');
+    res.status(500).json({ error: 'Failed to get quality metrics' });
+  }
+});
+
 // ---- Premium Agent (Specialist Sessions) ----
 
 agentRouter.post('/deploy-premium', requireAuth, validateBody(deployPremiumSchema), async (req: AuthRequest, res) => {

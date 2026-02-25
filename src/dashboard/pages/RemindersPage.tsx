@@ -30,13 +30,20 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { reminderService } from '@/services/api';
 import { parseNaturalLanguageReminder } from '@/utils/reminderParser';
-import type { ReminderChannel, ReminderCategory, Reminder } from '@/types';
+import type { ReminderChannel, ReminderCategory, ReminderPriority, Reminder } from '@/types';
 
 const categoryColors: Record<string, string> = {
   personal: '#00F0FF',
   work: '#00FF88',
   health: '#FF2D78',
   other: '#FFB800',
+};
+
+const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
+  low:    { label: 'Low',    color: '#6B7280', bg: '#6B728020' },
+  normal: { label: 'Normal', color: '#00F0FF', bg: '#00F0FF20' },
+  high:   { label: 'High',   color: '#F59E0B', bg: '#F59E0B20' },
+  urgent: { label: 'Urgent', color: '#FF2D78', bg: '#FF2D7820' },
 };
 
 const examples = [
@@ -68,12 +75,14 @@ export function RemindersPage() {
     channel: ReminderChannel;
     recurring: string;
     category: ReminderCategory;
+    priority: ReminderPriority;
   }>({
     text: '',
     datetime: '',
     channel: 'telegram',
     recurring: '',
     category: 'personal',
+    priority: 'normal',
   });
 
   // Poll for reminders every 30 seconds (targeted — only re-fetches reminders)
@@ -151,8 +160,9 @@ export function RemindersPage() {
       channel: newReminder.channel,
       recurring: newReminder.recurring || undefined,
       category: newReminder.category,
+      priority: newReminder.priority,
     });
-    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal' });
+    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
     setIsAddDialogOpen(false);
   };
 
@@ -204,6 +214,7 @@ export function RemindersPage() {
       channel: reminder.channel,
       recurring: reminder.recurring || '',
       category: reminder.category,
+      priority: reminder.priority || 'normal',
     });
     setNaturalInput('');
     setParsedReminder(null);
@@ -218,8 +229,9 @@ export function RemindersPage() {
       channel: newReminder.channel,
       recurring: (newReminder.recurring || undefined) as Reminder['recurring'],
       category: newReminder.category,
+      priority: newReminder.priority,
     });
-    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal' });
+    setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
     setEditingReminder(null);
     setIsAddDialogOpen(false);
   };
@@ -252,11 +264,18 @@ export function RemindersPage() {
     }
   };
 
+  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+
   const filteredReminders = reminders.filter(r => {
     if (filter === 'active') return !r.completed;
     if (filter === 'completed') return r.completed;
     return true;
-  }).filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase()));
+  }).filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      const pa = priorityOrder[a.priority ?? 'normal'] ?? 2;
+      const pb = priorityOrder[b.priority ?? 'normal'] ?? 2;
+      return pa - pb;
+    });
 
   const activeReminders = reminders.filter(r => !r.completed);
   const completedReminders = reminders.filter(r => r.completed);
@@ -546,6 +565,18 @@ export function RemindersPage() {
                                   {reminder.recurring}
                                 </Badge>
                               )}
+                              {reminder.priority && reminder.priority !== 'normal' && (
+                                <Badge
+                                  className="text-xs"
+                                  style={{
+                                    backgroundColor: priorityConfig[reminder.priority]?.bg,
+                                    color: priorityConfig[reminder.priority]?.color,
+                                    borderColor: `${priorityConfig[reminder.priority]?.color}40`,
+                                  }}
+                                >
+                                  {priorityConfig[reminder.priority]?.label}
+                                </Badge>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
@@ -636,7 +667,7 @@ export function RemindersPage() {
         setIsAddDialogOpen(open);
         if (!open) {
           setEditingReminder(null);
-          setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal' });
+          setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', category: 'personal', priority: 'normal' });
         }
       }}>
         <DialogContent className="glass-card-v2 border-[#00F0FF]/20 max-w-lg">
@@ -743,6 +774,32 @@ export function RemindersPage() {
                       {rec || 'Once'}
                     </button>
                   ))}
+                </div>
+              </div>
+              <div data-testid="priority-selector">
+                <label className="text-xs text-[#6B7280] mb-1 block">Priority</label>
+                <div className="flex gap-2">
+                  {(['low', 'normal', 'high', 'urgent'] as const).map((p) => {
+                    const cfg = priorityConfig[p];
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => setNewReminder({ ...newReminder, priority: p })}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
+                        style={{
+                          background: newReminder.priority === p ? cfg.bg : 'transparent',
+                          border: `1px solid ${newReminder.priority === p ? cfg.color : '#374151'}`,
+                          color: newReminder.priority === p ? cfg.color : '#6B7280',
+                        }}
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: cfg.color }}
+                        />
+                        {cfg.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

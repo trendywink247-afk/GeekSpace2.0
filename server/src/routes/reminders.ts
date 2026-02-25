@@ -20,13 +20,13 @@ remindersRouter.get('/', requireAuth, (req: AuthRequest, res) => {
 });
 
 remindersRouter.post('/', requireAuth, validateBody(reminderCreateSchema), (req: AuthRequest, res) => {
-  const { text, datetime, channel, category, recurring } = req.body;
+  const { text, datetime, channel, category, recurring, priority } = req.body;
 
   const id = uuid();
   const scheduledFor = datetime ? new Date(datetime).getTime() : Date.now();
 
-  db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, created_by, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
-    id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', 'user', scheduledFor
+  db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, created_by, scheduled_for, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+    id, req.userId, text, datetime || '', channel || 'push', category || 'general', recurring || '', 'user', scheduledFor, priority || 'normal'
   );
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`).run(uuid(), req.userId, text);
 
@@ -41,7 +41,7 @@ remindersRouter.patch('/:id', requireAuth, validateBody(reminderUpdateSchema), (
   const updates = req.body as Record<string, unknown>;
   const fields: string[] = [];
   const values: unknown[] = [];
-  for (const key of ['text', 'datetime', 'channel', 'category', 'recurring', 'completed']) {
+  for (const key of ['text', 'datetime', 'channel', 'category', 'recurring', 'completed', 'priority']) {
     if (updates[key] !== undefined) {
       fields.push(`${key} = ?`);
       values.push(typeof updates[key] === 'boolean' ? (updates[key] ? 1 : 0) : updates[key]);
