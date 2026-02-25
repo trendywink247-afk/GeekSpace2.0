@@ -255,3 +255,68 @@ integrationsRouter.get('/whatsapp/qr/:sessionId/status', requireAuth, async (req
     res.status(500).json({ linked: false, error: 'Failed to check status' });
   }
 });
+
+// ================================================================
+// Integration Health Check (24.1)
+// POST /integrations/:type/test — quick liveness check per type
+// ================================================================
+
+integrationsRouter.post('/:type/test', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const type = req.params.type;
+
+  // Only check connected integrations
+  const integration = db.prepare(
+    "SELECT * FROM integrations WHERE user_id = ? AND type = ? AND status = 'connected'"
+  ).get(userId, type) as Record<string, unknown> | undefined;
+
+  if (!integration) {
+    res.json({ healthy: false, reason: 'not_connected' });
+    return;
+  }
+
+  let healthy = false;
+  let reason = 'unknown';
+
+  switch (type) {
+    case 'telegram': {
+      // Healthy if bot token is configured AND the user has a linked channel
+      const hasToken = !!config.telegramBotToken;
+      const link = db.prepare(
+        "SELECT id FROM channel_links WHERE user_id = ? AND channel = 'telegram'"
+      ).get(userId);
+      healthy = hasToken && !!link;
+      reason = !hasToken ? 'bot_not_configured' : !link ? 'not_linked' : 'ok';
+      break;
+    }
+    case 'whatsapp': {
+      const link = db.prepare(
+        "SELECT id FROM channel_links WHERE user_id = ? AND channel = 'whatsapp'"
+      ).get(userId);
+      healthy = !!link;
+      reason = link ? 'ok' : 'not_linked';
+      break;
+    }
+    case 'email': {
+      const cfg = db.prepare(
+        "SELECT notification_email_enabled, notification_email_address FROM agent_configs WHERE user_id = ?"
+      ).get(userId) as { notification_email_enabled?: number; notification_email_address?: string } | undefined;
+      healthy = !!(cfg?.notification_email_enabled && cfg?.notification_email_address);
+      reason = healthy ? 'ok' : 'no_email_set';
+      break;
+    }
+    default: {
+      // For any other integration, status=connected is enough
+      healthy = true;
+      reason = 'ok';
+      break;
+    }
+  }
+
+  // Optionally update health column in integrations table
+  const healthValue = healthy ? 100 : 0;
+  db.prepare('UPDATE integrations SET health = ? WHERE user_id = ? AND type = ?')
+    .run(healthValue, userId, type);
+
+  res.json({ healthy, reason, type });
+});

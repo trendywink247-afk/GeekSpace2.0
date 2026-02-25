@@ -847,12 +847,28 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               <Send className="w-4 h-4" />
             </Button>
           </div>
-          <p className="text-[10px] text-[#6B7280]/50 text-center mt-2">
-            {premiumSession
-              ? `${premiumSession.codename} · Premium Engine · ${premiumSession.messagesCount} messages`
-              : <>Powered by Agentin &middot; {agent.primaryModel}</>
-            }
-          </p>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-[10px] text-[#6B7280]/50">
+              {premiumSession
+                ? `${premiumSession.codename} · Premium Engine · ${premiumSession.messagesCount} messages`
+                : <>Powered by Agentin &middot; {agent.primaryModel}</>
+              }
+            </p>
+            {messages.length > 0 && (
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded ${
+                  messages.length > 50
+                    ? 'text-[#FF6161] bg-[#FF6161]/10'
+                    : messages.length > 20
+                    ? 'text-[#F59E0B] bg-[#F59E0B]/10'
+                    : 'text-[#6B7280]/50'
+                }`}
+                title={messages.length > 50 ? 'Older messages may be truncated' : messages.length > 20 ? 'Context window filling up' : undefined}
+              >
+                {messages.length > 50 ? `Context: ${messages.length} ⚠` : `Context: ${messages.length}`}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </>
