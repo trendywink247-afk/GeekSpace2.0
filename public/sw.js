@@ -1,5 +1,5 @@
 // Agentin Service Worker — App Shell Caching
-const CACHE_NAME = 'agentin-v6.0.0';
+const CACHE_NAME = 'agentin-v6.1.0';
 const APP_SHELL = [
   '/',
   '/index.html',
