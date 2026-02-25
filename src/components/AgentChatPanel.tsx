@@ -162,6 +162,19 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     }
   }, [isOpen]);
 
+  // Fetch rate limit status on open and refresh every 60s (33.4)
+  useEffect(() => {
+    if (!isOpen || agentOwner) return;
+    const fetchRL = () => {
+      agentService.getRateLimitStatus().then(({ data }) => {
+        setChatRateLimitRemaining(data.remaining);
+      }).catch(() => { /* ignore */ });
+    };
+    fetchRL();
+    const rlTimer = setInterval(fetchRL, 60000);
+    return () => clearInterval(rlTimer);
+  }, [isOpen, agentOwner]);
+
   // Ctrl+F / Cmd+F to open search
   useEffect(() => {
     if (!isOpen) return;
@@ -411,9 +424,11 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         try {
           setIsTyping(true);
           await doRegularChat();
-        } catch {
+        } catch (innerErr: unknown) {
+          const reqId = (innerErr as { response?: { headers?: Record<string, string>; data?: { requestId?: string } } })?.response?.data?.requestId
+            ?? (innerErr as { response?: { headers?: Record<string, string> } })?.response?.headers?.['x-request-id'];
           setAgentMsg({
-            content: "Sorry, I couldn't process that right now. Please try again.",
+            content: "Sorry, I couldn't process that right now. Please try again." + (reqId ? ` (Error ID: ${reqId})` : ''),
             isStreaming: false,
             retryContent: content,
           });
@@ -600,11 +615,11 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           </div>
         )}
 
-        {/* Rate limit warning — shown when fewer than 5 chat requests remain in the window */}
-        {chatRateLimitRemaining !== null && chatRateLimitRemaining < 5 && (
-          <div className="px-4 py-1.5 bg-[#F59E0B]/10 border-b border-[#F59E0B]/20 flex items-center gap-2">
-            <span className="text-xs text-[#F59E0B]">
-              ⚠ {chatRateLimitRemaining} chat request{chatRateLimitRemaining !== 1 ? 's' : ''} remaining in this window
+        {/* Rate limit warning — shown when fewer than 10 chat requests remain in the window (33.4) */}
+        {chatRateLimitRemaining !== null && chatRateLimitRemaining < 10 && (
+          <div className={`px-4 py-1.5 border-b flex items-center gap-2 ${chatRateLimitRemaining < 5 ? 'bg-[#EF4444]/10 border-[#EF4444]/20' : 'bg-[#F59E0B]/10 border-[#F59E0B]/20'}`}>
+            <span className={`text-xs ${chatRateLimitRemaining < 5 ? 'text-[#EF4444]' : 'text-[#F59E0B]'}`}>
+              ⚠ {chatRateLimitRemaining} chat request{chatRateLimitRemaining !== 1 ? 's' : ''} remaining in this 15-min window
             </span>
           </div>
         )}
@@ -933,20 +948,37 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 : <>Powered by Agentin &middot; {agent.primaryModel}</>
               }
             </p>
-            {messages.length > 0 && (
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded ${
-                  messages.length > 50
-                    ? 'text-[#FF6161] bg-[#FF6161]/10'
-                    : messages.length > 20
-                    ? 'text-[#F59E0B] bg-[#F59E0B]/10'
-                    : 'text-[#6B7280]/50'
-                }`}
-                title={messages.length > 50 ? 'Older messages may be truncated' : messages.length > 20 ? 'Context window filling up' : undefined}
-              >
-                {messages.length > 50 ? `Context: ${messages.length} ⚠` : `Context: ${messages.length}`}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Rate limit indicator (33.4) */}
+              {chatRateLimitRemaining !== null && !premiumSession && !agentOwner && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded ${
+                    chatRateLimitRemaining < 5
+                      ? 'text-[#EF4444] bg-[#EF4444]/10'
+                      : chatRateLimitRemaining < 10
+                      ? 'text-[#F59E0B] bg-[#F59E0B]/10'
+                      : 'text-[#6B7280]/50'
+                  }`}
+                  title={`${chatRateLimitRemaining}/60 requests remaining in this 15-minute window`}
+                >
+                  {chatRateLimitRemaining}/60 reqs
+                </span>
+              )}
+              {messages.length > 0 && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded ${
+                    messages.length > 50
+                      ? 'text-[#FF6161] bg-[#FF6161]/10'
+                      : messages.length > 20
+                      ? 'text-[#F59E0B] bg-[#F59E0B]/10'
+                      : 'text-[#6B7280]/50'
+                  }`}
+                  title={messages.length > 50 ? 'Older messages may be truncated' : messages.length > 20 ? 'Context window filling up' : undefined}
+                >
+                  {messages.length > 50 ? `Context: ${messages.length} ⚠` : `Context: ${messages.length}`}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
