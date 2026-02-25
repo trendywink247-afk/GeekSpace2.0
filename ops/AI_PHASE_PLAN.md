@@ -36,15 +36,36 @@ handleSnooze fix (logs to snooze_log), due-soon badge, activity load-more, free 
 
 ---
 
-## Phase 40 — PROPOSED (7 items)
-**Theme:** Engagement, hardening, analytics, new features
+## Phase 40 — COMPLETE ✓
+**PR:** (merged to main) | **Tests:** 374/374
+Reminder category/priority filter, honeypot, message reactions, activity clear-all, snooze analytics, remind-before Telegram
 
-| # | Item | Type |
-|---|------|------|
-| 40.1 | Reminder search by category + priority filter pills | UX |
-| 40.2 | Portfolio contact form honeypot (bot prevention) | Hardening |
-| 40.3 | Agent chat: message reactions (👍👎) stored + displayed | Feature |
-| 40.4 | Activity log: clear all button with confirmation | UX |
-| 40.5 | Snooze log analytics: frequency shown in history popover | Feature |
-| 40.6 | Backend: remind-before alert (5 min Telegram push) | Feature |
-| 40.7 | Test: phase40 unit tests | Dev/ops |
+## Phase 41 — COMPLETE ✓
+**PR:** (merged to main) | **Tests:** 380/380
+Soft-delete reminders, portfolio share links, agent chat export, autocomplete contacts, webhook log viewer
+
+## Phase 42 — COMPLETE ✓
+**PR:** (merged to main) | **Tests:** 385/385
+LLM fallback chain fix, mobile nav polish, contact import CSV, agent config validation, rate-limit observability
+
+## Phase 43 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/73 | **Tests:** 396/396
+10-item policy baseline: auth 401 fix, remind_before reset, date grouping, relative timestamps, automations wiring, XSS hardening, DB indexes
+
+---
+
+## Phase 44 — PROPOSED (10 items)
+**Theme:** Integration reliability, UX polish, security hardening, performance
+
+| # | Item | Category |
+|---|------|----------|
+| 44.1 | Webhook delivery retry on 5xx (exponential backoff, max 3 retries) | Reliability |
+| 44.2 | Recurring reminder snooze fix (snoozed recurring reminders re-schedule correctly) | Reliability |
+| 44.3 | Portfolio skills section rendered on public page | UX |
+| 44.4 | Dashboard notification bell shows unread count badge | UX |
+| 44.5 | Automations: is_active toggle actually enables/disables cron/webhook trigger | State-sync |
+| 44.6 | Auth: OAuth error page — handle /auth/google/callback?error=access_denied gracefully | Edge-case |
+| 44.7 | Rate limit admin endpoints /admin/* (10 req/min separate limiter) | Security |
+| 44.8 | Structured logs for LLM routing + action execution | Dev/Ops |
+| 44.9 | Lazy-load heavy pages (Portfolio, Automations) with Suspense skeleton | Performance |
+| 44.10 | Phase 44 unit tests + full verification | Dev/Ops |

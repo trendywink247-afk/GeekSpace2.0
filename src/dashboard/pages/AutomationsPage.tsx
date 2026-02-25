@@ -222,6 +222,16 @@ export function AutomationsPage() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const fmtRunTime = (ts: string | null | undefined): string => {
+    if (!ts) return 'never';
+    const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 172800) return 'yesterday';
+    return `${Math.floor(diff / 86400)}d ago`;
+  };
+
 
   // Extract HTTP status code from output string like "HTTP 200 OK" or "HTTP 404 Not Found"
   const parseHttpStatus = (output: string): number | null => {
@@ -367,7 +377,14 @@ export function AutomationsPage() {
                           <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" />
                         )}
                       </div>
-                      <p className="text-sm text-[#6B7280] mb-3">{auto.description}</p>
+                      <p className="text-sm text-[#6B7280] mb-1">{auto.description}</p>
+
+                      {(auto.run_count ?? 0) > 0 && (
+                        <p className="text-xs text-[#8888AA] mb-2">
+                          Ran {auto.run_count} time{auto.run_count !== 1 ? 's' : ''}
+                          {' · '}Last run: {fmtRunTime(auto.last_run)}
+                        </p>
+                      )}
 
                       <div className="flex items-center gap-3 flex-wrap">
                         {/* Trigger badge */}
