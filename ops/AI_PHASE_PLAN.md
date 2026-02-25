@@ -66,18 +66,24 @@ OG entity-encode, dedup index, mobile fixes, auth logout, CSP hardening, ETag ca
 
 ---
 
-## Phase 46 — PROPOSED (10 items)
-**Theme:** Admin hardening, webhook validation, UX polish, observability, pagination
+## Phase 46 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/76 | **Tests:** 437/437
+Admin auth audit, webhook URL validation, connections empty state, settings unsaved warning, automation log pretty-print, portfolio email validation, X-Frame-Options DENY confirmed, activity default 25, /api/ready endpoint
+
+---
+
+## Phase 47 — PROPOSED (10 items)
+**Theme:** Reliability fixes, UX polish, performance, security, dev/ops observability
 
 | # | Item | Category |
 |---|------|----------|
-| 46.1 | Fix: admin routes missing auth middleware check (verify requireAdmin on all /admin/* endpoints) | Reliability |
-| 46.2 | Fix: webhook test-fire should validate URL format before sending | Reliability |
-| 46.3 | UX: Connections page — better empty state when no integrations connected | UX/Mobile |
-| 46.4 | UX: Settings page — unsaved changes warning before navigation | UX/Mobile |
-| 46.5 | Fix: Automation run log shows raw JSON in trigger_data; pretty-print it | State-sync |
-| 46.6 | Fix: Portfolio contact form submit button remains disabled if email is invalid — fix validation | Edge-case |
-| 46.7 | Security: Add X-Frame-Options DENY explicitly (defence-in-depth alongside CSP frame-ancestors) | Security |
-| 46.8 | Perf: Paginate GET /activity default limit from 50 to 25 to reduce initial page payload | Performance |
-| 46.9 | Dev/Ops: Add /api/ready endpoint (checks DB connection + returns 200/503) separate from /api/health | Dev/Ops |
-| 46.10 | Phase 46 unit tests + full verification gate + PR/merge | Dev/Ops |
+| 47.1 | Fix: GET /api/health should include DB status check (not just uptime) | Reliability |
+| 47.2 | Fix: Reminder edit dialog — priority field not pre-filled on open | Reliability |
+| 47.3 | UX: Mobile nav — active tab indicator uses text only; add colored underline | UX/Mobile |
+| 47.4 | UX: Chat message copy shows "Copied!" toast confirmation | UX/Mobile |
+| 47.5 | Fix: Portfolio project edit doesn't preserve existing image URL | State-sync |
+| 47.6 | Fix: Webhook payload validation — reject non-object body gracefully | Edge-case |
+| 47.7 | Security: Add rate limit to /auth/register to prevent account spam (5 req/15min) | Security |
+| 47.8 | Perf: Add response compression (compression middleware) to Express | Performance |
+| 47.9 | Dev/Ops: Add /api/version endpoint returning app version + git SHA | Dev/Ops |
+| 47.10 | Phase 47 tests + verification + PR/merge | Dev/Ops |

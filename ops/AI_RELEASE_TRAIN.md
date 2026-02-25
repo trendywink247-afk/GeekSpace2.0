@@ -30,3 +30,4 @@
 - **Phase 43 complete:** 396/396 tests. 401 loop fix, remind_before reset, date grouping, relative timestamps, automations run_count wiring, XSS hardening, DB indexes.
 - **Phase 44 complete:** 414/414 tests. Webhook retry, recurring reminder fix, notification badge, OAuth error handling, admin rate limit, structured logs, page skeleton.
 - **Phase 45 complete:** 422/422 tests. OG entity-encode, duplicate index removal, mobile FAB, auth logout localStorage fix, UTC sparklines, CSP hardening (frame-ancestors + upgrade-insecure-requests), ETag/Cache-Control on public portfolio, feature matrix refresh.
+- **Phase 46 complete:** 437/437 tests. Admin auth audit (no gaps found), webhook URL validation, connections empty state, settings unsaved changes warning, automation log JSON pretty-print, portfolio email validation (frontend+backend), X-Frame-Options DENY confirmed + risk register updated, /activity default limit 25, /api/ready readiness endpoint.

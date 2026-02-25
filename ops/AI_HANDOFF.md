@@ -1,44 +1,52 @@
-# AI Handoff — Phase 45 Complete
+# AI Handoff — Phase 46 Complete
 
 **Date:** 2026-02-25
-**Branch:** `ai/phase-20260225-phase45` (merged → main)
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/75
-**Merge SHA:** `8f0ef3c8`
-**Status:** All 10 items implemented, 422/422 tests passing, full verification clean
+**Branch:** `ai/phase-20260225-phase46` (merged → main)
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/76
+**Merge SHA:** `8409ea6`
+**Status:** All 10 items implemented, 437/437 tests passing, full verification clean
 
 ---
 
-## Phase 45 — What Was Done
+## Phase 46 — What Was Done
 
-### 45.1 OG HTML Entity-Encode (Reliability/Security)
-- `server/src/routes/portfolio.ts` — Added `htmlEncode()` helper to entity-encode title and description in the crawler OG HTML response. Prevents XSS via injected `<script>` tags or attribute-breaking `"` in user-controlled fields (name, headline, about).
+### 46.1 Admin Routes Auth Middleware Audit (Reliability)
+- `server/src/routes/admin.ts` — Added auth coverage comment documenting every endpoint's middleware: all routes use `requireAdminToken` or `requireAdminPassword`; `/stream` implements inline token check for EventSource compatibility. No auth gaps found.
+- Test: 4 tests verifying unauthenticated callers receive 401/503 (never 200).
 
-### 45.2 Duplicate DB Index Removed (Reliability/Cleanup)
-- `server/src/db/index.ts` — Removed `CREATE INDEX IF NOT EXISTS idx_reminders_user_due` which covered the same columns as the canonical `idx_reminders_datetime`. Reduces index maintenance overhead.
+### 46.2 Webhook Test-Fire URL Validation (Reliability)
+- `server/src/routes/automations.ts` — Added `isValidWebhookUrl()` helper using `new URL()` parser; validates `http:` or `https:` protocol. Returns `400 { message: 'Invalid webhook URL' }` before attempting HTTP request for invalid/non-http URLs.
+- Test: 3 tests covering garbage string, `javascript:` scheme, and missing URL cases.
 
-### 45.3 Portfolio Mobile Layout Hardening (UX/Mobile)
-- `src/portfolio/PortfolioView.tsx` — Added `break-words` on name/headline elements, responsive `text-2xl sm:text-3xl` h1 sizing, and `overflow-hidden` wrapper to prevent layout blowout at 375px viewport.
+### 46.3 Connections Page Empty State (UX/Mobile)
+- `src/dashboard/pages/ConnectionsPage.tsx` — Added empty state div inside the integration grid when `integrations.length === 0`: centered Plug icon, heading, and instructional copy for Telegram/WhatsApp/webhooks.
 
-### 45.4 Reminders Mobile FAB Button (UX/Mobile)
-- `src/dashboard/pages/RemindersPage.tsx` — Added floating action button (fixed bottom-20 right-4, md:hidden) with PlusCircle icon for mobile quick-add. Opens the same create dialog as the desktop "New Reminder" button.
+### 46.4 Settings Page Unsaved Changes Warning (UX/Mobile)
+- `src/dashboard/pages/SettingsPage.tsx` — Added `hasUnsavedChanges` boolean state; profile field `onChange` handlers set it to `true`; `handleSave` resets it to `false` on success. Added amber banner `"You have unsaved changes"` near Save button. Added `beforeunload` event listener guard.
 
-### 45.5 Auth Logout localStorage Fix (State-sync)
-- `src/services/api.ts` — `authService.logout()` now clears `gs-auth` key from localStorage, matching the 401 interceptor behavior. Fixes state desync after explicit logout.
+### 46.5 Automation Run Log Pretty-Print (State-sync)
+- `src/dashboard/pages/AutomationsPage.tsx` — Output cell in the run log table now tries `JSON.parse(output)` and renders `<pre>` with formatted JSON on success; falls back to truncated plain text on parse failure.
 
-### 45.6 Activity Sparklines UTC Date Bucketing (State-sync)
-- `src/dashboard/pages/ActivityPage.tsx` — Date bucketing now uses UTC ISO string slice (`toISOString().slice(0,10)`) instead of locale-dependent `toLocaleDateString()`. Prevents off-by-one bucketing for users in non-UTC timezones.
+### 46.6 Portfolio Contact Form Email Validation (Edge-case)
+- `src/portfolio/PortfolioView.tsx` — Added `isValidEmail()` regex validator. Inline error `"Please enter a valid email address"` shown below email input; Submit button disabled when `emailInvalid` is true.
+- `server/src/routes/portfolio.ts` — Added backend email format validation in `POST /:username/contact`; returns `400 { error: 'Invalid email address' }` for malformed email when provided.
+- Test: 4 tests covering invalid format, missing TLD, valid email, and empty email (optional).
 
-### 45.7 CSP Hardening (Security)
-- `server/src/app.ts` — Added `frameAncestors: ["'none'"]` (CSP-level clickjacking defence, defence-in-depth alongside `X-Frame-Options: DENY`) and `upgradeInsecureRequests: []` to force HTTP→HTTPS resource upgrades. Added Risk R11 comment noting `unsafe-inline` in `style-src` is an accepted risk (nonce-based CSP requires frontend templating changes out of scope).
+### 46.7 X-Frame-Options DENY Explicit (Security)
+- `server/src/app.ts` — Confirmed `helmet({ frameguard: { action: 'deny' } })` was already present (added comment for defence-in-depth alongside CSP `frame-ancestors: none`).
+- `ops/AI_RISK_REGISTER.md` — Updated R11 (CSP unsafe-inline) to "Partially Mitigated"; added R14 (clickjacking) as "Mitigated" with both X-Frame-Options DENY + CSP frame-ancestors:none confirmed.
 
-### 45.8 ETag + Cache-Control on Public Portfolio (Performance)
-- `server/src/routes/portfolio.ts` — GET `/:username` now sets `Cache-Control: public, max-age=300, stale-while-revalidate=60` and an ETag computed from `userId + viewCount`. Returns 304 when `If-None-Match` matches. Both cached (Redis) and fresh responses send the headers.
+### 46.8 Paginate /activity Default Limit 50→25 (Performance)
+- `server/src/routes/activity.ts` — Changed default `limit` from `50` to `25`.
+- `src/dashboard/pages/ActivityPage.tsx` — Changed `PAGE_SIZE` constant from `50` to `25`.
+- Test: 2 tests verifying ≤25 entries with 30 inserted, and explicit limit param override.
 
-### 45.9 Feature Matrix Update (Dev/Ops)
-- `ops/AI_FEATURE_MATRIX.md` — All Ph44/45 fixes marked verified. Auth, Portfolio, Dashboard, Reminders, Automations rows updated. Gap Summary cleared of all Ph45 items; only remaining open gap is billing UI placeholder.
+### 46.9 /api/ready Endpoint (Dev/Ops)
+- `server/src/app.ts` — Added `GET /api/ready` endpoint: runs `SELECT 1` against SQLite; returns `200 { status: 'ready', db: 'ok' }` when DB is reachable, `503 { status: 'not ready', db: 'error', message }` otherwise. Unauthenticated by design for readiness probes.
+- Test: 2 tests verifying 200 response and unauthenticated access.
 
-### 45.10 Verification Gate (Dev/Ops)
-- 422/422 unit tests passing (2 new ETag tests added in `server/src/test/api/phase45.test.ts`)
+### 46.10 Verification Gate (Dev/Ops)
+- 437/437 unit tests passing (15 new tests added in `server/src/test/api/phase46.test.ts`)
 - Frontend: lint clean, typecheck clean, build clean
 - Server: typecheck clean, build clean
 
@@ -48,32 +56,32 @@
 
 | Check | Result |
 |-------|--------|
-| Server unit tests | 422/422 passing (39 test files) |
-| Frontend lint (changed files) | 0 errors, 2 pre-existing warnings in untouched files |
+| Server unit tests | 437/437 passing (40 test files) |
+| Frontend lint | 0 errors, 2 pre-existing warnings in untouched files |
 | Frontend typecheck | Clean (no errors) |
-| Frontend build | Clean (10.13s) |
+| Frontend build | Clean (9.93s) |
 | Server typecheck | Clean (no errors) |
 | Server build | Clean |
 
 ---
 
 ## Current Test Count
-- **422/422** unit tests passing (up from 414 at Phase 44 baseline)
+- **437/437** unit tests passing (up from 422 at Phase 45 baseline)
 
 ---
 
-## Resume Steps for Phase 46
+## Resume Steps for Phase 47
 
 ```bash
 cd ~/GeekSpace2.0
 git pull origin main
-git worktree add .worktrees/phase-46 -b ai/phase-20260225-phase46
-cd .worktrees/phase-46/server && npm install && npm test  # confirm 422/422
-cat ops/AI_PHASE_PLAN.md   # review Phase 46 proposal
+git worktree add .worktrees/phase-47 -b ai/phase-20260225-phase47
+cd .worktrees/phase-47/server && npm test  # confirm 437/437
+cat ops/AI_PHASE_PLAN.md   # review Phase 47 proposal
 ```
 
 ---
 
-## Phase 46 Proposal
+## Phase 47 Proposal
 
-See `ops/AI_PHASE_PLAN.md` for the full 10-item Phase 46 proposal.
+See `ops/AI_PHASE_PLAN.md` for the full 10-item Phase 47 proposal.
