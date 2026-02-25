@@ -485,6 +485,10 @@ export const portfolioService = {
   // 37.1: Get contact messages (authenticated, owner only)
   getContacts: () =>
     api.get<PortfolioContact[]>('/portfolio/contacts'),
+
+  // 42.4: GET /portfolio/me/stats — view_count, contact_count, project_count, last_viewed_at
+  getMeStats: () =>
+    api.get<{ view_count: number; contact_count: number; project_count: number; last_viewed_at: string | null }>('/portfolio/me/stats'),
 };
 
 // ----- Activity Stats ----------------------------------------

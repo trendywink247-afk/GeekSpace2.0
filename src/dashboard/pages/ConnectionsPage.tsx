@@ -70,6 +70,18 @@ const colorMap: Record<string, string> = {
   image: '#FF2D78',
 };
 
+// 42.5: Time ago formatter for last sync display
+function timeAgo(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
 type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error';
 type WhatsAppStep = 'idle' | 'generating' | 'show-qr' | 'waiting' | 'success' | 'error';
 
@@ -659,6 +671,10 @@ export function ConnectionsPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-[#E8E8F0]">{connection.name}</h3>
+                      {/* 42.5: Last sync timestamp */}
+                      {connection.status === 'connected' && connection.lastSync && (
+                        <p className="text-[10px] text-[#6B7280] mb-0.5">Last sync: {timeAgo(connection.lastSync)}</p>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         {getStatusIcon(connection.status)}
                         <span className={`text-xs ${getStatusColor(connection.status)} capitalize`}>
