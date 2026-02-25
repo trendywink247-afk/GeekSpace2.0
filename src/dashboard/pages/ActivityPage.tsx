@@ -47,18 +47,25 @@ function ActivityIcon({ icon }: { icon: string }) {
   );
 }
 
+// 48.5: Normalize SQLite timestamp strings to ISO-8601 UTC before parsing.
+// SQLite returns "YYYY-MM-DD HH:MM:SS" (space, no Z) which V8 treats as local time;
+// Safari fails entirely. Normalizing to "YYYY-MM-DDTHH:MM:SSZ" ensures correct UTC parse.
+function parseSqliteTs(ts: string | number): number {
+  if (typeof ts === 'number') return ts;
+  const normalized = ts.includes('T') ? ts : ts.replace(' ', 'T') + 'Z';
+  return new Date(normalized).getTime();
+}
+
 function timeAgo(ts: string | number): string {
-  const ms = typeof ts === 'string' ? new Date(ts).getTime() : ts;
+  const ms = parseSqliteTs(ts);
   const diff = Math.floor((Date.now() - ms) / 1000);
   if (diff < 60) return 'just now';
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   if (diff < 172800) return 'yesterday';
   if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-  // Display-only: toLocaleDateString is appropriate here (user-facing relative date label).
-  // Sparkline day-bucketing happens server-side via toISOString().slice(0,10) (UTC), so
-  // this fallback has no effect on data aggregation correctness (Phase 45.6 verified).
-  return new Date(ms).toISOString().slice(0, 10);
+  // Use toLocaleDateString so the fallback label reflects the user's timezone (48.5)
+  return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 // 46.8: Reduced from 50 to 25 to match server default and lower initial payload
@@ -247,7 +254,7 @@ export function ActivityPage() {
                   </div>
                   <div className="flex-shrink-0 text-right flex items-start gap-2">
                     <div>
-                      <span title={new Date(entry.created_at).toLocaleString()} className="text-xs text-[#8888AA] whitespace-nowrap">
+                      <span title={new Date(parseSqliteTs(entry.created_at)).toLocaleString()} className="text-xs text-[#8888AA] whitespace-nowrap">
                         {timeAgo(entry.created_at)}
                       </span>
                       <p className="text-[10px] text-[#6B7280]/60 mt-0.5">

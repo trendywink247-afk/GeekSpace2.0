@@ -3,6 +3,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Bell,
   Plus,
@@ -59,6 +60,7 @@ const examples = [
 
 export function RemindersPage() {
   const { reminders, addReminder, updateReminder, toggleReminder, snoozeReminder, deleteReminder, loadReminders, bulkSnoozeReminders } = useDashboardStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'recurring' | 'one-off'>('all');
@@ -67,6 +69,14 @@ export function RemindersPage() {
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'urgent' | 'high' | 'normal' | 'low'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  // 48.4: Auto-open add dialog when navigated with ?openAdd=true
+  useEffect(() => {
+    if (searchParams.get('openAdd') === 'true') {
+      setIsAddDialogOpen(true);
+      setSearchParams({}, { replace: true }); // Clean URL after consuming
+    }
+  }, [searchParams, setSearchParams]);
   
   // Natural language input state
   const [naturalInput, setNaturalInput] = useState('');

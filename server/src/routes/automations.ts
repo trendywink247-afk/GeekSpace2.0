@@ -13,7 +13,9 @@ import {
 export const automationsRouter = Router();
 
 automationsRouter.get('/', requireAuth, (req: AuthRequest, res) => {
-  const automations = db.prepare('SELECT * FROM automations WHERE user_id = ? ORDER BY created_at DESC').all(req.userId!);
+  const rows = db.prepare('SELECT * FROM automations WHERE user_id = ? ORDER BY created_at DESC').all(req.userId!) as Array<Record<string, unknown>>;
+  // 48.1: Normalize enabled to boolean (SQLite returns 0/1 which confuses React toggle state)
+  const automations = rows.map(a => ({ ...a, enabled: Boolean(a.enabled) }));
   res.json(automations);
 });
 
@@ -54,8 +56,9 @@ automationsRouter.patch('/:id', requireAuth, validateBody(automationUpdateSchema
   // Hot-reload engine
   onAutomationChanged(req.params.id);
 
-  const automation = db.prepare('SELECT * FROM automations WHERE id = ?').get(req.params.id);
-  res.json(automation);
+  const raw = db.prepare('SELECT * FROM automations WHERE id = ?').get(req.params.id) as Record<string, unknown> | undefined;
+  if (!raw) { res.status(404).json({ error: 'Not found' }); return; }
+  res.json({ ...raw, enabled: Boolean(raw.enabled) });
 });
 
 automationsRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {

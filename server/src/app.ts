@@ -97,6 +97,12 @@ export function createApp(): express.Application {
     frameguard: { action: 'deny' },
   }));
 
+  // 48.7: Permissions-Policy header — restrict browser APIs to those the app actually uses
+  app.use((_req, res, next) => {
+    res.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()');
+    next();
+  });
+
   // ---- CORS ----
   app.use(cors({
     origin: config.corsOrigins,

@@ -15,7 +15,7 @@ import type { ParsedAction } from './action-parser.js';
 import { config } from '../config.js';
 import { RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
 import { generateImage, generateVideo, generateAvatar } from './media-generation.js';
-import { cacheSet, cacheGet } from './cache.js';
+import { cacheSet, cacheGet, cacheDel } from './cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from './telegram.js';
 
 // ── Types ───────────────────────────────────────────────────
@@ -30,6 +30,18 @@ export interface ActionResult {
   videoUrl?: string;  // Set by generate_video action
   data?: Record<string, unknown>;
   receipt?: ReceiptItem; // Visual confirmation of action taken
+}
+
+// ── Portfolio cache helper ───────────────────────────────────
+// 48.2: Invalidate public portfolio cache after AI-driven portfolio writes
+async function invalidatePortfolioCache(userId: string): Promise<void> {
+  try {
+    const row = db.prepare('SELECT username FROM portfolios WHERE user_id = ?').get(userId) as { username: string } | undefined;
+    if (row?.username) await cacheDel(`portfolio:${row.username}`);
+    // Also invalidate by users.username in case portfolios.username differs
+    const userRow = db.prepare('SELECT username FROM users WHERE id = ?').get(userId) as { username: string } | undefined;
+    if (userRow?.username && userRow.username !== row?.username) await cacheDel(`portfolio:${userRow.username}`);
+  } catch { /* non-fatal */ }
 }
 
 // ── Executor ────────────────────────────────────────────────
@@ -74,6 +86,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
             });
             db.prepare('UPDATE portfolios SET projects = ? WHERE user_id = ?')
               .run(JSON.stringify(projects), userId);
+            await invalidatePortfolioCache(userId); // 48.2
           }
         } catch { /* non-fatal */ }
 
@@ -111,6 +124,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         db.prepare(
           `UPDATE portfolios SET projects = ? WHERE user_id = ?`,
         ).run(JSON.stringify(projects), userId);
+        await invalidatePortfolioCache(userId); // 48.2
 
         return {
           tool,
@@ -125,6 +139,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         db.prepare(
           `UPDATE portfolios SET about = ? WHERE user_id = ?`,
         ).run(params.bio as string, userId);
+        await invalidatePortfolioCache(userId); // 48.2
 
         return {
           tool,
@@ -139,6 +154,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         db.prepare(
           `UPDATE portfolios SET skills = ? WHERE user_id = ?`,
         ).run(JSON.stringify(params.skills as string[]), userId);
+        await invalidatePortfolioCache(userId); // 48.2
 
         return {
           tool,
@@ -174,6 +190,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         db.prepare(
           `UPDATE portfolios SET projects = ? WHERE user_id = ?`,
         ).run(JSON.stringify(filtered), userId);
+        await invalidatePortfolioCache(userId); // 48.2
 
         return {
           tool,
