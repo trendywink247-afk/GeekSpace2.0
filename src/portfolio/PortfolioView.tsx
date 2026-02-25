@@ -63,6 +63,33 @@ export function PortfolioView() {
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [isStatusLoading, setIsStatusLoading] = useState(false);
 
+  // 37.1: Contact modal state
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
+  const [contactSending, setContactSending] = useState(false);
+  const [contactSent, setContactSent] = useState(false);
+  const [contactError, setContactError] = useState('');
+
+  const handleSendContact = async () => {
+    if (!contactName.trim() || !contactMessage.trim() || !username) return;
+    setContactSending(true);
+    setContactError('');
+    try {
+      await portfolioService.contact(username, {
+        senderName: contactName.trim(),
+        senderEmail: contactEmail.trim() || undefined,
+        message: contactMessage.trim(),
+      });
+      setContactSent(true);
+    } catch {
+      setContactError('Failed to send message. Please try again.');
+    } finally {
+      setContactSending(false);
+    }
+  };
+
   // Fetch portfolio data from API
   useEffect(() => {
     if (!username) return;
@@ -278,6 +305,15 @@ export function PortfolioView() {
                 {portfolio.social?.email && (
                   <a href={`mailto:${portfolio.social.email}`} className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/50 hover:bg-[#BF5FFF]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Email"><Mail className="w-5 h-5 text-[#BF5FFF]/70 hover:text-[#BF5FFF]" /></a>
                 )}
+                {/* 37.1: Contact button */}
+                <button
+                  onClick={() => { setContactOpen(true); setContactSent(false); setContactError(''); }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/30 hover:bg-[#00F0FF]/20 transition-all text-[#00F0FF] text-sm font-medium press-scale"
+                  aria-label="Send message"
+                >
+                  <Send className="w-4 h-4" />
+                  Message
+                </button>
               </div>
             </div>
 
@@ -637,6 +673,70 @@ export function PortfolioView() {
           </p>
         </div>
       </footer>
+
+      {/* 37.1: Contact modal */}
+      {contactOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)' }}>
+          <div className="w-full max-w-md rounded-2xl border border-[#00F0FF]/20 p-6" style={{ background: '#06060B' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-[#E8E8F0]">Message {displayName}</h2>
+              <button onClick={() => setContactOpen(false)} className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] transition-colors" aria-label="Close"><X className="w-5 h-5" /></button>
+            </div>
+
+            {contactSent ? (
+              <div className="text-center py-6">
+                <div className="w-12 h-12 rounded-full bg-[#00FF88]/15 flex items-center justify-center mx-auto mb-3">
+                  <Send className="w-6 h-6 text-[#00FF88]" />
+                </div>
+                <p className="text-[#00FF88] font-semibold mb-1">Message sent!</p>
+                <p className="text-sm text-[#6B7280]">{displayName} will be notified.</p>
+                <button onClick={() => setContactOpen(false)} className="mt-4 text-sm text-[#00F0FF] hover:underline">Close</button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-[#6B7280] mb-1 block">Your name *</label>
+                  <Input
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    placeholder="Jane Smith"
+                    className="bg-[#0C0C18] border-[#00F0FF]/20"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-[#6B7280] mb-1 block">Email (optional)</label>
+                  <Input
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="jane@example.com"
+                    type="email"
+                    className="bg-[#0C0C18] border-[#00F0FF]/20"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-[#6B7280] mb-1 block">Message * <span className="text-[#4B5563]">({contactMessage.length}/1000)</span></label>
+                  <textarea
+                    value={contactMessage}
+                    onChange={(e) => setContactMessage(e.target.value.slice(0, 1000))}
+                    placeholder="Hi, I'd love to connect about..."
+                    rows={4}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] placeholder-[#4B5563] focus:outline-none focus:border-[#00F0FF]/40 text-sm resize-none"
+                  />
+                </div>
+                {contactError && <p className="text-xs text-[#FF6161]">{contactError}</p>}
+                <button
+                  onClick={handleSendContact}
+                  disabled={contactSending || !contactName.trim() || !contactMessage.trim()}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold text-sm transition-colors disabled:opacity-50"
+                >
+                  {contactSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {contactSending ? 'Sending…' : 'Send Message'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

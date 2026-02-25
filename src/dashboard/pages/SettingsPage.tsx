@@ -79,6 +79,8 @@ export function SettingsPage() {
     notif_reminders: 1,
     notif_escalations: 1,
     notif_agents: 1,
+    notif_daily_briefing: 1,
+    notif_connections: 1,
   });
 
   const [privacy, setPrivacy] = useState({
@@ -485,6 +487,8 @@ export function SettingsPage() {
                 { key: 'notif_reminders' as const, title: 'Reminder alerts', desc: 'Get notified when a reminder fires' },
                 { key: 'notif_escalations' as const, title: 'Escalation alerts', desc: 'Receive replies to Telegram escalations' },
                 { key: 'notif_agents' as const, title: 'Agent activity alerts', desc: 'Notifications for agent actions and tasks' },
+                { key: 'notif_daily_briefing' as const, title: 'Daily briefing', desc: 'Deliver your daily AI briefing via Telegram' },
+                { key: 'notif_connections' as const, title: 'Connection alerts', desc: 'Get notified when someone accepts your invite' },
               ] as const).map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div>
