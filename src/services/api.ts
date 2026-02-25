@@ -302,6 +302,10 @@ export const integrationService = {
   // Email notification settings
   updateNotificationEmail: (data: { enabled?: boolean; address?: string }) =>
     api.patch<{ enabled: boolean; address: string | null }>('/users/notification-email', data),
+
+  // Health check for a connected integration (24.1)
+  testIntegration: (type: string) =>
+    api.post<{ healthy: boolean; reason: string; type: string }>(`/integrations/${type}/test`),
 };
 
 // ----- Reminders ---------------------------------------------

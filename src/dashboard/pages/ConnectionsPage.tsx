@@ -97,11 +97,46 @@ export function ConnectionsPage() {
   const [whatsappPolling, setWhatsappPolling] = useState(false);
   const [whatsappPollAttempts, setWhatsappPollAttempts] = useState(0);
 
+  // Health poll state (24.1) — keyed by integration type
+  const [healthStatus, setHealthStatus] = useState<Record<string, 'healthy' | 'unhealthy' | 'checking'>>({});
+
   // Email dialog state
   const [emailDialog, setEmailDialog] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
   const [emailSaving, setEmailSaving] = useState(false);
   const [emailSaved, setEmailSaved] = useState(false);
+
+  // Run health check for all connected integrations on mount and every 60s
+  useEffect(() => {
+    const runHealthChecks = async () => {
+      const connected = integrations.filter(c => c.status === 'connected');
+      if (connected.length === 0) return;
+      setHealthStatus(prev => {
+        const next = { ...prev };
+        for (const c of connected) next[c.type] = 'checking';
+        return next;
+      });
+      const results = await Promise.allSettled(
+        connected.map(c => integrationService.testIntegration(c.type))
+      );
+      setHealthStatus(prev => {
+        const next = { ...prev };
+        results.forEach((r, i) => {
+          const type = connected[i].type;
+          if (r.status === 'fulfilled') {
+            next[type] = r.value.data.healthy ? 'healthy' : 'unhealthy';
+          } else {
+            next[type] = 'unhealthy';
+          }
+        });
+        return next;
+      });
+    };
+
+    runHealthChecks();
+    const interval = setInterval(runHealthChecks, 60_000);
+    return () => clearInterval(interval);
+  }, [integrations]);
 
   const connectedCount = integrations.filter(c => c.status === 'connected').length;
   const totalRequests = integrations.reduce((acc, c) => acc + c.requestsToday, 0);
@@ -557,6 +592,24 @@ export function ConnectionsPage() {
                         <span className={`text-xs ${getStatusColor(connection.status)} capitalize`}>
                           {connection.status}
                         </span>
+                        {connection.status === 'connected' && healthStatus[connection.type] && (
+                          <span
+                            className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${
+                              healthStatus[connection.type] === 'healthy'
+                                ? 'bg-[#00FF88]'
+                                : healthStatus[connection.type] === 'checking'
+                                ? 'bg-[#F59E0B] animate-pulse'
+                                : 'bg-[#FF6161]'
+                            }`}
+                            title={
+                              healthStatus[connection.type] === 'healthy'
+                                ? 'Integration is healthy'
+                                : healthStatus[connection.type] === 'checking'
+                                ? 'Checking health...'
+                                : 'Integration may have issues'
+                            }
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
