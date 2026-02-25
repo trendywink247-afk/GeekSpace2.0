@@ -3,11 +3,18 @@ import { test, expect } from '@playwright/test';
 /**
  * Reminders Page E2E Tests
  * Tests the reminder CRUD flow
+ *
+ * Uses direct URL navigation (/dashboard/reminders) like connections.spec.ts
+ * and health.spec.ts — the Reminders nav item is inside a collapsed
+ * 'Productivity' group so sidebar clicks are unreliable.
+ *
+ * Uses .first() on text locators and role='tab' for TabsTrigger to avoid
+ * strict mode violations when tests share a persistent DB.
  */
 
 test.describe('Reminders Page', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate directly to the reminders page via URL (same pattern as connections/health specs)
+    // Navigate directly to the reminders page via URL
     await page.goto('/dashboard/reminders');
     // Dismiss first-use tour so it doesn't intercept clicks
     await page.evaluate(() => localStorage.setItem('gs_dashboard_tour_seen', '1'));
@@ -41,17 +48,17 @@ test.describe('Reminders Page', () => {
 
     // Set datetime — use a future date
     const datetimeInput = page.locator('input[type="datetime-local"]');
-    // Use a fixed future datetime string (2030-01-15T10:00)
     await datetimeInput.fill('2030-01-15T10:00');
 
-    // Click "Add Reminder" submit button (the one in the footer, not the wand button)
+    // Click "Add Reminder" submit button (last button with that name in the dialog)
     const addBtn = page.getByRole('button', { name: 'Add Reminder' }).last();
     await expect(addBtn).toBeEnabled();
     await addBtn.click();
 
     // Dialog should close and reminder should appear in the list
+    // Use .first() to handle cases where a previous test created the same text
     await expect(page.getByRole('dialog')).not.toBeVisible();
-    await expect(page.getByText('E2E test reminder')).toBeVisible();
+    await expect(page.getByText('E2E test reminder').first()).toBeVisible();
   });
 
   test('should mark a reminder as complete', async ({ page }) => {
@@ -60,21 +67,22 @@ test.describe('Reminders Page', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
 
     const textInput = page.getByPlaceholder('Enter reminder text...');
-    await textInput.fill('Complete me');
+    await textInput.fill('Complete me E2E');
     const datetimeInput = page.locator('input[type="datetime-local"]');
     await datetimeInput.fill('2030-06-01T09:00');
     await page.getByRole('button', { name: 'Add Reminder' }).last().click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
-    await expect(page.getByText('Complete me')).toBeVisible();
+    // Use .first() to avoid strict mode violation if reminder was created before
+    await expect(page.getByText('Complete me E2E').first()).toBeVisible();
 
-    // Click the check/complete button for this reminder
-    // The complete button is a button with Check icon inside the reminder card
-    const reminderCard = page.locator('[data-testid="reminders-page"]').getByText('Complete me').locator('../..').first();
-    const completeBtn = reminderCard.getByRole('button').first();
+    // Click the "Mark as complete" button using its aria-label
+    // Get the button associated with the most recently visible 'Complete me E2E' reminder
+    const completeBtn = page.getByRole('button', { name: 'Mark as complete' }).first();
     await completeBtn.click();
 
-    // Switch to "completed" filter to verify the reminder moved there
-    await page.getByRole('button', { name: /completed/i }).click();
-    await expect(page.getByText('Complete me')).toBeVisible();
+    // Switch to "completed" tab/filter to verify the reminder moved there
+    // TabsTrigger renders as role="tab"
+    await page.getByRole('tab', { name: 'Completed' }).click();
+    await expect(page.getByText('Complete me E2E').first()).toBeVisible();
   });
 });
