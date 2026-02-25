@@ -22,6 +22,7 @@ import {
   AlarmClock,
   Pencil,
   Download,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -737,6 +738,22 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               );
             })}
           </div>
+          {/* 50.5: Clear all filters button — shown when any filter is non-default */}
+          {(filter !== 'all' || categoryFilter !== 'all' || priorityFilter !== 'all' || recurrenceFilter !== 'all' || searchQuery !== '') && (
+            <button
+              onClick={() => {
+                setFilter('all');
+                setCategoryFilter('all');
+                setPriorityFilter('all');
+                setRecurrenceFilter('all');
+                setSearchQuery('');
+              }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border border-[#FF2D78]/30 text-[#FF2D78] bg-[#FF2D78]/8 hover:bg-[#FF2D78]/15 transition-all"
+            >
+              <X className="w-3 h-3" />
+              Clear filters
+            </button>
+          )}
         </div>
         <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
           <button

@@ -4,6 +4,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   MessageSquare,
   Calendar,
@@ -88,6 +89,13 @@ type WhatsAppStep = 'idle' | 'generating' | 'show-qr' | 'waiting' | 'success' | 
 export function ConnectionsPage() {
   const { integrations, connectIntegration, disconnectIntegration, loadIntegrations } = useDashboardStore();
   const isMobile = useMobileDetect();
+
+  // 50.4: Status filter persisted to URL param
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusFilter = (searchParams.get('status') as 'all' | 'connected' | 'disconnected') || 'all';
+  const setStatusFilter = (v: 'all' | 'connected' | 'disconnected') => {
+    setSearchParams(v === 'all' ? {} : { status: v }, { replace: true });
+  };
 
   // Per-integration connecting state — avoids blocking ALL buttons when one is connecting
   const [connectingId, setConnectingId] = useState<string | null>(null);
@@ -181,6 +189,11 @@ export function ConnectionsPage() {
   const connectedCount = integrations.filter(c => c.status === 'connected').length;
   const totalRequests = integrations.reduce((acc, c) => acc + c.requestsToday, 0);
   const avgHealth = Math.round(integrations.filter(c => c.status === 'connected').reduce((acc, c) => acc + c.health, 0) / (connectedCount || 1));
+
+  // 50.4: Apply status filter
+  const filteredIntegrations = statusFilter === 'all'
+    ? integrations
+    : integrations.filter(c => statusFilter === 'connected' ? c.status === 'connected' : c.status !== 'connected');
 
   // Poll for Telegram link status
   const pollTelegramStatus = useCallback(async () => {
@@ -650,17 +663,38 @@ export function ConnectionsPage() {
         </Card>
       )}
 
+      {/* 50.4: Status filter chips — persisted to URL param */}
+      <div className="flex items-center gap-2">
+        {(['all', 'connected', 'disconnected'] as const).map((opt) => (
+          <button
+            key={opt}
+            onClick={() => setStatusFilter(opt)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              statusFilter === opt
+                ? opt === 'connected'
+                  ? 'bg-[#00FF88]/15 border-[#00FF88]/50 text-[#00FF88]'
+                  : opt === 'disconnected'
+                  ? 'bg-[#FF6161]/15 border-[#FF6161]/50 text-[#FF6161]'
+                  : 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[#00F0FF]'
+                : 'border-[#00F0FF]/15 text-[#6B7280] hover:border-[#00F0FF]/30 hover:text-[#E8E8F0]'
+            }`}
+          >
+            {opt === 'all' ? `All (${integrations.length})` : opt === 'connected' ? `Connected (${connectedCount})` : `Disconnected (${integrations.length - connectedCount})`}
+          </button>
+        ))}
+      </div>
+
       {/* Connection Grid */}
       <div id="integration-grid" className="grid md:grid-cols-2 gap-4">
         {/* 46.3: Empty state when no integrations are available */}
-        {integrations.length === 0 && (
+        {filteredIntegrations.length === 0 && (
           <div className="md:col-span-2 text-center py-12 text-[#8888AA]">
             <Plug className="w-12 h-12 mx-auto mb-4 text-[#8888AA]/40" />
-            <p className="text-lg font-medium mb-2">No integrations connected yet</p>
+            <p className="text-lg font-medium mb-2">{statusFilter === 'all' ? 'No integrations connected yet' : `No ${statusFilter} integrations`}</p>
             <p className="text-sm">Connect Telegram, WhatsApp, or webhooks to receive notifications and automate your workflows.</p>
           </div>
         )}
-        {integrations.map((connection) => {
+        {filteredIntegrations.map((connection) => {
           const Icon = getIcon(connection.type);
           const color = getColor(connection.type);
           return (
