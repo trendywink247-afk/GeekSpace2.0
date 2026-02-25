@@ -743,6 +743,54 @@ export function RemindersPage() {
                     onChange={(e) => setNewReminder({ ...newReminder, datetime: e.target.value })}
                     className="bg-[#06060B] border-[#00F0FF]/20"
                   />
+                  {/* 27.5: Quick date preset buttons */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {[
+                      {
+                        label: 'In 1 hour',
+                        getDatetime: () => {
+                          const d = new Date(Date.now() + 60 * 60 * 1000);
+                          return d.toISOString().slice(0, 16);
+                        },
+                      },
+                      {
+                        label: 'Tomorrow 9am',
+                        getDatetime: () => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 1);
+                          d.setHours(9, 0, 0, 0);
+                          return d.toISOString().slice(0, 16);
+                        },
+                      },
+                      {
+                        label: 'Next Monday',
+                        getDatetime: () => {
+                          const d = new Date();
+                          const day = d.getDay();
+                          const daysUntilMonday = day === 0 ? 1 : 8 - day;
+                          d.setDate(d.getDate() + daysUntilMonday);
+                          d.setHours(9, 0, 0, 0);
+                          return d.toISOString().slice(0, 16);
+                        },
+                      },
+                      {
+                        label: 'In 1 week',
+                        getDatetime: () => {
+                          const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                          return d.toISOString().slice(0, 16);
+                        },
+                      },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => setNewReminder({ ...newReminder, datetime: preset.getDatetime() })}
+                        className="px-2 py-1 rounded text-xs bg-[#06060B] border border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/60 hover:text-[#00F0FF] transition-colors"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs text-[#6B7280] mb-1 block">Category</label>

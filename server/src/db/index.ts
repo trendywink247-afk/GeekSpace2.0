@@ -1205,3 +1205,16 @@ try { db.exec(`ALTER TABLE users ADD COLUMN password_changed_at INTEGER DEFAULT 
 
 // Phase 26.2: Reminder priority levels
 try { db.exec(`ALTER TABLE reminders ADD COLUMN priority TEXT DEFAULT 'normal'`); } catch { /* column already exists */ }
+
+// Phase 27.3: Connection invite links
+db.exec(`
+  CREATE TABLE IF NOT EXISTS connection_invites (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    email TEXT,
+    expires_at INTEGER NOT NULL,
+    used_at INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
+  )
+`);
