@@ -7,6 +7,7 @@ import {
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
   Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles
 } from 'lucide-react';
+import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentDesignWizard } from '@/components/AgentDesignWizard';
@@ -140,13 +141,6 @@ const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard
   { id: 'more', label: 'More', icon: MoreHorizontal },
 ];
 
-function PageLoader() {
-  return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-}
 
 export function DashboardApp() {
   const navigate = useNavigate();
@@ -775,7 +769,7 @@ export function DashboardApp() {
         {/* Page Content */}
         <div className="p-4 md:p-6" {...swipeHandlers}>
           <ErrorBoundary>
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<PageSkeleton />}>
             <div key={currentPage} className="animate-page-enter">
               {renderPage()}
             </div>
