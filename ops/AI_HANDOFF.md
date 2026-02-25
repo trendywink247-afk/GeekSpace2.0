@@ -5,8 +5,8 @@
 
 ## Current State
 
-**Branch:** `ai/phase-20260225-chat-retry-usage-export` (worktree at `.worktrees/phase-8`)
-**Phase:** 8 — Implementation Complete ✅ — PR open (draft)
+**Branch:** `ai/phase-20260225-portfolio-sharing-reminders-streaming` (worktree at `.worktrees/phase-9`)
+**Phase:** 9 — Implementation Complete ✅ — PR open (draft)
 **Status:** 154/154 tests passing (no regressions), lint/typecheck/build green — ready to merge
 
 ## Deployment History
@@ -22,57 +22,53 @@
 | Phase 6 | SSE delta fix, admin CSP, targeted store actions | #35 | 72b971c | ✅ merged |
 | Phase 7 | Escalation service, webhook hardening, build info, chat search | #36 | — | 🟡 PR open |
 | Phase 8 | Chat retry, credits display, export, WA deprecation, reactions | #37 | — | 🟡 PR open |
+| Phase 9 | Portfolio share, response feedback (👎), ops | — | — | 🟡 PR open |
 
-## Phase 8 Items Status
+## Phase 9 Items Status
 
 | # | Item | Status |
 |---|------|--------|
-| 8.1 | Chat error recovery + retry button | ✅ Done |
-| 8.2 | Credits remaining display in regular chat header | ✅ Done |
-| 8.3 | Conversation export API + download button | ✅ Done |
-| 8.4 | WhatsApp old endpoint deprecation log | ✅ Done |
-| 8.5 | Message reactions persistence (DB + API + frontend) | ✅ Done |
-| 8.6 | Ops files updated | ✅ Done |
+| 9.1 | Portfolio public sharing button | ✅ Done |
+| 9.2 | Recurring reminders | ✅ Already done (recurring column exists) |
+| 9.3 | Auth session management | ⏭️ Skipped (too risky) |
+| 9.4 | Chat streaming UX | ✅ Already done (typing indicator exists) |
+| 9.5 | Response feedback thumbs up/down | ✅ Done |
+| 9.6 | Ops files updated | ✅ Done |
 
 ## Resume Steps (Next Session)
 
 1. `cd ~/GeekSpace2.0 && git worktree list`
-2. Review PR for phase-7 and phase-8, merge when ready
-3. Start Phase 9 — see ops/AI_BACKLOG.md for next priorities
+2. Review and merge open PRs (#36, #37, phase-9 PR)
+3. Start Phase 10 — see ops/AI_BACKLOG.md for next priorities
 
-## Key Changes in Phase 8
+## Key Changes in Phase 9
 
-### src/components/AgentChatPanel.tsx
-- Added `retryContent?: string` to `ChatMessage` interface
-- When send fails, error message now stores original user content in `retryContent`
-- Retry button (RotateCcw icon) renders below failed error messages, aligned right
-- `creditsRemaining` state tracks last known credits from `agentService.chat()` response
-- Credits shown as "· ⚡ N credits" in the Online status line in header
-- Download icon button in header triggers `getConversationsExport(1000)` → downloads `conversations.json`
-- `MessageReactions.onReact` wired to `memoryService.addReaction()` (error silently swallowed)
+### src/dashboard/pages/PortfolioPage.tsx
+- Added `linkCopied` state (boolean, auto-resets after 2s)
+- Added `handleCopyLink()` async handler: copies `/portfolio/<username>` URL to clipboard
+- Added "Copy Link" button in header (next to "View Live"), shows "Copied!" confirmation
+  with green styling while active, purple-accented when idle
+- Falls back to `setMessage()` if clipboard API unavailable
 
-### src/services/api.ts
-- `memoryService.getConversationsExport(limit?)` — `GET /agent/conversations?limit=N`
-- `memoryService.addReaction(messageId, reaction)` — `POST /agent/conversations/reactions`
-
-### server/src/routes/agent.ts
-- `GET /api/conversations/export` — returns up to 1000 conversations as JSON attachment
-- `POST /api/conversations/reactions` — persists message reaction to `message_reactions` table
-
-### server/src/db/index.ts
-- `message_reactions` table (id, user_id, message_id, reaction, created_at) with indexes
-
-### server/src/routes/integrations.ts
-- `logger` imported
-- `POST /whatsapp/link`: deprecation `logger.warn` + `X-Deprecated: true` header added
+### src/components/MessageReactions.tsx
+- Added `ThumbsDown` to lucide-react imports
+- Added `'dislike'` to `ReactionType` union type
+- Added `{ id: 'dislike', icon: ThumbsDown, emoji: '👎', label: 'Not helpful', color: '#FF6161' }` to reactions array (appears between like and love)
+- Updated `ReactionSummary` to render 👎 when `reactions.dislike > 0`
 
 ## Verification Evidence
 
 ```
 Tests:  154/154 passing (no new tests added; no regressions)
 TSC:    npx tsc --noEmit → clean (frontend)
-        cd server && npx tsc --noEmit → clean (backend)
+        cd server && npx tsc --noEmit → clean (backend, run from /server)
 Build:  npm run build → success
         cd server && npm run build → success
-ESLint: npx eslint src/components/AgentChatPanel.tsx src/services/api.ts --max-warnings=0 → clean
+ESLint: npx eslint src/dashboard/pages/PortfolioPage.tsx --max-warnings=0 → clean
+        npx eslint src/components/MessageReactions.tsx --max-warnings=0 → clean
 ```
+
+## Notes for Next Phase
+- Auth session management (9.3) deferred — good candidate for a dedicated security/hardening phase
+- Consider adding thumbs-down analytics to admin dashboard
+- Phase 10 suggestions: notification preferences UI, portfolio analytics, agent personality customization

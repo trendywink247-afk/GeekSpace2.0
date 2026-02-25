@@ -54,3 +54,11 @@ _(none currently — all P0 items resolved in Phase 1/2)_
 - [x] **Phase 8** — Conversation export: GET /conversations/export + download button in chat UI
 - [x] **Phase 8** — WhatsApp old endpoint deprecation log + X-Deprecated header
 - [x] **Phase 8** — Message reactions persistence (message_reactions table + API + frontend wired)
+
+---
+_Updated Phase 9 (2026-02-25):_
+- [x] Portfolio share/copy link button — added to PortfolioPage header (Phase 9)
+- [x] Response feedback (👎 thumbs-down) — added dislike reaction to MessageReactions (Phase 9)
+- [ ] Auth session management — deferred from Phase 9 (too complex); needs dedicated security phase
+- [ ] Admin dashboard: thumbs-down analytics visualization
+- [ ] Phase 10 candidates: notification preferences UI, portfolio view analytics, personality customization

@@ -22,6 +22,20 @@ export function PortfolioPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const handleCopyLink = async () => {
+    if (!user?.username) return;
+    const url = `${window.location.origin}/portfolio/${user.username}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // Fallback: show the URL in message
+      setMessage({ type: 'success', text: `Share this link: ${url}` });
+    }
+  };
 
   // Portfolio state
   const [headline, setHeadline] = useState('');
@@ -273,15 +287,26 @@ export function PortfolioPage() {
         </div>
         <div className="flex items-center gap-3">
           {user?.username && (
-            <a
-              href={`/portfolio/${user.username}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-              View Live
-            </a>
+            <>
+              <button
+                onClick={handleCopyLink}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-colors min-h-[36px]"
+                style={linkCopied ? { color: '#00FF88', borderColor: 'rgba(0,255,136,0.4)', background: 'rgba(0,255,136,0.1)' } : { color: '#BF5FFF', borderColor: 'rgba(191,95,255,0.3)' }}
+                title="Copy portfolio link"
+              >
+                <Share2 className="w-4 h-4" />
+                {linkCopied ? 'Copied!' : 'Copy Link'}
+              </button>
+              <a
+                href={`/portfolio/${user.username}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                View Live
+              </a>
+            </>
           )}
           <Button onClick={handleSave} disabled={isSaving} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">
             {isSaving ? (
