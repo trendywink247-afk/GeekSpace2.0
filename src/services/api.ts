@@ -162,6 +162,9 @@ export const userService = {
   getActivity: (limit = 50, offset = 0) =>
     api.get<{ activity: ActivityEntry[]; total: number }>(`/activity?limit=${limit}&offset=${offset}`),
 
+  clearActivity: () =>
+    api.delete<{ deleted: number }>('/activity'),
+
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post<{ success: boolean; message: string }>('/users/me/change-password', {
       currentPassword,

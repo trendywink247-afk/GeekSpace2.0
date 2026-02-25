@@ -61,6 +61,9 @@ export function RemindersPage() {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'recurring' | 'one-off'>('all');
+  // 40.1: Category and priority filter pills
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'personal' | 'work' | 'health' | 'other'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<'all' | 'urgent' | 'high' | 'normal' | 'low'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
@@ -333,6 +336,14 @@ export function RemindersPage() {
     if (recurrenceFilter === 'recurring') return !!r.recurrence;
     if (recurrenceFilter === 'one-off') return !r.recurrence;
     return true;
+  }).filter(r => {
+    // 40.1: Category filter
+    if (categoryFilter !== 'all') return r.category === categoryFilter;
+    return true;
+  }).filter(r => {
+    // 40.1: Priority filter
+    if (priorityFilter !== 'all') return (r.priority ?? 'normal') === priorityFilter;
+    return true;
   }).filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       const pa = priorityOrder[a.priority ?? 'normal'] ?? 2;
@@ -555,6 +566,45 @@ export function RemindersPage() {
             >
               <Download className="w-3 h-3 mr-1" />CSV
             </Button>
+          </div>
+          {/* 40.1: Category filter pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {(['all', 'personal', 'work', 'health', 'other'] as const).map((cat) => {
+              const color = cat === 'all' ? '#00F0FF' : (categoryColors[cat] ?? '#6B7280');
+              const isActive = categoryFilter === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setCategoryFilter(cat)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                    isActive ? 'border-current' : 'border-[#00F0FF]/10 text-[#6B7280] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+                  }`}
+                  style={isActive ? { color, backgroundColor: `${color}15`, borderColor: `${color}60` } : {}}
+                >
+                  {cat === 'all' ? 'All categories' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </button>
+              );
+            })}
+          </div>
+          {/* 40.1: Priority filter pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {(['all', 'urgent', 'high', 'normal', 'low'] as const).map((pri) => {
+              const cfg = pri === 'all' ? null : priorityConfig[pri];
+              const color = cfg?.color ?? '#00F0FF';
+              const isActive = priorityFilter === pri;
+              return (
+                <button
+                  key={pri}
+                  onClick={() => setPriorityFilter(pri)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                    isActive ? 'border-current' : 'border-[#00F0FF]/10 text-[#6B7280] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+                  }`}
+                  style={isActive ? { color, backgroundColor: `${color}15`, borderColor: `${color}60` } : {}}
+                >
+                  {pri === 'all' ? 'All priorities' : cfg?.label ?? pri}
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
@@ -792,15 +842,29 @@ export function RemindersPage() {
                                       ) : snoozeHistory.length === 0 ? (
                                         <p className="text-xs text-[#6B7280]">No history yet</p>
                                       ) : (
-                                        <div className="space-y-1.5">
-                                          {snoozeHistory.map((h) => (
-                                            <div key={h.id} className="text-xs text-[#6B7280]">
-                                              <span className="text-[#E8E8F0]">{h.preset}</span>
-                                              {' → '}
-                                              {new Date(h.new_datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                            </div>
-                                          ))}
-                                        </div>
+                                        <>
+                                          <div className="space-y-1.5">
+                                            {snoozeHistory.map((h) => (
+                                              <div key={h.id} className="text-xs text-[#6B7280]">
+                                                <span className="text-[#E8E8F0]">{h.preset}</span>
+                                                {' → '}
+                                                {new Date(h.new_datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                              </div>
+                                            ))}
+                                          </div>
+                                          {/* 40.5: Snooze analytics summary */}
+                                          {(() => {
+                                            const counts: Record<string, number> = {};
+                                            snoozeHistory.forEach((h) => { counts[h.preset] = (counts[h.preset] ?? 0) + 1; });
+                                            const mostUsed = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+                                            return (
+                                              <p className="text-[10px] text-[#6B7280]/70 border-t border-[#F59E0B]/20 pt-1.5 mt-1.5">
+                                                Total {snoozeHistory.length} snooze{snoozeHistory.length !== 1 ? 's' : ''}
+                                                {mostUsed ? <>{' · Most used: '}<span className="text-[#F59E0B]">{mostUsed}</span></> : null}
+                                              </p>
+                                            );
+                                          })()}
+                                        </>
                                       )}
                                     </div>
                                   )}
