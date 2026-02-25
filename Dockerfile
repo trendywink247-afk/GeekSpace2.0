@@ -67,6 +67,10 @@ ENV NODE_ENV=production
 ENV PORT=3001
 ENV DB_PATH=/app/data/geekspace.db
 
+# 47.9: GIT_SHA baked in at build time (pass via --build-arg GIT_SHA=$(git rev-parse --short HEAD))
+ARG GIT_SHA=unknown
+ENV GIT_SHA=${GIT_SHA}
+
 EXPOSE 3001
 
 # Longer start-period for PM2 cluster (2 workers starting up)
