@@ -146,7 +146,8 @@ describe('Phase 43.9 — DB indexes', () => {
       "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'"
     ).all() as { name: string }[];
     const names = new Set(indexes.map((i) => i.name));
-    expect(names.has('idx_reminders_user_due')).toBe(true);
+    // idx_reminders_user_due was removed in Phase 45.2 (duplicate of idx_reminders_datetime)
+    expect(names.has('idx_reminders_datetime')).toBe(true);
     expect(names.has('idx_activity_log_user_created')).toBe(true);
     expect(names.has('idx_snooze_log_reminder')).toBe(true);
     expect(names.has('idx_conversations_user_updated')).toBe(true);

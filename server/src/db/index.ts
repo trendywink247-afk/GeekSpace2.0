@@ -1302,9 +1302,10 @@ try { db.exec(`ALTER TABLE reminders ADD COLUMN remind_before_sent_at INTEGER`);
 // Phase 41.6: Custom snooze presets for agent config
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN snooze_presets TEXT DEFAULT '[]'`); } catch { /* column already exists */ }
 
+// Phase 45.2: Drop duplicate reminders index (idx_reminders_datetime from Phase 30 covers the same cols)
+try { db.exec(`DROP INDEX IF EXISTS idx_reminders_user_due`); } catch { /* ignore */ }
+
 // Phase 43.9: Performance indexes for hot-path compound queries
-// reminders: user + due-date compound lookup (column is "datetime", not "due_at")
-try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reminders_user_due ON reminders(user_id, datetime)`); } catch { /* already exists */ }
 // activity_log: user + created_at DESC for sorted activity feeds
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_activity_log_user_created ON activity_log(user_id, created_at DESC)`); } catch { /* already exists */ }
 // snooze_log: reminder + snoozed_at DESC (may already exist from Phase 36; IF NOT EXISTS is safe)
