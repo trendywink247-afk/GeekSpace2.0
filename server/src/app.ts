@@ -6,7 +6,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { type Options as RateLimitOptions } from 'express-rate-limit';
 import passport from 'passport';
 
 import { config } from './config.js';
@@ -112,6 +112,17 @@ export function createApp(): express.Application {
   const enableRateLimiting = !config.isTestMode;
 
   if (enableRateLimiting) {
+    // Shared handler: adds Retry-After header to all 429 responses
+    const rateLimitHandler = (_req: express.Request, res: express.Response, _next: express.NextFunction, options: RateLimitOptions) => {
+      // RateLimit-Reset is epoch seconds (express-rate-limit v8 standardHeaders)
+      const resetEpochSec = (res.getHeader('RateLimit-Reset') as number) || 0;
+      const retryAfterSecs = resetEpochSec
+        ? Math.max(1, Math.ceil(resetEpochSec - Date.now() / 1000))
+        : Math.ceil((options.windowMs ?? 60000) / 1000);
+      res.setHeader('Retry-After', retryAfterSecs);
+      res.status(options.statusCode ?? 429).json(typeof options.message === 'object' ? options.message : { error: options.message });
+    };
+
     // Global rate limiting
     const globalLimiter = rateLimit({
       windowMs: config.rateLimitWindowMs,
@@ -119,6 +130,7 @@ export function createApp(): express.Application {
       standardHeaders: true,
       legacyHeaders: false,
       message: { error: 'Too many requests. Please slow down.' },
+      handler: rateLimitHandler,
       skip: (req) =>
         req.path === '/health/stream' ||
         req.path === '/health',
@@ -131,6 +143,7 @@ export function createApp(): express.Application {
       max: config.rateLimitAuthMax,
       skipSuccessfulRequests: true,
       message: { error: 'Too many login attempts. Try again in 15 minutes.' },
+      handler: rateLimitHandler,
     });
     app.use('/api/auth/login', authLimiter);
     app.use('/api/auth/signup', authLimiter);
@@ -143,6 +156,7 @@ export function createApp(): express.Application {
       standardHeaders: true,
       legacyHeaders: false,
       message: { error: 'Too many chat requests. Please slow down.' },
+      handler: rateLimitHandler,
     });
     app.use('/api/agent/chat', chatLimiter);
     app.use('/api/agent/chat/stream', chatLimiter);
@@ -154,6 +168,7 @@ export function createApp(): express.Application {
       standardHeaders: true,
       legacyHeaders: false,
       message: { error: 'Too many requests. Please try again later.' },
+      handler: rateLimitHandler,
     });
     app.use('/api/agent/chat/public', publicLimiter);
     app.use('/api/dashboard/contact', publicLimiter);
