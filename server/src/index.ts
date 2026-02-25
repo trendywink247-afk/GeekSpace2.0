@@ -28,22 +28,26 @@ import { startOllamaKeepalive } from './services/llm.js';
 const app = createApp();
 
 // ---- Graceful shutdown ----
-function shutdown(signal: string) {
-  logger.info(`Received ${signal}, shutting down gracefully...`);
-  // Force-exit after 10s to prevent hung processes during restart
+function shutdown(signal: string, httpServer: import('http').Server) {
+  logger.info(`Received ${signal} — stopping new connections, draining in-flight requests...`);
+
+  // Force-exit after 10s to prevent hung processes during container restart
   const forceExit = setTimeout(() => {
     logger.error('Graceful shutdown timeout (10s exceeded) — forcing exit');
     process.exit(1);
   }, 10_000);
-  forceExit.unref(); // Don't let this timer prevent normal exit
-  db.close();
-  process.exit(0);
+  forceExit.unref(); // Don't block normal exit
+
+  httpServer.close(() => {
+    logger.info('HTTP server closed — no more in-flight requests');
+    try { db.close(); } catch { /* ignore if already closed */ }
+    logger.info('Graceful shutdown complete');
+    process.exit(0);
+  });
 }
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
 
 // ---- Start server ----
-app.listen(config.port, () => {
+const httpServer = app.listen(config.port, () => {
   logger.info({
     port: config.port,
     env: config.env,
@@ -104,3 +108,6 @@ app.listen(config.port, () => {
     logger.info({ worker: instanceId }, 'Cluster worker — schedulers skipped');
   }
 });
+
+process.on('SIGTERM', () => shutdown('SIGTERM', httpServer));
+process.on('SIGINT', () => shutdown('SIGINT', httpServer));

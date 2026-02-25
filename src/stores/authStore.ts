@@ -16,6 +16,7 @@ interface AuthStore {
   isAuthenticated: boolean;
   isLoading: boolean;
   onboarding: OnboardingState;
+  compactMode: boolean;
 
   // actions
   login: (email: string, password: string) => Promise<void>;
@@ -26,6 +27,7 @@ interface AuthStore {
   saveOnboardingStep: (step: number, data: Record<string, unknown>) => Promise<void>;
   updateOnboarding: (data: Partial<OnboardingState>) => void;
   completeOnboarding: () => Promise<void>;
+  setCompactMode: (enabled: boolean) => void;
 
   // demo mode
   loginDemo: () => Promise<void>;
@@ -64,6 +66,7 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       isLoading: false,
       onboarding: { ...defaultOnboarding },
+      compactMode: false,
 
       login: async (email, password) => {
         set({ isLoading: true });
@@ -141,6 +144,8 @@ export const useAuthStore = create<AuthStore>()(
         set((s) => ({ onboarding: { ...s.onboarding, completed: true, step: 6 } }));
       },
 
+      setCompactMode: (enabled) => set({ compactMode: enabled }),
+
       // Demo mode: call real API, fallback to mock if backend unreachable
       loginDemo: async () => {
         set({ isLoading: true });
@@ -173,6 +178,7 @@ export const useAuthStore = create<AuthStore>()(
         isAuthenticated: state.isAuthenticated,
         user: state.user,
         onboarding: state.onboarding,
+        compactMode: state.compactMode,
       }),
     },
   ),

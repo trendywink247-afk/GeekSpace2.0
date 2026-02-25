@@ -166,6 +166,7 @@ export function DashboardApp() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const compactMode = useAuthStore((s) => s.compactMode);
   const usage = useDashboardStore((s) => s.usage);
   const agent = useDashboardStore((s) => s.agent);
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
@@ -546,7 +547,7 @@ export function DashboardApp() {
   );
 
   return (
-    <div className="min-h-screen bg-[#06060B] flex flex-col md:flex-row" style={{ background: background || undefined }}>
+    <div className={`min-h-screen bg-[#06060B] flex flex-col md:flex-row${compactMode ? ' gs-compact' : ''}`} style={{ background: background || undefined }}>
       {/* ---- Session idle warning ---- */}
       {showIdleWarning && (
         <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-3 bg-[#FFD700]/10 border-b border-[#FFD700]/30 backdrop-blur-sm">
@@ -627,6 +628,7 @@ export function DashboardApp() {
         className={`flex-1 transition-all duration-300 pb-24 md:pb-0 ${
           sidebarCollapsed ? 'md:ml-[82px]' : 'md:ml-[272px]'
         }`}
+        id="main-content"
         data-testid="dashboard-shell"
       >
         {/* Header — transparent with gradient border */}

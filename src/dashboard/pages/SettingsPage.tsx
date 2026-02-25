@@ -44,6 +44,8 @@ export function SettingsPage() {
     versionService.get().then(({ data }) => setAppVersion(data.version)).catch(() => {});
   }, []);
   const setUser = useAuthStore((s) => s.setUser);
+  const compactMode = useAuthStore((s) => s.compactMode);
+  const setCompactMode = useAuthStore((s) => s.setCompactMode);
   const { mode: themeMode, accentColor, accentPresets, setMode: setThemeMode, setAccentColor, setBackground } = useThemeStore();
   const isMobile = useMobileDetect();
 
@@ -878,6 +880,18 @@ export function SettingsPage() {
                   />
                   <span className="text-sm font-mono text-[#6B7280]">{accentColor}</span>
                 </div>
+              </div>
+
+              {/* Compact Mode */}
+              <div className="flex items-center justify-between py-3 border-t border-[#00F0FF]/10">
+                <div>
+                  <p className="text-sm font-medium text-[#E8E8F0]">Compact Mode</p>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Reduce card padding and spacing for a denser layout</p>
+                </div>
+                <Switch
+                  checked={compactMode}
+                  onCheckedChange={setCompactMode}
+                />
               </div>
 
               {/* AI Background Generator */}

@@ -582,10 +582,11 @@ export function PortfolioPage() {
               <div>
                 <label className="text-sm text-[#6B7280] mb-3 block">Theme Layout</label>
                 <div className="grid grid-cols-3 gap-3">
+                  {/* Active layout options */}
                   {([
-                    { id: 'minimal' as PortfolioLayout, label: 'Minimal', desc: 'Clean, focused', preview: 'min' },
-                    { id: 'modern' as PortfolioLayout, label: 'Modern', desc: 'Bold, vivid', preview: 'mod' },
-                    { id: 'grid' as PortfolioLayout, label: 'Grid', desc: 'Card mosaic', preview: 'grd' },
+                    { id: 'minimal' as PortfolioLayout, label: 'Minimal', desc: 'Clean, focused' },
+                    { id: 'modern' as PortfolioLayout, label: 'Modern', desc: 'Bold, vivid' },
+                    { id: 'grid' as PortfolioLayout, label: 'Grid', desc: 'Card mosaic' },
                   ]).map((opt) => (
                     <button
                       key={opt.id}
@@ -597,30 +598,54 @@ export function PortfolioPage() {
                       }`}
                     >
                       {/* Visual preview thumbnail */}
-                      <div className={`w-full h-14 rounded-lg overflow-hidden border ${layout === opt.id ? 'border-[#00F0FF]/40' : 'border-[#00F0FF]/10'} bg-[#06060B] flex flex-col gap-1 p-1.5`}>
+                      <div className={`w-full h-16 rounded-lg overflow-hidden border ${layout === opt.id ? 'border-[#00F0FF]/40' : 'border-[#00F0FF]/10'} bg-[#06060B] flex flex-col gap-1 p-2`}>
                         {opt.id === 'minimal' && (
                           <>
-                            <div className="h-1.5 w-2/3 rounded bg-[#00F0FF]/40" />
-                            <div className="h-1 w-full rounded bg-[#6B7280]/30" />
+                            {/* Minimal: centered avatar + text lines */}
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="h-3 w-3 rounded-full bg-[#00F0FF]/50" />
+                              <div className="h-1 w-2/3 rounded bg-[#00F0FF]/40" />
+                            </div>
+                            <div className="h-px w-full bg-[#6B7280]/20 mt-0.5" />
                             <div className="h-1 w-4/5 rounded bg-[#6B7280]/20" />
-                            <div className="h-1 w-3/5 rounded bg-[#6B7280]/20" />
+                            <div className="h-1 w-3/5 rounded bg-[#6B7280]/15" />
                           </>
                         )}
                         {opt.id === 'modern' && (
                           <>
-                            <div className="h-4 w-full rounded bg-gradient-to-r from-[#00F0FF]/30 to-[#BF5FFF]/30" />
-                            <div className="flex gap-1 mt-0.5">
-                              <div className="h-3 flex-1 rounded bg-[#00F0FF]/20" />
-                              <div className="h-3 flex-1 rounded bg-[#BF5FFF]/20" />
+                            {/* Modern: hero banner + two-col content */}
+                            <div className="h-5 w-full rounded bg-gradient-to-r from-[#00F0FF]/30 to-[#BF5FFF]/30 flex items-center px-1 gap-1">
+                              <div className="h-2 w-2 rounded-full bg-[#00F0FF]/60" />
+                              <div className="h-1 w-1/2 rounded bg-white/30" />
+                            </div>
+                            <div className="flex gap-1 mt-1">
+                              <div className="h-4 flex-1 rounded bg-[#00F0FF]/15 flex flex-col justify-center gap-0.5 p-0.5">
+                                <div className="h-0.5 w-full rounded bg-[#00F0FF]/30" />
+                                <div className="h-0.5 w-3/4 rounded bg-[#00F0FF]/20" />
+                              </div>
+                              <div className="h-4 flex-1 rounded bg-[#BF5FFF]/15 flex flex-col justify-center gap-0.5 p-0.5">
+                                <div className="h-0.5 w-full rounded bg-[#BF5FFF]/30" />
+                                <div className="h-0.5 w-2/3 rounded bg-[#BF5FFF]/20" />
+                              </div>
                             </div>
                           </>
                         )}
                         {opt.id === 'grid' && (
-                          <div className="grid grid-cols-3 gap-0.5 h-full">
-                            {[...Array(6)].map((_, i) => (
-                              <div key={i} className="rounded bg-[#00F0FF]/20" />
-                            ))}
-                          </div>
+                          <>
+                            {/* Grid: masonry card layout */}
+                            <div className="grid grid-cols-3 gap-0.5 flex-1">
+                              {[...Array(3)].map((_, i) => (
+                                <div key={i} className={`rounded bg-[#00F0FF]/${i === 0 ? '25' : '15'} flex flex-col justify-end p-0.5`}>
+                                  <div className="h-0.5 w-full rounded bg-[#00F0FF]/30" />
+                                </div>
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-2 gap-0.5 mt-0.5">
+                              {[...Array(2)].map((_, i) => (
+                                <div key={i} className="h-2 rounded bg-[#6B7280]/20" />
+                              ))}
+                            </div>
+                          </>
                         )}
                       </div>
                       <div className="text-center">
@@ -628,6 +653,26 @@ export function PortfolioPage() {
                         <div className={`text-[10px] ${layout === opt.id ? 'text-[#00F0FF]/70' : 'text-[#6B7280]/70'}`}>{opt.desc}</div>
                       </div>
                     </button>
+                  ))}
+                </div>
+                {/* Coming soon layouts */}
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  {([
+                    { id: 'classic', label: 'Classic', desc: 'Traditional résumé' },
+                    { id: 'creative', label: 'Creative', desc: 'Artistic flair' },
+                  ]).map((opt) => (
+                    <div
+                      key={opt.id}
+                      className="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-dashed border-[#6B7280]/20 text-[#6B7280]/50 opacity-60 cursor-not-allowed"
+                    >
+                      <div className="w-full h-12 rounded-lg bg-[#06060B] border border-[#6B7280]/10 flex items-center justify-center">
+                        <span className="text-[9px] font-semibold uppercase tracking-wider text-[#6B7280]/40">Soon</span>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs font-semibold">{opt.label}</div>
+                        <div className="text-[10px] text-[#6B7280]/40">{opt.desc}</div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
