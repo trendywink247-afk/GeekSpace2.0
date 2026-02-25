@@ -3,9 +3,9 @@
 // ============================================================
 
 import { useState } from 'react';
-import { ThumbsUp, Heart, Star, MoreHorizontal } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Heart, Star, MoreHorizontal } from 'lucide-react';
 
-export type ReactionType = 'like' | 'love' | 'save' | 'copy' | 'share';
+export type ReactionType = 'like' | 'dislike' | 'love' | 'save' | 'copy' | 'share';
 
 interface MessageReactionsProps {
   messageId: string;
@@ -19,6 +19,7 @@ interface MessageReactionsProps {
 
 const reactions = [
   { id: 'like' as ReactionType, icon: ThumbsUp, emoji: '👍', label: 'Helpful', color: '#00FF88' },
+  { id: 'dislike' as ReactionType, icon: ThumbsDown, emoji: '👎', label: 'Not helpful', color: '#FF6161' },
   { id: 'love' as ReactionType, icon: Heart, emoji: '❤️', label: 'Love', color: '#FF3366' },
   { id: 'save' as ReactionType, icon: Star, emoji: '⭐', label: 'Save', color: '#FFB800' },
 ];
@@ -163,6 +164,7 @@ export function ReactionSummary({ reactions }: ReactionSummaryProps) {
     <div className="flex items-center gap-1 mt-1">
       <div className="flex -space-x-1">
         {(reactions.like || 0) > 0 && <span className="text-sm">👍</span>}
+        {(reactions.dislike || 0) > 0 && <span className="text-sm">👎</span>}
         {(reactions.love || 0) > 0 && <span className="text-sm">❤️</span>}
         {(reactions.save || 0) > 0 && <span className="text-sm">⭐</span>}
       </div>
