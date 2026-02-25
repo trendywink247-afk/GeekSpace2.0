@@ -257,6 +257,23 @@ export function createApp(): express.Application {
     });
   });
 
+  // ---- 46.9: Readiness probe — checks DB connectivity ----
+  // Unauthenticated by design (used by orchestration/K8s readiness probes).
+  // Returns 200 when the database is reachable, 503 when it is not.
+  app.get('/api/ready', (_req, res) => {
+    try {
+      const row = db.prepare('SELECT 1 as ok').get() as { ok: number } | undefined;
+      if (row?.ok === 1) {
+        res.status(200).json({ status: 'ready', db: 'ok' });
+      } else {
+        res.status(503).json({ status: 'not ready', db: 'error', message: 'DB query returned unexpected result' });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'unknown error';
+      res.status(503).json({ status: 'not ready', db: 'error', message });
+    }
+  });
+
   // ---- Redirect stale /api/api/* double-prefix requests ----
   app.use('/api/api', (req, res) => {
     const qs = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';

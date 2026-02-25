@@ -632,8 +632,20 @@ export function AutomationsPage() {
                             );
                           })()}
                         </td>
-                        <td className="px-4 py-3 text-[#6B7280] max-w-[200px] truncate text-xs">
-                          {output || '—'}
+                        <td className="px-4 py-3 text-[#6B7280] max-w-[200px] text-xs">
+                          {/* 46.5: Pretty-print JSON output if parseable, otherwise truncate */}
+                          {output ? (() => {
+                            try {
+                              const parsed = JSON.parse(output);
+                              return (
+                                <pre className="text-xs text-[#8888AA] p-2 bg-black/20 rounded overflow-auto max-h-24 whitespace-pre-wrap break-all">
+                                  {JSON.stringify(parsed, null, 2)}
+                                </pre>
+                              );
+                            } catch {
+                              return <span className="truncate block">{output}</span>;
+                            }
+                          })() : '—'}
                         </td>
                         <td className="px-4 py-3 text-[#6B7280] font-mono text-xs hidden md:table-cell">
                           {durationMs > 0 ? `${durationMs}ms` : '—'}

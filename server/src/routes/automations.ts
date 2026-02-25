@@ -90,6 +90,16 @@ automationsRouter.get('/:id/logs', requireAuth, (req: AuthRequest, res) => {
   res.json(logs);
 });
 
+// ---- 46.2: URL validation helper for webhook test-fire ----
+function isValidWebhookUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
 // ---- 34.5: Webhook test-fire ----
 automationsRouter.post('/:id/test', requireAuth, async (req: AuthRequest, res) => {
   const auto = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId) as {
@@ -104,6 +114,12 @@ automationsRouter.post('/:id/test', requireAuth, async (req: AuthRequest, res) =
 
   if (!url) {
     res.status(400).json({ success: false, statusCode: 0, message: 'No URL configured on this automation' });
+    return;
+  }
+
+  // 46.2: Validate URL format before attempting HTTP request
+  if (!isValidWebhookUrl(url)) {
+    res.status(400).json({ success: false, statusCode: 0, message: 'Invalid webhook URL' });
     return;
   }
 

@@ -12,7 +12,8 @@ export const activityRouter = Router();
 
 activityRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
-  const limit = Math.min(Number(req.query.limit) || 50, 100);
+  // 46.8: Reduced default from 50 to 25 to lower initial payload size
+  const limit = Math.min(Number(req.query.limit) || 25, 100);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
 
   const entries = db.prepare(`

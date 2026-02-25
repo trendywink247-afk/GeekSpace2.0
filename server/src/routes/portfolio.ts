@@ -349,6 +349,11 @@ portfolioRouter.post('/:username/contact', async (req, res) => {
     res.status(400).json({ error: 'Message too long (max 1000 characters)' });
     return;
   }
+  // 46.6: Validate email format when provided
+  if (senderEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail.trim())) {
+    res.status(400).json({ error: 'Invalid email address' });
+    return;
+  }
 
   // Sanitize user-supplied fields to prevent XSS in stored content
   const sanitizedSenderName = stripDangerousHtml(senderName);
