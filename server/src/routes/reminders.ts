@@ -47,6 +47,11 @@ remindersRouter.patch('/:id', requireAuth, validateBody(reminderUpdateSchema), (
       values.push(typeof updates[key] === 'boolean' ? (updates[key] ? 1 : 0) : updates[key]);
     }
   }
+  // When datetime is rescheduled, reset remind_before_sent_at so the
+  // heads-up alert fires again for the new time.
+  if (updates['datetime'] !== undefined) {
+    fields.push('remind_before_sent_at = NULL');
+  }
   if (fields.length) {
     values.push(req.params.id, req.userId);
     db.prepare(`UPDATE reminders SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`).run(...values);
