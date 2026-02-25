@@ -1,58 +1,57 @@
-# AI Handoff — Phase 12 Complete
+# AI Handoff — Phase 13 Complete
 
 **Date:** 2026-02-25  
-**Branch:** `ai/phase-20260225-whatsapp-snooze-stats`  
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/41  
+**Branch:** `ai/phase-20260225-snooze-email-streaming`  
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/42  
 **Status:** All 5 items complete, 181/181 tests passing
 
 ---
 
-## Phase 12 — Completed Items
+## Phase 13 — Completed Items
 
-### 12.1 — WhatsApp Service Consolidation (Bug Fix / Reliability) ✅
-**Files:** `server/src/services/whatsapp.ts`, `server/src/services/whatsapp-new.ts`, `server/src/routes/integrations.ts`
+### 13.1 — Reminder Snooze Expiry Cleanup (Bug Fix) ✅
+**Files:** `server/src/services/reminder-scheduler.ts`, `server/src/db/index.ts`
 
-- Merged all logic from `whatsapp-new.ts` (Phase 11 experimental service) back into `whatsapp.ts`
-- `whatsapp-new.ts` is now a thin re-export facade preserving backward-compatible imports
-- `integrations.ts` cleaned up — removed duplicate handler code, routes use single service consistently
-- Result: single authoritative WhatsApp service, no split-brain risk
+- Added `snooze_until INTEGER` column via idempotent ALTER TABLE migration
+- Each 5s scheduler tick starts with a snooze-expiry cleanup: queries `WHERE snooze_until IS NOT NULL AND snooze_until <= now`, clears those rows' `snooze_until = NULL`, logs how many were resumed
+- Main delivery query updated with `AND snooze_until IS NULL` to skip actively-snoozed reminders
 
-### 12.2 — (Not assigned this phase)
+### 13.2 — Email Notification Delivery (Feature) ✅
+**Files:** `server/src/services/reminder-scheduler.ts`, `server/src/config.ts`
 
-### 12.3 — Portfolio Stats Daily Breakdown Chart (Feature) ✅
-**Files:** `server/src/routes/portfolio.ts`, `src/dashboard/pages/PortfolioPage.tsx`, `src/services/api.ts`
+- Integrated existing Resend email service (`sendReminderEmail`, `resolveEmailAddress`) into the scheduler
+- `tryEmailDelivery()` helper fires after Telegram for `telegram` channel and as primary for `email` channel
+- Added optional `SMTP_HOST/PORT/USER/PASS/FROM` env vars to config.ts
+- Gracefully no-ops if Resend is not configured
 
-- `GET /api/portfolio/stats` extended: now returns `{ totalViews, recentViews, dailyBreakdown }` where `dailyBreakdown` is `{ date: string, count: number }[]` (last 30 days)
-- `PortfolioPage.tsx` renders a recharts `AreaChart` with 7-day/30-day view toggle
-- `portfolioService.getStats()` added to `src/services/api.ts`
-- Phase 12 index on `portfolio_visits(user_id, visited_at)` for fast range scans
+### 13.3 — SSE Streaming (UX) ✅
+- Verified that `POST /agent/chat/stream` SSE endpoint, `agentService.chatStream()`, and AgentChatPanel streaming UI were already fully implemented in a prior phase. No changes needed.
 
-### 12.4 — Unit Tests: PATCH Reminders + Portfolio Stats (Dev/Ops) ✅
-**Files:** `server/src/test/api/reminders.test.ts`, `server/src/test/api/portfolio-stats.test.ts` (new)
+### 13.4 — E2E Tests: Portfolio Stats + Model Preference (Dev/Ops) ✅
+**New files:** `e2e/portfolio-stats.spec.ts`, `e2e/model-preference.spec.ts`
 
-- `reminders.test.ts`: 2 new tests — `PATCH /:id` toggle completed (200 + body shape), cross-user 404
-- `portfolio-stats.test.ts`: 4 new tests — 401 without token, response shape `{ totalViews, recentViews, dailyBreakdown }`, zeros for new user, visit count isolation (user A can't see user B's visits)
-- Total: **181/181 tests passing** (up from 175)
+- `portfolio-stats.spec.ts`: 4 tests covering analytics tab visibility, Total Views, Views This Week, chart/empty-state render
+- `model-preference.spec.ts`: 3 tests covering AI Engine Preference section, all 4 option buttons, and clicking/switching preferences
+- Fixed E2E failures: exact text matching for "Auto" (strict mode), direct goto navigation instead of sidebar clicks, fixed CSS/text locator syntax
 
-### 12.5 — Credits Progress Bar in AgentChatPanel (UX) ✅
-**File:** `src/components/AgentChatPanel.tsx`
+### 13.5 — Webhook Retry with Exponential Backoff (Hardening) ✅
+**New file:** `server/src/utils/retry.ts`
+**Modified:** `server/src/services/automations-engine.ts`
 
-- Fetches `billingService.getPlan()` when panel opens (non-blocking; errors silently ignored)
-- Renders a 1px `h-1` progress bar just below the panel header
-- Color bands: green (>50%) → amber (20–50%) → red (<20%)
-- `title` attribute shows "X of Y credits remaining" on hover
-- Also pre-populates `creditsRemaining` from subscription so the "credits" display is accurate from first open
+- `retryWithBackoff<T>(fn, maxAttempts, baseDelayMs, label)` utility: warn-per-attempt + final error log
+- Webhook fetch wrapped with 3 attempts at 1s → 2s → 4s backoff
 
 ---
 
 ## Verification Evidence
 
 ```
-Tests:    181/181 passing (15 test files)
-Frontend typecheck: npx tsc --noEmit → 0 errors
-Server typecheck:   cd server && npx tsc --noEmit → 0 errors
-Frontend build:     npm run build → ✓ built in 10.67s
-ESLint:             0 warnings on all touched frontend files
+Tests:    181/181 passing
+Frontend: npx tsc --noEmit → 0 errors
+Server:   npx tsc --noEmit → 0 errors
+Frontend: npm run build → success
+ESLint:   0 warnings on changed frontend files
+CI:       All checks pass (Static ✓, Unit ✓, E2E ✓, Test Suite ✓, Smoke ✓)
 ```
 
 ---
@@ -60,31 +59,25 @@ ESLint:             0 warnings on all touched frontend files
 ## Resume Steps (Next Session)
 
 1. Read this file
-2. `git log --oneline -3` in worktree to confirm Phase 12 commit
-3. Phase 12 is complete — propose Phase 13 improvements
+2. `git log --oneline -5` on main to confirm Phase 13 merge
+3. Phase 13 is complete — proceed with Phase 14
+4. Phase 14 candidates (from AI_PHASE_PLAN.md)
 
 ---
 
-## Phase 13 Candidates (Proposed)
+## Proposed Phase 14
 
-### Priority picks from backlog:
+### 14.1 — Portfolio Public URL Sharing Card (UX)
+Add a prominent "Share your portfolio" card/button in PortfolioPage that shows the public URL, a copy button, and a QR code preview.
 
-**13.1 — Reminder snooze expiry cleanup (Bug Fix)**
-- Snoozed reminders whose snooze time has passed are never auto-resumed. Add a cron check.
-- Files: `server/src/services/reminder-scheduler.ts`
+### 14.2 — Subscription Upgrade Prompt on Credit Exhaustion (Feature)
+When `creditsRemaining === 0`, show an upgrade prompt instead of an error in the chat panel.
 
-**13.2 — Email notification delivery (Feature)**  
-- Send reminder notifications via email (SMTP/SendGrid) as an alternative to Telegram
-- Files: `server/src/services/email.ts` (new), `server/src/services/reminder-scheduler.ts`
+### 14.3 — Reminder Recurrence UI in Edit Modal (UX)
+The RemindersPage edit modal doesn't expose recurrence settings. Add a frequency dropdown (none/daily/weekly/monthly) to the edit modal.
 
-**13.3 — Agent response streaming (UX)**
-- Stream LLM tokens to frontend via SSE for faster perceived response time
-- Files: `server/src/routes/agent.ts`, `src/components/AgentChatPanel.tsx`
+### 14.4 — Server Startup Healthcheck Logging (Dev/Ops)
+Log all initialized subsystems at startup with their status (Telegram: ✓, WhatsApp: ✓, email: configured/not-configured, etc.) so operators can quickly verify configuration.
 
-**13.4 — E2E test: portfolio stats + model preference (Dev/Ops)**
-- Playwright spec covering portfolio stats chart render + model picker save
-- Files: `e2e/portfolio-stats.spec.ts` (new), `e2e/settings.spec.ts`
-
-**13.5 — Webhook delivery retry with backoff (Hardening)**
-- Automation webhook triggers currently fail silently. Add retry with exponential backoff.
-- Files: `server/src/services/automations-engine.ts`
+### 14.5 — Portfolio Agent Personality Selector (Feature)
+Allow users to select their public portfolio agent personality (Jarvis/Edith/Weebo) from the Portfolio settings tab, not just Agent Settings.
