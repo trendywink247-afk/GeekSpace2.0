@@ -436,6 +436,9 @@ export interface Automation {
   lastStatus?: string;
   runCount: number;
   createdAt: string;
+  // Snake_case fields as returned directly from the API (backend does not transform keys)
+  run_count?: number;
+  last_run?: string | null;
 }
 
 export interface AutomationLog {
