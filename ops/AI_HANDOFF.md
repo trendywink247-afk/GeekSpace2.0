@@ -1,72 +1,71 @@
-# AI Handoff — GeekSpace 2.0
+# AI Handoff — Phase 11 Complete
 
-> Last updated: 2026-02-25
-> Resume from here in next session.
+**Date:** 2026-02-25  
+**Branch:** `ai/phase-20260225-model-fix-tests-portfolio-notif`  
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/40  
+**Status:** All 5 items complete, 175/175 tests passing
 
-## Current State
+---
 
-**Branch:** `ai/phase-20260225-session-mgmt-notifications-lm` (worktree at `.worktrees/phase-10`)
-**Phase:** 10 — Implementation Complete ✅ — PR open (draft)
-**Status:** 154/154 tests passing (no regressions), lint/typecheck/build green — ready to merge
+## Phase 11 — Completed Items
 
-## Deployment History
+### 11.1 — Model Preference Routing Fix (Bug Fix) ✅
+**Files:** `server/src/routes/users.ts`, `src/dashboard/pages/SettingsPage.tsx`
 
-| Phase | Description | PR | Status |
-|-------|-------------|-----|--------|
-| Phase 1 | Reliability, image gen, connections polish | #29 | ✅ live |
-| Phase 2 | Onboarding, video gen, channel cleanup | #30 | ✅ live |
-| E2E Fix | Portfolio mobile scroll hotfix | #31 | ✅ live |
-| Phase 3 | Snooze, CSP, sparklines, tests | #32 | ✅ live |
-| Phase 4 | Reminders polish, rate limit, coverage, briefing | #33 | ✅ merged |
-| Phase 5 | Health stream, connections lifecycle, forgot-pw | #34 | ✅ merged |
-| Phase 6 | SSE delta fix, admin CSP, targeted store actions | #35 | ✅ merged |
-| Phase 7 | Escalation service, webhook hardening, build info, chat search | #36 | 🟡 PR open |
-| Phase 8 | Chat retry, credits display, export, WA deprecation, reactions | #37 | 🟡 PR open |
-| Phase 9 | Portfolio share, response feedback, health stream fixes | — | 🟡 PR open |
-| Phase 10 | Session mgmt, model picker, activity log, roadmap | — | 🟡 PR open |
+- `PUT /api/users/me/model` now accepts `auto|local|cloud|premium` (aligned with `ModelPreference` type)
+- Also writes to `agent_configs.model_preference` so the LLM router actually uses the preference
+- `GET /me/model` reads from `agent_configs.model_preference` as source of truth
+- SettingsPage model picker values updated from `ollama/openrouter/edith` → `local/cloud/premium`
 
-## Phase 10 Items Status
+### 11.2 — API Tests for Phase 8-10 Endpoints (Dev/Ops) ✅
+**File:** `server/src/test/api/activity-sessions.test.ts`
 
-| # | Item | Status |
-|---|------|--------|
-| 10.1 | Auth session management — user_sessions table, GET/DELETE /api/auth/sessions | ✅ Done |
-| 10.2 | Activity log notification bell — GET /api/activity, bell icon in DashboardApp header | ✅ Done |
-| 10.3 | LLM model preference — users.preferred_model column, PUT/GET /api/users/me/model, Settings UI | ✅ Done |
-| 10.4 | RoadmapPage Recent Changes section — last 3 phases as release notes | ✅ Done |
-| 10.5 | Test count 154/154, lessons updated, backlog updated, old worktrees removed | ✅ Done |
+- 21 new tests covering: `GET /api/activity`, `GET /api/auth/sessions`, `DELETE /api/auth/sessions/:id`, `GET /api/agent/conversations/export`, `POST /api/agent/conversations/reactions`, `GET /api/users/me/model`, `PUT /api/users/me/model`
+- Total: 175/175 tests passing (up from 154)
 
-## Files Changed (Phase 10)
+### 11.3 — Portfolio Visit Analytics (Feature) ✅
+**Files:** `server/src/db/index.ts`, `server/src/routes/portfolio.ts`, `src/services/api.ts`, `src/dashboard/pages/PortfolioPage.tsx`
 
-### Backend
-- `server/src/db/index.ts` — Added `user_sessions` table migration + `preferred_model` column on users
-- `server/src/middleware/auth.ts` — Upsert session on each authenticated request (using `createHash` sync)
-- `server/src/routes/auth.ts` — Added GET/DELETE /sessions endpoints
-- `server/src/routes/users.ts` — Added PUT/GET /me/model endpoints
-- `server/src/routes/activity.ts` — NEW: GET /api/activity returns last 50 activity_log entries
-- `server/src/app.ts` — Mounted activityRouter at /api/activity
+- `portfolio_visits` table (id, user_id, visited_at, visitor_ip)
+- Public portfolio GET endpoint records visits (cached + uncached)
+- `GET /api/portfolio/stats` returns `{ totalViews, recentViews }`
+- PortfolioPage header shows "N total views · N this week"
 
-### Frontend
-- `src/services/api.ts` — Added UserSession, ActivityEntry types + getSessions, revokeSession, revokeAllSessions, getPreferredModel, setPreferredModel, getActivity
-- `src/dashboard/pages/SettingsPage.tsx` — Active Sessions panel + Preferred AI Engine picker in Security tab
-- `src/dashboard/DashboardApp.tsx` — Notification bell icon with activity dropdown in header
-- `src/dashboard/pages/RoadmapPage.tsx` — Recent Changes section with last 3 phases
+### 11.4 — Telegram Notification Preferences (Feature) ✅
+**Files:** `server/src/db/index.ts`, `server/src/routes/agent.ts`, `server/src/middleware/validate.ts`, `server/src/services/action-executor.ts`, `server/src/services/reminder-scheduler.ts`, `src/dashboard/pages/SettingsPage.tsx`
 
-### Ops
-- `ops/AI_LESSONS.md` — Phase 10 patterns added
-- `ops/AI_BACKLOG.md` — Phase 10 items marked complete
-- Cleaned up worktrees: phase-1, phase-2, phase-4, phase-5, phase-6 removed
+- `notif_reminders`, `notif_escalations`, `notif_agents` columns added to `agent_configs`
+- Preference checked in reminder-scheduler (Telegram channel) and escalation path (action-executor)
+- Three toggle switches in SettingsPage Notifications tab; saved via existing `PATCH /agent/config`
 
-## Known Limitations
+### 11.5 — README.md Feature Update (Dev/Ops) ✅
+**File:** `README.md`
 
-- **Session revocation is NOT real-time**: JWT tokens remain valid until expiry. Session DB records are marked inactive but can't stop valid tokens. Token blacklist in Redis would be needed for immediate invalidation.
-- **model_preference on agent_configs vs users**: The existing `model_preference` on `agent_configs` affects the LLM router directly. The new `users.preferred_model` is a user-level preference that needs to be wired into the LLM router in a future phase.
+- Added 9 Phase 7-10 features to the feature grid: chat search, export, reactions, AI model preference, portfolio sharing, recurring reminders, session management, activity log, build info
 
-## Next Session Resume Steps
+---
+
+## Resume Steps (Next Session)
 
 1. Read this file
-2. Merge Phase 10 PR
-3. Start Phase 11 — suggested items:
-   - Wire `users.preferred_model` into the LLM router (routeChat function)
-   - Token blacklist for real session invalidation
-   - Dashboard trend sparklines (credits over time)
-   - Unit tests for activity endpoint + sessions endpoint
+2. `cd ~/GeekSpace2.0/.worktrees/phase-11 && git log --oneline -3`
+3. Phase 11 is complete — propose Phase 12 improvements
+4. Phase 12 candidates (from backlog):
+   - Notification delivery via email (currently only Telegram + push placeholder)
+   - Agent response streaming improvements (latency / TTFB)
+   - Portfolio public stats page (visitor breakdown by day/week)
+   - Rate limit UI feedback (show remaining credits/requests)
+   - Dev: E2E test coverage for model preference + portfolio stats
+
+---
+
+## Verification Evidence
+
+```
+Tests:    175/175 passing
+Frontend: npx tsc --noEmit → 0 errors
+Server:   npx tsc --noEmit → 0 errors
+Frontend: npm run build → success
+Server:   npm run build → success
+ESLint:   0 warnings on all touched frontend files
+```
