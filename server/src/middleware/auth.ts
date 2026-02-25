@@ -24,6 +24,9 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
     }) as { sub: string };
     req.userId = payload.sub;
 
+    // Prevent caching of authenticated responses
+    res.set('Cache-Control', 'no-store');
+
     // Update last_active timestamp (non-blocking, fire-and-forget)
     try {
       db.prepare('UPDATE users SET last_active = ? WHERE id = ?').run(

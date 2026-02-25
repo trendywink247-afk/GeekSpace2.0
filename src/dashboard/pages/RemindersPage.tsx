@@ -155,10 +155,14 @@ export function RemindersPage() {
   };
 
   const [snoozeOpenId, setSnoozeOpenId] = useState<string | null>(null);
+  const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
 
   const handleComplete = async (id: string) => {
+    setCompletingIds((prev) => new Set(prev).add(id));
+    await new Promise((resolve) => setTimeout(resolve, 400));
     await toggleReminder(id);
+    setCompletingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
   };
 
   const handleDelete = async (id: string) => {
@@ -414,8 +418,10 @@ export function RemindersPage() {
               return (
                 <Card
                   key={reminder.id}
-                  className={`bg-[#0C0C18] border transition-all ${
-                    reminder.completed
+                  className={`bg-[#0C0C18] border transition-all duration-300 ${
+                    completingIds.has(reminder.id)
+                      ? 'border-[#00FF88] bg-[#00FF88]/10'
+                      : reminder.completed
                       ? 'border-[#00F0FF]/10 opacity-60'
                       : overdue
                       ? 'border-[#FF6161]/30'

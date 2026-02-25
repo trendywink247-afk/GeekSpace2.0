@@ -90,3 +90,75 @@ describe('Portfolio Stats Endpoints', () => {
     });
   });
 });
+
+describe('Portfolio Visit Deduplication', () => {
+  beforeAll(() => {
+    resetDatabase();
+  });
+
+  afterEach(() => {
+    // Clear portfolio_visits between tests since resetDatabase doesn't cover it
+    try { db.prepare('DELETE FROM portfolio_visits').run(); } catch { /* ignore */ }
+    resetDatabase();
+  });
+
+  it('should deduplicate visits from the same IP within 30 minutes', async () => {
+    const user = createTestUser();
+    const username = `dedup_test_${Date.now()}`;
+
+    // Create a portfolio for the user
+    db.prepare(`
+      INSERT INTO portfolios (user_id, username, headline, about, skills, projects, milestones, social, layout, agent_enabled, visibility)
+      VALUES (?, ?, 'Test', 'About', '[]', '[]', '[]', '{}', 'classic', 0, '{}')
+    `).run(user.id, username);
+
+    const sameIp = '10.0.0.1';
+
+    // Make two requests from the same IP — should only record one visit
+    await request(app)
+      .get(`/api/portfolio/${username}`)
+      .set('x-forwarded-for', sameIp);
+
+    await request(app)
+      .get(`/api/portfolio/${username}`)
+      .set('x-forwarded-for', sameIp);
+
+    const statsResponse = await request(app)
+      .get('/api/portfolio/stats')
+      .set('Authorization', makeAuthHeader(user.id))
+      .expect(200);
+
+    expect(statsResponse.body.totalViews).toBe(1);
+
+    cleanupTestUser(user.id);
+  });
+
+  it('should count visits from different IPs as separate views', async () => {
+    const user = createTestUser();
+    const username = `dedup_test2_${Date.now()}`;
+
+    // Create a portfolio for the user
+    db.prepare(`
+      INSERT INTO portfolios (user_id, username, headline, about, skills, projects, milestones, social, layout, agent_enabled, visibility)
+      VALUES (?, ?, 'Test', 'About', '[]', '[]', '[]', '{}', 'classic', 0, '{}')
+    `).run(user.id, username);
+
+    // Make requests from two different IPs
+    await request(app)
+      .get(`/api/portfolio/${username}`)
+      .set('x-forwarded-for', '10.0.0.2');
+
+    await request(app)
+      .get(`/api/portfolio/${username}`)
+      .set('x-forwarded-for', '10.0.0.3');
+
+    const statsResponse = await request(app)
+      .get('/api/portfolio/stats')
+      .set('Authorization', makeAuthHeader(user.id))
+      .expect(200);
+
+    expect(statsResponse.body.totalViews).toBe(2);
+
+    cleanupTestUser(user.id);
+  });
+});

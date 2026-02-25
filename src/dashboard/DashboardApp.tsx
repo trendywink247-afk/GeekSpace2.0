@@ -14,6 +14,7 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { QuickActionsWidget } from '@/components/QuickActionsWidget';
 import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPrompt';
 import { DashboardTour } from '@/components/DashboardTour';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
@@ -698,11 +699,13 @@ export function DashboardApp() {
 
         {/* Page Content */}
         <div className="p-4 md:p-6" {...swipeHandlers}>
+          <ErrorBoundary>
           <Suspense fallback={<PageLoader />}>
             <div key={currentPage} className="animate-page-enter">
               {renderPage()}
             </div>
           </Suspense>
+          </ErrorBoundary>
         </div>
       </main>
 
