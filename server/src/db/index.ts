@@ -1189,3 +1189,6 @@ if (shouldSeed) {
 }
 
 export { db, seedDemoData };
+
+// Phase 13: snooze_until column for reminder snooze expiry cleanup
+try { db.exec(`ALTER TABLE reminders ADD COLUMN snooze_until INTEGER`); } catch { /* column already exists */ }

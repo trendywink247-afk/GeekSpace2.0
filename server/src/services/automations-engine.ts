@@ -10,6 +10,7 @@ import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
+import { retryWithBackoff } from '../utils/retry.js';
 
 // ---- Types ----
 
@@ -99,18 +100,26 @@ async function executeAction(
           } catch { /* ignore parse errors */ }
         }
 
-        const res = await fetch(url, {
-          method,
-          headers,
-          body: method !== 'GET' ? JSON.stringify(bodyPayload) : undefined,
-          signal: AbortSignal.timeout(30000),
-        });
-        output = `HTTP ${res.status} ${res.statusText}`;
-        if (!res.ok) throw new Error(output);
+        const fetchResult = await retryWithBackoff(
+          async () => {
+            const r = await fetch(url, {
+              method,
+              headers,
+              body: method !== 'GET' ? JSON.stringify(bodyPayload) : undefined,
+              signal: AbortSignal.timeout(30000),
+            });
+            if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
+            return r;
+          },
+          3,      // maxAttempts
+          1000,   // baseDelayMs (1s -> 2s -> 4s)
+          `webhook:${automation.name}`,
+        );
+        output = `HTTP ${fetchResult.status} ${fetchResult.statusText}`;
 
         // Capture response body if n8n returns a reply
         try {
-          const responseBody = await res.json() as { reply?: string; message?: string };
+          const responseBody = await fetchResult.json() as { reply?: string; message?: string };
           if (responseBody.reply || responseBody.message) {
             output = responseBody.reply || responseBody.message || output;
           }
