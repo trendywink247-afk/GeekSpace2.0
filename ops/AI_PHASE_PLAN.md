@@ -49,7 +49,7 @@ Pre-populates `creditsRemaining` from subscription fetch for accuracy from first
 - [x] `cd server && npx tsc --noEmit` (server) — clean
 - [x] `npm run build` — clean
 - [x] ESLint `--max-warnings=0` on changed frontend files — clean
-- [x] PR #41 opened (draft)
+- [x] PR #41 opened and merged
 - [x] `ops/AI_HANDOFF.md` updated
 
 ---
