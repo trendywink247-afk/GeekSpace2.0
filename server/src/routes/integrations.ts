@@ -6,6 +6,7 @@ import { validateBody, permissionsUpdateSchema } from '../middleware/validate.js
 import { db } from '../db/index.js';
 import { getBotUsername } from '../services/telegram.js';
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 
 export const integrationsRouter = Router();
 
@@ -162,6 +163,8 @@ integrationsRouter.delete('/telegram/link', requireAuth, (req: AuthRequest, res)
 // Generate a link code and return a WhatsApp wa.me link
 integrationsRouter.post('/whatsapp/link', requireAuth, async (req: AuthRequest, res) => {
   const userId = req.userId!;
+  logger.warn({ userId }, 'whatsapp/link (deprecated wa.me): use /whatsapp/qr instead');
+  res.setHeader('X-Deprecated', 'true');
 
   if (!config.whatsappBusinessNumber) {
     res.status(503).json({ error: 'WhatsApp is not configured on this server.' });

@@ -761,6 +761,21 @@ try {
   `);
 } catch { /* table already exists */ }
 
+// Message reactions (for agent message reactions)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS message_reactions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      message_id TEXT NOT NULL,
+      reaction TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_message_reactions_user ON message_reactions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_message_reactions_msg ON message_reactions(message_id);
+  `);
+} catch { /* table already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {

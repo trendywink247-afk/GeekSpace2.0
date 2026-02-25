@@ -412,6 +412,12 @@ export const memoryService = {
 
   conversations: (limit = 20) =>
     api.get<ConversationEntry[]>(`/agent/conversations?limit=${limit}`),
+
+  getConversationsExport: (limit = 1000) =>
+    api.get<ConversationEntry[]>(`/agent/conversations?limit=${limit}`),
+
+  addReaction: (messageId: string, reaction: string) =>
+    api.post<{ success: boolean }>('/agent/conversations/reactions', { messageId, reaction }),
 };
 
 // ----- Automation Logs ---------------------------------------

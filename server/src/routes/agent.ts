@@ -1240,6 +1240,36 @@ agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
   res.json((conversations as unknown as Record<string, unknown>[]).map(mapConversation));
 });
 
+// ---- Conversation Export ----
+
+agentRouter.get('/conversations/export', requireAuth, (req: AuthRequest, res) => {
+  const conversations = getRecentConversations(req.userId!, 1000);
+  const data = (conversations as unknown as Record<string, unknown>[]).map(mapConversation);
+  res.setHeader('Content-Disposition', 'attachment; filename="conversations.json"');
+  res.setHeader('Content-Type', 'application/json');
+  res.json(data);
+});
+
+// ---- Message Reactions ----
+
+agentRouter.post('/conversations/reactions', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { messageId, reaction } = req.body as { messageId?: string; reaction?: string };
+  if (!messageId || !reaction) {
+    res.status(400).json({ error: 'messageId and reaction are required' });
+    return;
+  }
+  try {
+    db.prepare(
+      'INSERT OR REPLACE INTO message_reactions (id, user_id, message_id, reaction, created_at) VALUES (?, ?, ?, ?, datetime(\'now\'))'
+    ).run(`${userId}-${messageId}`, userId, messageId, reaction);
+    res.json({ success: true });
+  } catch (err) {
+    logger.error({ err, userId }, 'Failed to save reaction');
+    res.status(500).json({ error: 'Failed to save reaction' });
+  }
+});
+
 // ---- Premium Agent (Specialist Sessions) ----
 
 agentRouter.post('/deploy-premium', requireAuth, validateBody(deployPremiumSchema), async (req: AuthRequest, res) => {

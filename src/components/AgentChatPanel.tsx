@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search } from 'lucide-react';
+import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { agentService, premiumAgentService, publicAgentService } from '@/services/api';
+import { agentService, premiumAgentService, publicAgentService, memoryService } from '@/services/api';
 import type { AgentPersonality, PremiumSession } from '@/types';
 import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
@@ -60,6 +60,7 @@ interface ChatMessage {
   provider?: string;
   model?: string;
   isStreaming?: boolean;
+  retryContent?: string;
   actions?: Array<{
     tool: string;
     success: boolean;
@@ -107,6 +108,10 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     const diff = e.changedTouches[0].clientY - touchStartY;
     if (diff > 100) onClose(); // swipe down 100px+ to close
   };
+
+  // Credits remaining from last successful regular chat
+  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Premium session state
   const [premiumSession, setPremiumSession] = useState<PremiumSession | null>(null);
@@ -259,6 +264,9 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       const { data } = await agentService.chat(content);
       const text = data.text || '';
       if (!text && !data.actions?.length) throw new Error('Empty response');
+      if (typeof (data as unknown as Record<string, unknown>).creditsRemaining === 'number') {
+        setCreditsRemaining((data as unknown as Record<string, unknown>).creditsRemaining as number);
+      }
       setAgentMsg({ content: text, isStreaming: false, provider: data.provider, model: data.model, actions: data.actions || undefined, receipts: data.receipts || undefined });
     };
 
@@ -342,6 +350,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           setAgentMsg({
             content: "Sorry, I couldn't process that right now. Please try again.",
             isStreaming: false,
+            retryContent: content,
           });
         }
       } finally {
@@ -349,6 +358,24 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       }
     })();
   }, [input, isTyping, premiumSession, agentOwner, messages]);
+
+  // ---- 8.3: Export conversations ----
+  const handleExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const { data } = await memoryService.getConversationsExport(1000);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'conversations.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -440,6 +467,9 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               ) : (
                 <div className="text-xs text-[#00FF88] flex items-center gap-1">
                   <Sparkles className="w-3 h-3" /> Online
+                  {creditsRemaining !== null && (
+                    <span className="ml-1 text-[#6B7280]">· ⚡ {creditsRemaining} credits</span>
+                  )}
                 </div>
               )}
             </div>
@@ -462,6 +492,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 <RotateCcw className="w-4 h-4 text-[#6B7280]" />
               </button>
             )}
+            <button
+              onClick={handleExport}
+              disabled={isExporting}
+              className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
+              title="Export conversations"
+            >
+              <Download className={`w-4 h-4 ${isExporting ? 'text-[#00F0FF] animate-pulse' : 'text-[#6B7280]'}`} />
+            </button>
             <button
               onClick={() => { setSearchOpen(v => !v); setSearchTerm(''); }}
               className={`p-2 rounded-lg transition-colors ${searchOpen ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'hover:bg-[#00F0FF]/10 text-[#6B7280]'}`}
@@ -582,13 +620,22 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                       <MessageReactions
                         messageId={msg.id}
                         onReact={(id, reaction) => {
-                          // TODO: Send reaction to server
-                          console.log('Reacted to message:', id, reaction);
+                          memoryService.addReaction(id, reaction).catch(() => {});
                         }}
-                        onCopy={(id) => {
-                          console.log('Copied message:', id);
-                        }}
+                        onCopy={(_id) => {}}
                       />
+                    )}
+                    {/* Retry button for failed messages */}
+                    {msg.role === 'agent' && msg.retryContent && (
+                      <div className="flex justify-end mt-2">
+                        <button
+                          onClick={() => sendMessage(msg.retryContent)}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] text-xs transition-colors"
+                          title="Retry"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Retry
+                        </button>
+                      </div>
                     )}
                   </div>
                 </>
