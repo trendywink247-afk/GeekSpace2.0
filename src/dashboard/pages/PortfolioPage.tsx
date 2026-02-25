@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Save, Plus, Trash2, X, ExternalLink, Sparkles, Loader2,
   User, Code2, FolderGit2, Award, Share2, Bot, Wand2, Lightbulb, CheckCircle2,
-  BarChart3, Eye, TrendingUp
+  BarChart3, Eye, TrendingUp, Copy, Link
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
-import { portfolioService } from '@/services/api';
+import { portfolioService, agentService } from '@/services/api';
+import type { AgentPersonality } from '@/types';
 import type { Portfolio, PortfolioProject, PortfolioMilestone, PortfolioLayout } from '@/types';
 
 const emptyProject: PortfolioProject = { name: '', description: '', url: '', tags: [] };
@@ -60,6 +61,11 @@ export function PortfolioPage() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
 
+  // Portfolio personality selector state
+  const [portfolioPersonality, setPortfolioPersonality] = useState<AgentPersonality>('weebo');
+  const [personalitySaving, setPersonalitySaving] = useState(false);
+  const [personalitySaved, setPersonalitySaved] = useState(false);
+
   // Portfolio visit stats
   const [portfolioStats, setPortfolioStats] = useState<{ totalViews: number; recentViews: number; dailyBreakdown: { date: string; count: number }[] } | null>(null);
 
@@ -82,6 +88,11 @@ export function PortfolioPage() {
 
   // Load portfolio and suggestions
   useEffect(() => {
+    // Load current agent personality for portfolio selector
+    agentService.getConfig().then(({ data }) => {
+      if (data.personality) setPortfolioPersonality(data.personality);
+    }).catch(() => { /* non-fatal */ });
+
     portfolioService.get()
       .then(({ data }) => {
         setHeadline(data.headline || '');
@@ -120,6 +131,20 @@ export function PortfolioPage() {
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 3000);
+  };
+
+  const handlePersonalitySave = async (p: AgentPersonality) => {
+    setPortfolioPersonality(p);
+    setPersonalitySaving(true);
+    try {
+      await agentService.updateConfig({ personality: p });
+      setPersonalitySaved(true);
+      setTimeout(() => setPersonalitySaved(false), 2000);
+    } catch {
+      // revert on failure
+    } finally {
+      setPersonalitySaving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -341,6 +366,47 @@ export function PortfolioPage() {
             : 'bg-[#FF6161]/10 border border-[#FF6161]/30 text-[#FF6161]'
         }`}>
           {message.text}
+        </div>
+      )}
+
+      {/* Share Your Portfolio Card */}
+      {user?.username && (
+        <div
+          className="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center gap-4"
+          style={{ background: '#0C0C18', borderColor: 'rgba(0,240,255,0.25)' }}
+        >
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Link className="w-4 h-4 text-[#00F0FF]" />
+              <span className="text-sm font-semibold text-[#E8E8F0]">Share Your Portfolio</span>
+            </div>
+            <p className="text-xs text-[#6B7280] truncate">
+              {`${window.location.origin}/portfolio/${user.username}`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={handleCopyLink}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-colors"
+              style={linkCopied
+                ? { color: '#00FF88', borderColor: 'rgba(0,255,136,0.4)', background: 'rgba(0,255,136,0.1)' }
+                : { color: '#00F0FF', borderColor: 'rgba(0,240,255,0.3)', background: 'transparent' }
+              }
+            >
+              <Copy className="w-4 h-4" />
+              {linkCopied ? 'Copied!' : 'Copy Link'}
+            </button>
+            <a
+              href={`/portfolio/${user.username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-colors"
+              style={{ color: '#BF5FFF', borderColor: 'rgba(191,95,255,0.3)' }}
+            >
+              <ExternalLink className="w-4 h-4" />
+              View Live
+            </a>
+          </div>
         </div>
       )}
 
@@ -852,6 +918,55 @@ export function PortfolioPage() {
               </Button>
               <p className="text-xs text-[#6B7280] text-center">
                 Changes are applied locally — review them in the other tabs, then click Save Changes to persist.
+              </p>
+            </CardContent>
+          </Card>
+          {/* Portfolio Agent Personality */}
+          <Card className="border-[#BF5FFF]/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="w-5 h-5 text-[#BF5FFF]" />
+                Portfolio Agent Personality
+              </CardTitle>
+              <CardDescription className="text-[#6B7280]">
+                Choose how your public portfolio agent greets and responds to visitors
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-3 flex-wrap">
+                {(
+                  [
+                    { id: 'jarvis' as AgentPersonality, label: 'Jarvis', emoji: '🟣', desc: 'Professional butler' },
+                    { id: 'edith' as AgentPersonality, label: 'Edith', emoji: '🔷', desc: 'Sharp CTO' },
+                    { id: 'weebo' as AgentPersonality, label: 'Weebo', emoji: '💚', desc: 'Enthusiastic' },
+                  ] as const
+                ).map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handlePersonalitySave(p.id)}
+                    disabled={personalitySaving}
+                    className={`flex-1 min-w-[100px] flex flex-col items-center gap-2 px-4 py-4 rounded-xl border transition-all ${
+                      portfolioPersonality === p.id
+                        ? 'border-[#BF5FFF]/60 bg-[#BF5FFF]/10'
+                        : 'border-[#BF5FFF]/20 bg-[#06060B] hover:border-[#BF5FFF]/40'
+                    }`}
+                  >
+                    <span className="text-2xl">{p.emoji}</span>
+                    <span className="text-sm font-medium text-[#E8E8F0]">{p.label}</span>
+                    <span className="text-xs text-[#6B7280]">{p.desc}</span>
+                    {portfolioPersonality === p.id && !personalitySaving && (
+                      <span className="text-xs text-[#BF5FFF]">
+                        {personalitySaved ? 'Saved!' : 'Active'}
+                      </span>
+                    )}
+                    {personalitySaving && portfolioPersonality === p.id && (
+                      <Loader2 className="w-3 h-3 animate-spin text-[#BF5FFF]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-[#6B7280] mt-4 text-center">
+                This also applies to your agent in the dashboard. Change it anytime in Agent Settings.
               </p>
             </CardContent>
           </Card>

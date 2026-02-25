@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download } from 'lucide-react';
+import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -112,6 +112,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   // Credits remaining from last successful regular chat
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const [creditsTotal, setCreditsTotal] = useState<number | null>(null);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   // Premium session state
@@ -276,7 +277,9 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       const text = data.text || '';
       if (!text && !data.actions?.length) throw new Error('Empty response');
       if (typeof (data as unknown as Record<string, unknown>).creditsRemaining === 'number') {
-        setCreditsRemaining((data as unknown as Record<string, unknown>).creditsRemaining as number);
+        const cr = (data as unknown as Record<string, unknown>).creditsRemaining as number;
+        setCreditsRemaining(cr);
+        if (cr === 0) setShowUpgradePrompt(true);
       }
       setAgentMsg({ content: text, isStreaming: false, provider: data.provider, model: data.model, actions: data.actions || undefined, receipts: data.receipts || undefined });
     };
@@ -750,6 +753,40 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 >
                   {isDeploying ? 'Deploying...' : 'Deploy'}
                 </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upgrade Prompt Overlay — shown when credits reach zero */}
+        {showUpgradePrompt && (
+          <div className="absolute inset-0 bg-black/70 z-10 flex items-center justify-center p-6">
+            <div className="glass-card-v2 border border-[#00FF88]/30 rounded-2xl p-6 w-full max-w-sm space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#00FF88]/10 flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-[#00FF88]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-[#E8E8F0]">You're out of credits</h3>
+                  <p className="text-xs text-[#6B7280]">Upgrade to keep chatting</p>
+                </div>
+              </div>
+              <p className="text-sm text-[#6B7280]">
+                Your monthly credits are used up. Upgrade your plan to continue using the AI agent.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowUpgradePrompt(false)}
+                  className="flex-1 px-4 py-2 rounded-xl border border-[#00F0FF]/20 text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+                >
+                  Dismiss
+                </button>
+                <button
+                  onClick={() => { window.location.href = '/dashboard/billing'; }}
+                  className="flex-1 px-4 py-2 rounded-xl bg-[#00FF88] hover:bg-[#00D973] text-black text-sm font-semibold transition-colors"
+                >
+                  Upgrade Plan
+                </button>
               </div>
             </div>
           </div>
