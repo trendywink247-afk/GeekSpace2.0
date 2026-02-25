@@ -116,3 +116,51 @@ describe('Reminders Endpoints', () => {
     });
   });
 });
+
+  describe('PATCH /api/reminders/:id', () => {
+    it('should toggle a reminder to completed', async () => {
+      const user = createTestUser();
+
+      const reminderId = uuid();
+      db.prepare(`
+        INSERT INTO reminders (id, user_id, text, datetime, channel, category, completed, created_by)
+        VALUES (?, ?, ?, datetime('now', '+1 hour'), 'push', 'work', 0, 'test')
+      `).run(reminderId, user.id, 'Finish the report');
+
+      const response = await request(app)
+        .patch(`/api/reminders/${reminderId}`)
+        .set('Authorization', makeAuthHeader(user.id))
+        .send({ completed: true })
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      // PATCH returns the updated reminder object
+      expect(response.body).toHaveProperty('id', reminderId);
+      expect(response.body).toHaveProperty('completed', 1);
+
+      cleanupTestUser(user.id);
+    });
+
+    it('should return 404 when patching another user\'s reminder', async () => {
+      const owner = createTestUser();
+      const other = createTestUser();
+
+      const reminderId = uuid();
+      db.prepare(`
+        INSERT INTO reminders (id, user_id, text, datetime, channel, category, completed, created_by)
+        VALUES (?, ?, ?, datetime('now', '+1 hour'), 'push', 'work', 0, 'test')
+      `).run(reminderId, owner.id, 'Owner only reminder');
+
+      const response = await request(app)
+        .patch(`/api/reminders/${reminderId}`)
+        .set('Authorization', makeAuthHeader(other.id))
+        .send({ completed: true })
+        .expect('Content-Type', /json/)
+        .expect(404);
+
+      expect(response.body).toHaveProperty('error');
+
+      cleanupTestUser(owner.id);
+      cleanupTestUser(other.id);
+    });
+  });

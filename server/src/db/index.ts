@@ -811,6 +811,9 @@ try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_reminders INTEGER DEFA
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_escalations INTEGER DEFAULT 1`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_agents INTEGER DEFAULT 1`); } catch { /* column already exists */ }
 
+// Phase 12: Index for portfolio_visits queries (user_id + date range scans)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_portfolio_visits_user_date ON portfolio_visits(user_id, visited_at)`); } catch { /* index already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {

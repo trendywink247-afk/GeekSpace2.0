@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import {
   Save, Plus, Trash2, X, ExternalLink, Sparkles, Loader2,
   User, Code2, FolderGit2, Award, Share2, Bot, Wand2, Lightbulb, CheckCircle2,
-  BarChart3, Eye, MousePointer, TrendingUp, Globe
+  BarChart3, Eye, TrendingUp
 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -60,7 +61,7 @@ export function PortfolioPage() {
   const [aiLoading, setAiLoading] = useState(false);
 
   // Portfolio visit stats
-  const [portfolioStats, setPortfolioStats] = useState<{ totalViews: number; recentViews: number } | null>(null);
+  const [portfolioStats, setPortfolioStats] = useState<{ totalViews: number; recentViews: number; dailyBreakdown: { date: string; count: number }[] } | null>(null);
 
   // Magic Generate state
   const [generatingField, setGeneratingField] = useState<string | null>(null);
@@ -934,55 +935,69 @@ export function PortfolioPage() {
                 Portfolio Analytics
               </CardTitle>
               <CardDescription className="text-[#6B7280]">
-                Track views, engagement, and visitor insights
+                Track views and visitor insights
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
                   <div className="flex items-center gap-2 mb-2">
                     <Eye className="w-4 h-4 text-[#00F0FF]" />
                     <span className="text-xs text-[#6B7280]">Total Views</span>
                   </div>
-                  <div className="text-2xl font-bold text-[#E8E8F0]">1,234</div>
-                  <div className="text-xs text-[#00FF88]">↑ 12% this week</div>
+                  <div className="text-2xl font-bold text-[#E8E8F0]">
+                    {portfolioStats ? portfolioStats.totalViews.toLocaleString() : '—'}
+                  </div>
+                  <div className="text-xs text-[#6B7280]">all time</div>
                 </div>
                 <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
                   <div className="flex items-center gap-2 mb-2">
-                    <MousePointer className="w-4 h-4 text-[#00FF88]" />
-                    <span className="text-xs text-[#6B7280]">Click Rate</span>
+                    <TrendingUp className="w-4 h-4 text-[#00FF88]" />
+                    <span className="text-xs text-[#6B7280]">Views This Week</span>
                   </div>
-                  <div className="text-2xl font-bold text-[#E8E8F0]">8.5%</div>
-                  <div className="text-xs text-[#6B7280]">Industry avg: 5.2%</div>
-                </div>
-                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Globe className="w-4 h-4 text-[#FF2D78]" />
-                    <span className="text-xs text-[#6B7280]">Countries</span>
+                  <div className="text-2xl font-bold text-[#E8E8F0]">
+                    {portfolioStats ? portfolioStats.recentViews.toLocaleString() : '—'}
                   </div>
-                  <div className="text-2xl font-bold text-[#E8E8F0]">12</div>
-                  <div className="text-xs text-[#6B7280]">Top: US, India, UK</div>
-                </div>
-                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-4 h-4 text-[#FFB800]" />
-                    <span className="text-xs text-[#6B7280]">Connections</span>
-                  </div>
-                  <div className="text-2xl font-bold text-[#E8E8F0]">47</div>
-                  <div className="text-xs text-[#00FF88]">↑ 5 new this week</div>
+                  <div className="text-xs text-[#00FF88]">last 7 days</div>
                 </div>
               </div>
 
-              {/* Coming Soon Notice */}
-              <div className="p-6 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 text-center">
-                <BarChart3 className="w-12 h-12 text-[#00F0FF]/50 mx-auto mb-3" />
-                <h4 className="text-lg font-medium text-[#E8E8F0] mb-2">Detailed Analytics Coming Soon</h4>
-                <p className="text-sm text-[#6B7280] max-w-md mx-auto">
-                  We're building comprehensive analytics including referrer tracking, 
-                  project engagement heatmaps, and visitor demographics.
-                </p>
-              </div>
+              {/* 30-day bar chart */}
+              {portfolioStats && portfolioStats.dailyBreakdown.length > 0 ? (
+                <div>
+                  <p className="text-xs text-[#6B7280] mb-3">Daily views — last 30 days</p>
+                  <ResponsiveContainer width="100%" height={140}>
+                    <BarChart data={portfolioStats.dailyBreakdown} barSize={8}>
+                      <XAxis
+                        dataKey="date"
+                        tickFormatter={(d: string) => d.slice(5)} // MM-DD
+                        tick={{ fill: '#6B7280', fontSize: 10 }}
+                        axisLine={false}
+                        tickLine={false}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis hide allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{ background: '#0C0C18', border: '1px solid #00F0FF33', borderRadius: 8 }}
+                        labelStyle={{ color: '#6B7280', fontSize: 11 }}
+                        itemStyle={{ color: '#00F0FF' }}
+                      />
+                      <Bar dataKey="count" fill="#00F0FF" radius={[3, 3, 0, 0]} name="Views" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                portfolioStats && portfolioStats.totalViews === 0 ? (
+                  <div className="p-6 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 text-center">
+                    <BarChart3 className="w-12 h-12 text-[#00F0FF]/50 mx-auto mb-3" />
+                    <h4 className="text-base font-medium text-[#E8E8F0] mb-1">No visits yet</h4>
+                    <p className="text-sm text-[#6B7280]">
+                      Share your portfolio link to start tracking visitors.
+                    </p>
+                  </div>
+                ) : null
+              )}
             </CardContent>
           </Card>
         </TabsContent>

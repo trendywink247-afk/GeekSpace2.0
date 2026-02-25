@@ -210,7 +210,15 @@ portfolioRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
   const recentViews = (db.prepare(
     "SELECT COUNT(*) as cnt FROM portfolio_visits WHERE user_id = ? AND visited_at >= datetime('now', '-7 days')"
   ).get(userId) as { cnt: number }).cnt;
-  res.json({ totalViews, recentViews });
+  // Daily breakdown for the last 30 days
+  const dailyBreakdown = db.prepare(`
+    SELECT date(visited_at) as date, COUNT(*) as count
+    FROM portfolio_visits
+    WHERE user_id = ? AND visited_at >= datetime('now', '-30 days')
+    GROUP BY date(visited_at)
+    ORDER BY date ASC
+  `).all(userId) as { date: string; count: number }[];
+  res.json({ totalViews, recentViews, dailyBreakdown });
 });
 
 // Public portfolio view - MUST be last as it catches any /:username pattern
