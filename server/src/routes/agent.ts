@@ -1278,6 +1278,27 @@ agentRouter.post('/conversations/reactions', requireAuth, (req: AuthRequest, res
   }
 });
 
+// ---- Reactions Summary ----
+
+agentRouter.get('/conversations/reactions/summary', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  try {
+    // Get top reactions grouped by reaction emoji with count
+    const rows = db.prepare(
+      `SELECT reaction, COUNT(*) as count
+       FROM message_reactions
+       WHERE user_id = ?
+       GROUP BY reaction
+       ORDER BY count DESC
+       LIMIT 10`
+    ).all(userId) as { reaction: string; count: number }[];
+    res.json({ reactions: rows });
+  } catch (err) {
+    logger.error({ err, userId }, 'Failed to get reaction summary');
+    res.status(500).json({ error: 'Failed to get reaction summary' });
+  }
+});
+
 // ---- Premium Agent (Specialist Sessions) ----
 
 agentRouter.post('/deploy-premium', requireAuth, validateBody(deployPremiumSchema), async (req: AuthRequest, res) => {
