@@ -100,6 +100,26 @@ export function RemindersPage() {
     reminderService.getStreak().then(res => setStreak(res.data)).catch(() => {});
   }, []);
 
+  // 42.1: "All caught up for today!" celebration
+  const [showCelebration, setShowCelebration] = useState(false);
+  const prevActiveCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    const activeCount = reminders.filter(r => !r.completed).length;
+    const completedCount = reminders.filter(r => r.completed).length;
+    // Show banner when transitioning from >0 active to 0 active, with at least 1 completed
+    if (
+      prevActiveCountRef.current !== null &&
+      prevActiveCountRef.current > 0 &&
+      activeCount === 0 &&
+      completedCount > 0
+    ) {
+      setShowCelebration(true);
+      const timer = setTimeout(() => setShowCelebration(false), 5000);
+      return () => clearTimeout(timer);
+    }
+    prevActiveCountRef.current = activeCount;
+  }, [reminders]);
+
   // Poll for reminders every 30 seconds (targeted — only re-fetches reminders)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -391,6 +411,24 @@ export function RemindersPage() {
 
   return (
     <div className="space-y-6" data-testid="reminders-page">
+      {/* 42.1: All caught up celebration banner */}
+      {showCelebration && (
+        <div
+          className="flex items-center justify-between px-4 py-3 rounded-2xl border animate-in fade-in slide-in-from-top-2 duration-300"
+          style={{ background: 'rgba(0,255,136,0.12)', borderColor: 'rgba(0,255,136,0.4)' }}
+        >
+          <span className="text-sm font-semibold" style={{ color: '#00FF88' }}>
+            🎉 All caught up for today!
+          </span>
+          <button
+            onClick={() => setShowCelebration(false)}
+            className="text-[#00FF88]/60 hover:text-[#00FF88] transition-colors text-lg leading-none"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

@@ -380,6 +380,7 @@ export interface Portfolio {
     showActivity: boolean;
   };
   connectionCount?: number;
+  view_count?: number;
 }
 
 // ----- Channel Links (Telegram/WhatsApp user mapping) --------

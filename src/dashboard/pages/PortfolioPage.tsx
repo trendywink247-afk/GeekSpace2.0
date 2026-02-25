@@ -85,6 +85,8 @@ export function PortfolioPage() {
 
   // Portfolio visit stats
   const [portfolioStats, setPortfolioStats] = useState<{ totalViews: number; recentViews: number; dailyBreakdown: { date: string; count: number }[] } | null>(null);
+  // 42.2: Portfolio view_count from the portfolio record itself
+  const [portfolioViewCount, setPortfolioViewCount] = useState<number>(0);
 
   // Magic Generate state
   const [generatingField, setGeneratingField] = useState<string | null>(null);
@@ -123,6 +125,8 @@ export function PortfolioPage() {
         setProjects(data.projects || []);
         setMilestones(data.milestones || []);
         setSocial(data.social || {});
+        // 42.2: Capture view_count from portfolio record
+        if (typeof data.view_count === 'number') setPortfolioViewCount(data.view_count);
       })
       .catch(() => setMessage({ type: 'error', text: 'Failed to load portfolio' }))
       .finally(() => setIsLoading(false));
@@ -361,6 +365,13 @@ export function PortfolioPage() {
               <Eye className="w-3 h-3 inline mr-1 text-[#00F0FF]" />
               {portfolioStats.totalViews} total views · {portfolioStats.recentViews} this week
             </p>
+          )}
+          {/* 42.2: Public view_count badge */}
+          {portfolioViewCount > 0 && (
+            <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs" style={{ background: 'rgba(107,114,128,0.12)', color: '#6B7280', border: '1px solid rgba(107,114,128,0.25)' }}>
+              <Eye className="w-3 h-3" />
+              {portfolioViewCount.toLocaleString()} public views
+            </span>
           )}
         </div>
         <div className="flex items-center gap-3">

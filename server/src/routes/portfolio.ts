@@ -25,6 +25,32 @@ portfolioRouter.get('/me', requireAuth, (req: AuthRequest, res) => {
   res.json(parsePortfolio(portfolio));
 });
 
+// 42.4: GET /me/stats — view_count, contact_count, project_count, last_viewed_at
+portfolioRouter.get('/me/stats', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
+  if (!portfolio) { res.status(404).json({ error: 'Portfolio not found' }); return; }
+
+  const viewCount = (portfolio.view_count as number) ?? 0;
+
+  // contact_count from portfolio_contacts table
+  const contactRow = db.prepare('SELECT COUNT(*) as cnt FROM portfolio_contacts WHERE user_id = ?').get(userId) as { cnt: number };
+  const contactCount = contactRow.cnt;
+
+  // project_count from JSON array
+  let projectCount = 0;
+  try {
+    const projects = JSON.parse(portfolio.projects as string || '[]');
+    projectCount = Array.isArray(projects) ? projects.length : 0;
+  } catch { projectCount = 0; }
+
+  // last_viewed_at — use last_viewed_at column if it exists; fall back to null
+  const hasLastViewed = portfolio.last_viewed_at !== undefined;
+  const lastViewedAt = hasLastViewed ? (portfolio.last_viewed_at as string | null) : null;
+
+  res.json({ view_count: viewCount, contact_count: contactCount, project_count: projectCount, last_viewed_at: lastViewedAt });
+});
+
 portfolioRouter.patch('/me', requireAuth, validateBody(portfolioUpdateSchema), async (req: AuthRequest, res) => {
   const updates = req.body;
   const fields: string[] = [];
