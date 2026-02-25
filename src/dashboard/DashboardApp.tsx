@@ -53,8 +53,9 @@ const VideoGenPage = lazy(() => import('./pages/VideoGenPage').then(m => ({ defa
 const PlannerPage = lazy(() => import('./pages/PlannerPage').then(m => ({ default: m.PlannerPage })));
 const SocialMediaPage = lazy(() => import('./pages/SocialMediaPage').then(m => ({ default: m.SocialMediaPage })));
 const CapabilitiesPage = lazy(() => import('./pages/CapabilitiesPage').then(m => ({ default: m.CapabilitiesPage })));
+const ActivityPage = lazy(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity';
 
 interface MenuGroup {
   label: string | null;
@@ -123,6 +124,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: 'terminal', label: 'Terminal', icon: Terminal },
       { id: 'health', label: 'Health', icon: Activity },
+      { id: 'activity', label: 'Activity Log', icon: Clock },
     ],
   },
 ];
@@ -233,7 +235,7 @@ export function DashboardApp() {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -324,6 +326,8 @@ export function DashboardApp() {
           onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)}
           onOpenChat={() => setChatOpen(true)}
         />;
+      case 'activity':
+        return <ActivityPage />;
       default:
         return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
     }
@@ -783,7 +787,19 @@ export function DashboardApp() {
                   : 'text-[#6B7280] active:text-[#E8E8F0]'
               }`}
             >
-              <tab.icon className={`w-5 h-5 ${isActive ? 'drop-shadow-[0_0_6px_rgba(0,240,255,0.4)]' : ''}`} />
+              <div className="relative">
+                <tab.icon className={`w-5 h-5 ${isActive ? 'drop-shadow-[0_0_6px_rgba(0,240,255,0.4)]' : ''}`} />
+                {tab.id === 'reminders' && dueReminderCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#FF2D78] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                    {dueReminderCount > 9 ? '9+' : dueReminderCount}
+                  </span>
+                )}
+                {tab.id === 'connections' && pendingConnectionCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#F59E0B] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                    {pendingConnectionCount > 9 ? '9+' : pendingConnectionCount}
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] font-medium">{tab.label}</span>
               {isActive && <div className="w-4 h-1 rounded-full bg-gradient-to-r from-[#00F0FF] to-[#ADFF2F] mt-0.5" />}
             </button>

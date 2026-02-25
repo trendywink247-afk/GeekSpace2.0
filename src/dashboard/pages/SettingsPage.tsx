@@ -106,6 +106,7 @@ export function SettingsPage() {
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
   const [memoryFilter, setMemoryFilter] = useState<string>('all');
   const [memoriesLoading, setMemoriesLoading] = useState(false);
+  const [reactionSummary, setReactionSummary] = useState<{ reaction: string; count: number }[]>([]);
 
   // Load API keys from backend on mount
   useEffect(() => {
@@ -122,9 +123,10 @@ export function SettingsPage() {
   const [preferredModel, setPreferredModel] = useState('auto');
   const [modelSaving, setModelSaving] = useState(false);
 
-  // Load memories when memory tab is active
+  // Load memories and reaction summary when memory tab is active
   useEffect(() => {
     if (activeTab === 'memory') {
+      memoryService.getReactionSummary().then(({ data }) => setReactionSummary(data.reactions)).catch(() => {});
       setMemoriesLoading(true);
       memoryService.list(memoryFilter === 'all' ? undefined : memoryFilter)
         .then(({ data }) => setMemories(data))
@@ -706,6 +708,32 @@ export function SettingsPage() {
               )}
             </CardContent>
           </Card>
+
+          {reactionSummary.length > 0 && (
+            <Card className="border-[#00F0FF]/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <span className="text-base">✨</span> Top Reactions
+                </CardTitle>
+                <CardDescription className="text-[#6B7280] text-xs">
+                  Your most-used reactions on agent messages
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {reactionSummary.map(({ reaction, count }) => (
+                    <div
+                      key={reaction}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-colors"
+                    >
+                      <span className="text-base leading-none">{reaction}</span>
+                      <span className="text-xs font-bold text-[#00F0FF]">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">
             <CardContent className="p-4">

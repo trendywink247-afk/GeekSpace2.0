@@ -460,6 +460,9 @@ export const memoryService = {
 
   addReaction: (messageId: string, reaction: string) =>
     api.post<{ success: boolean }>('/agent/conversations/reactions', { messageId, reaction }),
+
+  getReactionSummary: () =>
+    api.get<{ reactions: { reaction: string; count: number }[] }>('/agent/conversations/reactions/summary'),
 };
 
 // ----- Automation Logs ---------------------------------------

@@ -203,6 +203,19 @@ export function AutomationsPage() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+
+  // Extract HTTP status code from output string like "HTTP 200 OK" or "HTTP 404 Not Found"
+  const parseHttpStatus = (output: string): number | null => {
+    const match = output.match(/^HTTP (\d{3})/);
+    return match ? parseInt(match[1], 10) : null;
+  };
+
+  const getHttpStatusBg = (status: number): string => {
+    if (status >= 200 && status < 300) return 'bg-[#00FF88]/10 border-[#00FF88]/20 text-[#00FF88]';
+    if (status >= 400) return 'bg-[#FF6161]/10 border-[#FF6161]/20 text-[#FF6161]';
+    return 'bg-[#6B7280]/10 border-[#6B7280]/20 text-[#6B7280]';
+  };
+
   return (
     <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
       {/* Header */}
@@ -549,10 +562,21 @@ export function AutomationsPage() {
                             {status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-[#6B7280] max-w-[200px] truncate">
+                        <td className="px-4 py-3 hidden sm:table-cell">
+                          {(() => {
+                            const httpCode = parseHttpStatus(output);
+                            if (!httpCode) return <span className="text-[#6B7280] text-xs">—</span>;
+                            return (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold border ${getHttpStatusBg(httpCode)}`}>
+                                {httpCode}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-4 py-3 text-[#6B7280] max-w-[200px] truncate text-xs">
                           {output || '—'}
                         </td>
-                        <td className="px-4 py-3 text-[#6B7280] font-mono text-xs">
+                        <td className="px-4 py-3 text-[#6B7280] font-mono text-xs hidden md:table-cell">
                           {durationMs > 0 ? `${durationMs}ms` : '—'}
                         </td>
                         <td className="px-4 py-3 text-[#6B7280] text-xs whitespace-nowrap">
