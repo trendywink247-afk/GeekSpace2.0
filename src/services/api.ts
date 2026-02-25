@@ -370,6 +370,12 @@ export const reminderService = {
 
   getStreak: () =>
     api.get<{ streak: number; longestStreak: number; completedToday: boolean }>('/reminders/streak'),
+
+  snooze: (id: string, preset: '1h' | 'tomorrow' | 'next-week') =>
+    api.post<{ snoozed: boolean; newDatetime: string }>(`/reminders/${id}/snooze`, { preset }),
+
+  getSnoozeHistory: (id: string) =>
+    api.get<{ history: Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }> }>(`/reminders/${id}/snooze-history`),
 };
 
 // ----- Portfolio ---------------------------------------------

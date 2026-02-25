@@ -189,6 +189,21 @@ export function RemindersPage() {
   const [selectedActiveIds, setSelectedActiveIds] = useState<Set<string>>(new Set());
   const [isBulkSnoozing, setIsBulkSnoozing] = useState(false);
 
+  // 36.1: Snooze history popover
+  const [snoozeHistoryId, setSnoozeHistoryId] = useState<string | null>(null);
+  const [snoozeHistory, setSnoozeHistory] = useState<Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }>>([]);
+  const [snoozeHistoryLoading, setSnoozeHistoryLoading] = useState(false);
+
+  const handleShowSnoozeHistory = async (id: string) => {
+    if (snoozeHistoryId === id) { setSnoozeHistoryId(null); return; }
+    setSnoozeHistoryId(id);
+    setSnoozeHistoryLoading(true);
+    try {
+      const res = await reminderService.getSnoozeHistory(id);
+      setSnoozeHistory(res.data.history);
+    } catch { setSnoozeHistory([]); } finally { setSnoozeHistoryLoading(false); }
+  };
+
   const handleComplete = async (id: string) => {
     setCompletingIds((prev) => new Set(prev).add(id));
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -707,9 +722,35 @@ export function RemindersPage() {
                                 </Badge>
                               )}
                               {(reminder.snoozeCount ?? 0) > 0 && (
-                                <Badge className="text-xs bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30">
-                                  Snoozed {reminder.snoozeCount}×
-                                </Badge>
+                                <div className="relative">
+                                  <button
+                                    onClick={() => handleShowSnoozeHistory(reminder.id)}
+                                    className="text-xs px-2 py-0.5 rounded-full bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 hover:bg-[#F59E0B]/20 transition-colors"
+                                    aria-label="Show snooze history"
+                                  >
+                                    Snoozed {reminder.snoozeCount}×
+                                  </button>
+                                  {snoozeHistoryId === reminder.id && (
+                                    <div className="absolute left-0 top-full mt-1 z-20 bg-[#0C0C18] border border-[#F59E0B]/30 rounded-xl shadow-lg p-3 min-w-[200px]">
+                                      <p className="text-xs font-medium text-[#F59E0B] mb-2">Snooze history</p>
+                                      {snoozeHistoryLoading ? (
+                                        <div className="w-4 h-4 border-2 border-[#F59E0B]/30 border-t-[#F59E0B] rounded-full animate-spin mx-auto" />
+                                      ) : snoozeHistory.length === 0 ? (
+                                        <p className="text-xs text-[#6B7280]">No history yet</p>
+                                      ) : (
+                                        <div className="space-y-1.5">
+                                          {snoozeHistory.map((h) => (
+                                            <div key={h.id} className="text-xs text-[#6B7280]">
+                                              <span className="text-[#E8E8F0]">{h.preset}</span>
+                                              {' → '}
+                                              {new Date(h.new_datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
