@@ -212,28 +212,19 @@ export function AutomationsPage() {
   const enabledCount = automations.filter((a) => a.enabled).length;
   const totalRuns = automations.reduce((acc, a) => acc + a.runCount, 0);
 
-  const formatLastRun = (lastRun?: string) => {
-    if (!lastRun) return 'Never';
-    const date = new Date(lastRun);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  const fmtRunTime = (ts: string | null | undefined): string => {
-    if (!ts) return 'never';
+  // 50.2: Unified relative-time formatter — consistent casing and language
+  const fmtRelativeTime = (ts: string | null | undefined): string => {
+    if (!ts) return 'Never';
     const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
-    if (diff < 60) return 'just now';
+    if (diff < 60) return 'Just now';
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 172800) return 'yesterday';
-    return `${Math.floor(diff / 86400)}d ago`;
+    if (diff < 172800) return 'Yesterday';
+    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
+
+  const formatLastRun = fmtRelativeTime;
+  const fmtRunTime = fmtRelativeTime;
 
 
   // Extract HTTP status code from output string like "HTTP 200 OK" or "HTTP 404 Not Found"

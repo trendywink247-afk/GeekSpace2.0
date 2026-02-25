@@ -103,6 +103,14 @@ export function createApp(): express.Application {
     next();
   });
 
+  // 50.7: HSTS — enforce HTTPS in production for 1 year (includeSubDomains)
+  if (config.isProduction) {
+    app.use((_req, res, next) => {
+      res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+      next();
+    });
+  }
+
   // 49.1: Prevent search engines from indexing API endpoints
   app.use('/api', (_req, res, next) => {
     res.set('X-Robots-Tag', 'noindex, nofollow');
@@ -258,6 +266,15 @@ export function createApp(): express.Application {
         avgMs: stats.count > 0 ? Math.round(stats.totalLatencyMs / stats.count) : 0,
       }));
 
+    // 50.9: Lightweight DB row counts — helps operators assess data volume at a glance
+    const dbStats: Record<string, number> = {};
+    try {
+      for (const t of ['users', 'reminders', 'automations', 'integrations', 'portfolios', 'activity_log'] as const) {
+        const row = db.prepare(`SELECT count(*) as cnt FROM ${t}`).get() as { cnt: number } | undefined;
+        dbStats[t] = row?.cnt ?? 0;
+      }
+    } catch { /* non-fatal — omit if DB is down */ }
+
     res.status(allOk ? 200 : 503).json({
       timestamp: new Date().toISOString(),
       cacheAgeMs: null, // not available in REST context
@@ -273,6 +290,7 @@ export function createApp(): express.Application {
         uptime: metrics.uptime,
         memoryMb: metrics.memoryMb,
       },
+      db: dbStats,
       topEndpoints,
       ok: allOk,
       status: allOk ? 'ok' : 'degraded',

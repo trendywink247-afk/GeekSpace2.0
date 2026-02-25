@@ -4,15 +4,26 @@ import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, userUpdateSchema, notificationEmailSchema, changePasswordSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
-import { cacheDel } from '../services/cache.js';
+import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 
 export const usersRouter = Router();
 
-usersRouter.get('/me', requireAuth, (req: AuthRequest, res) => {
+usersRouter.get('/me', requireAuth, async (req: AuthRequest, res) => {
+  // 50.8: Serve from Redis cache when available (60s TTL) — reduces DB load on frequent polls
+  const cacheKey = `user:me:${req.userId!}`;
+  try {
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+      res.set('X-Cache', 'HIT');
+      res.json(JSON.parse(cached));
+      return;
+    }
+  } catch { /* Redis unavailable — fall through to DB */ }
+
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.userId!) as Record<string, unknown> | undefined;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
-  res.json({
+  const payload = {
     id: user.id, email: user.email, username: user.username, name: user.name,
     avatar: user.avatar, bio: user.bio, location: user.location, website: user.website,
     role: user.role, company: user.company,
@@ -31,7 +42,13 @@ usersRouter.get('/me', requireAuth, (req: AuthRequest, res) => {
       allowAgentChat: !!user.privacy_allow_chat, showLocation: !!user.privacy_show_location,
     },
     createdAt: user.created_at,
-  });
+  };
+
+  // Populate cache for next 60 seconds (fire-and-forget)
+  cacheSet(cacheKey, JSON.stringify(payload), 60).catch(() => {});
+
+  res.set('X-Cache', 'MISS');
+  res.json(payload);
 });
 
 usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), async (req: AuthRequest, res) => {
@@ -103,6 +120,9 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), async (req
   if (oldUsername && oldUsername !== updates.username) {
     await cacheDel(`portfolio:${oldUsername}`);
   }
+
+  // 50.8: Invalidate cached /me response after profile update
+  cacheDel(`user:me:${req.userId!}`).catch(() => {});
 
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Updated profile', 'Settings changed', 'user')`).run(uuid(), req.userId);
 

@@ -62,6 +62,8 @@ interface DashboardStore {
   hourlyData: HourlyActivity[];
   isLoading: boolean;
   error: string | null;
+  // 50.1: Track how many API sources failed during loadDashboard
+  loadErrors: number;
 
   loadDashboard: () => Promise<void>;
   loadIntegrations: () => Promise<void>;
@@ -95,9 +97,10 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   hourlyData: [],
   isLoading: false,
   error: null,
+  loadErrors: 0,
 
   loadDashboard: async () => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, loadErrors: 0 });
     try {
       // Fire all API calls in parallel
       const [statsRes, usageRes, agentRes, intRes, remRes, autoRes, featRes, chartRes, hourlyRes] = await Promise.allSettled([
@@ -112,6 +115,10 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         usageService.latency(),
       ]);
 
+      // 50.1: Count rejected promises so UI can surface partial failure
+      const results = [statsRes, usageRes, agentRes, intRes, remRes, autoRes, featRes, chartRes, hourlyRes];
+      const failCount = results.filter(r => r.status === 'rejected').length;
+
       set({
         stats: statsRes.status === 'fulfilled' ? statsRes.value.data : fallbackStats,
         usage: usageRes.status === 'fulfilled' ? usageRes.value.data : fallbackUsage,
@@ -123,9 +130,10 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         chartData: chartRes.status === 'fulfilled' ? chartRes.value.data : [],
         hourlyData: hourlyRes.status === 'fulfilled' ? hourlyRes.value.data : [],
         isLoading: false,
+        loadErrors: failCount,
       });
     } catch {
-      set({ isLoading: false, error: 'Failed to load dashboard data' });
+      set({ isLoading: false, error: 'Failed to load dashboard data', loadErrors: 9 });
     }
   },
 

@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
-  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles
+  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff
 } from 'lucide-react';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -167,6 +167,8 @@ export function DashboardApp() {
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
   const reminders = useDashboardStore((s) => s.reminders);
   const integrations = useDashboardStore((s) => s.integrations);
+  // 50.1: Track partial load failures
+  const loadErrors = useDashboardStore((s) => s.loadErrors);
   const applyTheme = useThemeStore((s) => s.applyTheme);
   const setThemeMode = useThemeStore((s) => s.setMode);
   const setAccentColor = useThemeStore((s) => s.setAccentColor);
@@ -572,6 +574,14 @@ export function DashboardApp() {
           >
             Stay logged in
           </button>
+        </div>
+      )}
+
+      {/* 50.1: Partial load failure indicator — shown when some API sources fail on load */}
+      {loadErrors > 0 && !showIdleWarning && (
+        <div className="fixed top-0 left-0 right-0 z-[99] flex items-center justify-center gap-2 px-4 py-2 text-xs bg-[#FFB800]/8 border-b border-[#FFB800]/20">
+          <WifiOff className="w-3 h-3 text-[#FFB800] shrink-0" />
+          <span className="text-[#FFB800]/80">{loadErrors} data source{loadErrors > 1 ? 's' : ''} failed to load — some widgets may show cached or empty data</span>
         </div>
       )}
 

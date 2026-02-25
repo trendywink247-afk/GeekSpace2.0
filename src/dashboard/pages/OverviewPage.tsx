@@ -20,7 +20,8 @@ import {
   Check,
   X,
   GripVertical,
-  AlertTriangle
+  AlertTriangle,
+  Flame
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +45,7 @@ import {
 } from 'recharts';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { briefingService, modelService, agentService, usageService, activityService } from '@/services/api';
+import { briefingService, modelService, agentService, usageService, activityService, reminderService } from '@/services/api';
 import type { FreeModel, ModelChangelogEntry } from '@/types';
 
 interface OverviewPageProps {
@@ -144,6 +145,8 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     hasEnoughData: boolean;
   } | null>(null);
   const [activityStats, setActivityStats] = useState<{ date: string; messages: number; reminders: number }[]>([]);
+  // 50.3: Reminder streak widget
+  const [reminderStreak, setReminderStreak] = useState<{ streak: number; longestStreak: number; completedToday: boolean } | null>(null);
 
   // 35.2: Stat card reorder (drag-to-reorder, persisted in localStorage)
   const [statOrder, setStatOrder] = useState<number[]>(() => {
@@ -293,6 +296,13 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   useEffect(() => {
     activityService.getStats().then(res => {
       setActivityStats(res.data.days);
+    }).catch(() => {});
+  }, []);
+
+  // 50.3: Load reminder streak on mount
+  useEffect(() => {
+    reminderService.getStreak().then(res => {
+      setReminderStreak(res.data);
     }).catch(() => {});
   }, []);
 
@@ -750,6 +760,39 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           );
         })}
       </div>
+
+      {/* 50.3: Reminder streak widget — only shown when streak >= 2 */}
+      {reminderStreak !== null && reminderStreak.streak >= 2 && (
+        <Card
+          style={{
+            background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
+            border: '1px solid rgba(245, 158, 11, 0.2)',
+          }}
+        >
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#F59E0B]/10 flex-shrink-0">
+              <Flame className="w-5 h-5 text-[#F59E0B]" />
+            </div>
+            <div className="flex-1">
+              <div className="text-sm text-[#6B7280]">Reminder Streak</div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xl font-bold text-[#F59E0B]">{reminderStreak.streak}</span>
+                <span className="text-sm text-[#E8E8F0]">day{reminderStreak.streak !== 1 ? 's' : ''}</span>
+                {reminderStreak.completedToday && (
+                  <span className="inline-flex items-center gap-1 text-xs text-[#00FF88] bg-[#00FF88]/10 px-2 py-0.5 rounded-full">
+                    <CheckCircle className="w-3 h-3" />
+                    Done today
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-[#6B7280]">Best</div>
+              <div className="text-sm font-semibold text-[#E8E8F0]">{reminderStreak.longestStreak}d</div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Agent Quality Card — only shown when there are >= 5 reactions */}
       {agentQuality?.hasEnoughData && agentQuality.satisfactionRate !== null && (
