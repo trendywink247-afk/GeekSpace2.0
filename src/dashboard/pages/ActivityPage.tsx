@@ -235,7 +235,7 @@ export function ActivityPage() {
               {filtered.map((entry) => (
                 <div
                   key={entry.id}
-                  className="flex items-start gap-3 px-4 py-3 hover:bg-[#00F0FF]/5 transition-colors"
+                  className="group flex items-start gap-3 px-4 py-3 hover:bg-[#00F0FF]/5 transition-colors"
                 >
                   <ActivityIcon icon={entry.icon} />
                   <div className="flex-1 min-w-0">
@@ -244,13 +244,25 @@ export function ActivityPage() {
                       <p className="text-xs text-[#6B7280] truncate mt-0.5">{entry.details}</p>
                     )}
                   </div>
-                  <div className="flex-shrink-0 text-right">
-                    <span className="text-[10px] text-[#6B7280] font-mono whitespace-nowrap">
-                      {timeAgo(entry.created_at)}
-                    </span>
-                    <p className="text-[10px] text-[#6B7280]/60 mt-0.5">
-                      {getCategory(entry.icon)}
-                    </p>
+                  <div className="flex-shrink-0 text-right flex items-start gap-2">
+                    <div>
+                      <span className="text-[10px] text-[#6B7280] font-mono whitespace-nowrap">
+                        {timeAgo(entry.created_at)}
+                      </span>
+                      <p className="text-[10px] text-[#6B7280]/60 mt-0.5">
+                        {getCategory(entry.icon)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        await userService.deleteActivityEntry(entry.id).catch(() => {});
+                        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded text-[#6B7280] hover:text-[#FF6161] transition-all"
+                      aria-label="Delete this entry"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               ))}

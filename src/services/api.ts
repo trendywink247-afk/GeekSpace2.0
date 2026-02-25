@@ -170,6 +170,9 @@ export const userService = {
       currentPassword,
       newPassword,
     }),
+
+  deleteActivityEntry: (id: string) =>
+    api.delete<{ deleted: number }>(`/activity/${id}`),
 };
 
 // ----- Agent -------------------------------------------------
@@ -382,6 +385,12 @@ export const reminderService = {
     api.get<{ history: Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }> }>(`/reminders/${id}/snooze-history`),
 
   // 38.3: CSV export — returns raw CSV text (authenticated via Axios interceptor)
+  bulkComplete: (ids: string[]) =>
+    api.post<{ updated: number }>('/reminders/bulk-complete', { ids }),
+
+  getStats: () =>
+    api.get<{ total: number; active: number; completed: number; overdue: number; byPriority: { low: number; normal: number; high: number; urgent: number } }>('/reminders/stats'),
+
   exportCsv: (status: 'all' | 'active' | 'completed' = 'all') =>
     api.get<string>(`/reminders/export.csv?status=${status}`),
 };

@@ -102,6 +102,7 @@ export interface AgentConfig {
   notif_agents?: number;
   notif_daily_briefing?: number;
   notif_connections?: number;
+  snooze_presets?: string;
 }
 
 export interface Personality {

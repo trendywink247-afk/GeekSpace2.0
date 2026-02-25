@@ -55,3 +55,15 @@ activityRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
   }
   res.json({ days });
 });
+
+// ---- 41.5: DELETE /activity/:id — delete single activity log entry ----
+activityRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { id } = req.params;
+  const result = db.prepare('DELETE FROM activity_log WHERE id = ? AND user_id = ?').run(id, userId);
+  if (result.changes === 0) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+  res.json({ deleted: 1 });
+});

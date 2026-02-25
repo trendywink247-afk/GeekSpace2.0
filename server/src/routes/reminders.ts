@@ -312,3 +312,53 @@ remindersRouter.delete('/bulk', requireAuth, validateBody(bulkReminderDeleteSche
 
   res.json({ deleted: result.changes });
 });
+
+// ── 41.1: Bulk Complete ────────────────────────────────────────────────────
+remindersRouter.post('/bulk-complete', requireAuth, (req: AuthRequest, res) => {
+  const { ids } = req.body as { ids: string[] };
+
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 100) {
+    res.status(400).json({ error: 'ids must be a non-empty array of max 100' });
+    return;
+  }
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const owned = db.prepare(
+    `SELECT id FROM reminders WHERE id IN (${placeholders}) AND user_id = ? AND completed = 0`
+  ).all(...ids, req.userId!) as Array<{ id: string }>;
+
+  if (owned.length === 0) {
+    res.json({ updated: 0 });
+    return;
+  }
+
+  const ownedIds = owned.map((r) => r.id);
+  const updPlaceholders = ownedIds.map(() => '?').join(', ');
+  db.prepare(
+    `UPDATE reminders SET completed = 1, completed_at = ? WHERE id IN (${updPlaceholders})`
+  ).run(Date.now(), ...ownedIds);
+
+  res.json({ updated: owned.length });
+});
+
+// ── 41.4: Reminder Stats ───────────────────────────────────────────────────
+remindersRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
+  const now = Date.now();
+
+  const total = (db.prepare('SELECT COUNT(*) as c FROM reminders WHERE user_id = ?').get(req.userId!) as { c: number }).c;
+  const completed = (db.prepare('SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 1').get(req.userId!) as { c: number }).c;
+  const overdue = (db.prepare('SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 0 AND scheduled_for < ?').get(req.userId!, now) as { c: number }).c;
+  const active = (db.prepare('SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 0 AND scheduled_for >= ?').get(req.userId!, now) as { c: number }).c;
+
+  const byPriority = { low: 0, normal: 0, high: 0, urgent: 0 };
+  const priorityRows = db.prepare(
+    `SELECT priority, COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 0 GROUP BY priority`
+  ).all(req.userId!) as Array<{ priority: string; c: number }>;
+  for (const row of priorityRows) {
+    if (row.priority in byPriority) {
+      byPriority[row.priority as keyof typeof byPriority] = row.c;
+    }
+  }
+
+  res.json({ total, active, completed, overdue, byPriority });
+});
