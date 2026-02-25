@@ -14,7 +14,6 @@ const app = createApp();
 
 // Override adminToken so the admin middleware sees a valid token in tests
 const ADMIN_TOKEN = 'test-admin-token-phase32';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (config as any).adminToken = ADMIN_TOKEN;
 
 // ---- 32.4: Admin Feedback Analytics ----
