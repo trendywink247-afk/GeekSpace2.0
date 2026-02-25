@@ -90,18 +90,24 @@ X-Robots-Tag, automations log/runCount sync, overdue complete button, portfolio 
 
 ---
 
-## Phase 50 — PROPOSED (10 items)
-**Theme:** Reliability, UX/Mobile, State-sync, Security, Performance, Dev/Ops
+## Phase 50 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/80 | **Tests:** 471/471
+loadErrors banner, unified timestamps, streak widget, connections URL filter, clear-filters btn, HSTS, users/me Redis cache, health DB stats
+
+---
+
+## Phase 51 — PROPOSED (10 items)
+**Theme:** Reliability, UX/Mobile, Edge-case hardening, Security, Performance, Dev/Ops
 
 | # | Item | Category |
 |---|------|----------|
-| 50.1 | Fix: RemindersPage "load more" button missing — only 20 shown without pagination | Reliability |
-| 50.2 | Fix: Automation run log timestamps show UTC without conversion — show local time | Reliability |
-| 50.3 | UX: AgentChatPanel — add "copy last response" button on assistant messages | UX/Mobile |
-| 50.4 | UX: Connections page — persist filter tab (all/connected/disconnected) in URL param | UX/Mobile |
-| 50.5 | Fix: OverviewPage streak counter resets on hard refresh (should persist via API) | State-sync |
-| 50.6 | Fix: Portfolio public page shows broken "send message" if email not configured | Edge-case |
-| 50.7 | Security: Add Content-Security-Policy nonce for inline scripts in portfolio HTML | Security |
-| 50.8 | Perf: Add LRU-based in-memory cache for frequently accessed user settings | Performance |
-| 50.9 | Dev/Ops: Add `/api/metrics/summary` endpoint (CPU, mem, request rate) for admin | Dev/Ops |
-| 50.10 | Phase 50 tests + verification gate + PR/merge | Dev/Ops |
+| 51.1 | Fix: PATCH /me should also invalidate `user:me` cache on notification/privacy field changes (currently only clears on profile PATCH) | Reliability |
+| 51.2 | Fix: RemindersPage — editing a recurring reminder should offer "this occurrence" vs "all future" choice | UX |
+| 51.3 | UX: AgentChatPanel — add message count badge on mobile nav Connections tab when unread | UX/Mobile |
+| 51.4 | UX: OverviewPage — add "copy briefing" button on Daily Briefing card | UX/Mobile |
+| 51.5 | Fix: Automation trigger button shows no error feedback if POST /trigger fails | State-sync |
+| 51.6 | Edge: Portfolio contact form — show inline success/error message instead of silent close | Edge-case |
+| 51.7 | Security: Add `rate-limit-policy` header to document rate limit rules on all limited endpoints | Security |
+| 51.8 | Perf: Debounce portfolio contact form nonce fetch (avoid double-fetch on mobile double-tap) | Performance |
+| 51.9 | Dev/Ops: Add structured event logging for portfolio contact attempts (success/blocked/nonce-fail) | Dev/Ops |
+| 51.10 | Phase 51 tests + verification gate + PR/merge | Dev/Ops |

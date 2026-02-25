@@ -1,45 +1,43 @@
-# AI Handoff — Phase 49 Complete
+# AI Handoff — Phase 50 Complete
 
 **Date:** 2026-02-25
-**Branch:** `ai/phase-20260225-phase49` (merged → main)
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/79
-**Merge SHA:** `992c576`
-**Status:** All 10 items implemented, 465/465 tests passing, full verification clean
+**Branch:** `ai/phase-20260225-phase50` (merged → main)
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/80
+**Merge SHA:** `b878d93`
+**Status:** All 10 items implemented, 471/471 tests passing, full verification clean
 
 ---
 
-## Phase 49 — What Was Done
+## Phase 50 — What Was Done
 
-### 49.1 X-Robots-Tag: noindex on API routes (Ops/Security)
-- `server/src/app.ts` — Added `X-Robots-Tag: noindex, nofollow` middleware on `/api/*` to prevent search engine crawling of API endpoints.
+### 50.1 Dashboard loadErrors tracking (Reliability)
+- `src/stores/dashboardStore.ts` — Added `loadErrors: number` field. `loadDashboard` counts rejected promises from `Promise.allSettled` (0–9 range).
+- `src/dashboard/DashboardApp.tsx` — Amber `WifiOff` banner shown when `loadErrors > 0` and idle warning is not showing.
 
-### 49.2 + 49.5 Automations state sync after trigger (State-sync)
-- `src/dashboard/pages/AutomationsPage.tsx` — `handleTrigger` now reloads logs + dead-letters immediately so the log panel is fresh without page refresh.
-- `src/stores/dashboardStore.ts` — `triggerAutomation` re-fetches automations list after trigger so `runCount` is authoritative (not just optimistic).
+### 50.2 AutomationsPage timestamp normalization (Reliability)
+- `src/dashboard/pages/AutomationsPage.tsx` — Replaced two divergent `formatLastRun` and `fmtRunTime` functions with single `fmtRelativeTime`. Consistent capitalization ("Just now", "Yesterday"), locale-aware `toLocaleDateString`.
 
-### 49.3 Mark all overdue complete button (UX)
-- `src/dashboard/pages/RemindersPage.tsx` — Added `handleMarkAllOverdueComplete` + a banner that shows when 4+ overdue reminders exist, using `reminderService.bulkComplete`.
+### 50.3 OverviewPage streak widget (UX)
+- `src/dashboard/pages/OverviewPage.tsx` — Imports `Flame` + `reminderService`. Fetches streak on mount. Shows amber card with current streak (days), "Done today" badge, and best streak when `streak >= 2`.
 
-### 49.4 Portfolio last-viewed in local timezone (UX)
-- `src/dashboard/pages/PortfolioPage.tsx` — Calls `getMeStats()` on mount, shows `· last seen {date}` with full local timezone tooltip via `toLocaleString()`.
+### 50.4 ConnectionsPage filter URL persistence (UX)
+- `src/dashboard/pages/ConnectionsPage.tsx` — Added `useSearchParams` from react-router-dom. Filter chips (All/Connected/Disconnected) sync to `?status=` URL param in replace mode. Grid filters `filteredIntegrations` accordingly.
 
-### 49.6 Portfolio contact rate limit via Redis (Security)
-- `server/src/routes/portfolio.ts` — Migrated in-memory Map rate limit to Redis (`portfolio:contact:rl:{ip}`). PM2 workers now share the rate limit counter. Falls back gracefully if Redis unavailable.
+### 50.5 RemindersPage "Clear filters" button (UX)
+- `src/dashboard/pages/RemindersPage.tsx` — Pink "Clear filters" button visible when any of: status, category, priority, recurrence, or search is non-default. Resets all to defaults.
 
-### 49.7 Portfolio contact nonce (Security/Anti-replay)
-- `server/src/routes/portfolio.ts` — Added `GET /:username/contact-nonce` (issues 15-min one-time token). `POST /:username/contact` validates + consumes nonce on use.
-- `src/services/api.ts` — Added `portfolioService.contactNonce()`.
-- `src/portfolio/PortfolioView.tsx` — Fetches nonce before form submission.
+### 50.7 HSTS header in production (Security)
+- `server/src/app.ts` — `Strict-Transport-Security: max-age=31536000; includeSubDomains` middleware injected when `config.isProduction`.
 
-### 49.8 SQLite ANALYZE on startup (Performance)
-- `server/src/db/index.ts` — `db.exec('ANALYZE')` after pragma setup keeps query plans fresh across restarts.
+### 50.8 Redis cache for GET /api/users/me (Performance)
+- `server/src/routes/users.ts` — `GET /me` reads from Redis first (`user:me:{userId}`, 60s TTL). Sets `X-Cache: HIT` or `MISS`. Cache populated after DB read (fire-and-forget). `PATCH /me` invalidates cache via `cacheDel`.
 
-### 49.9 Startup DB row counts log (Dev/Ops)
-- `server/src/index.ts` — Main worker logs `{ dbRows }` (users, reminders, automations, integrations, portfolios, activity_log) at startup for operator sanity checking.
+### 50.9 DB stats in /api/health (Dev/Ops)
+- `server/src/app.ts` — Health endpoint now includes `db: { users, reminders, automations, integrations, portfolios, activity_log }` row counts.
 
-### 49.10 Tests
-- `server/src/test/api/phase49.test.ts` — 8 new tests covering 49.1 (X-Robots-Tag), 49.7 (nonce endpoint + nonce validation), 49.8 (ANALYZE).
-- Total: **465/465** tests passing
+### 50.10 Tests + verification
+- `server/src/test/api/phase50.test.ts` — 6 new tests covering X-Cache header, user object shape, health db field, existing health fields, dashboard stats shape.
+- Total: **471/471** tests passing
 
 ---
 
@@ -50,42 +48,40 @@ cd ~/GeekSpace2.0
 git status
 cat ops/AI_HANDOFF.md
 cat ops/AI_PHASE_PLAN.md
-cd server && npm test    # expect 465/465
+cd server && npm test    # expect 471/471
 ```
 
-**Next phase:** Phase 50 — see `AI_PHASE_PLAN.md` for proposed items.
+**Next phase:** Phase 51 — see `AI_PHASE_PLAN.md` for proposed items.
 
 ---
 
-## Files Changed in Phase 49
+## Files Changed in Phase 50
 
 **Server:**
-- `server/src/app.ts` — X-Robots-Tag middleware
-- `server/src/db/index.ts` — ANALYZE on startup
-- `server/src/index.ts` — startup DB row counts log
-- `server/src/routes/portfolio.ts` — Redis rate limit, nonce endpoint, nonce validation, randomBytes import
+- `server/src/app.ts` — HSTS middleware, DB stats in /api/health
+- `server/src/routes/users.ts` — Redis cache for GET /me + cache invalidation on PATCH
 
 **Frontend:**
-- `src/dashboard/pages/AutomationsPage.tsx` — reload logs + dead-letters after trigger
-- `src/dashboard/pages/PortfolioPage.tsx` — getMeStats() + lastViewedAt display
-- `src/dashboard/pages/RemindersPage.tsx` — overdueReminders, handleMarkAllOverdueComplete, banner UI
-- `src/portfolio/PortfolioView.tsx` — nonce fetch before submit
-- `src/services/api.ts` — portfolioService.contactNonce() + nonce param in contact()
-- `src/stores/dashboardStore.ts` — re-fetch automations after trigger
+- `src/dashboard/DashboardApp.tsx` — loadErrors partial-failure banner
+- `src/dashboard/pages/AutomationsPage.tsx` — unified fmtRelativeTime
+- `src/dashboard/pages/ConnectionsPage.tsx` — filter chips + useSearchParams
+- `src/dashboard/pages/OverviewPage.tsx` — streak widget
+- `src/dashboard/pages/RemindersPage.tsx` — clear-filters button
+- `src/stores/dashboardStore.ts` — loadErrors tracking
 
 **Tests:**
-- `server/src/test/api/phase49.test.ts` — 8 new tests
+- `server/src/test/api/phase50.test.ts` — 6 new tests
 
 ---
 
 ## Open Risks
 
-- Portfolio contact nonce is optional (nonce skipped if absent for backward compat). Public portfolio pages NOT yet pre-loading a nonce on page load — this is handled client-side by fetching on submit.
-- Redis rate limit for portfolio contact: if Redis is down, rate limit is bypassed (falls back to allow-through). Existing behaviour.
-- ANALYZE is synchronous and runs before schema creation — if the DB is very large (>100MB) this adds ~50-100ms to startup. Acceptable for typical GeekSpace DBs.
+- HSTS is middleware-applied: if Caddy/proxy also sets HSTS, header may appear twice. Low risk — browsers take the longest max-age.
+- `user:me` Redis cache: password change, credits update, or notification toggle in other routes are NOT invalidating this cache yet. 60s TTL means stale data for up to 60s max.
+- Streak widget only shows when streak ≥ 2 — users with 0-day or 1-day streak see nothing (correct behavior, avoids noise).
 
 ## Baseline
 
-- Tests: 465/465
-- Phases complete: 49
-- Main SHA: 992c576
+- Tests: 471/471
+- Phases complete: 50
+- Main SHA: b878d93
