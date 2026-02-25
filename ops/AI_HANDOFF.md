@@ -1,48 +1,45 @@
-# AI Handoff — Phase 48 Complete
+# AI Handoff — Phase 49 Complete
 
 **Date:** 2026-02-25
-**Branch:** `ai/phase-20260225-phase48` (merged → main)
-**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/78
-**Merge SHA:** `4fa7335`
-**Status:** All 10 items implemented, 457/457 tests passing, full verification clean
+**Branch:** `ai/phase-20260225-phase49` (merged → main)
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/79
+**Merge SHA:** `992c576`
+**Status:** All 10 items implemented, 465/465 tests passing, full verification clean
 
 ---
 
-## Phase 48 — What Was Done
+## Phase 49 — What Was Done
 
-### 48.1 Automation enabled toggle normalization (Reliability)
-- `server/src/routes/automations.ts` — GET list and PATCH both now wrap `enabled` in `Boolean()` before returning. SQLite stores 0/1 integers; React toggle state was getting confused by falsy `0` vs `false`.
-- Updated `phase44.test.ts` and `automations.test.ts` to expect boolean instead of integer.
+### 49.1 X-Robots-Tag: noindex on API routes (Ops/Security)
+- `server/src/app.ts` — Added `X-Robots-Tag: noindex, nofollow` middleware on `/api/*` to prevent search engine crawling of API endpoints.
 
-### 48.2 Portfolio cache miss after AI-driven writes (State-sync)
-- `server/src/services/action-executor.ts` — Added `invalidatePortfolioCache(userId)` helper that calls `cacheDel(portfolio:${username})`. Called after: `portfolio_add_project`, `portfolio_update_bio`, `portfolio_update_skills`, `portfolio_remove_project`, and the `generate_code` auto-portfolio-add. Previously AI portfolio updates were invisible on the public page for up to 5 minutes.
+### 49.2 + 49.5 Automations state sync after trigger (State-sync)
+- `src/dashboard/pages/AutomationsPage.tsx` — `handleTrigger` now reloads logs + dead-letters immediately so the log panel is fresh without page refresh.
+- `src/stores/dashboardStore.ts` — `triggerAutomation` re-fetches automations list after trigger so `runCount` is authoritative (not just optimistic).
 
-### 48.3 AgentChatPanel skeleton loading state (UX/Mobile)
-- `src/components/AgentChatPanel.tsx` — Added `Skeleton` import; shimmer bar replaces credits bar while billing data loads (`creditsTotal === null`); ghost message bubble shows in messages area while greeting initializes.
+### 49.3 Mark all overdue complete button (UX)
+- `src/dashboard/pages/RemindersPage.tsx` — Added `handleMarkAllOverdueComplete` + a banner that shows when 4+ overdue reminders exist, using `reminderService.bulkComplete`.
 
-### 48.4 Reminder quick-add from Overview (Edge-case/flow)
-- `src/dashboard/pages/OverviewPage.tsx` — "Set reminder" quick action now navigates to `reminders?openAdd=true`
-- `src/dashboard/pages/RemindersPage.tsx` — Added `useSearchParams` from react-router-dom; `useEffect` detects `?openAdd=true`, calls `setIsAddDialogOpen(true)`, then cleans the URL with `replace: true`.
+### 49.4 Portfolio last-viewed in local timezone (UX)
+- `src/dashboard/pages/PortfolioPage.tsx` — Calls `getMeStats()` on mount, shows `· last seen {date}` with full local timezone tooltip via `toLocaleString()`.
 
-### 48.5 Activity log timestamp timezone fix (Reliability)
-- `src/dashboard/pages/ActivityPage.tsx` — Added `parseSqliteTs()` helper that normalizes `"YYYY-MM-DD HH:MM:SS"` → `"YYYY-MM-DDTHH:MM:SSZ"` before passing to `new Date()`. Safari couldn't parse SQLite format; V8 was treating it as local time. Fallback date now uses `toLocaleDateString()` instead of `toISOString().slice(0,10)`.
+### 49.6 Portfolio contact rate limit via Redis (Security)
+- `server/src/routes/portfolio.ts` — Migrated in-memory Map rate limit to Redis (`portfolio:contact:rl:{ip}`). PM2 workers now share the rate limit counter. Falls back gracefully if Redis unavailable.
 
-### 48.6 Portfolio contact origin validation (Security)
-- `server/src/routes/portfolio.ts` — POST `/:username/contact` now checks `req.headers.origin` against `config.corsOrigins`. Requests with an Origin not in the allowed list get 403. Requests without Origin header (server-to-server) pass through.
+### 49.7 Portfolio contact nonce (Security/Anti-replay)
+- `server/src/routes/portfolio.ts` — Added `GET /:username/contact-nonce` (issues 15-min one-time token). `POST /:username/contact` validates + consumes nonce on use.
+- `src/services/api.ts` — Added `portfolioService.contactNonce()`.
+- `src/portfolio/PortfolioView.tsx` — Fetches nonce before form submission.
 
-### 48.7 Permissions-Policy header (Security)
-- `server/src/app.ts` — Added middleware after Helmet: sets `Permissions-Policy: camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()`. Helmet 8 does not support this natively.
+### 49.8 SQLite ANALYZE on startup (Performance)
+- `server/src/db/index.ts` — `db.exec('ANALYZE')` after pragma setup keeps query plans fresh across restarts.
 
-### 48.8 ETag caching for GET /api/reminders (Performance)
-- `server/src/routes/reminders.ts` — Added `createHash` import; computes SHA-256 of serialized reminder list, sets `ETag: "hash16"` and `Cache-Control: private, no-cache`. Returns 304 when `If-None-Match` matches.
+### 49.9 Startup DB row counts log (Dev/Ops)
+- `server/src/index.ts` — Main worker logs `{ dbRows }` (users, reminders, automations, integrations, portfolios, activity_log) at startup for operator sanity checking.
 
-### 48.9 Structured logs for reminder lifecycle (Ops/Observability)
-- `server/src/routes/reminders.ts` — Added `logger` import; structured Pino log events: `reminder.created` (create POST), `reminder.completed` (complete POST), `reminder.deleted` (delete DELETE), `reminder.snoozed` (snooze POST).
-
-### 48.10 Tests + gate + PR + merge
-- New: `server/src/test/api/phase48.test.ts` — 12 new tests covering 48.1, 48.6, 48.7, 48.8
-- Total: **457/457** tests passing
-- Verification: server typecheck ✅, frontend typecheck ✅, build ✅, lint ✅
+### 49.10 Tests
+- `server/src/test/api/phase49.test.ts` — 8 new tests covering 49.1 (X-Robots-Tag), 49.7 (nonce endpoint + nonce validation), 49.8 (ANALYZE).
+- Total: **465/465** tests passing
 
 ---
 
@@ -53,43 +50,42 @@ cd ~/GeekSpace2.0
 git status
 cat ops/AI_HANDOFF.md
 cat ops/AI_PHASE_PLAN.md
-cd server && npm test    # expect 457/457
+cd server && npm test    # expect 465/465
 ```
 
-**Next phase:** Phase 49 — see `AI_PHASE_PLAN.md` for proposed items.
+**Next phase:** Phase 50 — see `AI_PHASE_PLAN.md` for proposed items.
 
 ---
 
-## Files Changed in Phase 48
+## Files Changed in Phase 49
 
 **Server:**
-- `server/src/app.ts` — Permissions-Policy middleware
-- `server/src/routes/automations.ts` — enabled boolean normalization
-- `server/src/routes/portfolio.ts` — origin validation, config import
-- `server/src/routes/reminders.ts` — ETag + structured logs + crypto import + logger import
-- `server/src/services/action-executor.ts` — invalidatePortfolioCache helper + cacheDel import
+- `server/src/app.ts` — X-Robots-Tag middleware
+- `server/src/db/index.ts` — ANALYZE on startup
+- `server/src/index.ts` — startup DB row counts log
+- `server/src/routes/portfolio.ts` — Redis rate limit, nonce endpoint, nonce validation, randomBytes import
 
 **Frontend:**
-- `src/components/AgentChatPanel.tsx` — Skeleton import, skeleton credit bar, skeleton greeting
-- `src/dashboard/pages/ActivityPage.tsx` — parseSqliteTs helper, timeAgo fix
-- `src/dashboard/pages/OverviewPage.tsx` — reminder quick-action passes ?openAdd=true
-- `src/dashboard/pages/RemindersPage.tsx` — useSearchParams, auto-open add dialog
+- `src/dashboard/pages/AutomationsPage.tsx` — reload logs + dead-letters after trigger
+- `src/dashboard/pages/PortfolioPage.tsx` — getMeStats() + lastViewedAt display
+- `src/dashboard/pages/RemindersPage.tsx` — overdueReminders, handleMarkAllOverdueComplete, banner UI
+- `src/portfolio/PortfolioView.tsx` — nonce fetch before submit
+- `src/services/api.ts` — portfolioService.contactNonce() + nonce param in contact()
+- `src/stores/dashboardStore.ts` — re-fetch automations after trigger
 
 **Tests:**
-- `server/src/test/api/phase48.test.ts` — 12 new tests
-- `server/src/test/api/automations.test.ts` — updated to expect boolean
-- `server/src/test/api/phase44.test.ts` — updated to expect boolean
+- `server/src/test/api/phase49.test.ts` — 8 new tests
 
 ---
 
 ## Open Risks
 
-- Permissions-Policy `interest-cohort=()` may generate warnings in some browser consoles (FLoC-era directive) — low priority cosmetic issue
-- ETag for reminders uses full list hash — for large lists (100+ reminders) this adds a small CPU cost per GET (SHA-256 on ~10KB JSON is negligible)
-- Origin validation on portfolio contact uses in-memory `config.corsOrigins` from env; multi-process deployments share the same env so this is safe
+- Portfolio contact nonce is optional (nonce skipped if absent for backward compat). Public portfolio pages NOT yet pre-loading a nonce on page load — this is handled client-side by fetching on submit.
+- Redis rate limit for portfolio contact: if Redis is down, rate limit is bypassed (falls back to allow-through). Existing behaviour.
+- ANALYZE is synchronous and runs before schema creation — if the DB is very large (>100MB) this adds ~50-100ms to startup. Acceptable for typical GeekSpace DBs.
 
 ## Baseline
 
-- Tests: 457/457
-- Phases complete: 48
-- Main SHA: 4fa7335
+- Tests: 465/465
+- Phases complete: 49
+- Main SHA: 992c576
