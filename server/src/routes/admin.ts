@@ -522,6 +522,54 @@ adminRouter.get('/audit', requireAdminToken, (req: Request, res: Response): void
   }
 });
 
+// ---- /analytics/feedback endpoint — thumbs-down analytics ----
+adminRouter.get('/analytics/feedback', requireAdminToken, (_req: Request, res: Response): void => {
+  try {
+    // Total disliked reactions (👎 emoji)
+    const totalDisliked = (db.prepare(
+      "SELECT COUNT(*) as c FROM message_reactions WHERE reaction = '👎'"
+    ).get() as { c: number }).c;
+
+    // Recent dislikes — message_id is a string key; return id + message_id + created_at
+    const recentRows = db.prepare(
+      `SELECT id, user_id, message_id, reaction, created_at
+       FROM message_reactions
+       WHERE reaction = '👎'
+       ORDER BY created_at DESC
+       LIMIT 5`
+    ).all() as { id: string; user_id: string; message_id: string; reaction: string; created_at: string }[];
+
+    // Derive "topics" from message_id — extract first 3-5 words (simple string split)
+    const topicCounts: Record<string, number> = {};
+    for (const row of recentRows) {
+      // message_id is typically a UUID or short key; use first words as topic label
+      const words = row.message_id.replace(/[-_]/g, ' ').split(/\s+/).slice(0, 4).join(' ').trim();
+      if (words) {
+        topicCounts[words] = (topicCounts[words] || 0) + 1;
+      }
+    }
+    const topDislikedTopics = Object.entries(topicCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([topic]) => topic);
+
+    res.json({
+      totalDisliked,
+      topDislikedTopics,
+      recentDislikes: recentRows.map(r => ({
+        id: r.id,
+        messageId: r.message_id,
+        userId: r.user_id,
+        reaction: r.reaction,
+        created_at: r.created_at,
+      })),
+    });
+  } catch (err) {
+    logger.error({ err }, 'Admin feedback analytics query failed');
+    res.status(500).json({ error: 'Feedback analytics query failed' });
+  }
+});
+
 // ---- serveAdminDashboard — GET /admin (HTML page) ----
 export function serveAdminDashboard(_req: Request, res: Response): void {
   // Admin dashboard is a standalone HTML file with inline scripts.
