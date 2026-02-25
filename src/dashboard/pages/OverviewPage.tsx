@@ -17,7 +17,8 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  Check
+  Check,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -104,6 +105,40 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const [modelSaving, setModelSaving] = useState<string | null>(null);
   const [briefingTime, setBriefingTime] = useState('08:00');
   const [briefingSaving, setBriefingSaving] = useState(false);
+
+  // Onboarding checklist state
+  const ONBOARDING_ITEMS = [
+    { id: 'profile', label: 'Complete your profile', page: 'settings' },
+    { id: 'skill', label: 'Add a skill', page: 'portfolio' },
+    { id: 'project', label: 'Create a project', page: 'portfolio' },
+    { id: 'portfolio', label: 'Enable your portfolio', page: 'portfolio' },
+    { id: 'telegram', label: 'Connect Telegram', page: 'connections' },
+  ] as const;
+  type OnboardingItemId = typeof ONBOARDING_ITEMS[number]['id'];
+  const [onboardingDone, setOnboardingDone] = useState<OnboardingItemId[]>(() => {
+    try {
+      const stored = localStorage.getItem('gs_onboarding_done');
+      return stored ? (JSON.parse(stored) as OnboardingItemId[]) : [];
+    } catch { return []; }
+  });
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() =>
+    localStorage.getItem('gs_onboarding_dismissed') === 'true'
+  );
+  const allOnboardingDone = onboardingDone.length >= ONBOARDING_ITEMS.length;
+  const showOnboarding = !onboardingDismissed && !allOnboardingDone;
+
+  const toggleOnboardingItem = (id: OnboardingItemId) => {
+    setOnboardingDone(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      localStorage.setItem('gs_onboarding_done', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const dismissOnboarding = () => {
+    setOnboardingDismissed(true);
+    localStorage.setItem('gs_onboarding_dismissed', 'true');
+  };
 
   const user = useAuthStore((s) => s.user);
   const { stats, integrations, agent, reminders, chartData, hourlyData } = useDashboardStore();
@@ -320,6 +355,69 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           </div>
         </div>
       </div>
+
+      {/* ─── Getting Started Checklist ─── */}
+      {showOnboarding && (
+        <div
+          className="rounded-2xl border overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, rgba(10,10,20,0.95), rgba(8,8,16,0.98))', borderColor: 'rgba(0,240,255,0.15)' }}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-[#00FF88]" />
+              <span className="text-sm font-semibold text-[#E8E8F0]">Getting Started</span>
+              <span className="text-xs text-[#6B7280]">({onboardingDone.length}/{ONBOARDING_ITEMS.length} done)</span>
+            </div>
+            <button
+              onClick={dismissOnboarding}
+              className="p-1 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 transition-colors"
+              aria-label="Dismiss checklist"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {ONBOARDING_ITEMS.map((item) => {
+              const done = onboardingDone.includes(item.id);
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none"
+                  style={{
+                    borderColor: done ? 'rgba(0,255,136,0.2)' : 'rgba(0,240,255,0.1)',
+                    background: done ? 'rgba(0,255,136,0.04)' : 'rgba(0,240,255,0.02)',
+                  }}
+                  onClick={() => toggleOnboardingItem(item.id)}
+                >
+                  <div
+                    className="w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all"
+                    style={{
+                      borderColor: done ? '#00FF88' : 'rgba(0,240,255,0.3)',
+                      background: done ? 'rgba(0,255,136,0.15)' : 'transparent',
+                    }}
+                  >
+                    {done && <Check className="w-3 h-3 text-[#00FF88]" />}
+                  </div>
+                  <span
+                    className="text-sm flex-1"
+                    style={{ color: done ? '#6B7280' : '#E8E8F0', textDecoration: done ? 'line-through' : 'none' }}
+                  >
+                    {item.label}
+                  </span>
+                  {!done && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onNavigate?.(item.page); }}
+                      className="text-[10px] text-[#00F0FF] hover:underline flex-shrink-0"
+                    >
+                      Go →
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ─── Capability Spotlight (new users) ─── */}
       {stats.messagesSent < 10 && (

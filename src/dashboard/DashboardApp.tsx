@@ -167,6 +167,7 @@ export function DashboardApp() {
   const agent = useDashboardStore((s) => s.agent);
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
   const reminders = useDashboardStore((s) => s.reminders);
+  const integrations = useDashboardStore((s) => s.integrations);
   const applyTheme = useThemeStore((s) => s.applyTheme);
   const setThemeMode = useThemeStore((s) => s.setMode);
   const setAccentColor = useThemeStore((s) => s.setAccentColor);
@@ -177,6 +178,9 @@ export function DashboardApp() {
   const dueReminderCount = reminders.filter(
     (r) => !r.completed && new Date(r.datetime).getTime() <= Date.now()
   ).length;
+
+  // Pending integrations count for nav badge
+  const pendingConnectionCount = integrations.filter((i) => i.status === 'pending').length;
 
   useEffect(() => {
     loadDashboard();
@@ -209,6 +213,18 @@ export function DashboardApp() {
       const timer = setTimeout(() => setShowWelcome(false), 5000);
       return () => clearTimeout(timer);
     }
+  }, []);
+
+  // Cmd+K / Ctrl+K global shortcut opens command palette
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
   // Sync URL pathname → currentPage (so navigate() calls update the view)
@@ -381,6 +397,11 @@ export function DashboardApp() {
                         {item.id === 'reminders' && dueReminderCount > 0 && (
                           <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none px-1">
                             {dueReminderCount > 9 ? '9+' : dueReminderCount}
+                          </span>
+                        )}
+                        {item.id === 'connections' && pendingConnectionCount > 0 && (
+                          <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none px-1">
+                            {pendingConnectionCount > 9 ? '9+' : pendingConnectionCount}
                           </span>
                         )}
                       </button>
