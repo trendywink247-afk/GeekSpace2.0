@@ -74,6 +74,11 @@ export function LoginPage() {
       setPassword('pass');
       setUsername('alex');
     }
+    // Show OAuth cancellation / failure errors passed in query string
+    const oauthError = searchParams.get('error');
+    if (oauthError) {
+      setError(oauthError);
+    }
     const timer = setTimeout(() => setIsLoaded(true), 50);
     return () => clearTimeout(timer);
   }, [searchParams]);

@@ -7,6 +7,7 @@ import {
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
   Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles
 } from 'lucide-react';
+import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentDesignWizard } from '@/components/AgentDesignWizard';
@@ -140,13 +141,6 @@ const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard
   { id: 'more', label: 'More', icon: MoreHorizontal },
 ];
 
-function PageLoader() {
-  return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-}
 
 export function DashboardApp() {
   const navigate = useNavigate();
@@ -154,6 +148,7 @@ export function DashboardApp() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const swipeHandlers = useSwipeNavigation(location.pathname);
   const [currentPage, setCurrentPage] = useState<PageType>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
@@ -192,6 +187,19 @@ export function DashboardApp() {
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  // Fetch recent activity silently on mount to compute initial unread badge count
+  useEffect(() => {
+    const lastSeen = parseInt(localStorage.getItem('activity_last_seen') || '0', 10);
+    userService.getActivity(20)
+      .then(({ data }) => {
+        const count = data.activity.filter(
+          (e) => new Date(e.created_at).getTime() > lastSeen
+        ).length;
+        setUnreadCount(Math.min(count, 99));
+      })
+      .catch(() => {});
+  }, []);
 
   // Apply stored theme on mount and when user changes
   useEffect(() => {
@@ -683,8 +691,12 @@ export function DashboardApp() {
             <div className="relative">
               <button
                 onClick={() => {
+                  const opening = !notifOpen;
                   setNotifOpen((o) => !o);
-                  if (!notifOpen) {
+                  if (opening) {
+                    // Mark all as seen and reset badge
+                    localStorage.setItem('activity_last_seen', Date.now().toString());
+                    setUnreadCount(0);
                     setActivityLoading(true);
                     userService.getActivity(20)
                       .then(({ data }) => setActivity(data.activity))
@@ -697,6 +709,11 @@ export function DashboardApp() {
               >
                 <Bell className="w-5 h-5 text-[#6B7280]" />
               </button>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
               {notifOpen && (
                 <div className="absolute right-0 top-12 w-80 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-xl shadow-2xl z-50 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10">
@@ -752,7 +769,7 @@ export function DashboardApp() {
         {/* Page Content */}
         <div className="p-4 md:p-6" {...swipeHandlers}>
           <ErrorBoundary>
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<PageSkeleton />}>
             <div key={currentPage} className="animate-page-enter">
               {renderPage()}
             </div>

@@ -28,7 +28,9 @@ interface DueReminder {
   channel: string;
   category: string;
   recurring: string;
+  recurrence: string | null;
   scheduled_for: number | null;
+  priority: string | null;
 }
 
 interface SnoozedReminder {
@@ -136,7 +138,7 @@ async function checkAndDeliverReminders(): Promise<void> {
 
     // Step 2: Fetch due reminders (skip still-snoozed ones)
     const dueReminders = db.prepare(`
-      SELECT id, user_id, text, datetime, channel, category, recurring, scheduled_for
+      SELECT id, user_id, text, datetime, channel, category, recurring, recurrence, scheduled_for, priority
       FROM reminders
       WHERE completed = 0
         AND snooze_until IS NULL
@@ -289,13 +291,15 @@ async function tryEmailDelivery(reminder: DueReminder): Promise<void> {
 
 // ---- Recurring Logic ----
 
-function scheduleNextRecurrence(reminder: DueReminder): void {
-  if (!reminder.recurring || !reminder.datetime) return;
+export function scheduleNextRecurrence(reminder: DueReminder): void {
+  // Support both legacy `recurring` field and newer `recurrence` field
+  const recurField = reminder.recurrence || reminder.recurring;
+  if (!recurField || !reminder.datetime) return;
 
   const current = new Date(reminder.datetime);
   let next: Date;
 
-  switch (reminder.recurring) {
+  switch (recurField) {
     case 'daily':
       next = new Date(current.getTime() + 24 * 3600_000);
       break;
@@ -314,10 +318,14 @@ function scheduleNextRecurrence(reminder: DueReminder): void {
     const nextStr = next.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
     const nextEpoch = next.getTime();
 
-    db.prepare(`INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, completed, created_by, scheduled_for)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'scheduler', ?)`).run(
+    // Copy both `recurring` and `recurrence` fields so the next occurrence
+    // is properly rescheduled by both the scheduler and the /complete endpoint.
+    // Also preserve `priority` so user preference carries forward.
+    db.prepare(`INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, recurrence, priority, completed, created_by, scheduled_for)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'scheduler', ?)`).run(
       uuid(), reminder.user_id, reminder.text, nextStr,
-      reminder.channel, reminder.category, reminder.recurring, nextEpoch,
+      reminder.channel, reminder.category, reminder.recurring || '',
+      reminder.recurrence || null, reminder.priority || 'normal', nextEpoch,
     );
     logger.info({ reminderId: reminder.id, nextAt: nextStr, scheduledFor: nextEpoch }, 'Recurring reminder rescheduled');
   }

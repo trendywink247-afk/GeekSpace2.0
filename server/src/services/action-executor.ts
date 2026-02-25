@@ -34,11 +34,8 @@ export interface ActionResult {
 
 // ── Executor ────────────────────────────────────────────────
 
-export async function executeAction(userId: string, action: ParsedAction): Promise<ActionResult> {
-  const { tool, params } = action;
-
-  try {
-    switch (tool) {
+async function runAction(userId: string, tool: string, params: ParsedAction['params']): Promise<ActionResult> {
+  switch (tool) {
       // ── generate_code ───────────────────────────────────
       case 'generate_code': {
         const title = params.title as string;
@@ -502,8 +499,22 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           message: `Unknown tool "${tool}"`,
         };
     }
+}
+
+export async function executeAction(userId: string, action: ParsedAction): Promise<ActionResult> {
+  const { tool, params } = action;
+  const actionStart = Date.now();
+
+  logger.info({ actionType: tool, userId }, 'action:executing');
+
+  try {
+    const result = await runAction(userId, tool, params);
+    const duration = Date.now() - actionStart;
+    logger.info({ actionType: tool, userId, duration, success: result.success }, 'action:completed');
+    return result;
   } catch (err) {
-    logger.error({ err, tool, userId }, 'Action execution failed');
+    const duration = Date.now() - actionStart;
+    logger.error({ actionType: tool, error: err instanceof Error ? err.message : String(err), userId, duration }, 'action:failed');
     return {
       tool,
       success: false,

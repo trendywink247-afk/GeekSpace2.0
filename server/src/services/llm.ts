@@ -160,12 +160,15 @@ const AUTOMATION_KEYWORDS = [
   'heartbeat', 'monitor', 'uptime', 'daily summary', 'notify', 'ping',
 ];
 
-export function classifyIntent(message: string): Intent {
+export function classifyIntent(message: string, userId?: string): Intent {
   const lower = message.toLowerCase();
   const wordCount = message.split(/\s+/).length;
 
   // Long messages are more likely complex
-  if (wordCount > 80) return 'complex';
+  if (wordCount > 80) {
+    logger.info({ intent: 'complex', userId, messageLength: message.length, reason: 'word_count_exceeded' }, 'llm:intent_classified');
+    return 'complex';
+  }
 
   const matchCount = (keywords: string[]) =>
     keywords.filter((k) => lower.includes(k)).length;
@@ -175,12 +178,15 @@ export function classifyIntent(message: string): Intent {
   const automationScore = matchCount(AUTOMATION_KEYWORDS);
   const complexScore = matchCount(COMPLEX_KEYWORDS);
 
-  if (codingScore >= 2) return 'coding';
-  if (automationScore >= 1) return 'automation';
-  if (planningScore >= 2) return 'planning';
-  if (complexScore >= 2 || wordCount > 40) return 'complex';
+  let intent: Intent;
+  if (codingScore >= 2) intent = 'coding';
+  else if (automationScore >= 1) intent = 'automation';
+  else if (planningScore >= 2) intent = 'planning';
+  else if (complexScore >= 2 || wordCount > 40) intent = 'complex';
+  else intent = 'simple';
 
-  return 'simple';
+  logger.info({ intent, userId, messageLength: message.length }, 'llm:intent_classified');
+  return intent;
 }
 
 // ---- Provider Availability ----
@@ -574,7 +580,7 @@ export async function routeChat(
 ): Promise<LLMResponse> {
   const start = Date.now();
   const userMessage = messages[messages.length - 1]?.content || '';
-  const intent = classifyIntent(userMessage);
+  const intent = classifyIntent(userMessage, opts?.userId);
   
   // Estimate tokens (rough heuristic)
   const tokensEstimate = Math.ceil(userMessage.length / 4) + 100;
@@ -598,7 +604,7 @@ export async function routeChat(
   if (isCacheable && cacheKey) {
     const cached = getCached(cacheKey);
     if (cached) {
-      logger.debug({ cacheKey }, 'LLM cache hit');
+      logger.debug({ cacheKey, intent, userId: opts?.userId }, 'LLM cache hit');
       return {
         reply: cached,
         provider: 'builtin' as Provider,
@@ -608,7 +614,7 @@ export async function routeChat(
         latencyMs: 0,
         costEstimate: 0,
         creditCost: 0,
-        intent: classifyIntent(messages[0].content),
+        intent,
       };
     }
   }
@@ -690,6 +696,20 @@ export async function routeChat(
     ollamaAvailable = await isOllamaAvailable();
   }
 
+  // Log provider selection with credits info
+  logger.info({
+    provider,
+    model: provider === 'ollama' ? config.ollamaModel
+      : provider === 'openrouter' ? config.openrouterModel
+      : provider === 'edith' ? config.moonshotReasoningModel
+      : provider,
+    intent,
+    userId: opts?.userId,
+    credits: opts?.userCredits,
+    routingReason,
+    forced: !!(manualOverride || opts?.forceProvider),
+  }, 'llm:provider_selected');
+
   // Record initial routing decision trace
   const traceStart: RoutingTrace = {
     timestamp: new Date().toISOString(),
@@ -769,7 +789,12 @@ export async function routeChat(
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     error = errorMsg;
-    logger.warn({ provider, intent, error: errorMsg }, 'LLM call failed, attempting fallback');
+    const fallbackProvider: Provider = (provider === 'ollama' && isOpenRouterFreeAvailable())
+      ? 'openrouter-free'
+      : (provider === 'edith' || provider === 'openrouter' || provider === 'openrouter-free')
+        ? 'ollama'
+        : 'builtin';
+    logger.warn({ error: errorMsg, provider, fallback: fallbackProvider, intent, userId: opts?.userId }, 'llm:provider_fallback');
 
     // Fallback chain: cloud → ollama → builtin
     if (provider === 'edith' || provider === 'openrouter' || provider === 'openrouter-free') {
@@ -911,7 +936,7 @@ export async function pickProvider(
   if (preference === 'premium') return isPremiumPlan ? 'edith' : (isPaidPlan ? 'openrouter-free' : 'ollama');
 
   // Auto: check complexity + plan
-  const intent = classifyIntent(messageText);
+  const intent = classifyIntent(messageText, userId);
   if (['planning', 'complex'].includes(intent)) {
     if (isPremiumPlan) return 'edith';
     if (isPaidPlan) return 'openrouter-free';

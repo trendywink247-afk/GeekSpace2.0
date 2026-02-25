@@ -9,8 +9,38 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
-import { config } from '../config.js';
-import { retryWithBackoff } from '../utils/retry.js';
+// ---- fetchWithRetry: exponential backoff retry for webhook delivery ----
+// Retries on 5xx server errors and network errors; does NOT retry on 4xx client errors.
+
+export async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxAttempts = 3,
+  baseDelayMs = 1000,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.ok || res.status < 500) {
+        // Success or client error (4xx) — don't retry client errors
+        return res;
+      }
+      // 5xx — retry
+      lastError = new Error(`HTTP ${res.status}`);
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, baseDelayMs * attempt));
+      }
+    } catch (err) {
+      // Network error — retry
+      lastError = err;
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, baseDelayMs * attempt));
+      }
+    }
+  }
+  throw lastError;
+}
 
 // ---- Types ----
 
@@ -100,21 +130,18 @@ async function executeAction(
           } catch { /* ignore parse errors */ }
         }
 
-        const fetchResult = await retryWithBackoff(
-          async () => {
-            const r = await fetch(url, {
-              method,
-              headers,
-              body: method !== 'GET' ? JSON.stringify(bodyPayload) : undefined,
-              signal: AbortSignal.timeout(30000),
-            });
-            if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
-            return r;
+        const fetchResult = await fetchWithRetry(
+          url,
+          {
+            method,
+            headers,
+            body: method !== 'GET' ? JSON.stringify(bodyPayload) : undefined,
+            signal: AbortSignal.timeout(30000),
           },
-          3,      // maxAttempts
-          1000,   // baseDelayMs (1s -> 2s -> 4s)
-          `webhook:${automation.name}`,
+          3,     // maxAttempts (1s → 2s delay between retries)
+          1000,  // baseDelayMs
         );
+        if (!fetchResult.ok) throw new Error(`HTTP ${fetchResult.status} ${fetchResult.statusText}`);
         output = `HTTP ${fetchResult.status} ${fetchResult.statusText}`;
 
         // Capture response body if n8n returns a reply
