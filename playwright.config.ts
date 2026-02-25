@@ -41,6 +41,7 @@ export default defineConfig({
     video: 'retain-on-failure',
     actionTimeout: 10000,
     navigationTimeout: 15000,
+    reducedMotion: 'reduce', // Disable animations so dialogs don't animate mid-test
   },
 
   projects: [

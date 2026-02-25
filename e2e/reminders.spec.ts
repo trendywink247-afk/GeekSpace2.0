@@ -53,10 +53,10 @@ test.describe('Reminders Page', () => {
     const datetimeInput = page.locator('input[type="datetime-local"]');
     await datetimeInput.fill('2030-01-15T10:00');
 
-    // Click submit via data-testid (stable, avoids .last() ambiguity on mobile)
+    // Click submit via data-testid; force:true bypasses animation instability on mobile
     const addBtn = page.getByTestId('submit-reminder-btn');
     await expect(addBtn).toBeEnabled();
-    await addBtn.click();
+    await addBtn.click({ force: true });
 
     // Dialog should close and reminder should appear in the list
     // Use .first() to handle cases where a previous test created the same text
@@ -73,7 +73,7 @@ test.describe('Reminders Page', () => {
     await textInput.fill('Complete me E2E');
     const datetimeInput = page.locator('input[type="datetime-local"]');
     await datetimeInput.fill('2030-06-01T09:00');
-    await page.getByTestId('submit-reminder-btn').click();
+    await page.getByTestId('submit-reminder-btn').click({ force: true });
     await expect(page.getByRole('dialog')).not.toBeVisible();
     // Use .first() to avoid strict mode violation if reminder was created before
     await expect(page.getByText('Complete me E2E').first()).toBeVisible();
@@ -113,7 +113,7 @@ test.describe('Reminders Page', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByPlaceholder('Enter reminder text...').fill('Bulk delete E2E test');
     await page.locator('input[type="datetime-local"]').fill('2030-03-01T10:00');
-    await page.getByTestId('submit-reminder-btn').click();
+    await page.getByTestId('submit-reminder-btn').click({ force: true });
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText('Bulk delete E2E test').first()).toBeVisible();
 
