@@ -891,6 +891,7 @@ export function SettingsPage() {
                 <Switch
                   checked={compactMode}
                   onCheckedChange={setCompactMode}
+                  aria-label="Compact Mode"
                 />
               </div>
 
