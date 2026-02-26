@@ -504,3 +504,25 @@ XSS hardening, vote count API enrichment, RoadmapPage content refresh, DB index 
 | 73.12 | Brand guard — 0 violations | ✅ | Brand |
 | 73.13 | Ops files + commit + PR | ✅ | Dev/Ops |
 
+---
+
+## Phase 74 — IN PROGRESS
+**Branch:** `ai/phase-20260226-phase74` | **Tests:** 811/811
+Test coverage hardening — 5 route test suites + Vite manual chunks + contact.ts bug fix.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 74.1 | CI baseline (760/760 clean) + create branch | ✅ | Reliability |
+| 74.2 | api-keys.test.ts — 10 tests (CRUD, rotate, default, auth) | ✅ | Testing |
+| 74.3 | integrations.test.ts — 14 tests (CRUD, connect, invite, events) | ✅ | Testing |
+| 74.4 | contact.test.ts — 10 tests (request, dedup, preferences, accept) | ✅ | Testing |
+| 74.5 | oauth.test.ts — 5 tests (status, callbacks, redirects) | ✅ | Testing |
+| 74.6 | webhooks.test.ts — 7 tests (telegram secret, bot filter, n8n auth) | ✅ | Testing |
+| 74.7 | Bug fix: contact.ts checkRateLimit missing SQL param | ✅ | Bug fix |
+| 74.8 | Vite manual chunks (recharts, radix-ui, framer-motion) | ✅ | Performance |
+| 74.9 | Update AI_FEATURE_MATRIX.md | ✅ | Dev/Ops |
+| 74.10 | Update AI_RISK_REGISTER.md | ✅ | Dev/Ops |
+| 74.11 | phase74.test.ts meta test (6 tests) | ✅ | Testing |
+| 74.12 | Brand guard | pending | Brand |
+| 74.13 | Verification + commit + PR + merge | pending | Dev/Ops |
+

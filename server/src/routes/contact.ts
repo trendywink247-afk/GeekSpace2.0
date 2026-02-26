@@ -32,13 +32,13 @@ const RATE_LIMIT_MAX_REQUESTS = 5; // max 5 requests per hour per user/IP
  */
 function checkRateLimit(identifier: string, identifierType: 'user' | 'ip' | 'session'): boolean {
   const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
-  
+
   // Count recent requests
   const count = db.prepare(
-    `SELECT COUNT(*) as count FROM contact_requests 
+    `SELECT COUNT(*) as count FROM contact_requests
      WHERE (from_user_id = ? OR (from_user_id IS NULL AND created_at > ?))
      AND created_at > datetime('now', '-1 hour')`
-  ).get(identifierType === 'user' ? identifier : null) as { count: number };
+  ).get(identifierType === 'user' ? identifier : null, windowStart) as { count: number };
 
   return count.count < RATE_LIMIT_MAX_REQUESTS;
 }
