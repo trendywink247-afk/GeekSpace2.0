@@ -1,9 +1,9 @@
-# AI Handoff — Phase 66 Complete
+# AI Handoff — Phase 67 Complete
 
 **Date:** 2026-02-26
-**Branch:** `ai/phase-20260226-phase66` → PR #97 merged ✅
-**Tests:** 670/670 ✅
-**Status:** All 11 improvements implemented, merged to main
+**Branch:** `ai/phase-20260226-phase67` → PR #98 merged ✅
+**Tests:** 689/689 ✅
+**Status:** All 14 improvements implemented, merged to main
 
 ---
 
@@ -16,70 +16,81 @@ If the conversation is compacted, before doing ANY work:
 
 ---
 
-## Phase 66 — What Was Done
+## Phase 67 — What Was Done
 
-### 66.1 RemindersPage: undo toast after bulk-complete
-- `src/dashboard/pages/RemindersPage.tsx` — `undoToast` state, 5s toast with "Undo" button, `handleUndoBulkComplete` reverts via PATCH
+### New Policy (from Phase 67 forward)
+- **14 tasks per phase** (Tasks 1–13 normal + Task 14: Suggestion Intelligence, forever)
+- **Release train:** Every 10 phases, promote main → prod (Phase 70 will be first candidate)
+- **Branch cleanup:** Removed 40+ stale local branches; 3 remain: main, live-production, phase-67
 
-### 66.2 Automation activity logging
-- `server/src/routes/automations.ts` — logs to `activity_log` on PATCH (enable/disable/update), DELETE, POST /:id/trigger
+### 67.1 DB schema: Suggestions system
+- `server/src/db/index.ts` — 4 new tables: `suggestions`, `suggestion_clusters`, `suggestion_scores`, `suggestion_rewards`
+- All additive (`CREATE TABLE IF NOT EXISTS`), safe for prod
 
-### 66.3 Portfolio contact delete + analytics date-range
-- `server/src/routes/portfolio.ts` — `DELETE /contacts/:id` (single), `DELETE /contacts` (bulk clear), `?from=&to=` params on analytics export
+### 67.2 User Suggestions API
+- `server/src/routes/suggestions.ts` — POST create, GET mine, GET clusters, GET /:id, GET rewards/mine
+- Rate limit: 5/hour (skipped in TEST_MODE); near-duplicate warning (non-blocking); multi-user isolation
 
-### 66.4 ConnectionsPage integration event log
-- `src/dashboard/pages/ConnectionsPage.tsx` — loads `integrationService.getEvents(10)`, shows last 5 events card
+### 67.3 Admin Suggestions API
+- `server/src/routes/admin.ts` — GET queue, PATCH /:id/status (triggers rewards), GET clusters, POST triage, POST /rewards/grant
+- Status transitions trigger idempotent credit issuance
 
-### 66.5 (part of 66.3) Analytics export date-range in API service
-- `src/services/api.ts` — `exportAnalyticsCSV(from?, to?)` passes optional params
+### 67.4 Rewards engine + AI triage worker
+- `server/src/services/rewards.ts` — `issueReward()` idempotent via `unique_key` (INSERT OR IGNORE)
+- `server/src/services/suggestions-triage.ts` — deterministic TEST_MODE stub; prod stub safe (no LLM calls)
+- Credits: ACCEPTED=+10, SHIPPED_MAIN=+50, SHIPPED_PROD=+100
 
-### 66.6 PortfolioPage analytics date-range date pickers
-- `src/dashboard/pages/PortfolioPage.tsx` — from/to date inputs, passed to `exportAnalyticsCSV`
+### 67.5–67.10 RoadmapPage: Suggest & Earn UI
+- `src/dashboard/pages/RoadmapPage.tsx` — Suggest a Feature modal, My Suggestions list, Earned Credits ledger
+- `src/services/api.ts` — `suggestionService` (create, mine, clusters, rewards)
 
-### 66.7 ActivityPage category color legend
-- `src/dashboard/pages/ActivityPage.tsx` — color dot legend strip above activity list
-
-### 66.8 RemindersPage sort-by-due toggle
-- `src/dashboard/pages/RemindersPage.tsx` — P↑ / Due↑ toggle buttons, sort by datetime when due mode
-
-### 66.11 VideoGenPage director job history filter
-- `src/dashboard/pages/VideoGenPage.tsx` — All/Done/Failed filter buttons on past director jobs
-
-### 66.13 MemoryManagerPage inline confirm modal
-- `src/dashboard/pages/MemoryManagerPage.tsx` — replaces `window.confirm()` with CSP-safe inline modal
+### 67.11–67.14 Tests + brand guard + PR
+- `server/src/test/api/phase67.test.ts` — 19 tests: create/mine/clusters/isolation/rewards/idempotency/triage
+- 689/689 tests passing (was 670 before Phase 66, 670 after Phase 66)
+- Brand guard: clean. Typecheck: clean. Build: clean.
 
 ---
 
 ## Files Changed
 
 ### Backend
-- `server/src/routes/automations.ts` — activity logging (delete, enable/disable, trigger)
-- `server/src/routes/portfolio.ts` — contact delete endpoints, analytics date-range
+- `server/src/db/index.ts`
+- `server/src/routes/suggestions.ts` (NEW)
+- `server/src/routes/admin.ts`
+- `server/src/services/rewards.ts` (NEW)
+- `server/src/services/suggestions-triage.ts` (NEW)
 
 ### Frontend
-- `src/dashboard/pages/ActivityPage.tsx`
-- `src/dashboard/pages/ConnectionsPage.tsx`
-- `src/dashboard/pages/MemoryManagerPage.tsx`
-- `src/dashboard/pages/PortfolioPage.tsx`
-- `src/dashboard/pages/RemindersPage.tsx`
-- `src/dashboard/pages/VideoGenPage.tsx`
+- `src/dashboard/pages/RoadmapPage.tsx`
 - `src/services/api.ts`
 
 ### Tests
-- `server/src/test/api/phase66.test.ts` — 11 new tests (670 total)
+- `server/src/test/api/phase67.test.ts` (NEW)
 
 ---
 
+## Branch Cleanup Done
+- Deleted 40+ stale local merged branches
+- Only 3 local branches remain: main, live-production, ai/phase-20260226-phase67
+
+---
+
+## Release Train Status
+- Phase 67 merged to main ✅
+- Phase 70 = release train candidate (promote main→prod if all green)
+- Next candidate: after Phase 70 is complete
+
 ## Open Risks
-- None. All tests green, brand guard clean.
+- phase65.test.ts: `65.7 DELETE /api/agent/memory/bulk` is flaky (intermittent 500). Pre-existing, not introduced by Phase 67. Investigate in a future phase.
+- AI triage worker: currently using deterministic stub; no real LLM clustering yet. Phase 68+ can add real clustering.
 
 ## Next Command to Run
 ```bash
 cd ~/GeekSpace2.0
 git log --oneline -5
 cat ops/AI_HANDOFF.md
-# Then start Phase 67
+# Then start Phase 68 (14 tasks, including Task 14: continue Suggest & Earn evolution)
 ```
 
 ## Merge Status
-✅ PR #97 merged to `main` on 2026-02-26
+✅ PR #98 merged to `main` on 2026-02-26
