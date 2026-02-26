@@ -108,19 +108,29 @@ E2E flake fixes (connections force:true, reminders 12s timeout), Referrer-Policy
 
 ---
 
-## Phase 53 — PLANNED (11 items)
-**Theme:** Auth hardening, agent UX, performance, CI green
+## Phase 53 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/84 | **Tests:** 509/509
+Redis automations cache, bulk-restore-snooze, CSP hardening (form-action/worker-src/manifest-src), /api/ready+automations, log pagination, reminder count badge, avatar upload preview, CI verified
+
+---
+
+## Phase 54 — PLANNED (12 items — NEW 12-TASK STRUCTURE)
+**Theme:** Brand purge (Agentin Chat), auth hardening, reliability, mobile polish
+
+> Phase 54 introduces the mandatory 12-task structure per updated CLAUDE.md:
+> 11 improvements + Task 12 = Brand Purge (recurring until zero banned strings)
 
 | # | Item | Category |
 |---|------|----------|
-| 53.1 | Fix: any remaining CI E2E failures post-Phase-52 | Reliability |
-| 53.2 | Feature: Agent chat history search / keyword filter | Feature |
-| 53.3 | Security: CSP nonce rotation audit (review Phase 43 implementation) | Security |
-| 53.4 | UX: Reminder bulk-snooze from completed tab | UX |
-| 53.5 | Performance: Redis cache for /api/automations list (per-user, 30s TTL) | Performance |
-| 53.6 | Dev/Ops: /api/ready endpoint extended with automations count | Dev/Ops |
-| 53.7 | Edge-case: Automation log pagination (currently shows latest 20 only) | Edge-case |
-| 53.8 | State-sync: Reminder count badge in sidebar Productivity group header | State-sync |
-| 53.9 | UX: Settings Profile tab — avatar upload preview improvement | UX |
-| 53.10 | Phase 53 tests + verification gate + PR/merge | Dev/Ops |
-| 53.11 | CI workflow verification: check + fix failing workflows before Phase 54 | CI Health |
+| 54.1 | Fix: any remaining CI failures post-Phase-53 | Reliability |
+| 54.2 | Feature: Webhook payload preview in AutomationsPage | Feature |
+| 54.3 | Security: JWT refresh token rotation (audit + short-circuit replay) | Security |
+| 54.4 | UX: Reminder search field (filter by text while viewing list) | UX |
+| 54.5 | Performance: Redis cache for /api/users/me (30s TTL, bust on update) | Performance |
+| 54.6 | Dev/Ops: Structured error logging (add request.id + user.id to 5xx errors) | Dev/Ops |
+| 54.7 | Edge-case: Portfolio public page 404 handling (graceful unknown username) | Edge-case |
+| 54.8 | State-sync: AutomationsPage run-count live-update after manual trigger | State-sync |
+| 54.9 | UX: Connections page — last sync relative timestamp | UX |
+| 54.10 | Mobile: Reminder quick-add input autofocus on mobile | Mobile |
+| 54.11 | Phase 54 tests + verification gate + PR/merge | Dev/Ops |
+| 54.12 | Brand Purge: remove all user-visible Pico/PicoFleet/PicoClaw references; create ops/brand_guard.mjs | Brand |

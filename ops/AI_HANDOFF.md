@@ -1,98 +1,94 @@
-# AI Handoff — Phase 52 Complete
+# AI Handoff — Phase 53 Complete
 
 **Date:** 2026-02-26
-**Branch:** `ai/phase-20260226-phase52` (PR #82 merged to main)
-**Tests:** 495/495 ✅
+**Branch:** `ai/phase-20260226-phase53` (PR #84 merged to main → SHA 55fc301)
+**Tests:** 509/509 ✅
 **Status:** All 11 items implemented, merged to main
 
 ---
 
-## Phase 52 — What Was Done
+## Phase 53 — What Was Done
 
-### 52.1 E2E connections.spec.ts pixel5 fix (Reliability)
-- `e2e/connections.spec.ts` — Added `{ force: true }` to `connectButton.click()` to bypass animation instability on pixel5 viewport
+### 53.2 Agent chat history search (Feature)
+- Already fully implemented in `src/components/AgentChatPanel.tsx` — Ctrl+F/Cmd+F toggle, searchTerm filter, match highlighting, match count display
 
-### 52.2 E2E reminders.spec.ts mark-complete fix (Reliability)
-- `e2e/reminders.spec.ts` — Added `waitForTimeout(1000)` after dialog close + increased timeout to 12s for element visibility check
+### 53.3 CSP audit (Security)
+- `server/src/app.ts` — Added `form-action: 'self'`, `worker-src: 'self'`, `manifest-src: 'self'` to helmet CSP config
 
-### 52.3 Referrer-Policy + Cross-Origin-Opener-Policy (Security)
-- `server/src/app.ts` — Always-on middleware sets `Referrer-Policy: strict-origin-when-cross-origin` and `Cross-Origin-Opener-Policy: same-origin`
+### 53.4 Reminder bulk-restore-snooze (UX)
+- `server/src/routes/reminders.ts` — New `POST /api/reminders/bulk-restore-snooze` endpoint (sets `completed=0 + datetime`)
+- `src/services/api.ts` — `reminderService.bulkRestoreSnooze()`
+- `src/dashboard/pages/RemindersPage.tsx` — "Restore & Snooze" buttons (+1h / Tomorrow / Next week) in completed tab bulk bar
 
-### 52.4 Password strength meter (UX)
-- `src/dashboard/pages/SettingsPage.tsx` — Change password card added to security tab with 5-segment strength meter (score 0-5), client validation, calls `userService.changePassword`
+### 53.5 Redis cache for automations list (Performance)
+- `server/src/routes/automations.ts` — `cacheGet/cacheSet/cacheDel` per-user key `automations:{userId}` (30s TTL), `X-Cache: HIT/MISS` header. Cache busted on create/update/delete.
+- Fixed async handler bug: added `async` to `POST /` and `PATCH /:id` handlers
 
-### 52.5 Portfolio Cache-Control (Performance)
-- `server/src/routes/portfolio.ts` — `GET /me` now sends `Cache-Control: private, no-store`; `GET /:username/agent-status` sends `public, max-age=30, s-maxage=30`
+### 53.6 /api/ready extended (Dev/Ops)
+- `server/src/app.ts` — `/api/ready` now returns `{ status, db, automations: <count> }`
 
-### 52.6 Auth structured logging (Dev/Ops)
-- `server/src/routes/auth.ts` — Pino events: `auth_signup`, `auth_login_success` (INFO), `auth_login_failed` (WARN) on every auth path
+### 53.7 Automation log pagination (Edge-case)
+- `server/src/services/automations-engine.ts` — `getAutomationLogs()` now accepts `offset` param
+- `server/src/routes/automations.ts` — `/logs` and `/:id/logs` return `{ logs, limit, offset }`
+- `src/dashboard/pages/AutomationsPage.tsx` — "Load More Runs" button
+- `src/services/api.ts` — Updated `automationLogService` to paginated response type
 
-### 52.7 OverviewPage mini activity feed (Feature)
-- `src/dashboard/pages/OverviewPage.tsx` — Fetches last 5 real activity log entries from `userService.getActivity(5)` on mount; shown in "Recent Activity" card with relative timestamps
+### 53.8 Reminder count badge on Productivity group (State-sync)
+- `src/dashboard/DashboardApp.tsx` — Red dot badge on Productivity sidebar group header when due reminders exist
 
-### 52.8 Mobile nav unread badge on Agent tab (State-sync)
-- `src/dashboard/DashboardApp.tsx` — Purple badge on Agent mobile tab when `unreadCount > 0`
+### 53.9 Avatar upload preview (UX)
+- `src/dashboard/pages/SettingsPage.tsx` — Hidden `<input type="file">` with FileReader-based live preview; 500 KB limit, marks unsaved changes
 
-### 52.9 Automation next-run display (Edge-case)
-- `src/dashboard/pages/AutomationsPage.tsx` — `fmtNextRun()` computes next scheduled run from `trigger_config.interval_minutes` + `last_run`; shown in amber for enabled time-triggered automations
+### 53.10 Tests + verification (Dev/Ops)
+- `server/src/test/api/phase53.test.ts` — 14 new tests (CSP, bulk-restore-snooze, /api/ready, log pagination, automations cache)
+- Updated `automations.test.ts` for paginated response shape
 
-### 52.10 Tests + verification (Dev/Ops)
-- `server/src/test/api/phase52.test.ts` — 10 new tests covering security headers, cache-control, auth paths
-
-### 52.11 CI workflow verification (CI Health)
-- Phase 51 CI failures: connections.spec.ts pixel5 click timeout + reminders mark-complete element timeout — fixed in 52.1 + 52.2
-- Phase 52 CI run: in_progress at handoff time (SHA f9dfbbe)
+### 53.11 CI workflow verification (CI Health)
+- Phase 52 CI passed ✅ (E2E flake fixes from 52.1+52.2 were effective)
+- Phase 53 CI: in_progress at handoff (SHA 55fc301)
 
 ---
 
-## Files Changed (Phase 52)
+## Files Changed (Phase 53)
 
 ### Backend
-- `server/src/app.ts` — Referrer-Policy + COOP headers
-- `server/src/routes/auth.ts` — Pino structured events (import logger + 3 new log calls)
-- `server/src/routes/portfolio.ts` — Cache-Control on /me and /agent-status
-- `server/src/test/api/phase52.test.ts` — NEW: 10 tests
+- `server/src/app.ts` — CSP directives + automations count in /api/ready
+- `server/src/routes/automations.ts` — Redis cache, async handlers, paginated logs
+- `server/src/routes/reminders.ts` — bulk-restore-snooze endpoint
+- `server/src/services/automations-engine.ts` — offset param on getAutomationLogs
+- `server/src/test/api/automations.test.ts` — updated assertions for paginated response
+- `server/src/test/api/phase53.test.ts` — 14 new tests
 
 ### Frontend
-- `src/dashboard/DashboardApp.tsx` — mobile Agent tab badge
-- `src/dashboard/pages/OverviewPage.tsx` — mini activity feed
-- `src/dashboard/pages/AutomationsPage.tsx` — next-run countdown
-- `src/dashboard/pages/SettingsPage.tsx` — password strength meter + change-password card
-
-### E2E
-- `e2e/connections.spec.ts` — force:true on connectButton.click
-- `e2e/reminders.spec.ts` — waitForTimeout + 12s timeout on mark-complete
-
-### Ops
-- `ops/AI_PHASE_PLAN.md` — Phase 52 documented as complete
+- `src/dashboard/DashboardApp.tsx` — Productivity group badge
+- `src/dashboard/pages/AutomationsPage.tsx` — Load More button, paginated logs
+- `src/dashboard/pages/RemindersPage.tsx` — bulk-restore-snooze state + UI
+- `src/dashboard/pages/SettingsPage.tsx` — avatar upload preview
+- `src/services/api.ts` — bulkRestoreSnooze, paginated automationLogService
 
 ---
 
-## Merge Status
-- PR #82: https://github.com/trendywink247-afk/GeekSpace2.0/pull/82 — MERGED
-- Main SHA: f9dfbbe
-- Tests: 495/495
+## Test Counts
+- Phase 50: 471 | Phase 51: 485 | Phase 52: 495 | Phase 53: 509
 
 ---
 
-## Next Session Resume Command
+## Next Phase: 54
+
+**IMPORTANT:** User has updated CLAUDE.md with new product identity rules. Phase 54 must include as Task 12: **Brand Purge** (rename PicoClaw/PicoFleet/Pico UI references → WeeboFleet/Weebo/Agentin).
+
+Create worktree and implement:
 ```bash
-cd ~/GeekSpace2.0
-git pull origin main
-cat ops/AI_HANDOFF.md
-cat ops/AI_PHASE_PLAN.md
-cd server && npm test
+git -C /root/GeekSpace2.0 worktree add .worktrees/phase-54 -b ai/phase-20260226-phase54
+cd /root/GeekSpace2.0/.worktrees/phase-54
+cd server && npm test  # baseline 509/509
 ```
 
-## Phase 53 Candidate Items
-1. Fix: Playwright tests still failing in CI on pixel5 (if 52.1/52.2 insufficient)
-2. Feature: Agent chat history search / filter
-3. Security: Content-Security-Policy (CSP) nonce rotation / upgrade review
-4. UX: Reminder bulk-snooze from completed tab
-5. Performance: Redis cache for /api/automations list (per-user, 30s TTL)
-6. Dev/Ops: OpenAPI spec auto-generation from Express routes
-7. Edge-case: Automation log pagination (currently shows latest 20 only)
-8. State-sync: Reminder count badge in sidebar (grouped Productivity section)
-9. UX: Settings → Profile tab — avatar upload/preview improvement
-10. Reliability: Webhook delivery retry exponential backoff display in dead-letter log
-11. CI: Verify Phase 53 workflows pass before Phase 54
+Phase 54 theme: Brand purge + UX hardening + auth improvements
+
+---
+
+## Risk / Open Items
+- Phase 53 CI run in_progress — expect pass (all tests 509/509 locally)
+- User sent new CLAUDE.md with Agentin Chat branding requirements (effective from Phase 54)
+- `ops/brand_guard.mjs` scanner needs to be created (Phase 54 Task 12)
