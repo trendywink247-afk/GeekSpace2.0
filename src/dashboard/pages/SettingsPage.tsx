@@ -163,6 +163,14 @@ export function SettingsPage() {
   const [freeModels, setFreeModels] = useState<FreeModel[]>([]);
   const [freeModelSaving, setFreeModelSaving] = useState(false);
 
+  // 52.4: Change password form state
+  const [pwCurrent, setPwCurrent] = useState('');
+  const [pwNew, setPwNew] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+
   // Load memories and reaction summary when memory tab is active
   useEffect(() => {
     if (activeTab === 'memory') {
@@ -725,6 +733,125 @@ export function SettingsPage() {
               <p className="text-xs text-[#6B7280]">
                 Only applies when your engine is set to Cloud or Auto. Free models have usage limits.
               </p>
+            </CardContent>
+          </Card>
+
+          {/* 52.4: Change Password Card */}
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle>Change Password</CardTitle>
+              <CardDescription className="text-[#6B7280]">Update your account password</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm text-[#6B7280] mb-2 block">Current Password</label>
+                <Input
+                  type="password"
+                  value={pwCurrent}
+                  onChange={(e) => { setPwCurrent(e.target.value); setPwError(''); setPwSuccess(''); }}
+                  placeholder="Enter current password"
+                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-[#6B7280] mb-2 block">New Password</label>
+                <Input
+                  type="password"
+                  value={pwNew}
+                  onChange={(e) => { setPwNew(e.target.value); setPwError(''); setPwSuccess(''); }}
+                  placeholder="Enter new password"
+                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                />
+                {/* Password strength meter */}
+                {pwNew.length > 0 && (() => {
+                  let score = 0;
+                  if (pwNew.length >= 8) score++;
+                  if (/[0-9]/.test(pwNew)) score++;
+                  if (/[a-z]/.test(pwNew)) score++;
+                  if (/[A-Z]/.test(pwNew)) score++;
+                  if (/[^A-Za-z0-9]/.test(pwNew)) score++;
+                  const labels = ['Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+                  const segmentColors = [
+                    'bg-[#EF4444]',
+                    'bg-[#F97316]',
+                    'bg-[#EAB308]',
+                    'bg-[#22C55E]',
+                    'bg-[#00F0FF]',
+                  ];
+                  return (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex gap-1">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                          <div
+                            key={i}
+                            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                              i < score ? segmentColors[score - 1] : 'bg-[#1C1C2E]'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className={`text-xs ${segmentColors[score - 1].replace('bg-', 'text-')}`}>
+                        {labels[score - 1] ?? ''}
+                      </p>
+                    </div>
+                  );
+                })()}
+              </div>
+              <div>
+                <label className="text-sm text-[#6B7280] mb-2 block">Confirm New Password</label>
+                <Input
+                  type="password"
+                  value={pwConfirm}
+                  onChange={(e) => { setPwConfirm(e.target.value); setPwError(''); setPwSuccess(''); }}
+                  placeholder="Confirm new password"
+                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                />
+              </div>
+              {pwError && (
+                <p className="text-sm text-[#EF4444]">{pwError}</p>
+              )}
+              {pwSuccess && (
+                <p className="text-sm text-[#00FF88]">{pwSuccess}</p>
+              )}
+              <Button
+                disabled={pwSaving || !pwCurrent || !pwNew || !pwConfirm}
+                onClick={async () => {
+                  setPwError('');
+                  setPwSuccess('');
+                  if (pwNew !== pwConfirm) {
+                    setPwError('New passwords do not match.');
+                    return;
+                  }
+                  if (pwNew.length < 8) {
+                    setPwError('New password must be at least 8 characters.');
+                    return;
+                  }
+                  setPwSaving(true);
+                  try {
+                    await userService.changePassword(pwCurrent, pwNew);
+                    setPwSuccess('Password updated successfully.');
+                    setPwCurrent('');
+                    setPwNew('');
+                    setPwConfirm('');
+                  } catch (err: unknown) {
+                    const axiosErr = err as { response?: { data?: { error?: string; message?: string } } };
+                    setPwError(
+                      axiosErr?.response?.data?.error ||
+                      axiosErr?.response?.data?.message ||
+                      'Failed to update password. Please try again.'
+                    );
+                  } finally {
+                    setPwSaving(false);
+                  }
+                }}
+                className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale"
+              >
+                {pwSaving ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+                ) : (
+                  <><Key className="w-4 h-4 mr-2" />Update Password</>
+                )}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

@@ -46,7 +46,7 @@ import {
 } from 'recharts';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { briefingService, modelService, agentService, usageService, activityService, reminderService } from '@/services/api';
+import { briefingService, modelService, agentService, usageService, activityService, reminderService, userService, type ActivityEntry } from '@/services/api';
 import type { FreeModel, ModelChangelogEntry } from '@/types';
 
 interface OverviewPageProps {
@@ -150,6 +150,8 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const [reminderStreak, setReminderStreak] = useState<{ streak: number; longestStreak: number; completedToday: boolean } | null>(null);
   // 51.4: Copy briefing state
   const [briefingCopied, setBriefingCopied] = useState(false);
+  // 52.7: Mini activity feed — last 5 real activity log entries
+  const [miniActivity, setMiniActivity] = useState<ActivityEntry[]>([]);
 
   // 35.2: Stat card reorder (drag-to-reorder, persisted in localStorage)
   const [statOrder, setStatOrder] = useState<number[]>(() => {
@@ -306,6 +308,13 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   useEffect(() => {
     reminderService.getStreak().then(res => {
       setReminderStreak(res.data);
+    }).catch(() => {});
+  }, []);
+
+  // 52.7: Fetch last 5 real activity log entries on mount
+  useEffect(() => {
+    userService.getActivity(5).then(res => {
+      setMiniActivity(res.data.activity.slice(0, 5));
     }).catch(() => {});
   }, []);
 
@@ -1027,26 +1036,40 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </div>
             </CardHeader>
             <CardContent>
+              {/* 52.7: Mini activity feed — real log entries when available, fallback to derived */}
               <div className="space-y-3">
-                {recentActivity.length > 0 ? recentActivity.map((activity, i) => (
+                {miniActivity.length > 0 ? miniActivity.map((entry, i) => {
+                  const relTime = (() => {
+                    const diff = Math.floor((Date.now() - new Date(entry.created_at).getTime()) / 1000);
+                    if (diff < 60) return 'just now';
+                    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+                    return new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                  })();
+                  return (
+                    <div
+                      key={entry.id}
+                      className="flex items-center gap-3 p-3 rounded-xl group hover:scale-[1.01] transition-all"
+                      style={{ background: 'rgba(6, 6, 11, 0.6)', animationDelay: `${i * 50}ms` }}
+                    >
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,240,255,0.08)' }}>
+                        <Zap className="w-4 h-4 text-[#00F0FF]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors truncate">{entry.action}</div>
+                        {entry.details && <div className="text-xs text-[#6B7280] truncate">{entry.details}</div>}
+                      </div>
+                      <div className="text-xs text-[#6B7280] font-mono flex-shrink-0">{relTime}</div>
+                    </div>
+                  );
+                }) : recentActivity.length > 0 ? recentActivity.map((activity, i) => (
                   <div
                     key={activity.id}
                     className="flex items-center gap-4 p-3 rounded-xl transition-all duration-300 group hover:scale-[1.01]"
-                    style={{
-                      background: 'rgba(6, 6, 11, 0.6)',
-                      animationDelay: `${i * 50}ms`,
-                    }}
+                    style={{ background: 'rgba(6, 6, 11, 0.6)', animationDelay: `${i * 50}ms` }}
                   >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-                      style={{
-                        backgroundColor: activity.status === 'success' ? 'rgba(173,255,47,0.1)' : 'rgba(255,215,0,0.1)'
-                      }}
-                    >
-                      <activity.icon
-                        className="w-5 h-5"
-                        style={{ color: activity.status === 'success' ? '#ADFF2F' : '#FFD700' }}
-                      />
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: activity.status === 'success' ? 'rgba(173,255,47,0.1)' : 'rgba(255,215,0,0.1)' }}>
+                      <activity.icon className="w-5 h-5" style={{ color: activity.status === 'success' ? '#ADFF2F' : '#FFD700' }} />
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-medium text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors">{activity.action}</div>

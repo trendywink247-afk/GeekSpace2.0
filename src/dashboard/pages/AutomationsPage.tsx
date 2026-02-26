@@ -234,6 +234,25 @@ export function AutomationsPage() {
   const formatLastRun = fmtRelativeTime;
   const fmtRunTime = fmtRelativeTime;
 
+  // 52.9: Compute "next run" for time-triggered automations
+  const fmtNextRun = (auto: typeof automations[number]): string | null => {
+    if (auto.triggerType !== 'time' && (auto as unknown as Record<string, unknown>).trigger_type !== 'time') return null;
+    try {
+      const triggerConfig = JSON.parse(((auto as unknown as Record<string, unknown>).trigger_config as string) || '{}') as { interval_minutes?: number };
+      const intervalMs = (triggerConfig.interval_minutes || 60) * 60 * 1000;
+      const lastRunTs = auto.last_run ? new Date(auto.last_run).getTime() : null;
+      const nextTs = lastRunTs ? lastRunTs + intervalMs : Date.now() + intervalMs;
+      const diff = Math.floor((nextTs - Date.now()) / 1000);
+      if (diff <= 0) return 'due now';
+      if (diff < 60) return `in ${diff}s`;
+      if (diff < 3600) return `in ${Math.floor(diff / 60)}m`;
+      if (diff < 86400) return `in ${Math.floor(diff / 3600)}h`;
+      return `in ${Math.floor(diff / 86400)}d`;
+    } catch {
+      return null;
+    }
+  };
+
 
   // Extract HTTP status code from output string like "HTTP 200 OK" or "HTTP 404 Not Found"
   const parseHttpStatus = (output: string): number | null => {
@@ -418,6 +437,17 @@ export function AutomationsPage() {
                           <Clock className="w-3 h-3 inline mr-1" />
                           {formatLastRun(auto.lastRun)}
                         </span>
+
+                        {/* 52.9: Next run for time-triggered automations */}
+                        {auto.enabled && (() => {
+                          const next = fmtNextRun(auto);
+                          return next ? (
+                            <span className="text-xs text-[#FFB800]">
+                              <CalendarClock className="w-3 h-3 inline mr-1" />
+                              Next: {next}
+                            </span>
+                          ) : null;
+                        })()}
                       </div>
                     </div>
 

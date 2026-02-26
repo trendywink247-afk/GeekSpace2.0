@@ -831,6 +831,12 @@ export function DashboardApp() {
                     {pendingConnectionCount > 9 ? '9+' : pendingConnectionCount}
                   </span>
                 )}
+                {/* 52.8: Unread activity badge on Agent tab */}
+                {tab.id === 'agent' && unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#BF5FFF] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
                 {tab.id === 'more' && pendingReminderCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-[#F59E0B] text-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
                     {pendingReminderCount > 9 ? '9+' : pendingReminderCount}
