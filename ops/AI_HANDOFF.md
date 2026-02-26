@@ -72,4 +72,4 @@ If the conversation is compacted, before doing ANY work:
 - Next release train candidate: Phase 80
 
 ## Merge Status
-Awaiting PR creation
+✅ PR #103 merged to `main` on 2026-02-26
