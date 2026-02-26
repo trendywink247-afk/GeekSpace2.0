@@ -305,3 +305,26 @@ Analytics CSV export, log status filter, datetime validation, persona pills, rel
 | 63.11 | Tests + verification + PR/merge (624 tests) | ✅ | Dev/Ops |
 | 63.12 | Brand gate | ✅ (0 violations) | Brand |
 | 63.13 | **Seedance**: Director restart button for failed jobs | ✅ | Feature |
+
+---
+
+## Phase 64 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/95 | **Tests:** 642/642
+Activity server-search+export, reminder duplicate, automation stats, last_status badge, VideoGen runtime estimate, Seedance shot labels
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 64.1 | CI review post-Phase-63 | ✅ | Reliability |
+| 64.2 | last_status badge on automation cards (green/red dot) | ✅ | UX |
+| 64.3 | Activity text search ?q= (server-side, debounced, reloads on change) | ✅ | Feature |
+| 64.4 | Reminder duplicate — POST /:id/duplicate + Copy button on cards | ✅ | Feature |
+| 64.5 | Automation stats endpoint GET /automations/stats + "Runs (7d)" stat card | ✅ | Feature |
+| 64.6 | Activity action type filter ?type= (exact match on action) | ✅ | State-sync |
+| 64.7 | Rate limit on portfolio analytics CSV export (10/5min Redis) | ✅ | Security |
+| 64.8 | Activity CSV export GET /activity/export + Export button in UI | ✅ | Feature |
+| 64.9 | Automations enabled server-side filter ?enabled=true/false | ✅ | Performance |
+| 64.10 | VideoGenPage estimated runtime (~Xs based on duration+model) | ✅ | UX |
+| 64.11 | Tests + verification + PR/merge (642 tests) | ✅ | Dev/Ops |
+| 64.12 | Brand gate | ✅ (0 violations) | Brand |
+| 64.13 | **Seedance**: shot prompt labels on clip grid + "Use idea again" on past jobs | ✅ | Feature |
+

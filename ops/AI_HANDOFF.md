@@ -1,9 +1,9 @@
-# AI Handoff — Phase 63 Complete
+# AI Handoff — Phase 64 Complete
 
 **Date:** 2026-02-26
-**Branch:** `ai/phase-20260226-phase63` → PR #94 (pending CI + merge)
-**Tests:** 624/624 ✅
-**Status:** All 10 improvements implemented, commit e8a6044, PR #94 created
+**Branch:** `ai/phase-20260226-phase64` → PR #95 merged ✅
+**Tests:** 642/642 ✅
+**Status:** All 13 improvements implemented + E2E fix, merged to main
 
 ---
 
@@ -13,6 +13,52 @@ If the conversation is compacted, before doing ANY work:
 2. Run: `git status && git branch --show-current && git log --oneline -5`
 3. Print a brief "Rehydrated Context" summary (phase, branch, current tasks, constraints)
 4. Only then continue implementation
+
+---
+
+## Phase 64 — What Was Done
+
+### 64.3 Activity text search (server-side)
+- `server/src/routes/activity.ts` — `?q=` param (LIKE on action+details)
+- `src/services/api.ts` — `userService.getActivity()` now accepts `q` and `actionType` params
+- `src/dashboard/pages/ActivityPage.tsx` — debounced server-side search (resets+reloads on change)
+
+### 64.4 Reminder duplicate
+- `server/src/routes/reminders.ts` — `POST /reminders/:id/duplicate` (copies all fields, new UUID)
+- `src/services/api.ts` — `reminderService.duplicate(id)`
+- `src/dashboard/pages/RemindersPage.tsx` — Copy button on both grouped and non-grouped card views
+
+### 64.5 Automation stats endpoint
+- `server/src/routes/automations.ts` — `GET /automations/stats` (total/enabled/disabled/recentRuns/byTrigger)
+- `src/services/api.ts` — `automationService.getStats()`
+- `src/dashboard/pages/AutomationsPage.tsx` — "Runs (7d)" stat card using server stats
+
+### 64.6 Activity action type filter
+- `server/src/routes/activity.ts` — `?type=` param (exact match on action field)
+
+### 64.7 Portfolio analytics export rate limit
+- `server/src/routes/portfolio.ts` — Redis rate limit (10 req/5min per user) on `GET /me/analytics/export`
+
+### 64.8 Activity CSV export
+- `server/src/routes/activity.ts` — `GET /activity/export` (last 500 entries as CSV)
+- `src/services/api.ts` — `activityService.export()` (responseType: blob)
+- `src/dashboard/pages/ActivityPage.tsx` — "Export CSV" button in header
+
+### 64.9 Automations enabled filter
+- `server/src/routes/automations.ts` — `?enabled=true/false` filter on automations list
+
+### 64.10 VideoGenPage estimated runtime
+- `src/dashboard/pages/VideoGenPage.tsx` — `estimatedSeconds` computed from duration + model tier
+
+### 64.2 Automation last_status badge
+- `src/dashboard/pages/AutomationsPage.tsx` — colored badge (green=success, red=error) next to run count
+
+### 64.13 Seedance Director Mode improvements
+- `src/dashboard/pages/VideoGenPage.tsx` — shot prompt labels under clip thumbnails; "Use idea again" on past jobs
+
+### Tests
+- `server/src/test/api/phase64.test.ts` — 18 new tests; full suite 642/642
+- `e2e/reminders.spec.ts` — `{ force: true }` on "Mark as complete" clicks (pixel5 layout stability fix)
 
 ---
 
