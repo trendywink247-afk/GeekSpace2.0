@@ -459,3 +459,25 @@ Suggestion Intelligence Phase 5: edit, vote rate limit, soft-delete cleanup, adm
 | 71.12 | Brand guard — 0 violations | ✅ | Brand |
 | 71.13 | Trending decay scoring (24h=1.0x, 48h=0.5x) | ✅ | Feature |
 
+---
+
+## Phase 72 — COMPLETE ✓
+**Branch:** `ai/phase-20260226-phase72` | **Tests:** 753/753
+Suggestion Intelligence Polish: status notifications, timeline UI, loading skeletons, error handling, ops lessons.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 72.1 | CI verification baseline (746/746 clean) | ✅ | Reliability |
+| 72.2 | Admin status change → activity_log notification for owner | ✅ | Feature |
+| 72.3 | Wire events endpoint into frontend api.ts | ✅ | State-sync |
+| 72.4 | Status timeline in suggestion detail modal | ✅ | UX |
+| 72.5 | Loading skeleton cards for suggestions list | ✅ | UX |
+| 72.6 | Error banner on API fetch failures | ✅ | Edge-case |
+| 72.7 | Vote button catch block preserves existing counts | ✅ | Reliability |
+| 72.8 | Trending threshold → TRENDING_WEIGHTED_THRESHOLD constant | ✅ | Performance |
+| 72.9 | Cluster merge logging: added combinedCount | ✅ | Dev/Ops |
+| 72.10 | AI_LESSONS: Caddy host vs Docker lesson | ✅ | Dev/Ops |
+| 72.11 | 7 new tests (753 total) | ✅ | Dev/Ops |
+| 72.12 | Brand guard — 0 violations | ✅ | Brand |
+| 72.13 | Ops files + commit + PR | ✅ | Dev/Ops |
+

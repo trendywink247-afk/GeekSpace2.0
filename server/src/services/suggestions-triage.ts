@@ -27,6 +27,7 @@ function wordOverlapRatio(a: string, b: string): number {
 // In prod: would call LLM (left as stub for now — safe for prod)
 // Phase 71.7: Max batch size to prevent DoS
 const MAX_TRIAGE_BATCH = 50;
+const TRENDING_WEIGHTED_THRESHOLD = 3;
 
 export async function triageSuggestions(suggestionIds: string[]): Promise<TriageScore[]> {
   if (!suggestionIds.length) return [];
@@ -167,7 +168,7 @@ export async function triageSuggestions(suggestionIds: string[]): Promise<Triage
             // Delete loser cluster (cascade deletes scores)
             db.prepare(`DELETE FROM suggestion_clusters WHERE id = ?`).run(loser.id);
             merged.add(loser.id);
-            logger.info({ winnerId: winner.id, loserId: loser.id, overlap }, 'Clusters auto-merged (>70% overlap)');
+            logger.info({ winnerId: winner.id, loserId: loser.id, overlap, combinedCount: combinedIds.length }, 'Clusters auto-merged (>70% overlap)');
           }
         }
       }
@@ -206,7 +207,7 @@ export async function triageSuggestions(suggestionIds: string[]): Promise<Triage
         FROM suggestion_votes
         WHERE vote = 1
         GROUP BY suggestion_id
-        HAVING weighted_score >= 3
+        HAVING weighted_score >= ${TRENDING_WEIGHTED_THRESHOLD}
       `).all() as Array<{ suggestion_id: string; weighted_score: number }>;
       trendingIds = rows.map(r => r.suggestion_id);
     }

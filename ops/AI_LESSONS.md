@@ -104,3 +104,22 @@ curl localhost:3001/api/health
 ### Worktree cleanup
 - Old worktrees with `node_modules/` require `--force` to remove
 - Safe to force-remove completed phase worktrees (phase-1 through phase-6 removed in Phase 10)
+
+## Caddy Host vs Docker (Phase 72 Lesson)
+
+### Docker Caddy port mapping is unreachable on Hostinger VPS
+- Docker Caddy binds 0.0.0.0:80/443 via docker-proxy — works from server loopback but **times out from external internet**
+- Root cause: Hostinger networking doesn't route external traffic to Docker's userland proxy
+- **Fix:** Use host-level Caddy (`/etc/caddy/Caddyfile`, systemd service) for production
+- Host Caddy can't resolve Docker hostname `geekspace` → added alias in `/etc/hosts` (`127.0.0.1 localhost geekspace`)
+- `/etc/hosts` managed by cloud-init — alias may be wiped on VPS re-provision
+
+### Two Caddyfile locations (keep in sync)
+- `/etc/caddy/Caddyfile` — host-level (systemd, serves production traffic)
+- `~/GeekSpace2.0/caddy/Caddyfile` — Docker Caddy (has gate page auth, but can't serve external traffic)
+- **CRITICAL:** After `docker compose up --build`, run `docker cp geekspace-app:/app/dist/. /var/www/geekspace/` AND ensure `gate.html` is in `/srv`
+
+### Gate page authentication
+- Cookie `gs_auth == "geekspace-verified-2026"` required; without it → redirect to `/gate.html`
+- Host Caddy must replicate: `@authed expression`, `handle @authed`, `handle { redir * /gate.html }`
+- `/gate.html` must exist in host Caddy's root (`/srv`) — copy from `/var/www/geekspace/gate.html`

@@ -773,6 +773,12 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
       } else if (status === 'shipped_prod') {
         issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_PROD' });
       }
+      // Phase 72.2: Notify suggestion owner via activity_log
+      try {
+        db.prepare(
+          `INSERT INTO activity_log (id, user_id, action, details, icon, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`
+        ).run(uuidV4(), suggestion.user_id, 'suggestion_status_changed', `Your idea "${suggestion.title}" was ${status}`, 'lightbulb');
+      } catch { /* non-fatal */ }
       updated++;
     }
 
@@ -814,7 +820,14 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
           `INSERT INTO activity_log (id, user_id, action, details, icon, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`
         ).run(uuidV4(), suggestion.user_id, 'Suggestion accepted', suggestion.title, 'lightbulb');
       } catch { /* non-fatal */ }
-    } else if (status === 'shipped_main') {
+    }
+    // Phase 72.2: Notify suggestion owner via activity_log on any status change
+    try {
+      db.prepare(
+        `INSERT INTO activity_log (id, user_id, action, details, icon, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`
+      ).run(uuidV4(), suggestion.user_id, 'suggestion_status_changed', `Your idea "${suggestion.title}" was ${status}`, 'lightbulb');
+    } catch { /* non-fatal */ }
+    if (status === 'shipped_main') {
       rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_MAIN' });
     } else if (status === 'shipped_prod') {
       rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_PROD' });
