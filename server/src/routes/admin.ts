@@ -845,12 +845,19 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
         LIMIT 5
       `).all() as Array<{ id: string; title: string; voteCount: number }>;
 
+      // 70.14: Count trending suggestions
+      let trendingCount = 0;
+      try {
+        trendingCount = (db.prepare(`SELECT COUNT(*) as c FROM suggestions WHERE trending = 1`).get() as { c: number }).c;
+      } catch { /* non-fatal */ }
+
       res.json({
         total,
         byStatus,
         totalRewardsIssued: rewardsRow.cnt,
         totalCreditsAwarded: rewardsRow.total_credits,
         topVoted,
+        trending: trendingCount,
       });
     } catch (err) {
       logger.error({ err }, 'Admin suggestion stats query failed');
