@@ -391,3 +391,26 @@ Suggestion Intelligence + Suggest & Earn (Task 14, forever). DB schema, API, rew
 | 67.14 | **Task 14: Suggest & Earn end-to-end wired** — DB→API→rewards→UI | ✅ | Feature |
 | OPS | Deleted 40+ stale merged local branches; 3 remain: main, live-production, phase-67 | ✅ | Dev/Ops |
 
+---
+
+## Phase 68 — COMPLETE ✓
+**Branch:** `ai/phase-20260226-phase68` (ready for PR) | **Tests:** 691/702
+Suggestion Intelligence Phase 2: voting, pagination, status history, similarity clustering, admin stats, cache.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 68.1 | suggestion_events table (status history) + log in admin status change | ✅ | Reliability |
+| 68.2 | Reminder humanDue helper: Today/Tomorrow/in Xd/Overdue Xh labels in cards | ✅ | UX |
+| 68.3 | GET /suggestions/mine: ?page&limit pagination, returns total/page/limit | ✅ | Performance |
+| 68.4 | suggestion_votes table + POST /suggestions/:id/vote (INSERT OR REPLACE) | ✅ | Feature |
+| 68.5 | Admin triage endpoint: 1/60s rate limit (skipped in TEST_MODE) | ✅ | Security |
+| 68.6 | GET /suggestions/clusters: add total_votes per cluster from suggestion_votes | ✅ | State-sync |
+| 68.7 | RoadmapPage: ThumbsUp vote button next to each suggestion, shows upvote count | ✅ | Mobile/UX |
+| 68.8 | Admin GET /stats: add suggestions.{total,new,accepted,shipped} counts | ✅ | Dev/Ops |
+| 68.9 | Duplicate warning: 60% body word-overlap check (bag-of-words) | ✅ | Reliability |
+| 68.10 | Activity log: log suggestion create + admin acceptance to activity_log | ✅ | UX |
+| 68.11 | GET /suggestions/clusters: 30s in-memory cache with invalidation | ✅ | Performance |
+| 68.12 | Brand gate | ✅ (0 violations) | Brand |
+| 68.13 | Tests: 13 new tests (pagination, vote, dup-detect, activity, status-history, clusters) | ✅ | Dev/Ops |
+| 68.14 | **Task 14: similarity clustering** — merge into existing cluster at ≥50% overlap; admin /suggestions/stats endpoint | ✅ | Feature |
+

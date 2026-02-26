@@ -13,6 +13,23 @@ import { config } from '../config.js';
 
 export const suggestionsRouter = Router();
 
+// ── Word-overlap helper (Task 68.9) ──────────────────────────────────────────
+function wordOverlap(a: string, b: string): number {
+  const wordsA = a.toLowerCase().split(/\s+/).filter(Boolean);
+  const wordsB = b.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!wordsA.length || !wordsB.length) return 0;
+  const setA = new Set(wordsA);
+  const common = wordsB.filter(w => setA.has(w)).length;
+  return common / Math.max(wordsA.length, wordsB.length);
+}
+
+// ── Clusters cache (Task 68.11) ───────────────────────────────────────────────
+const clustersCache: { data: unknown[] | null; expiresAt: number } = { data: null, expiresAt: 0 };
+export function invalidateClustersCache(): void {
+  clustersCache.data = null;
+  clustersCache.expiresAt = 0;
+}
+
 // ---- POST /api/suggestions — create a suggestion ----
 suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
@@ -67,10 +84,30 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
   const trimmedBody = body.trim();
   const tagsJson = JSON.stringify(parsedTags);
 
-  // Check for near-duplicate (same LOWER(TRIM(title)) for this user)
-  const duplicate = db.prepare(
-    `SELECT id FROM suggestions WHERE user_id = ? AND LOWER(TRIM(title)) = LOWER(TRIM(?))`
-  ).get(userId, trimmedTitle) as { id: string } | undefined;
+  // Check for near-duplicate (Task 68.9): exact title match OR 60% word overlap on body
+  const existingSuggestions = db.prepare(
+    `SELECT id, title, body FROM suggestions WHERE user_id = ?`
+  ).all(userId) as Array<{ id: string; title: string; body: string }>;
+
+  let duplicateWarning = false;
+
+  // Exact title match
+  const exactTitleDup = existingSuggestions.find(
+    s => s.title.toLowerCase().trim() === trimmedTitle.toLowerCase()
+  );
+  if (exactTitleDup) {
+    duplicateWarning = true;
+  }
+
+  // Word overlap on body (>= 60%)
+  if (!duplicateWarning) {
+    for (const s of existingSuggestions) {
+      if (wordOverlap(trimmedBody, s.body) >= 0.6) {
+        duplicateWarning = true;
+        break;
+      }
+    }
+  }
 
   const id = uuid();
   db.prepare(`
@@ -82,12 +119,22 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
     `SELECT id, user_id as userId, title, body, tags, status, created_at as createdAt, updated_at as updatedAt FROM suggestions WHERE id = ?`
   ).get(id) as Record<string, unknown>;
 
+  // Task 68.10: Log activity for suggestion creation
+  try {
+    db.prepare(
+      `INSERT INTO activity_log (id, user_id, action, details, icon, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`
+    ).run(uuid(), userId, 'Submitted suggestion', trimmedTitle, 'lightbulb');
+  } catch { /* non-fatal */ }
+
   logger.info({ userId, suggestionId: id }, 'Suggestion created');
+
+  // Invalidate clusters cache since a new suggestion was created
+  invalidateClustersCache();
 
   res.status(201).json({
     ...suggestion,
     tags: (() => { try { return JSON.parse(suggestion.tags as string); } catch { return []; } })(),
-    duplicate_warning: duplicate ? true : undefined,
+    duplicate_warning: duplicateWarning ? true : undefined,
   });
 });
 
@@ -101,6 +148,13 @@ suggestionsRouter.get('/rewards/mine', requireAuth, (req: AuthRequest, res) => {
 
 // ---- GET /api/suggestions/clusters — all clusters with scores (public summaries) ----
 suggestionsRouter.get('/clusters', requireAuth, (req: AuthRequest, res) => {
+  // Task 68.11: 30-second in-memory cache (skip in TEST_MODE)
+  if (!config.isTestMode && clustersCache.data !== null && Date.now() < clustersCache.expiresAt) {
+    res.json({ clusters: clustersCache.data });
+    return;
+  }
+
+  // Task 68.6: include vote counts for each suggestion in the cluster
   const clusters = db.prepare(`
     SELECT
       c.id,
@@ -120,29 +174,100 @@ suggestionsRouter.get('/clusters', requireAuth, (req: AuthRequest, res) => {
     ORDER BY s.overall_score DESC, c.created_at DESC
   `).all() as Array<Record<string, unknown>>;
 
-  const parsed = clusters.map(c => ({
-    ...c,
-    tags: (() => { try { return JSON.parse(c.tags as string); } catch { return []; } })(),
-    suggestionIds: (() => { try { return JSON.parse(c.suggestionIds as string); } catch { return []; } })(),
-  }));
+  const parsed = clusters.map(c => {
+    const suggestionIds: string[] = (() => {
+      try { return JSON.parse(c.suggestionIds as string) as string[]; } catch { return []; }
+    })();
+
+    // Sum votes for all suggestions in this cluster
+    let totalVotes = 0;
+    if (suggestionIds.length > 0) {
+      const placeholders = suggestionIds.map(() => '?').join(',');
+      const voteRow = db.prepare(
+        `SELECT COALESCE(SUM(vote), 0) as total_votes FROM suggestion_votes WHERE suggestion_id IN (${placeholders})`
+      ).get(...suggestionIds) as { total_votes: number } | undefined;
+      totalVotes = voteRow?.total_votes ?? 0;
+    }
+
+    return {
+      ...c,
+      tags: (() => { try { return JSON.parse(c.tags as string); } catch { return []; } })(),
+      suggestionIds,
+      total_votes: totalVotes,
+    };
+  });
+
+  // Cache for 30s (skip in test mode)
+  if (!config.isTestMode) {
+    clustersCache.data = parsed;
+    clustersCache.expiresAt = Date.now() + 30000;
+  }
 
   res.json({ clusters: parsed });
 });
 
-// ---- GET /api/suggestions/mine — list user's own suggestions ----
+// ---- GET /api/suggestions/mine — list user's own suggestions (paginated) ----
 suggestionsRouter.get('/mine', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
+
+  // Task 68.3: pagination
+  const rawPage = parseInt(String(req.query.page || '1'), 10);
+  const rawLimit = parseInt(String(req.query.limit || '10'), 10);
+  const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
+  const limit = Math.min(50, Math.max(1, isNaN(rawLimit) ? 10 : rawLimit));
+  const offset = (page - 1) * limit;
+
+  const total = (db.prepare(
+    `SELECT COUNT(*) as cnt FROM suggestions WHERE user_id = ?`
+  ).get(userId) as { cnt: number }).cnt;
+
   const rows = db.prepare(
     `SELECT id, user_id as userId, title, body, tags, status, created_at as createdAt, updated_at as updatedAt
-     FROM suggestions WHERE user_id = ? ORDER BY created_at DESC`
-  ).all(userId) as Array<Record<string, unknown>>;
+     FROM suggestions WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`
+  ).all(userId, limit, offset) as Array<Record<string, unknown>>;
 
   const suggestions = rows.map(r => ({
     ...r,
     tags: (() => { try { return JSON.parse(r.tags as string); } catch { return []; } })(),
   }));
 
-  res.json({ suggestions });
+  res.json({ suggestions, total, page, limit });
+});
+
+// ---- POST /api/suggestions/:id/vote — vote on a suggestion ----
+// MUST be before GET /:id to prevent route conflict
+suggestionsRouter.post('/:id/vote', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { id } = req.params;
+  const { vote } = req.body as { vote?: unknown };
+
+  if (vote !== 1 && vote !== -1) {
+    res.status(400).json({ error: 'vote must be 1 or -1' });
+    return;
+  }
+
+  const suggestion = db.prepare(`SELECT id FROM suggestions WHERE id = ?`).get(id) as { id: string } | undefined;
+  if (!suggestion) {
+    res.status(404).json({ error: 'Suggestion not found' });
+    return;
+  }
+
+  // INSERT OR REPLACE to handle vote changes (UNIQUE constraint on suggestion_id + user_id)
+  db.prepare(`
+    INSERT OR REPLACE INTO suggestion_votes (id, suggestion_id, user_id, vote, created_at)
+    VALUES (COALESCE((SELECT id FROM suggestion_votes WHERE suggestion_id = ? AND user_id = ?), ?), ?, ?, ?, datetime('now'))
+  `).run(id, userId, uuid(), id, userId, vote as number);
+
+  const upvotes = (db.prepare(
+    `SELECT COUNT(*) as cnt FROM suggestion_votes WHERE suggestion_id = ? AND vote = 1`
+  ).get(id) as { cnt: number }).cnt;
+
+  const downvotes = (db.prepare(
+    `SELECT COUNT(*) as cnt FROM suggestion_votes WHERE suggestion_id = ? AND vote = -1`
+  ).get(id) as { cnt: number }).cnt;
+
+  logger.info({ userId, suggestionId: id, vote }, 'Suggestion vote recorded');
+  res.json({ upvotes, downvotes });
 });
 
 // ---- GET /api/suggestions/:id — get own suggestion by id ----

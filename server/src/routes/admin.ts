@@ -17,8 +17,13 @@ import { cacheGet } from '../services/cache.js';
 import { eventBus } from '../services/event-bus.js';
 import { issueReward } from '../services/rewards.js';
 import { triageSuggestions } from '../services/suggestions-triage.js';
+import { invalidateClustersCache } from '../routes/suggestions.js';
+import { v4 as uuidV4 } from 'uuid';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Task 68.5: In-memory rate limit for triage endpoint (max 1 per 60s)
+let lastTriageTime = 0;
 
 // Cache the admin dashboard HTML in memory (read once at startup)
 let adminDashboardHtml: string | null = null;
@@ -160,6 +165,17 @@ adminRouter.get('/stats', requireAdminToken, (_req: Request, res: Response): voi
 
     const mem = process.memoryUsage();
 
+    // Task 68.8: suggestion counts in admin stats
+    const suggestionStats: { total: number; new: number; accepted: number; shipped: number } = {
+      total: 0, new: 0, accepted: 0, shipped: 0,
+    };
+    try {
+      suggestionStats.total = (db.prepare('SELECT COUNT(*) as c FROM suggestions').get() as { c: number }).c;
+      suggestionStats.new = (db.prepare("SELECT COUNT(*) as c FROM suggestions WHERE status = 'new'").get() as { c: number }).c;
+      suggestionStats.accepted = (db.prepare("SELECT COUNT(*) as c FROM suggestions WHERE status = 'accepted'").get() as { c: number }).c;
+      suggestionStats.shipped = (db.prepare("SELECT COUNT(*) as c FROM suggestions WHERE status IN ('shipped_main','shipped_prod')").get() as { c: number }).c;
+    } catch { /* table may not exist on older DBs */ }
+
     res.json({
       totalUsers,
       activeToday,
@@ -174,6 +190,7 @@ adminRouter.get('/stats', requireAdminToken, (_req: Request, res: Response): voi
         heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
         heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
       },
+      suggestions: suggestionStats,
       uptimeSeconds: Math.floor(process.uptime()),
       timestamp: new Date().toISOString(),
     });
@@ -644,19 +661,37 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
     const suggestion = db.prepare(`SELECT id, user_id, title, status FROM suggestions WHERE id = ?`).get(id) as {id: string; user_id: string; title: string; status: string} | undefined;
     if (!suggestion) { res.status(404).json({ error: 'Suggestion not found' }); return; }
 
+    const oldStatus = suggestion.status;
     db.prepare(`UPDATE suggestions SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, id);
+
+    // Task 68.1: Log status transition to suggestion_events
+    try {
+      db.prepare(`
+        INSERT INTO suggestion_events (id, suggestion_id, from_status, to_status, actor, created_at)
+        VALUES (?, ?, ?, ?, ?, datetime('now'))
+      `).run(uuidV4(), id, oldStatus, status, 'admin');
+    } catch { /* non-fatal */ }
 
     // Trigger idempotent reward issuance based on new status
     let rewardResult: { issued: boolean; credits: number } = { issued: false, credits: 0 };
     if (status === 'accepted') {
       rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'ACCEPTED_EXPERIMENT' });
+      // Task 68.10: Log activity for acceptance
+      try {
+        db.prepare(
+          `INSERT INTO activity_log (id, user_id, action, details, icon, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`
+        ).run(uuidV4(), suggestion.user_id, 'Suggestion accepted', suggestion.title, 'lightbulb');
+      } catch { /* non-fatal */ }
     } else if (status === 'shipped_main') {
       rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_MAIN' });
     } else if (status === 'shipped_prod') {
       rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_PROD' });
     }
 
-    logger.info({ suggestionId: id, oldStatus: suggestion.status, newStatus: status, rewardIssued: rewardResult.issued }, 'Admin updated suggestion status');
+    // Invalidate clusters cache on status change
+    invalidateClustersCache();
+
+    logger.info({ suggestionId: id, oldStatus, newStatus: status, rewardIssued: rewardResult.issued }, 'Admin updated suggestion status');
     res.json({ success: true, suggestion: { id, status }, reward: rewardResult });
   });
 
@@ -674,15 +709,69 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
 
   // POST /api/admin/suggestions/triage — trigger AI triage for new suggestions
   adminRouter.post('/suggestions/triage', requireAdminToken, async (_req: Request, res: Response): Promise<void> => {
+    // Task 68.5: Rate limit — max 1 triage per 60 seconds (skip in TEST_MODE)
+    if (!config.isTestMode) {
+      const now = Date.now();
+      if (lastTriageTime > 0 && now - lastTriageTime < 60000) {
+        const waitSec = Math.ceil((60000 - (now - lastTriageTime)) / 1000);
+        res.status(429).json({ error: `Triage rate limited. Wait ${waitSec}s before retrying.` });
+        return;
+      }
+      lastTriageTime = now;
+    }
+
     const newSuggestions = db.prepare(`SELECT id FROM suggestions WHERE status = 'new'`).all() as {id: string}[];
     const ids = newSuggestions.map(s => s.id);
     if (!ids.length) { res.json({ processed: 0, results: [] }); return; }
     try {
       const results = await triageSuggestions(ids);
+      // Invalidate clusters cache after triage creates new clusters
+      invalidateClustersCache();
       res.json({ processed: results.length, results });
     } catch (err) {
       logger.error({ err }, 'Triage failed');
       res.status(500).json({ error: 'Triage failed' });
+    }
+  });
+
+  // GET /api/admin/suggestions/stats — suggestion analytics (Task 68.14)
+  adminRouter.get('/suggestions/stats', requireAdminToken, (_req: Request, res: Response): void => {
+    try {
+      const total = (db.prepare('SELECT COUNT(*) as c FROM suggestions').get() as { c: number }).c;
+
+      const statusRows = db.prepare(
+        `SELECT status, COUNT(*) as cnt FROM suggestions GROUP BY status`
+      ).all() as Array<{ status: string; cnt: number }>;
+      const byStatus: Record<string, number> = {
+        new: 0, triaged: 0, accepted: 0, rejected: 0, shipped_main: 0, shipped_prod: 0,
+      };
+      for (const row of statusRows) {
+        byStatus[row.status] = row.cnt;
+      }
+
+      const rewardsRow = db.prepare(
+        `SELECT COUNT(*) as cnt, COALESCE(SUM(credits), 0) as total_credits FROM suggestion_rewards`
+      ).get() as { cnt: number; total_credits: number };
+
+      const topVoted = db.prepare(`
+        SELECT s.id, s.title, COALESCE(SUM(v.vote), 0) as voteCount
+        FROM suggestions s
+        LEFT JOIN suggestion_votes v ON v.suggestion_id = s.id
+        GROUP BY s.id
+        ORDER BY voteCount DESC
+        LIMIT 5
+      `).all() as Array<{ id: string; title: string; voteCount: number }>;
+
+      res.json({
+        total,
+        byStatus,
+        totalRewardsIssued: rewardsRow.cnt,
+        totalCreditsAwarded: rewardsRow.total_credits,
+        topVoted,
+      });
+    } catch (err) {
+      logger.error({ err }, 'Admin suggestion stats query failed');
+      res.status(500).json({ error: 'Suggestion stats query failed' });
     }
   });
 
