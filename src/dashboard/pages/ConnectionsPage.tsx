@@ -795,7 +795,7 @@ export function ConnectionsPage() {
 
                 <div className="flex items-center justify-between pt-4 border-t border-[#00F0FF]/10 text-xs text-[#6B7280]">
                   {connection.lastSync ? (
-                    <span>Last synced: {connection.lastSync}</span>
+                    <span>Last synced: {timeAgo(connection.lastSync)}</span>
                   ) : (
                     <span>Never synced</span>
                   )}

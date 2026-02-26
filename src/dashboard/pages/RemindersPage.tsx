@@ -1446,6 +1446,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                       value={naturalInput}
                       onChange={(e) => setNaturalInput(e.target.value)}
                       className="flex-1 bg-[#06060B] border-[#00F0FF]/20"
+                      autoFocus
                     />
                     <Button
                       onClick={handleNaturalAdd}

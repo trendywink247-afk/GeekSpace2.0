@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "e2e": "playwright test",
     "test:e2e": "playwright test",
-    "e2e:report": "playwright show-report playwright-report"
+    "e2e:report": "playwright show-report playwright-report",
+    "brand-guard": "node ops/brand_guard.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -612,6 +612,21 @@ export function AutomationsPage() {
                 </select>
               </div>
             </div>
+            {/* 54.2: Webhook payload preview — shown when trigger is webhook */}
+            {form.triggerType === 'webhook' && (
+              <div className="rounded-lg border border-[#00F0FF]/20 bg-[#06060B] p-3">
+                <p className="text-xs text-[#6B7280] mb-2 font-medium">Incoming Webhook Payload Preview</p>
+                <pre className="text-[11px] text-[#00F0FF] overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
+{`{
+  "event": "webhook.trigger",
+  "automationId": "<auto-id>",
+  "timestamp": "${new Date().toISOString()}",
+  "payload": { "key": "value" }
+}`}
+                </pre>
+                <p className="text-[10px] text-[#6B7280] mt-2">POST this JSON to <code className="text-[#FFB800]">/api/webhooks/receive/&lt;auto-id&gt;</code></p>
+              </div>
+            )}
             {saveError && (
               <p className="text-sm text-[#FF6161] mt-2">{saveError}</p>
             )}

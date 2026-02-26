@@ -18,6 +18,7 @@ import { v4 as uuid } from 'uuid';
 import { createApp } from '../../app.js';
 import { createTestUser, generateTestToken, resetDatabase } from '../setup.js';
 import { db } from '../../db/index.js';
+import { initAutomationsEngine } from '../../services/automations-engine.js';
 
 const app = createApp();
 
@@ -27,6 +28,7 @@ describe('Phase 53', () => {
 
   beforeAll(() => {
     resetDatabase();
+    initAutomationsEngine(); // ensures automation_logs table exists
     const user = createTestUser(`phase53-${Date.now()}@example.com`);
     userId = user.id;
     token = `Bearer ${generateTestToken(user.id)}`;
