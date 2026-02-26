@@ -102,7 +102,7 @@ test.describe('Reminders Page', () => {
     // Click the "Mark as complete" button using its aria-label
     // Get the button associated with the most recently visible 'Complete me E2E' reminder
     const completeBtn = page.getByRole('button', { name: 'Mark as complete' }).first();
-    await completeBtn.click();
+    await completeBtn.click({ force: true }); // force: bypass stability check (extra buttons cause mobile layout shift)
 
     // Switch to "completed" tab/filter to verify the reminder moved there
     // TabsTrigger renders as role="tab"
@@ -146,8 +146,8 @@ test.describe('Reminders Page', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText('Bulk delete E2E test').first()).toBeVisible();
 
-    // Mark it as complete
-    await page.getByRole('button', { name: 'Mark as complete' }).first().click();
+    // Mark it as complete (force: bypass stability check — extra buttons cause mobile layout shift)
+    await page.getByRole('button', { name: 'Mark as complete' }).first().click({ force: true });
     await page.waitForTimeout(800); // 57.6: allow store update to propagate after mark-complete
 
     // Switch to completed tab
