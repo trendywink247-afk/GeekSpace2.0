@@ -522,6 +522,37 @@ function formatRelativeTime(datetime: string): string {
   if (days === 1) return past ? 'yesterday' : 'tomorrow';
   return past ? `${days}d ago` : `in ${days}d`;
 }
+
+// ── Human-readable due label (Task 68.2) ─────────────────────────────────────
+function humanDue(datetime: string): string {
+  const d = new Date(datetime);
+  const now = new Date();
+  const ms = d.getTime() - now.getTime();
+
+  if (ms < 0) {
+    // Past
+    const abs = Math.abs(ms);
+    const hours = Math.floor(abs / 3600000);
+    const days = Math.floor(abs / 86400000);
+    if (hours < 24) return `Overdue ${hours}h`;
+    return `Overdue ${days}d`;
+  }
+
+  // Check "Today": same calendar day
+  const todayEnd = new Date(now); todayEnd.setHours(23, 59, 59, 999);
+  if (d <= todayEnd) return 'Today';
+
+  // Check "Tomorrow": next calendar day
+  const tomorrowEnd = new Date(todayEnd); tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+  if (d <= tomorrowEnd) return 'Tomorrow';
+
+  // Within 7 days
+  const days = Math.ceil(ms / 86400000);
+  if (days <= 7) return `in ${days}d`;
+
+  // Fallback: formatted date
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
   // ── Category grouping helper ────────────────────────────────────────────────
@@ -1274,6 +1305,12 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                       <Clock className="w-3 h-3" />
                                       {formatted.time}
                                     </span>
+                                    {/* 68.2: human-readable due label */}
+                                    {!reminder.completed && (
+                                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${overdue ? 'bg-[#FF6161]/15 text-[#FF6161]' : 'bg-[#00F0FF]/10 text-[#00F0FF]'}`}>
+                                        {humanDue(reminder.datetime)}
+                                      </span>
+                                    )}
                                     {/* 63.10: relative time */}
                                     <span className={`text-[10px] font-medium ${overdue ? 'text-[#FF6161]/80' : 'text-[#6B7280]/60'}`}>
                                       {formatRelativeTime(reminder.datetime)}

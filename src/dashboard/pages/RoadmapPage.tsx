@@ -20,7 +20,8 @@ import {
   Lightbulb,
   Gift,
   Star,
-  TrendingUp
+  TrendingUp,
+  ThumbsUp,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -206,6 +207,7 @@ export function RoadmapPage() {
   const [mySuggestions, setMySuggestions] = useState<Array<{id: string; title: string; body: string; status: string; created_at: string}>>([]);
   const [myRewards, setMyRewards] = useState<Array<{id: string; eventType: string; credits: number; createdAt: string}>>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [voteState, setVoteState] = useState<Record<string, { upvotes: number; downvotes: number; voting: boolean }>>({});
 
   useEffect(() => {
     setLoadingSuggestions(true);
@@ -217,6 +219,16 @@ export function RoadmapPage() {
       if (rewRes.status === 'fulfilled') setMyRewards(rewRes.value.data.rewards);
     }).finally(() => setLoadingSuggestions(false));
   }, []);
+
+  const handleVote = async (id: string) => {
+    setVoteState(prev => ({ ...prev, [id]: { ...(prev[id] || { upvotes: 0, downvotes: 0 }), voting: true } }));
+    try {
+      const res = await suggestionService.vote(id, 1);
+      setVoteState(prev => ({ ...prev, [id]: { upvotes: res.data.upvotes, downvotes: res.data.downvotes, voting: false } }));
+    } catch {
+      setVoteState(prev => ({ ...prev, [id]: { ...(prev[id] || { upvotes: 0, downvotes: 0 }), voting: false } }));
+    }
+  };
 
   const handleSubmit = async () => {
     if (!formTitle.trim() || formBody.trim().length < 20) {
@@ -587,20 +599,33 @@ export function RoadmapPage() {
               <p className="text-xs text-[#6B7280]">No suggestions yet. Be the first to suggest a feature!</p>
             ) : (
               <div className="space-y-2">
-                {mySuggestions.slice(0, 5).map(s => (
-                  <div key={s.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-[#05050A] border border-[#00F0FF]/10">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#E8E8F0] truncate">{s.title}</p>
-                      <p className="text-xs text-[#6B7280]">{new Date(s.created_at).toLocaleDateString()}</p>
+                {mySuggestions.slice(0, 5).map(s => {
+                  const vs = voteState[s.id];
+                  return (
+                    <div key={s.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-[#05050A] border border-[#00F0FF]/10">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#E8E8F0] truncate">{s.title}</p>
+                        <p className="text-xs text-[#6B7280]">{new Date(s.created_at).toLocaleDateString()}</p>
+                      </div>
+                      {/* Task 68.7: Vote button */}
+                      <button
+                        onClick={() => void handleVote(s.id)}
+                        disabled={vs?.voting}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] text-xs font-medium transition-colors disabled:opacity-50 flex-shrink-0"
+                        title="Upvote this suggestion"
+                      >
+                        <ThumbsUp className="w-3 h-3" />
+                        <span>{vs?.upvotes ?? 0}</span>
+                      </button>
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full border flex-shrink-0"
+                        style={{ color: getStatusColor(s.status), borderColor: `${getStatusColor(s.status)}40`, backgroundColor: `${getStatusColor(s.status)}15` }}
+                      >
+                        {getStatusLabel(s.status)}
+                      </span>
                     </div>
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full border flex-shrink-0"
-                      style={{ color: getStatusColor(s.status), borderColor: `${getStatusColor(s.status)}40`, backgroundColor: `${getStatusColor(s.status)}15` }}
-                    >
-                      {getStatusLabel(s.status)}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
