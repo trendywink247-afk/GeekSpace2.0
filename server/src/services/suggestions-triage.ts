@@ -86,10 +86,15 @@ export async function triageSuggestions(suggestionIds: string[]): Promise<Triage
       // Create a new cluster for this suggestion
       const clusterId = uuid();
 
+      // Phase 69.14: Generate cluster name
+      const clusterName = config.isTestMode
+        ? 'Cluster: ' + suggestion.title.toLowerCase().split(/\s+/).slice(0, 3).join(' ')
+        : suggestion.title.split(/\s+/).slice(0, 4).join(' ');
+
       db.prepare(`
-        INSERT OR IGNORE INTO suggestion_clusters (id, canonical_summary, tags, suggestion_ids, created_at, updated_at)
-        VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
-      `).run(clusterId, suggestion.title, suggestion.tags, JSON.stringify([suggestion.id]));
+        INSERT OR IGNORE INTO suggestion_clusters (id, canonical_summary, tags, suggestion_ids, name, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      `).run(clusterId, suggestion.title, suggestion.tags, JSON.stringify([suggestion.id]), clusterName);
 
       db.prepare(`
         INSERT OR REPLACE INTO suggestion_scores (id, cluster_id, demand_score, impact_score, effort_score, risk_score, overall_score, rationale)
@@ -104,6 +109,61 @@ export async function triageSuggestions(suggestionIds: string[]): Promise<Triage
 
       results.push({ clusterId, demandScore, impactScore, effortScore, riskScore, overallScore, rationale });
       logger.info({ clusterId, suggestionId: suggestion.id, merged: false }, 'Suggestion triaged into new cluster');
+    }
+  }
+
+  // ── Phase 69.11: Cluster auto-merge for high-overlap groups ─────────────────
+  // Skip in TEST_MODE to keep test scores deterministic
+  if (!config.isTestMode) {
+    try {
+      // Fetch all clusters with 2+ suggestions
+      const allClusters = db.prepare(
+        `SELECT id, canonical_summary, suggestion_ids FROM suggestion_clusters`
+      ).all() as Array<{ id: string; canonical_summary: string; suggestion_ids: string }>;
+
+      const clustersWithMultiple = allClusters.filter(c => {
+        try { return (JSON.parse(c.suggestion_ids) as string[]).length >= 2; } catch { return false; }
+      });
+
+      const merged = new Set<string>(); // track clusters already merged away
+
+      for (let i = 0; i < clustersWithMultiple.length; i++) {
+        for (let j = i + 1; j < clustersWithMultiple.length; j++) {
+          const a = clustersWithMultiple[i];
+          const b = clustersWithMultiple[j];
+          if (merged.has(a.id) || merged.has(b.id)) continue;
+
+          // Compute word overlap on top-3 words of each canonical_summary
+          const top3 = (s: string) => s.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 3).join(' ');
+          const overlap = wordOverlapRatio(top3(a.canonical_summary), top3(b.canonical_summary));
+
+          if (overlap > 0.7) {
+            // Merge smaller into larger
+            let idsA: string[] = []; try { idsA = JSON.parse(a.suggestion_ids) as string[]; } catch { idsA = []; }
+            let idsB: string[] = []; try { idsB = JSON.parse(b.suggestion_ids) as string[]; } catch { idsB = []; }
+
+            const [winner, loser, loserIds] = idsA.length >= idsB.length
+              ? [a, b, idsB]
+              : [b, a, idsA];
+
+            // Move loser's suggestion_ids to winner
+            const combinedIds = [...new Set([
+              ...(idsA.length >= idsB.length ? idsA : idsB),
+              ...loserIds,
+            ])];
+            db.prepare(
+              `UPDATE suggestion_clusters SET suggestion_ids = ?, updated_at = datetime('now') WHERE id = ?`
+            ).run(JSON.stringify(combinedIds), winner.id);
+
+            // Delete loser cluster (cascade deletes scores)
+            db.prepare(`DELETE FROM suggestion_clusters WHERE id = ?`).run(loser.id);
+            merged.add(loser.id);
+            logger.info({ winnerId: winner.id, loserId: loser.id, overlap }, 'Clusters auto-merged (>70% overlap)');
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn({ err }, 'Cluster auto-merge step failed (non-fatal)');
     }
   }
 

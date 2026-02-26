@@ -769,7 +769,7 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
   // GET /api/admin/suggestions/clusters — list clusters with scores
   adminRouter.get('/suggestions/clusters', requireAdminToken, (_req: Request, res: Response): void => {
     const rows = db.prepare(`
-      SELECT c.id, c.canonical_summary, c.tags, c.suggestion_ids, c.created_at,
+      SELECT c.id, c.canonical_summary, c.name, c.tags, c.suggestion_ids, c.created_at,
              sc.demand_score, sc.impact_score, sc.effort_score, sc.risk_score, sc.overall_score, sc.rationale
       FROM suggestion_clusters c
       LEFT JOIN suggestion_scores sc ON sc.cluster_id = c.id

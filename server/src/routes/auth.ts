@@ -329,13 +329,25 @@ authRouter.post('/forgot-password', async (req, res) => {
     return;
   }
 
-  const result = await requestPasswordReset(
-    email,
-    channel || 'auto',
-    req.ip || '0.0.0.0'
-  );
+  // Phase 69.7: Constant-time response to prevent user enumeration via timing attacks.
+  // We always wait at least 200ms before responding, regardless of whether the email exists.
+  const minDelayMs = 200;
+  const startTime = Date.now();
 
-  res.json(result);
+  try {
+    await requestPasswordReset(
+      email,
+      channel || 'auto',
+      req.ip || '0.0.0.0'
+    );
+  } catch { /* intentionally swallowed — caller should never learn if email exists */ }
+
+  const elapsed = Date.now() - startTime;
+  if (elapsed < minDelayMs) {
+    await new Promise(resolve => setTimeout(resolve, minDelayMs - elapsed));
+  }
+
+  res.json({ message: "If that email is registered, you'll receive a reset link." });
 });
 
 authRouter.post('/verify-reset-otp', async (req, res) => {
