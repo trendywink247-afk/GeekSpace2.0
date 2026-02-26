@@ -159,6 +159,12 @@ export function ConnectionsPage() {
     } catch { /* ignore */ }
   };
 
+  // 66.4: Integration event log
+  const [integrationEvents, setIntegrationEvents] = useState<Array<{ id: string; action: string; details: string; icon: string; created_at: string }>>([]);
+  useEffect(() => {
+    integrationService.getEvents(10).then((r) => setIntegrationEvents(r.data.events)).catch(() => {});
+  }, []);
+
   // Run health check for all connected integrations on mount and every 60s
   useEffect(() => {
     const runHealthChecks = async () => {
@@ -856,6 +862,28 @@ export function ConnectionsPage() {
           );
         })}
       </div>
+
+      {/* 66.4: Integration event log */}
+      {integrationEvents.length > 0 && (
+        <Card className="border-[#00F0FF]/20">
+          <CardContent className="p-4">
+            <h4 className="text-sm font-medium text-[#E8E8F0] mb-3 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#00F0FF]" />
+              Recent Integration Events
+            </h4>
+            <div className="space-y-2">
+              {integrationEvents.slice(0, 5).map((ev) => (
+                <div key={ev.id} className="flex items-center gap-3 text-xs">
+                  <div className="w-2 h-2 rounded-full bg-[#00F0FF] flex-shrink-0" />
+                  <span className="text-[#E8E8F0] flex-1 truncate">{ev.action}</span>
+                  {ev.details && <span className="text-[#6B7280] truncate max-w-[120px]">{ev.details}</span>}
+                  <span className="text-[#6B7280] flex-shrink-0">{timeAgo(ev.created_at)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Privacy Note */}
       <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">

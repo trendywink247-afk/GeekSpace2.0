@@ -251,11 +251,15 @@ export function RemindersPage() {
   const [isBatchEditing, setIsBatchEditing] = useState(false);
   // 63.3: Group-by mode toggle (date vs category)
   const [groupMode, setGroupMode] = useState<'date' | 'category'>('date');
+  // 66.8: Sort mode toggle (priority vs due-date)
+  const [sortMode, setSortMode] = useState<'priority' | 'due'>('priority');
 
   // Bulk snooze state (29.4)
   const [selectedActiveIds, setSelectedActiveIds] = useState<Set<string>>(new Set());
   const [isBulkSnoozing, setIsBulkSnoozing] = useState(false);
   const [isBulkCompleting, setIsBulkCompleting] = useState(false);
+  // 66.1: Undo toast after bulk-complete
+  const [undoToast, setUndoToast] = useState<{ ids: string[]; count: number } | null>(null);
   // 58.2: bulk-delete for active reminders
   const [isBulkDeletingActive, setIsBulkDeletingActive] = useState(false);
 
@@ -469,14 +473,26 @@ export function RemindersPage() {
 
   const handleBulkComplete = async () => {
     if (selectedActiveIds.size === 0) return;
+    const completedIds = Array.from(selectedActiveIds);
     setIsBulkCompleting(true);
     try {
-      await reminderService.bulkComplete(Array.from(selectedActiveIds));
+      await reminderService.bulkComplete(completedIds);
       setSelectedActiveIds(new Set());
       await loadReminders();
+      // 66.1: Show undo toast
+      setUndoToast({ ids: completedIds, count: completedIds.length });
+      setTimeout(() => setUndoToast(null), 5000);
     } finally {
       setIsBulkCompleting(false);
     }
+  };
+
+  const handleUndoBulkComplete = async () => {
+    if (!undoToast) return;
+    setUndoToast(null);
+    // Re-activate reminders by setting completed=false
+    await Promise.allSettled(undoToast.ids.map((id) => reminderService.update(id, { completed: false })));
+    await loadReminders();
   };
 
   // 58.2: Bulk-delete active reminders
@@ -573,6 +589,10 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
     return true;
   }).filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
+      // 66.8: Sort by due-date or priority
+      if (sortMode === 'due') {
+        return new Date(a.datetime).getTime() - new Date(b.datetime).getTime();
+      }
       const pa = priorityOrder[a.priority ?? 'normal'] ?? 2;
       const pb = priorityOrder[b.priority ?? 'normal'] ?? 2;
       return pa - pb;
@@ -624,6 +644,20 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFB800]/15 border border-[#FFB800]/40 text-[#FFB800] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="snooze-toast">
           <AlarmClock className="w-4 h-4" />
           {snoozeToast}
+        </div>
+      )}
+      {/* 66.1: Undo toast after bulk-complete */}
+      {undoToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#00FF88]/15 border border-[#00FF88]/40 text-[#00FF88] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <CheckCheck className="w-4 h-4 flex-shrink-0" />
+          <span>{undoToast.count} reminder{undoToast.count > 1 ? 's' : ''} marked done</span>
+          <button
+            onClick={() => void handleUndoBulkComplete()}
+            className="ml-1 underline text-[#00FF88]/80 hover:text-[#00FF88] transition-colors text-xs font-semibold"
+          >
+            Undo
+          </button>
+          <button onClick={() => setUndoToast(null)} className="text-[#00FF88]/50 hover:text-[#00FF88] ml-1">✕</button>
         </div>
       )}
       {/* 42.1: All caught up celebration banner */}
@@ -933,6 +967,25 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* 66.8: Sort-by toggle */}
+          <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
+            <button
+              onClick={() => setSortMode('priority')}
+              aria-label="Sort by priority"
+              title="Sort by priority"
+              className={`p-2 rounded transition-colors min-h-[36px] flex items-center justify-center text-[10px] font-medium px-2 ${sortMode === 'priority' ? 'bg-[#BF5FFF]/20 text-[#BF5FFF]' : 'text-[#6B7280]'}`}
+            >
+              P↑
+            </button>
+            <button
+              onClick={() => setSortMode('due')}
+              aria-label="Sort by due date"
+              title="Sort by due date"
+              className={`p-2 rounded transition-colors min-h-[36px] flex items-center justify-center text-[10px] font-medium px-2 ${sortMode === 'due' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
+            >
+              Due↑
+            </button>
+          </div>
           {/* 63.3: Group-by toggle */}
           <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
             <button

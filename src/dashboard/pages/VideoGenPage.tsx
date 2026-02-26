@@ -101,6 +101,8 @@ export function VideoGenPage() {
   const [directorJobId, setDirectorJobId] = useState<string | null>(null);
   const [directorJob, setDirectorJob] = useState<DirectorJob | null>(null);
   const [directorJobs, setDirectorJobs] = useState<DirectorJob[]>([]);
+  // 66.11: Job history status filter
+  const [jobHistoryFilter, setJobHistoryFilter] = useState<'all' | 'done' | 'failed'>('all');
   const [directorError, setDirectorError] = useState<string | null>(null);
   const directorPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // 58.13: prevent double-triggering auto-stitch
@@ -1166,10 +1168,24 @@ export function VideoGenPage() {
           )}
 
           {/* Past director jobs */}
-          {directorJobs.filter(j => j.status === 'done').length > 0 && !directorJob && (
+          {directorJobs.length > 0 && !directorJob && (
             <div className="space-y-2">
-              <p className="text-xs text-[#6B7280] font-medium">Recent Director Jobs</p>
-              {directorJobs.filter(j => j.status === 'done').slice(0, 3).map((job) => (
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-[#6B7280] font-medium">Recent Director Jobs</p>
+                {/* 66.11: Status filter for job history */}
+                <div className="flex items-center gap-1">
+                  {(['all', 'done', 'failed'] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setJobHistoryFilter(f)}
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all ${jobHistoryFilter === f ? 'bg-[#BF5FFF]/15 border-[#BF5FFF]/50 text-[#BF5FFF]' : 'border-[#BF5FFF]/10 text-[#6B7280] hover:text-[#BF5FFF]'}`}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {directorJobs.filter(j => jobHistoryFilter === 'all' || j.status === jobHistoryFilter).slice(0, 3).map((job) => (
                 <div
                   key={job.id}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#BF5FFF]/10 bg-[#BF5FFF]/5"

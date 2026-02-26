@@ -536,9 +536,14 @@ export const portfolioService = {
   getMeStats: () =>
     api.get<{ view_count: number; contact_count: number; project_count: number; last_viewed_at: string | null }>('/portfolio/me/stats'),
 
-  // 63.2: Download daily analytics as CSV
-  exportAnalyticsCSV: () =>
-    api.get<string>('/portfolio/me/analytics/export', { responseType: 'text' }),
+  // 63.2: Download daily analytics as CSV (66.6: optional date range)
+  exportAnalyticsCSV: (from?: string, to?: string) => {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString();
+    return api.get<string>(`/portfolio/me/analytics/export${qs ? `?${qs}` : ''}`, { responseType: 'text' });
+  },
 
   // 65.10: Visitor source analytics
   getAnalyticsSources: () =>
