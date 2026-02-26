@@ -104,6 +104,8 @@ export function AutomationsPage() {
     triggerType: 'time' as AutomationTrigger,
     actionType: 'telegram-message' as AutomationAction,
     enabled: true,
+    // 62.6: Cron builder — stores interval in minutes for time-based triggers
+    intervalMinutes: 60,
   });
   const [saveError, setSaveError] = useState('');
   const [logs, setLogs] = useState<AutomationLog[]>([]);
@@ -123,7 +125,7 @@ export function AutomationsPage() {
   const [dryRunResult, setDryRunResult] = useState<{ id: string; simulatedOutput: string } | null>(null);
 
   const resetForm = () => {
-    setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true });
+    setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true, intervalMinutes: 60 });
     setEditingId(null);
     setSaveError('');
   };
@@ -159,12 +161,14 @@ export function AutomationsPage() {
   const handleOpenEdit = (id: string) => {
     const auto = automations.find((a) => a.id === id);
     if (!auto) return;
+    const existingInterval = (auto.triggerConfig?.interval_minutes as number | undefined) ?? 60;
     setForm({
       name: auto.name,
       description: auto.description,
       triggerType: auto.triggerType,
       actionType: auto.actionType,
       enabled: auto.enabled,
+      intervalMinutes: existingInterval,
     });
     setEditingId(id);
     setIsAddDialogOpen(true);
@@ -174,6 +178,10 @@ export function AutomationsPage() {
     if (!form.name) return;
     setSaveError('');
     try {
+      // 62.6: build triggerConfig for time-based automations
+      const triggerConfig = form.triggerType === 'time'
+        ? { interval_minutes: form.intervalMinutes }
+        : {};
       if (editingId) {
         await updateAutomation(editingId, {
           name: form.name,
@@ -181,6 +189,7 @@ export function AutomationsPage() {
           triggerType: form.triggerType,
           actionType: form.actionType,
           enabled: form.enabled,
+          triggerConfig,
         });
       } else {
         await addAutomation({
@@ -190,6 +199,7 @@ export function AutomationsPage() {
           actionType: form.actionType,
           config: {},
           enabled: form.enabled,
+          triggerConfig,
         });
       }
       setIsAddDialogOpen(false);
@@ -699,6 +709,48 @@ export function AutomationsPage() {
                 </select>
               </div>
             </div>
+            {/* 62.6: Schedule builder — shown when trigger is time-based */}
+            {form.triggerType === 'time' && (
+              <div className="rounded-lg border border-[#00F0FF]/20 bg-[#06060B] p-3 space-y-3">
+                <p className="text-xs text-[#6B7280] font-medium">Schedule</p>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    { label: 'Every 15 min', value: 15 },
+                    { label: 'Every 30 min', value: 30 },
+                    { label: 'Every hour', value: 60 },
+                    { label: 'Every 2h', value: 120 },
+                    { label: 'Every 6h', value: 360 },
+                    { label: 'Daily', value: 1440 },
+                    { label: 'Weekly', value: 10080 },
+                  ] as const).map(({ label, value }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setForm({ ...form, intervalMinutes: value })}
+                      className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                        form.intervalMinutes === value
+                          ? 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[#00F0FF]'
+                          : 'bg-[#0C0C18] border-[#00F0FF]/20 text-[#6B7280] hover:text-[#E8E8F0]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#6B7280]">Custom:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10080}
+                    value={form.intervalMinutes}
+                    onChange={(e) => setForm({ ...form, intervalMinutes: Math.max(1, parseInt(e.target.value) || 60) })}
+                    className="w-20 p-1.5 text-xs rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 text-[#E8E8F0]"
+                  />
+                  <span className="text-xs text-[#6B7280]">minutes</span>
+                </div>
+              </div>
+            )}
             {/* 54.2: Webhook payload preview — shown when trigger is webhook */}
             {form.triggerType === 'webhook' && (
               <div className="rounded-lg border border-[#00F0FF]/20 bg-[#06060B] p-3">

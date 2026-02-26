@@ -148,6 +148,9 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  // 62.5: ↑/↓ history navigation + Ctrl+K clear
+  const inputHistoryRef = useRef<string[]>([]);
+  const historyIdxRef = useRef<number>(-1);
   const [isListening, setIsListening] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -379,6 +382,11 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     setInput('');
     setReplyTo(null);
     setIsTyping(true);
+    // 62.5: push to input history (deduplicate consecutive identical messages)
+    if (inputHistoryRef.current[0] !== raw) {
+      inputHistoryRef.current = [raw, ...inputHistoryRef.current].slice(0, 50);
+    }
+    historyIdxRef.current = -1;
 
     // Helper: set agent message (create or update)
     const setAgentMsg = (update: Partial<ChatMessage>) => {
@@ -564,6 +572,27 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     }
   };
 
+  // 62.3: Export current chat session as markdown text
+  const handleExportChat = () => {
+    const visibleMsgs = messages.filter((m) => !m.isStreaming && m.id !== 'greeting');
+    if (visibleMsgs.length === 0) return;
+    const lines: string[] = [`# Chat Export — ${new Date().toLocaleString()}`, ''];
+    for (const msg of visibleMsgs) {
+      const who = msg.role === 'user' ? '**You**' : `**${pMeta.name}**`;
+      const ts = new Date(msg.timestamp).toLocaleTimeString();
+      lines.push(`${who} · ${ts}`);
+      lines.push(msg.content);
+      lines.push('');
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -572,6 +601,37 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       } else {
         sendMessage();
       }
+    }
+    // 62.5: ↑ to navigate back in input history
+    if (e.key === 'ArrowUp' && !e.shiftKey && !isTyping) {
+      const hist = inputHistoryRef.current;
+      if (hist.length === 0) return;
+      e.preventDefault();
+      const nextIdx = Math.min(historyIdxRef.current + 1, hist.length - 1);
+      historyIdxRef.current = nextIdx;
+      setInput(hist[nextIdx]);
+      // Move cursor to end on next tick
+      setTimeout(() => {
+        const el = inputRef.current;
+        if (el) el.setSelectionRange(el.value.length, el.value.length);
+      }, 0);
+    }
+    // 62.5: ↓ to navigate forward in input history
+    if (e.key === 'ArrowDown' && !e.shiftKey && !isTyping) {
+      e.preventDefault();
+      if (historyIdxRef.current <= 0) {
+        historyIdxRef.current = -1;
+        setInput('');
+        return;
+      }
+      const nextIdx = historyIdxRef.current - 1;
+      historyIdxRef.current = nextIdx;
+      setInput(inputHistoryRef.current[nextIdx]);
+    }
+    // 62.5: Ctrl+K / Cmd+K to clear chat
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      resetChat();
     }
   };
 
@@ -694,10 +754,20 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               onClick={handleExport}
               disabled={isExporting}
               className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
-              title="Export conversations"
+              title="Export all conversations (JSON)"
             >
               <Download className={`w-4 h-4 ${isExporting ? 'text-[#00F0FF] animate-pulse' : 'text-[#6B7280]'}`} />
             </button>
+            {/* 62.3: Export current chat as markdown */}
+            {messages.filter((m) => !m.isStreaming && m.id !== 'greeting' && m.role !== 'system').length > 0 && (
+              <button
+                onClick={handleExportChat}
+                className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
+                title="Export this chat (Markdown)"
+              >
+                <span className="text-xs text-[#6B7280] font-mono">MD</span>
+              </button>
+            )}
             <button
               onClick={() => { setSearchOpen(v => !v); setSearchTerm(''); }}
               className={`p-2 rounded-lg transition-colors ${searchOpen ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'hover:bg-[#00F0FF]/10 text-[#6B7280]'}`}

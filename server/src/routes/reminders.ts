@@ -48,6 +48,58 @@ remindersRouter.post('/', requireAuth, validateBody(reminderCreateSchema), (req:
   res.status(201).json(reminder);
 });
 
+// ── 62.10: Batch Edit (priority/category) — must come BEFORE PATCH /:id ─────
+remindersRouter.patch('/batch-edit', requireAuth, (req: AuthRequest, res) => {
+  const { ids, priority, category } = req.body as {
+    ids: string[];
+    priority?: string;
+    category?: string;
+  };
+
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 100) {
+    res.status(400).json({ error: 'ids must be a non-empty array of max 100' });
+    return;
+  }
+
+  const validPriorities = ['low', 'normal', 'high', 'urgent'];
+  const validCategories = ['personal', 'work', 'health', 'finance', 'general'];
+
+  if (priority && !validPriorities.includes(priority)) {
+    res.status(400).json({ error: 'Invalid priority value' });
+    return;
+  }
+  if (category && !validCategories.includes(category)) {
+    res.status(400).json({ error: 'Invalid category value' });
+    return;
+  }
+  if (!priority && !category) {
+    res.status(400).json({ error: 'At least one of priority or category must be provided' });
+    return;
+  }
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const owned = (db.prepare(
+    `SELECT id FROM reminders WHERE id IN (${placeholders}) AND user_id = ?`
+  ).all(...ids, req.userId!) as Array<{ id: string }>).map((r) => r.id);
+
+  if (owned.length === 0) {
+    res.json({ updated: 0 });
+    return;
+  }
+
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  if (priority) { sets.push('priority = ?'); values.push(priority); }
+  if (category) { sets.push('category = ?'); values.push(category); }
+
+  const updPlaceholders = owned.map(() => '?').join(', ');
+  db.prepare(
+    `UPDATE reminders SET ${sets.join(', ')} WHERE id IN (${updPlaceholders})`
+  ).run(...values, ...owned);
+
+  res.json({ updated: owned.length });
+});
+
 remindersRouter.patch('/:id', requireAuth, validateBody(reminderUpdateSchema), (req: AuthRequest, res) => {
   const existing = db.prepare('SELECT * FROM reminders WHERE id = ? AND user_id = ?').get(req.params.id, req.userId);
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
@@ -500,3 +552,4 @@ remindersRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
 
   res.json({ total, active, completed, overdue, byPriority });
 });
+

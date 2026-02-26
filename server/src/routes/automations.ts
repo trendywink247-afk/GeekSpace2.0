@@ -44,7 +44,13 @@ automationsRouter.post('/', requireAuth, validateBody(automationCreateSchema), a
   // 53.5: Bust cache
   await cacheDel(`automations:${req.userId}`);
 
-  const automation = db.prepare('SELECT * FROM automations WHERE id = ?').get(id);
+  const raw = db.prepare('SELECT * FROM automations WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  const automation = raw ? {
+    ...raw,
+    enabled: Boolean(raw.enabled),
+    triggerConfig: (() => { try { return JSON.parse(raw.trigger_config as string || '{}'); } catch { return {}; } })(),
+    actionConfig: (() => { try { return JSON.parse(raw.action_config as string || '{}'); } catch { return {}; } })(),
+  } : null;
   res.status(201).json(automation);
 });
 

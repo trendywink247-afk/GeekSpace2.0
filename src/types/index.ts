@@ -439,6 +439,8 @@ export interface Automation {
   lastStatus?: string;
   runCount: number;
   createdAt: string;
+  // 62.6: trigger config (interval_minutes for time-based automations)
+  triggerConfig?: Record<string, unknown>;
   // Snake_case fields as returned directly from the API (backend does not transform keys)
   run_count?: number;
   last_run?: string | null;
