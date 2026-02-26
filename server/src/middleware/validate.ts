@@ -70,7 +70,10 @@ export const commandSchema = z.object({
 
 export const reminderCreateSchema = z.object({
   text: z.string().min(1).max(500),
-  datetime: z.string().max(50).optional(),
+  datetime: z.string().max(50).optional().refine(
+    (v) => !v || !isNaN(Date.parse(v)),
+    { message: 'Invalid datetime format' }
+  ),
   channel: z.enum(['telegram', 'email', 'push']).optional().default('push'),
   recurring: z.enum(['', 'daily', 'weekly', 'monthly']).optional(),
   recurrence: z.enum(['daily', 'weekly', 'monthly']).nullable().optional(),

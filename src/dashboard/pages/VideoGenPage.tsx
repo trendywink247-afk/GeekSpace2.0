@@ -968,6 +968,22 @@ export function VideoGenPage() {
                 </div>
               )}
 
+              {/* 63.13: Failed job restart button */}
+              {(directorJob.status as string) === 'failed' && (
+                <div className="flex items-center gap-3 rounded-lg border border-[#FF6161]/30 bg-[#FF6161]/5 px-3 py-2.5">
+                  <AlertCircle className="w-4 h-4 text-[#FF6161] flex-shrink-0" />
+                  <span className="text-xs text-[#FF6161] flex-1">Director job failed</span>
+                  <button
+                    onClick={handleRerun}
+                    disabled={directorRunning}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-[#FF6161]/30 text-[#FF6161] hover:bg-[#FF6161]/10 disabled:opacity-50 transition-colors"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Restart Job
+                  </button>
+                </div>
+              )}
+
               {/* 57.13: Stitch bar + Rerun — shown when job is done */}
               {directorJob.status === 'done' && directorJob.clips.length > 0 && (
                 <div className="space-y-2">
@@ -977,14 +993,23 @@ export function VideoGenPage() {
                         {stitchResult.url ? 'Stitched Video Ready' : 'Clip URLs Ready (soft stitch)'}
                       </p>
                       {stitchResult.url ? (
-                        <a
-                          href={stitchResult.url}
-                          download="stitched.mp4"
-                          className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10 transition-colors w-fit"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          Download Stitched Video
-                        </a>
+                        <div className="space-y-2">
+                          {/* 63.8: Inline video player for stitched result */}
+                          <video
+                            src={stitchResult.url}
+                            controls
+                            className="w-full rounded-lg border border-[#BF5FFF]/30 max-h-48 bg-black"
+                            preload="metadata"
+                          />
+                          <a
+                            href={stitchResult.url}
+                            download="stitched.mp4"
+                            className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10 transition-colors w-fit"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Download Stitched Video
+                          </a>
+                        </div>
                       ) : (
                         <div className="flex flex-col gap-1">
                           {stitchResult.clipUrls.map((u, idx) => (

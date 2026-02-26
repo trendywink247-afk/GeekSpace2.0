@@ -98,6 +98,23 @@ portfolioRouter.get('/me/stats', requireAuth, (req: AuthRequest, res) => {
   res.json({ view_count: viewCount, contact_count: contactCount, project_count: projectCount, last_viewed_at: lastViewedAt });
 });
 
+// 63.2: GET /me/analytics/export — CSV export of daily view counts (last 30 days)
+portfolioRouter.get('/me/analytics/export', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const rows = db.prepare(
+    `SELECT date(visited_at) as day, COUNT(*) as views
+     FROM portfolio_visits WHERE user_id = ? AND visited_at >= date('now', '-30 days')
+     GROUP BY day ORDER BY day ASC`
+  ).all(userId) as Array<{ day: string; views: number }>;
+
+  let csv = 'date,views\n';
+  for (const r of rows) { csv += `${r.day},${r.views}\n`; }
+
+  res.set('Content-Type', 'text/csv');
+  res.set('Content-Disposition', 'attachment; filename="portfolio-analytics.csv"');
+  res.send(csv);
+});
+
 // 59.5: Portfolio update rate limit — 10 updates per 5 minutes per user
 portfolioRouter.patch('/me', requireAuth, validateBody(portfolioUpdateSchema), async (req: AuthRequest, res) => {
   const rlKey = `portfolio:update-rl:${req.userId}`;

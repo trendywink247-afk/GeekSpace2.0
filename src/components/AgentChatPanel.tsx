@@ -139,6 +139,7 @@ const suggestedPrompts = [
 
 export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelProps) {
   const agent = useDashboardStore((s) => s.agent);
+  const updateAgent = useDashboardStore((s) => s.updateAgent);
   const isMobile = useMobileDetect();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -805,6 +806,29 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             </div>
           )
         }
+
+        {/* 63.9: Persona quick-switch pills — only for own agent (not portfolio mode) */}
+        {!agentOwner && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-[#1A1A2E]">
+            {(Object.entries(personalityMeta) as [AgentPersonality, { emoji: string; name: string }][]).map(([key, meta]) => {
+              const isActive = (agent.personality || 'jarvis') === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => { void updateAgent({ personality: key }); }}
+                  className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium border transition-all ${
+                    isActive
+                      ? 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[#00F0FF]'
+                      : 'border-[#1A1A2E] text-[#6B7280] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+                  }`}
+                  title={`Switch to ${meta.name}`}
+                >
+                  {meta.emoji} {meta.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Rate limit warning — shown when fewer than 10 chat requests remain in the window (33.4, 36.4) */}
         {chatRateLimitRemaining !== null && chatRateLimitRemaining < 10 && (

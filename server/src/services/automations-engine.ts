@@ -466,16 +466,18 @@ export function onAutomationChanged(automationId: string) {
 
 // ---- Get execution logs ----
 
-export function getAutomationLogs(userId: string, automationId?: string, limit = 50, offset = 0): unknown[] {
-  // 53.7: Pagination via LIMIT + OFFSET
+export function getAutomationLogs(userId: string, automationId?: string, limit = 50, offset = 0, status?: string): unknown[] {
+  // 53.7: Pagination via LIMIT + OFFSET; 63.4: optional status filter
+  const statusClause = status ? ` AND status = ?` : '';
+  const statusArgs = status ? [status] : [];
   if (automationId) {
     return db.prepare(
-      'SELECT * FROM automation_logs WHERE user_id = ? AND automation_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
-    ).all(userId, automationId, limit, offset);
+      `SELECT * FROM automation_logs WHERE user_id = ? AND automation_id = ?${statusClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    ).all(userId, automationId, ...statusArgs, limit, offset);
   }
   return db.prepare(
-    'SELECT * FROM automation_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
-  ).all(userId, limit, offset);
+    `SELECT * FROM automation_logs WHERE user_id = ?${statusClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+  ).all(userId, ...statusArgs, limit, offset);
 }
 
 // ---- Portfolio Visit Trigger (called from portfolio route) ----
