@@ -57,6 +57,8 @@ export function VideoGenPage() {
   // ── 55.13: Director Mode state ─────────────────────────────
   const [directorIdea, setDirectorIdea] = useState('');
   const [directorRunning, setDirectorRunning] = useState(false);
+  // 59.13: Multi-job queue — holds next idea to auto-start when current job finishes
+  const [queuedIdea, setQueuedIdea] = useState<string | null>(null);
   const [directorJobId, setDirectorJobId] = useState<string | null>(null);
   const [directorJob, setDirectorJob] = useState<DirectorJob | null>(null);
   const [directorJobs, setDirectorJobs] = useState<DirectorJob[]>([]);
@@ -79,6 +81,8 @@ export function VideoGenPage() {
 
   // Toast
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToast({ type, text });
     setTimeout(() => setToast(null), 3500);
@@ -228,14 +232,35 @@ export function VideoGenPage() {
     }
   }, [directorJob, stitchResult, stitching, directorJobId]);
 
-  const handleDirectorSubmit = async () => {
-    if (!directorIdea.trim()) return;
+  // 59.13: Auto-start queued job when current job finishes
+  useEffect(() => {
+    if (!directorRunning && queuedIdea) {
+      const idea = queuedIdea;
+      setQueuedIdea(null);
+      setDirectorIdea(idea);
+      // Small delay so state settles before starting
+      const tid = setTimeout(() => { void handleDirectorSubmit(idea); }, 800);
+      return () => clearTimeout(tid);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [directorRunning]);
+
+  const handleDirectorSubmit = async (overrideIdea?: string) => {
+    const idea = overrideIdea ?? directorIdea.trim();
+    if (!idea) return;
+    // 59.13: If a job is already running, queue the new idea instead of starting immediately
+    if (directorRunning) {
+      setQueuedIdea(idea);
+      setDirectorIdea('');
+      showToast('Queued! Will start automatically when the current job finishes.');
+      return;
+    }
     setDirectorRunning(true);
     setDirectorError(null);
     setDirectorJob(null);
     autoStitchFiredRef.current = false; // 58.13: allow auto-stitch for new job
     try {
-      const res = await videoService.directorCreate(directorIdea.trim());
+      const res = await videoService.directorCreate(idea);
       setDirectorJobId(res.data.jobId);
       showToast('Director Mode pipeline started — generating 6 clips…');
     } catch (err: unknown) {
@@ -291,8 +316,9 @@ export function VideoGenPage() {
     }
   };
 
-  // Handle delete
+  // Handle delete (called after confirmation)
   const handleDelete = async (id: string) => {
+    setIsDeleting(true);
     try {
       await videoService.delete(id);
       showToast('Video deleted');
@@ -300,6 +326,9 @@ export function VideoGenPage() {
       if (previewVideo?.id === id) setPreviewVideo(null);
     } catch {
       showToast('Failed to delete', 'error');
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmId(null);
     }
   };
 
@@ -740,9 +769,10 @@ export function VideoGenPage() {
                       </button>
                       {/* Delete */}
                       <button
-                        onClick={() => handleDelete(vid.id)}
+                        onClick={() => setDeleteConfirmId(vid.id)}
                         className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
-                        title="Delete"
+                        title="Delete video"
+                        data-testid={`delete-video-${vid.id}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -783,21 +813,27 @@ export function VideoGenPage() {
             <input
               value={directorIdea}
               onChange={(e) => setDirectorIdea(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !directorRunning && void handleDirectorSubmit()}
+              onKeyDown={(e) => e.key === 'Enter' && void handleDirectorSubmit()}
               placeholder="e.g. A lone astronaut discovering an alien city at sunset"
               maxLength={500}
               className="flex-1 px-4 py-3 rounded-xl bg-[#0C0C18] border border-[#BF5FFF]/20 text-[#E8E8F0] text-sm placeholder-[#374151] focus:outline-none focus:border-[#BF5FFF]/50"
-              disabled={directorRunning}
             />
             <button
               onClick={() => void handleDirectorSubmit()}
-              disabled={!directorIdea.trim() || directorRunning}
+              disabled={!directorIdea.trim()}
               className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#BF5FFF] hover:bg-[#A855F7] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
             >
               {directorRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {directorRunning ? 'Running…' : 'Direct'}
+              {directorRunning ? 'Queue' : 'Direct'}
             </button>
           </div>
+          {/* 59.13: Queued job indicator */}
+          {queuedIdea && (
+            <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#BF5FFF]/10 border border-[#BF5FFF]/20 text-xs text-[#BF5FFF]" data-testid="queued-idea-banner">
+              <span className="truncate flex-1 mr-2">⏳ Queued: <span className="text-[#D8B4FE]">{queuedIdea}</span></span>
+              <button onClick={() => setQueuedIdea(null)} className="shrink-0 hover:text-[#E8E8F0] transition-colors" title="Cancel queued job">✕</button>
+            </div>
+          )}
 
           {directorError && (
             <div className="flex items-center gap-2 text-xs text-[#FF6161] bg-[#FF6161]/10 border border-[#FF6161]/20 px-3 py-2 rounded-lg">
@@ -1003,6 +1039,43 @@ export function VideoGenPage() {
           <p>Use <strong className="text-[#E8E8F0]">Copy ID</strong> to reference videos in other tools.</p>
         </div>
       </div>
+      {/* Delete confirmation modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" data-testid="delete-confirm-modal">
+          <div className="bg-[#0D0D1A] border border-[#FF6161]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FF6161]/10 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-[#FF6161]" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[#F4F6FF]">Delete video?</h3>
+                <p className="text-xs text-[#6B7280]">This action cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-sm text-[#9CA3AF] mb-5">
+              The video will be permanently removed from your gallery.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                disabled={isDeleting}
+                className="flex-1 py-2 px-4 rounded-xl border border-[#2A2A3A] text-sm text-[#9CA3AF] hover:bg-[#1A1A2E] transition-colors disabled:opacity-50"
+                data-testid="delete-confirm-cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void handleDelete(deleteConfirmId)}
+                disabled={isDeleting}
+                className="flex-1 py-2 px-4 rounded-xl bg-[#FF6161]/15 border border-[#FF6161]/30 text-sm text-[#FF6161] hover:bg-[#FF6161]/25 transition-colors disabled:opacity-50 font-medium"
+                data-testid="delete-confirm-ok"
+              >
+                {isDeleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

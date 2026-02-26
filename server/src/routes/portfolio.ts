@@ -98,10 +98,29 @@ portfolioRouter.get('/me/stats', requireAuth, (req: AuthRequest, res) => {
   res.json({ view_count: viewCount, contact_count: contactCount, project_count: projectCount, last_viewed_at: lastViewedAt });
 });
 
+// 59.5: Portfolio update rate limit — 10 updates per 5 minutes per user
 portfolioRouter.patch('/me', requireAuth, validateBody(portfolioUpdateSchema), async (req: AuthRequest, res) => {
+  const rlKey = `portfolio:update-rl:${req.userId}`;
+  try {
+    const current = await cacheGet(rlKey);
+    const count = current ? parseInt(current, 10) : 0;
+    if (count >= 10) {
+      res.status(429).json({ error: 'Too many portfolio updates. Please wait a few minutes.' });
+      return;
+    }
+    // Increment; set TTL 5min on first call
+    const newCount = count + 1;
+    await cacheSet(rlKey, String(newCount), 300);
+  } catch { /* Redis unavailable — allow request through */ }
+
   const updates = req.body;
   const fields: string[] = [];
   const values: unknown[] = [];
+
+  // 59.9: Handle metaDescription → meta_description column
+  if (updates.metaDescription !== undefined) {
+    fields.push('meta_description = ?'); values.push(updates.metaDescription);
+  }
 
   // Sanitize free-text fields before storing
   for (const f of ['headline', 'about', 'avatar', 'location', 'role', 'company', 'layout']) {
@@ -486,11 +505,12 @@ portfolioRouter.get('/:username', async (req, res) => {
   if (isCrawler(ua)) {
     const username = req.params.username;
     const row = db.prepare(
-      'SELECT p.headline, p.about, p.avatar, u.name FROM portfolios p JOIN users u ON u.id = p.user_id WHERE p.username = ?'
-    ).get(username) as { headline: string; about: string; avatar: string; name: string } | undefined;
+      'SELECT p.headline, p.about, p.avatar, p.meta_description, u.name FROM portfolios p JOIN users u ON u.id = p.user_id WHERE p.username = ?'
+    ).get(username) as { headline: string; about: string; avatar: string; meta_description: string | null; name: string } | undefined;
     if (!row) { res.status(404).send('<html><body>Portfolio not found</body></html>'); return; }
     const title = `${row.name || username} — GeekSpace Portfolio`;
-    const description = row.headline || row.about?.slice(0, 160) || 'View this portfolio on GeekSpace.';
+    // 59.9: Prefer explicit meta_description over auto-generated fallback
+    const description = row.meta_description || row.headline || row.about?.slice(0, 160) || 'View this portfolio on GeekSpace.';
     const imageUrl = row.avatar && !row.avatar.match(/^[A-Z]{1,2}$/)
       ? row.avatar
       : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name || username)}&background=00F0FF&color=05050A&size=256`;

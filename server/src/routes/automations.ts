@@ -96,6 +96,25 @@ automationsRouter.post('/:id/trigger', requireAuth, async (req: AuthRequest, res
   }
 });
 
+// ---- 59.4: Duplicate automation ----
+automationsRouter.post('/:id/duplicate', requireAuth, async (req: AuthRequest, res) => {
+  const source = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId) as {
+    id: string; user_id: string; name: string; description: string; trigger_type: string; trigger_config: string; action_type: string; action_config: string;
+  } | undefined;
+  if (!source) { res.status(404).json({ error: 'Automation not found' }); return; }
+
+  const newId = uuid();
+  const newName = `Copy of ${source.name}`;
+  db.prepare(`INSERT INTO automations (id, user_id, name, description, trigger_type, trigger_config, action_type, action_config, enabled)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`)
+    .run(newId, req.userId, newName, source.description || '', source.trigger_type, source.trigger_config, source.action_type, source.action_config);
+
+  await cacheDel(`automations:${req.userId}`);
+
+  const created = db.prepare('SELECT * FROM automations WHERE id = ?').get(newId) as Record<string, unknown>;
+  res.status(201).json({ ...created, enabled: false });
+});
+
 // ---- Execution logs ----
 
 automationsRouter.get('/logs', requireAuth, (req: AuthRequest, res) => {
