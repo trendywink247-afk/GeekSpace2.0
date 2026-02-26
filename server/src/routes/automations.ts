@@ -164,8 +164,8 @@ automationsRouter.post('/:id/test', requireAuth, async (req: AuthRequest, res) =
 // ── 37.4: Webhook dead-letter log ─────────────────────────────────────────────
 automationsRouter.get('/dead-letters', requireAuth, (req: AuthRequest, res) => {
   const entries = db.prepare(
-    'SELECT id, automation_id, url, error, payload, failed_at FROM webhook_dead_letters WHERE user_id = ? ORDER BY failed_at DESC LIMIT 20'
-  ).all(req.userId!) as Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>;
+    'SELECT id, automation_id, url, error, payload, failed_at, retry_count, last_error FROM webhook_dead_letters WHERE user_id = ? ORDER BY failed_at DESC LIMIT 20'
+  ).all(req.userId!) as Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number; retry_count: number; last_error: string | null }>;
   res.json(entries);
 });
 
@@ -188,6 +188,10 @@ automationsRouter.post('/dead-letters/:id/retry', requireAuth, async (req: AuthR
     db.prepare('DELETE FROM webhook_dead_letters WHERE id = ?').run(entry.id);
     res.json({ retried: true, removed: true, result });
   } else {
+    // 57.10: Track retry count + last error on failure
+    db.prepare(
+      'UPDATE webhook_dead_letters SET retry_count = retry_count + 1, last_error = ? WHERE id = ?'
+    ).run(result.output ?? 'retry failed', entry.id);
     res.json({ retried: true, removed: false, result });
   }
 });

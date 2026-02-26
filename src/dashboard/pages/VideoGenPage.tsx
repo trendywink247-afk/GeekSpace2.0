@@ -63,6 +63,9 @@ export function VideoGenPage() {
   // 56.13: Clip preview modal
   const [previewClip, setPreviewClip] = useState<{ url: string; index: number } | null>(null);
   const [copiedClipUrl, setCopiedClipUrl] = useState(false);
+  // 57.13: stitch progress + result
+  const [stitching, setStitching] = useState(false);
+  const [stitchResult, setStitchResult] = useState<{ url: string | null; clipUrls: string[]; softStitch: boolean } | null>(null);
 
   // Agent state
   const [assignedAgent, setAssignedAgent] = useState<FleetAgent | null>(null);
@@ -207,6 +210,32 @@ export function VideoGenPage() {
       setDirectorRunning(false);
       showToast(msg, 'error');
     }
+  };
+
+  // 57.13: Stitch clips into a single video
+  const handleStitch = async () => {
+    if (!directorJobId) return;
+    setStitching(true);
+    setStitchResult(null);
+    try {
+      const res = await videoService.directorStitch(directorJobId);
+      setStitchResult({ url: res.data.stitchedUrl, clipUrls: res.data.clipUrls, softStitch: res.data.softStitch });
+      if (res.data.stitchedUrl) showToast('Stitch complete! Download your video below.');
+      else showToast('Soft stitch: individual clip URLs ready for download.');
+    } catch {
+      showToast('Stitch failed — try again', 'error');
+    } finally {
+      setStitching(false);
+    }
+  };
+
+  // 57.13: Rerun director job with same idea
+  const handleRerun = () => {
+    if (!directorIdea.trim()) return;
+    setDirectorJob(null);
+    setDirectorJobId(null);
+    setStitchResult(null);
+    void handleDirectorSubmit();
   };
 
   // Handle video generation
@@ -768,6 +797,63 @@ export function VideoGenPage() {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* 57.13: Stitch bar + Rerun — shown when job is done */}
+              {directorJob.status === 'done' && directorJob.clips.length > 0 && (
+                <div className="space-y-2">
+                  {stitchResult ? (
+                    <div className="rounded-xl border border-[#BF5FFF]/30 bg-[#BF5FFF]/5 p-3 space-y-2">
+                      <p className="text-xs font-semibold text-[#BF5FFF]">
+                        {stitchResult.url ? 'Stitched Video Ready' : 'Clip URLs Ready (soft stitch)'}
+                      </p>
+                      {stitchResult.url ? (
+                        <a
+                          href={stitchResult.url}
+                          download="stitched.mp4"
+                          className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10 transition-colors w-fit"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Download Stitched Video
+                        </a>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          {stitchResult.clipUrls.map((u, idx) => (
+                            <a key={idx} href={u} download={`clip-${idx + 1}.mp4`} className="text-xs text-[#BF5FFF]/70 hover:text-[#BF5FFF] underline truncate">
+                              Clip {idx + 1}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => void handleStitch()}
+                        disabled={stitching}
+                        data-testid="stitch-btn"
+                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10 disabled:opacity-50 transition-colors"
+                      >
+                        {stitching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
+                        {stitching ? 'Stitching…' : 'Stitch Clips'}
+                      </button>
+                      {stitching && (
+                        <div className="flex-1 h-1.5 rounded-full bg-[#0C0C18] overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-[#BF5FFF] to-[#00F0FF] animate-pulse rounded-full" style={{ width: '60%' }} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <button
+                    onClick={handleRerun}
+                    disabled={directorRunning}
+                    data-testid="rerun-director-btn"
+                    className="flex items-center gap-1.5 text-xs text-[#6B7280] hover:text-[#E8E8F0] disabled:opacity-50 transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Rerun with same idea
+                  </button>
                 </div>
               )}
 

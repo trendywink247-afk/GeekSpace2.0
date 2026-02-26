@@ -112,7 +112,7 @@ export function AutomationsPage() {
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string } | null>(null);
   // 37.4: Dead-letter log
-  const [deadLetters, setDeadLetters] = useState<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>>([]);
+  const [deadLetters, setDeadLetters] = useState<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number; retry_count: number; last_error: string | null }>>([]);
   // 55.6: Dead-letter retry state
   const [retryingDeadLetterId, setRetryingDeadLetterId] = useState<string | null>(null);
   // 51.5: Track per-automation trigger errors (auto-clear after 4s)
@@ -797,7 +797,10 @@ export function AutomationsPage() {
                           </button>
                         </div>
                       </div>
-                      <span className="text-xs text-[#FF6161] truncate">{dl.error}</span>
+                      <span className="text-xs text-[#FF6161] truncate">{dl.last_error ?? dl.error}</span>
+                      {dl.retry_count > 0 && (
+                        <span className="text-xs text-amber-400">Retried {dl.retry_count}×</span>
+                      )}
                       <span className="text-xs text-[#6B7280] truncate font-mono">{dl.url}</span>
                     </div>
                   );

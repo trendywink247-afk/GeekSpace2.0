@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
-import { readFileSync } from 'fs';
+import { readFileSync, statSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from '../config.js';
@@ -122,10 +122,13 @@ adminRouter.get('/health', requireAdminToken, async (_req: Request, res: Respons
   });
 });
 
-// ---- /stats endpoint ----
+// ---- /stats endpoint ---- (57.8: enhanced with activeToday, dbSize, memory)
 adminRouter.get('/stats', requireAdminToken, (_req: Request, res: Response): void => {
   try {
     const totalUsers = (db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;
+    const activeToday = (db.prepare(
+      "SELECT COUNT(*) as c FROM users WHERE last_active >= datetime('now', '-24 hours')"
+    ).get() as { c: number }).c;
 
     const activeAgents = (db.prepare('SELECT COUNT(*) as c FROM agent_configs').get() as { c: number }).c;
 
@@ -146,12 +149,30 @@ adminRouter.get('/stats', requireAdminToken, (_req: Request, res: Response): voi
       ).get() as { c: number }).c;
     } catch { /* pico_tasks table may not exist */ }
 
+    // DB file size (non-fatal — volume path may differ in Docker)
+    let dbSizeBytes: number | null = null;
+    try {
+      const dbPath = process.env.DB_PATH || path.join(__dirname, '../../../data/geekspace.db');
+      dbSizeBytes = statSync(dbPath).size;
+    } catch { /* path varies between Docker and local */ }
+
+    const mem = process.memoryUsage();
+
     res.json({
       totalUsers,
+      activeToday,
       activeAgents,
       tasksRunning,
       tasksToday,
       completedToday,
+      dbSizeBytes,
+      dbSizeMb: dbSizeBytes !== null ? Math.round(dbSizeBytes / 1024 / 1024 * 100) / 100 : null,
+      memory: {
+        rss: Math.round(mem.rss / 1024 / 1024),
+        heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+        heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
+      },
+      uptimeSeconds: Math.floor(process.uptime()),
       timestamp: new Date().toISOString(),
     });
   } catch (err) {

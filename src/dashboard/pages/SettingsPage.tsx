@@ -40,6 +40,9 @@ import type { ApiProvider, MemoryEntry, FreeModel } from '@/types';
 export function SettingsPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  // 57.9: toast shown after silent agent config saves
+  const [savedToast, setSavedToast] = useState(false);
+  const showSavedToast = () => { setSavedToast(true); setTimeout(() => setSavedToast(false), 2000); };
   const [isExportingConversations, setIsExportingConversations] = useState(false);
   const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
   const [isExportingMarkdown7Days, setIsExportingMarkdown7Days] = useState(false);
@@ -292,7 +295,8 @@ export function SettingsPage() {
     try {
       await userService.updateProfile({ notifications: { [serverKey]: value } } as Parameters<typeof userService.updateProfile>[0]);
     } catch {
-      // Silent fail — local state still updated
+      // 57.3: Revert toggle state on server failure to prevent stale UI
+      setNotifications((prev) => ({ ...prev, [field]: !value }));
     }
   };
 
@@ -388,6 +392,13 @@ export function SettingsPage() {
 
   return (
     <div data-testid="settings-page" className="space-y-6 animate-in fade-in duration-500">
+      {/* 57.9: Agent config save-confirmation toast */}
+      {savedToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[#00F0FF] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="settings-saved-toast">
+          <Save className="w-4 h-4" />
+          Settings saved
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
@@ -603,7 +614,7 @@ export function SettingsPage() {
                     onCheckedChange={(checked) => {
                       const updated = { ...agentNotifs, [item.key]: checked ? 1 : 0 };
                       setAgentNotifs(updated);
-                      void agentService.updateConfig({ [item.key]: checked ? 1 : 0 }).catch(() => {});
+                      void agentService.updateConfig({ [item.key]: checked ? 1 : 0 }).then(() => showSavedToast()).catch(() => {});
                     }}
                   />
                 </div>
@@ -633,7 +644,7 @@ export function SettingsPage() {
                           ? [...snoozePresets, preset]
                           : snoozePresets.filter((p) => p !== preset);
                         setSnoozePresets(updated);
-                        void agentService.updateConfig({ snooze_presets: JSON.stringify(updated) }).catch(() => {});
+                        void agentService.updateConfig({ snooze_presets: JSON.stringify(updated) }).then(() => showSavedToast()).catch(() => {});
                       }}
                     />
                   </div>
@@ -763,6 +774,7 @@ export function SettingsPage() {
                   setFreeModelSaving(true);
                   try {
                     await agentService.updateConfig({ preferred_free_model: val });
+                    showSavedToast();
                   } catch { /* ignore */ } finally {
                     setFreeModelSaving(false);
                   }
@@ -1281,7 +1293,7 @@ export function SettingsPage() {
                   {accentPresets.map((color) => (
                     <button
                       key={color}
-                      onClick={() => { setAccentColor(color); void agentService.updateConfig({ accentColor: color }).catch(() => {}); }}
+                      onClick={() => { setAccentColor(color); void agentService.updateConfig({ accentColor: color }).then(() => showSavedToast()).catch(() => {}); }}
                       className={`w-10 h-10 sm:w-8 sm:h-8 rounded-xl transition-all ${
                         accentColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0C0C18] scale-110' : 'hover:scale-110'
                       }`}
@@ -1294,7 +1306,7 @@ export function SettingsPage() {
                   <input
                     type="color"
                     value={accentColor}
-                    onChange={(e) => { setAccentColor(e.target.value); void agentService.updateConfig({ accentColor: e.target.value }).catch(() => {}); }}
+                    onChange={(e) => { setAccentColor(e.target.value); void agentService.updateConfig({ accentColor: e.target.value }).then(() => showSavedToast()).catch(() => {}); }}
                     className="w-8 h-8 rounded cursor-pointer bg-transparent"
                   />
                   <span className="text-sm font-mono text-[#6B7280]">{accentColor}</span>

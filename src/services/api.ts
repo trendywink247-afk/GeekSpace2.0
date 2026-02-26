@@ -533,7 +533,7 @@ export const automationService = {
 
   // 37.4: Dead-letter log for failed webhook deliveries
   getDeadLetters: () =>
-    api.get<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>>('/automations/dead-letters'),
+    api.get<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number; retry_count: number; last_error: string | null }>>('/automations/dead-letters'),
 
   // 55.6: Retry a failed dead-letter webhook delivery
   retryDeadLetter: (id: string) =>
@@ -953,6 +953,10 @@ export const videoService = {
 
   directorGet: (jobId: string) =>
     api.get<DirectorJob>(`/videos/director/${jobId}`),
+
+  // 57.13: Stitch clips into one video
+  directorStitch: (jobId: string) =>
+    api.post<{ stitched: boolean; stitchedUrl: string | null; clipUrls: string[]; softStitch: boolean; cached?: boolean }>(`/videos/director/${jobId}/stitch`),
 };
 
 // ----- Social Media (Social Media Handler) ---------------------

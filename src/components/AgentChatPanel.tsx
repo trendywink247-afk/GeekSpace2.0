@@ -146,6 +146,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isListening, setIsListening] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -199,20 +200,33 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 41.3: Track scroll position to show/hide scroll-to-bottom button
+  // 41.3 / 57.4: Track scroll position to show/hide scroll-to-bottom button + unread count
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
     const handleScroll = () => {
       const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-      setShowScrollToBottom(distanceFromBottom > 200);
+      const isScrolledUp = distanceFromBottom > 200;
+      setShowScrollToBottom(isScrolledUp);
+      if (!isScrolledUp) setUnreadCount(0); // reset when user scrolls to bottom
     };
     container.addEventListener('scroll', handleScroll, { passive: true });
     return () => container.removeEventListener('scroll', handleScroll);
   }, [isOpen]);
 
+  // 57.4: Track new messages while scrolled up
+  const prevMessagesLenRef = useRef(0);
+  useEffect(() => {
+    if (showScrollToBottom && messages.length > prevMessagesLenRef.current) {
+      const newCount = messages.length - prevMessagesLenRef.current;
+      setUnreadCount((c) => c + newCount);
+    }
+    prevMessagesLenRef.current = messages.length;
+  }, [messages.length, showScrollToBottom]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setUnreadCount(0);
   };
 
   useEffect(() => {
@@ -949,15 +963,20 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
           <div ref={messagesEndRef} />
 
-          {/* 41.3: Scroll to bottom button — sticky within scroll container */}
+          {/* 41.3 / 57.4: Scroll to bottom button with unread count badge */}
           {showScrollToBottom && (
             <button
               onClick={scrollToBottom}
-              className="sticky bottom-4 ml-auto mr-2 flex items-center justify-center w-8 h-8 rounded-full shadow-lg transition-all"
+              className="sticky bottom-4 ml-auto mr-2 flex items-center justify-center w-8 h-8 rounded-full shadow-lg transition-all relative"
               style={{ background: 'rgba(0,240,255,0.15)', border: '1px solid rgba(0,240,255,0.4)', color: '#00F0FF' }}
               aria-label="Scroll to bottom"
             >
               <ArrowDown className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 rounded-full bg-[#00F0FF] text-black text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </button>
           )}
         </div>
