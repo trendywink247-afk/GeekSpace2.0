@@ -1,0 +1,89 @@
+# DECISIONS.md — Permanent Rules & Architecture Decisions
+# This file survives context compaction. Claude MUST read it at session start.
+
+## PRODUCT IDENTITY
+- Product name: **Agentin Chat** (domain: ai.agentin.chat)
+- Agent personas: Weebo (primary), WeeboFleet (multi-agent), Edith (reasoning), Jarvis (voice)
+- ❌ BANNED user-visible names: PicoClaw, PicoFleet, Pico (user-facing). Internal code identifiers (`picoService`, `PicoAgentFull`) are allowed.
+- Run `npm run brand-guard` every phase to verify 0 violations
+
+## PHASE STRUCTURE (CURRENT POLICY: 13 tasks)
+- Tasks 1–11: normal phase improvements (reliability, UX, security, performance, dev/ops, feature)
+- Task 12: Brand gate (run brand-guard, fix any violations)
+- Task 13: Seedance Director Mode (recurring until complete end-to-end)
+- Once Seedance is complete: remove Task 13, keep brand gate only (12-task phases)
+
+## SEEDANCE DIRECTOR MODE STATUS
+- Phase 55: First implementation phase
+- fal.ai adapter + director packet generator + async job pipeline + multi-clip + ffmpeg stitch
+- FAL_KEY env var required (never commit)
+- In TEST_MODE: stub fal.ai to return deterministic fake video URLs
+
+## MERGE POLICY
+1. All code goes to feature branch: `ai/phase-YYYYMMDD-phaseNN-<topic>`
+2. PR → CI green → merge to main
+3. Verify main SHA is updated after merge
+4. Production deploys from `main` only (every 20-30 phases or critical fixes)
+5. NEVER auto-deploy to live-production without explicit user request
+
+## AUTONOMOUS LOOP
+- Never ask for user approval between phases
+- After each phase: update ops files → commit to main → start next phase worktree automatically
+- If CI fails: fix before moving on (don't skip)
+
+## DB SAFETY
+- ❌ No DROP/TRUNCATE/RESET operations
+- ❌ No forced migrations
+- ✅ Additive schema changes only (CREATE TABLE IF NOT EXISTS, ADD COLUMN)
+- ✅ Test all DB changes locally before commit
+- Docker path: `/app/data/geekspace.db`
+- Local dev path: `server/data/geekspace.db`
+
+## TEST REQUIREMENTS
+- Run `cd server && npm test` for every phase (backend unit tests)
+- Run `npx tsc --noEmit` (frontend) and `cd server && npx tsc --noEmit` (server)
+- Target: all tests passing before PR
+- New features need tests (at minimum: happy path + auth guard + error case)
+- Phase test file naming: `server/src/test/api/phaseNN.test.ts`
+- Test isolation: `resetDatabase()` in beforeAll; use timestamp emails: `phaseNN-${Date.now()}@example.com`
+- `initAutomationsEngine()` must be called if tests use automation_logs table
+
+## CACHING PATTERN
+- Import: `import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';`
+- Keys: `user:me:{id}` (30-60s), `users:me:{id}` (30s), `automations:{id}` (30s), `portfolio:{username}` (300s)
+- Always bust cache on mutation (fire-and-forget `.catch(() => {})`)
+- Add `X-Cache: HIT/MISS` header on cached endpoints
+
+## WORKTREE WORKFLOW
+- Worktrees at `.worktrees/phase-NN`
+- Create: `git worktree add .worktrees/phase-NN -b ai/phase-YYYYMMDD-phaseNN`
+- Always `cd server && npm install` after creating worktree
+- Git commands inside worktree: `git -C /root/GeekSpace2.0/.worktrees/phase-NN <cmd>`
+
+## COMMON GOTCHAS
+- TypeScript: frontend enforces `noUnusedLocals/noUnusedParameters`; server does not
+- Bearer token format: `Authorization: Bearer ${token}` (not bare token)
+- Radix dialogs: use `force:true` in E2E for submit buttons; `reducedMotion:'reduce'` in playwright config
+- Telegram: sanitize with `sanitizeForTelegram()` before sending
+- Port 3001 conflicts: `fuser -k 3001/tcp`
+- Ollama on VPS: port 32778 (not 11434)
+- JWT: tokens are stateless; revoking session record does NOT invalidate token
+
+## VIDEO GENERATION STACK
+- Existing: Pollinations (free), OpenRouter Veo 2, Premium (Kimi enhanced)
+- Adding: fal.ai Seedance Fast + Seedance Quality
+- DB table: `user_videos` (existing), `video_jobs` (new, Phase 55+)
+- Route: `server/src/routes/videos.ts`
+- Service: `server/src/services/media-generation.ts` (Pollinations adapter)
+- New service: `server/src/services/fal-video.ts` (fal.ai adapter)
+- Director Mode: `server/src/services/director-mode.ts`
+
+## REHYDRATION COMMANDS (run after compaction)
+```bash
+cat CLAUDE.md
+cat ops/DECISIONS.md
+cat ops/AI_HANDOFF.md
+cat ops/AI_PHASE_PLAN.md
+git status && git branch --show-current && git log --oneline -5
+cd server && npm test 2>&1 | tail -5
+```

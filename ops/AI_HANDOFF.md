@@ -1,94 +1,120 @@
-# AI Handoff — Phase 53 Complete
+# AI Handoff — Phase 54 Complete
 
 **Date:** 2026-02-26
-**Branch:** `ai/phase-20260226-phase53` (PR #84 merged to main → SHA 55fc301)
-**Tests:** 509/509 ✅
-**Status:** All 11 items implemented, merged to main
+**Branch:** `ai/phase-20260226-phase54` (PR #85 merged to main → SHA b9d4717)
+**Tests:** 522/522 ✅
+**Status:** All 12 items implemented, merged to main
 
 ---
 
-## Phase 53 — What Was Done
-
-### 53.2 Agent chat history search (Feature)
-- Already fully implemented in `src/components/AgentChatPanel.tsx` — Ctrl+F/Cmd+F toggle, searchTerm filter, match highlighting, match count display
-
-### 53.3 CSP audit (Security)
-- `server/src/app.ts` — Added `form-action: 'self'`, `worker-src: 'self'`, `manifest-src: 'self'` to helmet CSP config
-
-### 53.4 Reminder bulk-restore-snooze (UX)
-- `server/src/routes/reminders.ts` — New `POST /api/reminders/bulk-restore-snooze` endpoint (sets `completed=0 + datetime`)
-- `src/services/api.ts` — `reminderService.bulkRestoreSnooze()`
-- `src/dashboard/pages/RemindersPage.tsx` — "Restore & Snooze" buttons (+1h / Tomorrow / Next week) in completed tab bulk bar
-
-### 53.5 Redis cache for automations list (Performance)
-- `server/src/routes/automations.ts` — `cacheGet/cacheSet/cacheDel` per-user key `automations:{userId}` (30s TTL), `X-Cache: HIT/MISS` header. Cache busted on create/update/delete.
-- Fixed async handler bug: added `async` to `POST /` and `PATCH /:id` handlers
-
-### 53.6 /api/ready extended (Dev/Ops)
-- `server/src/app.ts` — `/api/ready` now returns `{ status, db, automations: <count> }`
-
-### 53.7 Automation log pagination (Edge-case)
-- `server/src/services/automations-engine.ts` — `getAutomationLogs()` now accepts `offset` param
-- `server/src/routes/automations.ts` — `/logs` and `/:id/logs` return `{ logs, limit, offset }`
-- `src/dashboard/pages/AutomationsPage.tsx` — "Load More Runs" button
-- `src/services/api.ts` — Updated `automationLogService` to paginated response type
-
-### 53.8 Reminder count badge on Productivity group (State-sync)
-- `src/dashboard/DashboardApp.tsx` — Red dot badge on Productivity sidebar group header when due reminders exist
-
-### 53.9 Avatar upload preview (UX)
-- `src/dashboard/pages/SettingsPage.tsx` — Hidden `<input type="file">` with FileReader-based live preview; 500 KB limit, marks unsaved changes
-
-### 53.10 Tests + verification (Dev/Ops)
-- `server/src/test/api/phase53.test.ts` — 14 new tests (CSP, bulk-restore-snooze, /api/ready, log pagination, automations cache)
-- Updated `automations.test.ts` for paginated response shape
-
-### 53.11 CI workflow verification (CI Health)
-- Phase 52 CI passed ✅ (E2E flake fixes from 52.1+52.2 were effective)
-- Phase 53 CI: in_progress at handoff (SHA 55fc301)
+## Compaction Recovery Rule (MANDATORY)
+If the conversation is compacted, before doing ANY work:
+1. Re-read: `CLAUDE.md`, `ops/AI_HANDOFF.md`, `ops/AI_PHASE_PLAN.md`, `ops/AI_FEATURE_MATRIX.md`, `ops/AI_RISK_REGISTER.md`, `ops/DECISIONS.md`
+2. Run: `git status && git branch --show-current && git log --oneline -5`
+3. Print a brief "Rehydrated Context" summary (phase, branch, current tasks, constraints)
+4. Only then continue implementation
 
 ---
 
-## Files Changed (Phase 53)
+## Phase 54 — What Was Done
+
+### 54.2 Webhook payload preview (Feature)
+- `src/dashboard/pages/AutomationsPage.tsx` — Payload preview panel in add/edit dialog when triggerType=webhook
+
+### 54.3 JWT refresh endpoint (Security)
+- `server/src/routes/auth.ts` — `POST /api/auth/refresh` with short-circuit replay guard (429 if < 50% token lifetime elapsed)
+- Added `jwtPkg` import to auth routes for `decode()`
+
+### 54.4 Reminder search field (UX — verified already implemented)
+- `src/dashboard/pages/RemindersPage.tsx` — Search input at line 681 was already in place from prior phase
+
+### 54.5 Redis cache for /api/auth/me (Performance)
+- `server/src/routes/auth.ts` — `GET /me` now caches per-user (30s TTL, key `users:me:{id}`, X-Cache header)
+- `server/src/routes/users.ts` — PATCH /me now busts `users:me:` key alongside existing `user:me:` key
+
+### 54.6 Structured 5xx error logging (Dev/Ops)
+- `server/src/middleware/errors.ts` — `errCtx` now includes `method`, `url`, `userId` for every log entry
+
+### 54.7 Portfolio 404 (Edge-case — verified already implemented)
+- Already handled gracefully in the portfolio route — no change needed
+
+### 54.8 AutomationsPage run-count sync (State-sync — verified already implemented)
+- `dashboardStore.triggerAutomation()` already does optimistic update + server re-fetch
+
+### 54.9 Connections last-sync relative timestamp (UX)
+- `src/dashboard/pages/ConnectionsPage.tsx` — Desktop card now uses `timeAgo(connection.lastSync)` (mobile already did)
+
+### 54.10 Reminder dialog autofocus (Mobile)
+- `src/dashboard/pages/RemindersPage.tsx` — Added `autoFocus` to NL input in dialog
+
+### 54.11 Tests + verification
+- `server/src/test/api/phase54.test.ts` — 13 new tests (JWT refresh, auth/me cache, error structure, brand guard, integrations)
+- 522/522 tests passing, 0 TS errors, 0 lint errors
+
+### 54.12 Brand purge (Brand)
+- `ops/brand_guard.mjs` — New scanner: detects user-visible PicoClaw/PicoFleet/Pico strings
+- `package.json` — `npm run brand-guard` script added
+- Result: 0 violations found — UI is Agentin/Weebo compliant
+
+---
+
+## Files Changed (Phase 54)
 
 ### Backend
-- `server/src/app.ts` — CSP directives + automations count in /api/ready
-- `server/src/routes/automations.ts` — Redis cache, async handlers, paginated logs
-- `server/src/routes/reminders.ts` — bulk-restore-snooze endpoint
-- `server/src/services/automations-engine.ts` — offset param on getAutomationLogs
-- `server/src/test/api/automations.test.ts` — updated assertions for paginated response
-- `server/src/test/api/phase53.test.ts` — 14 new tests
+- `server/src/middleware/errors.ts` — structured errCtx
+- `server/src/routes/auth.ts` — Redis /me cache + JWT refresh endpoint
+- `server/src/routes/users.ts` — bust users:me cache on profile update
+- `server/src/test/api/phase54.test.ts` — 13 new tests
 
 ### Frontend
-- `src/dashboard/DashboardApp.tsx` — Productivity group badge
-- `src/dashboard/pages/AutomationsPage.tsx` — Load More button, paginated logs
-- `src/dashboard/pages/RemindersPage.tsx` — bulk-restore-snooze state + UI
-- `src/dashboard/pages/SettingsPage.tsx` — avatar upload preview
-- `src/services/api.ts` — bulkRestoreSnooze, paginated automationLogService
+- `src/dashboard/pages/AutomationsPage.tsx` — webhook payload preview
+- `src/dashboard/pages/ConnectionsPage.tsx` — timeAgo for desktop lastSync
+- `src/dashboard/pages/RemindersPage.tsx` — dialog autoFocus
+
+### Ops
+- `ops/brand_guard.mjs` — new brand scanner
+- `package.json` — brand-guard script
 
 ---
 
-## Test Counts
-- Phase 50: 471 | Phase 51: 485 | Phase 52: 495 | Phase 53: 509
+## Current State
+
+- **Main SHA:** b9d4717 (Phase 54 merged)
+- **Tests:** 522/522 ✅
+- **Next phase:** Phase 55 in worktree `.worktrees/phase-55`
+- **Phase 55 policy:** 13 tasks (11 normal + 1 brand gate + 1 Seedance Director Mode)
+- **Seedance Task 13:** Recurring every phase until end-to-end complete
 
 ---
 
-## Next Phase: 54
+## Phase 55 — Next Steps
 
-**IMPORTANT:** User has updated CLAUDE.md with new product identity rules. Phase 54 must include as Task 12: **Brand Purge** (rename PicoClaw/PicoFleet/Pico UI references → WeeboFleet/Weebo/Agentin).
-
-Create worktree and implement:
+### Worktree setup
 ```bash
-git -C /root/GeekSpace2.0 worktree add .worktrees/phase-54 -b ai/phase-20260226-phase54
-cd /root/GeekSpace2.0/.worktrees/phase-54
-cd server && npm test  # baseline 509/509
+git worktree add .worktrees/phase-55 -b ai/phase-20260226-phase55
+cd .worktrees/phase-55
+cd server && npm install
 ```
 
-Phase 54 theme: Brand purge + UX hardening + auth improvements
+### Phase 55 focus: Seedance Director Mode + general improvements
+Task 13 (Seedance) implementation plan:
+1. Add `video_jobs` table (additive, safe)
+2. Create `server/src/services/fal-video.ts` — fal.ai provider adapter
+3. Create `server/src/services/director-mode.ts` — LLM director packet generator
+4. Extend `server/src/routes/videos.ts` — async job endpoints (POST generate, GET status, GET history)
+5. Frontend: extend `src/dashboard/pages/VideoGenPage.tsx` with Director Mode UI
+6. Tests: stub fal.ai in TEST_MODE, test job lifecycle, credits, concurrency
+
+### Env vars needed
+- `FAL_KEY` — fal.ai API key (never commit)
 
 ---
 
-## Risk / Open Items
-- Phase 53 CI run in_progress — expect pass (all tests 509/509 locally)
-- User sent new CLAUDE.md with Agentin Chat branding requirements (effective from Phase 54)
-- `ops/brand_guard.mjs` scanner needs to be created (Phase 54 Task 12)
+## Resume Command
+```bash
+cd ~/GeekSpace2.0/.worktrees/phase-55
+cat ops/AI_HANDOFF.md
+cat ops/AI_PHASE_PLAN.md
+cd server && npm test
+git status
+```

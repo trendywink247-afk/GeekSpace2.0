@@ -114,23 +114,30 @@ Redis automations cache, bulk-restore-snooze, CSP hardening (form-action/worker-
 
 ---
 
-## Phase 54 — PLANNED (12 items — NEW 12-TASK STRUCTURE)
-**Theme:** Brand purge (Agentin Chat), auth hardening, reliability, mobile polish
+## Phase 54 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/85 | **Tests:** 522/522
+JWT refresh endpoint, /api/auth/me Redis cache, structured 5xx logging, webhook payload preview, connections timeAgo desktop, reminder dialog autofocus, brand guard scanner (0 violations)
 
-> Phase 54 introduces the mandatory 12-task structure per updated CLAUDE.md:
-> 11 improvements + Task 12 = Brand Purge (recurring until zero banned strings)
+---
 
-| # | Item | Category |
-|---|------|----------|
-| 54.1 | Fix: any remaining CI failures post-Phase-53 | Reliability |
-| 54.2 | Feature: Webhook payload preview in AutomationsPage | Feature |
-| 54.3 | Security: JWT refresh token rotation (audit + short-circuit replay) | Security |
-| 54.4 | UX: Reminder search field (filter by text while viewing list) | UX |
-| 54.5 | Performance: Redis cache for /api/users/me (30s TTL, bust on update) | Performance |
-| 54.6 | Dev/Ops: Structured error logging (add request.id + user.id to 5xx errors) | Dev/Ops |
-| 54.7 | Edge-case: Portfolio public page 404 handling (graceful unknown username) | Edge-case |
-| 54.8 | State-sync: AutomationsPage run-count live-update after manual trigger | State-sync |
-| 54.9 | UX: Connections page — last sync relative timestamp | UX |
-| 54.10 | Mobile: Reminder quick-add input autofocus on mobile | Mobile |
-| 54.11 | Phase 54 tests + verification gate + PR/merge | Dev/Ops |
-| 54.12 | Brand Purge: remove all user-visible Pico/PicoFleet/PicoClaw references; create ops/brand_guard.mjs | Brand |
+## Phase 55 — IN PROGRESS (13 items — Seedance Director Mode + general improvements)
+**Theme:** Seedance Director Mode (fal.ai), reliability, UX polish, mobile improvements
+
+> Phase 55 introduces 13-task structure per updated CLAUDE.md:
+> Tasks 1–11 = normal improvements, Task 12 = Brand gate, Task 13 = Seedance Director Mode
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 55.1 | Fix: CI check post-Phase-54 | ⬜ | Reliability |
+| 55.2 | Reliability: Dashboard load-error graceful fallback (retry + empty state) | ⬜ | Reliability |
+| 55.3 | UX: Portfolio edit page inline preview (live update as you type) | ⬜ | UX |
+| 55.4 | Security: Rate limit on /api/auth/refresh endpoint | ⬜ | Security |
+| 55.5 | Performance: /api/reminders ETag caching (per-user hash) | ⬜ | Performance |
+| 55.6 | UX: AutomationsPage dead-letter retry button | ⬜ | UX |
+| 55.7 | Edge-case: Agent chat empty state (first-time user guidance) | ⬜ | Edge-case |
+| 55.8 | State-sync: Settings page unsaved changes guard on navigation | ⬜ | State-sync |
+| 55.9 | Mobile: Connections page card tap-to-expand on mobile | ⬜ | Mobile |
+| 55.10 | Dev/Ops: /api/version endpoint serves gitSha + buildTime | ⬜ | Dev/Ops |
+| 55.11 | Phase 55 tests + verification gate + PR/merge | ⬜ | Dev/Ops |
+| 55.12 | Brand gate: npm run brand-guard → 0 violations | ⬜ | Brand |
+| 55.13 | **Seedance Director Mode** (fal.ai): provider adapter + director packet + async jobs + multi-clip + ffmpeg stitch + tests | ⬜ | Feature |

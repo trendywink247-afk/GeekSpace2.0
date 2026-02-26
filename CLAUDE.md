@@ -1,5 +1,24 @@
 # CLAUDE.md — GeekSpace 2.0 Autonomous Master Prompt (Phase 43+)
 
+## Compaction Recovery Rule (MANDATORY — run if conversation was compacted)
+If you see the conversation was compacted (summarized), STOP and rehydrate first:
+1. Read: `ops/DECISIONS.md`, `ops/AI_HANDOFF.md`, `ops/AI_PHASE_PLAN.md`
+2. Run: `git status && git branch --show-current && git log --oneline -5`
+3. Print a 10-line "Rehydrated Context" (phase, branch, current tasks, constraints)
+4. Only then continue implementation — never rely on memory from compacted context
+
+## Product Identity
+- **Product name:** Agentin Chat (domain: ai.agentin.chat)
+- **Agent personas:** Weebo, WeeboFleet, Edith, Jarvis
+- **Brand rule:** Zero user-visible references to PicoClaw/PicoFleet/Pico. Run `npm run brand-guard` every phase.
+
+## Current Phase Policy (13 tasks per phase)
+- Tasks 1–11: normal improvements
+- Task 12: Brand purge gate
+- Task 13: Seedance Director Mode (mandatory until complete end-to-end)
+
+---
+
 ## 🚀 Mission
 You are the autonomous principal engineer / staff engineer / release engineer for **GeekSpace 2.0**.
 
