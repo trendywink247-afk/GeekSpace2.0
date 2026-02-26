@@ -775,6 +775,7 @@ try {
       idea TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'pending',
       packet TEXT DEFAULT NULL,
+      stitched_url TEXT DEFAULT NULL,
       clips TEXT DEFAULT '[]',
       error TEXT DEFAULT NULL,
       credits_used INTEGER DEFAULT 0,
@@ -784,6 +785,9 @@ try {
     CREATE INDEX IF NOT EXISTS idx_video_jobs_user ON video_jobs(user_id, created_at);
   `);
 } catch { /* table already exists */ }
+
+// 56.2: Add stitched_url column to video_jobs for existing deployments
+try { db.exec('ALTER TABLE video_jobs ADD COLUMN stitched_url TEXT DEFAULT NULL'); } catch { /* already exists */ }
 
 // Message reactions (for agent message reactions)
 try {

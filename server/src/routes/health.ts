@@ -103,6 +103,103 @@ export function startHealthProbeCache(): void {
   logger.info('Health probe cache started (30s interval, parallel probes)');
 }
 
+// ── 56.8: Detailed health endpoint ─────────────────────────────
+// GET /api/health/detailed — per-service status with latency (live probes, admin use)
+
+type ServiceDetail = {
+  status: 'ok' | 'degraded' | 'down' | 'not_configured';
+  latencyMs: number | null;
+  detail?: string;
+};
+
+async function probe<T>(fn: () => Promise<T>, timeoutMs = 3000): Promise<{ ok: boolean; latencyMs: number }> {
+  const start = Date.now();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    await fn();
+    clearTimeout(timer);
+    return { ok: true, latencyMs: Date.now() - start };
+  } catch {
+    clearTimeout(timer);
+    return { ok: false, latencyMs: Date.now() - start };
+  }
+}
+
+healthRouter.get('/detailed', async (_req: Request, res: Response) => {
+  const services: Record<string, ServiceDetail> = {};
+  const start = Date.now();
+
+  // DB
+  const dbResult = await probe(async () => {
+    const row = db.prepare('SELECT 1 as ok').get() as { ok: number } | undefined;
+    if (row?.ok !== 1) throw new Error('DB query failed');
+  });
+  services.database = {
+    status: dbResult.ok ? 'ok' : 'down',
+    latencyMs: dbResult.latencyMs,
+  };
+
+  // Redis (via cache ping)
+  try {
+    const { cacheGet } = await import('../services/cache.js');
+    const redisResult = await probe(async () => {
+      await cacheGet('health:ping');
+    }, 2000);
+    services.redis = {
+      status: redisResult.ok ? 'ok' : 'degraded',
+      latencyMs: redisResult.latencyMs,
+      detail: redisResult.ok ? undefined : 'Redis unavailable — cache disabled',
+    };
+  } catch {
+    services.redis = { status: 'down', latencyMs: null, detail: 'Cache module unavailable' };
+  }
+
+  // Ollama
+  if (config.ollamaBaseUrl) {
+    const ollamaResult = await probe(async () => {
+      const r = await fetch(`${config.ollamaBaseUrl}/api/tags`, { signal: AbortSignal.timeout(3000) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    });
+    services.ollama = { status: ollamaResult.ok ? 'ok' : 'down', latencyMs: ollamaResult.latencyMs };
+  } else {
+    services.ollama = { status: 'not_configured', latencyMs: null };
+  }
+
+  // OpenRouter (config check only — no charge)
+  services.openrouter = {
+    status: config.openrouterApiKey ? 'ok' : 'not_configured',
+    latencyMs: null,
+    detail: config.openrouterApiKey ? 'API key present' : 'No API key set',
+  };
+
+  // Edith / fal.ai
+  const edithResult = await probe(() => edithProbe().then((ok) => { if (!ok) throw new Error('unhealthy'); }));
+  services.edith = {
+    status: config.edithGatewayUrl ? (edithResult.ok ? 'ok' : 'down') : 'not_configured',
+    latencyMs: edithResult.latencyMs,
+  };
+
+  // fal.ai (check via config)
+  services.fal = {
+    status: config.falEnabled ? 'ok' : 'not_configured',
+    latencyMs: null,
+    detail: config.falEnabled ? 'FAL_KEY present' : 'No FAL_KEY set',
+  };
+
+  const totalMs = Date.now() - start;
+  const overallStatus = Object.values(services).some((s) => s.status === 'down') ? 'degraded' : 'ok';
+
+  res.json({
+    status: overallStatus,
+    checkedAt: new Date().toISOString(),
+    probeTimeMs: totalMs,
+    services,
+    cached: cachedComponents,
+    cacheAgeMs: cacheAge ? Date.now() - cacheAge : null,
+  });
+});
+
 // ---- Max SSE connections to prevent runaway resource use ----
 const MAX_SSE_CONNECTIONS = 25; // Supports admin dashboard + monitoring tools simultaneously
 let activeSSECount = 0;
