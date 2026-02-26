@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { notify } from '@/services/notifications';
-import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Copy, Check } from 'lucide-react';
+import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Copy, Check, Bookmark, BookmarkCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -174,6 +174,8 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const [isExporting, setIsExporting] = useState(false);
   // 60.6: reply-to context
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  // 61.4: memory quick-add — tracks which message was just saved
+  const [memorySavedId, setMemorySavedId] = useState<string | null>(null);
 
   // Premium session state
   const [premiumSession, setPremiumSession] = useState<PremiumSession | null>(null);
@@ -531,6 +533,20 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   }, [input, isTyping, premiumSession, agentOwner, messages, replyTo]);
 
   // ---- 8.3: Export conversations ----
+  // 61.4: Save message content to agent memory
+  const handleSaveToMemory = async (msgId: string, content: string) => {
+    try {
+      const key = `chat-note:${Date.now()}`;
+      const snippet = content.slice(0, 500);
+      await memoryService.create({ category: 'note', key, value: snippet, confidence: 0.8 });
+      setMemorySavedId(msgId);
+      setTimeout(() => setMemorySavedId(null), 2500);
+      toast.success('Saved to memory');
+    } catch {
+      toast.error('Failed to save to memory');
+    }
+  };
+
   const handleExport = async () => {
     if (isExporting) return;
     setIsExporting(true);
@@ -924,9 +940,21 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         </button>
                       </div>
                     )}
-                    {/* 60.6: Reply button */}
+                    {/* 60.6: Reply + 61.4: Save to memory buttons */}
                     {msg.role !== 'system' && !msg.isStreaming && (
-                      <div className="flex justify-end mt-1">
+                      <div className="flex justify-end gap-1 mt-1">
+                        {/* 61.4: Save to memory */}
+                        <button
+                          onClick={() => void handleSaveToMemory(msg.id, msg.content)}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded text-[#6B7280] hover:text-[#BF5FFF] text-[10px] transition-colors opacity-0 group-hover:opacity-100"
+                          title="Save to agent memory"
+                          data-testid={`save-memory-btn-${msg.id}`}
+                        >
+                          {memorySavedId === msg.id
+                            ? <BookmarkCheck className="w-3 h-3 text-[#00FF88]" />
+                            : <Bookmark className="w-3 h-3" />}
+                          {memorySavedId === msg.id ? 'Saved!' : 'Save'}
+                        </button>
                         <button
                           onClick={() => { setReplyTo(msg); inputRef.current?.focus(); }}
                           className="flex items-center gap-1 px-2 py-0.5 rounded text-[#6B7280] hover:text-[#00F0FF] text-[10px] transition-colors opacity-0 group-hover:opacity-100"
