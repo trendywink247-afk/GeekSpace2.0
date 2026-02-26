@@ -162,10 +162,12 @@ export const userService = {
   setPreferredModel: (model: string) =>
     api.put<{ preferredModel: string }>('/users/me/model', { model }),
 
-  getActivity: (limit = 50, offset = 0, q?: string, actionType?: string) => {
+  getActivity: (limit = 50, offset = 0, q?: string, actionType?: string, from?: string, to?: string) => {
     const params: Record<string, string | number> = { limit, offset };
     if (q) params.q = q;
     if (actionType) params.type = actionType;
+    if (from) params.from = from;
+    if (to) params.to = to;
     return api.get<{ activity: ActivityEntry[]; total: number }>('/activity', { params });
   },
 
@@ -374,6 +376,10 @@ export const integrationService = {
 
   listInvites: () =>
     api.get<{ id: string; token: string; email: string | null; inviteUrl: string; expired: boolean; used: boolean; created_at: number }[]>('/integrations/invites'),
+
+  // 65.6: Integration event log
+  getEvents: (limit = 50) =>
+    api.get<{ events: Array<{ id: string; action: string; details: string; icon: string; created_at: string }> }>(`/integrations/events?limit=${limit}`),
 };
 
 // ----- Reminders ---------------------------------------------
@@ -533,6 +539,10 @@ export const portfolioService = {
   // 63.2: Download daily analytics as CSV
   exportAnalyticsCSV: () =>
     api.get<string>('/portfolio/me/analytics/export', { responseType: 'text' }),
+
+  // 65.10: Visitor source analytics
+  getAnalyticsSources: () =>
+    api.get<{ sources: Array<{ source: string; visits: number }> }>('/portfolio/me/analytics/sources'),
 };
 
 // ----- Activity Stats ----------------------------------------
@@ -588,6 +598,8 @@ export const automationService = {
 
 export const dashboardService = {
   stats: () => api.get<DashboardStats>('/dashboard/stats'),
+  // 65.5: Lightweight quick-stats (Redis-cached 60s)
+  quickStats: () => api.get<{ remindersActive: number; messagesToday: number; automationsActive: number }>('/dashboard/quick-stats'),
 };
 
 // ----- Explore / Directory -----------------------------------
@@ -634,6 +646,10 @@ export const memoryService = {
 
   delete: (memoryId: string) =>
     api.delete(`/agent/memory/${memoryId}`),
+
+  // 65.7: Bulk-clear all memories in a category
+  bulkClear: (category: string) =>
+    api.delete<{ deleted: number }>(`/agent/memory/bulk?category=${encodeURIComponent(category)}`),
 
   conversations: (limit = 20) =>
     api.get<ConversationEntry[]>(`/agent/conversations?limit=${limit}`),
@@ -994,6 +1010,10 @@ export const videoService = {
   // 55.13: Seedance Director Mode
   directorCreate: (idea: string, width?: number, height?: number) =>
     api.post<{ jobId: string; status: string; message: string }>('/videos/director/create', { idea, width, height }),
+
+  // 65.13: Expand idea with AI before creating a Director job
+  directorExpandIdea: (idea: string) =>
+    api.post<{ expanded: string }>('/videos/director/expand-idea', { idea }),
 
   directorList: () =>
     api.get<{ jobs: DirectorJob[] }>('/videos/director'),

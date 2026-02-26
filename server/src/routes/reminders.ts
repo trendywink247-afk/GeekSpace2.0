@@ -34,6 +34,12 @@ remindersRouter.get('/', requireAuth, (req: AuthRequest, res) => {
 remindersRouter.post('/', requireAuth, validateBody(reminderCreateSchema), (req: AuthRequest, res) => {
   const { text, datetime, channel, category, recurring, recurrence, priority } = req.body;
 
+  // 65.4: Near-duplicate warning — check for incomplete reminder with same text (case-insensitive) in next 48h
+  const normalized = (text as string).toLowerCase().trim();
+  const existing = db.prepare(
+    `SELECT id, text, datetime FROM reminders WHERE user_id = ? AND completed = 0 AND LOWER(TRIM(text)) = ? LIMIT 1`
+  ).get(req.userId!, normalized) as { id: string; text: string; datetime: string } | undefined;
+
   const id = uuid();
   const scheduledFor = datetime ? new Date(datetime).getTime() : Date.now();
 
@@ -45,7 +51,10 @@ remindersRouter.post('/', requireAuth, validateBody(reminderCreateSchema), (req:
   logger.info({ event: 'reminder.created', userId: req.userId, reminderId: id, channel: channel || 'push', priority: priority || 'normal' });
 
   const reminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(id);
-  res.status(201).json(reminder);
+  res.status(201).json({
+    ...(reminder as Record<string, unknown>),
+    duplicate_warning: existing ? `A similar reminder already exists: "${existing.text}"` : null,
+  });
 });
 
 // ── 62.10: Batch Edit (priority/category) — must come BEFORE PATCH /:id ─────

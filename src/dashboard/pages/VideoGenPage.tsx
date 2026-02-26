@@ -94,6 +94,8 @@ export function VideoGenPage() {
   // ── 55.13: Director Mode state ─────────────────────────────
   const [directorIdea, setDirectorIdea] = useState('');
   const [directorRunning, setDirectorRunning] = useState(false);
+  // 65.13: Expand idea — AI enrichment of the director idea
+  const [expandingIdea, setExpandingIdea] = useState(false);
   // 59.13: Multi-job queue — holds next idea to auto-start when current job finishes
   const [queuedIdea, setQueuedIdea] = useState<string | null>(null);
   const [directorJobId, setDirectorJobId] = useState<string | null>(null);
@@ -281,6 +283,18 @@ export function VideoGenPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [directorRunning]);
+
+  // 65.13: Expand idea via AI before submitting to Director Mode
+  const handleExpandIdea = async () => {
+    if (!directorIdea.trim() || expandingIdea) return;
+    setExpandingIdea(true);
+    try {
+      const res = await videoService.directorExpandIdea(directorIdea.trim());
+      setDirectorIdea(res.data.expanded);
+    } catch { /* ignore — keep original idea */ } finally {
+      setExpandingIdea(false);
+    }
+  };
 
   const handleDirectorSubmit = async (overrideIdea?: string) => {
     const idea = overrideIdea ?? directorIdea.trim();
@@ -871,6 +885,16 @@ export function VideoGenPage() {
               maxLength={500}
               className="flex-1 px-4 py-3 rounded-xl bg-[#0C0C18] border border-[#BF5FFF]/20 text-[#E8E8F0] text-sm placeholder-[#374151] focus:outline-none focus:border-[#BF5FFF]/50"
             />
+            {/* 65.13: Expand idea with AI */}
+            <button
+              onClick={() => void handleExpandIdea()}
+              disabled={!directorIdea.trim() || expandingIdea}
+              title="Expand idea with AI"
+              className="flex items-center gap-1.5 px-3 py-3 rounded-xl bg-[#BF5FFF]/10 border border-[#BF5FFF]/20 hover:bg-[#BF5FFF]/20 disabled:opacity-40 disabled:cursor-not-allowed text-[#BF5FFF] text-xs transition-colors"
+            >
+              {expandingIdea ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+              {expandingIdea ? '' : 'Expand'}
+            </button>
             <button
               onClick={() => void handleDirectorSubmit()}
               disabled={!directorIdea.trim()}

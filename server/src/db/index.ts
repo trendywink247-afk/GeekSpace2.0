@@ -854,6 +854,8 @@ try { db.exec(`ALTER TABLE reminders ADD COLUMN completed_at INTEGER`); } catch 
 
 // Phase 12: Index for portfolio_visits queries (user_id + date range scans)
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_portfolio_visits_user_date ON portfolio_visits(user_id, visited_at)`); } catch { /* index already exists */ }
+// Phase 65.10: Add referer_host tracking column (additive migration)
+try { db.exec(`ALTER TABLE portfolio_visits ADD COLUMN referer_host TEXT DEFAULT NULL`); } catch { /* already exists */ }
 
 // Phase 36.1: Snooze event log
 db.exec(`

@@ -485,3 +485,19 @@ integrationsRouter.post('/invite/:token/accept', (req, res) => {
 
   res.json({ success: true, message: 'Connection established' });
 });
+
+
+// ── 65.6: Integration event log — last 50 integration-related activity entries ─
+integrationsRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const limit = Math.min(parseInt(req.query.limit as string || '50', 10), 100);
+  const events = db.prepare(
+    `SELECT id, action, details, icon, created_at FROM activity_log
+     WHERE user_id = ? AND (
+       action LIKE '%integration%' OR action LIKE '%Connected%' OR action LIKE '%Disconnected%'
+       OR action LIKE '%Linked%' OR action LIKE '%Unlinked%' OR action LIKE '%connection%'
+     )
+     ORDER BY created_at DESC LIMIT ?`
+  ).all(userId, limit);
+  res.json({ events });
+});

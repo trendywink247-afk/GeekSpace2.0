@@ -1252,6 +1252,15 @@ agentRouter.put('/memory/:id', requireAuth, validateBody(memoryUpdateSchema), (r
   res.json(mapMemory(updated));
 });
 
+// ── 65.7: Bulk-clear memories by category (must be before /:id) ────────────
+agentRouter.delete('/memory/bulk', requireAuth, (req: AuthRequest, res) => {
+  const category = typeof req.query.category === 'string' && req.query.category.trim() ? req.query.category.trim() : null;
+  const userId = req.userId!;
+  if (!category) { res.status(400).json({ error: 'category query param is required' }); return; }
+  const result = db.prepare('DELETE FROM agent_memory WHERE user_id = ? AND category = ?').run(userId, category);
+  res.json({ deleted: result.changes });
+});
+
 agentRouter.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
   const deleted = deleteMemory(req.userId!, req.params.id);
   if (!deleted) { res.status(404).json({ error: 'Memory not found' }); return; }

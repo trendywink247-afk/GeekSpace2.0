@@ -98,6 +98,18 @@ portfolioRouter.get('/me/stats', requireAuth, (req: AuthRequest, res) => {
   res.json({ view_count: viewCount, contact_count: contactCount, project_count: projectCount, last_viewed_at: lastViewedAt });
 });
 
+// 65.10: GET /me/analytics/sources — top visitor referrer domains (last 30 days)
+portfolioRouter.get('/me/analytics/sources', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const sources = db.prepare(
+    `SELECT COALESCE(referer_host, 'Direct') as source, COUNT(*) as visits
+     FROM portfolio_visits
+     WHERE user_id = ? AND visited_at >= datetime('now', '-30 days')
+     GROUP BY referer_host ORDER BY visits DESC LIMIT 10`
+  ).all(userId) as Array<{ source: string; visits: number }>;
+  res.json({ sources });
+});
+
 // 63.2 + 64.7: GET /me/analytics/export — CSV export (rate-limited: 10/5min per user)
 portfolioRouter.get('/me/analytics/export', requireAuth, async (req: AuthRequest, res) => {
   const userId = req.userId!;
@@ -583,7 +595,9 @@ portfolioRouter.get('/:username', async (req, res) => {
           "SELECT id FROM portfolio_visits WHERE user_id = ? AND visitor_ip = ? AND visited_at >= datetime('now', '-30 minutes')"
         ).get(cachedData.userId, visitorIp);
         if (!recentVisit) {
-          db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(cachedData.userId, visitorIp);
+          // 65.10: Capture referer host for visitor source analytics
+          const refererHost = (() => { try { return req.headers.referer ? new URL(req.headers.referer).hostname : null; } catch { return null; } })();
+          db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip, referer_host) VALUES (?, ?, ?)').run(cachedData.userId, visitorIp, refererHost);
           firePortfolioVisitAutomations(cachedData.userId, visitorIp);
         }
       }
@@ -629,7 +643,9 @@ portfolioRouter.get('/:username', async (req, res) => {
       "SELECT id FROM portfolio_visits WHERE user_id = ? AND visitor_ip = ? AND visited_at >= datetime('now', '-30 minutes')"
     ).get(portfolio.user_id, visitorIp);
     if (!recentVisit) {
-      db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(portfolio.user_id, visitorIp);
+      // 65.10: Capture referer host
+      const refererHost2 = (() => { try { return req.headers.referer ? new URL(req.headers.referer).hostname : null; } catch { return null; } })();
+      db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip, referer_host) VALUES (?, ?, ?)').run(portfolio.user_id, visitorIp, refererHost2);
       firePortfolioVisitAutomations(portfolio.user_id as string, visitorIp);
     }
   } catch { /* non-fatal */ }
