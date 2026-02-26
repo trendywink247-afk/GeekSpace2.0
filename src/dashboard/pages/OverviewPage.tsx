@@ -153,6 +153,22 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   // 52.7: Mini activity feed — last 5 real activity log entries
   const [miniActivity, setMiniActivity] = useState<ActivityEntry[]>([]);
 
+  // 62.9: Widget section visibility (persisted in localStorage)
+  const [sectionVisible, setSectionVisible] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = localStorage.getItem('gs_widget_visibility');
+      if (stored) return JSON.parse(stored) as Record<string, boolean>;
+    } catch { /* ignore */ }
+    return { briefing: true, charts: true, activity: true };
+  });
+  const toggleSection = (key: string) => {
+    setSectionVisible((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem('gs_widget_visibility', JSON.stringify(next));
+      return next;
+    });
+  };
+
   // 35.2: Stat card reorder (drag-to-reorder, persisted in localStorage)
   const [statOrder, setStatOrder] = useState<number[]>(() => {
     try {
@@ -866,6 +882,14 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               <Sparkles className="w-5 h-5 text-[#FFD700]" />
               Daily Briefing
             </span>
+            {/* 62.9: Collapse toggle */}
+            <button
+              onClick={() => toggleSection('briefing')}
+              className="text-[#6B7280] hover:text-[#FFD700] transition-colors p-1 rounded ml-auto text-xs"
+              title={sectionVisible.briefing ? 'Collapse' : 'Expand'}
+            >
+              {sectionVisible.briefing ? '▲' : '▼'}
+            </button>
             {/* 51.4: Copy briefing content to clipboard */}
             {latestBriefing && (
               <button
@@ -883,7 +907,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        {sectionVisible.briefing && <CardContent>
           {latestBriefing ? (
             <>
               <p className="text-sm text-[#E8E8F0] leading-relaxed whitespace-pre-line">
@@ -917,11 +941,15 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               {briefingSaving ? 'Saving…' : 'Saved'}
             </span>
           </div>
-        </CardContent>
+        </CardContent>}
       </Card>
 
       {/* ─── Bento Charts Row ─── */}
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-sm text-[#6B7280] font-medium">Analytics</span>
+        <button onClick={() => toggleSection('charts')} className="text-xs text-[#6B7280] hover:text-[#00F0FF] transition-colors">{sectionVisible.charts ? '▲ Collapse' : '▼ Expand'}</button>
+      </div>
+      {sectionVisible.charts && <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Activity Chart — spans 2 cols */}
         <Card
           className="lg:col-span-2"
@@ -1030,7 +1058,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div>}
 
       {/* ─── Bento 3-Column Section ─── */}
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">

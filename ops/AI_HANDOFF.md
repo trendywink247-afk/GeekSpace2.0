@@ -1,9 +1,9 @@
-# AI Handoff — Phase 61 Complete
+# AI Handoff — Phase 62 Complete
 
 **Date:** 2026-02-26
-**Branch:** `ai/phase-20260226-phase61` → PR #92 merged to main SHA 7970995
-**Tests:** 604/604 ✅
-**Status:** All 13 improvements implemented and merged
+**Branch:** `ai/phase-20260226-phase62` → PR pending (ready to merge)
+**Tests:** 615/615 ✅
+**Status:** All 13 improvements implemented, commit 398cb64, PR being created
 
 ---
 
@@ -13,6 +13,54 @@ If the conversation is compacted, before doing ANY work:
 2. Run: `git status && git branch --show-current && git log --oneline -5`
 3. Print a brief "Rehydrated Context" summary (phase, branch, current tasks, constraints)
 4. Only then continue implementation
+
+---
+
+## Phase 62 — What Was Done
+
+### 62.1 CI review
+- CI was green post-Phase-61; brand guard: 0 violations
+
+### 62.2 Reminder recurring rule visual builder
+- `src/dashboard/pages/RemindersPage.tsx` — replaced "Recurring?" toggle + "Repeat" select with 4-button grid
+- Options: Never (One-time) / Daily (Every day) / Weekly (Every week) / Monthly (Every month)
+- Sets both `recurrence` and `recurring` fields simultaneously
+
+### 62.3 Chat export as markdown
+- `src/components/AgentChatPanel.tsx` — `handleExportChat()` downloads current session as `.md` file
+- "MD" button in toolbar (visible when messages exist)
+
+### 62.5 Chat keyboard shortcuts
+- `src/components/AgentChatPanel.tsx` — Arrow Up/Down for input history (up to 50 entries, ref-based)
+- `Ctrl+K` / `Cmd+K` clears chat via `resetChat()`
+
+### 62.6 Automations interval schedule builder
+- `src/dashboard/pages/AutomationsPage.tsx` — preset buttons (15min, 30min, 1h, 2h, 6h, Daily, Weekly) + custom input
+- Stores `interval_minutes` in `triggerConfig`
+- `server/src/middleware/validate.ts` — added `triggerConfig` + `actionConfig` to `automationCreateSchema`
+- `server/src/routes/automations.ts` — POST response now parses `trigger_config`/`action_config` → camelCase `triggerConfig`/`actionConfig`
+- `src/types/index.ts` — added `triggerConfig?: Record<string, unknown>` to Automation interface
+
+### 62.7 Connections health ping
+- `server/src/routes/integrations.ts` — `GET /:type/ping` endpoint (latencyMs, healthy, reason, type)
+- `src/services/api.ts` — `integrationService.pingIntegration(type)`
+- `src/dashboard/pages/ConnectionsPage.tsx` — Ping button + latency badge in expanded card
+
+### 62.8 Video gen step indicator
+- `src/dashboard/pages/VideoGenPage.tsx` — replaced "still processing" text with Queued→Generating→Rendering→Ready steps
+- Active step highlighted in purple, completed in green, future in grey
+
+### 62.9 Dashboard widget collapse/expand
+- `src/dashboard/pages/OverviewPage.tsx` — `sectionVisible` state (localStorage: `gs_widget_visibility`)
+- `toggleSection()` function; collapse toggles on Daily Briefing + Analytics/Charts sections
+
+### 62.10 Reminder batch-edit
+- `server/src/routes/reminders.ts` — `PATCH /batch-edit` (placed BEFORE `PATCH /:id`) validates ids/priority/category, only updates owned rows
+- `src/services/api.ts` — `reminderService.batchEdit(ids, fields)`
+- `src/dashboard/pages/RemindersPage.tsx` — Priority + Category dropdowns in bulk action bar
+
+### 62.13 Seedance live clip progress
+- `src/dashboard/pages/VideoGenPage.tsx` — during Director running state: shows "Clips: X/Y complete" + progress bar
 
 ---
 
@@ -77,53 +125,54 @@ If the conversation is compacted, before doing ANY work:
 
 ---
 
-## Files Changed
+## Phase 62 Files Changed
 ```
-server/src/services/automations-engine.ts
-server/src/routes/automations.ts
-server/src/routes/videos.ts
-server/src/test/api/phase61.test.ts  (NEW — 14 tests)
-src/components/AgentChatPanel.tsx
-src/dashboard/DashboardApp.tsx
-src/dashboard/pages/AutomationsPage.tsx
-src/dashboard/pages/PortfolioPage.tsx
-src/dashboard/pages/RemindersPage.tsx
-src/dashboard/pages/SettingsPage.tsx
-src/dashboard/pages/VideoGenPage.tsx
-src/services/api.ts
+server/src/middleware/validate.ts         (added triggerConfig/actionConfig to automationCreateSchema)
+server/src/routes/automations.ts          (normalize POST response: triggerConfig/actionConfig camelCase)
+server/src/routes/integrations.ts         (GET /:type/ping endpoint)
+server/src/routes/reminders.ts            (PATCH /batch-edit before PATCH /:id)
+server/src/test/api/phase62.test.ts       (NEW — 11 tests)
+src/components/AgentChatPanel.tsx         (history nav, Ctrl+K, MD export)
+src/dashboard/pages/AutomationsPage.tsx   (interval_minutes schedule builder)
+src/dashboard/pages/ConnectionsPage.tsx   (ping button + latency badge)
+src/dashboard/pages/OverviewPage.tsx      (widget collapse/expand + localStorage)
+src/dashboard/pages/RemindersPage.tsx     (visual recurring builder, batch-edit bar)
+src/dashboard/pages/VideoGenPage.tsx      (step indicator, live clip progress bar)
+src/services/api.ts                       (batchEdit, pingIntegration)
+src/types/index.ts                        (Automation.triggerConfig)
 ```
 
 ---
 
 ## Test Counts
-- Phase 60 baseline: 590 tests
-- Phase 61 final: **604 tests** (+14)
+- Phase 61 baseline: 604 tests
+- Phase 62 final: **615 tests** (+11)
 
 ---
 
-## Next Phase (62) — Suggested Items
-1. CI review (brand guard + lint + tsc)
-2. Reminder recurring rule editor (visual RRULE builder — currently just plain text)
-3. Chat conversation export as PDF (jsPDF or print-to-PDF)
-4. Portfolio analytics chart (views over last 30 days — line chart)
-5. Agent chat keyboard shortcuts (↑/↓ for history, Ctrl+K to clear)
-6. Automations scheduling — cron expression builder UI
-7. Connections health ping (test connection → show latency badge)
-8. Video gen progress step indicator (queue position + estimated time)
-9. Dashboard widget drag-to-reorder (react-dnd or dnd-kit)
-10. Reminder batch-edit (select multiple → change priority/category)
-11. Phase 62 tests + verification + PR/merge
+## Next Phase (63) — Suggested Items
+1. CI review post-Phase-62
+2. Chat message reactions (emoji picker → reaction summary)
+3. Reminder smart-group (group by category/date in list)
+4. Portfolio analytics export (CSV download of view counts)
+5. Automations run log search/filter by status
+6. Mobile: connections page swipe to ping
+7. Edge-case: reminder batch-complete (mark all selected done)
+8. Security: automation webhook HMAC signature verification
+9. Performance: lazy-load VideoGenPage gallery chunks
+10. Feature: agent persona quick-switch from chat toolbar
+11. Phase 63 tests + verification + PR/merge
 12. Brand gate
-13. Seedance Director Mode — add progress polling to Director job (live clip count updates)
+13. Seedance Director Mode: stitch preview in-page player
 
 ## Next Command
 ```bash
 cd ~/GeekSpace2.0
 git log --oneline -3
 cat ops/AI_HANDOFF.md
-# Start Phase 62 worktree
-git worktree add .worktrees/phase-62 -b ai/phase-20260226-phase62
-cd .worktrees/phase-62
-npm install
-cd server && npm test
+# Phase 62 is in .worktrees/phase-62 — PR pending
+# After PR merge to main:
+git pull origin main
+git worktree add .worktrees/phase-63 -b ai/phase-20260226-phase63
+cd .worktrees/phase-63 && npm install && cd server && npm test
 ```

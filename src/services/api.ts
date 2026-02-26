@@ -360,6 +360,10 @@ export const integrationService = {
   testIntegration: (type: string) =>
     api.post<{ healthy: boolean; reason: string; type: string }>(`/integrations/${type}/test`),
 
+  // 62.7: Ping integration with latency measurement
+  pingIntegration: (type: string) =>
+    api.get<{ latencyMs: number; healthy: boolean; reason: string; type: string }>(`/integrations/${type}/ping`),
+
   // 27.3: Connection invite links
   createInvite: (email?: string) =>
     api.post<{ inviteUrl: string; token: string; expiresAt: number }>('/integrations/invite', { email }),
@@ -405,6 +409,10 @@ export const reminderService = {
   // 38.3: CSV export — returns raw CSV text (authenticated via Axios interceptor)
   bulkComplete: (ids: string[]) =>
     api.post<{ updated: number }>('/reminders/bulk-complete', { ids }),
+
+  // 62.10: Batch edit priority/category
+  batchEdit: (ids: string[], fields: { priority?: string; category?: string }) =>
+    api.patch<{ updated: number }>('/reminders/batch-edit', { ids, ...fields }),
 
   getStats: () =>
     api.get<{ total: number; active: number; completed: number; overdue: number; byPriority: { low: number; normal: number; high: number; urgent: number } }>('/reminders/stats'),

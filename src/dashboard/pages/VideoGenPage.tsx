@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Film, Sparkles, Send, Loader2, Trash2, Copy, Check,
   Clock, Bot, Wifi, WifiOff, Wand2, ChevronDown,
@@ -449,9 +449,18 @@ export function VideoGenPage() {
                 className="w-full rounded-2xl border border-[#00F0FF]/20 bg-black"
               />
             ) : (
-              <div className="w-full aspect-video rounded-2xl border border-[#00F0FF]/20 bg-[#06060B] flex flex-col items-center justify-center gap-3">
+              <div className="w-full aspect-video rounded-2xl border border-[#00F0FF]/20 bg-[#06060B] flex flex-col items-center justify-center gap-4 p-6">
                 <Loader2 className="w-8 h-8 text-[#A78BFA] animate-spin" />
-                <p className="text-sm text-[#6B7280]">Video is still processing...</p>
+                {/* 62.8: step indicator for processing state */}
+                <div className="flex items-center gap-1.5 text-xs">
+                  {(['Queued', 'Generating', 'Rendering', 'Ready'] as const).map((step, i) => (
+                    <React.Fragment key={step}>
+                      <span className={i === 1 ? 'text-[#A78BFA] font-semibold' : i < 1 ? 'text-[#00FF88]' : 'text-[#6B7280]'}>{step}</span>
+                      {i < 3 && <span className="text-[#6B7280]">→</span>}
+                    </React.Fragment>
+                  ))}
+                </div>
+                <p className="text-xs text-[#6B7280]">30–120s depending on model &amp; duration</p>
               </div>
             )}
             <div className="flex items-center justify-between mt-3">
@@ -888,9 +897,27 @@ export function VideoGenPage() {
                 </div>
               )}
               {directorJob.status === 'running' && (
-                <div className="flex items-center gap-2 text-xs text-[#BF5FFF]">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Generating clips… this takes 2-4 minutes
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-[#BF5FFF]">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    {/* 62.13: live clip count progress */}
+                    {directorJob.packet?.shotlist && directorJob.packet.shotlist.length > 0 ? (
+                      <span>
+                        Clips: <strong>{directorJob.clips.length}</strong>/{directorJob.packet.shotlist.length} complete
+                        {directorJob.clips.length === 0 && ' — waiting for first clip…'}
+                      </span>
+                    ) : (
+                      <span>Generating clips… this takes 2-4 minutes</span>
+                    )}
+                  </div>
+                  {directorJob.packet?.shotlist && directorJob.packet.shotlist.length > 0 && (
+                    <div className="w-full bg-[#BF5FFF]/10 rounded-full h-1.5">
+                      <div
+                        className="bg-[#BF5FFF] h-1.5 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.round((directorJob.clips.length / directorJob.packet.shotlist.length) * 100)}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
               {directorJob.clips.length > 0 && (

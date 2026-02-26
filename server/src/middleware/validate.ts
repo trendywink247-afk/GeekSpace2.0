@@ -83,7 +83,9 @@ export const automationCreateSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional().default(''),
   triggerType: z.enum(['time', 'event', 'webhook', 'manual', 'keyword', 'health_down']),
+  triggerConfig: z.record(z.string(), z.unknown()).optional().default({}),
   actionType: z.enum(['n8n-webhook', 'telegram-message', 'portfolio-update', 'manychat-broadcast', 'whatsapp-message', 'call_api', 'create_reminder', 'log']),
+  actionConfig: z.record(z.string(), z.unknown()).optional().default({}),
   config: z.record(z.string(), z.unknown()).optional().default({}),
   enabled: z.boolean().optional().default(true),
 });

@@ -246,6 +246,8 @@ export function RemindersPage() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   // 53.4: Bulk restore-snooze for completed reminders
   const [isBulkRestoringSnooze, setIsBulkRestoringSnooze] = useState(false);
+  // 62.10: Batch edit state
+  const [isBatchEditing, setIsBatchEditing] = useState(false);
 
   // Bulk snooze state (29.4)
   const [selectedActiveIds, setSelectedActiveIds] = useState<Set<string>>(new Set());
@@ -403,6 +405,18 @@ export function RemindersPage() {
       await loadReminders();
     } finally {
       setIsBulkDeleting(false);
+    }
+  };
+
+  // 62.10: Batch edit priority/category for selected reminders
+  const handleBatchEdit = async (ids: string[], fields: { priority?: string; category?: string }) => {
+    if (ids.length === 0) return;
+    setIsBatchEditing(true);
+    try {
+      await reminderService.batchEdit(ids, fields);
+      await loadReminders();
+    } finally {
+      setIsBatchEditing(false);
     }
   };
 
@@ -950,6 +964,32 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                 <Trash2 className="w-3.5 h-3.5" />
                 Delete ({selectedActiveIds.size})
               </button>
+              {/* 62.10: Batch edit priority/category */}
+              <select
+                disabled={isBatchEditing}
+                onChange={(e) => { if (e.target.value) { void handleBatchEdit(Array.from(selectedActiveIds), { priority: e.target.value }); e.target.value = ''; } }}
+                className="text-xs px-2 py-1 rounded-lg bg-[#0C0C18] border border-[#BF5FFF]/30 text-[#BF5FFF] disabled:opacity-50"
+                aria-label="Set priority for selected reminders"
+              >
+                <option value="">Priority…</option>
+                <option value="low">Low</option>
+                <option value="normal">Normal</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+              <select
+                disabled={isBatchEditing}
+                onChange={(e) => { if (e.target.value) { void handleBatchEdit(Array.from(selectedActiveIds), { category: e.target.value }); e.target.value = ''; } }}
+                className="text-xs px-2 py-1 rounded-lg bg-[#0C0C18] border border-[#BF5FFF]/30 text-[#BF5FFF] disabled:opacity-50"
+                aria-label="Set category for selected reminders"
+              >
+                <option value="">Category…</option>
+                <option value="personal">Personal</option>
+                <option value="work">Work</option>
+                <option value="health">Health</option>
+                <option value="finance">Finance</option>
+                <option value="general">General</option>
+              </select>
               {isBulkSnoozing && (
                 <div className="w-4 h-4 border-2 border-[#FFB800]/30 border-t-[#FFB800] rounded-full animate-spin" />
               )}
@@ -1692,36 +1732,31 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                   </select>
                 </div>
               </div>
+              {/* 62.2: Visual recurring rule builder — unified, replaces split Recurring+Repeat UI */}
               <div>
-                <label className="text-xs text-[#6B7280] mb-1 block">Recurring?</label>
-                <div className="flex gap-2">
-                  {['', 'daily', 'weekly', 'monthly'].map((rec) => (
+                <label className="text-xs text-[#6B7280] mb-1.5 block">Recurrence</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {([
+                    { label: 'Never', value: '' as const, desc: 'One-time' },
+                    { label: 'Daily', value: 'daily' as const, desc: 'Every day' },
+                    { label: 'Weekly', value: 'weekly' as const, desc: 'Every week' },
+                    { label: 'Monthly', value: 'monthly' as const, desc: 'Every month' },
+                  ]).map(({ label, value, desc }) => (
                     <button
-                      key={rec || 'once'}
-                      onClick={() => setNewReminder({ ...newReminder, recurring: rec })}
-                      className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                        newReminder.recurring === rec
-                          ? 'bg-[#00F0FF] text-white'
-                          : 'bg-[#06060B] text-[#6B7280] hover:text-white'
+                      key={value || 'never'}
+                      type="button"
+                      onClick={() => setNewReminder({ ...newReminder, recurrence: value, recurring: value })}
+                      className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg border text-center transition-colors ${
+                        (newReminder.recurrence || '') === value
+                          ? 'border-[#00F0FF] bg-[#00F0FF]/10 text-[#00F0FF]'
+                          : 'border-[#1C1C2E] bg-[#06060B] text-[#6B7280] hover:border-[#00F0FF]/30 hover:text-[#E8E8F0]'
                       }`}
                     >
-                      {rec || 'Once'}
+                      <span className="text-xs font-semibold">{label}</span>
+                      <span className="text-[10px] opacity-60">{desc}</span>
                     </button>
                   ))}
                 </div>
-              </div>
-              <div>
-                <label className="text-xs text-[#6B7280] mb-1 block">Repeat</label>
-                <select
-                  value={newReminder.recurrence}
-                  onChange={(e) => setNewReminder({ ...newReminder, recurrence: e.target.value as 'daily' | 'weekly' | 'monthly' | '' })}
-                  className="w-full px-3 py-2 rounded-md bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm"
-                >
-                  <option value="">None</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
               </div>
               <div data-testid="priority-selector">
                 <label className="text-xs text-[#6B7280] mb-1 block">Priority</label>

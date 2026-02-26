@@ -122,6 +122,9 @@ export function ConnectionsPage() {
 
   // Health poll state (24.1) — keyed by integration type
   const [healthStatus, setHealthStatus] = useState<Record<string, 'healthy' | 'unhealthy' | 'checking'>>({});
+  // 62.7: Ping latency badge — keyed by integration type
+  const [pingLatency, setPingLatency] = useState<Record<string, number | null>>({});
+  const [pinging, setPinging] = useState<Record<string, boolean>>({});
 
   // Email dialog state
   const [emailDialog, setEmailDialog] = useState(false);
@@ -308,6 +311,21 @@ export function ConnectionsPage() {
       notify(`${type.charAt(0).toUpperCase() + type.slice(1)} connected!`, 'success');
     } finally {
       setConnectingId(null);
+    }
+  };
+
+  // 62.7: Ping integration for latency badge
+  const handlePing = async (type: string) => {
+    setPinging((prev) => ({ ...prev, [type]: true }));
+    setPingLatency((prev) => ({ ...prev, [type]: null }));
+    try {
+      const res = await integrationService.pingIntegration(type);
+      setPingLatency((prev) => ({ ...prev, [type]: res.data.latencyMs }));
+      setHealthStatus((prev) => ({ ...prev, [type]: res.data.healthy ? 'healthy' : 'unhealthy' }));
+    } catch {
+      setPingLatency((prev) => ({ ...prev, [type]: null }));
+    } finally {
+      setPinging((prev) => ({ ...prev, [type]: false }));
     }
   };
 
@@ -747,6 +765,10 @@ export function ConnectionsPage() {
                             }
                           />
                         )}
+                        {/* 62.7: Ping latency badge */}
+                        {connection.status === 'connected' && pingLatency[connection.type] != null && (
+                          <span className="text-xs text-[#00F0FF] font-mono">{pingLatency[connection.type]}ms</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -780,7 +802,22 @@ export function ConnectionsPage() {
                       <div className="mb-4">
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="text-[#6B7280]">Health</span>
-                          <span className="text-[#E8E8F0]">{connection.health}%</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[#E8E8F0]">{connection.health}%</span>
+                            {/* 62.7: Ping button */}
+                            <button
+                              onClick={() => void handlePing(connection.type)}
+                              disabled={pinging[connection.type]}
+                              className="flex items-center gap-1 text-xs text-[#00F0FF] hover:text-[#00D4B0] disabled:opacity-50 transition-colors"
+                              title="Test latency"
+                            >
+                              {pinging[connection.type] ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <span>Ping{pingLatency[connection.type] != null ? ` ${pingLatency[connection.type]}ms` : ''}</span>
+                              )}
+                            </button>
+                          </div>
                         </div>
                         <div className="h-1.5 bg-[#06060B] rounded-full overflow-hidden">
                           <div
