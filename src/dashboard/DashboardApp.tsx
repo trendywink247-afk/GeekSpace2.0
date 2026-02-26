@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense, useRef } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
@@ -16,6 +16,7 @@ import { QuickActionsWidget } from '@/components/QuickActionsWidget';
 import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPrompt';
 import { DashboardTour } from '@/components/DashboardTour';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { lazyRetry } from '@/utils/lazyRetry';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
@@ -30,31 +31,31 @@ const personalityEmojis: Record<AgentPersonality, string> = {
   weebo: '💚',
 };
 
-// ---- Lazy loaded pages for code splitting ----
-const OverviewPage = lazy(() => import('./pages/OverviewPage').then(m => ({ default: m.OverviewPage })));
-const ConnectionsPage = lazy(() => import('./pages/ConnectionsPage').then(m => ({ default: m.ConnectionsPage })));
-const AgentSettingsPage = lazy(() => import('./pages/AgentSettingsPage').then(m => ({ default: m.AgentSettingsPage })));
-const RemindersPage = lazy(() => import('./pages/RemindersPage').then(m => ({ default: m.RemindersPage })));
-const TerminalPage = lazy(() => import('./pages/TerminalPage').then(m => ({ default: m.TerminalPage })));
-const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
-const AutomationsPage = lazy(() => import('./pages/AutomationsPage').then(m => ({ default: m.AutomationsPage })));
-const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
-const UsageAnalyticsPage = lazy(() => import('./pages/UsageAnalyticsPage').then(m => ({ default: m.UsageAnalyticsPage })));
-const MemoryManagerPage = lazy(() => import('./pages/MemoryManagerPage').then(m => ({ default: m.MemoryManagerPage })));
-const BillingPage = lazy(() => import('./pages/BillingPage').then(m => ({ default: m.BillingPage })));
-const RecipesPage = lazy(() => import('./pages/RecipesPage').then(m => ({ default: m.RecipesPage })));
-const PicoFleetPage = lazy(() =>
+// ---- Lazy loaded pages for code splitting (with chunk-load retry) ----
+const OverviewPage = lazyRetry(() => import('./pages/OverviewPage').then(m => ({ default: m.OverviewPage })));
+const ConnectionsPage = lazyRetry(() => import('./pages/ConnectionsPage').then(m => ({ default: m.ConnectionsPage })));
+const AgentSettingsPage = lazyRetry(() => import('./pages/AgentSettingsPage').then(m => ({ default: m.AgentSettingsPage })));
+const RemindersPage = lazyRetry(() => import('./pages/RemindersPage').then(m => ({ default: m.RemindersPage })));
+const TerminalPage = lazyRetry(() => import('./pages/TerminalPage').then(m => ({ default: m.TerminalPage })));
+const SettingsPage = lazyRetry(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const AutomationsPage = lazyRetry(() => import('./pages/AutomationsPage').then(m => ({ default: m.AutomationsPage })));
+const PortfolioPage = lazyRetry(() => import('./pages/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
+const UsageAnalyticsPage = lazyRetry(() => import('./pages/UsageAnalyticsPage').then(m => ({ default: m.UsageAnalyticsPage })));
+const MemoryManagerPage = lazyRetry(() => import('./pages/MemoryManagerPage').then(m => ({ default: m.MemoryManagerPage })));
+const BillingPage = lazyRetry(() => import('./pages/BillingPage').then(m => ({ default: m.BillingPage })));
+const RecipesPage = lazyRetry(() => import('./pages/RecipesPage').then(m => ({ default: m.RecipesPage })));
+const PicoFleetPage = lazyRetry(() =>
   import('./pages/PicoFleetPage').then(m => ({ default: m.PicoFleetPage }))
 );
-const HealthDashboardPage = lazy(() => import('./pages/HealthDashboardPage').then(m => ({ default: m.HealthDashboardPage })));
-const WebsiteBuilderPage = lazy(() => import('./pages/WebsiteBuilderPage').then(m => ({ default: m.WebsiteBuilderPage })));
-const RoadmapPage = lazy(() => import('./pages/RoadmapPage').then(m => ({ default: m.RoadmapPage })));
-const ImageGenPage = lazy(() => import('./pages/ImageGenPage').then(m => ({ default: m.ImageGenPage })));
-const VideoGenPage = lazy(() => import('./pages/VideoGenPage').then(m => ({ default: m.VideoGenPage })));
-const PlannerPage = lazy(() => import('./pages/PlannerPage').then(m => ({ default: m.PlannerPage })));
-const SocialMediaPage = lazy(() => import('./pages/SocialMediaPage').then(m => ({ default: m.SocialMediaPage })));
-const CapabilitiesPage = lazy(() => import('./pages/CapabilitiesPage').then(m => ({ default: m.CapabilitiesPage })));
-const ActivityPage = lazy(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
+const HealthDashboardPage = lazyRetry(() => import('./pages/HealthDashboardPage').then(m => ({ default: m.HealthDashboardPage })));
+const WebsiteBuilderPage = lazyRetry(() => import('./pages/WebsiteBuilderPage').then(m => ({ default: m.WebsiteBuilderPage })));
+const RoadmapPage = lazyRetry(() => import('./pages/RoadmapPage').then(m => ({ default: m.RoadmapPage })));
+const ImageGenPage = lazyRetry(() => import('./pages/ImageGenPage').then(m => ({ default: m.ImageGenPage })));
+const VideoGenPage = lazyRetry(() => import('./pages/VideoGenPage').then(m => ({ default: m.VideoGenPage })));
+const PlannerPage = lazyRetry(() => import('./pages/PlannerPage').then(m => ({ default: m.PlannerPage })));
+const SocialMediaPage = lazyRetry(() => import('./pages/SocialMediaPage').then(m => ({ default: m.SocialMediaPage })));
+const CapabilitiesPage = lazyRetry(() => import('./pages/CapabilitiesPage').then(m => ({ default: m.CapabilitiesPage })));
+const ActivityPage = lazyRetry(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
 
 type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity';
 
@@ -588,6 +589,7 @@ export function DashboardApp() {
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] transition-all min-h-[44px]"
+          data-testid="dashboard-logout-button"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {!sidebarCollapsed && <span className="text-sm font-medium">Sign Out</span>}

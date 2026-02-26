@@ -59,6 +59,7 @@ export function AgentChatButton({ context, onOpenChat }: AgentChatButtonProps) {
       onMouseLeave={() => setIsHovered(false)}
       className="alex-orb group"
       aria-label="Talk to AI Agent"
+      data-testid="agent-chat-fab"
     >
       {/* Pulse ring */}
       <span className="absolute inset-0 rounded-full bg-[#00F0FF]/20 animate-[alex-ping_2s_ease-in-out_infinite]" />

@@ -15,6 +15,7 @@ import { DocsPage } from './pages/DocsPage';
 import { ConnectPage } from './pages/ConnectPage';
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -32,6 +33,7 @@ function App() {
       >
         Skip to main content
       </a>
+      <ErrorBoundary>
       <div className="min-h-screen bg-[#05050A] text-[#F4F6FF]">
         <Routes>
           {/* Public routes */}
@@ -70,6 +72,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      </ErrorBoundary>
       <Toaster
         position="bottom-right"
         toastOptions={{

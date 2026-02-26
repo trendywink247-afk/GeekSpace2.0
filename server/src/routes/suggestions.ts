@@ -23,6 +23,11 @@ function wordOverlap(a: string, b: string): number {
   return common / Math.max(wordsA.length, wordsB.length);
 }
 
+// ── HTML entity encoder (Task 73.8) ──────────────────────────────────────────
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // ── Clusters cache (Task 68.11) ───────────────────────────────────────────────
 const clustersCache: { data: unknown[] | null; expiresAt: number } = { data: null, expiresAt: 0 };
 export function invalidateClustersCache(): void {
@@ -91,8 +96,8 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
     }
   }
 
-  const trimmedTitle = title.trim();
-  const trimmedBody = body.trim();
+  const trimmedTitle = escapeHtml(title.trim());
+  const trimmedBody = escapeHtml(body.trim());
   const tagsJson = JSON.stringify(parsedTags);
 
   // Check for near-duplicate (Task 68.9): exact title match OR 60% word overlap on body
@@ -102,6 +107,7 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
   ).all(userId) as Array<{ id: string; title: string; body: string }>;
 
   let duplicateWarning = false;
+  let similarTitle: string | undefined;
 
   // Exact title match
   const exactTitleDup = existingSuggestions.find(
@@ -109,6 +115,7 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
   );
   if (exactTitleDup) {
     duplicateWarning = true;
+    similarTitle = exactTitleDup.title;
   }
 
   // Word overlap on body (>= 60%)
@@ -116,6 +123,7 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
     for (const s of existingSuggestions) {
       if (wordOverlap(trimmedBody, s.body) >= 0.6) {
         duplicateWarning = true;
+        similarTitle = s.title;
         break;
       }
     }
@@ -146,7 +154,10 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
   res.status(201).json({
     ...suggestion,
     tags: (() => { try { return JSON.parse(suggestion.tags as string); } catch { return []; } })(),
+    upvotes: 0,
+    downvotes: 0,
     duplicate_warning: duplicateWarning ? true : undefined,
+    similar_title: duplicateWarning ? similarTitle : undefined,
   });
 });
 
@@ -267,7 +278,18 @@ suggestionsRouter.post('/:id/vote', requireAuth, (req: AuthRequest, res) => {
     return;
   }
 
-  const suggestion = db.prepare(`SELECT id FROM suggestions WHERE id = ?`).get(id) as { id: string } | undefined;
+  // Phase 71.3: Vote rate limit — max 10 votes per user per minute (skip in TEST_MODE)
+  if (!config.isTestMode) {
+    const recentVotes = db.prepare(
+      `SELECT COUNT(*) as cnt FROM suggestion_votes WHERE user_id = ? AND created_at > datetime('now', '-1 minute')`
+    ).get(userId) as { cnt: number };
+    if (recentVotes.cnt >= 10) {
+      res.status(429).json({ error: 'Too many votes. Please wait a moment.' });
+      return;
+    }
+  }
+
+  const suggestion = db.prepare(`SELECT id FROM suggestions WHERE id = ? AND deleted_at IS NULL`).get(id) as { id: string } | undefined;
   if (!suggestion) {
     res.status(404).json({ error: 'Suggestion not found' });
     return;
@@ -294,6 +316,9 @@ suggestionsRouter.post('/:id/vote', requireAuth, (req: AuthRequest, res) => {
     `SELECT COUNT(*) as cnt FROM suggestion_votes WHERE suggestion_id = ? AND vote = -1`
   ).get(id) as { cnt: number }).cnt;
 
+  // Phase 71.8: Invalidate clusters cache after vote (vote counts affect cluster totals)
+  invalidateClustersCache();
+
   logger.info({ userId, suggestionId: id, vote }, 'Suggestion vote recorded');
   res.json({ upvotes, downvotes });
 });
@@ -304,8 +329,13 @@ suggestionsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
   const { id } = req.params;
 
   const row = db.prepare(
-    `SELECT id, user_id as userId, title, body, tags, status, created_at as createdAt, updated_at as updatedAt
-     FROM suggestions WHERE id = ? AND deleted_at IS NULL`
+    `SELECT s.id, s.user_id as userId, s.title, s.body, s.tags, s.status, s.created_at as createdAt, s.updated_at as updatedAt,
+            COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0) as upvotes,
+            COALESCE(SUM(CASE WHEN v.vote = -1 THEN 1 ELSE 0 END), 0) as downvotes
+     FROM suggestions s
+     LEFT JOIN suggestion_votes v ON v.suggestion_id = s.id
+     WHERE s.id = ? AND s.deleted_at IS NULL
+     GROUP BY s.id`
   ).get(id) as Record<string, unknown> | undefined;
 
   if (!row) {
@@ -322,6 +352,59 @@ suggestionsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
     ...row,
     tags: (() => { try { return JSON.parse(row.tags as string); } catch { return []; } })(),
   });
+});
+
+// ---- PATCH /api/suggestions/:id — edit own suggestion (Phase 71.5) ----
+// Only allows editing suggestions in 'new' status.
+suggestionsRouter.patch('/:id', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { id } = req.params;
+  const { title, body } = req.body as { title?: unknown; body?: unknown };
+
+  const suggestion = db.prepare(
+    `SELECT id, user_id as userId, status FROM suggestions WHERE id = ? AND deleted_at IS NULL`
+  ).get(id) as { id: string; userId: string; status: string } | undefined;
+
+  if (!suggestion || suggestion.userId !== userId) {
+    res.status(404).json({ error: 'Suggestion not found' });
+    return;
+  }
+
+  if (suggestion.status !== 'new') {
+    res.status(409).json({ error: 'Only suggestions in "new" status can be edited' });
+    return;
+  }
+
+  // Validate title
+  if (typeof title !== 'string' || title.trim().length < 1) {
+    res.status(400).json({ error: 'title is required' });
+    return;
+  }
+  if (title.trim().length > 100) {
+    res.status(400).json({ error: 'title must be 100 characters or fewer' });
+    return;
+  }
+
+  // Validate body
+  if (typeof body !== 'string' || body.trim().length < 20) {
+    res.status(400).json({ error: 'body must be at least 20 characters' });
+    return;
+  }
+  if (body.trim().length > 2000) {
+    res.status(400).json({ error: 'body must be 2000 characters or fewer' });
+    return;
+  }
+
+  db.prepare(
+    `UPDATE suggestions SET title = ?, body = ?, updated_at = datetime('now') WHERE id = ?`
+  ).run(escapeHtml(title.trim()), escapeHtml(body.trim()), id);
+
+  const updated = db.prepare(
+    `SELECT id, user_id as userId, title, body, tags, status, created_at as createdAt, updated_at as updatedAt FROM suggestions WHERE id = ?`
+  ).get(id) as Record<string, unknown>;
+
+  logger.info({ userId, suggestionId: id }, 'Suggestion edited');
+  res.json({ ...updated, tags: (() => { try { return JSON.parse(updated.tags as string); } catch { return []; } })() });
 });
 
 // ---- DELETE /api/suggestions/:id — soft-delete own suggestion (Task 70.11) ----
@@ -347,6 +430,14 @@ suggestionsRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
   db.prepare(
     `UPDATE suggestions SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
   ).run(id);
+
+  // Phase 71.4: Clean up orphaned votes for deleted suggestion
+  try {
+    db.prepare(`DELETE FROM suggestion_votes WHERE suggestion_id = ?`).run(id);
+  } catch { /* non-fatal */ }
+
+  // Phase 71.8: Invalidate clusters cache after deletion
+  invalidateClustersCache();
 
   logger.info({ userId, suggestionId: id }, 'Suggestion soft-deleted');
   res.status(204).end();

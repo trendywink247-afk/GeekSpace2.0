@@ -1494,6 +1494,12 @@ try { db.exec(`ALTER TABLE suggestion_clusters ADD COLUMN name TEXT`); } catch {
 // Phase 70.4: Composite index on activity_log for per-user sorted queries (additive — IF NOT EXISTS is safe)
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_activity_log_user_created ON activity_log(user_id, created_at DESC)`); } catch { /* already exists */ }
 
+// Phase 73.6: Index on activity_log(action) for action-based queries
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_activity_log_action ON activity_log(action)`); } catch { /* already exists */ }
+
+// Phase 73.9: Compound index on suggestions(user_id, deleted_at) for filtered user queries
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestions_user_deleted ON suggestions(user_id, deleted_at)`); } catch { /* already exists */ }
+
 // Phase 70.11: Soft-delete support for suggestions
 try { db.exec(`ALTER TABLE suggestions ADD COLUMN deleted_at TEXT DEFAULT NULL`); } catch { /* already exists */ }
 

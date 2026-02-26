@@ -25,8 +25,18 @@ function wordOverlapRatio(a: string, b: string): number {
 
 // In TEST_MODE: returns deterministic stub scores without calling LLM
 // In prod: would call LLM (left as stub for now — safe for prod)
+// Phase 71.7: Max batch size to prevent DoS
+const MAX_TRIAGE_BATCH = 50;
+const TRENDING_WEIGHTED_THRESHOLD = 3;
+
 export async function triageSuggestions(suggestionIds: string[]): Promise<TriageScore[]> {
   if (!suggestionIds.length) return [];
+
+  // Phase 71.7: Safety limit on batch size
+  if (suggestionIds.length > MAX_TRIAGE_BATCH) {
+    logger.warn({ requested: suggestionIds.length, max: MAX_TRIAGE_BATCH }, 'Triage batch size exceeded limit, truncating');
+    suggestionIds = suggestionIds.slice(0, MAX_TRIAGE_BATCH);
+  }
 
   const placeholders = suggestionIds.map(() => '?').join(',');
   const suggestions = db.prepare(
@@ -158,7 +168,7 @@ export async function triageSuggestions(suggestionIds: string[]): Promise<Triage
             // Delete loser cluster (cascade deletes scores)
             db.prepare(`DELETE FROM suggestion_clusters WHERE id = ?`).run(loser.id);
             merged.add(loser.id);
-            logger.info({ winnerId: winner.id, loserId: loser.id, overlap }, 'Clusters auto-merged (>70% overlap)');
+            logger.info({ winnerId: winner.id, loserId: loser.id, overlap, combinedCount: combinedIds.length }, 'Clusters auto-merged (>70% overlap)');
           }
         }
       }
@@ -167,9 +177,10 @@ export async function triageSuggestions(suggestionIds: string[]): Promise<Triage
     }
   }
 
-  // ── Phase 70.14: Mark trending suggestions ──────────────────────────────────
-  // In TEST_MODE: any suggestion with at least 1 upvote total is trending
-  // In prod: suggestions with 3+ upvotes in the last 24h are trending
+  // ── Phase 71.13: Mark trending suggestions with decay scoring ───────────────
+  // Votes in last 24h count as 1.0; votes 24-48h count as 0.5 (decay)
+  // TEST_MODE: any suggestion with at least 1 upvote total is trending
+  // Prod: suggestions need weighted score >= 3 to be trending
   try {
     let trendingIds: string[] = [];
 
@@ -184,14 +195,20 @@ export async function triageSuggestions(suggestionIds: string[]): Promise<Triage
       `).all() as Array<{ suggestion_id: string }>;
       trendingIds = rows.map(r => r.suggestion_id);
     } else {
-      // Prod: suggestions with 3+ upvotes in the last 24h (vote velocity threshold)
+      // Prod: weighted trending score with decay
+      // Recent votes (< 24h) = 1.0 weight, older votes (24-48h) = 0.5 weight
       const rows = db.prepare(`
-        SELECT suggestion_id
+        SELECT suggestion_id,
+          SUM(CASE
+            WHEN created_at >= datetime('now', '-24 hours') THEN 1.0
+            WHEN created_at >= datetime('now', '-48 hours') THEN 0.5
+            ELSE 0.0
+          END) as weighted_score
         FROM suggestion_votes
-        WHERE vote = 1 AND created_at >= datetime('now', '-24 hours')
+        WHERE vote = 1
         GROUP BY suggestion_id
-        HAVING COUNT(*) >= 3
-      `).all() as Array<{ suggestion_id: string }>;
+        HAVING weighted_score >= ${TRENDING_WEIGHTED_THRESHOLD}
+      `).all() as Array<{ suggestion_id: string; weighted_score: number }>;
       trendingIds = rows.map(r => r.suggestion_id);
     }
 
@@ -200,7 +217,7 @@ export async function triageSuggestions(suggestionIds: string[]): Promise<Triage
       db.prepare(`UPDATE suggestions SET trending = 0`).run();
       const placeholders = trendingIds.map(() => '?').join(',');
       db.prepare(`UPDATE suggestions SET trending = 1 WHERE id IN (${placeholders})`).run(...trendingIds);
-      logger.info({ trendingCount: trendingIds.length }, 'Trending suggestions updated');
+      logger.info({ trendingCount: trendingIds.length }, 'Trending suggestions updated (with decay)');
     } else {
       db.prepare(`UPDATE suggestions SET trending = 0`).run();
     }

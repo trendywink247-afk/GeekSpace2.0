@@ -27,6 +27,8 @@ import {
   X,
   Trash2,
   Layers,
+  Pencil,
+  ChevronDown,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -57,39 +59,36 @@ interface ReleaseNote {
 
 const releaseNotes: ReleaseNote[] = [
   {
-    phase: 'Phase 10',
-    title: 'Session Management & Model Picker',
+    phase: 'Phase 72',
+    title: 'Suggestion Intelligence Polish',
     date: 'Feb 2026',
     color: '#00F0FF',
     items: [
-      'Active Sessions panel in Settings — view and revoke devices',
-      'Preferred AI Engine picker — choose Auto, Local, Cloud, or Premium',
-      'Notification Activity Log — bell icon in header shows recent events',
-      'Roadmap now includes Recent Changes section',
+      'Status change notifications for suggestion owners',
+      'Status timeline in suggestion detail modal',
+      'Loading skeleton cards and error handling',
     ],
   },
   {
-    phase: 'Phase 9',
-    title: 'Health Stream & Connection Lifecycle',
+    phase: 'Phase 71',
+    title: 'Suggestion Editing & Voting',
     date: 'Feb 2026',
     color: '#BF5FFF',
     items: [
-      'Real-time health stream endpoint with SSE',
-      'Connection lifecycle improvements',
-      'Forgot password flow with OTP verification',
-      'Rate limiting hardening for auth routes',
+      'Edit your own suggestions (new status only)',
+      'Vote rate limiting and soft-delete cleanup',
+      'Admin bulk status updates and trending decay',
     ],
   },
   {
-    phase: 'Phase 8',
-    title: 'Coverage Gate & AI Briefing Scheduler',
+    phase: 'Phase 70',
+    title: 'Release Train R3',
     date: 'Feb 2026',
     color: '#00FF88',
     items: [
-      'Test coverage gate in CI (minimum coverage enforcement)',
-      'AI daily briefing schedule picker in agent settings',
-      'Snooze error handling for reminders',
-      'Reminder edit modal for in-place editing',
+      'Production deployment v3.1.0',
+      'Suggestion clusters and trending badges',
+      'Admin audit logging and ops cleanup',
     ],
   },
 ];
@@ -208,16 +207,31 @@ export function RoadmapPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const [similarTitle, setSimilarTitle] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [mySuggestions, setMySuggestions] = useState<Array<{id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number; trending?: number}>>([]);
   const [myRewards, setMyRewards] = useState<Array<{id: string; eventType: string; credits: number; createdAt: string}>>([]);
   const [topClusters, setTopClusters] = useState<Array<{id: string; name?: string; canonical_summary: string; total_votes?: number; overall_score: number | null}>>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [voteState, setVoteState] = useState<Record<string, { upvotes: number; downvotes: number; voting: boolean }>>({});
 
   // Task 69.10: Suggestion detail modal state
   const [detailSuggestion, setDetailSuggestion] = useState<{id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number} | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Phase 72.4: Events for detail modal timeline
+  const [detailEvents, setDetailEvents] = useState<Array<{id: string; oldStatus: string; newStatus: string; changedAt: string}>>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+
+  // Phase 71: Edit state for "new" status suggestions
+  const [editingSuggestion, setEditingSuggestion] = useState<{id: string; title: string; body: string} | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editBody, setEditBody] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+
+  // Phase 71: Show all suggestions toggle
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
 
   useEffect(() => {
     setLoadingSuggestions(true);
@@ -235,6 +249,8 @@ export function RoadmapPage() {
             .map(c => ({ id: c.id, name: c.name, canonical_summary: c.canonical_summary, total_votes: c.total_votes, overall_score: c.overall_score ?? null }))
         );
       }
+      const failed = [sugRes, rewRes, clusterRes].filter(r => r.status === 'rejected');
+      if (failed.length > 0) setLoadError('Some data failed to load.');
     }).finally(() => setLoadingSuggestions(false));
   }, []);
 
@@ -244,7 +260,10 @@ export function RoadmapPage() {
       const res = await suggestionService.vote(id, 1);
       setVoteState(prev => ({ ...prev, [id]: { upvotes: res.data.upvotes, downvotes: res.data.downvotes, voting: false } }));
     } catch {
-      setVoteState(prev => ({ ...prev, [id]: { ...(prev[id] || { upvotes: 0, downvotes: 0 }), voting: false } }));
+      setVoteState(prev => {
+        const existing = prev[id];
+        return { ...prev, [id]: { upvotes: existing?.upvotes ?? 0, downvotes: existing?.downvotes ?? 0, voting: false } };
+      });
     }
   };
 
@@ -260,13 +279,14 @@ export function RoadmapPage() {
       const res = await suggestionService.create({ title: formTitle.trim(), body: formBody.trim(), tags });
       if (res.data.duplicate_warning) {
         setDuplicateWarning(true);
+        if (res.data.similar_title) setSimilarTitle(res.data.similar_title);
       }
       setSubmitSuccess(true);
       setMySuggestions(prev => [{ id: res.data.id, title: res.data.title, body: res.data.body, status: res.data.status, created_at: res.data.created_at }, ...prev]);
       setFormTitle('');
       setFormBody('');
       setFormTags('');
-      setTimeout(() => { setSuggestionOpen(false); setSubmitSuccess(false); setDuplicateWarning(false); }, 1500);
+      setTimeout(() => { setSuggestionOpen(false); setSubmitSuccess(false); setDuplicateWarning(false); setSimilarTitle(''); }, 3000);
     } catch (err: unknown) {
       const message = (err as {response?: {data?: {error?: string}}})?.response?.data?.error || 'Failed to submit. Please try again.';
       setSubmitError(message);
@@ -285,6 +305,27 @@ export function RoadmapPage() {
       // non-fatal — ignore errors
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  // Phase 71: Edit suggestion handler
+  const handleEdit = async () => {
+    if (!editingSuggestion) return;
+    if (!editTitle.trim() || editBody.trim().length < 20) {
+      setEditError('Title required; description must be at least 20 characters.');
+      return;
+    }
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const res = await suggestionService.update(editingSuggestion.id, { title: editTitle.trim(), body: editBody.trim() });
+      setMySuggestions(prev => prev.map(s => s.id === editingSuggestion.id ? { ...s, title: res.data.title, body: res.data.body } : s));
+      setEditingSuggestion(null);
+    } catch (err: unknown) {
+      const message = (err as {response?: {data?: {error?: string}}})?.response?.data?.error || 'Failed to save. Please try again.';
+      setEditError(message);
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -565,13 +606,13 @@ export function RoadmapPage() {
                       <Star className="w-8 h-8 text-[#00FF88]" />
                     </div>
                     <p className="text-[#00FF88] font-semibold text-lg">Submitted!</p>
-                    {duplicateWarning && <p className="text-xs text-[#F59E0B] mt-2">Similar suggestion detected — we'll merge them.</p>}
+                    {duplicateWarning && <p className="text-xs text-[#F59E0B] mt-2">Similar to &quot;{similarTitle || 'an existing idea'}&quot; — we&apos;ll merge them.</p>}
                   </div>
                 ) : (
                   <div className="space-y-4 pt-2">
                     {duplicateWarning && (
                       <div className="px-3 py-2 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-xs text-[#F59E0B]">
-                        A similar idea already exists — yours will be merged with it.
+                        Similar to &quot;{similarTitle || 'an existing idea'}&quot; — yours will be merged with it.
                       </div>
                     )}
                     <div className="space-y-1.5">
@@ -629,13 +670,28 @@ export function RoadmapPage() {
                 </span>
               )}
             </h4>
+            {loadError && (
+              <div className="mb-3 px-3 py-2 rounded-lg bg-[#FF2D78]/10 border border-[#FF2D78]/30 text-xs text-[#FF2D78]">
+                {loadError}
+              </div>
+            )}
             {loadingSuggestions ? (
-              <p className="text-xs text-[#6B7280]">Loading\u2026</p>
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-[#05050A] border border-[#00F0FF]/10 animate-pulse">
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3.5 bg-[#1A1A2E] rounded w-3/4" />
+                      <div className="h-2.5 bg-[#1A1A2E] rounded w-1/2" />
+                    </div>
+                    <div className="h-6 w-16 bg-[#1A1A2E] rounded-full" />
+                  </div>
+                ))}
+              </div>
             ) : mySuggestions.length === 0 ? (
               <p className="text-xs text-[#6B7280]">No suggestions yet. Be the first to suggest a feature!</p>
             ) : (
               <div className="space-y-2">
-                {mySuggestions.slice(0, 5).map(s => {
+                {(showAllSuggestions ? mySuggestions : mySuggestions.slice(0, 5)).map(s => {
                   const vs = voteState[s.id];
                   const upvotes = vs?.upvotes ?? (s.upvotes ?? 0);
                   const downvotes = vs?.downvotes ?? (s.downvotes ?? 0);
@@ -645,7 +701,6 @@ export function RoadmapPage() {
                         <p className="text-sm text-[#E8E8F0] truncate">{s.title}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-xs text-[#6B7280]">{new Date(s.created_at).toLocaleDateString()}</p>
-                          {/* Task 70.3: Vote count badges */}
                           <span className="flex items-center gap-0.5 text-xs text-[#00F0FF]">
                             <ThumbsUp className="w-2.5 h-2.5" /> {upvotes}
                           </span>
@@ -659,15 +714,21 @@ export function RoadmapPage() {
                           )}
                         </div>
                       </div>
-                      {/* Task 69.10: View details button */}
                       <button
-                        onClick={() => setDetailSuggestion(s)}
+                        onClick={() => {
+                          setDetailSuggestion(s);
+                          setDetailEvents([]);
+                          setLoadingEvents(true);
+                          suggestionService.events(s.id)
+                            .then(res => setDetailEvents(res.data.events))
+                            .catch(() => {})
+                            .finally(() => setLoadingEvents(false));
+                        }}
                         className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#BF5FFF]/10 hover:bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs font-medium transition-colors flex-shrink-0"
                         title="View details"
                       >
                         <Eye className="w-3 h-3" />
                       </button>
-                      {/* Task 68.7: Vote button */}
                       <button
                         onClick={() => void handleVote(s.id)}
                         disabled={vs?.voting}
@@ -677,7 +738,16 @@ export function RoadmapPage() {
                         <ThumbsUp className="w-3 h-3" />
                         <span>{upvotes}</span>
                       </button>
-                      {/* Task 70.12: Delete button (only for 'new' status suggestions) */}
+                      {/* Phase 71: Edit button for 'new' status suggestions */}
+                      {s.status === 'new' && (
+                        <button
+                          onClick={() => { setEditingSuggestion(s); setEditTitle(s.title); setEditBody(s.body); setEditError(''); }}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[#00F0FF]/10 text-[#6B7280] hover:text-[#00F0FF] text-xs transition-colors flex-shrink-0"
+                          title="Edit suggestion"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                      )}
                       {s.status === 'new' && (
                         <button
                           onClick={() => void handleDelete(s.id)}
@@ -697,6 +767,16 @@ export function RoadmapPage() {
                     </div>
                   );
                 })}
+                {/* Phase 71: Show all / Show less toggle */}
+                {mySuggestions.length > 5 && (
+                  <button
+                    onClick={() => setShowAllSuggestions(prev => !prev)}
+                    className="flex items-center gap-1.5 mx-auto mt-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/5 hover:bg-[#00F0FF]/10 text-[#00F0FF] text-xs font-medium transition-colors"
+                  >
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllSuggestions ? 'rotate-180' : ''}`} />
+                    {showAllSuggestions ? 'Show less' : `View all ${mySuggestions.length} suggestions`}
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -767,7 +847,10 @@ export function RoadmapPage() {
           <p className="text-sm text-[#6B7280] mb-4">
             We're building Agentin for you. Let us know what you'd like to see next.
           </p>
-          <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-white font-medium transition-colors">
+          <button
+            onClick={() => setSuggestionOpen(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-white font-medium transition-colors"
+          >
             Share Feedback
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -777,9 +860,9 @@ export function RoadmapPage() {
       {/* Task 69.12: Recent Improvements section */}
       {(() => {
         const RECENT_IMPROVEMENTS = [
-          { phase: 69, title: 'Suggestion voting, CSV export, code copy, performance improvements' },
-          { phase: 68, title: 'Suggestion events, voting system, pagination, admin stats dashboard' },
-          { phase: 67, title: 'Suggest & Earn: submit ideas, earn credits when they ship' },
+          { phase: 72, title: 'Status notifications, timeline UI, loading skeletons, error handling' },
+          { phase: 71, title: 'Suggestion editing, vote rate limits, admin bulk-status, trending decay' },
+          { phase: 70, title: 'Release Train R3 — v3.1.0 production deploy, clusters, trending' },
         ];
         return (
           <Card className="bg-[#0B0B10] border-[#BF5FFF]/20">
@@ -805,6 +888,58 @@ export function RoadmapPage() {
           </Card>
         );
       })()}
+
+      {/* Phase 71: Edit Suggestion Modal */}
+      {editingSuggestion && (
+        <Dialog open={!!editingSuggestion} onOpenChange={(open) => { if (!open) setEditingSuggestion(null); }}>
+          <DialogContent className="bg-[#06060B] border-[#00F0FF]/20 max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-[#E8E8F0] flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-[#00F0FF]" />
+                Edit Suggestion
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-1.5">
+                <Label className="text-[#E8E8F0] text-sm">Title</Label>
+                <Input
+                  value={editTitle}
+                  onChange={e => setEditTitle(e.target.value)}
+                  maxLength={100}
+                  className="bg-[#05050A] border-[#00F0FF]/20 text-[#E8E8F0]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[#E8E8F0] text-sm">Description <span className="text-[#6B7280] font-normal">(min 20 chars)</span></Label>
+                <Textarea
+                  value={editBody}
+                  onChange={e => setEditBody(e.target.value)}
+                  rows={4}
+                  className="bg-[#05050A] border-[#00F0FF]/20 text-[#E8E8F0] resize-none"
+                />
+                <p className="text-right text-xs text-[#6B7280]">{editBody.length}/2000</p>
+              </div>
+              {editError && <p className="text-xs text-[#FF2D78]">{editError}</p>}
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setEditingSuggestion(null)}
+                  variant="outline"
+                  className="flex-1 border-[#00F0FF]/20 text-[#6B7280]"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => void handleEdit()}
+                  disabled={editSaving || !editTitle.trim() || editBody.trim().length < 20}
+                  className="flex-1 bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold"
+                >
+                  {editSaving ? 'Saving\u2026' : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Task 69.10: Suggestion Detail Modal */}
       {detailSuggestion && (
@@ -834,17 +969,38 @@ export function RoadmapPage() {
               <div className="rounded-lg bg-[#05050A] border border-[#BF5FFF]/10 p-4">
                 <p className="text-sm text-[#C4C8D4] leading-relaxed whitespace-pre-wrap">{detailSuggestion.body}</p>
               </div>
-              {/* Vote counts from voteState */}
-              {voteState[detailSuggestion.id] && (
-                <div className="flex items-center gap-4 text-xs text-[#6B7280]">
-                  <span className="flex items-center gap-1">
-                    <ThumbsUp className="w-3.5 h-3.5 text-[#00F0FF]" />
-                    {voteState[detailSuggestion.id].upvotes} upvotes
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <ThumbsUp className="w-3.5 h-3.5 text-[#FF6161] rotate-180" />
-                    {voteState[detailSuggestion.id].downvotes} downvotes
-                  </span>
+              {/* Vote counts — always show, using voteState with suggestion fallback */}
+              <div className="flex items-center gap-4 text-xs text-[#6B7280]">
+                <span className="flex items-center gap-1">
+                  <ThumbsUp className="w-3.5 h-3.5 text-[#00F0FF]" />
+                  {(voteState[detailSuggestion.id]?.upvotes ?? detailSuggestion.upvotes ?? 0)} upvotes
+                </span>
+                <span className="flex items-center gap-1">
+                  <ThumbsUp className="w-3.5 h-3.5 text-[#FF6161] rotate-180" />
+                  {(voteState[detailSuggestion.id]?.downvotes ?? detailSuggestion.downvotes ?? 0)} downvotes
+                </span>
+              </div>
+              {/* Phase 72.4: Status Timeline */}
+              {loadingEvents && <p className="text-xs text-[#6B7280]">Loading history…</p>}
+              {detailEvents.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-[#6B7280]">Status History</p>
+                  <div className="space-y-1.5">
+                    {detailEvents.map(ev => (
+                      <div key={ev.id} className="flex items-center gap-2 text-xs">
+                        <span className="px-1.5 py-0.5 rounded border" style={{ color: getStatusColor(ev.oldStatus), borderColor: `${getStatusColor(ev.oldStatus)}40`, backgroundColor: `${getStatusColor(ev.oldStatus)}10` }}>
+                          {getStatusLabel(ev.oldStatus)}
+                        </span>
+                        <ArrowRight className="w-3 h-3 text-[#6B7280]" />
+                        <span className="px-1.5 py-0.5 rounded border" style={{ color: getStatusColor(ev.newStatus), borderColor: `${getStatusColor(ev.newStatus)}40`, backgroundColor: `${getStatusColor(ev.newStatus)}10` }}>
+                          {getStatusLabel(ev.newStatus)}
+                        </span>
+                        <span className="text-[#6B7280] ml-auto">
+                          {new Date(ev.changedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               {/* Close button */}

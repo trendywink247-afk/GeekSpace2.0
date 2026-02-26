@@ -730,6 +730,63 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
     res.json({ suggestions: rows });
   });
 
+  // PATCH /api/admin/suggestions/bulk-status — bulk status update (Phase 71.10)
+  // MUST be before /:id/status to prevent Express treating 'bulk-status' as :id
+  adminRouter.patch('/suggestions/bulk-status', requireAdminToken, (req: Request, res: Response): void => {
+    const { ids, status } = req.body as { ids?: unknown; status?: string };
+    const validStatuses = ['new', 'triaged', 'accepted', 'rejected', 'shipped_main', 'shipped_prod'];
+
+    if (!status || !validStatuses.includes(status)) {
+      res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+      return;
+    }
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ error: 'ids must be a non-empty array' });
+      return;
+    }
+    if (ids.length > 50) {
+      res.status(400).json({ error: 'Maximum 50 suggestions per bulk operation' });
+      return;
+    }
+
+    const stringIds = ids.map(String);
+    let updated = 0;
+
+    for (const id of stringIds) {
+      const suggestion = db.prepare(`SELECT id, user_id, title, status FROM suggestions WHERE id = ?`).get(id) as {id: string; user_id: string; title: string; status: string} | undefined;
+      if (!suggestion) continue;
+
+      const oldStatus = suggestion.status;
+      db.prepare(`UPDATE suggestions SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, id);
+
+      try {
+        db.prepare(`
+          INSERT INTO suggestion_events (id, suggestion_id, from_status, to_status, actor, created_at)
+          VALUES (?, ?, ?, ?, ?, datetime('now'))
+        `).run(uuidV4(), id, oldStatus, status, 'admin');
+      } catch { /* non-fatal */ }
+
+      if (status === 'accepted') {
+        issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'ACCEPTED_EXPERIMENT' });
+      } else if (status === 'shipped_main') {
+        issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_MAIN' });
+      } else if (status === 'shipped_prod') {
+        issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_PROD' });
+      }
+      // Phase 72.2: Notify suggestion owner via activity_log
+      try {
+        db.prepare(
+          `INSERT INTO activity_log (id, user_id, action, details, icon, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`
+        ).run(uuidV4(), suggestion.user_id, 'suggestion_status_changed', `Your idea "${suggestion.title}" was ${status}`, 'lightbulb');
+      } catch { /* non-fatal */ }
+      updated++;
+    }
+
+    invalidateClustersCache();
+    logger.info({ count: updated, status }, 'Admin bulk-updated suggestion statuses');
+    res.json({ success: true, updated, status });
+  });
+
   // PATCH /api/admin/suggestions/:id/status — update status, trigger rewards
   adminRouter.patch('/suggestions/:id/status', requireAdminToken, (req: Request, res: Response): void => {
     const { id } = req.params;
@@ -763,7 +820,14 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
           `INSERT INTO activity_log (id, user_id, action, details, icon, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`
         ).run(uuidV4(), suggestion.user_id, 'Suggestion accepted', suggestion.title, 'lightbulb');
       } catch { /* non-fatal */ }
-    } else if (status === 'shipped_main') {
+    }
+    // Phase 72.2: Notify suggestion owner via activity_log on any status change
+    try {
+      db.prepare(
+        `INSERT INTO activity_log (id, user_id, action, details, icon, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`
+      ).run(uuidV4(), suggestion.user_id, 'suggestion_status_changed', `Your idea "${suggestion.title}" was ${status}`, 'lightbulb');
+    } catch { /* non-fatal */ }
+    if (status === 'shipped_main') {
       rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_MAIN' });
     } else if (status === 'shipped_prod') {
       rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_PROD' });

@@ -1133,14 +1133,20 @@ export const socialMediaService = {
 
 export const suggestionService = {
   create: (data: { title: string; body: string; tags: string[] }) =>
-    api.post<{ id: string; title: string; body: string; tags: string; status: string; created_at: string; duplicate_warning?: boolean }>('/suggestions', data),
+    api.post<{ id: string; title: string; body: string; tags: string; status: string; created_at: string; duplicate_warning?: boolean; similar_title?: string }>('/suggestions', data),
   mine: (params?: { page?: number; limit?: number }) =>
     api.get<{ suggestions: Array<{ id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number; trending?: number }>; total: number; page: number; limit: number }>('/suggestions/mine', { params }),
   clusters: () => api.get<{ clusters: Array<{ id: string; canonical_summary: string; name?: string; tags: string; suggestion_ids: string; overall_score: number | null; total_votes?: number; created_at: string }> }>('/suggestions/clusters'),
+  update: (id: string, data: { title: string; body: string }) =>
+    api.patch<{ id: string; title: string; body: string; status: string; updated_at: string }>(`/suggestions/${id}`, data),
   delete: (id: string) => api.delete(`/suggestions/${id}`),
   rewards: () => api.get<{ rewards: Array<{ id: string; eventType: string; credits: number; suggestionId: string | null; clusterId: string | null; createdAt: string }> }>('/suggestions/rewards/mine'),
   vote: (id: string, vote: 1 | -1) =>
     api.post<{ upvotes: number; downvotes: number }>(`/suggestions/${id}/vote`, { vote }),
+  events: (id: string) =>
+    api.get<{ events: Array<{ id: string; suggestionId: string; oldStatus: string; newStatus: string; changedBy: string; changedAt: string }> }>(`/suggestions/${id}/events`),
+  get: (id: string) =>
+    api.get<{ id: string; userId: string; title: string; body: string; tags: string[]; status: string; createdAt: string; updatedAt: string; upvotes: number; downvotes: number }>(`/suggestions/${id}`),
 };
 
 export default api;

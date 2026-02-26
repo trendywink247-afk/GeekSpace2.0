@@ -1,7 +1,7 @@
 # AI Risk Register — GeekSpace 2.0
 
 > Updated each phase. Tracks medium/high risks and mitigation status.
-> Last updated: Phase 70 (2026-02-26)
+> Last updated: Phase 74 (2026-02-26)
 
 ## Risk Levels
 - 🔴 High — may break production or user data
@@ -25,3 +25,5 @@
 | R12 | No rate limiting on admin endpoints (/admin/*) | 🟠 | Security | Mitigated: adminLimiter added in app.ts (10 req/min), confirmed Phase 46.1 audit | Mitigated | Phase 43 |
 | R13 | Missing DB indexes on high-frequency query paths | 🟡 | Performance | Fix: Phase 43.9 | In Progress | Phase 43 |
 | R14 | Clickjacking risk from iframeable content | 🟡 | Security | Mitigated: Helmet frameguard({ action: 'deny' }) sends X-Frame-Options: DENY; CSP frame-ancestors: none also in production. Double-mitigation confirmed Phase 46.7. | Mitigated | Phase 46 |
+| R15 | Contact request rate-limit SQL had missing parameter (RangeError on every POST /contact/request) | 🟠 | Reliability | Fixed: Phase 74 — added missing `windowStart` param to `checkRateLimit` query | Resolved Phase 74 | Phase 74 |
+| R16 | 27+ routes lacked dedicated unit tests (apiKeys, integrations, contact, oauth, webhooks) | 🟠 | Quality | Fixed: Phase 74 — 45 new tests across 5 route test files | Resolved Phase 74 | Phase 74 |

@@ -437,3 +437,112 @@ Suggestion Intelligence Phase 3: DB indexes, vote activity log, events endpoint,
 | 68.13 | Tests: 13 new tests (pagination, vote, dup-detect, activity, status-history, clusters) | ✅ | Dev/Ops |
 | 68.14 | **Task 14: similarity clustering** — merge into existing cluster at ≥50% overlap; admin /suggestions/stats endpoint | ✅ | Feature |
 
+---
+
+## Phase 71 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/102 | **Tests:** 746/746
+Suggestion Intelligence Phase 5: edit, vote rate limit, soft-delete cleanup, admin bulk-status, trending decay.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 71.1 | Fix 2 pre-existing lint warnings (exhaustive-deps) | ✅ | Reliability |
+| 71.2 | Vote state consistency in detail modal (always show) | ✅ | UX |
+| 71.3 | Vote rate limit: 10/min per user | ✅ | Security |
+| 71.4 | Soft-delete cleans orphaned votes | ✅ | Reliability |
+| 71.5 | PATCH /suggestions/:id — edit own 'new' suggestions + modal | ✅ | Feature |
+| 71.6 | My Suggestions "View all" toggle | ✅ | UX |
+| 71.7 | Triage batch safety limit (max 50) | ✅ | Security |
+| 71.8 | Cluster cache invalidation on vote/delete/status | ✅ | Performance |
+| 71.9 | Duplicate warning returns similar_title | ✅ | UX |
+| 71.10 | Admin bulk status update (max 50) | ✅ | Dev/Ops |
+| 71.11 | 15 new tests (746 total) | ✅ | Dev/Ops |
+| 71.12 | Brand guard — 0 violations | ✅ | Brand |
+| 71.13 | Trending decay scoring (24h=1.0x, 48h=0.5x) | ✅ | Feature |
+
+---
+
+## Phase 72 — COMPLETE ✓
+**Branch:** `ai/phase-20260226-phase72` | **Tests:** 753/753
+Suggestion Intelligence Polish: status notifications, timeline UI, loading skeletons, error handling, ops lessons.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 72.1 | CI verification baseline (746/746 clean) | ✅ | Reliability |
+| 72.2 | Admin status change → activity_log notification for owner | ✅ | Feature |
+| 72.3 | Wire events endpoint into frontend api.ts | ✅ | State-sync |
+| 72.4 | Status timeline in suggestion detail modal | ✅ | UX |
+| 72.5 | Loading skeleton cards for suggestions list | ✅ | UX |
+| 72.6 | Error banner on API fetch failures | ✅ | Edge-case |
+| 72.7 | Vote button catch block preserves existing counts | ✅ | Reliability |
+| 72.8 | Trending threshold → TRENDING_WEIGHTED_THRESHOLD constant | ✅ | Performance |
+| 72.9 | Cluster merge logging: added combinedCount | ✅ | Dev/Ops |
+| 72.10 | AI_LESSONS: Caddy host vs Docker lesson | ✅ | Dev/Ops |
+| 72.11 | 7 new tests (753 total) | ✅ | Dev/Ops |
+| 72.12 | Brand guard — 0 violations | ✅ | Brand |
+| 72.13 | Ops files + commit + PR | ✅ | Dev/Ops |
+
+---
+
+## Phase 73 — COMPLETE ✓
+**Branch:** `ai/phase-20260226-phase73` | **Tests:** 760/760
+XSS hardening, vote count API enrichment, RoadmapPage content refresh, DB index tuning.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 73.1 | CI verification baseline (753/753 clean) | ✅ | Reliability |
+| 73.2 | ReleaseNotes updated to phases 70–72 | ✅ | UX |
+| 73.3 | Recent Improvements updated to phases 70–72 | ✅ | UX |
+| 73.4 | Share Feedback button wired to suggestion modal | ✅ | Feature |
+| 73.5 | GET /suggestions/:id returns upvotes/downvotes | ✅ | Feature |
+| 73.6 | idx_activity_log_action index | ✅ | Performance |
+| 73.7 | suggestionService.get() added to api.ts | ✅ | State-sync |
+| 73.8 | XSS escaping on POST /suggestions (title + body) | ✅ | Security |
+| 73.8b | XSS escaping on PATCH /suggestions/:id | ✅ | Security |
+| 73.9 | idx_suggestions_user_deleted compound index | ✅ | Performance |
+| 73.10 | POST /suggestions returns upvotes: 0, downvotes: 0 | ✅ | Reliability |
+| 73.11 | 7 new tests (760 total) | ✅ | Dev/Ops |
+| 73.12 | Brand guard — 0 violations | ✅ | Brand |
+| 73.13 | Ops files + commit + PR | ✅ | Dev/Ops |
+
+---
+
+## Phase 74 — COMPLETE ✓
+**Branch:** `ai/phase-20260226-phase74` | **Tests:** 811/811
+Test coverage hardening — 5 route test suites + Vite manual chunks + contact.ts bug fix.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 74.1 | CI baseline (760/760 clean) + create branch | ✅ | Reliability |
+| 74.2 | api-keys.test.ts — 10 tests (CRUD, rotate, default, auth) | ✅ | Testing |
+| 74.3 | integrations.test.ts — 14 tests (CRUD, connect, invite, events) | ✅ | Testing |
+| 74.4 | contact.test.ts — 10 tests (request, dedup, preferences, accept) | ✅ | Testing |
+| 74.5 | oauth.test.ts — 5 tests (status, callbacks, redirects) | ✅ | Testing |
+| 74.6 | webhooks.test.ts — 7 tests (telegram secret, bot filter, n8n auth) | ✅ | Testing |
+| 74.7 | Bug fix: contact.ts checkRateLimit missing SQL param | ✅ | Bug fix |
+| 74.8 | Vite manual chunks (recharts, radix-ui, framer-motion) | ✅ | Performance |
+| 74.9 | Update AI_FEATURE_MATRIX.md | ✅ | Dev/Ops |
+| 74.10 | Update AI_RISK_REGISTER.md | ✅ | Dev/Ops |
+| 74.11 | phase74.test.ts meta test (6 tests) | ✅ | Testing |
+| 74.12 | Brand guard — 0 violations | ✅ | Brand |
+| 74.13 | Verification + commit + PR #105 + merge | ✅ | Dev/Ops |
+
+---
+
+## Phase 75 — COMPLETE ✓
+**Branch:** `ai/phase-20260226-phase75` | **Tests:** 818/818
+Production hardening + E2E test scaffolding: unified Caddy, hardened prod.sh, ErrorBoundary, lazyRetry, E2E specs.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 75.1 | CI baseline (811/811 clean) + create branch | ✅ | Reliability |
+| 75.2 | Unify Caddy configs (host /etc/caddy/Caddyfile) | ✅ | Infra |
+| 75.3 | Harden prod.sh (static sync validation, SW bump, Caddy reload) | ✅ | Infra |
+| 75.4 | Root ErrorBoundary in App.tsx | ✅ | Reliability |
+| 75.5 | lazyRetry chunk load retry utility + DashboardApp integration | ✅ | Reliability |
+| 75.6 | Add data-testid attributes for E2E selectors | ✅ | Testing |
+| 75.7 | E2E agent chat spec (e2e/chat.spec.ts) | ✅ | Testing |
+| 75.8 | E2E logout spec (e2e/logout.spec.ts) | ✅ | Testing |
+| 75.9 | phase75.test.ts meta test (7 tests) | ✅ | Testing |
+| 75.10 | Full verification (818/818, lint, typecheck, build, brand) | ✅ | Dev/Ops |
+| 75.11 | Ops + commit + PR + merge | ✅ | Dev/Ops |
+
