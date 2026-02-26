@@ -1,12 +1,57 @@
 import { Router } from 'express';
+import { randomBytes } from 'crypto';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, portfolioUpdateSchema, portfolioAiEditSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { firePortfolioVisitAutomations } from '../services/automations-engine.js';
+import { config } from '../config.js';
+import { logger } from '../logger.js';
 
 export const portfolioRouter = Router();
+
+/** Encode characters that have special meaning in HTML to prevent XSS and broken markup. */
+function htmlEncode(str: string | null | undefined): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+/** Strip dangerous HTML while preserving basic formatting. */
+function stripDangerousHtml(input: unknown): string {
+  if (typeof input !== 'string') return String(input ?? '');
+  return input
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<iframe[\s\S]*?\/?\s*>/gi, '')
+    .replace(/javascript\s*:/gi, '')
+    .replace(/on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '')
+    .replace(/<(?!\/?(?:b|i|em|strong|p|br|ul|ol|li|a)\b)[^>]+>/gi, '');
+}
+
+// In-memory view dedup: prevents same IP from inflating view_count within 1h
+const recentViewers = new Map<string, number>(); // `${ip}:${username}` → expires_at
+const VIEW_DEDUP_MS = 60 * 60 * 1000; // 1 hour
+
+function isDuplicateView(ip: string, username: string): boolean {
+  const key = `${ip}:${username}`;
+  const expires = recentViewers.get(key);
+  if (expires && expires > Date.now()) return true;
+  // Record this view
+  recentViewers.set(key, Date.now() + VIEW_DEDUP_MS);
+  // Evict stale entries when Map grows large
+  if (recentViewers.size > 2000) {
+    const now = Date.now();
+    for (const [k, exp] of recentViewers.entries()) {
+      if (exp < now) recentViewers.delete(k);
+    }
+  }
+  return false;
+}
 
 const parsePortfolio = (row: Record<string, unknown>) => ({
   ...row,
@@ -22,19 +67,136 @@ const parsePortfolio = (row: Record<string, unknown>) => ({
 portfolioRouter.get('/me', requireAuth, (req: AuthRequest, res) => {
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(req.userId!) as Record<string, unknown> | undefined;
   if (!portfolio) { res.status(404).json({ error: 'Portfolio not found' }); return; }
+  // 52.5: Explicitly no-store for authenticated private data
+  res.set('Cache-Control', 'private, no-store');
   res.json(parsePortfolio(portfolio));
 });
 
+// 42.4: GET /me/stats — view_count, contact_count, project_count, last_viewed_at
+portfolioRouter.get('/me/stats', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
+  if (!portfolio) { res.status(404).json({ error: 'Portfolio not found' }); return; }
+
+  const viewCount = (portfolio.view_count as number) ?? 0;
+
+  // contact_count from portfolio_contacts table
+  const contactRow = db.prepare('SELECT COUNT(*) as cnt FROM portfolio_contacts WHERE user_id = ?').get(userId) as { cnt: number };
+  const contactCount = contactRow.cnt;
+
+  // project_count from JSON array
+  let projectCount = 0;
+  try {
+    const projects = JSON.parse(portfolio.projects as string || '[]');
+    projectCount = Array.isArray(projects) ? projects.length : 0;
+  } catch { projectCount = 0; }
+
+  // last_viewed_at — use last_viewed_at column if it exists; fall back to null
+  const hasLastViewed = portfolio.last_viewed_at !== undefined;
+  const lastViewedAt = hasLastViewed ? (portfolio.last_viewed_at as string | null) : null;
+
+  res.json({ view_count: viewCount, contact_count: contactCount, project_count: projectCount, last_viewed_at: lastViewedAt });
+});
+
+// 65.10: GET /me/analytics/sources — top visitor referrer domains (last 30 days)
+portfolioRouter.get('/me/analytics/sources', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const sources = db.prepare(
+    `SELECT COALESCE(referer_host, 'Direct') as source, COUNT(*) as visits
+     FROM portfolio_visits
+     WHERE user_id = ? AND visited_at >= datetime('now', '-30 days')
+     GROUP BY referer_host ORDER BY visits DESC LIMIT 10`
+  ).all(userId) as Array<{ source: string; visits: number }>;
+  res.json({ sources });
+});
+
+// 63.2 + 64.7: GET /me/analytics/export — CSV export (rate-limited: 10/5min per user)
+portfolioRouter.get('/me/analytics/export', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  // 64.7: Redis-based rate limit (10 exports per 5 min per user)
+  const rlKey = `portfolio:analytics-export-rl:${userId}`;
+  try {
+    const current = await cacheGet(rlKey);
+    const count = current ? parseInt(current, 10) : 0;
+    if (count >= 10) {
+      res.status(429).json({ error: 'Too many export requests. Try again in a few minutes.' });
+      return;
+    }
+    await cacheSet(rlKey, String(count + 1), 300);
+  } catch { /* Redis unavailable — allow through */ }
+
+  // 66.3: Optional date-range filter for analytics export
+  const fromDate = typeof req.query.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.from) ? req.query.from : null;
+  const toDate = typeof req.query.to === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.to) ? req.query.to : null;
+
+  let rows: Array<{ day: string; views: number }>;
+  if (fromDate && toDate) {
+    rows = db.prepare(
+      `SELECT date(visited_at) as day, COUNT(*) as views
+       FROM portfolio_visits WHERE user_id = ? AND date(visited_at) >= ? AND date(visited_at) <= ?
+       GROUP BY day ORDER BY day ASC`
+    ).all(userId, fromDate, toDate) as Array<{ day: string; views: number }>;
+  } else {
+    rows = db.prepare(
+      `SELECT date(visited_at) as day, COUNT(*) as views
+       FROM portfolio_visits WHERE user_id = ? AND visited_at >= date('now', '-30 days')
+       GROUP BY day ORDER BY day ASC`
+    ).all(userId) as Array<{ day: string; views: number }>;
+  }
+
+  let csv = 'date,views\n';
+  for (const r of rows) { csv += `${r.day},${r.views}\n`; }
+
+  res.set('Content-Type', 'text/csv');
+  res.set('Content-Disposition', 'attachment; filename="portfolio-analytics.csv"');
+  res.send(csv);
+});
+
+// 59.5: Portfolio update rate limit — 10 updates per 5 minutes per user
 portfolioRouter.patch('/me', requireAuth, validateBody(portfolioUpdateSchema), async (req: AuthRequest, res) => {
+  const rlKey = `portfolio:update-rl:${req.userId}`;
+  try {
+    const current = await cacheGet(rlKey);
+    const count = current ? parseInt(current, 10) : 0;
+    if (count >= 10) {
+      res.status(429).json({ error: 'Too many portfolio updates. Please wait a few minutes.' });
+      return;
+    }
+    // Increment; set TTL 5min on first call
+    const newCount = count + 1;
+    await cacheSet(rlKey, String(newCount), 300);
+  } catch { /* Redis unavailable — allow request through */ }
+
   const updates = req.body;
   const fields: string[] = [];
   const values: unknown[] = [];
 
+  // 59.9: Handle metaDescription → meta_description column
+  if (updates.metaDescription !== undefined) {
+    fields.push('meta_description = ?'); values.push(updates.metaDescription);
+  }
+
+  // Sanitize free-text fields before storing
   for (const f of ['headline', 'about', 'avatar', 'location', 'role', 'company', 'layout']) {
-    if (updates[f] !== undefined) { fields.push(`${f} = ?`); values.push(updates[f]); }
+    if (updates[f] !== undefined) {
+      const sanitized = typeof updates[f] === 'string' ? stripDangerousHtml(updates[f]) : updates[f];
+      fields.push(`${f} = ?`); values.push(sanitized);
+    }
   }
   for (const [k, col] of Object.entries({ skills: 'skills', projects: 'projects', milestones: 'milestones', social: 'social', visibility: 'visibility' })) {
-    if (updates[k] !== undefined) { fields.push(`${col} = ?`); values.push(JSON.stringify(updates[k])); }
+    if (updates[k] !== undefined) {
+      let val = updates[k];
+      // Sanitize project name, title (alias), and description fields
+      if (k === 'projects' && Array.isArray(val)) {
+        val = val.map((proj: Record<string, unknown>) => ({
+          ...proj,
+          name: typeof proj.name === 'string' ? stripDangerousHtml(proj.name) : proj.name,
+          title: typeof proj.title === 'string' ? stripDangerousHtml(proj.title) : proj.title,
+          description: typeof proj.description === 'string' ? stripDangerousHtml(proj.description) : proj.description,
+        }));
+      }
+      fields.push(`${col} = ?`); values.push(JSON.stringify(val));
+    }
   }
   if (updates.agentEnabled !== undefined) { fields.push('agent_enabled = ?'); values.push(updates.agentEnabled ? 1 : 0); }
   if (updates.isPublic !== undefined) { fields.push('is_public = ?'); values.push(updates.isPublic ? 1 : 0); }
@@ -176,6 +338,8 @@ portfolioRouter.get('/:username/agent-status', async (req, res) => {
   // Status logic: Active if agent_enabled AND (has recent activity OR no last_active recorded yet)
   const isActive = portfolio.agent_enabled && (isRecentlyActive || !agentConfig?.last_active);
 
+  // 52.5: Cache agent status for 30s — polled by portfolio view, changes slowly
+  res.set('Cache-Control', 'public, max-age=30, s-maxage=30');
   res.json({
     status: isActive ? 'active' : 'inactive',
     enabled: true,
@@ -211,14 +375,22 @@ portfolioRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
   const recentViews = (db.prepare(
     "SELECT COUNT(*) as cnt FROM portfolio_visits WHERE user_id = ? AND visited_at >= datetime('now', '-7 days')"
   ).get(userId) as { cnt: number }).cnt;
-  // Daily breakdown for the last 30 days
-  const dailyBreakdown = db.prepare(`
+  // 58.3: Daily breakdown — all 30 days filled with zeros (no gaps)
+  const rawBreakdown = db.prepare(`
     SELECT date(visited_at) as date, COUNT(*) as count
     FROM portfolio_visits
     WHERE user_id = ? AND visited_at >= datetime('now', '-30 days')
     GROUP BY date(visited_at)
     ORDER BY date ASC
   `).all(userId) as { date: string; count: number }[];
+  const countMap = new Map(rawBreakdown.map((r) => [r.date, r.count]));
+  const dailyBreakdown: { date: string; count: number }[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const ds = d.toISOString().slice(0, 10);
+    dailyBreakdown.push({ date: ds, count: countMap.get(ds) ?? 0 });
+  }
   res.json({ totalViews, recentViews, dailyBreakdown });
 });
 
@@ -245,11 +417,38 @@ portfolioRouter.get('/stats/export', requireAuth, (req: AuthRequest, res) => {
 });
 
 // ── 37.1: Portfolio contact form (public, rate-limited) ──────────────────────
-const contactRateLimit = new Map<string, { count: number; windowStart: number }>();
+
+// 49.7: Issue a one-time nonce for the contact form. The nonce prevents replay attacks:
+// the frontend fetches a fresh token before every submission, and the server consumes it on first use.
+portfolioRouter.get('/:username/contact-nonce', async (req, res) => {
+  const { username } = req.params;
+  const user = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: string } | undefined;
+  if (!user) { res.status(404).json({ error: 'Not found' }); return; }
+  const nonce = randomBytes(16).toString('hex');
+  await cacheSet(`portfolio:nonce:${nonce}`, username, 900); // 15-minute TTL
+  res.json({ nonce });
+});
 
 portfolioRouter.post('/:username/contact', async (req, res) => {
   const { username } = req.params;
-  const { senderName, senderEmail, message } = req.body as { senderName?: string; senderEmail?: string; message?: string };
+  const { senderName, senderEmail, message, honeypot, nonce } = req.body as { senderName?: string; senderEmail?: string; message?: string; honeypot?: string; nonce?: string };
+
+  // 48.6: Origin validation — reject requests from disallowed origins
+  // Requests with no Origin (e.g., server-side curl) are allowed through.
+  const requestOrigin = req.headers.origin;
+  if (requestOrigin) {
+    const allowedOrigins = config.corsOrigins;
+    if (!allowedOrigins.includes(requestOrigin)) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+  }
+
+  // 40.2: Honeypot — bots fill hidden fields; silently accept and discard
+  if (honeypot) {
+    res.json({ success: true });
+    return;
+  }
 
   if (!senderName?.trim() || !message?.trim()) {
     res.status(400).json({ error: 'Name and message are required' });
@@ -259,19 +458,44 @@ portfolioRouter.post('/:username/contact', async (req, res) => {
     res.status(400).json({ error: 'Message too long (max 1000 characters)' });
     return;
   }
+  // 46.6: Validate email format when provided
+  if (senderEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail.trim())) {
+    res.status(400).json({ error: 'Invalid email address' });
+    return;
+  }
 
-  // IP-based rate limit: max 3 requests per hour per IP
+  // Sanitize user-supplied fields to prevent XSS in stored content
+  const sanitizedSenderName = stripDangerousHtml(senderName);
+  const sanitizedMessage = stripDangerousHtml(message);
+
+  // 49.6: IP-based rate limit using Redis (shared across PM2 workers; max 3 req/hr per IP)
+  // Falls back to allow-through if Redis is unavailable.
   const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
-  const now = Date.now();
-  const rlEntry = contactRateLimit.get(ip);
-  if (rlEntry && now - rlEntry.windowStart < 3600000) {
-    if (rlEntry.count >= 3) {
+  const rlKey = `portfolio:contact:rl:${ip}`;
+  try {
+    const rlRaw = await cacheGet(rlKey);
+    const rlCount = rlRaw ? parseInt(rlRaw, 10) : 0;
+    if (rlCount >= 3) {
+      // 51.9: Log rate-limit block event
+      logger.warn({ event: 'portfolio_contact_blocked', username, ip, reason: 'rate_limit' }, 'Portfolio contact rate-limited');
       res.status(429).json({ error: 'Too many requests, please try again later' });
       return;
     }
-    rlEntry.count++;
-  } else {
-    contactRateLimit.set(ip, { count: 1, windowStart: now });
+    await cacheSet(rlKey, String(rlCount + 1), 3600); // TTL = 1 hour
+  } catch { /* Redis unavailable — allow through (non-fatal) */ }
+
+  // 49.7: Validate one-time nonce if provided (silently skip validation when Redis is unavailable)
+  if (nonce) {
+    try {
+      const nonceOwner = await cacheGet(`portfolio:nonce:${nonce}`);
+      if (!nonceOwner || nonceOwner !== username) {
+        // 51.9: Log nonce failure event
+        logger.warn({ event: 'portfolio_contact_blocked', username, ip, reason: 'nonce_invalid' }, 'Portfolio contact nonce invalid or expired');
+        res.status(422).json({ error: 'Invalid or expired form token. Please reload and try again.' });
+        return;
+      }
+      await cacheDel(`portfolio:nonce:${nonce}`); // One-time use: consume immediately
+    } catch { /* Redis unavailable — allow through */ }
   }
 
   const user = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: string } | undefined;
@@ -283,7 +507,10 @@ portfolioRouter.post('/:username/contact', async (req, res) => {
   const id = uuid();
   db.prepare(
     'INSERT INTO portfolio_contacts (id, username, user_id, sender_name, sender_email, message) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(id, username, user.id, senderName.trim(), senderEmail?.trim() || null, message.trim());
+  ).run(id, username, user.id, sanitizedSenderName.trim(), senderEmail?.trim() || null, sanitizedMessage.trim());
+
+  // 51.9: Log successful contact submission
+  logger.info({ event: 'portfolio_contact_success', username, ip, hasEmail: !!senderEmail }, 'Portfolio contact message received');
 
   // Notify owner via Telegram if linked
   const link = db.prepare(
@@ -293,7 +520,7 @@ portfolioRouter.post('/:username/contact', async (req, res) => {
     const { sendTelegramMessage } = await import('../services/telegram.js');
     sendTelegramMessage(
       link.external_id,
-      `📩 Portfolio message from ${senderName.trim()}: "${message.slice(0, 200)}${message.length > 200 ? '…' : ''}"`
+      `📩 Portfolio message from ${sanitizedSenderName.trim()}: "${sanitizedMessage.slice(0, 200)}${sanitizedMessage.length > 200 ? '…' : ''}"`
     ).catch(() => {});
   }
 
@@ -308,12 +535,28 @@ portfolioRouter.get('/contacts', requireAuth, (req: AuthRequest, res) => {
   res.json(contacts);
 });
 
+// 66.3: DELETE /contacts/:id — delete a single contact message (owner only)
+portfolioRouter.delete('/contacts/:id', requireAuth, (req: AuthRequest, res) => {
+  const result = db.prepare('DELETE FROM portfolio_contacts WHERE id = ? AND user_id = ?').run(req.params.id, req.userId!);
+  if (result.changes === 0) { res.status(404).json({ error: 'Contact not found' }); return; }
+  res.json({ success: true });
+});
+
+// 66.3: DELETE /contacts — clear all contact messages (owner only)
+portfolioRouter.delete('/contacts', requireAuth, (req: AuthRequest, res) => {
+  const result = db.prepare('DELETE FROM portfolio_contacts WHERE user_id = ?').run(req.userId!);
+  res.json({ deleted: result.changes });
+});
+
 // ── 34.3: Public view counter (no auth — fire-and-forget on portfolio page load) ──
 portfolioRouter.post('/:username/view', (req, res) => {
   const { username } = req.params;
   const user = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: string } | undefined;
   if (!user) { res.status(404).json({ error: 'Not found' }); return; }
-  db.prepare('UPDATE portfolios SET view_count = view_count + 1 WHERE user_id = ?').run(user.id);
+  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+  if (!isDuplicateView(ip, username)) {
+    db.prepare('UPDATE portfolios SET view_count = view_count + 1 WHERE user_id = ?').run(user.id);
+  }
   res.json({ ok: true });
 });
 
@@ -329,35 +572,38 @@ portfolioRouter.get('/:username', async (req, res) => {
   if (isCrawler(ua)) {
     const username = req.params.username;
     const row = db.prepare(
-      'SELECT p.headline, p.about, p.avatar, u.name FROM portfolios p JOIN users u ON u.id = p.user_id WHERE p.username = ?'
-    ).get(username) as { headline: string; about: string; avatar: string; name: string } | undefined;
+      'SELECT p.headline, p.about, p.avatar, p.meta_description, u.name FROM portfolios p JOIN users u ON u.id = p.user_id WHERE p.username = ?'
+    ).get(username) as { headline: string; about: string; avatar: string; meta_description: string | null; name: string } | undefined;
     if (!row) { res.status(404).send('<html><body>Portfolio not found</body></html>'); return; }
     const title = `${row.name || username} — GeekSpace Portfolio`;
-    const description = row.headline || row.about?.slice(0, 160) || 'View this portfolio on GeekSpace.';
+    // 59.9: Prefer explicit meta_description over auto-generated fallback
+    const description = row.meta_description || row.headline || row.about?.slice(0, 160) || 'View this portfolio on GeekSpace.';
     const imageUrl = row.avatar && !row.avatar.match(/^[A-Z]{1,2}$/)
       ? row.avatar
       : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name || username)}&background=00F0FF&color=05050A&size=256`;
     const pageUrl = `https://ai.geekspace.space/p/${username}`;
+    const safeTitle = htmlEncode(title);
+    const safeDescription = htmlEncode(description);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(`<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>${title}</title>
-  <meta name="description" content="${description}" />
-  <meta property="og:title" content="${title}" />
-  <meta property="og:description" content="${description}" />
-  <meta property="og:image" content="${imageUrl}" />
-  <meta property="og:url" content="${pageUrl}" />
+  <title>${safeTitle}</title>
+  <meta name="description" content="${safeDescription}" />
+  <meta property="og:title" content="${safeTitle}" />
+  <meta property="og:description" content="${safeDescription}" />
+  <meta property="og:image" content="${htmlEncode(imageUrl)}" />
+  <meta property="og:url" content="${htmlEncode(pageUrl)}" />
   <meta property="og:type" content="profile" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${title}" />
-  <meta name="twitter:description" content="${description}" />
-  <meta name="twitter:image" content="${imageUrl}" />
+  <meta name="twitter:title" content="${safeTitle}" />
+  <meta name="twitter:description" content="${safeDescription}" />
+  <meta name="twitter:image" content="${htmlEncode(imageUrl)}" />
 </head>
 <body>
-  <h1>${title}</h1>
-  <p>${description}</p>
+  <h1>${safeTitle}</h1>
+  <p>${safeDescription}</p>
 </body>
 </html>`);
     return;
@@ -368,16 +614,27 @@ portfolioRouter.get('/:username', async (req, res) => {
   if (cached) {
     // Record visit even for cached responses
     try {
-      const cachedData = JSON.parse(cached) as { userId?: string };
+      const cachedData = JSON.parse(cached) as { userId?: string; viewCount?: number };
       if (cachedData.userId) {
         const visitorIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || null;
         const recentVisit = db.prepare(
           "SELECT id FROM portfolio_visits WHERE user_id = ? AND visitor_ip = ? AND visited_at >= datetime('now', '-30 minutes')"
         ).get(cachedData.userId, visitorIp);
         if (!recentVisit) {
-          db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(cachedData.userId, visitorIp);
+          // 65.10: Capture referer host for visitor source analytics
+          const refererHost = (() => { try { return req.headers.referer ? new URL(req.headers.referer).hostname : null; } catch { return null; } })();
+          db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip, referer_host) VALUES (?, ?, ?)').run(cachedData.userId, visitorIp, refererHost);
           firePortfolioVisitAutomations(cachedData.userId, visitorIp);
         }
+      }
+
+      // 45.8: ETag + Cache-Control for cached responses
+      const etag = `"${Buffer.from(JSON.stringify({ id: cachedData.userId, vc: cachedData.viewCount ?? 0 })).toString('base64')}"`;
+      res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+      res.set('ETag', etag);
+      if (req.headers['if-none-match'] === etag) {
+        res.status(304).end();
+        return;
       }
     } catch { /* non-fatal */ }
     res.json(JSON.parse(cached));
@@ -412,11 +669,23 @@ portfolioRouter.get('/:username', async (req, res) => {
       "SELECT id FROM portfolio_visits WHERE user_id = ? AND visitor_ip = ? AND visited_at >= datetime('now', '-30 minutes')"
     ).get(portfolio.user_id, visitorIp);
     if (!recentVisit) {
-      db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip) VALUES (?, ?)').run(portfolio.user_id, visitorIp);
+      // 65.10: Capture referer host
+      const refererHost2 = (() => { try { return req.headers.referer ? new URL(req.headers.referer).hostname : null; } catch { return null; } })();
+      db.prepare('INSERT INTO portfolio_visits (user_id, visitor_ip, referer_host) VALUES (?, ?, ?)').run(portfolio.user_id, visitorIp, refererHost2);
       firePortfolioVisitAutomations(portfolio.user_id as string, visitorIp);
     }
   } catch { /* non-fatal */ }
 
   await cacheSet(cacheKey, JSON.stringify(responseData), 300);
+
+  // 45.8: ETag + Cache-Control for fresh responses
+  const etag = `"${Buffer.from(JSON.stringify({ id: responseData.userId, vc: responseData.viewCount })).toString('base64')}"`;
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+  res.set('ETag', etag);
+  if (req.headers['if-none-match'] === etag) {
+    res.status(304).end();
+    return;
+  }
+
   res.json(responseData);
 });

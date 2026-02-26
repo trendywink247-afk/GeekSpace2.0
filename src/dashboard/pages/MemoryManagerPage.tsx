@@ -41,6 +41,11 @@ export function MemoryManagerPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // 65.2: Confidence threshold filter (0-100)
+  const [minConfidence, setMinConfidence] = useState(0);
+  const [bulkClearing, setBulkClearing] = useState<string | null>(null);
+  // 66.13: Confirmation state for bulk-clear modal
+  const [bulkClearConfirm, setBulkClearConfirm] = useState<string | null>(null);
 
   // Load memories from API
   useEffect(() => {
@@ -83,10 +88,29 @@ export function MemoryManagerPage() {
 
   const handleDeleteByCategory = async (category: string) => {
     if (!confirm(`Delete all memories in category "${category}"?`)) return;
-    
+
     const toDelete = memories.filter((m) => m.category === category);
     for (const memory of toDelete) {
       await handleDelete(memory.id);
+    }
+  };
+
+  // 65.7: Bulk-clear by category via server endpoint
+  // 66.13: Uses modal confirmation instead of window.confirm()
+  const handleBulkClear = async (category: string) => {
+    setBulkClearConfirm(category);
+  };
+
+  const confirmBulkClear = async () => {
+    const category = bulkClearConfirm;
+    if (!category) return;
+    setBulkClearConfirm(null);
+    setBulkClearing(category);
+    try {
+      await memoryService.bulkClear(category);
+      setMemories(prev => prev.filter(m => m.category !== category));
+    } catch { /* ignore */ } finally {
+      setBulkClearing(null);
     }
   };
 
@@ -104,14 +128,16 @@ export function MemoryManagerPage() {
   // Filter and sort memories
   const filteredMemories = memories
     .filter((m) => {
-      const matchesSearch = 
+      const matchesSearch =
         m.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.category.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const matchesCategory = selectedCategory === 'all' || m.category === selectedCategory;
-      
-      return matchesSearch && matchesCategory;
+      // 65.2: Confidence threshold filter
+      const matchesConfidence = (m.confidence * 100) >= minConfidence;
+
+      return matchesSearch && matchesCategory && matchesConfidence;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -275,21 +301,46 @@ export function MemoryManagerPage() {
             </div>
           </div>
 
+          {/* 65.2: Confidence threshold slider */}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-[#6B7280] whitespace-nowrap">Min confidence: <span className="text-[#00FF88] font-mono">{minConfidence}%</span></span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={minConfidence}
+              onChange={(e) => setMinConfidence(Number(e.target.value))}
+              className="flex-1 h-1.5 accent-[#00FF88] cursor-pointer"
+              aria-label="Minimum confidence threshold"
+            />
+          </div>
+
           {/* Category quick filters */}
           {categories.length > 1 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               {categories.filter(c => c !== 'all').map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(selectedCategory === cat ? 'all' : cat)}
-                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                    selectedCategory === cat
-                      ? 'bg-[#00F0FF] text-white'
-                      : 'bg-[#06060B] text-[#6B7280] hover:text-white'
-                  }`}
-                >
-                  {cat}
-                </button>
+                <div key={cat} className="flex items-center gap-1">
+                  <button
+                    onClick={() => setSelectedCategory(selectedCategory === cat ? 'all' : cat)}
+                    className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                      selectedCategory === cat
+                        ? 'bg-[#00F0FF] text-white'
+                        : 'bg-[#06060B] text-[#6B7280] hover:text-white'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                  {/* 65.7: Bulk-clear button per category */}
+                  <button
+                    onClick={() => void handleBulkClear(cat)}
+                    disabled={bulkClearing === cat}
+                    title={`Clear all ${cat} memories`}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF6161]/10 text-[#FF6161]/60 hover:text-[#FF6161] hover:bg-[#FF6161]/20 transition-colors disabled:opacity-40"
+                  >
+                    {bulkClearing === cat ? '…' : '✕ all'}
+                  </button>
+                </div>
               ))}
             </div>
           )}
@@ -400,6 +451,40 @@ export function MemoryManagerPage() {
             <Trash2 className="w-4 h-4 mr-2" />
             Delete all in {selectedCategory}
           </Button>
+        </div>
+      )}
+
+      {/* 66.13: Bulk-clear confirmation modal */}
+      {bulkClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0D0D1A] border border-[#FF6161]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FF6161]/10 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-[#FF6161]" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[#F4F6FF]">Clear all memories?</h3>
+                <p className="text-xs text-[#6B7280]">Category: <span className="text-[#E8E8F0] font-medium">{bulkClearConfirm}</span></p>
+              </div>
+            </div>
+            <p className="text-sm text-[#9CA3AF] mb-5">
+              All memories in the <strong className="text-[#E8E8F0]">{bulkClearConfirm}</strong> category will be permanently deleted from the server.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBulkClearConfirm(null)}
+                className="flex-1 py-2 px-4 rounded-xl border border-[#2A2A3A] text-sm text-[#9CA3AF] hover:bg-[#1A1A2E] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void confirmBulkClear()}
+                className="flex-1 py-2 px-4 rounded-xl bg-[#FF6161]/15 border border-[#FF6161]/30 text-sm text-[#FF6161] hover:bg-[#FF6161]/25 transition-colors font-medium"
+              >
+                Clear all
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

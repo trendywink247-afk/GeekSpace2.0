@@ -15,7 +15,7 @@ import type { ParsedAction } from './action-parser.js';
 import { config } from '../config.js';
 import { RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
 import { generateImage, generateVideo, generateAvatar } from './media-generation.js';
-import { cacheSet, cacheGet } from './cache.js';
+import { cacheSet, cacheGet, cacheDel } from './cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from './telegram.js';
 
 // ── Types ───────────────────────────────────────────────────
@@ -32,13 +32,22 @@ export interface ActionResult {
   receipt?: ReceiptItem; // Visual confirmation of action taken
 }
 
+// ── Portfolio cache helper ───────────────────────────────────
+// 48.2: Invalidate public portfolio cache after AI-driven portfolio writes
+async function invalidatePortfolioCache(userId: string): Promise<void> {
+  try {
+    const row = db.prepare('SELECT username FROM portfolios WHERE user_id = ?').get(userId) as { username: string } | undefined;
+    if (row?.username) await cacheDel(`portfolio:${row.username}`);
+    // Also invalidate by users.username in case portfolios.username differs
+    const userRow = db.prepare('SELECT username FROM users WHERE id = ?').get(userId) as { username: string } | undefined;
+    if (userRow?.username && userRow.username !== row?.username) await cacheDel(`portfolio:${userRow.username}`);
+  } catch { /* non-fatal */ }
+}
+
 // ── Executor ────────────────────────────────────────────────
 
-export async function executeAction(userId: string, action: ParsedAction): Promise<ActionResult> {
-  const { tool, params } = action;
-
-  try {
-    switch (tool) {
+async function runAction(userId: string, tool: string, params: ParsedAction['params']): Promise<ActionResult> {
+  switch (tool) {
       // ── generate_code ───────────────────────────────────
       case 'generate_code': {
         const title = params.title as string;
@@ -77,6 +86,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
             });
             db.prepare('UPDATE portfolios SET projects = ? WHERE user_id = ?')
               .run(JSON.stringify(projects), userId);
+            await invalidatePortfolioCache(userId); // 48.2
           }
         } catch { /* non-fatal */ }
 
@@ -114,6 +124,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
         db.prepare(
           `UPDATE portfolios SET projects = ? WHERE user_id = ?`,
         ).run(JSON.stringify(projects), userId);
+        await invalidatePortfolioCache(userId); // 48.2
 
         return {
           tool,
@@ -128,6 +139,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
         db.prepare(
           `UPDATE portfolios SET about = ? WHERE user_id = ?`,
         ).run(params.bio as string, userId);
+        await invalidatePortfolioCache(userId); // 48.2
 
         return {
           tool,
@@ -142,6 +154,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
         db.prepare(
           `UPDATE portfolios SET skills = ? WHERE user_id = ?`,
         ).run(JSON.stringify(params.skills as string[]), userId);
+        await invalidatePortfolioCache(userId); // 48.2
 
         return {
           tool,
@@ -177,6 +190,7 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
         db.prepare(
           `UPDATE portfolios SET projects = ? WHERE user_id = ?`,
         ).run(JSON.stringify(filtered), userId);
+        await invalidatePortfolioCache(userId); // 48.2
 
         return {
           tool,
@@ -502,8 +516,22 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
           message: `Unknown tool "${tool}"`,
         };
     }
+}
+
+export async function executeAction(userId: string, action: ParsedAction): Promise<ActionResult> {
+  const { tool, params } = action;
+  const actionStart = Date.now();
+
+  logger.info({ actionType: tool, userId }, 'action:executing');
+
+  try {
+    const result = await runAction(userId, tool, params);
+    const duration = Date.now() - actionStart;
+    logger.info({ actionType: tool, userId, duration, success: result.success }, 'action:completed');
+    return result;
   } catch (err) {
-    logger.error({ err, tool, userId }, 'Action execution failed');
+    const duration = Date.now() - actionStart;
+    logger.error({ actionType: tool, error: err instanceof Error ? err.message : String(err), userId, duration }, 'action:failed');
     return {
       tool,
       success: false,

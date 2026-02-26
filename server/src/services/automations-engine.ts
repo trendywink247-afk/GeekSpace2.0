@@ -9,8 +9,38 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
-import { config } from '../config.js';
-import { retryWithBackoff } from '../utils/retry.js';
+// ---- fetchWithRetry: exponential backoff retry for webhook delivery ----
+// Retries on 5xx server errors and network errors; does NOT retry on 4xx client errors.
+
+export async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxAttempts = 3,
+  baseDelayMs = 1000,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.ok || res.status < 500) {
+        // Success or client error (4xx) — don't retry client errors
+        return res;
+      }
+      // 5xx — retry
+      lastError = new Error(`HTTP ${res.status}`);
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, baseDelayMs * attempt));
+      }
+    } catch (err) {
+      // Network error — retry
+      lastError = err;
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, baseDelayMs * attempt));
+      }
+    }
+  }
+  throw lastError;
+}
 
 // ---- Types ----
 
@@ -100,21 +130,18 @@ async function executeAction(
           } catch { /* ignore parse errors */ }
         }
 
-        const fetchResult = await retryWithBackoff(
-          async () => {
-            const r = await fetch(url, {
-              method,
-              headers,
-              body: method !== 'GET' ? JSON.stringify(bodyPayload) : undefined,
-              signal: AbortSignal.timeout(30000),
-            });
-            if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
-            return r;
+        const fetchResult = await fetchWithRetry(
+          url,
+          {
+            method,
+            headers,
+            body: method !== 'GET' ? JSON.stringify(bodyPayload) : undefined,
+            signal: AbortSignal.timeout(30000),
           },
-          3,      // maxAttempts
-          1000,   // baseDelayMs (1s -> 2s -> 4s)
-          `webhook:${automation.name}`,
+          3,     // maxAttempts (1s → 2s delay between retries)
+          1000,  // baseDelayMs
         );
+        if (!fetchResult.ok) throw new Error(`HTTP ${fetchResult.status} ${fetchResult.statusText}`);
         output = `HTTP ${fetchResult.status} ${fetchResult.statusText}`;
 
         // Capture response body if n8n returns a reply
@@ -367,7 +394,60 @@ export function initAutomationsEngine() {
   // Start health monitor
   startHealthMonitor();
 
+  // 61.2: Start overdue reminder escalation checker
+  startOverdueReminderEscalation();
+
   logger.info('Automations engine initialized');
+}
+
+// ---- 61.2: Overdue Reminder Escalation ----
+// Every 30 minutes: find reminders >1h overdue, not escalated, send Telegram if linked.
+
+let overdueEscalationTimer: ReturnType<typeof setInterval> | null = null;
+
+function startOverdueReminderEscalation() {
+  if (overdueEscalationTimer) return;
+
+  // Add column if missing
+  try { db.exec("ALTER TABLE reminders ADD COLUMN overdue_escalated_at TEXT DEFAULT NULL"); } catch { /* exists */ }
+
+  const runCheck = async () => {
+    const oneHourAgo = new Date(Date.now() - 3_600_000).toISOString();
+    const overdue = db.prepare(`
+      SELECT r.id, r.user_id, r.text, r.datetime
+      FROM reminders r
+      WHERE r.completed = 0
+        AND r.datetime < ?
+        AND r.overdue_escalated_at IS NULL
+      LIMIT 50
+    `).all(oneHourAgo) as Array<{ id: string; user_id: string; text: string; datetime: string }>;
+
+    for (const reminder of overdue) {
+      try {
+        const link = db.prepare(
+          "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' LIMIT 1"
+        ).get(reminder.user_id) as { external_id: string } | undefined;
+
+        if (link) {
+          const { sendTelegramMessage } = await import('./telegram.js');
+          const dt = new Date(reminder.datetime);
+          const formatted = dt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' });
+          await sendTelegramMessage(link.external_id, `⏰ *Overdue reminder*: ${reminder.text}\n_Was due: ${formatted}_`);
+          logger.info({ reminderId: reminder.id, userId: reminder.user_id }, 'Overdue escalation sent');
+        }
+
+        // Mark escalated regardless of Telegram availability (prevent re-check)
+        db.prepare("UPDATE reminders SET overdue_escalated_at = datetime('now') WHERE id = ?").run(reminder.id);
+      } catch (err) {
+        logger.warn({ err, reminderId: reminder.id }, 'Overdue escalation error');
+      }
+    }
+  };
+
+  // Run immediately on startup (after 2min delay), then every 30 min
+  setTimeout(() => { void runCheck(); }, 120_000);
+  overdueEscalationTimer = setInterval(() => { void runCheck(); }, 1_800_000);
+  logger.info('Overdue reminder escalation checker started');
 }
 
 // ---- Hot-reload on automation changes ----
@@ -386,15 +466,18 @@ export function onAutomationChanged(automationId: string) {
 
 // ---- Get execution logs ----
 
-export function getAutomationLogs(userId: string, automationId?: string, limit = 50): unknown[] {
+export function getAutomationLogs(userId: string, automationId?: string, limit = 50, offset = 0, status?: string): unknown[] {
+  // 53.7: Pagination via LIMIT + OFFSET; 63.4: optional status filter
+  const statusClause = status ? ` AND status = ?` : '';
+  const statusArgs = status ? [status] : [];
   if (automationId) {
     return db.prepare(
-      'SELECT * FROM automation_logs WHERE user_id = ? AND automation_id = ? ORDER BY created_at DESC LIMIT ?'
-    ).all(userId, automationId, limit);
+      `SELECT * FROM automation_logs WHERE user_id = ? AND automation_id = ?${statusClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    ).all(userId, automationId, ...statusArgs, limit, offset);
   }
   return db.prepare(
-    'SELECT * FROM automation_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
-  ).all(userId, limit);
+    `SELECT * FROM automation_logs WHERE user_id = ?${statusClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+  ).all(userId, ...statusArgs, limit, offset);
 }
 
 // ---- Portfolio Visit Trigger (called from portfolio route) ----

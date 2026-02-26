@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
-import { readFileSync } from 'fs';
+import { readFileSync, statSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from '../config.js';
@@ -15,8 +15,15 @@ import { getMetricsSnapshot } from '../middleware/metrics.js';
 import { logger } from '../logger.js';
 import { cacheGet } from '../services/cache.js';
 import { eventBus } from '../services/event-bus.js';
+import { issueReward } from '../services/rewards.js';
+import { triageSuggestions } from '../services/suggestions-triage.js';
+import { invalidateClustersCache } from '../routes/suggestions.js';
+import { v4 as uuidV4 } from 'uuid';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Task 68.5: In-memory rate limit for triage endpoint (max 1 per 60s)
+let lastTriageTime = 0;
 
 // Cache the admin dashboard HTML in memory (read once at startup)
 let adminDashboardHtml: string | null = null;
@@ -32,6 +39,23 @@ function getAdminDashboardHtml(): string | null {
 }
 
 export const adminRouter = Router();
+
+// ── 70.7: Admin action audit logging middleware ────────────────────────────────
+// Logs requester IP + path + method for every admin action for audit trail visibility.
+adminRouter.use((req: Request, _res, next) => {
+  logger.info(
+    { adminAction: req.path, method: req.method, ip: req.ip ?? req.headers['x-forwarded-for'] },
+    'Admin action',
+  );
+  next();
+});
+
+// ---- Auth coverage (46.1) ----
+// Every route below requires one of two auth guards:
+//   - requireAdminToken   : validates Authorization: Bearer <ADMIN_TOKEN> header (new style)
+//   - requireAdminPassword: validates X-Admin-Password header (legacy dashboard route)
+// The /stream endpoint implements its own inline token check to support EventSource query-param auth.
+// Unauthenticated callers receive 401 or 503 (token not configured).
 
 // ---- Password middleware (legacy X-Admin-Password) ----
 function requireAdminPassword(req: Request, res: Response, next: NextFunction): void {
@@ -115,10 +139,13 @@ adminRouter.get('/health', requireAdminToken, async (_req: Request, res: Respons
   });
 });
 
-// ---- /stats endpoint ----
+// ---- /stats endpoint ---- (57.8: enhanced with activeToday, dbSize, memory)
 adminRouter.get('/stats', requireAdminToken, (_req: Request, res: Response): void => {
   try {
     const totalUsers = (db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;
+    const activeToday = (db.prepare(
+      "SELECT COUNT(*) as c FROM users WHERE last_active >= datetime('now', '-24 hours')"
+    ).get() as { c: number }).c;
 
     const activeAgents = (db.prepare('SELECT COUNT(*) as c FROM agent_configs').get() as { c: number }).c;
 
@@ -139,12 +166,42 @@ adminRouter.get('/stats', requireAdminToken, (_req: Request, res: Response): voi
       ).get() as { c: number }).c;
     } catch { /* pico_tasks table may not exist */ }
 
+    // DB file size (non-fatal — volume path may differ in Docker)
+    let dbSizeBytes: number | null = null;
+    try {
+      const dbPath = process.env.DB_PATH || path.join(__dirname, '../../../data/geekspace.db');
+      dbSizeBytes = statSync(dbPath).size;
+    } catch { /* path varies between Docker and local */ }
+
+    const mem = process.memoryUsage();
+
+    // Task 68.8: suggestion counts in admin stats
+    const suggestionStats: { total: number; new: number; accepted: number; shipped: number } = {
+      total: 0, new: 0, accepted: 0, shipped: 0,
+    };
+    try {
+      suggestionStats.total = (db.prepare('SELECT COUNT(*) as c FROM suggestions').get() as { c: number }).c;
+      suggestionStats.new = (db.prepare("SELECT COUNT(*) as c FROM suggestions WHERE status = 'new'").get() as { c: number }).c;
+      suggestionStats.accepted = (db.prepare("SELECT COUNT(*) as c FROM suggestions WHERE status = 'accepted'").get() as { c: number }).c;
+      suggestionStats.shipped = (db.prepare("SELECT COUNT(*) as c FROM suggestions WHERE status IN ('shipped_main','shipped_prod')").get() as { c: number }).c;
+    } catch { /* table may not exist on older DBs */ }
+
     res.json({
       totalUsers,
+      activeToday,
       activeAgents,
       tasksRunning,
       tasksToday,
       completedToday,
+      dbSizeBytes,
+      dbSizeMb: dbSizeBytes !== null ? Math.round(dbSizeBytes / 1024 / 1024 * 100) / 100 : null,
+      memory: {
+        rss: Math.round(mem.rss / 1024 / 1024),
+        heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+        heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
+      },
+      suggestions: suggestionStats,
+      uptimeSeconds: Math.floor(process.uptime()),
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
@@ -251,6 +308,77 @@ adminRouter.get('/export/users', requireAdminToken, (_req: Request, res: Respons
     res.send(header + rows);
   } catch (err) {
     logger.error({ err }, 'Admin export/users failed');
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+// ---- /suggestions/export endpoint — CSV export of suggestions (Task 69.5) ----
+adminRouter.get('/suggestions/export', requireAdminToken, (req: Request, res: Response): void => {
+  try {
+    const statusFilter = typeof req.query.status === 'string' && req.query.status ? req.query.status : null;
+
+    // Helper: escape a CSV field value
+    function csvField(val: unknown): string {
+      const str = val == null ? '' : String(val);
+      // Wrap in double-quotes if contains comma, quote, or newline
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
+    let rows: Array<{
+      id: string; title: string; body: string; status: string;
+      created_at: string;
+    }>;
+
+    if (statusFilter) {
+      rows = db.prepare(
+        `SELECT s.id, s.title, s.body, s.status, s.created_at
+         FROM suggestions s
+         WHERE s.status = ?
+         ORDER BY s.created_at DESC`
+      ).all(statusFilter) as typeof rows;
+    } else {
+      rows = db.prepare(
+        `SELECT s.id, s.title, s.body, s.status, s.created_at
+         FROM suggestions s
+         ORDER BY s.created_at DESC`
+      ).all() as typeof rows;
+    }
+
+    // Build vote counts for each suggestion
+    const suggestionIds = rows.map(r => r.id);
+    const voteMap: Record<string, { upvotes: number; downvotes: number }> = {};
+    for (const sid of suggestionIds) {
+      const up = (db.prepare(
+        `SELECT COUNT(*) as cnt FROM suggestion_votes WHERE suggestion_id = ? AND vote = 1`
+      ).get(sid) as { cnt: number }).cnt;
+      const down = (db.prepare(
+        `SELECT COUNT(*) as cnt FROM suggestion_votes WHERE suggestion_id = ? AND vote = -1`
+      ).get(sid) as { cnt: number }).cnt;
+      voteMap[sid] = { upvotes: up, downvotes: down };
+    }
+
+    const header = 'id,title,body,status,upvotes,downvotes,created_at\n';
+    const csvRows = rows.map(r => {
+      const votes = voteMap[r.id] || { upvotes: 0, downvotes: 0 };
+      return [
+        csvField(r.id),
+        csvField(r.title),
+        csvField(r.body),
+        csvField(r.status),
+        String(votes.upvotes),
+        String(votes.downvotes),
+        csvField(r.created_at),
+      ].join(',');
+    }).join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="suggestions.csv"');
+    res.send(header + csvRows);
+  } catch (err) {
+    logger.error({ err }, 'Admin suggestions export failed');
     res.status(500).json({ error: 'Export failed' });
   }
 });
@@ -578,6 +706,174 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
   res.setHeader('Content-Security-Policy',
     "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
   );
+
+  // ── Phase 67: Admin Suggestions Queue ─────────────────────────────────────
+  // GET /api/admin/suggestions/queue — list all suggestions with user email
+  adminRouter.get('/suggestions/queue', requireAdminToken, (req: Request, res: Response): void => {
+    const status = typeof req.query.status === 'string' ? req.query.status : null;
+    let rows: unknown[];
+    if (status) {
+      rows = db.prepare(`
+        SELECT s.id, s.title, s.body, s.tags, s.status, s.created_at, s.updated_at,
+               u.email as user_email, u.id as user_id
+        FROM suggestions s JOIN users u ON s.user_id = u.id
+        WHERE s.status = ? ORDER BY s.created_at DESC
+      `).all(status);
+    } else {
+      rows = db.prepare(`
+        SELECT s.id, s.title, s.body, s.tags, s.status, s.created_at, s.updated_at,
+               u.email as user_email, u.id as user_id
+        FROM suggestions s JOIN users u ON s.user_id = u.id
+        ORDER BY s.created_at DESC
+      `).all();
+    }
+    res.json({ suggestions: rows });
+  });
+
+  // PATCH /api/admin/suggestions/:id/status — update status, trigger rewards
+  adminRouter.patch('/suggestions/:id/status', requireAdminToken, (req: Request, res: Response): void => {
+    const { id } = req.params;
+    const { status } = req.body as { status?: string };
+    const validStatuses = ['new', 'triaged', 'accepted', 'rejected', 'shipped_main', 'shipped_prod'];
+    if (!status || !validStatuses.includes(status)) {
+      res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+      return;
+    }
+    const suggestion = db.prepare(`SELECT id, user_id, title, status FROM suggestions WHERE id = ?`).get(id) as {id: string; user_id: string; title: string; status: string} | undefined;
+    if (!suggestion) { res.status(404).json({ error: 'Suggestion not found' }); return; }
+
+    const oldStatus = suggestion.status;
+    db.prepare(`UPDATE suggestions SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, id);
+
+    // Task 68.1: Log status transition to suggestion_events
+    try {
+      db.prepare(`
+        INSERT INTO suggestion_events (id, suggestion_id, from_status, to_status, actor, created_at)
+        VALUES (?, ?, ?, ?, ?, datetime('now'))
+      `).run(uuidV4(), id, oldStatus, status, 'admin');
+    } catch { /* non-fatal */ }
+
+    // Trigger idempotent reward issuance based on new status
+    let rewardResult: { issued: boolean; credits: number } = { issued: false, credits: 0 };
+    if (status === 'accepted') {
+      rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'ACCEPTED_EXPERIMENT' });
+      // Task 68.10: Log activity for acceptance
+      try {
+        db.prepare(
+          `INSERT INTO activity_log (id, user_id, action, details, icon, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`
+        ).run(uuidV4(), suggestion.user_id, 'Suggestion accepted', suggestion.title, 'lightbulb');
+      } catch { /* non-fatal */ }
+    } else if (status === 'shipped_main') {
+      rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_MAIN' });
+    } else if (status === 'shipped_prod') {
+      rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_PROD' });
+    }
+
+    // Invalidate clusters cache on status change
+    invalidateClustersCache();
+
+    logger.info({ suggestionId: id, oldStatus, newStatus: status, rewardIssued: rewardResult.issued }, 'Admin updated suggestion status');
+    res.json({ success: true, suggestion: { id, status }, reward: rewardResult });
+  });
+
+  // GET /api/admin/suggestions/clusters — list clusters with scores
+  // 70.9: LIMIT 100 to prevent unbounded results; status index used via suggestion join
+  adminRouter.get('/suggestions/clusters', requireAdminToken, (_req: Request, res: Response): void => {
+    const rows = db.prepare(`
+      SELECT c.id, c.canonical_summary, c.name, c.tags, c.suggestion_ids, c.created_at,
+             sc.demand_score, sc.impact_score, sc.effort_score, sc.risk_score, sc.overall_score, sc.rationale
+      FROM suggestion_clusters c
+      LEFT JOIN suggestion_scores sc ON sc.cluster_id = c.id
+      ORDER BY sc.overall_score DESC NULLS LAST, c.created_at DESC
+      LIMIT 100
+    `).all();
+    res.json({ clusters: rows });
+  });
+
+  // POST /api/admin/suggestions/triage — trigger AI triage for new suggestions
+  adminRouter.post('/suggestions/triage', requireAdminToken, async (_req: Request, res: Response): Promise<void> => {
+    // Task 68.5: Rate limit — max 1 triage per 60 seconds (skip in TEST_MODE)
+    if (!config.isTestMode) {
+      const now = Date.now();
+      if (lastTriageTime > 0 && now - lastTriageTime < 60000) {
+        const waitSec = Math.ceil((60000 - (now - lastTriageTime)) / 1000);
+        res.status(429).json({ error: `Triage rate limited. Wait ${waitSec}s before retrying.` });
+        return;
+      }
+      lastTriageTime = now;
+    }
+
+    const newSuggestions = db.prepare(`SELECT id FROM suggestions WHERE status = 'new'`).all() as {id: string}[];
+    const ids = newSuggestions.map(s => s.id);
+    if (!ids.length) { res.json({ processed: 0, results: [] }); return; }
+    try {
+      const results = await triageSuggestions(ids);
+      // Invalidate clusters cache after triage creates new clusters
+      invalidateClustersCache();
+      res.json({ processed: results.length, results });
+    } catch (err) {
+      logger.error({ err }, 'Triage failed');
+      res.status(500).json({ error: 'Triage failed' });
+    }
+  });
+
+  // GET /api/admin/suggestions/stats — suggestion analytics (Task 68.14)
+  adminRouter.get('/suggestions/stats', requireAdminToken, (_req: Request, res: Response): void => {
+    try {
+      const total = (db.prepare('SELECT COUNT(*) as c FROM suggestions').get() as { c: number }).c;
+
+      const statusRows = db.prepare(
+        `SELECT status, COUNT(*) as cnt FROM suggestions GROUP BY status`
+      ).all() as Array<{ status: string; cnt: number }>;
+      const byStatus: Record<string, number> = {
+        new: 0, triaged: 0, accepted: 0, rejected: 0, shipped_main: 0, shipped_prod: 0,
+      };
+      for (const row of statusRows) {
+        byStatus[row.status] = row.cnt;
+      }
+
+      const rewardsRow = db.prepare(
+        `SELECT COUNT(*) as cnt, COALESCE(SUM(credits), 0) as total_credits FROM suggestion_rewards`
+      ).get() as { cnt: number; total_credits: number };
+
+      const topVoted = db.prepare(`
+        SELECT s.id, s.title, COALESCE(SUM(v.vote), 0) as voteCount
+        FROM suggestions s
+        LEFT JOIN suggestion_votes v ON v.suggestion_id = s.id
+        GROUP BY s.id
+        ORDER BY voteCount DESC
+        LIMIT 5
+      `).all() as Array<{ id: string; title: string; voteCount: number }>;
+
+      // 70.14: Count trending suggestions
+      let trendingCount = 0;
+      try {
+        trendingCount = (db.prepare(`SELECT COUNT(*) as c FROM suggestions WHERE trending = 1`).get() as { c: number }).c;
+      } catch { /* non-fatal */ }
+
+      res.json({
+        total,
+        byStatus,
+        totalRewardsIssued: rewardsRow.cnt,
+        totalCreditsAwarded: rewardsRow.total_credits,
+        topVoted,
+        trending: trendingCount,
+      });
+    } catch (err) {
+      logger.error({ err }, 'Admin suggestion stats query failed');
+      res.status(500).json({ error: 'Suggestion stats query failed' });
+    }
+  });
+
+  // POST /api/admin/rewards/grant — manual reward override
+  adminRouter.post('/rewards/grant', requireAdminToken, (req: Request, res: Response): void => {
+    const { userId, suggestionId, clusterId, eventType } = req.body as {userId?: string; suggestionId?: string; clusterId?: string; eventType?: string};
+    if (!userId || !eventType) { res.status(400).json({ error: 'userId and eventType required' }); return; }
+    const validEvents = ['ACCEPTED_EXPERIMENT', 'SHIPPED_MAIN', 'SHIPPED_PROD', 'ADOPTION_MILESTONE'];
+    if (!validEvents.includes(eventType)) { res.status(400).json({ error: 'Invalid eventType' }); return; }
+    const result = issueReward({ userId, suggestionId, clusterId, eventType: eventType as import('../services/rewards.js').RewardEventType });
+    res.json(result);
+  });
 
   // Serve the comprehensive standalone admin dashboard HTML file
   const html = getAdminDashboardHtml();

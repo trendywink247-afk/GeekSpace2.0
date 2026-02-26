@@ -36,6 +36,29 @@ apiKeysRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
   res.json({ success: true });
 });
 
+// 56.5: Rotate (re-key) an existing API key entry — update value without delete+re-add
+apiKeysRouter.post('/:id/rotate', requireAuth, (req: AuthRequest, res) => {
+  const { key } = req.body as { key?: string };
+  if (!key || typeof key !== 'string' || key.trim().length < 8) {
+    res.status(400).json({ error: 'New key value is required (min 8 chars)' });
+    return;
+  }
+  const existing = db.prepare('SELECT id, provider FROM api_keys WHERE id = ? AND user_id = ?')
+    .get(req.params.id, req.userId!) as { id: string; provider: string } | undefined;
+  if (!existing) {
+    res.status(404).json({ error: 'API key not found' });
+    return;
+  }
+  const trimmedKey = key.trim();
+  const maskedKey = trimmedKey.slice(0, 3) + '...' + trimmedKey.slice(-4);
+  const encryptedKey = encrypt(trimmedKey);
+  db.prepare('UPDATE api_keys SET key_encrypted = ?, masked_key = ? WHERE id = ? AND user_id = ?')
+    .run(encryptedKey, maskedKey, req.params.id, req.userId!);
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Rotated API key', ?, 'key')`)
+    .run(uuid(), req.userId, `${existing.provider} key rotated`);
+  res.json({ success: true, maskedKey });
+});
+
 apiKeysRouter.patch('/:id/default', requireAuth, (req: AuthRequest, res) => {
   db.prepare('UPDATE api_keys SET is_default = 0 WHERE user_id = ?').run(req.userId);
   db.prepare('UPDATE api_keys SET is_default = 1 WHERE id = ? AND user_id = ?').run(req.params.id, req.userId);

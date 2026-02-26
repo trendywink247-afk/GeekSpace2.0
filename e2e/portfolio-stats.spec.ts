@@ -49,13 +49,20 @@ test.describe('Portfolio Stats', () => {
     await analyticsTab.scrollIntoViewIfNeeded();
     await analyticsTab.click();
 
-    // Stats grid always renders after analytics API responds
-    await expect(page.getByText('Total Views', { exact: true })).toBeVisible({ timeout: 5000 });
+    // Wait for portfolioStats API to resolve — "Total Views" label is always present,
+    // but the chart or empty-state only renders once the async portfolioStats state loads.
+    // Wait up to 10s for either condition before asserting.
+    const chart = page.locator('.recharts-wrapper').first();
+    const emptyState = page.getByText('No visits yet');
+    await Promise.race([
+      chart.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {}),
+      emptyState.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {}),
+    ]);
 
     // Either a recharts bar chart (if user has visits) OR "No visits yet" empty state
     // Both are valid; in CI with a fresh test user, "No visits yet" is expected
-    const hasChart = await page.locator('.recharts-wrapper').isVisible().catch(() => false);
-    const hasEmptyState = await page.getByText('No visits yet').isVisible().catch(() => false);
+    const hasChart = await chart.isVisible().catch(() => false);
+    const hasEmptyState = await emptyState.isVisible().catch(() => false);
     expect(hasChart || hasEmptyState).toBeTruthy();
   });
 });

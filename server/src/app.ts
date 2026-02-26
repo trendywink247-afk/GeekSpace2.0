@@ -4,6 +4,7 @@
 // ============================================================
 
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit, { type Options as RateLimitOptions } from 'express-rate-limit';
@@ -41,6 +42,7 @@ import { videosRouter } from './routes/videos.js';
 import { socialMediaRouter } from './routes/social-media.js';
 import { activityRouter } from './routes/activity.js';
 import { routesListRouter } from './routes/routes-list.js';
+import { suggestionsRouter } from './routes/suggestions.js';
 import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
@@ -58,7 +60,7 @@ import { createProjectFromChat, detectProjectFromChat, getProjectSuggestionText 
 // Import test routes conditionally (only in test mode)
 import testRouter from './routes/test.js';
 
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.1.0';
 
 /**
  * Create and configure the Express application
@@ -71,6 +73,10 @@ export function createApp(): express.Application {
   app.set('trust proxy', 1);
 
   // ---- Security headers ----
+  // NOTE (Risk R11): script-src uses 'self' without nonces. Nonce-based CSP would require
+  // frontend templating changes that are out of scope. style-src uses 'unsafe-inline' for
+  // Tailwind/shadcn inline styles. Both are documented in the risk register as accepted risks.
+  // 53.3 CSP audit: added form-action, worker-src, manifest-src directives.
   app.use(helmet({
     contentSecurityPolicy: config.isProduction ? {
       directives: {
@@ -81,13 +87,41 @@ export function createApp(): express.Application {
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'", "https://openrouter.ai", "wss:"],
         frameSrc: ["'none'"],
+        // Prevent embedding in iframes — defence-in-depth alongside X-Frame-Options: DENY
+        frameAncestors: ["'none'"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
+        // 53.3: Restrict form submissions, workers, and manifest to same-origin
+        formAction: ["'self'"],
+        workerSrc: ["'self'"],
+        manifestSrc: ["'self'"],
+        // Force HTTP resources to upgrade to HTTPS (safe, widely supported)
+        upgradeInsecureRequests: [],
       },
     } : false,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     frameguard: { action: 'deny' },
   }));
+
+  // 48.7: Permissions-Policy header — restrict browser APIs to those the app actually uses
+  app.use((_req, res, next) => {
+    res.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()');
+    next();
+  });
+
+  // 50.7: HSTS — enforce HTTPS in production for 1 year (includeSubDomains)
+  if (config.isProduction) {
+    app.use((_req, res, next) => {
+      res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+      next();
+    });
+  }
+
+  // 49.1: Prevent search engines from indexing API endpoints
+  app.use('/api', (_req, res, next) => {
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    next();
+  });
 
   // ---- CORS ----
   app.use(cors({
@@ -96,6 +130,20 @@ export function createApp(): express.Application {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'X-Admin-Password'],
   }));
+
+  // ---- 47.8: Response compression (gzip/deflate) ----
+  // Applied before body parsing so all responses (JSON, HTML, SSE) can be compressed.
+  // SSE streams are excluded automatically because they flush headers before compression kicks in.
+  app.use(compression());
+
+  // 52.3: Security headers — applied early so all responses carry them
+  // Referrer-Policy prevents leaking paths in cross-origin navigations
+  // Cross-Origin-Opener-Policy isolates this window from opener contexts
+  app.use((_req, res, next) => {
+    res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.set('Cross-Origin-Opener-Policy', 'same-origin');
+    next();
+  });
 
   // ---- Body parsing ----
   app.use(express.json({ limit: `${config.maxRequestBodyBytes}` }));
@@ -157,8 +205,30 @@ export function createApp(): express.Application {
       handler: rateLimitHandler,
     });
     app.use('/api/auth/login', authLimiter);
-    app.use('/api/auth/signup', authLimiter);
     app.use('/api/auth/demo', authLimiter);
+
+    // 47.7: Signup rate limit — 5 req/15min including successful requests to prevent account spam
+    // Intentionally does NOT use skipSuccessfulRequests so successful account creations are counted.
+    const signupLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 5,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many registration attempts. Try again in 15 minutes.' },
+      handler: rateLimitHandler,
+    });
+    app.use('/api/auth/signup', signupLimiter);
+
+    // 55.4: Rate limit on token refresh — 10 req/15min to prevent token farming
+    const refreshLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many token refresh attempts. Please wait 15 minutes.' },
+      handler: rateLimitHandler,
+    });
+    app.use('/api/auth/refresh', refreshLimiter);
 
     // Rate limit on LLM chat endpoints — 60 req/15min (4/min) balances protection with usability
     const chatLimiter = rateLimit({
@@ -183,11 +253,40 @@ export function createApp(): express.Application {
     });
     app.use('/api/agent/chat/public', publicLimiter);
     app.use('/api/dashboard/contact', publicLimiter);
+
+    // Strict rate limit on admin endpoints — 10 requests per minute
+    // Admin routes are sensitive (user management, system ops) so apply a tight window
+    const adminLimiter = rateLimit({
+      windowMs: 60 * 1000,
+      max: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many admin requests, please slow down' },
+      handler: rateLimitHandler,
+    });
+    app.use('/api/admin', adminLimiter);
   }
+
+  // 51.7: X-RateLimit-Policy headers — always present so clients can discover limits
+  // even in test/dev environments where actual rate limiting is disabled
+  app.use('/api/auth/login', (_req, res, next) => { res.set('X-RateLimit-Policy', `${config.rateLimitAuthMax};w=900`); next(); });
+  app.use('/api/auth/demo', (_req, res, next) => { res.set('X-RateLimit-Policy', `${config.rateLimitAuthMax};w=900`); next(); });
+  app.use('/api/auth/signup', (_req, res, next) => { res.set('X-RateLimit-Policy', '5;w=900'); next(); });
+  app.use('/api/agent/chat', (_req, res, next) => { res.set('X-RateLimit-Policy', '60;w=900'); next(); });
+  app.use('/api/agent/chat/public', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
+  app.use('/api/dashboard/contact', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
 
   // ---- Health check ----
   app.get('/api/health', (_req, res) => {
-    const components = getCachedComponents(); // use warmed probe cache (all 8 components)
+    // 47.1: Live DB check on every call so db status is always fresh (not just cached probe)
+    let liveDbStatus = 'ok';
+    try {
+      const row = db.prepare('SELECT 1 as ok').get() as { ok: number } | undefined;
+      liveDbStatus = row?.ok === 1 ? 'ok' : 'error';
+    } catch {
+      liveDbStatus = 'error';
+    }
+    const components = { ...getCachedComponents(), database: liveDbStatus }; // merge live DB over cached
     const metrics = getMetricsSnapshot();
     const allOk = components.database === 'ok';
 
@@ -201,6 +300,15 @@ export function createApp(): express.Application {
         errors: stats.errors,
         avgMs: stats.count > 0 ? Math.round(stats.totalLatencyMs / stats.count) : 0,
       }));
+
+    // 50.9: Lightweight DB row counts — helps operators assess data volume at a glance
+    const dbStats: Record<string, number> = {};
+    try {
+      for (const t of ['users', 'reminders', 'automations', 'integrations', 'portfolios', 'activity_log'] as const) {
+        const row = db.prepare(`SELECT count(*) as cnt FROM ${t}`).get() as { cnt: number } | undefined;
+        dbStats[t] = row?.cnt ?? 0;
+      }
+    } catch { /* non-fatal — omit if DB is down */ }
 
     res.status(allOk ? 200 : 503).json({
       timestamp: new Date().toISOString(),
@@ -217,6 +325,7 @@ export function createApp(): express.Application {
         uptime: metrics.uptime,
         memoryMb: metrics.memoryMb,
       },
+      db: dbStats,
       topEndpoints,
       ok: allOk,
       status: allOk ? 'ok' : 'degraded',
@@ -229,13 +338,35 @@ export function createApp(): express.Application {
     });
   });
 
-  // ---- Version endpoint ----
+  // ---- 47.9: Version endpoint — app version + git SHA + env ----
+  // Unauthenticated by design (used by deployment tooling and health dashboards).
   app.get('/api/version', (_req, res) => {
     res.json({
       version: APP_VERSION,
+      gitSha: process.env.GIT_SHA ?? 'unknown',
+      env: config.isProduction ? 'production' : 'development',
       buildTime: process.env.BUILD_TIME ?? new Date().toISOString(),
       nodeVersion: process.versions.node,
     });
+  });
+
+  // ---- 46.9: Readiness probe — checks DB connectivity ----
+  // Unauthenticated by design (used by orchestration/K8s readiness probes).
+  // Returns 200 when the database is reachable, 503 when it is not.
+  app.get('/api/ready', (_req, res) => {
+    try {
+      const row = db.prepare('SELECT 1 as ok').get() as { ok: number } | undefined;
+      if (row?.ok === 1) {
+        // 53.6: Include automations count for richer readiness telemetry
+        const automationCount = (db.prepare('SELECT COUNT(*) as cnt FROM automations').get() as { cnt: number }).cnt;
+        res.status(200).json({ status: 'ready', db: 'ok', automations: automationCount });
+      } else {
+        res.status(503).json({ status: 'not ready', db: 'error', message: 'DB query returned unexpected result' });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'unknown error';
+      res.status(503).json({ status: 'not ready', db: 'error', message });
+    }
   });
 
   // ---- Redirect stale /api/api/* double-prefix requests ----
@@ -275,6 +406,7 @@ export function createApp(): express.Application {
   app.use('/api/social-media', socialMediaRouter);
   app.use('/api/activity', activityRouter);
   app.use('/api/routes', routesListRouter);
+  app.use('/api/suggestions', suggestionsRouter);
 
   // ---- Test routes (only in test mode) ----
   if (config.isTestMode) {

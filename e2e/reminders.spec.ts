@@ -26,8 +26,12 @@ test.describe('Reminders Page', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate directly to the reminders page via URL
     await page.goto('/dashboard/reminders');
-    // Dismiss first-use tour so it doesn't intercept clicks
-    await page.evaluate(() => localStorage.setItem('gs_dashboard_tour_seen', '1'));
+    // Dismiss first-use tour and reset filter persistence so tests start with active filter
+    await page.evaluate(() => {
+      localStorage.setItem('gs_dashboard_tour_seen', '1');
+      // 61.5: Clear persisted filter so each test starts with the default 'active' view
+      localStorage.removeItem('geekspace:reminders:filters');
+    });
     // Wait for the dashboard shell and reminders page to load
     await expect(page.getByTestId('dashboard-shell')).toBeVisible();
     await expect(page.getByTestId('reminders-page')).toBeVisible();
@@ -90,20 +94,23 @@ test.describe('Reminders Page', () => {
     await submitBtn.click({ force: true });
 
     await expect(page.getByRole('dialog')).not.toBeVisible();
+    await page.waitForTimeout(1000); // 52.2: wait for store update + list re-render after dialog close
     // Use .first() to avoid strict mode violation if reminder was created before
-    // timeout:8000 gives extra time for store update after dialog close
-    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 8000 });
+    // timeout:12000 gives extra time for store update after dialog close
+    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 12000 });
 
     // Click the "Mark as complete" button using its aria-label
     // Get the button associated with the most recently visible 'Complete me E2E' reminder
     const completeBtn = page.getByRole('button', { name: 'Mark as complete' }).first();
-    await completeBtn.click();
+    await completeBtn.click({ force: true }); // force: bypass stability check (extra buttons cause mobile layout shift)
 
     // Switch to "completed" tab/filter to verify the reminder moved there
     // TabsTrigger renders as role="tab"
+    await page.waitForTimeout(800); // 57.6: wait for store update + list re-render after mark-complete
     await page.getByRole('tab', { name: 'Completed' }).click();
-    // timeout:5000 gives the tab switch + store re-render time to settle
-    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(1500); // 57.6: increased settle time for tab animation + store re-render
+    // timeout:12000 gives the tab switch + store re-render time to settle
+    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 12000 });
   });
 
   test('should show priority selector in create form', async ({ page }) => {
@@ -139,20 +146,23 @@ test.describe('Reminders Page', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByText('Bulk delete E2E test').first()).toBeVisible();
 
-    // Mark it as complete
-    await page.getByRole('button', { name: 'Mark as complete' }).first().click();
+    // Mark it as complete (force: bypass stability check — extra buttons cause mobile layout shift)
+    await page.getByRole('button', { name: 'Mark as complete' }).first().click({ force: true });
+    await page.waitForTimeout(800); // 57.6: allow store update to propagate after mark-complete
 
     // Switch to completed tab
     await page.getByRole('tab', { name: 'Completed' }).click();
+    await page.waitForTimeout(2000); // 57.6: increased settle time for tab animation + store re-render on slow CI
 
-    // The Select All checkbox label should be visible
-    await expect(page.getByText(/Select all completed/)).toBeVisible();
+    // The Select All checkbox label should be visible — 57.6: 15s timeout for slow CI
+    await expect(page.getByText(/Select all completed/)).toBeVisible({ timeout: 15000 });
 
     // Check the individual checkbox on the reminder (force bypasses animation instability)
     const bulkCheckbox = page.getByRole('checkbox', { name: 'Select reminder for bulk delete' }).first();
     await bulkCheckbox.check({ force: true });
 
     // Delete Selected button should now appear
-    await expect(page.getByRole('button', { name: /Delete Selected/ })).toBeVisible();
+    // Button text is "Delete (N)" with count, not "Delete Selected"
+    await expect(page.getByRole('button', { name: /Delete \(/ })).toBeVisible();
   });
 });

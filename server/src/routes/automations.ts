@@ -9,15 +9,44 @@ import {
   onAutomationChanged,
   getAutomationLogs,
 } from '../services/automations-engine.js';
+import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 
 export const automationsRouter = Router();
 
-automationsRouter.get('/', requireAuth, (req: AuthRequest, res) => {
-  const automations = db.prepare('SELECT * FROM automations WHERE user_id = ? ORDER BY created_at DESC').all(req.userId!);
-  res.json(automations);
+// 64.5: GET /automations/stats — summary counts (must be before /:id routes)
+automationsRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { total } = db.prepare('SELECT COUNT(*) as total FROM automations WHERE user_id = ?').get(userId) as { total: number };
+  const { enabled } = db.prepare('SELECT COUNT(*) as enabled FROM automations WHERE user_id = ? AND enabled = 1').get(userId) as { enabled: number };
+  const byTrigger = db.prepare(
+    'SELECT trigger_type, COUNT(*) as cnt FROM automations WHERE user_id = ? GROUP BY trigger_type'
+  ).all(userId) as Array<{ trigger_type: string; cnt: number }>;
+  const recentRuns = db.prepare(
+    `SELECT COUNT(*) as cnt FROM automation_logs WHERE user_id = ? AND created_at >= datetime('now', '-7 days')`
+  ).get(userId) as { cnt: number };
+  res.json({ total, enabled, disabled: total - enabled, byTrigger, recentRuns: recentRuns.cnt });
 });
 
-automationsRouter.post('/', requireAuth, validateBody(automationCreateSchema), (req: AuthRequest, res) => {
+automationsRouter.get('/', requireAuth, async (req: AuthRequest, res) => {
+  // 64.9: optional enabled filter (true/false/undefined=all)
+  const enabledFilter = req.query.enabled === 'true' ? 1 : req.query.enabled === 'false' ? 0 : null;
+  // 53.5: Redis cache per-user automations list (30s TTL); include filter in cache key
+  const cacheKey = `automations:${req.userId}:${enabledFilter ?? 'all'}`;
+  const cached = await cacheGet(cacheKey);
+  if (cached) {
+    res.set('X-Cache', 'HIT').json(JSON.parse(cached));
+    return;
+  }
+  const rows = enabledFilter !== null
+    ? db.prepare('SELECT * FROM automations WHERE user_id = ? AND enabled = ? ORDER BY created_at DESC').all(req.userId!, enabledFilter) as Array<Record<string, unknown>>
+    : db.prepare('SELECT * FROM automations WHERE user_id = ? ORDER BY created_at DESC').all(req.userId!) as Array<Record<string, unknown>>;
+  // 48.1: Normalize enabled to boolean (SQLite returns 0/1 which confuses React toggle state)
+  const automations = rows.map(a => ({ ...a, enabled: Boolean(a.enabled) }));
+  await cacheSet(cacheKey, JSON.stringify(automations), 30);
+  res.set('X-Cache', 'MISS').json(automations);
+});
+
+automationsRouter.post('/', requireAuth, validateBody(automationCreateSchema), async (req: AuthRequest, res) => {
   const { name, description, triggerType, triggerConfig, actionType, actionConfig } = req.body;
 
   const id = uuid();
@@ -30,12 +59,21 @@ automationsRouter.post('/', requireAuth, validateBody(automationCreateSchema), (
   // Hot-reload engine
   onAutomationChanged(id);
 
-  const automation = db.prepare('SELECT * FROM automations WHERE id = ?').get(id);
+  // 53.5: Bust cache
+  await cacheDel(`automations:${req.userId}`);
+
+  const raw = db.prepare('SELECT * FROM automations WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  const automation = raw ? {
+    ...raw,
+    enabled: Boolean(raw.enabled),
+    triggerConfig: (() => { try { return JSON.parse(raw.trigger_config as string || '{}'); } catch { return {}; } })(),
+    actionConfig: (() => { try { return JSON.parse(raw.action_config as string || '{}'); } catch { return {}; } })(),
+  } : null;
   res.status(201).json(automation);
 });
 
-automationsRouter.patch('/:id', requireAuth, validateBody(automationUpdateSchema), (req: AuthRequest, res) => {
-  const existing = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId);
+automationsRouter.patch('/:id', requireAuth, validateBody(automationUpdateSchema), async (req: AuthRequest, res) => {
+  const existing = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId) as Record<string, unknown> | undefined;
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
 
   const updates = req.body;
@@ -51,17 +89,37 @@ automationsRouter.patch('/:id', requireAuth, validateBody(automationUpdateSchema
 
   if (fields.length) { values.push(req.params.id, req.userId); db.prepare(`UPDATE automations SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`).run(...values); }
 
+  // 66.2: Activity log — detect enable/disable vs generic update
+  const autoName = (updates.name as string | undefined) || (existing.name as string) || req.params.id;
+  if (updates.enabled !== undefined) {
+    const action = updates.enabled ? 'Enabled automation' : 'Disabled automation';
+    db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, ?, ?, 'zap')`).run(uuid(), req.userId, action, autoName);
+  } else if (fields.length) {
+    db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Updated automation', ?, 'zap')`).run(uuid(), req.userId, autoName);
+  }
+
   // Hot-reload engine
   onAutomationChanged(req.params.id);
 
-  const automation = db.prepare('SELECT * FROM automations WHERE id = ?').get(req.params.id);
-  res.json(automation);
+  // 53.5: Bust cache on update
+  await cacheDel(`automations:${req.userId}`);
+
+  const raw = db.prepare('SELECT * FROM automations WHERE id = ?').get(req.params.id) as Record<string, unknown> | undefined;
+  if (!raw) { res.status(404).json({ error: 'Not found' }); return; }
+  res.json({ ...raw, enabled: Boolean(raw.enabled) });
 });
 
-automationsRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
+automationsRouter.delete('/:id', requireAuth, async (req: AuthRequest, res) => {
+  // 66.2: Capture name before delete for activity log
+  const toDelete = db.prepare('SELECT name FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId) as { name: string } | undefined;
   onAutomationChanged(req.params.id); // Unregister before delete
   const result = db.prepare('DELETE FROM automations WHERE id = ? AND user_id = ?').run(req.params.id, req.userId);
   if (result.changes === 0) { res.status(404).json({ error: 'Not found' }); return; }
+  if (toDelete) {
+    db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Deleted automation', ?, 'zap')`).run(uuid(), req.userId, toDelete.name);
+  }
+  // 53.5: Bust cache on delete
+  await cacheDel(`automations:${req.userId}`);
   res.json({ success: true });
 });
 
@@ -69,6 +127,10 @@ automationsRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
 
 automationsRouter.post('/:id/trigger', requireAuth, async (req: AuthRequest, res) => {
   const result = await executeManualTrigger(req.params.id, req.userId!);
+  // 66.2: Log manual trigger attempt
+  const triggerAuto = db.prepare('SELECT name FROM automations WHERE id = ?').get(req.params.id) as { name: string } | undefined;
+  const triggerName = triggerAuto?.name || req.params.id;
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Triggered automation', ?, 'zap')`).run(uuid(), req.userId, triggerName);
   if (!result.success && result.output.includes('not found')) {
     res.status(404).json(result);
   } else {
@@ -76,19 +138,112 @@ automationsRouter.post('/:id/trigger', requireAuth, async (req: AuthRequest, res
   }
 });
 
+// ---- 61.8: Dry-run automation ----
+// POST /api/automations/:id/dry-run
+// Simulates what the automation would do without actually executing the action.
+automationsRouter.post('/:id/dry-run', requireAuth, async (req: AuthRequest, res) => {
+  const auto = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId) as {
+    id: string; name: string; trigger_type: string; trigger_config: string; action_type: string; action_config: string; enabled: number;
+  } | undefined;
+
+  if (!auto) { res.status(404).json({ error: 'Automation not found' }); return; }
+
+  const actionConfig = JSON.parse(auto.action_config || '{}') as Record<string, unknown>;
+  const triggerConfig = JSON.parse(auto.trigger_config || '{}') as Record<string, unknown>;
+
+  // Simulate what would be sent/triggered
+  let simulatedOutput = '';
+  switch (auto.action_type) {
+    case 'telegram-message':
+    case 'whatsapp-message': {
+      const channel = auto.action_type === 'telegram-message' ? 'Telegram' : 'WhatsApp';
+      const message = actionConfig.message || '(no message configured)';
+      simulatedOutput = `Would send ${channel} message: "${message}"`;
+      break;
+    }
+    case 'n8n-webhook':
+    case 'call_api': {
+      const url = actionConfig.url || actionConfig.webhook_url || '(no URL configured)';
+      const method = (actionConfig.method as string) || 'POST';
+      simulatedOutput = `Would ${method} to: ${url}`;
+      if (actionConfig.payload) simulatedOutput += `\nWith payload: ${JSON.stringify(actionConfig.payload).slice(0, 200)}`;
+      break;
+    }
+    case 'create_reminder': {
+      const text = actionConfig.reminder_text || '(no reminder text)';
+      simulatedOutput = `Would create reminder: "${text}" (1 hour from now)`;
+      break;
+    }
+    case 'log': {
+      const message = actionConfig.message || '(no message)';
+      simulatedOutput = `Would log: "${message}"`;
+      break;
+    }
+    default:
+      simulatedOutput = `Would execute action: ${auto.action_type}`;
+  }
+
+  res.json({
+    dryRun: true,
+    automationId: auto.id,
+    automationName: auto.name,
+    triggerType: auto.trigger_type,
+    triggerConfig,
+    actionType: auto.action_type,
+    simulatedOutput,
+    enabled: !!auto.enabled,
+  });
+});
+
+// ---- 59.4: Duplicate automation ----
+automationsRouter.post('/:id/duplicate', requireAuth, async (req: AuthRequest, res) => {
+  const source = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId) as {
+    id: string; user_id: string; name: string; description: string; trigger_type: string; trigger_config: string; action_type: string; action_config: string;
+  } | undefined;
+  if (!source) { res.status(404).json({ error: 'Automation not found' }); return; }
+
+  const newId = uuid();
+  const newName = `Copy of ${source.name}`;
+  db.prepare(`INSERT INTO automations (id, user_id, name, description, trigger_type, trigger_config, action_type, action_config, enabled)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`)
+    .run(newId, req.userId, newName, source.description || '', source.trigger_type, source.trigger_config, source.action_type, source.action_config);
+
+  await cacheDel(`automations:${req.userId}`);
+
+  const created = db.prepare('SELECT * FROM automations WHERE id = ?').get(newId) as Record<string, unknown>;
+  res.status(201).json({ ...created, enabled: false });
+});
+
 // ---- Execution logs ----
 
 automationsRouter.get('/logs', requireAuth, (req: AuthRequest, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-  const logs = getAutomationLogs(req.userId!, undefined, limit);
-  res.json(logs);
+  // 53.7: Pagination support — offset param
+  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+  // 63.4: optional status filter (success | failed | error)
+  const status = ['success', 'failed', 'error'].includes(req.query.status as string) ? (req.query.status as string) : undefined;
+  const logs = getAutomationLogs(req.userId!, undefined, limit, offset, status);
+  res.json({ logs, limit, offset });
 });
 
 automationsRouter.get('/:id/logs', requireAuth, (req: AuthRequest, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-  const logs = getAutomationLogs(req.userId!, req.params.id, limit);
-  res.json(logs);
+  // 53.7: Pagination support — offset param
+  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+  const status = ['success', 'failed', 'error'].includes(req.query.status as string) ? (req.query.status as string) : undefined;
+  const logs = getAutomationLogs(req.userId!, req.params.id, limit, offset, status);
+  res.json({ logs, limit, offset });
 });
+
+// ---- 46.2: URL validation helper for webhook test-fire ----
+function isValidWebhookUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
 
 // ---- 34.5: Webhook test-fire ----
 automationsRouter.post('/:id/test', requireAuth, async (req: AuthRequest, res) => {
@@ -107,32 +262,91 @@ automationsRouter.post('/:id/test', requireAuth, async (req: AuthRequest, res) =
     return;
   }
 
+  // 46.2: Validate URL format before attempting HTTP request
+  if (!isValidWebhookUrl(url)) {
+    res.status(400).json({ success: false, statusCode: 0, message: 'Invalid webhook URL' });
+    return;
+  }
+
   try {
+    const t0 = Date.now();
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ test: true, timestamp: new Date().toISOString(), automation_id: auto.id }),
       signal: AbortSignal.timeout(5000),
     });
-    res.json({ success: response.ok, statusCode: response.status, message: response.ok ? 'Test successful' : `Test failed with status ${response.status}` });
+    const latencyMs = Date.now() - t0;
+    const contentType = response.headers.get('content-type') ?? '';
+    let responseBody: string;
+    try {
+      const text = await response.text();
+      // 58.6: Pretty-print JSON if possible, else keep raw
+      responseBody = contentType.includes('json')
+        ? JSON.stringify(JSON.parse(text), null, 2)
+        : text.slice(0, 500);
+    } catch {
+      responseBody = '';
+    }
+    res.json({
+      success: response.ok,
+      statusCode: response.status,
+      message: response.ok ? 'Test successful' : `Test failed with status ${response.status}`,
+      latencyMs,
+      contentType,
+      responseBody,
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Request failed';
-    res.json({ success: false, statusCode: 0, message: `Test failed: ${msg}` });
+    res.json({ success: false, statusCode: 0, message: `Test failed: ${msg}`, latencyMs: 0, contentType: '', responseBody: '' });
   }
 });
 
 // ── 37.4: Webhook dead-letter log ─────────────────────────────────────────────
 automationsRouter.get('/dead-letters', requireAuth, (req: AuthRequest, res) => {
   const entries = db.prepare(
-    'SELECT id, automation_id, url, error, payload, failed_at FROM webhook_dead_letters WHERE user_id = ? ORDER BY failed_at DESC LIMIT 20'
-  ).all(req.userId!) as Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>;
+    'SELECT id, automation_id, url, error, payload, failed_at, retry_count, last_error FROM webhook_dead_letters WHERE user_id = ? ORDER BY failed_at DESC LIMIT 20'
+  ).all(req.userId!) as Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number; retry_count: number; last_error: string | null }>;
   res.json(entries);
+});
+
+// ── 55.6: Dead-letter retry ────────────────────────────────────────────────────
+// Re-fires the failed webhook and removes the dead-letter record on success.
+automationsRouter.post('/dead-letters/:id/retry', requireAuth, async (req: AuthRequest, res) => {
+  const entry = db.prepare(
+    'SELECT id, automation_id, url, payload, user_id FROM webhook_dead_letters WHERE id = ? AND user_id = ?'
+  ).get(req.params.id, req.userId!) as { id: string; automation_id: string; url: string; payload: string | null; user_id: string } | undefined;
+
+  if (!entry) {
+    res.status(404).json({ error: 'Dead-letter entry not found' });
+    return;
+  }
+
+  const payload = entry.payload ? JSON.parse(entry.payload) as Record<string, unknown> : {};
+  const result = await executeWebhookTrigger(entry.automation_id, payload);
+
+  if (result.success) {
+    db.prepare('DELETE FROM webhook_dead_letters WHERE id = ?').run(entry.id);
+    res.json({ retried: true, removed: true, result });
+  } else {
+    // 57.10: Track retry count + last error on failure
+    db.prepare(
+      'UPDATE webhook_dead_letters SET retry_count = retry_count + 1, last_error = ? WHERE id = ?'
+    ).run(result.output ?? 'retry failed', entry.id);
+    res.json({ retried: true, removed: false, result });
+  }
 });
 
 // ---- Webhook endpoint (no auth — triggered by external services) ----
 
 automationsRouter.post('/webhook/:id', async (req, res) => {
-  const result = await executeWebhookTrigger(req.params.id, req.body);
+  // 47.6: Reject non-object payloads (arrays, strings, null, numbers)
+  const body = req.body;
+  if (body === null || body === undefined || typeof body !== 'object' || Array.isArray(body)) {
+    res.status(400).json({ error: 'Webhook payload must be a JSON object' });
+    return;
+  }
+  const result = await executeWebhookTrigger(req.params.id, body);
   if (!result.success && result.output.includes('not found')) {
     res.status(404).json(result);
   } else {

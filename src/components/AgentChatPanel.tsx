@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { notify } from '@/services/notifications';
-import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard } from 'lucide-react';
+import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Copy, Check, Bookmark, BookmarkCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -10,6 +11,7 @@ import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
 import { MessageReactions } from './MessageReactions';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Browser SpeechRecognition (Chrome/Edge — not in @types/dom by default)
 declare global {
@@ -30,6 +32,54 @@ declare global {
   interface SpeechRecognitionEvent {
     results: SpeechRecognitionResultList;
   }
+}
+
+// 42.3: CodeBlock — renders a fenced code block with a Copy button
+function CodeBlock({ code, lang }: { code: string; lang?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="relative my-2 rounded-lg overflow-hidden border border-[#00F0FF]/20">
+      <div className="flex items-center justify-between px-3 py-1 bg-[#0A0A1A]">
+        <span className="text-[10px] text-[#6B7280]">{lang || 'code'}</span>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1 text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+          title="Copy code"
+        >
+          {copied ? <Check className="w-3 h-3 text-[#00FF88]" /> : <Copy className="w-3 h-3" />}
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
+      <pre className="p-3 overflow-x-auto text-xs text-[#E8E8F0] bg-[#06060B] leading-relaxed whitespace-pre">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
+// 42.3: Parse message content and render code blocks with Copy buttons
+function renderMessageContent(content: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  const fenceRegex = /```(\w*)?\n?([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let keyIdx = 0;
+  while ((match = fenceRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<span key={keyIdx++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex, match.index)}</span>);
+    }
+    parts.push(<CodeBlock key={keyIdx++} lang={match[1] || ''} code={match[2] || ''} />);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < content.length) {
+    parts.push(<span key={keyIdx++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex)}</span>);
+  }
+  return parts.length > 0 ? <>{parts}</> : content;
 }
 
 const personalityMeta: Record<AgentPersonality, { emoji: string; name: string; greeting: string }> = {
@@ -89,12 +139,19 @@ const suggestedPrompts = [
 
 export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelProps) {
   const agent = useDashboardStore((s) => s.agent);
+  const updateAgent = useDashboardStore((s) => s.updateAgent);
   const isMobile = useMobileDetect();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  // 62.5: ↑/↓ history navigation + Ctrl+K clear
+  const inputHistoryRef = useRef<string[]>([]);
+  const historyIdxRef = useRef<number>(-1);
   const [isListening, setIsListening] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -119,6 +176,10 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const [chatRateLimitRemaining, setChatRateLimitRemaining] = useState<number | null>(null);
   const [chatRateLimitResetAt, setChatRateLimitResetAt] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  // 60.6: reply-to context
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  // 61.4: memory quick-add — tracks which message was just saved
+  const [memorySavedId, setMemorySavedId] = useState<string | null>(null);
 
   // Premium session state
   const [premiumSession, setPremiumSession] = useState<PremiumSession | null>(null);
@@ -146,6 +207,35 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // 41.3 / 57.4: Track scroll position to show/hide scroll-to-bottom button + unread count
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      const isScrolledUp = distanceFromBottom > 200;
+      setShowScrollToBottom(isScrolledUp);
+      if (!isScrolledUp) setUnreadCount(0); // reset when user scrolls to bottom
+    };
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [isOpen]);
+
+  // 57.4: Track new messages while scrolled up
+  const prevMessagesLenRef = useRef(0);
+  useEffect(() => {
+    if (showScrollToBottom && messages.length > prevMessagesLenRef.current) {
+      const newCount = messages.length - prevMessagesLenRef.current;
+      setUnreadCount((c) => c + newCount);
+    }
+    prevMessagesLenRef.current = messages.length;
+  }, [messages.length, showScrollToBottom]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setUnreadCount(0);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -273,8 +363,12 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   }, [premiumSession]);
 
   const sendMessage = useCallback((text?: string) => {
-    const content = text || input.trim();
-    if (!content || isTyping) return;
+    const raw = text || input.trim();
+    if (!raw || isTyping) return;
+    // 60.6: prepend reply-to context if replying
+    const content = replyTo
+      ? `> Re: "${replyTo.content.slice(0, 80)}${replyTo.content.length > 80 ? '…' : ''}"\n\n${raw}`
+      : raw;
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -287,7 +381,13 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
+    setReplyTo(null);
     setIsTyping(true);
+    // 62.5: push to input history (deduplicate consecutive identical messages)
+    if (inputHistoryRef.current[0] !== raw) {
+      inputHistoryRef.current = [raw, ...inputHistoryRef.current].slice(0, 50);
+    }
+    historyIdxRef.current = -1;
 
     // Helper: set agent message (create or update)
     const setAgentMsg = (update: Partial<ChatMessage>) => {
@@ -439,9 +539,23 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         setIsTyping(false);
       }
     })();
-  }, [input, isTyping, premiumSession, agentOwner, messages]);
+  }, [input, isTyping, premiumSession, agentOwner, messages, replyTo]);
 
   // ---- 8.3: Export conversations ----
+  // 61.4: Save message content to agent memory
+  const handleSaveToMemory = async (msgId: string, content: string) => {
+    try {
+      const key = `chat-note:${Date.now()}`;
+      const snippet = content.slice(0, 500);
+      await memoryService.create({ category: 'note', key, value: snippet, confidence: 0.8 });
+      setMemorySavedId(msgId);
+      setTimeout(() => setMemorySavedId(null), 2500);
+      toast.success('Saved to memory');
+    } catch {
+      toast.error('Failed to save to memory');
+    }
+  };
+
   const handleExport = async () => {
     if (isExporting) return;
     setIsExporting(true);
@@ -459,6 +573,27 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     }
   };
 
+  // 62.3: Export current chat session as markdown text
+  const handleExportChat = () => {
+    const visibleMsgs = messages.filter((m) => !m.isStreaming && m.id !== 'greeting');
+    if (visibleMsgs.length === 0) return;
+    const lines: string[] = [`# Chat Export — ${new Date().toLocaleString()}`, ''];
+    for (const msg of visibleMsgs) {
+      const who = msg.role === 'user' ? '**You**' : `**${pMeta.name}**`;
+      const ts = new Date(msg.timestamp).toLocaleTimeString();
+      lines.push(`${who} · ${ts}`);
+      lines.push(msg.content);
+      lines.push('');
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -467,6 +602,37 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       } else {
         sendMessage();
       }
+    }
+    // 62.5: ↑ to navigate back in input history
+    if (e.key === 'ArrowUp' && !e.shiftKey && !isTyping) {
+      const hist = inputHistoryRef.current;
+      if (hist.length === 0) return;
+      e.preventDefault();
+      const nextIdx = Math.min(historyIdxRef.current + 1, hist.length - 1);
+      historyIdxRef.current = nextIdx;
+      setInput(hist[nextIdx]);
+      // Move cursor to end on next tick
+      setTimeout(() => {
+        const el = inputRef.current;
+        if (el) el.setSelectionRange(el.value.length, el.value.length);
+      }, 0);
+    }
+    // 62.5: ↓ to navigate forward in input history
+    if (e.key === 'ArrowDown' && !e.shiftKey && !isTyping) {
+      e.preventDefault();
+      if (historyIdxRef.current <= 0) {
+        historyIdxRef.current = -1;
+        setInput('');
+        return;
+      }
+      const nextIdx = historyIdxRef.current - 1;
+      historyIdxRef.current = nextIdx;
+      setInput(inputHistoryRef.current[nextIdx]);
+    }
+    // 62.5: Ctrl+K / Cmd+K to clear chat
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      resetChat();
     }
   };
 
@@ -547,11 +713,22 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                   <Zap className="w-3 h-3" /> Session active &middot; {premiumSession.creditsUsed} credits
                 </div>
               ) : (
-                <div className="text-xs text-[#00FF88] flex items-center gap-1">
+                <div className="text-xs text-[#00FF88] flex items-center gap-1 flex-wrap">
                   <Sparkles className="w-3 h-3" /> Online
                   {creditsRemaining !== null && (
                     <span className="ml-1 text-[#6B7280]">· ⚡ {creditsRemaining} credits</span>
                   )}
+                  {/* 42.6: Conversation turns indicator */}
+                  {(() => {
+                    const turns = Math.floor(messages.filter(m => m.role !== 'system').length / 2);
+                    if (turns === 0) return null;
+                    const color = turns >= 25 ? '#FF6161' : turns >= 15 ? '#F59E0B' : '#6B7280';
+                    return (
+                      <span className="ml-1 text-[10px]" style={{ color }} title={`${turns} conversation turns used`}>
+                        · Turn {turns}
+                      </span>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -578,10 +755,20 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               onClick={handleExport}
               disabled={isExporting}
               className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
-              title="Export conversations"
+              title="Export all conversations (JSON)"
             >
               <Download className={`w-4 h-4 ${isExporting ? 'text-[#00F0FF] animate-pulse' : 'text-[#6B7280]'}`} />
             </button>
+            {/* 62.3: Export current chat as markdown */}
+            {messages.filter((m) => !m.isStreaming && m.id !== 'greeting' && m.role !== 'system').length > 0 && (
+              <button
+                onClick={handleExportChat}
+                className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
+                title="Export this chat (Markdown)"
+              >
+                <span className="text-xs text-[#6B7280] font-mono">MD</span>
+              </button>
+            )}
             <button
               onClick={() => { setSearchOpen(v => !v); setSearchTerm(''); }}
               className={`p-2 rounded-lg transition-colors ${searchOpen ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'hover:bg-[#00F0FF]/10 text-[#6B7280]'}`}
@@ -598,22 +785,48 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           </div>
         </div>
 
-        {/* Credits progress bar */}
-        {creditsTotal !== null && creditsRemaining !== null && creditsTotal > 0 && (
-          <div
-            className="h-1 w-full bg-[#0A0A12]"
-            title={`${creditsRemaining} of ${creditsTotal} credits remaining`}
-          >
+        {/* Credits progress bar — skeleton while loading, real bar once data arrives (48.3) */}
+        {creditsTotal === null
+          ? <Skeleton className="h-1 w-full rounded-none" />
+          : creditsTotal > 0 && creditsRemaining !== null && (
             <div
-              className={`h-full transition-all duration-500 ${
-                creditsRemaining / creditsTotal > 0.5
-                  ? 'bg-[#00FF88]'
-                  : creditsRemaining / creditsTotal > 0.2
-                  ? 'bg-[#F59E0B]'
-                  : 'bg-[#EF4444]'
-              }`}
-              style={{ width: `${Math.min(100, (creditsRemaining / creditsTotal) * 100)}%` }}
-            />
+              className="h-1 w-full bg-[#0A0A12]"
+              title={`${creditsRemaining} of ${creditsTotal} credits remaining`}
+            >
+              <div
+                className={`h-full transition-all duration-500 ${
+                  creditsRemaining / creditsTotal > 0.5
+                    ? 'bg-[#00FF88]'
+                    : creditsRemaining / creditsTotal > 0.2
+                    ? 'bg-[#F59E0B]'
+                    : 'bg-[#EF4444]'
+                }`}
+                style={{ width: `${Math.min(100, (creditsRemaining / creditsTotal) * 100)}%` }}
+              />
+            </div>
+          )
+        }
+
+        {/* 63.9: Persona quick-switch pills — only for own agent (not portfolio mode) */}
+        {!agentOwner && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-[#1A1A2E]">
+            {(Object.entries(personalityMeta) as [AgentPersonality, { emoji: string; name: string }][]).map(([key, meta]) => {
+              const isActive = (agent.personality || 'jarvis') === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => { void updateAgent({ personality: key }); }}
+                  className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium border transition-all ${
+                    isActive
+                      ? 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[#00F0FF]'
+                      : 'border-[#1A1A2E] text-[#6B7280] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+                  }`}
+                  title={`Switch to ${meta.name}`}
+                >
+                  {meta.emoji} {meta.name}
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -676,14 +889,46 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 relative">
+          {/* 48.3 / 55.7: Empty state — skeleton while loading, suggestions once settled */}
+          {messages.length === 0 && (
+            <>
+              <div className="flex justify-start gap-2">
+                <Skeleton className="w-7 h-7 rounded-full flex-shrink-0 mt-1" />
+                <div className="space-y-2 max-w-[75%]">
+                  <Skeleton className="h-4 w-48 rounded-xl" />
+                  <Skeleton className="h-4 w-36 rounded-xl" />
+                </div>
+              </div>
+              {/* 55.7: Quick-start suggestions */}
+              <div className="mt-6 px-2">
+                <p className="text-[11px] text-[#6B7280] mb-3 text-center">Try asking…</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    'Summarize my reminders for today',
+                    'What automations do I have running?',
+                    'Generate a Python hello-world snippet',
+                    'Check my Telegram connection status',
+                  ].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onClick={() => { setInput(suggestion); inputRef.current?.focus(); }}
+                      className="text-left text-xs px-3 py-2 rounded-lg border border-[#00F0FF]/15 bg-[#00F0FF]/5 text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-all"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
           {(searchOpen && searchTerm
             ? messages.filter(m => m.content.toLowerCase().includes(searchTerm.toLowerCase()))
             : messages
           ).map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start'}`}
+              className={`group flex ${msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start'}`}
               style={{ animation: 'page-enter 0.2s ease-out' }}
             >
               {msg.role === 'system' ? (
@@ -715,7 +960,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                               : part
                           );
                         })()
-                      : msg.content}
+                      : (msg.role === 'agent' ? renderMessageContent(msg.content) : msg.content)}
                     {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-[#00F0FF] ml-0.5 animate-pulse rounded-sm" />}
                     {msg.provider && !msg.isStreaming && (
                       <span className="block mt-1.5 text-[10px] text-[#6B7280]/60 flex items-center gap-1">
@@ -765,10 +1010,16 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                     {msg.role === 'agent' && !msg.isStreaming && (
                       <MessageReactions
                         messageId={msg.id}
+                        content={msg.content}
                         onReact={(id, reaction) => {
                           memoryService.addReaction(id, reaction).catch(() => {});
                         }}
-                        onCopy={(_id) => {}}
+                        onCopy={(_id, text) => {
+                          // 47.4: Show "Copied!" toast on copy
+                          navigator.clipboard.writeText(text)
+                            .then(() => toast.success('Copied!', { duration: 1500 }))
+                            .catch(() => {});
+                        }}
                       />
                     )}
                     {/* Retry button for failed messages */}
@@ -780,6 +1031,31 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                           title="Retry"
                         >
                           <RotateCcw className="w-3 h-3" /> Retry
+                        </button>
+                      </div>
+                    )}
+                    {/* 60.6: Reply + 61.4: Save to memory buttons */}
+                    {!msg.isStreaming && (
+                      <div className="flex justify-end gap-1 mt-1">
+                        {/* 61.4: Save to memory */}
+                        <button
+                          onClick={() => void handleSaveToMemory(msg.id, msg.content)}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded text-[#6B7280] hover:text-[#BF5FFF] text-[10px] transition-colors opacity-0 group-hover:opacity-100"
+                          title="Save to agent memory"
+                          data-testid={`save-memory-btn-${msg.id}`}
+                        >
+                          {memorySavedId === msg.id
+                            ? <BookmarkCheck className="w-3 h-3 text-[#00FF88]" />
+                            : <Bookmark className="w-3 h-3" />}
+                          {memorySavedId === msg.id ? 'Saved!' : 'Save'}
+                        </button>
+                        <button
+                          onClick={() => { setReplyTo(msg); inputRef.current?.focus(); }}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded text-[#6B7280] hover:text-[#00F0FF] text-[10px] transition-colors opacity-0 group-hover:opacity-100"
+                          title="Reply to this message"
+                          data-testid={`reply-btn-${msg.id}`}
+                        >
+                          ↩ Reply
                         </button>
                       </div>
                     )}
@@ -828,6 +1104,23 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           )}
 
           <div ref={messagesEndRef} />
+
+          {/* 41.3 / 57.4: Scroll to bottom button with unread count badge */}
+          {showScrollToBottom && (
+            <button
+              onClick={scrollToBottom}
+              className="sticky bottom-4 ml-auto mr-2 flex items-center justify-center w-8 h-8 rounded-full shadow-lg transition-all relative"
+              style={{ background: 'rgba(0,240,255,0.15)', border: '1px solid rgba(0,240,255,0.4)', color: '#00F0FF' }}
+              aria-label="Scroll to bottom"
+            >
+              <ArrowDown className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 rounded-full bg-[#00F0FF] text-black text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Deploy Dialog Overlay */}
@@ -907,6 +1200,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
         {/* Input */}
         <div className="p-4 border-t border-[#00F0FF]/20 bg-[#06060B] safe-area-pb">
+          {/* 60.6: reply-to context banner */}
+          {replyTo && (
+            <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/5 border border-[#00F0FF]/20" data-testid="reply-to-banner">
+              <span className="text-[10px] text-[#00F0FF] flex-shrink-0">↩ Replying to</span>
+              <span className="text-[11px] text-[#9CA3AF] truncate flex-1">{replyTo.content.slice(0, 60)}{replyTo.content.length > 60 ? '…' : ''}</span>
+              <button onClick={() => setReplyTo(null)} className="text-[#6B7280] hover:text-[#E8E8F0] text-xs flex-shrink-0">✕</button>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             {!premiumSession && !agentOwner && (
               <button

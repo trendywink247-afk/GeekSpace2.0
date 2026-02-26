@@ -93,7 +93,8 @@ describe('Automations', () => {
         .set('Authorization', user.token)
         .send({ enabled: false });
       expect(res.status).toBe(200);
-      expect(res.body.enabled).toBe(0);
+      // 48.1: API normalizes SQLite 0/1 → boolean
+      expect(res.body.enabled).toBe(false);
     });
 
     it('returns 404 for non-existent automation', async () => {
@@ -140,7 +141,8 @@ describe('Automations', () => {
         .get('/api/automations/logs')
         .set('Authorization', user.token);
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
+      // 53.7: paginated response { logs, limit, offset }
+      expect(Array.isArray(res.body.logs)).toBe(true);
     });
 
     it('respects limit parameter', async () => {
@@ -148,7 +150,7 @@ describe('Automations', () => {
         .get('/api/automations/logs?limit=5')
         .set('Authorization', user.token);
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeLessThanOrEqual(5);
+      expect(res.body.logs.length).toBeLessThanOrEqual(5);
     });
   });
 
@@ -158,7 +160,8 @@ describe('Automations', () => {
         .get(`/api/automations/${automationId}/logs`)
         .set('Authorization', user.token);
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
+      // 53.7: paginated response { logs, limit, offset }
+      expect(Array.isArray(res.body.logs)).toBe(true);
     });
   });
 

@@ -321,6 +321,60 @@ integrationsRouter.post('/:type/test', requireAuth, (req: AuthRequest, res) => {
   res.json({ healthy, reason, type });
 });
 
+// ── 62.7: Connections health ping with latency ───────────────────────────────
+// GET /integrations/:type/ping — returns { latencyMs, healthy, reason }
+integrationsRouter.get('/:type/ping', requireAuth, (req: AuthRequest, res) => {
+  const startMs = Date.now();
+  const userId = req.userId!;
+  const type = req.params.type;
+
+  const integration = db.prepare(
+    "SELECT * FROM integrations WHERE user_id = ? AND type = ? AND status = 'connected'"
+  ).get(userId, type) as Record<string, unknown> | undefined;
+
+  if (!integration) {
+    res.json({ latencyMs: Date.now() - startMs, healthy: false, reason: 'not_connected', type });
+    return;
+  }
+
+  let healthy = false;
+  let reason = 'unknown';
+
+  switch (type) {
+    case 'telegram': {
+      const hasToken = !!config.telegramBotToken;
+      const link = db.prepare("SELECT id FROM channel_links WHERE user_id = ? AND channel = 'telegram'").get(userId);
+      healthy = hasToken && !!link;
+      reason = !hasToken ? 'bot_not_configured' : !link ? 'not_linked' : 'ok';
+      break;
+    }
+    case 'whatsapp': {
+      const link = db.prepare("SELECT id FROM channel_links WHERE user_id = ? AND channel = 'whatsapp'").get(userId);
+      healthy = !!link;
+      reason = link ? 'ok' : 'not_linked';
+      break;
+    }
+    case 'email': {
+      const cfg = db.prepare(
+        'SELECT notification_email_enabled, notification_email_address FROM agent_configs WHERE user_id = ?'
+      ).get(userId) as { notification_email_enabled?: number; notification_email_address?: string } | undefined;
+      healthy = !!(cfg?.notification_email_enabled && cfg?.notification_email_address);
+      reason = healthy ? 'ok' : 'no_email_set';
+      break;
+    }
+    default:
+      healthy = true;
+      reason = 'ok';
+      break;
+  }
+
+  const latencyMs = Date.now() - startMs;
+  db.prepare('UPDATE integrations SET health = ? WHERE user_id = ? AND type = ?')
+    .run(healthy ? 100 : 0, userId, type);
+
+  res.json({ latencyMs, healthy, reason, type });
+});
+
 // ── Phase 27.3: Connection Invite Links ──────────────────────────────────────
 
 integrationsRouter.post('/invite', requireAuth, (req: AuthRequest, res) => {
@@ -430,4 +484,20 @@ integrationsRouter.post('/invite/:token/accept', (req, res) => {
   }
 
   res.json({ success: true, message: 'Connection established' });
+});
+
+
+// ── 65.6: Integration event log — last 50 integration-related activity entries ─
+integrationsRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const limit = Math.min(parseInt(req.query.limit as string || '50', 10), 100);
+  const events = db.prepare(
+    `SELECT id, action, details, icon, created_at FROM activity_log
+     WHERE user_id = ? AND (
+       action LIKE '%integration%' OR action LIKE '%Connected%' OR action LIKE '%Disconnected%'
+       OR action LIKE '%Linked%' OR action LIKE '%Unlinked%' OR action LIKE '%connection%'
+     )
+     ORDER BY created_at DESC LIMIT ?`
+  ).all(userId, limit);
+  res.json({ events });
 });

@@ -26,6 +26,11 @@ db.pragma('temp_store = MEMORY');      // Temp tables in RAM not disk
 db.pragma('mmap_size = 134217728');    // 128MB memory-mapped I/O
 db.pragma('foreign_keys = ON');
 
+// 49.8: Run ANALYZE on startup to keep query plans fresh.
+// ANALYZE scans table/index statistics so SQLite can choose optimal query plans.
+// It is a read-only table scan (no writes to user tables) and completes in <100ms for typical DBs.
+db.exec('ANALYZE');
+
 // ── Schema ──────────────────────────────────────────────────
 
 db.exec(`
@@ -761,6 +766,29 @@ try {
   `);
 } catch { /* table already exists */ }
 
+// 55.13: Director Mode multi-clip video jobs
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS video_jobs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      idea TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'pending',
+      packet TEXT DEFAULT NULL,
+      stitched_url TEXT DEFAULT NULL,
+      clips TEXT DEFAULT '[]',
+      error TEXT DEFAULT NULL,
+      credits_used INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_video_jobs_user ON video_jobs(user_id, created_at);
+  `);
+} catch { /* table already exists */ }
+
+// 56.2: Add stitched_url column to video_jobs for existing deployments
+try { db.exec('ALTER TABLE video_jobs ADD COLUMN stitched_url TEXT DEFAULT NULL'); } catch { /* already exists */ }
+
 // Message reactions (for agent message reactions)
 try {
   db.exec(`
@@ -826,6 +854,8 @@ try { db.exec(`ALTER TABLE reminders ADD COLUMN completed_at INTEGER`); } catch 
 
 // Phase 12: Index for portfolio_visits queries (user_id + date range scans)
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_portfolio_visits_user_date ON portfolio_visits(user_id, visited_at)`); } catch { /* index already exists */ }
+// Phase 65.10: Add referer_host tracking column (additive migration)
+try { db.exec(`ALTER TABLE portfolio_visits ADD COLUMN referer_host TEXT DEFAULT NULL`); } catch { /* already exists */ }
 
 // Phase 36.1: Snooze event log
 db.exec(`
@@ -868,6 +898,16 @@ db.exec(`
     failed_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
   )
 `);
+
+// Phase 57.10: Add retry_count + last_error to webhook_dead_letters
+try { db.exec(`ALTER TABLE webhook_dead_letters ADD COLUMN retry_count INTEGER DEFAULT 0`); } catch { /* already exists */ }
+try { db.exec(`ALTER TABLE webhook_dead_letters ADD COLUMN last_error TEXT DEFAULT NULL`); } catch { /* already exists */ }
+
+// Phase 59.9: SEO meta description for portfolio
+try { db.exec(`ALTER TABLE portfolios ADD COLUMN meta_description TEXT DEFAULT ''`); } catch { /* already exists */ }
+
+// Phase 60.2: Star/pin chat messages
+try { db.exec(`ALTER TABLE conversation_log ADD COLUMN starred INTEGER DEFAULT 0`); } catch { /* already exists */ }
 
 // Phase 37.5: Connection alert opt-in/out
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_connections INTEGER DEFAULT 1`); } catch { /* column already exists */ }
@@ -1295,3 +1335,167 @@ db.exec(`
   )
 `);
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_snooze_log_reminder ON snooze_log(reminder_id, snoozed_at DESC)`); } catch { /* already exists */ }
+
+// Phase 40.6: Track when the 5-min early Telegram alert was sent for each reminder
+try { db.exec(`ALTER TABLE reminders ADD COLUMN remind_before_sent_at INTEGER`); } catch { /* column already exists */ }
+
+// Phase 41.6: Custom snooze presets for agent config
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN snooze_presets TEXT DEFAULT '[]'`); } catch { /* column already exists */ }
+
+// Phase 45.2: Drop duplicate reminders index (idx_reminders_datetime from Phase 30 covers the same cols)
+try { db.exec(`DROP INDEX IF EXISTS idx_reminders_user_due`); } catch { /* ignore */ }
+
+// Phase 43.9: Performance indexes for hot-path compound queries
+// activity_log: user + created_at DESC for sorted activity feeds
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_activity_log_user_created ON activity_log(user_id, created_at DESC)`); } catch { /* already exists */ }
+// snooze_log: reminder + snoozed_at DESC (may already exist from Phase 36; IF NOT EXISTS is safe)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_snooze_log_reminder ON snooze_log(reminder_id, snoozed_at DESC)`); } catch { /* already exists */ }
+// generated_outputs: user + created_at DESC (conversations table does not exist; closest equivalent)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_conversations_user_updated ON generated_outputs(user_id, created_at DESC)`); } catch { /* already exists */ }
+// automations: user + enabled flag compound lookup (column is "enabled", not "is_active")
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_automations_user_active ON automations(user_id, enabled)`); } catch { /* already exists */ }
+
+// Phase 61.2: Overdue escalation tracking — prevents duplicate Telegram alerts
+try { db.exec(`ALTER TABLE reminders ADD COLUMN overdue_escalated_at TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+
+// ── Phase 67: Suggestion Intelligence + Suggest & Earn ────────────────────────
+// All tables are additive (CREATE TABLE IF NOT EXISTS) — safe for existing prod DBs.
+
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    tags TEXT NOT NULL DEFAULT '[]',
+    status TEXT NOT NULL DEFAULT 'new',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestion_clusters (
+    id TEXT PRIMARY KEY,
+    canonical_summary TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '[]',
+    suggestion_ids TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestion_scores (
+    id TEXT PRIMARY KEY,
+    cluster_id TEXT NOT NULL UNIQUE REFERENCES suggestion_clusters(id) ON DELETE CASCADE,
+    demand_score INTEGER NOT NULL DEFAULT 0,
+    impact_score INTEGER NOT NULL DEFAULT 0,
+    effort_score INTEGER NOT NULL DEFAULT 0,
+    risk_score INTEGER NOT NULL DEFAULT 0,
+    overall_score INTEGER NOT NULL DEFAULT 0,
+    rationale TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestion_rewards (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    suggestion_id TEXT,
+    cluster_id TEXT,
+    event_type TEXT NOT NULL,
+    credits INTEGER NOT NULL DEFAULT 0,
+    unique_key TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+
+// Indexes for suggestion queries
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestions_user ON suggestions(user_id, created_at DESC)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions(status, created_at DESC)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_rewards_user ON suggestion_rewards(user_id, created_at DESC)`); } catch { /* already exists */ }
+
+// ── Phase 68.1: Fix CI — ensure agent_memory + conversation_log always exist ──
+// These tables were created only by initMemoryTables() (in memory.ts), which is
+// called by index.ts (prod) but NOT by app.ts (tests). Moving them here ensures
+// they're always created when db/index.ts is imported (which tests do directly).
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS agent_memory (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    category TEXT NOT NULL,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    confidence REAL DEFAULT 1.0,
+    source TEXT DEFAULT 'observed',
+    access_count INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, category, key)
+  )
+`); } catch { /* already exists */ }
+
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS conversation_log (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    provider TEXT DEFAULT '',
+    model TEXT DEFAULT '',
+    summary TEXT DEFAULT '',
+    tags TEXT DEFAULT '[]',
+    request_id TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  )
+`); } catch { /* already exists */ }
+
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_user ON agent_memory(user_id)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_category ON agent_memory(user_id, category)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_conversation_log_user ON conversation_log(user_id, created_at)`); } catch { /* already exists */ }
+
+// ── Phase 68.1: Suggestion status history ────────────────────────────────────
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestion_events (
+    id TEXT PRIMARY KEY,
+    suggestion_id TEXT NOT NULL REFERENCES suggestions(id) ON DELETE CASCADE,
+    from_status TEXT NOT NULL,
+    to_status TEXT NOT NULL,
+    actor TEXT NOT NULL DEFAULT 'admin',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_events_suggestion ON suggestion_events(suggestion_id, created_at DESC)`); } catch { /* already exists */ }
+
+// ── Phase 68.4: Suggestion votes ─────────────────────────────────────────────
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestion_votes (
+    id TEXT PRIMARY KEY,
+    suggestion_id TEXT NOT NULL REFERENCES suggestions(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    vote INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(suggestion_id, user_id)
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_votes_suggestion ON suggestion_votes(suggestion_id)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_votes_user ON suggestion_votes(user_id)`); } catch { /* already exists */ }
+
+// Phase 69.1: Compound index for vote lookup by suggestion+user (covers INSERT OR REPLACE uniqueness check)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_votes_user_suggestion ON suggestion_votes(suggestion_id, user_id)`); } catch { /* already exists */ }
+
+// Phase 69.14: Cluster name column (human-readable label for admin UI)
+try { db.exec(`ALTER TABLE suggestion_clusters ADD COLUMN name TEXT`); } catch { /* already exists */ }
+
+// Phase 70.4: Composite index on activity_log for per-user sorted queries (additive — IF NOT EXISTS is safe)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_activity_log_user_created ON activity_log(user_id, created_at DESC)`); } catch { /* already exists */ }
+
+// Phase 70.11: Soft-delete support for suggestions
+try { db.exec(`ALTER TABLE suggestions ADD COLUMN deleted_at TEXT DEFAULT NULL`); } catch { /* already exists */ }
+
+// Phase 70.14: Trending flag on suggestions (vote velocity > threshold in last 24h)
+try { db.exec(`ALTER TABLE suggestions ADD COLUMN trending INTEGER DEFAULT 0`); } catch { /* already exists */ }

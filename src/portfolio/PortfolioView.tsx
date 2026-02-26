@@ -72,17 +72,32 @@ export function PortfolioView() {
   const [contactSent, setContactSent] = useState(false);
   const [contactError, setContactError] = useState('');
 
+  // 46.6: Email format validation
+  const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  const emailInvalid = contactEmail.trim().length > 0 && !isValidEmail(contactEmail.trim());
+
   const handleSendContact = async () => {
     if (!contactName.trim() || !contactMessage.trim() || !username) return;
+    if (emailInvalid) return;
     setContactSending(true);
     setContactError('');
     try {
+      // 49.7: Fetch a one-time nonce token before submitting (anti-replay)
+      let nonce: string | undefined;
+      try {
+        const nonceRes = await portfolioService.contactNonce(username);
+        nonce = nonceRes.data.nonce;
+      } catch { /* Non-fatal: proceed without nonce if fetch fails */ }
+
       await portfolioService.contact(username, {
         senderName: contactName.trim(),
         senderEmail: contactEmail.trim() || undefined,
         message: contactMessage.trim(),
+        nonce,
       });
       setContactSent(true);
+      // 51.6: Auto-close modal after 2s on success
+      setTimeout(() => setContactOpen(false), 2000);
     } catch {
       setContactError('Failed to send message. Please try again.');
     } finally {
@@ -267,8 +282,8 @@ export function PortfolioView() {
                   {portfolio.avatar || displayName?.[0] || '?'}
                 </div>
               )}
-              <h1 className="text-4xl md:text-5xl font-bold mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>{displayName}</h1>
-              <p className="text-lg md:text-2xl text-[#00F0FF] mb-5 px-2 font-medium">{portfolio.headline}</p>
+              <h1 className="text-3xl md:text-5xl font-bold mb-3 break-words" style={{ fontFamily: 'Syne, sans-serif', textWrap: 'balance' }}>{displayName}</h1>
+              <p className="text-base md:text-2xl text-[#00F0FF] mb-5 px-2 font-medium break-words">{portfolio.headline}</p>
               <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-sm text-[#6B7280]">
                 {portfolio.role && portfolio.company && (
                   <span className="flex items-center gap-1"><Briefcase className="w-4 h-4 shrink-0" />{portfolio.role} @ {portfolio.company}</span>
@@ -320,12 +335,12 @@ export function PortfolioView() {
             {/* Bio */}
             <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20 mb-8">
               <h2 className="text-lg font-semibold mb-3">About</h2>
-              <p className="text-[#6B7280] leading-relaxed">{portfolio.about}</p>
+              <p className="text-[#6B7280] leading-relaxed break-words">{portfolio.about}</p>
             </div>
 
             {/* Skills */}
             {portfolio.skills?.length > 0 && (
-              <div className="mb-8">
+              <div className="mb-8" data-testid="portfolio-skills">
                 <h2 className="text-lg font-semibold mb-4">Skills</h2>
                 <div className="flex flex-wrap gap-2">
                   {portfolio.skills.map((skill, i) => {
@@ -339,7 +354,7 @@ export function PortfolioView() {
                     ];
                     const c = palette[i % palette.length];
                     return (
-                      <span key={i} className={`px-4 py-1.5 rounded-full border text-sm font-medium ${c.bg} ${c.border} ${c.text}`}>{skill}</span>
+                      <span key={skill} className={`px-4 py-1.5 rounded-full border text-sm font-medium ${c.bg} ${c.border} ${c.text}`}>{skill}</span>
                     );
                   })}
                 </div>
@@ -366,7 +381,7 @@ export function PortfolioView() {
                             {hasUrl && <Globe className="w-3.5 h-3.5 text-[#6B7280] group-hover:text-[#00F0FF] transition-colors" />}
                           </div>
                         </div>
-                        <p className="text-sm text-[#6B7280] leading-relaxed">{project.description}</p>
+                        <p className="text-sm text-[#6B7280] leading-relaxed break-words">{project.description}</p>
                         {project.tags && project.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-3">
                             {project.tags.map((tag) => (
@@ -710,8 +725,12 @@ export function PortfolioView() {
                     onChange={(e) => setContactEmail(e.target.value)}
                     placeholder="jane@example.com"
                     type="email"
-                    className="bg-[#0C0C18] border-[#00F0FF]/20"
+                    className={`bg-[#0C0C18] ${emailInvalid ? 'border-red-500/50' : 'border-[#00F0FF]/20'}`}
                   />
+                  {/* 46.6: Inline email validation error */}
+                  {emailInvalid && (
+                    <p className="text-red-400 text-xs mt-1">Please enter a valid email address</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs text-[#6B7280] mb-1 block">Message * <span className="text-[#4B5563]">({contactMessage.length}/1000)</span></label>
@@ -726,7 +745,7 @@ export function PortfolioView() {
                 {contactError && <p className="text-xs text-[#FF6161]">{contactError}</p>}
                 <button
                   onClick={handleSendContact}
-                  disabled={contactSending || !contactName.trim() || !contactMessage.trim()}
+                  disabled={contactSending || !contactName.trim() || !contactMessage.trim() || emailInvalid}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold text-sm transition-colors disabled:opacity-50"
                 >
                   {contactSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

@@ -5,8 +5,9 @@ import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
-  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles
+  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff
 } from 'lucide-react';
+import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentDesignWizard } from '@/components/AgentDesignWizard';
@@ -140,13 +141,6 @@ const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard
   { id: 'more', label: 'More', icon: MoreHorizontal },
 ];
 
-function PageLoader() {
-  return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-}
 
 export function DashboardApp() {
   const navigate = useNavigate();
@@ -154,6 +148,7 @@ export function DashboardApp() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const swipeHandlers = useSwipeNavigation(location.pathname);
   const [currentPage, setCurrentPage] = useState<PageType>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
@@ -172,6 +167,8 @@ export function DashboardApp() {
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
   const reminders = useDashboardStore((s) => s.reminders);
   const integrations = useDashboardStore((s) => s.integrations);
+  // 50.1: Track partial load failures
+  const loadErrors = useDashboardStore((s) => s.loadErrors);
   const applyTheme = useThemeStore((s) => s.applyTheme);
   const setThemeMode = useThemeStore((s) => s.setMode);
   const setAccentColor = useThemeStore((s) => s.setAccentColor);
@@ -192,6 +189,19 @@ export function DashboardApp() {
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  // Fetch recent activity silently on mount to compute initial unread badge count
+  useEffect(() => {
+    const lastSeen = parseInt(localStorage.getItem('activity_last_seen') || '0', 10);
+    userService.getActivity(20)
+      .then(({ data }) => {
+        const count = data.activity.filter(
+          (e) => new Date(e.created_at).getTime() > lastSeen
+        ).length;
+        setUnreadCount(Math.min(count, 99));
+      })
+      .catch(() => {});
+  }, []);
 
   // Apply stored theme on mount and when user changes
   useEffect(() => {
@@ -275,6 +285,35 @@ export function DashboardApp() {
     logout();
     navigate('/', { replace: true });
   }, [logout, navigate]);
+
+  // 61.10: mobile swipe gestures — right-edge swipe to open sidebar, left swipe to close
+  const swipeTouchStartX = useRef(0);
+  const swipeTouchStartY = useRef(0);
+  useEffect(() => {
+    const onTouchStart = (e: TouchEvent) => {
+      swipeTouchStartX.current = e.touches[0].clientX;
+      swipeTouchStartY.current = e.touches[0].clientY;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      const dx = e.changedTouches[0].clientX - swipeTouchStartX.current;
+      const dy = Math.abs(e.changedTouches[0].clientY - swipeTouchStartY.current);
+      // Only horizontal swipes (dx > 2× vertical movement)
+      if (dy > Math.abs(dx) * 0.6) return;
+      if (dx > 80 && swipeTouchStartX.current < 70) {
+        // Swipe right from left edge → open sidebar
+        setSidebarOpen(true);
+      } else if (dx < -80) {
+        // Swipe left anywhere → close sidebar (if open)
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, []);
 
   // Session idle timeout — warn at 25 min, logout at 30 min
   const { showWarning: showIdleWarning, secondsLeft, dismissWarning } = useIdleTimeout({
@@ -396,7 +435,15 @@ export function DashboardApp() {
                   {groupHasActivePage(group) && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
                   )}
-                  <group.icon className="w-5 h-5 flex-shrink-0" />
+                  <div className="relative flex-shrink-0">
+                    <group.icon className="w-5 h-5" />
+                    {/* 53.8: Badge on Productivity group header when reminders are due */}
+                    {group.label === 'Productivity' && dueReminderCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold leading-none px-0.5">
+                        {dueReminderCount > 9 ? '9+' : dueReminderCount}
+                      </span>
+                    )}
+                  </div>
                   {!sidebarCollapsed && (
                     <>
                       <span className="text-sm font-medium flex-1 text-left">{group.label}</span>
@@ -567,6 +614,14 @@ export function DashboardApp() {
         </div>
       )}
 
+      {/* 50.1: Partial load failure indicator — shown when some API sources fail on load */}
+      {loadErrors > 0 && !showIdleWarning && (
+        <div className="fixed top-0 left-0 right-0 z-[99] flex items-center justify-center gap-2 px-4 py-2 text-xs bg-[#FFB800]/8 border-b border-[#FFB800]/20">
+          <WifiOff className="w-3 h-3 text-[#FFB800] shrink-0" />
+          <span className="text-[#FFB800]/80">{loadErrors} data source{loadErrors > 1 ? 's' : ''} failed to load — some widgets may show cached or empty data</span>
+        </div>
+      )}
+
       {/* ---- Welcome toast ---- */}
       {showWelcome && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-welcome-in">
@@ -683,8 +738,12 @@ export function DashboardApp() {
             <div className="relative">
               <button
                 onClick={() => {
+                  const opening = !notifOpen;
                   setNotifOpen((o) => !o);
-                  if (!notifOpen) {
+                  if (opening) {
+                    // Mark all as seen and reset badge
+                    localStorage.setItem('activity_last_seen', Date.now().toString());
+                    setUnreadCount(0);
                     setActivityLoading(true);
                     userService.getActivity(20)
                       .then(({ data }) => setActivity(data.activity))
@@ -697,6 +756,11 @@ export function DashboardApp() {
               >
                 <Bell className="w-5 h-5 text-[#6B7280]" />
               </button>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
               {notifOpen && (
                 <div className="absolute right-0 top-12 w-80 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-xl shadow-2xl z-50 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10">
@@ -752,7 +816,7 @@ export function DashboardApp() {
         {/* Page Content */}
         <div className="p-4 md:p-6" {...swipeHandlers}>
           <ErrorBoundary>
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<PageSkeleton />}>
             <div key={currentPage} className="animate-page-enter">
               {renderPage()}
             </div>
@@ -804,6 +868,12 @@ export function DashboardApp() {
                     {pendingConnectionCount > 9 ? '9+' : pendingConnectionCount}
                   </span>
                 )}
+                {/* 52.8: Unread activity badge on Agent tab */}
+                {tab.id === 'agent' && unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#BF5FFF] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
                 {tab.id === 'more' && pendingReminderCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-[#F59E0B] text-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
                     {pendingReminderCount > 9 ? '9+' : pendingReminderCount}
@@ -811,7 +881,8 @@ export function DashboardApp() {
                 )}
               </div>
               <span className="text-[10px] font-medium">{tab.label}</span>
-              {isActive && <div className="w-4 h-1 rounded-full bg-gradient-to-r from-[#00F0FF] to-[#ADFF2F] mt-0.5" />}
+              {/* 47.3: Colored underline for active tab — full-width bottom border */}
+              <div className={`h-0.5 w-full rounded-full transition-all ${isActive ? 'bg-[#00F0FF]' : 'bg-transparent'}`} />
             </button>
           );
         })}

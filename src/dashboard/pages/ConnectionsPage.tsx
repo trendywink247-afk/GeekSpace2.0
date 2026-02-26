@@ -4,6 +4,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   MessageSquare,
   Calendar,
@@ -70,12 +71,31 @@ const colorMap: Record<string, string> = {
   image: '#FF2D78',
 };
 
+// 42.5: Time ago formatter for last sync display
+function timeAgo(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
 type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error';
 type WhatsAppStep = 'idle' | 'generating' | 'show-qr' | 'waiting' | 'success' | 'error';
 
 export function ConnectionsPage() {
   const { integrations, connectIntegration, disconnectIntegration, loadIntegrations } = useDashboardStore();
   const isMobile = useMobileDetect();
+
+  // 50.4: Status filter persisted to URL param
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusFilter = (searchParams.get('status') as 'all' | 'connected' | 'disconnected') || 'all';
+  const setStatusFilter = (v: 'all' | 'connected' | 'disconnected') => {
+    setSearchParams(v === 'all' ? {} : { status: v }, { replace: true });
+  };
 
   // Per-integration connecting state — avoids blocking ALL buttons when one is connecting
   const [connectingId, setConnectingId] = useState<string | null>(null);
@@ -102,6 +122,9 @@ export function ConnectionsPage() {
 
   // Health poll state (24.1) — keyed by integration type
   const [healthStatus, setHealthStatus] = useState<Record<string, 'healthy' | 'unhealthy' | 'checking'>>({});
+  // 62.7: Ping latency badge — keyed by integration type
+  const [pingLatency, setPingLatency] = useState<Record<string, number | null>>({});
+  const [pinging, setPinging] = useState<Record<string, boolean>>({});
 
   // Email dialog state
   const [emailDialog, setEmailDialog] = useState(false);
@@ -113,6 +136,8 @@ export function ConnectionsPage() {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
+  // 55.9: Mobile tap-to-expand connection cards
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleGenerateInvite = async () => {
     setInviteLoading(true);
@@ -133,6 +158,12 @@ export function ConnectionsPage() {
       setTimeout(() => setInviteCopied(false), 2000);
     } catch { /* ignore */ }
   };
+
+  // 66.4: Integration event log
+  const [integrationEvents, setIntegrationEvents] = useState<Array<{ id: string; action: string; details: string; icon: string; created_at: string }>>([]);
+  useEffect(() => {
+    integrationService.getEvents(10).then((r) => setIntegrationEvents(r.data.events)).catch(() => {});
+  }, []);
 
   // Run health check for all connected integrations on mount and every 60s
   useEffect(() => {
@@ -169,6 +200,11 @@ export function ConnectionsPage() {
   const connectedCount = integrations.filter(c => c.status === 'connected').length;
   const totalRequests = integrations.reduce((acc, c) => acc + c.requestsToday, 0);
   const avgHealth = Math.round(integrations.filter(c => c.status === 'connected').reduce((acc, c) => acc + c.health, 0) / (connectedCount || 1));
+
+  // 50.4: Apply status filter
+  const filteredIntegrations = statusFilter === 'all'
+    ? integrations
+    : integrations.filter(c => statusFilter === 'connected' ? c.status === 'connected' : c.status !== 'connected');
 
   // Poll for Telegram link status
   const pollTelegramStatus = useCallback(async () => {
@@ -281,6 +317,21 @@ export function ConnectionsPage() {
       notify(`${type.charAt(0).toUpperCase() + type.slice(1)} connected!`, 'success');
     } finally {
       setConnectingId(null);
+    }
+  };
+
+  // 62.7: Ping integration for latency badge
+  const handlePing = async (type: string) => {
+    setPinging((prev) => ({ ...prev, [type]: true }));
+    setPingLatency((prev) => ({ ...prev, [type]: null }));
+    try {
+      const res = await integrationService.pingIntegration(type);
+      setPingLatency((prev) => ({ ...prev, [type]: res.data.latencyMs }));
+      setHealthStatus((prev) => ({ ...prev, [type]: res.data.healthy ? 'healthy' : 'unhealthy' }));
+    } catch {
+      setPingLatency((prev) => ({ ...prev, [type]: null }));
+    } finally {
+      setPinging((prev) => ({ ...prev, [type]: false }));
     }
   };
 
@@ -638,18 +689,52 @@ export function ConnectionsPage() {
         </Card>
       )}
 
+      {/* 50.4: Status filter chips — persisted to URL param */}
+      <div className="flex items-center gap-2">
+        {(['all', 'connected', 'disconnected'] as const).map((opt) => (
+          <button
+            key={opt}
+            onClick={() => setStatusFilter(opt)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              statusFilter === opt
+                ? opt === 'connected'
+                  ? 'bg-[#00FF88]/15 border-[#00FF88]/50 text-[#00FF88]'
+                  : opt === 'disconnected'
+                  ? 'bg-[#FF6161]/15 border-[#FF6161]/50 text-[#FF6161]'
+                  : 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[#00F0FF]'
+                : 'border-[#00F0FF]/15 text-[#6B7280] hover:border-[#00F0FF]/30 hover:text-[#E8E8F0]'
+            }`}
+          >
+            {opt === 'all' ? `All (${integrations.length})` : opt === 'connected' ? `Connected (${connectedCount})` : `Disconnected (${integrations.length - connectedCount})`}
+          </button>
+        ))}
+      </div>
+
       {/* Connection Grid */}
       <div id="integration-grid" className="grid md:grid-cols-2 gap-4">
-        {integrations.map((connection) => {
+        {/* 46.3: Empty state when no integrations are available */}
+        {filteredIntegrations.length === 0 && (
+          <div className="md:col-span-2 text-center py-12 text-[#8888AA]">
+            <Plug className="w-12 h-12 mx-auto mb-4 text-[#8888AA]/40" />
+            <p className="text-lg font-medium mb-2">{statusFilter === 'all' ? 'No integrations connected yet' : `No ${statusFilter} integrations`}</p>
+            <p className="text-sm">Connect Telegram, WhatsApp, or webhooks to receive notifications and automate your workflows.</p>
+          </div>
+        )}
+        {filteredIntegrations.map((connection) => {
           const Icon = getIcon(connection.type);
           const color = getColor(connection.type);
+          // 55.9: On mobile, cards are collapsed by default; tap the header to expand
+          const isExpanded = !isMobile || expandedId === connection.id;
           return (
             <Card
               key={connection.id}
               className="bg-[#0C0C18] border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 group"
             >
               <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
-                <div className="flex items-start justify-between mb-4">
+                <div
+                  className={`flex items-start justify-between ${isExpanded ? 'mb-4' : ''} ${isMobile ? 'cursor-pointer' : ''}`}
+                  onClick={isMobile ? () => setExpandedId(expandedId === connection.id ? null : connection.id) : undefined}
+                >
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div
                       className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
@@ -659,6 +744,10 @@ export function ConnectionsPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-[#E8E8F0]">{connection.name}</h3>
+                      {/* 42.5: Last sync timestamp */}
+                      {connection.status === 'connected' && connection.lastSync && (
+                        <p className="text-[10px] text-[#6B7280] mb-0.5">Last sync: {timeAgo(connection.lastSync)}</p>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         {getStatusIcon(connection.status)}
                         <span className={`text-xs ${getStatusColor(connection.status)} capitalize`}>
@@ -681,6 +770,10 @@ export function ConnectionsPage() {
                                 : 'Integration may have issues'
                             }
                           />
+                        )}
+                        {/* 62.7: Ping latency badge */}
+                        {connection.status === 'connected' && pingLatency[connection.type] != null && (
+                          <span className="text-xs text-[#00F0FF] font-mono">{pingLatency[connection.type]}ms</span>
                         )}
                       </div>
                     </div>
@@ -705,51 +798,92 @@ export function ConnectionsPage() {
                   )}
                 </div>
 
-                <p className="text-sm text-[#6B7280] mb-4">
-                  {connection.description}
-                </p>
+                {isExpanded && (
+                  <>
+                    <p className="text-sm text-[#6B7280] mb-4">
+                      {connection.description}
+                    </p>
 
-                {connection.status === 'connected' && (
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-[#6B7280]">Health</span>
-                      <span className="text-[#E8E8F0]">{connection.health}%</span>
+                    {connection.status === 'connected' && (
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="text-[#6B7280]">Health</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[#E8E8F0]">{connection.health}%</span>
+                            {/* 62.7: Ping button */}
+                            <button
+                              onClick={() => void handlePing(connection.type)}
+                              disabled={pinging[connection.type]}
+                              className="flex items-center gap-1 text-xs text-[#00F0FF] hover:text-[#00D4B0] disabled:opacity-50 transition-colors"
+                              title="Test latency"
+                            >
+                              {pinging[connection.type] ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <span>Ping{pingLatency[connection.type] != null ? ` ${pingLatency[connection.type]}ms` : ''}</span>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="h-1.5 bg-[#06060B] rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${connection.health}%`,
+                              backgroundColor: connection.health > 80 ? '#00FF88' : connection.health > 50 ? '#FFB800' : '#FF6161'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {connection.features.map((feature, i) => (
+                        <Badge key={i} variant="outline" className="border-[#00F0FF]/20 text-[#6B7280] text-xs">
+                          {feature}
+                        </Badge>
+                      ))}
                     </div>
-                    <div className="h-1.5 bg-[#06060B] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${connection.health}%`,
-                          backgroundColor: connection.health > 80 ? '#00FF88' : connection.health > 50 ? '#FFB800' : '#FF6161'
-                        }}
-                      />
+
+                    <div className="flex items-center justify-between pt-4 border-t border-[#00F0FF]/10 text-xs text-[#6B7280]">
+                      {connection.lastSync ? (
+                        <span>Last synced: {timeAgo(connection.lastSync)}</span>
+                      ) : (
+                        <span>Never synced</span>
+                      )}
+                      {connection.status === 'connected' && (
+                        <span>{connection.requestsToday} req today</span>
+                      )}
                     </div>
-                  </div>
+                  </>
                 )}
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {connection.features.map((feature, i) => (
-                    <Badge key={i} variant="outline" className="border-[#00F0FF]/20 text-[#6B7280] text-xs">
-                      {feature}
-                    </Badge>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-[#00F0FF]/10 text-xs text-[#6B7280]">
-                  {connection.lastSync ? (
-                    <span>Last synced: {connection.lastSync}</span>
-                  ) : (
-                    <span>Never synced</span>
-                  )}
-                  {connection.status === 'connected' && (
-                    <span>{connection.requestsToday} req today</span>
-                  )}
-                </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {/* 66.4: Integration event log */}
+      {integrationEvents.length > 0 && (
+        <Card className="border-[#00F0FF]/20">
+          <CardContent className="p-4">
+            <h4 className="text-sm font-medium text-[#E8E8F0] mb-3 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#00F0FF]" />
+              Recent Integration Events
+            </h4>
+            <div className="space-y-2">
+              {integrationEvents.slice(0, 5).map((ev) => (
+                <div key={ev.id} className="flex items-center gap-3 text-xs">
+                  <div className="w-2 h-2 rounded-full bg-[#00F0FF] flex-shrink-0" />
+                  <span className="text-[#E8E8F0] flex-1 truncate">{ev.action}</span>
+                  {ev.details && <span className="text-[#6B7280] truncate max-w-[120px]">{ev.details}</span>}
+                  <span className="text-[#6B7280] flex-shrink-0">{timeAgo(ev.created_at)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Privacy Note */}
       <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">

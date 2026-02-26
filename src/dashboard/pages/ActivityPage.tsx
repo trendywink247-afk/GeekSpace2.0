@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter, Trash2, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { userService, type ActivityEntry } from '@/services/api';
+import { Button } from '@/components/ui/button';
+import { userService, activityService, type ActivityEntry } from '@/services/api';
 
 // Map icon field values to event categories
 function getCategory(icon: string): string {
@@ -46,21 +47,29 @@ function ActivityIcon({ icon }: { icon: string }) {
   );
 }
 
-function timeAgo(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+// 48.5: Normalize SQLite timestamp strings to ISO-8601 UTC before parsing.
+// SQLite returns "YYYY-MM-DD HH:MM:SS" (space, no Z) which V8 treats as local time;
+// Safari fails entirely. Normalizing to "YYYY-MM-DDTHH:MM:SSZ" ensures correct UTC parse.
+function parseSqliteTs(ts: string | number): number {
+  if (typeof ts === 'number') return ts;
+  const normalized = ts.includes('T') ? ts : ts.replace(' ', 'T') + 'Z';
+  return new Date(normalized).getTime();
 }
 
-const PAGE_SIZE = 50;
+function timeAgo(ts: string | number): string {
+  const ms = parseSqliteTs(ts);
+  const diff = Math.floor((Date.now() - ms) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 172800) return 'yesterday';
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  // Use toLocaleDateString so the fallback label reflects the user's timezone (48.5)
+  return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// 46.8: Reduced from 50 to 25 to match server default and lower initial payload
+const PAGE_SIZE = 25;
 
 export function ActivityPage() {
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
@@ -68,34 +77,75 @@ export function ActivityPage() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  // 64.3: server-side search — debounced from searchQuery
+  const [serverQ, setServerQ] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
+  // 40.4: Clear all with confirmation
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  // 64.8: CSV export
+  const [exporting, setExporting] = useState(false);
+  // 65.9: Date-range filter
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
+  // Debounce search query → serverQ
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => { setServerQ(searchQuery); }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchQuery]);
+
+  // Reload when serverQ or date-range changes (server-side text search + date filter)
   useEffect(() => {
     setLoading(true);
-    userService.getActivity(PAGE_SIZE, 0)
+    userService.getActivity(PAGE_SIZE, 0, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined)
       .then(({ data }) => { setEntries(data.activity); setTotal(data.total ?? data.activity.length); })
       .catch(() => setEntries([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [serverQ, dateFrom, dateTo]);
 
   const handleLoadMore = () => {
     setLoadingMore(true);
-    userService.getActivity(PAGE_SIZE, entries.length)
+    userService.getActivity(PAGE_SIZE, entries.length, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined)
       .then(({ data }) => { setEntries((prev) => [...prev, ...data.activity]); setTotal(data.total ?? (entries.length + data.activity.length)); })
       .catch(() => {})
       .finally(() => setLoadingMore(false));
   };
 
+  // 64.8: Download activity log as CSV
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await activityService.export();
+      const url = URL.createObjectURL(res.data as unknown as Blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'activity-log.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* non-fatal */ } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleClearAll = async () => {
+    setIsClearing(true);
+    try {
+      await userService.clearActivity();
+      setEntries([]);
+      setTotal(0);
+      setShowClearConfirm(false);
+    } catch { /* ignore */ } finally {
+      setIsClearing(false);
+    }
+  };
+
+  // 64.3: text search is server-side; client-side only filters by category chip
   const filtered = entries.filter((entry) => {
-    const matchesSearch =
-      !searchQuery ||
-      entry.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      entry.details.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesFilter =
-      activeFilter === 'All' || getCategory(entry.icon) === activeFilter;
-
-    return matchesSearch && matchesFilter;
+    const matchesFilter = activeFilter === 'All' || getCategory(entry.icon) === activeFilter;
+    return matchesFilter;
   });
 
   // Count per category for badge display
@@ -110,13 +160,54 @@ export function ActivityPage() {
   return (
     <div data-testid="activity-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Activity Log
-        </h1>
-        <p className="text-sm md:text-base text-[#6B7280]">
-          <span className="text-[#00F0FF] font-medium">{total || entries.length}</span> total events recorded
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
+            Activity Log
+          </h1>
+          <p className="text-sm md:text-base text-[#6B7280]">
+            <span className="text-[#00F0FF] font-medium">{total || entries.length}</span> total events recorded
+          </p>
+        </div>
+        {/* 40.4: Clear all + 64.8: Export */}
+        {entries.length > 0 && (
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* 64.8: CSV export button */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleExport}
+              disabled={exporting}
+              className="h-8 border-[#00F0FF]/30 text-[#00F0FF]/70 hover:text-[#00F0FF] hover:border-[#00F0FF]/50"
+            >
+              <Download className="w-3 h-3 mr-1" />{exporting ? 'Exporting…' : 'Export CSV'}
+            </Button>
+            {showClearConfirm ? (
+              <>
+                <span className="text-xs text-[#FF6161]">Clear all activity?</span>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleClearAll}
+                  disabled={isClearing}
+                  className="h-8 bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
+                >
+                  {isClearing ? 'Clearing…' : 'Yes, clear'}
+                </Button>
+                <button onClick={() => setShowClearConfirm(false)} className="text-xs text-[#6B7280] hover:text-[#E8E8F0]">Cancel</button>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowClearConfirm(true)}
+                className="h-8 border-[#FF6161]/30 text-[#FF6161]/70 hover:text-[#FF6161] hover:border-[#FF6161]/50"
+              >
+                <Trash2 className="w-3 h-3 mr-1" />Clear all
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Search */}
@@ -128,6 +219,35 @@ export function ActivityPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[44px]"
         />
+      </div>
+
+      {/* 65.9: Date-range filter */}
+      <div className="flex flex-wrap items-center gap-2 text-xs text-[#6B7280]">
+        <span>From:</span>
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="px-2 py-1.5 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] text-xs"
+          aria-label="Filter from date"
+        />
+        <span>To:</span>
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="px-2 py-1.5 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] text-xs"
+          aria-label="Filter to date"
+        />
+        {(dateFrom || dateTo) && (
+          <button
+            onClick={() => { setDateFrom(''); setDateTo(''); }}
+            className="text-[#FF6161] hover:text-[#FF6161]/80 transition-colors"
+            aria-label="Clear date range"
+          >
+            ✕ Clear dates
+          </button>
+        )}
       </div>
 
       {/* Filter chips */}
@@ -159,6 +279,17 @@ export function ActivityPage() {
         })}
       </div>
 
+      {/* 66.7: Category color legend */}
+      <div className="flex flex-wrap items-center gap-3 text-[10px] text-[#6B7280]">
+        <span className="font-medium">Legend:</span>
+        {(Object.entries(FILTER_COLORS) as Array<[FilterType, string]>).filter(([k]) => k !== 'All').map(([cat, color]) => (
+          <span key={cat} className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+            {cat}
+          </span>
+        ))}
+      </div>
+
       {/* Activity list */}
       <Card className="border-[#00F0FF]/20">
         <CardContent className="p-0">
@@ -170,11 +301,11 @@ export function ActivityPage() {
             <div className="text-center py-16">
               <Activity className="w-12 h-12 text-[#00F0FF]/20 mx-auto mb-4" />
               <p className="text-[#6B7280] mb-1">
-                {searchQuery || activeFilter !== 'All'
+                {serverQ || activeFilter !== 'All'
                   ? 'No events match your filters'
                   : 'No activity recorded yet'}
               </p>
-              {(searchQuery || activeFilter !== 'All') && (
+              {(serverQ || activeFilter !== 'All') && (
                 <button
                   onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}
                   className="text-xs text-[#00F0FF] hover:underline mt-2"
@@ -188,7 +319,7 @@ export function ActivityPage() {
               {filtered.map((entry) => (
                 <div
                   key={entry.id}
-                  className="flex items-start gap-3 px-4 py-3 hover:bg-[#00F0FF]/5 transition-colors"
+                  className="group flex items-start gap-3 px-4 py-3 hover:bg-[#00F0FF]/5 transition-colors"
                 >
                   <ActivityIcon icon={entry.icon} />
                   <div className="flex-1 min-w-0">
@@ -197,13 +328,25 @@ export function ActivityPage() {
                       <p className="text-xs text-[#6B7280] truncate mt-0.5">{entry.details}</p>
                     )}
                   </div>
-                  <div className="flex-shrink-0 text-right">
-                    <span className="text-[10px] text-[#6B7280] font-mono whitespace-nowrap">
-                      {timeAgo(entry.created_at)}
-                    </span>
-                    <p className="text-[10px] text-[#6B7280]/60 mt-0.5">
-                      {getCategory(entry.icon)}
-                    </p>
+                  <div className="flex-shrink-0 text-right flex items-start gap-2">
+                    <div>
+                      <span title={new Date(parseSqliteTs(entry.created_at)).toLocaleString()} className="text-xs text-[#8888AA] whitespace-nowrap">
+                        {timeAgo(entry.created_at)}
+                      </span>
+                      <p className="text-[10px] text-[#6B7280]/60 mt-0.5">
+                        {getCategory(entry.icon)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        await userService.deleteActivityEntry(entry.id).catch(() => {});
+                        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded text-[#6B7280] hover:text-[#FF6161] transition-all"
+                      aria-label="Delete this entry"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -212,7 +355,7 @@ export function ActivityPage() {
         </CardContent>
       </Card>
 
-      {entries.length > 0 && entries.length < total && !searchQuery && activeFilter === 'All' && (
+      {entries.length > 0 && entries.length < total && (
         <div className="flex justify-center">
           <button
             onClick={handleLoadMore}

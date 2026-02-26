@@ -127,6 +127,7 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     notif_daily_briefing: 'notif_daily_briefing',
     notif_connections: 'notif_connections',
     greeting: 'greeting',
+    snooze_presets: 'snooze_presets',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {
@@ -1198,6 +1199,7 @@ function mapConversation(row: Record<string, unknown>) {
     summary: row.summary,
     tags: row.tags,
     createdAt: row.created_at,
+    starred: !!row.starred,
   };
 }
 
@@ -1248,6 +1250,15 @@ agentRouter.put('/memory/:id', requireAuth, validateBody(memoryUpdateSchema), (r
     'SELECT * FROM agent_memory WHERE user_id = ? AND category = ? AND key = ?'
   ).get(req.userId!, category, key) as Record<string, unknown>;
   res.json(mapMemory(updated));
+});
+
+// ── 65.7: Bulk-clear memories by category (must be before /:id) ────────────
+agentRouter.delete('/memory/bulk', requireAuth, (req: AuthRequest, res) => {
+  const category = typeof req.query.category === 'string' && req.query.category.trim() ? req.query.category.trim() : null;
+  const userId = req.userId!;
+  if (!category) { res.status(400).json({ error: 'category query param is required' }); return; }
+  const result = db.prepare('DELETE FROM agent_memory WHERE user_id = ? AND category = ?').run(userId, category);
+  res.json({ deleted: result.changes });
 });
 
 agentRouter.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
@@ -1345,6 +1356,27 @@ agentRouter.get('/conversations/reactions/summary', requireAuth, (req: AuthReque
     logger.error({ err, userId }, 'Failed to get reaction summary');
     res.status(500).json({ error: 'Failed to get reaction summary' });
   }
+});
+
+// ---- 60.2: Star/unstar a conversation message ----
+
+agentRouter.post('/conversations/:id/star', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const row = db.prepare('SELECT id, user_id, starred FROM conversation_log WHERE id = ? AND user_id = ?').get(req.params.id, userId) as { id: string; user_id: string; starred: number } | undefined;
+  if (!row) { res.status(404).json({ error: 'Message not found' }); return; }
+  const newStarred = row.starred ? 0 : 1;
+  db.prepare('UPDATE conversation_log SET starred = ? WHERE id = ? AND user_id = ?').run(newStarred, req.params.id, userId);
+  res.json({ starred: !!newStarred });
+});
+
+// 60.2: Get all starred messages (must come before /:id/star to avoid route ambiguity)
+agentRouter.get('/conversations/starred', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+  const rows = db.prepare(
+    'SELECT * FROM conversation_log WHERE user_id = ? AND starred = 1 ORDER BY created_at DESC LIMIT ?'
+  ).all(userId, limit) as Record<string, unknown>[];
+  res.json({ messages: rows.map(mapConversation) });
 });
 
 // ---- Agent Quality Metrics (Phase 26.5) ----

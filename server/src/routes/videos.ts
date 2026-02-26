@@ -12,6 +12,10 @@ import { v4 as uuid } from 'uuid';
 import { logger } from '../logger.js';
 import { generateVideo, checkMediaStatus } from '../services/media-generation.js';
 import { config } from '../config.js';
+import { runDirectorMode } from '../services/director-mode.js';
+import { generateFalClip } from '../services/fal-video.js';
+import type { DirectorPacket } from '../services/director-mode.js';
+import { routeChat } from '../services/llm.js';
 
 export const videosRouter = Router();
 
@@ -282,6 +286,346 @@ videosRouter.get('/models/available', requireAuth, (_req: AuthRequest, res) => {
   ];
 
   res.json({ models });
+});
+
+// ──────────────────────────────────────────────────────────────
+// 65.13: Expand Idea — AI-enriched idea for Director Mode
+// POST /api/videos/director/expand-idea
+// ──────────────────────────────────────────────────────────────
+videosRouter.post('/director/expand-idea', requireAuth, async (req: AuthRequest, res) => {
+  const { idea } = req.body as { idea?: string };
+  if (!idea?.trim() || idea.trim().length < 5) {
+    res.status(400).json({ error: 'idea is required (min 5 chars)' });
+    return;
+  }
+  if (idea.trim().length > 500) {
+    res.status(400).json({ error: 'idea too long (max 500 chars)' });
+    return;
+  }
+  try {
+    const result = await routeChat(
+      [
+        { role: 'system', content: 'You are a cinematic AI director. Expand the given short idea into a rich, vivid 1-2 sentence scene description suitable for a 6-shot video sequence. Focus on visual details, lighting, atmosphere, and movement. Return only the expanded description, no preamble.' },
+        { role: 'user', content: `Expand this video idea: "${idea.trim()}"` },
+      ],
+      { userId: req.userId! }
+    );
+    const expanded = result.reply?.trim() || idea.trim();
+    res.json({ expanded });
+  } catch {
+    res.json({ expanded: idea.trim() }); // graceful fallback
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// 55.13: Seedance Director Mode
+// POST /api/videos/director/create  — start a director job
+// GET  /api/videos/director/:jobId  — poll job status
+// GET  /api/videos/director         — list user's director jobs
+// ──────────────────────────────────────────────────────────────
+
+const DIRECTOR_CREDITS = 60; // 6 clips × 10 credits each
+const MAX_CONCURRENT_DIRECTOR_JOBS = 1;
+
+videosRouter.post('/director/create', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { idea, width, height } = req.body as {
+    idea: string;
+    width?: number;
+    height?: number;
+  };
+
+  if (!idea?.trim()) {
+    res.status(400).json({ error: 'idea is required' });
+    return;
+  }
+  if (idea.length > 500) {
+    res.status(400).json({ error: 'idea too long (max 500 chars)' });
+    return;
+  }
+
+  // Per-user concurrency limit: 1 active job
+  const activeJobs = db.prepare(
+    "SELECT COUNT(*) as count FROM video_jobs WHERE user_id = ? AND status IN ('pending', 'running')"
+  ).get(userId) as { count: number };
+  if (activeJobs.count >= MAX_CONCURRENT_DIRECTOR_JOBS) {
+    res.status(429).json({ error: 'A Director Mode job is already running. Please wait for it to finish.' });
+    return;
+  }
+
+  // Credits check (skip in test mode)
+  if (!config.isTestMode) {
+    const sub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+    if ((sub?.credits_remaining ?? 0) < DIRECTOR_CREDITS) {
+      res.status(402).json({ error: `Insufficient credits. Director Mode requires ${DIRECTOR_CREDITS} credits.`, required: DIRECTOR_CREDITS });
+      return;
+    }
+  }
+
+  // Create job record
+  const jobId = `dj-${uuid().slice(0, 12)}`;
+  db.prepare(
+    'INSERT INTO video_jobs (id, user_id, idea, status, clips) VALUES (?, ?, ?, ?, ?)'
+  ).run(jobId, userId, idea.trim(), 'running', '[]');
+
+  logger.info({ userId, jobId, idea: idea.slice(0, 60) }, 'Director Mode job started');
+
+  // Run pipeline async — respond immediately with jobId
+  // (client polls /director/:jobId for updates)
+  setImmediate(async () => {
+    try {
+      const w = Math.min(Math.max(width || 1280, 480), 1920);
+      const h = Math.min(Math.max(height || 720, 360), 1080);
+
+      const result = await runDirectorMode(idea.trim(), w, h);
+
+      if (result.success) {
+        // Deduct credits in production
+        if (!config.isTestMode) {
+          db.prepare(`
+            UPDATE subscriptions
+            SET credits_remaining = MAX(0, credits_remaining - ?),
+                credits_used_this_cycle = credits_used_this_cycle + ?
+            WHERE user_id = ?
+          `).run(DIRECTOR_CREDITS, DIRECTOR_CREDITS, userId);
+        }
+
+        db.prepare(
+          'UPDATE video_jobs SET status = ?, packet = ?, clips = ?, credits_used = ?, updated_at = datetime(\'now\') WHERE id = ?'
+        ).run('done', JSON.stringify(result.packet), JSON.stringify(result.clips), DIRECTOR_CREDITS, jobId);
+
+        db.prepare(
+          'INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, ?, ?, ?)'
+        ).run(uuid(), userId, 'Director Mode video created', result.packet?.title ?? idea.slice(0, 60), 'film');
+
+        logger.info({ jobId, clips: result.clips.length }, 'Director Mode job completed');
+      } else {
+        db.prepare(
+          'UPDATE video_jobs SET status = ?, error = ?, updated_at = datetime(\'now\') WHERE id = ?'
+        ).run('failed', result.error ?? 'Unknown error', jobId);
+        logger.warn({ jobId, error: result.error }, 'Director Mode job failed');
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'unknown';
+      db.prepare(
+        'UPDATE video_jobs SET status = ?, error = ?, updated_at = datetime(\'now\') WHERE id = ?'
+      ).run('failed', msg, jobId);
+      logger.error({ err, jobId }, 'Director Mode job threw');
+    }
+  });
+
+  res.status(202).json({
+    jobId,
+    status: 'running',
+    message: 'Director Mode pipeline started. Poll /api/videos/director/:jobId for status.',
+  });
+});
+
+videosRouter.get('/director', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const rows = db.prepare(
+    'SELECT id, idea, status, packet, clips, error, credits_used, created_at, updated_at FROM video_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT 20'
+  ).all(userId) as Array<Record<string, unknown>>;
+
+  const jobs = rows.map((r) => ({
+    ...r,
+    packet: r.packet ? JSON.parse(r.packet as string) : null,
+    clips: r.clips ? JSON.parse(r.clips as string) : [],
+  }));
+
+  res.json({ jobs });
+});
+
+// ── 60.13: Per-clip retry ──────────────────────────────────────────
+// POST /api/videos/director/:jobId/retry-clip/:clipIndex
+// Re-generates a single failed clip using its shot prompt from the packet.
+// Costs 10 credits (1 clip).
+videosRouter.post('/director/:jobId/retry-clip/:clipIndex', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { jobId, clipIndex: clipIndexStr } = req.params;
+  const clipIndex = parseInt(clipIndexStr, 10);
+
+  if (isNaN(clipIndex) || clipIndex < 0 || clipIndex > 5) {
+    res.status(400).json({ error: 'clipIndex must be 0–5' });
+    return;
+  }
+
+  const row = db.prepare(
+    'SELECT id, status, packet, clips FROM video_jobs WHERE id = ? AND user_id = ?'
+  ).get(jobId, userId) as { id: string; status: string; packet: string | null; clips: string } | undefined;
+
+  if (!row) { res.status(404).json({ error: 'Job not found' }); return; }
+  if (!row.packet) { res.status(400).json({ error: 'Job has no director packet — cannot retry clip' }); return; }
+
+  const packet = JSON.parse(row.packet) as DirectorPacket;
+  const shot = packet.shotlist?.[clipIndex];
+  if (!shot) { res.status(400).json({ error: `No shot at index ${clipIndex}` }); return; }
+
+  const CLIP_CREDITS = 10;
+  if (!config.isTestMode) {
+    const sub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+    if ((sub?.credits_remaining ?? 0) < CLIP_CREDITS) {
+      res.status(402).json({ error: `Insufficient credits. Clip retry requires ${CLIP_CREDITS} credits.` });
+      return;
+    }
+  }
+
+  // Respond immediately; run async
+  res.json({ message: 'Clip retry started', clipIndex });
+
+  setImmediate(async () => {
+    try {
+      const result = await generateFalClip({
+        prompt: `${packet.styleGuide ? packet.styleGuide + '. ' : ''}${shot.prompt}`,
+        duration: 5,
+        width: 1280,
+        height: 720,
+      }, clipIndex);
+
+      const clips = JSON.parse(row.clips || '[]') as Array<{ success: boolean; url: string; error?: string }>;
+      clips[clipIndex] = result;
+
+      db.prepare(
+        "UPDATE video_jobs SET clips = ?, updated_at = datetime('now') WHERE id = ?"
+      ).run(JSON.stringify(clips), jobId);
+
+      if (result.success && !config.isTestMode) {
+        db.prepare(`
+          UPDATE subscriptions
+          SET credits_remaining = MAX(0, credits_remaining - ?),
+              credits_used_this_cycle = credits_used_this_cycle + ?
+          WHERE user_id = ?
+        `).run(CLIP_CREDITS, CLIP_CREDITS, userId);
+      }
+
+      logger.info({ jobId, clipIndex, success: result.success }, 'Clip retry complete');
+    } catch (err) {
+      logger.error({ err, jobId, clipIndex }, 'Clip retry error');
+    }
+  });
+});
+
+// ── 56.2: Stitch Director Mode clips ─────────────────────────────
+// POST /api/videos/director/:jobId/stitch
+// Soft stitch: returns ordered clip URLs. Uses ffmpeg concat when available.
+// Always succeeds — worst case returns clip URLs for client-side stitching.
+videosRouter.post('/director/:jobId/stitch', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { jobId } = req.params;
+
+  const row = db.prepare(
+    'SELECT id, status, clips, stitched_url FROM video_jobs WHERE id = ? AND user_id = ?'
+  ).get(jobId, userId) as { id: string; status: string; clips: string; stitched_url: string | null } | undefined;
+
+  if (!row) {
+    res.status(404).json({ error: 'Director job not found' });
+    return;
+  }
+  // 60.13: allow partial stitch — accept 'done' or jobs that have at least one successful clip
+  const clipsForCheck = JSON.parse(row.clips || '[]') as Array<{ success?: boolean; url?: string }>;
+  const hasSuccessfulClips = clipsForCheck.some((c) => c.success && c.url);
+  if (row.status === 'running' || row.status === 'pending') {
+    res.status(409).json({ error: `Job is ${row.status} — stitch requires completed or partial clips` });
+    return;
+  }
+  if (!hasSuccessfulClips) {
+    res.status(400).json({ error: 'No successful clips to stitch' });
+    return;
+  }
+  // 61.13: If already stitched (or soft-stitched), return cached result
+  if (row.stitched_url) {
+    // Soft-stitch stores JSON; hard stitch stores a plain URL
+    if (row.stitched_url.startsWith('{')) {
+      try {
+        const cached = JSON.parse(row.stitched_url) as { softStitch: boolean; clipUrls: string[] };
+        res.json({ stitched: true, stitchedUrl: null, cached: true, clipUrls: cached.clipUrls, softStitch: true });
+        return;
+      } catch { /* fall through and re-stitch */ }
+    } else {
+      res.json({ stitched: true, stitchedUrl: row.stitched_url, cached: true, clipUrls: [] });
+      return;
+    }
+  }
+
+  const clips = JSON.parse(row.clips || '[]') as Array<{ success?: boolean; url?: string }>;
+  const clipUrls = clips.filter((c) => c.success && c.url).map((c) => c.url as string);
+
+  if (!clipUrls.length) {
+    res.status(400).json({ error: 'No successful clips to stitch' });
+    return;
+  }
+
+  // Attempt ffmpeg concat stitch — gracefully skip when not available
+  let stitchedUrl: string | null = null;
+  try {
+    const { spawn } = await import('child_process');
+    const { promisify } = await import('util');
+    const execFile = promisify((await import('child_process')).execFile);
+
+    // Quick check: is ffmpeg on PATH?
+    await execFile('ffmpeg', ['-version']).catch(() => { throw new Error('ffmpeg not found'); });
+
+    // Build concat list in a temp file
+    const tmpDir = (await import('os')).tmpdir();
+    const listFile = `${tmpDir}/stitch-${jobId}.txt`;
+    const outFile = `${tmpDir}/stitched-${jobId}.mp4`;
+
+    const lines = clipUrls.map((u) => `file '${u}'`).join('\n');
+    (await import('fs')).writeFileSync(listFile, lines, 'utf8');
+
+    const ffmpegProc = spawn('ffmpeg', [
+      '-y', '-f', 'concat', '-safe', '0', '-i', listFile,
+      '-c', 'copy', outFile,
+    ]);
+
+    await new Promise<void>((resolve, reject) => {
+      ffmpegProc.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`ffmpeg exit ${code}`))));
+      ffmpegProc.on('error', reject);
+    });
+
+    // In production the stitched file would be uploaded to storage.
+    // Here we note it was stitched locally (URL would be set by an upload step).
+    stitchedUrl = outFile; // placeholder — real deploy uploads to CDN
+    logger.info({ jobId, outFile }, 'Director Mode clips stitched via ffmpeg');
+  } catch (ffmpegErr) {
+    // ffmpeg not available — soft stitch (return ordered URLs, client handles playback)
+    logger.info({ jobId, reason: (ffmpegErr as Error).message }, 'ffmpeg stitch skipped — returning clip URLs');
+  }
+
+  // 61.13: Persist stitch result — hard stitch stores URL, soft stitch stores JSON
+  if (stitchedUrl) {
+    db.prepare('UPDATE video_jobs SET stitched_url = ?, updated_at = datetime(\'now\') WHERE id = ?')
+      .run(stitchedUrl, jobId);
+  } else {
+    // Soft stitch: persist clip URLs so repeated calls return cached result
+    db.prepare('UPDATE video_jobs SET stitched_url = ?, updated_at = datetime(\'now\') WHERE id = ?')
+      .run(JSON.stringify({ softStitch: true, clipUrls }), jobId);
+  }
+
+  res.json({
+    stitched: true,
+    stitchedUrl,          // null when ffmpeg unavailable
+    clipUrls,             // always returned for client-side sequential playback
+    softStitch: !stitchedUrl,
+  });
+});
+
+videosRouter.get('/director/:jobId', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const row = db.prepare(
+    'SELECT id, idea, status, packet, clips, error, credits_used, created_at, updated_at FROM video_jobs WHERE id = ? AND user_id = ?'
+  ).get(req.params.jobId, userId) as Record<string, unknown> | undefined;
+
+  if (!row) {
+    res.status(404).json({ error: 'Director job not found' });
+    return;
+  }
+
+  res.json({
+    ...row,
+    packet: row.packet ? JSON.parse(row.packet as string) : null,
+    clips: row.clips ? JSON.parse(row.clips as string) : [],
+  });
 });
 
 // ---- Cleanup expired videos -----------------------------------

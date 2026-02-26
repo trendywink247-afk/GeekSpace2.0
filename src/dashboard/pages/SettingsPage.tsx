@@ -21,7 +21,10 @@ import {
   LogOut,
   Download,
   Users,
-  CalendarDays
+  CalendarDays,
+  Moon,
+  Sun,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,11 +39,17 @@ import { userService, apiKeyService, memoryService, agentService, versionService
 import type { ApiProvider, MemoryEntry, FreeModel } from '@/types';
 
 export function SettingsPage() {
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  // 57.9: toast shown after silent agent config saves
+  const [savedToast, setSavedToast] = useState(false);
+  const showSavedToast = () => { setSavedToast(true); setTimeout(() => setSavedToast(false), 2000); };
   const [isExportingConversations, setIsExportingConversations] = useState(false);
   const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
   const [isExportingMarkdown7Days, setIsExportingMarkdown7Days] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  // 60.4: keyboard shortcut cheat sheet
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const user = useAuthStore((s) => s.user);
   const [appVersion, setAppVersion] = useState<string | null>(null);
 
@@ -58,6 +67,10 @@ export function SettingsPage() {
       });
       // 39.4: preferred free model
       if (cfg.preferred_free_model) setPreferredFreeModel(cfg.preferred_free_model as string);
+      // 41.6: snooze presets
+      if (cfg.snooze_presets) {
+        try { setSnoozePresets(JSON.parse(cfg.snooze_presets as string) as string[]); } catch { /* ignore */ }
+      }
     }).catch(() => {});
   }, []);
   const setUser = useAuthStore((s) => s.setUser);
@@ -95,6 +108,8 @@ export function SettingsPage() {
     notif_daily_briefing: 1,
     notif_connections: 1,
   });
+  // 41.6: snooze presets
+  const [snoozePresets, setSnoozePresets] = useState<string[]>(['1h', 'tomorrow', 'next-week']);
 
   const [privacy, setPrivacy] = useState({
     showInDirectory: true,
@@ -108,6 +123,9 @@ export function SettingsPage() {
   const [newKeyProvider, setNewKeyProvider] = useState<ApiProvider>('openai');
   const [newKeyValue, setNewKeyValue] = useState('');
   const [showAddKey, setShowAddKey] = useState(false);
+  const [rotatingKeyId, setRotatingKeyId] = useState<string | null>(null);
+  const [rotateValue, setRotateValue] = useState('');
+  const [isRotating, setIsRotating] = useState(false);
 
   // AI Background Generator state
   const handleRevokeSession = async (sessionId: string) => {
@@ -136,6 +154,9 @@ export function SettingsPage() {
   const [memoryFilter, setMemoryFilter] = useState<string>('all');
   const [memoriesLoading, setMemoriesLoading] = useState(false);
   const [reactionSummary, setReactionSummary] = useState<{ reaction: string; count: number }[]>([]);
+  // 60.2: Starred messages
+  const [starredMessages, setStarredMessages] = useState<import('@/types').ConversationEntry[]>([]);
+  const [showStarred, setShowStarred] = useState(false);
 
   // Load API keys from backend on mount
   useEffect(() => {
@@ -156,10 +177,20 @@ export function SettingsPage() {
   const [freeModels, setFreeModels] = useState<FreeModel[]>([]);
   const [freeModelSaving, setFreeModelSaving] = useState(false);
 
+  // 52.4: Change password form state
+  const [pwCurrent, setPwCurrent] = useState('');
+  const [pwNew, setPwNew] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+
   // Load memories and reaction summary when memory tab is active
   useEffect(() => {
     if (activeTab === 'memory') {
       memoryService.getReactionSummary().then(({ data }) => setReactionSummary(data.reactions)).catch(() => {});
+      // 60.2: Load starred messages
+      agentService.getStarred().then(({ data }) => setStarredMessages(data.messages)).catch(() => {});
       setMemoriesLoading(true);
       memoryService.list(memoryFilter === 'all' ? undefined : memoryFilter)
         .then(({ data }) => setMemories(data))
@@ -272,7 +303,8 @@ export function SettingsPage() {
     try {
       await userService.updateProfile({ notifications: { [serverKey]: value } } as Parameters<typeof userService.updateProfile>[0]);
     } catch {
-      // Silent fail — local state still updated
+      // 57.3: Revert toggle state on server failure to prevent stale UI
+      setNotifications((prev) => ({ ...prev, [field]: !value }));
     }
   };
 
@@ -294,6 +326,27 @@ export function SettingsPage() {
     await userService.updateProfile({ theme_background: bgPreview.gradient } as Parameters<typeof userService.updateProfile>[0]);
   };
 
+  // 46.4: beforeunload guard — warn when navigating away with unsaved profile changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsavedChanges]);
+
+  // 60.4: global '?' key toggles keyboard shortcut cheat sheet
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '?' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        setShowShortcuts((v) => !v);
+      }
+      if (e.key === 'Escape') setShowShortcuts(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -303,6 +356,7 @@ export function SettingsPage() {
         // and any fields not returned by PATCH /me (server omits some on update)
         setUser({ ...user, ...updatedUser });
       }
+      setHasUnsavedChanges(false);
     } catch (err) {
       console.error('[settings] save failed:', err);
     } finally {
@@ -333,6 +387,50 @@ export function SettingsPage() {
     setShowAddKey(false);
   };
 
+  const handleRotateKey = async (id: string) => {
+    if (!rotateValue.trim() || rotateValue.trim().length < 8) return;
+    setIsRotating(true);
+    try {
+      const { data } = await apiKeyService.rotate(id, rotateValue.trim());
+      setApiKeys(apiKeys.map(k => k.id === id ? { ...k, maskedKey: data.maskedKey } : k));
+      setRotatingKeyId(null);
+      setRotateValue('');
+    } catch {
+      // silently fail — UI state unchanged
+    } finally {
+      setIsRotating(false);
+    }
+  };
+
+  // 59.10: Reset agent config to defaults
+  const [isResettingAgent, setIsResettingAgent] = useState(false);
+  const handleResetAgentConfig = async () => {
+    setIsResettingAgent(true);
+    try {
+      const defaultNotifs = { notif_reminders: 1, notif_escalations: 1, notif_agents: 1, notif_daily_briefing: 1, notif_connections: 1 };
+      const defaultPresets = ['1h', 'tomorrow', 'next-week'];
+      const defaultModel = 'auto';
+      await agentService.updateConfig({
+        ...defaultNotifs,
+        snooze_presets: JSON.stringify(defaultPresets),
+        preferred_free_model: defaultModel,
+      });
+      setAgentNotifs(defaultNotifs);
+      setSnoozePresets(defaultPresets);
+      setPreferredFreeModel(defaultModel);
+      showSavedToast();
+    } catch { /* silently fail */ } finally { setIsResettingAgent(false); }
+  };
+
+  // 61.6: provider emoji logos
+  const providerEmoji: Record<string, string> = {
+    openai: '🤖',
+    anthropic: '🅰',
+    qwen: '🇨🇳',
+    openrouter: '🔀',
+    custom: '⚙️',
+  };
+
   const providerColors: Record<string, string> = {
     openai: '#10a37f',
     anthropic: '#d4a574',
@@ -343,6 +441,66 @@ export function SettingsPage() {
 
   return (
     <div data-testid="settings-page" className="space-y-6 animate-in fade-in duration-500">
+      {/* 57.9: Agent config save-confirmation toast */}
+      {savedToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[#00F0FF] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="settings-saved-toast">
+          <Save className="w-4 h-4" />
+          Settings saved
+        </div>
+      )}
+
+      {/* 60.4: Keyboard shortcut cheat sheet modal */}
+      {showShortcuts && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowShortcuts(false)}
+          data-testid="shortcuts-modal"
+        >
+          <div
+            className="bg-[#0C0C18] border border-[#00F0FF]/30 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-[#F4F6FF]" style={{ fontFamily: 'Syne, sans-serif' }}>
+                Keyboard Shortcuts
+              </h2>
+              <button onClick={() => setShowShortcuts(false)} className="text-[#6B7280] hover:text-[#F4F6FF] transition-colors text-lg leading-none">✕</button>
+            </div>
+            <div className="space-y-4">
+              {[
+                { group: 'Navigation', items: [
+                  { key: '?', desc: 'Toggle this cheat sheet' },
+                  { key: 'Esc', desc: 'Close modals / dialogs' },
+                ]},
+                { group: 'Reminders', items: [
+                  { key: 'N', desc: 'New reminder (when on Reminders page)' },
+                  { key: '/', desc: 'Focus search (when on Reminders page)' },
+                ]},
+                { group: 'Chat', items: [
+                  { key: 'Enter', desc: 'Send message' },
+                  { key: 'Shift + Enter', desc: 'New line in message' },
+                ]},
+                { group: 'Settings', items: [
+                  { key: 'Ctrl + S', desc: 'Save profile changes' },
+                ]},
+              ].map(({ group, items }) => (
+                <div key={group}>
+                  <p className="text-[10px] uppercase tracking-widest text-[#6B7280] mb-1.5">{group}</p>
+                  <div className="space-y-1">
+                    {items.map(({ key, desc }) => (
+                      <div key={key} className="flex items-center justify-between">
+                        <span className="text-[#9CA3AF] text-sm">{desc}</span>
+                        <kbd className="px-2 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/20 text-[#00F0FF] text-xs font-mono">{key}</kbd>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-5 text-[11px] text-[#6B7280] text-center">Press <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">?</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">Esc</kbd> to close</p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
@@ -350,13 +508,33 @@ export function SettingsPage() {
           </h1>
           <p className="text-[#6B7280]">Manage your account preferences</p>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">
-          {isSaving ? (
-            <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
-          ) : (
-            <><Save className="w-4 h-4 mr-2" />Save Changes</>
+        <div className="flex flex-col items-end gap-2">
+          {/* 46.4: Unsaved changes warning banner */}
+          {hasUnsavedChanges && !isSaving && (
+            <div className="px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">
+              You have unsaved changes
+            </div>
           )}
-        </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowShortcuts(true)}
+              className="border-[#00F0FF]/20 text-[#6B7280] hover:text-[#00F0FF] hover:border-[#00F0FF]/40 text-xs"
+              title="Keyboard shortcuts (?)"
+              data-testid="shortcuts-btn"
+            >
+              <kbd className="text-xs font-mono mr-1">?</kbd>Shortcuts
+            </Button>
+          <Button onClick={handleSave} disabled={isSaving} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">
+            {isSaving ? (
+              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
+            ) : (
+              <><Save className="w-4 h-4 mr-2" />Save Changes</>
+            )}
+          </Button>
+          </div>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -391,7 +569,7 @@ export function SettingsPage() {
               <CardContent className="p-6 text-center">
                 <div className="relative inline-block mb-4">
                   {profile.avatar ? (
-                    <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[#0C0C18]" />
+                    <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[#0C0C18] object-cover" />
                   ) : (
                     <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center text-3xl font-bold">
                       {profile.name.split(' ').map(n => n[0]).join('')}
@@ -410,6 +588,35 @@ export function SettingsPage() {
                     <Sparkles className="w-4 h-4 text-white" />
                   </button>
                 </div>
+                {/* 53.9: Upload photo with live preview */}
+                <div className="mt-2">
+                  <label className="cursor-pointer">
+                    <span className="text-xs text-[#00F0FF] hover:text-[#00D4B0] transition-colors underline underline-offset-2">Upload Photo</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 500 * 1024) {
+                          alert('Image must be under 500 KB');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const dataUrl = ev.target?.result as string;
+                          if (dataUrl) {
+                            setProfile({ ...profile, avatar: dataUrl });
+                            setHasUnsavedChanges(true);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                  <p className="text-[10px] text-[#6B7280] mt-1">Max 500 KB · JPEG, PNG, WebP</p>
+                </div>
                 <h3 className="font-semibold text-[#E8E8F0]">{profile.name}</h3>
                 <p className="text-sm text-[#6B7280]">@{profile.username}</p>
                 <Badge variant="outline" className="mt-3 border-[#00FF88]/30 text-[#00FF88]">Pro Plan</Badge>
@@ -425,32 +632,32 @@ export function SettingsPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-[#6B7280] mb-2 block">Display Name</label>
-                    <Input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                    <Input value={profile.name} onChange={(e) => { setProfile({ ...profile, name: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                   </div>
                   <div>
                     <label className="text-sm text-[#6B7280] mb-2 block">Username</label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]">@</span>
-                      <Input value={profile.username} onChange={(e) => setProfile({ ...profile, username: e.target.value })} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] pl-8" />
+                      <Input value={profile.username} onChange={(e) => { setProfile({ ...profile, username: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] pl-8" />
                     </div>
                   </div>
                 </div>
                 <div>
                   <label className="text-sm text-[#6B7280] mb-2 block">Email</label>
-                  <Input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                  <Input type="email" value={profile.email} onChange={(e) => { setProfile({ ...profile, email: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                 </div>
                 <div>
                   <label className="text-sm text-[#6B7280] mb-2 block">Bio</label>
-                  <textarea value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF]" />
+                  <textarea value={profile.bio} onChange={(e) => { setProfile({ ...profile, bio: e.target.value }); setHasUnsavedChanges(true); }} className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF]" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-[#6B7280] mb-2 block">Location</label>
-                    <Input value={profile.location} onChange={(e) => setProfile({ ...profile, location: e.target.value })} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                    <Input value={profile.location} onChange={(e) => { setProfile({ ...profile, location: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                   </div>
                   <div>
                     <label className="text-sm text-[#6B7280] mb-2 block">Website</label>
-                    <Input value={profile.website} onChange={(e) => setProfile({ ...profile, website: e.target.value })} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                    <Input value={profile.website} onChange={(e) => { setProfile({ ...profile, website: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                   </div>
                 </div>
               </CardContent>
@@ -521,11 +728,62 @@ export function SettingsPage() {
                     onCheckedChange={(checked) => {
                       const updated = { ...agentNotifs, [item.key]: checked ? 1 : 0 };
                       setAgentNotifs(updated);
-                      void agentService.updateConfig({ [item.key]: checked ? 1 : 0 }).catch(() => {});
+                      void agentService.updateConfig({ [item.key]: checked ? 1 : 0 }).then(() => showSavedToast()).catch(() => {});
                     }}
                   />
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          {/* 41.6: Snooze Presets Card */}
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle>Snooze Presets</CardTitle>
+              <CardDescription className="text-[#6B7280]">Choose which snooze options appear when delaying a reminder</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {(['1h', '3h', 'tomorrow', 'next-week'] as const).map((preset) => {
+                const labels: Record<string, string> = { '1h': '1 hour', '3h': '3 hours', 'tomorrow': 'Tomorrow 9am', 'next-week': 'Next week 9am' };
+                const enabled = snoozePresets.includes(preset);
+                return (
+                  <div key={preset} className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-[#E8E8F0] text-sm">{labels[preset]}</div>
+                    </div>
+                    <Switch
+                      checked={enabled}
+                      onCheckedChange={(checked) => {
+                        const updated = checked
+                          ? [...snoozePresets, preset]
+                          : snoozePresets.filter((p) => p !== preset);
+                        setSnoozePresets(updated);
+                        void agentService.updateConfig({ snooze_presets: JSON.stringify(updated) }).then(() => showSavedToast()).catch(() => {});
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          {/* 59.10: Reset Agent Config to Defaults */}
+          <Card className="border-[#FF6161]/20">
+            <CardHeader>
+              <CardTitle className="text-[#E8E8F0]">Reset Agent Configuration</CardTitle>
+              <CardDescription className="text-[#6B7280]">Restore all agent notification and snooze settings to their defaults</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="ghost"
+                onClick={() => void handleResetAgentConfig()}
+                disabled={isResettingAgent}
+                data-testid="reset-agent-config-btn"
+                className="flex items-center gap-2 text-[#FF6161] hover:text-[#FF6161] hover:bg-[#FF6161]/10 border border-[#FF6161]/30"
+              >
+                {isResettingAgent ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                Reset to Defaults
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -650,6 +908,7 @@ export function SettingsPage() {
                   setFreeModelSaving(true);
                   try {
                     await agentService.updateConfig({ preferred_free_model: val });
+                    showSavedToast();
                   } catch { /* ignore */ } finally {
                     setFreeModelSaving(false);
                   }
@@ -669,6 +928,125 @@ export function SettingsPage() {
               <p className="text-xs text-[#6B7280]">
                 Only applies when your engine is set to Cloud or Auto. Free models have usage limits.
               </p>
+            </CardContent>
+          </Card>
+
+          {/* 52.4: Change Password Card */}
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle>Change Password</CardTitle>
+              <CardDescription className="text-[#6B7280]">Update your account password</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm text-[#6B7280] mb-2 block">Current Password</label>
+                <Input
+                  type="password"
+                  value={pwCurrent}
+                  onChange={(e) => { setPwCurrent(e.target.value); setPwError(''); setPwSuccess(''); }}
+                  placeholder="Enter current password"
+                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-[#6B7280] mb-2 block">New Password</label>
+                <Input
+                  type="password"
+                  value={pwNew}
+                  onChange={(e) => { setPwNew(e.target.value); setPwError(''); setPwSuccess(''); }}
+                  placeholder="Enter new password"
+                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                />
+                {/* Password strength meter */}
+                {pwNew.length > 0 && (() => {
+                  let score = 0;
+                  if (pwNew.length >= 8) score++;
+                  if (/[0-9]/.test(pwNew)) score++;
+                  if (/[a-z]/.test(pwNew)) score++;
+                  if (/[A-Z]/.test(pwNew)) score++;
+                  if (/[^A-Za-z0-9]/.test(pwNew)) score++;
+                  const labels = ['Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+                  const segmentColors = [
+                    'bg-[#EF4444]',
+                    'bg-[#F97316]',
+                    'bg-[#EAB308]',
+                    'bg-[#22C55E]',
+                    'bg-[#00F0FF]',
+                  ];
+                  return (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex gap-1">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                          <div
+                            key={i}
+                            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                              i < score ? segmentColors[score - 1] : 'bg-[#1C1C2E]'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className={`text-xs ${segmentColors[score - 1].replace('bg-', 'text-')}`}>
+                        {labels[score - 1] ?? ''}
+                      </p>
+                    </div>
+                  );
+                })()}
+              </div>
+              <div>
+                <label className="text-sm text-[#6B7280] mb-2 block">Confirm New Password</label>
+                <Input
+                  type="password"
+                  value={pwConfirm}
+                  onChange={(e) => { setPwConfirm(e.target.value); setPwError(''); setPwSuccess(''); }}
+                  placeholder="Confirm new password"
+                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                />
+              </div>
+              {pwError && (
+                <p className="text-sm text-[#EF4444]">{pwError}</p>
+              )}
+              {pwSuccess && (
+                <p className="text-sm text-[#00FF88]">{pwSuccess}</p>
+              )}
+              <Button
+                disabled={pwSaving || !pwCurrent || !pwNew || !pwConfirm}
+                onClick={async () => {
+                  setPwError('');
+                  setPwSuccess('');
+                  if (pwNew !== pwConfirm) {
+                    setPwError('New passwords do not match.');
+                    return;
+                  }
+                  if (pwNew.length < 8) {
+                    setPwError('New password must be at least 8 characters.');
+                    return;
+                  }
+                  setPwSaving(true);
+                  try {
+                    await userService.changePassword(pwCurrent, pwNew);
+                    setPwSuccess('Password updated successfully.');
+                    setPwCurrent('');
+                    setPwNew('');
+                    setPwConfirm('');
+                  } catch (err: unknown) {
+                    const axiosErr = err as { response?: { data?: { error?: string; message?: string } } };
+                    setPwError(
+                      axiosErr?.response?.data?.error ||
+                      axiosErr?.response?.data?.message ||
+                      'Failed to update password. Please try again.'
+                    );
+                  } finally {
+                    setPwSaving(false);
+                  }
+                }}
+                className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale"
+              >
+                {pwSaving ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+                ) : (
+                  <><Key className="w-4 h-4 mr-2" />Update Password</>
+                )}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -697,19 +1075,48 @@ export function SettingsPage() {
               )}
 
               {apiKeys.map((key) => (
-                <div key={key.id} className="flex items-center justify-between p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${providerColors[key.provider]}20` }}>
-                      <Key className="w-5 h-5" style={{ color: providerColors[key.provider] }} />
+                <div key={key.id} className="rounded-xl bg-[#06060B] border border-[#00F0FF]/20 overflow-hidden">
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style={{ backgroundColor: `${providerColors[key.provider]}20` }}>
+                        {providerEmoji[key.provider] ?? '🔑'}
+                      </div>
+                      <div>
+                        <div className="font-medium text-[#E8E8F0]">{key.label}</div>
+                        <div className="text-sm text-[#6B7280] font-mono">
+                          {key.maskedKey.length > 12
+                            ? `${key.maskedKey.slice(0, 4)}...${key.maskedKey.slice(-4)}`
+                            : key.maskedKey}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-[#E8E8F0]">{key.label}</div>
-                      <div className="text-sm text-[#6B7280] font-mono">{key.maskedKey}</div>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm"
+                        onClick={() => { setRotatingKeyId(rotatingKeyId === key.id ? null : key.id); setRotateValue(''); }}
+                        className="text-[#00F0FF]/70 hover:text-[#00F0FF] text-xs px-2">
+                        Rotate
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setApiKeys(apiKeys.filter(k => k.id !== key.id))} className="text-[#FF6161] hover:text-[#FF6161]">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setApiKeys(apiKeys.filter(k => k.id !== key.id))} className="text-[#FF6161] hover:text-[#FF6161]">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {rotatingKeyId === key.id && (
+                    <div className="px-4 pb-4 flex gap-2 border-t border-[#00F0FF]/10 pt-3">
+                      <Input
+                        type="password"
+                        placeholder="Paste new key value…"
+                        value={rotateValue}
+                        onChange={(e) => setRotateValue(e.target.value)}
+                        className="flex-1 text-sm bg-[#0A0A14] border-[#00F0FF]/20"
+                      />
+                      <Button size="sm" disabled={isRotating || rotateValue.trim().length < 8}
+                        onClick={() => handleRotateKey(key.id)}
+                        className="bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/30">
+                        {isRotating ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
 
@@ -859,6 +1266,56 @@ export function SettingsPage() {
             </Card>
           )}
 
+          {/* 60.2: Starred Messages */}
+          <Card className="border-[#F59E0B]/20">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <span className="text-base">⭐</span> Starred Messages
+                  {starredMessages.length > 0 && (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B]">{starredMessages.length}</span>
+                  )}
+                </CardTitle>
+                <button
+                  onClick={() => setShowStarred(s => !s)}
+                  className="text-xs text-[#6B7280] hover:text-[#F59E0B] transition-colors"
+                >
+                  {showStarred ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              <CardDescription className="text-[#6B7280] text-xs">Messages you've starred from your conversation history</CardDescription>
+            </CardHeader>
+            {showStarred && (
+              <CardContent className="space-y-2 max-h-64 overflow-y-auto">
+                {starredMessages.length === 0 ? (
+                  <p className="text-xs text-[#4B5563] py-2">No starred messages yet. Star messages from your conversation history.</p>
+                ) : (
+                  starredMessages.map((msg) => (
+                    <div key={msg.id} className="flex items-start gap-2 p-2 rounded-lg bg-[#0C0C18] border border-[#F59E0B]/20">
+                      <span className="text-xs mt-0.5">{msg.role === 'user' ? '👤' : '🤖'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-[#E8E8F0] line-clamp-2">{msg.content}</p>
+                        <p className="text-[10px] text-[#4B5563] mt-0.5">{new Date(msg.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          agentService.toggleStar(msg.id).then(() => {
+                            setStarredMessages(prev => prev.filter(m => m.id !== msg.id));
+                          }).catch(() => {});
+                        }}
+                        className="shrink-0 text-[#F59E0B] hover:text-[#6B7280] transition-colors"
+                        title="Unstar"
+                        data-testid={`unstar-msg-${msg.id}`}
+                      >
+                        ★
+                      </button>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            )}
+          </Card>
+
           <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
@@ -987,26 +1444,35 @@ export function SettingsPage() {
               <CardDescription className="text-[#6B7280]">Customize the look of your dashboard</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* 56.7: Prominent 3-way theme toggle with icons */}
               <div>
                 <label className="text-sm text-[#6B7280] mb-3 block">Theme Mode</label>
-                <div className="flex gap-3">
-                  {(['dark', 'light', 'system'] as const).map((m) => (
+                <div className="inline-flex rounded-xl border border-[#00F0FF]/20 bg-[#06060B] p-1 gap-1">
+                  {([
+                    { id: 'dark', label: 'Dark', Icon: Moon },
+                    { id: 'light', label: 'Light', Icon: Sun },
+                    { id: 'system', label: 'System', Icon: Monitor },
+                  ] as const).map(({ id, label, Icon }) => (
                     <button
-                      key={m}
+                      key={id}
                       onClick={() => {
-                        setThemeMode(m);
-                        void userService.updateProfile({ theme: { mode: m } } as Parameters<typeof userService.updateProfile>[0]);
+                        setThemeMode(id);
+                        void userService.updateProfile({ theme: { mode: id } } as Parameters<typeof userService.updateProfile>[0]);
                       }}
-                      className={`flex-1 p-4 rounded-xl border-2 capitalize transition-all ${
-                        themeMode === m
-                          ? 'border-[#00F0FF] bg-[#00F0FF]/10 text-[#00F0FF]'
-                          : 'border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/40'
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        themeMode === id
+                          ? 'bg-[#00F0FF]/15 text-[#00F0FF] shadow-inner'
+                          : 'text-[#6B7280] hover:text-[#E8E8F0]'
                       }`}
                     >
-                      {m}
+                      <Icon className="w-4 h-4" />
+                      {label}
                     </button>
                   ))}
                 </div>
+                <p className="mt-2 text-xs text-[#6B7280]">
+                  {themeMode === 'system' ? 'Follows your OS preference' : themeMode === 'dark' ? 'Dark mode active' : 'Light mode active'}
+                </p>
               </div>
 
               <div>
@@ -1015,7 +1481,7 @@ export function SettingsPage() {
                   {accentPresets.map((color) => (
                     <button
                       key={color}
-                      onClick={() => { setAccentColor(color); void agentService.updateConfig({ accentColor: color }).catch(() => {}); }}
+                      onClick={() => { setAccentColor(color); void agentService.updateConfig({ accentColor: color }).then(() => showSavedToast()).catch(() => {}); }}
                       className={`w-10 h-10 sm:w-8 sm:h-8 rounded-xl transition-all ${
                         accentColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0C0C18] scale-110' : 'hover:scale-110'
                       }`}
@@ -1028,7 +1494,7 @@ export function SettingsPage() {
                   <input
                     type="color"
                     value={accentColor}
-                    onChange={(e) => { setAccentColor(e.target.value); void agentService.updateConfig({ accentColor: e.target.value }).catch(() => {}); }}
+                    onChange={(e) => { setAccentColor(e.target.value); void agentService.updateConfig({ accentColor: e.target.value }).then(() => showSavedToast()).catch(() => {}); }}
                     className="w-8 h-8 rounded cursor-pointer bg-transparent"
                   />
                   <span className="text-sm font-mono text-[#6B7280]">{accentColor}</span>

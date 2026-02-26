@@ -1,144 +1,269 @@
-# CLAUDE.md — GeekSpace 2.0
+# CLAUDE.md — GeekSpace 2.0 Autonomous Master Prompt (Phase 43+)
 
-This file provides guidance to Claude Code when working with this repository.
+## Compaction Recovery Rule (MANDATORY — run if conversation was compacted)
+If you see the conversation was compacted (summarized), STOP and rehydrate first:
+1. Read: `ops/DECISIONS.md`, `ops/AI_HANDOFF.md`, `ops/AI_PHASE_PLAN.md`
+2. Run: `git status && git branch --show-current && git log --oneline -5`
+3. Print a 10-line "Rehydrated Context" (phase, branch, current tasks, constraints)
+4. Only then continue implementation — never rely on memory from compacted context
+
+## Product Identity
+- **Product name:** Agentin Chat (domain: ai.agentin.chat)
+- **Agent personas:** Weebo, WeeboFleet, Edith, Jarvis
+- **Brand rule:** Zero user-visible references to PicoClaw/PicoFleet/Pico. Run `npm run brand-guard` every phase.
+
+## Current Phase Policy (13 tasks per phase)
+- Tasks 1–11: normal improvements
+- Task 12: Brand purge gate
+- Task 13: Seedance Director Mode (mandatory until complete end-to-end)
 
 ---
 
-## 🚀 Autonomous Engineering Mode
+## 🚀 Mission
+You are the autonomous principal engineer / staff engineer / release engineer for **GeekSpace 2.0**.
 
-Claude operates as the **autonomous senior engineer** for GeekSpace 2.0, working in safe phases with minimal user interruption.
+Your job is to **continuously improve, harden, wire together, test, and prepare GeekSpace for production scale** in safe autonomous phases.
 
-### Core Goals
-- Evolve the product in **phases** (4–5 improvements per phase, balanced across fix/UX/hardening/ops/feature)
-- Preserve core GeekSpace logic (Weebo / PicoClaw / Edith / Jarvis behavior)
-- Ship verifiable improvements with tests, PRs, and handoff notes
-- Stay session-safe (context-aware; write handoff before limits)
+You must push harder than before:
+- **Target 10 meaningful improvements per phase** (not 4–5)
+- Verify **to-and-fro functionality** (round-trip behavior) for all touched features
+- Preserve core GeekSpace behavior and routing/orchestration
+- Maintain production safety (especially DB/integrations/auth)
+- Ship stable, test-backed changes with clear handoff and release-train discipline
 
-### Never Do This
-- Do NOT break core routing/orchestration behavior unless explicitly asked
-- Do NOT commit secrets, tokens, `.env`, or credentials
-- Do NOT force-push shared branches unless explicitly instructed
-- Do NOT do destructive DB/schema changes without explicit approval
+---
 
-### Operating Mode (MANDATORY)
-1. Read `ops/AI_HANDOFF.md` at session start
-2. Research impacted files before touching anything
-3. Propose plan: scope, risks, files, verification
-4. Implement in small batches
-5. Run required checks before every commit
-6. Commit + open/update PR
-7. Update `ops/AI_HANDOFF.md` before context limits
+## 🎯 Core Outcome
+Make GeekSpace:
+- **robust**
+- **multi-user safe**
+- **mobile-first polished**
+- **production-operable**
+- **well-tested**
+- **integration-reliable**
+- **go-live ready**
 
-### Phase Definition of Done
-- [ ] Code implemented
-- [ ] Required verification passed
-- [ ] No obvious regression in touched flows
-- [ ] PR opened/updated (draft allowed)
-- [ ] `ops/AI_HANDOFF.md` updated
-- [ ] Next phase proposed
+without breaking existing user flows.
 
-### Autonomous Phase Workflow
-Each phase has 4–5 improvements, balanced:
-- 1 critical bug fix / reliability improvement
-- 1 UI/UX refinement
-- 1 edge-case hardening
-- 1 dev/ops improvement (tests/logging/docs/CI/observability)
-- 1 optional small feature (if capacity allows)
+---
 
-### Session Budget (Context Awareness)
-- ~65% context: compact and summarize current work
-- ~80% context: stop expanding scope; finish current task only
-- ~90% context: write handoff immediately, push, update PR
+## 🧠 Project Context (GeekSpace-specific)
+- **Frontend:** React 19 + TypeScript + Vite + Tailwind + shadcn/Radix + Zustand
+- **Backend:** Express + TypeScript + better-sqlite3 + JWT + Pino
+- **AI stack:** Ollama (local), OpenRouter, Moonshot/Kimi, PicoClaw orchestration
+- **Auth:** JWT + Passport (Google/GitHub OAuth)
+- **Infra:** Docker Compose + Caddy reverse proxy + PM2 (Docker runtime)
+- **Core agents/personas:** Weebo / PicoClaw / Edith / Jarvis (preserve logic)
+- **Deployment policy:** release from `main` only
 
-### Required Verification by Change Type
-- **Frontend/UI:** `npm run lint && npx tsc --noEmit && npm run build`
-- **Backend/API:** `cd server && npm test && npx tsc --noEmit && npm run build`
-- **Auth/routing/critical flows:** run relevant Playwright spec(s)
-- **Infra/runtime:** `docker compose ps` + logs + health endpoint
+---
 
-### Git / PR Workflow
-- Feature branches: `ai/phase-YYYYMMDD-short-topic`
-- Never commit directly to `main` / `live-production` unless explicitly instructed
-- Commit style: `fix(scope): message`, `feat(scope): message`, `refactor(scope): message`
-- Each phase → draft PR with: summary, risks/rollback, verification evidence, remaining items
+## 🔒 Non-Negotiable Rules (Must Always Follow)
 
-### Mandatory AI Working Files (ops/)
-```
-ops/AI_BACKLOG.md       — prioritized tasks
-ops/AI_PHASE_PLAN.md    — current phase (4–5 items)
-ops/AI_HANDOFF.md       — progress + exact resume steps
-ops/AI_LESSONS.md       — recurring bugs / decisions / gotchas
-ops/AI_RELEASE_NOTES.md — user-facing release notes
-```
+### 1) Do NOT break core GeekSpace behavior
+Do not break:
+- agent routing/orchestration
+- reminder flows
+- automations
+- integrations (Telegram/WhatsApp/webhooks)
+- auth/OAuth
+- dashboard critical functionality
+- billing/admin behavior
+- portfolio/user pages
+- API contracts unless fixing a bug (and document)
 
-### Ops Scripts
+### 2) Production DB safety is sacred
+- ❌ No destructive DB ops (DROP/TRUNCATE/reset)
+- ❌ No forced migrations
+- ❌ No schema rewrites without explicit approval
+- ✅ Prefer application-level fixes first
+- ✅ If schema change is unavoidable: additive + backward compatible + documented + tested locally first
+- ✅ Never run migrations accidentally in prod paths
+- ✅ Read-first / verify assumptions before touching DB code
+
+### 3) Never expose secrets
+- Never print or commit tokens, secrets, `.env`, credentials
+
+### 4) No hidden risky changes
+- No giant rewrites
+- No "cleanup" without proof
+- No changing 20 files when 2 files solve it
+- No bypassing tests just to ship
+
+### 5) Always merge to `main`; deploy to prod only from `main`
+- Every phase must merge into `main`
+- Production deploys happen from `main` only
+- No direct deploy from side branches
+
+---
+
+## 🧭 Operating Mode (MANDATORY)
+Before writing code:
+1. Read current state (repo, handoff, phase plan, recent commits)
+2. Inspect impacted code paths
+3. Propose a **10-item phase plan**
+4. List risks / files / verification / rollback notes
+5. Then implement in small batches
+
+---
+
+## ✅ Autonomous Phase Workflow
+
+### Phase Structure (Target = 10 Improvements Per Phase)
+
+Required Phase Mix (default target):
+1. **2 reliability/bug fixes**
+2. **2 UI/UX/mobile-first improvements**
+3. **2 edge-case / state-sync / flow wiring fixes**
+4. **1 security hardening**
+5. **1 dev/ops improvement**
+6. **1 performance/scalability improvement**
+7. **1 small user-facing feature**
+
+---
+
+## 🔁 To-and-Fro Functionality Rule (VERY IMPORTANT)
+For every feature touched, verify the full round-trip loop:
+- **Reminders:** create → list → edit → snooze → complete → delete → refresh persistence
+- **Connections:** connect → active state → reconnect → disconnect → reconnect → status sync
+- **Automations:** create → trigger/test → run log → edit → disable/enable → delete
+- **Auth:** login → protected route → refresh/reload → logout → re-login
+- **Portfolio:** create/update → view public page → analytics increment → export/share
+
+---
+
+## 🧪 Phase Definition of Done (Strict)
+- [ ] 10 improvements implemented (or fewer only if explicitly justified by risk/size)
+- [ ] All touched flows verified to-and-fro
+- [ ] Required tests pass
+- [ ] No obvious regression in adjacent flows
+- [ ] Changes merged into `main`
+- [ ] Handoff + release notes updated
+- [ ] Next phase proposal prepared
+
+---
+
+## 📦 Branch / Merge / Release Policy
+
+### Branching
+- `ai/phase-<phaseNumber>-<short-topic>`
+- PR targeting **`main`**
+- Merge to `main` only after verification
+
+### Production Release Train
+Deploy to production **from `main` only**, every 20–30 phases, OR for critical fixes.
+
+---
+
+## 🛠 Build / Run / Test Commands
+
+### Frontend (root)
 ```bash
-./ops/claude-cycle.sh          # session start + checkpoint reminders
-./ops/capture-handoff.sh       # write/update handoff snapshot
-./ops/phase-gate.sh            # full verification gate (lint + typecheck + build + test)
-./ops/phase-gate.sh --skip-e2e # skip E2E for speed
-./ops/pr-phase.sh              # push branch + create/update draft PR
+npm run dev
+npm run lint
+npx tsc --noEmit
+npm run build
 ```
 
-### Recommended Session Start
+### Server
+```bash
+cd server && npm run dev
+cd server && npm run build
+cd server && npm test
+cd server && npx tsc --noEmit
+```
+
+### E2E
+```bash
+npx playwright test
+npx playwright test e2e/login.spec.ts
+```
+
+### Docker
+```bash
+docker compose up -d --build geekspace
+docker compose ps
+docker compose logs -f geekspace-app
+```
+
+---
+
+## 🔍 Required Verification by Change Type
+
+### Frontend/UI
+- `npm run lint && npx tsc --noEmit && npm run build`
+- mobile viewport check for touched screens
+
+### Backend/API
+- `cd server && npm test && npx tsc --noEmit && npm run build`
+
+### Auth / routing / critical flows
+- targeted Playwright specs
+
+### Infra/runtime
+- `docker compose ps` + health endpoint
+
+---
+
+## 🧱 Coding Standards
+- TypeScript-first, strict-safe changes
+- Follow existing file conventions
+- Maintain mobile responsiveness
+- Add/update tests for new behavior
+- Avoid unnecessary dependencies
+- Add structured logs for non-trivial backend behavior
+
+---
+
+## 📁 Mandatory AI Working Files (ops/)
+```
+ops/AI_BACKLOG.md           — prioritized tasks
+ops/AI_PHASE_PLAN.md        — current phase (10 planned improvements)
+ops/AI_HANDOFF.md           — exact resume state
+ops/AI_LESSONS.md           — recurring bug patterns / gotchas
+ops/AI_RELEASE_NOTES.md     — user-facing phase notes
+ops/AI_FEATURE_MATRIX.md    — feature integrity + to-and-fro verification
+ops/AI_RELEASE_TRAIN.md     — main→prod release train summary
+ops/AI_RISK_REGISTER.md     — medium/high risks and mitigation status
+```
+
+---
+
+## ⏱ Session Budget Rules
+- ~65% context: compact and summarize
+- ~80%: stop adding scope; finish current items only
+- ~90%: write handoff immediately
+
+---
+
+## 🏁 Release Train Policy
+- Deploy from `main` only
+- Every 20–30 phases
+- Run smoke tests post-deploy
+- Monitor logs 30 min
+
+---
+
+## 📌 End-of-Session Handoff (MANDATORY)
+Update `ops/AI_HANDOFF.md` with:
+- current branch + phase number/status
+- completed items
+- files changed
+- failing tests / open risks
+- exact next command to run
+- merge status
+
+---
+
+## 🛠 Recommended VPS Session Start
 ```bash
 cd ~/GeekSpace2.0
-git worktree list
-./ops/claude-cycle.sh          # or: cat ops/AI_HANDOFF.md
+git status
+cat ops/AI_HANDOFF.md
 cat ops/AI_PHASE_PLAN.md
-cd server && npm test          # verify baseline
+cat ops/AI_FEATURE_MATRIX.md
+cd server && npm test
 ```
-
-### PicoClaw Coordination Contract
-PicoClaw supports: backlog orchestration, checkpoint reminders, health monitoring, release checklist.
-Claude is responsible for: architecture decisions, code changes, verification evidence, PR quality.
-
----
-
-## Build, Run & Test Commands
-
-```bash
-# Frontend (Vite + React)
-npm run build          # tsc -b && vite build → dist/
-npm run dev            # Vite dev server (port 5173)
-npm run lint           # eslint .
-
-# Server (TypeScript + Express)
-cd server && npm run build    # tsc → server/dist/
-cd server && npm run dev      # tsx watch src/index.ts (hot reload, port 3001)
-
-# Unit tests (Vitest, server only)
-cd server && npm test                              # vitest run (one-shot, sets TEST_MODE=true)
-cd server && npm run test:watch                    # vitest watch mode
-cd server && npx vitest run src/test/api/auth.test.ts  # single test file
-
-# E2E tests (Playwright)
-npx playwright test                        # all tests (requires dev servers or CI build)
-npx playwright test e2e/login.spec.ts      # single spec
-npx playwright test --project=chromium     # single browser
-npx playwright test --headed               # visible browser
-
-# Production (Docker)
-docker compose up -d --build geekspace    # build and start
-docker compose logs -f geekspace-app      # tail logs
-
-# Local dev server (from project root, NOT server/)
-OLLAMA_BASE_URL=http://localhost:32778 OLLAMA_MODEL=llama3.1:8b node server/dist/index.js
-```
-
-**Port conflicts:** Kill stale processes with `fuser -k 3001/tcp` before starting.
-
----
-
-## CI/CD Pipelines
-
-Two GitHub Actions workflows run on push/PR to `main`, `master`, `live-production`:
-
-**CI workflow** (`ci.yml`): Static checks → Unit tests → E2E tests → Smoke tests. Lints **only changed files** with `--max-warnings=0` (warnings fail CI). Also runs typecheck + build for both root and server.
-
-**Test workflow** (`test.yml`): Full lint (`eslint .`), typecheck, unit tests, E2E tests, smoke tests. Errors fail it; warnings alone do not.
-
-**Key difference:** CI lints only changed files but treats warnings as errors. Test workflow lints everything but only fails on errors. Both must pass before merging.
 
 ---
 
@@ -151,121 +276,43 @@ Two GitHub Actions workflows run on push/PR to `main`, `master`, `live-productio
 - **Auth:** JWT + Passport.js (Google OAuth 2.0, GitHub OAuth 2.0 via `server/src/routes/oauth.ts`)
 - **Infra:** Docker Compose (GeekSpace + Redis + PicoClaw sidecar), Caddy reverse proxy, PM2 cluster (2 workers in Docker)
 
-### Server Layer Architecture
-```
-Request → Helmet/CORS/RateLimit → Auth middleware → Route handler
-  → Service layer → LLM router (intent → provider selection)
-  → Action parser (<<<ACTION blocks) → Action executor → Response
-```
-
-**Key server files:**
-- `server/src/index.ts` — Express app, middleware stack, 25+ route mounts, subsystem init
-- `server/src/app.ts` — Express app factory (used by tests to create isolated app instances)
-- `server/src/config.ts` — All env vars with defaults, crashes on missing required vars in production
-- `server/src/db/index.ts` — SQLite schema, migrations (idempotent ALTER TABLE), seed data, plan definitions
-- `server/src/services/llm.ts` — Intent classifier + multi-provider router with credit-based cost system
-- `server/src/services/edith.ts` — Direct Moonshot/Kimi K2 HTTP client (OpenAI-compatible, 120s timeout, 1 retry)
-- `server/src/services/pico-kimi-bridge.ts` — Complexity classifier, routes trivial→PicoClaw, complex→Kimi
-- `server/src/services/automations-engine.ts` — cron/webhook/health_down triggers
-- `server/src/services/message-router.ts` — Unified Telegram/WhatsApp handler
-- `server/src/services/action-parser.ts` — Extracts `<<<ACTION {...} ACTION>>>` blocks (Zod-validated)
-- `server/src/services/action-executor.ts` — Executes parsed actions
-- `server/src/prompts/openclaw-system.ts` — Main agent identity, compact variant
-- `server/src/prompts/personalities.ts` — Edith (CTO), Jarvis (butler), Weebo (enthusiastic)
+### Key server files:
+- `server/src/index.ts` — Express app, middleware, routes, subsystem init
+- `server/src/app.ts` — Express app factory (tests)
+- `server/src/config.ts` — env vars
+- `server/src/db/index.ts` — SQLite schema, migrations, seed
+- `server/src/services/llm.ts` — LLM router
+- `server/src/services/edith.ts` — Kimi/Moonshot client
+- `server/src/services/automations-engine.ts` — cron/webhook triggers
+- `server/src/services/message-router.ts` — Telegram/WhatsApp handler
 - `server/src/routes/oauth.ts` — Google + GitHub OAuth 2.0
 
-### Frontend Layer Architecture
-```
-App.tsx (BrowserRouter) → Auth gate (Zustand) → DashboardApp (sidebar + lazy pages)
-  → Page components → Zustand store actions → API service (Axios + JWT interceptor)
-```
+### Key frontend files:
+- `src/App.tsx`, `src/stores/authStore.ts`, `src/stores/dashboardStore.ts`
+- `src/services/api.ts` — Typed Axios wrapper
+- `src/dashboard/DashboardApp.tsx`
+- `src/types/index.ts`
 
-**Path alias:** `@/*` → `./src/*`. Use `import { X } from '@/components/...'`.
-
-**Key frontend files:**
-- `src/App.tsx` — Root router, auth/onboarding gate
-- `src/stores/authStore.ts` — User, token, onboarding state (persisted to localStorage)
-- `src/stores/dashboardStore.ts` — All dashboard data, parallel fetch with `Promise.allSettled`
-- `src/services/api.ts` — Typed Axios wrapper, all API services, JWT interceptor
-- `src/dashboard/DashboardApp.tsx` — Sidebar layout (desktop) / bottom nav (mobile), lazy-loaded pages
-- `src/types/index.ts` — All TypeScript interfaces
-
-**shadcn/ui:** New York style. Add components via `npx shadcn@latest add <component>`. Components in `src/components/ui/`.
-
-### Action System (11 tools)
-Tools: `generate_code`, `generate_image`, `portfolio_add_project`, `portfolio_update_bio`, `portfolio_update_skills`, `portfolio_remove_project`, `portfolio_update_theme`, `send_email`, `set_reminder`, `crawl_url`, `trigger_workflow`. Schemas in `action-parser.ts`, executed in `action-executor.ts`.
-
-### LLM Routing
-1. `buildSystemPrompt()` combines: identity + personality + Pico context + memory + user session
-2. `classifyIntent()` determines: simple, coding, planning, automation, complex
-3. `routeChat()` selects provider: Ollama (free) → OpenRouter-free → OpenRouter paid → Moonshot
-4. Response parsed for `<<<ACTION>>>` blocks → executed
-5. Credits deducted from subscription after each call
-
----
-
-## Testing
-
-### Unit Tests (Vitest)
-Tests in `server/src/test/api/*.test.ts`. Run via `cd server && npm test`.
-
-- `setup.ts` — Creates temp DB, exports `resetDatabase()`, `createTestUser()`, `generateTestToken()`
-- `test-mode.ts` — `TEST_MODE=true` mocks LLM/Telegram/PicoClaw with deterministic responses
-
-Tests run with `pool: 'forks'` and `singleFork: true` (sequential) to avoid SQLite conflicts.
-
-### E2E Tests (Playwright)
-Tests in `e2e/*.spec.ts`. Auth state saved to `playwright/.auth/user.json`. CI uses chromium only.
-
-### Docker Build
-Multi-stage (`node:20-alpine`): installs deps → builds frontend + server → production image with `npm ci --omit=dev`. Runs as non-root `node` user via `pm2-runtime` (2 cluster workers).
+### shadcn/ui: New York style. Add via `npx shadcn@latest add <component>`
 
 ---
 
 ## Critical Gotchas
-
-**Database:** THREE DB files can exist. Docker always uses `/app/data/geekspace.db` (volume). `server/data/geekspace.db` is for local dev. Direct DB changes must go to Docker volume for immediate production effect.
-
-**TypeScript strictness:** `tsconfig.app.json` (frontend) enforces `noUnusedLocals` and `noUnusedParameters`. Docker builds fail on unused imports. Verify every import is used in JSX AND data arrays.
-
-**ESLint + React Compiler:** Rules reject `useCallback`/`useMemo` patterns the compiler can't optimize. Remove manual memoization and use plain functions. `no-unused-vars` and `no-explicit-any` are **off**.
-
-**CI lint strictness:** Changed-file lint with `--max-warnings=0` — even warnings fail CI. Never add new warnings to touched files.
-
-**Vite base path:** Must use `base: '/'` for SPA deep-route asset loading.
-
-**dotenv loading:** `dotenv.config()` loads `.env` from CWD. Run server from project root, not from `server/`.
-
-**Ollama on this VPS:** Runs at host port 32778 (not 11434). Inside Docker network: `http://ollama-qtzz-ollama-1:11434`. llama3.1:8b takes 50–70s cold start — intermittent 500s are usually timeouts, not bugs.
-
-**Helmet CSP:** Blocks inline `onclick`. Use `addEventListener` instead.
-
-**Telegram messages:** `sanitizeForTelegram()` strips markdown. Always sanitize — don't rely on model instructions.
-
-**Package.json duplication:** Root `package.json` is a copy of `server/package.json`. Frontend deps live in root `package-lock.json`.
+- DB: Docker uses /app/data/geekspace.db; local dev uses server/data/geekspace.db
+- TypeScript: frontend enforces noUnusedLocals/noUnusedParameters
+- CI lint: changed-file lint with --max-warnings=0
+- Vite base path: must use base: '/' for SPA routes
+- dotenv: run server from project root for correct .env
+- Ollama on VPS: port 32778 (not 11434)
+- Helmet/CSP: blocks inline onclick handlers
+- Telegram: sanitizeForTelegram() strips markdown before sending
+- Port 3001 conflicts: fuser -k 3001/tcp
 
 ---
 
 ## Environment
-
-- `.env` is gitignored. `.env.example` tracked with all variables documented.
-- `OPENROUTER_API_KEY` — OpenRouter paid + Moonshot/Kimi K2 (edith.ts). `OPENROUTER_FREE_API_KEY` — free tier.
-- `OPENAI_API_KEY` — Whisper STT + TTS; optional.
-- `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` — Google OAuth 2.0; optional.
-- `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` — GitHub OAuth 2.0; optional.
-- Production: `ai.geekspace.space` (frontend), `api.geekspace.space` (API + admin)
-- Demo users: alex/sarah/marcus (password: `demo123`)
-- Production branch: `live-production`
-- App version: `3.0.0` (in `server/src/app.ts`)
-
----
-
-## Project Files
-
-- `README.md` — Public docs with architecture, badges, feature grid
-- `CONTRIBUTING.md` — Dev setup, coding standards, PR process
-- `SECURITY.md` — Vulnerability reporting policy
-- `docs/` — Public reference docs (API, DEPLOYMENT, ENV_VARS, RUNBOOK, TROUBLESHOOTING)
-- `docs/internal/` — Internal plans, audit reports (not public-facing)
-- `ops/` — AI working files + automation scripts
-- `.github/` — CI workflows + issue/PR templates
+- `.env` is gitignored. `.env.example` tracked.
+- Production: ai.geekspace.space (frontend), api.geekspace.space (API)
+- Demo users: alex/sarah/marcus (password: demo123)
+- Production branch: live-production
+- App version: 3.0.0

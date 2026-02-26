@@ -28,7 +28,9 @@ interface DueReminder {
   channel: string;
   category: string;
   recurring: string;
+  recurrence: string | null;
   scheduled_for: number | null;
+  priority: string | null;
 }
 
 interface SnoozedReminder {
@@ -66,9 +68,51 @@ export function stopReminderScheduler(): void {
 
 // ---- Core Logic ----
 
+// 40.6: 5-minute remind-before alert
+const REMIND_BEFORE_MS = 5 * 60 * 1000; // 5 minutes
+
 async function checkAndDeliverReminders(): Promise<void> {
   try {
     const now = Date.now();
+
+    // Step 0 (40.6): Send early "heads-up" for reminders due in the next 5–10 minutes
+    // Only for users with Telegram linked; only sent once per reminder.
+    try {
+      const horizon = now + REMIND_BEFORE_MS + POLL_INTERVAL_MS; // 5min + 5s lookahead
+      const upcoming = db.prepare(`
+        SELECT id, user_id, text, scheduled_for, datetime
+        FROM reminders
+        WHERE completed = 0
+          AND snooze_until IS NULL
+          AND remind_before_sent_at IS NULL
+          AND (
+            (scheduled_for IS NOT NULL AND scheduled_for > ? AND scheduled_for <= ?)
+            OR
+            (scheduled_for IS NULL AND datetime IS NOT NULL
+             AND REPLACE(REPLACE(datetime, 'T', ' '), 'Z', '') > datetime('now')
+             AND REPLACE(REPLACE(datetime, 'T', ' '), 'Z', '') <= datetime('now', '+5 minutes'))
+          )
+        LIMIT 20
+      `).all(now, horizon) as Array<{ id: string; user_id: string; text: string; scheduled_for: number | null; datetime: string }>;
+
+      for (const rem of upcoming) {
+        try {
+          const link = db.prepare(
+            "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+          ).get(rem.user_id) as { external_id: string } | undefined;
+          if (link) {
+            const notifPref = db.prepare('SELECT notif_reminders FROM agent_configs WHERE user_id = ?').get(rem.user_id) as { notif_reminders?: number } | undefined;
+            if (!notifPref || notifPref.notif_reminders !== 0) {
+              await sendTelegramMessage(link.external_id, `⏳ Heads up! Reminder in ~5 min: ${rem.text}`);
+              logger.info({ reminderId: rem.id }, 'Remind-before alert sent');
+            }
+          }
+          db.prepare('UPDATE reminders SET remind_before_sent_at = ? WHERE id = ?').run(now, rem.id);
+        } catch (err) {
+          logger.debug({ reminderId: rem.id, err: (err as Error).message }, 'Remind-before send failed');
+        }
+      }
+    } catch { /* non-fatal — don't block main delivery */ }
 
     // Step 1: Resume expired snoozes — clear snooze_until so the main
     // query picks them up on the next tick.
@@ -94,7 +138,7 @@ async function checkAndDeliverReminders(): Promise<void> {
 
     // Step 2: Fetch due reminders (skip still-snoozed ones)
     const dueReminders = db.prepare(`
-      SELECT id, user_id, text, datetime, channel, category, recurring, scheduled_for
+      SELECT id, user_id, text, datetime, channel, category, recurring, recurrence, scheduled_for, priority
       FROM reminders
       WHERE completed = 0
         AND snooze_until IS NULL
@@ -247,13 +291,15 @@ async function tryEmailDelivery(reminder: DueReminder): Promise<void> {
 
 // ---- Recurring Logic ----
 
-function scheduleNextRecurrence(reminder: DueReminder): void {
-  if (!reminder.recurring || !reminder.datetime) return;
+export function scheduleNextRecurrence(reminder: DueReminder): void {
+  // Support both legacy `recurring` field and newer `recurrence` field
+  const recurField = reminder.recurrence || reminder.recurring;
+  if (!recurField || !reminder.datetime) return;
 
   const current = new Date(reminder.datetime);
   let next: Date;
 
-  switch (reminder.recurring) {
+  switch (recurField) {
     case 'daily':
       next = new Date(current.getTime() + 24 * 3600_000);
       break;
@@ -272,10 +318,14 @@ function scheduleNextRecurrence(reminder: DueReminder): void {
     const nextStr = next.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
     const nextEpoch = next.getTime();
 
-    db.prepare(`INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, completed, created_by, scheduled_for)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'scheduler', ?)`).run(
+    // Copy both `recurring` and `recurrence` fields so the next occurrence
+    // is properly rescheduled by both the scheduler and the /complete endpoint.
+    // Also preserve `priority` so user preference carries forward.
+    db.prepare(`INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, recurrence, priority, completed, created_by, scheduled_for)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'scheduler', ?)`).run(
       uuid(), reminder.user_id, reminder.text, nextStr,
-      reminder.channel, reminder.category, reminder.recurring, nextEpoch,
+      reminder.channel, reminder.category, reminder.recurring || '',
+      reminder.recurrence || null, reminder.priority || 'normal', nextEpoch,
     );
     logger.info({ reminderId: reminder.id, nextAt: nextStr, scheduledFor: nextEpoch }, 'Recurring reminder rescheduled');
   }

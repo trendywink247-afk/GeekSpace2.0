@@ -63,11 +63,13 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       const url = err.config?.url || '';
-      const isAuthEndpoint = ['/auth/login', '/auth/signup', '/auth/demo'].some(
+      const isAuthEndpoint = ['/auth/login', '/auth/signup', '/auth/demo', '/auth/google', '/auth/github'].some(
         (p) => url.includes(p),
       );
       if (!isAuthEndpoint) {
+        // Clear raw token and Zustand persisted auth state so UI resets cleanly
         localStorage.removeItem('gs_token');
+        localStorage.removeItem('gs-auth');
         window.location.href = '/login';
       }
     }
@@ -98,6 +100,7 @@ export const authService = {
 
   logout: () => {
     localStorage.removeItem('gs_token');
+    localStorage.removeItem('gs-auth');
   },
 
   saveOnboardingStep: (step: number, data: Record<string, unknown>) =>
@@ -159,14 +162,26 @@ export const userService = {
   setPreferredModel: (model: string) =>
     api.put<{ preferredModel: string }>('/users/me/model', { model }),
 
-  getActivity: (limit = 50, offset = 0) =>
-    api.get<{ activity: ActivityEntry[]; total: number }>(`/activity?limit=${limit}&offset=${offset}`),
+  getActivity: (limit = 50, offset = 0, q?: string, actionType?: string, from?: string, to?: string) => {
+    const params: Record<string, string | number> = { limit, offset };
+    if (q) params.q = q;
+    if (actionType) params.type = actionType;
+    if (from) params.from = from;
+    if (to) params.to = to;
+    return api.get<{ activity: ActivityEntry[]; total: number }>('/activity', { params });
+  },
+
+  clearActivity: () =>
+    api.delete<{ deleted: number }>('/activity'),
 
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post<{ success: boolean; message: string }>('/users/me/change-password', {
       currentPassword,
       newPassword,
     }),
+
+  deleteActivityEntry: (id: string) =>
+    api.delete<{ deleted: number }>(`/activity/${id}`),
 };
 
 // ----- Agent -------------------------------------------------
@@ -234,6 +249,14 @@ export const agentService = {
 
   getRateLimitStatus: () =>
     api.get<{ remaining: number; limit: number; resetAt: string; windowMinutes: number }>('/agent/rate-limit-status'),
+
+  // 60.2: Star / unstar a message
+  toggleStar: (messageId: string) =>
+    api.post<{ starred: boolean }>(`/agent/conversations/${messageId}/star`),
+
+  // 60.2: Get starred messages
+  getStarred: (limit = 50) =>
+    api.get<{ messages: ConversationEntry[] }>(`/agent/conversations/starred?limit=${limit}`),
 };
 
 // ----- Version -----------------------------------------------
@@ -255,6 +278,9 @@ export const apiKeyService = {
 
   setDefault: (id: string) =>
     api.patch<ApiKey>(`/api-keys/${id}/default`),
+
+  rotate: (id: string, key: string) =>
+    api.post<{ success: boolean; maskedKey: string }>(`/api-keys/${id}/rotate`, { key }),
 };
 
 // ----- Usage & Billing ---------------------------------------
@@ -340,12 +366,20 @@ export const integrationService = {
   testIntegration: (type: string) =>
     api.post<{ healthy: boolean; reason: string; type: string }>(`/integrations/${type}/test`),
 
+  // 62.7: Ping integration with latency measurement
+  pingIntegration: (type: string) =>
+    api.get<{ latencyMs: number; healthy: boolean; reason: string; type: string }>(`/integrations/${type}/ping`),
+
   // 27.3: Connection invite links
   createInvite: (email?: string) =>
     api.post<{ inviteUrl: string; token: string; expiresAt: number }>('/integrations/invite', { email }),
 
   listInvites: () =>
     api.get<{ id: string; token: string; email: string | null; inviteUrl: string; expired: boolean; used: boolean; created_at: number }[]>('/integrations/invites'),
+
+  // 65.6: Integration event log
+  getEvents: (limit = 50) =>
+    api.get<{ events: Array<{ id: string; action: string; details: string; icon: string; created_at: string }> }>(`/integrations/events?limit=${limit}`),
 };
 
 // ----- Reminders ---------------------------------------------
@@ -368,6 +402,10 @@ export const reminderService = {
   bulkSnooze: (ids: string[], preset: '1h' | 'tomorrow' | 'next-week') =>
     api.post<{ snoozed: number; newDatetime: string }>('/reminders/bulk-snooze', { ids, preset }),
 
+  // 53.4: Restore completed reminders back to active with a snooze preset
+  bulkRestoreSnooze: (ids: string[], preset: '1h' | 'tomorrow' | 'next-week') =>
+    api.post<{ restored: number; newDatetime: string }>('/reminders/bulk-restore-snooze', { ids, preset }),
+
   getStreak: () =>
     api.get<{ streak: number; longestStreak: number; completedToday: boolean }>('/reminders/streak'),
 
@@ -379,8 +417,24 @@ export const reminderService = {
     api.get<{ history: Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }> }>(`/reminders/${id}/snooze-history`),
 
   // 38.3: CSV export — returns raw CSV text (authenticated via Axios interceptor)
+  bulkComplete: (ids: string[]) =>
+    api.post<{ updated: number }>('/reminders/bulk-complete', { ids }),
+
+  // 62.10: Batch edit priority/category
+  batchEdit: (ids: string[], fields: { priority?: string; category?: string }) =>
+    api.patch<{ updated: number }>('/reminders/batch-edit', { ids, ...fields }),
+
+  getStats: () =>
+    api.get<{ total: number; active: number; completed: number; overdue: number; byPriority: { low: number; normal: number; high: number; urgent: number } }>('/reminders/stats'),
+
   exportCsv: (status: 'all' | 'active' | 'completed' = 'all') =>
     api.get<string>(`/reminders/export.csv?status=${status}`),
+
+  exportIcs: (status: 'all' | 'active' | 'completed' = 'active') =>
+    api.get<string>(`/reminders/export.ics?status=${status}`),
+
+  // 64.4: Duplicate a reminder
+  duplicate: (id: string) => api.post<Reminder>(`/reminders/${id}/duplicate`),
 };
 
 // ----- Portfolio ---------------------------------------------
@@ -467,18 +521,41 @@ export const portfolioService = {
     api.post<{ ok: boolean }>(`/portfolio/${username}/view`),
 
   // 37.1: Contact portfolio owner (public)
-  contact: (username: string, data: { senderName: string; senderEmail?: string; message: string }) =>
+  contact: (username: string, data: { senderName: string; senderEmail?: string; message: string; nonce?: string }) =>
     api.post<{ success: boolean }>(`/portfolio/${username}/contact`, data),
+
+  // 49.7: Fetch a one-time nonce token for the contact form (prevents replay attacks)
+  contactNonce: (username: string) =>
+    api.get<{ nonce: string }>(`/portfolio/${username}/contact-nonce`),
 
   // 37.1: Get contact messages (authenticated, owner only)
   getContacts: () =>
     api.get<PortfolioContact[]>('/portfolio/contacts'),
+
+  // 42.4: GET /portfolio/me/stats — view_count, contact_count, project_count, last_viewed_at
+  getMeStats: () =>
+    api.get<{ view_count: number; contact_count: number; project_count: number; last_viewed_at: string | null }>('/portfolio/me/stats'),
+
+  // 63.2: Download daily analytics as CSV (66.6: optional date range)
+  exportAnalyticsCSV: (from?: string, to?: string) => {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString();
+    return api.get<string>(`/portfolio/me/analytics/export${qs ? `?${qs}` : ''}`, { responseType: 'text' });
+  },
+
+  // 65.10: Visitor source analytics
+  getAnalyticsSources: () =>
+    api.get<{ sources: Array<{ source: string; visits: number }> }>('/portfolio/me/analytics/sources'),
 };
 
 // ----- Activity Stats ----------------------------------------
 
 export const activityService = {
   getStats: () => api.get<{ days: { date: string; messages: number; reminders: number }[] }>('/activity/stats'),
+  // 64.8: CSV export of last 500 activity entries
+  export: () => api.get<Blob>('/activity/export', { responseType: 'blob' }),
 };
 
 // ----- Automations -------------------------------------------
@@ -499,17 +576,35 @@ export const automationService = {
 
   // 34.5: Test-fire a webhook automation
   testFire: (id: string) =>
-    api.post<{ success: boolean; statusCode: number; message: string }>(`/automations/${id}/test`),
+    api.post<{ success: boolean; statusCode: number; message: string; latencyMs?: number; contentType?: string; responseBody?: string }>(`/automations/${id}/test`),
 
   // 37.4: Dead-letter log for failed webhook deliveries
   getDeadLetters: () =>
-    api.get<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>>('/automations/dead-letters'),
+    api.get<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number; retry_count: number; last_error: string | null }>>('/automations/dead-letters'),
+
+  // 55.6: Retry a failed dead-letter webhook delivery
+  retryDeadLetter: (id: string) =>
+    api.post<{ retried: boolean; removed: boolean; result: { success: boolean; output: string } }>(`/automations/dead-letters/${id}/retry`),
+
+  // 59.4: Duplicate an automation
+  duplicate: (id: string) => api.post<Automation>(`/automations/${id}/duplicate`),
+
+  // 64.5: Automation stats (total, enabled, disabled, recentRuns, byTrigger)
+  getStats: () => api.get<{ total: number; enabled: number; disabled: number; byTrigger: Array<{ trigger_type: string; cnt: number }>; recentRuns: number }>('/automations/stats'),
+
+  // 61.8: Dry-run simulation
+  dryRun: (id: string) => api.post<{
+    dryRun: boolean; automationId: string; automationName: string;
+    triggerType: string; actionType: string; simulatedOutput: string; enabled: boolean;
+  }>(`/automations/${id}/dry-run`),
 };
 
 // ----- Dashboard (aggregated) --------------------------------
 
 export const dashboardService = {
   stats: () => api.get<DashboardStats>('/dashboard/stats'),
+  // 65.5: Lightweight quick-stats (Redis-cached 60s)
+  quickStats: () => api.get<{ remindersActive: number; messagesToday: number; automationsActive: number }>('/dashboard/quick-stats'),
 };
 
 // ----- Explore / Directory -----------------------------------
@@ -557,6 +652,10 @@ export const memoryService = {
   delete: (memoryId: string) =>
     api.delete(`/agent/memory/${memoryId}`),
 
+  // 65.7: Bulk-clear all memories in a category
+  bulkClear: (category: string) =>
+    api.delete<{ deleted: number }>(`/agent/memory/bulk?category=${encodeURIComponent(category)}`),
+
   conversations: (limit = 20) =>
     api.get<ConversationEntry[]>(`/agent/conversations?limit=${limit}`),
 
@@ -574,16 +673,20 @@ export const memoryService = {
 
   getReactionSummary: () =>
     api.get<{ reactions: { reaction: string; count: number }[] }>('/agent/conversations/reactions/summary'),
+
 };
 
 // ----- Automation Logs ---------------------------------------
 
 export const automationLogService = {
-  list: (limit = 50) =>
-    api.get<AutomationLog[]>(`/automations/logs?limit=${limit}`),
+  // 53.7: Paginated — returns { logs, limit, offset }; 63.4: optional status filter
+  list: (limit = 50, offset = 0, status?: string) =>
+    api.get<{ logs: AutomationLog[]; limit: number; offset: number }>(
+      `/automations/logs?limit=${limit}&offset=${offset}${status ? `&status=${status}` : ''}`
+    ),
 
-  forAutomation: (automationId: string, limit = 50) =>
-    api.get<AutomationLog[]>(`/automations/${automationId}/logs?limit=${limit}`),
+  forAutomation: (automationId: string, limit = 50, offset = 0) =>
+    api.get<{ logs: AutomationLog[]; limit: number; offset: number }>(`/automations/${automationId}/logs?limit=${limit}&offset=${offset}`),
 };
 
 // ----- Premium Agent -----------------------------------------
@@ -854,6 +957,42 @@ export interface VideoModel {
   tier: 'auto' | 'free' | 'standard' | 'premium';
 }
 
+// ── Director Mode types ───────────────────────────────────────
+
+export interface DirectorShot {
+  index: number;
+  prompt: string;
+  cameraMove: string;
+}
+
+export interface DirectorPacket {
+  title: string;
+  genre: string;
+  styleGuide: string;
+  transitions: string;
+  shotlist: DirectorShot[];
+}
+
+export interface DirectorClip {
+  success: boolean;
+  url: string;
+  error?: string;
+  requestId?: string;
+  durationMs?: number;
+}
+
+export interface DirectorJob {
+  id: string;
+  idea: string;
+  status: 'pending' | 'running' | 'done' | 'failed';
+  packet: DirectorPacket | null;
+  clips: DirectorClip[];
+  error: string | null;
+  credits_used: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export const videoService = {
   list: () =>
     api.get<{ videos: UserVideo[]; count: number; max: number }>('/videos'),
@@ -872,6 +1011,28 @@ export const videoService = {
 
   getModels: () =>
     api.get<{ models: VideoModel[] }>('/videos/models/available'),
+
+  // 55.13: Seedance Director Mode
+  directorCreate: (idea: string, width?: number, height?: number) =>
+    api.post<{ jobId: string; status: string; message: string }>('/videos/director/create', { idea, width, height }),
+
+  // 65.13: Expand idea with AI before creating a Director job
+  directorExpandIdea: (idea: string) =>
+    api.post<{ expanded: string }>('/videos/director/expand-idea', { idea }),
+
+  directorList: () =>
+    api.get<{ jobs: DirectorJob[] }>('/videos/director'),
+
+  directorGet: (jobId: string) =>
+    api.get<DirectorJob>(`/videos/director/${jobId}`),
+
+  // 57.13: Stitch clips into one video
+  directorStitch: (jobId: string) =>
+    api.post<{ stitched: boolean; stitchedUrl: string | null; clipUrls: string[]; softStitch: boolean; cached?: boolean }>(`/videos/director/${jobId}/stitch`),
+
+  // 60.13: Retry a single failed clip
+  directorRetryClip: (jobId: string, clipIndex: number) =>
+    api.post<{ message: string; clipIndex: number }>(`/videos/director/${jobId}/retry-clip/${clipIndex}`),
 };
 
 // ----- Social Media (Social Media Handler) ---------------------
@@ -966,6 +1127,20 @@ export const socialMediaService = {
 
   postItem: (planId: string, itemId: string) =>
     api.post<{ success: boolean; result: string }>(`/social-media/plans/${planId}/items/${itemId}/post`),
+};
+
+// ----- Suggestions (Suggest & Earn) ---------------------------
+
+export const suggestionService = {
+  create: (data: { title: string; body: string; tags: string[] }) =>
+    api.post<{ id: string; title: string; body: string; tags: string; status: string; created_at: string; duplicate_warning?: boolean }>('/suggestions', data),
+  mine: (params?: { page?: number; limit?: number }) =>
+    api.get<{ suggestions: Array<{ id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number; trending?: number }>; total: number; page: number; limit: number }>('/suggestions/mine', { params }),
+  clusters: () => api.get<{ clusters: Array<{ id: string; canonical_summary: string; name?: string; tags: string; suggestion_ids: string; overall_score: number | null; total_votes?: number; created_at: string }> }>('/suggestions/clusters'),
+  delete: (id: string) => api.delete(`/suggestions/${id}`),
+  rewards: () => api.get<{ rewards: Array<{ id: string; eventType: string; credits: number; suggestionId: string | null; clusterId: string | null; createdAt: string }> }>('/suggestions/rewards/mine'),
+  vote: (id: string, vote: 1 | -1) =>
+    api.post<{ upvotes: number; downvotes: number }>(`/suggestions/${id}/vote`, { vote }),
 };
 
 export default api;

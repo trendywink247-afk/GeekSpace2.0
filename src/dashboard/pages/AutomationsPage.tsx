@@ -22,6 +22,8 @@ import {
   FileText,
   Phone,
   Bell,
+  Copy,
+  FlaskConical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,24 +104,63 @@ export function AutomationsPage() {
     triggerType: 'time' as AutomationTrigger,
     actionType: 'telegram-message' as AutomationAction,
     enabled: true,
+    // 62.6: Cron builder — stores interval in minutes for time-based triggers
+    intervalMinutes: 60,
+    // 65.8: Webhook URL field for n8n-webhook / call_api
+    webhookUrl: '',
   });
   const [saveError, setSaveError] = useState('');
   const [logs, setLogs] = useState<AutomationLog[]>([]);
+  // 53.7: Pagination state for automation logs
+  const [logsOffset, setLogsOffset] = useState(0);
+  const [logsHasMore, setLogsHasMore] = useState(false);
+  const [logsLoadingMore, setLogsLoadingMore] = useState(false);
+  // 63.4: Run log status filter
+  const [logsStatusFilter, setLogsStatusFilter] = useState<'' | 'success' | 'failed' | 'error'>('');
   const [testingId, setTestingId] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string; statusCode?: number; latencyMs?: number; responseBody?: string } | null>(null);
+  // 64.5: Automation stats
+  const [automationStats, setAutomationStats] = useState<{ total: number; enabled: number; disabled: number; recentRuns: number } | null>(null);
+
   // 37.4: Dead-letter log
-  const [deadLetters, setDeadLetters] = useState<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>>([]);
+  const [deadLetters, setDeadLetters] = useState<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number; retry_count: number; last_error: string | null }>>([]);
+  // 55.6: Dead-letter retry state
+  const [retryingDeadLetterId, setRetryingDeadLetterId] = useState<string | null>(null);
+  // 51.5: Track per-automation trigger errors (auto-clear after 4s)
+  const [triggerErrors, setTriggerErrors] = useState<Record<string, string>>({});
+  // 61.8: Dry-run result popover
+  const [dryRunResult, setDryRunResult] = useState<{ id: string; simulatedOutput: string } | null>(null);
 
   const resetForm = () => {
-    setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true });
+    setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true, intervalMinutes: 60, webhookUrl: '' });
     setEditingId(null);
     setSaveError('');
   };
 
   useEffect(() => {
-    automationLogService.list(20).then((r) => setLogs(r.data)).catch(() => setLogs([]));
+    automationLogService.list(20, 0, logsStatusFilter || undefined).then((r) => {
+      setLogs(r.data.logs);
+      setLogsOffset(0);
+      setLogsHasMore(r.data.logs.length === 20);
+    }).catch(() => setLogs([]));
     automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => setDeadLetters([]));
-  }, []);
+    // 64.5: load stats
+    automationService.getStats().then((r) => setAutomationStats(r.data)).catch(() => {});
+  }, [logsStatusFilter]);
+
+  // 53.7: Load more logs handler
+  const handleLoadMoreLogs = async () => {
+    setLogsLoadingMore(true);
+    try {
+      const nextOffset = logsOffset + 20;
+      const r = await automationLogService.list(20, nextOffset, logsStatusFilter || undefined);
+      setLogs(prev => [...prev, ...r.data.logs]);
+      setLogsOffset(nextOffset);
+      setLogsHasMore(r.data.logs.length === 20);
+    } catch { /* ignore */ } finally {
+      setLogsLoadingMore(false);
+    }
+  };
 
   const handleOpenAdd = () => {
     resetForm();
@@ -129,12 +170,15 @@ export function AutomationsPage() {
   const handleOpenEdit = (id: string) => {
     const auto = automations.find((a) => a.id === id);
     if (!auto) return;
+    const existingInterval = (auto.triggerConfig?.interval_minutes as number | undefined) ?? 60;
     setForm({
       name: auto.name,
       description: auto.description,
       triggerType: auto.triggerType,
       actionType: auto.actionType,
       enabled: auto.enabled,
+      intervalMinutes: existingInterval,
+      webhookUrl: '',
     });
     setEditingId(id);
     setIsAddDialogOpen(true);
@@ -144,6 +188,15 @@ export function AutomationsPage() {
     if (!form.name) return;
     setSaveError('');
     try {
+      // 62.6: build triggerConfig for time-based automations
+      const triggerConfig = form.triggerType === 'time'
+        ? { interval_minutes: form.intervalMinutes }
+        : {};
+      // 65.8: Include webhookUrl in actionConfig for webhook action types
+      const urlActionTypes = ['n8n-webhook', 'call_api'];
+      const actionConfig = urlActionTypes.includes(form.actionType) && form.webhookUrl
+        ? { url: form.webhookUrl }
+        : {};
       if (editingId) {
         await updateAutomation(editingId, {
           name: form.name,
@@ -151,6 +204,7 @@ export function AutomationsPage() {
           triggerType: form.triggerType,
           actionType: form.actionType,
           enabled: form.enabled,
+          triggerConfig,
         });
       } else {
         await addAutomation({
@@ -160,7 +214,9 @@ export function AutomationsPage() {
           actionType: form.actionType,
           config: {},
           enabled: form.enabled,
-        });
+          triggerConfig,
+          actionConfig,
+        } as Parameters<typeof addAutomation>[0]);
       }
       setIsAddDialogOpen(false);
       resetForm();
@@ -177,8 +233,52 @@ export function AutomationsPage() {
     await deleteAutomation(id);
   };
 
+  // 61.8: Dry-run simulation
+  const handleDryRun = async (id: string) => {
+    try {
+      const { data } = await automationService.dryRun(id);
+      setDryRunResult({ id, simulatedOutput: data.simulatedOutput });
+      setTimeout(() => setDryRunResult(null), 8000);
+    } catch {
+      setDryRunResult({ id, simulatedOutput: 'Dry-run failed — automation may not be found.' });
+      setTimeout(() => setDryRunResult(null), 4000);
+    }
+  };
+
+  // 59.4: Duplicate automation — call API directly, refresh list from server
+  const handleDuplicate = async (id: string) => {
+    try {
+      await automationService.duplicate(id);
+      const fresh = await automationService.list();
+      useDashboardStore.setState({ automations: fresh.data });
+    } catch {
+      // silently ignore
+    }
+  };
+
   const handleTrigger = async (id: string) => {
-    await triggerAutomation(id);
+    try {
+      await triggerAutomation(id);
+    } catch {
+      // 51.5: Show per-automation error message for 4s
+      setTriggerErrors((prev) => ({ ...prev, [id]: 'Trigger failed — check webhook URL or retry' }));
+      setTimeout(() => setTriggerErrors((prev) => { const next = { ...prev }; delete next[id]; return next; }), 4000);
+    }
+    // 49.2/49.5: Refresh logs and dead-letters after trigger so the panel shows the new log entry
+    automationLogService.list(20, 0).then((r) => { setLogs(r.data.logs); setLogsOffset(0); setLogsHasMore(r.data.logs.length === 20); }).catch(() => {});
+    automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => {});
+  };
+
+  // 55.6: Retry a failed dead-letter webhook
+  const handleRetryDeadLetter = async (id: string) => {
+    setRetryingDeadLetterId(id);
+    try {
+      await automationService.retryDeadLetter(id);
+      // Refresh dead-letter list
+      automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => {});
+    } catch { /* ignore */ } finally {
+      setRetryingDeadLetterId(null);
+    }
   };
 
   const handleTestFire = async (id: string) => {
@@ -186,7 +286,7 @@ export function AutomationsPage() {
     setTestResult(null);
     try {
       const res = await automationService.testFire(id);
-      setTestResult({ id, success: res.data.success, message: res.data.message });
+      setTestResult({ id, success: res.data.success, message: res.data.message, statusCode: res.data.statusCode, latencyMs: res.data.latencyMs, responseBody: res.data.responseBody });
     } catch {
       setTestResult({ id, success: false, message: 'Test request failed' });
     } finally {
@@ -209,17 +309,37 @@ export function AutomationsPage() {
   const enabledCount = automations.filter((a) => a.enabled).length;
   const totalRuns = automations.reduce((acc, a) => acc + a.runCount, 0);
 
-  const formatLastRun = (lastRun?: string) => {
-    if (!lastRun) return 'Never';
-    const date = new Date(lastRun);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // 50.2: Unified relative-time formatter — consistent casing and language
+  const fmtRelativeTime = (ts: string | null | undefined): string => {
+    if (!ts) return 'Never';
+    const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 172800) return 'Yesterday';
+    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+
+  const formatLastRun = fmtRelativeTime;
+  const fmtRunTime = fmtRelativeTime;
+
+  // 52.9: Compute "next run" for time-triggered automations
+  const fmtNextRun = (auto: typeof automations[number]): string | null => {
+    if (auto.triggerType !== 'time' && (auto as unknown as Record<string, unknown>).trigger_type !== 'time') return null;
+    try {
+      const triggerConfig = JSON.parse(((auto as unknown as Record<string, unknown>).trigger_config as string) || '{}') as { interval_minutes?: number };
+      const intervalMs = (triggerConfig.interval_minutes || 60) * 60 * 1000;
+      const lastRunTs = auto.last_run ? new Date(auto.last_run).getTime() : null;
+      const nextTs = lastRunTs ? lastRunTs + intervalMs : Date.now() + intervalMs;
+      const diff = Math.floor((nextTs - Date.now()) / 1000);
+      if (diff <= 0) return 'due now';
+      if (diff < 60) return `in ${diff}s`;
+      if (diff < 3600) return `in ${Math.floor(diff / 60)}m`;
+      if (diff < 86400) return `in ${Math.floor(diff / 3600)}h`;
+      return `in ${Math.floor(diff / 86400)}d`;
+    } catch {
+      return null;
+    }
   };
 
 
@@ -237,6 +357,19 @@ export function AutomationsPage() {
 
   return (
     <div data-testid="automations-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
+      {/* 61.8: Dry-run result toast */}
+      {dryRunResult && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm px-4 py-3 rounded-xl bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-[#F59E0B] text-sm shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="dry-run-result">
+          <div className="flex items-start gap-2">
+            <FlaskConical className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-xs mb-0.5">Dry Run Result</p>
+              <p className="text-[11px] text-[#F59E0B]/80">{dryRunResult.simulatedOutput}</p>
+            </div>
+            <button onClick={() => setDryRunResult(null)} className="text-[#F59E0B]/60 hover:text-[#F59E0B] ml-auto">✕</button>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         <div>
@@ -308,6 +441,22 @@ export function AutomationsPage() {
             </div>
           </CardContent>
         </Card>
+        {/* 64.5: Recent runs stat from server */}
+        {automationStats !== null && (
+          <Card className="border-[#BF5FFF]/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#BF5FFF]/10 flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-[#BF5FFF]" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-[#E8E8F0]">{automationStats.recentRuns}</div>
+                  <div className="text-xs text-[#6B7280]">Runs (7d)</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Filters & Search */}
@@ -367,7 +516,14 @@ export function AutomationsPage() {
                           <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" />
                         )}
                       </div>
-                      <p className="text-sm text-[#6B7280] mb-3">{auto.description}</p>
+                      <p className="text-sm text-[#6B7280] mb-1">{auto.description}</p>
+
+                      {(auto.run_count ?? 0) > 0 && (
+                        <p className="text-xs text-[#8888AA] mb-2">
+                          Ran {auto.run_count} time{auto.run_count !== 1 ? 's' : ''}
+                          {' · '}Last run: {fmtRunTime(auto.last_run)}
+                        </p>
+                      )}
 
                       <div className="flex items-center gap-3 flex-wrap">
                         {/* Trigger badge */}
@@ -394,20 +550,57 @@ export function AutomationsPage() {
                           {auto.runCount} runs
                         </Badge>
 
+                        {/* 64.2: last_status badge */}
+                        {auto.lastStatus && (
+                          <Badge
+                            variant="outline"
+                            className={
+                              auto.lastStatus === 'success'
+                                ? 'border-[#00FF88]/30 text-[#00FF88]'
+                                : 'border-[#FF6161]/30 text-[#FF6161]'
+                            }
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${auto.lastStatus === 'success' ? 'bg-[#00FF88]' : 'bg-[#FF6161]'}`} />
+                            {auto.lastStatus === 'success' ? 'ok' : auto.lastStatus}
+                          </Badge>
+                        )}
+
                         {/* Last run */}
                         <span className="text-xs text-[#6B7280]">
                           <Clock className="w-3 h-3 inline mr-1" />
                           {formatLastRun(auto.lastRun)}
                         </span>
+
+                        {/* 52.9: Next run for time-triggered automations */}
+                        {auto.enabled && (() => {
+                          const next = fmtNextRun(auto);
+                          return next ? (
+                            <span className="text-xs text-[#FFB800]">
+                              <CalendarClock className="w-3 h-3 inline mr-1" />
+                              Next: {next}
+                            </span>
+                          ) : null;
+                        })()}
                       </div>
                     </div>
 
                     {/* Actions */}
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
                       {testResult?.id === auto.id && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${testResult.success ? 'bg-[#00FF88]/10 border-[#00FF88]/30 text-[#00FF88]' : 'bg-[#FF6161]/10 border-[#FF6161]/30 text-[#FF6161]'}`}>
-                          {testResult.message}
-                        </span>
+                        <div className={`rounded-lg border p-2 max-w-[240px] space-y-1 ${testResult.success ? 'bg-[#00FF88]/5 border-[#00FF88]/20' : 'bg-[#FF6161]/5 border-[#FF6161]/20'}`}>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-xs font-medium ${testResult.success ? 'text-[#00FF88]' : 'text-[#FF6161]'}`}>{testResult.message}</span>
+                            {testResult.statusCode != null && testResult.statusCode > 0 && (
+                              <span className="text-[10px] text-[#6B7280] font-mono bg-[#0C0C18] px-1.5 py-0.5 rounded">{testResult.statusCode}</span>
+                            )}
+                            {testResult.latencyMs != null && (
+                              <span className="text-[10px] text-[#6B7280]">{testResult.latencyMs}ms</span>
+                            )}
+                          </div>
+                          {testResult.responseBody && (
+                            <pre className="text-[9px] text-[#6B7280] font-mono max-h-[60px] overflow-auto whitespace-pre-wrap break-all">{testResult.responseBody.slice(0, 200)}</pre>
+                          )}
+                        </div>
                       )}
                       <div className="flex items-center gap-1">
                       {auto.triggerType === 'webhook' && (
@@ -436,6 +629,18 @@ export function AutomationsPage() {
                       >
                         <Play className="w-4 h-4" />
                       </Button>
+                      {/* 61.8: Dry-run button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void handleDryRun(auto.id)}
+                        aria-label={`Dry run ${auto.name}`}
+                        title="Simulate (dry run)"
+                        data-testid={`dry-run-btn-${auto.id}`}
+                        className="text-[#6B7280] hover:text-[#F59E0B] hover:bg-[#F59E0B]/10 h-10 w-10 p-0 press-scale"
+                      >
+                        <FlaskConical className="w-4 h-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -448,6 +653,16 @@ export function AutomationsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => void handleDuplicate(auto.id)}
+                        aria-label={`Duplicate ${auto.name}`}
+                        title="Duplicate"
+                        className="text-[#6B7280] hover:text-[#A78BFA] hover:bg-[#A78BFA]/10 h-10 w-10 p-0 press-scale"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleDelete(auto.id)}
                         aria-label={`Delete ${auto.name}`}
                         className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 press-scale"
@@ -456,6 +671,10 @@ export function AutomationsPage() {
                       </Button>
                       </div>
                     </div>
+                    {/* 51.5: Trigger error feedback — auto-clears after 4s */}
+                    {triggerErrors[auto.id] && (
+                      <p className="text-xs text-[#FF6161] mt-2 pl-1">{triggerErrors[auto.id]}</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -537,6 +756,81 @@ export function AutomationsPage() {
                 </select>
               </div>
             </div>
+            {/* 65.8: Webhook URL input + https warning for n8n-webhook / call_api */}
+            {(form.actionType === 'n8n-webhook' || form.actionType === 'call_api') && (
+              <div className="space-y-1">
+                <label className="text-xs text-[#6B7280]">Webhook URL</label>
+                <input
+                  type="url"
+                  placeholder="https://your-webhook-endpoint.com/..."
+                  value={form.webhookUrl}
+                  onChange={(e) => setForm({ ...form, webhookUrl: e.target.value })}
+                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] text-sm"
+                />
+                {form.webhookUrl && form.webhookUrl.startsWith('http://') && !form.webhookUrl.startsWith('https://') && (
+                  <p className="text-xs flex items-center gap-1.5 text-[#F59E0B]">
+                    <span>⚠</span> Using http:// sends data unencrypted. Use https:// for production.
+                  </p>
+                )}
+              </div>
+            )}
+            {/* 62.6: Schedule builder — shown when trigger is time-based */}
+            {form.triggerType === 'time' && (
+              <div className="rounded-lg border border-[#00F0FF]/20 bg-[#06060B] p-3 space-y-3">
+                <p className="text-xs text-[#6B7280] font-medium">Schedule</p>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    { label: 'Every 15 min', value: 15 },
+                    { label: 'Every 30 min', value: 30 },
+                    { label: 'Every hour', value: 60 },
+                    { label: 'Every 2h', value: 120 },
+                    { label: 'Every 6h', value: 360 },
+                    { label: 'Daily', value: 1440 },
+                    { label: 'Weekly', value: 10080 },
+                  ] as const).map(({ label, value }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setForm({ ...form, intervalMinutes: value })}
+                      className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                        form.intervalMinutes === value
+                          ? 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[#00F0FF]'
+                          : 'bg-[#0C0C18] border-[#00F0FF]/20 text-[#6B7280] hover:text-[#E8E8F0]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#6B7280]">Custom:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10080}
+                    value={form.intervalMinutes}
+                    onChange={(e) => setForm({ ...form, intervalMinutes: Math.max(1, parseInt(e.target.value) || 60) })}
+                    className="w-20 p-1.5 text-xs rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 text-[#E8E8F0]"
+                  />
+                  <span className="text-xs text-[#6B7280]">minutes</span>
+                </div>
+              </div>
+            )}
+            {/* 54.2: Webhook payload preview — shown when trigger is webhook */}
+            {form.triggerType === 'webhook' && (
+              <div className="rounded-lg border border-[#00F0FF]/20 bg-[#06060B] p-3">
+                <p className="text-xs text-[#6B7280] mb-2 font-medium">Incoming Webhook Payload Preview</p>
+                <pre className="text-[11px] text-[#00F0FF] overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
+{`{
+  "event": "webhook.trigger",
+  "automationId": "<auto-id>",
+  "timestamp": "${new Date().toISOString()}",
+  "payload": { "key": "value" }
+}`}
+                </pre>
+                <p className="text-[10px] text-[#6B7280] mt-2">POST this JSON to <code className="text-[#FFB800]">/api/webhooks/receive/&lt;auto-id&gt;</code></p>
+              </div>
+            )}
             {saveError && (
               <p className="text-sm text-[#FF6161] mt-2">{saveError}</p>
             )}
@@ -562,9 +856,23 @@ export function AutomationsPage() {
 
       {/* Recent Runs */}
       <div className="mt-6">
-        <h2 className="text-lg font-bold text-[#E8E8F0] mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Recent Runs
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-[#E8E8F0]" style={{ fontFamily: 'Syne, sans-serif' }}>
+            Recent Runs
+          </h2>
+          {/* 63.4: Status filter */}
+          <select
+            value={logsStatusFilter}
+            onChange={(e) => setLogsStatusFilter(e.target.value as typeof logsStatusFilter)}
+            className="text-xs px-2 py-1 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280] focus:outline-none"
+            aria-label="Filter logs by status"
+          >
+            <option value="">All statuses</option>
+            <option value="success">Success</option>
+            <option value="failed">Failed</option>
+            <option value="error">Error</option>
+          </select>
+        </div>
         {logs.length === 0 ? (
           <Card className="border-[#00F0FF]/20">
             <CardContent className="py-10 text-center">
@@ -615,8 +923,20 @@ export function AutomationsPage() {
                             );
                           })()}
                         </td>
-                        <td className="px-4 py-3 text-[#6B7280] max-w-[200px] truncate text-xs">
-                          {output || '—'}
+                        <td className="px-4 py-3 text-[#6B7280] max-w-[200px] text-xs">
+                          {/* 46.5: Pretty-print JSON output if parseable, otherwise truncate */}
+                          {output ? (() => {
+                            try {
+                              const parsed = JSON.parse(output);
+                              return (
+                                <pre className="text-xs text-[#8888AA] p-2 bg-black/20 rounded overflow-auto max-h-24 whitespace-pre-wrap break-all">
+                                  {JSON.stringify(parsed, null, 2)}
+                                </pre>
+                              );
+                            } catch {
+                              return <span className="truncate block">{output}</span>;
+                            }
+                          })() : '—'}
                         </td>
                         <td className="px-4 py-3 text-[#6B7280] font-mono text-xs hidden md:table-cell">
                           {durationMs > 0 ? `${durationMs}ms` : '—'}
@@ -630,6 +950,25 @@ export function AutomationsPage() {
                 </tbody>
               </table>
             </div>
+            {/* 53.7: Load More button for paginated logs */}
+            {logsHasMore && (
+              <div className="flex justify-center p-3 border-t border-[#00F0FF]/10">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLoadMoreLogs}
+                  disabled={logsLoadingMore}
+                  className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10"
+                >
+                  {logsLoadingMore ? (
+                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Clock className="w-4 h-4 mr-2" />
+                  )}
+                  Load More Runs
+                </Button>
+              </div>
+            )}
           </Card>
         )}
 
@@ -649,9 +988,23 @@ export function AutomationsPage() {
                     <div key={dl.id} className="flex flex-col gap-0.5 bg-[#0C0C18] rounded-lg px-3 py-2 border border-[#FF6161]/10">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-medium text-[#E8E8F0] truncate">{auto?.name ?? dl.automation_id.slice(0, 8)}</span>
-                        <span className="text-xs text-[#6B7280] whitespace-nowrap">{new Date(dl.failed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-xs text-[#6B7280] whitespace-nowrap">{new Date(dl.failed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          {/* 55.6: Retry button */}
+                          <button
+                            onClick={() => handleRetryDeadLetter(dl.id)}
+                            disabled={retryingDeadLetterId === dl.id}
+                            aria-label="Retry failed webhook"
+                            className="text-[10px] px-2 py-0.5 rounded border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 disabled:opacity-50 transition-colors"
+                          >
+                            {retryingDeadLetterId === dl.id ? '...' : 'Retry'}
+                          </button>
+                        </div>
                       </div>
-                      <span className="text-xs text-[#FF6161] truncate">{dl.error}</span>
+                      <span className="text-xs text-[#FF6161] truncate">{dl.last_error ?? dl.error}</span>
+                      {dl.retry_count > 0 && (
+                        <span className="text-xs text-amber-400">Retried {dl.retry_count}×</span>
+                      )}
                       <span className="text-xs text-[#6B7280] truncate font-mono">{dl.url}</span>
                     </div>
                   );

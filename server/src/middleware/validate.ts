@@ -70,7 +70,10 @@ export const commandSchema = z.object({
 
 export const reminderCreateSchema = z.object({
   text: z.string().min(1).max(500),
-  datetime: z.string().max(50).optional(),
+  datetime: z.string().max(50).optional().refine(
+    (v) => !v || !isNaN(Date.parse(v)),
+    { message: 'Invalid datetime format' }
+  ),
   channel: z.enum(['telegram', 'email', 'push']).optional().default('push'),
   recurring: z.enum(['', 'daily', 'weekly', 'monthly']).optional(),
   recurrence: z.enum(['daily', 'weekly', 'monthly']).nullable().optional(),
@@ -83,10 +86,22 @@ export const automationCreateSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional().default(''),
   triggerType: z.enum(['time', 'event', 'webhook', 'manual', 'keyword', 'health_down']),
+  triggerConfig: z.record(z.string(), z.unknown()).optional().default({}),
   actionType: z.enum(['n8n-webhook', 'telegram-message', 'portfolio-update', 'manychat-broadcast', 'whatsapp-message', 'call_api', 'create_reminder', 'log']),
+  actionConfig: z.record(z.string(), z.unknown()).optional().default({}),
   config: z.record(z.string(), z.unknown()).optional().default({}),
   enabled: z.boolean().optional().default(true),
-});
+}).refine((data) => {
+  // 65.3: Validate webhook URL format when actionType requires a URL
+  const urlActionTypes = ['n8n-webhook', 'call_api'];
+  if (!urlActionTypes.includes(data.actionType)) return true;
+  const url = (data.actionConfig?.url as string | undefined) || (data.actionConfig?.webhook_url as string | undefined);
+  if (!url) return true; // URL is optional at create time
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch { return false; }
+}, { message: 'actionConfig.url must be a valid http:// or https:// URL', path: ['actionConfig'] });
 
 export const apiKeyCreateSchema = z.object({
   provider: z.string().min(1).max(50),
@@ -201,6 +216,8 @@ export const portfolioUpdateSchema = z.object({
   visibility: z.record(z.string().max(50), z.boolean()).optional(),
   agentEnabled: z.boolean().optional(),
   isPublic: z.boolean().optional(),
+  // 59.9: SEO meta description (max 160 chars — Google snippet limit)
+  metaDescription: z.string().max(160).transform(stripHtml).optional(),
 });
 
 export const portfolioAiEditSchema = z.object({
@@ -249,8 +266,10 @@ export const billingUpgradeSchema = z.object({
 });
 
 export const notificationEmailSchema = z.object({
-  enabled: z.boolean(),
+  enabled: z.boolean().optional(),
   address: z.string().email().max(254).nullable().optional(),
+}).refine((data) => data.enabled !== undefined || data.address !== undefined, {
+  message: 'At least one of enabled or address must be provided',
 });
 
 // ---- Premium agent schemas ----

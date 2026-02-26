@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Film, Sparkles, Send, Loader2, Trash2, Copy, Check,
   Clock, Bot, Wifi, WifiOff, Wand2, ChevronDown,
   Download, X, Play, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { videoService, picoService } from '@/services/api';
-import type { UserVideo, VideoModel } from '@/services/api';
+import type { UserVideo, VideoModel, DirectorJob } from '@/services/api';
 
 // ---- Fleet agent type ----
 interface FleetAgent {
@@ -22,6 +22,43 @@ const statusColor: Record<string, string> = {
   idle: '#6B7280',
   disabled: '#FF6161',
 };
+
+// 61.7: Lazy-load video thumbnails via IntersectionObserver
+function LazyVideo({ src, className }: { src: string; className?: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !el.src) {
+          el.src = src;
+          setLoaded(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [src]);
+
+  return (
+    <div className="relative w-full h-full">
+      {!loaded && (
+        <div className="absolute inset-0 bg-[#0C0C18] animate-pulse" />
+      )}
+      <video
+        ref={videoRef}
+        className={className}
+        muted
+        preload="none"
+      />
+    </div>
+  );
+}
 
 function timeLeft(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now();
@@ -46,11 +83,36 @@ export function VideoGenPage() {
   const [videoCount, setVideoCount] = useState(0);
   const [maxVideos, setMaxVideos] = useState(5);
   const [galleryLoading, setGalleryLoading] = useState(true);
+  // 58.9: gallery sort
+  const [gallerySort, setGallerySort] = useState<'newest' | 'status'>('newest');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewVideo, setPreviewVideo] = useState<UserVideo | null>(null);
 
   // Polling for processing videos
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── 55.13: Director Mode state ─────────────────────────────
+  const [directorIdea, setDirectorIdea] = useState('');
+  const [directorRunning, setDirectorRunning] = useState(false);
+  // 65.13: Expand idea — AI enrichment of the director idea
+  const [expandingIdea, setExpandingIdea] = useState(false);
+  // 59.13: Multi-job queue — holds next idea to auto-start when current job finishes
+  const [queuedIdea, setQueuedIdea] = useState<string | null>(null);
+  const [directorJobId, setDirectorJobId] = useState<string | null>(null);
+  const [directorJob, setDirectorJob] = useState<DirectorJob | null>(null);
+  const [directorJobs, setDirectorJobs] = useState<DirectorJob[]>([]);
+  // 66.11: Job history status filter
+  const [jobHistoryFilter, setJobHistoryFilter] = useState<'all' | 'done' | 'failed'>('all');
+  const [directorError, setDirectorError] = useState<string | null>(null);
+  const directorPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // 58.13: prevent double-triggering auto-stitch
+  const autoStitchFiredRef = useRef(false);
+  // 56.13: Clip preview modal
+  const [previewClip, setPreviewClip] = useState<{ url: string; index: number } | null>(null);
+  const [copiedClipUrl, setCopiedClipUrl] = useState(false);
+  // 57.13: stitch progress + result
+  const [stitching, setStitching] = useState(false);
+  const [stitchResult, setStitchResult] = useState<{ url: string | null; clipUrls: string[]; softStitch: boolean } | null>(null);
 
   // Agent state
   const [assignedAgent, setAssignedAgent] = useState<FleetAgent | null>(null);
@@ -60,6 +122,8 @@ export function VideoGenPage() {
 
   // Toast
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToast({ type, text });
     setTimeout(() => setToast(null), 3500);
@@ -148,6 +212,145 @@ export function VideoGenPage() {
     };
   }, [videos, loadGallery]);
 
+  // ── 55.13: Director Mode logic ─────────────────────────────
+
+  const loadDirectorJobs = useCallback(async () => {
+    try {
+      const res = await videoService.directorList();
+      setDirectorJobs(res.data.jobs);
+    } catch { /* non-fatal */ }
+  }, []);
+
+  useEffect(() => { void loadDirectorJobs(); }, [loadDirectorJobs]);
+
+  // Poll active job
+  useEffect(() => {
+    if (!directorJobId) return;
+    if (directorPollRef.current) clearInterval(directorPollRef.current);
+    directorPollRef.current = setInterval(async () => {
+      try {
+        const res = await videoService.directorGet(directorJobId);
+        setDirectorJob(res.data);
+        if (res.data.status === 'done' || res.data.status === 'failed') {
+          clearInterval(directorPollRef.current!);
+          directorPollRef.current = null;
+          setDirectorRunning(false);
+          if (res.data.status === 'done') showToast('Director Mode complete! All clips generated.');
+          else showToast(res.data.error || 'Director Mode failed', 'error');
+          void loadDirectorJobs();
+        }
+      } catch { /* non-fatal */ }
+    }, 4000);
+    return () => { if (directorPollRef.current) clearInterval(directorPollRef.current); };
+  }, [directorJobId, loadDirectorJobs]);
+
+  // 58.13: Auto-stitch when all clips complete successfully
+  useEffect(() => {
+    if (
+      directorJob?.status === 'done' &&
+      directorJob.clips.length > 0 &&
+      directorJob.clips.every((c) => c.success) &&
+      !stitchResult &&
+      !stitching &&
+      !autoStitchFiredRef.current &&
+      directorJobId
+    ) {
+      autoStitchFiredRef.current = true;
+      // Defer slightly so UI settles after polling update
+      const tid = setTimeout(() => {
+        void (async () => {
+          setStitching(true);
+          try {
+            const res = await videoService.directorStitch(directorJobId);
+            setStitchResult({ url: res.data.stitchedUrl, clipUrls: res.data.clipUrls, softStitch: res.data.softStitch });
+            if (res.data.stitchedUrl) showToast('Auto-stitch complete! Download your video below.');
+          } catch { /* non-fatal — user can stitch manually */ } finally {
+            setStitching(false);
+          }
+        })();
+      }, 1500);
+      return () => clearTimeout(tid);
+    }
+  }, [directorJob, stitchResult, stitching, directorJobId]);
+
+  // 59.13: Auto-start queued job when current job finishes
+  useEffect(() => {
+    if (!directorRunning && queuedIdea) {
+      const idea = queuedIdea;
+      setQueuedIdea(null);
+      setDirectorIdea(idea);
+      // Small delay so state settles before starting
+      const tid = setTimeout(() => { void handleDirectorSubmit(idea); }, 800);
+      return () => clearTimeout(tid);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [directorRunning]);
+
+  // 65.13: Expand idea via AI before submitting to Director Mode
+  const handleExpandIdea = async () => {
+    if (!directorIdea.trim() || expandingIdea) return;
+    setExpandingIdea(true);
+    try {
+      const res = await videoService.directorExpandIdea(directorIdea.trim());
+      setDirectorIdea(res.data.expanded);
+    } catch { /* ignore — keep original idea */ } finally {
+      setExpandingIdea(false);
+    }
+  };
+
+  const handleDirectorSubmit = async (overrideIdea?: string) => {
+    const idea = overrideIdea ?? directorIdea.trim();
+    if (!idea) return;
+    // 59.13: If a job is already running, queue the new idea instead of starting immediately
+    if (directorRunning) {
+      setQueuedIdea(idea);
+      setDirectorIdea('');
+      showToast('Queued! Will start automatically when the current job finishes.');
+      return;
+    }
+    setDirectorRunning(true);
+    setDirectorError(null);
+    setDirectorJob(null);
+    autoStitchFiredRef.current = false; // 58.13: allow auto-stitch for new job
+    try {
+      const res = await videoService.directorCreate(idea);
+      setDirectorJobId(res.data.jobId);
+      showToast('Director Mode pipeline started — generating 6 clips…');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Director Mode failed to start';
+      setDirectorError(msg);
+      setDirectorRunning(false);
+      showToast(msg, 'error');
+    }
+  };
+
+  // 57.13: Stitch clips into a single video
+  const handleStitch = async () => {
+    if (!directorJobId) return;
+    setStitching(true);
+    setStitchResult(null);
+    try {
+      const res = await videoService.directorStitch(directorJobId);
+      setStitchResult({ url: res.data.stitchedUrl, clipUrls: res.data.clipUrls, softStitch: res.data.softStitch });
+      if (res.data.stitchedUrl) showToast('Stitch complete! Download your video below.');
+      else showToast('Soft stitch: individual clip URLs ready for download.');
+    } catch {
+      showToast('Stitch failed — try again', 'error');
+    } finally {
+      setStitching(false);
+    }
+  };
+
+  // 57.13: Rerun director job with same idea
+  const handleRerun = () => {
+    if (!directorIdea.trim()) return;
+    setDirectorJob(null);
+    setDirectorJobId(null);
+    setStitchResult(null);
+    autoStitchFiredRef.current = false; // 58.13: allow auto-stitch for new job
+    void handleDirectorSubmit();
+  };
+
   // Handle video generation
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -166,8 +369,9 @@ export function VideoGenPage() {
     }
   };
 
-  // Handle delete
+  // Handle delete (called after confirmation)
   const handleDelete = async (id: string) => {
+    setIsDeleting(true);
     try {
       await videoService.delete(id);
       showToast('Video deleted');
@@ -175,6 +379,9 @@ export function VideoGenPage() {
       if (previewVideo?.id === id) setPreviewVideo(null);
     } catch {
       showToast('Failed to delete', 'error');
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmId(null);
     }
   };
 
@@ -209,6 +416,14 @@ export function VideoGenPage() {
     { label: '8s', val: 8 },
     { label: '10s', val: 10 },
   ];
+
+  // 64.10: Estimated runtime based on duration + model tier
+  const estimatedSeconds = (() => {
+    const base = duration * 6; // ~6s per second of footage
+    const multiplier = currentModel?.tier === 'premium' ? 1.5 : currentModel?.tier === 'standard' ? 1.1 : 1.0;
+    const est = Math.round(base * multiplier);
+    return Math.max(20, Math.min(est, 120));
+  })();
 
   return (
     <div className="space-y-6">
@@ -258,9 +473,18 @@ export function VideoGenPage() {
                 className="w-full rounded-2xl border border-[#00F0FF]/20 bg-black"
               />
             ) : (
-              <div className="w-full aspect-video rounded-2xl border border-[#00F0FF]/20 bg-[#06060B] flex flex-col items-center justify-center gap-3">
+              <div className="w-full aspect-video rounded-2xl border border-[#00F0FF]/20 bg-[#06060B] flex flex-col items-center justify-center gap-4 p-6">
                 <Loader2 className="w-8 h-8 text-[#A78BFA] animate-spin" />
-                <p className="text-sm text-[#6B7280]">Video is still processing...</p>
+                {/* 62.8: step indicator for processing state */}
+                <div className="flex items-center gap-1.5 text-xs">
+                  {(['Queued', 'Generating', 'Rendering', 'Ready'] as const).map((step, i) => (
+                    <React.Fragment key={step}>
+                      <span className={i === 1 ? 'text-[#A78BFA] font-semibold' : i < 1 ? 'text-[#00FF88]' : 'text-[#6B7280]'}>{step}</span>
+                      {i < 3 && <span className="text-[#6B7280]">→</span>}
+                    </React.Fragment>
+                  ))}
+                </div>
+                <p className="text-xs text-[#6B7280]">30–120s depending on model &amp; duration</p>
               </div>
             )}
             <div className="flex items-center justify-between mt-3">
@@ -494,9 +718,10 @@ export function VideoGenPage() {
           </button>
         </div>
 
+        {/* 64.10: Estimated runtime display */}
         <p className="text-xs text-[#6B7280] mt-3 flex items-center gap-1.5">
           <AlertCircle className="w-3 h-3" />
-          Video generation takes 30-120 seconds. The video will appear below once ready.
+          Est. ~{estimatedSeconds}s for {duration}s clip · The video will appear below once ready.
         </p>
       </div>
 
@@ -510,9 +735,22 @@ export function VideoGenPage() {
               {videoCount}/{maxVideos}
             </span>
           </h2>
-          <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
-            <Clock className="w-3 h-3" />
-            Videos expire in 24h
+          <div className="flex items-center gap-2">
+            {/* 58.9: Sort toggle */}
+            <div className="flex items-center rounded-lg border border-[#A78BFA]/20 bg-[#0C0C18] p-0.5 gap-0.5">
+              <button
+                onClick={() => setGallerySort('newest')}
+                className={`text-xs px-2 py-1 rounded transition-colors ${gallerySort === 'newest' ? 'bg-[#A78BFA]/20 text-[#A78BFA]' : 'text-[#6B7280] hover:text-[#E8E8F0]'}`}
+              >Newest</button>
+              <button
+                onClick={() => setGallerySort('status')}
+                className={`text-xs px-2 py-1 rounded transition-colors ${gallerySort === 'status' ? 'bg-[#A78BFA]/20 text-[#A78BFA]' : 'text-[#6B7280] hover:text-[#E8E8F0]'}`}
+              >Status</button>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
+              <Clock className="w-3 h-3" />
+              Expire 24h
+            </div>
           </div>
         </div>
 
@@ -528,7 +766,13 @@ export function VideoGenPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {videos.map(vid => (
+            {[...videos].sort((a, b) => {
+              if (gallerySort === 'status') {
+                const order = { ready: 0, processing: 1 };
+                return (order[a.status] ?? 2) - (order[b.status] ?? 2);
+              }
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            }).map(vid => (
               <div
                 key={vid.id}
                 className="group rounded-2xl border border-[#A78BFA]/10 overflow-hidden hover:border-[#A78BFA]/30 transition-all bg-[#0C0C18]"
@@ -540,11 +784,9 @@ export function VideoGenPage() {
                 >
                   {vid.status === 'ready' ? (
                     <>
-                      <video
+                      <LazyVideo
                         src={vid.video_url}
                         className="w-full h-full object-cover"
-                        muted
-                        preload="metadata"
                       />
                       {/* Play overlay */}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -596,9 +838,10 @@ export function VideoGenPage() {
                       </button>
                       {/* Delete */}
                       <button
-                        onClick={() => handleDelete(vid.id)}
+                        onClick={() => setDeleteConfirmId(vid.id)}
                         className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
-                        title="Delete"
+                        title="Delete video"
+                        data-testid={`delete-video-${vid.id}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -621,6 +864,354 @@ export function VideoGenPage() {
         )}
       </div>
 
+      {/* ── 55.13: Director Mode ─────────────────────────────────── */}
+      <div className="rounded-2xl border border-[#BF5FFF]/20 bg-gradient-to-br from-[#0A0A1A] to-[#06060B] overflow-hidden">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#BF5FFF]/10">
+          <div className="w-8 h-8 rounded-lg bg-[#BF5FFF]/15 flex items-center justify-center">
+            <Wand2 className="w-4 h-4 text-[#BF5FFF]" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-[#E8E8F0]">Director Mode <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#BF5FFF]/15 text-[#BF5FFF] ml-1">fal.ai Seedance</span></h2>
+            <p className="text-xs text-[#6B7280]">One idea → AI director packet → 6 clips × 5s (60 credits)</p>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Idea input */}
+          <div className="flex gap-3">
+            <input
+              value={directorIdea}
+              onChange={(e) => setDirectorIdea(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && void handleDirectorSubmit()}
+              placeholder="e.g. A lone astronaut discovering an alien city at sunset"
+              maxLength={500}
+              className="flex-1 px-4 py-3 rounded-xl bg-[#0C0C18] border border-[#BF5FFF]/20 text-[#E8E8F0] text-sm placeholder-[#374151] focus:outline-none focus:border-[#BF5FFF]/50"
+            />
+            {/* 65.13: Expand idea with AI */}
+            <button
+              onClick={() => void handleExpandIdea()}
+              disabled={!directorIdea.trim() || expandingIdea}
+              title="Expand idea with AI"
+              className="flex items-center gap-1.5 px-3 py-3 rounded-xl bg-[#BF5FFF]/10 border border-[#BF5FFF]/20 hover:bg-[#BF5FFF]/20 disabled:opacity-40 disabled:cursor-not-allowed text-[#BF5FFF] text-xs transition-colors"
+            >
+              {expandingIdea ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+              {expandingIdea ? '' : 'Expand'}
+            </button>
+            <button
+              onClick={() => void handleDirectorSubmit()}
+              disabled={!directorIdea.trim()}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#BF5FFF] hover:bg-[#A855F7] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+            >
+              {directorRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {directorRunning ? 'Queue' : 'Direct'}
+            </button>
+          </div>
+          {/* 59.13: Queued job indicator */}
+          {queuedIdea && (
+            <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#BF5FFF]/10 border border-[#BF5FFF]/20 text-xs text-[#BF5FFF]" data-testid="queued-idea-banner">
+              <span className="truncate flex-1 mr-2">⏳ Queued: <span className="text-[#D8B4FE]">{queuedIdea}</span></span>
+              <button onClick={() => setQueuedIdea(null)} className="shrink-0 hover:text-[#E8E8F0] transition-colors" title="Cancel queued job">✕</button>
+            </div>
+          )}
+
+          {directorError && (
+            <div className="flex items-center gap-2 text-xs text-[#FF6161] bg-[#FF6161]/10 border border-[#FF6161]/20 px-3 py-2 rounded-lg">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              {directorError}
+            </div>
+          )}
+
+          {/* Active job progress */}
+          {directorJob && (
+            <div className="rounded-xl border border-[#BF5FFF]/15 bg-[#BF5FFF]/5 p-4 space-y-3">
+              {directorJob.packet && (
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-[#E8E8F0]">{directorJob.packet.title}</p>
+                  <p className="text-xs text-[#BF5FFF]">{directorJob.packet.genre}</p>
+                  <p className="text-xs text-[#6B7280]">{directorJob.packet.styleGuide}</p>
+                </div>
+              )}
+              {directorJob.status === 'running' && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-[#BF5FFF]">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    {/* 62.13: live clip count progress */}
+                    {directorJob.packet?.shotlist && directorJob.packet.shotlist.length > 0 ? (
+                      <span>
+                        Clips: <strong>{directorJob.clips.length}</strong>/{directorJob.packet.shotlist.length} complete
+                        {directorJob.clips.length === 0 && ' — waiting for first clip…'}
+                      </span>
+                    ) : (
+                      <span>Generating clips… this takes 2-4 minutes</span>
+                    )}
+                  </div>
+                  {directorJob.packet?.shotlist && directorJob.packet.shotlist.length > 0 && (
+                    <div className="w-full bg-[#BF5FFF]/10 rounded-full h-1.5">
+                      <div
+                        className="bg-[#BF5FFF] h-1.5 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.round((directorJob.clips.length / directorJob.packet.shotlist.length) * 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+              {directorJob.clips.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {directorJob.clips.map((clip, i) => {
+                    // 64.13: shot prompt for this clip index
+                    const shot = directorJob.packet?.shotlist?.[i];
+                    return (
+                    <div key={i} className="flex flex-col gap-1">
+                    <div
+                      className={`relative rounded-lg overflow-hidden aspect-video bg-[#0C0C18] border transition-all ${
+                        clip.success ? 'border-[#BF5FFF]/10 cursor-pointer hover:border-[#BF5FFF]/40 hover:scale-[1.02]' : 'border-[#FF6161]/20'
+                      }`}
+                      onClick={() => clip.success && clip.url && setPreviewClip({ url: clip.url, index: i })}
+                      title={shot ? `${shot.cameraMove} — ${shot.prompt}` : (clip.success ? 'Click to preview' : undefined)}
+                    >
+                      {clip.success ? (
+                        <>
+                          <video src={clip.url} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                          <div className="absolute bottom-1 left-1 text-[9px] text-white/60 bg-black/40 px-1 rounded">
+                            {i + 1}
+                          </div>
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
+                            <Play className="w-6 h-6 text-white drop-shadow" />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-[#FF6161]">
+                          <AlertCircle className="w-4 h-4" />
+                          <span className="text-[9px]">Failed</span>
+                          {/* 60.13: per-clip retry */}
+                          {directorJob.status === 'done' && directorJobId && (
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  await videoService.directorRetryClip(directorJobId, i);
+                                  showToast(`Retrying clip ${i + 1}…`);
+                                } catch { showToast('Retry failed — try again'); }
+                              }}
+                              className="text-[8px] px-1.5 py-0.5 rounded bg-[#FF6161]/20 hover:bg-[#FF6161]/40 text-[#FF6161] transition-colors"
+                              data-testid={`retry-clip-${i}`}
+                            >
+                              ↻ Retry
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {/* 64.13: shot prompt label */}
+                    {shot && (
+                      <p className="text-[9px] text-[#6B7280] leading-tight truncate px-0.5" title={shot.prompt}>
+                        <span className="text-[#BF5FFF]/60">{shot.cameraMove}</span> {shot.prompt}
+                      </p>
+                    )}
+                    </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 63.13: Failed job restart button */}
+              {(directorJob.status as string) === 'failed' && (
+                <div className="flex items-center gap-3 rounded-lg border border-[#FF6161]/30 bg-[#FF6161]/5 px-3 py-2.5">
+                  <AlertCircle className="w-4 h-4 text-[#FF6161] flex-shrink-0" />
+                  <span className="text-xs text-[#FF6161] flex-1">Director job failed</span>
+                  <button
+                    onClick={handleRerun}
+                    disabled={directorRunning}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-[#FF6161]/30 text-[#FF6161] hover:bg-[#FF6161]/10 disabled:opacity-50 transition-colors"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Restart Job
+                  </button>
+                </div>
+              )}
+
+              {/* 57.13: Stitch bar + Rerun — shown when job is done */}
+              {directorJob.status === 'done' && directorJob.clips.length > 0 && (
+                <div className="space-y-2">
+                  {stitchResult ? (
+                    <div className="rounded-xl border border-[#BF5FFF]/30 bg-[#BF5FFF]/5 p-3 space-y-2">
+                      <p className="text-xs font-semibold text-[#BF5FFF]">
+                        {stitchResult.url ? 'Stitched Video Ready' : 'Clip URLs Ready (soft stitch)'}
+                      </p>
+                      {stitchResult.url ? (
+                        <div className="space-y-2">
+                          {/* 63.8: Inline video player for stitched result */}
+                          <video
+                            src={stitchResult.url}
+                            controls
+                            className="w-full rounded-lg border border-[#BF5FFF]/30 max-h-48 bg-black"
+                            preload="metadata"
+                          />
+                          <a
+                            href={stitchResult.url}
+                            download="stitched.mp4"
+                            className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10 transition-colors w-fit"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Download Stitched Video
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          {stitchResult.clipUrls.map((u, idx) => (
+                            <a key={idx} href={u} download={`clip-${idx + 1}.mp4`} className="text-xs text-[#BF5FFF]/70 hover:text-[#BF5FFF] underline truncate">
+                              Clip {idx + 1}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {/* 60.13: show partial clip count when some failed */}
+                      {directorJob.clips.some((c) => !c.success) && (
+                        <p className="text-[10px] text-amber-400">
+                          {directorJob.clips.filter((c) => c.success).length}/{directorJob.clips.length} clips succeeded — stitch will use successful clips only
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => void handleStitch()}
+                          disabled={stitching || !directorJob.clips.some((c) => c.success)}
+                          data-testid="stitch-btn"
+                          className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10 disabled:opacity-50 transition-colors"
+                        >
+                          {stitching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
+                          {stitching ? 'Stitching…' : directorJob.clips.some((c) => !c.success) ? 'Partial Stitch' : 'Stitch Clips'}
+                        </button>
+                        {stitching && (
+                          <div className="flex-1 h-1.5 rounded-full bg-[#0C0C18] overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-[#BF5FFF] to-[#00F0FF] animate-pulse rounded-full" style={{ width: '60%' }} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleRerun}
+                    disabled={directorRunning}
+                    data-testid="rerun-director-btn"
+                    className="flex items-center gap-1.5 text-xs text-[#6B7280] hover:text-[#E8E8F0] disabled:opacity-50 transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Rerun with same idea
+                  </button>
+                </div>
+              )}
+
+              {/* 56.13: Clip preview modal */}
+              {previewClip && (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                  onClick={(e) => { if (e.target === e.currentTarget) setPreviewClip(null); }}
+                >
+                  <div className="relative w-full max-w-2xl bg-[#0C0C18] rounded-2xl border border-[#BF5FFF]/30 overflow-hidden shadow-2xl">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#BF5FFF]/15">
+                      <p className="text-sm font-medium text-[#E8E8F0]">
+                        Clip {previewClip.index + 1} — {directorJob.packet?.shotlist?.[previewClip.index]?.prompt ?? 'Director Mode clip'}
+                      </p>
+                      <button onClick={() => setPreviewClip(null)} className="text-[#6B7280] hover:text-[#E8E8F0] transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <video
+                      key={previewClip.url}
+                      src={previewClip.url}
+                      className="w-full aspect-video bg-black"
+                      controls
+                      autoPlay
+                      loop
+                    />
+                    <div className="flex items-center gap-2 px-4 py-3 border-t border-[#BF5FFF]/15">
+                      <button
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(previewClip.url).catch(() => {});
+                          setCopiedClipUrl(true);
+                          setTimeout(() => setCopiedClipUrl(false), 2000);
+                        }}
+                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10 transition-colors"
+                      >
+                        {copiedClipUrl ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedClipUrl ? 'Copied!' : 'Copy URL'}
+                      </button>
+                      <a
+                        href={previewClip.url}
+                        download={`clip-${previewClip.index + 1}.mp4`}
+                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#6B7280]/30 text-[#6B7280] hover:border-[#6B7280]/60 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Download className="w-3 h-3" />
+                        Download
+                      </a>
+                      {previewClip.index > 0 && (
+                        <button
+                          onClick={() => setPreviewClip({ url: directorJob.clips[previewClip.index - 1].url!, index: previewClip.index - 1 })}
+                          className="ml-auto text-xs px-3 py-1.5 rounded-lg border border-[#00F0FF]/20 text-[#00F0FF]/70 hover:text-[#00F0FF] transition-colors"
+                        >← Prev</button>
+                      )}
+                      {previewClip.index < directorJob.clips.length - 1 && (
+                        <button
+                          onClick={() => setPreviewClip({ url: directorJob.clips[previewClip.index + 1].url!, index: previewClip.index + 1 })}
+                          className={`text-xs px-3 py-1.5 rounded-lg border border-[#00F0FF]/20 text-[#00F0FF]/70 hover:text-[#00F0FF] transition-colors ${previewClip.index === 0 ? 'ml-auto' : ''}`}
+                        >Next →</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Past director jobs */}
+          {directorJobs.length > 0 && !directorJob && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-[#6B7280] font-medium">Recent Director Jobs</p>
+                {/* 66.11: Status filter for job history */}
+                <div className="flex items-center gap-1">
+                  {(['all', 'done', 'failed'] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setJobHistoryFilter(f)}
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all ${jobHistoryFilter === f ? 'bg-[#BF5FFF]/15 border-[#BF5FFF]/50 text-[#BF5FFF]' : 'border-[#BF5FFF]/10 text-[#6B7280] hover:text-[#BF5FFF]'}`}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {directorJobs.filter(j => jobHistoryFilter === 'all' || j.status === jobHistoryFilter).slice(0, 3).map((job) => (
+                <div
+                  key={job.id}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#BF5FFF]/10 bg-[#BF5FFF]/5"
+                >
+                  <button
+                    onClick={() => { setDirectorJob(job); setDirectorJobId(job.id); }}
+                    className="flex-1 text-left hover:opacity-80 transition-opacity"
+                  >
+                    <p className="text-xs font-medium text-[#E8E8F0]">{job.packet?.title ?? job.idea.slice(0, 50)}</p>
+                    <p className="text-[10px] text-[#6B7280]">{job.clips.filter(c => c.success).length}/{job.clips.length} clips · {new Date(job.created_at).toLocaleDateString()}</p>
+                  </button>
+                  {/* 64.13: Re-use idea button */}
+                  <button
+                    onClick={() => setDirectorIdea(job.idea)}
+                    title="Use this idea again"
+                    className="flex-shrink-0 p-1.5 rounded-lg text-[#BF5FFF]/50 hover:text-[#BF5FFF] hover:bg-[#BF5FFF]/10 transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Usage info */}
       <div className="rounded-xl border border-[#A78BFA]/10 p-4 flex items-start gap-3">
         <AlertCircle className="w-4 h-4 text-[#6B7280] shrink-0 mt-0.5" />
@@ -631,6 +1222,43 @@ export function VideoGenPage() {
           <p>Use <strong className="text-[#E8E8F0]">Copy ID</strong> to reference videos in other tools.</p>
         </div>
       </div>
+      {/* Delete confirmation modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" data-testid="delete-confirm-modal">
+          <div className="bg-[#0D0D1A] border border-[#FF6161]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FF6161]/10 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-[#FF6161]" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[#F4F6FF]">Delete video?</h3>
+                <p className="text-xs text-[#6B7280]">This action cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-sm text-[#9CA3AF] mb-5">
+              The video will be permanently removed from your gallery.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                disabled={isDeleting}
+                className="flex-1 py-2 px-4 rounded-xl border border-[#2A2A3A] text-sm text-[#9CA3AF] hover:bg-[#1A1A2E] transition-colors disabled:opacity-50"
+                data-testid="delete-confirm-cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void handleDelete(deleteConfirmId)}
+                disabled={isDeleting}
+                className="flex-1 py-2 px-4 rounded-xl bg-[#FF6161]/15 border border-[#FF6161]/30 text-sm text-[#FF6161] hover:bg-[#FF6161]/25 transition-colors disabled:opacity-50 font-medium"
+                data-testid="delete-confirm-ok"
+              >
+                {isDeleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

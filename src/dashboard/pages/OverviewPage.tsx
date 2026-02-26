@@ -7,6 +7,7 @@ import {
   ExternalLink,
   Zap,
   CheckCircle,
+  CheckCircle2,
   TrendingUp,
   Clock,
   Activity,
@@ -20,7 +21,9 @@ import {
   Check,
   X,
   GripVertical,
-  AlertTriangle
+  AlertTriangle,
+  Flame,
+  Copy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +47,7 @@ import {
 } from 'recharts';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { briefingService, modelService, agentService, usageService, activityService } from '@/services/api';
+import { briefingService, modelService, agentService, usageService, activityService, reminderService, userService, portfolioService, type ActivityEntry } from '@/services/api';
 import type { FreeModel, ModelChangelogEntry } from '@/types';
 
 interface OverviewPageProps {
@@ -144,6 +147,28 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     hasEnoughData: boolean;
   } | null>(null);
   const [activityStats, setActivityStats] = useState<{ date: string; messages: number; reminders: number }[]>([]);
+  // 50.3: Reminder streak widget
+  const [reminderStreak, setReminderStreak] = useState<{ streak: number; longestStreak: number; completedToday: boolean } | null>(null);
+  // 51.4: Copy briefing state
+  const [briefingCopied, setBriefingCopied] = useState(false);
+  // 52.7: Mini activity feed — last 5 real activity log entries
+  const [miniActivity, setMiniActivity] = useState<ActivityEntry[]>([]);
+
+  // 62.9: Widget section visibility (persisted in localStorage)
+  const [sectionVisible, setSectionVisible] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = localStorage.getItem('gs_widget_visibility');
+      if (stored) return JSON.parse(stored) as Record<string, boolean>;
+    } catch { /* ignore */ }
+    return { briefing: true, charts: true, activity: true };
+  });
+  const toggleSection = (key: string) => {
+    setSectionVisible((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem('gs_widget_visibility', JSON.stringify(next));
+      return next;
+    });
+  };
 
   // 35.2: Stat card reorder (drag-to-reorder, persisted in localStorage)
   const [statOrder, setStatOrder] = useState<number[]>(() => {
@@ -203,9 +228,18 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
   // 36.3: Overdue reminder alert (session-only dismiss)
   const [overdueAlertDismissed, setOverdueAlertDismissed] = useState(false);
+  // 65.1: Portfolio stats widget
+  const [portfolioStats, setPortfolioStats] = useState<{ view_count: number; contact_count: number; project_count: number } | null>(null);
+  // 65.11: Done Today count-up animation
+  const [doneTodayAnimKey, setDoneTodayAnimKey] = useState(0);
+  const prevDoneToday = useRef(0);
 
   const user = useAuthStore((s) => s.user);
   const { stats, integrations, agent, reminders, chartData, hourlyData } = useDashboardStore();
+  // 55.2: Load-error count for partial-failure banner
+  const loadErrors = useDashboardStore((s) => s.loadErrors);
+  const loadDashboard = useDashboardStore((s) => s.loadDashboard);
+  const [loadErrDismissed, setLoadErrDismissed] = useState(false);
 
   // Detect Telegram connection for banner (33.3)
   const isTelegramConnected = integrations.some(i => i.type === 'telegram' && i.status === 'connected');
@@ -296,6 +330,27 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     }).catch(() => {});
   }, []);
 
+  // 50.3: Load reminder streak on mount
+  useEffect(() => {
+    reminderService.getStreak().then(res => {
+      setReminderStreak(res.data);
+    }).catch(() => {});
+  }, []);
+
+  // 52.7: Fetch last 5 real activity log entries on mount
+  useEffect(() => {
+    userService.getActivity(5).then(res => {
+      setMiniActivity(res.data.activity.slice(0, 5));
+    }).catch(() => {});
+  }, []);
+
+  // 65.1: Load portfolio stats
+  useEffect(() => {
+    portfolioService.getMeStats().then(res => {
+      setPortfolioStats({ view_count: res.data.view_count, contact_count: res.data.contact_count, project_count: res.data.project_count });
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     const pref = (agent as unknown as Record<string, unknown>)?.preferred_free_model as string | undefined;
     if (pref) setPreferredModel(pref);
@@ -327,6 +382,19 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   };
 
   // Derive quick stats from store
+  // 63.7: Count reminders completed today
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const doneToday = reminders.filter((r) => r.completed && new Date((r as { completed_at?: string }).completed_at || r.createdAt || '').getTime() >= todayStart.getTime()).length
+    || (reminderStreak?.completedToday ? 1 : 0);
+
+  // 65.11: Trigger count-up animation when doneToday increases
+  useEffect(() => {
+    if (doneToday > prevDoneToday.current) {
+      setDoneTodayAnimKey(k => k + 1);
+    }
+    prevDoneToday.current = doneToday;
+  }, [doneToday]);
+
   const quickStats = [
     {
       label: 'Messages Sent',
@@ -343,6 +411,16 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
       change: `${stats.remindersChange > 0 ? '+' : ''}${stats.remindersChange}`,
       trend: stats.remindersChange >= 0 ? 'up' as const : 'down' as const,
       color: statAccents[1],
+    },
+    {
+      label: 'Done Today',
+      // 65.11: animKey triggers re-mount of the value span for CSS pop animation
+      value: String(doneToday),
+      animKey: doneTodayAnimKey,
+      icon: CheckCircle2,
+      change: reminderStreak?.completedToday ? '✓ streak' : '—',
+      trend: 'up' as const,
+      color: '#00FF88',
     },
     {
       label: 'API Calls',
@@ -394,7 +472,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   // Quick actions wired to navigation
   const quickActions = [
     { label: 'Build a website', icon: Terminal, color: '#BF5FFF', desc: 'AI-generated live page', action: () => onNavigate?.('website-builder') },
-    { label: 'Set reminder', icon: Bell, color: '#00FF88', desc: 'Natural language time', action: () => onNavigate?.('reminders') },
+    { label: 'Set reminder', icon: Bell, color: '#00FF88', desc: 'Natural language time', action: () => onNavigate?.('reminders?openAdd=true') },
     { label: 'Chat with agent', icon: MessageSquare, color: '#00F0FF', desc: 'Ask anything', action: () => onOpenChat?.() },
     { label: 'See all powers', icon: Sparkles, color: '#F59E0B', desc: `20+ capabilities`, action: () => onNavigate?.('capabilities') },
   ];
@@ -445,6 +523,21 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           </div>
         </div>
       </div>
+
+      {/* ─── 55.2: Partial-load error banner ─── */}
+      {loadErrors > 0 && !loadErrDismissed && (
+        <div className="flex items-center gap-3 rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-3 text-sm text-[#F59E0B]">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <span className="flex-1">{loadErrors} dashboard section{loadErrors > 1 ? 's' : ''} failed to load — some data may be stale.</span>
+          <button
+            onClick={() => { setLoadErrDismissed(true); void loadDashboard(); }}
+            className="text-xs underline hover:no-underline"
+          >Retry</button>
+          <button onClick={() => setLoadErrDismissed(true)} aria-label="Dismiss" className="ml-1 p-0.5 rounded hover:bg-[#F59E0B]/20">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* ─── Getting Started Checklist ─── */}
       {showOnboarding && (
@@ -576,6 +669,55 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         </div>
       )}
 
+      {/* ─── Upcoming Today Strip (41.2) ─── */}
+      {(() => {
+        const now = Date.now();
+        const in24h = now + 24 * 60 * 60 * 1000;
+        const upcoming = reminders
+          .filter(r => !r.completed && r.datetime && Date.parse(r.datetime) >= now && Date.parse(r.datetime) <= in24h)
+          .slice(0, 3);
+        if (upcoming.length === 0) return null;
+        const catColors: Record<string, string> = {
+          personal: '#00F0FF', work: '#00FF88', health: '#FF2D78', other: '#FFB800',
+        };
+        return (
+          <div className="rounded-2xl border border-white/8 px-4 py-3" style={{ background: 'rgba(0,240,255,0.03)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Bell className="w-3.5 h-3.5 text-[#00F0FF]" />
+                <span className="text-xs font-semibold text-[#E8E8F0]">Upcoming Today</span>
+              </div>
+              <button
+                onClick={() => onNavigate?.('reminders')}
+                className="text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+              >
+                View all
+              </button>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {upcoming.map((r) => {
+                const t = new Date(r.datetime);
+                const timeStr = t.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                const dot = catColors[r.category] || '#6B7280';
+                return (
+                  <div
+                    key={r.id}
+                    className="flex-shrink-0 rounded-xl border border-white/8 px-3 py-2 min-w-[140px] max-w-[180px]"
+                    style={{ background: 'rgba(255,255,255,0.03)' }}
+                  >
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dot }} />
+                      <span className="text-[11px] text-[#6B7280] flex-shrink-0">{timeStr}</span>
+                    </div>
+                    <p className="text-xs text-[#E8E8F0] truncate">{r.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ─── Capability Spotlight (new users) ─── */}
       {stats.messagesSent < 10 && (
         <div
@@ -654,9 +796,11 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 </div>
               </div>
               <div
+                key={(stat as { animKey?: number }).animKey ?? stat.label}
                 className="text-2xl font-bold bg-clip-text text-transparent transition-all"
                 style={{
                   backgroundImage: `linear-gradient(135deg, ${stat.color}, #E8E8F0)`,
+                  animation: (stat as { animKey?: number }).animKey ? 'pulse 0.4s ease-out' : undefined,
                 }}
               >
                 {stat.value}
@@ -702,6 +846,39 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         })}
       </div>
 
+      {/* 50.3: Reminder streak widget — only shown when streak >= 2 */}
+      {reminderStreak !== null && reminderStreak.streak >= 2 && (
+        <Card
+          style={{
+            background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
+            border: '1px solid rgba(245, 158, 11, 0.2)',
+          }}
+        >
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#F59E0B]/10 flex-shrink-0">
+              <Flame className="w-5 h-5 text-[#F59E0B]" />
+            </div>
+            <div className="flex-1">
+              <div className="text-sm text-[#6B7280]">Reminder Streak</div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xl font-bold text-[#F59E0B]">{reminderStreak.streak}</span>
+                <span className="text-sm text-[#E8E8F0]">day{reminderStreak.streak !== 1 ? 's' : ''}</span>
+                {reminderStreak.completedToday && (
+                  <span className="inline-flex items-center gap-1 text-xs text-[#00FF88] bg-[#00FF88]/10 px-2 py-0.5 rounded-full">
+                    <CheckCircle className="w-3 h-3" />
+                    Done today
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-[#6B7280]">Best</div>
+              <div className="text-sm font-semibold text-[#E8E8F0]">{reminderStreak.longestStreak}d</div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Agent Quality Card — only shown when there are >= 5 reactions */}
       {agentQuality?.hasEnoughData && agentQuality.satisfactionRate !== null && (
         <Card
@@ -738,12 +915,37 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         }}
       >
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#FFD700]" />
-            Daily Briefing
+          <CardTitle className="text-lg font-semibold flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#FFD700]" />
+              Daily Briefing
+            </span>
+            {/* 62.9: Collapse toggle */}
+            <button
+              onClick={() => toggleSection('briefing')}
+              className="text-[#6B7280] hover:text-[#FFD700] transition-colors p-1 rounded ml-auto text-xs"
+              title={sectionVisible.briefing ? 'Collapse' : 'Expand'}
+            >
+              {sectionVisible.briefing ? '▲' : '▼'}
+            </button>
+            {/* 51.4: Copy briefing content to clipboard */}
+            {latestBriefing && (
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(latestBriefing.content).then(() => {
+                    setBriefingCopied(true);
+                    setTimeout(() => setBriefingCopied(false), 1500);
+                  }).catch(() => {});
+                }}
+                className="text-[#6B7280] hover:text-[#FFD700] transition-colors p-1 rounded"
+                aria-label="Copy briefing"
+              >
+                {briefingCopied ? <Check className="w-4 h-4 text-[#00FF88]" /> : <Copy className="w-4 h-4" />}
+              </button>
+            )}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        {sectionVisible.briefing && <CardContent>
           {latestBriefing ? (
             <>
               <p className="text-sm text-[#E8E8F0] leading-relaxed whitespace-pre-line">
@@ -777,11 +979,15 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               {briefingSaving ? 'Saving…' : 'Saved'}
             </span>
           </div>
-        </CardContent>
+        </CardContent>}
       </Card>
 
       {/* ─── Bento Charts Row ─── */}
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-sm text-[#6B7280] font-medium">Analytics</span>
+        <button onClick={() => toggleSection('charts')} className="text-xs text-[#6B7280] hover:text-[#00F0FF] transition-colors">{sectionVisible.charts ? '▲ Collapse' : '▼ Expand'}</button>
+      </div>
+      {sectionVisible.charts && <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Activity Chart — spans 2 cols */}
         <Card
           className="lg:col-span-2"
@@ -890,7 +1096,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div>}
 
       {/* ─── Bento 3-Column Section ─── */}
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
@@ -915,26 +1121,40 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {recentActivity.length > 0 ? recentActivity.map((activity, i) => (
+              {/* 52.7 / 57.2: Mini activity feed — height-constrained with overflow scroll for long lists */}
+              <div className="space-y-3 max-h-[360px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-[#00F0FF]/10 scrollbar-track-transparent pr-1" style={{ contain: 'paint' }}>
+                {miniActivity.length > 0 ? miniActivity.map((entry, i) => {
+                  const relTime = (() => {
+                    const diff = Math.floor((Date.now() - new Date(entry.created_at).getTime()) / 1000);
+                    if (diff < 60) return 'just now';
+                    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+                    return new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                  })();
+                  return (
+                    <div
+                      key={entry.id}
+                      className="flex items-center gap-3 p-3 rounded-xl group hover:scale-[1.01] transition-all"
+                      style={{ background: 'rgba(6, 6, 11, 0.6)', animationDelay: `${i * 50}ms` }}
+                    >
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,240,255,0.08)' }}>
+                        <Zap className="w-4 h-4 text-[#00F0FF]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors truncate">{entry.action}</div>
+                        {entry.details && <div className="text-xs text-[#6B7280] truncate">{entry.details}</div>}
+                      </div>
+                      <div className="text-xs text-[#6B7280] font-mono flex-shrink-0">{relTime}</div>
+                    </div>
+                  );
+                }) : recentActivity.length > 0 ? recentActivity.map((activity, i) => (
                   <div
                     key={activity.id}
                     className="flex items-center gap-4 p-3 rounded-xl transition-all duration-300 group hover:scale-[1.01]"
-                    style={{
-                      background: 'rgba(6, 6, 11, 0.6)',
-                      animationDelay: `${i * 50}ms`,
-                    }}
+                    style={{ background: 'rgba(6, 6, 11, 0.6)', animationDelay: `${i * 50}ms` }}
                   >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-                      style={{
-                        backgroundColor: activity.status === 'success' ? 'rgba(173,255,47,0.1)' : 'rgba(255,215,0,0.1)'
-                      }}
-                    >
-                      <activity.icon
-                        className="w-5 h-5"
-                        style={{ color: activity.status === 'success' ? '#ADFF2F' : '#FFD700' }}
-                      />
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: activity.status === 'success' ? 'rgba(173,255,47,0.1)' : 'rgba(255,215,0,0.1)' }}>
+                      <activity.icon className="w-5 h-5" style={{ color: activity.status === 'success' ? '#ADFF2F' : '#FFD700' }} />
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-medium text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors">{activity.action}</div>
@@ -1046,6 +1266,37 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </div>
             </CardContent>
           </Card>
+
+          {/* 65.1: Portfolio Stats Widget */}
+          {portfolioStats && (
+            <Card
+              style={{
+                background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
+                border: '1px solid rgba(191, 95, 255, 0.15)',
+              }}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base font-semibold text-[#BF5FFF]">Portfolio</CardTitle>
+                  <button onClick={() => onNavigate?.('portfolio')} className="text-xs text-[#6B7280] hover:text-[#BF5FFF] transition-colors">View →</button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'Views', value: portfolioStats.view_count },
+                    { label: 'Contacts', value: portfolioStats.contact_count },
+                    { label: 'Projects', value: portfolioStats.project_count },
+                  ].map((item) => (
+                    <div key={item.label} className="text-center rounded-lg p-2" style={{ background: 'rgba(191, 95, 255, 0.06)' }}>
+                      <div className="text-lg font-bold text-[#BF5FFF]">{item.value}</div>
+                      <div className="text-[10px] text-[#6B7280]">{item.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Quick Actions */}
           <Card

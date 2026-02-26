@@ -102,6 +102,7 @@ export interface AgentConfig {
   notif_agents?: number;
   notif_daily_briefing?: number;
   notif_connections?: number;
+  snooze_presets?: string;
 }
 
 export interface Personality {
@@ -336,6 +337,7 @@ export interface PortfolioProject {
   name: string;
   description: string;
   url: string;
+  imageUrl?: string;   // 47.5: project thumbnail/screenshot URL
   tags?: string[];
   aiGenerated?: boolean;
 }
@@ -379,6 +381,9 @@ export interface Portfolio {
     showActivity: boolean;
   };
   connectionCount?: number;
+  view_count?: number;
+  // 59.9: SEO meta description (max 160 chars)
+  metaDescription?: string;
 }
 
 // ----- Channel Links (Telegram/WhatsApp user mapping) --------
@@ -434,6 +439,11 @@ export interface Automation {
   lastStatus?: string;
   runCount: number;
   createdAt: string;
+  // 62.6: trigger config (interval_minutes for time-based automations)
+  triggerConfig?: Record<string, unknown>;
+  // Snake_case fields as returned directly from the API (backend does not transform keys)
+  run_count?: number;
+  last_run?: string | null;
 }
 
 export interface AutomationLog {
@@ -471,6 +481,7 @@ export interface ConversationEntry {
   summary: string;
   tags: string;
   createdAt: string;
+  starred?: boolean;
 }
 
 // ----- Chart Data --------------------------------------------
