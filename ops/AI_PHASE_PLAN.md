@@ -243,21 +243,43 @@ Chat starring, iCal export, filter persistence, keyboard shortcut cheat sheet, r
 
 ---
 
-## Phase 61 — PLANNED (13 items)
-**Theme:** Chat polish, mobile UX, reminder intelligence, performance
+## Phase 61 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/92 | **Tests:** 604/604
+Overdue escalation, memory quick-add, lazy gallery, dry-run mode, soft-stitch cache, mobile swipe, API key logos, snooze toast
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 61.1 | CI review post-Phase-60 | ✅ | Reliability |
+| 61.2 | Reminder overdue auto-Telegram escalation | ✅ | Reliability |
+| 61.3 | Chat message search highlight | ✅ (verified done) | UX |
+| 61.4 | Agent memory quick-add from chat | ✅ | Feature |
+| 61.5 | Snooze feedback toast ("snoozed until HH:MM") | ✅ | State-sync |
+| 61.6 | API key masked preview with provider emoji | ✅ | UX |
+| 61.7 | Video gallery lazy-load thumbnails | ✅ | Performance |
+| 61.8 | Automation dry-run mode | ✅ | Edge-case |
+| 61.9 | Portfolio honeypot spam filter | ✅ (verified done) | Security |
+| 61.10 | Dashboard mobile swipe sidebar | ✅ | Mobile |
+| 61.11 | Tests + verification + PR/merge (604 tests) | ✅ | Dev/Ops |
+| 61.12 | Brand gate | ✅ (0 violations) | Brand |
+| 61.13 | **Seedance**: persist partial stitch URL (soft-stitch cache) | ✅ | Feature |
+
+---
+
+## Phase 62 — PLANNED (13 items)
+**Theme:** Analytics, keyboard UX, scheduling UI, video progress, widget reorder
 
 | # | Item | Category |
 |---|------|----------|
-| 61.1 | CI review post-Phase-60 | Reliability |
-| 61.2 | Reminder overdue auto-Telegram escalation | Reliability |
-| 61.3 | Chat message search highlight | UX |
-| 61.4 | Agent memory quick-add from chat | Feature |
-| 61.5 | Dashboard mobile swipe gestures | Mobile |
-| 61.6 | API key masked preview with provider logo | UX |
-| 61.7 | Video gallery lazy-load thumbnails | Performance |
-| 61.8 | Automation dry-run mode | Edge-case |
-| 61.9 | Portfolio honeypot spam filter | Security |
-| 61.10 | Snooze feedback toast ("snoozed until HH:MM") | State-sync |
-| 61.11 | Tests + verification + PR/merge | Dev/Ops |
-| 61.12 | Brand gate | Brand |
-| 61.13 | **Seedance**: persist partial stitch URL + stitched_url on retry | Feature |
+| 62.1 | CI review post-Phase-61 | Reliability |
+| 62.2 | Reminder recurring rule editor (visual builder) | UX |
+| 62.3 | Chat conversation export as PDF | Feature |
+| 62.4 | Portfolio analytics chart (30-day views line chart) | UX |
+| 62.5 | Agent chat keyboard shortcuts (↑/↓ history, Ctrl+K clear) | UX |
+| 62.6 | Automations scheduling — cron expression builder UI | Edge-case |
+| 62.7 | Connections health ping (test connection latency badge) | Reliability |
+| 62.8 | Video gen progress step indicator (queue + ETA) | UX |
+| 62.9 | Dashboard widget drag-to-reorder | Mobile |
+| 62.10 | Reminder batch-edit (select multiple → change priority/category) | State-sync |
+| 62.11 | Tests + verification + PR/merge | Dev/Ops |
+| 62.12 | Brand gate | Brand |
+| 62.13 | **Seedance Director Mode**: live progress polling (clip count updates) | Feature |
