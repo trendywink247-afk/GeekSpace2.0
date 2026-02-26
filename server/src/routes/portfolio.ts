@@ -125,11 +125,24 @@ portfolioRouter.get('/me/analytics/export', requireAuth, async (req: AuthRequest
     await cacheSet(rlKey, String(count + 1), 300);
   } catch { /* Redis unavailable — allow through */ }
 
-  const rows = db.prepare(
-    `SELECT date(visited_at) as day, COUNT(*) as views
-     FROM portfolio_visits WHERE user_id = ? AND visited_at >= date('now', '-30 days')
-     GROUP BY day ORDER BY day ASC`
-  ).all(userId) as Array<{ day: string; views: number }>;
+  // 66.3: Optional date-range filter for analytics export
+  const fromDate = typeof req.query.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.from) ? req.query.from : null;
+  const toDate = typeof req.query.to === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.to) ? req.query.to : null;
+
+  let rows: Array<{ day: string; views: number }>;
+  if (fromDate && toDate) {
+    rows = db.prepare(
+      `SELECT date(visited_at) as day, COUNT(*) as views
+       FROM portfolio_visits WHERE user_id = ? AND date(visited_at) >= ? AND date(visited_at) <= ?
+       GROUP BY day ORDER BY day ASC`
+    ).all(userId, fromDate, toDate) as Array<{ day: string; views: number }>;
+  } else {
+    rows = db.prepare(
+      `SELECT date(visited_at) as day, COUNT(*) as views
+       FROM portfolio_visits WHERE user_id = ? AND visited_at >= date('now', '-30 days')
+       GROUP BY day ORDER BY day ASC`
+    ).all(userId) as Array<{ day: string; views: number }>;
+  }
 
   let csv = 'date,views\n';
   for (const r of rows) { csv += `${r.day},${r.views}\n`; }
@@ -520,6 +533,19 @@ portfolioRouter.get('/contacts', requireAuth, (req: AuthRequest, res) => {
     'SELECT id, sender_name, sender_email, message, created_at FROM portfolio_contacts WHERE user_id = ? ORDER BY created_at DESC LIMIT 50'
   ).all(req.userId!) as Array<{ id: string; sender_name: string; sender_email: string | null; message: string; created_at: string }>;
   res.json(contacts);
+});
+
+// 66.3: DELETE /contacts/:id — delete a single contact message (owner only)
+portfolioRouter.delete('/contacts/:id', requireAuth, (req: AuthRequest, res) => {
+  const result = db.prepare('DELETE FROM portfolio_contacts WHERE id = ? AND user_id = ?').run(req.params.id, req.userId!);
+  if (result.changes === 0) { res.status(404).json({ error: 'Contact not found' }); return; }
+  res.json({ success: true });
+});
+
+// 66.3: DELETE /contacts — clear all contact messages (owner only)
+portfolioRouter.delete('/contacts', requireAuth, (req: AuthRequest, res) => {
+  const result = db.prepare('DELETE FROM portfolio_contacts WHERE user_id = ?').run(req.userId!);
+  res.json({ deleted: result.changes });
 });
 
 // ── 34.3: Public view counter (no auth — fire-and-forget on portfolio page load) ──

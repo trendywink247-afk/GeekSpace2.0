@@ -73,7 +73,7 @@ automationsRouter.post('/', requireAuth, validateBody(automationCreateSchema), a
 });
 
 automationsRouter.patch('/:id', requireAuth, validateBody(automationUpdateSchema), async (req: AuthRequest, res) => {
-  const existing = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId);
+  const existing = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId) as Record<string, unknown> | undefined;
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
 
   const updates = req.body;
@@ -89,6 +89,15 @@ automationsRouter.patch('/:id', requireAuth, validateBody(automationUpdateSchema
 
   if (fields.length) { values.push(req.params.id, req.userId); db.prepare(`UPDATE automations SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`).run(...values); }
 
+  // 66.2: Activity log — detect enable/disable vs generic update
+  const autoName = (updates.name as string | undefined) || (existing.name as string) || req.params.id;
+  if (updates.enabled !== undefined) {
+    const action = updates.enabled ? 'Enabled automation' : 'Disabled automation';
+    db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, ?, ?, 'zap')`).run(uuid(), req.userId, action, autoName);
+  } else if (fields.length) {
+    db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Updated automation', ?, 'zap')`).run(uuid(), req.userId, autoName);
+  }
+
   // Hot-reload engine
   onAutomationChanged(req.params.id);
 
@@ -101,9 +110,14 @@ automationsRouter.patch('/:id', requireAuth, validateBody(automationUpdateSchema
 });
 
 automationsRouter.delete('/:id', requireAuth, async (req: AuthRequest, res) => {
+  // 66.2: Capture name before delete for activity log
+  const toDelete = db.prepare('SELECT name FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId) as { name: string } | undefined;
   onAutomationChanged(req.params.id); // Unregister before delete
   const result = db.prepare('DELETE FROM automations WHERE id = ? AND user_id = ?').run(req.params.id, req.userId);
   if (result.changes === 0) { res.status(404).json({ error: 'Not found' }); return; }
+  if (toDelete) {
+    db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Deleted automation', ?, 'zap')`).run(uuid(), req.userId, toDelete.name);
+  }
   // 53.5: Bust cache on delete
   await cacheDel(`automations:${req.userId}`);
   res.json({ success: true });
@@ -113,6 +127,10 @@ automationsRouter.delete('/:id', requireAuth, async (req: AuthRequest, res) => {
 
 automationsRouter.post('/:id/trigger', requireAuth, async (req: AuthRequest, res) => {
   const result = await executeManualTrigger(req.params.id, req.userId!);
+  // 66.2: Log manual trigger attempt
+  const triggerAuto = db.prepare('SELECT name FROM automations WHERE id = ?').get(req.params.id) as { name: string } | undefined;
+  const triggerName = triggerAuto?.name || req.params.id;
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Triggered automation', ?, 'zap')`).run(uuid(), req.userId, triggerName);
   if (!result.success && result.output.includes('not found')) {
     res.status(404).json(result);
   } else {
