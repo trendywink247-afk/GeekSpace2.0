@@ -162,6 +162,7 @@ test.describe('Reminders Page', () => {
     await bulkCheckbox.check({ force: true });
 
     // Delete Selected button should now appear
-    await expect(page.getByRole('button', { name: /Delete Selected/ })).toBeVisible();
+    // Button text is "Delete (N)" with count, not "Delete Selected"
+    await expect(page.getByRole('button', { name: /Delete \(/ })).toBeVisible();
   });
 });

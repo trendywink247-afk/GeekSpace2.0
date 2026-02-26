@@ -37,8 +37,11 @@ test.describe('Connections Page', () => {
       await page.waitForTimeout(600);
     }
 
-    const connectButton = page.getByRole('button', { name: /connect/i }).first();
+    // 61.10: scope to telegramCard to avoid matching the sidebar "Connections" nav link
+    // which is off-screen on pixel5 and would cause "element outside viewport" errors
+    const connectButton = telegramCard.getByRole('button', { name: /^connect$/i }).first();
     if (await connectButton.isVisible().catch(() => false)) {
+      await connectButton.scrollIntoViewIfNeeded().catch(() => {});
       await connectButton.click({ force: true }); // 52.1: force bypasses pixel5 animation instability
       await page.waitForTimeout(1500); // 57.6: extra time for dialog open on slow pixel5
 
