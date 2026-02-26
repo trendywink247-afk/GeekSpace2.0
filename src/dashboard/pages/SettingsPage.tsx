@@ -422,6 +422,15 @@ export function SettingsPage() {
     } catch { /* silently fail */ } finally { setIsResettingAgent(false); }
   };
 
+  // 61.6: provider emoji logos
+  const providerEmoji: Record<string, string> = {
+    openai: '🤖',
+    anthropic: '🅰',
+    qwen: '🇨🇳',
+    openrouter: '🔀',
+    custom: '⚙️',
+  };
+
   const providerColors: Record<string, string> = {
     openai: '#10a37f',
     anthropic: '#d4a574',
@@ -1069,12 +1078,16 @@ export function SettingsPage() {
                 <div key={key.id} className="rounded-xl bg-[#06060B] border border-[#00F0FF]/20 overflow-hidden">
                   <div className="flex items-center justify-between p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${providerColors[key.provider]}20` }}>
-                        <Key className="w-5 h-5" style={{ color: providerColors[key.provider] }} />
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style={{ backgroundColor: `${providerColors[key.provider]}20` }}>
+                        {providerEmoji[key.provider] ?? '🔑'}
                       </div>
                       <div>
                         <div className="font-medium text-[#E8E8F0]">{key.label}</div>
-                        <div className="text-sm text-[#6B7280] font-mono">{key.maskedKey}</div>
+                        <div className="text-sm text-[#6B7280] font-mono">
+                          {key.maskedKey.length > 12
+                            ? `${key.maskedKey.slice(0, 4)}...${key.maskedKey.slice(-4)}`
+                            : key.maskedKey}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">

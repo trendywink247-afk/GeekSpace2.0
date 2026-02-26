@@ -223,3 +223,41 @@ E2E flake fixes, load-error banner, portfolio inline preview, auth/refresh rate 
 | 59.11 | Phase 59 tests + verification gate + PR/merge | Dev/Ops |
 | 59.12 | Brand gate: npm run brand-guard → 0 violations | Brand |
 | 59.13 | **Seedance Director Mode** (Task 13): Multi-job queue support | Feature |
+
+---
+
+## Phase 60 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/91 | **Tests:** 590/590
+Chat starring, iCal export, filter persistence, keyboard shortcut cheat sheet, reply-to context, Seedance per-clip retry + partial stitch
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 60.1 | CI review post-Phase-59 | ✅ | Reliability |
+| 60.2 | Chat message starring/pinning | ✅ | UX |
+| 60.3 | Reminder iCal export | ✅ | Feature |
+| 60.4 | Settings keyboard shortcut cheat sheet | ✅ | Dev/Ops |
+| 60.5 | Reminder filter persistence (localStorage) | ✅ | State-sync |
+| 60.6 | Chat reply-to context | ✅ | UX |
+| 60.11 | Tests + verification + PR/merge (590 tests) | ✅ | Dev/Ops |
+| 60.13 | **Seedance**: per-clip retry + partial stitch | ✅ | Feature |
+
+---
+
+## Phase 61 — PLANNED (13 items)
+**Theme:** Chat polish, mobile UX, reminder intelligence, performance
+
+| # | Item | Category |
+|---|------|----------|
+| 61.1 | CI review post-Phase-60 | Reliability |
+| 61.2 | Reminder overdue auto-Telegram escalation | Reliability |
+| 61.3 | Chat message search highlight | UX |
+| 61.4 | Agent memory quick-add from chat | Feature |
+| 61.5 | Dashboard mobile swipe gestures | Mobile |
+| 61.6 | API key masked preview with provider logo | UX |
+| 61.7 | Video gallery lazy-load thumbnails | Performance |
+| 61.8 | Automation dry-run mode | Edge-case |
+| 61.9 | Portfolio honeypot spam filter | Security |
+| 61.10 | Snooze feedback toast ("snoozed until HH:MM") | State-sync |
+| 61.11 | Tests + verification + PR/merge | Dev/Ops |
+| 61.12 | Brand gate | Brand |
+| 61.13 | **Seedance**: persist partial stitch URL + stitched_url on retry | Feature |

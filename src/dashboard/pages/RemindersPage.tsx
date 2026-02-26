@@ -227,6 +227,14 @@ export function RemindersPage() {
   };
 
   const [snoozeOpenId, setSnoozeOpenId] = useState<string | null>(null);
+  // 61.5: snooze feedback toast
+  const [snoozeToast, setSnoozeToast] = useState<string | null>(null);
+  const showSnoozeToast = (newDatetime: string) => {
+    const dt = new Date(newDatetime);
+    const formatted = dt.toLocaleString('en', { hour: '2-digit', minute: '2-digit', weekday: 'short', month: 'short', day: 'numeric' });
+    setSnoozeToast(`Snoozed until ${formatted}`);
+    setTimeout(() => setSnoozeToast(null), 3000);
+  };
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   // 51.2: Recurring reminder edit — choice dialog state
@@ -285,6 +293,7 @@ export function RemindersPage() {
     try {
       const res = await reminderService.snooze(id, undefined, snoozeCustomValue);
       await snoozeReminder(id, res.data.newDatetime);
+      showSnoozeToast(res.data.newDatetime);
       setSnoozeCustomId(null);
       setSnoozeCustomValue('');
       setSnoozeOpenId(null);
@@ -307,6 +316,7 @@ export function RemindersPage() {
     try {
       const res = await reminderService.snooze(id, preset);
       await snoozeReminder(id, res.data.newDatetime);
+      showSnoozeToast(res.data.newDatetime);
     } catch { /* ignore */ }
     setSnoozeOpenId(null);
   };
@@ -548,6 +558,13 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
 
   return (
     <div className="space-y-6" data-testid="reminders-page">
+      {/* 61.5: Snooze feedback toast */}
+      {snoozeToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFB800]/15 border border-[#FFB800]/40 text-[#FFB800] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="snooze-toast">
+          <AlarmClock className="w-4 h-4" />
+          {snoozeToast}
+        </div>
+      )}
       {/* 42.1: All caught up celebration banner */}
       {showCelebration && (
         <div

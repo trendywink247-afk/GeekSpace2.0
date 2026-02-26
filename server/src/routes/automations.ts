@@ -96,6 +96,63 @@ automationsRouter.post('/:id/trigger', requireAuth, async (req: AuthRequest, res
   }
 });
 
+// ---- 61.8: Dry-run automation ----
+// POST /api/automations/:id/dry-run
+// Simulates what the automation would do without actually executing the action.
+automationsRouter.post('/:id/dry-run', requireAuth, async (req: AuthRequest, res) => {
+  const auto = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId) as {
+    id: string; name: string; trigger_type: string; trigger_config: string; action_type: string; action_config: string; enabled: number;
+  } | undefined;
+
+  if (!auto) { res.status(404).json({ error: 'Automation not found' }); return; }
+
+  const actionConfig = JSON.parse(auto.action_config || '{}') as Record<string, unknown>;
+  const triggerConfig = JSON.parse(auto.trigger_config || '{}') as Record<string, unknown>;
+
+  // Simulate what would be sent/triggered
+  let simulatedOutput = '';
+  switch (auto.action_type) {
+    case 'telegram-message':
+    case 'whatsapp-message': {
+      const channel = auto.action_type === 'telegram-message' ? 'Telegram' : 'WhatsApp';
+      const message = actionConfig.message || '(no message configured)';
+      simulatedOutput = `Would send ${channel} message: "${message}"`;
+      break;
+    }
+    case 'n8n-webhook':
+    case 'call_api': {
+      const url = actionConfig.url || actionConfig.webhook_url || '(no URL configured)';
+      const method = (actionConfig.method as string) || 'POST';
+      simulatedOutput = `Would ${method} to: ${url}`;
+      if (actionConfig.payload) simulatedOutput += `\nWith payload: ${JSON.stringify(actionConfig.payload).slice(0, 200)}`;
+      break;
+    }
+    case 'create_reminder': {
+      const text = actionConfig.reminder_text || '(no reminder text)';
+      simulatedOutput = `Would create reminder: "${text}" (1 hour from now)`;
+      break;
+    }
+    case 'log': {
+      const message = actionConfig.message || '(no message)';
+      simulatedOutput = `Would log: "${message}"`;
+      break;
+    }
+    default:
+      simulatedOutput = `Would execute action: ${auto.action_type}`;
+  }
+
+  res.json({
+    dryRun: true,
+    automationId: auto.id,
+    automationName: auto.name,
+    triggerType: auto.trigger_type,
+    triggerConfig,
+    actionType: auto.action_type,
+    simulatedOutput,
+    enabled: !!auto.enabled,
+  });
+});
+
 // ---- 59.4: Duplicate automation ----
 automationsRouter.post('/:id/duplicate', requireAuth, async (req: AuthRequest, res) => {
   const source = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId) as {

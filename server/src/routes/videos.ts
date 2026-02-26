@@ -502,10 +502,19 @@ videosRouter.post('/director/:jobId/stitch', requireAuth, async (req: AuthReques
     res.status(400).json({ error: 'No successful clips to stitch' });
     return;
   }
-  // If already stitched, return cached result
+  // 61.13: If already stitched (or soft-stitched), return cached result
   if (row.stitched_url) {
-    res.json({ stitched: true, stitchedUrl: row.stitched_url, cached: true, clipUrls: [] });
-    return;
+    // Soft-stitch stores JSON; hard stitch stores a plain URL
+    if (row.stitched_url.startsWith('{')) {
+      try {
+        const cached = JSON.parse(row.stitched_url) as { softStitch: boolean; clipUrls: string[] };
+        res.json({ stitched: true, stitchedUrl: null, cached: true, clipUrls: cached.clipUrls, softStitch: true });
+        return;
+      } catch { /* fall through and re-stitch */ }
+    } else {
+      res.json({ stitched: true, stitchedUrl: row.stitched_url, cached: true, clipUrls: [] });
+      return;
+    }
   }
 
   const clips = JSON.parse(row.clips || '[]') as Array<{ success?: boolean; url?: string }>;
@@ -553,10 +562,14 @@ videosRouter.post('/director/:jobId/stitch', requireAuth, async (req: AuthReques
     logger.info({ jobId, reason: (ffmpegErr as Error).message }, 'ffmpeg stitch skipped — returning clip URLs');
   }
 
-  // Persist stitched_url when we have one
+  // 61.13: Persist stitch result — hard stitch stores URL, soft stitch stores JSON
   if (stitchedUrl) {
     db.prepare('UPDATE video_jobs SET stitched_url = ?, updated_at = datetime(\'now\') WHERE id = ?')
       .run(stitchedUrl, jobId);
+  } else {
+    // Soft stitch: persist clip URLs so repeated calls return cached result
+    db.prepare('UPDATE video_jobs SET stitched_url = ?, updated_at = datetime(\'now\') WHERE id = ?')
+      .run(JSON.stringify({ softStitch: true, clipUrls }), jobId);
   }
 
   res.json({

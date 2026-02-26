@@ -286,6 +286,35 @@ export function DashboardApp() {
     navigate('/', { replace: true });
   }, [logout, navigate]);
 
+  // 61.10: mobile swipe gestures — right-edge swipe to open sidebar, left swipe to close
+  const swipeTouchStartX = useRef(0);
+  const swipeTouchStartY = useRef(0);
+  useEffect(() => {
+    const onTouchStart = (e: TouchEvent) => {
+      swipeTouchStartX.current = e.touches[0].clientX;
+      swipeTouchStartY.current = e.touches[0].clientY;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      const dx = e.changedTouches[0].clientX - swipeTouchStartX.current;
+      const dy = Math.abs(e.changedTouches[0].clientY - swipeTouchStartY.current);
+      // Only horizontal swipes (dx > 2× vertical movement)
+      if (dy > Math.abs(dx) * 0.6) return;
+      if (dx > 80 && swipeTouchStartX.current < 70) {
+        // Swipe right from left edge → open sidebar
+        setSidebarOpen(true);
+      } else if (dx < -80) {
+        // Swipe left anywhere → close sidebar (if open)
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, []);
+
   // Session idle timeout — warn at 25 min, logout at 30 min
   const { showWarning: showIdleWarning, secondsLeft, dismissWarning } = useIdleTimeout({
     idleMs: 25 * 60 * 1000,
