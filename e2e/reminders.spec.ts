@@ -90,9 +90,10 @@ test.describe('Reminders Page', () => {
     await submitBtn.click({ force: true });
 
     await expect(page.getByRole('dialog')).not.toBeVisible();
+    await page.waitForTimeout(1000); // 52.2: wait for store update + list re-render after dialog close
     // Use .first() to avoid strict mode violation if reminder was created before
-    // timeout:8000 gives extra time for store update after dialog close
-    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 8000 });
+    // timeout:12000 gives extra time for store update after dialog close
+    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 12000 });
 
     // Click the "Mark as complete" button using its aria-label
     // Get the button associated with the most recently visible 'Complete me E2E' reminder

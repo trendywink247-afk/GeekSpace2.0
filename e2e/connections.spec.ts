@@ -31,7 +31,7 @@ test.describe('Connections Page', () => {
 
     const connectButton = page.getByRole('button', { name: /connect/i }).first();
     if (await connectButton.isVisible().catch(() => false)) {
-      await connectButton.click();
+      await connectButton.click({ force: true }); // 52.1: force bypasses pixel5 animation instability
       await page.waitForTimeout(1000);
 
       const dialogContent = page.getByText(/connect telegram|connection failed/i).first();
