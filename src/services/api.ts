@@ -403,6 +403,9 @@ export const reminderService = {
 
   exportCsv: (status: 'all' | 'active' | 'completed' = 'all') =>
     api.get<string>(`/reminders/export.csv?status=${status}`),
+
+  exportIcs: (status: 'all' | 'active' | 'completed' = 'active') =>
+    api.get<string>(`/reminders/export.ics?status=${status}`),
 };
 
 // ----- Portfolio ---------------------------------------------
@@ -611,6 +614,14 @@ export const memoryService = {
 
   getReactionSummary: () =>
     api.get<{ reactions: { reaction: string; count: number }[] }>('/agent/conversations/reactions/summary'),
+
+  // 60.2: Star / unstar a message
+  toggleStar: (messageId: string) =>
+    api.post<{ starred: boolean }>(`/agent/conversations/${messageId}/star`),
+
+  // 60.2: Get starred messages
+  getStarred: (limit = 50) =>
+    api.get<{ messages: ConversationEntry[] }>(`/agent/conversations/starred?limit=${limit}`),
 };
 
 // ----- Automation Logs ---------------------------------------
@@ -960,6 +971,10 @@ export const videoService = {
   // 57.13: Stitch clips into one video
   directorStitch: (jobId: string) =>
     api.post<{ stitched: boolean; stitchedUrl: string | null; clipUrls: string[]; softStitch: boolean; cached?: boolean }>(`/videos/director/${jobId}/stitch`),
+
+  // 60.13: Retry a single failed clip
+  directorRetryClip: (jobId: string, clipIndex: number) =>
+    api.post<{ message: string; clipIndex: number }>(`/videos/director/${jobId}/retry-clip/${clipIndex}`),
 };
 
 // ----- Social Media (Social Media Handler) ---------------------

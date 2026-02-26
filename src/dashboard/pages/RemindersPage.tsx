@@ -63,11 +63,24 @@ export function RemindersPage() {
   const { reminders, addReminder, updateReminder, toggleReminder, snoozeReminder, deleteReminder, loadReminders, bulkSnoozeReminders } = useDashboardStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
-  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
-  const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'recurring' | 'one-off'>('all');
+  // 60.5: persist filters to localStorage
+  const LS_KEY = 'geekspace:reminders:filters';
+  const loadFilters = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; } };
+  const savedFilters = loadFilters();
+  const [filter, setFilterRaw] = useState<'all' | 'active' | 'completed'>(savedFilters.filter ?? 'all');
+  const [recurrenceFilter, setRecurrenceFilterRaw] = useState<'all' | 'recurring' | 'one-off'>(savedFilters.recurrenceFilter ?? 'all');
   // 40.1: Category and priority filter pills
-  const [categoryFilter, setCategoryFilter] = useState<'all' | 'personal' | 'work' | 'health' | 'other'>('all');
-  const [priorityFilter, setPriorityFilter] = useState<'all' | 'urgent' | 'high' | 'normal' | 'low'>('all');
+  const [categoryFilter, setCategoryFilterRaw] = useState<'all' | 'personal' | 'work' | 'health' | 'other'>(savedFilters.categoryFilter ?? 'all');
+  const [priorityFilter, setPriorityFilterRaw] = useState<'all' | 'urgent' | 'high' | 'normal' | 'low'>(savedFilters.priorityFilter ?? 'all');
+
+  const persistFilters = (updates: Record<string, string>) => {
+    const current = loadFilters();
+    localStorage.setItem(LS_KEY, JSON.stringify({ ...current, ...updates }));
+  };
+  const setFilter = (v: 'all' | 'active' | 'completed') => { setFilterRaw(v); persistFilters({ filter: v }); };
+  const setRecurrenceFilter = (v: 'all' | 'recurring' | 'one-off') => { setRecurrenceFilterRaw(v); persistFilters({ recurrenceFilter: v }); };
+  const setCategoryFilter = (v: 'all' | 'personal' | 'work' | 'health' | 'other') => { setCategoryFilterRaw(v); persistFilters({ categoryFilter: v }); };
+  const setPriorityFilter = (v: 'all' | 'urgent' | 'high' | 'normal' | 'low') => { setPriorityFilterRaw(v); persistFilters({ priorityFilter: v }); };
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
@@ -761,6 +774,28 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               aria-label="Export reminders as CSV"
             >
               <Download className="w-3 h-3 mr-1" />CSV
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-[11px] border-[#00F0FF]/20 text-[#00F0FF] hover:bg-[#00F0FF]/10 px-2"
+              onClick={async () => {
+                try {
+                  const { data } = await reminderService.exportIcs('active');
+                  const blob = new Blob([data], { type: 'text/calendar' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `reminders-${new Date().toISOString().slice(0, 10)}.ics`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                } catch { /* ignore */ }
+              }}
+              aria-label="Export reminders as iCalendar"
+            >
+              <Download className="w-3 h-3 mr-1" />iCal
             </Button>
           </div>
           {/* 40.1: Category filter pills */}

@@ -48,6 +48,8 @@ export function SettingsPage() {
   const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
   const [isExportingMarkdown7Days, setIsExportingMarkdown7Days] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  // 60.4: keyboard shortcut cheat sheet
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const user = useAuthStore((s) => s.user);
   const [appVersion, setAppVersion] = useState<string | null>(null);
 
@@ -152,6 +154,9 @@ export function SettingsPage() {
   const [memoryFilter, setMemoryFilter] = useState<string>('all');
   const [memoriesLoading, setMemoriesLoading] = useState(false);
   const [reactionSummary, setReactionSummary] = useState<{ reaction: string; count: number }[]>([]);
+  // 60.2: Starred messages
+  const [starredMessages, setStarredMessages] = useState<import('@/types').ConversationEntry[]>([]);
+  const [showStarred, setShowStarred] = useState(false);
 
   // Load API keys from backend on mount
   useEffect(() => {
@@ -184,6 +189,8 @@ export function SettingsPage() {
   useEffect(() => {
     if (activeTab === 'memory') {
       memoryService.getReactionSummary().then(({ data }) => setReactionSummary(data.reactions)).catch(() => {});
+      // 60.2: Load starred messages
+      agentService.getStarred().then(({ data }) => setStarredMessages(data.messages)).catch(() => {});
       setMemoriesLoading(true);
       memoryService.list(memoryFilter === 'all' ? undefined : memoryFilter)
         .then(({ data }) => setMemories(data))
@@ -328,6 +335,18 @@ export function SettingsPage() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [hasUnsavedChanges]);
 
+  // 60.4: global '?' key toggles keyboard shortcut cheat sheet
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '?' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        setShowShortcuts((v) => !v);
+      }
+      if (e.key === 'Escape') setShowShortcuts(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -420,6 +439,59 @@ export function SettingsPage() {
           Settings saved
         </div>
       )}
+
+      {/* 60.4: Keyboard shortcut cheat sheet modal */}
+      {showShortcuts && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowShortcuts(false)}
+          data-testid="shortcuts-modal"
+        >
+          <div
+            className="bg-[#0C0C18] border border-[#00F0FF]/30 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-[#F4F6FF]" style={{ fontFamily: 'Syne, sans-serif' }}>
+                Keyboard Shortcuts
+              </h2>
+              <button onClick={() => setShowShortcuts(false)} className="text-[#6B7280] hover:text-[#F4F6FF] transition-colors text-lg leading-none">✕</button>
+            </div>
+            <div className="space-y-4">
+              {[
+                { group: 'Navigation', items: [
+                  { key: '?', desc: 'Toggle this cheat sheet' },
+                  { key: 'Esc', desc: 'Close modals / dialogs' },
+                ]},
+                { group: 'Reminders', items: [
+                  { key: 'N', desc: 'New reminder (when on Reminders page)' },
+                  { key: '/', desc: 'Focus search (when on Reminders page)' },
+                ]},
+                { group: 'Chat', items: [
+                  { key: 'Enter', desc: 'Send message' },
+                  { key: 'Shift + Enter', desc: 'New line in message' },
+                ]},
+                { group: 'Settings', items: [
+                  { key: 'Ctrl + S', desc: 'Save profile changes' },
+                ]},
+              ].map(({ group, items }) => (
+                <div key={group}>
+                  <p className="text-[10px] uppercase tracking-widest text-[#6B7280] mb-1.5">{group}</p>
+                  <div className="space-y-1">
+                    {items.map(({ key, desc }) => (
+                      <div key={key} className="flex items-center justify-between">
+                        <span className="text-[#9CA3AF] text-sm">{desc}</span>
+                        <kbd className="px-2 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/20 text-[#00F0FF] text-xs font-mono">{key}</kbd>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-5 text-[11px] text-[#6B7280] text-center">Press <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">?</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">Esc</kbd> to close</p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
@@ -434,6 +506,17 @@ export function SettingsPage() {
               You have unsaved changes
             </div>
           )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowShortcuts(true)}
+              className="border-[#00F0FF]/20 text-[#6B7280] hover:text-[#00F0FF] hover:border-[#00F0FF]/40 text-xs"
+              title="Keyboard shortcuts (?)"
+              data-testid="shortcuts-btn"
+            >
+              <kbd className="text-xs font-mono mr-1">?</kbd>Shortcuts
+            </Button>
           <Button onClick={handleSave} disabled={isSaving} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">
             {isSaving ? (
               <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
@@ -441,6 +524,7 @@ export function SettingsPage() {
               <><Save className="w-4 h-4 mr-2" />Save Changes</>
             )}
           </Button>
+          </div>
         </div>
       </div>
 
@@ -1168,6 +1252,56 @@ export function SettingsPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* 60.2: Starred Messages */}
+          <Card className="border-[#F59E0B]/20">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <span className="text-base">⭐</span> Starred Messages
+                  {starredMessages.length > 0 && (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B]">{starredMessages.length}</span>
+                  )}
+                </CardTitle>
+                <button
+                  onClick={() => setShowStarred(s => !s)}
+                  className="text-xs text-[#6B7280] hover:text-[#F59E0B] transition-colors"
+                >
+                  {showStarred ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              <CardDescription className="text-[#6B7280] text-xs">Messages you've starred from your conversation history</CardDescription>
+            </CardHeader>
+            {showStarred && (
+              <CardContent className="space-y-2 max-h-64 overflow-y-auto">
+                {starredMessages.length === 0 ? (
+                  <p className="text-xs text-[#4B5563] py-2">No starred messages yet. Star messages from your conversation history.</p>
+                ) : (
+                  starredMessages.map((msg) => (
+                    <div key={msg.id} className="flex items-start gap-2 p-2 rounded-lg bg-[#0C0C18] border border-[#F59E0B]/20">
+                      <span className="text-xs mt-0.5">{msg.role === 'user' ? '👤' : '🤖'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-[#E8E8F0] line-clamp-2">{msg.content}</p>
+                        <p className="text-[10px] text-[#4B5563] mt-0.5">{new Date(msg.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          agentService.toggleStar(msg.id).then(() => {
+                            setStarredMessages(prev => prev.filter(m => m.id !== msg.id));
+                          }).catch(() => {});
+                        }}
+                        className="shrink-0 text-[#F59E0B] hover:text-[#6B7280] transition-colors"
+                        title="Unstar"
+                        data-testid={`unstar-msg-${msg.id}`}
+                      >
+                        ★
+                      </button>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            )}
+          </Card>
 
           <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">
             <CardContent className="p-4">

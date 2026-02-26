@@ -479,6 +479,7 @@ export interface ConversationEntry {
   summary: string;
   tags: string;
   createdAt: string;
+  starred?: boolean;
 }
 
 // ----- Chart Data --------------------------------------------

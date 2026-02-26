@@ -883,6 +883,22 @@ export function VideoGenPage() {
                         <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-[#FF6161]">
                           <AlertCircle className="w-4 h-4" />
                           <span className="text-[9px]">Failed</span>
+                          {/* 60.13: per-clip retry */}
+                          {directorJob.status === 'done' && directorJobId && (
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  await videoService.directorRetryClip(directorJobId, i);
+                                  showToast(`Retrying clip ${i + 1}…`);
+                                } catch { showToast('Retry failed — try again'); }
+                              }}
+                              className="text-[8px] px-1.5 py-0.5 rounded bg-[#FF6161]/20 hover:bg-[#FF6161]/40 text-[#FF6161] transition-colors"
+                              data-testid={`retry-clip-${i}`}
+                            >
+                              ↻ Retry
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -918,21 +934,29 @@ export function VideoGenPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => void handleStitch()}
-                        disabled={stitching}
-                        data-testid="stitch-btn"
-                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10 disabled:opacity-50 transition-colors"
-                      >
-                        {stitching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
-                        {stitching ? 'Stitching…' : 'Stitch Clips'}
-                      </button>
-                      {stitching && (
-                        <div className="flex-1 h-1.5 rounded-full bg-[#0C0C18] overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-[#BF5FFF] to-[#00F0FF] animate-pulse rounded-full" style={{ width: '60%' }} />
-                        </div>
+                    <div className="space-y-1.5">
+                      {/* 60.13: show partial clip count when some failed */}
+                      {directorJob.clips.some((c) => !c.success) && (
+                        <p className="text-[10px] text-amber-400">
+                          {directorJob.clips.filter((c) => c.success).length}/{directorJob.clips.length} clips succeeded — stitch will use successful clips only
+                        </p>
                       )}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => void handleStitch()}
+                          disabled={stitching || !directorJob.clips.some((c) => c.success)}
+                          data-testid="stitch-btn"
+                          className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10 disabled:opacity-50 transition-colors"
+                        >
+                          {stitching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
+                          {stitching ? 'Stitching…' : directorJob.clips.some((c) => !c.success) ? 'Partial Stitch' : 'Stitch Clips'}
+                        </button>
+                        {stitching && (
+                          <div className="flex-1 h-1.5 rounded-full bg-[#0C0C18] overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-[#BF5FFF] to-[#00F0FF] animate-pulse rounded-full" style={{ width: '60%' }} />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                   <button

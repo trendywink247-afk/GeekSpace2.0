@@ -379,6 +379,78 @@ remindersRouter.get('/export.csv', requireAuth, (req: AuthRequest, res) => {
   res.send([header, ...lines].join('\n'));
 });
 
+// ── 60.3: iCalendar Export ────────────────────────────────────────────────────
+remindersRouter.get('/export.ics', requireAuth, (req: AuthRequest, res) => {
+  const status = (req.query.status as string) || 'all';
+  let query = 'SELECT id, text, datetime, category, priority, channel, recurring FROM reminders WHERE user_id = ? AND completed = 0';
+  const params: unknown[] = [req.userId!];
+  if (status === 'completed') {
+    query = 'SELECT id, text, datetime, category, priority, channel, recurring FROM reminders WHERE user_id = ? AND completed = 1';
+  } else if (status === 'all') {
+    query = 'SELECT id, text, datetime, category, priority, channel, recurring FROM reminders WHERE user_id = ?';
+  }
+  query += ' ORDER BY datetime ASC';
+
+  const rows = db.prepare(query).all(...params) as Array<{
+    id: string; text: string; datetime: string; category: string;
+    priority: string; channel: string; recurring: string | null;
+  }>;
+
+  const now = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  const toIcalDate = (dt: string) => {
+    // dt may be ISO 8601 "2025-06-01T09:00:00.000Z" or "2025-06-01 09:00"
+    const d = new Date(dt);
+    if (isNaN(d.getTime())) return now;
+    return d.toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  };
+
+  const foldLine = (line: string) => {
+    // RFC 5545 §3.1: fold lines longer than 75 octets
+    const chunks: string[] = [];
+    while (line.length > 75) { chunks.push(line.slice(0, 75)); line = ' ' + line.slice(75); }
+    chunks.push(line);
+    return chunks.join('\r\n');
+  };
+
+  const events = rows.map((r) => {
+    const dtstart = toIcalDate(r.datetime);
+    const dtend = toIcalDate(r.datetime); // single-instant event
+    const summary = r.text.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
+    const desc = `Category: ${r.category} | Priority: ${r.priority || 'normal'} | Channel: ${r.channel}`;
+    const rrule = r.recurring === 'daily' ? 'RRULE:FREQ=DAILY'
+      : r.recurring === 'weekly' ? 'RRULE:FREQ=WEEKLY'
+      : r.recurring === 'monthly' ? 'RRULE:FREQ=MONTHLY'
+      : null;
+    const lines = [
+      'BEGIN:VEVENT',
+      foldLine(`UID:${r.id}@geekspace`),
+      `DTSTAMP:${now}`,
+      `DTSTART:${dtstart}`,
+      `DTEND:${dtend}`,
+      foldLine(`SUMMARY:${summary}`),
+      foldLine(`DESCRIPTION:${desc}`),
+    ];
+    if (rrule) lines.push(rrule);
+    lines.push('END:VEVENT');
+    return lines.join('\r\n');
+  });
+
+  const cal = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//GeekSpace//Reminders//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    ...events,
+    'END:VCALENDAR',
+  ].join('\r\n');
+
+  const date = new Date().toISOString().slice(0, 10);
+  res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="reminders-${date}.ics"`);
+  res.send(cal);
+});
+
 // ── 41.1: Bulk Complete ────────────────────────────────────────────────────
 remindersRouter.post('/bulk-complete', requireAuth, (req: AuthRequest, res) => {
   const { ids } = req.body as { ids: string[] };
