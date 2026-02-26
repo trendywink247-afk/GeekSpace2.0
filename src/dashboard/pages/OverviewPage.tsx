@@ -7,6 +7,7 @@ import {
   ExternalLink,
   Zap,
   CheckCircle,
+  CheckCircle2,
   TrendingUp,
   Clock,
   Activity,
@@ -369,6 +370,11 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   };
 
   // Derive quick stats from store
+  // 63.7: Count reminders completed today
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const doneToday = reminders.filter((r) => r.completed && new Date((r as { completed_at?: string }).completed_at || r.createdAt || '').getTime() >= todayStart.getTime()).length
+    || (reminderStreak?.completedToday ? 1 : 0);
+
   const quickStats = [
     {
       label: 'Messages Sent',
@@ -385,6 +391,14 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
       change: `${stats.remindersChange > 0 ? '+' : ''}${stats.remindersChange}`,
       trend: stats.remindersChange >= 0 ? 'up' as const : 'down' as const,
       color: statAccents[1],
+    },
+    {
+      label: 'Done Today',
+      value: String(doneToday),
+      icon: CheckCircle2,
+      change: reminderStreak?.completedToday ? '✓ streak' : '—',
+      trend: 'up' as const,
+      color: '#00FF88',
     },
     {
       label: 'API Calls',

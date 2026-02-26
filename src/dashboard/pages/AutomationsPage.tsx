@@ -113,6 +113,8 @@ export function AutomationsPage() {
   const [logsOffset, setLogsOffset] = useState(0);
   const [logsHasMore, setLogsHasMore] = useState(false);
   const [logsLoadingMore, setLogsLoadingMore] = useState(false);
+  // 63.4: Run log status filter
+  const [logsStatusFilter, setLogsStatusFilter] = useState<'' | 'success' | 'failed' | 'error'>('');
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string; statusCode?: number; latencyMs?: number; responseBody?: string } | null>(null);
   // 37.4: Dead-letter log
@@ -131,20 +133,20 @@ export function AutomationsPage() {
   };
 
   useEffect(() => {
-    automationLogService.list(20, 0).then((r) => {
+    automationLogService.list(20, 0, logsStatusFilter || undefined).then((r) => {
       setLogs(r.data.logs);
       setLogsOffset(0);
       setLogsHasMore(r.data.logs.length === 20);
     }).catch(() => setLogs([]));
     automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => setDeadLetters([]));
-  }, []);
+  }, [logsStatusFilter]);
 
   // 53.7: Load more logs handler
   const handleLoadMoreLogs = async () => {
     setLogsLoadingMore(true);
     try {
       const nextOffset = logsOffset + 20;
-      const r = await automationLogService.list(20, nextOffset);
+      const r = await automationLogService.list(20, nextOffset, logsStatusFilter || undefined);
       setLogs(prev => [...prev, ...r.data.logs]);
       setLogsOffset(nextOffset);
       setLogsHasMore(r.data.logs.length === 20);
@@ -791,9 +793,23 @@ export function AutomationsPage() {
 
       {/* Recent Runs */}
       <div className="mt-6">
-        <h2 className="text-lg font-bold text-[#E8E8F0] mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Recent Runs
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-[#E8E8F0]" style={{ fontFamily: 'Syne, sans-serif' }}>
+            Recent Runs
+          </h2>
+          {/* 63.4: Status filter */}
+          <select
+            value={logsStatusFilter}
+            onChange={(e) => setLogsStatusFilter(e.target.value as typeof logsStatusFilter)}
+            className="text-xs px-2 py-1 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280] focus:outline-none"
+            aria-label="Filter logs by status"
+          >
+            <option value="">All statuses</option>
+            <option value="success">Success</option>
+            <option value="failed">Failed</option>
+            <option value="error">Error</option>
+          </select>
+        </div>
         {logs.length === 0 ? (
           <Card className="border-[#00F0FF]/20">
             <CardContent className="py-10 text-center">

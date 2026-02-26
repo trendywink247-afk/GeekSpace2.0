@@ -522,6 +522,10 @@ export const portfolioService = {
   // 42.4: GET /portfolio/me/stats — view_count, contact_count, project_count, last_viewed_at
   getMeStats: () =>
     api.get<{ view_count: number; contact_count: number; project_count: number; last_viewed_at: string | null }>('/portfolio/me/stats'),
+
+  // 63.2: Download daily analytics as CSV
+  exportAnalyticsCSV: () =>
+    api.get<string>('/portfolio/me/analytics/export', { responseType: 'text' }),
 };
 
 // ----- Activity Stats ----------------------------------------
@@ -642,9 +646,11 @@ export const memoryService = {
 // ----- Automation Logs ---------------------------------------
 
 export const automationLogService = {
-  // 53.7: Paginated — returns { logs, limit, offset }
-  list: (limit = 50, offset = 0) =>
-    api.get<{ logs: AutomationLog[]; limit: number; offset: number }>(`/automations/logs?limit=${limit}&offset=${offset}`),
+  // 53.7: Paginated — returns { logs, limit, offset }; 63.4: optional status filter
+  list: (limit = 50, offset = 0, status?: string) =>
+    api.get<{ logs: AutomationLog[]; limit: number; offset: number }>(
+      `/automations/logs?limit=${limit}&offset=${offset}${status ? `&status=${status}` : ''}`
+    ),
 
   forAutomation: (automationId: string, limit = 50, offset = 0) =>
     api.get<{ logs: AutomationLog[]; limit: number; offset: number }>(`/automations/${automationId}/logs?limit=${limit}&offset=${offset}`),

@@ -248,6 +248,8 @@ export function RemindersPage() {
   const [isBulkRestoringSnooze, setIsBulkRestoringSnooze] = useState(false);
   // 62.10: Batch edit state
   const [isBatchEditing, setIsBatchEditing] = useState(false);
+  // 63.3: Group-by mode toggle (date vs category)
+  const [groupMode, setGroupMode] = useState<'date' | 'category'>('date');
 
   // Bulk snooze state (29.4)
   const [selectedActiveIds, setSelectedActiveIds] = useState<Set<string>>(new Set());
@@ -476,6 +478,38 @@ export function RemindersPage() {
       setIsBulkDeletingActive(false);
     }
   };
+
+  // ── Relative time helper ────────────────────────────────────────────────────
+function formatRelativeTime(datetime: string): string {
+  const ms = new Date(datetime).getTime() - Date.now();
+  const abs = Math.abs(ms);
+  const mins = Math.floor(abs / 60000);
+  const hours = Math.floor(abs / 3600000);
+  const days = Math.floor(abs / 86400000);
+  const past = ms < 0;
+  if (abs < 60000) return past ? 'just now' : 'in a moment';
+  if (mins < 60) return past ? `${mins}m ago` : `in ${mins}m`;
+  if (hours < 24) return past ? `${hours}h ago` : `in ${hours}h`;
+  if (days === 1) return past ? 'yesterday' : 'tomorrow';
+  return past ? `${days}d ago` : `in ${days}d`;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+  // ── Category grouping helper ────────────────────────────────────────────────
+function groupRemindersByCategory(reminders: Reminder[]) {
+  const order = ['work', 'personal', 'health', 'other', 'general'];
+  const map = new Map<string, Reminder[]>();
+  for (const r of reminders) {
+    const cat = r.category ?? 'general';
+    if (!map.has(cat)) map.set(cat, []);
+    map.get(cat)!.push(r);
+  }
+  return order
+    .filter((cat) => map.has(cat))
+    .concat([...map.keys()].filter((k) => !order.includes(k)))
+    .map((cat) => ({ label: cat.charAt(0).toUpperCase() + cat.slice(1), items: map.get(cat)! }));
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
   // ── Date grouping helper ─────────────────────────────────────────────────────
 function groupRemindersByDate(reminders: Reminder[]) {
@@ -885,21 +919,42 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             </button>
           )}
         </div>
-        <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
-          <button
-            onClick={() => setViewMode('list')}
-            aria-label="List view"
-            className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'list' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
-          >
-            <List className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setViewMode('calendar')}
-            aria-label="Calendar view"
-            className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'calendar' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
+        <div className="flex items-center gap-2">
+          {/* 63.3: Group-by toggle */}
+          <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
+            <button
+              onClick={() => setGroupMode('date')}
+              aria-label="Group by date"
+              title="Group by date"
+              className={`p-2 rounded transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center text-xs font-medium ${groupMode === 'date' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setGroupMode('category')}
+              aria-label="Group by category"
+              title="Group by category"
+              className={`p-2 rounded transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center text-xs font-medium ${groupMode === 'category' ? 'bg-[#BF5FFF]/20 text-[#BF5FFF]' : 'text-[#6B7280]'}`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('list')}
+              aria-label="List view"
+              className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'list' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('calendar')}
+              aria-label="Calendar view"
+              className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'calendar' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1060,8 +1115,8 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               <p className="text-sm text-[#6B7280]/70 mt-1">Use the quick add above to create your first reminder</p>
             </div>
           ) : filter === 'active' ? (
-            // Grouped view for active reminders
-            groupRemindersByDate(filteredReminders).map(({ label, items }) => (
+            // Grouped view for active reminders (date or category)
+            (groupMode === 'category' ? groupRemindersByCategory(filteredReminders) : groupRemindersByDate(filteredReminders)).map(({ label, items }) => (
               <div key={label} className="mb-4">
                 <div className="flex items-center gap-2 mb-2 px-1">
                   <span className="text-xs font-semibold uppercase tracking-wider text-[#8888AA]">{label}</span>
@@ -1152,7 +1207,10 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                     <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-[#FF6161]' : 'text-[#6B7280]'}`}>
                                       <Clock className="w-3 h-3" />
                                       {formatted.time}
-                                      {overdue && ' (overdue)'}
+                                    </span>
+                                    {/* 63.10: relative time */}
+                                    <span className={`text-[10px] font-medium ${overdue ? 'text-[#FF6161]/80' : 'text-[#6B7280]/60'}`}>
+                                      {formatRelativeTime(reminder.datetime)}
                                     </span>
                                     {dueSoon && (
                                       <Badge className="text-[10px] px-1.5 py-0 bg-[#00FF88]/15 text-[#00FF88] border-[#00FF88]/30">
