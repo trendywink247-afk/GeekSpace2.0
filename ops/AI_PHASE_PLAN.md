@@ -163,21 +163,42 @@ E2E flake fixes, load-error banner, portfolio inline preview, auth/refresh rate 
 
 ---
 
-## Phase 57 — PLANNED (13 items)
-**Theme:** Virtual scroll, notification preferences, webhook editor, pagination, hardening
+## Phase 57 — COMPLETE ✓
+**PR:** #88 merged SHA 9b16fbf | **Tests:** 556/556
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 57.1 | CI review | ✅ (clean) | Reliability |
+| 57.2 | CSS contain on activity feed (OverviewPage) | ✅ | Performance |
+| 57.3 | Notification toggle revert-on-failure | ✅ | UX |
+| 57.4 | Agent chat unread count badge | ✅ | UX |
+| 57.5 | CSRF token validation | deferred | Security |
+| 57.6 | E2E flaky fixes (connections pixel5, reminders select-all) | ✅ | Reliability |
+| 57.7 | Portfolio swipeable cards | deferred | Mobile |
+| 57.8 | /api/admin/stats enhanced (memory, uptime, dbSize, activeToday) | ✅ | Dev/Ops |
+| 57.9 | Agent config save-confirmation toast | ✅ | State-sync |
+| 57.10 | Dead-letter retry_count + last_error DB + UI | ✅ | Reliability |
+| 57.11 | Tests + verification + PR/merge (556 tests) | ✅ | Dev/Ops |
+| 57.12 | Brand gate | ✅ (clean) | Brand |
+| 57.13 | Stitch progress bar + Rerun button (VideoGenPage) | ✅ | Feature |
+
+---
+
+## Phase 58 — PLANNED (13 items)
+**Theme:** Bulk operations, analytics, pagination, mobile polish, auto-stitch
 
 | # | Item | Category |
 |---|------|----------|
-| 57.1 | Fix: Review any CI issues from Phase 56 | Reliability |
-| 57.2 | Performance: Virtual scroll for activity log (react-window or CSS contain) | Performance |
-| 57.3 | UX: Notification preferences real-time toggle sync (prevent stale toggles) | UX |
-| 57.4 | UX: Agent chat — scroll-to-bottom button on overflow | UX |
-| 57.5 | Security: CSRF token validation for state-mutating non-JSON requests | Security |
-| 57.6 | Edge-case: Reminder batch complete via keyboard (Select All + Enter) | Edge-case |
-| 57.7 | Mobile: Portfolio page swipeable project cards | Mobile |
-| 57.8 | Ops: /api/admin/stats — total users, active today, memory, DB size | Dev/Ops |
-| 57.9 | State-sync: Agent config saved-confirmation toast (vs silent save) | State-sync |
-| 57.10 | Reliability: Webhook dead-letter UI retry count + last-error display | Reliability |
-| 57.11 | Phase 57 tests + verification gate + PR/merge | Dev/Ops |
-| 57.12 | Brand gate: npm run brand-guard → 0 violations | Brand |
-| 57.13 | **Seedance Director Mode** (Task 13): Stitch progress bar + Rerun button | Feature |
+| 58.1 | Fix: CI review post-Phase-57 | Reliability |
+| 58.2 | Reliability: Reminder bulk-delete for active tab (not just completed) | Reliability |
+| 58.3 | UX: Portfolio analytics chart — views over 30 days sparkline | UX |
+| 58.4 | UX: Chat message reply-to context in UI | UX |
+| 58.5 | Security: CSRF token validation for state-mutating requests | Security |
+| 58.6 | Edge-case: Webhook test-fire result modal with full response body | Edge-case |
+| 58.7 | Mobile: Settings page section collapse on mobile | Mobile |
+| 58.8 | Ops: Automations run-log pagination (currently shows last 10) | Dev/Ops |
+| 58.9 | State-sync: Video gallery sort by status/date toggle | State-sync |
+| 58.10 | Performance: Conversation list virtual scroll (CSS contain fallback) | Performance |
+| 58.11 | Phase 58 tests + verification gate + PR/merge | Dev/Ops |
+| 58.12 | Brand gate: npm run brand-guard → 0 violations | Brand |
+| 58.13 | **Seedance Director Mode** (Task 13): Auto-stitch when all clips complete | Feature |
