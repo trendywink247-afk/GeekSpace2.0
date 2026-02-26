@@ -1145,6 +1145,8 @@ export const suggestionService = {
     api.post<{ upvotes: number; downvotes: number }>(`/suggestions/${id}/vote`, { vote }),
   events: (id: string) =>
     api.get<{ events: Array<{ id: string; suggestionId: string; oldStatus: string; newStatus: string; changedBy: string; changedAt: string }> }>(`/suggestions/${id}/events`),
+  get: (id: string) =>
+    api.get<{ id: string; userId: string; title: string; body: string; tags: string[]; status: string; createdAt: string; updatedAt: string; upvotes: number; downvotes: number }>(`/suggestions/${id}`),
 };
 
 export default api;
