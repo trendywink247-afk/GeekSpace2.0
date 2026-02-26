@@ -105,6 +105,10 @@ export function AutomationsPage() {
   });
   const [saveError, setSaveError] = useState('');
   const [logs, setLogs] = useState<AutomationLog[]>([]);
+  // 53.7: Pagination state for automation logs
+  const [logsOffset, setLogsOffset] = useState(0);
+  const [logsHasMore, setLogsHasMore] = useState(false);
+  const [logsLoadingMore, setLogsLoadingMore] = useState(false);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string } | null>(null);
   // 37.4: Dead-letter log
@@ -119,9 +123,27 @@ export function AutomationsPage() {
   };
 
   useEffect(() => {
-    automationLogService.list(20).then((r) => setLogs(r.data)).catch(() => setLogs([]));
+    automationLogService.list(20, 0).then((r) => {
+      setLogs(r.data.logs);
+      setLogsOffset(0);
+      setLogsHasMore(r.data.logs.length === 20);
+    }).catch(() => setLogs([]));
     automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => setDeadLetters([]));
   }, []);
+
+  // 53.7: Load more logs handler
+  const handleLoadMoreLogs = async () => {
+    setLogsLoadingMore(true);
+    try {
+      const nextOffset = logsOffset + 20;
+      const r = await automationLogService.list(20, nextOffset);
+      setLogs(prev => [...prev, ...r.data.logs]);
+      setLogsOffset(nextOffset);
+      setLogsHasMore(r.data.logs.length === 20);
+    } catch { /* ignore */ } finally {
+      setLogsLoadingMore(false);
+    }
+  };
 
   const handleOpenAdd = () => {
     resetForm();
@@ -188,7 +210,7 @@ export function AutomationsPage() {
       setTimeout(() => setTriggerErrors((prev) => { const next = { ...prev }; delete next[id]; return next; }), 4000);
     }
     // 49.2/49.5: Refresh logs and dead-letters after trigger so the panel shows the new log entry
-    automationLogService.list(20).then((r) => setLogs(r.data)).catch(() => {});
+    automationLogService.list(20, 0).then((r) => { setLogs(r.data.logs); setLogsOffset(0); setLogsHasMore(r.data.logs.length === 20); }).catch(() => {});
     automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => {});
   };
 
@@ -695,6 +717,25 @@ export function AutomationsPage() {
                 </tbody>
               </table>
             </div>
+            {/* 53.7: Load More button for paginated logs */}
+            {logsHasMore && (
+              <div className="flex justify-center p-3 border-t border-[#00F0FF]/10">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLoadMoreLogs}
+                  disabled={logsLoadingMore}
+                  className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10"
+                >
+                  {logsLoadingMore ? (
+                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Clock className="w-4 h-4 mr-2" />
+                  )}
+                  Load More Runs
+                </Button>
+              </div>
+            )}
           </Card>
         )}
 

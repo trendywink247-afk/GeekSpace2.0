@@ -413,15 +413,16 @@ export function onAutomationChanged(automationId: string) {
 
 // ---- Get execution logs ----
 
-export function getAutomationLogs(userId: string, automationId?: string, limit = 50): unknown[] {
+export function getAutomationLogs(userId: string, automationId?: string, limit = 50, offset = 0): unknown[] {
+  // 53.7: Pagination via LIMIT + OFFSET
   if (automationId) {
     return db.prepare(
-      'SELECT * FROM automation_logs WHERE user_id = ? AND automation_id = ? ORDER BY created_at DESC LIMIT ?'
-    ).all(userId, automationId, limit);
+      'SELECT * FROM automation_logs WHERE user_id = ? AND automation_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    ).all(userId, automationId, limit, offset);
   }
   return db.prepare(
-    'SELECT * FROM automation_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
-  ).all(userId, limit);
+    'SELECT * FROM automation_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+  ).all(userId, limit, offset);
 }
 
 // ---- Portfolio Visit Trigger (called from portfolio route) ----

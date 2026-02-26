@@ -424,7 +424,7 @@ export function SettingsPage() {
               <CardContent className="p-6 text-center">
                 <div className="relative inline-block mb-4">
                   {profile.avatar ? (
-                    <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[#0C0C18]" />
+                    <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[#0C0C18] object-cover" />
                   ) : (
                     <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center text-3xl font-bold">
                       {profile.name.split(' ').map(n => n[0]).join('')}
@@ -442,6 +442,35 @@ export function SettingsPage() {
                   >
                     <Sparkles className="w-4 h-4 text-white" />
                   </button>
+                </div>
+                {/* 53.9: Upload photo with live preview */}
+                <div className="mt-2">
+                  <label className="cursor-pointer">
+                    <span className="text-xs text-[#00F0FF] hover:text-[#00D4B0] transition-colors underline underline-offset-2">Upload Photo</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 500 * 1024) {
+                          alert('Image must be under 500 KB');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const dataUrl = ev.target?.result as string;
+                          if (dataUrl) {
+                            setProfile({ ...profile, avatar: dataUrl });
+                            setHasUnsavedChanges(true);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                  <p className="text-[10px] text-[#6B7280] mt-1">Max 500 KB · JPEG, PNG, WebP</p>
                 </div>
                 <h3 className="font-semibold text-[#E8E8F0]">{profile.name}</h3>
                 <p className="text-sm text-[#6B7280]">@{profile.username}</p>

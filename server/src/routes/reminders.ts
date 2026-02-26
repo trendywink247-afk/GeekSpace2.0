@@ -231,6 +231,54 @@ remindersRouter.post('/bulk-snooze', requireAuth, (req: AuthRequest, res) => {
   res.json({ snoozed: owned.length, newDatetime });
 });
 
+// ── 53.4: Bulk restore-and-snooze for completed reminders ────────────────────
+remindersRouter.post('/bulk-restore-snooze', requireAuth, (req: AuthRequest, res) => {
+  const { ids, preset } = req.body as { ids: string[]; preset: '1h' | 'tomorrow' | 'next-week' };
+
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 100) {
+    res.status(400).json({ error: 'ids must be a non-empty array of max 100' });
+    return;
+  }
+  if (!['1h', 'tomorrow', 'next-week'].includes(preset)) {
+    res.status(400).json({ error: 'Invalid preset' });
+    return;
+  }
+
+  const now = new Date();
+  let newDatetime: string;
+  if (preset === '1h') {
+    newDatetime = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+  } else if (preset === 'tomorrow') {
+    const d = new Date(now); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0);
+    newDatetime = d.toISOString();
+  } else {
+    const d = new Date(now); d.setDate(d.getDate() + 7); d.setHours(9, 0, 0, 0);
+    newDatetime = d.toISOString();
+  }
+
+  const placeholders = ids.map(() => '?').join(', ');
+  // Verify ownership (includes completed ones)
+  const owned = db.prepare(
+    `SELECT id FROM reminders WHERE id IN (${placeholders}) AND user_id = ?`
+  ).all(...ids, req.userId!) as Array<{ id: string }>;
+
+  if (owned.length === 0) { res.json({ restored: 0 }); return; }
+
+  const ownedIds = owned.map((r) => r.id);
+  const updPlaceholders = ownedIds.map(() => '?').join(', ');
+  db.prepare(
+    `UPDATE reminders SET completed = 0, datetime = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id IN (${updPlaceholders})`
+  ).run(newDatetime, ...ownedIds);
+
+  const logStmt = db.prepare('INSERT INTO snooze_log (id, reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?, ?)');
+  const snoozedAt = Date.now();
+  for (const rid of ownedIds) {
+    logStmt.run(uuid(), rid, req.userId!, snoozedAt, `restore-${preset}`, newDatetime);
+  }
+
+  res.json({ restored: ownedIds.length, newDatetime });
+});
+
 // ── Individual Snooze (36.1 + 37.2) — preset or custom datetime ──────────────
 remindersRouter.post('/:id/snooze', requireAuth, (req: AuthRequest, res) => {
   const { preset, customDatetime } = req.body as { preset?: string; customDatetime?: string };
