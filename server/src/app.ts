@@ -42,6 +42,7 @@ import { videosRouter } from './routes/videos.js';
 import { socialMediaRouter } from './routes/social-media.js';
 import { activityRouter } from './routes/activity.js';
 import { routesListRouter } from './routes/routes-list.js';
+import { suggestionsRouter } from './routes/suggestions.js';
 import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
@@ -405,6 +406,7 @@ export function createApp(): express.Application {
   app.use('/api/social-media', socialMediaRouter);
   app.use('/api/activity', activityRouter);
   app.use('/api/routes', routesListRouter);
+  app.use('/api/suggestions', suggestionsRouter);
 
   // ---- Test routes (only in test mode) ----
   if (config.isTestMode) {
