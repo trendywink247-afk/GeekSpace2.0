@@ -30,4 +30,21 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
+            return 'recharts';
+          }
+          if (id.includes('node_modules/@radix-ui/')) {
+            return 'radix-ui';
+          }
+          if (id.includes('node_modules/framer-motion')) {
+            return 'framer-motion';
+          }
+        },
+      },
+    },
+  },
 });
