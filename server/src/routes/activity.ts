@@ -15,18 +15,28 @@ activityRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   // 46.8: Reduced default from 50 to 25 to lower initial payload size
   const limit = Math.min(Number(req.query.limit) || 25, 100);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
+  // 64.3: text search — partial match on action or details
+  const q = typeof req.query.q === 'string' && req.query.q.trim() ? req.query.q.trim() : null;
+  // 64.6: action type filter — exact prefix match on action field
+  const actionType = typeof req.query.type === 'string' && req.query.type.trim() ? req.query.type.trim() : null;
+
+  const whereClauses: string[] = ['user_id = ?'];
+  const params: unknown[] = [userId];
+  if (q) { whereClauses.push('(action LIKE ? OR details LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+  if (actionType) { whereClauses.push('action = ?'); params.push(actionType); }
+  const where = whereClauses.join(' AND ');
 
   const entries = db.prepare(`
     SELECT id, action, details, icon, created_at
     FROM activity_log
-    WHERE user_id = ?
+    WHERE ${where}
     ORDER BY created_at DESC
     LIMIT ? OFFSET ?
-  `).all(userId, limit, offset);
+  `).all(...params, limit, offset);
 
   const { total } = db.prepare(
-    'SELECT COUNT(*) AS total FROM activity_log WHERE user_id = ?'
-  ).get(userId) as { total: number };
+    `SELECT COUNT(*) AS total FROM activity_log WHERE ${where}`
+  ).get(...params) as { total: number };
 
   res.json({ activity: entries, total });
 });
@@ -55,6 +65,25 @@ activityRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
     days.push({ date: dateStr, messages: msgs.c, reminders: rems.c });
   }
   res.json({ days });
+});
+
+// ---- 64.8: GET /activity/export — CSV download of last 500 activity entries ----
+activityRouter.get('/export', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const rows = db.prepare(`
+    SELECT id, action, details, icon, created_at
+    FROM activity_log WHERE user_id = ?
+    ORDER BY created_at DESC LIMIT 500
+  `).all(userId) as Array<{ id: string; action: string; details: string; icon: string; created_at: string }>;
+
+  const escape = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  let csv = 'date,action,details\n';
+  for (const r of rows) {
+    csv += `${escape(r.created_at)},${escape(r.action)},${escape(r.details)}\n`;
+  }
+  res.set('Content-Type', 'text/csv');
+  res.set('Content-Disposition', 'attachment; filename="activity-log.csv"');
+  res.send(csv);
 });
 
 // ---- 41.5: DELETE /activity/:id — delete single activity log entry ----

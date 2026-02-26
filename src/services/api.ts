@@ -162,8 +162,12 @@ export const userService = {
   setPreferredModel: (model: string) =>
     api.put<{ preferredModel: string }>('/users/me/model', { model }),
 
-  getActivity: (limit = 50, offset = 0) =>
-    api.get<{ activity: ActivityEntry[]; total: number }>(`/activity?limit=${limit}&offset=${offset}`),
+  getActivity: (limit = 50, offset = 0, q?: string, actionType?: string) => {
+    const params: Record<string, string | number> = { limit, offset };
+    if (q) params.q = q;
+    if (actionType) params.type = actionType;
+    return api.get<{ activity: ActivityEntry[]; total: number }>('/activity', { params });
+  },
 
   clearActivity: () =>
     api.delete<{ deleted: number }>('/activity'),
@@ -422,6 +426,9 @@ export const reminderService = {
 
   exportIcs: (status: 'all' | 'active' | 'completed' = 'active') =>
     api.get<string>(`/reminders/export.ics?status=${status}`),
+
+  // 64.4: Duplicate a reminder
+  duplicate: (id: string) => api.post<Reminder>(`/reminders/${id}/duplicate`),
 };
 
 // ----- Portfolio ---------------------------------------------
@@ -532,6 +539,8 @@ export const portfolioService = {
 
 export const activityService = {
   getStats: () => api.get<{ days: { date: string; messages: number; reminders: number }[] }>('/activity/stats'),
+  // 64.8: CSV export of last 500 activity entries
+  export: () => api.get<Blob>('/activity/export', { responseType: 'blob' }),
 };
 
 // ----- Automations -------------------------------------------
@@ -564,6 +573,9 @@ export const automationService = {
 
   // 59.4: Duplicate an automation
   duplicate: (id: string) => api.post<Automation>(`/automations/${id}/duplicate`),
+
+  // 64.5: Automation stats (total, enabled, disabled, recentRuns, byTrigger)
+  getStats: () => api.get<{ total: number; enabled: number; disabled: number; byTrigger: Array<{ trigger_type: string; cnt: number }>; recentRuns: number }>('/automations/stats'),
 
   // 61.8: Dry-run simulation
   dryRun: (id: string) => api.post<{

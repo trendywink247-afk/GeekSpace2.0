@@ -401,6 +401,14 @@ export function VideoGenPage() {
     { label: '10s', val: 10 },
   ];
 
+  // 64.10: Estimated runtime based on duration + model tier
+  const estimatedSeconds = (() => {
+    const base = duration * 6; // ~6s per second of footage
+    const multiplier = currentModel?.tier === 'premium' ? 1.5 : currentModel?.tier === 'standard' ? 1.1 : 1.0;
+    const est = Math.round(base * multiplier);
+    return Math.max(20, Math.min(est, 120));
+  })();
+
   return (
     <div className="space-y-6">
       {/* Toast */}
@@ -694,9 +702,10 @@ export function VideoGenPage() {
           </button>
         </div>
 
+        {/* 64.10: Estimated runtime display */}
         <p className="text-xs text-[#6B7280] mt-3 flex items-center gap-1.5">
           <AlertCircle className="w-3 h-3" />
-          Video generation takes 30-120 seconds. The video will appear below once ready.
+          Est. ~{estimatedSeconds}s for {duration}s clip · The video will appear below once ready.
         </p>
       </div>
 
@@ -922,14 +931,17 @@ export function VideoGenPage() {
               )}
               {directorJob.clips.length > 0 && (
                 <div className="grid grid-cols-3 gap-2">
-                  {directorJob.clips.map((clip, i) => (
+                  {directorJob.clips.map((clip, i) => {
+                    // 64.13: shot prompt for this clip index
+                    const shot = directorJob.packet?.shotlist?.[i];
+                    return (
+                    <div key={i} className="flex flex-col gap-1">
                     <div
-                      key={i}
                       className={`relative rounded-lg overflow-hidden aspect-video bg-[#0C0C18] border transition-all ${
                         clip.success ? 'border-[#BF5FFF]/10 cursor-pointer hover:border-[#BF5FFF]/40 hover:scale-[1.02]' : 'border-[#FF6161]/20'
                       }`}
                       onClick={() => clip.success && clip.url && setPreviewClip({ url: clip.url, index: i })}
-                      title={clip.success ? 'Click to preview' : undefined}
+                      title={shot ? `${shot.cameraMove} — ${shot.prompt}` : (clip.success ? 'Click to preview' : undefined)}
                     >
                       {clip.success ? (
                         <>
@@ -964,7 +976,15 @@ export function VideoGenPage() {
                         </div>
                       )}
                     </div>
-                  ))}
+                    {/* 64.13: shot prompt label */}
+                    {shot && (
+                      <p className="text-[9px] text-[#6B7280] leading-tight truncate px-0.5" title={shot.prompt}>
+                        <span className="text-[#BF5FFF]/60">{shot.cameraMove}</span> {shot.prompt}
+                      </p>
+                    )}
+                    </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -1126,14 +1146,26 @@ export function VideoGenPage() {
             <div className="space-y-2">
               <p className="text-xs text-[#6B7280] font-medium">Recent Director Jobs</p>
               {directorJobs.filter(j => j.status === 'done').slice(0, 3).map((job) => (
-                <button
+                <div
                   key={job.id}
-                  onClick={() => { setDirectorJob(job); setDirectorJobId(job.id); }}
-                  className="w-full text-left px-3 py-2 rounded-lg border border-[#BF5FFF]/10 hover:border-[#BF5FFF]/20 bg-[#BF5FFF]/5 hover:bg-[#BF5FFF]/10 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#BF5FFF]/10 bg-[#BF5FFF]/5"
                 >
-                  <p className="text-xs font-medium text-[#E8E8F0]">{job.packet?.title ?? job.idea.slice(0, 50)}</p>
-                  <p className="text-[10px] text-[#6B7280]">{job.clips.filter(c => c.success).length}/{job.clips.length} clips · {new Date(job.created_at).toLocaleDateString()}</p>
-                </button>
+                  <button
+                    onClick={() => { setDirectorJob(job); setDirectorJobId(job.id); }}
+                    className="flex-1 text-left hover:opacity-80 transition-opacity"
+                  >
+                    <p className="text-xs font-medium text-[#E8E8F0]">{job.packet?.title ?? job.idea.slice(0, 50)}</p>
+                    <p className="text-[10px] text-[#6B7280]">{job.clips.filter(c => c.success).length}/{job.clips.length} clips · {new Date(job.created_at).toLocaleDateString()}</p>
+                  </button>
+                  {/* 64.13: Re-use idea button */}
+                  <button
+                    onClick={() => setDirectorIdea(job.idea)}
+                    title="Use this idea again"
+                    className="flex-shrink-0 p-1.5 rounded-lg text-[#BF5FFF]/50 hover:text-[#BF5FFF] hover:bg-[#BF5FFF]/10 transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                  </button>
+                </div>
               ))}
             </div>
           )}

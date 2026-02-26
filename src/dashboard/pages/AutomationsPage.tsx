@@ -117,6 +117,9 @@ export function AutomationsPage() {
   const [logsStatusFilter, setLogsStatusFilter] = useState<'' | 'success' | 'failed' | 'error'>('');
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string; statusCode?: number; latencyMs?: number; responseBody?: string } | null>(null);
+  // 64.5: Automation stats
+  const [automationStats, setAutomationStats] = useState<{ total: number; enabled: number; disabled: number; recentRuns: number } | null>(null);
+
   // 37.4: Dead-letter log
   const [deadLetters, setDeadLetters] = useState<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number; retry_count: number; last_error: string | null }>>([]);
   // 55.6: Dead-letter retry state
@@ -139,6 +142,8 @@ export function AutomationsPage() {
       setLogsHasMore(r.data.logs.length === 20);
     }).catch(() => setLogs([]));
     automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => setDeadLetters([]));
+    // 64.5: load stats
+    automationService.getStats().then((r) => setAutomationStats(r.data)).catch(() => {});
   }, [logsStatusFilter]);
 
   // 53.7: Load more logs handler
@@ -427,6 +432,22 @@ export function AutomationsPage() {
             </div>
           </CardContent>
         </Card>
+        {/* 64.5: Recent runs stat from server */}
+        {automationStats !== null && (
+          <Card className="border-[#BF5FFF]/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#BF5FFF]/10 flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-[#BF5FFF]" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-[#E8E8F0]">{automationStats.recentRuns}</div>
+                  <div className="text-xs text-[#6B7280]">Runs (7d)</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Filters & Search */}
@@ -519,6 +540,21 @@ export function AutomationsPage() {
                           <Play className="w-3 h-3 mr-1" />
                           {auto.runCount} runs
                         </Badge>
+
+                        {/* 64.2: last_status badge */}
+                        {auto.lastStatus && (
+                          <Badge
+                            variant="outline"
+                            className={
+                              auto.lastStatus === 'success'
+                                ? 'border-[#00FF88]/30 text-[#00FF88]'
+                                : 'border-[#FF6161]/30 text-[#FF6161]'
+                            }
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${auto.lastStatus === 'success' ? 'bg-[#00FF88]' : 'bg-[#FF6161]'}`} />
+                            {auto.lastStatus === 'success' ? 'ok' : auto.lastStatus}
+                          </Badge>
+                        )}
 
                         {/* Last run */}
                         <span className="text-xs text-[#6B7280]">
