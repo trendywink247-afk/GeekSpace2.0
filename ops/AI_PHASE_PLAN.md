@@ -184,21 +184,42 @@ E2E flake fixes, load-error banner, portfolio inline preview, auth/refresh rate 
 
 ---
 
-## Phase 58 — PLANNED (13 items)
-**Theme:** Bulk operations, analytics, pagination, mobile polish, auto-stitch
+## Phase 58 — COMPLETE ✓
+**PR:** #89 merged SHA 246a720 | **Tests:** 565/565
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 58.1 | CI review | ✅ (clean) | Reliability |
+| 58.2 | Bulk-delete for active reminders + route ordering fix | ✅ | Reliability |
+| 58.3 | Portfolio stats 30-day fill + mini sparkline | ✅ | UX |
+| 58.4 | Chat reply-to context | deferred | UX |
+| 58.5 | CSRF token validation | deferred | Security |
+| 58.6 | Webhook test-fire latencyMs + responseBody | ✅ | Edge-case |
+| 58.7 | Settings mobile collapse | deferred | Mobile |
+| 58.8 | Automations run-log pagination | ✅ (verified done Phase 53) | Dev/Ops |
+| 58.9 | Video gallery sort toggle (Newest/Status) | ✅ | State-sync |
+| 58.10 | Conversation virtual scroll | deferred | Performance |
+| 58.11 | Tests + verification + PR/merge (565 tests) | ✅ | Dev/Ops |
+| 58.12 | Brand gate | ✅ (clean) | Brand |
+| 58.13 | Auto-stitch when all clips succeed | ✅ | Feature |
+
+---
+
+## Phase 59 — PLANNED (13 items)
+**Theme:** Chat enhancements, automation improvements, mobile polish, performance
 
 | # | Item | Category |
 |---|------|----------|
-| 58.1 | Fix: CI review post-Phase-57 | Reliability |
-| 58.2 | Reliability: Reminder bulk-delete for active tab (not just completed) | Reliability |
-| 58.3 | UX: Portfolio analytics chart — views over 30 days sparkline | UX |
-| 58.4 | UX: Chat message reply-to context in UI | UX |
-| 58.5 | Security: CSRF token validation for state-mutating requests | Security |
-| 58.6 | Edge-case: Webhook test-fire result modal with full response body | Edge-case |
-| 58.7 | Mobile: Settings page section collapse on mobile | Mobile |
-| 58.8 | Ops: Automations run-log pagination (currently shows last 10) | Dev/Ops |
-| 58.9 | State-sync: Video gallery sort by status/date toggle | State-sync |
-| 58.10 | Performance: Conversation list virtual scroll (CSS contain fallback) | Performance |
-| 58.11 | Phase 58 tests + verification gate + PR/merge | Dev/Ops |
-| 58.12 | Brand gate: npm run brand-guard → 0 violations | Brand |
-| 58.13 | **Seedance Director Mode** (Task 13): Auto-stitch when all clips complete | Feature |
+| 59.1 | Fix: CI review post-Phase-58 | Reliability |
+| 59.2 | UX: Video gallery delete confirmation modal | UX |
+| 59.3 | UX: Chat message starring/pinning for important messages | UX |
+| 59.4 | UX: Automations duplicate button | UX |
+| 59.5 | Security: Rate limit on portfolio update endpoint | Security |
+| 59.6 | Edge-case: Chat message reply-to context in UI | Edge-case |
+| 59.7 | Mobile: Bottom sheet for reminder creation on mobile | Mobile |
+| 59.8 | Dev/Ops: Settings keyboard shortcut cheat sheet | Dev/Ops |
+| 59.9 | State-sync: Portfolio SEO meta description field | State-sync |
+| 59.10 | Performance: Agent config reset-to-defaults button | Performance |
+| 59.11 | Phase 59 tests + verification gate + PR/merge | Dev/Ops |
+| 59.12 | Brand gate: npm run brand-guard → 0 violations | Brand |
+| 59.13 | **Seedance Director Mode** (Task 13): Multi-job queue support | Feature |
