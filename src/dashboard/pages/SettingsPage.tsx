@@ -24,6 +24,7 @@ import {
   CalendarDays,
   Moon,
   Sun,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -382,6 +383,26 @@ export function SettingsPage() {
     }
   };
 
+  // 59.10: Reset agent config to defaults
+  const [isResettingAgent, setIsResettingAgent] = useState(false);
+  const handleResetAgentConfig = async () => {
+    setIsResettingAgent(true);
+    try {
+      const defaultNotifs = { notif_reminders: 1, notif_escalations: 1, notif_agents: 1, notif_daily_briefing: 1, notif_connections: 1 };
+      const defaultPresets = ['1h', 'tomorrow', 'next-week'];
+      const defaultModel = 'auto';
+      await agentService.updateConfig({
+        ...defaultNotifs,
+        snooze_presets: JSON.stringify(defaultPresets),
+        preferred_free_model: defaultModel,
+      });
+      setAgentNotifs(defaultNotifs);
+      setSnoozePresets(defaultPresets);
+      setPreferredFreeModel(defaultModel);
+      showSavedToast();
+    } catch { /* silently fail */ } finally { setIsResettingAgent(false); }
+  };
+
   const providerColors: Record<string, string> = {
     openai: '#10a37f',
     anthropic: '#d4a574',
@@ -650,6 +671,26 @@ export function SettingsPage() {
                   </div>
                 );
               })}
+            </CardContent>
+          </Card>
+
+          {/* 59.10: Reset Agent Config to Defaults */}
+          <Card className="border-[#FF6161]/20">
+            <CardHeader>
+              <CardTitle className="text-[#E8E8F0]">Reset Agent Configuration</CardTitle>
+              <CardDescription className="text-[#6B7280]">Restore all agent notification and snooze settings to their defaults</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="ghost"
+                onClick={() => void handleResetAgentConfig()}
+                disabled={isResettingAgent}
+                data-testid="reset-agent-config-btn"
+                className="flex items-center gap-2 text-[#FF6161] hover:text-[#FF6161] hover:bg-[#FF6161]/10 border border-[#FF6161]/30"
+              >
+                {isResettingAgent ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                Reset to Defaults
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

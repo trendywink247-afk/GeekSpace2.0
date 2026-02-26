@@ -538,6 +538,9 @@ export const automationService = {
   // 55.6: Retry a failed dead-letter webhook delivery
   retryDeadLetter: (id: string) =>
     api.post<{ retried: boolean; removed: boolean; result: { success: boolean; output: string } }>(`/automations/dead-letters/${id}/retry`),
+
+  // 59.4: Duplicate an automation
+  duplicate: (id: string) => api.post<Automation>(`/automations/${id}/duplicate`),
 };
 
 // ----- Dashboard (aggregated) --------------------------------

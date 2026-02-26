@@ -901,6 +901,9 @@ db.exec(`
 try { db.exec(`ALTER TABLE webhook_dead_letters ADD COLUMN retry_count INTEGER DEFAULT 0`); } catch { /* already exists */ }
 try { db.exec(`ALTER TABLE webhook_dead_letters ADD COLUMN last_error TEXT DEFAULT NULL`); } catch { /* already exists */ }
 
+// Phase 59.9: SEO meta description for portfolio
+try { db.exec(`ALTER TABLE portfolios ADD COLUMN meta_description TEXT DEFAULT ''`); } catch { /* already exists */ }
+
 // Phase 37.5: Connection alert opt-in/out
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_connections INTEGER DEFAULT 1`); } catch { /* column already exists */ }
 

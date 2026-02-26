@@ -382,6 +382,8 @@ export interface Portfolio {
   };
   connectionCount?: number;
   view_count?: number;
+  // 59.9: SEO meta description (max 160 chars)
+  metaDescription?: string;
 }
 
 // ----- Channel Links (Telegram/WhatsApp user mapping) --------

@@ -59,6 +59,7 @@ export function PortfolioPage() {
   // Portfolio state
   const [headline, setHeadline] = useState('');
   const [about, setAbout] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
   const [avatar, setAvatar] = useState('');
   const [layout, setLayout] = useState<PortfolioLayout>('classic');
   const [skills, setSkills] = useState<string[]>([]);
@@ -121,6 +122,7 @@ export function PortfolioPage() {
       .then(({ data }) => {
         setHeadline(data.headline || '');
         setAbout(data.about || '');
+        setMetaDescription((data as Record<string, unknown>).meta_description as string || '');
         setAvatar(data.avatar || '');
         setLayout(data.layout || 'classic');
         setSkills(data.skills || []);
@@ -186,10 +188,11 @@ export function PortfolioPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const data = await portfolioService.update({ headline, about, avatar, layout, skills, projects, milestones, social });
+      const data = await portfolioService.update({ headline, about, metaDescription, avatar, layout, skills, projects, milestones, social });
       // Refresh from server response
       setHeadline(data.data.headline || '');
       setAbout(data.data.about || '');
+      setMetaDescription((data.data as Record<string, unknown>).meta_description as string || '');
       setAvatar(data.data.avatar || '');
       setLayout(data.data.layout || 'classic');
       setSkills(data.data.skills || []);
@@ -618,6 +621,21 @@ export function PortfolioPage() {
                   placeholder="Tell visitors about yourself..."
                   className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[120px] resize-none focus:outline-none focus:border-[#00F0FF]"
                 />
+              </div>
+              {/* 59.9: SEO meta description */}
+              <div>
+                <label className="text-sm text-[#6B7280] mb-1.5 block flex items-center gap-1.5">
+                  SEO Meta Description
+                  <span className="text-xs text-[#4B5563]">(shown in Google search results, max 160 chars)</span>
+                </label>
+                <textarea
+                  value={metaDescription}
+                  onChange={(e) => setMetaDescription(e.target.value.slice(0, 160))}
+                  placeholder="A brief description of your portfolio for search engines..."
+                  data-testid="meta-description-input"
+                  className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[60px] resize-none focus:outline-none focus:border-[#00F0FF] text-sm"
+                />
+                <p className="text-xs text-[#4B5563] mt-1 text-right">{metaDescription.length}/160</p>
               </div>
               <div>
                 <label className="text-sm text-[#6B7280] mb-2 block">Avatar URL</label>

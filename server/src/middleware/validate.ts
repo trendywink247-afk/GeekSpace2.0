@@ -201,6 +201,8 @@ export const portfolioUpdateSchema = z.object({
   visibility: z.record(z.string().max(50), z.boolean()).optional(),
   agentEnabled: z.boolean().optional(),
   isPublic: z.boolean().optional(),
+  // 59.9: SEO meta description (max 160 chars — Google snippet limit)
+  metaDescription: z.string().max(160).transform(stripHtml).optional(),
 });
 
 export const portfolioAiEditSchema = z.object({

@@ -22,6 +22,7 @@ import {
   FileText,
   Phone,
   Bell,
+  Copy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -201,6 +202,17 @@ export function AutomationsPage() {
 
   const handleDelete = async (id: string) => {
     await deleteAutomation(id);
+  };
+
+  // 59.4: Duplicate automation — call API directly, refresh list from server
+  const handleDuplicate = async (id: string) => {
+    try {
+      await automationService.duplicate(id);
+      const fresh = await automationService.list();
+      useDashboardStore.setState({ automations: fresh.data });
+    } catch {
+      // silently ignore
+    }
   };
 
   const handleTrigger = async (id: string) => {
@@ -540,6 +552,16 @@ export function AutomationsPage() {
                         className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 p-0 press-scale"
                       >
                         <Edit3 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void handleDuplicate(auto.id)}
+                        aria-label={`Duplicate ${auto.name}`}
+                        title="Duplicate"
+                        className="text-[#6B7280] hover:text-[#A78BFA] hover:bg-[#A78BFA]/10 h-10 w-10 p-0 press-scale"
+                      >
+                        <Copy className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
