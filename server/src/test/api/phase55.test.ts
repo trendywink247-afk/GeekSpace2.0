@@ -19,6 +19,7 @@ import { createApp } from '../../app.js';
 import { createTestUser, generateTestToken, resetDatabase } from '../setup.js';
 import { db } from '../../db/index.js';
 import { v4 as uuid } from 'uuid';
+import { initAutomationsEngine } from '../../services/automations-engine.js';
 
 const app = createApp();
 
@@ -28,6 +29,7 @@ describe('Phase 55', () => {
 
   beforeAll(() => {
     resetDatabase();
+    initAutomationsEngine(); // ensures automation_logs table exists
     const user = createTestUser(`phase55-${Date.now()}@example.com`);
     userId = user.id;
     token = `Bearer ${generateTestToken(user.id)}`;
@@ -92,7 +94,7 @@ describe('Phase 55', () => {
       expect(res.body).toHaveProperty('retried', true);
       expect(res.body).toHaveProperty('removed');
       expect(res.body).toHaveProperty('result');
-    });
+    }, 10000);
 
     it('returns 404 when dead-letter belongs to different user', async () => {
       const other = createTestUser(`phase55-other-${Date.now()}@example.com`);

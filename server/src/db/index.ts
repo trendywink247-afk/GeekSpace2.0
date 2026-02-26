@@ -766,6 +766,25 @@ try {
   `);
 } catch { /* table already exists */ }
 
+// 55.13: Director Mode multi-clip video jobs
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS video_jobs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      idea TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'pending',
+      packet TEXT DEFAULT NULL,
+      clips TEXT DEFAULT '[]',
+      error TEXT DEFAULT NULL,
+      credits_used INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_video_jobs_user ON video_jobs(user_id, created_at);
+  `);
+} catch { /* table already exists */ }
+
 // Message reactions (for agent message reactions)
 try {
   db.exec(`

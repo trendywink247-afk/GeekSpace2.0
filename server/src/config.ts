@@ -75,6 +75,10 @@ export const config = {
   moonshotTimeout: optionalInt('MOONSHOT_TIMEOUT_MS', 120000),
   moonshotMaxTokens: optionalInt('MOONSHOT_MAX_TOKENS', 8192),
 
+  // fal.ai — Seedance Director Mode video generation
+  falApiKey: process.env.FAL_KEY || '',
+  falEnabled: !!process.env.FAL_KEY,
+
   // PicoClaw (lightweight automation engine)
   picoClawUrl: optional('PICOCLAW_URL', 'http://localhost:8080'),
   picoClawEnabled: optional('PICOCLAW_ENABLED', 'false') === 'true',
