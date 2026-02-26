@@ -328,3 +328,24 @@ Activity server-search+export, reminder duplicate, automation stats, last_status
 | 64.12 | Brand gate | ✅ (0 violations) | Brand |
 | 64.13 | **Seedance**: shot prompt labels on clip grid + "Use idea again" on past jobs | ✅ | Feature |
 
+## Phase 65 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/96 | **Tests:** 659/659
+Portfolio stats widget, memory confidence slider, webhook URL validation, activity date-range, quick-stats cache, Seedance expand-idea
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 65.1 | Portfolio stats card on OverviewPage (views/contacts/projects) | ✅ | UX |
+| 65.2 | Memory confidence threshold slider filter in MemoryManagerPage | ✅ | UX |
+| 65.3 | Automation create schema validates actionConfig.url for webhook types | ✅ | Security |
+| 65.4 | Reminder near-duplicate warning on POST /reminders | ✅ | Reliability |
+| 65.5 | GET /api/dashboard/quick-stats with 60s Redis TTL | ✅ | Performance |
+| 65.6 | GET /api/integrations/events — integration activity log viewer | ✅ | Feature |
+| 65.7 | DELETE /api/agent/memory/bulk + per-category clear buttons | ✅ | Feature |
+| 65.8 | Automation form webhook URL + https-only warning | ✅ | UX |
+| 65.9 | Activity date-range filter (?from=&to=) server + UI date pickers | ✅ | Feature |
+| 65.10 | Portfolio visit referer_host tracking + /me/analytics/sources | ✅ | Feature |
+| 65.11 | Done Today count-up pulse animation on OverviewPage | ✅ | UX |
+| 65.12 | Brand gate | ✅ (0 violations) | Brand |
+| 65.13 | **Seedance**: "Expand Idea" AI button (POST /director/expand-idea) | ✅ | Feature |
+
+

@@ -1,9 +1,9 @@
-# AI Handoff — Phase 64 Complete
+# AI Handoff — Phase 65 Complete
 
 **Date:** 2026-02-26
-**Branch:** `ai/phase-20260226-phase64` → PR #95 merged ✅
-**Tests:** 642/642 ✅
-**Status:** All 13 improvements implemented + E2E fix, merged to main
+**Branch:** `ai/phase-20260226-phase65` → PR #96 merged ✅
+**Tests:** 659/659 ✅
+**Status:** All 13 improvements implemented, merged to main
 
 ---
 
@@ -13,6 +13,62 @@ If the conversation is compacted, before doing ANY work:
 2. Run: `git status && git branch --show-current && git log --oneline -5`
 3. Print a brief "Rehydrated Context" summary (phase, branch, current tasks, constraints)
 4. Only then continue implementation
+
+---
+
+## Phase 65 — What Was Done
+
+### 65.1 Portfolio stats widget on OverviewPage
+- `src/dashboard/pages/OverviewPage.tsx` — imports `portfolioService`, loads `getMeStats()` on mount, renders view_count/contact_count/project_count card
+
+### 65.2 Memory confidence threshold slider
+- `src/dashboard/pages/MemoryManagerPage.tsx` — `minConfidence` state (0-100), `<input type="range">` slider filters `filteredMemories`
+
+### 65.3 Webhook URL validation in automation schema
+- `server/src/middleware/validate.ts` — `.refine()` on `automationCreateSchema` validates `actionConfig.url` is valid http/https URL when actionType is `n8n-webhook` or `call_api`
+
+### 65.4 Reminder near-duplicate warning
+- `server/src/routes/reminders.ts` — `POST /reminders` checks for existing incomplete reminder with same text (LOWER(TRIM)), returns `duplicate_warning` field
+
+### 65.5 Dashboard quick-stats with Redis cache
+- `server/src/routes/dashboard.ts` — `GET /api/dashboard/quick-stats` (remindersActive, messagesToday, automationsActive) with 60s Redis TTL
+- `src/services/api.ts` — `dashboardService.quickStats()`
+
+### 65.6 Integration event log viewer
+- `server/src/routes/integrations.ts` — `GET /integrations/events` (last 50 integration-related activity entries)
+- `src/services/api.ts` — `integrationService.getEvents()`
+
+### 65.7 Memory bulk-clear by category
+- `server/src/routes/agent.ts` — `DELETE /agent/memory/bulk?category=X` (placed before `/:id`)
+- `src/services/api.ts` — `memoryService.bulkClear(category)`
+- `src/dashboard/pages/MemoryManagerPage.tsx` — per-category "✕ all" buttons + `handleBulkClear()`
+
+### 65.8 Automation webhook https warning
+- `src/dashboard/pages/AutomationsPage.tsx` — `webhookUrl` form field for n8n-webhook/call_api; amber warning when http:// used
+
+### 65.9 Activity date-range filter
+- `server/src/routes/activity.ts` — `?from=YYYY-MM-DD&to=YYYY-MM-DD` params
+- `src/services/api.ts` — `userService.getActivity()` accepts `from` and `to`
+- `src/dashboard/pages/ActivityPage.tsx` — date pickers reload with server-side filter
+
+### 65.10 Portfolio visitor referer tracking
+- `server/src/db/index.ts` — additive `ALTER TABLE portfolio_visits ADD COLUMN referer_host TEXT`
+- `server/src/routes/portfolio.ts` — captures Referer header → hostname on both visit paths; `GET /me/analytics/sources` returns top 10 sources
+- `src/services/api.ts` — `portfolioService.getAnalyticsSources()`
+
+### 65.11 Done Today count-up animation
+- `src/dashboard/pages/OverviewPage.tsx` — `doneTodayAnimKey` state triggers CSS pulse animation on stat card when doneToday increases
+
+### 65.12 Brand guard
+- `npm run brand-guard` → 0 violations
+
+### 65.13 Seedance Director Mode: "Expand Idea" AI button
+- `server/src/routes/videos.ts` — `POST /director/expand-idea` calls `routeChat()` to enrich idea text; graceful fallback returns original
+- `src/services/api.ts` — `videoService.directorExpandIdea(idea)`
+- `src/dashboard/pages/VideoGenPage.tsx` — Wand2 "Expand" button next to Director input, calls `handleExpandIdea()`
+
+### Tests
+- `server/src/test/api/phase65.test.ts` — 17 new tests; full suite 659/659
 
 ---
 
