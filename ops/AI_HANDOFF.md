@@ -1,9 +1,9 @@
-# AI Handoff — Phase 69 Complete
+# AI Handoff — Phase 70 Complete (Release Train Candidate)
 
 **Date:** 2026-02-26
-**Branch:** `ai/phase-20260226-phase69` (ready for PR → main)
-**Tests:** 715/715 passing (702 baseline + 13 new)
-**Status:** All 14 improvements implemented, 3 commits made
+**Branch:** `ai/phase-20260226-phase70` (ready for PR → main)
+**Tests:** 731/731 passing (715 baseline + 16 new)
+**Status:** All 14 improvements implemented, 3 commits made. RELEASE TRAIN CANDIDATE.
 
 ---
 
@@ -16,108 +16,74 @@ If the conversation is compacted, before doing ANY work:
 
 ---
 
-## Phase 69 — What Was Done
+## Phase 70 — What Was Done
 
-### 69.1 DB indexes for Suggestions performance
-- `server/src/db/index.ts` — Added `idx_suggestion_votes_user_suggestion` compound index on `suggestion_votes(suggestion_id, user_id)`
-- Note: `idx_suggestions_status` was already present from Phase 67; compound index is new
+### Commit 1 — Tasks 70.1–70.6
+- **70.1 Version bump:** `server/src/app.ts` `APP_VERSION = '3.1.0'`; `package.json` + `server/package.json` updated to `3.1.0`
+- **70.2 Global suggestion cap:** `server/src/routes/suggestions.ts` — Added 20-suggestion total cap per user (skipped in TEST_MODE)
+- **70.3 Vote counts in /mine:** `server/src/routes/suggestions.ts` — GET /mine now LEFT JOINs suggestion_votes; returns `upvotes`, `downvotes`, `trending`
+- **70.4 Activity log index:** `server/src/db/index.ts` — Added Phase 70 migrations for `deleted_at`, `trending` columns + confirmed `idx_activity_log_user_created` exists
+- **70.5 Cluster names in /clusters:** `server/src/routes/suggestions.ts` — GET /clusters query now SELECTs `c.name`
+- **70.6 Cluster names in RoadmapPage:** `src/dashboard/pages/RoadmapPage.tsx` — Popular Ideas section showing top 3 clusters; `src/services/api.ts` — updated types with `name?`, `upvotes?`, `downvotes?`, `trending?`, added `delete` method
 
-### 69.2 Vote activity logging
-- `server/src/routes/suggestions.ts` — After INSERT OR REPLACE vote, logs to activity_log with action='vote_suggestion', details=JSON{suggestionId, vote}
+### Commit 2 — Tasks 70.7–70.12
+- **70.7 Admin IP logging:** `server/src/routes/admin.ts` — Added `adminRouter.use()` middleware that logs `adminAction`, `method`, `ip` for all admin routes
+- **70.8 Ops files:** `ops/AI_RELEASE_TRAIN.md` — R3 entry updated with Phase 70 release train candidate; `ops/AI_RISK_REGISTER.md` — Closed R05/R06/R07/R08 (resolved in Phase 43)
+- **70.9 Admin clusters LIMIT 100:** `server/src/routes/admin.ts` — Added `LIMIT 100` to GET /admin/suggestions/clusters
+- **70.10 My Suggestions count badge:** `src/dashboard/pages/RoadmapPage.tsx` — Count badge next to "My Suggestions" heading (done in commit 1)
+- **70.11 Soft-delete:** `server/src/routes/suggestions.ts` — Added DELETE /api/suggestions/:id; GET /mine and GET /:id filter `deleted_at IS NULL`; duplicate-check also excludes deleted
+- **70.12 Delete button in UI:** `src/dashboard/pages/RoadmapPage.tsx` — Trash2 icon on 'new' status suggestions; calls `suggestionService.delete(id)` (done in commit 1)
 
-### 69.3 Reminder list: friendly due labels in detail/edit view
-- `src/dashboard/pages/RemindersPage.tsx` — Added humanDue() label below datetime-local input in the edit reminder dialog
-
-### 69.4 Copy code button on agent chat code blocks
-- Already implemented in Phase 42 (CodeBlock component with Copy button in AgentChatPanel.tsx) — confirmed existing, no changes needed
-
-### 69.5 Admin: Export suggestions queue to CSV
-- `server/src/routes/admin.ts` — Added `GET /api/admin/suggestions/export` returning CSV with id,title,body,status,upvotes,downvotes,created_at
-- Supports optional ?status= query param filter
-- CSV field escaping handles commas, quotes, newlines
-
-### 69.6 Suggestion status history endpoint
-- `server/src/routes/suggestions.ts` — Added `GET /api/suggestions/:id/events` returning status history
-- Only returns events for suggestions owned by requesting user (404 for others)
-- Maps from_status→oldStatus, to_status→newStatus, actor→changedBy, created_at→changedAt
-
-### 69.7 Auth: constant-time response on forgot-password
-- `server/src/routes/auth.ts` — Modified POST /forgot-password to always wait at least 200ms
-- Always responds with `{ message: "If that email is registered, you'll receive a reset link." }` regardless of whether email exists
-- Errors from requestPasswordReset are swallowed
-
-### 69.8 Performance: Response compression middleware
-- Already implemented in Phase 47 — `app.use(compression())` at line 137 of app.ts. Confirmed existing.
-
-### 69.9 Brand guard
-- `npm run brand-guard` passes clean — no PicoClaw/Pico violations in files touched in phases 67-69
-
-### 69.10 Suggestion detail modal in RoadmapPage
-- `src/dashboard/pages/RoadmapPage.tsx` — Added Eye icon button to each suggestion in "My Suggestions" list
-- On click, opens a Dialog with title, full body, status badge, created date, vote counts (if available)
-- Added detailSuggestion state, Eye and X imports from lucide-react
-
-### 69.11 Cluster auto-merge for high-overlap suggestion groups
-- `server/src/services/suggestions-triage.ts` — After scoring, fetches all clusters, computes pairwise title overlap
-- If top-3 words of two clusters have >70% overlap, merges smaller into larger (DELETE loser, UPDATE winner suggestion_ids)
-- Skipped in TEST_MODE to preserve deterministic behavior
-
-### 69.12 RoadmapPage: Recent Changes section from release notes
-- `src/dashboard/pages/RoadmapPage.tsx` — Added "Recent Improvements" section below the CTA card
-- Hard-coded data for phases 67, 68, 69 with timeline-style display and phase badges
-
-### 69.13 Tests
-- `server/src/test/api/phase69.test.ts` — 13 new tests:
-  1. Events endpoint returns events for own suggestion (200)
-  2. Events endpoint returns 404 for another user's suggestion
-  3. Events endpoint returns empty array for suggestion with no events
-  4. Admin CSV export returns Content-Type: text/csv
-  5. Admin CSV contains suggestion id and title
-  6. Admin CSV with ?status=new filter returns only matching rows
-  7. Vote activity log created after POST /:id/vote
-  8. Vote idempotency — duplicate votes don't double vote row
-  9. idx_suggestions_status index exists in sqlite_master
-  10. Admin PATCH status creates suggestion_events row
-  11. Admin stats endpoint returns {total, byStatus, topVoted}
-  12. Triage rate limit skipped in TEST_MODE (no 429)
-  13. Forgot-password always returns same message for existing/non-existing emails
-
-### 69.14 Suggestion Intelligence — AI cluster naming
-- `server/src/db/index.ts` — Added `ALTER TABLE suggestion_clusters ADD COLUMN name TEXT` migration
-- `server/src/services/suggestions-triage.ts` — Cluster name set at creation: TEST_MODE uses 'Cluster: <first 3 words>', prod uses first 4 words
-- `server/src/routes/admin.ts` — GET /admin/suggestions/clusters now returns `name` field
+### Commit 3 — Tasks 70.13–70.14
+- **70.13 Tests:** `server/src/test/api/phase70.test.ts` — 16 tests covering health version, cap, vote counts, clusters, soft-delete (204/404/409/exclusion), admin logging, trending
+- **70.14 Trending:** `server/src/services/suggestions-triage.ts` — After triage, marks `trending=1` on suggestions with vote velocity (TEST_MODE: ≥1 upvote; prod: ≥3 upvotes in last 24h); admin stats now returns `trending` count
 
 ---
 
 ## Files Changed
-
-### Server
-- `server/src/db/index.ts` — compound index + name column migration
-- `server/src/routes/suggestions.ts` — vote activity log + events endpoint
-- `server/src/routes/auth.ts` — constant-time forgot-password
-- `server/src/routes/admin.ts` — CSV export + name field in clusters
-- `server/src/services/suggestions-triage.ts` — cluster auto-merge + naming
-- `server/src/test/api/phase69.test.ts` — NEW: 13 tests
-
-### Frontend
-- `src/dashboard/pages/RemindersPage.tsx` — humanDue in edit dialog
-- `src/dashboard/pages/RoadmapPage.tsx` — detail modal + recent improvements section
-
----
-
-## Test Results
-- 63 test files, 715 tests (all passing)
-- Frontend TypeScript: clean
-- Server TypeScript: clean
-- Lint: 0 errors in touched files, 2 pre-existing warnings in untouched files
-- Build: frontend + server both clean
-- Brand guard: clean
+- `package.json`
+- `server/package.json`
+- `server/src/app.ts`
+- `server/src/db/index.ts`
+- `server/src/routes/suggestions.ts`
+- `server/src/routes/admin.ts`
+- `server/src/services/suggestions-triage.ts`
+- `server/src/test/api/phase70.test.ts` (NEW)
+- `src/dashboard/pages/RoadmapPage.tsx`
+- `src/services/api.ts`
+- `ops/AI_RELEASE_TRAIN.md`
+- `ops/AI_RISK_REGISTER.md`
 
 ---
 
-## Next Steps for Phase 70
-- Update ops/AI_HANDOFF.md after merge
-- Consider: E2E test for suggestions flow (create → vote → events → admin export)
-- Consider: Real LLM cluster naming when prod AI calls are stable
-- Consider: Suggestion deduplication UI (show existing similar suggestions on submit)
-- Next command to run: `cd ~/GeekSpace2.0 && cat ops/AI_PHASE_PLAN.md`
+## Verification Status
+- [x] 731/731 tests passing
+- [x] `npx tsc --noEmit` (frontend) — clean
+- [x] `cd server && npx tsc --noEmit` — clean
+- [x] `npm run build` (frontend) — clean
+- [x] `cd server && npm run build` — clean
+- [x] `npm run brand-guard` — no violations
+
+---
+
+## Release Train Status
+**Phase 70 is the Release Train Candidate (R3).**
+
+After merging to `main`:
+1. CI must pass (lint + typecheck + build + 731 tests)
+2. User must explicitly approve production deploy
+3. Controller will promote `main` → `live-production`
+4. Tag: `release/R3-start` at deploy start, `release/R3-end` after smoke tests
+
+---
+
+## Known Issues / Open Risks
+- Pre-existing lint warnings in `src/components/ui/page-progress.tsx` and `src/explore/ExplorePage.tsx` (react-hooks/exhaustive-deps) — NOT introduced by Phase 70; these existed before
+- The `--max-warnings=0` lint rule will fail CI on these files; they should be fixed in Phase 71
+
+---
+
+## Next Steps for Phase 71
+1. Fix pre-existing lint warnings in `page-progress.tsx` and `ExplorePage.tsx`
+2. Continue normal improvement cycle
+3. Monitor production after R3 deploy
