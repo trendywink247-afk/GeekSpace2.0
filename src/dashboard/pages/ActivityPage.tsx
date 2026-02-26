@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter, Trash2, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { userService, type ActivityEntry } from '@/services/api';
+import { userService, activityService, type ActivityEntry } from '@/services/api';
 
 // Map icon field values to event categories
 function getCategory(icon: string): string {
@@ -77,25 +77,54 @@ export function ActivityPage() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  // 64.3: server-side search — debounced from searchQuery
+  const [serverQ, setServerQ] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
   // 40.4: Clear all with confirmation
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  // 64.8: CSV export
+  const [exporting, setExporting] = useState(false);
 
+  // Debounce search query → serverQ
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => { setServerQ(searchQuery); }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchQuery]);
+
+  // Reload when serverQ changes (server-side text search)
   useEffect(() => {
     setLoading(true);
-    userService.getActivity(PAGE_SIZE, 0)
+    userService.getActivity(PAGE_SIZE, 0, serverQ || undefined)
       .then(({ data }) => { setEntries(data.activity); setTotal(data.total ?? data.activity.length); })
       .catch(() => setEntries([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [serverQ]);
 
   const handleLoadMore = () => {
     setLoadingMore(true);
-    userService.getActivity(PAGE_SIZE, entries.length)
+    userService.getActivity(PAGE_SIZE, entries.length, serverQ || undefined)
       .then(({ data }) => { setEntries((prev) => [...prev, ...data.activity]); setTotal(data.total ?? (entries.length + data.activity.length)); })
       .catch(() => {})
       .finally(() => setLoadingMore(false));
+  };
+
+  // 64.8: Download activity log as CSV
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await activityService.export();
+      const url = URL.createObjectURL(res.data as unknown as Blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'activity-log.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* non-fatal */ } finally {
+      setExporting(false);
+    }
   };
 
   const handleClearAll = async () => {
@@ -110,16 +139,10 @@ export function ActivityPage() {
     }
   };
 
+  // 64.3: text search is server-side; client-side only filters by category chip
   const filtered = entries.filter((entry) => {
-    const matchesSearch =
-      !searchQuery ||
-      entry.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      entry.details.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesFilter =
-      activeFilter === 'All' || getCategory(entry.icon) === activeFilter;
-
-    return matchesSearch && matchesFilter;
+    const matchesFilter = activeFilter === 'All' || getCategory(entry.icon) === activeFilter;
+    return matchesFilter;
   });
 
   // Count per category for badge display
@@ -143,9 +166,19 @@ export function ActivityPage() {
             <span className="text-[#00F0FF] font-medium">{total || entries.length}</span> total events recorded
           </p>
         </div>
-        {/* 40.4: Clear all with confirmation */}
+        {/* 40.4: Clear all + 64.8: Export */}
         {entries.length > 0 && (
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* 64.8: CSV export button */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleExport}
+              disabled={exporting}
+              className="h-8 border-[#00F0FF]/30 text-[#00F0FF]/70 hover:text-[#00F0FF] hover:border-[#00F0FF]/50"
+            >
+              <Download className="w-3 h-3 mr-1" />{exporting ? 'Exporting…' : 'Export CSV'}
+            </Button>
             {showClearConfirm ? (
               <>
                 <span className="text-xs text-[#FF6161]">Clear all activity?</span>
@@ -225,11 +258,11 @@ export function ActivityPage() {
             <div className="text-center py-16">
               <Activity className="w-12 h-12 text-[#00F0FF]/20 mx-auto mb-4" />
               <p className="text-[#6B7280] mb-1">
-                {searchQuery || activeFilter !== 'All'
+                {serverQ || activeFilter !== 'All'
                   ? 'No events match your filters'
                   : 'No activity recorded yet'}
               </p>
-              {(searchQuery || activeFilter !== 'All') && (
+              {(serverQ || activeFilter !== 'All') && (
                 <button
                   onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}
                   className="text-xs text-[#00F0FF] hover:underline mt-2"
@@ -279,7 +312,7 @@ export function ActivityPage() {
         </CardContent>
       </Card>
 
-      {entries.length > 0 && entries.length < total && !searchQuery && activeFilter === 'All' && (
+      {entries.length > 0 && entries.length < total && (
         <div className="flex justify-center">
           <button
             onClick={handleLoadMore}

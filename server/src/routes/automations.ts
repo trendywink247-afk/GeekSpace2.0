@@ -13,15 +13,33 @@ import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 
 export const automationsRouter = Router();
 
+// 64.5: GET /automations/stats — summary counts (must be before /:id routes)
+automationsRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { total } = db.prepare('SELECT COUNT(*) as total FROM automations WHERE user_id = ?').get(userId) as { total: number };
+  const { enabled } = db.prepare('SELECT COUNT(*) as enabled FROM automations WHERE user_id = ? AND enabled = 1').get(userId) as { enabled: number };
+  const byTrigger = db.prepare(
+    'SELECT trigger_type, COUNT(*) as cnt FROM automations WHERE user_id = ? GROUP BY trigger_type'
+  ).all(userId) as Array<{ trigger_type: string; cnt: number }>;
+  const recentRuns = db.prepare(
+    `SELECT COUNT(*) as cnt FROM automation_logs WHERE user_id = ? AND created_at >= datetime('now', '-7 days')`
+  ).get(userId) as { cnt: number };
+  res.json({ total, enabled, disabled: total - enabled, byTrigger, recentRuns: recentRuns.cnt });
+});
+
 automationsRouter.get('/', requireAuth, async (req: AuthRequest, res) => {
-  // 53.5: Redis cache per-user automations list (30s TTL)
-  const cacheKey = `automations:${req.userId}`;
+  // 64.9: optional enabled filter (true/false/undefined=all)
+  const enabledFilter = req.query.enabled === 'true' ? 1 : req.query.enabled === 'false' ? 0 : null;
+  // 53.5: Redis cache per-user automations list (30s TTL); include filter in cache key
+  const cacheKey = `automations:${req.userId}:${enabledFilter ?? 'all'}`;
   const cached = await cacheGet(cacheKey);
   if (cached) {
     res.set('X-Cache', 'HIT').json(JSON.parse(cached));
     return;
   }
-  const rows = db.prepare('SELECT * FROM automations WHERE user_id = ? ORDER BY created_at DESC').all(req.userId!) as Array<Record<string, unknown>>;
+  const rows = enabledFilter !== null
+    ? db.prepare('SELECT * FROM automations WHERE user_id = ? AND enabled = ? ORDER BY created_at DESC').all(req.userId!, enabledFilter) as Array<Record<string, unknown>>
+    : db.prepare('SELECT * FROM automations WHERE user_id = ? ORDER BY created_at DESC').all(req.userId!) as Array<Record<string, unknown>>;
   // 48.1: Normalize enabled to boolean (SQLite returns 0/1 which confuses React toggle state)
   const automations = rows.map(a => ({ ...a, enabled: Boolean(a.enabled) }));
   await cacheSet(cacheKey, JSON.stringify(automations), 30);

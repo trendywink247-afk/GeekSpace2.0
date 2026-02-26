@@ -22,6 +22,7 @@ import {
   AlarmClock,
   Pencil,
   Download,
+  Copy,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -313,6 +314,18 @@ export function RemindersPage() {
 
   const handleDelete = async (id: string) => {
     await deleteReminder(id);
+  };
+
+  // 64.4: Duplicate a reminder
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const handleDuplicate = async (id: string) => {
+    setDuplicatingId(id);
+    try {
+      await reminderService.duplicate(id);
+      await loadReminders();
+    } catch { /* non-fatal */ } finally {
+      setDuplicatingId(null);
+    }
   };
 
   // 39.1: Use proper snooze endpoint so every preset is logged to snooze_log
@@ -1346,6 +1359,15 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                       )}
                                     </div>
                                   )}
+                                  {/* 64.4: Duplicate */}
+                                  <button
+                                    onClick={() => void handleDuplicate(reminder.id)}
+                                    aria-label="Duplicate reminder"
+                                    disabled={duplicatingId === reminder.id}
+                                    className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#00F0FF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </button>
                                   <button
                                     onClick={() => handleEditClick(reminder)}
                                     aria-label="Edit reminder"
@@ -1592,6 +1614,15 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                 )}
                               </div>
                             )}
+                            {/* 64.4: Duplicate */}
+                            <button
+                              onClick={() => void handleDuplicate(reminder.id)}
+                              aria-label="Duplicate reminder"
+                              disabled={duplicatingId === reminder.id}
+                              className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#00F0FF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
                             <button
                               onClick={() => handleEditClick(reminder)}
                               aria-label="Edit reminder"

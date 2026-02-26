@@ -98,9 +98,21 @@ portfolioRouter.get('/me/stats', requireAuth, (req: AuthRequest, res) => {
   res.json({ view_count: viewCount, contact_count: contactCount, project_count: projectCount, last_viewed_at: lastViewedAt });
 });
 
-// 63.2: GET /me/analytics/export — CSV export of daily view counts (last 30 days)
-portfolioRouter.get('/me/analytics/export', requireAuth, (req: AuthRequest, res) => {
+// 63.2 + 64.7: GET /me/analytics/export — CSV export (rate-limited: 10/5min per user)
+portfolioRouter.get('/me/analytics/export', requireAuth, async (req: AuthRequest, res) => {
   const userId = req.userId!;
+  // 64.7: Redis-based rate limit (10 exports per 5 min per user)
+  const rlKey = `portfolio:analytics-export-rl:${userId}`;
+  try {
+    const current = await cacheGet(rlKey);
+    const count = current ? parseInt(current, 10) : 0;
+    if (count >= 10) {
+      res.status(429).json({ error: 'Too many export requests. Try again in a few minutes.' });
+      return;
+    }
+    await cacheSet(rlKey, String(count + 1), 300);
+  } catch { /* Redis unavailable — allow through */ }
+
   const rows = db.prepare(
     `SELECT date(visited_at) as day, COUNT(*) as views
      FROM portfolio_visits WHERE user_id = ? AND visited_at >= date('now', '-30 days')

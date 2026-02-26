@@ -401,6 +401,14 @@ export function VideoGenPage() {
     { label: '10s', val: 10 },
   ];
 
+  // 64.10: Estimated runtime based on duration + model tier
+  const estimatedSeconds = (() => {
+    const base = duration * 6; // ~6s per second of footage
+    const multiplier = currentModel?.tier === 'premium' ? 1.5 : currentModel?.tier === 'standard' ? 1.1 : 1.0;
+    const est = Math.round(base * multiplier);
+    return Math.max(20, Math.min(est, 120));
+  })();
+
   return (
     <div className="space-y-6">
       {/* Toast */}
@@ -694,9 +702,10 @@ export function VideoGenPage() {
           </button>
         </div>
 
+        {/* 64.10: Estimated runtime display */}
         <p className="text-xs text-[#6B7280] mt-3 flex items-center gap-1.5">
           <AlertCircle className="w-3 h-3" />
-          Video generation takes 30-120 seconds. The video will appear below once ready.
+          Est. ~{estimatedSeconds}s for {duration}s clip · The video will appear below once ready.
         </p>
       </div>
 

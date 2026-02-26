@@ -127,6 +127,27 @@ remindersRouter.patch('/:id', requireAuth, validateBody(reminderUpdateSchema), (
   res.json(reminder);
 });
 
+// ── 64.4: Duplicate reminder ────────────────────────────────────────────────
+remindersRouter.post('/:id/duplicate', requireAuth, (req: AuthRequest, res) => {
+  const src = db.prepare('SELECT * FROM reminders WHERE id = ? AND user_id = ?').get(req.params.id, req.userId!) as Record<string, unknown> | undefined;
+  if (!src) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const newId = uuid();
+  db.prepare(`
+    INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, recurrence, created_by, scheduled_for, priority)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    newId, req.userId!, src.text, src.datetime || '', src.channel || 'push',
+    src.category || 'general', src.recurring || '', src.recurrence ?? null,
+    'user', src.scheduled_for ?? Date.now(), src.priority || 'normal'
+  );
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`).run(uuid(), req.userId!, `Duplicate: ${src.text}`);
+  logger.info({ event: 'reminder.duplicated', userId: req.userId, sourceId: req.params.id, newId });
+
+  const reminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(newId);
+  res.status(201).json(reminder);
+});
+
 // ── Complete endpoint with recurrence support ───────────────────────────────
 remindersRouter.post('/:id/complete', requireAuth, (req: AuthRequest, res) => {
   const existing = db.prepare('SELECT * FROM reminders WHERE id = ? AND user_id = ?').get(req.params.id, req.userId!) as Record<string, unknown> | undefined;
