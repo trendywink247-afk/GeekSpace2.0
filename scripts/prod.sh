@@ -30,12 +30,38 @@ docker compose up -d
 echo ""
 
 # ── 4. Sync frontend to Caddy serve dir ─
-echo ">> Syncing frontend assets to Caddy..."
+echo ">> Syncing frontend assets to host..."
 docker cp geekspace-app:/app/dist/. /var/www/geekspace/
+# Validate critical files exist
+for f in index.html assets; do
+    if [ ! -e "/var/www/geekspace/$f" ]; then
+        echo "ERROR: /var/www/geekspace/$f missing after sync!"
+        exit 1
+    fi
+done
 echo "   Frontend synced to /var/www/geekspace/"
 echo ""
 
-# ── 5. Wait for startup ─────────────────
+# ── 5. Bump service worker cache name ────
+echo ">> Bumping service worker cache..."
+SHORT_SHA=$(git rev-parse --short HEAD)
+SW_FILE="/var/www/geekspace/sw.js"
+if [ -f "$SW_FILE" ]; then
+    sed -i "s/const CACHE_NAME = '.*'/const CACHE_NAME = 'agentin-${SHORT_SHA}'/" "$SW_FILE"
+    echo "   SW cache: agentin-${SHORT_SHA}"
+fi
+echo ""
+
+# ── 6. Sync Caddy config + reload ────────
+echo ">> Reloading Caddy..."
+if systemctl is-active --quiet caddy; then
+    sudo caddy reload --config /etc/caddy/Caddyfile 2>/dev/null && echo "   Host Caddy reloaded" || echo "   Host Caddy reload failed"
+else
+    echo "   Host Caddy not running — skipping reload"
+fi
+echo ""
+
+# ── 7. Wait for startup ─────────────────
 echo ">> Waiting for services to start..."
 for i in $(seq 1 30); do
     if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
@@ -49,7 +75,7 @@ for i in $(seq 1 30); do
 done
 echo ""
 
-# ── 6. Health check ──────────────────────
+# ── 8. Health check ──────────────────────
 echo ">> Running health check..."
 echo ""
 if bash "$SCRIPT_DIR/healthcheck.sh"; then
@@ -61,7 +87,7 @@ else
     echo "Check logs: docker compose logs --tail=50"
 fi
 
-# ── 7. Container status ─────────────────
+# ── 9. Container status ─────────────────
 echo ""
 echo "-- Container Status --"
 docker compose ps
