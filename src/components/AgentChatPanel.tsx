@@ -941,7 +941,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                       </div>
                     )}
                     {/* 60.6: Reply + 61.4: Save to memory buttons */}
-                    {msg.role !== 'system' && !msg.isStreaming && (
+                    {!msg.isStreaming && (
                       <div className="flex justify-end gap-1 mt-1">
                         {/* 61.4: Save to memory */}
                         <button

@@ -243,6 +243,14 @@ export const agentService = {
 
   getRateLimitStatus: () =>
     api.get<{ remaining: number; limit: number; resetAt: string; windowMinutes: number }>('/agent/rate-limit-status'),
+
+  // 60.2: Star / unstar a message
+  toggleStar: (messageId: string) =>
+    api.post<{ starred: boolean }>(`/agent/conversations/${messageId}/star`),
+
+  // 60.2: Get starred messages
+  getStarred: (limit = 50) =>
+    api.get<{ messages: ConversationEntry[] }>(`/agent/conversations/starred?limit=${limit}`),
 };
 
 // ----- Version -----------------------------------------------
@@ -621,13 +629,6 @@ export const memoryService = {
   getReactionSummary: () =>
     api.get<{ reactions: { reaction: string; count: number }[] }>('/agent/conversations/reactions/summary'),
 
-  // 60.2: Star / unstar a message
-  toggleStar: (messageId: string) =>
-    api.post<{ starred: boolean }>(`/agent/conversations/${messageId}/star`),
-
-  // 60.2: Get starred messages
-  getStarred: (limit = 50) =>
-    api.get<{ messages: ConversationEntry[] }>(`/agent/conversations/starred?limit=${limit}`),
 };
 
 // ----- Automation Logs ---------------------------------------
