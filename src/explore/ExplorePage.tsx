@@ -52,6 +52,7 @@ export function ExplorePage() {
     } finally {
       setIsLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- profiles.length intentionally excluded to avoid refetch loops when data loads
   }, [search, activeTag]);
 
   useEffect(() => {

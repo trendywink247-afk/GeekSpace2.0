@@ -32,6 +32,7 @@ export function PageProgress({ loading }: { loading: boolean }) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- 'visible' is intentionally excluded: we only want to react to loading changes, not to every visibility toggle
   }, [loading]);
 
   if (!visible) return null;

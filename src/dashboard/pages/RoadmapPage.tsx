@@ -27,6 +27,8 @@ import {
   X,
   Trash2,
   Layers,
+  Pencil,
+  ChevronDown,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -208,6 +210,7 @@ export function RoadmapPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const [similarTitle, setSimilarTitle] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [mySuggestions, setMySuggestions] = useState<Array<{id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number; trending?: number}>>([]);
   const [myRewards, setMyRewards] = useState<Array<{id: string; eventType: string; credits: number; createdAt: string}>>([]);
@@ -218,6 +221,16 @@ export function RoadmapPage() {
   // Task 69.10: Suggestion detail modal state
   const [detailSuggestion, setDetailSuggestion] = useState<{id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number} | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Phase 71: Edit state for "new" status suggestions
+  const [editingSuggestion, setEditingSuggestion] = useState<{id: string; title: string; body: string} | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editBody, setEditBody] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+
+  // Phase 71: Show all suggestions toggle
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
 
   useEffect(() => {
     setLoadingSuggestions(true);
@@ -260,13 +273,14 @@ export function RoadmapPage() {
       const res = await suggestionService.create({ title: formTitle.trim(), body: formBody.trim(), tags });
       if (res.data.duplicate_warning) {
         setDuplicateWarning(true);
+        if (res.data.similar_title) setSimilarTitle(res.data.similar_title);
       }
       setSubmitSuccess(true);
       setMySuggestions(prev => [{ id: res.data.id, title: res.data.title, body: res.data.body, status: res.data.status, created_at: res.data.created_at }, ...prev]);
       setFormTitle('');
       setFormBody('');
       setFormTags('');
-      setTimeout(() => { setSuggestionOpen(false); setSubmitSuccess(false); setDuplicateWarning(false); }, 1500);
+      setTimeout(() => { setSuggestionOpen(false); setSubmitSuccess(false); setDuplicateWarning(false); setSimilarTitle(''); }, 3000);
     } catch (err: unknown) {
       const message = (err as {response?: {data?: {error?: string}}})?.response?.data?.error || 'Failed to submit. Please try again.';
       setSubmitError(message);
@@ -285,6 +299,27 @@ export function RoadmapPage() {
       // non-fatal — ignore errors
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  // Phase 71: Edit suggestion handler
+  const handleEdit = async () => {
+    if (!editingSuggestion) return;
+    if (!editTitle.trim() || editBody.trim().length < 20) {
+      setEditError('Title required; description must be at least 20 characters.');
+      return;
+    }
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const res = await suggestionService.update(editingSuggestion.id, { title: editTitle.trim(), body: editBody.trim() });
+      setMySuggestions(prev => prev.map(s => s.id === editingSuggestion.id ? { ...s, title: res.data.title, body: res.data.body } : s));
+      setEditingSuggestion(null);
+    } catch (err: unknown) {
+      const message = (err as {response?: {data?: {error?: string}}})?.response?.data?.error || 'Failed to save. Please try again.';
+      setEditError(message);
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -565,13 +600,13 @@ export function RoadmapPage() {
                       <Star className="w-8 h-8 text-[#00FF88]" />
                     </div>
                     <p className="text-[#00FF88] font-semibold text-lg">Submitted!</p>
-                    {duplicateWarning && <p className="text-xs text-[#F59E0B] mt-2">Similar suggestion detected — we'll merge them.</p>}
+                    {duplicateWarning && <p className="text-xs text-[#F59E0B] mt-2">Similar to &quot;{similarTitle || 'an existing idea'}&quot; — we&apos;ll merge them.</p>}
                   </div>
                 ) : (
                   <div className="space-y-4 pt-2">
                     {duplicateWarning && (
                       <div className="px-3 py-2 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-xs text-[#F59E0B]">
-                        A similar idea already exists — yours will be merged with it.
+                        Similar to &quot;{similarTitle || 'an existing idea'}&quot; — yours will be merged with it.
                       </div>
                     )}
                     <div className="space-y-1.5">
@@ -635,7 +670,7 @@ export function RoadmapPage() {
               <p className="text-xs text-[#6B7280]">No suggestions yet. Be the first to suggest a feature!</p>
             ) : (
               <div className="space-y-2">
-                {mySuggestions.slice(0, 5).map(s => {
+                {(showAllSuggestions ? mySuggestions : mySuggestions.slice(0, 5)).map(s => {
                   const vs = voteState[s.id];
                   const upvotes = vs?.upvotes ?? (s.upvotes ?? 0);
                   const downvotes = vs?.downvotes ?? (s.downvotes ?? 0);
@@ -645,7 +680,6 @@ export function RoadmapPage() {
                         <p className="text-sm text-[#E8E8F0] truncate">{s.title}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-xs text-[#6B7280]">{new Date(s.created_at).toLocaleDateString()}</p>
-                          {/* Task 70.3: Vote count badges */}
                           <span className="flex items-center gap-0.5 text-xs text-[#00F0FF]">
                             <ThumbsUp className="w-2.5 h-2.5" /> {upvotes}
                           </span>
@@ -659,7 +693,6 @@ export function RoadmapPage() {
                           )}
                         </div>
                       </div>
-                      {/* Task 69.10: View details button */}
                       <button
                         onClick={() => setDetailSuggestion(s)}
                         className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#BF5FFF]/10 hover:bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs font-medium transition-colors flex-shrink-0"
@@ -667,7 +700,6 @@ export function RoadmapPage() {
                       >
                         <Eye className="w-3 h-3" />
                       </button>
-                      {/* Task 68.7: Vote button */}
                       <button
                         onClick={() => void handleVote(s.id)}
                         disabled={vs?.voting}
@@ -677,7 +709,16 @@ export function RoadmapPage() {
                         <ThumbsUp className="w-3 h-3" />
                         <span>{upvotes}</span>
                       </button>
-                      {/* Task 70.12: Delete button (only for 'new' status suggestions) */}
+                      {/* Phase 71: Edit button for 'new' status suggestions */}
+                      {s.status === 'new' && (
+                        <button
+                          onClick={() => { setEditingSuggestion(s); setEditTitle(s.title); setEditBody(s.body); setEditError(''); }}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[#00F0FF]/10 text-[#6B7280] hover:text-[#00F0FF] text-xs transition-colors flex-shrink-0"
+                          title="Edit suggestion"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                      )}
                       {s.status === 'new' && (
                         <button
                           onClick={() => void handleDelete(s.id)}
@@ -697,6 +738,16 @@ export function RoadmapPage() {
                     </div>
                   );
                 })}
+                {/* Phase 71: Show all / Show less toggle */}
+                {mySuggestions.length > 5 && (
+                  <button
+                    onClick={() => setShowAllSuggestions(prev => !prev)}
+                    className="flex items-center gap-1.5 mx-auto mt-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/5 hover:bg-[#00F0FF]/10 text-[#00F0FF] text-xs font-medium transition-colors"
+                  >
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllSuggestions ? 'rotate-180' : ''}`} />
+                    {showAllSuggestions ? 'Show less' : `View all ${mySuggestions.length} suggestions`}
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -806,6 +857,58 @@ export function RoadmapPage() {
         );
       })()}
 
+      {/* Phase 71: Edit Suggestion Modal */}
+      {editingSuggestion && (
+        <Dialog open={!!editingSuggestion} onOpenChange={(open) => { if (!open) setEditingSuggestion(null); }}>
+          <DialogContent className="bg-[#06060B] border-[#00F0FF]/20 max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-[#E8E8F0] flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-[#00F0FF]" />
+                Edit Suggestion
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-1.5">
+                <Label className="text-[#E8E8F0] text-sm">Title</Label>
+                <Input
+                  value={editTitle}
+                  onChange={e => setEditTitle(e.target.value)}
+                  maxLength={100}
+                  className="bg-[#05050A] border-[#00F0FF]/20 text-[#E8E8F0]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[#E8E8F0] text-sm">Description <span className="text-[#6B7280] font-normal">(min 20 chars)</span></Label>
+                <Textarea
+                  value={editBody}
+                  onChange={e => setEditBody(e.target.value)}
+                  rows={4}
+                  className="bg-[#05050A] border-[#00F0FF]/20 text-[#E8E8F0] resize-none"
+                />
+                <p className="text-right text-xs text-[#6B7280]">{editBody.length}/2000</p>
+              </div>
+              {editError && <p className="text-xs text-[#FF2D78]">{editError}</p>}
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setEditingSuggestion(null)}
+                  variant="outline"
+                  className="flex-1 border-[#00F0FF]/20 text-[#6B7280]"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => void handleEdit()}
+                  disabled={editSaving || !editTitle.trim() || editBody.trim().length < 20}
+                  className="flex-1 bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold"
+                >
+                  {editSaving ? 'Saving\u2026' : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Task 69.10: Suggestion Detail Modal */}
       {detailSuggestion && (
         <Dialog open={!!detailSuggestion} onOpenChange={(open) => { if (!open) setDetailSuggestion(null); }}>
@@ -834,19 +937,17 @@ export function RoadmapPage() {
               <div className="rounded-lg bg-[#05050A] border border-[#BF5FFF]/10 p-4">
                 <p className="text-sm text-[#C4C8D4] leading-relaxed whitespace-pre-wrap">{detailSuggestion.body}</p>
               </div>
-              {/* Vote counts from voteState */}
-              {voteState[detailSuggestion.id] && (
-                <div className="flex items-center gap-4 text-xs text-[#6B7280]">
-                  <span className="flex items-center gap-1">
-                    <ThumbsUp className="w-3.5 h-3.5 text-[#00F0FF]" />
-                    {voteState[detailSuggestion.id].upvotes} upvotes
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <ThumbsUp className="w-3.5 h-3.5 text-[#FF6161] rotate-180" />
-                    {voteState[detailSuggestion.id].downvotes} downvotes
-                  </span>
-                </div>
-              )}
+              {/* Vote counts — always show, using voteState with suggestion fallback */}
+              <div className="flex items-center gap-4 text-xs text-[#6B7280]">
+                <span className="flex items-center gap-1">
+                  <ThumbsUp className="w-3.5 h-3.5 text-[#00F0FF]" />
+                  {(voteState[detailSuggestion.id]?.upvotes ?? detailSuggestion.upvotes ?? 0)} upvotes
+                </span>
+                <span className="flex items-center gap-1">
+                  <ThumbsUp className="w-3.5 h-3.5 text-[#FF6161] rotate-180" />
+                  {(voteState[detailSuggestion.id]?.downvotes ?? detailSuggestion.downvotes ?? 0)} downvotes
+                </span>
+              </div>
               {/* Close button */}
               <div className="flex justify-end">
                 <button
