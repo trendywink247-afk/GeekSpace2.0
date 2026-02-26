@@ -1457,3 +1457,30 @@ try { db.exec(`
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_user ON agent_memory(user_id)`); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_category ON agent_memory(user_id, category)`); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_conversation_log_user ON conversation_log(user_id, created_at)`); } catch { /* already exists */ }
+
+// ── Phase 68.1: Suggestion status history ────────────────────────────────────
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestion_events (
+    id TEXT PRIMARY KEY,
+    suggestion_id TEXT NOT NULL REFERENCES suggestions(id) ON DELETE CASCADE,
+    from_status TEXT NOT NULL,
+    to_status TEXT NOT NULL,
+    actor TEXT NOT NULL DEFAULT 'admin',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_events_suggestion ON suggestion_events(suggestion_id, created_at DESC)`); } catch { /* already exists */ }
+
+// ── Phase 68.4: Suggestion votes ─────────────────────────────────────────────
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestion_votes (
+    id TEXT PRIMARY KEY,
+    suggestion_id TEXT NOT NULL REFERENCES suggestions(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    vote INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(suggestion_id, user_id)
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_votes_suggestion ON suggestion_votes(suggestion_id)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_votes_user ON suggestion_votes(user_id)`); } catch { /* already exists */ }

@@ -64,6 +64,12 @@ export function resetDatabase(): void {
       'snooze_log',
       'portfolio_contacts',
       'webhook_dead_letters',
+      'suggestion_events',
+      'suggestion_votes',
+      'suggestion_rewards',
+      'suggestion_scores',
+      'suggestion_clusters',
+      'suggestions',
       'users',
     ];
 
