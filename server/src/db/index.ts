@@ -1416,3 +1416,44 @@ try { db.exec(`
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestions_user ON suggestions(user_id, created_at DESC)`); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions(status, created_at DESC)`); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_rewards_user ON suggestion_rewards(user_id, created_at DESC)`); } catch { /* already exists */ }
+
+// ── Phase 68.1: Fix CI — ensure agent_memory + conversation_log always exist ──
+// These tables were created only by initMemoryTables() (in memory.ts), which is
+// called by index.ts (prod) but NOT by app.ts (tests). Moving them here ensures
+// they're always created when db/index.ts is imported (which tests do directly).
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS agent_memory (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    category TEXT NOT NULL,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    confidence REAL DEFAULT 1.0,
+    source TEXT DEFAULT 'observed',
+    access_count INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, category, key)
+  )
+`); } catch { /* already exists */ }
+
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS conversation_log (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    provider TEXT DEFAULT '',
+    model TEXT DEFAULT '',
+    summary TEXT DEFAULT '',
+    tags TEXT DEFAULT '[]',
+    request_id TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  )
+`); } catch { /* already exists */ }
+
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_user ON agent_memory(user_id)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_category ON agent_memory(user_id, category)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_conversation_log_user ON conversation_log(user_id, created_at)`); } catch { /* already exists */ }
