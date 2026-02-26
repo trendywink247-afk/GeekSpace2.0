@@ -1848,6 +1848,12 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                     onChange={(e) => setNewReminder({ ...newReminder, datetime: e.target.value })}
                     className="bg-[#06060B] border-[#00F0FF]/20"
                   />
+                  {/* 69.3: Friendly due label in edit mode */}
+                  {editingReminder && newReminder.datetime && (
+                    <p className="text-xs text-[#00F0FF] mt-1">
+                      {humanDue(new Date(newReminder.datetime).toISOString())}
+                    </p>
+                  )}
                   {/* 27.5: Quick date preset buttons */}
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {[

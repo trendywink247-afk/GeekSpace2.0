@@ -1484,3 +1484,9 @@ try { db.exec(`
 `); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_votes_suggestion ON suggestion_votes(suggestion_id)`); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_votes_user ON suggestion_votes(user_id)`); } catch { /* already exists */ }
+
+// Phase 69.1: Compound index for vote lookup by suggestion+user (covers INSERT OR REPLACE uniqueness check)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_votes_user_suggestion ON suggestion_votes(suggestion_id, user_id)`); } catch { /* already exists */ }
+
+// Phase 69.14: Cluster name column (human-readable label for admin UI)
+try { db.exec(`ALTER TABLE suggestion_clusters ADD COLUMN name TEXT`); } catch { /* already exists */ }

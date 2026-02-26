@@ -22,6 +22,8 @@ import {
   Star,
   TrendingUp,
   ThumbsUp,
+  Eye,
+  X,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -208,6 +210,9 @@ export function RoadmapPage() {
   const [myRewards, setMyRewards] = useState<Array<{id: string; eventType: string; credits: number; createdAt: string}>>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [voteState, setVoteState] = useState<Record<string, { upvotes: number; downvotes: number; voting: boolean }>>({});
+
+  // Task 69.10: Suggestion detail modal state
+  const [detailSuggestion, setDetailSuggestion] = useState<{id: string; title: string; body: string; status: string; created_at: string} | null>(null);
 
   useEffect(() => {
     setLoadingSuggestions(true);
@@ -607,6 +612,14 @@ export function RoadmapPage() {
                         <p className="text-sm text-[#E8E8F0] truncate">{s.title}</p>
                         <p className="text-xs text-[#6B7280]">{new Date(s.created_at).toLocaleDateString()}</p>
                       </div>
+                      {/* Task 69.10: View details button */}
+                      <button
+                        onClick={() => setDetailSuggestion(s)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#BF5FFF]/10 hover:bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs font-medium transition-colors flex-shrink-0"
+                        title="View details"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </button>
                       {/* Task 68.7: Vote button */}
                       <button
                         onClick={() => void handleVote(s.id)}
@@ -673,6 +686,94 @@ export function RoadmapPage() {
           </button>
         </CardContent>
       </Card>
+
+      {/* Task 69.12: Recent Improvements section */}
+      {(() => {
+        const RECENT_IMPROVEMENTS = [
+          { phase: 69, title: 'Suggestion voting, CSV export, code copy, performance improvements' },
+          { phase: 68, title: 'Suggestion events, voting system, pagination, admin stats dashboard' },
+          { phase: 67, title: 'Suggest & Earn: submit ideas, earn credits when they ship' },
+        ];
+        return (
+          <Card className="bg-[#0B0B10] border-[#BF5FFF]/20">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-[#E8E8F0] mb-4 flex items-center gap-2">
+                <History className="w-5 h-5 text-[#BF5FFF]" />
+                Recent Improvements
+              </h3>
+              <div className="space-y-3">
+                {RECENT_IMPROVEMENTS.map((item, idx) => (
+                  <div key={item.phase} className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 w-px self-stretch bg-[#BF5FFF]/20 ml-5 ${idx === 0 ? 'mt-6' : ''}`} aria-hidden="true" />
+                    <div className="flex items-start gap-3 flex-1 pb-3 border-b border-[#BF5FFF]/10 last:border-0">
+                      <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs font-bold border border-[#BF5FFF]/30">
+                        v{item.phase}
+                      </span>
+                      <p className="text-sm text-[#A7ACB8] leading-relaxed">{item.title}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {/* Task 69.10: Suggestion Detail Modal */}
+      {detailSuggestion && (
+        <Dialog open={!!detailSuggestion} onOpenChange={(open) => { if (!open) setDetailSuggestion(null); }}>
+          <DialogContent className="bg-[#0B0B10] border-[#BF5FFF]/20 max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-lg text-[#E8E8F0] pr-8">{detailSuggestion.title}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Status badge */}
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-xs px-2 py-0.5 rounded-full border"
+                  style={{
+                    color: getStatusColor(detailSuggestion.status),
+                    borderColor: `${getStatusColor(detailSuggestion.status)}40`,
+                    backgroundColor: `${getStatusColor(detailSuggestion.status)}15`,
+                  }}
+                >
+                  {getStatusLabel(detailSuggestion.status)}
+                </span>
+                <span className="text-xs text-[#6B7280]">
+                  Submitted {new Date(detailSuggestion.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+              {/* Body */}
+              <div className="rounded-lg bg-[#05050A] border border-[#BF5FFF]/10 p-4">
+                <p className="text-sm text-[#C4C8D4] leading-relaxed whitespace-pre-wrap">{detailSuggestion.body}</p>
+              </div>
+              {/* Vote counts from voteState */}
+              {voteState[detailSuggestion.id] && (
+                <div className="flex items-center gap-4 text-xs text-[#6B7280]">
+                  <span className="flex items-center gap-1">
+                    <ThumbsUp className="w-3.5 h-3.5 text-[#00F0FF]" />
+                    {voteState[detailSuggestion.id].upvotes} upvotes
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <ThumbsUp className="w-3.5 h-3.5 text-[#FF6161] rotate-180" />
+                    {voteState[detailSuggestion.id].downvotes} downvotes
+                  </span>
+                </div>
+              )}
+              {/* Close button */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setDetailSuggestion(null)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#06060B] border border-[#BF5FFF]/20 text-[#6B7280] hover:text-[#E8E8F0] text-xs transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Close
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
