@@ -506,7 +506,7 @@ XSS hardening, vote count API enrichment, RoadmapPage content refresh, DB index 
 
 ---
 
-## Phase 74 — IN PROGRESS
+## Phase 74 — COMPLETE ✓
 **Branch:** `ai/phase-20260226-phase74` | **Tests:** 811/811
 Test coverage hardening — 5 route test suites + Vite manual chunks + contact.ts bug fix.
 
@@ -523,6 +523,26 @@ Test coverage hardening — 5 route test suites + Vite manual chunks + contact.t
 | 74.9 | Update AI_FEATURE_MATRIX.md | ✅ | Dev/Ops |
 | 74.10 | Update AI_RISK_REGISTER.md | ✅ | Dev/Ops |
 | 74.11 | phase74.test.ts meta test (6 tests) | ✅ | Testing |
-| 74.12 | Brand guard | pending | Brand |
-| 74.13 | Verification + commit + PR + merge | pending | Dev/Ops |
+| 74.12 | Brand guard — 0 violations | ✅ | Brand |
+| 74.13 | Verification + commit + PR #105 + merge | ✅ | Dev/Ops |
+
+---
+
+## Phase 75 — COMPLETE ✓
+**Branch:** `ai/phase-20260226-phase75` | **Tests:** 818/818
+Production hardening + E2E test scaffolding: unified Caddy, hardened prod.sh, ErrorBoundary, lazyRetry, E2E specs.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 75.1 | CI baseline (811/811 clean) + create branch | ✅ | Reliability |
+| 75.2 | Unify Caddy configs (host /etc/caddy/Caddyfile) | ✅ | Infra |
+| 75.3 | Harden prod.sh (static sync validation, SW bump, Caddy reload) | ✅ | Infra |
+| 75.4 | Root ErrorBoundary in App.tsx | ✅ | Reliability |
+| 75.5 | lazyRetry chunk load retry utility + DashboardApp integration | ✅ | Reliability |
+| 75.6 | Add data-testid attributes for E2E selectors | ✅ | Testing |
+| 75.7 | E2E agent chat spec (e2e/chat.spec.ts) | ✅ | Testing |
+| 75.8 | E2E logout spec (e2e/logout.spec.ts) | ✅ | Testing |
+| 75.9 | phase75.test.ts meta test (7 tests) | ✅ | Testing |
+| 75.10 | Full verification (818/818, lint, typecheck, build, brand) | ✅ | Dev/Ops |
+| 75.11 | Ops + commit + PR + merge | ✅ | Dev/Ops |
 

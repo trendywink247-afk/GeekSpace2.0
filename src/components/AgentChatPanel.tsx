@@ -1225,6 +1225,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               onKeyDown={handleKeyDown}
               placeholder={premiumSession ? `Ask ${premiumSession.codename}...` : 'Ask anything...'}
               className="flex-1 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] rounded-xl"
+              data-testid="agent-chat-input"
             />
             {speechSupported && (
               <button
@@ -1238,6 +1239,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             <Button
               onClick={() => sendMessage()}
               disabled={!input.trim() || isTyping}
+              data-testid="agent-send-button"
               className={`rounded-xl px-3 press-scale ${
                 premiumSession
                   ? 'bg-[#F59E0B] hover:bg-[#D97706]'
