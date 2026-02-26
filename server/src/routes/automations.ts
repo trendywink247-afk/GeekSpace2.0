@@ -148,16 +148,36 @@ automationsRouter.post('/:id/test', requireAuth, async (req: AuthRequest, res) =
   }
 
   try {
+    const t0 = Date.now();
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ test: true, timestamp: new Date().toISOString(), automation_id: auto.id }),
       signal: AbortSignal.timeout(5000),
     });
-    res.json({ success: response.ok, statusCode: response.status, message: response.ok ? 'Test successful' : `Test failed with status ${response.status}` });
+    const latencyMs = Date.now() - t0;
+    const contentType = response.headers.get('content-type') ?? '';
+    let responseBody: string;
+    try {
+      const text = await response.text();
+      // 58.6: Pretty-print JSON if possible, else keep raw
+      responseBody = contentType.includes('json')
+        ? JSON.stringify(JSON.parse(text), null, 2)
+        : text.slice(0, 500);
+    } catch {
+      responseBody = '';
+    }
+    res.json({
+      success: response.ok,
+      statusCode: response.status,
+      message: response.ok ? 'Test successful' : `Test failed with status ${response.status}`,
+      latencyMs,
+      contentType,
+      responseBody,
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Request failed';
-    res.json({ success: false, statusCode: 0, message: `Test failed: ${msg}` });
+    res.json({ success: false, statusCode: 0, message: `Test failed: ${msg}`, latencyMs: 0, contentType: '', responseBody: '' });
   }
 });
 

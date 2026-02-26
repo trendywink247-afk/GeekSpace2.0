@@ -55,7 +55,10 @@ describe('Portfolio Stats Endpoints', () => {
 
       expect(response.body.totalViews).toBe(0);
       expect(response.body.recentViews).toBe(0);
-      expect(response.body.dailyBreakdown).toHaveLength(0);
+      // 58.3: dailyBreakdown now returns all 30 days filled with zeros (no gaps)
+      expect(response.body.dailyBreakdown).toHaveLength(30);
+      const allZero = (response.body.dailyBreakdown as { count: number }[]).every(d => d.count === 0);
+      expect(allZero).toBe(true);
 
       cleanupTestUser(user.id);
     });

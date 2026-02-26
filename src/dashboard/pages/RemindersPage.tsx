@@ -230,6 +230,8 @@ export function RemindersPage() {
   const [selectedActiveIds, setSelectedActiveIds] = useState<Set<string>>(new Set());
   const [isBulkSnoozing, setIsBulkSnoozing] = useState(false);
   const [isBulkCompleting, setIsBulkCompleting] = useState(false);
+  // 58.2: bulk-delete for active reminders
+  const [isBulkDeletingActive, setIsBulkDeletingActive] = useState(false);
 
   // 56.10: Reminder inline quick-edit
   const [inlineEditId, setInlineEditId] = useState<string | null>(null);
@@ -422,6 +424,19 @@ export function RemindersPage() {
       await loadReminders();
     } finally {
       setIsBulkCompleting(false);
+    }
+  };
+
+  // 58.2: Bulk-delete active reminders
+  const handleBulkDeleteActive = async () => {
+    if (selectedActiveIds.size === 0) return;
+    setIsBulkDeletingActive(true);
+    try {
+      await reminderService.bulkDelete(Array.from(selectedActiveIds));
+      setSelectedActiveIds(new Set());
+      await loadReminders();
+    } finally {
+      setIsBulkDeletingActive(false);
     }
   };
 
@@ -872,6 +887,16 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 Mark Done
+              </button>
+              {/* 58.2: Bulk-delete active reminders */}
+              <button
+                onClick={() => void handleBulkDeleteActive()}
+                disabled={isBulkDeletingActive}
+                className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-[#FF6161]/10 border border-[#FF6161]/30 text-[#FF6161] hover:bg-[#FF6161]/20 disabled:opacity-50 transition-colors"
+                aria-label="Delete selected active reminders"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete ({selectedActiveIds.size})
               </button>
               {isBulkSnoozing && (
                 <div className="w-4 h-4 border-2 border-[#FFB800]/30 border-t-[#FFB800] rounded-full animate-spin" />

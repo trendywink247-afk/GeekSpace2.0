@@ -302,14 +302,22 @@ portfolioRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
   const recentViews = (db.prepare(
     "SELECT COUNT(*) as cnt FROM portfolio_visits WHERE user_id = ? AND visited_at >= datetime('now', '-7 days')"
   ).get(userId) as { cnt: number }).cnt;
-  // Daily breakdown for the last 30 days
-  const dailyBreakdown = db.prepare(`
+  // 58.3: Daily breakdown — all 30 days filled with zeros (no gaps)
+  const rawBreakdown = db.prepare(`
     SELECT date(visited_at) as date, COUNT(*) as count
     FROM portfolio_visits
     WHERE user_id = ? AND visited_at >= datetime('now', '-30 days')
     GROUP BY date(visited_at)
     ORDER BY date ASC
   `).all(userId) as { date: string; count: number }[];
+  const countMap = new Map(rawBreakdown.map((r) => [r.date, r.count]));
+  const dailyBreakdown: { date: string; count: number }[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const ds = d.toISOString().slice(0, 10);
+    dailyBreakdown.push({ date: ds, count: countMap.get(ds) ?? 0 });
+  }
   res.json({ totalViews, recentViews, dailyBreakdown });
 });
 

@@ -46,6 +46,8 @@ export function VideoGenPage() {
   const [videoCount, setVideoCount] = useState(0);
   const [maxVideos, setMaxVideos] = useState(5);
   const [galleryLoading, setGalleryLoading] = useState(true);
+  // 58.9: gallery sort
+  const [gallerySort, setGallerySort] = useState<'newest' | 'status'>('newest');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewVideo, setPreviewVideo] = useState<UserVideo | null>(null);
 
@@ -60,6 +62,8 @@ export function VideoGenPage() {
   const [directorJobs, setDirectorJobs] = useState<DirectorJob[]>([]);
   const [directorError, setDirectorError] = useState<string | null>(null);
   const directorPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // 58.13: prevent double-triggering auto-stitch
+  const autoStitchFiredRef = useRef(false);
   // 56.13: Clip preview modal
   const [previewClip, setPreviewClip] = useState<{ url: string; index: number } | null>(null);
   const [copiedClipUrl, setCopiedClipUrl] = useState(false);
@@ -195,11 +199,41 @@ export function VideoGenPage() {
     return () => { if (directorPollRef.current) clearInterval(directorPollRef.current); };
   }, [directorJobId, loadDirectorJobs]);
 
+  // 58.13: Auto-stitch when all clips complete successfully
+  useEffect(() => {
+    if (
+      directorJob?.status === 'done' &&
+      directorJob.clips.length > 0 &&
+      directorJob.clips.every((c) => c.success) &&
+      !stitchResult &&
+      !stitching &&
+      !autoStitchFiredRef.current &&
+      directorJobId
+    ) {
+      autoStitchFiredRef.current = true;
+      // Defer slightly so UI settles after polling update
+      const tid = setTimeout(() => {
+        void (async () => {
+          setStitching(true);
+          try {
+            const res = await videoService.directorStitch(directorJobId);
+            setStitchResult({ url: res.data.stitchedUrl, clipUrls: res.data.clipUrls, softStitch: res.data.softStitch });
+            if (res.data.stitchedUrl) showToast('Auto-stitch complete! Download your video below.');
+          } catch { /* non-fatal — user can stitch manually */ } finally {
+            setStitching(false);
+          }
+        })();
+      }, 1500);
+      return () => clearTimeout(tid);
+    }
+  }, [directorJob, stitchResult, stitching, directorJobId]);
+
   const handleDirectorSubmit = async () => {
     if (!directorIdea.trim()) return;
     setDirectorRunning(true);
     setDirectorError(null);
     setDirectorJob(null);
+    autoStitchFiredRef.current = false; // 58.13: allow auto-stitch for new job
     try {
       const res = await videoService.directorCreate(directorIdea.trim());
       setDirectorJobId(res.data.jobId);
@@ -235,6 +269,7 @@ export function VideoGenPage() {
     setDirectorJob(null);
     setDirectorJobId(null);
     setStitchResult(null);
+    autoStitchFiredRef.current = false; // 58.13: allow auto-stitch for new job
     void handleDirectorSubmit();
   };
 
@@ -600,9 +635,22 @@ export function VideoGenPage() {
               {videoCount}/{maxVideos}
             </span>
           </h2>
-          <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
-            <Clock className="w-3 h-3" />
-            Videos expire in 24h
+          <div className="flex items-center gap-2">
+            {/* 58.9: Sort toggle */}
+            <div className="flex items-center rounded-lg border border-[#A78BFA]/20 bg-[#0C0C18] p-0.5 gap-0.5">
+              <button
+                onClick={() => setGallerySort('newest')}
+                className={`text-xs px-2 py-1 rounded transition-colors ${gallerySort === 'newest' ? 'bg-[#A78BFA]/20 text-[#A78BFA]' : 'text-[#6B7280] hover:text-[#E8E8F0]'}`}
+              >Newest</button>
+              <button
+                onClick={() => setGallerySort('status')}
+                className={`text-xs px-2 py-1 rounded transition-colors ${gallerySort === 'status' ? 'bg-[#A78BFA]/20 text-[#A78BFA]' : 'text-[#6B7280] hover:text-[#E8E8F0]'}`}
+              >Status</button>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
+              <Clock className="w-3 h-3" />
+              Expire 24h
+            </div>
           </div>
         </div>
 
@@ -618,7 +666,13 @@ export function VideoGenPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {videos.map(vid => (
+            {[...videos].sort((a, b) => {
+              if (gallerySort === 'status') {
+                const order = { ready: 0, processing: 1 };
+                return (order[a.status] ?? 2) - (order[b.status] ?? 2);
+              }
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            }).map(vid => (
               <div
                 key={vid.id}
                 className="group rounded-2xl border border-[#A78BFA]/10 overflow-hidden hover:border-[#A78BFA]/30 transition-all bg-[#0C0C18]"
