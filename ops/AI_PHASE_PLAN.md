@@ -120,24 +120,43 @@ JWT refresh endpoint, /api/auth/me Redis cache, structured 5xx logging, webhook 
 
 ---
 
-## Phase 55 — IN PROGRESS (13 items — Seedance Director Mode + general improvements)
-**Theme:** Seedance Director Mode (fal.ai), reliability, UX polish, mobile improvements
-
-> Phase 55 introduces 13-task structure per updated CLAUDE.md:
-> Tasks 1–11 = normal improvements, Task 12 = Brand gate, Task 13 = Seedance Director Mode
+## Phase 55 — COMPLETE ✓
+**PR:** pending | **Tests:** 530/530
+E2E flake fixes, load-error banner, portfolio inline preview, auth/refresh rate limit, dead-letter retry, agent chat suggestions, connections tap-to-expand, Seedance Director Mode (fal.ai)
 
 | # | Item | Status | Category |
 |---|------|--------|----------|
-| 55.1 | Fix: CI check post-Phase-54 | ⬜ | Reliability |
-| 55.2 | Reliability: Dashboard load-error graceful fallback (retry + empty state) | ⬜ | Reliability |
-| 55.3 | UX: Portfolio edit page inline preview (live update as you type) | ⬜ | UX |
-| 55.4 | Security: Rate limit on /api/auth/refresh endpoint | ⬜ | Security |
-| 55.5 | Performance: /api/reminders ETag caching (per-user hash) | ⬜ | Performance |
-| 55.6 | UX: AutomationsPage dead-letter retry button | ⬜ | UX |
-| 55.7 | Edge-case: Agent chat empty state (first-time user guidance) | ⬜ | Edge-case |
-| 55.8 | State-sync: Settings page unsaved changes guard on navigation | ⬜ | State-sync |
-| 55.9 | Mobile: Connections page card tap-to-expand on mobile | ⬜ | Mobile |
-| 55.10 | Dev/Ops: /api/version endpoint serves gitSha + buildTime | ⬜ | Dev/Ops |
-| 55.11 | Phase 55 tests + verification gate + PR/merge | ⬜ | Dev/Ops |
-| 55.12 | Brand gate: npm run brand-guard → 0 violations | ⬜ | Brand |
-| 55.13 | **Seedance Director Mode** (fal.ai): provider adapter + director packet + async jobs + multi-clip + ffmpeg stitch + tests | ⬜ | Feature |
+| 55.1 | Fix: CI check post-Phase-54 | ✅ | Reliability |
+| 55.2 | Reliability: Dashboard load-error graceful fallback (retry + empty state) | ✅ | Reliability |
+| 55.3 | UX: Portfolio edit page inline preview (live update as you type) | ✅ | UX |
+| 55.4 | Security: Rate limit on /api/auth/refresh endpoint | ✅ | Security |
+| 55.5 | Performance: /api/reminders ETag caching (per-user hash) | ✅ (verified) | Performance |
+| 55.6 | UX: AutomationsPage dead-letter retry button | ✅ | UX |
+| 55.7 | Edge-case: Agent chat empty state (first-time user guidance) | ✅ | Edge-case |
+| 55.8 | State-sync: Settings page unsaved changes guard on navigation | ✅ (verified) | State-sync |
+| 55.9 | Mobile: Connections page card tap-to-expand on mobile | ✅ | Mobile |
+| 55.10 | Dev/Ops: /api/version endpoint serves gitSha + buildTime | ✅ (verified) | Dev/Ops |
+| 55.11 | Phase 55 tests + verification gate + PR/merge | ✅ | Dev/Ops |
+| 55.12 | Brand gate: npm run brand-guard → 0 violations | ✅ | Brand |
+| 55.13 | **Seedance Director Mode** (fal.ai): provider adapter + director packet + async jobs + multi-clip | ✅ | Feature |
+
+---
+
+## Phase 56 — PLANNED (13 items)
+**Theme:** Seedance stitch, streaming, mobile nav, security hardening, performance
+
+| # | Item | Category |
+|---|------|----------|
+| 56.1 | Fix: Review CI failures from Phase 55 PR | Reliability |
+| 56.2 | Seedance: POST /director/:jobId/stitch endpoint (ffmpeg clip stitching) | Feature |
+| 56.3 | UX: Agent response streaming via SSE (long responses) | UX |
+| 56.4 | Mobile: Bottom navigation bar for 5 main sections | Mobile |
+| 56.5 | Security: API key rotation endpoint + admin UI | Security |
+| 56.6 | Performance: Virtual scroll for activity log + long reminder lists | Performance |
+| 56.7 | UX: Dark/light theme toggle (system preference + manual override) | UX |
+| 56.8 | Ops: /api/health/detailed — per-service status (DB, Redis, LLM, fal.ai) | Dev/Ops |
+| 56.9 | Edge-case: Automation run history pagination UI | Edge-case |
+| 56.10 | State-sync: Reminder quick-edit inline (click title to edit) | State-sync |
+| 56.11 | Phase 56 tests + verification gate + PR/merge | Dev/Ops |
+| 56.12 | Brand gate: npm run brand-guard → 0 violations | Brand |
+| 56.13 | **Seedance Director Mode** (Task 13 continues): clip preview modal + share URL | Feature |
