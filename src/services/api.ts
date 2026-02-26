@@ -531,6 +531,10 @@ export const automationService = {
   // 37.4: Dead-letter log for failed webhook deliveries
   getDeadLetters: () =>
     api.get<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>>('/automations/dead-letters'),
+
+  // 55.6: Retry a failed dead-letter webhook delivery
+  retryDeadLetter: (id: string) =>
+    api.post<{ retried: boolean; removed: boolean; result: { success: boolean; output: string } }>(`/automations/dead-letters/${id}/retry`),
 };
 
 // ----- Dashboard (aggregated) --------------------------------
@@ -882,6 +886,42 @@ export interface VideoModel {
   tier: 'auto' | 'free' | 'standard' | 'premium';
 }
 
+// ── Director Mode types ───────────────────────────────────────
+
+export interface DirectorShot {
+  index: number;
+  prompt: string;
+  cameraMove: string;
+}
+
+export interface DirectorPacket {
+  title: string;
+  genre: string;
+  styleGuide: string;
+  transitions: string;
+  shotlist: DirectorShot[];
+}
+
+export interface DirectorClip {
+  success: boolean;
+  url: string;
+  error?: string;
+  requestId?: string;
+  durationMs?: number;
+}
+
+export interface DirectorJob {
+  id: string;
+  idea: string;
+  status: 'pending' | 'running' | 'done' | 'failed';
+  packet: DirectorPacket | null;
+  clips: DirectorClip[];
+  error: string | null;
+  credits_used: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export const videoService = {
   list: () =>
     api.get<{ videos: UserVideo[]; count: number; max: number }>('/videos'),
@@ -900,6 +940,16 @@ export const videoService = {
 
   getModels: () =>
     api.get<{ models: VideoModel[] }>('/videos/models/available'),
+
+  // 55.13: Seedance Director Mode
+  directorCreate: (idea: string, width?: number, height?: number) =>
+    api.post<{ jobId: string; status: string; message: string }>('/videos/director/create', { idea, width, height }),
+
+  directorList: () =>
+    api.get<{ jobs: DirectorJob[] }>('/videos/director'),
+
+  directorGet: (jobId: string) =>
+    api.get<DirectorJob>(`/videos/director/${jobId}`),
 };
 
 // ----- Social Media (Social Media Handler) ---------------------

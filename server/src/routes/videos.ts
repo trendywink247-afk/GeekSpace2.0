@@ -12,6 +12,7 @@ import { v4 as uuid } from 'uuid';
 import { logger } from '../logger.js';
 import { generateVideo, checkMediaStatus } from '../services/media-generation.js';
 import { config } from '../config.js';
+import { runDirectorMode } from '../services/director-mode.js';
 
 export const videosRouter = Router();
 
@@ -282,6 +283,143 @@ videosRouter.get('/models/available', requireAuth, (_req: AuthRequest, res) => {
   ];
 
   res.json({ models });
+});
+
+// ──────────────────────────────────────────────────────────────
+// 55.13: Seedance Director Mode
+// POST /api/videos/director/create  — start a director job
+// GET  /api/videos/director/:jobId  — poll job status
+// GET  /api/videos/director         — list user's director jobs
+// ──────────────────────────────────────────────────────────────
+
+const DIRECTOR_CREDITS = 60; // 6 clips × 10 credits each
+const MAX_CONCURRENT_DIRECTOR_JOBS = 1;
+
+videosRouter.post('/director/create', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { idea, width, height } = req.body as {
+    idea: string;
+    width?: number;
+    height?: number;
+  };
+
+  if (!idea?.trim()) {
+    res.status(400).json({ error: 'idea is required' });
+    return;
+  }
+  if (idea.length > 500) {
+    res.status(400).json({ error: 'idea too long (max 500 chars)' });
+    return;
+  }
+
+  // Per-user concurrency limit: 1 active job
+  const activeJobs = db.prepare(
+    "SELECT COUNT(*) as count FROM video_jobs WHERE user_id = ? AND status IN ('pending', 'running')"
+  ).get(userId) as { count: number };
+  if (activeJobs.count >= MAX_CONCURRENT_DIRECTOR_JOBS) {
+    res.status(429).json({ error: 'A Director Mode job is already running. Please wait for it to finish.' });
+    return;
+  }
+
+  // Credits check (skip in test mode)
+  if (!config.isTestMode) {
+    const sub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+    if ((sub?.credits_remaining ?? 0) < DIRECTOR_CREDITS) {
+      res.status(402).json({ error: `Insufficient credits. Director Mode requires ${DIRECTOR_CREDITS} credits.`, required: DIRECTOR_CREDITS });
+      return;
+    }
+  }
+
+  // Create job record
+  const jobId = `dj-${uuid().slice(0, 12)}`;
+  db.prepare(
+    'INSERT INTO video_jobs (id, user_id, idea, status, clips) VALUES (?, ?, ?, ?, ?)'
+  ).run(jobId, userId, idea.trim(), 'running', '[]');
+
+  logger.info({ userId, jobId, idea: idea.slice(0, 60) }, 'Director Mode job started');
+
+  // Run pipeline async — respond immediately with jobId
+  // (client polls /director/:jobId for updates)
+  setImmediate(async () => {
+    try {
+      const w = Math.min(Math.max(width || 1280, 480), 1920);
+      const h = Math.min(Math.max(height || 720, 360), 1080);
+
+      const result = await runDirectorMode(idea.trim(), w, h);
+
+      if (result.success) {
+        // Deduct credits in production
+        if (!config.isTestMode) {
+          db.prepare(`
+            UPDATE subscriptions
+            SET credits_remaining = MAX(0, credits_remaining - ?),
+                credits_used_this_cycle = credits_used_this_cycle + ?
+            WHERE user_id = ?
+          `).run(DIRECTOR_CREDITS, DIRECTOR_CREDITS, userId);
+        }
+
+        db.prepare(
+          'UPDATE video_jobs SET status = ?, packet = ?, clips = ?, credits_used = ?, updated_at = datetime(\'now\') WHERE id = ?'
+        ).run('done', JSON.stringify(result.packet), JSON.stringify(result.clips), DIRECTOR_CREDITS, jobId);
+
+        db.prepare(
+          'INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, ?, ?, ?)'
+        ).run(uuid(), userId, 'Director Mode video created', result.packet?.title ?? idea.slice(0, 60), 'film');
+
+        logger.info({ jobId, clips: result.clips.length }, 'Director Mode job completed');
+      } else {
+        db.prepare(
+          'UPDATE video_jobs SET status = ?, error = ?, updated_at = datetime(\'now\') WHERE id = ?'
+        ).run('failed', result.error ?? 'Unknown error', jobId);
+        logger.warn({ jobId, error: result.error }, 'Director Mode job failed');
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'unknown';
+      db.prepare(
+        'UPDATE video_jobs SET status = ?, error = ?, updated_at = datetime(\'now\') WHERE id = ?'
+      ).run('failed', msg, jobId);
+      logger.error({ err, jobId }, 'Director Mode job threw');
+    }
+  });
+
+  res.status(202).json({
+    jobId,
+    status: 'running',
+    message: 'Director Mode pipeline started. Poll /api/videos/director/:jobId for status.',
+  });
+});
+
+videosRouter.get('/director', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const rows = db.prepare(
+    'SELECT id, idea, status, packet, clips, error, credits_used, created_at, updated_at FROM video_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT 20'
+  ).all(userId) as Array<Record<string, unknown>>;
+
+  const jobs = rows.map((r) => ({
+    ...r,
+    packet: r.packet ? JSON.parse(r.packet as string) : null,
+    clips: r.clips ? JSON.parse(r.clips as string) : [],
+  }));
+
+  res.json({ jobs });
+});
+
+videosRouter.get('/director/:jobId', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const row = db.prepare(
+    'SELECT id, idea, status, packet, clips, error, credits_used, created_at, updated_at FROM video_jobs WHERE id = ? AND user_id = ?'
+  ).get(req.params.jobId, userId) as Record<string, unknown> | undefined;
+
+  if (!row) {
+    res.status(404).json({ error: 'Director job not found' });
+    return;
+  }
+
+  res.json({
+    ...row,
+    packet: row.packet ? JSON.parse(row.packet as string) : null,
+    clips: row.clips ? JSON.parse(row.clips as string) : [],
+  });
 });
 
 // ---- Cleanup expired videos -----------------------------------

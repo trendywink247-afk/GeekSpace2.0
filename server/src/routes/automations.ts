@@ -169,6 +169,29 @@ automationsRouter.get('/dead-letters', requireAuth, (req: AuthRequest, res) => {
   res.json(entries);
 });
 
+// ── 55.6: Dead-letter retry ────────────────────────────────────────────────────
+// Re-fires the failed webhook and removes the dead-letter record on success.
+automationsRouter.post('/dead-letters/:id/retry', requireAuth, async (req: AuthRequest, res) => {
+  const entry = db.prepare(
+    'SELECT id, automation_id, url, payload, user_id FROM webhook_dead_letters WHERE id = ? AND user_id = ?'
+  ).get(req.params.id, req.userId!) as { id: string; automation_id: string; url: string; payload: string | null; user_id: string } | undefined;
+
+  if (!entry) {
+    res.status(404).json({ error: 'Dead-letter entry not found' });
+    return;
+  }
+
+  const payload = entry.payload ? JSON.parse(entry.payload) as Record<string, unknown> : {};
+  const result = await executeWebhookTrigger(entry.automation_id, payload);
+
+  if (result.success) {
+    db.prepare('DELETE FROM webhook_dead_letters WHERE id = ?').run(entry.id);
+    res.json({ retried: true, removed: true, result });
+  } else {
+    res.json({ retried: true, removed: false, result });
+  }
+});
+
 // ---- Webhook endpoint (no auth — triggered by external services) ----
 
 automationsRouter.post('/webhook/:id', async (req, res) => {

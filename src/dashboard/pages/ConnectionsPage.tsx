@@ -133,6 +133,8 @@ export function ConnectionsPage() {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
+  // 55.9: Mobile tap-to-expand connection cards
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleGenerateInvite = async () => {
     setInviteLoading(true);
@@ -697,13 +699,18 @@ export function ConnectionsPage() {
         {filteredIntegrations.map((connection) => {
           const Icon = getIcon(connection.type);
           const color = getColor(connection.type);
+          // 55.9: On mobile, cards are collapsed by default; tap the header to expand
+          const isExpanded = !isMobile || expandedId === connection.id;
           return (
             <Card
               key={connection.id}
               className="bg-[#0C0C18] border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 group"
             >
               <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
-                <div className="flex items-start justify-between mb-4">
+                <div
+                  className={`flex items-start justify-between ${isExpanded ? 'mb-4' : ''} ${isMobile ? 'cursor-pointer' : ''}`}
+                  onClick={isMobile ? () => setExpandedId(expandedId === connection.id ? null : connection.id) : undefined}
+                >
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div
                       className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
@@ -763,46 +770,50 @@ export function ConnectionsPage() {
                   )}
                 </div>
 
-                <p className="text-sm text-[#6B7280] mb-4">
-                  {connection.description}
-                </p>
+                {isExpanded && (
+                  <>
+                    <p className="text-sm text-[#6B7280] mb-4">
+                      {connection.description}
+                    </p>
 
-                {connection.status === 'connected' && (
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-[#6B7280]">Health</span>
-                      <span className="text-[#E8E8F0]">{connection.health}%</span>
+                    {connection.status === 'connected' && (
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="text-[#6B7280]">Health</span>
+                          <span className="text-[#E8E8F0]">{connection.health}%</span>
+                        </div>
+                        <div className="h-1.5 bg-[#06060B] rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${connection.health}%`,
+                              backgroundColor: connection.health > 80 ? '#00FF88' : connection.health > 50 ? '#FFB800' : '#FF6161'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {connection.features.map((feature, i) => (
+                        <Badge key={i} variant="outline" className="border-[#00F0FF]/20 text-[#6B7280] text-xs">
+                          {feature}
+                        </Badge>
+                      ))}
                     </div>
-                    <div className="h-1.5 bg-[#06060B] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${connection.health}%`,
-                          backgroundColor: connection.health > 80 ? '#00FF88' : connection.health > 50 ? '#FFB800' : '#FF6161'
-                        }}
-                      />
+
+                    <div className="flex items-center justify-between pt-4 border-t border-[#00F0FF]/10 text-xs text-[#6B7280]">
+                      {connection.lastSync ? (
+                        <span>Last synced: {timeAgo(connection.lastSync)}</span>
+                      ) : (
+                        <span>Never synced</span>
+                      )}
+                      {connection.status === 'connected' && (
+                        <span>{connection.requestsToday} req today</span>
+                      )}
                     </div>
-                  </div>
+                  </>
                 )}
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {connection.features.map((feature, i) => (
-                    <Badge key={i} variant="outline" className="border-[#00F0FF]/20 text-[#6B7280] text-xs">
-                      {feature}
-                    </Badge>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-[#00F0FF]/10 text-xs text-[#6B7280]">
-                  {connection.lastSync ? (
-                    <span>Last synced: {timeAgo(connection.lastSync)}</span>
-                  ) : (
-                    <span>Never synced</span>
-                  )}
-                  {connection.status === 'connected' && (
-                    <span>{connection.requestsToday} req today</span>
-                  )}
-                </div>
               </CardContent>
             </Card>
           );

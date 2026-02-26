@@ -214,6 +214,10 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
   const user = useAuthStore((s) => s.user);
   const { stats, integrations, agent, reminders, chartData, hourlyData } = useDashboardStore();
+  // 55.2: Load-error count for partial-failure banner
+  const loadErrors = useDashboardStore((s) => s.loadErrors);
+  const loadDashboard = useDashboardStore((s) => s.loadDashboard);
+  const [loadErrDismissed, setLoadErrDismissed] = useState(false);
 
   // Detect Telegram connection for banner (33.3)
   const isTelegramConnected = integrations.some(i => i.type === 'telegram' && i.status === 'connected');
@@ -467,6 +471,21 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           </div>
         </div>
       </div>
+
+      {/* ─── 55.2: Partial-load error banner ─── */}
+      {loadErrors > 0 && !loadErrDismissed && (
+        <div className="flex items-center gap-3 rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-3 text-sm text-[#F59E0B]">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <span className="flex-1">{loadErrors} dashboard section{loadErrors > 1 ? 's' : ''} failed to load — some data may be stale.</span>
+          <button
+            onClick={() => { setLoadErrDismissed(true); void loadDashboard(); }}
+            className="text-xs underline hover:no-underline"
+          >Retry</button>
+          <button onClick={() => setLoadErrDismissed(true)} aria-label="Dismiss" className="ml-1 p-0.5 rounded hover:bg-[#F59E0B]/20">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* ─── Getting Started Checklist ─── */}
       {showOnboarding && (

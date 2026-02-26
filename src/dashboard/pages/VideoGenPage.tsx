@@ -5,7 +5,7 @@ import {
   Download, X, Play, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { videoService, picoService } from '@/services/api';
-import type { UserVideo, VideoModel } from '@/services/api';
+import type { UserVideo, VideoModel, DirectorJob } from '@/services/api';
 
 // ---- Fleet agent type ----
 interface FleetAgent {
@@ -51,6 +51,15 @@ export function VideoGenPage() {
 
   // Polling for processing videos
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── 55.13: Director Mode state ─────────────────────────────
+  const [directorIdea, setDirectorIdea] = useState('');
+  const [directorRunning, setDirectorRunning] = useState(false);
+  const [directorJobId, setDirectorJobId] = useState<string | null>(null);
+  const [directorJob, setDirectorJob] = useState<DirectorJob | null>(null);
+  const [directorJobs, setDirectorJobs] = useState<DirectorJob[]>([]);
+  const [directorError, setDirectorError] = useState<string | null>(null);
+  const directorPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Agent state
   const [assignedAgent, setAssignedAgent] = useState<FleetAgent | null>(null);
@@ -147,6 +156,55 @@ export function VideoGenPage() {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [videos, loadGallery]);
+
+  // ── 55.13: Director Mode logic ─────────────────────────────
+
+  const loadDirectorJobs = useCallback(async () => {
+    try {
+      const res = await videoService.directorList();
+      setDirectorJobs(res.data.jobs);
+    } catch { /* non-fatal */ }
+  }, []);
+
+  useEffect(() => { void loadDirectorJobs(); }, [loadDirectorJobs]);
+
+  // Poll active job
+  useEffect(() => {
+    if (!directorJobId) return;
+    if (directorPollRef.current) clearInterval(directorPollRef.current);
+    directorPollRef.current = setInterval(async () => {
+      try {
+        const res = await videoService.directorGet(directorJobId);
+        setDirectorJob(res.data);
+        if (res.data.status === 'done' || res.data.status === 'failed') {
+          clearInterval(directorPollRef.current!);
+          directorPollRef.current = null;
+          setDirectorRunning(false);
+          if (res.data.status === 'done') showToast('Director Mode complete! All clips generated.');
+          else showToast(res.data.error || 'Director Mode failed', 'error');
+          void loadDirectorJobs();
+        }
+      } catch { /* non-fatal */ }
+    }, 4000);
+    return () => { if (directorPollRef.current) clearInterval(directorPollRef.current); };
+  }, [directorJobId, loadDirectorJobs]);
+
+  const handleDirectorSubmit = async () => {
+    if (!directorIdea.trim()) return;
+    setDirectorRunning(true);
+    setDirectorError(null);
+    setDirectorJob(null);
+    try {
+      const res = await videoService.directorCreate(directorIdea.trim());
+      setDirectorJobId(res.data.jobId);
+      showToast('Director Mode pipeline started — generating 6 clips…');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Director Mode failed to start';
+      setDirectorError(msg);
+      setDirectorRunning(false);
+      showToast(msg, 'error');
+    }
+  };
 
   // Handle video generation
   const handleGenerate = async () => {
@@ -619,6 +677,106 @@ export function VideoGenPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* ── 55.13: Director Mode ─────────────────────────────────── */}
+      <div className="rounded-2xl border border-[#BF5FFF]/20 bg-gradient-to-br from-[#0A0A1A] to-[#06060B] overflow-hidden">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#BF5FFF]/10">
+          <div className="w-8 h-8 rounded-lg bg-[#BF5FFF]/15 flex items-center justify-center">
+            <Wand2 className="w-4 h-4 text-[#BF5FFF]" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-[#E8E8F0]">Director Mode <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#BF5FFF]/15 text-[#BF5FFF] ml-1">fal.ai Seedance</span></h2>
+            <p className="text-xs text-[#6B7280]">One idea → AI director packet → 6 clips × 5s (60 credits)</p>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Idea input */}
+          <div className="flex gap-3">
+            <input
+              value={directorIdea}
+              onChange={(e) => setDirectorIdea(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !directorRunning && void handleDirectorSubmit()}
+              placeholder="e.g. A lone astronaut discovering an alien city at sunset"
+              maxLength={500}
+              className="flex-1 px-4 py-3 rounded-xl bg-[#0C0C18] border border-[#BF5FFF]/20 text-[#E8E8F0] text-sm placeholder-[#374151] focus:outline-none focus:border-[#BF5FFF]/50"
+              disabled={directorRunning}
+            />
+            <button
+              onClick={() => void handleDirectorSubmit()}
+              disabled={!directorIdea.trim() || directorRunning}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#BF5FFF] hover:bg-[#A855F7] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+            >
+              {directorRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {directorRunning ? 'Running…' : 'Direct'}
+            </button>
+          </div>
+
+          {directorError && (
+            <div className="flex items-center gap-2 text-xs text-[#FF6161] bg-[#FF6161]/10 border border-[#FF6161]/20 px-3 py-2 rounded-lg">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              {directorError}
+            </div>
+          )}
+
+          {/* Active job progress */}
+          {directorJob && (
+            <div className="rounded-xl border border-[#BF5FFF]/15 bg-[#BF5FFF]/5 p-4 space-y-3">
+              {directorJob.packet && (
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-[#E8E8F0]">{directorJob.packet.title}</p>
+                  <p className="text-xs text-[#BF5FFF]">{directorJob.packet.genre}</p>
+                  <p className="text-xs text-[#6B7280]">{directorJob.packet.styleGuide}</p>
+                </div>
+              )}
+              {directorJob.status === 'running' && (
+                <div className="flex items-center gap-2 text-xs text-[#BF5FFF]">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Generating clips… this takes 2-4 minutes
+                </div>
+              )}
+              {directorJob.clips.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {directorJob.clips.map((clip, i) => (
+                    <div key={i} className="relative rounded-lg overflow-hidden aspect-video bg-[#0C0C18] border border-[#BF5FFF]/10">
+                      {clip.success ? (
+                        <>
+                          <video src={clip.url} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                          <div className="absolute bottom-1 left-1 text-[9px] text-white/60 bg-black/40 px-1 rounded">
+                            {i + 1}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-[#FF6161]">
+                          <AlertCircle className="w-4 h-4" />
+                          <span className="text-[9px]">Failed</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Past director jobs */}
+          {directorJobs.filter(j => j.status === 'done').length > 0 && !directorJob && (
+            <div className="space-y-2">
+              <p className="text-xs text-[#6B7280] font-medium">Recent Director Jobs</p>
+              {directorJobs.filter(j => j.status === 'done').slice(0, 3).map((job) => (
+                <button
+                  key={job.id}
+                  onClick={() => { setDirectorJob(job); setDirectorJobId(job.id); }}
+                  className="w-full text-left px-3 py-2 rounded-lg border border-[#BF5FFF]/10 hover:border-[#BF5FFF]/20 bg-[#BF5FFF]/5 hover:bg-[#BF5FFF]/10 transition-colors"
+                >
+                  <p className="text-xs font-medium text-[#E8E8F0]">{job.packet?.title ?? job.idea.slice(0, 50)}</p>
+                  <p className="text-[10px] text-[#6B7280]">{job.clips.filter(c => c.success).length}/{job.clips.length} clips · {new Date(job.created_at).toLocaleDateString()}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Usage info */}

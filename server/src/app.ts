@@ -218,6 +218,17 @@ export function createApp(): express.Application {
     });
     app.use('/api/auth/signup', signupLimiter);
 
+    // 55.4: Rate limit on token refresh — 10 req/15min to prevent token farming
+    const refreshLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many token refresh attempts. Please wait 15 minutes.' },
+      handler: rateLimitHandler,
+    });
+    app.use('/api/auth/refresh', refreshLimiter);
+
     // Rate limit on LLM chat endpoints — 60 req/15min (4/min) balances protection with usability
     const chatLimiter = rateLimit({
       windowMs: 15 * 60 * 1000,

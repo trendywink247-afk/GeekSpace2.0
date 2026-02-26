@@ -113,6 +113,8 @@ export function AutomationsPage() {
   const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string } | null>(null);
   // 37.4: Dead-letter log
   const [deadLetters, setDeadLetters] = useState<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>>([]);
+  // 55.6: Dead-letter retry state
+  const [retryingDeadLetterId, setRetryingDeadLetterId] = useState<string | null>(null);
   // 51.5: Track per-automation trigger errors (auto-clear after 4s)
   const [triggerErrors, setTriggerErrors] = useState<Record<string, string>>({});
 
@@ -212,6 +214,18 @@ export function AutomationsPage() {
     // 49.2/49.5: Refresh logs and dead-letters after trigger so the panel shows the new log entry
     automationLogService.list(20, 0).then((r) => { setLogs(r.data.logs); setLogsOffset(0); setLogsHasMore(r.data.logs.length === 20); }).catch(() => {});
     automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => {});
+  };
+
+  // 55.6: Retry a failed dead-letter webhook
+  const handleRetryDeadLetter = async (id: string) => {
+    setRetryingDeadLetterId(id);
+    try {
+      await automationService.retryDeadLetter(id);
+      // Refresh dead-letter list
+      automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => {});
+    } catch { /* ignore */ } finally {
+      setRetryingDeadLetterId(null);
+    }
   };
 
   const handleTestFire = async (id: string) => {
@@ -770,7 +784,18 @@ export function AutomationsPage() {
                     <div key={dl.id} className="flex flex-col gap-0.5 bg-[#0C0C18] rounded-lg px-3 py-2 border border-[#FF6161]/10">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-medium text-[#E8E8F0] truncate">{auto?.name ?? dl.automation_id.slice(0, 8)}</span>
-                        <span className="text-xs text-[#6B7280] whitespace-nowrap">{new Date(dl.failed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-xs text-[#6B7280] whitespace-nowrap">{new Date(dl.failed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          {/* 55.6: Retry button */}
+                          <button
+                            onClick={() => handleRetryDeadLetter(dl.id)}
+                            disabled={retryingDeadLetterId === dl.id}
+                            aria-label="Retry failed webhook"
+                            className="text-[10px] px-2 py-0.5 rounded border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 disabled:opacity-50 transition-colors"
+                          >
+                            {retryingDeadLetterId === dl.id ? '...' : 'Retry'}
+                          </button>
+                        </div>
                       </div>
                       <span className="text-xs text-[#FF6161] truncate">{dl.error}</span>
                       <span className="text-xs text-[#6B7280] truncate font-mono">{dl.url}</span>
