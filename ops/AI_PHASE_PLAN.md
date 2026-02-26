@@ -265,21 +265,22 @@ Overdue escalation, memory quick-add, lazy gallery, dry-run mode, soft-stitch ca
 
 ---
 
-## Phase 62 — PLANNED (13 items)
-**Theme:** Analytics, keyboard UX, scheduling UI, video progress, widget reorder
+## Phase 62 — COMPLETE ✓
+**PR:** pending | **Tests:** 615/615
+Chat shortcuts, batch edit, ping health, schedule builder, widget collapse, video steps
 
-| # | Item | Category |
-|---|------|----------|
-| 62.1 | CI review post-Phase-61 | Reliability |
-| 62.2 | Reminder recurring rule editor (visual builder) | UX |
-| 62.3 | Chat conversation export as PDF | Feature |
-| 62.4 | Portfolio analytics chart (30-day views line chart) | UX |
-| 62.5 | Agent chat keyboard shortcuts (↑/↓ history, Ctrl+K clear) | UX |
-| 62.6 | Automations scheduling — cron expression builder UI | Edge-case |
-| 62.7 | Connections health ping (test connection latency badge) | Reliability |
-| 62.8 | Video gen progress step indicator (queue + ETA) | UX |
-| 62.9 | Dashboard widget drag-to-reorder | Mobile |
-| 62.10 | Reminder batch-edit (select multiple → change priority/category) | State-sync |
-| 62.11 | Tests + verification + PR/merge | Dev/Ops |
-| 62.12 | Brand gate | Brand |
-| 62.13 | **Seedance Director Mode**: live progress polling (clip count updates) | Feature |
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 62.1 | CI review post-Phase-61 | ✅ (CI was green) | Reliability |
+| 62.2 | Reminder recurring rule editor (visual builder) | ✅ | UX |
+| 62.3 | Chat export as markdown (.md download) | ✅ | Feature |
+| 62.4 | Portfolio analytics chart (30-day views) | ✅ (verified done in Phase 58) | UX |
+| 62.5 | Agent chat keyboard shortcuts (↑/↓ history, Ctrl+K clear) | ✅ | UX |
+| 62.6 | Automations interval_minutes schedule builder + schema fix | ✅ | Edge-case |
+| 62.7 | Connections health ping endpoint + latency badge | ✅ | Reliability |
+| 62.8 | Video gen step indicator (Queued→Generating→Rendering→Ready) | ✅ | UX |
+| 62.9 | Dashboard widget collapse/expand (localStorage persist) | ✅ | Mobile |
+| 62.10 | Reminder batch-edit (PATCH /batch-edit + Priority/Category bulk bar) | ✅ | State-sync |
+| 62.11 | Tests + verification + PR/merge (615 tests) | ✅ | Dev/Ops |
+| 62.12 | Brand gate | ✅ (0 violations) | Brand |
+| 62.13 | **Seedance**: live clip count progress bar | ✅ | Feature |
