@@ -1199,6 +1199,7 @@ function mapConversation(row: Record<string, unknown>) {
     summary: row.summary,
     tags: row.tags,
     createdAt: row.created_at,
+    starred: !!row.starred,
   };
 }
 
@@ -1346,6 +1347,27 @@ agentRouter.get('/conversations/reactions/summary', requireAuth, (req: AuthReque
     logger.error({ err, userId }, 'Failed to get reaction summary');
     res.status(500).json({ error: 'Failed to get reaction summary' });
   }
+});
+
+// ---- 60.2: Star/unstar a conversation message ----
+
+agentRouter.post('/conversations/:id/star', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const row = db.prepare('SELECT id, user_id, starred FROM conversation_log WHERE id = ? AND user_id = ?').get(req.params.id, userId) as { id: string; user_id: string; starred: number } | undefined;
+  if (!row) { res.status(404).json({ error: 'Message not found' }); return; }
+  const newStarred = row.starred ? 0 : 1;
+  db.prepare('UPDATE conversation_log SET starred = ? WHERE id = ? AND user_id = ?').run(newStarred, req.params.id, userId);
+  res.json({ starred: !!newStarred });
+});
+
+// 60.2: Get all starred messages (must come before /:id/star to avoid route ambiguity)
+agentRouter.get('/conversations/starred', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+  const rows = db.prepare(
+    'SELECT * FROM conversation_log WHERE user_id = ? AND starred = 1 ORDER BY created_at DESC LIMIT ?'
+  ).all(userId, limit) as Record<string, unknown>[];
+  res.json({ messages: rows.map(mapConversation) });
 });
 
 // ---- Agent Quality Metrics (Phase 26.5) ----

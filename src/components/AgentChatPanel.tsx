@@ -172,6 +172,8 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const [chatRateLimitRemaining, setChatRateLimitRemaining] = useState<number | null>(null);
   const [chatRateLimitResetAt, setChatRateLimitResetAt] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  // 60.6: reply-to context
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
 
   // Premium session state
   const [premiumSession, setPremiumSession] = useState<PremiumSession | null>(null);
@@ -355,8 +357,12 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   }, [premiumSession]);
 
   const sendMessage = useCallback((text?: string) => {
-    const content = text || input.trim();
-    if (!content || isTyping) return;
+    const raw = text || input.trim();
+    if (!raw || isTyping) return;
+    // 60.6: prepend reply-to context if replying
+    const content = replyTo
+      ? `> Re: "${replyTo.content.slice(0, 80)}${replyTo.content.length > 80 ? '…' : ''}"\n\n${raw}`
+      : raw;
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -369,6 +375,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
+    setReplyTo(null);
     setIsTyping(true);
 
     // Helper: set agent message (create or update)
@@ -521,7 +528,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         setIsTyping(false);
       }
     })();
-  }, [input, isTyping, premiumSession, agentOwner, messages]);
+  }, [input, isTyping, premiumSession, agentOwner, messages, replyTo]);
 
   // ---- 8.3: Export conversations ----
   const handleExport = async () => {
@@ -811,7 +818,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           ).map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start'}`}
+              className={`group flex ${msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start'}`}
               style={{ animation: 'page-enter 0.2s ease-out' }}
             >
               {msg.role === 'system' ? (
@@ -914,6 +921,19 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                           title="Retry"
                         >
                           <RotateCcw className="w-3 h-3" /> Retry
+                        </button>
+                      </div>
+                    )}
+                    {/* 60.6: Reply button */}
+                    {msg.role !== 'system' && !msg.isStreaming && (
+                      <div className="flex justify-end mt-1">
+                        <button
+                          onClick={() => { setReplyTo(msg); inputRef.current?.focus(); }}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded text-[#6B7280] hover:text-[#00F0FF] text-[10px] transition-colors opacity-0 group-hover:opacity-100"
+                          title="Reply to this message"
+                          data-testid={`reply-btn-${msg.id}`}
+                        >
+                          ↩ Reply
                         </button>
                       </div>
                     )}
@@ -1058,6 +1078,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
         {/* Input */}
         <div className="p-4 border-t border-[#00F0FF]/20 bg-[#06060B] safe-area-pb">
+          {/* 60.6: reply-to context banner */}
+          {replyTo && (
+            <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/5 border border-[#00F0FF]/20" data-testid="reply-to-banner">
+              <span className="text-[10px] text-[#00F0FF] flex-shrink-0">↩ Replying to</span>
+              <span className="text-[11px] text-[#9CA3AF] truncate flex-1">{replyTo.content.slice(0, 60)}{replyTo.content.length > 60 ? '…' : ''}</span>
+              <button onClick={() => setReplyTo(null)} className="text-[#6B7280] hover:text-[#E8E8F0] text-xs flex-shrink-0">✕</button>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             {!premiumSession && !agentOwner && (
               <button

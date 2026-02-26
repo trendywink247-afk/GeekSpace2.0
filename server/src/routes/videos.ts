@@ -13,6 +13,8 @@ import { logger } from '../logger.js';
 import { generateVideo, checkMediaStatus } from '../services/media-generation.js';
 import { config } from '../config.js';
 import { runDirectorMode } from '../services/director-mode.js';
+import { generateFalClip } from '../services/fal-video.js';
+import type { DirectorPacket } from '../services/director-mode.js';
 
 export const videosRouter = Router();
 
@@ -404,6 +406,75 @@ videosRouter.get('/director', requireAuth, (req: AuthRequest, res) => {
   res.json({ jobs });
 });
 
+// ── 60.13: Per-clip retry ──────────────────────────────────────────
+// POST /api/videos/director/:jobId/retry-clip/:clipIndex
+// Re-generates a single failed clip using its shot prompt from the packet.
+// Costs 10 credits (1 clip).
+videosRouter.post('/director/:jobId/retry-clip/:clipIndex', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { jobId, clipIndex: clipIndexStr } = req.params;
+  const clipIndex = parseInt(clipIndexStr, 10);
+
+  if (isNaN(clipIndex) || clipIndex < 0 || clipIndex > 5) {
+    res.status(400).json({ error: 'clipIndex must be 0–5' });
+    return;
+  }
+
+  const row = db.prepare(
+    'SELECT id, status, packet, clips FROM video_jobs WHERE id = ? AND user_id = ?'
+  ).get(jobId, userId) as { id: string; status: string; packet: string | null; clips: string } | undefined;
+
+  if (!row) { res.status(404).json({ error: 'Job not found' }); return; }
+  if (!row.packet) { res.status(400).json({ error: 'Job has no director packet — cannot retry clip' }); return; }
+
+  const packet = JSON.parse(row.packet) as DirectorPacket;
+  const shot = packet.shotlist?.[clipIndex];
+  if (!shot) { res.status(400).json({ error: `No shot at index ${clipIndex}` }); return; }
+
+  const CLIP_CREDITS = 10;
+  if (!config.isTestMode) {
+    const sub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?').get(userId) as { credits_remaining: number } | undefined;
+    if ((sub?.credits_remaining ?? 0) < CLIP_CREDITS) {
+      res.status(402).json({ error: `Insufficient credits. Clip retry requires ${CLIP_CREDITS} credits.` });
+      return;
+    }
+  }
+
+  // Respond immediately; run async
+  res.json({ message: 'Clip retry started', clipIndex });
+
+  setImmediate(async () => {
+    try {
+      const result = await generateFalClip({
+        prompt: `${packet.styleGuide ? packet.styleGuide + '. ' : ''}${shot.prompt}`,
+        duration: 5,
+        width: 1280,
+        height: 720,
+      }, clipIndex);
+
+      const clips = JSON.parse(row.clips || '[]') as Array<{ success: boolean; url: string; error?: string }>;
+      clips[clipIndex] = result;
+
+      db.prepare(
+        "UPDATE video_jobs SET clips = ?, updated_at = datetime('now') WHERE id = ?"
+      ).run(JSON.stringify(clips), jobId);
+
+      if (result.success && !config.isTestMode) {
+        db.prepare(`
+          UPDATE subscriptions
+          SET credits_remaining = MAX(0, credits_remaining - ?),
+              credits_used_this_cycle = credits_used_this_cycle + ?
+          WHERE user_id = ?
+        `).run(CLIP_CREDITS, CLIP_CREDITS, userId);
+      }
+
+      logger.info({ jobId, clipIndex, success: result.success }, 'Clip retry complete');
+    } catch (err) {
+      logger.error({ err, jobId, clipIndex }, 'Clip retry error');
+    }
+  });
+});
+
 // ── 56.2: Stitch Director Mode clips ─────────────────────────────
 // POST /api/videos/director/:jobId/stitch
 // Soft stitch: returns ordered clip URLs. Uses ffmpeg concat when available.
@@ -420,8 +491,15 @@ videosRouter.post('/director/:jobId/stitch', requireAuth, async (req: AuthReques
     res.status(404).json({ error: 'Director job not found' });
     return;
   }
-  if (row.status !== 'done') {
-    res.status(409).json({ error: `Job is ${row.status} — stitch is only available for completed jobs` });
+  // 60.13: allow partial stitch — accept 'done' or jobs that have at least one successful clip
+  const clipsForCheck = JSON.parse(row.clips || '[]') as Array<{ success?: boolean; url?: string }>;
+  const hasSuccessfulClips = clipsForCheck.some((c) => c.success && c.url);
+  if (row.status === 'running' || row.status === 'pending') {
+    res.status(409).json({ error: `Job is ${row.status} — stitch requires completed or partial clips` });
+    return;
+  }
+  if (!hasSuccessfulClips) {
+    res.status(400).json({ error: 'No successful clips to stitch' });
     return;
   }
   // If already stitched, return cached result
