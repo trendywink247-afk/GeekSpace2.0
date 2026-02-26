@@ -1,9 +1,9 @@
-# AI Handoff — Phase 55 Complete
+# AI Handoff — Phase 56 Complete
 
 **Date:** 2026-02-26
-**Branch:** `ai/phase-20260226-phase55` (PR pending, targeting main)
-**Tests:** 530/530 ✅
-**Status:** All 13 items implemented, commits: ea24f6f + 9644a8d
+**Branch:** `ai/phase-20260226-phase56` → PR #87 merged to main SHA c819abf
+**Tests:** 546/546 ✅
+**Status:** All 7 improvements implemented
 
 ---
 
@@ -16,91 +16,62 @@ If the conversation is compacted, before doing ANY work:
 
 ---
 
-## Phase 55 — What Was Done
+## Phase 56 — What Was Done
 
-### 55.1 E2E flake fixes (CI Reliability)
-- `e2e/reminders.spec.ts` — Added waitForTimeout(800/1500) + increased timeouts to 10000ms
-- `e2e/connections.spec.ts` — Added 10000ms timeout to toHaveURL matcher
+### 56.2 Seedance stitch endpoint
+- `server/src/routes/videos.ts` — `POST /api/videos/director/:jobId/stitch`; returns ordered clip URLs (soft stitch) + attempts ffmpeg concat when available; caches `stitched_url`
+- `server/src/db/index.ts` — Added `stitched_url TEXT DEFAULT NULL` to `video_jobs` schema + additive ALTER TABLE migration
 
-### 55.2 Dashboard load-error banner (UX)
-- `src/dashboard/pages/OverviewPage.tsx` — Amber warning banner when `loadErrors > 0`, with inline Retry button
+### 56.5 API key rotation
+- `server/src/routes/apiKeys.ts` — `POST /api/api-keys/:id/rotate` — re-encrypts key, updates masked_key, logs activity
+- `src/services/api.ts` — `apiKeyService.rotate(id, key)` method
+- `src/dashboard/pages/SettingsPage.tsx` — "Rotate" button per key row; shows inline password input + Save
 
-### 55.3 Portfolio edit inline preview (UX)
-- `src/dashboard/pages/PortfolioPage.tsx` — Live preview panel alongside edit form on md+ screens
+### 56.7 Theme toggle UI (3-way pill)
+- `src/dashboard/pages/SettingsPage.tsx` — Replaced plain text buttons with pill segmented control: Dark(Moon)/Light(Sun)/System(Monitor) with active highlight
 
-### 55.4 Rate limit on /api/auth/refresh (Security)
-- `server/src/app.ts` — `refreshLimiter` (10 req/15min) applied to `/api/auth/refresh`
+### 56.8 /api/health/detailed
+- `server/src/routes/health.ts` — `GET /api/health/detailed` — live per-service probes with latency: database, redis, ollama, openrouter, edith, fal.ai
 
-### 55.5 ETag for /api/reminders (Perf — verified Phase 48 already done)
+### 56.10 Reminder inline quick-edit
+- `src/dashboard/pages/RemindersPage.tsx` — Click reminder title → inline input; Enter=PATCH save, Escape=cancel; both list and calendar views
 
-### 55.6 Dead-letter retry (Reliability)
-- `server/src/routes/automations.ts` — `POST /dead-letters/:id/retry` endpoint
-- `src/services/api.ts` — `retryDeadLetter()` method
-- `src/dashboard/pages/AutomationsPage.tsx` — Retry button in dead-letter panel
+### 56.13 Seedance clip preview modal
+- `src/dashboard/pages/VideoGenPage.tsx` — Click clip thumbnail → fullscreen video modal with native controls, Copy URL, Download, Prev/Next navigation
 
-### 55.7 Agent chat empty state (UX)
-- `src/components/AgentChatPanel.tsx` — 4 quick-start suggestion buttons below skeleton (click-to-fill input)
-
-### 55.8 Settings unsaved guard (UX — verified Phase 46 already done)
-
-### 55.9 Connections mobile tap-to-expand (Mobile UX)
-- `src/dashboard/pages/ConnectionsPage.tsx` — `expandedId` state; mobile cards collapsed by default, tap header to expand
-
-### 55.10 /api/version buildTime (Ops — verified Phase 47 already done)
-
-### 55.11 Tests + verification
-- `server/src/test/api/phase55.test.ts` — 8 new tests (530 total)
-
-### 55.12 Brand gate ✅
-- `npm run brand-guard` — no violations
-
-### 55.13 Seedance Director Mode (NEW FEATURE — fal.ai)
-- `server/src/services/fal-video.ts` — fal.ai Seedance v1 adapter with TEST_MODE stub
-- `server/src/services/director-mode.ts` — LLM director packet generator (title/genre/shotlist/styleGuide)
-- `server/src/db/index.ts` — `video_jobs` table (additive)
-- `server/src/config.ts` — `falApiKey`, `falEnabled` fields
-- `server/src/routes/videos.ts` — `POST /director/create`, `GET /director`, `GET /director/:jobId`
-- `src/services/api.ts` — `DirectorJob`, `DirectorPacket`, `DirectorClip` types + service methods
-- `src/dashboard/pages/VideoGenPage.tsx` — Director Mode UI panel with idea input, job polling, clip grid
+### 56.11 Tests + verification
+- `server/src/test/api/phase56.test.ts` — 16 new tests (546 total)
+- Brand guard: 0 violations
+- Frontend tsc: clean; build: clean
 
 ---
 
-## Resume for Next Phase
+## Already-done items (skipped in Phase 56)
+- 56.1 CI lint (already passing)
+- 56.3 SSE agent streaming (already done in agent.ts:1064)
+- 56.4 Mobile bottom nav (already done in DashboardApp.tsx:801)
+- 56.6 Virtual scroll (react-window not installed — deferred)
+- 56.9 Automation logs pagination (already done in AutomationsPage.tsx:108)
+
+---
+
+## Resume for Phase 57
 
 ```bash
-cd ~/GeekSpace2.0/.worktrees/phase-55
-git log --oneline -5
+cd ~/GeekSpace2.0
+git log --oneline -3
+git worktree add .worktrees/phase-57 -b ai/phase-20260226-phase57
+cd .worktrees/phase-57 && npm install && cd server && npm install && cd ..
+npm test  # must be 546/546
 ```
 
-Next: Create PR for Phase 55, merge to main, then start Phase 56 worktree.
-
-Phase 56 target areas:
-- Continue Seedance: add stitching endpoint (POST /director/:jobId/stitch) using ffmpeg
-- Add FAL_KEY to .env.example documentation
-- Automation: time-trigger visual editor
-- Mobile: bottom navigation for 5 main sections
-- Agent: response streaming (SSE) for long responses
-- Security: API key rotation endpoint
-- Performance: virtual scroll for long lists (activity, reminders 100+)
-- UX: dark/light theme toggle
-- Ops: health dashboard endpoint with per-service status
-- Brand: Task 13 continues until Seedance stitch is complete
-
-## Files Changed (Phase 55)
-- e2e/connections.spec.ts
-- e2e/reminders.spec.ts
-- server/src/app.ts
-- server/src/config.ts
+## Files Changed (Phase 56)
 - server/src/db/index.ts
-- server/src/routes/automations.ts
+- server/src/routes/apiKeys.ts
+- server/src/routes/health.ts
 - server/src/routes/videos.ts
-- server/src/services/director-mode.ts (NEW)
-- server/src/services/fal-video.ts (NEW)
-- server/src/test/api/phase55.test.ts (NEW)
-- src/components/AgentChatPanel.tsx
-- src/dashboard/pages/AutomationsPage.tsx
-- src/dashboard/pages/ConnectionsPage.tsx
-- src/dashboard/pages/OverviewPage.tsx
-- src/dashboard/pages/PortfolioPage.tsx
+- server/src/test/api/phase56.test.ts (NEW)
+- src/dashboard/pages/RemindersPage.tsx
+- src/dashboard/pages/SettingsPage.tsx
 - src/dashboard/pages/VideoGenPage.tsx
 - src/services/api.ts

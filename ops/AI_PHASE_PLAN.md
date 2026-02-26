@@ -142,21 +142,42 @@ E2E flake fixes, load-error banner, portfolio inline preview, auth/refresh rate 
 
 ---
 
-## Phase 56 — PLANNED (13 items)
-**Theme:** Seedance stitch, streaming, mobile nav, security hardening, performance
+## Phase 56 — COMPLETE ✓
+**PR:** #87 merged SHA c819abf | **Tests:** 546/546
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 56.1 | CI review | ✅ (clean) | Reliability |
+| 56.2 | Seedance stitch endpoint POST /director/:jobId/stitch | ✅ | Feature |
+| 56.3 | SSE agent streaming | ✅ (verified done) | UX |
+| 56.4 | Mobile bottom nav | ✅ (verified done) | Mobile |
+| 56.5 | API key rotation endpoint + frontend Rotate button | ✅ | Security |
+| 56.6 | Virtual scroll | deferred (react-window not installed) | Performance |
+| 56.7 | 3-way theme toggle pill (Dark/Light/System with icons) | ✅ | UX |
+| 56.8 | GET /api/health/detailed per-service with latency | ✅ | Dev/Ops |
+| 56.9 | Automation run history pagination | ✅ (verified done) | Edge-case |
+| 56.10 | Reminder inline quick-edit (click title → input) | ✅ | State-sync |
+| 56.11 | Tests + verification + PR/merge (546 tests) | ✅ | Dev/Ops |
+| 56.12 | Brand gate | ✅ | Brand |
+| 56.13 | Clip preview modal + Copy URL + Prev/Next | ✅ | Feature |
+
+---
+
+## Phase 57 — PLANNED (13 items)
+**Theme:** Virtual scroll, notification preferences, webhook editor, pagination, hardening
 
 | # | Item | Category |
 |---|------|----------|
-| 56.1 | Fix: Review CI failures from Phase 55 PR | Reliability |
-| 56.2 | Seedance: POST /director/:jobId/stitch endpoint (ffmpeg clip stitching) | Feature |
-| 56.3 | UX: Agent response streaming via SSE (long responses) | UX |
-| 56.4 | Mobile: Bottom navigation bar for 5 main sections | Mobile |
-| 56.5 | Security: API key rotation endpoint + admin UI | Security |
-| 56.6 | Performance: Virtual scroll for activity log + long reminder lists | Performance |
-| 56.7 | UX: Dark/light theme toggle (system preference + manual override) | UX |
-| 56.8 | Ops: /api/health/detailed — per-service status (DB, Redis, LLM, fal.ai) | Dev/Ops |
-| 56.9 | Edge-case: Automation run history pagination UI | Edge-case |
-| 56.10 | State-sync: Reminder quick-edit inline (click title to edit) | State-sync |
-| 56.11 | Phase 56 tests + verification gate + PR/merge | Dev/Ops |
-| 56.12 | Brand gate: npm run brand-guard → 0 violations | Brand |
-| 56.13 | **Seedance Director Mode** (Task 13 continues): clip preview modal + share URL | Feature |
+| 57.1 | Fix: Review any CI issues from Phase 56 | Reliability |
+| 57.2 | Performance: Virtual scroll for activity log (react-window or CSS contain) | Performance |
+| 57.3 | UX: Notification preferences real-time toggle sync (prevent stale toggles) | UX |
+| 57.4 | UX: Agent chat — scroll-to-bottom button on overflow | UX |
+| 57.5 | Security: CSRF token validation for state-mutating non-JSON requests | Security |
+| 57.6 | Edge-case: Reminder batch complete via keyboard (Select All + Enter) | Edge-case |
+| 57.7 | Mobile: Portfolio page swipeable project cards | Mobile |
+| 57.8 | Ops: /api/admin/stats — total users, active today, memory, DB size | Dev/Ops |
+| 57.9 | State-sync: Agent config saved-confirmation toast (vs silent save) | State-sync |
+| 57.10 | Reliability: Webhook dead-letter UI retry count + last-error display | Reliability |
+| 57.11 | Phase 57 tests + verification gate + PR/merge | Dev/Ops |
+| 57.12 | Brand gate: npm run brand-guard → 0 violations | Brand |
+| 57.13 | **Seedance Director Mode** (Task 13): Stitch progress bar + Rerun button | Feature |
