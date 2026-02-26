@@ -23,6 +23,7 @@ import {
   Phone,
   Bell,
   Copy,
+  FlaskConical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,6 +119,8 @@ export function AutomationsPage() {
   const [retryingDeadLetterId, setRetryingDeadLetterId] = useState<string | null>(null);
   // 51.5: Track per-automation trigger errors (auto-clear after 4s)
   const [triggerErrors, setTriggerErrors] = useState<Record<string, string>>({});
+  // 61.8: Dry-run result popover
+  const [dryRunResult, setDryRunResult] = useState<{ id: string; simulatedOutput: string } | null>(null);
 
   const resetForm = () => {
     setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true });
@@ -202,6 +205,18 @@ export function AutomationsPage() {
 
   const handleDelete = async (id: string) => {
     await deleteAutomation(id);
+  };
+
+  // 61.8: Dry-run simulation
+  const handleDryRun = async (id: string) => {
+    try {
+      const { data } = await automationService.dryRun(id);
+      setDryRunResult({ id, simulatedOutput: data.simulatedOutput });
+      setTimeout(() => setDryRunResult(null), 8000);
+    } catch {
+      setDryRunResult({ id, simulatedOutput: 'Dry-run failed — automation may not be found.' });
+      setTimeout(() => setDryRunResult(null), 4000);
+    }
   };
 
   // 59.4: Duplicate automation — call API directly, refresh list from server
@@ -316,6 +331,19 @@ export function AutomationsPage() {
 
   return (
     <div data-testid="automations-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
+      {/* 61.8: Dry-run result toast */}
+      {dryRunResult && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm px-4 py-3 rounded-xl bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-[#F59E0B] text-sm shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="dry-run-result">
+          <div className="flex items-start gap-2">
+            <FlaskConical className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-xs mb-0.5">Dry Run Result</p>
+              <p className="text-[11px] text-[#F59E0B]/80">{dryRunResult.simulatedOutput}</p>
+            </div>
+            <button onClick={() => setDryRunResult(null)} className="text-[#F59E0B]/60 hover:text-[#F59E0B] ml-auto">✕</button>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         <div>
@@ -543,6 +571,18 @@ export function AutomationsPage() {
                         className="text-[#00FF88] hover:text-[#00FF88] hover:bg-[#00FF88]/10 h-10 w-10 p-0 press-scale"
                       >
                         <Play className="w-4 h-4" />
+                      </Button>
+                      {/* 61.8: Dry-run button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void handleDryRun(auto.id)}
+                        aria-label={`Dry run ${auto.name}`}
+                        title="Simulate (dry run)"
+                        data-testid={`dry-run-btn-${auto.id}`}
+                        className="text-[#6B7280] hover:text-[#F59E0B] hover:bg-[#F59E0B]/10 h-10 w-10 p-0 press-scale"
+                      >
+                        <FlaskConical className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"

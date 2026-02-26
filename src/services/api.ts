@@ -544,6 +544,12 @@ export const automationService = {
 
   // 59.4: Duplicate an automation
   duplicate: (id: string) => api.post<Automation>(`/automations/${id}/duplicate`),
+
+  // 61.8: Dry-run simulation
+  dryRun: (id: string) => api.post<{
+    dryRun: boolean; automationId: string; automationName: string;
+    triggerType: string; actionType: string; simulatedOutput: string; enabled: boolean;
+  }>(`/automations/${id}/dry-run`),
 };
 
 // ----- Dashboard (aggregated) --------------------------------

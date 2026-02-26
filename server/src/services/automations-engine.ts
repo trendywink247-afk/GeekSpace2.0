@@ -394,7 +394,60 @@ export function initAutomationsEngine() {
   // Start health monitor
   startHealthMonitor();
 
+  // 61.2: Start overdue reminder escalation checker
+  startOverdueReminderEscalation();
+
   logger.info('Automations engine initialized');
+}
+
+// ---- 61.2: Overdue Reminder Escalation ----
+// Every 30 minutes: find reminders >1h overdue, not escalated, send Telegram if linked.
+
+let overdueEscalationTimer: ReturnType<typeof setInterval> | null = null;
+
+function startOverdueReminderEscalation() {
+  if (overdueEscalationTimer) return;
+
+  // Add column if missing
+  try { db.exec("ALTER TABLE reminders ADD COLUMN overdue_escalated_at TEXT DEFAULT NULL"); } catch { /* exists */ }
+
+  const runCheck = async () => {
+    const oneHourAgo = new Date(Date.now() - 3_600_000).toISOString();
+    const overdue = db.prepare(`
+      SELECT r.id, r.user_id, r.text, r.datetime
+      FROM reminders r
+      WHERE r.completed = 0
+        AND r.datetime < ?
+        AND r.overdue_escalated_at IS NULL
+      LIMIT 50
+    `).all(oneHourAgo) as Array<{ id: string; user_id: string; text: string; datetime: string }>;
+
+    for (const reminder of overdue) {
+      try {
+        const link = db.prepare(
+          "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' LIMIT 1"
+        ).get(reminder.user_id) as { external_id: string } | undefined;
+
+        if (link) {
+          const { sendTelegramMessage } = await import('./telegram.js');
+          const dt = new Date(reminder.datetime);
+          const formatted = dt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' });
+          await sendTelegramMessage(link.external_id, `⏰ *Overdue reminder*: ${reminder.text}\n_Was due: ${formatted}_`);
+          logger.info({ reminderId: reminder.id, userId: reminder.user_id }, 'Overdue escalation sent');
+        }
+
+        // Mark escalated regardless of Telegram availability (prevent re-check)
+        db.prepare("UPDATE reminders SET overdue_escalated_at = datetime('now') WHERE id = ?").run(reminder.id);
+      } catch (err) {
+        logger.warn({ err, reminderId: reminder.id }, 'Overdue escalation error');
+      }
+    }
+  };
+
+  // Run immediately on startup (after 2min delay), then every 30 min
+  setTimeout(() => { void runCheck(); }, 120_000);
+  overdueEscalationTimer = setInterval(() => { void runCheck(); }, 1_800_000);
+  logger.info('Overdue reminder escalation checker started');
 }
 
 // ---- Hot-reload on automation changes ----
