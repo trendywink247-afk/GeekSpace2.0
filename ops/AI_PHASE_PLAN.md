@@ -394,8 +394,31 @@ Suggestion Intelligence + Suggest & Earn (Task 14, forever). DB schema, API, rew
 ---
 
 ## Phase 68 — COMPLETE ✓
-**Branch:** `ai/phase-20260226-phase68` (ready for PR) | **Tests:** 691/702
+**Branch:** `ai/phase-20260226-phase68` (merged to main) | **Tests:** 702/702
 Suggestion Intelligence Phase 2: voting, pagination, status history, similarity clustering, admin stats, cache.
+
+---
+
+## Phase 69 — COMPLETE ✓
+**Branch:** `ai/phase-20260226-phase69` (ready for PR → main) | **Tests:** 715/715
+Suggestion Intelligence Phase 3: DB indexes, vote activity log, events endpoint, CSV export, auth hardening, cluster merge, cluster naming.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 69.1 | DB: idx_suggestion_votes_user_suggestion compound index on suggestion_votes | ✅ | Performance |
+| 69.2 | Vote activity log: activity_log entry with action='vote_suggestion' after vote | ✅ | Feature |
+| 69.3 | Reminder edit dialog: humanDue() label below datetime-local input | ✅ | UX |
+| 69.4 | Copy code button (already in AgentChatPanel from Phase 42 — confirmed) | ✅ | UX |
+| 69.5 | Admin CSV export: GET /api/admin/suggestions/export (id,title,body,status,upvotes,downvotes) | ✅ | Feature |
+| 69.6 | Events endpoint: GET /api/suggestions/:id/events (status history, 404 for others) | ✅ | Feature |
+| 69.7 | Auth hardening: forgot-password always 200ms min delay + constant message | ✅ | Security |
+| 69.8 | Compression middleware (already in app.ts from Phase 47 — confirmed) | ✅ | Performance |
+| 69.9 | Brand guard | ✅ (0 violations) | Brand |
+| 69.10 | Suggestion detail modal in RoadmapPage (Eye button → Dialog with body/status/date) | ✅ | UX |
+| 69.11 | Cluster auto-merge for high-overlap groups (>70% overlap, prod only) | ✅ | Feature |
+| 69.12 | Recent Improvements section in RoadmapPage (phases 67/68/69 hard-coded) | ✅ | UX |
+| 69.13 | Tests: 13 new tests (715 total) | ✅ | Dev/Ops |
+| 69.14 | Cluster AI naming: name column on suggestion_clusters, set at creation | ✅ | Feature |
 
 | # | Item | Status | Category |
 |---|------|--------|----------|
