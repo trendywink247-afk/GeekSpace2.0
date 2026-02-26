@@ -44,6 +44,8 @@ export function MemoryManagerPage() {
   // 65.2: Confidence threshold filter (0-100)
   const [minConfidence, setMinConfidence] = useState(0);
   const [bulkClearing, setBulkClearing] = useState<string | null>(null);
+  // 66.13: Confirmation state for bulk-clear modal
+  const [bulkClearConfirm, setBulkClearConfirm] = useState<string | null>(null);
 
   // Load memories from API
   useEffect(() => {
@@ -94,8 +96,15 @@ export function MemoryManagerPage() {
   };
 
   // 65.7: Bulk-clear by category via server endpoint
+  // 66.13: Uses modal confirmation instead of window.confirm()
   const handleBulkClear = async (category: string) => {
-    if (!confirm(`Clear ALL "${category}" memories from server?`)) return;
+    setBulkClearConfirm(category);
+  };
+
+  const confirmBulkClear = async () => {
+    const category = bulkClearConfirm;
+    if (!category) return;
+    setBulkClearConfirm(null);
     setBulkClearing(category);
     try {
       await memoryService.bulkClear(category);
@@ -442,6 +451,40 @@ export function MemoryManagerPage() {
             <Trash2 className="w-4 h-4 mr-2" />
             Delete all in {selectedCategory}
           </Button>
+        </div>
+      )}
+
+      {/* 66.13: Bulk-clear confirmation modal */}
+      {bulkClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0D0D1A] border border-[#FF6161]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FF6161]/10 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-[#FF6161]" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[#F4F6FF]">Clear all memories?</h3>
+                <p className="text-xs text-[#6B7280]">Category: <span className="text-[#E8E8F0] font-medium">{bulkClearConfirm}</span></p>
+              </div>
+            </div>
+            <p className="text-sm text-[#9CA3AF] mb-5">
+              All memories in the <strong className="text-[#E8E8F0]">{bulkClearConfirm}</strong> category will be permanently deleted from the server.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBulkClearConfirm(null)}
+                className="flex-1 py-2 px-4 rounded-xl border border-[#2A2A3A] text-sm text-[#9CA3AF] hover:bg-[#1A1A2E] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void confirmBulkClear()}
+                className="flex-1 py-2 px-4 rounded-xl bg-[#FF6161]/15 border border-[#FF6161]/30 text-sm text-[#FF6161] hover:bg-[#FF6161]/25 transition-colors font-medium"
+              >
+                Clear all
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

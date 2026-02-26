@@ -41,14 +41,18 @@ export function PortfolioPage() {
     }
   };
 
+  // 66.6: Analytics export date range
+  const [analyticsFrom, setAnalyticsFrom] = useState('');
+  const [analyticsTo, setAnalyticsTo] = useState('');
+
   const handleExportCsv = async () => {
     try {
-      const response = await portfolioService.exportStats();
+      const response = await portfolioService.exportAnalyticsCSV(analyticsFrom || undefined, analyticsTo || undefined);
       const blob = new Blob([response.data as unknown as BlobPart], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `portfolio-visits-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `portfolio-analytics-${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -1336,15 +1340,25 @@ export function PortfolioPage() {
                     Track views and visitor insights
                   </CardDescription>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportCsv}
-                  className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 shrink-0"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export CSV
-                </Button>
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {/* 66.6: Date range filter for export */}
+                  <input type="date" value={analyticsFrom} onChange={(e) => setAnalyticsFrom(e.target.value)}
+                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] h-8"
+                    aria-label="Analytics export from date" />
+                  <span className="text-xs text-[#6B7280]">–</span>
+                  <input type="date" value={analyticsTo} onChange={(e) => setAnalyticsTo(e.target.value)}
+                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] h-8"
+                    aria-label="Analytics export to date" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportCsv}
+                    className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 shrink-0 h-8"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">

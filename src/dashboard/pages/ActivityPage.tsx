@@ -279,6 +279,17 @@ export function ActivityPage() {
         })}
       </div>
 
+      {/* 66.7: Category color legend */}
+      <div className="flex flex-wrap items-center gap-3 text-[10px] text-[#6B7280]">
+        <span className="font-medium">Legend:</span>
+        {(Object.entries(FILTER_COLORS) as Array<[FilterType, string]>).filter(([k]) => k !== 'All').map(([cat, color]) => (
+          <span key={cat} className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+            {cat}
+          </span>
+        ))}
+      </div>
+
       {/* Activity list */}
       <Card className="border-[#00F0FF]/20">
         <CardContent className="p-0">
