@@ -1357,3 +1357,62 @@ try { db.exec(`CREATE INDEX IF NOT EXISTS idx_automations_user_active ON automat
 
 // Phase 61.2: Overdue escalation tracking — prevents duplicate Telegram alerts
 try { db.exec(`ALTER TABLE reminders ADD COLUMN overdue_escalated_at TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+
+// ── Phase 67: Suggestion Intelligence + Suggest & Earn ────────────────────────
+// All tables are additive (CREATE TABLE IF NOT EXISTS) — safe for existing prod DBs.
+
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    tags TEXT NOT NULL DEFAULT '[]',
+    status TEXT NOT NULL DEFAULT 'new',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestion_clusters (
+    id TEXT PRIMARY KEY,
+    canonical_summary TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '[]',
+    suggestion_ids TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestion_scores (
+    id TEXT PRIMARY KEY,
+    cluster_id TEXT NOT NULL UNIQUE REFERENCES suggestion_clusters(id) ON DELETE CASCADE,
+    demand_score INTEGER NOT NULL DEFAULT 0,
+    impact_score INTEGER NOT NULL DEFAULT 0,
+    effort_score INTEGER NOT NULL DEFAULT 0,
+    risk_score INTEGER NOT NULL DEFAULT 0,
+    overall_score INTEGER NOT NULL DEFAULT 0,
+    rationale TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS suggestion_rewards (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    suggestion_id TEXT,
+    cluster_id TEXT,
+    event_type TEXT NOT NULL,
+    credits INTEGER NOT NULL DEFAULT 0,
+    unique_key TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+
+// Indexes for suggestion queries
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestions_user ON suggestions(user_id, created_at DESC)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions(status, created_at DESC)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_rewards_user ON suggestion_rewards(user_id, created_at DESC)`); } catch { /* already exists */ }

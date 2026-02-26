@@ -15,6 +15,8 @@ import { getMetricsSnapshot } from '../middleware/metrics.js';
 import { logger } from '../logger.js';
 import { cacheGet } from '../services/cache.js';
 import { eventBus } from '../services/event-bus.js';
+import { issueReward } from '../services/rewards.js';
+import { triageSuggestions } from '../services/suggestions-triage.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -606,6 +608,93 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
   res.setHeader('Content-Security-Policy',
     "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
   );
+
+  // ── Phase 67: Admin Suggestions Queue ─────────────────────────────────────
+  // GET /api/admin/suggestions/queue — list all suggestions with user email
+  adminRouter.get('/suggestions/queue', requireAdminToken, (req: Request, res: Response): void => {
+    const status = typeof req.query.status === 'string' ? req.query.status : null;
+    let rows: unknown[];
+    if (status) {
+      rows = db.prepare(`
+        SELECT s.id, s.title, s.body, s.tags, s.status, s.created_at, s.updated_at,
+               u.email as user_email, u.id as user_id
+        FROM suggestions s JOIN users u ON s.user_id = u.id
+        WHERE s.status = ? ORDER BY s.created_at DESC
+      `).all(status);
+    } else {
+      rows = db.prepare(`
+        SELECT s.id, s.title, s.body, s.tags, s.status, s.created_at, s.updated_at,
+               u.email as user_email, u.id as user_id
+        FROM suggestions s JOIN users u ON s.user_id = u.id
+        ORDER BY s.created_at DESC
+      `).all();
+    }
+    res.json({ suggestions: rows });
+  });
+
+  // PATCH /api/admin/suggestions/:id/status — update status, trigger rewards
+  adminRouter.patch('/suggestions/:id/status', requireAdminToken, (req: Request, res: Response): void => {
+    const { id } = req.params;
+    const { status } = req.body as { status?: string };
+    const validStatuses = ['new', 'triaged', 'accepted', 'rejected', 'shipped_main', 'shipped_prod'];
+    if (!status || !validStatuses.includes(status)) {
+      res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+      return;
+    }
+    const suggestion = db.prepare(`SELECT id, user_id, title, status FROM suggestions WHERE id = ?`).get(id) as {id: string; user_id: string; title: string; status: string} | undefined;
+    if (!suggestion) { res.status(404).json({ error: 'Suggestion not found' }); return; }
+
+    db.prepare(`UPDATE suggestions SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, id);
+
+    // Trigger idempotent reward issuance based on new status
+    let rewardResult: { issued: boolean; credits: number } = { issued: false, credits: 0 };
+    if (status === 'accepted') {
+      rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'ACCEPTED_EXPERIMENT' });
+    } else if (status === 'shipped_main') {
+      rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_MAIN' });
+    } else if (status === 'shipped_prod') {
+      rewardResult = issueReward({ userId: suggestion.user_id, suggestionId: id, eventType: 'SHIPPED_PROD' });
+    }
+
+    logger.info({ suggestionId: id, oldStatus: suggestion.status, newStatus: status, rewardIssued: rewardResult.issued }, 'Admin updated suggestion status');
+    res.json({ success: true, suggestion: { id, status }, reward: rewardResult });
+  });
+
+  // GET /api/admin/suggestions/clusters — list clusters with scores
+  adminRouter.get('/suggestions/clusters', requireAdminToken, (_req: Request, res: Response): void => {
+    const rows = db.prepare(`
+      SELECT c.id, c.canonical_summary, c.tags, c.suggestion_ids, c.created_at,
+             sc.demand_score, sc.impact_score, sc.effort_score, sc.risk_score, sc.overall_score, sc.rationale
+      FROM suggestion_clusters c
+      LEFT JOIN suggestion_scores sc ON sc.cluster_id = c.id
+      ORDER BY sc.overall_score DESC NULLS LAST, c.created_at DESC
+    `).all();
+    res.json({ clusters: rows });
+  });
+
+  // POST /api/admin/suggestions/triage — trigger AI triage for new suggestions
+  adminRouter.post('/suggestions/triage', requireAdminToken, async (_req: Request, res: Response): Promise<void> => {
+    const newSuggestions = db.prepare(`SELECT id FROM suggestions WHERE status = 'new'`).all() as {id: string}[];
+    const ids = newSuggestions.map(s => s.id);
+    if (!ids.length) { res.json({ processed: 0, results: [] }); return; }
+    try {
+      const results = await triageSuggestions(ids);
+      res.json({ processed: results.length, results });
+    } catch (err) {
+      logger.error({ err }, 'Triage failed');
+      res.status(500).json({ error: 'Triage failed' });
+    }
+  });
+
+  // POST /api/admin/rewards/grant — manual reward override
+  adminRouter.post('/rewards/grant', requireAdminToken, (req: Request, res: Response): void => {
+    const { userId, suggestionId, clusterId, eventType } = req.body as {userId?: string; suggestionId?: string; clusterId?: string; eventType?: string};
+    if (!userId || !eventType) { res.status(400).json({ error: 'userId and eventType required' }); return; }
+    const validEvents = ['ACCEPTED_EXPERIMENT', 'SHIPPED_MAIN', 'SHIPPED_PROD', 'ADOPTION_MILESTONE'];
+    if (!validEvents.includes(eventType)) { res.status(400).json({ error: 'Invalid eventType' }); return; }
+    const result = issueReward({ userId, suggestionId, clusterId, eventType: eventType as import('../services/rewards.js').RewardEventType });
+    res.json(result);
+  });
 
   // Serve the comprehensive standalone admin dashboard HTML file
   const html = getAdminDashboardHtml();
