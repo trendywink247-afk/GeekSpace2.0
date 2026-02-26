@@ -20,10 +20,16 @@ activityRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   // 64.6: action type filter — exact prefix match on action field
   const actionType = typeof req.query.type === 'string' && req.query.type.trim() ? req.query.type.trim() : null;
 
+  // 65.9: date-range filter — ISO date strings YYYY-MM-DD
+  const from = typeof req.query.from === 'string' && req.query.from.match(/^\d{4}-\d{2}-\d{2}$/) ? req.query.from : null;
+  const to = typeof req.query.to === 'string' && req.query.to.match(/^\d{4}-\d{2}-\d{2}$/) ? req.query.to : null;
+
   const whereClauses: string[] = ['user_id = ?'];
   const params: unknown[] = [userId];
   if (q) { whereClauses.push('(action LIKE ? OR details LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
   if (actionType) { whereClauses.push('action = ?'); params.push(actionType); }
+  if (from) { whereClauses.push("date(created_at) >= ?"); params.push(from); }
+  if (to) { whereClauses.push("date(created_at) <= ?"); params.push(to); }
   const where = whereClauses.join(' AND ');
 
   const entries = db.prepare(`

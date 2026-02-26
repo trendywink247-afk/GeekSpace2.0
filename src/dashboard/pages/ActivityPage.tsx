@@ -86,6 +86,9 @@ export function ActivityPage() {
   const [isClearing, setIsClearing] = useState(false);
   // 64.8: CSV export
   const [exporting, setExporting] = useState(false);
+  // 65.9: Date-range filter
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   // Debounce search query → serverQ
   useEffect(() => {
@@ -94,18 +97,18 @@ export function ActivityPage() {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchQuery]);
 
-  // Reload when serverQ changes (server-side text search)
+  // Reload when serverQ or date-range changes (server-side text search + date filter)
   useEffect(() => {
     setLoading(true);
-    userService.getActivity(PAGE_SIZE, 0, serverQ || undefined)
+    userService.getActivity(PAGE_SIZE, 0, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined)
       .then(({ data }) => { setEntries(data.activity); setTotal(data.total ?? data.activity.length); })
       .catch(() => setEntries([]))
       .finally(() => setLoading(false));
-  }, [serverQ]);
+  }, [serverQ, dateFrom, dateTo]);
 
   const handleLoadMore = () => {
     setLoadingMore(true);
-    userService.getActivity(PAGE_SIZE, entries.length, serverQ || undefined)
+    userService.getActivity(PAGE_SIZE, entries.length, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined)
       .then(({ data }) => { setEntries((prev) => [...prev, ...data.activity]); setTotal(data.total ?? (entries.length + data.activity.length)); })
       .catch(() => {})
       .finally(() => setLoadingMore(false));
@@ -216,6 +219,35 @@ export function ActivityPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[44px]"
         />
+      </div>
+
+      {/* 65.9: Date-range filter */}
+      <div className="flex flex-wrap items-center gap-2 text-xs text-[#6B7280]">
+        <span>From:</span>
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="px-2 py-1.5 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] text-xs"
+          aria-label="Filter from date"
+        />
+        <span>To:</span>
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="px-2 py-1.5 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] text-xs"
+          aria-label="Filter to date"
+        />
+        {(dateFrom || dateTo) && (
+          <button
+            onClick={() => { setDateFrom(''); setDateTo(''); }}
+            className="text-[#FF6161] hover:text-[#FF6161]/80 transition-colors"
+            aria-label="Clear date range"
+          >
+            ✕ Clear dates
+          </button>
+        )}
       </div>
 
       {/* Filter chips */}

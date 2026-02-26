@@ -106,6 +106,8 @@ export function AutomationsPage() {
     enabled: true,
     // 62.6: Cron builder — stores interval in minutes for time-based triggers
     intervalMinutes: 60,
+    // 65.8: Webhook URL field for n8n-webhook / call_api
+    webhookUrl: '',
   });
   const [saveError, setSaveError] = useState('');
   const [logs, setLogs] = useState<AutomationLog[]>([]);
@@ -130,7 +132,7 @@ export function AutomationsPage() {
   const [dryRunResult, setDryRunResult] = useState<{ id: string; simulatedOutput: string } | null>(null);
 
   const resetForm = () => {
-    setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true, intervalMinutes: 60 });
+    setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true, intervalMinutes: 60, webhookUrl: '' });
     setEditingId(null);
     setSaveError('');
   };
@@ -176,6 +178,7 @@ export function AutomationsPage() {
       actionType: auto.actionType,
       enabled: auto.enabled,
       intervalMinutes: existingInterval,
+      webhookUrl: '',
     });
     setEditingId(id);
     setIsAddDialogOpen(true);
@@ -188,6 +191,11 @@ export function AutomationsPage() {
       // 62.6: build triggerConfig for time-based automations
       const triggerConfig = form.triggerType === 'time'
         ? { interval_minutes: form.intervalMinutes }
+        : {};
+      // 65.8: Include webhookUrl in actionConfig for webhook action types
+      const urlActionTypes = ['n8n-webhook', 'call_api'];
+      const actionConfig = urlActionTypes.includes(form.actionType) && form.webhookUrl
+        ? { url: form.webhookUrl }
         : {};
       if (editingId) {
         await updateAutomation(editingId, {
@@ -207,7 +215,8 @@ export function AutomationsPage() {
           config: {},
           enabled: form.enabled,
           triggerConfig,
-        });
+          actionConfig,
+        } as Parameters<typeof addAutomation>[0]);
       }
       setIsAddDialogOpen(false);
       resetForm();
@@ -747,6 +756,24 @@ export function AutomationsPage() {
                 </select>
               </div>
             </div>
+            {/* 65.8: Webhook URL input + https warning for n8n-webhook / call_api */}
+            {(form.actionType === 'n8n-webhook' || form.actionType === 'call_api') && (
+              <div className="space-y-1">
+                <label className="text-xs text-[#6B7280]">Webhook URL</label>
+                <input
+                  type="url"
+                  placeholder="https://your-webhook-endpoint.com/..."
+                  value={form.webhookUrl}
+                  onChange={(e) => setForm({ ...form, webhookUrl: e.target.value })}
+                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] text-sm"
+                />
+                {form.webhookUrl && form.webhookUrl.startsWith('http://') && !form.webhookUrl.startsWith('https://') && (
+                  <p className="text-xs flex items-center gap-1.5 text-[#F59E0B]">
+                    <span>⚠</span> Using http:// sends data unencrypted. Use https:// for production.
+                  </p>
+                )}
+              </div>
+            )}
             {/* 62.6: Schedule builder — shown when trigger is time-based */}
             {form.triggerType === 'time' && (
               <div className="rounded-lg border border-[#00F0FF]/20 bg-[#06060B] p-3 space-y-3">

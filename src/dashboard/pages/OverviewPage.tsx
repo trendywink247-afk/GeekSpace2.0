@@ -47,7 +47,7 @@ import {
 } from 'recharts';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { briefingService, modelService, agentService, usageService, activityService, reminderService, userService, type ActivityEntry } from '@/services/api';
+import { briefingService, modelService, agentService, usageService, activityService, reminderService, userService, portfolioService, type ActivityEntry } from '@/services/api';
 import type { FreeModel, ModelChangelogEntry } from '@/types';
 
 interface OverviewPageProps {
@@ -228,6 +228,11 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
   // 36.3: Overdue reminder alert (session-only dismiss)
   const [overdueAlertDismissed, setOverdueAlertDismissed] = useState(false);
+  // 65.1: Portfolio stats widget
+  const [portfolioStats, setPortfolioStats] = useState<{ view_count: number; contact_count: number; project_count: number } | null>(null);
+  // 65.11: Done Today count-up animation
+  const [doneTodayAnimKey, setDoneTodayAnimKey] = useState(0);
+  const prevDoneToday = useRef(0);
 
   const user = useAuthStore((s) => s.user);
   const { stats, integrations, agent, reminders, chartData, hourlyData } = useDashboardStore();
@@ -339,6 +344,13 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     }).catch(() => {});
   }, []);
 
+  // 65.1: Load portfolio stats
+  useEffect(() => {
+    portfolioService.getMeStats().then(res => {
+      setPortfolioStats({ view_count: res.data.view_count, contact_count: res.data.contact_count, project_count: res.data.project_count });
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     const pref = (agent as unknown as Record<string, unknown>)?.preferred_free_model as string | undefined;
     if (pref) setPreferredModel(pref);
@@ -375,6 +387,14 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const doneToday = reminders.filter((r) => r.completed && new Date((r as { completed_at?: string }).completed_at || r.createdAt || '').getTime() >= todayStart.getTime()).length
     || (reminderStreak?.completedToday ? 1 : 0);
 
+  // 65.11: Trigger count-up animation when doneToday increases
+  useEffect(() => {
+    if (doneToday > prevDoneToday.current) {
+      setDoneTodayAnimKey(k => k + 1);
+    }
+    prevDoneToday.current = doneToday;
+  }, [doneToday]);
+
   const quickStats = [
     {
       label: 'Messages Sent',
@@ -394,7 +414,9 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     },
     {
       label: 'Done Today',
+      // 65.11: animKey triggers re-mount of the value span for CSS pop animation
       value: String(doneToday),
+      animKey: doneTodayAnimKey,
       icon: CheckCircle2,
       change: reminderStreak?.completedToday ? '✓ streak' : '—',
       trend: 'up' as const,
@@ -774,9 +796,11 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 </div>
               </div>
               <div
+                key={(stat as { animKey?: number }).animKey ?? stat.label}
                 className="text-2xl font-bold bg-clip-text text-transparent transition-all"
                 style={{
                   backgroundImage: `linear-gradient(135deg, ${stat.color}, #E8E8F0)`,
+                  animation: (stat as { animKey?: number }).animKey ? 'pulse 0.4s ease-out' : undefined,
                 }}
               >
                 {stat.value}
@@ -1242,6 +1266,37 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </div>
             </CardContent>
           </Card>
+
+          {/* 65.1: Portfolio Stats Widget */}
+          {portfolioStats && (
+            <Card
+              style={{
+                background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
+                border: '1px solid rgba(191, 95, 255, 0.15)',
+              }}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base font-semibold text-[#BF5FFF]">Portfolio</CardTitle>
+                  <button onClick={() => onNavigate?.('portfolio')} className="text-xs text-[#6B7280] hover:text-[#BF5FFF] transition-colors">View →</button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'Views', value: portfolioStats.view_count },
+                    { label: 'Contacts', value: portfolioStats.contact_count },
+                    { label: 'Projects', value: portfolioStats.project_count },
+                  ].map((item) => (
+                    <div key={item.label} className="text-center rounded-lg p-2" style={{ background: 'rgba(191, 95, 255, 0.06)' }}>
+                      <div className="text-lg font-bold text-[#BF5FFF]">{item.value}</div>
+                      <div className="text-[10px] text-[#6B7280]">{item.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Quick Actions */}
           <Card

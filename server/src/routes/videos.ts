@@ -15,6 +15,7 @@ import { config } from '../config.js';
 import { runDirectorMode } from '../services/director-mode.js';
 import { generateFalClip } from '../services/fal-video.js';
 import type { DirectorPacket } from '../services/director-mode.js';
+import { routeChat } from '../services/llm.js';
 
 export const videosRouter = Router();
 
@@ -285,6 +286,35 @@ videosRouter.get('/models/available', requireAuth, (_req: AuthRequest, res) => {
   ];
 
   res.json({ models });
+});
+
+// ──────────────────────────────────────────────────────────────
+// 65.13: Expand Idea — AI-enriched idea for Director Mode
+// POST /api/videos/director/expand-idea
+// ──────────────────────────────────────────────────────────────
+videosRouter.post('/director/expand-idea', requireAuth, async (req: AuthRequest, res) => {
+  const { idea } = req.body as { idea?: string };
+  if (!idea?.trim() || idea.trim().length < 5) {
+    res.status(400).json({ error: 'idea is required (min 5 chars)' });
+    return;
+  }
+  if (idea.trim().length > 500) {
+    res.status(400).json({ error: 'idea too long (max 500 chars)' });
+    return;
+  }
+  try {
+    const result = await routeChat(
+      [
+        { role: 'system', content: 'You are a cinematic AI director. Expand the given short idea into a rich, vivid 1-2 sentence scene description suitable for a 6-shot video sequence. Focus on visual details, lighting, atmosphere, and movement. Return only the expanded description, no preamble.' },
+        { role: 'user', content: `Expand this video idea: "${idea.trim()}"` },
+      ],
+      { userId: req.userId! }
+    );
+    const expanded = result.reply?.trim() || idea.trim();
+    res.json({ expanded });
+  } catch {
+    res.json({ expanded: idea.trim() }); // graceful fallback
+  }
 });
 
 // ──────────────────────────────────────────────────────────────

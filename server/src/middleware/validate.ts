@@ -91,7 +91,17 @@ export const automationCreateSchema = z.object({
   actionConfig: z.record(z.string(), z.unknown()).optional().default({}),
   config: z.record(z.string(), z.unknown()).optional().default({}),
   enabled: z.boolean().optional().default(true),
-});
+}).refine((data) => {
+  // 65.3: Validate webhook URL format when actionType requires a URL
+  const urlActionTypes = ['n8n-webhook', 'call_api'];
+  if (!urlActionTypes.includes(data.actionType)) return true;
+  const url = (data.actionConfig?.url as string | undefined) || (data.actionConfig?.webhook_url as string | undefined);
+  if (!url) return true; // URL is optional at create time
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch { return false; }
+}, { message: 'actionConfig.url must be a valid http:// or https:// URL', path: ['actionConfig'] });
 
 export const apiKeyCreateSchema = z.object({
   provider: z.string().min(1).max(50),

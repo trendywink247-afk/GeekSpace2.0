@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, contactSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
+import { cacheGet, cacheSet } from '../services/cache.js';
 
 export const dashboardRouter = Router();
 
@@ -109,6 +110,24 @@ dashboardRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
       overdue: remOverdue.total || 0,
     },
   });
+});
+
+// ── 65.5: Quick-stats — lightweight 3-count payload, 60s Redis TTL ─────────
+dashboardRouter.get('/quick-stats', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const cacheKey = `dashboard:quick-stats:${userId}`;
+  try {
+    const cached = await cacheGet(cacheKey);
+    if (cached) { res.json(JSON.parse(cached)); return; }
+  } catch { /* Redis unavailable — fall through */ }
+
+  const remindersActive = (db.prepare('SELECT COUNT(*) as n FROM reminders WHERE user_id = ? AND completed = 0').get(userId) as { n: number }).n;
+  const messagesToday = (db.prepare("SELECT COUNT(*) as n FROM usage_events WHERE user_id = ? AND tool = 'ai.chat' AND created_at >= date('now')").get(userId) as { n: number }).n;
+  const automationsActive = (db.prepare("SELECT COUNT(*) as n FROM automations WHERE user_id = ? AND enabled = 1").get(userId) as { n: number }).n;
+
+  const payload = { remindersActive, messagesToday, automationsActive };
+  try { await cacheSet(cacheKey, JSON.stringify(payload), 60); } catch { /* ignore */ }
+  res.json(payload);
 });
 
 dashboardRouter.post('/contact', validateBody(contactSchema), (req, res) => {
