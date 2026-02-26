@@ -1,9 +1,9 @@
-# AI Handoff — Phase 62 Complete
+# AI Handoff — Phase 63 Complete
 
 **Date:** 2026-02-26
-**Branch:** `ai/phase-20260226-phase62` → PR pending (ready to merge)
-**Tests:** 615/615 ✅
-**Status:** All 13 improvements implemented, commit 398cb64, PR being created
+**Branch:** `ai/phase-20260226-phase63` → PR #94 (pending CI + merge)
+**Tests:** 624/624 ✅
+**Status:** All 10 improvements implemented, commit e8a6044, PR #94 created
 
 ---
 
@@ -13,6 +13,42 @@ If the conversation is compacted, before doing ANY work:
 2. Run: `git status && git branch --show-current && git log --oneline -5`
 3. Print a brief "Rehydrated Context" summary (phase, branch, current tasks, constraints)
 4. Only then continue implementation
+
+---
+
+## Phase 63 — What Was Done
+
+### 63.2 Portfolio analytics CSV export
+- `server/src/routes/portfolio.ts` — `GET /me/analytics/export` (30-day date+views CSV)
+- `src/services/api.ts` — `portfolioService.exportAnalyticsCSV()`
+
+### 63.3 Reminder group-by-category + relative time
+- `src/dashboard/pages/RemindersPage.tsx` — `groupRemindersByCategory()` + `groupMode` state toggle
+- `formatRelativeTime()` helper shows "in 2d", "3h ago" alongside clock time
+
+### 63.4 Automation run log status filter
+- `server/src/services/automations-engine.ts` — `getAutomationLogs()` now accepts optional `status` param
+- `server/src/routes/automations.ts` — `?status=success|failed|error` on `/logs` and `/:id/logs`
+- `src/dashboard/pages/AutomationsPage.tsx` — status filter `<select>` in "Recent Runs" header
+- `src/services/api.ts` — `automationLogService.list()` accepts optional `status`
+
+### 63.6 Server-side datetime validation
+- `server/src/middleware/validate.ts` — `.refine()` on `datetime` field in `reminderCreateSchema` rejects invalid dates
+
+### 63.7 OverviewPage "Done Today" stat
+- `src/dashboard/pages/OverviewPage.tsx` — `doneToday` computed + `CheckCircle2` stat card
+
+### 63.8 VideoGenPage inline video player
+- `src/dashboard/pages/VideoGenPage.tsx` — `<video>` element with controls/preload for `stitchResult.url`
+
+### 63.9 AgentChatPanel persona quick-switch
+- `src/components/AgentChatPanel.tsx` — persona pills row (Weebo/Jarvis/Edith) below credits bar
+
+### 63.13 Seedance Director restart button
+- `src/dashboard/pages/VideoGenPage.tsx` — Restart button shown when `directorJob.status === 'failed'`
+
+### Tests
+- `server/src/test/api/phase63.test.ts` — 9 tests (63.2, 63.4, 63.6); full suite 624/624
 
 ---
 
