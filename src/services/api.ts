@@ -529,7 +529,7 @@ export const automationService = {
 
   // 34.5: Test-fire a webhook automation
   testFire: (id: string) =>
-    api.post<{ success: boolean; statusCode: number; message: string }>(`/automations/${id}/test`),
+    api.post<{ success: boolean; statusCode: number; message: string; latencyMs?: number; contentType?: string; responseBody?: string }>(`/automations/${id}/test`),
 
   // 37.4: Dead-letter log for failed webhook deliveries
   getDeadLetters: () =>

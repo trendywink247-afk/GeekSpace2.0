@@ -110,7 +110,7 @@ export function AutomationsPage() {
   const [logsHasMore, setLogsHasMore] = useState(false);
   const [logsLoadingMore, setLogsLoadingMore] = useState(false);
   const [testingId, setTestingId] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string; statusCode?: number; latencyMs?: number; responseBody?: string } | null>(null);
   // 37.4: Dead-letter log
   const [deadLetters, setDeadLetters] = useState<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number; retry_count: number; last_error: string | null }>>([]);
   // 55.6: Dead-letter retry state
@@ -233,7 +233,7 @@ export function AutomationsPage() {
     setTestResult(null);
     try {
       const res = await automationService.testFire(id);
-      setTestResult({ id, success: res.data.success, message: res.data.message });
+      setTestResult({ id, success: res.data.success, message: res.data.message, statusCode: res.data.statusCode, latencyMs: res.data.latencyMs, responseBody: res.data.responseBody });
     } catch {
       setTestResult({ id, success: false, message: 'Test request failed' });
     } finally {
@@ -490,9 +490,20 @@ export function AutomationsPage() {
                     {/* Actions */}
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
                       {testResult?.id === auto.id && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${testResult.success ? 'bg-[#00FF88]/10 border-[#00FF88]/30 text-[#00FF88]' : 'bg-[#FF6161]/10 border-[#FF6161]/30 text-[#FF6161]'}`}>
-                          {testResult.message}
-                        </span>
+                        <div className={`rounded-lg border p-2 max-w-[240px] space-y-1 ${testResult.success ? 'bg-[#00FF88]/5 border-[#00FF88]/20' : 'bg-[#FF6161]/5 border-[#FF6161]/20'}`}>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-xs font-medium ${testResult.success ? 'text-[#00FF88]' : 'text-[#FF6161]'}`}>{testResult.message}</span>
+                            {testResult.statusCode != null && testResult.statusCode > 0 && (
+                              <span className="text-[10px] text-[#6B7280] font-mono bg-[#0C0C18] px-1.5 py-0.5 rounded">{testResult.statusCode}</span>
+                            )}
+                            {testResult.latencyMs != null && (
+                              <span className="text-[10px] text-[#6B7280]">{testResult.latencyMs}ms</span>
+                            )}
+                          </div>
+                          {testResult.responseBody && (
+                            <pre className="text-[9px] text-[#6B7280] font-mono max-h-[60px] overflow-auto whitespace-pre-wrap break-all">{testResult.responseBody.slice(0, 200)}</pre>
+                          )}
+                        </div>
                       )}
                       <div className="flex items-center gap-1">
                       {auto.triggerType === 'webhook' && (

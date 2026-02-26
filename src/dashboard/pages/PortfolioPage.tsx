@@ -4,7 +4,7 @@ import {
   User, Code2, FolderGit2, Award, Share2, Bot, Wand2, Lightbulb, CheckCircle2,
   BarChart3, Eye, TrendingUp, Copy, Link, Download, GripVertical
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -1351,6 +1351,20 @@ export function PortfolioPage() {
                     {portfolioStats ? portfolioStats.recentViews.toLocaleString() : '—'}
                   </div>
                   <div className="text-xs text-[#00FF88]">last 7 days</div>
+                  {/* 58.3: Mini sparkline — last 30 days */}
+                  {portfolioStats && portfolioStats.dailyBreakdown.length > 0 && (
+                    <ResponsiveContainer width="100%" height={32} className="mt-2">
+                      <AreaChart data={portfolioStats.dailyBreakdown} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                        <defs>
+                          <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#00FF88" stopOpacity={0.4} />
+                            <stop offset="100%" stopColor="#00FF88" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <Area type="monotone" dataKey="count" stroke="#00FF88" strokeWidth={1.5} fill="url(#sparkGrad)" dot={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
 

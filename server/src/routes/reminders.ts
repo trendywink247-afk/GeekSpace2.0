@@ -170,6 +170,20 @@ remindersRouter.get('/streak', requireAuth, (req: AuthRequest, res) => {
   res.json({ streak, longestStreak, completedToday });
 });
 
+// 58.2: /bulk must come before /:id to avoid Express matching bulk as an id param
+remindersRouter.delete('/bulk', requireAuth, validateBody(bulkReminderDeleteSchema), (req: AuthRequest, res) => {
+  const { ids } = req.body as { ids: string[] };
+  const placeholders = ids.map(() => '?').join(', ');
+  const owned = db.prepare(
+    `SELECT id FROM reminders WHERE id IN (${placeholders}) AND user_id = ?`
+  ).all(...ids, req.userId!) as Array<{ id: string }>;
+  if (owned.length === 0) { res.json({ deleted: 0 }); return; }
+  const ownedIds = owned.map((r) => r.id);
+  const delPlaceholders = ownedIds.map(() => '?').join(', ');
+  const result = db.prepare(`DELETE FROM reminders WHERE id IN (${delPlaceholders})`).run(...ownedIds);
+  res.json({ deleted: result.changes });
+});
+
 remindersRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
   const result = db.prepare('DELETE FROM reminders WHERE id = ? AND user_id = ?').run(req.params.id, req.userId);
   if (result.changes === 0) { res.status(404).json({ error: 'Not found' }); return; }
@@ -363,27 +377,6 @@ remindersRouter.get('/export.csv', requireAuth, (req: AuthRequest, res) => {
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename="reminders-${new Date().toISOString().slice(0, 10)}.csv"`);
   res.send([header, ...lines].join('\n'));
-});
-
-remindersRouter.delete('/bulk', requireAuth, validateBody(bulkReminderDeleteSchema), (req: AuthRequest, res) => {
-  const { ids } = req.body as { ids: string[] };
-
-  // Validate all IDs belong to the requesting user before deleting
-  const placeholders = ids.map(() => '?').join(', ');
-  const owned = db.prepare(
-    `SELECT id FROM reminders WHERE id IN (${placeholders}) AND user_id = ?`
-  ).all(...ids, req.userId!) as Array<{ id: string }>;
-
-  if (owned.length === 0) {
-    res.json({ deleted: 0 });
-    return;
-  }
-
-  const ownedIds = owned.map((r) => r.id);
-  const delPlaceholders = ownedIds.map(() => '?').join(', ');
-  const result = db.prepare(`DELETE FROM reminders WHERE id IN (${delPlaceholders})`).run(...ownedIds);
-
-  res.json({ deleted: result.changes });
 });
 
 // ── 41.1: Bulk Complete ────────────────────────────────────────────────────
