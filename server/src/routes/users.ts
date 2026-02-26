@@ -123,6 +123,8 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), async (req
 
   // 50.8: Invalidate cached /me response after profile update
   cacheDel(`user:me:${req.userId!}`).catch(() => {});
+  // 54.5: Bust auth/me cache key too
+  cacheDel(`users:me:${req.userId!}`).catch(() => {});
 
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Updated profile', 'Settings changed', 'user')`).run(uuid(), req.userId);
 

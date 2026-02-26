@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import bcrypt from 'bcryptjs';
+import jwtPkg from 'jsonwebtoken';
 import { signToken, requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { db, seedDemoData } from '../db/index.js';
 import { config } from '../config.js';
 import { validateBody, signupSchema, loginSchema, onboardingSchema } from '../middleware/validate.js';
-import { cacheDel } from '../services/cache.js';
+import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { logSecurityEvent } from '../services/security-log.js';
 import { requestPasswordReset, verifyResetOTP, resetPassword } from '../services/passwordReset.js';
 import { logger } from '../logger.js';
@@ -184,14 +185,22 @@ authRouter.post('/demo', (req, res) => {
   });
 });
 
-authRouter.get('/me', requireAuth, (req: AuthRequest, res) => {
+authRouter.get('/me', requireAuth, async (req: AuthRequest, res) => {
+  // 54.5: Redis cache per-user (30s TTL)
+  const cacheKey = `users:me:${req.userId}`;
+  const cached = await cacheGet(cacheKey);
+  if (cached) {
+    res.set('X-Cache', 'HIT').json(JSON.parse(cached));
+    return;
+  }
+
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.userId!) as Record<string, unknown> | undefined;
   if (!user) {
     res.status(404).json({ error: 'User not found' });
     return;
   }
 
-  res.json({
+  const payload = {
     id: user.id,
     email: user.email,
     username: user.username,
@@ -209,7 +218,9 @@ authRouter.get('/me', requireAuth, (req: AuthRequest, res) => {
     onboardingCompleted: !!user.onboarding_completed,
     onboardingStep: (user.onboarding_step as number) ?? 0,
     createdAt: user.created_at,
-  });
+  };
+  await cacheSet(cacheKey, JSON.stringify(payload), 30);
+  res.set('X-Cache', 'MISS').json(payload);
 });
 
 authRouter.post('/onboarding', requireAuth, validateBody(onboardingSchema), (req: AuthRequest, res) => {
@@ -359,6 +370,44 @@ authRouter.post('/reset-password', async (req, res) => {
   }
 
   res.json({ success: true, message: 'Password reset successfully' });
+});
+
+// ── Token Refresh (54.3) ─────────────────────────────────────
+// Short-circuit replay guard: only allow refresh when ≥50% of token lifetime has elapsed.
+// This prevents token farming (immediate re-issue abuse) while still letting genuine
+// clients renew before expiry.
+authRouter.post('/refresh', requireAuth, (req: AuthRequest, res) => {
+  const header = req.headers.authorization || '';
+  const rawToken = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (!rawToken) {
+    res.status(401).json({ error: 'Missing token' });
+    return;
+  }
+  let iat = 0;
+  let exp = 0;
+  try {
+    // decode does not verify signature — we already verified in requireAuth
+    const decoded = jwtPkg.decode(rawToken) as { iat?: number; exp?: number } | null;
+    iat = decoded?.iat ?? 0;
+    exp = decoded?.exp ?? 0;
+  } catch { /* ignore */ }
+
+  const now = Math.floor(Date.now() / 1000);
+  const lifetime = exp - iat;
+  const elapsed = now - iat;
+
+  // Short-circuit: refuse if < 50% of lifetime has passed (prevents replay abuse)
+  if (lifetime > 0 && elapsed < lifetime * 0.5) {
+    res.status(429).json({
+      error: 'Token refresh too early — please wait until the token is at least 50% through its lifetime',
+      retryAfter: Math.ceil(iat + lifetime * 0.5 - now),
+    });
+    return;
+  }
+
+  const newToken = signToken(req.userId!);
+  logger.info({ event: 'auth_token_refresh', userId: req.userId, ip: req.ip }, 'Token refreshed');
+  res.json({ token: newToken });
 });
 
 // ── Session Management ──────────────────────────────────────
