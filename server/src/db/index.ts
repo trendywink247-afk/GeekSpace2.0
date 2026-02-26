@@ -897,6 +897,10 @@ db.exec(`
   )
 `);
 
+// Phase 57.10: Add retry_count + last_error to webhook_dead_letters
+try { db.exec(`ALTER TABLE webhook_dead_letters ADD COLUMN retry_count INTEGER DEFAULT 0`); } catch { /* already exists */ }
+try { db.exec(`ALTER TABLE webhook_dead_letters ADD COLUMN last_error TEXT DEFAULT NULL`); } catch { /* already exists */ }
+
 // Phase 37.5: Connection alert opt-in/out
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_connections INTEGER DEFAULT 1`); } catch { /* column already exists */ }
 

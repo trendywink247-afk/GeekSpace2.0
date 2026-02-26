@@ -1055,8 +1055,8 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </div>
             </CardHeader>
             <CardContent>
-              {/* 52.7: Mini activity feed — real log entries when available, fallback to derived */}
-              <div className="space-y-3">
+              {/* 52.7 / 57.2: Mini activity feed — height-constrained with overflow scroll for long lists */}
+              <div className="space-y-3 max-h-[360px] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-[#00F0FF]/10 scrollbar-track-transparent pr-1" style={{ contain: 'paint' }}>
                 {miniActivity.length > 0 ? miniActivity.map((entry, i) => {
                   const relTime = (() => {
                     const diff = Math.floor((Date.now() - new Date(entry.created_at).getTime()) / 1000);
