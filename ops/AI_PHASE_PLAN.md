@@ -348,4 +348,24 @@ Portfolio stats widget, memory confidence slider, webhook URL validation, activi
 | 65.12 | Brand gate | ✅ (0 violations) | Brand |
 | 65.13 | **Seedance**: "Expand Idea" AI button (POST /director/expand-idea) | ✅ | Feature |
 
+---
+
+## Phase 66 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/97 | **Tests:** 670/670
+Automation activity logging, portfolio contact delete, analytics date-range, RemindersPage undo toast + sort, ActivityPage legend, MemoryManager confirm modal
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 66.1 | RemindersPage bulk-complete undo toast (5s, reverts via PATCH) | ✅ | UX |
+| 66.2 | Automation activity logging (delete/enable/disable/trigger → activity_log) | ✅ | Reliability |
+| 66.3 | Portfolio contact delete: DELETE /contacts/:id + DELETE /contacts (bulk) | ✅ | Feature |
+| 66.3b | Analytics CSV export: optional ?from=&to= date-range params | ✅ | Feature |
+| 66.4 | ConnectionsPage: integration event log card (last 5 events) | ✅ | State-sync |
+| 66.6 | PortfolioPage: analytics date-range date pickers for CSV export | ✅ | UX |
+| 66.7 | ActivityPage: category color legend strip | ✅ | UX |
+| 66.8 | RemindersPage: sort-by-due toggle (P↑ / Due↑) | ✅ | UX |
+| 66.11 | VideoGenPage: director job history filter (All/Done/Failed) | ✅ | State-sync |
+| 66.12 | Brand gate | ✅ (0 violations) | Brand |
+| 66.13 | MemoryManagerPage: inline confirm modal (replaces window.confirm()) | ✅ | Security |
+
 
