@@ -9,17 +9,26 @@ import {
   onAutomationChanged,
   getAutomationLogs,
 } from '../services/automations-engine.js';
+import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 
 export const automationsRouter = Router();
 
-automationsRouter.get('/', requireAuth, (req: AuthRequest, res) => {
+automationsRouter.get('/', requireAuth, async (req: AuthRequest, res) => {
+  // 53.5: Redis cache per-user automations list (30s TTL)
+  const cacheKey = `automations:${req.userId}`;
+  const cached = await cacheGet(cacheKey);
+  if (cached) {
+    res.set('X-Cache', 'HIT').json(JSON.parse(cached));
+    return;
+  }
   const rows = db.prepare('SELECT * FROM automations WHERE user_id = ? ORDER BY created_at DESC').all(req.userId!) as Array<Record<string, unknown>>;
   // 48.1: Normalize enabled to boolean (SQLite returns 0/1 which confuses React toggle state)
   const automations = rows.map(a => ({ ...a, enabled: Boolean(a.enabled) }));
-  res.json(automations);
+  await cacheSet(cacheKey, JSON.stringify(automations), 30);
+  res.set('X-Cache', 'MISS').json(automations);
 });
 
-automationsRouter.post('/', requireAuth, validateBody(automationCreateSchema), (req: AuthRequest, res) => {
+automationsRouter.post('/', requireAuth, validateBody(automationCreateSchema), async (req: AuthRequest, res) => {
   const { name, description, triggerType, triggerConfig, actionType, actionConfig } = req.body;
 
   const id = uuid();
@@ -32,11 +41,14 @@ automationsRouter.post('/', requireAuth, validateBody(automationCreateSchema), (
   // Hot-reload engine
   onAutomationChanged(id);
 
+  // 53.5: Bust cache
+  await cacheDel(`automations:${req.userId}`);
+
   const automation = db.prepare('SELECT * FROM automations WHERE id = ?').get(id);
   res.status(201).json(automation);
 });
 
-automationsRouter.patch('/:id', requireAuth, validateBody(automationUpdateSchema), (req: AuthRequest, res) => {
+automationsRouter.patch('/:id', requireAuth, validateBody(automationUpdateSchema), async (req: AuthRequest, res) => {
   const existing = db.prepare('SELECT * FROM automations WHERE id = ? AND user_id = ?').get(req.params.id, req.userId);
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
 
@@ -56,15 +68,20 @@ automationsRouter.patch('/:id', requireAuth, validateBody(automationUpdateSchema
   // Hot-reload engine
   onAutomationChanged(req.params.id);
 
+  // 53.5: Bust cache on update
+  await cacheDel(`automations:${req.userId}`);
+
   const raw = db.prepare('SELECT * FROM automations WHERE id = ?').get(req.params.id) as Record<string, unknown> | undefined;
   if (!raw) { res.status(404).json({ error: 'Not found' }); return; }
   res.json({ ...raw, enabled: Boolean(raw.enabled) });
 });
 
-automationsRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
+automationsRouter.delete('/:id', requireAuth, async (req: AuthRequest, res) => {
   onAutomationChanged(req.params.id); // Unregister before delete
   const result = db.prepare('DELETE FROM automations WHERE id = ? AND user_id = ?').run(req.params.id, req.userId);
   if (result.changes === 0) { res.status(404).json({ error: 'Not found' }); return; }
+  // 53.5: Bust cache on delete
+  await cacheDel(`automations:${req.userId}`);
   res.json({ success: true });
 });
 
@@ -83,14 +100,18 @@ automationsRouter.post('/:id/trigger', requireAuth, async (req: AuthRequest, res
 
 automationsRouter.get('/logs', requireAuth, (req: AuthRequest, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-  const logs = getAutomationLogs(req.userId!, undefined, limit);
-  res.json(logs);
+  // 53.7: Pagination support — offset param
+  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+  const logs = getAutomationLogs(req.userId!, undefined, limit, offset);
+  res.json({ logs, limit, offset });
 });
 
 automationsRouter.get('/:id/logs', requireAuth, (req: AuthRequest, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-  const logs = getAutomationLogs(req.userId!, req.params.id, limit);
-  res.json(logs);
+  // 53.7: Pagination support — offset param
+  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+  const logs = getAutomationLogs(req.userId!, req.params.id, limit, offset);
+  res.json({ logs, limit, offset });
 });
 
 // ---- 46.2: URL validation helper for webhook test-fire ----

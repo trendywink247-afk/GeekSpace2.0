@@ -223,6 +223,8 @@ export function RemindersPage() {
   // Bulk delete state (25.5)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  // 53.4: Bulk restore-snooze for completed reminders
+  const [isBulkRestoringSnooze, setIsBulkRestoringSnooze] = useState(false);
 
   // Bulk snooze state (29.4)
   const [selectedActiveIds, setSelectedActiveIds] = useState<Set<string>>(new Set());
@@ -362,6 +364,19 @@ export function RemindersPage() {
       await loadReminders();
     } finally {
       setIsBulkDeleting(false);
+    }
+  };
+
+  // 53.4: Restore completed reminders back to active with a snooze preset
+  const handleBulkRestoreSnooze = async (preset: '1h' | 'tomorrow' | 'next-week') => {
+    if (selectedIds.size === 0) return;
+    setIsBulkRestoringSnooze(true);
+    try {
+      await reminderService.bulkRestoreSnooze(Array.from(selectedIds), preset);
+      setSelectedIds(new Set());
+      await loadReminders();
+    } finally {
+      setIsBulkRestoringSnooze(false);
     }
   };
 
@@ -865,20 +880,42 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             Select all completed ({completedReminders.length})
           </label>
           {selectedIds.size > 0 && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={handleBulkDelete}
-              disabled={isBulkDeleting}
-              className="ml-auto bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
-            >
-              {isBulkDeleting ? (
-                <div className="w-4 h-4 border-2 border-[#FF6161]/30 border-t-[#FF6161] rounded-full animate-spin mr-2" />
-              ) : (
-                <Trash2 className="w-4 h-4 mr-2" />
+            <div className="ml-auto flex items-center gap-2 flex-wrap">
+              {/* 53.4: Restore + Snooze completed reminders back to active */}
+              <span className="text-xs text-[#6B7280]">Restore {selectedIds.size} selected:</span>
+              <button
+                onClick={() => handleBulkRestoreSnooze('1h')}
+                disabled={isBulkRestoringSnooze}
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] hover:bg-[#FFB800]/20 disabled:opacity-50 transition-colors"
+              >+1h</button>
+              <button
+                onClick={() => handleBulkRestoreSnooze('tomorrow')}
+                disabled={isBulkRestoringSnooze}
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] hover:bg-[#FFB800]/20 disabled:opacity-50 transition-colors"
+              >Tomorrow</button>
+              <button
+                onClick={() => handleBulkRestoreSnooze('next-week')}
+                disabled={isBulkRestoringSnooze}
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] hover:bg-[#FFB800]/20 disabled:opacity-50 transition-colors"
+              >Next week</button>
+              {isBulkRestoringSnooze && (
+                <div className="w-4 h-4 border-2 border-[#FFB800]/30 border-t-[#FFB800] rounded-full animate-spin" />
               )}
-              Delete Selected ({selectedIds.size})
-            </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleBulkDelete}
+                disabled={isBulkDeleting}
+                className="bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
+              >
+                {isBulkDeleting ? (
+                  <div className="w-4 h-4 border-2 border-[#FF6161]/30 border-t-[#FF6161] rounded-full animate-spin mr-2" />
+                ) : (
+                  <Trash2 className="w-4 h-4 mr-2" />
+                )}
+                Delete ({selectedIds.size})
+              </Button>
+            </div>
           )}
         </div>
       )}

@@ -377,6 +377,10 @@ export const reminderService = {
   bulkSnooze: (ids: string[], preset: '1h' | 'tomorrow' | 'next-week') =>
     api.post<{ snoozed: number; newDatetime: string }>('/reminders/bulk-snooze', { ids, preset }),
 
+  // 53.4: Restore completed reminders back to active with a snooze preset
+  bulkRestoreSnooze: (ids: string[], preset: '1h' | 'tomorrow' | 'next-week') =>
+    api.post<{ restored: number; newDatetime: string }>('/reminders/bulk-restore-snooze', { ids, preset }),
+
   getStreak: () =>
     api.get<{ streak: number; longestStreak: number; completedToday: boolean }>('/reminders/streak'),
 
@@ -602,11 +606,12 @@ export const memoryService = {
 // ----- Automation Logs ---------------------------------------
 
 export const automationLogService = {
-  list: (limit = 50) =>
-    api.get<AutomationLog[]>(`/automations/logs?limit=${limit}`),
+  // 53.7: Paginated — returns { logs, limit, offset }
+  list: (limit = 50, offset = 0) =>
+    api.get<{ logs: AutomationLog[]; limit: number; offset: number }>(`/automations/logs?limit=${limit}&offset=${offset}`),
 
-  forAutomation: (automationId: string, limit = 50) =>
-    api.get<AutomationLog[]>(`/automations/${automationId}/logs?limit=${limit}`),
+  forAutomation: (automationId: string, limit = 50, offset = 0) =>
+    api.get<{ logs: AutomationLog[]; limit: number; offset: number }>(`/automations/${automationId}/logs?limit=${limit}&offset=${offset}`),
 };
 
 // ----- Premium Agent -----------------------------------------

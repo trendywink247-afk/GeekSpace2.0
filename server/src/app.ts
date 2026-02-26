@@ -75,6 +75,7 @@ export function createApp(): express.Application {
   // NOTE (Risk R11): script-src uses 'self' without nonces. Nonce-based CSP would require
   // frontend templating changes that are out of scope. style-src uses 'unsafe-inline' for
   // Tailwind/shadcn inline styles. Both are documented in the risk register as accepted risks.
+  // 53.3 CSP audit: added form-action, worker-src, manifest-src directives.
   app.use(helmet({
     contentSecurityPolicy: config.isProduction ? {
       directives: {
@@ -89,6 +90,10 @@ export function createApp(): express.Application {
         frameAncestors: ["'none'"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
+        // 53.3: Restrict form submissions, workers, and manifest to same-origin
+        formAction: ["'self'"],
+        workerSrc: ["'self'"],
+        manifestSrc: ["'self'"],
         // Force HTTP resources to upgrade to HTTPS (safe, widely supported)
         upgradeInsecureRequests: [],
       },
@@ -340,7 +345,9 @@ export function createApp(): express.Application {
     try {
       const row = db.prepare('SELECT 1 as ok').get() as { ok: number } | undefined;
       if (row?.ok === 1) {
-        res.status(200).json({ status: 'ready', db: 'ok' });
+        // 53.6: Include automations count for richer readiness telemetry
+        const automationCount = (db.prepare('SELECT COUNT(*) as cnt FROM automations').get() as { cnt: number }).cnt;
+        res.status(200).json({ status: 'ready', db: 'ok', automations: automationCount });
       } else {
         res.status(503).json({ status: 'not ready', db: 'error', message: 'DB query returned unexpected result' });
       }

@@ -406,7 +406,15 @@ export function DashboardApp() {
                   {groupHasActivePage(group) && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
                   )}
-                  <group.icon className="w-5 h-5 flex-shrink-0" />
+                  <div className="relative flex-shrink-0">
+                    <group.icon className="w-5 h-5" />
+                    {/* 53.8: Badge on Productivity group header when reminders are due */}
+                    {group.label === 'Productivity' && dueReminderCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold leading-none px-0.5">
+                        {dueReminderCount > 9 ? '9+' : dueReminderCount}
+                      </span>
+                    )}
+                  </div>
                   {!sidebarCollapsed && (
                     <>
                       <span className="text-sm font-medium flex-1 text-left">{group.label}</span>
