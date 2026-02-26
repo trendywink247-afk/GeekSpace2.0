@@ -60,7 +60,7 @@ import { createProjectFromChat, detectProjectFromChat, getProjectSuggestionText 
 // Import test routes conditionally (only in test mode)
 import testRouter from './routes/test.js';
 
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.1.0';
 
 /**
  * Create and configure the Express application

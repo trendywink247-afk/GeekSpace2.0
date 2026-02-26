@@ -80,6 +80,17 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
     }
   }
 
+  // Global cap: max 20 suggestions per user total (skip in test mode)
+  if (!config.isTestMode) {
+    const totalCount = db.prepare(
+      `SELECT COUNT(*) as cnt FROM suggestions WHERE user_id = ? AND deleted_at IS NULL`
+    ).get(userId) as { cnt: number };
+    if (totalCount.cnt >= 20) {
+      res.status(429).json({ error: 'Suggestion limit reached', limit: 20 });
+      return;
+    }
+  }
+
   const trimmedTitle = title.trim();
   const trimmedBody = body.trim();
   const tagsJson = JSON.stringify(parsedTags);
@@ -155,10 +166,12 @@ suggestionsRouter.get('/clusters', requireAuth, (req: AuthRequest, res) => {
   }
 
   // Task 68.6: include vote counts for each suggestion in the cluster
+  // Task 70.5: include name field
   const clusters = db.prepare(`
     SELECT
       c.id,
       c.canonical_summary as canonicalSummary,
+      c.name,
       c.tags,
       c.suggestion_ids as suggestionIds,
       c.created_at as createdAt,
@@ -218,17 +231,24 @@ suggestionsRouter.get('/mine', requireAuth, (req: AuthRequest, res) => {
   const offset = (page - 1) * limit;
 
   const total = (db.prepare(
-    `SELECT COUNT(*) as cnt FROM suggestions WHERE user_id = ?`
+    `SELECT COUNT(*) as cnt FROM suggestions WHERE user_id = ? AND deleted_at IS NULL`
   ).get(userId) as { cnt: number }).cnt;
 
   const rows = db.prepare(
-    `SELECT id, user_id as userId, title, body, tags, status, created_at as createdAt, updated_at as updatedAt
-     FROM suggestions WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    `SELECT s.id, s.user_id as userId, s.title, s.body, s.tags, s.status, s.created_at as createdAt, s.updated_at as updatedAt,
+            COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0) as upvotes,
+            COALESCE(SUM(CASE WHEN v.vote = -1 THEN 1 ELSE 0 END), 0) as downvotes
+     FROM suggestions s
+     LEFT JOIN suggestion_votes v ON v.suggestion_id = s.id
+     WHERE s.user_id = ? AND s.deleted_at IS NULL
+     GROUP BY s.id
+     ORDER BY s.created_at DESC LIMIT ? OFFSET ?`
   ).all(userId, limit, offset) as Array<Record<string, unknown>>;
 
   const suggestions = rows.map(r => ({
     ...r,
     tags: (() => { try { return JSON.parse(r.tags as string); } catch { return []; } })(),
+    trending: (r.trending as number | null) ?? 0,
   }));
 
   res.json({ suggestions, total, page, limit });

@@ -1,6 +1,6 @@
 {
   "name": "geekspace-api",
-  "version": "1.0.0",
+  "version": "3.1.0",
   "description": "GeekSpace Core API — auth, users, agents, usage, billing, integrations",
   "type": "module",
   "scripts": {
