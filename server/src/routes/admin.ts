@@ -166,7 +166,7 @@ adminRouter.get('/stats', requireAdminToken, (_req: Request, res: Response): voi
     const mem = process.memoryUsage();
 
     // Task 68.8: suggestion counts in admin stats
-    let suggestionStats: { total: number; new: number; accepted: number; shipped: number } = {
+    const suggestionStats: { total: number; new: number; accepted: number; shipped: number } = {
       total: 0, new: 0, accepted: 0, shipped: 0,
     };
     try {
