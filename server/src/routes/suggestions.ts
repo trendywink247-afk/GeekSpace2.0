@@ -23,6 +23,11 @@ function wordOverlap(a: string, b: string): number {
   return common / Math.max(wordsA.length, wordsB.length);
 }
 
+// ── HTML entity encoder (Task 73.8) ──────────────────────────────────────────
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // ── Clusters cache (Task 68.11) ───────────────────────────────────────────────
 const clustersCache: { data: unknown[] | null; expiresAt: number } = { data: null, expiresAt: 0 };
 export function invalidateClustersCache(): void {
@@ -91,8 +96,8 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
     }
   }
 
-  const trimmedTitle = title.trim();
-  const trimmedBody = body.trim();
+  const trimmedTitle = escapeHtml(title.trim());
+  const trimmedBody = escapeHtml(body.trim());
   const tagsJson = JSON.stringify(parsedTags);
 
   // Check for near-duplicate (Task 68.9): exact title match OR 60% word overlap on body
@@ -149,6 +154,8 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
   res.status(201).json({
     ...suggestion,
     tags: (() => { try { return JSON.parse(suggestion.tags as string); } catch { return []; } })(),
+    upvotes: 0,
+    downvotes: 0,
     duplicate_warning: duplicateWarning ? true : undefined,
     similar_title: duplicateWarning ? similarTitle : undefined,
   });
@@ -322,8 +329,13 @@ suggestionsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
   const { id } = req.params;
 
   const row = db.prepare(
-    `SELECT id, user_id as userId, title, body, tags, status, created_at as createdAt, updated_at as updatedAt
-     FROM suggestions WHERE id = ? AND deleted_at IS NULL`
+    `SELECT s.id, s.user_id as userId, s.title, s.body, s.tags, s.status, s.created_at as createdAt, s.updated_at as updatedAt,
+            COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0) as upvotes,
+            COALESCE(SUM(CASE WHEN v.vote = -1 THEN 1 ELSE 0 END), 0) as downvotes
+     FROM suggestions s
+     LEFT JOIN suggestion_votes v ON v.suggestion_id = s.id
+     WHERE s.id = ? AND s.deleted_at IS NULL
+     GROUP BY s.id`
   ).get(id) as Record<string, unknown> | undefined;
 
   if (!row) {
@@ -385,7 +397,7 @@ suggestionsRouter.patch('/:id', requireAuth, (req: AuthRequest, res) => {
 
   db.prepare(
     `UPDATE suggestions SET title = ?, body = ?, updated_at = datetime('now') WHERE id = ?`
-  ).run(title.trim(), body.trim(), id);
+  ).run(escapeHtml(title.trim()), escapeHtml(body.trim()), id);
 
   const updated = db.prepare(
     `SELECT id, user_id as userId, title, body, tags, status, created_at as createdAt, updated_at as updatedAt FROM suggestions WHERE id = ?`

@@ -59,39 +59,36 @@ interface ReleaseNote {
 
 const releaseNotes: ReleaseNote[] = [
   {
-    phase: 'Phase 10',
-    title: 'Session Management & Model Picker',
+    phase: 'Phase 72',
+    title: 'Suggestion Intelligence Polish',
     date: 'Feb 2026',
     color: '#00F0FF',
     items: [
-      'Active Sessions panel in Settings — view and revoke devices',
-      'Preferred AI Engine picker — choose Auto, Local, Cloud, or Premium',
-      'Notification Activity Log — bell icon in header shows recent events',
-      'Roadmap now includes Recent Changes section',
+      'Status change notifications for suggestion owners',
+      'Status timeline in suggestion detail modal',
+      'Loading skeleton cards and error handling',
     ],
   },
   {
-    phase: 'Phase 9',
-    title: 'Health Stream & Connection Lifecycle',
+    phase: 'Phase 71',
+    title: 'Suggestion Editing & Voting',
     date: 'Feb 2026',
     color: '#BF5FFF',
     items: [
-      'Real-time health stream endpoint with SSE',
-      'Connection lifecycle improvements',
-      'Forgot password flow with OTP verification',
-      'Rate limiting hardening for auth routes',
+      'Edit your own suggestions (new status only)',
+      'Vote rate limiting and soft-delete cleanup',
+      'Admin bulk status updates and trending decay',
     ],
   },
   {
-    phase: 'Phase 8',
-    title: 'Coverage Gate & AI Briefing Scheduler',
+    phase: 'Phase 70',
+    title: 'Release Train R3',
     date: 'Feb 2026',
     color: '#00FF88',
     items: [
-      'Test coverage gate in CI (minimum coverage enforcement)',
-      'AI daily briefing schedule picker in agent settings',
-      'Snooze error handling for reminders',
-      'Reminder edit modal for in-place editing',
+      'Production deployment v3.1.0',
+      'Suggestion clusters and trending badges',
+      'Admin audit logging and ops cleanup',
     ],
   },
 ];
@@ -850,7 +847,10 @@ export function RoadmapPage() {
           <p className="text-sm text-[#6B7280] mb-4">
             We're building Agentin for you. Let us know what you'd like to see next.
           </p>
-          <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-white font-medium transition-colors">
+          <button
+            onClick={() => setSuggestionOpen(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-white font-medium transition-colors"
+          >
             Share Feedback
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -860,9 +860,9 @@ export function RoadmapPage() {
       {/* Task 69.12: Recent Improvements section */}
       {(() => {
         const RECENT_IMPROVEMENTS = [
-          { phase: 69, title: 'Suggestion voting, CSV export, code copy, performance improvements' },
-          { phase: 68, title: 'Suggestion events, voting system, pagination, admin stats dashboard' },
-          { phase: 67, title: 'Suggest & Earn: submit ideas, earn credits when they ship' },
+          { phase: 72, title: 'Status notifications, timeline UI, loading skeletons, error handling' },
+          { phase: 71, title: 'Suggestion editing, vote rate limits, admin bulk-status, trending decay' },
+          { phase: 70, title: 'Release Train R3 — v3.1.0 production deploy, clusters, trending' },
         ];
         return (
           <Card className="bg-[#0B0B10] border-[#BF5FFF]/20">
