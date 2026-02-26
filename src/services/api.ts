@@ -1143,6 +1143,8 @@ export const suggestionService = {
   rewards: () => api.get<{ rewards: Array<{ id: string; eventType: string; credits: number; suggestionId: string | null; clusterId: string | null; createdAt: string }> }>('/suggestions/rewards/mine'),
   vote: (id: string, vote: 1 | -1) =>
     api.post<{ upvotes: number; downvotes: number }>(`/suggestions/${id}/vote`, { vote }),
+  events: (id: string) =>
+    api.get<{ events: Array<{ id: string; suggestionId: string; oldStatus: string; newStatus: string; changedBy: string; changedAt: string }> }>(`/suggestions/${id}/events`),
 };
 
 export default api;

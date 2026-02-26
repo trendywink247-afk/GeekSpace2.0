@@ -216,11 +216,15 @@ export function RoadmapPage() {
   const [myRewards, setMyRewards] = useState<Array<{id: string; eventType: string; credits: number; createdAt: string}>>([]);
   const [topClusters, setTopClusters] = useState<Array<{id: string; name?: string; canonical_summary: string; total_votes?: number; overall_score: number | null}>>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [voteState, setVoteState] = useState<Record<string, { upvotes: number; downvotes: number; voting: boolean }>>({});
 
   // Task 69.10: Suggestion detail modal state
   const [detailSuggestion, setDetailSuggestion] = useState<{id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number} | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Phase 72.4: Events for detail modal timeline
+  const [detailEvents, setDetailEvents] = useState<Array<{id: string; oldStatus: string; newStatus: string; changedAt: string}>>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
 
   // Phase 71: Edit state for "new" status suggestions
   const [editingSuggestion, setEditingSuggestion] = useState<{id: string; title: string; body: string} | null>(null);
@@ -248,6 +252,8 @@ export function RoadmapPage() {
             .map(c => ({ id: c.id, name: c.name, canonical_summary: c.canonical_summary, total_votes: c.total_votes, overall_score: c.overall_score ?? null }))
         );
       }
+      const failed = [sugRes, rewRes, clusterRes].filter(r => r.status === 'rejected');
+      if (failed.length > 0) setLoadError('Some data failed to load.');
     }).finally(() => setLoadingSuggestions(false));
   }, []);
 
@@ -257,7 +263,10 @@ export function RoadmapPage() {
       const res = await suggestionService.vote(id, 1);
       setVoteState(prev => ({ ...prev, [id]: { upvotes: res.data.upvotes, downvotes: res.data.downvotes, voting: false } }));
     } catch {
-      setVoteState(prev => ({ ...prev, [id]: { ...(prev[id] || { upvotes: 0, downvotes: 0 }), voting: false } }));
+      setVoteState(prev => {
+        const existing = prev[id];
+        return { ...prev, [id]: { upvotes: existing?.upvotes ?? 0, downvotes: existing?.downvotes ?? 0, voting: false } };
+      });
     }
   };
 
@@ -664,8 +673,23 @@ export function RoadmapPage() {
                 </span>
               )}
             </h4>
+            {loadError && (
+              <div className="mb-3 px-3 py-2 rounded-lg bg-[#FF2D78]/10 border border-[#FF2D78]/30 text-xs text-[#FF2D78]">
+                {loadError}
+              </div>
+            )}
             {loadingSuggestions ? (
-              <p className="text-xs text-[#6B7280]">Loading\u2026</p>
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-[#05050A] border border-[#00F0FF]/10 animate-pulse">
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3.5 bg-[#1A1A2E] rounded w-3/4" />
+                      <div className="h-2.5 bg-[#1A1A2E] rounded w-1/2" />
+                    </div>
+                    <div className="h-6 w-16 bg-[#1A1A2E] rounded-full" />
+                  </div>
+                ))}
+              </div>
             ) : mySuggestions.length === 0 ? (
               <p className="text-xs text-[#6B7280]">No suggestions yet. Be the first to suggest a feature!</p>
             ) : (
@@ -694,7 +718,15 @@ export function RoadmapPage() {
                         </div>
                       </div>
                       <button
-                        onClick={() => setDetailSuggestion(s)}
+                        onClick={() => {
+                          setDetailSuggestion(s);
+                          setDetailEvents([]);
+                          setLoadingEvents(true);
+                          suggestionService.events(s.id)
+                            .then(res => setDetailEvents(res.data.events))
+                            .catch(() => {})
+                            .finally(() => setLoadingEvents(false));
+                        }}
                         className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#BF5FFF]/10 hover:bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs font-medium transition-colors flex-shrink-0"
                         title="View details"
                       >
@@ -948,6 +980,29 @@ export function RoadmapPage() {
                   {(voteState[detailSuggestion.id]?.downvotes ?? detailSuggestion.downvotes ?? 0)} downvotes
                 </span>
               </div>
+              {/* Phase 72.4: Status Timeline */}
+              {loadingEvents && <p className="text-xs text-[#6B7280]">Loading history…</p>}
+              {detailEvents.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-[#6B7280]">Status History</p>
+                  <div className="space-y-1.5">
+                    {detailEvents.map(ev => (
+                      <div key={ev.id} className="flex items-center gap-2 text-xs">
+                        <span className="px-1.5 py-0.5 rounded border" style={{ color: getStatusColor(ev.oldStatus), borderColor: `${getStatusColor(ev.oldStatus)}40`, backgroundColor: `${getStatusColor(ev.oldStatus)}10` }}>
+                          {getStatusLabel(ev.oldStatus)}
+                        </span>
+                        <ArrowRight className="w-3 h-3 text-[#6B7280]" />
+                        <span className="px-1.5 py-0.5 rounded border" style={{ color: getStatusColor(ev.newStatus), borderColor: `${getStatusColor(ev.newStatus)}40`, backgroundColor: `${getStatusColor(ev.newStatus)}10` }}>
+                          {getStatusLabel(ev.newStatus)}
+                        </span>
+                        <span className="text-[#6B7280] ml-auto">
+                          {new Date(ev.changedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* Close button */}
               <div className="flex justify-end">
                 <button
