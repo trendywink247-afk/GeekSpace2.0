@@ -829,6 +829,7 @@ export function PortfolioPage() {
             <CardContent className="space-y-4">
               {/* Inline project form */}
               {editingProject && (
+                <div className="grid md:grid-cols-[1fr_280px] gap-4">
                 <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 space-y-3">
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
@@ -906,6 +907,41 @@ export function PortfolioPage() {
                       {editingProjectIdx !== null ? 'Update' : 'Add'}
                     </Button>
                   </div>
+                </div>
+                {/* 55.3: Inline live preview */}
+                <div className="hidden md:flex flex-col gap-2">
+                  <p className="text-xs text-[#6B7280] font-medium">Live Preview</p>
+                  <div className="rounded-xl border border-[#00F0FF]/20 bg-[#06060B] overflow-hidden">
+                    {editingProject.imageUrl && (
+                      <img
+                        src={editingProject.imageUrl}
+                        alt="Preview"
+                        className="w-full h-32 object-cover"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    )}
+                    <div className="p-3 space-y-1.5">
+                      <p className="text-sm font-semibold text-[#E8E8F0] truncate">
+                        {editingProject.name || <span className="text-[#374151] italic">Project name…</span>}
+                      </p>
+                      {editingProject.url && (
+                        <p className="text-xs text-[#00F0FF] truncate">{editingProject.url}</p>
+                      )}
+                      {editingProject.description && (
+                        <p className="text-xs text-[#6B7280] line-clamp-3">{editingProject.description}</p>
+                      )}
+                      {(editingProject.tags || []).length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {editingProject.tags!.slice(0, 4).map((tag) => (
+                            <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/20">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 </div>
               )}
 

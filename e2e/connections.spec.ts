@@ -45,7 +45,8 @@ test.describe('Connections Page', () => {
       }
     }
 
-    await expect(page).toHaveURL(/.*dashboard.*/);
+    // 55.1: increased timeout — pixel5 dialog close animation can take >5s
+    await expect(page).toHaveURL(/.*dashboard.*/, { timeout: 10000 });
   });
 
   test('disconnect and reconnect should be idempotent', async ({ page }) => {

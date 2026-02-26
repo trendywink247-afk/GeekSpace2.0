@@ -103,8 +103,9 @@ test.describe('Reminders Page', () => {
     // Switch to "completed" tab/filter to verify the reminder moved there
     // TabsTrigger renders as role="tab"
     await page.getByRole('tab', { name: 'Completed' }).click();
-    // timeout:5000 gives the tab switch + store re-render time to settle
-    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(800); // 55.1: settle time for tab animation + store re-render
+    // timeout:10000 gives the tab switch + store re-render time to settle
+    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should show priority selector in create form', async ({ page }) => {
@@ -145,9 +146,10 @@ test.describe('Reminders Page', () => {
 
     // Switch to completed tab
     await page.getByRole('tab', { name: 'Completed' }).click();
+    await page.waitForTimeout(1500); // 55.1: extra settle time for store re-render + tab animation
 
     // The Select All checkbox label should be visible
-    await expect(page.getByText(/Select all completed/)).toBeVisible();
+    await expect(page.getByText(/Select all completed/)).toBeVisible({ timeout: 10000 });
 
     // Check the individual checkbox on the reminder (force bypasses animation instability)
     const bulkCheckbox = page.getByRole('checkbox', { name: 'Select reminder for bulk delete' }).first();

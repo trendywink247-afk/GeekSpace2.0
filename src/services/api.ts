@@ -531,6 +531,10 @@ export const automationService = {
   // 37.4: Dead-letter log for failed webhook deliveries
   getDeadLetters: () =>
     api.get<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number }>>('/automations/dead-letters'),
+
+  // 55.6: Retry a failed dead-letter webhook delivery
+  retryDeadLetter: (id: string) =>
+    api.post<{ retried: boolean; removed: boolean; result: { success: boolean; output: string } }>(`/automations/dead-letters/${id}/retry`),
 };
 
 // ----- Dashboard (aggregated) --------------------------------
