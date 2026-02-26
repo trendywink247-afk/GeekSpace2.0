@@ -213,8 +213,8 @@ export function RoadmapPage() {
       suggestionService.mine(),
       suggestionService.rewards(),
     ]).then(([sugRes, rewRes]) => {
-      if (sugRes.status === 'fulfilled') setMySuggestions(sugRes.value.data);
-      if (rewRes.status === 'fulfilled') setMyRewards(rewRes.value.data);
+      if (sugRes.status === 'fulfilled') setMySuggestions(sugRes.value.data.suggestions);
+      if (rewRes.status === 'fulfilled') setMyRewards(rewRes.value.data.rewards);
     }).finally(() => setLoadingSuggestions(false));
   }, []);
 
