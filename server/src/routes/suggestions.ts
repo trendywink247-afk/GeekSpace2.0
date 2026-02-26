@@ -96,8 +96,9 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
   const tagsJson = JSON.stringify(parsedTags);
 
   // Check for near-duplicate (Task 68.9): exact title match OR 60% word overlap on body
+  // (exclude deleted suggestions)
   const existingSuggestions = db.prepare(
-    `SELECT id, title, body FROM suggestions WHERE user_id = ?`
+    `SELECT id, title, body FROM suggestions WHERE user_id = ? AND deleted_at IS NULL`
   ).all(userId) as Array<{ id: string; title: string; body: string }>;
 
   let duplicateWarning = false;
@@ -304,7 +305,7 @@ suggestionsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
 
   const row = db.prepare(
     `SELECT id, user_id as userId, title, body, tags, status, created_at as createdAt, updated_at as updatedAt
-     FROM suggestions WHERE id = ?`
+     FROM suggestions WHERE id = ? AND deleted_at IS NULL`
   ).get(id) as Record<string, unknown> | undefined;
 
   if (!row) {
@@ -321,6 +322,34 @@ suggestionsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
     ...row,
     tags: (() => { try { return JSON.parse(row.tags as string); } catch { return []; } })(),
   });
+});
+
+// ---- DELETE /api/suggestions/:id — soft-delete own suggestion (Task 70.11) ----
+// Only allows deleting suggestions in 'new' status. Soft-deletes (sets deleted_at).
+suggestionsRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { id } = req.params;
+
+  const suggestion = db.prepare(
+    `SELECT id, user_id as userId, status FROM suggestions WHERE id = ? AND deleted_at IS NULL`
+  ).get(id) as { id: string; userId: string; status: string } | undefined;
+
+  if (!suggestion || suggestion.userId !== userId) {
+    res.status(404).json({ error: 'Suggestion not found' });
+    return;
+  }
+
+  if (suggestion.status !== 'new') {
+    res.status(409).json({ error: 'Only suggestions in "new" status can be deleted' });
+    return;
+  }
+
+  db.prepare(
+    `UPDATE suggestions SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+  ).run(id);
+
+  logger.info({ userId, suggestionId: id }, 'Suggestion soft-deleted');
+  res.status(204).end();
 });
 
 // ---- GET /api/suggestions/:id/events — status history for own suggestion (Task 69.6) ----
