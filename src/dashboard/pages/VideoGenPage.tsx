@@ -60,6 +60,9 @@ export function VideoGenPage() {
   const [directorJobs, setDirectorJobs] = useState<DirectorJob[]>([]);
   const [directorError, setDirectorError] = useState<string | null>(null);
   const directorPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // 56.13: Clip preview modal
+  const [previewClip, setPreviewClip] = useState<{ url: string; index: number } | null>(null);
+  const [copiedClipUrl, setCopiedClipUrl] = useState(false);
 
   // Agent state
   const [assignedAgent, setAssignedAgent] = useState<FleetAgent | null>(null);
@@ -739,12 +742,22 @@ export function VideoGenPage() {
               {directorJob.clips.length > 0 && (
                 <div className="grid grid-cols-3 gap-2">
                   {directorJob.clips.map((clip, i) => (
-                    <div key={i} className="relative rounded-lg overflow-hidden aspect-video bg-[#0C0C18] border border-[#BF5FFF]/10">
+                    <div
+                      key={i}
+                      className={`relative rounded-lg overflow-hidden aspect-video bg-[#0C0C18] border transition-all ${
+                        clip.success ? 'border-[#BF5FFF]/10 cursor-pointer hover:border-[#BF5FFF]/40 hover:scale-[1.02]' : 'border-[#FF6161]/20'
+                      }`}
+                      onClick={() => clip.success && clip.url && setPreviewClip({ url: clip.url, index: i })}
+                      title={clip.success ? 'Click to preview' : undefined}
+                    >
                       {clip.success ? (
                         <>
                           <video src={clip.url} className="w-full h-full object-cover" muted loop autoPlay playsInline />
                           <div className="absolute bottom-1 left-1 text-[9px] text-white/60 bg-black/40 px-1 rounded">
                             {i + 1}
+                          </div>
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
+                            <Play className="w-6 h-6 text-white drop-shadow" />
                           </div>
                         </>
                       ) : (
@@ -755,6 +768,67 @@ export function VideoGenPage() {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* 56.13: Clip preview modal */}
+              {previewClip && (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                  onClick={(e) => { if (e.target === e.currentTarget) setPreviewClip(null); }}
+                >
+                  <div className="relative w-full max-w-2xl bg-[#0C0C18] rounded-2xl border border-[#BF5FFF]/30 overflow-hidden shadow-2xl">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#BF5FFF]/15">
+                      <p className="text-sm font-medium text-[#E8E8F0]">
+                        Clip {previewClip.index + 1} — {directorJob.packet?.shotlist?.[previewClip.index]?.prompt ?? 'Director Mode clip'}
+                      </p>
+                      <button onClick={() => setPreviewClip(null)} className="text-[#6B7280] hover:text-[#E8E8F0] transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <video
+                      key={previewClip.url}
+                      src={previewClip.url}
+                      className="w-full aspect-video bg-black"
+                      controls
+                      autoPlay
+                      loop
+                    />
+                    <div className="flex items-center gap-2 px-4 py-3 border-t border-[#BF5FFF]/15">
+                      <button
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(previewClip.url).catch(() => {});
+                          setCopiedClipUrl(true);
+                          setTimeout(() => setCopiedClipUrl(false), 2000);
+                        }}
+                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10 transition-colors"
+                      >
+                        {copiedClipUrl ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedClipUrl ? 'Copied!' : 'Copy URL'}
+                      </button>
+                      <a
+                        href={previewClip.url}
+                        download={`clip-${previewClip.index + 1}.mp4`}
+                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#6B7280]/30 text-[#6B7280] hover:border-[#6B7280]/60 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Download className="w-3 h-3" />
+                        Download
+                      </a>
+                      {previewClip.index > 0 && (
+                        <button
+                          onClick={() => setPreviewClip({ url: directorJob.clips[previewClip.index - 1].url!, index: previewClip.index - 1 })}
+                          className="ml-auto text-xs px-3 py-1.5 rounded-lg border border-[#00F0FF]/20 text-[#00F0FF]/70 hover:text-[#00F0FF] transition-colors"
+                        >← Prev</button>
+                      )}
+                      {previewClip.index < directorJob.clips.length - 1 && (
+                        <button
+                          onClick={() => setPreviewClip({ url: directorJob.clips[previewClip.index + 1].url!, index: previewClip.index + 1 })}
+                          className={`text-xs px-3 py-1.5 rounded-lg border border-[#00F0FF]/20 text-[#00F0FF]/70 hover:text-[#00F0FF] transition-colors ${previewClip.index === 0 ? 'ml-auto' : ''}`}
+                        >Next →</button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

@@ -231,6 +231,20 @@ export function RemindersPage() {
   const [isBulkSnoozing, setIsBulkSnoozing] = useState(false);
   const [isBulkCompleting, setIsBulkCompleting] = useState(false);
 
+  // 56.10: Reminder inline quick-edit
+  const [inlineEditId, setInlineEditId] = useState<string | null>(null);
+  const [inlineEditValue, setInlineEditValue] = useState('');
+  const inlineEditRef = useRef<HTMLInputElement>(null);
+
+  const handleInlineEditSave = async (id: string) => {
+    const trimmed = inlineEditValue.trim();
+    if (trimmed && trimmed !== reminders.find(r => r.id === id)?.text) {
+      await updateReminder(id, { text: trimmed }).catch(() => {});
+    }
+    setInlineEditId(null);
+    setInlineEditValue('');
+  };
+
   // 36.1: Snooze history popover
   const [snoozeHistoryId, setSnoozeHistoryId] = useState<string | null>(null);
   const [snoozeHistory, setSnoozeHistory] = useState<Array<{ id: string; snoozed_at: number; preset: string; new_datetime: string }>>([]);
@@ -993,10 +1007,30 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                             {/* Content */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-2">
-                                <div>
-                                  <p className={`font-medium ${reminder.completed ? 'line-through text-[#6B7280]' : 'text-[#E8E8F0]'}`}>
-                                    {reminder.text}
-                                  </p>
+                                <div className="flex-1 min-w-0">
+                                  {/* 56.10: Inline quick-edit — click title to edit, Enter=save, Escape=cancel */}
+                                  {inlineEditId === reminder.id ? (
+                                    <input
+                                      ref={inlineEditRef}
+                                      autoFocus
+                                      className="w-full bg-[#0A0A14] border border-[#00F0FF]/40 rounded px-2 py-0.5 text-[#E8E8F0] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/60"
+                                      value={inlineEditValue}
+                                      onChange={(e) => setInlineEditValue(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleInlineEditSave(reminder.id);
+                                        if (e.key === 'Escape') { setInlineEditId(null); setInlineEditValue(''); }
+                                      }}
+                                      onBlur={() => handleInlineEditSave(reminder.id)}
+                                    />
+                                  ) : (
+                                    <p
+                                      className={`font-medium cursor-text hover:bg-[#00F0FF]/5 rounded px-1 -mx-1 transition-colors ${reminder.completed ? 'line-through text-[#6B7280]' : 'text-[#E8E8F0]'}`}
+                                      title="Click to edit"
+                                      onClick={() => { if (!reminder.completed) { setInlineEditId(reminder.id); setInlineEditValue(reminder.text); } }}
+                                    >
+                                      {reminder.text}
+                                    </p>
+                                  )}
                                   <div className="flex items-center gap-2 mt-1">
                                     <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-[#FF6161]' : 'text-[#6B7280]'}`}>
                                       <Clock className="w-3 h-3" />
@@ -1220,10 +1254,29 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className={`font-medium ${reminder.completed ? 'line-through text-[#6B7280]' : 'text-[#E8E8F0]'}`}>
-                              {reminder.text}
-                            </p>
+                          <div className="flex-1 min-w-0">
+                            {inlineEditId === reminder.id ? (
+                              <input
+                                ref={inlineEditRef}
+                                autoFocus
+                                className="w-full bg-[#0A0A14] border border-[#00F0FF]/40 rounded px-2 py-0.5 text-[#E8E8F0] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/60"
+                                value={inlineEditValue}
+                                onChange={(e) => setInlineEditValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleInlineEditSave(reminder.id);
+                                  if (e.key === 'Escape') { setInlineEditId(null); setInlineEditValue(''); }
+                                }}
+                                onBlur={() => handleInlineEditSave(reminder.id)}
+                              />
+                            ) : (
+                              <p
+                                className={`font-medium cursor-text hover:bg-[#00F0FF]/5 rounded px-1 -mx-1 transition-colors ${reminder.completed ? 'line-through text-[#6B7280]' : 'text-[#E8E8F0]'}`}
+                                title="Click to edit"
+                                onClick={() => { if (!reminder.completed) { setInlineEditId(reminder.id); setInlineEditValue(reminder.text); } }}
+                              >
+                                {reminder.text}
+                              </p>
+                            )}
                             <div className="flex items-center gap-2 mt-1">
                               <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-[#FF6161]' : 'text-[#6B7280]'}`}>
                                 <Clock className="w-3 h-3" />

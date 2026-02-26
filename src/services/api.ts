@@ -264,6 +264,9 @@ export const apiKeyService = {
 
   setDefault: (id: string) =>
     api.patch<ApiKey>(`/api-keys/${id}/default`),
+
+  rotate: (id: string, key: string) =>
+    api.post<{ success: boolean; maskedKey: string }>(`/api-keys/${id}/rotate`, { key }),
 };
 
 // ----- Usage & Billing ---------------------------------------

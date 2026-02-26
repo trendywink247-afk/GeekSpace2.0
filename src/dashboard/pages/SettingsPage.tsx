@@ -21,7 +21,9 @@ import {
   LogOut,
   Download,
   Users,
-  CalendarDays
+  CalendarDays,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -115,6 +117,9 @@ export function SettingsPage() {
   const [newKeyProvider, setNewKeyProvider] = useState<ApiProvider>('openai');
   const [newKeyValue, setNewKeyValue] = useState('');
   const [showAddKey, setShowAddKey] = useState(false);
+  const [rotatingKeyId, setRotatingKeyId] = useState<string | null>(null);
+  const [rotateValue, setRotateValue] = useState('');
+  const [isRotating, setIsRotating] = useState(false);
 
   // AI Background Generator state
   const handleRevokeSession = async (sessionId: string) => {
@@ -356,6 +361,21 @@ export function SettingsPage() {
     }
     setNewKeyValue('');
     setShowAddKey(false);
+  };
+
+  const handleRotateKey = async (id: string) => {
+    if (!rotateValue.trim() || rotateValue.trim().length < 8) return;
+    setIsRotating(true);
+    try {
+      const { data } = await apiKeyService.rotate(id, rotateValue.trim());
+      setApiKeys(apiKeys.map(k => k.id === id ? { ...k, maskedKey: data.maskedKey } : k));
+      setRotatingKeyId(null);
+      setRotateValue('');
+    } catch {
+      // silently fail — UI state unchanged
+    } finally {
+      setIsRotating(false);
+    }
   };
 
   const providerColors: Record<string, string> = {
@@ -909,19 +929,44 @@ export function SettingsPage() {
               )}
 
               {apiKeys.map((key) => (
-                <div key={key.id} className="flex items-center justify-between p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${providerColors[key.provider]}20` }}>
-                      <Key className="w-5 h-5" style={{ color: providerColors[key.provider] }} />
+                <div key={key.id} className="rounded-xl bg-[#06060B] border border-[#00F0FF]/20 overflow-hidden">
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${providerColors[key.provider]}20` }}>
+                        <Key className="w-5 h-5" style={{ color: providerColors[key.provider] }} />
+                      </div>
+                      <div>
+                        <div className="font-medium text-[#E8E8F0]">{key.label}</div>
+                        <div className="text-sm text-[#6B7280] font-mono">{key.maskedKey}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-[#E8E8F0]">{key.label}</div>
-                      <div className="text-sm text-[#6B7280] font-mono">{key.maskedKey}</div>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm"
+                        onClick={() => { setRotatingKeyId(rotatingKeyId === key.id ? null : key.id); setRotateValue(''); }}
+                        className="text-[#00F0FF]/70 hover:text-[#00F0FF] text-xs px-2">
+                        Rotate
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setApiKeys(apiKeys.filter(k => k.id !== key.id))} className="text-[#FF6161] hover:text-[#FF6161]">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setApiKeys(apiKeys.filter(k => k.id !== key.id))} className="text-[#FF6161] hover:text-[#FF6161]">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {rotatingKeyId === key.id && (
+                    <div className="px-4 pb-4 flex gap-2 border-t border-[#00F0FF]/10 pt-3">
+                      <Input
+                        type="password"
+                        placeholder="Paste new key value…"
+                        value={rotateValue}
+                        onChange={(e) => setRotateValue(e.target.value)}
+                        className="flex-1 text-sm bg-[#0A0A14] border-[#00F0FF]/20"
+                      />
+                      <Button size="sm" disabled={isRotating || rotateValue.trim().length < 8}
+                        onClick={() => handleRotateKey(key.id)}
+                        className="bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/30">
+                        {isRotating ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
 
@@ -1199,26 +1244,35 @@ export function SettingsPage() {
               <CardDescription className="text-[#6B7280]">Customize the look of your dashboard</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* 56.7: Prominent 3-way theme toggle with icons */}
               <div>
                 <label className="text-sm text-[#6B7280] mb-3 block">Theme Mode</label>
-                <div className="flex gap-3">
-                  {(['dark', 'light', 'system'] as const).map((m) => (
+                <div className="inline-flex rounded-xl border border-[#00F0FF]/20 bg-[#06060B] p-1 gap-1">
+                  {([
+                    { id: 'dark', label: 'Dark', Icon: Moon },
+                    { id: 'light', label: 'Light', Icon: Sun },
+                    { id: 'system', label: 'System', Icon: Monitor },
+                  ] as const).map(({ id, label, Icon }) => (
                     <button
-                      key={m}
+                      key={id}
                       onClick={() => {
-                        setThemeMode(m);
-                        void userService.updateProfile({ theme: { mode: m } } as Parameters<typeof userService.updateProfile>[0]);
+                        setThemeMode(id);
+                        void userService.updateProfile({ theme: { mode: id } } as Parameters<typeof userService.updateProfile>[0]);
                       }}
-                      className={`flex-1 p-4 rounded-xl border-2 capitalize transition-all ${
-                        themeMode === m
-                          ? 'border-[#00F0FF] bg-[#00F0FF]/10 text-[#00F0FF]'
-                          : 'border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/40'
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        themeMode === id
+                          ? 'bg-[#00F0FF]/15 text-[#00F0FF] shadow-inner'
+                          : 'text-[#6B7280] hover:text-[#E8E8F0]'
                       }`}
                     >
-                      {m}
+                      <Icon className="w-4 h-4" />
+                      {label}
                     </button>
                   ))}
                 </div>
+                <p className="mt-2 text-xs text-[#6B7280]">
+                  {themeMode === 'system' ? 'Follows your OS preference' : themeMode === 'dark' ? 'Dark mode active' : 'Light mode active'}
+                </p>
               </div>
 
               <div>
