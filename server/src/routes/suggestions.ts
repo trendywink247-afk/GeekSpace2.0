@@ -258,6 +258,13 @@ suggestionsRouter.post('/:id/vote', requireAuth, (req: AuthRequest, res) => {
     VALUES (COALESCE((SELECT id FROM suggestion_votes WHERE suggestion_id = ? AND user_id = ?), ?), ?, ?, ?, datetime('now'))
   `).run(id, userId, uuid(), id, userId, vote as number);
 
+  // Phase 69.2: Log vote activity
+  try {
+    db.prepare(
+      `INSERT INTO activity_log (id, user_id, action, details, icon, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`
+    ).run(uuid(), userId, 'vote_suggestion', JSON.stringify({ suggestionId: id, vote }), 'thumbs-up');
+  } catch { /* non-fatal */ }
+
   const upvotes = (db.prepare(
     `SELECT COUNT(*) as cnt FROM suggestion_votes WHERE suggestion_id = ? AND vote = 1`
   ).get(id) as { cnt: number }).cnt;
@@ -294,4 +301,43 @@ suggestionsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
     ...row,
     tags: (() => { try { return JSON.parse(row.tags as string); } catch { return []; } })(),
   });
+});
+
+// ---- GET /api/suggestions/:id/events — status history for own suggestion (Task 69.6) ----
+// MUST be after POST /:id/vote and GET /:id to avoid route conflicts with /vote
+suggestionsRouter.get('/:id/events', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { id } = req.params;
+
+  // Verify suggestion exists and belongs to user
+  const suggestion = db.prepare(
+    `SELECT id FROM suggestions WHERE id = ? AND user_id = ?`
+  ).get(id, userId) as { id: string } | undefined;
+
+  if (!suggestion) {
+    res.status(404).json({ error: 'Suggestion not found' });
+    return;
+  }
+
+  const events = db.prepare(`
+    SELECT
+      id,
+      suggestion_id as suggestionId,
+      from_status as oldStatus,
+      to_status as newStatus,
+      actor as changedBy,
+      created_at as changedAt
+    FROM suggestion_events
+    WHERE suggestion_id = ?
+    ORDER BY created_at ASC
+  `).all(id) as Array<{
+    id: string;
+    suggestionId: string;
+    oldStatus: string;
+    newStatus: string;
+    changedBy: string;
+    changedAt: string;
+  }>;
+
+  res.json({ events });
 });

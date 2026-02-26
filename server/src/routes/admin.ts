@@ -302,6 +302,77 @@ adminRouter.get('/export/users', requireAdminToken, (_req: Request, res: Respons
   }
 });
 
+// ---- /suggestions/export endpoint — CSV export of suggestions (Task 69.5) ----
+adminRouter.get('/suggestions/export', requireAdminToken, (req: Request, res: Response): void => {
+  try {
+    const statusFilter = typeof req.query.status === 'string' && req.query.status ? req.query.status : null;
+
+    // Helper: escape a CSV field value
+    function csvField(val: unknown): string {
+      const str = val == null ? '' : String(val);
+      // Wrap in double-quotes if contains comma, quote, or newline
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
+    let rows: Array<{
+      id: string; title: string; body: string; status: string;
+      created_at: string;
+    }>;
+
+    if (statusFilter) {
+      rows = db.prepare(
+        `SELECT s.id, s.title, s.body, s.status, s.created_at
+         FROM suggestions s
+         WHERE s.status = ?
+         ORDER BY s.created_at DESC`
+      ).all(statusFilter) as typeof rows;
+    } else {
+      rows = db.prepare(
+        `SELECT s.id, s.title, s.body, s.status, s.created_at
+         FROM suggestions s
+         ORDER BY s.created_at DESC`
+      ).all() as typeof rows;
+    }
+
+    // Build vote counts for each suggestion
+    const suggestionIds = rows.map(r => r.id);
+    const voteMap: Record<string, { upvotes: number; downvotes: number }> = {};
+    for (const sid of suggestionIds) {
+      const up = (db.prepare(
+        `SELECT COUNT(*) as cnt FROM suggestion_votes WHERE suggestion_id = ? AND vote = 1`
+      ).get(sid) as { cnt: number }).cnt;
+      const down = (db.prepare(
+        `SELECT COUNT(*) as cnt FROM suggestion_votes WHERE suggestion_id = ? AND vote = -1`
+      ).get(sid) as { cnt: number }).cnt;
+      voteMap[sid] = { upvotes: up, downvotes: down };
+    }
+
+    const header = 'id,title,body,status,upvotes,downvotes,created_at\n';
+    const csvRows = rows.map(r => {
+      const votes = voteMap[r.id] || { upvotes: 0, downvotes: 0 };
+      return [
+        csvField(r.id),
+        csvField(r.title),
+        csvField(r.body),
+        csvField(r.status),
+        String(votes.upvotes),
+        String(votes.downvotes),
+        csvField(r.created_at),
+      ].join(',');
+    }).join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="suggestions.csv"');
+    res.send(header + csvRows);
+  } catch (err) {
+    logger.error({ err }, 'Admin suggestions export failed');
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
 // ---- /export/activity endpoint — JSON activity summary ----
 adminRouter.get('/export/activity', requireAdminToken, (_req: Request, res: Response): void => {
   try {
