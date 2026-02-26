@@ -49,6 +49,9 @@ test.describe('Connections Page', () => {
 
       const closeButton = page.getByRole('button', { name: /close|done|cancel/i }).first();
       if (await closeButton.isVisible().catch(() => false)) {
+        // 61.10: scroll into view before clicking — on pixel5 the dialog may extend
+        // beyond the viewport, causing "element is outside of the viewport" errors
+        await closeButton.scrollIntoViewIfNeeded().catch(() => {});
         await closeButton.click({ force: true });
         await page.waitForTimeout(800);
       }

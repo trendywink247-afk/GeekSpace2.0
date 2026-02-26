@@ -26,8 +26,12 @@ test.describe('Reminders Page', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate directly to the reminders page via URL
     await page.goto('/dashboard/reminders');
-    // Dismiss first-use tour so it doesn't intercept clicks
-    await page.evaluate(() => localStorage.setItem('gs_dashboard_tour_seen', '1'));
+    // Dismiss first-use tour and reset filter persistence so tests start with active filter
+    await page.evaluate(() => {
+      localStorage.setItem('gs_dashboard_tour_seen', '1');
+      // 61.5: Clear persisted filter so each test starts with the default 'active' view
+      localStorage.removeItem('geekspace:reminders:filters');
+    });
     // Wait for the dashboard shell and reminders page to load
     await expect(page.getByTestId('dashboard-shell')).toBeVisible();
     await expect(page.getByTestId('reminders-page')).toBeVisible();

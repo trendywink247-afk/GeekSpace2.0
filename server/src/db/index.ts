@@ -1352,3 +1352,6 @@ try { db.exec(`CREATE INDEX IF NOT EXISTS idx_snooze_log_reminder ON snooze_log(
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_conversations_user_updated ON generated_outputs(user_id, created_at DESC)`); } catch { /* already exists */ }
 // automations: user + enabled flag compound lookup (column is "enabled", not "is_active")
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_automations_user_active ON automations(user_id, enabled)`); } catch { /* already exists */ }
+
+// Phase 61.2: Overdue escalation tracking — prevents duplicate Telegram alerts
+try { db.exec(`ALTER TABLE reminders ADD COLUMN overdue_escalated_at TEXT DEFAULT NULL`); } catch { /* column already exists */ }
