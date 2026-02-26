@@ -1,13 +1,12 @@
-# AI Handoff — Phase 70 + Release Train R3 ✅ DEPLOYED
+# AI Handoff — Phase 71 ✅ MERGED
 
 **Date:** 2026-02-26
-**Branch:** `ai/phase-20260226-phase70` → PR #101 merged ✅
-**Tests:** 731/731 ✅
-**CI:** All checks green (Static, Unit Tests, E2E, Smoke Tests, Vercel) ✅
-**Release Tag:** `release/R3` pushed to GitHub ✅
-**Production:** `live-production` updated + `docker compose up -d --build` deployed ✅
-**Health:** https://api.geekspace.space/api/health → `version: "3.1.0"`, `status: "ok"` ✅
-**Frontend:** https://ai.geekspace.space/ → HTTP 200 via Caddy ✅
+**Branch:** `ai/phase-20260226-phase71` → PR #102 merged ✅
+**Tests:** 746/746 ✅
+**Lint:** 0 warnings ✅
+**TypeCheck:** Clean (frontend + server) ✅
+**Build:** Clean (frontend + server) ✅
+**Brand Guard:** 0 violations ✅
 
 ---
 
@@ -20,87 +19,58 @@ If the conversation is compacted, before doing ANY work:
 
 ---
 
-## Phase 70 — What Was Done
+## Phase 71 — What Was Done
 
-### Commit 1 — Tasks 70.1–70.6
-- **70.1 Version bump:** `server/src/app.ts` `APP_VERSION = '3.1.0'`; `package.json` + `server/package.json` updated to `3.1.0`
-- **70.2 Global suggestion cap:** `server/src/routes/suggestions.ts` — Added 20-suggestion total cap per user (skipped in TEST_MODE)
-- **70.3 Vote counts in /mine:** `server/src/routes/suggestions.ts` — GET /mine now LEFT JOINs suggestion_votes; returns `upvotes`, `downvotes`, `trending`
-- **70.4 Activity log index:** `server/src/db/index.ts` — Added Phase 70 migrations for `deleted_at`, `trending` columns + confirmed `idx_activity_log_user_created` exists
-- **70.5 Cluster names in /clusters:** `server/src/routes/suggestions.ts` — GET /clusters query now SELECTs `c.name`
-- **70.6 Cluster names in RoadmapPage:** `src/dashboard/pages/RoadmapPage.tsx` — Popular Ideas section showing top 3 clusters; `src/services/api.ts` — updated types with `name?`, `upvotes?`, `downvotes?`, `trending?`, added `delete` method
-
-### Commit 2 — Tasks 70.7–70.12
-- **70.7 Admin IP logging:** `server/src/routes/admin.ts` — Added `adminRouter.use()` middleware that logs `adminAction`, `method`, `ip` for all admin routes
-- **70.8 Ops files:** `ops/AI_RELEASE_TRAIN.md` — R3 entry updated with Phase 70 release train candidate; `ops/AI_RISK_REGISTER.md` — Closed R05/R06/R07/R08 (resolved in Phase 43)
-- **70.9 Admin clusters LIMIT 100:** `server/src/routes/admin.ts` — Added `LIMIT 100` to GET /admin/suggestions/clusters
-- **70.10 My Suggestions count badge:** `src/dashboard/pages/RoadmapPage.tsx` — Count badge next to "My Suggestions" heading (done in commit 1)
-- **70.11 Soft-delete:** `server/src/routes/suggestions.ts` — Added DELETE /api/suggestions/:id; GET /mine and GET /:id filter `deleted_at IS NULL`; duplicate-check also excludes deleted
-- **70.12 Delete button in UI:** `src/dashboard/pages/RoadmapPage.tsx` — Trash2 icon on 'new' status suggestions; calls `suggestionService.delete(id)` (done in commit 1)
-
-### Commit 3 — Tasks 70.13–70.14
-- **70.13 Tests:** `server/src/test/api/phase70.test.ts` — 16 tests covering health version, cap, vote counts, clusters, soft-delete (204/404/409/exclusion), admin logging, trending
-- **70.14 Trending:** `server/src/services/suggestions-triage.ts` — After triage, marks `trending=1` on suggestions with vote velocity (TEST_MODE: ≥1 upvote; prod: ≥3 upvotes in last 24h); admin stats now returns `trending` count
+### Tasks 71.1–71.13
+- **71.1 Lint fixes:** Fixed 2 pre-existing `react-hooks/exhaustive-deps` warnings in `page-progress.tsx` (line 35) and `ExplorePage.tsx` (line 55) — CI `--max-warnings=0` now clean
+- **71.2 Vote state consistency:** Detail modal always shows vote counts using `voteState` with fallback to suggestion object data (was conditional)
+- **71.3 Vote rate limit:** POST /suggestions/:id/vote now rate-limited to 10 votes per user per minute (skipped in TEST_MODE)
+- **71.4 Soft-delete cleanup:** DELETE /suggestions/:id now removes orphaned votes from `suggestion_votes` table
+- **71.5 Suggestion edit:** PATCH /api/suggestions/:id — edit title/body of own 'new' status suggestions; edit modal in RoadmapPage with validation
+- **71.6 Pagination:** My Suggestions list now shows "View all X suggestions" toggle (was truncated to 5)
+- **71.7 Triage batch safety:** `triageSuggestions()` caps batch at 50 items with warning log
+- **71.8 Cache invalidation:** `invalidateClustersCache()` now called on vote, soft-delete, and admin status change
+- **71.9 Duplicate warning:** POST /suggestions now returns `similar_title` field; frontend shows which existing idea is similar
+- **71.10 Admin bulk status:** PATCH /api/admin/suggestions/bulk-status — update up to 50 suggestions at once with rewards trigger
+- **71.11 Tests:** 15 new tests in `phase71.test.ts` (746 total); all builds/lint/typecheck clean
+- **71.12 Brand guard:** 0 violations
+- **71.13 Trending decay:** Vote scoring uses time-decay (24h=1.0x, 24-48h=0.5x, >48h=0x) for production trending
 
 ---
 
 ## Files Changed
-- `package.json`
-- `server/package.json`
-- `server/src/app.ts`
-- `server/src/db/index.ts`
+- `src/components/ui/page-progress.tsx`
+- `src/explore/ExplorePage.tsx`
+- `src/dashboard/pages/RoadmapPage.tsx`
+- `src/services/api.ts`
 - `server/src/routes/suggestions.ts`
 - `server/src/routes/admin.ts`
 - `server/src/services/suggestions-triage.ts`
-- `server/src/test/api/phase70.test.ts` (NEW)
-- `src/dashboard/pages/RoadmapPage.tsx`
-- `src/services/api.ts`
-- `ops/AI_RELEASE_TRAIN.md`
-- `ops/AI_RISK_REGISTER.md`
+- `server/src/test/api/phase71.test.ts` (NEW)
 
 ---
 
 ## Verification Status
-- [x] 731/731 tests passing
+- [x] 746/746 tests passing
+- [x] `npm run lint` — 0 warnings
 - [x] `npx tsc --noEmit` (frontend) — clean
 - [x] `cd server && npx tsc --noEmit` — clean
 - [x] `npm run build` (frontend) — clean
 - [x] `cd server && npm run build` — clean
-- [x] `npm run brand-guard` — no violations
-
----
-
-## Release Train Status
-**Phase 70 is the Release Train Candidate (R3).**
-
-After merging to `main`:
-1. CI must pass (lint + typecheck + build + 731 tests)
-2. User must explicitly approve production deploy
-3. Controller will promote `main` → `live-production`
-4. Tag: `release/R3-start` at deploy start, `release/R3-end` after smoke tests
+- [x] `npm run brand-guard` — 0 violations
 
 ---
 
 ## Known Issues / Open Risks
-- Pre-existing lint warnings in `src/components/ui/page-progress.tsx` and `src/explore/ExplorePage.tsx` (react-hooks/exhaustive-deps) — NOT introduced by Phase 70; these existed before
-- The `--max-warnings=0` lint rule will fail CI on these files; they should be fixed in Phase 71
+- Pre-existing chunk size warnings in frontend build (index.js 886kB) — not a regression
+- Admin suggestion routes lazy-registered inside `serveAdminDashboard` — works but is architectural debt
 
 ---
 
-## Release Train R3 — COMPLETE
-1. ✅ main → live-production merged
-2. ✅ `docker compose up -d --build` completed
-3. ✅ All containers healthy (geekspace-app, caddy, picoclaw, redis, edith-bridge)
-4. ✅ Health check: `version: "3.1.0"`, all components reachable
-5. ✅ `release/R3` tag pushed to GitHub
-6. Next release train candidate: **Phase 80**
-
 ## Next Steps
-- Start Phase 71 (autonomous continuation, no approval needed)
-- Fix pre-existing lint warnings in `page-progress.tsx` + `ExplorePage.tsx`
-- Continue Suggestion Intelligence improvements
+- Start Phase 72 (autonomous continuation)
+- Continue Suggestion Intelligence improvements (notification on status change, AI-powered triage scoring)
+- Next release train candidate: Phase 80
 
 ## Merge Status
-✅ PR #101 merged to `main` on 2026-02-26
-✅ CI: All checks green
-✅ Deployed to live-production on 2026-02-26
+✅ PR #102 merged to `main` on 2026-02-26

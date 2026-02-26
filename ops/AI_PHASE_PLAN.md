@@ -437,3 +437,25 @@ Suggestion Intelligence Phase 3: DB indexes, vote activity log, events endpoint,
 | 68.13 | Tests: 13 new tests (pagination, vote, dup-detect, activity, status-history, clusters) | ✅ | Dev/Ops |
 | 68.14 | **Task 14: similarity clustering** — merge into existing cluster at ≥50% overlap; admin /suggestions/stats endpoint | ✅ | Feature |
 
+---
+
+## Phase 71 — COMPLETE ✓
+**PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/102 | **Tests:** 746/746
+Suggestion Intelligence Phase 5: edit, vote rate limit, soft-delete cleanup, admin bulk-status, trending decay.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 71.1 | Fix 2 pre-existing lint warnings (exhaustive-deps) | ✅ | Reliability |
+| 71.2 | Vote state consistency in detail modal (always show) | ✅ | UX |
+| 71.3 | Vote rate limit: 10/min per user | ✅ | Security |
+| 71.4 | Soft-delete cleans orphaned votes | ✅ | Reliability |
+| 71.5 | PATCH /suggestions/:id — edit own 'new' suggestions + modal | ✅ | Feature |
+| 71.6 | My Suggestions "View all" toggle | ✅ | UX |
+| 71.7 | Triage batch safety limit (max 50) | ✅ | Security |
+| 71.8 | Cluster cache invalidation on vote/delete/status | ✅ | Performance |
+| 71.9 | Duplicate warning returns similar_title | ✅ | UX |
+| 71.10 | Admin bulk status update (max 50) | ✅ | Dev/Ops |
+| 71.11 | 15 new tests (746 total) | ✅ | Dev/Ops |
+| 71.12 | Brand guard — 0 violations | ✅ | Brand |
+| 71.13 | Trending decay scoring (24h=1.0x, 48h=0.5x) | ✅ | Feature |
+
