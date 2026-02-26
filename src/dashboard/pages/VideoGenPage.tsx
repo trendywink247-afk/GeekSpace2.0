@@ -23,6 +23,43 @@ const statusColor: Record<string, string> = {
   disabled: '#FF6161',
 };
 
+// 61.7: Lazy-load video thumbnails via IntersectionObserver
+function LazyVideo({ src, className }: { src: string; className?: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !el.src) {
+          el.src = src;
+          setLoaded(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [src]);
+
+  return (
+    <div className="relative w-full h-full">
+      {!loaded && (
+        <div className="absolute inset-0 bg-[#0C0C18] animate-pulse" />
+      )}
+      <video
+        ref={videoRef}
+        className={className}
+        muted
+        preload="none"
+      />
+    </div>
+  );
+}
+
 function timeLeft(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now();
   if (diff <= 0) return 'Expired';
@@ -713,11 +750,9 @@ export function VideoGenPage() {
                 >
                   {vid.status === 'ready' ? (
                     <>
-                      <video
+                      <LazyVideo
                         src={vid.video_url}
                         className="w-full h-full object-cover"
-                        muted
-                        preload="metadata"
                       />
                       {/* Play overlay */}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
