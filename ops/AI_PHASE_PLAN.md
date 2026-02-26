@@ -99,3 +99,22 @@ loadErrors banner, unified timestamps, streak widget, connections URL filter, cl
 ## Phase 51 — COMPLETE ✓
 **PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/81 | **Tests:** 485/485
 notification-email cache invalidation, recurring reminder edit scope choice, copy briefing button, trigger error feedback, portfolio contact auto-close, X-RateLimit-Policy headers always-on, nonce double-tap guard verified, structured contact logging
+
+---
+
+## Phase 52 — IN PROGRESS (11 items — NEW: item 11 = CI workflow verification mandatory each phase)
+**Theme:** E2E reliability, UX polish, security headers, auth observability, performance caching
+
+| # | Item | Category |
+|---|------|----------|
+| 52.1 | Fix: connections.spec.ts pixel5 Telegram dialog timeout (force:true + waitFor) | Reliability |
+| 52.2 | Fix: reminders.spec.ts mark-complete chromium element-not-found | Reliability |
+| 52.3 | Security: Referrer-Policy + Cross-Origin-Opener-Policy headers | Security |
+| 52.4 | UX: Password strength meter on Settings change-password form | UX |
+| 52.5 | Performance: Portfolio public page Cache-Control header | Performance |
+| 52.6 | Dev/Ops: Auth structured logging (login/signup/password-change events) | Dev/Ops |
+| 52.7 | Feature: OverviewPage mini activity feed (last 5 events inline) | Feature |
+| 52.8 | State-sync: Mobile nav unread badge on Agent/Chat item (deferred 51.3) | State-sync |
+| 52.9 | Edge: Automation "next run" time display for time-triggered automations | Edge-case |
+| 52.10 | Phase 52 tests + verification gate + PR/merge | Dev/Ops |
+| 52.11 | **NEW** CI workflow verification: check + fix any failing workflows before Phase 53 | CI Health |

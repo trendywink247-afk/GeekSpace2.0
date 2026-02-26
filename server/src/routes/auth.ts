@@ -8,6 +8,7 @@ import { validateBody, signupSchema, loginSchema, onboardingSchema } from '../mi
 import { cacheDel } from '../services/cache.js';
 import { logSecurityEvent } from '../services/security-log.js';
 import { requestPasswordReset, verifyResetOTP, resetPassword } from '../services/passwordReset.js';
+import { logger } from '../logger.js';
 
 export const authRouter = Router();
 
@@ -76,6 +77,7 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
     // Log activity
     db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Signed up', 'Welcome to GeekSpace!', 'user-plus')`).run(uuid(), id);
     logSecurityEvent('signup', req.ip || '', { email, username });
+    logger.info({ event: 'auth_signup', userId: id, username, ip: req.ip }, 'New user signup');
   });
 
   try {
@@ -108,6 +110,7 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
 
   if (!user || !(await bcrypt.compare(password, user.password_hash as string))) {
     logSecurityEvent('login_failure', req.ip || '', { email });
+    logger.warn({ event: 'auth_login_failed', email, ip: req.ip, reason: 'invalid_credentials' }, 'Login failed');
     res.status(401).json({ error: 'Invalid credentials' });
     return;
   }
@@ -117,6 +120,7 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
   // Log activity
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Logged in', 'Session started', 'log-in')`).run(uuid(), user.id);
   logSecurityEvent('login_success', req.ip || '', { email: user.email as string, userId: user.id as string });
+  logger.info({ event: 'auth_login_success', userId: user.id as string, ip: req.ip }, 'Login success');
 
   res.json({
     user: {

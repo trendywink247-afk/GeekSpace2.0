@@ -130,6 +130,15 @@ export function createApp(): express.Application {
   // SSE streams are excluded automatically because they flush headers before compression kicks in.
   app.use(compression());
 
+  // 52.3: Security headers — applied early so all responses carry them
+  // Referrer-Policy prevents leaking paths in cross-origin navigations
+  // Cross-Origin-Opener-Policy isolates this window from opener contexts
+  app.use((_req, res, next) => {
+    res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.set('Cross-Origin-Opener-Policy', 'same-origin');
+    next();
+  });
+
   // ---- Body parsing ----
   app.use(express.json({ limit: `${config.maxRequestBodyBytes}` }));
 

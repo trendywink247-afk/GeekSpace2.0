@@ -67,6 +67,8 @@ const parsePortfolio = (row: Record<string, unknown>) => ({
 portfolioRouter.get('/me', requireAuth, (req: AuthRequest, res) => {
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(req.userId!) as Record<string, unknown> | undefined;
   if (!portfolio) { res.status(404).json({ error: 'Portfolio not found' }); return; }
+  // 52.5: Explicitly no-store for authenticated private data
+  res.set('Cache-Control', 'private, no-store');
   res.json(parsePortfolio(portfolio));
 });
 
@@ -263,6 +265,8 @@ portfolioRouter.get('/:username/agent-status', async (req, res) => {
   // Status logic: Active if agent_enabled AND (has recent activity OR no last_active recorded yet)
   const isActive = portfolio.agent_enabled && (isRecentlyActive || !agentConfig?.last_active);
 
+  // 52.5: Cache agent status for 30s — polled by portfolio view, changes slowly
+  res.set('Cache-Control', 'public, max-age=30, s-maxage=30');
   res.json({
     status: isActive ? 'active' : 'inactive',
     enabled: true,
