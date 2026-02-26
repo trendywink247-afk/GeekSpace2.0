@@ -1135,8 +1135,9 @@ export const suggestionService = {
   create: (data: { title: string; body: string; tags: string[] }) =>
     api.post<{ id: string; title: string; body: string; tags: string; status: string; created_at: string; duplicate_warning?: boolean }>('/suggestions', data),
   mine: (params?: { page?: number; limit?: number }) =>
-    api.get<{ suggestions: Array<{ id: string; title: string; body: string; status: string; created_at: string }>; total: number; page: number; limit: number }>('/suggestions/mine', { params }),
-  clusters: () => api.get<{ clusters: Array<{ id: string; canonical_summary: string; tags: string; suggestion_ids: string; overall_score: number | null; total_votes?: number; created_at: string }> }>('/suggestions/clusters'),
+    api.get<{ suggestions: Array<{ id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number; trending?: number }>; total: number; page: number; limit: number }>('/suggestions/mine', { params }),
+  clusters: () => api.get<{ clusters: Array<{ id: string; canonical_summary: string; name?: string; tags: string; suggestion_ids: string; overall_score: number | null; total_votes?: number; created_at: string }> }>('/suggestions/clusters'),
+  delete: (id: string) => api.delete(`/suggestions/${id}`),
   rewards: () => api.get<{ rewards: Array<{ id: string; eventType: string; credits: number; suggestionId: string | null; clusterId: string | null; createdAt: string }> }>('/suggestions/rewards/mine'),
   vote: (id: string, vote: 1 | -1) =>
     api.post<{ upvotes: number; downvotes: number }>(`/suggestions/${id}/vote`, { vote }),

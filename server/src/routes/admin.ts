@@ -40,6 +40,16 @@ function getAdminDashboardHtml(): string | null {
 
 export const adminRouter = Router();
 
+// ── 70.7: Admin action audit logging middleware ────────────────────────────────
+// Logs requester IP + path + method for every admin action for audit trail visibility.
+adminRouter.use((req: Request, _res, next) => {
+  logger.info(
+    { adminAction: req.path, method: req.method, ip: req.ip ?? req.headers['x-forwarded-for'] },
+    'Admin action',
+  );
+  next();
+});
+
 // ---- Auth coverage (46.1) ----
 // Every route below requires one of two auth guards:
 //   - requireAdminToken   : validates Authorization: Bearer <ADMIN_TOKEN> header (new style)
@@ -767,6 +777,7 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
   });
 
   // GET /api/admin/suggestions/clusters — list clusters with scores
+  // 70.9: LIMIT 100 to prevent unbounded results; status index used via suggestion join
   adminRouter.get('/suggestions/clusters', requireAdminToken, (_req: Request, res: Response): void => {
     const rows = db.prepare(`
       SELECT c.id, c.canonical_summary, c.name, c.tags, c.suggestion_ids, c.created_at,
@@ -774,6 +785,7 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
       FROM suggestion_clusters c
       LEFT JOIN suggestion_scores sc ON sc.cluster_id = c.id
       ORDER BY sc.overall_score DESC NULLS LAST, c.created_at DESC
+      LIMIT 100
     `).all();
     res.json({ clusters: rows });
   });
@@ -833,12 +845,19 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
         LIMIT 5
       `).all() as Array<{ id: string; title: string; voteCount: number }>;
 
+      // 70.14: Count trending suggestions
+      let trendingCount = 0;
+      try {
+        trendingCount = (db.prepare(`SELECT COUNT(*) as c FROM suggestions WHERE trending = 1`).get() as { c: number }).c;
+      } catch { /* non-fatal */ }
+
       res.json({
         total,
         byStatus,
         totalRewardsIssued: rewardsRow.cnt,
         totalCreditsAwarded: rewardsRow.total_credits,
         topVoted,
+        trending: trendingCount,
       });
     } catch (err) {
       logger.error({ err }, 'Admin suggestion stats query failed');

@@ -22,8 +22,11 @@ import {
   Star,
   TrendingUp,
   ThumbsUp,
+  ThumbsDown,
   Eye,
   X,
+  Trash2,
+  Layers,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -206,22 +209,32 @@ export function RoadmapPage() {
   const [submitError, setSubmitError] = useState('');
   const [duplicateWarning, setDuplicateWarning] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [mySuggestions, setMySuggestions] = useState<Array<{id: string; title: string; body: string; status: string; created_at: string}>>([]);
+  const [mySuggestions, setMySuggestions] = useState<Array<{id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number; trending?: number}>>([]);
   const [myRewards, setMyRewards] = useState<Array<{id: string; eventType: string; credits: number; createdAt: string}>>([]);
+  const [topClusters, setTopClusters] = useState<Array<{id: string; name?: string; canonical_summary: string; total_votes?: number; overall_score: number | null}>>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [voteState, setVoteState] = useState<Record<string, { upvotes: number; downvotes: number; voting: boolean }>>({});
 
   // Task 69.10: Suggestion detail modal state
-  const [detailSuggestion, setDetailSuggestion] = useState<{id: string; title: string; body: string; status: string; created_at: string} | null>(null);
+  const [detailSuggestion, setDetailSuggestion] = useState<{id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number} | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     setLoadingSuggestions(true);
     Promise.allSettled([
       suggestionService.mine(),
       suggestionService.rewards(),
-    ]).then(([sugRes, rewRes]) => {
+      suggestionService.clusters(),
+    ]).then(([sugRes, rewRes, clusterRes]) => {
       if (sugRes.status === 'fulfilled') setMySuggestions(sugRes.value.data.suggestions);
       if (rewRes.status === 'fulfilled') setMyRewards(rewRes.value.data.rewards);
+      if (clusterRes.status === 'fulfilled') {
+        setTopClusters(
+          clusterRes.value.data.clusters
+            .slice(0, 3)
+            .map(c => ({ id: c.id, name: c.name, canonical_summary: c.canonical_summary, total_votes: c.total_votes, overall_score: c.overall_score ?? null }))
+        );
+      }
     }).finally(() => setLoadingSuggestions(false));
   }, []);
 
@@ -259,6 +272,19 @@ export function RoadmapPage() {
       setSubmitError(message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Delete this suggestion? This cannot be undone.')) return;
+    setDeletingId(id);
+    try {
+      await suggestionService.delete(id);
+      setMySuggestions(prev => prev.filter(s => s.id !== id));
+    } catch {
+      // non-fatal — ignore errors
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -597,6 +623,11 @@ export function RoadmapPage() {
             <h4 className="text-sm font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-[#00F0FF]" />
               My Suggestions
+              {mySuggestions.length > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-[#00F0FF]/20 text-[#00F0FF] text-xs font-bold border border-[#00F0FF]/30">
+                  {mySuggestions.length}
+                </span>
+              )}
             </h4>
             {loadingSuggestions ? (
               <p className="text-xs text-[#6B7280]">Loading\u2026</p>
@@ -606,11 +637,27 @@ export function RoadmapPage() {
               <div className="space-y-2">
                 {mySuggestions.slice(0, 5).map(s => {
                   const vs = voteState[s.id];
+                  const upvotes = vs?.upvotes ?? (s.upvotes ?? 0);
+                  const downvotes = vs?.downvotes ?? (s.downvotes ?? 0);
                   return (
-                    <div key={s.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-[#05050A] border border-[#00F0FF]/10">
+                    <div key={s.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-[#05050A] border border-[#00F0FF]/10">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-[#E8E8F0] truncate">{s.title}</p>
-                        <p className="text-xs text-[#6B7280]">{new Date(s.created_at).toLocaleDateString()}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-[#6B7280]">{new Date(s.created_at).toLocaleDateString()}</p>
+                          {/* Task 70.3: Vote count badges */}
+                          <span className="flex items-center gap-0.5 text-xs text-[#00F0FF]">
+                            <ThumbsUp className="w-2.5 h-2.5" /> {upvotes}
+                          </span>
+                          {downvotes > 0 && (
+                            <span className="flex items-center gap-0.5 text-xs text-[#FF6161]">
+                              <ThumbsDown className="w-2.5 h-2.5" /> {downvotes}
+                            </span>
+                          )}
+                          {s.trending === 1 && (
+                            <span className="text-xs text-[#F59E0B] font-semibold">trending</span>
+                          )}
+                        </div>
                       </div>
                       {/* Task 69.10: View details button */}
                       <button
@@ -628,8 +675,19 @@ export function RoadmapPage() {
                         title="Upvote this suggestion"
                       >
                         <ThumbsUp className="w-3 h-3" />
-                        <span>{vs?.upvotes ?? 0}</span>
+                        <span>{upvotes}</span>
                       </button>
+                      {/* Task 70.12: Delete button (only for 'new' status suggestions) */}
+                      {s.status === 'new' && (
+                        <button
+                          onClick={() => void handleDelete(s.id)}
+                          disabled={deletingId === s.id}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[#FF2D78]/10 text-[#6B7280] hover:text-[#FF2D78] text-xs transition-colors disabled:opacity-50 flex-shrink-0"
+                          title="Delete suggestion"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
                       <span
                         className="text-xs px-2 py-0.5 rounded-full border flex-shrink-0"
                         style={{ color: getStatusColor(s.status), borderColor: `${getStatusColor(s.status)}40`, backgroundColor: `${getStatusColor(s.status)}15` }}
@@ -642,6 +700,35 @@ export function RoadmapPage() {
               </div>
             )}
           </div>
+
+          {/* Task 70.6: Popular Ideas (top clusters) */}
+          {topClusters.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#BF5FFF]" />
+                Popular Ideas
+              </h4>
+              <div className="space-y-2">
+                {topClusters.map(cluster => (
+                  <div key={cluster.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-[#05050A] border border-[#BF5FFF]/10">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#E8E8F0] truncate">
+                        {cluster.name || cluster.canonical_summary}
+                      </p>
+                      {cluster.name && cluster.name !== cluster.canonical_summary && (
+                        <p className="text-xs text-[#6B7280] truncate">{cluster.canonical_summary}</p>
+                      )}
+                    </div>
+                    {cluster.total_votes !== undefined && (
+                      <span className="flex items-center gap-1 text-xs text-[#00F0FF] flex-shrink-0">
+                        <ThumbsUp className="w-3 h-3" /> {cluster.total_votes}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Earned Credits */}
           {myRewards.length > 0 && (

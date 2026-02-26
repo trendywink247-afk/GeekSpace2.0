@@ -1490,3 +1490,12 @@ try { db.exec(`CREATE INDEX IF NOT EXISTS idx_suggestion_votes_user_suggestion O
 
 // Phase 69.14: Cluster name column (human-readable label for admin UI)
 try { db.exec(`ALTER TABLE suggestion_clusters ADD COLUMN name TEXT`); } catch { /* already exists */ }
+
+// Phase 70.4: Composite index on activity_log for per-user sorted queries (additive — IF NOT EXISTS is safe)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_activity_log_user_created ON activity_log(user_id, created_at DESC)`); } catch { /* already exists */ }
+
+// Phase 70.11: Soft-delete support for suggestions
+try { db.exec(`ALTER TABLE suggestions ADD COLUMN deleted_at TEXT DEFAULT NULL`); } catch { /* already exists */ }
+
+// Phase 70.14: Trending flag on suggestions (vote velocity > threshold in last 24h)
+try { db.exec(`ALTER TABLE suggestions ADD COLUMN trending INTEGER DEFAULT 0`); } catch { /* already exists */ }

@@ -80,13 +80,25 @@ suggestionsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
     }
   }
 
+  // Global cap: max 20 suggestions per user total (skip in test mode)
+  if (!config.isTestMode) {
+    const totalCount = db.prepare(
+      `SELECT COUNT(*) as cnt FROM suggestions WHERE user_id = ? AND deleted_at IS NULL`
+    ).get(userId) as { cnt: number };
+    if (totalCount.cnt >= 20) {
+      res.status(429).json({ error: 'Suggestion limit reached', limit: 20 });
+      return;
+    }
+  }
+
   const trimmedTitle = title.trim();
   const trimmedBody = body.trim();
   const tagsJson = JSON.stringify(parsedTags);
 
   // Check for near-duplicate (Task 68.9): exact title match OR 60% word overlap on body
+  // (exclude deleted suggestions)
   const existingSuggestions = db.prepare(
-    `SELECT id, title, body FROM suggestions WHERE user_id = ?`
+    `SELECT id, title, body FROM suggestions WHERE user_id = ? AND deleted_at IS NULL`
   ).all(userId) as Array<{ id: string; title: string; body: string }>;
 
   let duplicateWarning = false;
@@ -155,10 +167,12 @@ suggestionsRouter.get('/clusters', requireAuth, (req: AuthRequest, res) => {
   }
 
   // Task 68.6: include vote counts for each suggestion in the cluster
+  // Task 70.5: include name field
   const clusters = db.prepare(`
     SELECT
       c.id,
       c.canonical_summary as canonicalSummary,
+      c.name,
       c.tags,
       c.suggestion_ids as suggestionIds,
       c.created_at as createdAt,
@@ -218,17 +232,24 @@ suggestionsRouter.get('/mine', requireAuth, (req: AuthRequest, res) => {
   const offset = (page - 1) * limit;
 
   const total = (db.prepare(
-    `SELECT COUNT(*) as cnt FROM suggestions WHERE user_id = ?`
+    `SELECT COUNT(*) as cnt FROM suggestions WHERE user_id = ? AND deleted_at IS NULL`
   ).get(userId) as { cnt: number }).cnt;
 
   const rows = db.prepare(
-    `SELECT id, user_id as userId, title, body, tags, status, created_at as createdAt, updated_at as updatedAt
-     FROM suggestions WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    `SELECT s.id, s.user_id as userId, s.title, s.body, s.tags, s.status, s.created_at as createdAt, s.updated_at as updatedAt,
+            COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0) as upvotes,
+            COALESCE(SUM(CASE WHEN v.vote = -1 THEN 1 ELSE 0 END), 0) as downvotes
+     FROM suggestions s
+     LEFT JOIN suggestion_votes v ON v.suggestion_id = s.id
+     WHERE s.user_id = ? AND s.deleted_at IS NULL
+     GROUP BY s.id
+     ORDER BY s.created_at DESC LIMIT ? OFFSET ?`
   ).all(userId, limit, offset) as Array<Record<string, unknown>>;
 
   const suggestions = rows.map(r => ({
     ...r,
     tags: (() => { try { return JSON.parse(r.tags as string); } catch { return []; } })(),
+    trending: (r.trending as number | null) ?? 0,
   }));
 
   res.json({ suggestions, total, page, limit });
@@ -284,7 +305,7 @@ suggestionsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
 
   const row = db.prepare(
     `SELECT id, user_id as userId, title, body, tags, status, created_at as createdAt, updated_at as updatedAt
-     FROM suggestions WHERE id = ?`
+     FROM suggestions WHERE id = ? AND deleted_at IS NULL`
   ).get(id) as Record<string, unknown> | undefined;
 
   if (!row) {
@@ -301,6 +322,34 @@ suggestionsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
     ...row,
     tags: (() => { try { return JSON.parse(row.tags as string); } catch { return []; } })(),
   });
+});
+
+// ---- DELETE /api/suggestions/:id — soft-delete own suggestion (Task 70.11) ----
+// Only allows deleting suggestions in 'new' status. Soft-deletes (sets deleted_at).
+suggestionsRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { id } = req.params;
+
+  const suggestion = db.prepare(
+    `SELECT id, user_id as userId, status FROM suggestions WHERE id = ? AND deleted_at IS NULL`
+  ).get(id) as { id: string; userId: string; status: string } | undefined;
+
+  if (!suggestion || suggestion.userId !== userId) {
+    res.status(404).json({ error: 'Suggestion not found' });
+    return;
+  }
+
+  if (suggestion.status !== 'new') {
+    res.status(409).json({ error: 'Only suggestions in "new" status can be deleted' });
+    return;
+  }
+
+  db.prepare(
+    `UPDATE suggestions SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+  ).run(id);
+
+  logger.info({ userId, suggestionId: id }, 'Suggestion soft-deleted');
+  res.status(204).end();
 });
 
 // ---- GET /api/suggestions/:id/events — status history for own suggestion (Task 69.6) ----

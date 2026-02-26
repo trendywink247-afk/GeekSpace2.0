@@ -167,5 +167,46 @@ export async function triageSuggestions(suggestionIds: string[]): Promise<Triage
     }
   }
 
+  // ── Phase 70.14: Mark trending suggestions ──────────────────────────────────
+  // In TEST_MODE: any suggestion with at least 1 upvote total is trending
+  // In prod: suggestions with 3+ upvotes in the last 24h are trending
+  try {
+    let trendingIds: string[] = [];
+
+    if (config.isTestMode) {
+      // TEST_MODE: simpler — any suggestion with at least 1 upvote total
+      const rows = db.prepare(`
+        SELECT suggestion_id
+        FROM suggestion_votes
+        WHERE vote = 1
+        GROUP BY suggestion_id
+        HAVING COUNT(*) >= 1
+      `).all() as Array<{ suggestion_id: string }>;
+      trendingIds = rows.map(r => r.suggestion_id);
+    } else {
+      // Prod: suggestions with 3+ upvotes in the last 24h (vote velocity threshold)
+      const rows = db.prepare(`
+        SELECT suggestion_id
+        FROM suggestion_votes
+        WHERE vote = 1 AND created_at >= datetime('now', '-24 hours')
+        GROUP BY suggestion_id
+        HAVING COUNT(*) >= 3
+      `).all() as Array<{ suggestion_id: string }>;
+      trendingIds = rows.map(r => r.suggestion_id);
+    }
+
+    if (trendingIds.length > 0) {
+      // Reset all to 0 first, then mark trending ones
+      db.prepare(`UPDATE suggestions SET trending = 0`).run();
+      const placeholders = trendingIds.map(() => '?').join(',');
+      db.prepare(`UPDATE suggestions SET trending = 1 WHERE id IN (${placeholders})`).run(...trendingIds);
+      logger.info({ trendingCount: trendingIds.length }, 'Trending suggestions updated');
+    } else {
+      db.prepare(`UPDATE suggestions SET trending = 0`).run();
+    }
+  } catch (err) {
+    logger.warn({ err }, 'Trending update step failed (non-fatal)');
+  }
+
   return results;
 }
