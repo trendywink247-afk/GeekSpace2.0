@@ -132,6 +132,20 @@ bold "=========================================="
 green "  Pre-flight PASSED — ready for Phase $NEXT_PHASE"
 bold "=========================================="
 
+# ── Cronicle safety guard ─────────────────────────────────────
+# When called from Cronicle (CRONICLE_AUDIT_ONLY=1), stop here.
+# The --full flag is blocked in Cronicle mode to prevent accidental
+# deploys, commits, or pushes from a scheduled job.
+if [ "${CRONICLE_AUDIT_ONLY:-0}" = "1" ]; then
+  if [ "$MODE" = "--full" ]; then
+    red "BLOCKED: --full is disabled when CRONICLE_AUDIT_ONLY=1"
+    exit 1
+  fi
+  echo ""
+  echo "(Cronicle audit mode — stopping after audit, no write operations)"
+  exit 0
+fi
+
 # ── Full mode: Gate + Stage + PR ──────────────────────────────
 if [ "$MODE" = "--full" ]; then
   echo ""
