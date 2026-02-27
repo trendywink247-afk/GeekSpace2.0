@@ -186,6 +186,22 @@ docker compose ps
 docker compose logs -f geekspace-app
 ```
 
+### Staging
+```bash
+./scripts/staging.sh                    # Build + deploy staging containers
+./scripts/smoke-staging.sh              # Run staging smoke tests
+docker compose -f docker-compose.staging.yml ps
+docker compose -f docker-compose.staging.yml logs -f staging-app
+```
+
+### Autonomy Loop
+```bash
+./scripts/autonomy-run.sh              # Pre-flight + audit (start of session)
+./scripts/autonomy-run.sh --full       # Gate + stage + PR (end of session)
+./ops/phase-gate.sh --skip-e2e         # Phase gate verification
+./ops/claude-cycle.sh                  # Session checkpoint reminders
+```
+
 ---
 
 ## 🔍 Required Verification by Change Type
@@ -225,6 +241,8 @@ ops/AI_RELEASE_NOTES.md     — user-facing phase notes
 ops/AI_FEATURE_MATRIX.md    — feature integrity + to-and-fro verification
 ops/AI_RELEASE_TRAIN.md     — main→prod release train summary
 ops/AI_RISK_REGISTER.md     — medium/high risks and mitigation status
+ops/AUTONOMY.md             — autonomy rules, roles, stop conditions, escalation
+ops/systemd/                — reproducible copies of systemd units
 ```
 
 ---
@@ -293,6 +311,15 @@ cd server && npm test
 - `src/dashboard/DashboardApp.tsx`
 - `src/types/index.ts`
 
+### Key infra files:
+- `docker-compose.yml` — production containers (geekspace, redis, caddy, picoclaw, edith-bridge)
+- `docker-compose.staging.yml` — staging containers (staging-app, staging-redis)
+- `caddy/Caddyfile` — Caddy reverse proxy routes (production + staging + dev)
+- `scripts/staging.sh` — staging deploy script
+- `scripts/smoke-staging.sh` — staging smoke tests
+- `scripts/autonomy-run.sh` — autonomy orchestrator (pre-flight + audit)
+- `ops/AUTONOMY.md` — autonomy rules, roles, cadence, stop conditions
+
 ### shadcn/ui: New York style. Add via `npx shadcn@latest add <component>`
 
 ---
@@ -312,7 +339,9 @@ cd server && npm test
 
 ## Environment
 - `.env` is gitignored. `.env.example` tracked.
+- `.env.staging` is gitignored. `.env.staging.example` tracked.
 - Production: ai.geekspace.space (frontend), api.geekspace.space (API)
+- Staging: staging.agentin.chat (full reverse proxy, isolated DB/Redis)
 - Demo users: alex/sarah/marcus (password: demo123)
 - Production branch: live-production
 - App version: 3.0.0
