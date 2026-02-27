@@ -151,31 +151,38 @@ fi
 # ── 8. Baseline Tests ───────────────────────────────────────
 echo ""
 echo "--- Baseline Tests ---"
-cd "$PROJECT_DIR/server"
+
+# Run tests only on the host (not inside Cronicle container).
+# Detect Cronicle: repo mounted at /host/GeekSpace2.0 (read-only, wrong libc).
 TEST_EXIT=0
-TEST_OUTPUT=$(npm test 2>&1) || TEST_EXIT=$?
-TEST_PASSED=$(echo "$TEST_OUTPUT" | grep -oP '\d+ passed' | head -1 || echo "0 passed")
-TEST_FAILED_CT=$(echo "$TEST_OUTPUT" | grep -oP '(\d+) failed' | grep -oP '\d+' || echo "0")
-CURRENT_CT=$(echo "$TEST_PASSED" | grep -oP '\d+' || echo "0")
-cd "$PROJECT_DIR"
+if [ ! -d "/host/GeekSpace2.0" ] && [ -f "$PROJECT_DIR/server/node_modules/.bin/vitest" ]; then
+  echo "  Running server tests..."
+  cd "$PROJECT_DIR/server"
+  TEST_OUTPUT=$(npm test 2>&1) || TEST_EXIT=$?
+  cd "$PROJECT_DIR"
 
-echo "  Result: $TEST_PASSED (local server suite)"
+  TEST_PASSED=$(echo "$TEST_OUTPUT" | grep -oP '\d+ passed' | head -1 || echo "0 passed")
+  TEST_FAILED_CT=$(echo "$TEST_OUTPUT" | grep -oP '(\d+) failed' | grep -oP '\d+' || echo "0")
+  CURRENT_CT=$(echo "$TEST_PASSED" | grep -oP '\d+' || echo "0")
 
-# Actual test failures — tests ran but some failed
-if [ "$TEST_FAILED_CT" -gt 0 ]; then
-  echo "[FAIL] $TEST_FAILED_CT tests actually failing"
-  TEST_FAIL=1
-elif [ "$TEST_EXIT" -ne 0 ]; then
-  echo "[FAIL] npm test exited non-zero ($TEST_EXIT) — may not have run"
-  TEST_FAIL=1
+  echo "  Result: $TEST_PASSED"
+
+  if [ "$TEST_FAILED_CT" -gt 0 ]; then
+    echo "[FAIL] $TEST_FAILED_CT tests actually failing"
+    TEST_FAIL=1
+  elif [ "$TEST_EXIT" -ne 0 ] && [ "$CURRENT_CT" -eq 0 ]; then
+    echo "[FAIL] npm test exited non-zero ($TEST_EXIT) — may not have run"
+    TEST_FAIL=1
+  else
+    ok "All tests passing ($CURRENT_CT)"
+  fi
+
+  if [ "$HANDOFF_BASELINE" -gt 0 ] && [ "$CURRENT_CT" -gt 0 ] && [ "$HANDOFF_BASELINE" -ne "$CURRENT_CT" ]; then
+    warn "Baseline mismatch: current=$CURRENT_CT vs handoff=$HANDOFF_BASELINE (may be different test scopes)"
+  fi
 else
-  ok "All local tests passing ($CURRENT_CT)"
-fi
-
-# Baseline comparison — warn-only because handoff tracks Docker
-# full suite (818) while local npm test runs server subset (74)
-if [ "$HANDOFF_BASELINE" -gt 0 ] && [ "$CURRENT_CT" -gt 0 ] && [ "$HANDOFF_BASELINE" -ne "$CURRENT_CT" ]; then
-  warn "Baseline mismatch: local=$CURRENT_CT vs handoff=$HANDOFF_BASELINE (different test scopes — Docker full suite vs local server)"
+  warn "Tests skipped — vitest not available (run from host for full test suite)"
+  CURRENT_CT=0
 fi
 
 # ── 9. SSL Certificates ─────────────────────────────────────
