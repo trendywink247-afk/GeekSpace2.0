@@ -4,6 +4,28 @@
 
 ---
 
+## Post-Phase 75 (2026-02-28) — Infrastructure + CI Hardening
+
+*Status: Committed to main*
+
+### What's New
+- **Staging environment**: Isolated staging on `staging.agentin.chat` with separate DB/Redis, shares AI services with production
+- **Autonomy audit system**: 12-check automated audit (production health, staging, containers, disk, memory, OpenClaw, git, tests, SSL) runs daily via Cronicle
+- **Scheduled monitoring**: Daily staging smoke tests and weekly Docker space reports via Cronicle
+
+### What's Fixed
+- **E2E test suite fully green**: Fixed 2 failing tests (logout strict mode violation, reminders test ordering interference) — CI now passes all 79 E2E tests
+- **CI pipeline cleanup**: Removed redundant `test.yml` workflow that duplicated `ci.yml`
+- **OpenClaw resilience**: Systemd watchdog timer ensures OpenClaw container alias survives Hostinger container recreation
+
+### Under the Hood
+- Added `data-testid="reminder-card-{id}"` to reminder cards for reliable E2E targeting
+- Cronicle connected to geekspace network for direct staging container access
+- Tracked Cronicle config reference in `ops/cronicle/` for reproducibility
+- Autonomy loop tooling: orchestrator script, deploy script, smoke tests, rules document
+
+---
+
 ## Phase 1 (2026-02-24) — Reliability + Image Generation
 
 *Status: In Progress*

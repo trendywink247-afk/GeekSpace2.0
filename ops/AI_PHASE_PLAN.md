@@ -546,3 +546,20 @@ Production hardening + E2E test scaffolding: unified Caddy, hardened prod.sh, Er
 | 75.10 | Full verification (818/818, lint, typecheck, build, brand) | ✅ | Dev/Ops |
 | 75.11 | Ops + commit + PR + merge | ✅ | Dev/Ops |
 
+## Post-Phase 75 — Infra + CI Hardening (COMPLETE ✓)
+**Branch:** `main` (direct commits) | **CI:** 5/5 green | **Audit:** 12/12 ALL CLEAR
+Infrastructure hardening, staging environment, autonomy tooling, CI/E2E fixes.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| I.1 | OpenClaw alias watchdog (systemd timer, 2-min interval) | ✅ | Infra |
+| I.2 | Staging environment (docker-compose.staging.yml + Caddy + .env) | ✅ | Infra |
+| I.3 | Autonomy loop tooling (AUTONOMY.md, autonomy-run.sh, staging.sh, smoke-staging.sh) | ✅ | Dev/Ops |
+| I.4 | Cronicle scheduled jobs (audit, staging smoke, Docker space report) | ✅ | Dev/Ops |
+| I.5 | Autonomy audit script (12 checks, cronicle-autonomy-audit.sh) | ✅ | Dev/Ops |
+| I.6 | Cronicle network fix + tracked config reference (ops/cronicle/) | ✅ | Infra |
+| I.7 | Remove redundant CI test.yml workflow | ✅ | CI |
+| I.8 | Fix E2E logout strict mode violation (2 logout buttons) | ✅ | Testing |
+| I.9 | Fix E2E reminders mark-complete test isolation (data-testid cards) | ✅ | Testing |
+| I.10 | Full verification (79 E2E + 74 unit, CI green, audit 12/12) | ✅ | Verification |
+

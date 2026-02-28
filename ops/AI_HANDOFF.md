@@ -1,12 +1,11 @@
-# AI Handoff — Phase 75
+# AI Handoff — Post-Phase 75 (Infra + CI Hardening)
 
-**Date:** 2026-02-26
-**Branch:** `ai/phase-20260226-phase75`
-**Tests:** 818/818 (+7 from Phase 74's 811)
-**Lint:** 0 warnings
-**TypeCheck:** Clean (frontend + server)
+**Date:** 2026-02-28
+**Branch:** `main`
+**Tests:** 74 server unit + 79 E2E (all passing)
+**CI:** All 5 jobs green (Static Checks, Unit Tests, E2E Tests, Smoke Tests, Summary)
+**Autonomy Audit:** 12/12 ALL CLEAR
 **Build:** Clean (frontend + server)
-**Brand Guard:** 0 violations
 
 ---
 
@@ -19,61 +18,75 @@ If the conversation is compacted, before doing ANY work:
 
 ---
 
-## Phase 75 — What Was Done
+## Post-Phase 75 — What Was Done
 
-**Theme:** Production Hardening + E2E Test Scaffolding
+**Theme:** Infrastructure Hardening, CI Fixes, Autonomy Tooling
 
-### Tasks 75.1–75.11
-- **75.1 CI baseline:** 811/811 tests, lint/typecheck/build/brand clean — confirmed
-- **75.2 Unify Caddy configs:** Wrote unified `/etc/caddy/Caddyfile` with common_headers, gate auth, asset immutable caching. Stopped Docker Caddy, enabled host Caddy via systemd.
-- **75.3 Harden prod.sh:** Added static file validation (checks index.html + assets after docker cp), SW cache bump via git SHA sed, Caddy reload step, health check wait loop.
-- **75.4 Root ErrorBoundary in App.tsx:** Wrapped all routes in `<ErrorBoundary>` so public pages (landing, explore, portfolio) don't white-screen on crash.
-- **75.5 lazyRetry chunk load retry:** Created `src/utils/lazyRetry.ts` — wraps React.lazy with sessionStorage-based reload retry for stale chunk 404s. Updated all 22 lazy imports in DashboardApp.tsx.
-- **75.6 Add test-id attributes:** Added `data-testid` to AgentChatPanel (chat-input, send-button), AgentChatButton (chat-fab), DashboardApp (logout-button) for E2E selectors.
-- **75.7 E2E chat spec:** Created `e2e/chat.spec.ts` — opens chat FAB, types message, clicks send, verifies input clears.
-- **75.8 E2E logout spec:** Created `e2e/logout.spec.ts` — clicks logout button (handles mobile sidebar), verifies redirect to login.
-- **75.9 phase75.test.ts:** 7 meta tests verifying all artifacts exist and contain expected patterns.
-- **75.10 Verification:** 818/818 tests, lint clean, typecheck clean, build clean, brand guard clean.
-- **75.11 Ops + commit + PR + merge:** This file.
+### Infrastructure (committed directly to main)
+- **OpenClaw alias watchdog:** Systemd timer (`agentin-openclaw-alias.timer`) runs every 2 min, ensures OpenClaw container has `openclaw` alias on `geekspace-shared` network — survives Hostinger container recreation
+- **Staging environment:** `docker-compose.staging.yml` with isolated staging-app + staging-redis on `staging.agentin.chat`, Caddy reverse proxy block added
+- **Autonomy loop:** `ops/AUTONOMY.md` (rules/roles/stop conditions), `scripts/autonomy-run.sh` (orchestrator), `scripts/staging.sh` (deploy), `scripts/smoke-staging.sh` (smoke tests)
+- **Cronicle scheduled jobs:** Autonomy audit (daily 09:00 IST), staging smoke test (daily 09:10 IST), Docker space report (weekly Sunday 09:30 IST), all with email notification on failure
+- **Cronicle network fix:** Connected Cronicle container to `geekspace20_geekspace-net` for staging access; tracked reference in `ops/cronicle/`
+- **Autonomy audit script:** `scripts/cronicle-autonomy-audit.sh` — 12 checks (prod health, staging, containers, disk, memory, OpenClaw alias, git, phase status, tests, SSL)
+
+### CI Pipeline Fixes
+- **Removed redundant `test.yml`:** Was a duplicate of `ci.yml` running on same triggers but less robust
+- **Fixed E2E logout test:** Strict mode violation — `getByTestId('dashboard-logout-button')` resolved to 2 elements (desktop + mobile sidebar). Fixed by scoping to specific sidebar via `data-testid`
+- **Fixed E2E reminders "mark as complete" test:** Failed when run after other tests due to shared reminder state. Fixed with unique `Date.now()` text + `data-testid="reminder-card-{id}"` on each Card for precise ancestor targeting
+- **Added `data-testid="reminder-card-{id}"`** to `RemindersPage.tsx` Card components
 
 ---
 
-## Files Changed
-- `/etc/caddy/Caddyfile` — unified host Caddy config (not in git)
-- `scripts/prod.sh` — hardened deploy script
-- `src/App.tsx` — added ErrorBoundary import + wrap
-- `src/utils/lazyRetry.ts` (NEW) — chunk load retry utility
-- `src/dashboard/DashboardApp.tsx` — lazy→lazyRetry, added logout data-testid
-- `src/components/AgentChatPanel.tsx` — added chat-input + send-button data-testid
-- `src/components/AgentChatButton.tsx` — added chat-fab data-testid
-- `e2e/chat.spec.ts` (NEW) — agent chat E2E test
-- `e2e/logout.spec.ts` (NEW) — logout flow E2E test
-- `server/src/test/api/phase75.test.ts` (NEW) — 7 meta tests
-- `ops/AI_HANDOFF.md` — updated
-- `ops/AI_PHASE_PLAN.md` — added Phase 75 table
+## Files Changed (since Phase 75 merge)
+- `scripts/cronicle-autonomy-audit.sh` (NEW) — autonomy audit script
+- `scripts/staging.sh` (NEW) — staging deploy script
+- `scripts/smoke-staging.sh` (NEW) — staging smoke tests
+- `scripts/autonomy-run.sh` (NEW) — autonomy orchestrator
+- `docker-compose.staging.yml` (NEW) — staging containers
+- `.env.staging` (NEW, gitignored) — staging env vars
+- `.env.staging.example` (NEW) — tracked template
+- `caddy/Caddyfile` — added staging block + openclaw alias fix
+- `ops/AUTONOMY.md` (NEW) — autonomy rules and roles
+- `ops/cronicle/docker-compose.yml` (NEW) — tracked Cronicle config reference
+- `ops/cronicle/README.md` (NEW) — Cronicle docs
+- `.github/workflows/test.yml` — DELETED (redundant)
+- `e2e/logout.spec.ts` — fixed strict mode violation
+- `e2e/reminders.spec.ts` — fixed mark-complete test isolation
+- `src/dashboard/pages/RemindersPage.tsx` — added reminder-card data-testid
+- `/usr/local/bin/agentin-openclaw-alias-fix.sh` (NEW, host-level) — watchdog script
+- `/etc/systemd/system/agentin-openclaw-alias.service` (NEW, host-level) — systemd oneshot
+- `/etc/systemd/system/agentin-openclaw-alias.timer` (NEW, host-level) — 2-min timer
+- `/root/geekspace-network-fix.sh` — updated with dynamic discovery + alias
 
 ---
 
 ## Verification Status
-- [x] 818/818 tests passing
-- [x] `npm run lint` — 0 warnings
-- [x] `npx tsc --noEmit` (frontend) — clean
-- [x] `npm run build` (frontend) — clean
-- [x] `npm run brand-guard` — 0 violations
+- [x] CI pipeline: 5/5 jobs green (commit `66ac746`)
+- [x] E2E tests: 79 passed, 0 failed, 1 skipped
+- [x] Server unit tests: 74 passed
+- [x] Autonomy audit: 12/12 ALL CLEAR
+- [x] Production healthy (35 users, 0 errors)
+- [x] Staging healthy (HTTPS)
+- [x] All 7 Docker containers healthy
+- [x] OpenClaw alias present
+- [x] SSL certs valid (82d + 88d)
+- [x] Working tree clean
 
 ---
 
 ## Known Issues / Open Risks
-- Pre-existing chunk size warning for index.js (738kB) — reduced from 886kB by manual chunks
-- E2E specs (chat, logout) need running dev servers + Playwright for full execution
-- Host Caddy `/etc/caddy/Caddyfile` is not in git (host-level config)
+- Pre-existing chunk size warning for index.js (738kB)
+- Staging DNS `staging.agentin.chat` now resolves correctly
+- Host Caddy `/etc/caddy/Caddyfile` not in git (host-level config)
+- Cronicle config at `/docker/cronicle-ngym/` not in git (tracked reference in `ops/cronicle/`)
 
 ---
 
 ## Next Steps
 - Start Phase 76 (autonomous continuation)
-- Consider: CSRF tokens, virtual scroll for chat, frontend bundle further splitting
+- Consider: CSRF tokens, virtual scroll for chat, frontend bundle splitting
 - Next release train candidate: Phase 80
 
 ## Merge Status
-Pending — PR to be created
+All changes committed and pushed to `main` (no PR — direct infra/CI fixes)
