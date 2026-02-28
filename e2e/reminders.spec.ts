@@ -76,12 +76,20 @@ test.describe('Reminders Page', () => {
   });
 
   test('should mark a reminder as complete', async ({ page }) => {
-    // First create a reminder so we have something to complete
+    // Ensure we're on the Active tab first
+    const activeTab = page.getByRole('tab', { name: 'Active' });
+    if (await activeTab.isVisible().catch(() => false)) {
+      await activeTab.click();
+      await page.waitForTimeout(500);
+    }
+
+    // Create a uniquely-named reminder so we don't collide with other tests
+    const reminderText = `Complete me E2E ${Date.now()}`;
     await page.getByTestId('create-reminder-button').click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     const textInput = page.getByPlaceholder('Enter reminder text...');
-    await textInput.fill('Complete me E2E');
+    await textInput.fill(reminderText);
     const datetimeInput = page.locator('input[type="datetime-local"]');
     await datetimeInput.fill('2030-06-01T09:00');
 
@@ -94,23 +102,20 @@ test.describe('Reminders Page', () => {
     await submitBtn.click({ force: true });
 
     await expect(page.getByRole('dialog')).not.toBeVisible();
-    await page.waitForTimeout(1000); // 52.2: wait for store update + list re-render after dialog close
-    // Use .first() to avoid strict mode violation if reminder was created before
-    // timeout:12000 gives extra time for store update after dialog close
-    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 12000 });
+    await page.waitForTimeout(1000); // wait for store update + list re-render after dialog close
+    await expect(page.getByText(reminderText).first()).toBeVisible({ timeout: 12000 });
 
-    // Click the "Mark as complete" button using its aria-label
-    // Get the button associated with the most recently visible 'Complete me E2E' reminder
-    const completeBtn = page.getByRole('button', { name: 'Mark as complete' }).first();
-    await completeBtn.click({ force: true }); // force: bypass stability check (extra buttons cause mobile layout shift)
+    // Find the complete button inside the same reminder card (data-testid="reminder-card-*").
+    const reminderCard = page.getByText(reminderText).first().locator('xpath=ancestor::div[starts-with(@data-testid,"reminder-card-")]');
+    const completeBtn = reminderCard.getByRole('button', { name: 'Mark as complete' });
+    await completeBtn.click({ force: true });
 
     // Switch to "completed" tab/filter to verify the reminder moved there
-    // TabsTrigger renders as role="tab"
-    await page.waitForTimeout(800); // 57.6: wait for store update + list re-render after mark-complete
+    await page.waitForTimeout(800);
     await page.getByRole('tab', { name: 'Completed' }).click();
-    await page.waitForTimeout(1500); // 57.6: increased settle time for tab animation + store re-render
-    // timeout:12000 gives the tab switch + store re-render time to settle
-    await expect(page.getByText('Complete me E2E').first()).toBeVisible({ timeout: 12000 });
+    await page.waitForTimeout(1500);
+    // Verify our specific reminder appears in the completed list
+    await expect(page.getByText(reminderText).first()).toBeVisible({ timeout: 12000 });
   });
 
   test('should show priority selector in create form', async ({ page }) => {
