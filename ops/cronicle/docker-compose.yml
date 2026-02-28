@@ -1,0 +1,28 @@
+services:
+  cronicle:
+    image: soulteary/cronicle:0.9
+    restart: unless-stopped
+    ports:
+      - "3012"
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - data:/opt/cronicle/data
+      - logs:/opt/cronicle/logs
+      - plugins:/opt/cronicle/plugins
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/GeekSpace2.0:/host/GeekSpace2.0:ro
+    networks:
+      - default
+      - geekspace-net
+
+networks:
+  geekspace-net:
+    external: true
+    name: geekspace20_geekspace-net
+
+volumes:
+  data:
+  logs:
+  plugins:
+
