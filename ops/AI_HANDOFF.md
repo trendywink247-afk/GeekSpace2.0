@@ -1,10 +1,10 @@
-# AI Handoff — Post-Phase 75 (Infra + CI Hardening)
+# AI Handoff — Post-Phase 76 (AI Gateway + Smart Routing)
 
-**Date:** 2026-02-28
+**Date:** 2026-03-01
 **Branch:** `main`
-**Tests:** 74 server unit + 79 E2E (all passing)
-**CI:** All 5 jobs green (Static Checks, Unit Tests, E2E Tests, Smoke Tests, Summary)
-**Autonomy Audit:** 12/12 ALL CLEAR
+**Tests:** 76 server unit test files | 870 tests (all passing)
+**CI:** Phase gate 7/7 ✅ | Smoke tests 11/11 ✅
+**Brand Guard:** 0 violations
 **Build:** Clean (frontend + server)
 
 ---
@@ -14,79 +14,93 @@ If the conversation is compacted, before doing ANY work:
 1. Re-read: `CLAUDE.md`, `ops/AI_HANDOFF.md`, `ops/AI_PHASE_PLAN.md`, `ops/AI_FEATURE_MATRIX.md`
 2. Run: `git status && git branch --show-current && git log --oneline -5`
 3. Print a brief "Rehydrated Context" summary (phase, branch, current tasks, constraints)
-4. Only then continue implementation
+4. Only then continue implementation — never rely on memory from compacted context
 
 ---
 
-## Post-Phase 75 — What Was Done
+## Post-Phase 76 — What Was Done
 
-**Theme:** Infrastructure Hardening, CI Fixes, Autonomy Tooling
+**Theme:** AI Gateway + Smart Routing (cost optimization)
 
-### Infrastructure (committed directly to main)
-- **OpenClaw alias watchdog:** Systemd timer (`agentin-openclaw-alias.timer`) runs every 2 min, ensures OpenClaw container has `openclaw` alias on `geekspace-shared` network — survives Hostinger container recreation
-- **Staging environment:** `docker-compose.staging.yml` with isolated staging-app + staging-redis on `staging.agentin.chat`, Caddy reverse proxy block added
-- **Autonomy loop:** `ops/AUTONOMY.md` (rules/roles/stop conditions), `scripts/autonomy-run.sh` (orchestrator), `scripts/staging.sh` (deploy), `scripts/smoke-staging.sh` (smoke tests)
-- **Cronicle scheduled jobs:** Autonomy audit (daily 09:00 IST), staging smoke test (daily 09:10 IST), Docker space report (weekly Sunday 09:30 IST), all with email notification on failure
-- **Cronicle network fix:** Connected Cronicle container to `geekspace20_geekspace-net` for staging access; tracked reference in `ops/cronicle/`
-- **Autonomy audit script:** `scripts/cronicle-autonomy-audit.sh` — 12 checks (prod health, staging, containers, disk, memory, OpenClaw alias, git, phase status, tests, SSL)
+### New Capabilities
 
-### CI Pipeline Fixes
-- **Removed redundant `test.yml`:** Was a duplicate of `ci.yml` running on same triggers but less robust
-- **Fixed E2E logout test:** Strict mode violation — `getByTestId('dashboard-logout-button')` resolved to 2 elements (desktop + mobile sidebar). Fixed by scoping to specific sidebar via `data-testid`
-- **Fixed E2E reminders "mark as complete" test:** Failed when run after other tests due to shared reminder state. Fixed with unique `Date.now()` text + `data-testid="reminder-card-{id}"` on each Card for precise ancestor targeting
-- **Added `data-testid="reminder-card-{id}"`** to `RemindersPage.tsx` Card components
+**Routing Ladder (Phase 76+)**
+- `ollama → openrouter-free → ollama-cloud → edith(premium-only last resort)`
+- Edith is **NEVER** auto-selected for 'complex' or 'planning' intent — waterfall last resort only
+- `pickProvider()` no longer returns edith directly; uses `openrouter-free` for paid complex tasks
+- Daily token budget enforcement (`isOverDailyBudget`) blocks edith when daily cap exceeded
 
----
+**New ollama-cloud provider**
+- `callOllamaCloud()` with OpenAI-compatible API + Bearer auth
+- Config vars: `OLLAMA_CLOUD_BASE_URL`, `OLLAMA_CLOUD_API_KEY`, `OLLAMA_CLOUD_MODEL`, `OLLAMA_CLOUD_TIMEOUT_MS`
+- Credit cost: 2 (same as openrouter-free; free in dollar terms)
 
-## Files Changed (since Phase 75 merge)
-- `scripts/cronicle-autonomy-audit.sh` (NEW) — autonomy audit script
-- `scripts/staging.sh` (NEW) — staging deploy script
-- `scripts/smoke-staging.sh` (NEW) — staging smoke tests
-- `scripts/autonomy-run.sh` (NEW) — autonomy orchestrator
-- `docker-compose.staging.yml` (NEW) — staging containers
-- `.env.staging` (NEW, gitignored) — staging env vars
-- `.env.staging.example` (NEW) — tracked template
-- `caddy/Caddyfile` — added staging block + openclaw alias fix
-- `ops/AUTONOMY.md` (NEW) — autonomy rules and roles
-- `ops/cronicle/docker-compose.yml` (NEW) — tracked Cronicle config reference
-- `ops/cronicle/README.md` (NEW) — Cronicle docs
-- `.github/workflows/test.yml` — DELETED (redundant)
-- `e2e/logout.spec.ts` — fixed strict mode violation
-- `e2e/reminders.spec.ts` — fixed mark-complete test isolation
-- `src/dashboard/pages/RemindersPage.tsx` — added reminder-card data-testid
-- `/usr/local/bin/agentin-openclaw-alias-fix.sh` (NEW, host-level) — watchdog script
-- `/etc/systemd/system/agentin-openclaw-alias.service` (NEW, host-level) — systemd oneshot
-- `/etc/systemd/system/agentin-openclaw-alias.timer` (NEW, host-level) — 2-min timer
-- `/root/geekspace-network-fix.sh` — updated with dynamic discovery + alias
+**LLM Response Cache (L1 + L2)**
+- L1: In-memory Map (100 entries max, 5-min TTL, per-worker)
+- L2: Redis (5-min TTL, shared across PM2 workers, key prefix `llm:resp:`)
+- Cacheable for single-turn user messages only (no `forceProvider`)
+
+**In-flight Deduplication**
+- `inFlightRequests` Map: identical concurrent requests wait for first result instead of double-calling
+
+**Async Job Queue** (`server/src/services/job-queue.ts`)
+- `enqueueJob(type, payload, userId)` → returns job ID immediately
+- `getJobStatus(id)` → poll for result
+- Types: `voice:transcribe`, `voice:synthesize`, `image:generate`, `video:generate`, `video:stitch`
+- Backed by Redis (falls back to in-memory Map for single-worker dev)
+
+### Files Changed
+- `server/src/services/llm.ts` — complete routing rewrite + cache + dedupe + daily budget
+- `server/src/services/token-budget.ts` — `getDailyTokenUsage`, `isOverDailyBudget` added
+- `server/src/services/job-queue.ts` (NEW) — async job queue service
+- `server/src/config.ts` — `ollamaCloudBaseUrl/ApiKey/Model/Timeout` vars added
+- `.env.example` — `OLLAMA_CLOUD_*` vars documented
+- `server/src/test/api/llm-router.test.ts` (NEW) — 17 routing tests
+- `server/src/test/api/phase76.test.ts` (NEW) — 35 integration/static tests
+- `server/src/__tests__/llm-router.test.ts` — updated (excluded from vitest, kept for reference)
+- `ops/AI_PHASE_PLAN.md` — Phase 76 entry added
+
+### Test Exports Added (for test isolation)
+- `clearOllamaCache()` — resets module-level Ollama availability cache
+- `clearLLMCache()` — clears in-memory LLM response cache
 
 ---
 
 ## Verification Status
-- [x] CI pipeline: 5/5 jobs green (commit `66ac746`)
-- [x] E2E tests: 79 passed, 0 failed, 1 skipped
-- [x] Server unit tests: 74 passed
-- [x] Autonomy audit: 12/12 ALL CLEAR
-- [x] Production healthy (35 users, 0 errors)
-- [x] Staging healthy (HTTPS)
-- [x] All 7 Docker containers healthy
-- [x] OpenClaw alias present
-- [x] SSL certs valid (82d + 88d)
-- [x] Working tree clean
+- [x] Tests: 870/870 passed (76 test files)
+- [x] Phase gate: 7/7 ✅
+- [x] Brand guard: 0 violations
+- [x] TypeScript: clean (frontend + server)
+- [x] Staging: deployed + 11/11 smoke tests ✅
+- [x] Merged to main (de3fd29)
+- [x] Pushed to origin/main
 
 ---
 
 ## Known Issues / Open Risks
-- Pre-existing chunk size warning for index.js (738kB)
-- Staging DNS `staging.agentin.chat` now resolves correctly
-- Host Caddy `/etc/caddy/Caddyfile` not in git (host-level config)
-- Cronicle config at `/docker/cronicle-ngym/` not in git (tracked reference in `ops/cronicle/`)
+- `gh auth` credentials expired — PR created as direct merge instead
+- Pre-existing chunk size warning for index.js (738kB) — not a Phase 76 concern
+- `job-queue.ts` handlers not yet wired to voice/image routes — Phase 77 task
+- Staging containers from worktree build (phase-76-*) — clean up if disk space needed
 
 ---
 
-## Next Steps
-- Start Phase 76 (autonomous continuation)
-- Consider: CSRF tokens, virtual scroll for chat, frontend bundle splitting
+## Architecture Notes
+- Daily token budget check (`isOverDailyBudget`) is 10% of monthly budget
+- Monthly budget check (`shouldDegradeRouting`) degrades routing at 100% usage
+- Both checks only block edith and paid OpenRouter; Ollama/openrouter-free remain available
+- Job queue `processJob()` runs via `setImmediate()` — non-blocking for API routes
+
+---
+
+## Next Steps (Phase 77 candidates)
+- Wire job queue handlers to actual voice/image service calls
+- Frontend polling endpoint for job status (`GET /api/jobs/:id`)
+- Consider CSRF tokens (mentioned in phase 75 open risks)
+- Virtual scroll for chat history (bundle size optimization)
+- Frontend bundle splitting (recharts 431kB + index.js 738kB)
 - Next release train candidate: Phase 80
 
 ## Merge Status
-All changes committed and pushed to `main` (no PR — direct infra/CI fixes)
+Merged `ai/phase-20260301-phase76` → `main` (de3fd29)
+Pushed to `origin/main`
