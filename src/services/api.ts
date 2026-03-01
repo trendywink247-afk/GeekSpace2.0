@@ -306,6 +306,17 @@ export const usageService = {
 
   daily: (days = 7) =>
     api.get<Array<{ day: string; label: string; messages: number; credits: number }>>(`/usage/daily?days=${days}`),
+
+  today: () =>
+    api.get<{
+      plan: string;
+      tokenBudget: number;
+      tokenUsed: number;
+      tokenPercentage: number;
+      messages: { used: number; limit: number; percentage: number };
+      voice: { used: number; limit: number; percentage: number };
+      images: { used: number; limit: number; percentage: number };
+    }>('/usage/today'),
 };
 
 // ----- Billing -----------------------------------------------

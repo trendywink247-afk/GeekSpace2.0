@@ -619,7 +619,36 @@ export function SettingsPage() {
                 </div>
                 <h3 className="font-semibold text-[#E8E8F0]">{profile.name}</h3>
                 <p className="text-sm text-[#6B7280]">@{profile.username}</p>
-                <Badge variant="outline" className="mt-3 border-[#00FF88]/30 text-[#00FF88]">Pro Plan</Badge>
+                {/* 77.6: Dynamic plan badge */}
+                {(() => {
+                  const plan = user?.plan as string | undefined;
+                  if (!plan || plan === 'free') {
+                    return (
+                      <Badge variant="outline" className="mt-3 border-[#6B7280]/30 text-[#6B7280]">
+                        Free Plan
+                      </Badge>
+                    );
+                  }
+                  const isPremium = plan === 'yearly' || plan === 'halfyear' || plan === 'monthly';
+                  const label = plan === 'yearly' ? 'Premium — Yearly'
+                    : plan === 'halfyear' ? 'Premium — 6 Month'
+                    : plan === 'monthly' ? 'Premium — Monthly'
+                    : plan === 'intro' ? 'Intro Plan'
+                    : plan === 'team' ? 'Team Plan'
+                    : `${plan.charAt(0).toUpperCase()}${plan.slice(1)} Plan`;
+                  return (
+                    <Badge
+                      variant="outline"
+                      className="mt-3"
+                      style={{
+                        borderColor: isPremium ? 'rgba(0,240,255,0.4)' : 'rgba(0,255,136,0.3)',
+                        color: isPremium ? '#00F0FF' : '#00FF88',
+                      }}
+                    >
+                      {label}
+                    </Badge>
+                  );
+                })()}
               </CardContent>
             </Card>
 
