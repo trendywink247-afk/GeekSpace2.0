@@ -120,6 +120,9 @@ export function ConnectionsPage() {
   const [whatsappPolling, setWhatsappPolling] = useState(false);
   const [whatsappPollAttempts, setWhatsappPollAttempts] = useState(0);
 
+  // 78.6: Telegram last message time (from channel_links via status endpoint)
+  const [telegramLastPing, setTelegramLastPing] = useState<string | null>(null);
+
   // Health poll state (24.1) — keyed by integration type
   const [healthStatus, setHealthStatus] = useState<Record<string, 'healthy' | 'unhealthy' | 'checking'>>({});
   // 62.7: Ping latency badge — keyed by integration type
@@ -195,6 +198,15 @@ export function ConnectionsPage() {
     runHealthChecks();
     const interval = setInterval(runHealthChecks, 60_000);
     return () => clearInterval(interval);
+  }, [integrations]);
+
+  // 78.6: Fetch Telegram lastPing on mount if Telegram is connected
+  useEffect(() => {
+    const tg = integrations.find(i => i.type === 'telegram' && i.status === 'connected');
+    if (!tg) return;
+    integrationService.checkTelegramLink()
+      .then(r => { if (r.data.lastPing) setTelegramLastPing(r.data.lastPing); })
+      .catch(() => {});
   }, [integrations]);
 
   const connectedCount = integrations.filter(c => c.status === 'connected').length;
@@ -615,6 +627,14 @@ export function ConnectionsPage() {
                 <p className="text-xs text-[#6B7280]">
                   Scan the QR code above to connect
                 </p>
+                {/* 78.5: WhatsApp platform policy disclaimer */}
+                <div className="bg-[#25d366]/10 border border-[#25d366]/20 rounded-lg px-3 py-2 text-left">
+                  <p className="text-xs text-[#6B7280]">
+                    <span className="text-[#25d366] font-medium">Utility flows only</span> — reminders, OTP, and notifications.
+                    {' '}AI chat is available via the{' '}
+                    <a href="https://ai.agentin.chat" target="_blank" rel="noopener noreferrer" className="text-[#00F0FF] underline">Agentin web app</a>.
+                  </p>
+                </div>
                 <div className="flex items-center justify-center gap-2 text-xs text-[#00FF88]">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   Waiting for scan...
@@ -846,11 +866,17 @@ export function ConnectionsPage() {
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-[#00F0FF]/10 text-xs text-[#6B7280]">
-                      {connection.lastSync ? (
-                        <span>Last synced: {timeAgo(connection.lastSync)}</span>
-                      ) : (
-                        <span>Never synced</span>
-                      )}
+                      <div className="flex flex-col gap-0.5">
+                        {connection.lastSync ? (
+                          <span>Last synced: {timeAgo(connection.lastSync)}</span>
+                        ) : (
+                          <span>Never synced</span>
+                        )}
+                        {/* 78.6: Show last Telegram message time for Telegram connections */}
+                        {connection.type === 'telegram' && connection.status === 'connected' && telegramLastPing && (
+                          <span className="text-[#00F0FF]">Last message: {timeAgo(telegramLastPing)}</span>
+                        )}
+                      </div>
                       {connection.status === 'connected' && (
                         <span>{connection.requestsToday} req today</span>
                       )}

@@ -903,6 +903,22 @@ db.exec(`
 try { db.exec(`ALTER TABLE webhook_dead_letters ADD COLUMN retry_count INTEGER DEFAULT 0`); } catch { /* already exists */ }
 try { db.exec(`ALTER TABLE webhook_dead_letters ADD COLUMN last_error TEXT DEFAULT NULL`); } catch { /* already exists */ }
 
+// Phase 78.7: Reminder dead-letter log — captures failed Telegram reminder deliveries
+db.exec(`
+  CREATE TABLE IF NOT EXISTS reminder_dead_letters (
+    id TEXT PRIMARY KEY,
+    reminder_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    channel TEXT NOT NULL DEFAULT 'telegram',
+    error TEXT DEFAULT 'send_failed',
+    attempts INTEGER DEFAULT 1,
+    last_attempt_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_reminder_dead_letters_user ON reminder_dead_letters(user_id, created_at);
+  CREATE INDEX IF NOT EXISTS idx_reminder_dead_letters_reminder ON reminder_dead_letters(reminder_id);
+`);
+
 // Phase 59.9: SEO meta description for portfolio
 try { db.exec(`ALTER TABLE portfolios ADD COLUMN meta_description TEXT DEFAULT ''`); } catch { /* already exists */ }
 

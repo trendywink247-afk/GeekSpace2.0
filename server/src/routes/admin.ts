@@ -650,6 +650,32 @@ adminRouter.get('/audit', requireAdminToken, (req: Request, res: Response): void
   }
 });
 
+// ---- /dead-letters — failed reminder delivery log (78.7) ----
+adminRouter.get('/dead-letters', requireAdminToken, (req: Request, res: Response): void => {
+  try {
+    const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit || '50'), 10)));
+    const entries = db.prepare(
+      `SELECT rdl.id, rdl.reminder_id, rdl.user_id, u.username, rdl.channel,
+              rdl.error, rdl.attempts, rdl.last_attempt_at, rdl.created_at,
+              r.text as reminder_text
+       FROM reminder_dead_letters rdl
+       LEFT JOIN users u ON u.id = rdl.user_id
+       LEFT JOIN reminders r ON r.id = rdl.reminder_id
+       ORDER BY rdl.created_at DESC
+       LIMIT ?`
+    ).all(limit) as {
+      id: string; reminder_id: string; user_id: string; username: string | null;
+      channel: string; error: string; attempts: number; last_attempt_at: string;
+      created_at: string; reminder_text: string | null;
+    }[];
+    const total = (db.prepare('SELECT COUNT(*) as c FROM reminder_dead_letters').get() as { c: number }).c;
+    res.json({ entries, total, limit });
+  } catch (err) {
+    logger.error({ err }, 'Admin dead-letters query failed');
+    res.status(500).json({ error: 'Dead-letters query failed' });
+  }
+});
+
 // ---- /analytics/feedback endpoint — thumbs-down analytics ----
 adminRouter.get('/analytics/feedback', requireAdminToken, (_req: Request, res: Response): void => {
   try {

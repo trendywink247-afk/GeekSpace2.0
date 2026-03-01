@@ -198,9 +198,12 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     return;
   }
 
-  // 3. Update last_message_at
+  // 3. Update last_message_at in channel_links + last_sync in integrations (78.6: reflect real activity time)
+  const now = new Date().toISOString();
   db.prepare('UPDATE channel_links SET last_message_at = ? WHERE channel = ? AND external_id = ?')
-    .run(new Date().toISOString(), msg.channel, msg.externalId);
+    .run(now, msg.channel, msg.externalId);
+  db.prepare("UPDATE integrations SET last_sync = ? WHERE user_id = ? AND type = ?")
+    .run(now, userId, msg.channel);
 
   // 4. Log user message + extract memories
   logConversation(userId, 'user', msg.text, requestId);
