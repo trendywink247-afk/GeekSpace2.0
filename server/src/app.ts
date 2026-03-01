@@ -43,6 +43,8 @@ import { socialMediaRouter } from './routes/social-media.js';
 import { activityRouter } from './routes/activity.js';
 import { routesListRouter } from './routes/routes-list.js';
 import { suggestionsRouter } from './routes/suggestions.js';
+import { voiceRouter } from './routes/voice.js';
+import { jobsRouter } from './routes/jobs.js';
 import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
@@ -407,6 +409,8 @@ export function createApp(): express.Application {
   app.use('/api/activity', activityRouter);
   app.use('/api/routes', routesListRouter);
   app.use('/api/suggestions', suggestionsRouter);
+  app.use('/api/voice', voiceRouter);
+  app.use('/api/jobs', jobsRouter);
 
   // ---- Test routes (only in test mode) ----
   if (config.isTestMode) {

@@ -1160,4 +1160,71 @@ export const suggestionService = {
     api.get<{ id: string; userId: string; title: string; body: string; tags: string[]; status: string; createdAt: string; updatedAt: string; upvotes: number; downvotes: number }>(`/suggestions/${id}`),
 };
 
+// ----- Voice (STT + TTS) — Phase 80 -------------------------
+
+export const voiceService = {
+  /**
+   * Transcribe an audio blob. Returns a jobId immediately.
+   * Poll /api/jobs/:jobId until status='done' for {text, duration_seconds}.
+   */
+  transcribe: async (audioBlob: Blob): Promise<{ jobId: string }> => {
+    const response = await fetch('/api/voice/transcribe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': audioBlob.type || 'audio/webm',
+        Authorization: `Bearer ${localStorage.getItem('authToken') || ''}`,
+      },
+      body: audioBlob,
+    });
+    if (response.status === 429) {
+      const data = await response.json() as { error: string; used: number; limit: number };
+      throw Object.assign(new Error(data.error), { code: 'VOICE_CAP', used: data.used, limit: data.limit });
+    }
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({})) as { error?: string };
+      throw new Error(data.error || 'Transcription request failed');
+    }
+    return response.json() as Promise<{ jobId: string }>;
+  },
+
+  /**
+   * Synthesize speech from text. Returns a jobId immediately.
+   * Poll /api/jobs/:jobId until status='done' for {audioBase64, mimeType}.
+   */
+  speak: (text: string, voice?: string): Promise<{ jobId: string }> =>
+    api.post<{ jobId: string }>('/voice/speak', { text, voice }).then(r => r.data),
+};
+
+// ----- Jobs (async polling) — Phase 80 ----------------------
+
+export type JobStatus = 'pending' | 'processing' | 'done' | 'failed';
+
+export interface JobResult {
+  id: string;
+  type: string;
+  status: JobStatus;
+  result?: unknown;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const jobsService = {
+  /** Poll an async job by ID. */
+  get: (jobId: string) => api.get<JobResult>(`/jobs/${jobId}`).then(r => r.data),
+
+  /**
+   * Poll until done or failed (max attempts, 1s interval).
+   * Throws if job fails or max attempts exceeded.
+   */
+  pollUntilDone: async (jobId: string, maxAttempts = 30, intervalMs = 1000): Promise<JobResult> => {
+    for (let i = 0; i < maxAttempts; i++) {
+      const job = await jobsService.get(jobId);
+      if (job.status === 'done' || job.status === 'failed') return job;
+      await new Promise(r => setTimeout(r, intervalMs));
+    }
+    throw new Error('Voice job timed out');
+  },
+};
+
 export default api;

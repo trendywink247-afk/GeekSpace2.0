@@ -4,6 +4,25 @@
 
 ---
 
+## Post-Phase 80 (2026-03-01) — Voice Pipeline (STT + TTS)
+
+*Status: Committed to main*
+
+### What's New
+- **Voice recording**: Tap the microphone button to record audio — your voice is transcribed and sent as a chat message using OpenAI Whisper (async job, non-blocking)
+- **Text-to-speech**: Every agent message has a speaker icon — tap it to hear the response read aloud via OpenAI TTS (async job, plays automatically when ready)
+- **Daily voice cap**: Free users get 5 voice calls/day (STT + TTS combined). Paid plans get 30–100/day. Cap-hit users see a clear upgrade prompt.
+- **Async job polling**: All voice operations run in the background — never blocks the chat UI. Status tracked via `GET /api/jobs/:id`.
+
+### Under the Hood
+- `POST /api/voice/transcribe` — raw audio upload (up to 10MB), per-route body parsing, returns `{ jobId }`
+- `POST /api/voice/speak` — JSON `{ text }`, returns `{ jobId }`
+- `GET /api/jobs/:id` — polls job status; user-isolated (403 masqueraded as 404)
+- Voice cap enforced via `usage_events` table; `voice.stt` and `voice.tts` tools logged per call
+- TODO stubs for local Whisper / piper-tts when VPS audio deps are available
+
+---
+
 ## Post-Phase 79 (2026-03-01) — Structured Memory Pipeline + Reminder Consistency
 
 *Status: Committed to main*
