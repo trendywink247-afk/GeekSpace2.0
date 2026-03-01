@@ -581,3 +581,21 @@ Infrastructure hardening, staging environment, autonomy tooling, CI/E2E fixes.
 | 76.10 | Brand guard (0 violations), TypeScript clean, phase gate 7/7 ✅ | ✅ | Verification |
 | 76.11 | Deploy to staging + smoke test | ⏳ | Dev/Ops |
 | 76.12 | Commit + PR + merge to main | ⏳ | Dev/Ops |
+
+## Phase 78 — Telegram/WhatsApp Stability + Connections Polish — COMPLETE ✓
+**Branch:** `ai/phase-20260302-phase78` | **Commit:** 30cb010 | **Tests:** 916/916
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 78.1 | CI baseline + branch setup | ✅ | Reliability |
+| 78.2 | Telegram status endpoint: +connected, +lastPing, +botConfigured | ✅ | Reliability |
+| 78.3 | Telegram disconnect: wrap 3 ops in db.transaction() (atomic) | ✅ | Reliability |
+| 78.4 | Telegram /start link_{code} auto-registration (verified pre-existing) | ✅ | Feature |
+| 78.5 | WhatsApp utility-flows disclaimer in ConnectionsPage QR dialog | ✅ | UI/UX |
+| 78.6 | ConnectionsPage: telegramLastPing display + integrations.last_sync sync | ✅ | UI/UX |
+| 78.7 | Reminder dead-letter table + scheduler logging + admin endpoint | ✅ | Reliability |
+| 78.8 | Auth rate limits verified (10/15min login, 5/15min signup) | ✅ | Security |
+| 78.9 | phase78.test.ts — 24 tests (916/916 total) | ✅ | Testing |
+| 78.10 | Brand guard 0 violations + phase gate 7/7 | ✅ | Verification |
+| 78.11 | Staging smoke tests 11/11 | ✅ | Dev/Ops |
+| 78.12 | Commit + merge to main + push | ✅ | Dev/Ops |

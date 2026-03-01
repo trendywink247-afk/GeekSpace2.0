@@ -4,6 +4,23 @@
 
 ---
 
+## Post-Phase 78 (2026-03-01) — Telegram/WhatsApp Stability + Connections Polish
+
+*Status: Committed to main*
+
+### What's New
+- **WhatsApp disclaimer**: Dialog now shows "Utility flows only — reminders, OTP, notifications" with link to Agentin web app
+- **Telegram connection polish**: Connection card now shows "Last message: X ago" from actual Telegram activity
+- **Reminder dead-letter monitoring**: Failed Telegram reminder deliveries are now logged to `reminder_dead_letters` table; viewable via admin dashboard
+- **Telegram status API**: `/api/integrations/telegram/status` now returns `connected`, `lastPing`, and `botConfigured` fields
+
+### What's Fixed
+- **Telegram disconnect atomicity**: Unlinking Telegram now uses a DB transaction — no more orphaned state if any of the 3 DB ops fail
+- **Connection activity tracking**: `integrations.last_sync` now updates on every incoming Telegram/WhatsApp message (previously only updated on link)
+- **Auth rate limits verified**: Login (10 req/15min) and signup (5 req/15min) limits confirmed working
+
+---
+
 ## Post-Phase 75 (2026-02-28) — Infrastructure + CI Hardening
 
 *Status: Committed to main*
