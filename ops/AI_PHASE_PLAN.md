@@ -563,3 +563,21 @@ Infrastructure hardening, staging environment, autonomy tooling, CI/E2E fixes.
 | I.9 | Fix E2E reminders mark-complete test isolation (data-testid cards) | ✅ | Testing |
 | I.10 | Full verification (79 E2E + 74 unit, CI green, audit 12/12) | ✅ | Verification |
 
+
+## Phase 76 — AI Gateway + Smart Routing (IN PROGRESS)
+**Branch:** `ai/phase-20260301-phase76` | **Tests:** 870/870
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 76.1 | Add ollama-cloud provider (OLLAMA_CLOUD_BASE_URL, Bearer auth, config) | ✅ | Feature |
+| 76.2 | Fix routing ladder: ollama → openrouter-free → ollama-cloud → edith(premium-only) | ✅ | Performance |
+| 76.3 | Remove auto-escalation to edith for complex intent (pickProvider fixed) | ✅ | Reliability |
+| 76.4 | Wire isOverDailyBudget into routeChat (daily token budget enforcement) | ✅ | Reliability |
+| 76.5 | Add Redis L2 cache for LLM responses (5-min TTL) | ✅ | Performance |
+| 76.6 | Add Redis dedupe: in-flight request Map prevents duplicate API calls | ✅ | Performance |
+| 76.7 | Async job queue (job-queue.ts) for voice/image — non-blocking API | ✅ | Reliability |
+| 76.8 | Update .env.example with OLLAMA_CLOUD_* vars | ✅ | Dev/Ops |
+| 76.9 | Routing tests: 17 new tests (waterfall order, no complexity_escalation, daily budget) | ✅ | Testing |
+| 76.10 | Brand guard (0 violations), TypeScript clean, phase gate 7/7 ✅ | ✅ | Verification |
+| 76.11 | Deploy to staging + smoke test | ⏳ | Dev/Ops |
+| 76.12 | Commit + PR + merge to main | ⏳ | Dev/Ops |

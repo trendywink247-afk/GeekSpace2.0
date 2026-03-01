@@ -1,13 +1,19 @@
 // ============================================================
-// GeekSpace LLM Router
+// GeekSpace LLM Router — Phase 76: AI Gateway + Smart Routing
 //
-// Local Engine: Ollama — fast/cheap, handles simple tasks
-// Cloud Engine: OpenRouter — handles complex/coding/planning
-// Premium Engine: Moonshot Reasoning — heavy reasoning
-// Automation Engine: PicoClaw — lightweight automation tasks
-// Orchestration: Pico-Kimi Bridge — multi-agent workflows
+// Routing Waterfall (Phase 76+):
+//   1. Ollama local     — always try first (free, fast)
+//   2. OpenRouter Free  — if Ollama fails
+//   3. Ollama Cloud     — if OpenRouter Free fails
+//   4. Edith/Moonshot   — PREMIUM ONLY, last resort
+//   5. Builtin fallback — error message, no real AI
 //
-// Flow: Intent classify → Route → Call → Log usage
+// Automation: picoclaw → ollama waterfall
+// Edith: NEVER auto-selected for "complex" intent. Only when
+//        user is premium AND all other providers have failed.
+//
+// Caching: L1 = in-memory (per-worker), L2 = Redis (shared)
+// Deduplication: in-flight Map prevents duplicate API calls
 // ============================================================
 
 import { createHash } from 'crypto';
@@ -15,12 +21,13 @@ import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
 import { getCurrentFreeModel, switchToNextFreeModel, getUserPreferredFreeModel } from './openrouter-models.js';
-import { recordTokenUsage, shouldDegradeRouting } from './token-budget.js';
+import { recordTokenUsage, shouldDegradeRouting, isOverDailyBudget } from './token-budget.js';
+import { cacheGet, cacheSet } from './cache.js';
 
 // ---- Types ----
 
 export type Intent = 'simple' | 'planning' | 'coding' | 'automation' | 'complex';
-export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'edith' | 'picoclaw' | 'builtin';
+export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'edith' | 'picoclaw' | 'builtin' | 'ollama-cloud';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -45,14 +52,15 @@ export interface RoutingTrace {
   timestamp: string;
   userId: string;
   routeDecision: Provider;
-  reason: 
+  reason:
     | 'ollama_healthy'
-    | 'ollama_unreachable' 
+    | 'ollama_unreachable'
     | 'ollama_timeout'
+    | 'ollama_cloud_available'
     | 'openrouter_free_available'
     | 'openrouter_error'
-    | 'complexity_escalation'
     | 'budget_degradation'
+    | 'daily_budget_exceeded'
     | 'manual_override'
     | 'fallback_chain';
   latencyMs: number;
@@ -74,11 +82,13 @@ export function clearRoutingTraces(): void {
   routingTraces.length = 0;
 }
 
-// ---- Simple In-Memory LLM Response Cache ----
-// Only for simple, single-turn queries. Max 100 entries (LRU). TTL: 5 minutes.
+// ---- In-Memory LLM Response Cache (L1) ----
+// Per-worker cache, fast, non-persistent. Max 100 entries, TTL 5 min.
 
-const LLM_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const LLM_CACHE_TTL_MS = 5 * 60 * 1000;
+const LLM_CACHE_TTL_SEC = 300;
 const LLM_CACHE_MAX = 100;
+const LLM_CACHE_KEY_PREFIX = 'llm:resp:';
 
 interface LLMCacheEntry {
   reply: string;
@@ -93,7 +103,7 @@ function makeCacheKey(messages: ChatMessage[], systemPrompt?: string): string {
     .digest('hex');
 }
 
-function getCached(key: string): string | null {
+function getMemCached(key: string): string | null {
   const entry = llmCache.get(key);
   if (!entry) return null;
   if (Date.now() - entry.timestamp > LLM_CACHE_TTL_MS) {
@@ -103,9 +113,8 @@ function getCached(key: string): string | null {
   return entry.reply;
 }
 
-function setCached(key: string, reply: string): void {
-  if (!reply) return; // never cache empty replies
-  // LRU eviction: delete oldest when full
+function setMemCached(key: string, reply: string): void {
+  if (!reply) return;
   if (llmCache.size >= LLM_CACHE_MAX) {
     const oldestKey = llmCache.keys().next().value;
     if (oldestKey) llmCache.delete(oldestKey);
@@ -113,20 +122,44 @@ function setCached(key: string, reply: string): void {
   llmCache.set(key, { reply, timestamp: Date.now() });
 }
 
+// ---- Redis Cache Layer (L2) ----
+// Shared across PM2 workers. Survives worker restarts.
+
+async function getRedisCached(key: string): Promise<string | null> {
+  try {
+    return await cacheGet(LLM_CACHE_KEY_PREFIX + key);
+  } catch {
+    return null;
+  }
+}
+
+async function setRedisCached(key: string, reply: string): Promise<void> {
+  try {
+    await cacheSet(LLM_CACHE_KEY_PREFIX + key, reply, LLM_CACHE_TTL_SEC);
+  } catch {
+    // Redis failure is non-fatal
+  }
+}
+
 export function getLLMCacheStats(): { size: number; maxSize: number; ttlMs: number } {
   return { size: llmCache.size, maxSize: LLM_CACHE_MAX, ttlMs: LLM_CACHE_TTL_MS };
 }
 
+/** Clear the in-memory LLM cache. Exported for test isolation only. */
+export function clearLLMCache(): void {
+  llmCache.clear();
+}
 
+// ---- In-Flight Request Deduplication ----
+// Prevents duplicate API calls for identical cacheable requests within the same worker.
+
+const inFlightRequests = new Map<string, Promise<string>>();
+
+// ---- Routing Trace Logger ----
 
 function recordRoutingTrace(trace: RoutingTrace): void {
   routingTraces.push(trace);
-  // Keep only last 1000
-  if (routingTraces.length > 1000) {
-    routingTraces.shift();
-  }
-  
-  // Log structured info (no secrets, no prompt content)
+  if (routingTraces.length > 1000) routingTraces.shift();
   logger.info({
     routing: {
       decision: trace.routeDecision,
@@ -164,7 +197,6 @@ export function classifyIntent(message: string, userId?: string): Intent {
   const lower = message.toLowerCase();
   const wordCount = message.split(/\s+/).length;
 
-  // Long messages are more likely complex
   if (wordCount > 80) {
     logger.info({ intent: 'complex', userId, messageLength: message.length, reason: 'word_count_exceeded' }, 'llm:intent_classified');
     return 'complex';
@@ -194,8 +226,13 @@ export function classifyIntent(message: string, userId?: string): Intent {
 let ollamaAvailable: boolean | null = null;
 let ollamaCheckTime = 0;
 
+/** Reset Ollama availability cache. Exported for test isolation only. */
+export function clearOllamaCache(): void {
+  ollamaAvailable = null;
+  ollamaCheckTime = 0;
+}
+
 async function isOllamaAvailable(): Promise<boolean> {
-  // Cache check for 30 seconds
   if (ollamaAvailable !== null && Date.now() - ollamaCheckTime < 30_000) {
     return ollamaAvailable;
   }
@@ -216,12 +253,24 @@ function isOpenRouterAvailable(): boolean {
   return !!config.openrouterApiKey;
 }
 
+function isOpenRouterFreeAvailable(): boolean {
+  return !!config.openrouterFreeApiKey && !!config.openrouterFreeModel;
+}
+
+function isOllamaCloudAvailable(): boolean {
+  return !!config.ollamaCloudBaseUrl && !!config.ollamaCloudApiKey;
+}
+
 function isEdithAvailable(): boolean {
-  // Now checks for direct Moonshot API access (no longer needs EDITH bridge)
   return !!config.openrouterApiKey && !!config.openrouterBaseUrl;
 }
 
-// ---- Ollama Streaming Call ----
+// Premium plans that can access Edith (Moonshot reasoning) as last resort
+function isPremiumPlan(plan?: string): boolean {
+  return ['halfyear', 'yearly'].includes(plan || '');
+}
+
+// ---- Provider Callers ----
 
 export async function streamOllama(
   messages: ChatMessage[],
@@ -255,7 +304,6 @@ export async function streamOllama(
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
 
-    // Ollama sends newline-delimited JSON
     const lines = buffer.split('\n');
     buffer = lines.pop() || '';
 
@@ -268,9 +316,7 @@ export async function streamOllama(
           prompt_eval_count?: number;
           eval_count?: number;
         };
-        if (data.message?.content) {
-          onChunk(data.message.content);
-        }
+        if (data.message?.content) onChunk(data.message.content);
         if (data.done) {
           tokensIn = data.prompt_eval_count || 0;
           tokensOut = data.eval_count || 0;
@@ -281,8 +327,6 @@ export async function streamOllama(
 
   return { tokensIn, tokensOut };
 }
-
-// ---- Ollama Call ----
 
 async function callOllama(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
   const start = Date.now();
@@ -316,8 +360,7 @@ async function callOllama(messages: ChatMessage[]): Promise<{ content: string; t
   };
 
   const content = data.message?.content || '';
-  const elapsed = Date.now() - start;
-  logger.debug({ provider: 'ollama', elapsed, model: config.ollamaModel }, 'Ollama response');
+  logger.debug({ provider: 'ollama', elapsed: Date.now() - start, model: config.ollamaModel }, 'Ollama response');
 
   return {
     content,
@@ -326,7 +369,42 @@ async function callOllama(messages: ChatMessage[]): Promise<{ content: string; t
   };
 }
 
-// ---- OpenRouter Call (OpenAI-compatible) ----
+// ---- Ollama Cloud (OpenAI-compatible with Bearer auth) ----
+
+async function callOllamaCloud(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+  const response = await fetch(`${config.ollamaCloudBaseUrl}/v1/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.ollamaCloudApiKey}`,
+    },
+    body: JSON.stringify({
+      model: config.ollamaCloudModel,
+      messages,
+      max_tokens: config.ollamaMaxTokens,
+    }),
+    signal: AbortSignal.timeout(config.ollamaCloudTimeout),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`Ollama Cloud returned ${response.status}: ${text}`);
+  }
+
+  const data = await response.json() as {
+    choices?: Array<{ message?: { content: string } }>;
+    usage?: { prompt_tokens: number; completion_tokens: number };
+  };
+
+  const content = data.choices?.[0]?.message?.content || '';
+  return {
+    content,
+    tokensIn: data.usage?.prompt_tokens || 0,
+    tokensOut: data.usage?.completion_tokens || 0,
+  };
+}
+
+// ---- OpenRouter Calls (OpenAI-compatible) ----
 
 async function callOpenRouterWithModel(
   messages: ChatMessage[],
@@ -376,7 +454,6 @@ async function callOpenRouterFree(messages: ChatMessage[], userId?: string): Pro
   const MAX_ATTEMPTS = 3;
 
   const preferredModel = userId ? getUserPreferredFreeModel(userId) : null;
-
   let lastError: Error = new Error('OpenRouter Free: no attempts made');
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -398,7 +475,6 @@ async function callOpenRouterFree(messages: ChatMessage[], userId?: string): Pro
       signal: AbortSignal.timeout(config.openrouterTimeout),
     });
 
-    // On quota/rate-limit errors, switch model and retry immediately
     if (!response.ok) {
       const text = await response.text().catch(() => '');
       const isQuotaError =
@@ -412,10 +488,9 @@ async function callOpenRouterFree(messages: ChatMessage[], userId?: string): Pro
         logger.warn({ model, status: response.status, attempt }, 'OpenRouter Free quota/rate error — switching model');
         await switchToNextFreeModel(model);
         lastError = new Error(`OpenRouter Free model ${model} quota exceeded (${response.status})`);
-        continue; // retry with next model
+        continue;
       }
 
-      // Non-quota error — throw immediately without retrying
       throw new Error(`OpenRouter Free returned ${response.status}: ${text}`);
     }
 
@@ -435,11 +510,7 @@ async function callOpenRouterFree(messages: ChatMessage[], userId?: string): Pro
   throw lastError;
 }
 
-function isOpenRouterFreeAvailable(): boolean {
-  return !!config.openrouterFreeApiKey && !!config.openrouterFreeModel;
-}
-
-// ---- Moonshot Reasoning Call (direct HTTP — replaces broken EDITH/WS bridge) ----
+// ---- Moonshot Reasoning Call (direct HTTP) ----
 
 async function callMoonshotReasoning(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
   if (!config.openrouterApiKey) {
@@ -478,44 +549,77 @@ async function callMoonshotReasoning(messages: ChatMessage[]): Promise<{ content
   };
 }
 
+// ---- Waterfall Fallback Helper ----
+// Tries each provider in order, skipping unavailable ones.
+// Returns null if all fail (caller uses builtin fallback).
+
+type CallResult = { content: string; tokensIn: number; tokensOut: number; provider: Provider };
+
+async function tryFallbackChain(
+  providers: Provider[],
+  fullMessages: ChatMessage[],
+  userId: string | undefined,
+): Promise<CallResult | null> {
+  for (const p of providers) {
+    try {
+      switch (p) {
+        case 'ollama': {
+          const ok = await isOllamaAvailable();
+          if (!ok) continue;
+          const r = await callOllama(fullMessages);
+          return { ...r, provider: 'ollama' };
+        }
+        case 'openrouter-free': {
+          if (!isOpenRouterFreeAvailable()) continue;
+          const r = await callOpenRouterFree(fullMessages, userId);
+          return { ...r, provider: 'openrouter-free' };
+        }
+        case 'ollama-cloud': {
+          if (!isOllamaCloudAvailable()) continue;
+          const r = await callOllamaCloud(fullMessages);
+          return { ...r, provider: 'ollama-cloud' };
+        }
+        case 'edith': {
+          if (!isEdithAvailable()) continue;
+          const r = await callMoonshotReasoning(fullMessages);
+          return { ...r, provider: 'edith' };
+        }
+        case 'openrouter': {
+          if (!isOpenRouterAvailable()) continue;
+          const r = await callOpenRouter(fullMessages);
+          return { ...r, provider: 'openrouter' };
+        }
+      }
+    } catch (e) {
+      logger.warn({ provider: p, error: String(e) }, 'llm:fallback_chain_provider_failed');
+    }
+  }
+  return null;
+}
+
 // ---- Credit Cost ----
-//
-// Every AI call costs at least 1 credit so the meter always moves.
-//
-// Flat costs per call:
-//   ollama           →  1 (local, cheap)
-//   openrouter-free  →  2 (free cloud models)
-//   picoclaw         →  1 (automation sidecar)
-//   builtin          →  0 (fallback, no real AI)
-//
-// Token-based costs (per 1K tokens):
-//   openrouter (k2.5)       →  5
-//   edith (k2-thinking)     → 10
-//
-// Minimum per premium call: 10 credits.
 
 import { db } from '../db/index.js';
 
 const FLAT_CREDIT_COSTS: Partial<Record<Provider, number>> = {
   ollama:            1,
+  'ollama-cloud':    2,
   'openrouter-free': 2,
   picoclaw:          1,
   builtin:           0,
 };
 
 const TOKEN_CREDIT_RATES: Partial<Record<Provider, number>> = {
-  openrouter: 5,   // kimi-k2.5 — standard cloud
-  edith:      10,  // kimi-k2-thinking — heavy reasoning
+  openrouter: 5,
+  edith:      10,
 };
 
 const MIN_PREMIUM_CREDITS = 10;
 
 export function computeCreditCost(provider: Provider, tokensIn: number, tokensOut: number): number {
-  // Flat-cost providers
   const flat = FLAT_CREDIT_COSTS[provider];
   if (flat !== undefined) return flat;
 
-  // Token-based providers
   const rate = TOKEN_CREDIT_RATES[provider];
   if (rate) {
     const totalTokens = tokensIn + tokensOut;
@@ -526,7 +630,6 @@ export function computeCreditCost(provider: Provider, tokensIn: number, tokensOu
   return 0;
 }
 
-// Deduct credits from the subscription table after each LLM call
 export function deductSubscriptionCredits(userId: string, credits: number): void {
   if (credits <= 0) return;
   db.prepare(`
@@ -537,31 +640,27 @@ export function deductSubscriptionCredits(userId: string, credits: number): void
   `).run(credits, credits, userId);
 }
 
-// Legacy USD estimate (kept for usage_events.cost_usd column)
 function estimateCost(provider: Provider, tokensIn: number, tokensOut: number): number {
   switch (provider) {
-    case 'ollama': return 0;
+    case 'ollama':          return 0;
+    case 'ollama-cloud':    return 0;
     case 'openrouter-free': return 0;
-    case 'openrouter': return (tokensIn * 0.0000006) + (tokensOut * 0.000002);
-    case 'edith': return (tokensIn * 0.0000012) + (tokensOut * 0.000004);
-    case 'picoclaw': return 0;
-    case 'builtin': return 0;
-    default: return 0;
+    case 'openrouter':      return (tokensIn * 0.0000006) + (tokensOut * 0.000002);
+    case 'edith':           return (tokensIn * 0.0000012) + (tokensOut * 0.000004);
+    case 'picoclaw':        return 0;
+    case 'builtin':         return 0;
+    default:                return 0;
   }
 }
 
 // ---- Manual Override Helper (TEST_MODE only) ----
 
 export function getManualOverride(): Provider | null {
-  // Only allow manual override in TEST_MODE
   if (!config.isTestMode) return null;
-  
-  // Check env var
   const envOverride = process.env.FORCE_LLM_PROVIDER as Provider;
-  if (envOverride && ['ollama', 'openrouter', 'openrouter-free', 'edith', 'picoclaw', 'builtin'].includes(envOverride)) {
+  if (envOverride && ['ollama', 'openrouter', 'openrouter-free', 'edith', 'picoclaw', 'builtin', 'ollama-cloud'].includes(envOverride)) {
     return envOverride;
   }
-  
   return null;
 }
 
@@ -572,26 +671,23 @@ export async function routeChat(
   opts?: {
     forceProvider?: Provider;
     userCredits?: number;
+    userPlan?: string;        // Used to gate Edith (premium-only last resort)
     systemPrompt?: string;
     agentName?: string;
     userId?: string;
-    requestHeaders?: Record<string, string>; // For X-Model-Route header (TEST_MODE only)
+    requestHeaders?: Record<string, string>;
   },
 ): Promise<LLMResponse> {
   const start = Date.now();
   const userMessage = messages[messages.length - 1]?.content || '';
   const intent = classifyIntent(userMessage, opts?.userId);
-  
-  // Estimate tokens (rough heuristic)
   const tokensEstimate = Math.ceil(userMessage.length / 4) + 100;
 
-  // Build full message list with system prompt
   const fullMessages: ChatMessage[] = [];
   if (opts?.systemPrompt) {
     fullMessages.push({ role: 'system', content: opts.systemPrompt });
   }
   fullMessages.push(...messages);
-
 
   // ---- Cache check (simple / single-turn queries only) ----
   const isCacheable =
@@ -602,116 +698,122 @@ export async function routeChat(
   const cacheKey = isCacheable ? makeCacheKey(messages, opts?.systemPrompt) : '';
 
   if (isCacheable && cacheKey) {
-    const cached = getCached(cacheKey);
-    if (cached) {
-      logger.debug({ cacheKey, intent, userId: opts?.userId }, 'LLM cache hit');
-      return {
-        reply: cached,
-        provider: 'builtin' as Provider,
-        model: 'cache',
-        tokensIn: 0,
-        tokensOut: 0,
-        latencyMs: 0,
-        costEstimate: 0,
-        creditCost: 0,
-        intent,
-      };
+    // L1: in-memory cache (fastest)
+    const memHit = getMemCached(cacheKey);
+    if (memHit) {
+      logger.debug({ cacheKey, intent, userId: opts?.userId, layer: 'memory' }, 'LLM cache hit');
+      return { reply: memHit, provider: 'builtin', model: 'cache', tokensIn: 0, tokensOut: 0, latencyMs: 0, costEstimate: 0, creditCost: 0, intent };
+    }
+
+    // L2: Redis cache (shared across PM2 workers)
+    const redisHit = await getRedisCached(cacheKey);
+    if (redisHit) {
+      logger.debug({ cacheKey, intent, userId: opts?.userId, layer: 'redis' }, 'LLM cache hit');
+      setMemCached(cacheKey, redisHit); // warm L1
+      return { reply: redisHit, provider: 'builtin', model: 'cache', tokensIn: 0, tokensOut: 0, latencyMs: 0, costEstimate: 0, creditCost: 0, intent };
+    }
+
+    // In-flight deduplication: if same request is in-flight, wait instead of double-calling
+    const existing = inFlightRequests.get(cacheKey);
+    if (existing) {
+      logger.debug({ cacheKey, userId: opts?.userId }, 'LLM dedupe: waiting for in-flight request');
+      try {
+        const deduped = await existing;
+        if (deduped) {
+          return { reply: deduped, provider: 'builtin', model: 'cache', tokensIn: 0, tokensOut: 0, latencyMs: 0, costEstimate: 0, creditCost: 0, intent };
+        }
+      } catch {
+        // In-flight failed — proceed with own request
+      }
     }
   }
 
-  // Check manual override (TEST_MODE only)
+  // ---- Manual override (TEST_MODE only) ----
   let manualOverride: Provider | null = null;
   if (config.isTestMode) {
-    // Check header
     const headerOverride = opts?.requestHeaders?.['x-model-route'] as Provider;
-    if (headerOverride && ['ollama', 'openrouter', 'openrouter-free', 'edith', 'picoclaw', 'builtin'].includes(headerOverride)) {
+    if (headerOverride && ['ollama', 'openrouter', 'openrouter-free', 'edith', 'picoclaw', 'builtin', 'ollama-cloud'].includes(headerOverride)) {
       manualOverride = headerOverride;
     }
-    // Check env var as fallback
-    if (!manualOverride) {
-      manualOverride = getManualOverride();
-    }
+    if (!manualOverride) manualOverride = getManualOverride();
   }
 
-  // Determine routing — three-tier system:
-  //   Tier 1 (free):     Ollama local — default for simple tasks
-  //   Tier 2 (free):     OpenRouter Free — fallback for complex when Ollama fails
-  //   Tier 3 (premium):  Moonshot/Edith — escalation for complex tasks
-  let provider: Provider = manualOverride || opts?.forceProvider || 'ollama';
-  let routingReason: RoutingTrace['reason'] = manualOverride ? 'manual_override' : 'ollama_healthy';
-  let ollamaAvailable = false;
+  // ---- Phase 76 Provider Selection: Waterfall ----
+  // Waterfall order: ollama → openrouter-free → ollama-cloud → edith (premium only)
+  // Edith is NEVER auto-selected based on intent. It is only the last resort
+  // for premium users when all other providers are unavailable or have failed.
 
-  // Check if should degrade to cheaper providers due to budget
+  let provider: Provider = 'builtin';
+  let routingReason: RoutingTrace['reason'] = 'ollama_unreachable';
+  let ollamaOk = false;
+
   const overBudget = opts?.userId ? shouldDegradeRouting(opts.userId) : false;
-  if (overBudget && (provider === 'edith' || provider === 'openrouter')) {
-    logger.info({ userId: opts?.userId }, 'User over token budget, degrading routing');
-    provider = 'openrouter-free';
-    routingReason = 'budget_degradation';
+  const overDailyBudget = opts?.userId ? isOverDailyBudget(opts.userId) : false;
+  const isPremium = isPremiumPlan(opts?.userPlan);
+  const hasCredits = opts?.userCredits === undefined || opts.userCredits > 0;
+
+  // Daily budget exceeded: block edith + openrouter (paid), allow only free-tier providers
+  if (overDailyBudget && opts?.userId) {
+    logger.info({ userId: opts.userId }, 'Daily token budget exceeded — restricting to free-tier providers');
   }
 
-  if (!manualOverride && !opts?.forceProvider) {
-    ollamaAvailable = await isOllamaAvailable();
-    const picoOk = await isPicoClawAvailable();
-    const hasCredits = opts?.userCredits === undefined || opts.userCredits > 0;
+  if (manualOverride || opts?.forceProvider) {
+    provider = manualOverride || opts!.forceProvider!;
+    routingReason = 'manual_override';
+    ollamaOk = await isOllamaAvailable();
 
+    // Budget degradation: downgrade premium forced calls when over monthly or daily budget
+    if ((overBudget || overDailyBudget) && (provider === 'edith' || provider === 'openrouter')) {
+      logger.info({ userId: opts?.userId, provider, overBudget, overDailyBudget }, 'Budget exceeded — degrading from premium provider');
+      provider = 'openrouter-free';
+      routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'budget_degradation';
+    }
+  } else {
+    ollamaOk = await isOllamaAvailable();
+    const picoOk = await isPicoClawAvailable();
+
+    // Automation intent → picoclaw first
     if (picoOk && intent === 'automation') {
       provider = 'picoclaw';
-      routingReason = ollamaAvailable ? 'ollama_healthy' : 'fallback_chain';
-    } else if (intent === 'simple' && ollamaAvailable) {
-      // Simple queries → always local (fast, free)
+      routingReason = 'ollama_healthy';
+    }
+    // Waterfall: ollama → openrouter-free → ollama-cloud → (premium, non-daily-capped) edith → builtin
+    else if (ollamaOk) {
       provider = 'ollama';
       routingReason = 'ollama_healthy';
-    } else if (intent === 'coding' || intent === 'planning' || intent === 'complex') {
-      // Complex queries → ESCALATION PATH
-      // 1. Try Kimi/Moonshot for complex tasks (if available)
-      if (hasCredits && isEdithAvailable() && intent === 'complex') {
-        provider = 'edith';
-        routingReason = 'complexity_escalation';
-      } 
-      // 2. Fallback to OpenRouter Free
-      else if (isOpenRouterFreeAvailable()) {
-        provider = 'openrouter-free';
-        routingReason = ollamaAvailable ? 'ollama_healthy' : 'openrouter_free_available';
-      }
-      // 3. Last resort: Ollama (openrouter paid is NEVER auto-selected — only via explicit /premium prefix)
-      else if (ollamaAvailable) {
-        provider = 'ollama';
-        routingReason = 'fallback_chain';
-      } else {
-        provider = 'builtin';
-        routingReason = 'ollama_unreachable';
-      }
-    } else if (ollamaAvailable) {
-      provider = 'ollama';
-      routingReason = 'ollama_healthy';
-    } else if (picoOk) {
-      provider = 'picoclaw';
+    } else if (isOpenRouterFreeAvailable()) {
+      provider = 'openrouter-free';
+      routingReason = 'ollama_unreachable';
+    } else if (isOllamaCloudAvailable()) {
+      provider = 'ollama-cloud';
+      routingReason = 'ollama_cloud_available';
+    } else if (isPremium && hasCredits && !overDailyBudget && isEdithAvailable()) {
+      // Edith is last resort — premium users only when all free tiers unavailable AND daily budget not exceeded
+      provider = 'edith';
       routingReason = 'fallback_chain';
     } else {
       provider = 'builtin';
-      routingReason = 'ollama_unreachable';
+      routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'ollama_unreachable';
     }
-  } else {
-    // Still need to check Ollama availability for trace
-    ollamaAvailable = await isOllamaAvailable();
   }
 
-  // Log provider selection with credits info
   logger.info({
     provider,
     model: provider === 'ollama' ? config.ollamaModel
+      : provider === 'ollama-cloud' ? config.ollamaCloudModel
       : provider === 'openrouter' ? config.openrouterModel
       : provider === 'edith' ? config.moonshotReasoningModel
       : provider,
     intent,
     userId: opts?.userId,
     credits: opts?.userCredits,
+    isPremium,
+    overBudget,
     routingReason,
     forced: !!(manualOverride || opts?.forceProvider),
   }, 'llm:provider_selected');
 
-  // Record initial routing decision trace
-  const traceStart: RoutingTrace = {
+  recordRoutingTrace({
     timestamp: new Date().toISOString(),
     userId: opts?.userId || 'anonymous',
     routeDecision: provider,
@@ -719,50 +821,53 @@ export async function routeChat(
     latencyMs: 0,
     tokensEstimate,
     intent,
-    ollamaAvailable,
+    ollamaAvailable: ollamaOk,
     forcedProvider: manualOverride || opts?.forceProvider,
-  };
-  recordRoutingTrace(traceStart);
+  });
 
-  // Execute
+  // ---- Execute with in-flight tracking ----
   let reply: string;
   let tokensIn = 0;
   let tokensOut = 0;
   let model = '';
   let finalProvider = provider;
-  let error: string | undefined;
+
+  // Register in-flight entry for deduplication
+  let resolveInFlight: ((reply: string) => void) | null = null;
+  if (isCacheable && cacheKey) {
+    const inFlightPromise = new Promise<string>((resolve) => { resolveInFlight = resolve; });
+    inFlightRequests.set(cacheKey, inFlightPromise);
+  }
 
   try {
     switch (provider) {
       case 'ollama': {
         const result = await callOllama(fullMessages);
-        reply = result.content;
-        tokensIn = result.tokensIn;
-        tokensOut = result.tokensOut;
+        reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
         model = config.ollamaModel;
         break;
       }
       case 'openrouter': {
         const result = await callOpenRouter(fullMessages);
-        reply = result.content;
-        tokensIn = result.tokensIn;
-        tokensOut = result.tokensOut;
+        reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
         model = config.openrouterModel;
         break;
       }
       case 'openrouter-free': {
         const result = await callOpenRouterFree(fullMessages, opts?.userId);
-        reply = result.content;
-        tokensIn = result.tokensIn;
-        tokensOut = result.tokensOut;
+        reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
         model = await getCurrentFreeModel();
+        break;
+      }
+      case 'ollama-cloud': {
+        const result = await callOllamaCloud(fullMessages);
+        reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
+        model = config.ollamaCloudModel;
         break;
       }
       case 'edith': {
         const result = await callMoonshotReasoning(fullMessages);
-        reply = result.content;
-        tokensIn = result.tokensIn;
-        tokensOut = result.tokensOut;
+        reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
         model = config.moonshotReasoningModel;
         break;
       }
@@ -770,116 +875,78 @@ export async function routeChat(
         const userMsg = fullMessages[fullMessages.length - 1]?.content || '';
         const sysMsg = fullMessages.find(m => m.role === 'system')?.content;
         const result = await queryPicoClaw(userMsg, sysMsg);
-        reply = result.text;
-        tokensIn = result.tokensIn;
-        tokensOut = result.tokensOut;
+        reply = result.text; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
         model = 'picoclaw-haiku';
         break;
       }
       default: {
-        // Builtin fallback — no LLM available
         reply = `I'm currently running in offline mode — my AI backend isn't available right now. ` +
           `Please try again shortly, or use terminal commands like \`gs reminders list\` or \`gs credits\`.`;
         model = 'builtin-fallback';
-        tokensIn = userMessage.length;
-        tokensOut = reply.length;
+        tokensIn = userMessage.length; tokensOut = reply.length;
         break;
       }
     }
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    error = errorMsg;
-    const fallbackProvider: Provider = (provider === 'ollama' && isOpenRouterFreeAvailable())
-      ? 'openrouter-free'
-      : (provider === 'edith' || provider === 'openrouter' || provider === 'openrouter-free')
-        ? 'ollama'
-        : 'builtin';
-    logger.warn({ error: errorMsg, provider, fallback: fallbackProvider, intent, userId: opts?.userId }, 'llm:provider_fallback');
+    logger.warn({ error: errorMsg, provider, intent, userId: opts?.userId }, 'llm:provider_failed');
 
-    // Fallback chain: cloud → ollama → builtin
-    if (provider === 'edith' || provider === 'openrouter' || provider === 'openrouter-free') {
-      const ollamaOk = await isOllamaAvailable();
-      if (ollamaOk) {
-        try {
-          const result = await callOllama(fullMessages);
-          reply = result.content;
-          tokensIn = result.tokensIn;
-          tokensOut = result.tokensOut;
-          model = config.ollamaModel;
-          finalProvider = 'ollama';
-          routingReason = 'fallback_chain';
-        } catch {
-          reply = 'I had trouble connecting to my AI backends. Please try again shortly.';
-          model = 'error-fallback';
-          tokensIn = userMessage.length;
-          tokensOut = reply.length;
-          finalProvider = 'builtin';
-          routingReason = 'ollama_unreachable';
-        }
-      } else {
-        reply = 'I had trouble connecting to my AI backends. Please try again shortly.';
-        model = 'error-fallback';
-        tokensIn = userMessage.length;
-        tokensOut = reply.length;
-        provider = 'builtin';
-      }
-    } else if (provider === 'ollama' && isOpenRouterFreeAvailable()) {
-      // Ollama failed → try OpenRouter Free before giving up
-      try {
-        const result = await callOpenRouterFree(fullMessages, opts?.userId);
-        reply = result.content;
-        tokensIn = result.tokensIn;
-        tokensOut = result.tokensOut;
-        model = config.openrouterFreeModel;
-        finalProvider = 'openrouter-free';
-        routingReason = 'ollama_timeout';
-      } catch {
-        reply = 'I had trouble processing your request. Please try again shortly.';
-        model = 'error-fallback';
-        tokensIn = userMessage.length;
-        tokensOut = reply.length;
-        provider = 'builtin';
-      }
+    // ---- Phase 76 Waterfall Fallback ----
+    // Try remaining providers in waterfall order after the failed one.
+    // Edith is included only for premium users with credits.
+    const WATERFALL: Provider[] = ['ollama', 'openrouter-free', 'ollama-cloud', 'edith'];
+    const failedIdx = WATERFALL.indexOf(provider);
+    const remaining = WATERFALL.slice(failedIdx + 1).filter(p => {
+      if (p === 'edith') return isPremium && hasCredits && !overDailyBudget;
+      return true;
+    });
+
+    logger.info({ failedProvider: provider, chain: remaining, userId: opts?.userId }, 'llm:starting_fallback_chain');
+
+    const fallback = await tryFallbackChain(remaining, fullMessages, opts?.userId);
+    if (fallback) {
+      reply = fallback.content;
+      tokensIn = fallback.tokensIn;
+      tokensOut = fallback.tokensOut;
+      finalProvider = fallback.provider;
+      model = finalProvider === 'ollama' ? config.ollamaModel
+        : finalProvider === 'ollama-cloud' ? config.ollamaCloudModel
+        : finalProvider === 'edith' ? config.moonshotReasoningModel
+        : finalProvider;
+      routingReason = 'fallback_chain';
     } else {
-      reply = 'I had trouble processing your request. Please try again shortly.';
+      reply = 'I had trouble connecting to my AI backends. Please try again shortly.';
       model = 'error-fallback';
-      tokensIn = userMessage.length;
-      tokensOut = reply.length;
-      provider = 'builtin';
+      tokensIn = userMessage.length; tokensOut = reply.length;
+      finalProvider = 'builtin';
+      routingReason = 'ollama_unreachable';
     }
+  } finally {
+    if (isCacheable && cacheKey) inFlightRequests.delete(cacheKey);
   }
 
-  // Record token usage if userId provided
-  if (opts?.userId) {
-    recordTokenUsage(opts.userId, tokensIn + tokensOut);
-  }
+  // Resolve in-flight promise for deduplication waiters
+  if (resolveInFlight && reply) (resolveInFlight as (r: string) => void)(reply);
+
+  // Record token usage
+  if (opts?.userId) recordTokenUsage(opts.userId, tokensIn + tokensOut);
 
   const latencyMs = Date.now() - start;
-  const costEstimate = estimateCost(provider, tokensIn, tokensOut);
-  const creditCost = computeCreditCost(provider, tokensIn, tokensOut);
+  const costEstimate = estimateCost(finalProvider, tokensIn, tokensOut);
+  const creditCost = computeCreditCost(finalProvider, tokensIn, tokensOut);
 
-  logger.info({
-    intent,
-    provider,
-    model,
-    tokensIn,
-    tokensOut,
-    latencyMs,
-    costEstimate,
-    creditCost,
-  }, 'LLM response');
+  logger.info({ intent, provider: finalProvider, model, tokensIn, tokensOut, latencyMs, costEstimate, creditCost }, 'LLM response');
 
-  // Store in cache for simple single-turn queries (not errors, not fallbacks)
+  // Write to L1 + L2 cache on success
   if (isCacheable && cacheKey && reply && model !== 'error-fallback' && finalProvider !== 'builtin') {
-    setCached(cacheKey, reply);
+    setMemCached(cacheKey, reply);
+    setRedisCached(cacheKey, reply).catch(() => {}); // non-blocking
   }
 
-  return { reply, provider, model, tokensIn, tokensOut, latencyMs, costEstimate, creditCost, intent };
+  return { reply, provider: finalProvider, model, tokensIn, tokensOut, latencyMs, costEstimate, creditCost, intent };
 }
 
 // ---- Ollama Keepalive ----
-// Pings Ollama every 3 minutes to keep the model loaded in memory,
-// preventing cold-start timeouts (model reload takes 30-60s on this VPS).
 
 let keepaliveInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -888,17 +955,10 @@ async function pingOllama(): Promise<void> {
     const res = await fetch(`${config.ollamaBaseUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: config.ollamaModel,
-        prompt: 'ping',
-        stream: false,
-        options: { num_predict: 1 },
-      }),
+      body: JSON.stringify({ model: config.ollamaModel, prompt: 'ping', stream: false, options: { num_predict: 1 } }),
       signal: AbortSignal.timeout(30000),
     });
-    if (res.ok) {
-      logger.debug({ model: config.ollamaModel }, 'Ollama keepalive ping OK');
-    }
+    if (res.ok) logger.debug({ model: config.ollamaModel }, 'Ollama keepalive ping OK');
   } catch {
     logger.debug('Ollama keepalive ping failed (non-fatal)');
   }
@@ -906,14 +966,12 @@ async function pingOllama(): Promise<void> {
 
 export function startOllamaKeepalive(): void {
   if (keepaliveInterval) return;
-  // Initial warmup
   pingOllama().catch(() => {});
-  // Ping every 3 minutes
   keepaliveInterval = setInterval(() => pingOllama().catch(() => {}), 3 * 60 * 1000);
   logger.info('Ollama keepalive started (every 3 minutes)');
 }
 
-// ---- Smart Provider Picker ----
+// ---- Smart Provider Picker (used by chat routes for explicit plan-aware selection) ----
 
 export type UserModelPreference = 'local' | 'cloud' | 'premium' | 'auto';
 
@@ -922,27 +980,23 @@ export async function pickProvider(
   messageText: string,
   userPlan: string,
 ): Promise<Provider> {
-  // Read user preference
   const agentConfig = db.prepare('SELECT model_preference FROM agent_configs WHERE user_id = ?')
     .get(userId) as { model_preference: string } | undefined;
   const preference = (agentConfig?.model_preference || 'auto') as UserModelPreference;
 
-  // Plan-based access
-  const isPremiumPlan = ['halfyear', 'yearly'].includes(userPlan);
   const isPaidPlan = ['pilot', 'intro', 'halfyear', 'yearly', 'monthly'].includes(userPlan);
 
   if (preference === 'local') return 'ollama';
   if (preference === 'cloud') return isPaidPlan ? 'openrouter-free' : 'ollama';
-  if (preference === 'premium') return isPremiumPlan ? 'edith' : (isPaidPlan ? 'openrouter-free' : 'ollama');
+  // 'premium' preference: still use openrouter-free; edith only via waterfall last-resort
+  if (preference === 'premium') return isPaidPlan ? 'openrouter-free' : 'ollama';
 
-  // Auto: check complexity + plan
+  // Auto: prefer local. Edith is NEVER auto-selected by intent.
+  // It is only a last resort in routeChat's waterfall when all
+  // other providers have failed AND the user is premium.
   const intent = classifyIntent(messageText, userId);
-  if (['planning', 'complex'].includes(intent)) {
-    if (isPremiumPlan) return 'edith';
-    if (isPaidPlan) return 'openrouter-free';
-    return 'ollama';
+  if (['planning', 'complex', 'coding'].includes(intent) && isPaidPlan) {
+    return 'openrouter-free';
   }
-
-  // Simple queries: default to ollama
   return 'ollama';
 }

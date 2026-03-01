@@ -77,3 +77,37 @@ export function shouldDegradeRouting(userId: string): boolean {
   const { percentage } = getUserTokenUsage(userId);
   return percentage >= 1.0;
 }
+
+// ---- Daily Token Budget Enforcement ----
+// Daily limit = 10% of monthly budget (prevents a single user exhausting their
+// allowance in one session and gives fair usage across the month).
+
+const DAILY_BUDGET_RATIO = 0.10; // 10% of monthly budget per day
+
+export function getDailyTokenUsage(userId: string): { used: number; budget: number; percentage: number } {
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  const row = db.prepare(
+    'SELECT tokens_used FROM token_usage WHERE user_id = ? AND month = ?'
+  ).get(userId, today) as { tokens_used: number } | undefined;
+
+  const sub = db.prepare(
+    'SELECT plan, tokens_budget FROM subscriptions WHERE user_id = ?'
+  ).get(userId) as { plan: string; tokens_budget: number } | undefined;
+
+  const monthlyBudget = sub?.tokens_budget || getTokenBudget(sub?.plan || 'free');
+  const dailyBudget = Math.ceil(monthlyBudget * DAILY_BUDGET_RATIO);
+  const used = row?.tokens_used || 0;
+
+  return { used, budget: dailyBudget, percentage: dailyBudget > 0 ? used / dailyBudget : 0 };
+}
+
+export function isOverDailyBudget(userId: string): boolean {
+  const { percentage } = getDailyTokenUsage(userId);
+  const over = percentage >= 1.0;
+  if (over) {
+    logger.info({ userId }, 'User has exceeded daily token budget — degrading routing');
+  }
+  return over;
+}
