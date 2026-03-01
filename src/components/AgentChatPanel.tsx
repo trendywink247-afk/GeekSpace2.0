@@ -5,7 +5,7 @@ import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Downloa
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { agentService, premiumAgentService, publicAgentService, memoryService, billingService, voiceService, jobsService } from '@/services/api';
+import { agentService, premiumAgentService, publicAgentService, memoryService, billingService, voiceService, jobsService, imageAsyncService } from '@/services/api';
 import type { AgentPersonality, PremiumSession } from '@/types';
 import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
@@ -121,6 +121,8 @@ interface ChatMessage {
     receipt?: { icon: string; text: string; details?: string; link?: string };
   }>;
   receipts?: Array<{ icon: string; text: string; details?: string; link?: string }>;
+  /** 81.7: URL of generated image to render as inline image bubble */
+  imageUrl?: string;
 }
 
 interface AgentChatPanelProps {
@@ -175,6 +177,9 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const [ttsLoadingId, setTtsLoadingId] = useState<string | null>(null);
   const [ttsPlayingId, setTtsPlayingId] = useState<string | null>(null);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // 81.8: Image cap error shown inline
+  const [imageCapError, setImageCapError] = useState<string | null>(null);
 
   // Swipe-down-to-close on mobile header
   const [touchStartY, setTouchStartY] = useState(0);
@@ -414,6 +419,39 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         return [...prev, { id: agentMsgId, role: 'agent' as const, content: '', timestamp: new Date(), ...update }];
       });
     };
+
+    // 81.6: /image [prompt] command → async image generation (bypass chat)
+    if (raw.startsWith('/image ')) {
+      const imagePrompt = raw.slice(7).trim();
+      if (imagePrompt) {
+        setImageCapError(null);
+        setAgentMsg({ content: '🎨 Generating image…', isStreaming: true });
+        (async () => {
+          try {
+            const { jobId } = await imageAsyncService.generate(imagePrompt);
+            const job = await jobsService.pollUntilDone(jobId, 60, 2000);
+            const result = job.result as { imageUrl: string; imageId: string; prompt: string } | undefined;
+            if (job.status === 'done' && result?.imageUrl) {
+              setAgentMsg({ content: `Generated: "${imagePrompt}"`, imageUrl: result.imageUrl, isStreaming: false });
+            } else {
+              setAgentMsg({ content: 'Image generation failed. Please try again.', isStreaming: false });
+            }
+          } catch (err) {
+            const e = err as { code?: string };
+            if (e?.code === 'IMAGE_CAP') {
+              const capMsg = `Image limit reached (${(err as { used?: number }).used ?? 5}/5) — upgrade for more`;
+              setImageCapError(capMsg);
+              setAgentMsg({ content: capMsg, isStreaming: false });
+            } else {
+              setAgentMsg({ content: 'Image generation failed. Please try again.', isStreaming: false });
+            }
+          } finally {
+            setIsTyping(false);
+          }
+        })();
+        return;
+      }
+    }
 
     // Premium session chat (non-streaming)
     if (premiumSession) {
@@ -1122,6 +1160,33 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         ))}
                       </div>
                     )}
+                    {/* 81.7: Inline generated image bubble */}
+                    {msg.imageUrl && !msg.isStreaming && (
+                      <div className="mt-3">
+                        <img
+                          src={msg.imageUrl}
+                          alt={msg.content}
+                          className="rounded-xl max-w-full border border-[#00F0FF]/20"
+                          loading="lazy"
+                        />
+                        <a
+                          href={msg.imageUrl}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 mt-1.5 text-xs text-[#00F0FF]/70 hover:text-[#00F0FF] transition-colors"
+                        >
+                          <Download className="w-3 h-3" /> Download
+                        </a>
+                      </div>
+                    )}
+                    {/* 81.7: Spinner while image job is in progress */}
+                    {msg.isStreaming && msg.content.startsWith('🎨') && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-[#A78BFA]" />
+                        <span className="text-xs text-[#6B7280]">This may take 10–20s…</span>
+                      </div>
+                    )}
                     {/* Message Reactions for agent messages */}
                     {msg.role === 'agent' && !msg.isStreaming && (
                       <MessageReactions
@@ -1408,6 +1473,12 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             {voiceError && (
               <span className="absolute bottom-16 left-4 right-4 text-xs text-red-400 bg-red-900/40 border border-red-500/30 rounded-lg px-3 py-1.5 text-center">
                 {voiceError}
+              </span>
+            )}
+            {/* 81.8: Image cap error toast */}
+            {imageCapError && (
+              <span className="absolute bottom-20 left-4 right-4 text-xs text-amber-400 bg-amber-900/40 border border-amber-500/30 rounded-lg px-3 py-1.5 text-center">
+                {imageCapError}
               </span>
             )}
             <Button
