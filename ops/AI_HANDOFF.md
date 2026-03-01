@@ -1,8 +1,8 @@
-# AI Handoff — Post-Phase 76 (AI Gateway + Smart Routing)
+# AI Handoff — Post-Phase 77 (Per-User Limits UI + Usage Dashboard)
 
 **Date:** 2026-03-01
 **Branch:** `main`
-**Tests:** 76 server unit test files | 870 tests (all passing)
+**Tests:** 77 server unit test files | 892 tests (all passing)
 **CI:** Phase gate 7/7 ✅ | Smoke tests 11/11 ✅
 **Brand Guard:** 0 violations
 **Build:** Clean (frontend + server)
@@ -18,89 +18,85 @@ If the conversation is compacted, before doing ANY work:
 
 ---
 
-## Post-Phase 76 — What Was Done
+## Post-Phase 77 — What Was Done
 
-**Theme:** AI Gateway + Smart Routing (cost optimization)
+**Theme:** Per-User Limits UI + Usage Dashboard + Onboarding Polish
 
 ### New Capabilities
 
-**Routing Ladder (Phase 76+)**
-- `ollama → openrouter-free → ollama-cloud → edith(premium-only last resort)`
-- Edith is **NEVER** auto-selected for 'complex' or 'planning' intent — waterfall last resort only
-- `pickProvider()` no longer returns edith directly; uses `openrouter-free` for paid complex tasks
-- Daily token budget enforcement (`isOverDailyBudget`) blocks edith when daily cap exceeded
+**GET /api/usage/today**
+- Returns `{plan, messages:{used,limit,percentage}, voice:{used,limit,percentage}, images:{used,limit,percentage}, tokenPercentage}`
+- Per-plan daily limits: free(30 msg/5 voice/3 img), monthly(150/30/20), yearly(500/100/80)
+- Counts from `usage_events` table for today's date
+- Imported `getDailyTokenUsage` + `getTokenBudget` from token-budget service
 
-**New ollama-cloud provider**
-- `callOllamaCloud()` with OpenAI-compatible API + Bearer auth
-- Config vars: `OLLAMA_CLOUD_BASE_URL`, `OLLAMA_CLOUD_API_KEY`, `OLLAMA_CLOUD_MODEL`, `OLLAMA_CLOUD_TIMEOUT_MS`
-- Credit cost: 2 (same as openrouter-free; free in dollar terms)
+**Today's Usage Widget (OverviewPage)**
+- Compact card after the Bento Stats Grid
+- Shows Messages / Voice / Images progress bars with color-coded thresholds
+  - Green = <80%, Amber = 80-99%, Red = 100%
+- Links to full Usage Analytics page
 
-**LLM Response Cache (L1 + L2)**
-- L1: In-memory Map (100 entries max, 5-min TTL, per-worker)
-- L2: Redis (5-min TTL, shared across PM2 workers, key prefix `llm:resp:`)
-- Cacheable for single-turn user messages only (no `forceProvider`)
+**Soft-Limit Warning Banner (77.4)**
+- Dismissable amber banner in OverviewPage when any resource >= 80%
+- Shows "Approaching daily limit" with upgrade CTA for free users
 
-**In-flight Deduplication**
-- `inFlightRequests` Map: identical concurrent requests wait for first result instead of double-calling
+**Hard-Limit Upgrade Prompt (77.5)**
+- AgentChatPanel now catches HTTP 429 errors specifically
+- Shows `setShowUpgradePrompt(true)` (reuses existing upgrade overlay)
+- Sets a friendly "reached your daily limit" message instead of raw error
 
-**Async Job Queue** (`server/src/services/job-queue.ts`)
-- `enqueueJob(type, payload, userId)` → returns job ID immediately
-- `getJobStatus(id)` → poll for result
-- Types: `voice:transcribe`, `voice:synthesize`, `image:generate`, `video:generate`, `video:stitch`
-- Backed by Redis (falls back to in-memory Map for single-worker dev)
+**Dynamic Plan Badge (77.6)**
+- SettingsPage profile card badge now reads from `user.plan`
+- free = grey "Free Plan", monthly/yearly/halfyear = cyan "Premium — ...", team = "Team Plan"
+
+**Confirmed Already Working**
+- Onboarding checklist (77.7): ONBOARDING_ITEMS in OverviewPage lines 187-218
+- Forgot password Telegram OTP (77.8): ForgotPasswordPage already uses `channel='auto'` and renders "Check your Telegram" when server returns `channel:'telegram'`
 
 ### Files Changed
-- `server/src/services/llm.ts` — complete routing rewrite + cache + dedupe + daily budget
-- `server/src/services/token-budget.ts` — `getDailyTokenUsage`, `isOverDailyBudget` added
-- `server/src/services/job-queue.ts` (NEW) — async job queue service
-- `server/src/config.ts` — `ollamaCloudBaseUrl/ApiKey/Model/Timeout` vars added
-- `.env.example` — `OLLAMA_CLOUD_*` vars documented
-- `server/src/test/api/llm-router.test.ts` (NEW) — 17 routing tests
-- `server/src/test/api/phase76.test.ts` (NEW) — 35 integration/static tests
-- `server/src/__tests__/llm-router.test.ts` — updated (excluded from vitest, kept for reference)
-- `ops/AI_PHASE_PLAN.md` — Phase 76 entry added
-
-### Test Exports Added (for test isolation)
-- `clearOllamaCache()` — resets module-level Ollama availability cache
-- `clearLLMCache()` — clears in-memory LLM response cache
+- `server/src/routes/usage.ts` — `/today` endpoint + DAILY_*_LIMITS constants + import token-budget
+- `src/services/api.ts` — `usageService.today()` method added
+- `src/dashboard/pages/OverviewPage.tsx` — todayUsage state, fetch, widget, soft-limit banner
+- `src/components/AgentChatPanel.tsx` — 429 error → upgrade prompt
+- `src/dashboard/pages/SettingsPage.tsx` — dynamic plan badge
+- `server/src/test/api/phase77.test.ts` (NEW) — 22 tests covering all Phase 77 changes
 
 ---
 
 ## Verification Status
-- [x] Tests: 870/870 passed (76 test files)
+- [x] Tests: 892/892 passed (77 test files)
 - [x] Phase gate: 7/7 ✅
 - [x] Brand guard: 0 violations
 - [x] TypeScript: clean (frontend + server)
 - [x] Staging: deployed + 11/11 smoke tests ✅
-- [x] Merged to main (de3fd29)
+- [x] Merged to main (e281534)
 - [x] Pushed to origin/main
 
 ---
 
 ## Known Issues / Open Risks
-- `gh auth` credentials expired — PR created as direct merge instead
-- Pre-existing chunk size warning for index.js (738kB) — not a Phase 76 concern
-- `job-queue.ts` handlers not yet wired to voice/image routes — Phase 77 task
-- Staging containers from worktree build (phase-76-*) — clean up if disk space needed
+- Pre-existing chunk size warning (index.js 738kB, recharts 431kB) — not Phase 77 concern
+- `job-queue.ts` handlers still not wired to actual voice/image routes (Phase 78 candidate)
+- `Progress` component color override uses CSS custom property (`--progress-foreground`) which depends on shadcn CSS var support — visual color may not apply without additional CSS; functional logic is correct
+- Daily limits are approximate (usage_events tool field may not always be populated for voice/image)
 
 ---
 
 ## Architecture Notes
-- Daily token budget check (`isOverDailyBudget`) is 10% of monthly budget
-- Monthly budget check (`shouldDegradeRouting`) degrades routing at 100% usage
-- Both checks only block edith and paid OpenRouter; Ollama/openrouter-free remain available
-- Job queue `processJob()` runs via `setImmediate()` — non-blocking for API routes
+- `/today` endpoint uses `date(created_at) = date('now')` for SQLite same-day filtering
+- Daily message limit counts `tool = 'ai.chat'` OR empty/null tool (generic chat events)
+- Token budget and message count limits are independent signals (token = LLM cost, messages = API calls)
 
 ---
 
-## Next Steps (Phase 77 candidates)
-- Wire job queue handlers to actual voice/image service calls
-- Frontend polling endpoint for job status (`GET /api/jobs/:id`)
-- Consider CSRF tokens (mentioned in phase 75 open risks)
-- Virtual scroll for chat history (bundle size optimization)
-- Frontend bundle splitting (recharts 431kB + index.js 738kB)
+## Next Steps (Phase 78 candidates)
+- Wire job queue handlers to voice/image service calls (unblocked)
+- Frontend job status polling endpoint (`GET /api/jobs/:id`)
+- Frontend bundle splitting (recharts + index.js — Phase 77 noted, Phase 78 priority)
+- CSRF tokens (mentioned in phase 75 open risks — still open)
+- Virtual scroll for long chat history
 - Next release train candidate: Phase 80
 
 ## Merge Status
-Merged `ai/phase-20260301-phase76` → `main` (de3fd29)
+Merged `ai/phase-20260301-phase77` → `main` (e281534)
 Pushed to `origin/main`
