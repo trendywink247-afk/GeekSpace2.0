@@ -221,7 +221,16 @@ async function deliverReminder(reminder: DueReminder): Promise<void> {
         if (result.success) {
           logger.info({ reminderId: reminder.id, userId: reminder.user_id }, 'Reminder delivered via Telegram');
         } else {
-          logger.warn({ reminderId: reminder.id }, 'Telegram delivery failed for reminder');
+          // 78.7: sendTelegramMessage already retries 3x internally; log to dead_letters on final failure
+          logger.warn({ reminderId: reminder.id }, 'Telegram delivery failed for reminder — writing to dead_letters');
+          try {
+            db.prepare(`
+              INSERT INTO reminder_dead_letters (id, reminder_id, user_id, channel, error, attempts, last_attempt_at)
+              VALUES (?, ?, ?, 'telegram', 'send_failed_after_retries', 3, datetime('now'))
+            `).run(uuid(), reminder.id, reminder.user_id);
+          } catch (dlErr) {
+            logger.error({ reminderId: reminder.id, err: (dlErr as Error).message }, 'Failed to write reminder dead letter');
+          }
         }
       } else {
         logger.warn({ reminderId: reminder.id, userId: reminder.user_id }, 'No Telegram link for reminder delivery');

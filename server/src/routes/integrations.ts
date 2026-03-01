@@ -120,20 +120,25 @@ integrationsRouter.get('/telegram/status', requireAuth, (req: AuthRequest, res) 
     "SELECT external_id, external_username, linked_at, last_message_at FROM channel_links WHERE user_id = ? AND channel = 'telegram'"
   ).get(userId) as { external_id: string; external_username: string; linked_at: string; last_message_at: string | null } | undefined;
 
+  const botConfigured = !!config.telegramBotToken;
+
   if (link) {
     res.json({
       linked: true,
+      connected: true,
+      botConfigured,
       externalId: link.external_id,
       username: link.external_username,
       linkedAt: link.linked_at,
       lastMessageAt: link.last_message_at,
+      lastPing: link.last_message_at,
     });
   } else {
-    res.json({ linked: false });
+    res.json({ linked: false, connected: false, botConfigured });
   }
 });
 
-// Unlink Telegram
+// Unlink Telegram — atomic transaction: remove channel link + update integration status + log
 integrationsRouter.delete('/telegram/link', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
 
@@ -146,13 +151,20 @@ integrationsRouter.delete('/telegram/link', requireAuth, (req: AuthRequest, res)
     return;
   }
 
-  db.prepare('DELETE FROM channel_links WHERE id = ?').run(link.id);
-  db.prepare(
-    "UPDATE integrations SET status = 'disconnected', health = 0 WHERE user_id = ? AND type = 'telegram'"
-  ).run(userId);
+  const unlinkId = link.id;
+  const logId = uuid();
 
-  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Unlinked Telegram', 'Telegram bot disconnected', 'unlink')`)
-    .run(uuid(), userId);
+  // 78.3: Wrap all three DB ops in a transaction to prevent orphaned state
+  const doUnlink = db.transaction(() => {
+    db.prepare('DELETE FROM channel_links WHERE id = ?').run(unlinkId);
+    db.prepare(
+      "UPDATE integrations SET status = 'disconnected', health = 0 WHERE user_id = ? AND type = 'telegram'"
+    ).run(userId);
+    db.prepare(
+      "INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Unlinked Telegram', 'Telegram bot disconnected', 'unlink')"
+    ).run(logId, userId);
+  });
+  doUnlink();
 
   res.json({ success: true });
 });

@@ -355,7 +355,7 @@ export const integrationService = {
     api.post<{ linked: boolean; code?: string; deepLink?: string | null; botUsername?: string | null; expiresIn?: number; message: string }>('/integrations/telegram/link'),
 
   checkTelegramLink: () =>
-    api.get<{ linked: boolean; externalId?: string; username?: string; linkedAt?: string; lastMessageAt?: string | null }>('/integrations/telegram/status'),
+    api.get<{ linked: boolean; connected?: boolean; botConfigured?: boolean; externalId?: string; username?: string; linkedAt?: string; lastMessageAt?: string | null; lastPing?: string | null }>('/integrations/telegram/status'),
 
   unlinkTelegram: () =>
     api.delete('/integrations/telegram/link'),
