@@ -17,6 +17,7 @@ import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { sendTelegramMessage } from './telegram.js';
 import { sendReminderEmail, resolveEmailAddress } from './email.js';
+import { getRelevantMemories } from './memory.js';
 
 // ---- Types ----
 
@@ -201,7 +202,16 @@ async function checkAndDeliverReminders(): Promise<void> {
 // ---- Delivery ----
 
 async function deliverReminder(reminder: DueReminder): Promise<void> {
-  const message = `⏰ Reminder: ${reminder.text}`;
+  // 79.7: Check for related memories and enrich message with context
+  let message = `⏰ Reminder: ${reminder.text}`;
+  try {
+    const related = getRelevantMemories(reminder.user_id, reminder.text, 2);
+    const contextual = related.filter(m => m.category !== 'summary' && m.value && m.value.length > 3);
+    if (contextual.length > 0) {
+      const ctxLines = contextual.map(m => `• ${m.key}: ${m.value}`).join('\n');
+      message += `\n\n💡 Context:\n${ctxLines}`;
+    }
+  } catch { /* non-fatal — use plain message */ }
 
   switch (reminder.channel) {
     case 'telegram': {

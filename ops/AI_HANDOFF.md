@@ -1,8 +1,8 @@
-# AI Handoff — Post-Phase 78 (Telegram/WhatsApp Stability + Connections Polish)
+# AI Handoff — Post-Phase 79 (Structured Memory Pipeline + Reminder Consistency)
 
 **Date:** 2026-03-01
 **Branch:** `main`
-**Tests:** 78 server unit test files | 916 tests (all passing)
+**Tests:** 79 server unit test files | 944 tests (all passing)
 **CI:** Phase gate 7/7 ✅ | Smoke tests 11/11 ✅
 **Brand Guard:** 0 violations
 **Build:** Clean (frontend + server)
@@ -18,102 +18,93 @@ If the conversation is compacted, before doing ANY work:
 
 ---
 
-## Post-Phase 78 — What Was Done
+## Post-Phase 79 — What Was Done
 
-**Theme:** Telegram/WhatsApp Stability + Connections Polish
+**Theme:** Structured Memory Pipeline + Reminder Consistency
 
 ### New Capabilities
 
-**GET /api/integrations/telegram/status (enhanced)**
-- Added `connected` (alias for `linked`) boolean field
-- Added `lastPing` (alias for `last_message_at` from channel_links)
-- Added `botConfigured` flag (`!!config.telegramBotToken`)
-- Frontend `api.ts` type updated accordingly
+**Ollama Memory Extraction (79.2)**
+- Added `extractMemoriesWithOllama(userId, userMessage, assistantResponse)` to `services/memory.ts`
+- Uses local Ollama (`config.ollamaBaseUrl`, `config.ollamaModel`) — NOT PicoClaw/edith
+- Extracts up to 5 structured facts (category, key, value) per conversation turn
+- Source tagged as `'ollama-extract'` in `agent_memory` table
+- Falls back to regex `extractMemories()` if Ollama is unavailable or returns invalid JSON
+- Fire-and-forget: called non-blocking after every AI reply in `message-router.ts`
+- Strips markdown code fences from Ollama JSON output before parsing
 
-**Telegram Disconnect Atomicity (78.3)**
-- `DELETE /api/integrations/telegram/link` now wraps 3 DB ops in `db.transaction()`
-- channel_links delete + integrations status update + activity_log insert = one atomic op
-- Prevents orphaned state if any of the three operations fail
+**Memory Context in System Prompt (79.3 — verified pre-existing)**
+- `buildMemoryContext(userId, userMessage)` already wired in both `message-router.ts` (line 113) and `agent.ts` (line 85)
+- Injects top 8 relevant memories via keyword scoring before every AI response
 
-**Telegram /start Command Auto-Registration (78.4 — verified pre-existing)**
-- `/start link_{code}` deep link flow was already complete in `webhooks.ts`
-- `handleLinkCode()` function creates channel_links + updates integrations + deletes used code
-- Tests added to verify all parts of the flow
+**Memory Manager UI + API (79.4/79.5/79.6 — verified pre-existing)**
+- `MemoryManagerPage.tsx` fully implemented at `src/dashboard/pages/MemoryManagerPage.tsx`
+- `GET /api/agent/memory` with category + search filters
+- `DELETE /api/agent/memory/:id` with 404 for missing entries
+- `DELETE /api/agent/memory/bulk?category=` bulk clear
+- `POST /api/agent/memory` create
+- `PUT /api/agent/memory/:id` update
+- All wired via `memoryService` in `src/services/api.ts`
 
-**WhatsApp Platform Policy Disclaimer (78.5)**
-- Added green disclaimer box in ConnectionsPage.tsx WhatsApp QR dialog
-- Text: "Utility flows only — reminders, OTP, and notifications. AI chat via Agentin web app [link]"
-- Displayed during `show-qr` step with link to `ai.agentin.chat`
+**Reminder ↔ Memory Consistency (79.7)**
+- `reminder-scheduler.ts` now imports `getRelevantMemories` from `memory.ts`
+- `deliverReminder()` calls `getRelevantMemories(userId, reminderText, 2)` before sending
+- Appends `💡 Context: [memory lines]` to Telegram/email reminder message when related memories found
+- Skips 'summary' category memories (too general for context)
+- Non-fatal: wrapped in try/catch; plain message used if lookup fails
 
-**Telegram lastPing in ConnectionsPage (78.6)**
-- `telegramLastPing` state added — fetches from `GET /telegram/status` on mount
-- Displays "Last message: X ago" in the Telegram connection card (cyan color)
-- message-router.ts now also updates `integrations.last_sync` when a message is processed
-  - Ensures "Last synced: X ago" on the card reflects real activity
-
-**Reminder Dead-Letter Table (78.7)**
-- Added `reminder_dead_letters` table to DB (additive migration via `db.exec`)
-- Columns: id, reminder_id, user_id, channel, error, attempts, last_attempt_at, created_at
-- reminder-scheduler.ts logs to dead_letters when `sendTelegramMessage` returns `{success:false}`
-  - Note: `sendTelegramMessage` already retries 3x internally before returning failure
-  - Error field: `'send_failed_after_retries'`
-- Admin endpoint: `GET /api/admin/dead-letters` — returns last N failed reminder deliveries
-  - Includes reminder text, username, channel, error, attempts, timestamps
-
-**Auth Rate Limits (78.8 — verified pre-existing)**
-- login: 10/15min with `skipSuccessfulRequests: true`
-- signup: 5/15min
-- refresh: 10/15min
-- Tests added to verify presence
+**Weekly Memory Summary Cron (79.8)**
+- Added `runWeeklyMemorySummary()` to `services/memory.ts`
+- Runs Sunday 04:00–05:00 UTC (= Sunday 10:00–11:00 IST)
+- Calls Ollama to summarize all memories (min 3) into a 1–2 sentence user profile
+- Stores result as `agent_memory(category='summary', key='week_YYYY-MM-DD', value=<summary>, source='weekly-cron')`
+- `startWeeklySummaryScheduler()` exported, checks hourly, started via `safeStart` in `index.ts`
 
 ### Files Changed
-- `server/src/routes/integrations.ts` — status endpoint + atomic disconnect
-- `server/src/routes/admin.ts` — dead-letters endpoint
-- `server/src/db/index.ts` — reminder_dead_letters table migration
-- `server/src/services/reminder-scheduler.ts` — dead-letter logging on Telegram failure
-- `server/src/services/message-router.ts` — update integrations.last_sync on message
-- `src/dashboard/pages/ConnectionsPage.tsx` — WhatsApp disclaimer + telegramLastPing
-- `src/services/api.ts` — updated checkTelegramLink type with new fields
-- `server/src/test/api/phase78.test.ts` (NEW) — 24 tests covering all Phase 78 changes
+- `server/src/services/memory.ts` — added `extractMemoriesWithOllama`, `startWeeklySummaryScheduler`, `runWeeklyMemorySummary`; added `config` import
+- `server/src/services/message-router.ts` — import `extractMemoriesWithOllama` + fire-and-forget call after assistant reply (line 371)
+- `server/src/services/reminder-scheduler.ts` — import `getRelevantMemories` + context enrichment in `deliverReminder`
+- `server/src/index.ts` — import `startWeeklySummaryScheduler` + `safeStart('memory-weekly-summary', ...)`
+- `server/src/test/api/phase79.test.ts` (NEW) — 28 tests covering all Phase 79 changes
 
 ---
 
 ## Verification Status
-- [x] Tests: 916/916 passed (78 test files)
+- [x] Tests: 944/944 passed (79 test files)
 - [x] Phase gate: 7/7 ✅
 - [x] Brand guard: 0 violations
 - [x] TypeScript: clean (frontend + server)
 - [x] Staging: 11/11 smoke tests ✅
-- [x] Merged to main (30cb010)
-- [x] Pushed to origin/main
+- [x] Merged to main
 
 ---
 
 ## Known Issues / Open Risks
-- Pre-existing chunk size warning (index.js 738kB, recharts 431kB) — bundle splitting still pending
+- Pre-existing chunk size warning (index.js ~700kB) — bundle splitting partially done in Phase 74, further splitting deferred
 - `job-queue.ts` handlers still not wired to actual voice/image routes
 - Dead-letters only captures Telegram reminder failures — WhatsApp failures not yet tracked
-- `telegramLastPing` is fetched via separate API call on mount (could be consolidated into integrations GET)
+- Ollama extraction requires Ollama to be running (port 32778 on VPS); if Ollama is down, falls back to regex
+- Weekly summary uses same Ollama instance — if unavailable on Sunday, summary is skipped silently
 
 ---
 
 ## Architecture Notes
-- `integrations.last_sync` is now updated on every Telegram/WhatsApp message in message-router
-- `channel_links.last_message_at` = last message from user to bot
-- `integrations.last_sync` = last message received (same as above now)
-- `reminder_dead_letters` does NOT track send errors for reminders with no channel_link (those are logged as warn, not dead-lettered)
+- `extractMemoriesWithOllama` writes to `agent_memory` (same table as regex extraction) — no separate `user_memory` table needed since existing schema supports all required types (category field serves as type)
+- Ollama extraction uses `temperature: 0.1` for deterministic JSON output
+- AbortSignal timeout: 15s for extraction, 20s for weekly summary
+- Weekly scheduler uses hourly polling to check if it's Sunday 04:00–05:00 UTC (setInterval approach, no cron library needed)
 
 ---
 
-## Next Steps (Phase 79 candidates)
-- Bundle splitting: code-split recharts + index.js (Phase 77/78 deferred)
+## Next Steps (Phase 80 candidates)
+- Bundle splitting: further code-split heavy components (deferred from 77/78/79)
 - Wire job queue handlers to voice/image service calls
 - Frontend job status polling (`GET /api/jobs/:id`)
-- CSRF tokens (mentioned in phase 75/76/77/78 open risks — still open)
+- CSRF tokens (mentioned in phases 75–79 open risks — still open)
 - Virtual scroll for long chat history
 - WhatsApp dead-letter support (not just Telegram)
 - Next release train candidate: Phase 80
 
 ## Merge Status
-Merged `ai/phase-20260302-phase78` → `main` (30cb010)
+Merged `ai/phase-20260302-phase79` → `main`
 Pushed to `origin/main`

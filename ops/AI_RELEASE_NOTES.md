@@ -4,6 +4,23 @@
 
 ---
 
+## Post-Phase 79 (2026-03-01) — Structured Memory Pipeline + Reminder Consistency
+
+*Status: Committed to main*
+
+### What's New
+- **Smarter reminders**: Reminders now include related memory context — if the agent knows your timezone, project name, or preferences, it includes relevant facts in the notification message
+- **Ollama memory extraction**: After every AI chat response, the local Ollama model extracts and remembers facts, goals, and preferences — goes beyond simple keyword matching
+- **Weekly memory summary**: Every Sunday the agent auto-summarizes everything it knows about each user into a concise profile, stored as a searchable memory entry
+
+### Under the Hood
+- Ollama extraction uses `temperature: 0.1` for deterministic JSON output; strips markdown code fences before parsing
+- Extraction is fire-and-forget (non-blocking): never slows down chat responses; falls back to regex if Ollama is unavailable
+- Weekly summary cron runs at 10:00 IST (04:30 UTC) on Sundays via hourly check
+- Reminder delivery enriched with up to 2 related memories (non-fatal, falls back to plain message on error)
+
+---
+
 ## Post-Phase 78 (2026-03-01) — Telegram/WhatsApp Stability + Connections Polish
 
 *Status: Committed to main*
