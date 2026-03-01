@@ -11,7 +11,7 @@ import { db } from './db/index.js';
 
 import { initAutomationsEngine, initWeeklyReportScheduler } from './services/automations-engine.js';
 import { initCleanupCron } from './services/cleanup.js';
-import { initMemoryTables, startMemorySyncScheduler } from './services/memory.js';
+import { initMemoryTables, startMemorySyncScheduler, startWeeklySummaryScheduler } from './services/memory.js';
 import { initWorkflowTables } from './services/workflow-engine.js';
 import { initTelegramBot } from './services/telegram.js';
 import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
@@ -91,6 +91,7 @@ const httpServer = app.listen(config.port, () => {
     safeStart('briefing-scheduler', startBriefingScheduler);
     safeStart('reminder-scheduler', startReminderScheduler);
     safeStart('memory-sync', startMemorySyncScheduler);
+    safeStart('memory-weekly-summary', startWeeklySummaryScheduler);
     safeStart('model-sync', startModelSyncScheduler);
     safeStart('artifact-cleanup', startArtifactCleanupScheduler);
     safeStart('db-cleanup-cron', initCleanupCron);

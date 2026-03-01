@@ -582,6 +582,26 @@ Infrastructure hardening, staging environment, autonomy tooling, CI/E2E fixes.
 | 76.11 | Deploy to staging + smoke test | ⏳ | Dev/Ops |
 | 76.12 | Commit + PR + merge to main | ⏳ | Dev/Ops |
 
+## Phase 79 — Structured Memory Pipeline + Reminder Consistency — COMPLETE ✓
+**Branch:** `ai/phase-20260302-phase79` | **Tests:** 944/944
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 79.1 | CI baseline + create branch | ✅ | Reliability |
+| 79.2 | extractMemoriesWithOllama: Ollama-based extraction (not PicoClaw) | ✅ | Feature |
+| 79.3 | buildMemoryContext wired in message-router + agent (verified pre-existing) | ✅ | Feature |
+| 79.4 | MemoryManagerPage + memoryService (verified pre-existing, fully functional) | ✅ | UI/UX |
+| 79.5 | GET /api/agent/memory: category + search filters (verified pre-existing) | ✅ | Feature |
+| 79.6 | DELETE /api/agent/memory/:id + bulk clear (verified pre-existing) | ✅ | Feature |
+| 79.7 | Reminder delivery enriched with related memories (💡 Context lines) | ✅ | Reliability |
+| 79.8 | Weekly memory summary cron (Sunday 10:00 IST, Ollama summarization) | ✅ | Feature |
+| 79.9 | phase79.test.ts — 28 tests (944/944 total) | ✅ | Testing |
+| 79.10 | Brand guard 0 violations + phase gate 7/7 | ✅ | Verification |
+| 79.11 | Staging smoke tests 11/11 | ✅ | Dev/Ops |
+| 79.12 | Ops files + commit + merge to main + push | ✅ | Dev/Ops |
+
+---
+
 ## Phase 78 — Telegram/WhatsApp Stability + Connections Polish — COMPLETE ✓
 **Branch:** `ai/phase-20260302-phase78` | **Commit:** 30cb010 | **Tests:** 916/916
 

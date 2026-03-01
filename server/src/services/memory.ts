@@ -8,6 +8,7 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
+import { config } from '../config.js';
 import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
 
 // ---- Schema (called on init) ----
@@ -280,6 +281,69 @@ Assistant said: "${assistantResponse.slice(0, 500)}"`;
   }
 }
 
+/**
+ * 79.2: Ollama-powered memory extraction — uses local Ollama (NOT PicoClaw/edith).
+ * Extracts structured facts (name, goal, preference, project, etc.) from conversation.
+ * Falls back to regex extraction if Ollama is unavailable or returns invalid JSON.
+ * Fire-and-forget: callers should not await this in the hot path.
+ */
+export async function extractMemoriesWithOllama(userId: string, userMessage: string, assistantResponse: string): Promise<void> {
+  try {
+    const prompt = `Extract facts about the user from this conversation. Return ONLY a valid JSON array of objects with {category, key, value}. Categories: preference, fact, goal, project. Max 5 items. If nothing notable, return [].
+
+User said: "${userMessage.slice(0, 400)}"
+Assistant said: "${assistantResponse.slice(0, 400)}"`;
+
+    const response = await fetch(`${config.ollamaBaseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: config.ollamaModel,
+        messages: [
+          { role: 'system', content: 'You extract user facts from conversations. Return valid JSON array only. No markdown, no explanation.' },
+          { role: 'user', content: prompt },
+        ],
+        stream: false,
+        options: { temperature: 0.1, num_predict: 256 },
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      extractMemories(userId, userMessage);
+      return;
+    }
+
+    const data = await response.json() as { message?: { content: string } };
+    const raw = (data.message?.content || '').trim();
+
+    // Strip optional markdown code fences
+    const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    let facts: Array<{ category: string; key: string; value: string }>;
+    try {
+      facts = JSON.parse(jsonStr);
+      if (!Array.isArray(facts)) { extractMemories(userId, userMessage); return; }
+    } catch {
+      extractMemories(userId, userMessage);
+      return;
+    }
+
+    for (const fact of facts.slice(0, 5)) {
+      if (!fact.category || !fact.key || !fact.value) continue;
+      const val = String(fact.value);
+      if (val.length < 2 || val.length > 300) continue;
+      upsertMemory(userId, fact.category, fact.key, val, 0.75, 'ollama-extract');
+    }
+
+    logger.debug({ userId, count: facts.length }, 'Ollama memory extraction complete');
+  } catch (err) {
+    // Non-fatal: fall back to regex extraction
+    logger.debug({ error: (err as Error).message }, 'Ollama memory extraction failed (non-fatal), falling back to regex');
+    try { extractMemories(userId, userMessage); } catch { /* ignore */ }
+  }
+}
+
 // ---- Build owner context for portfolio visitor chat ----
 
 const SCHEDULE_KEYWORDS = ['schedule', 'availability', 'free', 'busy', 'meeting', 'calendar', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'morning', 'afternoon', 'evening', 'timezone', 'hours', 'available', 'unavailable', 'slot', 'appointment', 'office hours', 'work hours'];
@@ -443,4 +507,80 @@ export function startMemorySyncScheduler(): void {
   setTimeout(syncMemoriesForActiveUsers, 5 * 60_000);
 
   logger.info('Memory sync scheduler started (3h interval)');
+}
+
+// ---- 79.8: Weekly Memory Summary ----
+
+let weeklySummaryInterval: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Summarize all memories updated in the past 7 days into a single
+ * "week_summary" entry. Uses Ollama (local, not PicoClaw).
+ * Skips users with fewer than 3 memories. Runs Sunday 10:00 IST (04:30 UTC).
+ */
+async function runWeeklyMemorySummary(): Promise<void> {
+  try {
+    const now = new Date();
+    // Only run on Sunday (0 = Sunday in JS) at 04:00–05:00 UTC (10:00–11:00 IST)
+    if (now.getUTCDay() !== 0 || now.getUTCHours() < 4 || now.getUTCHours() >= 5) return;
+
+    const activeUsers = db.prepare(`
+      SELECT DISTINCT user_id FROM agent_memory
+      WHERE updated_at >= datetime('now', '-7 days')
+    `).all() as { user_id: string }[];
+
+    logger.info({ count: activeUsers.length }, 'Weekly memory summary: processing users');
+
+    for (const { user_id: userId } of activeUsers) {
+      try {
+        const memories = getMemories(userId, undefined, 50);
+        if (memories.length < 3) continue;
+
+        const memLines = memories
+          .map(m => `[${m.category}] ${m.key}: ${m.value}`)
+          .join('\n');
+
+        const weekStart = now.toISOString().slice(0, 10);
+
+        const response = await fetch(`${config.ollamaBaseUrl}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: config.ollamaModel,
+            messages: [
+              { role: 'system', content: 'You write concise user profile summaries from memory entries. Keep it under 100 words.' },
+              { role: 'user', content: `Summarize what you know about this user in 1–2 sentences:\n${memLines}` },
+            ],
+            stream: false,
+            options: { temperature: 0.3, num_predict: 150 },
+          }),
+          signal: AbortSignal.timeout(20000),
+        });
+
+        if (!response.ok) continue;
+
+        const data = await response.json() as { message?: { content: string } };
+        const summary = (data.message?.content || '').trim();
+        if (!summary || summary.length < 10) continue;
+
+        upsertMemory(userId, 'summary', `week_${weekStart}`, summary, 0.9, 'weekly-cron');
+        logger.debug({ userId, weekStart }, 'Weekly memory summary stored');
+      } catch (err) {
+        logger.debug({ userId, error: (err as Error).message }, 'Weekly summary failed for user (non-fatal)');
+      }
+    }
+
+    logger.info({ count: activeUsers.length }, 'Weekly memory summary complete');
+  } catch (err) {
+    logger.error({ err: (err as Error).message }, 'Weekly memory summary tick failed');
+  }
+}
+
+export function startWeeklySummaryScheduler(): void {
+  if (weeklySummaryInterval) return;
+
+  // Check every hour whether it's the right time to run
+  weeklySummaryInterval = setInterval(runWeeklyMemorySummary, 60 * 60_000);
+
+  logger.info('Weekly memory summary scheduler started (checks hourly, runs Sunday 10:00 IST)');
 }
