@@ -4,6 +4,25 @@
 
 ---
 
+## Post-Phase 81 (2026-03-01) — Image Generation Pipeline
+
+*Status: Committed to main*
+
+### What's New
+- **Chat image generation**: Type `/image [your prompt]` in any chat to generate an image — result appears inline as a chat bubble with a download link
+- **Image gallery**: New "Image Gallery" section in the dashboard shows your last 30 generated images in a responsive grid with prompts, timestamps, and download links
+- **Daily image cap**: Free users get 5 image generations/day. Paid plans get 20/day. Cap-hit users see a clear upgrade prompt inline in chat.
+- **Async generation**: Images generate in the background — chat stays responsive while Pollinations AI creates your image (10–20 seconds)
+
+### Under the Hood
+- `POST /api/image/generate` — enqueues `image:generate` job, returns `{jobId}`
+- `GET /api/image/gallery` — last 30 images from `user_images` table
+- `GET /api/image/file/:id` — user-isolated redirect to stored image URL
+- Cap tracked via `usage_events` table with `tool='image.generate'`
+- TODO stub for local Stable Diffusion / Ollama vision model when available on VPS
+
+---
+
 ## Post-Phase 80 (2026-03-01) — Voice Pipeline (STT + TTS)
 
 *Status: Committed to main*

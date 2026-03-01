@@ -1,5 +1,9 @@
 # AI Phase Plan
 
+## Phase 81 — COMPLETE ✓
+**Tests:** 1009/1009 | **Branch:** merged to main
+Image Generation Pipeline: async POST /api/image/generate (job-queue), daily cap free=5/premium=20, GET /gallery, GET /file/:id, ImageGalleryPage, /image chat command, inline image bubbles, cap error UX, 32 new tests
+
 ## Phase 80 — COMPLETE ✓
 **Tests:** 977/977 | **Branch:** merged to main
 Voice Pipeline: STT endpoint (POST /api/voice/transcribe), TTS endpoint (POST /api/voice/speak), daily cap enforcement (free=5), MediaRecorder frontend, TTS speaker icon, job polling GET /api/jobs/:id, 33 new tests

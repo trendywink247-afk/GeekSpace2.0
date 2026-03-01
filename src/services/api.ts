@@ -1223,8 +1223,52 @@ export const jobsService = {
       if (job.status === 'done' || job.status === 'failed') return job;
       await new Promise(r => setTimeout(r, intervalMs));
     }
-    throw new Error('Voice job timed out');
+    throw new Error('Job timed out');
   },
+};
+
+// ----- Image Async (job-queue based) — Phase 81 -------------
+
+export interface ImageGalleryItem {
+  id: string;
+  prompt: string;
+  model: string;
+  image_url: string;
+  width: number;
+  height: number;
+  source: string;
+  created_at: string;
+  expires_at: string;
+}
+
+export const imageAsyncService = {
+  /**
+   * Enqueue an async image generation job.
+   * Returns {jobId}; poll /api/jobs/:jobId for {imageUrl, imageId, prompt}.
+   */
+  generate: async (prompt: string, style?: string): Promise<{ jobId: string }> => {
+    const response = await fetch('/api/image/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('authToken') || ''}`,
+      },
+      body: JSON.stringify({ prompt, style }),
+    });
+    if (response.status === 429) {
+      const data = await response.json() as { error: string; used: number; limit: number };
+      throw Object.assign(new Error(data.error), { code: 'IMAGE_CAP', used: data.used, limit: data.limit });
+    }
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({})) as { error?: string };
+      throw new Error(data.error || 'Image generation request failed');
+    }
+    return response.json() as Promise<{ jobId: string }>;
+  },
+
+  /** Get last 30 user-generated images. */
+  gallery: () =>
+    api.get<{ images: ImageGalleryItem[]; count: number }>('/image/gallery').then(r => r.data),
 };
 
 export default api;
