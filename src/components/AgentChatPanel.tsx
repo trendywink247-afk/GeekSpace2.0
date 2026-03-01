@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { notify } from '@/services/notifications';
-import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Copy, Check, Bookmark, BookmarkCheck } from 'lucide-react';
+import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Copy, Check, Bookmark, BookmarkCheck, Volume2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { agentService, premiumAgentService, publicAgentService, memoryService, billingService } from '@/services/api';
+import { agentService, premiumAgentService, publicAgentService, memoryService, billingService, voiceService, jobsService } from '@/services/api';
 import type { AgentPersonality, PremiumSession } from '@/types';
 import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
@@ -160,6 +160,21 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const speechSupported = typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
+  // 80.5/80.7: MediaRecorder voice recording states
+  type VoiceRecordState = 'idle' | 'recording' | 'uploading' | 'transcribing';
+  const [voiceRecordState, setVoiceRecordState] = useState<VoiceRecordState>('idle');
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const mediaRecorderSupported = typeof window !== 'undefined' && 'MediaRecorder' in window;
+
+  // 80.6: TTS playback state (per message id)
+  const [ttsLoadingId, setTtsLoadingId] = useState<string | null>(null);
+  const [ttsPlayingId, setTtsPlayingId] = useState<string | null>(null);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Swipe-down-to-close on mobile header
   const [touchStartY, setTouchStartY] = useState(0);
@@ -676,6 +691,97 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     setIsListening(true);
   };
 
+  // 80.5/80.7: MediaRecorder-based voice recording → server Whisper transcription
+  const handleMediaRecord = async () => {
+    if (voiceRecordState === 'recording') {
+      mediaRecorderRef.current?.stop();
+      return;
+    }
+    if (voiceRecordState !== 'idle') return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/ogg') ? 'audio/ogg' : '';
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      recordingChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordingChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+        setRecordingDuration(0);
+
+        const blob = new Blob(recordingChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        if (blob.size < 100) { setVoiceRecordState('idle'); return; }
+
+        setVoiceRecordState('uploading');
+        try {
+          const { jobId } = await voiceService.transcribe(blob);
+          setVoiceRecordState('transcribing');
+          const job = await jobsService.pollUntilDone(jobId, 30, 1000);
+          if (job.status === 'done' && job.result) {
+            const result = job.result as { text: string };
+            setInput(result.text);
+            inputRef.current?.focus();
+          } else {
+            throw new Error(job.error || 'Transcription failed');
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Voice error';
+          setVoiceError(msg.includes('Voice limit reached') ? 'Voice limit reached — upgrade for more' : msg);
+          setTimeout(() => setVoiceError(null), 4000);
+        } finally {
+          setVoiceRecordState('idle');
+        }
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setVoiceRecordState('recording');
+      setRecordingDuration(0);
+      recordingIntervalRef.current = setInterval(() => setRecordingDuration(d => d + 1), 1000);
+    } catch {
+      setVoiceError('Microphone access denied');
+      setTimeout(() => setVoiceError(null), 3000);
+    }
+  };
+
+  // 80.6: TTS playback — click speaker icon to hear an agent message
+  const handleTTS = async (messageId: string, text: string) => {
+    if (ttsLoadingId === messageId) return;
+    // Toggle off if already playing this message
+    if (ttsPlayingId === messageId) {
+      ttsAudioRef.current?.pause();
+      setTtsPlayingId(null);
+      return;
+    }
+    try {
+      setTtsLoadingId(messageId);
+      const { jobId } = await voiceService.speak(text.slice(0, 500));
+      const job = await jobsService.pollUntilDone(jobId, 20, 1000);
+      if (job.status === 'done' && job.result) {
+        const result = job.result as { audioBase64: string; mimeType: string };
+        const audio = new Audio(`data:${result.mimeType};base64,${result.audioBase64}`);
+        ttsAudioRef.current = audio;
+        audio.onended = () => setTtsPlayingId(null);
+        audio.onerror = () => setTtsPlayingId(null);
+        setTtsPlayingId(messageId);
+        await audio.play();
+      } else {
+        throw new Error(job.error || 'TTS failed');
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      toast.error(msg.includes('Voice limit reached') ? 'Voice limit reached — upgrade for more' : 'Text-to-speech unavailable');
+    } finally {
+      setTtsLoadingId(null);
+    }
+  };
+
   // Current avatar emoji — specialist uses a rocket
   const avatarEmoji = premiumSession ? '🚀' : pMeta.emoji;
   const headerName = premiumSession ? `${premiumSession.codename} — Specialist` : (agent.name || pMeta.name);
@@ -1032,6 +1138,27 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         }}
                       />
                     )}
+                    {/* 80.6: TTS speaker icon for agent messages */}
+                    {msg.role === 'agent' && !msg.isStreaming && (
+                      <div className="flex justify-end mt-1">
+                        <button
+                          onClick={() => handleTTS(msg.id, msg.content)}
+                          className={`p-1 rounded transition-colors ${
+                            ttsPlayingId === msg.id
+                              ? 'text-[#00F0FF] bg-[#00F0FF]/15'
+                              : 'text-[#6B7280]/50 hover:text-[#6B7280] hover:bg-[#00F0FF]/5'
+                          }`}
+                          title={ttsPlayingId === msg.id ? 'Stop playback' : 'Listen to this message'}
+                          data-testid="tts-button"
+                        >
+                          {ttsLoadingId === msg.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Volume2 className="w-3 h-3" />
+                          )}
+                        </button>
+                      </div>
+                    )}
                     {/* Retry button for failed messages */}
                     {msg.role === 'agent' && msg.retryContent && (
                       <div className="flex justify-end mt-2">
@@ -1237,7 +1364,38 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               className="flex-1 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] rounded-xl"
               data-testid="agent-chat-input"
             />
-            {speechSupported && (
+            {/* 80.5/80.7: MediaRecorder voice input with state indicator */}
+            {mediaRecorderSupported ? (
+              <button
+                onClick={handleMediaRecord}
+                disabled={voiceRecordState === 'uploading' || voiceRecordState === 'transcribing'}
+                className={`p-2 rounded-lg transition-colors relative ${
+                  voiceRecordState === 'recording'
+                    ? 'bg-red-500/20 hover:bg-red-500/30'
+                    : voiceRecordState !== 'idle'
+                    ? 'bg-[#00F0FF]/10 cursor-wait'
+                    : 'hover:bg-[#00F0FF]/10'
+                }`}
+                title={
+                  voiceRecordState === 'recording' ? `Recording… ${recordingDuration}s (click to stop)`
+                    : voiceRecordState === 'uploading' ? 'Uploading…'
+                    : voiceRecordState === 'transcribing' ? 'Transcribing…'
+                    : 'Record voice message'
+                }
+                data-testid="voice-record-button"
+              >
+                {voiceRecordState === 'uploading' || voiceRecordState === 'transcribing' ? (
+                  <Loader2 className="w-4 h-4 text-[#00F0FF] animate-spin" />
+                ) : (
+                  <Mic className={`w-4 h-4 ${voiceRecordState === 'recording' ? 'text-red-400 animate-pulse' : 'text-[#6B7280]'}`} />
+                )}
+                {voiceRecordState === 'recording' && (
+                  <span className="absolute -top-1 -right-1 text-[9px] bg-red-500 text-white rounded px-0.5 leading-4 min-w-[14px] text-center">
+                    {recordingDuration}
+                  </span>
+                )}
+              </button>
+            ) : speechSupported ? (
               <button
                 onClick={handleVoiceInput}
                 className={`p-2 rounded-lg transition-colors ${isListening ? 'bg-[#00F0FF]/20 hover:bg-[#00F0FF]/30' : 'hover:bg-[#00F0FF]/10'}`}
@@ -1245,6 +1403,12 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               >
                 <Mic className={`w-4 h-4 ${isListening ? 'text-[#00F0FF]' : 'text-[#6B7280]'}`} />
               </button>
+            ) : null}
+            {/* 80.7: Voice error/cap toast */}
+            {voiceError && (
+              <span className="absolute bottom-16 left-4 right-4 text-xs text-red-400 bg-red-900/40 border border-red-500/30 rounded-lg px-3 py-1.5 text-center">
+                {voiceError}
+              </span>
             )}
             <Button
               onClick={() => sendMessage()}

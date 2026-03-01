@@ -1,5 +1,15 @@
 # AI Phase Plan
 
+## Phase 80 — COMPLETE ✓
+**Tests:** 977/977 | **Branch:** merged to main
+Voice Pipeline: STT endpoint (POST /api/voice/transcribe), TTS endpoint (POST /api/voice/speak), daily cap enforcement (free=5), MediaRecorder frontend, TTS speaker icon, job polling GET /api/jobs/:id, 33 new tests
+
+## Phase 79 — COMPLETE ✓
+**Tests:** 944/944 | **Branch:** merged to main
+Structured Memory Pipeline: Ollama-based fact extraction (fire-and-forget), reminder enrichment with related memories, weekly summary cron (Sundays 10:00 IST)
+
+---
+
 ## Phase 32 — COMPLETE ✓
 **PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/61 | **Tests:** 290/290
 Sparklines, mobile badges, recurrence filter, feedback analytics, session revoke test
