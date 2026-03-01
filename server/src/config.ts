@@ -75,6 +75,12 @@ export const config = {
   moonshotTimeout: optionalInt('MOONSHOT_TIMEOUT_MS', 120000),
   moonshotMaxTokens: optionalInt('MOONSHOT_MAX_TOKENS', 8192),
 
+  // Ollama Cloud (remote Ollama-compatible instance with Bearer auth — middle tier)
+  ollamaCloudBaseUrl: process.env.OLLAMA_CLOUD_BASE_URL || '',
+  ollamaCloudApiKey: process.env.OLLAMA_CLOUD_API_KEY || '',
+  ollamaCloudModel: optional('OLLAMA_CLOUD_MODEL', 'llama3.1:8b'),
+  ollamaCloudTimeout: optionalInt('OLLAMA_CLOUD_TIMEOUT_MS', 60000),
+
   // fal.ai — Seedance Director Mode video generation
   falApiKey: process.env.FAL_KEY || '',
   falEnabled: !!process.env.FAL_KEY,
