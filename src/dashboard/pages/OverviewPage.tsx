@@ -23,11 +23,14 @@ import {
   GripVertical,
   AlertTriangle,
   Flame,
-  Copy
+  Copy,
+  Gauge,
+  CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import {
   AreaChart,
@@ -230,6 +233,16 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const [overdueAlertDismissed, setOverdueAlertDismissed] = useState(false);
   // 65.1: Portfolio stats widget
   const [portfolioStats, setPortfolioStats] = useState<{ view_count: number; contact_count: number; project_count: number } | null>(null);
+  // 77.2: Today's usage (messages/voice/images vs limits)
+  const [todayUsage, setTodayUsage] = useState<{
+    plan: string;
+    messages: { used: number; limit: number; percentage: number };
+    voice: { used: number; limit: number; percentage: number };
+    images: { used: number; limit: number; percentage: number };
+    tokenPercentage: number;
+  } | null>(null);
+  // 77.4: Soft limit banner dismiss
+  const [usageBannerDismissed, setUsageBannerDismissed] = useState(false);
   // 65.11: Done Today count-up animation
   const [doneTodayAnimKey, setDoneTodayAnimKey] = useState(0);
   const prevDoneToday = useRef(0);
@@ -348,6 +361,13 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   useEffect(() => {
     portfolioService.getMeStats().then(res => {
       setPortfolioStats({ view_count: res.data.view_count, contact_count: res.data.contact_count, project_count: res.data.project_count });
+    }).catch(() => {});
+  }, []);
+
+  // 77.2: Load today's usage vs limits
+  useEffect(() => {
+    usageService.today().then(res => {
+      setTodayUsage(res.data);
     }).catch(() => {});
   }, []);
 
@@ -669,6 +689,50 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
         </div>
       )}
 
+      {/* ─── 77.4: Soft Limit Warning Banner (≥80% of any daily limit) ─── */}
+      {todayUsage && !usageBannerDismissed && (
+        todayUsage.messages.percentage >= 0.8 ||
+        todayUsage.voice.percentage >= 0.8 ||
+        todayUsage.images.percentage >= 0.8 ||
+        todayUsage.tokenPercentage >= 0.8
+      ) && (
+        <div
+          className="rounded-2xl border flex items-start gap-4 px-4 py-3"
+          style={{ background: 'rgba(245,158,11,0.06)', borderColor: 'rgba(245,158,11,0.25)' }}
+        >
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(245,158,11,0.12)' }}>
+            <Gauge className="w-4 h-4 text-[#F59E0B]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#E8E8F0]">Approaching daily limit</p>
+            <p className="text-xs text-[#6B7280] mt-0.5">
+              {todayUsage.messages.percentage >= 1 || todayUsage.tokenPercentage >= 1
+                ? "You've hit your daily limit. Upgrade for more."
+                : `You've used ${Math.round(Math.max(todayUsage.messages.percentage, todayUsage.tokenPercentage) * 100)}% of today's allowance.`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {todayUsage.plan === 'free' && (
+              <Button
+                size="sm"
+                onClick={() => onNavigate?.('billing')}
+                className="text-xs h-8 px-3 bg-[#F59E0B] hover:bg-[#D97706] text-black"
+              >
+                <CreditCard className="w-3 h-3 mr-1" />
+                Upgrade
+              </Button>
+            )}
+            <button
+              onClick={() => setUsageBannerDismissed(true)}
+              className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ─── Upcoming Today Strip (41.2) ─── */}
       {(() => {
         const now = Date.now();
@@ -845,6 +909,62 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           );
         })}
       </div>
+
+      {/* ─── 77.2: Today's Usage Widget ─── */}
+      {todayUsage && (
+        <Card
+          style={{
+            background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
+            border: '1px solid rgba(0, 240, 255, 0.12)',
+          }}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Gauge className="w-4 h-4 text-[#00F0FF]" />
+                <span className="text-sm font-semibold text-[#E8E8F0]">Today's Usage</span>
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                  style={{ background: 'rgba(0,240,255,0.1)', color: '#00F0FF' }}
+                >
+                  {todayUsage.plan}
+                </span>
+              </div>
+              <button
+                onClick={() => onNavigate?.('usage')}
+                className="text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+              >
+                Full stats →
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Messages', ...todayUsage.messages, color: '#00F0FF' },
+                { label: 'Voice', ...todayUsage.voice, color: '#ADFF2F' },
+                { label: 'Images', ...todayUsage.images, color: '#BF5FFF' },
+              ].map((item) => {
+                const pct = Math.round(item.percentage * 100);
+                const barColor = pct >= 100 ? '#FF2D78' : pct >= 80 ? '#F59E0B' : item.color;
+                return (
+                  <div key={item.label}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] text-[#6B7280]">{item.label}</span>
+                      <span className="text-[10px] font-mono" style={{ color: barColor }}>
+                        {item.used}/{item.limit}
+                      </span>
+                    </div>
+                    <Progress
+                      value={Math.min(pct, 100)}
+                      className="h-1.5"
+                      style={{ '--progress-foreground': barColor } as React.CSSProperties}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 50.3: Reminder streak widget — only shown when streak >= 2 */}
       {reminderStreak !== null && reminderStreak.streak >= 2 && (

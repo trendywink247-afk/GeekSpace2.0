@@ -527,13 +527,23 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           setIsTyping(true);
           await doRegularChat();
         } catch (innerErr: unknown) {
-          const reqId = (innerErr as { response?: { headers?: Record<string, string>; data?: { requestId?: string } } })?.response?.data?.requestId
-            ?? (innerErr as { response?: { headers?: Record<string, string> } })?.response?.headers?.['x-request-id'];
-          setAgentMsg({
-            content: "Sorry, I couldn't process that right now. Please try again." + (reqId ? ` (Error ID: ${reqId})` : ''),
-            isStreaming: false,
-            retryContent: content,
-          });
+          const status = (innerErr as { response?: { status?: number } })?.response?.status;
+          // 77.5: 429 / credit exhaustion → show upgrade prompt instead of raw error
+          if (status === 429) {
+            setShowUpgradePrompt(true);
+            setAgentMsg({
+              content: "You've reached your daily limit. Upgrade your plan to keep chatting.",
+              isStreaming: false,
+            });
+          } else {
+            const reqId = (innerErr as { response?: { headers?: Record<string, string>; data?: { requestId?: string } } })?.response?.data?.requestId
+              ?? (innerErr as { response?: { headers?: Record<string, string> } })?.response?.headers?.['x-request-id'];
+            setAgentMsg({
+              content: "Sorry, I couldn't process that right now. Please try again." + (reqId ? ` (Error ID: ${reqId})` : ''),
+              isStreaming: false,
+              retryContent: content,
+            });
+          }
         }
       } finally {
         setIsTyping(false);
