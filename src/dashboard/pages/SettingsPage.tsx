@@ -35,7 +35,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
-import { userService, apiKeyService, memoryService, agentService, versionService, modelService, type UserSession } from '@/services/api';
+import { userService, apiKeyService, memoryService, agentService, versionService, modelService, authService, type UserSession } from '@/services/api';
 import type { ApiProvider, MemoryEntry, FreeModel } from '@/types';
 
 export function SettingsPage() {
@@ -184,6 +184,13 @@ export function SettingsPage() {
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState('');
   const [pwSaving, setPwSaving] = useState(false);
+
+  // 82.8: Delete account state
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const logout = useAuthStore((s) => s.logout);
 
   // Load memories and reaction summary when memory tab is active
   useEffect(() => {
@@ -1076,6 +1083,82 @@ export function SettingsPage() {
                   <><Key className="w-4 h-4 mr-2" />Update Password</>
                 )}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* 82.8: Danger Zone — Delete Account */}
+          <Card className="border-red-500/30 bg-red-500/5">
+            <CardHeader>
+              <CardTitle className="text-red-400 flex items-center gap-2">
+                <Trash2 className="w-4 h-4" /> Danger Zone
+              </CardTitle>
+              <CardDescription className="text-[#6B7280]">
+                Permanently delete your account and all associated data. This cannot be undone.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!showDeleteConfirm ? (
+                <Button
+                  variant="outline"
+                  className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500/60"
+                  onClick={() => { setShowDeleteConfirm(true); setDeleteError(''); setDeletePassword(''); }}
+                  data-testid="delete-account-open-btn"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete My Account
+                </Button>
+              ) : (
+                <div className="space-y-3 p-4 rounded-xl bg-red-500/5 border border-red-500/20">
+                  <p className="text-sm text-[#E8E8F0]">
+                    Enter your password to confirm permanent account deletion. All your data — conversations, reminders, automations, and settings — will be erased immediately.
+                  </p>
+                  <Input
+                    type="password"
+                    placeholder="Your current password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    className="bg-[#0C0C18] border-red-500/30 text-[#E8E8F0]"
+                    data-testid="delete-account-password-input"
+                  />
+                  {deleteError && (
+                    <p className="text-xs text-red-400">{deleteError}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); setDeleteError(''); }}
+                      className="border-[#00F0FF]/20 text-[#6B7280]"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={isDeleting || deletePassword.length < 6}
+                      onClick={async () => {
+                        setDeleteError('');
+                        setIsDeleting(true);
+                        try {
+                          await authService.deleteUserAccount(deletePassword);
+                          logout();
+                        } catch (err: unknown) {
+                          const axiosErr = err as { response?: { data?: { error?: string } } };
+                          setDeleteError(axiosErr?.response?.data?.error || 'Failed to delete account. Check your password and try again.');
+                        } finally {
+                          setIsDeleting(false);
+                        }
+                      }}
+                      className="bg-red-500 hover:bg-red-600 text-white"
+                      data-testid="delete-account-confirm-btn"
+                    >
+                      {isDeleting ? (
+                        <><Loader2 className="w-3 h-3 mr-2 animate-spin" />Deleting…</>
+                      ) : (
+                        'Permanently Delete Account'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

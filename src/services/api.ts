@@ -117,6 +117,10 @@ export const authService = {
 
   resetPassword: (resetToken: string, newPassword: string) =>
     api.post<{ success: boolean; message?: string; error?: string }>('/auth/reset-password', { resetToken, newPassword }),
+
+  // 82.8: Permanently delete the authenticated user's account
+  deleteUserAccount: (password: string) =>
+    api.post<{ success: boolean; message: string }>('/auth/delete-account', { password }),
 };
 
 // ----- Users -------------------------------------------------

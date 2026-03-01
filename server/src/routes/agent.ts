@@ -12,6 +12,7 @@ import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/
 import { checkKeywordTriggers } from '../services/automations-engine.js';
 import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations } from '../services/memory.js';
 import { loadPicoContext, formatContextBlock } from '../services/pico-context.js';
+import { checkContent } from '../services/content-filter.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
 import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeRequest } from '../services/pico-kimi-bridge.js';
 import { getUserWorkflows, getWorkflowStatus, getWorkflowAnalytics } from '../services/workflow-engine.js';
@@ -293,6 +294,9 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
       });
       return;
     }
+
+    // 82.6: Content filter — tag flagged messages (non-blocking, never stops the request)
+    checkContent(message, userId);
 
     // Log user message + extract memories (non-blocking)
     logConversation(userId, 'user', message);
@@ -1076,6 +1080,9 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
     const systemPrompt = buildSystemPrompt(agentConfig, user, userId);
+
+    // 82.6: Content filter — tag flagged messages (non-blocking)
+    checkContent(message, userId);
 
     const history = getConversationContext(userId);
     const intent = classifyIntent(message);

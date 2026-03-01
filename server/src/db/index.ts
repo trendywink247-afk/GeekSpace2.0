@@ -1521,3 +1521,45 @@ try { db.exec(`ALTER TABLE suggestions ADD COLUMN deleted_at TEXT DEFAULT NULL`)
 
 // Phase 70.14: Trending flag on suggestions (vote velocity > threshold in last 24h)
 try { db.exec(`ALTER TABLE suggestions ADD COLUMN trending INTEGER DEFAULT 0`); } catch { /* already exists */ }
+
+// ── Phase 82: Store Safety tables ────────────────────────────────────────────
+
+// 82.2: AI response reports — users can flag harmful/inaccurate/inappropriate responses
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS reports (
+    id TEXT PRIMARY KEY,
+    reporter_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    message_content TEXT NOT NULL DEFAULT '',
+    reason TEXT NOT NULL DEFAULT 'other',
+    additional_info TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reports_reporter ON reports(reporter_id, created_at DESC)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, created_at DESC)`); } catch { /* already exists */ }
+
+// 82.3: User blocking infrastructure (for future user-to-user messaging)
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS blocked_users (
+    id TEXT PRIMARY KEY,
+    blocker_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    blocked_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(blocker_id, blocked_id)
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_blocked_users_blocker ON blocked_users(blocker_id)`); } catch { /* already exists */ }
+
+// 82.6: Content moderation log — flagged messages (still sent but logged)
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS moderation_log (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    message TEXT NOT NULL,
+    flags TEXT NOT NULL DEFAULT '[]',
+    action TEXT NOT NULL DEFAULT 'allowed',
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_moderation_log_user ON moderation_log(user_id, created_at DESC)`); } catch { /* already exists */ }

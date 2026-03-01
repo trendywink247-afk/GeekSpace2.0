@@ -456,3 +456,69 @@ authRouter.delete('/sessions', requireAuth, (req: AuthRequest, res) => {
   `).run(userId);
   res.json({ success: true });
 });
+
+// ── 82.8: Account Deletion ────────────────────────────────────────────────────
+// Permanently deletes all user data in a single transaction.
+// Requires password confirmation for security.
+
+authRouter.post('/delete-account', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { password } = req.body as { password?: string };
+
+  if (!password) {
+    res.status(400).json({ error: 'Password confirmation is required' });
+    return;
+  }
+
+  // Verify password before destroying anything
+  const user = db.prepare('SELECT id, email, password_hash FROM users WHERE id = ?').get(userId) as {
+    id: string; email: string; password_hash: string;
+  } | undefined;
+
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  const valid = await bcrypt.compare(password, user.password_hash);
+  if (!valid) {
+    res.status(403).json({ error: 'Incorrect password' });
+    return;
+  }
+
+  // Delete all user data in a single transaction.
+  // Tables with ON DELETE CASCADE are handled automatically when the users row is deleted,
+  // but we delete explicitly for clarity and to handle tables without CASCADE.
+  const deleteAll = db.transaction(() => {
+    // Explicit deletes for tables that may not have CASCADE
+    const tables = [
+      'conversation_log', 'agent_memory', 'reminders', 'automations', 'automation_logs',
+      'integrations', 'usage_events', 'activity_log', 'api_keys', 'agent_configs',
+      'agent_messages', 'premium_sessions', 'subscriptions', 'briefings', 'installed_recipes',
+      'generated_artifacts', 'user_images', 'user_videos', 'video_jobs',
+      'reports', 'moderation_log', 'blocked_users', 'suggestion_votes', 'suggestions',
+      'portfolios', 'portfolio_visits', 'security_events', 'user_sessions', 'channel_links',
+      'link_codes', 'password_reset_tokens', 'password_reset_rate_limits', 'password_reset_audit',
+    ];
+
+    for (const table of tables) {
+      try {
+        db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).run(userId);
+      } catch {
+        // Table may not exist or may not have user_id column — skip silently
+      }
+    }
+
+    // Delete the user row last (cascades any remaining FK relations)
+    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  });
+
+  deleteAll();
+
+  logger.info({ userId, email: user.email }, 'Account deleted by user request');
+
+  res.json({
+    success: true,
+    message: 'Your account and all associated data have been permanently deleted.',
+  });
+});
