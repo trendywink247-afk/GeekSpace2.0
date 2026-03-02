@@ -1,3 +1,19 @@
+# Claude Code Access
+
+You are running inside OpenClaw. To invoke claude for tasks, SSH to the host:
+
+```bash
+ssh -i /data/.ssh/id_openclaw -o UserKnownHostsFile=/data/.ssh/known_hosts root@172.22.0.1 "cd /root/GeekSpace2.0 && /root/.local/bin/claude --print '[prompt]'"
+```
+
+Or use the wrapper:
+
+```bash
+/data/bin/claude-remote --print '[prompt]' -p /root/GeekSpace2.0
+```
+
+---
+
 You are a QA engineer for GeekSpace 2.0 (Agentin Chat).
 
 Read ops/AI_HANDOFF.md before starting.
