@@ -1,51 +1,51 @@
-# AI Handoff — Post-Phase 84 (Mobile UI Polish)
+# AI Handoff — Post-Phase 85 (Complete Mobile + Web UI Overhaul)
 
 **Date:** 2026-03-02
-**Branch:** `main` (phase-84 merged)
-**Tests:** 84 server unit test files | 1103 tests (all passing)
+**Branch:** `main` (phase-85 merged)
+**Tests:** 85 server unit test files | 1141 tests (all passing)
 
 ---
 
 ## Completed This Phase
 
-### Phase 84 — Mobile UI Polish (13 items)
+### Phase 85 — Complete Mobile + Web UI Overhaul
 
-1. ✅ **84.1** CI baseline verified (1080/1080), worktree created at `.worktrees/phase-84`
-2. ✅ **84.2** Mobile audit → `ops/MOBILE_AUDIT.md` (comprehensive finding for all pages)
-3. ✅ **84.3** Global: `overflow-x-hidden` added to App.tsx root div
-4. ✅ **84.4** AgentChatPanel: header icon buttons `p-2`→`p-2.5` + `min-w-[44px] min-h-[44px]`; scroll-to-bottom `w-8 h-8`→`w-10 h-10`; voice/deploy buttons upgraded
-5. ✅ **84.5** Navigation: mobile hamburger `p-2`→`p-3` + `min-w/h-[44px]` + `aria-label`
-6. ✅ **84.6** Forms: Input component already correct (h-11, text-base 16px) — documented
-7. ✅ **84.7** Cards/Lists: reviewed — DashboardApp mobile tabs OK (h-16, safe-area-pb)
-8. ✅ **84.8** ImageGallery: download button moved from hover-only overlay to always-visible bottom bar with `aria-label`
-9. ✅ **84.9** InvitePage: `change` invite code button gets `min-h-[44px]`
-10. ✅ **84.10** PWA manifest: fixed icon paths (`icon-192x192.png`→`icon-192.png`, `icon-512x512.png`→`icon-512.png`); removed non-existent icon sizes
-11. ✅ **84.11** Web consistency: App.tsx overflow protection + index.css safe-area classes verified
-12. ✅ **84.12** Brand guard: 0 violations ✅
-13. ✅ **84.13** `phase84.test.ts`: 23 tests | 1103 total | phase gate 7/7 ✅
-14. ✅ **84.14** Staging deploy + smoke 11/11 ✅
-15. ✅ **84.15** Committed `6d9da65`, merged to `main`
+1. ✅ **A1** Global CSS: `html { overflow-x: hidden; max-width: 100vw; }`, `* { box-sizing: border-box; }`, `img, video { max-width: 100%; height: auto; }` added to `index.css`
+2. ✅ **A3/A5** Root container overflow: `overflow-x-hidden` on App.tsx root div + MemoryManagerPage root div
+3. ✅ **B1** Hero section: spinning rings + orbiting particles `hidden sm:block`; badge `relative z-10`; typewriter `overflow-visible`; section `overflow-hidden`
+4. ✅ **B2** Navigation: `hidden md:flex` (links), `hidden md:block` (CTA), `md:hidden` (hamburger), `min-w-[44px]` tap target (already correct from Phase 84)
+5. ✅ **B3** MemoryManagerPage: card key `truncate`; metadata `flex-wrap`; action buttons `flex-shrink-0 min-w-[44px] min-h-[44px]`; root `overflow-x-hidden`
+6. ✅ **B4** WebsiteBuilderPage: TabsList wrapped in `overflow-x-auto scrollbar-hide`; triggers `flex-shrink-0 whitespace-nowrap`
+7. ✅ **C4** ConnectionsPage: QR image `max-w-full`; QR container `max-w-[90vw] mx-auto`
+8. ✅ **C5** SettingsPage: API key text container `min-w-0 flex-1`; label + masked key `truncate`; actions `flex-shrink-0`
+9. ✅ **C8** ArtifactsPage: all icon action buttons `p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center`
+10. ✅ **D1** manifest.json: icon paths `/icon-192.png` (192×192), `/icon-512.png` (512×512); `display: standalone` (verified from Phase 84)
+11. ✅ **D2** index.html: `viewport-fit=cover`, `apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-touch-icon`, `manifest.json` link (verified present)
+12. ✅ **D3** Safe-area insets: `safe-area-pb` on AgentChatPanel input area + DashboardApp mobile tab bar (verified from Phase 84)
+13. ✅ **Gate** Phase gate 7/7 ✅ | Brand guard 0 violations ✅
+14. ✅ **Tests** `phase85.test.ts`: 38 tests | 1141 total | staging smoke 11/11 ✅
+15. ✅ **Merge** Committed `b1da73d`, merged to `main`, pushed to `origin/main`
 
 ---
 
 ## Files Changed
 
 ```
-ops/MOBILE_AUDIT.md                      — new: full mobile audit doc
-server/src/test/phase84.test.ts          — new: 23 mobile polish tests
-src/App.tsx                              — overflow-x-hidden on root div
-src/components/AgentChatPanel.tsx        — tap targets: header + scroll + input buttons
-src/components/Navigation.tsx            — hamburger tap target + aria-label
-src/dashboard/pages/ImageGalleryPage.tsx — download button always-visible on touch
-src/pages/InvitePage.tsx                 — change button min-h tap target
-public/manifest.json                     — fix icon paths to match actual files
+server/src/test/phase85.test.ts             — new: 38 mobile overhaul tests
+src/index.css                               — html/box-sizing/img global rules
+src/landing/sections/HeroSection.tsx        — mobile decorative hidden, badge z-10
+src/dashboard/pages/MemoryManagerPage.tsx   — overflow + truncation + 44px tap targets
+src/dashboard/pages/WebsiteBuilderPage.tsx  — tab overflow-x-auto scrollable
+src/dashboard/pages/ConnectionsPage.tsx     — QR code max-w-full + max-w-[90vw]
+src/dashboard/pages/SettingsPage.tsx        — API key min-w-0 + truncate
+src/dashboard/pages/ArtifactsPage.tsx       — icon button 44px tap targets
 ```
 
 ---
 
 ## Test / Gate Status
 
-- **Server tests:** 1103/1103 ✅ (84 test files)
+- **Server tests:** 1141/1141 ✅ (85 test files)
 - **Frontend lint:** 0 errors ✅
 - **TypeScript:** 0 errors ✅
 - **Build:** clean ✅
@@ -57,14 +57,14 @@ public/manifest.json                     — fix icon paths to match actual file
 
 ## Merge Status
 
-- Branch `ai/phase-20260302-phase84` → merged to `main`
-- Commit: `6d9da65` (phase branch) + merge commit on main
-- **Next:** push to `origin/main` (awaiting user instruction)
+- Branch `ai/phase-20260302-phase85` → merged to `main`
+- Commit: `b1da73d` (phase branch) + merge commit `a948e45` on main
+- **Pushed:** `origin/main` up to date
 - **Prod deploy:** when user says to sync + deploy
 
 ---
 
-## Next Phase Proposal — Phase 85
+## Next Phase Proposal — Phase 86
 
 Suggested focus: **Performance + SEO + Accessibility Hardening**
 
@@ -86,6 +86,7 @@ Candidate tasks:
 
 ```bash
 cd ~/GeekSpace2.0
-git push origin main   # push phase 84 to remote
-# then optionally: sync live-production + docker deploy
+# Sync to live-production and deploy when ready:
+git checkout live-production && git merge main --no-ff && git push origin live-production
+cd ~/GeekSpace2.0 && docker compose up -d --build geekspace
 ```
