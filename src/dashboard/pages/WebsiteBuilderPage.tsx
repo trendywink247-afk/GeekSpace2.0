@@ -306,24 +306,26 @@ export function WebsiteBuilderPage() {
       )}
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/10">
-          <TabsTrigger value="projects" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[#00F0FF] gap-2">
-            <Code className="w-4 h-4" />
-            My Projects
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[#00F0FF] gap-2">
-            <LayoutTemplate className="w-4 h-4" />
-            Templates
-          </TabsTrigger>
-          <TabsTrigger value="builder" className="data-[state=active]:bg-[#ADFF2F]/10 data-[state=active]:text-[#ADFF2F] gap-2">
-            <Wrench className="w-4 h-4" />
-            Builder
-          </TabsTrigger>
-          <TabsTrigger value="weebos" className="data-[state=active]:bg-[#00FF88]/10 data-[state=active]:text-[#00FF88] gap-2">
-            <Bot className="w-4 h-4" />
-            Weebos
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto scrollbar-hide w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/10 flex w-max min-w-full">
+            <TabsTrigger value="projects" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[#00F0FF] gap-2 flex-shrink-0 whitespace-nowrap">
+              <Code className="w-4 h-4" />
+              My Projects
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[#00F0FF] gap-2 flex-shrink-0 whitespace-nowrap">
+              <LayoutTemplate className="w-4 h-4" />
+              Templates
+            </TabsTrigger>
+            <TabsTrigger value="builder" className="data-[state=active]:bg-[#ADFF2F]/10 data-[state=active]:text-[#ADFF2F] gap-2 flex-shrink-0 whitespace-nowrap">
+              <Wrench className="w-4 h-4" />
+              Builder
+            </TabsTrigger>
+            <TabsTrigger value="weebos" className="data-[state=active]:bg-[#00FF88]/10 data-[state=active]:text-[#00FF88] gap-2 flex-shrink-0 whitespace-nowrap">
+              <Bot className="w-4 h-4" />
+              Weebos
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="projects" className="mt-6">
           <ArtifactsPage onNavigate={(page) => {

@@ -219,7 +219,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleCopyUrl(artifact.previewUrl, artifact.id)}
-                  className="p-2 text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 rounded-lg transition-colors"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 rounded-lg transition-colors"
                   title="Copy URL"
                 >
                   {copiedId === artifact.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
@@ -227,7 +227,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleEdit(artifact)}
-                  className="p-2 text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 rounded-lg transition-colors"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 rounded-lg transition-colors"
                   title="Edit"
                 >
                   <Edit3 className="w-4 h-4" />
@@ -235,7 +235,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleExportZip(artifact)}
-                  className="p-2 text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 rounded-lg transition-colors"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 rounded-lg transition-colors"
                   title="Download ZIP"
                 >
                   <Download className="w-4 h-4" />
@@ -243,7 +243,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleDomainSetup(artifact)}
-                  className="p-2 text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 rounded-lg transition-colors"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 rounded-lg transition-colors"
                   title="Custom Domain"
                 >
                   <Globe className="w-4 h-4" />
@@ -254,7 +254,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                     setSelectedArtifact(artifact);
                     setShowDeleteConfirm(true);
                   }}
-                  className="p-2 text-[#6B7280] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B7280] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4" />
