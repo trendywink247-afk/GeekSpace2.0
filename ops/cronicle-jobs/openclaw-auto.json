@@ -1,0 +1,9 @@
+{
+  "title": "OpenClaw Auto Session",
+  "enabled": false,
+  "timezone": "Asia/Kolkata",
+  "schedule": "0 2 * * *",
+  "command": "/root/GeekSpace2.0/scripts/openclaw-auto.sh",
+  "description": "Runs current-phase-prompt.txt autonomously via claude --print. Enable manually in Cronicle UI when a phase prompt is ready. Auto-disables after running once.",
+  "notes": "Prompt file: /root/GeekSpace2.0/ops/current-phase-prompt.txt\nWrite prompt with: cat prompt.txt | ./scripts/write-phase-prompt.sh"
+}
