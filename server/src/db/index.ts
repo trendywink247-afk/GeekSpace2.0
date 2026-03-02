@@ -1563,3 +1563,19 @@ try { db.exec(`
   )
 `); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_moderation_log_user ON moderation_log(user_id, created_at DESC)`); } catch { /* already exists */ }
+
+// 83.4: Invite codes — for invite-gated beta registration
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS invite_codes (
+    id TEXT PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    email TEXT,
+    note TEXT DEFAULT '',
+    created_by TEXT DEFAULT 'admin',
+    used_at TEXT DEFAULT NULL,
+    used_by TEXT DEFAULT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_invite_codes_used ON invite_codes(used_at)`); } catch { /* already exists */ }

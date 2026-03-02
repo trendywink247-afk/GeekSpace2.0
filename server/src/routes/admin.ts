@@ -955,6 +955,69 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
     }
   });
 
+  // ── 83.4: Invite codes ───────────────────────────────────────
+  // POST /api/admin/invite — create one or more invite codes
+  adminRouter.post('/invite', requireAdminToken, (req: Request, res: Response): void => {
+    const { email, note, count = 1 } = req.body as { email?: string; note?: string; count?: number };
+    const n = Math.min(Math.max(1, Number(count) || 1), 100); // 1–100 at a time
+    const codes: Array<{ id: string; code: string; email: string | null; note: string }> = [];
+
+    const insert = db.prepare(`
+      INSERT INTO invite_codes (id, code, email, note, created_by)
+      VALUES (?, ?, ?, ?, 'admin')
+    `);
+
+    const doInserts = db.transaction(() => {
+      for (let i = 0; i < n; i++) {
+        const id = uuidV4();
+        // 8-char alphanumeric code, uppercase
+        const code = Math.random().toString(36).substring(2, 6).toUpperCase() +
+                     Math.random().toString(36).substring(2, 6).toUpperCase();
+        insert.run(id, code, email || null, note || '');
+        codes.push({ id, code, email: email || null, note: note || '' });
+      }
+    });
+    doInserts();
+
+    logger.info({ count: n, email }, 'admin: invite codes created');
+    res.status(201).json({ created: n, codes });
+  });
+
+  // GET /api/admin/invites — list all invite codes with usage status
+  adminRouter.get('/invites', requireAdminToken, (req: Request, res: Response): void => {
+    const unused = req.query.unused === 'true';
+    const rows = db.prepare(`
+      SELECT id, code, email, note, created_by, used_at, used_by, created_at
+      FROM invite_codes
+      ${unused ? 'WHERE used_at IS NULL' : ''}
+      ORDER BY created_at DESC
+      LIMIT 500
+    `).all() as Array<{
+      id: string; code: string; email: string | null; note: string;
+      created_by: string; used_at: string | null; used_by: string | null; created_at: string;
+    }>;
+
+    res.json({
+      count: rows.length,
+      unusedCount: rows.filter(r => !r.used_at).length,
+      usedCount: rows.filter(r => !!r.used_at).length,
+      codes: rows.map(r => ({
+        ...r,
+        used: !!r.used_at,
+      })),
+    });
+  });
+
+  // DELETE /api/admin/invite/:id — revoke an unused invite code
+  adminRouter.delete('/invite/:id', requireAdminToken, (req: Request, res: Response): void => {
+    const { id } = req.params;
+    const row = db.prepare('SELECT id, used_at FROM invite_codes WHERE id = ?').get(id) as { id: string; used_at: string | null } | undefined;
+    if (!row) { res.status(404).json({ error: 'Invite code not found' }); return; }
+    if (row.used_at) { res.status(409).json({ error: 'Cannot revoke an already-used invite code' }); return; }
+    db.prepare('DELETE FROM invite_codes WHERE id = ?').run(id);
+    res.json({ revoked: true, id });
+  });
+
   // POST /api/admin/rewards/grant — manual reward override
   adminRouter.post('/rewards/grant', requireAdminToken, (req: Request, res: Response): void => {
     const { userId, suggestionId, clusterId, eventType } = req.body as {userId?: string; suggestionId?: string; clusterId?: string; eventType?: string};

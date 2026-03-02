@@ -14,7 +14,27 @@ import { logger } from '../logger.js';
 export const authRouter = Router();
 
 authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
-  const { email, password, username, name } = req.body;
+  const { email, password, username, name, invite_code } = req.body as {
+    email: string; password: string; username: string; name?: string; invite_code?: string;
+  };
+
+  // 83.5: Invite-gated registration — check if INVITE_REQUIRED=true
+  if (config.inviteRequired) {
+    if (!invite_code || typeof invite_code !== 'string') {
+      res.status(403).json({ error: 'An invite code is required to register. Request access at ai.agentin.chat.' });
+      return;
+    }
+    const invite = db.prepare('SELECT id, used_at FROM invite_codes WHERE code = ?').get(invite_code.trim().toUpperCase()) as
+      { id: string; used_at: string | null } | undefined;
+    if (!invite) {
+      res.status(403).json({ error: 'Invalid invite code. Check your invite link or request one from the team.' });
+      return;
+    }
+    if (invite.used_at) {
+      res.status(409).json({ error: 'This invite code has already been used.' });
+      return;
+    }
+  }
 
   const existing = db.prepare('SELECT id FROM users WHERE email = ? OR username = ?').get(email, username);
   if (existing) {
@@ -89,6 +109,16 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
       return;
     }
     throw err;
+  }
+
+  // 83.5: Mark invite code as used (non-fatal — user is already created)
+  if (config.inviteRequired && invite_code) {
+    try {
+      db.prepare('UPDATE invite_codes SET used_at = datetime(\'now\'), used_by = ? WHERE code = ?')
+        .run(id, invite_code.trim().toUpperCase());
+    } catch (err) {
+      logger.warn({ err, invite_code }, 'Failed to mark invite code as used');
+    }
   }
 
   const token = signToken(id);
