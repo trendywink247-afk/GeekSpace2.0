@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { notify } from '@/services/notifications';
-import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Copy, Check, Bookmark, BookmarkCheck, Volume2, Loader2 } from 'lucide-react';
+import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Copy, Check, Bookmark, BookmarkCheck, Volume2, Loader2, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -180,6 +180,13 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
   // 81.8: Image cap error shown inline
   const [imageCapError, setImageCapError] = useState<string | null>(null);
+
+  // 82.7: AI safety footer — dismissed per session via sessionStorage
+  const [safetyDismissed, setSafetyDismissed] = useState(() =>
+    typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ai-disclaimer-dismissed') === '1'
+  );
+  // 82.2: Track which agent messages have been reported
+  const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
 
   // Swipe-down-to-close on mobile header
   const [touchStartY, setTouchStartY] = useState(0);
@@ -1259,6 +1266,37 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         >
                           ↩ Reply
                         </button>
+                        {/* 82.2: Flag / Report this agent response */}
+                        {msg.role === 'agent' && (
+                          <button
+                            onClick={async () => {
+                              if (reportedIds.has(msg.id)) return;
+                              try {
+                                const token = localStorage.getItem('gs_token');
+                                await fetch('/api/report', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                                  },
+                                  body: JSON.stringify({ messageContent: msg.content.slice(0, 500), reason: 'inappropriate' }),
+                                });
+                                setReportedIds(prev => new Set([...prev, msg.id]));
+                                toast.success('Response flagged — thank you', { duration: 2000 });
+                              } catch {
+                                toast.error('Failed to submit report');
+                              }
+                            }}
+                            className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] transition-colors opacity-0 group-hover:opacity-100 ${
+                              reportedIds.has(msg.id) ? 'text-[#FF6161]' : 'text-[#6B7280] hover:text-[#FF6161]'
+                            }`}
+                            title="Flag this response"
+                            data-testid={`report-btn-${msg.id}`}
+                          >
+                            <Flag className="w-3 h-3" />
+                            {reportedIds.has(msg.id) ? 'Flagged' : 'Flag'}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1397,6 +1435,27 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* 82.7: AI safety footer — dismissable per session */}
+        {!safetyDismissed && (
+          <div
+            className="px-4 py-1.5 flex items-center justify-between gap-2 border-t border-[#00F0FF]/5 bg-[#06060B]/80"
+            data-testid="ai-safety-banner"
+          >
+            <span className="text-[10px] text-[#6B7280]/70">AI can make mistakes — always verify important information.</span>
+            <button
+              onClick={() => {
+                sessionStorage.setItem('ai-disclaimer-dismissed', '1');
+                setSafetyDismissed(true);
+              }}
+              className="text-[#6B7280]/50 hover:text-[#6B7280] flex-shrink-0 transition-colors"
+              aria-label="Dismiss AI safety notice"
+              data-testid="dismiss-safety-banner"
+            >
+              <X className="w-3 h-3" />
+            </button>
           </div>
         )}
 
