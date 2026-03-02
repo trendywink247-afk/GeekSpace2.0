@@ -64,10 +64,62 @@ dev.geekspace.space {
 	reverse_proxy openclaw:58049
 }
 
+# ---- Production (agentin.chat) ----
+ai.agentin.chat {
+	import common_headers
+
+	# API calls always pass through
+	handle /api/* {
+		reverse_proxy geekspace:3001
+	}
+
+	# Gate page is always accessible
+	handle /gate.html {
+		root * /srv
+		file_server
+	}
+
+	# Authenticated users (cookie set by gate page) get the SPA
+	@agentin_authed expression `{http.request.cookie.gs_auth} == "geekspace-verified-2026"`
+	handle @agentin_authed {
+		reverse_proxy geekspace:3001
+	}
+
+	# Everyone else → gate
+	handle {
+		redir * /gate.html
+	}
+}
+
+api.agentin.chat {
+	import common_headers
+
+	reverse_proxy geekspace:3001
+}
+
 # ---- Staging Environment ----
 staging.agentin.chat {
 	import common_headers
 
-	# Full reverse proxy — staging app serves its own frontend via Express
-	reverse_proxy staging-app:3001
+	# API calls always pass through
+	handle /api/* {
+		reverse_proxy staging-app:3001
+	}
+
+	# Gate page is always accessible
+	handle /gate.html {
+		root * /srv
+		file_server
+	}
+
+	# Authenticated users (cookie set by gate page) get the app
+	@staging_authed expression `{http.request.cookie.gs_auth} == "geekspace-verified-2026"`
+	handle @staging_authed {
+		reverse_proxy staging-app:3001
+	}
+
+	# Everyone else → gate
+	handle {
+		redir * /gate.html
+	}
 }
