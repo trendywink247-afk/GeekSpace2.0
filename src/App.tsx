@@ -13,6 +13,7 @@ import { TermsPage } from './pages/TermsPage';
 import { StatusPage } from './pages/StatusPage';
 import { DocsPage } from './pages/DocsPage';
 import { ConnectPage } from './pages/ConnectPage';
+import { InvitePage } from './pages/InvitePage';
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -47,6 +48,7 @@ function App() {
           <Route path="/status" element={<StatusPage />} />
           <Route path="/docs" element={<DocsPage />} />
           <Route path="/connect/:token" element={<ConnectPage />} />
+          <Route path="/invite" element={<InvitePage />} />
 
           {/* Onboarding — only show if logged in but not completed */}
           <Route

@@ -175,6 +175,9 @@ export const config = {
 
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',
+
+  // 83.5: Invite-gated registration (set INVITE_REQUIRED=true to enable)
+  inviteRequired: optional('INVITE_REQUIRED', 'false') === 'true',
 } as const;
 
 // ---- Startup validation ----

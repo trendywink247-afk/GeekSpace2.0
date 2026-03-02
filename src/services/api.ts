@@ -90,8 +90,8 @@ export const authService = {
   login: (email: string, password: string) =>
     api.post<{ user: User; token: string }>('/auth/login', { email, password }),
 
-  signup: (email: string, password: string, username: string) =>
-    api.post<{ user: User; token: string }>('/auth/signup', { email, password, username }),
+  signup: (email: string, password: string, username: string, name?: string, invite_code?: string) =>
+    api.post<{ user: User; token: string }>('/auth/signup', { email, password, username, name, invite_code }),
 
   me: () => api.get<User>('/auth/me'),
 
