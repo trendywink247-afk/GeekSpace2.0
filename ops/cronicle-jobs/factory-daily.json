@@ -1,0 +1,9 @@
+{
+  "title": "🏭 Factory — 5 Phases Nightly",
+  "enabled": true,
+  "timezone": "Asia/Kolkata",
+  "schedule": "0 2 * * *",
+  "command": "/data/.openclaw/workspace/repo/scripts/factory-run.sh",
+  "timeout": 14400,
+  "description": "Runs up to 5 phases from ops/phase-queue.txt every night at 2AM IST. Reports to Telegram."
+}
