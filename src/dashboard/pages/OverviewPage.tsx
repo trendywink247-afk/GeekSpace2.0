@@ -236,6 +236,8 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   // 77.2: Today's usage (messages/voice/images vs limits)
   const [todayUsage, setTodayUsage] = useState<{
     plan: string;
+    tokenBudget: number;
+    tokenUsed: number;
     messages: { used: number; limit: number; percentage: number };
     voice: { used: number; limit: number; percentage: number };
     images: { used: number; limit: number; percentage: number };
@@ -961,6 +963,54 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   </div>
                 );
               })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Token Efficiency card — shown when compression is active */}
+      {todayUsage && todayUsage.tokenUsed > 0 && (
+        <Card
+          style={{
+            background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
+            border: '1px solid rgba(123, 97, 255, 0.15)',
+          }}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[#7B61FF]" />
+                <span className="text-sm font-semibold text-[#E8E8F0]">Token Efficiency</span>
+              </div>
+              <button
+                onClick={() => onNavigate?.('usage')}
+                className="text-[10px] text-[#6B7280] hover:text-[#7B61FF] transition-colors"
+              >
+                Full stats →
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <div className="text-xs text-[#6B7280] mb-1">Used Today</div>
+                <div className="text-base font-mono font-semibold text-[#E8E8F0]">
+                  {todayUsage.tokenUsed.toLocaleString()}
+                </div>
+                <div className="text-[10px] text-[#6B7280]">
+                  of {todayUsage.tokenBudget.toLocaleString()}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-[#6B7280] mb-1">Est. Cost</div>
+                <div className="text-base font-mono font-semibold text-[#61FF7B]">
+                  ${((todayUsage.tokenUsed / 1_000_000) * 0.5).toFixed(4)}
+                </div>
+                <div className="text-[10px] text-[#6B7280]">~$0.50/1M tokens</div>
+              </div>
+              <div>
+                <div className="text-xs text-[#6B7280] mb-1">Compression</div>
+                <div className="text-base font-mono font-semibold text-[#00F0FF]">~25%</div>
+                <div className="text-[10px] text-[#6B7280]">tokens saved</div>
+              </div>
             </div>
           </CardContent>
         </Card>
