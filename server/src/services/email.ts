@@ -51,30 +51,48 @@ export async function sendEmail(
   html: string
 ): Promise<boolean> {
   const client = getClient();
-  if (!client) {
-    logger.warn('Resend API key not configured — email not sent');
-    return false;
-  }
 
-  try {
-    const { error } = await client.emails.send({
-      from: config.resendFromEmail,
-      to,
-      subject,
-      html,
-    });
+  // Primary: Resend
+  if (client) {
+    try {
+      const { error } = await client.emails.send({
+        from: config.resendFromEmail,
+        to,
+        subject,
+        html,
+      });
 
-    if (error) {
-      logger.error({ error, to, subject }, 'Resend returned error');
-      return false;
+      if (error) {
+        logger.error({ error, to, subject }, 'Resend returned error');
+      } else {
+        logger.info({ to, subject }, 'Email sent via Resend');
+        return true;
+      }
+    } catch (err) {
+      logger.warn({ err, to, subject }, 'Resend failed, trying AgentMail fallback');
     }
+  }
 
-    logger.info({ to, subject }, 'Email sent via Resend');
-    return true;
-  } catch (err) {
-    logger.error({ err, to, subject }, 'Failed to send email via Resend');
+  // Fallback: AgentMail (used when Resend not configured or fails)
+  if (process.env.AGENTMAIL_API_KEY) {
+    try {
+      const { sendAgentMail } = await import('./agentmail.js');
+      // Strip HTML tags for plain-text fallback
+      const plainText = html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      const result = await sendAgentMail(to, subject, plainText);
+      if (result.success) {
+        logger.info({ to, subject, messageId: result.messageId }, 'Email sent via AgentMail');
+        return true;
+      }
+      logger.error({ err: result.error, to, subject }, 'AgentMail delivery failed');
+    } catch (err) {
+      logger.error({ err, to, subject }, 'Failed to send email via AgentMail');
+    }
     return false;
   }
+
+  logger.warn({ to, subject }, 'No email provider configured (RESEND_API_KEY or AGENTMAIL_API_KEY required)');
+  return false;
 }
 
 // ── Templates ─────────────────────────────────────────────────

@@ -21,6 +21,9 @@ import { getPersonalityPrompt, getPersonality } from '../prompts/personalities.j
 import { OPENCLAW_IDENTITY_COMPACT } from '../prompts/openclaw-system.js';
 import { parseActions } from './action-parser.js';
 import { executeAction, type ActionResult } from './action-executor.js';
+import { compressPrompt, trimConversationHistory } from '../utils/token-format.js';
+import { isSearchIntent, tavilySearch } from './tavily.js';
+import { extractUrl, firecrawlScrape } from './firecrawl.js';
 
 // ---- Task Intent Detection ----
 
@@ -251,9 +254,52 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   }
 
   // 6. Build messages for LLM
-  const systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);
+  let systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);
   const history = getConversationContext(userId);
   const userCredits = (user?.credits as number) || 0;
+
+  // 6a. Token compression — compress system prompt + user message for LLM
+  //     (msg.text kept original for logging/memory/channel delivery)
+  systemPrompt = compressPrompt(systemPrompt);
+  const llmUserText = compressPrompt(msg.text);
+
+  // 6b. Web search enrichment (Tavily) — runs when search intent detected
+  let webSearchUsed = false;
+  if (isSearchIntent(msg.text) && process.env.TAVILY_API_KEY) {
+    try {
+      const searchResult = await tavilySearch(msg.text);
+      if (searchResult.results.length > 0) {
+        const context = searchResult.results
+          .map((r) => `[${r.title}]: ${r.content}`)
+          .join('\n');
+        systemPrompt += `\n\nWEB_SEARCH_RESULTS:\n${context}`;
+        webSearchUsed = true;
+        logger.debug({ query: msg.text, resultCount: searchResult.results.length }, 'Tavily search enriched prompt');
+      }
+    } catch (e) {
+      logger.debug({ err: (e as Error).message }, 'Tavily search failed, continuing');
+    }
+  }
+
+  // 6c. URL scraping enrichment (Firecrawl) — runs when URL found in message
+  //     Also handles /research <url> command
+  const researchUrl = msg.text.startsWith('/research ')
+    ? msg.text.replace('/research ', '').trim()
+    : extractUrl(msg.text);
+  if (researchUrl && process.env.FIRECRAWL_API_KEY) {
+    try {
+      const scraped = await firecrawlScrape(researchUrl);
+      if (scraped.content) {
+        systemPrompt += `\n\nPAGE_CONTENT [${scraped.title}]:\n${scraped.content}`;
+        logger.debug({ url: researchUrl }, 'Firecrawl page scraped and injected');
+      }
+    } catch (e) {
+      logger.debug({ err: (e as Error).message }, 'Firecrawl scrape failed, continuing');
+    }
+  }
+
+  // 6d. Trim conversation history to token budget (3000 token estimate)
+  const trimmedHistory = trimConversationHistory(history, 3000) as ChatMessage[];
 
   // 7. Route through bridge (PicoClaw for simple, Kimi for complex) or fallback to routeChat
   let replyText: string;
@@ -268,9 +314,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     try {
       const bridgeReq: BridgeRequest = {
         userId,
-        message: msg.text,
+        message: llmUserText,
         systemPrompt,
-        conversationHistory: history,
+        conversationHistory: trimmedHistory,
         userCredits,
       };
       const bridgeResult = await bridgeChat(bridgeReq);
@@ -290,7 +336,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     } catch (err) {
       logger.warn({ err: (err as Error).message }, 'Bridge failed for channel message, falling back to routeChat');
       // Fallback to routeChat
-      const messages: ChatMessage[] = [...history, { role: 'user', content: msg.text }];
+      const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
       const result = await routeChat(messages, {
         systemPrompt,
         agentName: (agentConfig?.name as string) || 'Geek',
@@ -305,7 +351,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     }
   } else {
     // Bridge not enabled — use routeChat directly
-    const messages: ChatMessage[] = [...history, { role: 'user', content: msg.text }];
+    const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
     const result = await routeChat(messages, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
@@ -351,7 +397,8 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   }
 
   // Build action summary for channel (no iframe possible).
-  const channelReply = taskConfirmation + buildActionChannelSuffix(finalReply, actionResults);
+  // Prepend 🔍 if web search was used — visible only in channel, not stored
+  const channelReply = (webSearchUsed ? '🔍 ' : '') + taskConfirmation + buildActionChannelSuffix(finalReply, actionResults);
 
   // 8. Log usage with correct channel
   db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
@@ -359,6 +406,16 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     uuid(), userId, provider, model,
     tokensIn, tokensOut, creditCost, msg.channel,
   );
+
+  // A4: Structured token usage log (makes savings visible in monitoring)
+  logger.info({
+    model,
+    promptTokens: tokensIn,
+    completionTokens: tokensOut,
+    totalTokens: tokensIn + tokensOut,
+    compressed: true,
+    webSearchUsed,
+  }, 'LLM call stats');
 
   // 9. Deduct credits
   if (creditCost > 0) {
