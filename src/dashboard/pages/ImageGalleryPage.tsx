@@ -87,28 +87,27 @@ export function ImageGalleryPage() {
                   loading="lazy"
                 />
               </div>
-              {/* Overlay on hover */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+              {/* Overlay on hover (desktop) */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex flex-col justify-end p-3">
                 <p className="text-xs text-[#E8E8F0] line-clamp-2 mb-1">{img.prompt}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-[#6B7280]">
-                    {new Date(img.created_at).toLocaleDateString()}
-                  </span>
-                  <a
-                    href={img.image_url}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[10px] text-[#A78BFA] hover:text-[#C4B5FD] transition-colors"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Download className="w-3 h-3" /> Save
-                  </a>
-                </div>
+                <span className="text-[10px] text-[#6B7280]">
+                  {new Date(img.created_at).toLocaleDateString()}
+                </span>
               </div>
-              {/* Bottom label always visible */}
-              <div className="px-2 py-1.5 border-t border-[#A78BFA]/10">
-                <p className="text-[10px] text-[#6B7280] truncate">{img.prompt}</p>
+              {/* Bottom bar: always visible with prompt + download (touch-friendly) */}
+              <div className="px-2 py-1.5 border-t border-[#A78BFA]/10 flex items-center justify-between gap-1">
+                <p className="text-[10px] text-[#6B7280] truncate flex-1">{img.prompt}</p>
+                <a
+                  href={img.image_url}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center min-w-[36px] min-h-[36px] text-[#A78BFA] hover:text-[#C4B5FD] transition-colors flex-shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Download image"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </a>
               </div>
             </div>
           ))}

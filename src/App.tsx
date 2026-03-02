@@ -35,7 +35,7 @@ function App() {
         Skip to main content
       </a>
       <ErrorBoundary>
-      <div className="min-h-screen bg-[#05050A] text-[#F4F6FF]">
+      <div className="min-h-screen bg-[#05050A] text-[#F4F6FF] overflow-x-hidden">
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
