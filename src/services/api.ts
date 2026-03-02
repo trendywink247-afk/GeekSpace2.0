@@ -90,8 +90,8 @@ export const authService = {
   login: (email: string, password: string) =>
     api.post<{ user: User; token: string }>('/auth/login', { email, password }),
 
-  signup: (email: string, password: string, username: string) =>
-    api.post<{ user: User; token: string }>('/auth/signup', { email, password, username }),
+  signup: (email: string, password: string, username: string, name?: string, invite_code?: string) =>
+    api.post<{ user: User; token: string }>('/auth/signup', { email, password, username, name, invite_code }),
 
   me: () => api.get<User>('/auth/me'),
 
@@ -117,6 +117,10 @@ export const authService = {
 
   resetPassword: (resetToken: string, newPassword: string) =>
     api.post<{ success: boolean; message?: string; error?: string }>('/auth/reset-password', { resetToken, newPassword }),
+
+  // 82.8: Permanently delete the authenticated user's account
+  deleteUserAccount: (password: string) =>
+    api.post<{ success: boolean; message: string }>('/auth/delete-account', { password }),
 };
 
 // ----- Users -------------------------------------------------
@@ -306,6 +310,17 @@ export const usageService = {
 
   daily: (days = 7) =>
     api.get<Array<{ day: string; label: string; messages: number; credits: number }>>(`/usage/daily?days=${days}`),
+
+  today: () =>
+    api.get<{
+      plan: string;
+      tokenBudget: number;
+      tokenUsed: number;
+      tokenPercentage: number;
+      messages: { used: number; limit: number; percentage: number };
+      voice: { used: number; limit: number; percentage: number };
+      images: { used: number; limit: number; percentage: number };
+    }>('/usage/today'),
 };
 
 // ----- Billing -----------------------------------------------
@@ -344,7 +359,7 @@ export const integrationService = {
     api.post<{ linked: boolean; code?: string; deepLink?: string | null; botUsername?: string | null; expiresIn?: number; message: string }>('/integrations/telegram/link'),
 
   checkTelegramLink: () =>
-    api.get<{ linked: boolean; externalId?: string; username?: string; linkedAt?: string; lastMessageAt?: string | null }>('/integrations/telegram/status'),
+    api.get<{ linked: boolean; connected?: boolean; botConfigured?: boolean; externalId?: string; username?: string; linkedAt?: string; lastMessageAt?: string | null; lastPing?: string | null }>('/integrations/telegram/status'),
 
   unlinkTelegram: () =>
     api.delete('/integrations/telegram/link'),
@@ -1147,6 +1162,117 @@ export const suggestionService = {
     api.get<{ events: Array<{ id: string; suggestionId: string; oldStatus: string; newStatus: string; changedBy: string; changedAt: string }> }>(`/suggestions/${id}/events`),
   get: (id: string) =>
     api.get<{ id: string; userId: string; title: string; body: string; tags: string[]; status: string; createdAt: string; updatedAt: string; upvotes: number; downvotes: number }>(`/suggestions/${id}`),
+};
+
+// ----- Voice (STT + TTS) — Phase 80 -------------------------
+
+export const voiceService = {
+  /**
+   * Transcribe an audio blob. Returns a jobId immediately.
+   * Poll /api/jobs/:jobId until status='done' for {text, duration_seconds}.
+   */
+  transcribe: async (audioBlob: Blob): Promise<{ jobId: string }> => {
+    const response = await fetch('/api/voice/transcribe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': audioBlob.type || 'audio/webm',
+        Authorization: `Bearer ${localStorage.getItem('authToken') || ''}`,
+      },
+      body: audioBlob,
+    });
+    if (response.status === 429) {
+      const data = await response.json() as { error: string; used: number; limit: number };
+      throw Object.assign(new Error(data.error), { code: 'VOICE_CAP', used: data.used, limit: data.limit });
+    }
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({})) as { error?: string };
+      throw new Error(data.error || 'Transcription request failed');
+    }
+    return response.json() as Promise<{ jobId: string }>;
+  },
+
+  /**
+   * Synthesize speech from text. Returns a jobId immediately.
+   * Poll /api/jobs/:jobId until status='done' for {audioBase64, mimeType}.
+   */
+  speak: (text: string, voice?: string): Promise<{ jobId: string }> =>
+    api.post<{ jobId: string }>('/voice/speak', { text, voice }).then(r => r.data),
+};
+
+// ----- Jobs (async polling) — Phase 80 ----------------------
+
+export type JobStatus = 'pending' | 'processing' | 'done' | 'failed';
+
+export interface JobResult {
+  id: string;
+  type: string;
+  status: JobStatus;
+  result?: unknown;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const jobsService = {
+  /** Poll an async job by ID. */
+  get: (jobId: string) => api.get<JobResult>(`/jobs/${jobId}`).then(r => r.data),
+
+  /**
+   * Poll until done or failed (max attempts, 1s interval).
+   * Throws if job fails or max attempts exceeded.
+   */
+  pollUntilDone: async (jobId: string, maxAttempts = 30, intervalMs = 1000): Promise<JobResult> => {
+    for (let i = 0; i < maxAttempts; i++) {
+      const job = await jobsService.get(jobId);
+      if (job.status === 'done' || job.status === 'failed') return job;
+      await new Promise(r => setTimeout(r, intervalMs));
+    }
+    throw new Error('Job timed out');
+  },
+};
+
+// ----- Image Async (job-queue based) — Phase 81 -------------
+
+export interface ImageGalleryItem {
+  id: string;
+  prompt: string;
+  model: string;
+  image_url: string;
+  width: number;
+  height: number;
+  source: string;
+  created_at: string;
+  expires_at: string;
+}
+
+export const imageAsyncService = {
+  /**
+   * Enqueue an async image generation job.
+   * Returns {jobId}; poll /api/jobs/:jobId for {imageUrl, imageId, prompt}.
+   */
+  generate: async (prompt: string, style?: string): Promise<{ jobId: string }> => {
+    const response = await fetch('/api/image/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('authToken') || ''}`,
+      },
+      body: JSON.stringify({ prompt, style }),
+    });
+    if (response.status === 429) {
+      const data = await response.json() as { error: string; used: number; limit: number };
+      throw Object.assign(new Error(data.error), { code: 'IMAGE_CAP', used: data.used, limit: data.limit });
+    }
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({})) as { error?: string };
+      throw new Error(data.error || 'Image generation request failed');
+    }
+    return response.json() as Promise<{ jobId: string }>;
+  },
+
+  /** Get last 30 user-generated images. */
+  gallery: () =>
+    api.get<{ images: ImageGalleryItem[]; count: number }>('/image/gallery').then(r => r.data),
 };
 
 export default api;

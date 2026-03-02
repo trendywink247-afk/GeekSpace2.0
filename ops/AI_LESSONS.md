@@ -13,8 +13,8 @@
 
 ### ESLint --max-warnings=0 on changed files (CI)
 - The `ci.yml` workflow lints ONLY changed files but treats warnings as errors
-- The `test.yml` workflow lints ALL files but only fails on errors
 - **Pattern:** Never introduce new lint warnings in files you touch, even if they existed before
+- Note: `test.yml` was removed (redundant duplicate of `ci.yml`)
 
 ## Database
 
@@ -123,3 +123,28 @@ curl localhost:3001/api/health
 - Cookie `gs_auth == "geekspace-verified-2026"` required; without it → redirect to `/gate.html`
 - Host Caddy must replicate: `@authed expression`, `handle @authed`, `handle { redir * /gate.html }`
 - `/gate.html` must exist in host Caddy's root (`/srv`) — copy from `/var/www/geekspace/gate.html`
+
+## E2E Tests (Post-Phase 75 Lessons)
+
+### Strict mode violations from duplicate testids
+- Playwright strict mode fails when `getByTestId()` resolves to multiple elements
+- Example: `getByTestId('dashboard-logout-button')` found 2 elements (desktop + mobile sidebar)
+- **Fix:** Scope to specific sidebar container: `page.getByTestId('dashboard-sidebar-mobile').getByTestId('...')`
+- Or use `.first()` when the first match is always correct
+
+### E2E test isolation — shared DB state causes ordering failures
+- Tests that create data (reminders, etc.) persist across the test suite within a run
+- Later tests may collide with earlier test data (e.g., `.first()` clicking wrong reminder)
+- **Fix 1:** Use unique identifiers per test: `` `Text ${Date.now()}` ``
+- **Fix 2:** Add `data-testid` to list item cards (e.g., `data-testid="reminder-card-{id}"`) and use xpath ancestor: `locator('xpath=ancestor::div[starts-with(@data-testid,"reminder-card-")]')`
+- **Anti-pattern:** Using `.first()` on action buttons across all items — fragile when item count varies
+
+### Cronicle escapes `!` to `\!` in stored scripts
+- Cronicle's script storage escapes `!` characters, breaking `if ! cmd` shell patterns
+- **Fix:** Use `cmd || { fallback }` pattern instead of `if ! cmd`
+
+### E2E test environment setup
+- Must use separate ports (e.g., 3099/5199) to avoid production conflicts
+- Clean temp DB (`DB_PATH=/tmp/e2e-test/test.db`) prevents stale user interference
+- Vite preview needs `VITE_API_TARGET` env var for proxy routing to test backend
+- Build with `VITE_TEST_MODE=true VITE_API_URL=/api` to match CI config

@@ -650,6 +650,32 @@ adminRouter.get('/audit', requireAdminToken, (req: Request, res: Response): void
   }
 });
 
+// ---- /dead-letters — failed reminder delivery log (78.7) ----
+adminRouter.get('/dead-letters', requireAdminToken, (req: Request, res: Response): void => {
+  try {
+    const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit || '50'), 10)));
+    const entries = db.prepare(
+      `SELECT rdl.id, rdl.reminder_id, rdl.user_id, u.username, rdl.channel,
+              rdl.error, rdl.attempts, rdl.last_attempt_at, rdl.created_at,
+              r.text as reminder_text
+       FROM reminder_dead_letters rdl
+       LEFT JOIN users u ON u.id = rdl.user_id
+       LEFT JOIN reminders r ON r.id = rdl.reminder_id
+       ORDER BY rdl.created_at DESC
+       LIMIT ?`
+    ).all(limit) as {
+      id: string; reminder_id: string; user_id: string; username: string | null;
+      channel: string; error: string; attempts: number; last_attempt_at: string;
+      created_at: string; reminder_text: string | null;
+    }[];
+    const total = (db.prepare('SELECT COUNT(*) as c FROM reminder_dead_letters').get() as { c: number }).c;
+    res.json({ entries, total, limit });
+  } catch (err) {
+    logger.error({ err }, 'Admin dead-letters query failed');
+    res.status(500).json({ error: 'Dead-letters query failed' });
+  }
+});
+
 // ---- /analytics/feedback endpoint — thumbs-down analytics ----
 adminRouter.get('/analytics/feedback', requireAdminToken, (_req: Request, res: Response): void => {
   try {
@@ -927,6 +953,69 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
       logger.error({ err }, 'Admin suggestion stats query failed');
       res.status(500).json({ error: 'Suggestion stats query failed' });
     }
+  });
+
+  // ── 83.4: Invite codes ───────────────────────────────────────
+  // POST /api/admin/invite — create one or more invite codes
+  adminRouter.post('/invite', requireAdminToken, (req: Request, res: Response): void => {
+    const { email, note, count = 1 } = req.body as { email?: string; note?: string; count?: number };
+    const n = Math.min(Math.max(1, Number(count) || 1), 100); // 1–100 at a time
+    const codes: Array<{ id: string; code: string; email: string | null; note: string }> = [];
+
+    const insert = db.prepare(`
+      INSERT INTO invite_codes (id, code, email, note, created_by)
+      VALUES (?, ?, ?, ?, 'admin')
+    `);
+
+    const doInserts = db.transaction(() => {
+      for (let i = 0; i < n; i++) {
+        const id = uuidV4();
+        // 8-char alphanumeric code, uppercase
+        const code = Math.random().toString(36).substring(2, 6).toUpperCase() +
+                     Math.random().toString(36).substring(2, 6).toUpperCase();
+        insert.run(id, code, email || null, note || '');
+        codes.push({ id, code, email: email || null, note: note || '' });
+      }
+    });
+    doInserts();
+
+    logger.info({ count: n, email }, 'admin: invite codes created');
+    res.status(201).json({ created: n, codes });
+  });
+
+  // GET /api/admin/invites — list all invite codes with usage status
+  adminRouter.get('/invites', requireAdminToken, (req: Request, res: Response): void => {
+    const unused = req.query.unused === 'true';
+    const rows = db.prepare(`
+      SELECT id, code, email, note, created_by, used_at, used_by, created_at
+      FROM invite_codes
+      ${unused ? 'WHERE used_at IS NULL' : ''}
+      ORDER BY created_at DESC
+      LIMIT 500
+    `).all() as Array<{
+      id: string; code: string; email: string | null; note: string;
+      created_by: string; used_at: string | null; used_by: string | null; created_at: string;
+    }>;
+
+    res.json({
+      count: rows.length,
+      unusedCount: rows.filter(r => !r.used_at).length,
+      usedCount: rows.filter(r => !!r.used_at).length,
+      codes: rows.map(r => ({
+        ...r,
+        used: !!r.used_at,
+      })),
+    });
+  });
+
+  // DELETE /api/admin/invite/:id — revoke an unused invite code
+  adminRouter.delete('/invite/:id', requireAdminToken, (req: Request, res: Response): void => {
+    const { id } = req.params;
+    const row = db.prepare('SELECT id, used_at FROM invite_codes WHERE id = ?').get(id) as { id: string; used_at: string | null } | undefined;
+    if (!row) { res.status(404).json({ error: 'Invite code not found' }); return; }
+    if (row.used_at) { res.status(409).json({ error: 'Cannot revoke an already-used invite code' }); return; }
+    db.prepare('DELETE FROM invite_codes WHERE id = ?').run(id);
+    res.json({ revoked: true, id });
   });
 
   // POST /api/admin/rewards/grant — manual reward override

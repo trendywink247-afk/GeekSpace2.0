@@ -1,5 +1,19 @@
 # AI Phase Plan
 
+## Phase 81 — COMPLETE ✓
+**Tests:** 1009/1009 | **Branch:** merged to main
+Image Generation Pipeline: async POST /api/image/generate (job-queue), daily cap free=5/premium=20, GET /gallery, GET /file/:id, ImageGalleryPage, /image chat command, inline image bubbles, cap error UX, 32 new tests
+
+## Phase 80 — COMPLETE ✓
+**Tests:** 977/977 | **Branch:** merged to main
+Voice Pipeline: STT endpoint (POST /api/voice/transcribe), TTS endpoint (POST /api/voice/speak), daily cap enforcement (free=5), MediaRecorder frontend, TTS speaker icon, job polling GET /api/jobs/:id, 33 new tests
+
+## Phase 79 — COMPLETE ✓
+**Tests:** 944/944 | **Branch:** merged to main
+Structured Memory Pipeline: Ollama-based fact extraction (fire-and-forget), reminder enrichment with related memories, weekly summary cron (Sundays 10:00 IST)
+
+---
+
 ## Phase 32 — COMPLETE ✓
 **PR:** https://github.com/trendywink247-afk/GeekSpace2.0/pull/61 | **Tests:** 290/290
 Sparklines, mobile badges, recurrence filter, feedback analytics, session revoke test
@@ -546,3 +560,76 @@ Production hardening + E2E test scaffolding: unified Caddy, hardened prod.sh, Er
 | 75.10 | Full verification (818/818, lint, typecheck, build, brand) | ✅ | Dev/Ops |
 | 75.11 | Ops + commit + PR + merge | ✅ | Dev/Ops |
 
+## Post-Phase 75 — Infra + CI Hardening (COMPLETE ✓)
+**Branch:** `main` (direct commits) | **CI:** 5/5 green | **Audit:** 12/12 ALL CLEAR
+Infrastructure hardening, staging environment, autonomy tooling, CI/E2E fixes.
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| I.1 | OpenClaw alias watchdog (systemd timer, 2-min interval) | ✅ | Infra |
+| I.2 | Staging environment (docker-compose.staging.yml + Caddy + .env) | ✅ | Infra |
+| I.3 | Autonomy loop tooling (AUTONOMY.md, autonomy-run.sh, staging.sh, smoke-staging.sh) | ✅ | Dev/Ops |
+| I.4 | Cronicle scheduled jobs (audit, staging smoke, Docker space report) | ✅ | Dev/Ops |
+| I.5 | Autonomy audit script (12 checks, cronicle-autonomy-audit.sh) | ✅ | Dev/Ops |
+| I.6 | Cronicle network fix + tracked config reference (ops/cronicle/) | ✅ | Infra |
+| I.7 | Remove redundant CI test.yml workflow | ✅ | CI |
+| I.8 | Fix E2E logout strict mode violation (2 logout buttons) | ✅ | Testing |
+| I.9 | Fix E2E reminders mark-complete test isolation (data-testid cards) | ✅ | Testing |
+| I.10 | Full verification (79 E2E + 74 unit, CI green, audit 12/12) | ✅ | Verification |
+
+
+## Phase 76 — AI Gateway + Smart Routing (IN PROGRESS)
+**Branch:** `ai/phase-20260301-phase76` | **Tests:** 870/870
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 76.1 | Add ollama-cloud provider (OLLAMA_CLOUD_BASE_URL, Bearer auth, config) | ✅ | Feature |
+| 76.2 | Fix routing ladder: ollama → openrouter-free → ollama-cloud → edith(premium-only) | ✅ | Performance |
+| 76.3 | Remove auto-escalation to edith for complex intent (pickProvider fixed) | ✅ | Reliability |
+| 76.4 | Wire isOverDailyBudget into routeChat (daily token budget enforcement) | ✅ | Reliability |
+| 76.5 | Add Redis L2 cache for LLM responses (5-min TTL) | ✅ | Performance |
+| 76.6 | Add Redis dedupe: in-flight request Map prevents duplicate API calls | ✅ | Performance |
+| 76.7 | Async job queue (job-queue.ts) for voice/image — non-blocking API | ✅ | Reliability |
+| 76.8 | Update .env.example with OLLAMA_CLOUD_* vars | ✅ | Dev/Ops |
+| 76.9 | Routing tests: 17 new tests (waterfall order, no complexity_escalation, daily budget) | ✅ | Testing |
+| 76.10 | Brand guard (0 violations), TypeScript clean, phase gate 7/7 ✅ | ✅ | Verification |
+| 76.11 | Deploy to staging + smoke test | ⏳ | Dev/Ops |
+| 76.12 | Commit + PR + merge to main | ⏳ | Dev/Ops |
+
+## Phase 79 — Structured Memory Pipeline + Reminder Consistency — COMPLETE ✓
+**Branch:** `ai/phase-20260302-phase79` | **Tests:** 944/944
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 79.1 | CI baseline + create branch | ✅ | Reliability |
+| 79.2 | extractMemoriesWithOllama: Ollama-based extraction (not PicoClaw) | ✅ | Feature |
+| 79.3 | buildMemoryContext wired in message-router + agent (verified pre-existing) | ✅ | Feature |
+| 79.4 | MemoryManagerPage + memoryService (verified pre-existing, fully functional) | ✅ | UI/UX |
+| 79.5 | GET /api/agent/memory: category + search filters (verified pre-existing) | ✅ | Feature |
+| 79.6 | DELETE /api/agent/memory/:id + bulk clear (verified pre-existing) | ✅ | Feature |
+| 79.7 | Reminder delivery enriched with related memories (💡 Context lines) | ✅ | Reliability |
+| 79.8 | Weekly memory summary cron (Sunday 10:00 IST, Ollama summarization) | ✅ | Feature |
+| 79.9 | phase79.test.ts — 28 tests (944/944 total) | ✅ | Testing |
+| 79.10 | Brand guard 0 violations + phase gate 7/7 | ✅ | Verification |
+| 79.11 | Staging smoke tests 11/11 | ✅ | Dev/Ops |
+| 79.12 | Ops files + commit + merge to main + push | ✅ | Dev/Ops |
+
+---
+
+## Phase 78 — Telegram/WhatsApp Stability + Connections Polish — COMPLETE ✓
+**Branch:** `ai/phase-20260302-phase78` | **Commit:** 30cb010 | **Tests:** 916/916
+
+| # | Item | Status | Category |
+|---|------|--------|----------|
+| 78.1 | CI baseline + branch setup | ✅ | Reliability |
+| 78.2 | Telegram status endpoint: +connected, +lastPing, +botConfigured | ✅ | Reliability |
+| 78.3 | Telegram disconnect: wrap 3 ops in db.transaction() (atomic) | ✅ | Reliability |
+| 78.4 | Telegram /start link_{code} auto-registration (verified pre-existing) | ✅ | Feature |
+| 78.5 | WhatsApp utility-flows disclaimer in ConnectionsPage QR dialog | ✅ | UI/UX |
+| 78.6 | ConnectionsPage: telegramLastPing display + integrations.last_sync sync | ✅ | UI/UX |
+| 78.7 | Reminder dead-letter table + scheduler logging + admin endpoint | ✅ | Reliability |
+| 78.8 | Auth rate limits verified (10/15min login, 5/15min signup) | ✅ | Security |
+| 78.9 | phase78.test.ts — 24 tests (916/916 total) | ✅ | Testing |
+| 78.10 | Brand guard 0 violations + phase gate 7/7 | ✅ | Verification |
+| 78.11 | Staging smoke tests 11/11 | ✅ | Dev/Ops |
+| 78.12 | Commit + merge to main + push | ✅ | Dev/Ops |

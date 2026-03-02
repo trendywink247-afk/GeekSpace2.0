@@ -14,7 +14,7 @@ import { logger } from '../logger.js';
 import { config } from '../config.js';
 import { routeChat, deductSubscriptionCredits, type ChatMessage } from './llm.js';
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
-import { buildMemoryContext, logConversation, extractMemories, getConversationContext } from './memory.js';
+import { buildMemoryContext, logConversation, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
 import { checkKeywordTriggers } from './automations-engine.js';
 import { sendTelegramMessage } from './telegram.js';
 import { getPersonalityPrompt, getPersonality } from '../prompts/personalities.js';
@@ -198,9 +198,12 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     return;
   }
 
-  // 3. Update last_message_at
+  // 3. Update last_message_at in channel_links + last_sync in integrations (78.6: reflect real activity time)
+  const now = new Date().toISOString();
   db.prepare('UPDATE channel_links SET last_message_at = ? WHERE channel = ? AND external_id = ?')
-    .run(new Date().toISOString(), msg.channel, msg.externalId);
+    .run(now, msg.channel, msg.externalId);
+  db.prepare("UPDATE integrations SET last_sync = ? WHERE user_id = ? AND type = ?")
+    .run(now, userId, msg.channel);
 
   // 4. Log user message + extract memories
   logConversation(userId, 'user', msg.text, requestId);
@@ -365,6 +368,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 10. Log assistant response (clean text without action blocks)
   logConversation(userId, 'assistant', finalReply, requestId, provider, model);
+
+  // 79.2: Fire-and-forget Ollama memory extraction (non-blocking)
+  extractMemoriesWithOllama(userId, msg.text, finalReply).catch(() => { /* non-fatal */ });
 
   // 11. Send response back through originating channel
   await sendChannelResponse({

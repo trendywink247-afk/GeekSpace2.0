@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { db } from '../db/index.js';
+import { getTokenBudget, getDailyTokenUsage } from '../services/token-budget.js';
 
 export const usageRouter = Router();
 
@@ -177,6 +178,84 @@ usageRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
   }));
 
   res.json({ events, total: (total.count as number) || 0 });
+});
+
+// ---- Today's usage vs per-day limits (for usage widget + limit banners) ----
+// Returns message/voice/image counts for today vs plan limits.
+
+const DAILY_MSG_LIMITS: Record<string, number> = {
+  free: 30,
+  intro: 150,
+  monthly: 150,
+  halfyear: 300,
+  yearly: 500,
+  pro: 200,
+  team: 500,
+};
+const DAILY_VOICE_LIMITS: Record<string, number> = {
+  free: 5,
+  intro: 30,
+  monthly: 30,
+  halfyear: 60,
+  yearly: 100,
+  pro: 50,
+  team: 100,
+};
+const DAILY_IMAGE_LIMITS: Record<string, number> = {
+  free: 3,
+  intro: 20,
+  monthly: 20,
+  halfyear: 40,
+  yearly: 80,
+  pro: 30,
+  team: 80,
+};
+
+usageRouter.get('/today', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  const user = db.prepare('SELECT plan FROM users WHERE id = ?').get(userId) as { plan: string } | undefined;
+  const plan = user?.plan || 'free';
+
+  // Today's counts from usage_events
+  const today = db.prepare(`
+    SELECT
+      COUNT(CASE WHEN tool = 'ai.chat' OR tool = '' OR tool IS NULL THEN 1 END) as messages,
+      COUNT(CASE WHEN tool LIKE 'voice:%' THEN 1 END) as voice,
+      COUNT(CASE WHEN tool LIKE 'image:%' THEN 1 END) as images
+    FROM usage_events
+    WHERE user_id = ? AND date(created_at) = date('now')
+  `).get(userId) as { messages: number; voice: number; images: number } | undefined;
+
+  const msgLimit = DAILY_MSG_LIMITS[plan] ?? DAILY_MSG_LIMITS.free;
+  const voiceLimit = DAILY_VOICE_LIMITS[plan] ?? DAILY_VOICE_LIMITS.free;
+  const imageLimit = DAILY_IMAGE_LIMITS[plan] ?? DAILY_IMAGE_LIMITS.free;
+
+  // Token budget percentage (from token-budget service)
+  const tokenUsage = getDailyTokenUsage(userId);
+  const tokenBudget = getTokenBudget(plan);
+
+  res.json({
+    plan,
+    tokenBudget,
+    tokenUsed: tokenUsage.used,
+    tokenPercentage: Math.min(tokenUsage.percentage, 1),
+    messages: {
+      used: today?.messages ?? 0,
+      limit: msgLimit,
+      percentage: Math.min((today?.messages ?? 0) / msgLimit, 1),
+    },
+    voice: {
+      used: today?.voice ?? 0,
+      limit: voiceLimit,
+      percentage: Math.min((today?.voice ?? 0) / voiceLimit, 1),
+    },
+    images: {
+      used: today?.images ?? 0,
+      limit: imageLimit,
+      percentage: Math.min((today?.images ?? 0) / imageLimit, 1),
+    },
+  });
 });
 
 // ---- Daily usage for last 7 days (messages + credits burned) ----

@@ -5,6 +5,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, userUpdateSchema, notificationEmailSchema, changePasswordSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
+import { logger } from '../logger.js';
 
 export const usersRouter = Router();
 
@@ -240,4 +241,59 @@ usersRouter.post('/me/change-password', requireAuth, validateBody(changePassword
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Changed password', 'Password updated, all sessions invalidated', 'shield')`).run(uuid(), req.userId);
 
   res.json({ success: true, message: 'Password changed. Please log in again.' });
+});
+
+// ── 82.3: Block / Unblock user infrastructure ────────────────────────────────
+// Future-proofs user-to-user messaging. Stub UI — no messaging yet.
+
+usersRouter.post('/:id/block', requireAuth, (req: AuthRequest, res) => {
+  const blockerId = req.userId!;
+  const blockedId = req.params.id;
+
+  if (blockerId === blockedId) {
+    res.status(400).json({ error: 'Cannot block yourself' });
+    return;
+  }
+
+  const target = db.prepare('SELECT id FROM users WHERE id = ?').get(blockedId);
+  if (!target) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  try {
+    db.prepare(`
+      INSERT OR IGNORE INTO blocked_users (id, blocker_id, blocked_id, created_at)
+      VALUES (?, ?, ?, datetime('now'))
+    `).run(uuid(), blockerId, blockedId);
+  } catch {
+    // unique constraint — already blocked
+  }
+
+  logger.info({ blockerId, blockedId }, 'User blocked');
+  res.json({ blocked: true, blockedUserId: blockedId });
+});
+
+usersRouter.delete('/:id/block', requireAuth, (req: AuthRequest, res) => {
+  const blockerId = req.userId!;
+  const blockedId = req.params.id;
+
+  db.prepare('DELETE FROM blocked_users WHERE blocker_id = ? AND blocked_id = ?').run(blockerId, blockedId);
+
+  res.json({ unblocked: true, blockedUserId: blockedId });
+});
+
+usersRouter.get('/blocked', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  const blocked = db.prepare(`
+    SELECT b.blocked_id as userId, b.created_at as blockedAt,
+           u.username, u.name
+    FROM blocked_users b
+    LEFT JOIN users u ON u.id = b.blocked_id
+    WHERE b.blocker_id = ?
+    ORDER BY b.created_at DESC
+  `).all(userId);
+
+  res.json({ blocked, count: blocked.length });
 });

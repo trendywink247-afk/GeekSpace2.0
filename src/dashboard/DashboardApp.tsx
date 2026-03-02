@@ -56,8 +56,9 @@ const PlannerPage = lazyRetry(() => import('./pages/PlannerPage').then(m => ({ d
 const SocialMediaPage = lazyRetry(() => import('./pages/SocialMediaPage').then(m => ({ default: m.SocialMediaPage })));
 const CapabilitiesPage = lazyRetry(() => import('./pages/CapabilitiesPage').then(m => ({ default: m.CapabilitiesPage })));
 const ActivityPage = lazyRetry(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
+const ImageGalleryPage = lazyRetry(() => import('./pages/ImageGalleryPage').then(m => ({ default: m.ImageGalleryPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery';
 
 interface MenuGroup {
   label: string | null;
@@ -80,6 +81,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: 'website-builder', label: 'Website Builder', icon: Code },
       { id: 'image-gen', label: 'Image Generator', icon: ImageIcon },
+      { id: 'gallery', label: 'Image Gallery', icon: ImageIcon },
       { id: 'video-gen', label: 'Video Generator', icon: Film },
     ],
   },
@@ -250,7 +252,7 @@ export function DashboardApp() {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -353,6 +355,8 @@ export function DashboardApp() {
         return <WebsiteBuilderPage />;
       case 'image-gen':
         return <ImageGenPage />;
+      case 'gallery':
+        return <ImageGalleryPage />;
       case 'video-gen':
         return <VideoGenPage />;
       case 'planner':

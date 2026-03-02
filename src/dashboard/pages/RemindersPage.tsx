@@ -1227,6 +1227,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                     return (
                       <Card
                         key={reminder.id}
+                        data-testid={`reminder-card-${reminder.id}`}
                         className={`bg-[#0C0C18] border transition-all duration-300 ${
                           completingIds.has(reminder.id)
                             ? 'border-[#00FF88] bg-[#00FF88]/10'

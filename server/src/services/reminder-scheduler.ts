@@ -17,6 +17,7 @@ import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { sendTelegramMessage } from './telegram.js';
 import { sendReminderEmail, resolveEmailAddress } from './email.js';
+import { getRelevantMemories } from './memory.js';
 
 // ---- Types ----
 
@@ -201,7 +202,16 @@ async function checkAndDeliverReminders(): Promise<void> {
 // ---- Delivery ----
 
 async function deliverReminder(reminder: DueReminder): Promise<void> {
-  const message = `⏰ Reminder: ${reminder.text}`;
+  // 79.7: Check for related memories and enrich message with context
+  let message = `⏰ Reminder: ${reminder.text}`;
+  try {
+    const related = getRelevantMemories(reminder.user_id, reminder.text, 2);
+    const contextual = related.filter(m => m.category !== 'summary' && m.value && m.value.length > 3);
+    if (contextual.length > 0) {
+      const ctxLines = contextual.map(m => `• ${m.key}: ${m.value}`).join('\n');
+      message += `\n\n💡 Context:\n${ctxLines}`;
+    }
+  } catch { /* non-fatal — use plain message */ }
 
   switch (reminder.channel) {
     case 'telegram': {
@@ -221,7 +231,16 @@ async function deliverReminder(reminder: DueReminder): Promise<void> {
         if (result.success) {
           logger.info({ reminderId: reminder.id, userId: reminder.user_id }, 'Reminder delivered via Telegram');
         } else {
-          logger.warn({ reminderId: reminder.id }, 'Telegram delivery failed for reminder');
+          // 78.7: sendTelegramMessage already retries 3x internally; log to dead_letters on final failure
+          logger.warn({ reminderId: reminder.id }, 'Telegram delivery failed for reminder — writing to dead_letters');
+          try {
+            db.prepare(`
+              INSERT INTO reminder_dead_letters (id, reminder_id, user_id, channel, error, attempts, last_attempt_at)
+              VALUES (?, ?, ?, 'telegram', 'send_failed_after_retries', 3, datetime('now'))
+            `).run(uuid(), reminder.id, reminder.user_id);
+          } catch (dlErr) {
+            logger.error({ reminderId: reminder.id, err: (dlErr as Error).message }, 'Failed to write reminder dead letter');
+          }
         }
       } else {
         logger.warn({ reminderId: reminder.id, userId: reminder.user_id }, 'No Telegram link for reminder delivery');

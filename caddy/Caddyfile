@@ -61,5 +61,13 @@ api.geekspace.space {
 dev.geekspace.space {
 	import common_headers
 
-	reverse_proxy openclaw-tnq7-openclaw-1:58049
+	reverse_proxy openclaw:58049
+}
+
+# ---- Staging Environment ----
+staging.agentin.chat {
+	import common_headers
+
+	# Full reverse proxy — staging app serves its own frontend via Express
+	reverse_proxy staging-app:3001
 }

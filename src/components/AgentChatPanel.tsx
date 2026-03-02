@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { notify } from '@/services/notifications';
-import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Copy, Check, Bookmark, BookmarkCheck } from 'lucide-react';
+import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Copy, Check, Bookmark, BookmarkCheck, Volume2, Loader2, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { agentService, premiumAgentService, publicAgentService, memoryService, billingService } from '@/services/api';
+import { agentService, premiumAgentService, publicAgentService, memoryService, billingService, voiceService, jobsService, imageAsyncService } from '@/services/api';
 import type { AgentPersonality, PremiumSession } from '@/types';
 import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
@@ -121,6 +121,8 @@ interface ChatMessage {
     receipt?: { icon: string; text: string; details?: string; link?: string };
   }>;
   receipts?: Array<{ icon: string; text: string; details?: string; link?: string }>;
+  /** 81.7: URL of generated image to render as inline image bubble */
+  imageUrl?: string;
 }
 
 interface AgentChatPanelProps {
@@ -160,6 +162,31 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const speechSupported = typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
+  // 80.5/80.7: MediaRecorder voice recording states
+  type VoiceRecordState = 'idle' | 'recording' | 'uploading' | 'transcribing';
+  const [voiceRecordState, setVoiceRecordState] = useState<VoiceRecordState>('idle');
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const mediaRecorderSupported = typeof window !== 'undefined' && 'MediaRecorder' in window;
+
+  // 80.6: TTS playback state (per message id)
+  const [ttsLoadingId, setTtsLoadingId] = useState<string | null>(null);
+  const [ttsPlayingId, setTtsPlayingId] = useState<string | null>(null);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // 81.8: Image cap error shown inline
+  const [imageCapError, setImageCapError] = useState<string | null>(null);
+
+  // 82.7: AI safety footer — dismissed per session via sessionStorage
+  const [safetyDismissed, setSafetyDismissed] = useState(() =>
+    typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ai-disclaimer-dismissed') === '1'
+  );
+  // 82.2: Track which agent messages have been reported
+  const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
 
   // Swipe-down-to-close on mobile header
   const [touchStartY, setTouchStartY] = useState(0);
@@ -400,6 +427,39 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       });
     };
 
+    // 81.6: /image [prompt] command → async image generation (bypass chat)
+    if (raw.startsWith('/image ')) {
+      const imagePrompt = raw.slice(7).trim();
+      if (imagePrompt) {
+        setImageCapError(null);
+        setAgentMsg({ content: '🎨 Generating image…', isStreaming: true });
+        (async () => {
+          try {
+            const { jobId } = await imageAsyncService.generate(imagePrompt);
+            const job = await jobsService.pollUntilDone(jobId, 60, 2000);
+            const result = job.result as { imageUrl: string; imageId: string; prompt: string } | undefined;
+            if (job.status === 'done' && result?.imageUrl) {
+              setAgentMsg({ content: `Generated: "${imagePrompt}"`, imageUrl: result.imageUrl, isStreaming: false });
+            } else {
+              setAgentMsg({ content: 'Image generation failed. Please try again.', isStreaming: false });
+            }
+          } catch (err) {
+            const e = err as { code?: string };
+            if (e?.code === 'IMAGE_CAP') {
+              const capMsg = `Image limit reached (${(err as { used?: number }).used ?? 5}/5) — upgrade for more`;
+              setImageCapError(capMsg);
+              setAgentMsg({ content: capMsg, isStreaming: false });
+            } else {
+              setAgentMsg({ content: 'Image generation failed. Please try again.', isStreaming: false });
+            }
+          } finally {
+            setIsTyping(false);
+          }
+        })();
+        return;
+      }
+    }
+
     // Premium session chat (non-streaming)
     if (premiumSession) {
       (async () => {
@@ -527,13 +587,23 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           setIsTyping(true);
           await doRegularChat();
         } catch (innerErr: unknown) {
-          const reqId = (innerErr as { response?: { headers?: Record<string, string>; data?: { requestId?: string } } })?.response?.data?.requestId
-            ?? (innerErr as { response?: { headers?: Record<string, string> } })?.response?.headers?.['x-request-id'];
-          setAgentMsg({
-            content: "Sorry, I couldn't process that right now. Please try again." + (reqId ? ` (Error ID: ${reqId})` : ''),
-            isStreaming: false,
-            retryContent: content,
-          });
+          const status = (innerErr as { response?: { status?: number } })?.response?.status;
+          // 77.5: 429 / credit exhaustion → show upgrade prompt instead of raw error
+          if (status === 429) {
+            setShowUpgradePrompt(true);
+            setAgentMsg({
+              content: "You've reached your daily limit. Upgrade your plan to keep chatting.",
+              isStreaming: false,
+            });
+          } else {
+            const reqId = (innerErr as { response?: { headers?: Record<string, string>; data?: { requestId?: string } } })?.response?.data?.requestId
+              ?? (innerErr as { response?: { headers?: Record<string, string> } })?.response?.headers?.['x-request-id'];
+            setAgentMsg({
+              content: "Sorry, I couldn't process that right now. Please try again." + (reqId ? ` (Error ID: ${reqId})` : ''),
+              isStreaming: false,
+              retryContent: content,
+            });
+          }
         }
       } finally {
         setIsTyping(false);
@@ -664,6 +734,97 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
+  };
+
+  // 80.5/80.7: MediaRecorder-based voice recording → server Whisper transcription
+  const handleMediaRecord = async () => {
+    if (voiceRecordState === 'recording') {
+      mediaRecorderRef.current?.stop();
+      return;
+    }
+    if (voiceRecordState !== 'idle') return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/ogg') ? 'audio/ogg' : '';
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      recordingChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordingChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+        setRecordingDuration(0);
+
+        const blob = new Blob(recordingChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        if (blob.size < 100) { setVoiceRecordState('idle'); return; }
+
+        setVoiceRecordState('uploading');
+        try {
+          const { jobId } = await voiceService.transcribe(blob);
+          setVoiceRecordState('transcribing');
+          const job = await jobsService.pollUntilDone(jobId, 30, 1000);
+          if (job.status === 'done' && job.result) {
+            const result = job.result as { text: string };
+            setInput(result.text);
+            inputRef.current?.focus();
+          } else {
+            throw new Error(job.error || 'Transcription failed');
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Voice error';
+          setVoiceError(msg.includes('Voice limit reached') ? 'Voice limit reached — upgrade for more' : msg);
+          setTimeout(() => setVoiceError(null), 4000);
+        } finally {
+          setVoiceRecordState('idle');
+        }
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setVoiceRecordState('recording');
+      setRecordingDuration(0);
+      recordingIntervalRef.current = setInterval(() => setRecordingDuration(d => d + 1), 1000);
+    } catch {
+      setVoiceError('Microphone access denied');
+      setTimeout(() => setVoiceError(null), 3000);
+    }
+  };
+
+  // 80.6: TTS playback — click speaker icon to hear an agent message
+  const handleTTS = async (messageId: string, text: string) => {
+    if (ttsLoadingId === messageId) return;
+    // Toggle off if already playing this message
+    if (ttsPlayingId === messageId) {
+      ttsAudioRef.current?.pause();
+      setTtsPlayingId(null);
+      return;
+    }
+    try {
+      setTtsLoadingId(messageId);
+      const { jobId } = await voiceService.speak(text.slice(0, 500));
+      const job = await jobsService.pollUntilDone(jobId, 20, 1000);
+      if (job.status === 'done' && job.result) {
+        const result = job.result as { audioBase64: string; mimeType: string };
+        const audio = new Audio(`data:${result.mimeType};base64,${result.audioBase64}`);
+        ttsAudioRef.current = audio;
+        audio.onended = () => setTtsPlayingId(null);
+        audio.onerror = () => setTtsPlayingId(null);
+        setTtsPlayingId(messageId);
+        await audio.play();
+      } else {
+        throw new Error(job.error || 'TTS failed');
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      toast.error(msg.includes('Voice limit reached') ? 'Voice limit reached — upgrade for more' : 'Text-to-speech unavailable');
+    } finally {
+      setTtsLoadingId(null);
+    }
   };
 
   // Current avatar emoji — specialist uses a rocket
@@ -1006,6 +1167,33 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         ))}
                       </div>
                     )}
+                    {/* 81.7: Inline generated image bubble */}
+                    {msg.imageUrl && !msg.isStreaming && (
+                      <div className="mt-3">
+                        <img
+                          src={msg.imageUrl}
+                          alt={msg.content}
+                          className="rounded-xl max-w-full border border-[#00F0FF]/20"
+                          loading="lazy"
+                        />
+                        <a
+                          href={msg.imageUrl}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 mt-1.5 text-xs text-[#00F0FF]/70 hover:text-[#00F0FF] transition-colors"
+                        >
+                          <Download className="w-3 h-3" /> Download
+                        </a>
+                      </div>
+                    )}
+                    {/* 81.7: Spinner while image job is in progress */}
+                    {msg.isStreaming && msg.content.startsWith('🎨') && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-[#A78BFA]" />
+                        <span className="text-xs text-[#6B7280]">This may take 10–20s…</span>
+                      </div>
+                    )}
                     {/* Message Reactions for agent messages */}
                     {msg.role === 'agent' && !msg.isStreaming && (
                       <MessageReactions
@@ -1021,6 +1209,27 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                             .catch(() => {});
                         }}
                       />
+                    )}
+                    {/* 80.6: TTS speaker icon for agent messages */}
+                    {msg.role === 'agent' && !msg.isStreaming && (
+                      <div className="flex justify-end mt-1">
+                        <button
+                          onClick={() => handleTTS(msg.id, msg.content)}
+                          className={`p-1 rounded transition-colors ${
+                            ttsPlayingId === msg.id
+                              ? 'text-[#00F0FF] bg-[#00F0FF]/15'
+                              : 'text-[#6B7280]/50 hover:text-[#6B7280] hover:bg-[#00F0FF]/5'
+                          }`}
+                          title={ttsPlayingId === msg.id ? 'Stop playback' : 'Listen to this message'}
+                          data-testid="tts-button"
+                        >
+                          {ttsLoadingId === msg.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Volume2 className="w-3 h-3" />
+                          )}
+                        </button>
+                      </div>
                     )}
                     {/* Retry button for failed messages */}
                     {msg.role === 'agent' && msg.retryContent && (
@@ -1057,6 +1266,37 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         >
                           ↩ Reply
                         </button>
+                        {/* 82.2: Flag / Report this agent response */}
+                        {msg.role === 'agent' && (
+                          <button
+                            onClick={async () => {
+                              if (reportedIds.has(msg.id)) return;
+                              try {
+                                const token = localStorage.getItem('gs_token');
+                                await fetch('/api/report', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                                  },
+                                  body: JSON.stringify({ messageContent: msg.content.slice(0, 500), reason: 'inappropriate' }),
+                                });
+                                setReportedIds(prev => new Set([...prev, msg.id]));
+                                toast.success('Response flagged — thank you', { duration: 2000 });
+                              } catch {
+                                toast.error('Failed to submit report');
+                              }
+                            }}
+                            className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] transition-colors opacity-0 group-hover:opacity-100 ${
+                              reportedIds.has(msg.id) ? 'text-[#FF6161]' : 'text-[#6B7280] hover:text-[#FF6161]'
+                            }`}
+                            title="Flag this response"
+                            data-testid={`report-btn-${msg.id}`}
+                          >
+                            <Flag className="w-3 h-3" />
+                            {reportedIds.has(msg.id) ? 'Flagged' : 'Flag'}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1198,6 +1438,27 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           </div>
         )}
 
+        {/* 82.7: AI safety footer — dismissable per session */}
+        {!safetyDismissed && (
+          <div
+            className="px-4 py-1.5 flex items-center justify-between gap-2 border-t border-[#00F0FF]/5 bg-[#06060B]/80"
+            data-testid="ai-safety-banner"
+          >
+            <span className="text-[10px] text-[#6B7280]/70">AI can make mistakes — always verify important information.</span>
+            <button
+              onClick={() => {
+                sessionStorage.setItem('ai-disclaimer-dismissed', '1');
+                setSafetyDismissed(true);
+              }}
+              className="text-[#6B7280]/50 hover:text-[#6B7280] flex-shrink-0 transition-colors"
+              aria-label="Dismiss AI safety notice"
+              data-testid="dismiss-safety-banner"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
         {/* Input */}
         <div className="p-4 border-t border-[#00F0FF]/20 bg-[#06060B] safe-area-pb">
           {/* 60.6: reply-to context banner */}
@@ -1227,7 +1488,38 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               className="flex-1 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] rounded-xl"
               data-testid="agent-chat-input"
             />
-            {speechSupported && (
+            {/* 80.5/80.7: MediaRecorder voice input with state indicator */}
+            {mediaRecorderSupported ? (
+              <button
+                onClick={handleMediaRecord}
+                disabled={voiceRecordState === 'uploading' || voiceRecordState === 'transcribing'}
+                className={`p-2 rounded-lg transition-colors relative ${
+                  voiceRecordState === 'recording'
+                    ? 'bg-red-500/20 hover:bg-red-500/30'
+                    : voiceRecordState !== 'idle'
+                    ? 'bg-[#00F0FF]/10 cursor-wait'
+                    : 'hover:bg-[#00F0FF]/10'
+                }`}
+                title={
+                  voiceRecordState === 'recording' ? `Recording… ${recordingDuration}s (click to stop)`
+                    : voiceRecordState === 'uploading' ? 'Uploading…'
+                    : voiceRecordState === 'transcribing' ? 'Transcribing…'
+                    : 'Record voice message'
+                }
+                data-testid="voice-record-button"
+              >
+                {voiceRecordState === 'uploading' || voiceRecordState === 'transcribing' ? (
+                  <Loader2 className="w-4 h-4 text-[#00F0FF] animate-spin" />
+                ) : (
+                  <Mic className={`w-4 h-4 ${voiceRecordState === 'recording' ? 'text-red-400 animate-pulse' : 'text-[#6B7280]'}`} />
+                )}
+                {voiceRecordState === 'recording' && (
+                  <span className="absolute -top-1 -right-1 text-[9px] bg-red-500 text-white rounded px-0.5 leading-4 min-w-[14px] text-center">
+                    {recordingDuration}
+                  </span>
+                )}
+              </button>
+            ) : speechSupported ? (
               <button
                 onClick={handleVoiceInput}
                 className={`p-2 rounded-lg transition-colors ${isListening ? 'bg-[#00F0FF]/20 hover:bg-[#00F0FF]/30' : 'hover:bg-[#00F0FF]/10'}`}
@@ -1235,6 +1527,18 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               >
                 <Mic className={`w-4 h-4 ${isListening ? 'text-[#00F0FF]' : 'text-[#6B7280]'}`} />
               </button>
+            ) : null}
+            {/* 80.7: Voice error/cap toast */}
+            {voiceError && (
+              <span className="absolute bottom-16 left-4 right-4 text-xs text-red-400 bg-red-900/40 border border-red-500/30 rounded-lg px-3 py-1.5 text-center">
+                {voiceError}
+              </span>
+            )}
+            {/* 81.8: Image cap error toast */}
+            {imageCapError && (
+              <span className="absolute bottom-20 left-4 right-4 text-xs text-amber-400 bg-amber-900/40 border border-amber-500/30 rounded-lg px-3 py-1.5 text-center">
+                {imageCapError}
+              </span>
             )}
             <Button
               onClick={() => sendMessage()}

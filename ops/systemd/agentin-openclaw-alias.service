@@ -1,0 +1,8 @@
+[Unit]
+Description=Agentin OpenClaw Alias Fix — ensure openclaw has network alias
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/agentin-openclaw-alias-fix.sh

@@ -14,7 +14,27 @@ import { logger } from '../logger.js';
 export const authRouter = Router();
 
 authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
-  const { email, password, username, name } = req.body;
+  const { email, password, username, name, invite_code } = req.body as {
+    email: string; password: string; username: string; name?: string; invite_code?: string;
+  };
+
+  // 83.5: Invite-gated registration — check if INVITE_REQUIRED=true
+  if (config.inviteRequired) {
+    if (!invite_code || typeof invite_code !== 'string') {
+      res.status(403).json({ error: 'An invite code is required to register. Request access at ai.agentin.chat.' });
+      return;
+    }
+    const invite = db.prepare('SELECT id, used_at FROM invite_codes WHERE code = ?').get(invite_code.trim().toUpperCase()) as
+      { id: string; used_at: string | null } | undefined;
+    if (!invite) {
+      res.status(403).json({ error: 'Invalid invite code. Check your invite link or request one from the team.' });
+      return;
+    }
+    if (invite.used_at) {
+      res.status(409).json({ error: 'This invite code has already been used.' });
+      return;
+    }
+  }
 
   const existing = db.prepare('SELECT id FROM users WHERE email = ? OR username = ?').get(email, username);
   if (existing) {
@@ -89,6 +109,16 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
       return;
     }
     throw err;
+  }
+
+  // 83.5: Mark invite code as used (non-fatal — user is already created)
+  if (config.inviteRequired && invite_code) {
+    try {
+      db.prepare('UPDATE invite_codes SET used_at = datetime(\'now\'), used_by = ? WHERE code = ?')
+        .run(id, invite_code.trim().toUpperCase());
+    } catch (err) {
+      logger.warn({ err, invite_code }, 'Failed to mark invite code as used');
+    }
   }
 
   const token = signToken(id);
@@ -455,4 +485,70 @@ authRouter.delete('/sessions', requireAuth, (req: AuthRequest, res) => {
     UPDATE user_sessions SET is_active = 0 WHERE user_id = ?
   `).run(userId);
   res.json({ success: true });
+});
+
+// ── 82.8: Account Deletion ────────────────────────────────────────────────────
+// Permanently deletes all user data in a single transaction.
+// Requires password confirmation for security.
+
+authRouter.post('/delete-account', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { password } = req.body as { password?: string };
+
+  if (!password) {
+    res.status(400).json({ error: 'Password confirmation is required' });
+    return;
+  }
+
+  // Verify password before destroying anything
+  const user = db.prepare('SELECT id, email, password_hash FROM users WHERE id = ?').get(userId) as {
+    id: string; email: string; password_hash: string;
+  } | undefined;
+
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  const valid = await bcrypt.compare(password, user.password_hash);
+  if (!valid) {
+    res.status(403).json({ error: 'Incorrect password' });
+    return;
+  }
+
+  // Delete all user data in a single transaction.
+  // Tables with ON DELETE CASCADE are handled automatically when the users row is deleted,
+  // but we delete explicitly for clarity and to handle tables without CASCADE.
+  const deleteAll = db.transaction(() => {
+    // Explicit deletes for tables that may not have CASCADE
+    const tables = [
+      'conversation_log', 'agent_memory', 'reminders', 'automations', 'automation_logs',
+      'integrations', 'usage_events', 'activity_log', 'api_keys', 'agent_configs',
+      'agent_messages', 'premium_sessions', 'subscriptions', 'briefings', 'installed_recipes',
+      'generated_artifacts', 'user_images', 'user_videos', 'video_jobs',
+      'reports', 'moderation_log', 'blocked_users', 'suggestion_votes', 'suggestions',
+      'portfolios', 'portfolio_visits', 'security_events', 'user_sessions', 'channel_links',
+      'link_codes', 'password_reset_tokens', 'password_reset_rate_limits', 'password_reset_audit',
+    ];
+
+    for (const table of tables) {
+      try {
+        db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).run(userId);
+      } catch {
+        // Table may not exist or may not have user_id column — skip silently
+      }
+    }
+
+    // Delete the user row last (cascades any remaining FK relations)
+    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  });
+
+  deleteAll();
+
+  logger.info({ userId, email: user.email }, 'Account deleted by user request');
+
+  res.json({
+    success: true,
+    message: 'Your account and all associated data have been permanently deleted.',
+  });
 });

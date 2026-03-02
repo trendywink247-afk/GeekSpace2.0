@@ -903,6 +903,22 @@ db.exec(`
 try { db.exec(`ALTER TABLE webhook_dead_letters ADD COLUMN retry_count INTEGER DEFAULT 0`); } catch { /* already exists */ }
 try { db.exec(`ALTER TABLE webhook_dead_letters ADD COLUMN last_error TEXT DEFAULT NULL`); } catch { /* already exists */ }
 
+// Phase 78.7: Reminder dead-letter log — captures failed Telegram reminder deliveries
+db.exec(`
+  CREATE TABLE IF NOT EXISTS reminder_dead_letters (
+    id TEXT PRIMARY KEY,
+    reminder_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    channel TEXT NOT NULL DEFAULT 'telegram',
+    error TEXT DEFAULT 'send_failed',
+    attempts INTEGER DEFAULT 1,
+    last_attempt_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_reminder_dead_letters_user ON reminder_dead_letters(user_id, created_at);
+  CREATE INDEX IF NOT EXISTS idx_reminder_dead_letters_reminder ON reminder_dead_letters(reminder_id);
+`);
+
 // Phase 59.9: SEO meta description for portfolio
 try { db.exec(`ALTER TABLE portfolios ADD COLUMN meta_description TEXT DEFAULT ''`); } catch { /* already exists */ }
 
@@ -1505,3 +1521,61 @@ try { db.exec(`ALTER TABLE suggestions ADD COLUMN deleted_at TEXT DEFAULT NULL`)
 
 // Phase 70.14: Trending flag on suggestions (vote velocity > threshold in last 24h)
 try { db.exec(`ALTER TABLE suggestions ADD COLUMN trending INTEGER DEFAULT 0`); } catch { /* already exists */ }
+
+// ── Phase 82: Store Safety tables ────────────────────────────────────────────
+
+// 82.2: AI response reports — users can flag harmful/inaccurate/inappropriate responses
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS reports (
+    id TEXT PRIMARY KEY,
+    reporter_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    message_content TEXT NOT NULL DEFAULT '',
+    reason TEXT NOT NULL DEFAULT 'other',
+    additional_info TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reports_reporter ON reports(reporter_id, created_at DESC)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, created_at DESC)`); } catch { /* already exists */ }
+
+// 82.3: User blocking infrastructure (for future user-to-user messaging)
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS blocked_users (
+    id TEXT PRIMARY KEY,
+    blocker_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    blocked_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(blocker_id, blocked_id)
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_blocked_users_blocker ON blocked_users(blocker_id)`); } catch { /* already exists */ }
+
+// 82.6: Content moderation log — flagged messages (still sent but logged)
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS moderation_log (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    message TEXT NOT NULL,
+    flags TEXT NOT NULL DEFAULT '[]',
+    action TEXT NOT NULL DEFAULT 'allowed',
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_moderation_log_user ON moderation_log(user_id, created_at DESC)`); } catch { /* already exists */ }
+
+// 83.4: Invite codes — for invite-gated beta registration
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS invite_codes (
+    id TEXT PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    email TEXT,
+    note TEXT DEFAULT '',
+    created_by TEXT DEFAULT 'admin',
+    used_at TEXT DEFAULT NULL,
+    used_by TEXT DEFAULT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_invite_codes_used ON invite_codes(used_at)`); } catch { /* already exists */ }
