@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { userService, activityService, type ActivityEntry } from '@/services/api';
+import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 
 // Map icon field values to event categories
 function getCategory(icon: string): string {
@@ -157,7 +158,10 @@ export function ActivityPage() {
     Agent: entries.filter((e) => getCategory(e.icon) === 'Agent').length,
   };
 
+  const handlePullRefresh = async () => { void userService.getActivity(50); };
+
   return (
+    <PullToRefreshWrapper onRefresh={handlePullRefresh}>
     <div data-testid="activity-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
@@ -228,7 +232,7 @@ export function ActivityPage() {
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="px-2 py-1.5 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] text-xs"
+          className="px-2 py-1.5 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] text-xs min-h-[44px]"
           aria-label="Filter from date"
         />
         <span>To:</span>
@@ -236,7 +240,7 @@ export function ActivityPage() {
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="px-2 py-1.5 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] text-xs"
+          className="px-2 py-1.5 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] text-xs min-h-[44px]"
           aria-label="Filter to date"
         />
         {(dateFrom || dateTo) && (
@@ -261,7 +265,7 @@ export function ActivityPage() {
             <button
               key={chip}
               onClick={() => setActiveFilter(chip)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all min-h-[36px] border ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all min-h-[44px] border ${
                 isActive
                   ? 'border-current'
                   : 'border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/40'
@@ -375,5 +379,6 @@ export function ActivityPage() {
         </p>
       )}
     </div>
+    </PullToRefreshWrapper>
   );
 }

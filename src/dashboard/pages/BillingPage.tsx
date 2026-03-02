@@ -161,7 +161,7 @@ export function BillingPage() {
             <button
               key={c}
               onClick={() => setCurrency(c)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all min-h-[44px] ${
                 currency === c
                   ? 'bg-[#00F0FF] text-white'
                   : 'text-[#6B7280] hover:text-[#E8E8F0]'
