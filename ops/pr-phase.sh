@@ -12,8 +12,8 @@ if [ -z "$BRANCH" ]; then
   exit 1
 fi
 
-echo "📤 Pushing branch: $BRANCH"
-git push -u origin "$BRANCH" 2>&1
+echo "📤 Pushing branch: $BRANCH (via host SSH)"
+ssh -i /data/.ssh/id_openclaw -o UserKnownHostsFile=/data/.ssh/known_hosts root@172.22.0.1 "cd /root/GeekSpace2.0 && git push -u origin '$BRANCH'" 2>&1
 
 # Check if PR already exists
 EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number' 2>/dev/null || echo "")

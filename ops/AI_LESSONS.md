@@ -57,9 +57,11 @@
 
 ### Full deploy sequence
 ```bash
-git push origin main
+# Push from host (SSH to host first)
+ssh -i /data/.ssh/id_openclaw -o UserKnownHostsFile=/data/.ssh/known_hosts root@172.22.0.1 "cd /root/GeekSpace2.0 && git push origin main"
 # Wait for CI + Test workflows green (GitHub Actions)
-git push origin main:live-production
+# Then push to live-production
+ssh -i /data/.ssh/id_openclaw -o UserKnownHostsFile=/data/.ssh/known_hosts root@172.22.0.1 "cd /root/GeekSpace2.0 && git push origin main:live-production"
 # Wait for CI green on live-production
 # ALWAYS use prod.sh — it includes the static file sync step
 cd ~/GeekSpace2.0 && ./scripts/prod.sh

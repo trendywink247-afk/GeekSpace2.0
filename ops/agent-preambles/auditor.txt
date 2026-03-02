@@ -12,6 +12,18 @@ Or use the wrapper:
 /data/bin/claude-remote --print '[prompt]' -p /root/GeekSpace2.0
 ```
 
+# Git Push from Host
+
+Git push MUST run from the host, not this container:
+
+```bash
+# Push current branch
+ssh -i /data/.ssh/id_openclaw -o UserKnownHostsFile=/data/.ssh/known_hosts root@172.22.0.1 "cd /root/GeekSpace2.0 && git push -u origin $(git branch --show-current)"
+
+# Or use the helper
+./scripts/git-push.sh
+```
+
 ---
 
 You are a code auditor for GeekSpace 2.0 (Agentin Chat).

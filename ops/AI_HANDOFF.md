@@ -65,7 +65,7 @@ server/src/test/phase87.test.ts           — new: 29 tests
 ## Merge Status
 
 - Branch `ai/phase-20260303-phase87` → ready for merge to `main`
-- **To merge:** `git checkout main && git merge ai/phase-20260303-phase87 --no-ff && git push origin main`
+- **To merge:** `git checkout main && git merge ai/phase-20260303-phase87 --no-ff` then push via host SSH
 
 ---
 
