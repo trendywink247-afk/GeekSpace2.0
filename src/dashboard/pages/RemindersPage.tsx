@@ -36,6 +36,7 @@ import { useDashboardStore } from '@/stores/dashboardStore';
 import { reminderService } from '@/services/api';
 import { Flame } from 'lucide-react';
 import { parseNaturalLanguageReminder } from '@/utils/reminderParser';
+import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import type { ReminderChannel, ReminderCategory, ReminderPriority, Reminder } from '@/types';
 
 const categoryColors: Record<string, string> = {
@@ -668,7 +669,10 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
     return ms > 0 && ms <= 24 * 60 * 60 * 1000;
   };
 
+  const handlePullRefresh = async () => { await loadReminders(); };
+
   return (
+    <PullToRefreshWrapper onRefresh={handlePullRefresh}>
     <div className="space-y-6" data-testid="reminders-page">
       {/* 61.5: Snooze feedback toast */}
       {snoozeToast && (
@@ -1775,7 +1779,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
           setNewReminder({ text: '', datetime: '', channel: 'telegram', recurring: '', recurrence: '', category: 'personal', priority: 'normal' });
         }
       }}>
-        <DialogContent className="glass-card-v2 border-[#00F0FF]/20 max-w-lg">
+        <DialogContent className="glass-card-v2 border-[#00F0FF]/20">
           <DialogHeader>
             <DialogTitle className="text-xl">{editingReminder ? 'Edit Reminder' : 'Add Reminder'}</DialogTitle>
           </DialogHeader>
@@ -1897,7 +1901,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                         key={preset.label}
                         type="button"
                         onClick={() => setNewReminder({ ...newReminder, datetime: preset.getDatetime() })}
-                        className="px-2 py-1 rounded text-xs bg-[#06060B] border border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/60 hover:text-[#00F0FF] transition-colors"
+                        className="px-2 py-2.5 rounded text-xs bg-[#06060B] border border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/60 hover:text-[#00F0FF] transition-colors min-h-[44px]"
                       >
                         {preset.label}
                       </button>
@@ -1953,7 +1957,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                       <button
                         key={p}
                         onClick={() => setNewReminder({ ...newReminder, priority: p })}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px]"
                         style={{
                           background: newReminder.priority === p ? cfg.bg : 'transparent',
                           border: `1px solid ${newReminder.priority === p ? cfg.color : '#374151'}`,
@@ -2037,5 +2041,6 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
         </div>
       )}
     </div>
+    </PullToRefreshWrapper>
   );
 }

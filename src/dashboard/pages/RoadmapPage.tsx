@@ -593,7 +593,7 @@ export function RoadmapPage() {
                   Suggest a Feature
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-[#06060B] border-[#00F0FF]/20 max-w-lg">
+              <DialogContent className="bg-[#06060B] border-[#00F0FF]/20">
                 <DialogHeader>
                   <DialogTitle className="text-[#E8E8F0] flex items-center gap-2">
                     <Lightbulb className="w-5 h-5 text-[#00F0FF]" />
@@ -892,7 +892,7 @@ export function RoadmapPage() {
       {/* Phase 71: Edit Suggestion Modal */}
       {editingSuggestion && (
         <Dialog open={!!editingSuggestion} onOpenChange={(open) => { if (!open) setEditingSuggestion(null); }}>
-          <DialogContent className="bg-[#06060B] border-[#00F0FF]/20 max-w-lg">
+          <DialogContent className="bg-[#06060B] border-[#00F0FF]/20">
             <DialogHeader>
               <DialogTitle className="text-[#E8E8F0] flex items-center gap-2">
                 <Pencil className="w-5 h-5 text-[#00F0FF]" />
@@ -944,7 +944,7 @@ export function RoadmapPage() {
       {/* Task 69.10: Suggestion Detail Modal */}
       {detailSuggestion && (
         <Dialog open={!!detailSuggestion} onOpenChange={(open) => { if (!open) setDetailSuggestion(null); }}>
-          <DialogContent className="bg-[#0B0B10] border-[#BF5FFF]/20 max-w-lg">
+          <DialogContent className="bg-[#0B0B10] border-[#BF5FFF]/20">
             <DialogHeader>
               <DialogTitle className="text-lg text-[#E8E8F0] pr-8">{detailSuggestion.title}</DialogTitle>
             </DialogHeader>

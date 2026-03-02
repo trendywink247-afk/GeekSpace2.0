@@ -772,7 +772,7 @@ export function DashboardApp() {
                 </span>
               )}
               {notifOpen && (
-                <div className="absolute right-0 top-12 w-80 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="absolute right-0 top-12 w-80 max-w-[calc(100vw-1rem)] bg-[#0C0C18] border border-[#00F0FF]/20 rounded-xl shadow-2xl z-50 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10">
                     <span className="text-sm font-semibold text-[#E8E8F0]">Recent Activity</span>
                     <button onClick={() => setNotifOpen(false)} className="text-[#6B7280] hover:text-[#E8E8F0]">
