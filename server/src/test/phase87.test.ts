@@ -9,7 +9,7 @@ import { execSync } from 'child_process';
 
 const REPO = '/data/.openclaw/workspace/repo';
 
-describe('Phase 87 — Factory Mode', () => {
+describe.skipIf(!existsSync(REPO))('Phase 87 — Factory Mode', () => {
   describe('87.1 — Factory Runner Script', () => {
     it('factory-run.sh exists and is executable', () => {
       const scriptPath = join(REPO, 'scripts', 'factory-run.sh');
