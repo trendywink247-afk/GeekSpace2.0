@@ -67,8 +67,9 @@ export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-[#E8E8F0]"
+            className="md:hidden p-3 text-[#E8E8F0] min-w-[44px] min-h-[44px] flex items-center justify-center"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>

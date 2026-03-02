@@ -153,7 +153,7 @@ export function InvitePage() {
                 <button
                   type="button"
                   onClick={() => { setStep('code'); setError(''); }}
-                  className="ml-auto text-[10px] text-[#6B7280] hover:text-[#A7ACB8] underline"
+                  className="ml-auto text-[10px] text-[#6B7280] hover:text-[#A7ACB8] underline min-h-[44px] min-w-[44px] flex items-center justify-end pr-1"
                 >
                   change
                 </button>

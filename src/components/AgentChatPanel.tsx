@@ -906,7 +906,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             ) : (
               <button
                 onClick={resetChat}
-                className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
+                className="p-2.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 title="Reset chat"
               >
                 <RotateCcw className="w-4 h-4 text-[#6B7280]" />
@@ -915,7 +915,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             <button
               onClick={handleExport}
               disabled={isExporting}
-              className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
+              className="p-2.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               title="Export all conversations (JSON)"
             >
               <Download className={`w-4 h-4 ${isExporting ? 'text-[#00F0FF] animate-pulse' : 'text-[#6B7280]'}`} />
@@ -924,7 +924,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             {messages.filter((m) => !m.isStreaming && m.id !== 'greeting' && m.role !== 'system').length > 0 && (
               <button
                 onClick={handleExportChat}
-                className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
+                className="p-2.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 title="Export this chat (Markdown)"
               >
                 <span className="text-xs text-[#6B7280] font-mono">MD</span>
@@ -932,14 +932,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             )}
             <button
               onClick={() => { setSearchOpen(v => !v); setSearchTerm(''); }}
-              className={`p-2 rounded-lg transition-colors ${searchOpen ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'hover:bg-[#00F0FF]/10 text-[#6B7280]'}`}
+              className={`p-2.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${searchOpen ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'hover:bg-[#00F0FF]/10 text-[#6B7280]'}`}
               title="Search messages"
             >
               <Search className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
+              className="p-2.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               <X className="w-5 h-5 text-[#6B7280]" />
             </button>
@@ -1349,7 +1349,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           {showScrollToBottom && (
             <button
               onClick={scrollToBottom}
-              className="sticky bottom-4 ml-auto mr-2 flex items-center justify-center w-8 h-8 rounded-full shadow-lg transition-all relative"
+              className="sticky bottom-4 ml-auto mr-2 flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition-all relative"
               style={{ background: 'rgba(0,240,255,0.15)', border: '1px solid rgba(0,240,255,0.4)', color: '#00F0FF' }}
               aria-label="Scroll to bottom"
             >
@@ -1473,7 +1473,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             {!premiumSession && !agentOwner && (
               <button
                 onClick={() => setShowDeployDialog(true)}
-                className="p-2 rounded-lg hover:bg-[#F59E0B]/10 transition-colors"
+                className="p-2.5 rounded-lg hover:bg-[#F59E0B]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 title="Deploy Specialist"
               >
                 <Rocket className="w-4 h-4 text-[#F59E0B]" />
@@ -1493,7 +1493,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               <button
                 onClick={handleMediaRecord}
                 disabled={voiceRecordState === 'uploading' || voiceRecordState === 'transcribing'}
-                className={`p-2 rounded-lg transition-colors relative ${
+                className={`p-2.5 rounded-lg transition-colors relative min-w-[44px] min-h-[44px] flex items-center justify-center ${
                   voiceRecordState === 'recording'
                     ? 'bg-red-500/20 hover:bg-red-500/30'
                     : voiceRecordState !== 'idle'
@@ -1522,7 +1522,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             ) : speechSupported ? (
               <button
                 onClick={handleVoiceInput}
-                className={`p-2 rounded-lg transition-colors ${isListening ? 'bg-[#00F0FF]/20 hover:bg-[#00F0FF]/30' : 'hover:bg-[#00F0FF]/10'}`}
+                className={`p-2.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${isListening ? 'bg-[#00F0FF]/20 hover:bg-[#00F0FF]/30' : 'hover:bg-[#00F0FF]/10'}`}
                 title={isListening ? 'Stop listening' : 'Voice input'}
               >
                 <Mic className={`w-4 h-4 ${isListening ? 'text-[#00F0FF]' : 'text-[#6B7280]'}`} />
