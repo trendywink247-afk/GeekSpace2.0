@@ -4,6 +4,26 @@
 
 ---
 
+## Post-Phase 82 (2026-03-02) — Store Safety + Polish
+
+*Status: Committed to main*
+
+### What's New
+- **Flag AI responses**: Click the ⚑ Flag button (appears on hover) on any AI message to report it. Reports are reviewed by the team.
+- **AI safety notice**: A dismissable banner "AI can make mistakes — always verify important information" now appears in the chat panel (dismissed once per session).
+- **Delete account**: Settings → Security → Danger Zone now has a "Delete My Account" button with password confirmation. All data is permanently erased immediately.
+- **User blocking**: Backend infrastructure for blocking/unblocking users is in place (messaging feature coming in a future phase).
+
+### Under the Hood
+- `POST /api/report` — flag AI responses (reason: harmful/inaccurate/inappropriate/other)
+- `POST|DELETE /api/users/:id/block` + `GET /api/users/blocked` — block infrastructure
+- `POST /api/auth/delete-account` — password-verified full data cascade deletion
+- Content filter service: word-list + regex safety check on all chat messages (non-blocking — only logs, never stops messages)
+- 3 new DB tables: `reports`, `blocked_users`, `moderation_log`
+- 34 new server-side tests — 1043 total
+
+---
+
 ## Post-Phase 81 (2026-03-01) — Image Generation Pipeline
 
 *Status: Committed to main*
