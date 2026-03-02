@@ -1188,21 +1188,21 @@ export function SettingsPage() {
 
               {apiKeys.map((key) => (
                 <div key={key.id} className="rounded-xl bg-[#06060B] border border-[#00F0FF]/20 overflow-hidden">
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style={{ backgroundColor: `${providerColors[key.provider]}20` }}>
+                  <div className="flex items-center justify-between p-4 gap-2">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0" style={{ backgroundColor: `${providerColors[key.provider]}20` }}>
                         {providerEmoji[key.provider] ?? '🔑'}
                       </div>
-                      <div>
-                        <div className="font-medium text-[#E8E8F0]">{key.label}</div>
-                        <div className="text-sm text-[#6B7280] font-mono">
+                      <div className="min-w-0">
+                        <div className="font-medium text-[#E8E8F0] truncate">{key.label}</div>
+                        <div className="text-sm text-[#6B7280] font-mono truncate">
                           {key.maskedKey.length > 12
                             ? `${key.maskedKey.slice(0, 4)}...${key.maskedKey.slice(-4)}`
                             : key.maskedKey}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       <Button variant="ghost" size="sm"
                         onClick={() => { setRotatingKeyId(rotatingKeyId === key.id ? null : key.id); setRotateValue(''); }}
                         className="text-[#00F0FF]/70 hover:text-[#00F0FF] text-xs px-2">

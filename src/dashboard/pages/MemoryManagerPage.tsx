@@ -186,7 +186,7 @@ export function MemoryManagerPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -398,7 +398,7 @@ export function MemoryManagerPage() {
                           </span>
                         </div>
                         
-                        <h4 className="font-medium text-[#E8E8F0] mb-1">{memory.key}</h4>
+                        <h4 className="font-medium text-[#E8E8F0] mb-1 truncate">{memory.key}</h4>
                         
                         {expandedId === memory.id ? (
                           <p className="text-sm text-[#6B7280] whitespace-pre-wrap">{memory.value}</p>
@@ -406,17 +406,17 @@ export function MemoryManagerPage() {
                           <p className="text-sm text-[#6B7280] line-clamp-2">{memory.value}</p>
                         )}
                         
-                        <div className="flex items-center gap-3 mt-2 text-xs text-[#6B7280]">
-                          <span>Created: {formatDate(memory.createdAt)}</span>
-                          <span>Updated: {formatDate(memory.updatedAt)}</span>
-                          <span>Source: {memory.source}</span>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-[#6B7280]">
+                          <span className="whitespace-nowrap">Created: {formatDate(memory.createdAt)}</span>
+                          <span className="whitespace-nowrap">Updated: {formatDate(memory.updatedAt)}</span>
+                          <span className="whitespace-nowrap">Source: {memory.source}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         <button
                           onClick={() => setExpandedId(expandedId === memory.id ? null : memory.id)}
-                          className="p-2 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-white transition-colors"
+                          className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                         >
                           {expandedId === memory.id ? (
                             <ChevronUp className="w-4 h-4" />
@@ -426,7 +426,7 @@ export function MemoryManagerPage() {
                         </button>
                         <button
                           onClick={() => handleDelete(memory.id)}
-                          className="p-2 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FF6161] transition-colors"
+                          className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FF6161] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

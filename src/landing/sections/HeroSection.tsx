@@ -66,7 +66,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
     <section
       ref={sectionRef}
       id="hero"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden scanlines"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden scanlines w-full"
     >
       {/* Gradient Mesh Background */}
       <div className="absolute inset-0 gradient-mesh pointer-events-none" />
@@ -88,9 +88,9 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
               borderRadius: '50%',
             }}
           />
-          {/* Spinning dashed ring */}
-          <div className="absolute inset-[-8px] border border-dashed border-[#00F0FF]/20 rounded-full animate-spin" style={{ animationDuration: '25s' }} />
-          <div className="absolute inset-[-20px] border border-dashed border-[#FF2D78]/10 rounded-full" style={{ animation: 'spin 35s linear infinite reverse' }} />
+          {/* Spinning dashed rings — hidden on mobile to prevent badge overlap */}
+          <div className="hidden sm:block absolute inset-[-8px] border border-dashed border-[#00F0FF]/20 rounded-full animate-spin" style={{ animationDuration: '25s' }} />
+          <div className="hidden sm:block absolute inset-[-20px] border border-dashed border-[#FF2D78]/10 rounded-full" style={{ animation: 'spin 35s linear infinite reverse' }} />
 
           {/* Inner glow */}
           <div
@@ -114,13 +114,13 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
             </div>
           </div>
 
-          {/* Orbiting particles */}
+          {/* Orbiting particles — hidden on mobile to prevent overlap */}
           {[...Array(8)].map((_, i) => {
             const isCyan = i % 2 === 0;
             return (
               <div
                 key={i}
-                className="absolute w-2 h-2 rounded-full"
+                className="hidden sm:block absolute w-2 h-2 rounded-full"
                 style={{
                   top: `${50 + 42 * Math.sin((i * Math.PI) / 4)}%`,
                   left: `${50 + 42 * Math.cos((i * Math.PI) / 4)}%`,
@@ -139,7 +139,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
       <div className="relative z-10 text-center px-4 sm:px-6 md:px-8 max-w-5xl mx-auto mt-[28vh] sm:mt-[30vh] md:mt-[35vh] animate-page-enter">
         {/* Micro Label */}
         <div
-          className={`mb-6 transition-all duration-700 delay-100 ${
+          className={`mb-6 relative z-10 transition-all duration-700 delay-100 ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
@@ -161,7 +161,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
 
         {/* Typewriter Subline */}
         <div
-          className={`h-8 mb-8 transition-all duration-700 delay-400 ${
+          className={`h-8 mb-8 w-full px-4 text-center overflow-visible transition-all duration-700 delay-400 ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >

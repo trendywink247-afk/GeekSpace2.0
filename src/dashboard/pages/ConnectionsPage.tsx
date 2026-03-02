@@ -618,8 +618,8 @@ export function ConnectionsPage() {
 
             {whatsappStep === 'show-qr' && whatsappQR && (
               <div className="space-y-4 text-center">
-                <div className="bg-white p-4 rounded-xl inline-block">
-                  <img src={whatsappQR} alt="WhatsApp QR Code" className="w-48 h-48" />
+                <div className="bg-white p-4 rounded-xl inline-block max-w-[90vw] mx-auto">
+                  <img src={whatsappQR} alt="WhatsApp QR Code" className="w-48 h-48 max-w-full" />
                 </div>
                 <p className="text-sm text-[#6B7280]">
                   Open WhatsApp → Settings → Linked Devices → Link a Device
