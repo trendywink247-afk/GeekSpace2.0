@@ -4,7 +4,7 @@ set -euo pipefail
 REPO="/data/.openclaw/workspace/repo"
 QUEUE="$REPO/ops/phase-queue.txt"
 LOG_DIR="$REPO/ops/reports"
-SECRETS="/root/.secrets/telegram.env"
+CLAUDE_REMOTE="/data/bin/claude-remote"
 MAX_PHASES=5
 
 COMPLETED=0
@@ -12,11 +12,6 @@ FAILED=0
 RESULTS=""
 
 mkdir -p "$LOG_DIR"
-
-# Source Telegram secrets if available
-if [[ -f "$SECRETS" ]]; then
-  source "$SECRETS"
-fi
 
 notify() {
   local msg="$1"
@@ -74,12 +69,12 @@ while IFS= read -r line && [[ $COMPLETED -lt $MAX_PHASES ]]; do
   
   cd "$REPO"
   
-  # Prepend agent preamble then run
+  # Prepend agent preamble and pipe through Claude Code on the host
   PREAMBLE_FILE="$REPO/ops/agent-preambles/$AGENT_TYPE.txt"
   if [[ -f "$PREAMBLE_FILE" ]]; then
-    cat "$PREAMBLE_FILE" "$PROMPT_FILE" 2>&1 | tee "$LOG"
+    cat "$PREAMBLE_FILE" "$PROMPT_FILE" | "$CLAUDE_REMOTE" 2>&1 | tee "$LOG"
   else
-    cat "$PROMPT_FILE" 2>&1 | tee "$LOG"
+    cat "$PROMPT_FILE" | "$CLAUDE_REMOTE" 2>&1 | tee "$LOG"
   fi
   
   EXIT_CODE=${PIPESTATUS[0]:-0}

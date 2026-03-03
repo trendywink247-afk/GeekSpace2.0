@@ -22,6 +22,7 @@ import { startReminderScheduler } from './services/reminder-scheduler.js';
 import { startHealthProbeCache } from './routes/health.js';
 import { startModelSyncScheduler } from './services/model-sync.js';
 import { startArtifactCleanupScheduler } from './services/artifact-cleanup.js';
+import { initProactiveEngine } from './services/proactive-engine.js';
 import { startOllamaKeepalive } from './services/llm.js';
 
 // Create the Express app using the factory
@@ -96,6 +97,7 @@ const httpServer = app.listen(config.port, () => {
     safeStart('artifact-cleanup', startArtifactCleanupScheduler);
     safeStart('db-cleanup-cron', initCleanupCron);
     safeStart('weekly-report-scheduler', initWeeklyReportScheduler);
+    safeStart('proactive-engine', initProactiveEngine);
 
     // Startup subsystem summary — visible in Docker logs for quick operator verification
     logger.info({
