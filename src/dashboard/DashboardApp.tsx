@@ -5,7 +5,8 @@ import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
-  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff
+  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff,
+  Inbox, MessageSquare
 } from 'lucide-react';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -115,7 +116,13 @@ const menuGroups: MenuGroup[] = [
       { id: 'automations', label: 'Automations', icon: Zap },
       { id: 'social-media', label: 'Social Media', icon: Share2 },
       { id: 'proactive', label: 'Proactive AI', icon: Sparkles },
-      { id: 'inbox', label: 'AI Inbox', icon: Bell },
+    ],
+  },
+  {
+    label: 'Communication',
+    icon: MessageSquare,
+    items: [
+      { id: 'inbox', label: 'AI Inbox', icon: Inbox },
     ],
   },
   {
@@ -211,6 +218,20 @@ export function DashboardApp() {
         setUnreadCount(Math.min(count, 99));
       })
       .catch(() => {});
+  }, []);
+
+  // Poll inbox unread count every 60s
+  useEffect(() => {
+    const fetchInboxCount = () => {
+      import('@/services/api').then(({ default: api }) => {
+        api.get('/inbox/count')
+          .then(res => { setInboxUnreadCount((res.data as { unread: number }).unread ?? 0); })
+          .catch(() => {});
+      });
+    };
+    fetchInboxCount();
+    const interval = setInterval(fetchInboxCount, 60_000);
+    return () => clearInterval(interval);
   }, []);
 
   // Apply stored theme on mount and when user changes
@@ -499,6 +520,11 @@ export function DashboardApp() {
                             {pendingConnectionCount > 9 ? '9+' : pendingConnectionCount}
                           </span>
                         )}
+                        {item.id === 'inbox' && inboxUnreadCount > 0 && (
+                          <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#00F0FF] text-[#06060B] text-[10px] font-bold leading-none px-1">
+                            {inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -753,19 +779,21 @@ export function DashboardApp() {
             >
               <span className="text-xs text-[#00F0FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
             </div>
-            {/* AI Inbox bell */}
-            <button
-              onClick={() => navigate("/dashboard/inbox")}
-              className="relative p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
-              aria-label="AI Inbox"
-            >
-              <Bell className="w-5 h-5 text-[#6B7280]" />
+            {/* Inbox Bell */}
+            <div className="relative">
+              <button
+                onClick={() => navigate('/dashboard/inbox')}
+                className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center relative"
+                aria-label="AI Inbox"
+              >
+                <Inbox className="w-5 h-5 text-[#6B7280]" />
+              </button>
               {inboxUnreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] flex items-center justify-center rounded-full bg-[#00F0FF] text-[#05050A] text-[9px] font-bold px-0.5">
-                  {inboxUnreadCount > 9 ? "9+" : inboxUnreadCount}
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-[#00F0FF] text-[#06060B] text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none">
+                  {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
                 </span>
               )}
-            </button>
+            </div>
             {/* Notification Bell */}
             <div className="relative">
               <button
