@@ -178,6 +178,13 @@ export const config = {
 
   // 83.5: Invite-gated registration (set INVITE_REQUIRED=true to enable)
   inviteRequired: optional('INVITE_REQUIRED', 'false') === 'true',
+
+  // Stripe billing (Phase 89)
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+  stripeBasicPriceId: process.env.STRIPE_BASIC_PRICE_ID || '',
+  stripeProPriceId: process.env.STRIPE_PRO_PRICE_ID || '',
+  stripeEnabled: !!process.env.STRIPE_SECRET_KEY,
 } as const;
 
 // ---- Startup validation ----

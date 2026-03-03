@@ -1,0 +1,39 @@
+# Claude Code Access
+
+You are running inside OpenClaw. To invoke claude for tasks, SSH to the host:
+
+```bash
+ssh -i /data/.ssh/id_openclaw -o UserKnownHostsFile=/data/.ssh/known_hosts root@172.22.0.1 "cd /root/GeekSpace2.0 && /root/.local/bin/claude --print '[prompt]'"
+```
+
+Or use the wrapper:
+
+```bash
+/data/bin/claude-remote --print '[prompt]' -p /root/GeekSpace2.0
+```
+
+# Git Push from Host
+
+Git push MUST run from the host, not this container:
+
+```bash
+# Push current branch
+ssh -i /data/.ssh/id_openclaw -o UserKnownHostsFile=/data/.ssh/known_hosts root@172.22.0.1 "cd /root/GeekSpace2.0 && git push -u origin $(git branch --show-current)"
+
+# Or use the helper
+./scripts/git-push.sh
+```
+
+---
+
+You are a mobile UI specialist for GeekSpace 2.0 (Agentin Chat).
+
+Read ops/AI_HANDOFF.md before starting.
+
+Your ONLY job: fix mobile layout issues described below.
+
+Test mentally at 375px, 390px, 430px, 360px widths.
+
+Use only Tailwind responsive classes (sm: md: lg:).
+
+Every fix passes phase-gate before commit.

@@ -79,7 +79,28 @@ imagesRouter.post('/generate', requireAuth, async (req: AuthRequest, res) => {
     return res.status(400).json({ error: 'Prompt too long (max 2000 chars)' });
   }
 
-  // Check image limit
+  // Plan-based daily image generation cap (Phase 89)
+  const imgUser = db.prepare('SELECT subscription_plan, subscription_status FROM users WHERE id = ?').get(userId) as { subscription_plan?: string; subscription_status?: string } | undefined;
+  const imgPlan = imgUser?.subscription_plan || 'free';
+  const imgIsPaid = (imgPlan === 'basic' || imgPlan === 'pro') && imgUser?.subscription_status === 'active';
+  const IMAGE_DAILY_CAPS: Record<string, number> = { free: 3, basic: 20, pro: 50 };
+  const dailyCap = IMAGE_DAILY_CAPS[imgPlan] ?? IMAGE_DAILY_CAPS['free'];
+  const todayRow = db.prepare(
+    "SELECT COUNT(*) as cnt FROM user_images WHERE user_id = ? AND date(created_at) = date('now')"
+  ).get(userId) as { cnt: number };
+  const todayCount = todayRow.cnt;
+  if (todayCount >= dailyCap) {
+    return res.status(429).json({
+      error: imgIsPaid
+        ? 'Daily image limit reached. Resets at midnight.'
+        : 'Upgrade to Basic or Pro to unlock more image generation',
+      upgradeRequired: !imgIsPaid,
+      used: todayCount,
+      limit: dailyCap,
+    });
+  }
+
+  // Check image gallery limit
   const count = getUserImageCount(userId);
   if (count >= MAX_IMAGES_PER_USER) {
     return res.status(429).json({

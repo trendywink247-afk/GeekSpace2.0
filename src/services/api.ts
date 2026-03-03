@@ -338,6 +338,13 @@ export const billingService = {
   activateDayPass: () => api.post<{ message: string; expiresAt: string }>('/billing/day-pass'),
 
   getEvents: () => api.get<UsageEvent[]>('/billing/events'),
+
+  // Stripe billing (Phase 89)
+  getStripeStatus: () =>
+    api.get<{ plan: string; status: string; expiresAt: number | null; label: string; isPaid: boolean }>('/billing/status'),
+
+  createCheckout: (plan: 'basic' | 'pro') =>
+    api.post<{ url: string }>('/billing/checkout', { plan }),
 };
 
 // ----- Integrations ------------------------------------------

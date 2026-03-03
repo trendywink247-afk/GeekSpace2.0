@@ -1,0 +1,3 @@
+STUB — Geek will fill this prompt before enabling the queue. Do not execute.
+
+Write ops/AI_HANDOFF.md and STOP.

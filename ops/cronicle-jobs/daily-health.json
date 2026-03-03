@@ -1,0 +1,9 @@
+{
+  "title": "❤️ Daily Health Check",
+  "enabled": true,
+  "timezone": "Asia/Kolkata",
+  "schedule": "0 9 * * *",
+  "command": "cd /data/.openclaw/workspace/repo && ./scripts/smoke-staging.sh 2>&1 | tail -5",
+  "timeout": 300,
+  "description": "Daily 9AM IST — 11-point smoke test. Telegram alert on failure."
+}

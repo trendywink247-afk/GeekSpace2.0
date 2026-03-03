@@ -1,5 +1,8 @@
 import { Router } from 'express';
+import express from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { createCheckoutSession, handleWebhook, getStatus } from '../services/stripe.js';
+import { config } from '../config.js';
 import { validateBody, billingUpgradeSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { PLAN_DEFINITIONS } from '../db/index.js';
@@ -128,4 +131,50 @@ billingRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
     LIMIT 20
   `).all(req.userId!);
   res.json(events);
+});
+
+// POST /api/billing/checkout — create Stripe Checkout session
+billingRouter.post('/checkout', requireAuth, async (req: AuthRequest, res) => {
+  const { plan } = req.body as { plan?: string };
+  if (!plan || (plan !== 'basic' && plan !== 'pro')) {
+    res.status(400).json({ error: 'Plan must be "basic" or "pro"' });
+    return;
+  }
+  if (!config.stripeEnabled) {
+    res.status(503).json({ error: 'Stripe billing is not configured on this server.' });
+    return;
+  }
+  try {
+    const url = await createCheckoutSession(req.userId!, plan as 'basic' | 'pro');
+    res.json({ url });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Checkout failed';
+    res.status(500).json({ error: msg });
+  }
+});
+
+// POST /api/billing/webhook — Stripe webhook (raw body for signature verification)
+billingRouter.post(
+  '/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    if (!sig || typeof sig !== 'string') {
+      res.status(400).json({ error: 'Missing Stripe-Signature header' });
+      return;
+    }
+    try {
+      await handleWebhook(req.body as Buffer, sig);
+      res.json({ received: true });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Webhook processing failed';
+      res.status(400).json({ error: msg });
+    }
+  },
+);
+
+// GET /api/billing/status — current Stripe subscription plan + expiry
+billingRouter.get('/status', requireAuth, (req: AuthRequest, res) => {
+  const status = getStatus(req.userId!);
+  res.json(status);
 });

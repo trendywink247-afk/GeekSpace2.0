@@ -27,11 +27,12 @@ export const voiceRouter = Router();
 
 const VOICE_DAILY_CAPS: Record<string, number> = {
   free: 5,
+  basic: 30,
+  pro: 100,
   intro: 30,
   monthly: 30,
   halfyear: 60,
   yearly: 100,
-  pro: 50,
   team: 100,
 };
 
@@ -91,7 +92,7 @@ voiceRouter.post('/transcribe', requireAuth,
     const cap = getVoiceCap(userId);
     if (!cap.allowed) {
       res.status(429).json({
-        error: 'Voice limit reached — upgrade for more',
+        error: 'Voice limit reached. Upgrade to Basic or Pro to unlock more voice calls',
         used: cap.used,
         limit: cap.limit,
       });
@@ -136,7 +137,7 @@ voiceRouter.post('/speak', requireAuth, async (req: AuthRequest, res) => {
   const cap = getVoiceCap(userId);
   if (!cap.allowed) {
     res.status(429).json({
-      error: 'Voice limit reached — upgrade for more',
+      error: 'Voice limit reached. Upgrade to Basic or Pro to unlock more voice calls',
       used: cap.used,
       limit: cap.limit,
     });

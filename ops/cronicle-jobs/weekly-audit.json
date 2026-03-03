@@ -1,0 +1,9 @@
+{
+  "title": "🔍 Weekly Improvement Audit",
+  "enabled": true,
+  "timezone": "Asia/Kolkata",
+  "schedule": "0 10 * * 0",
+  "command": "/data/.openclaw/workspace/repo/scripts/weekly-audit.sh",
+  "timeout": 3600,
+  "description": "Every Sunday 10AM IST — security, performance, mobile, deps audit. Auto-fixes HIGH issues."
+}
