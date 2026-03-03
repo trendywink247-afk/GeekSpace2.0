@@ -79,7 +79,14 @@ export function verifyWhatsAppWebhook(signature: string, body: string): boolean 
     .update(body)
     .digest('hex');
 
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  // 92.7: Guard against null/undefined signature and length mismatch (prevents crash)
+  if (signature == null || typeof signature !== 'string') return false;
+  try {
+    const sigBuf = Buffer.from(signature.replace(/^sha256=/, ''), 'hex');
+    const expBuf = Buffer.from(expected, 'hex');
+    if (sigBuf.length !== expBuf.length) return false;
+    return crypto.timingSafeEqual(sigBuf, expBuf);
+  } catch { return false; }
 }
 
 // ── Link token (legacy wa.me flow) ──────────────────────────

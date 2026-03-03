@@ -9,7 +9,9 @@ export type SecurityEventType =
   | 'token_invalid'
   | 'admin_access'
   | 'admin_denied'
-  | 'rate_limited';
+  | 'rate_limited'
+  | 'login_blocked'
+  | 'logout';
 
 export function logSecurityEvent(
   event: SecurityEventType,

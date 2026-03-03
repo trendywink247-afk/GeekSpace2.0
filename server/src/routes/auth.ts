@@ -10,6 +10,7 @@ import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { logSecurityEvent } from '../services/security-log.js';
 import { requestPasswordReset, verifyResetOTP, resetPassword } from '../services/passwordReset.js';
 import { logger } from '../logger.js';
+import { isLoginBlocked, recordFailedLogin, clearLoginAttempts } from '../services/login-guard.js';
 
 export const authRouter = Router();
 
@@ -137,9 +138,22 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
 
 authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
   const { email, password } = req.body;
+
+  // 92.2: Brute-force protection
+  const ip = req.ip || '0.0.0.0';
+  const blockStatus = isLoginBlocked(ip);
+  if (blockStatus.blocked) {
+    logSecurityEvent('login_blocked', ip, { email });
+    res.status(429)
+      .set('Retry-After', String(Math.ceil(blockStatus.retryAfterMs / 1000)))
+      .json({ error: 'Too many failed login attempts. Try again in 15 minutes.' });
+    return;
+  }
+
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as Record<string, unknown> | undefined;
 
   if (!user || !(await bcrypt.compare(password, user.password_hash as string))) {
+    recordFailedLogin(ip);
     logSecurityEvent('login_failure', req.ip || '', { email });
     logger.warn({ event: 'auth_login_failed', email, ip: req.ip, reason: 'invalid_credentials' }, 'Login failed');
     res.status(401).json({ error: 'Invalid credentials' });
@@ -147,6 +161,7 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
   }
 
   const token = signToken(user.id as string);
+  clearLoginAttempts(ip); // 92.2: clear on success
 
   // Log activity
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Logged in', 'Session started', 'log-in')`).run(uuid(), user.id);
@@ -484,6 +499,25 @@ authRouter.delete('/sessions', requireAuth, (req: AuthRequest, res) => {
   db.prepare(`
     UPDATE user_sessions SET is_active = 0 WHERE user_id = ?
   `).run(userId);
+  res.json({ success: true });
+});
+
+
+// ── Logout (92.6: JWT blocklist) ──────────────────────────────────────────
+authRouter.post('/logout', requireAuth, (req: AuthRequest, res) => {
+  const header = req.headers.authorization || '';
+  const rawToken = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (rawToken) {
+    try {
+      const decoded = jwtPkg.decode(rawToken) as { jti?: string; exp?: number } | null;
+      if (decoded?.jti && decoded?.exp) {
+        db.prepare('INSERT OR IGNORE INTO token_blocklist (jti, user_id, expires_at) VALUES (?, ?, ?)')
+          .run(decoded.jti, req.userId!, decoded.exp);
+      }
+    } catch { /* ignore --- non-fatal */ }
+  }
+  logSecurityEvent('logout', req.ip || '', { userId: req.userId });
+  logger.info({ event: 'auth_logout', userId: req.userId, ip: req.ip }, 'User logged out');
   res.json({ success: true });
 });
 
