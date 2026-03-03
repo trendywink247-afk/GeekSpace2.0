@@ -951,6 +951,26 @@ try {
 // Phase 90: Proactive messages enabled toggle per user
 try { db.exec(`ALTER TABLE users ADD COLUMN proactive_enabled INTEGER DEFAULT 1`); } catch { /* column already exists */ }
 
+// Phase 92: JWT token blocklist --- for logout invalidation
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS token_blocklist (
+      jti TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_token_blocklist_expires ON token_blocklist(expires_at);
+  `);
+} catch { /* table already exists */ }
+
+// Phase 92: Cleanup expired blocklist entries on startup
+try {
+  const now = Math.floor(Date.now() / 1000);
+  db.prepare('DELETE FROM token_blocklist WHERE expires_at < ?').run(now);
+} catch { /* non-fatal */ }
+
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {

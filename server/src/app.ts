@@ -102,6 +102,8 @@ export function createApp(): express.Application {
         manifestSrc: ["'self'"],
         // Force HTTP resources to upgrade to HTTPS (safe, widely supported)
         upgradeInsecureRequests: [],
+        // 92.1: CSP violation reporting endpoint
+        reportUri: ['/api/csp-report'],
       },
     } : false,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
@@ -117,7 +119,7 @@ export function createApp(): express.Application {
   // 50.7: HSTS — enforce HTTPS in production for 1 year (includeSubDomains)
   if (config.isProduction) {
     app.use((_req, res, next) => {
-      res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+      res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
       next();
     });
   }
@@ -280,6 +282,13 @@ export function createApp(): express.Application {
   app.use('/api/agent/chat', (_req, res, next) => { res.set('X-RateLimit-Policy', '60;w=900'); next(); });
   app.use('/api/agent/chat/public', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
   app.use('/api/dashboard/contact', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
+
+  // ---- 92.4: CSP violation reporting endpoint ----
+  app.post('/api/csp-report', (req, res) => {
+    const report = req.body;
+    logger.warn({ cspViolation: report }, 'CSP violation reported');
+    res.status(204).end();
+  });
 
   // ---- Health check ----
   app.get('/api/health', (_req, res) => {
