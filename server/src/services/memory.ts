@@ -584,3 +584,169 @@ export function startWeeklySummaryScheduler(): void {
 
   logger.info('Weekly memory summary scheduler started (checks hourly, runs Sunday 10:00 IST)');
 }
+
+// ============================================================
+// Phase 94: User Memories — simple key-value long-term store
+// Per-user facts like preferred_name, timezone, main_project, etc.
+// Injected into every LLM prompt as a compact context block.
+// ============================================================
+
+export interface UserMemory {
+  id: number;
+  user_id: string;
+  key: string;
+  value: string;
+  source: string;
+  confidence: number;
+  last_used: number | null;
+  created_at: number;
+  updated_at: number;
+}
+
+/** Return all memories for a user, sorted by last_used DESC */
+export function getUserMemories(userId: string): UserMemory[] {
+  return db.prepare(
+    'SELECT * FROM user_memories WHERE user_id = ? ORDER BY last_used DESC NULLS LAST, updated_at DESC'
+  ).all(userId) as UserMemory[];
+}
+
+/** Return top N most recently used memories */
+export function getTopUserMemories(userId: string, limit = 10): UserMemory[] {
+  return db.prepare(
+    'SELECT * FROM user_memories WHERE user_id = ? ORDER BY last_used DESC NULLS LAST, updated_at DESC LIMIT ?'
+  ).all(userId, limit) as UserMemory[];
+}
+
+/** Insert or update a user memory entry */
+export function upsertUserMemory(
+  userId: string,
+  key: string,
+  value: string,
+  source = 'manual',
+  confidence = 1.0,
+): UserMemory {
+  const now = Date.now();
+  db.prepare(`
+    INSERT INTO user_memories (user_id, key, value, source, confidence, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(user_id, key)
+    DO UPDATE SET
+      value = excluded.value,
+      source = excluded.source,
+      confidence = excluded.confidence,
+      updated_at = ?
+  `).run(userId, key, value, source, confidence, now, now, now);
+
+  return db.prepare(
+    'SELECT * FROM user_memories WHERE user_id = ? AND key = ?'
+  ).get(userId, key) as UserMemory;
+}
+
+/** Delete a specific user memory by id */
+export function deleteUserMemory(userId: string, id: number): boolean {
+  const result = db.prepare('DELETE FROM user_memories WHERE id = ? AND user_id = ?').run(id, userId);
+  return result.changes > 0;
+}
+
+/**
+ * Mark a set of memories as "used" (update last_used timestamp).
+ * Called when memories are injected into a prompt.
+ */
+function touchUserMemories(ids: number[]): void {
+  if (!ids.length) return;
+  const now = Date.now();
+  const placeholders = ids.map(() => '?').join(',');
+  db.prepare(`UPDATE user_memories SET last_used = ? WHERE id IN (${placeholders})`).run(now, ...ids);
+}
+
+/**
+ * Format user memories as a compact string for injection into LLM system prompts.
+ * Keeps it under 500 tokens. Updates last_used on the memories that are included.
+ */
+export function formatMemoryContext(userId: string): string {
+  const memories = getTopUserMemories(userId, 15);
+  if (!memories.length) return '';
+
+  // Touch memories as "used"
+  touchUserMemories(memories.map(m => m.id));
+
+  const pairs = memories.map(m => `${m.key}=${m.value}`).join(', ');
+  return `[User memories: ${pairs}]`;
+}
+
+/**
+ * Scan recent messages for facts worth remembering.
+ * Uses regex patterns — no LLM call needed.
+ * Returns number of new memories extracted.
+ */
+const USER_MEMORY_PATTERNS: Array<{
+  pattern: RegExp;
+  keyFn: (m: RegExpMatchArray) => string;
+  valueFn: (m: RegExpMatchArray) => string;
+}> = [
+  {
+    pattern: /(?:call me|my name is|i(?:'m| am))\s+([A-Z][a-zA-Z]+)/i,
+    keyFn: () => 'preferred_name',
+    valueFn: (m) => m[1],
+  },
+  {
+    pattern: /(?:my (?:timezone|tz) is|i(?:'m| am) in)\s+((?:UTC|GMT|IST|PST|EST|CST|MST|AEST|CET|[A-Z]{2,5})(?:[+-]\d+(?::\d+)?)?)/i,
+    keyFn: () => 'timezone',
+    valueFn: (m) => m[1],
+  },
+  {
+    pattern: /(?:i(?:'m| am) working on|my (?:main |current )?project is|i(?:'m| am) building)\s+(.{5,80}?)(?:\.|,|$)/i,
+    keyFn: () => 'main_project',
+    valueFn: (m) => m[1].trim(),
+  },
+  {
+    pattern: /(?:i prefer|i (?:like|love|use|work with))\s+(.{3,60}?)(?:\.|,|$)/i,
+    keyFn: () => 'preference',
+    valueFn: (m) => m[1].trim(),
+  },
+  {
+    pattern: /(?:my (?:email|e-mail) is)\s+([\w.+-]+@[\w-]+\.[a-zA-Z]{2,})/i,
+    keyFn: () => 'email',
+    valueFn: (m) => m[1],
+  },
+  {
+    pattern: /(?:i work (?:at|for)|i(?:'m| am) a[n]? .{1,30} at)\s+(.{3,60}?)(?:\.|,|$)/i,
+    keyFn: () => 'company',
+    valueFn: (m) => m[1].trim(),
+  },
+  {
+    pattern: /(?:i(?:'m| am) a[n]?)\s+(.{3,50}?)(?:\.|,|and |$)/i,
+    keyFn: () => 'role',
+    valueFn: (m) => m[1].trim(),
+  },
+  {
+    pattern: /(?:i(?:'m| am) (?:from|based in|located in|living in))\s+(.{3,60}?)(?:\.|,|$)/i,
+    keyFn: () => 'location',
+    valueFn: (m) => m[1].trim(),
+  },
+];
+
+export function extractMemoriesFromConversation(
+  userId: string,
+  messages: Array<{ role: string; content: string }>,
+): number {
+  let count = 0;
+  // Only scan user messages
+  const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
+
+  for (const text of userMessages) {
+    for (const { pattern, keyFn, valueFn } of USER_MEMORY_PATTERNS) {
+      const match = text.match(pattern);
+      if (match) {
+        const key = keyFn(match);
+        const value = valueFn(match);
+        if (value.length >= 2 && value.length <= 200) {
+          upsertUserMemory(userId, key, value, 'extracted', 0.8);
+          count++;
+        }
+      }
+    }
+  }
+
+  return count;
+}

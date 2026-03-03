@@ -10,7 +10,7 @@ import { config } from '../config.js';
 import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openclaw-system.js';
 import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
-import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations } from '../services/memory.js';
+import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations, formatMemoryContext, extractMemoriesFromConversation } from '../services/memory.js';
 import { loadPicoContext, formatContextBlock } from '../services/pico-context.js';
 import { checkContent } from '../services/content-filter.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
@@ -103,6 +103,7 @@ ${formatContextBlock(picoCtx)}
 Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
 ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
 ${memoryBlock}
+${formatMemoryContext(userId)}
 
 ${closingInstruction}`;
 }
@@ -615,6 +616,8 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
         // Background AI memory extraction (non-blocking)
         extractMemoriesWithAI(userId, message, cleanReply || bridgeResult.text).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
+        // Phase 94: also extract into user_memories (flat key-value store)
+        extractMemoriesFromConversation(userId, [{ role: 'user', content: message }]);
 
         res.json(response);
         return;
@@ -723,6 +726,8 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     // Background AI memory extraction (non-blocking)
     extractMemoriesWithAI(userId, message, cleanReply || result.reply).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
+    // Phase 94: also extract into user_memories (flat key-value store)
+    extractMemoriesFromConversation(userId, [{ role: 'user', content: message }]);
 
     // Increment rate limit tracker for UI display
     incrementRateLimitTracker(userId as unknown as number);
