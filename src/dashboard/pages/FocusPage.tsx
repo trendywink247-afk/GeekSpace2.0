@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { api } from '@/services/api';
+import api from '@/services/api';
 import { Target, CheckCircle, Plus, Flame, Timer, Play, Bell, BellOff } from 'lucide-react';
 
 interface FocusSession { id: number; started_at: number; ended_at: number | null; duration_min: number | null; goal: string | null; completed: number; }
