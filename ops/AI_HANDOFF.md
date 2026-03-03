@@ -1,97 +1,77 @@
-# AI Handoff -- Post-Phase 90 (Proactive AI)
+# AI Handoff -- Post-Phase 97 (AI Inbox)
 
 **Date:** 2026-03-03
-**Branch:** `ai/phase-20260303-phase90-proactive-ai`
-**Tests:** 89 server unit test files | 1284 tests (Phase 90: 40/40 passing)
+**Branch:** `ai/phase-20260303-phase97-ai-inbox`
+**Tests:** 93 server unit test files | 1476 tests (Phase 97: 53/53 passing)
 
 ---
 
 ## Completed This Phase
 
-### Phase 90 -- Proactive AI (Weebo sends proactive messages)
+### Phase 97 -- AI Inbox (unified message feed with AI triage)
 
-1. ✅ **90.1** `server/src/services/proactive-engine.ts` -- full proactive engine:
-   - `dailyBriefing(userId)` -- Good morning message with reminder counts at 8:00 IST
-   - `overdueAlert(userId)` -- overdue reminder list at 10:00 IST (skips if none)
-   - `idleCheckIn(userId)` -- idle check sent if user inactive 3+ days at 8:00 IST
-   - `getProactiveLog(userId, limit)` -- retrieves proactive message history
-   - `initProactiveEngine()` -- 60-second interval, checks IST hour/minute
-2. ✅ **90.2** Engine registered via `safeStart('proactive-engine', initProactiveEngine)` in `server/src/index.ts`
-3. ✅ **90.3** DB migrations in `server/src/db/index.ts`:
-   - `proactive_messages` table (id, user_id, type, sent_at, message + index)
-   - `proactive_enabled` column on `users` table (DEFAULT 1)
-4. ✅ **90.4** `server/src/routes/proactive.ts` routes:
-   - `GET /api/proactive/log` -- returns last N messages
-   - `GET /api/proactive/settings` -- returns `{ enabled }` 
-   - `PATCH /api/proactive/toggle` -- enable/disable per user, body `{ enabled: boolean }`
-5. ✅ **90.5** `proactiveRouter` registered in `server/src/app.ts` at `/api/proactive`
-6. ✅ **90.6** `src/dashboard/pages/ProactivePage.tsx` -- frontend page showing:
-   - Toggle switch for proactive messages
-   - IST schedule display (8AM briefing, 10AM overdue, 8AM idle)
-   - Recent message history list
-   - Added to DashboardApp: lazy import, PageType, menu item (Productivity group), case in renderPage
-7. ✅ **90.7** `server/src/test/phase90.test.ts` -- 40 tests (33 static + 7 functional)
-8. ✅ **Tests** `phase90.test.ts`: 40/40 passing | 1284 total (1255 passing)
-9. ✅ **Brand guard** 0 violations
-10. ✅ **TypeScript** 0 errors (frontend + server)
+1. DB: `inbox_messages` table (user_id, source, sender, content, summary, priority, read, archived, suggested_reply, related_reminder_id, received_at)
+2. `server/src/services/inbox.ts` -- addInboxMessage, triageMessage, getInbox, getUnreadCount, markRead, archiveMessage, deleteMessage, getMessageById
+3. `server/src/routes/inbox.ts` -- CRUD + reply endpoint (inboxRouter)
+4. `server/src/app.ts` -- inboxRouter at /api/inbox
+5. `server/src/services/message-router.ts` -- addInboxMessage side-effect after logConversation
+6. `src/dashboard/pages/InboxPage.tsx` -- filter tabs, message cards, suggested reply, reply input, action buttons
+7. `src/dashboard/DashboardApp.tsx` -- InboxPage lazy import, inbox PageType, nav item (Productivity), bell icon + badge
+8. `server/src/test/phase97.test.ts` -- 53 tests (all passing)
 
 ---
 
 ## Files Changed
 
 ```
-server/src/services/proactive-engine.ts   -- NEW: full proactive engine service
-server/src/routes/proactive.ts            -- NEW: proactive routes (log/settings/toggle)
-server/src/test/phase90.test.ts           -- NEW: 40 tests
-server/src/db/index.ts                    -- proactive_messages table + proactive_enabled column
-server/src/index.ts                       -- safeStart proactiveEngine registration
-server/src/app.ts                         -- proactiveRouter at /api/proactive
-server/src/routes/users.ts               -- proactiveEnabled in GET/PATCH /me
-src/dashboard/pages/ProactivePage.tsx     -- NEW: proactive UI page
-src/dashboard/DashboardApp.tsx            -- ProactivePage import + nav + route
+server/src/db/index.ts                 -- inbox_messages table + index
+server/src/services/inbox.ts           -- NEW: inbox service
+server/src/routes/inbox.ts             -- NEW: inbox routes
+server/src/services/message-router.ts  -- inbox side-effect added
+server/src/app.ts                      -- inboxRouter registered
+server/src/test/phase97.test.ts        -- NEW: 53 tests
+src/dashboard/pages/InboxPage.tsx      -- NEW: inbox UI page
+src/dashboard/DashboardApp.tsx         -- InboxPage + nav + bell icon
 ```
 
 ---
 
 ## Test / Gate Status
 
-- **Phase 90 tests:** 40/40 ✅
-- **Total tests:** 1284 (1255 passing + 29 pre-existing phase87 env-specific skips)
-- **Brand guard:** 0 violations ✅
-- **TypeScript:** 0 errors ✅
-- **Branch:** `ai/phase-20260303-phase90-proactive-ai` (NOT yet merged to main)
+- **Phase 97 tests:** 53/53
+- **Total tests:** 1476 (1447 passing + 29 phase87 env-specific skips)
+- **TypeScript:** 0 errors (frontend + server)
+- **Brand guard:** N/A (no brand-visible changes)
+- **Branch:** `ai/phase-20260303-phase97-ai-inbox` (pushed, NOT merged to main)
 
 ---
 
-## Proactive Engine Details
+## Inbox Service Details
 
-### Scheduling (IST = UTC+5:30)
-| Time | Event | Condition |
-|------|-------|-----------|
-| 8:00 AM | Daily Briefing | Once per day per user |
-| 10:00 AM | Overdue Alert | Only if overdue reminders exist |
-| 8:00 AM | Idle Check-in | Only if user inactive 3+ days |
+### API Routes
+| Method | Route | Purpose |
+|--------|-------|---------|
+| GET | /api/inbox | List messages (params: limit, offset, source, unreadOnly) |
+| GET | /api/inbox/count | Unread count |
+| POST | /api/inbox | Create message (internal/system use) |
+| PATCH | /api/inbox/:id/read | Mark as read |
+| PATCH | /api/inbox/:id/archive | Archive |
+| DELETE | /api/inbox/:id | Delete |
+| POST | /api/inbox/:id/reply | Send reply via telegram/whatsapp |
 
-### Toggle
-- Per-user setting: `users.proactive_enabled` (1=on, 0=off)
-- API: `PATCH /api/proactive/toggle` with `{ enabled: boolean }`
-- `isProactiveEnabled()` checked at start of each function
+### Triage
+- Synchronous: classifyPriority (urgent/high/normal by keyword)
+- Async: LLM triage for summary + suggested_reply (fire-and-forget in prod)
+- TEST_MODE: deterministic keyword stubs, no real LLM calls
 
 ---
 
 ## Next Phase
 
-Phase 91: Add tests for voice+image -- `./scripts/queue.sh next`
-
-### Queue (Phases 91-92)
-| Phase | Type | Description |
-|-------|------|-------------|
-| 91 | tester | Add tests for voice+image |
-| 92 | auditor | Security audit + fixes |
+Phase 98: next in queue -- `./scripts/queue.sh next`
 
 ---
 
-🏭 **FACTORY MODE LIVE**
-- 5 phases/night at 02:00 IST
-- 1284 tests (1255 passing)
-- Phase 90 complete ✅
+## FACTORY MODE LIVE
+- 1476 tests (1447 passing)
+- Phase 97 complete
