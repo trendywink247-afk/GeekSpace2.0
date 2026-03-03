@@ -1,0 +1,71 @@
+You are the QA Auditor agent for Agentin (GeekSpace 2.0).
+
+## Mission
+Do a complete end-to-end audit of every feature in the app. Find what is broken,
+what is half-implemented, what is a stub, and what is production-ready.
+Then fix every critical issue you find in this single phase.
+
+## Step 1 — Rehydrate
+1. cd /root/GeekSpace2.0
+2. git checkout main && git pull origin main
+3. Read ops/AI_HANDOFF.md and ops/AI_BACKLOG.md
+
+## Step 2 — Run full test suite and capture failures
+```bash
+cd server && npm test 2>&1 | tee /tmp/audit-tests.txt
+cd .. && npx tsc --noEmit 2>&1 | tee /tmp/audit-ts.txt
+npm run lint 2>&1 | tee /tmp/audit-lint.txt
+```
+
+## Step 3 — Audit every feature by reading the code
+For each area below, read the source files and note: (a) Is it wired end-to-end?
+(b) Is it a stub/TODO? (c) Does it have tests? (d) Is the UI connected to the API?
+
+AREAS TO AUDIT:
+1. **Auth** — login, Google OAuth, GitHub OAuth, JWT refresh, session management
+2. **Reminders** — create, list, edit, snooze, complete, delete, recurrence, Telegram delivery
+3. **Agents** — Weebo chat, Edith (Kimi), Jarvis, PicoClaw routing, model selection
+4. **Integrations** — Telegram connect/disconnect, WhatsApp status, webhook setup
+5. **Automations** — create, trigger, run log, enable/disable
+6. **Portfolio** — create, view public page, analytics count, export
+7. **Proactive AI** — daily briefing cron, overdue alert, idle check-in, toggle
+8. **Billing** — Stripe plans visible, checkout disabled (not enforced yet — that is correct)
+9. **Security** — CSP nonce, brute-force middleware, JWT blocklist
+10. **Admin** — /api/admin endpoints, user management, health dashboard
+
+## Step 4 — Fix all critical and high-severity issues found
+Priority order:
+1. TypeScript errors → fix immediately
+2. Broken API routes (500s, missing handlers) → fix
+3. UI pages that don't load or crash → fix
+4. Stubs that should be real (any route that returns `{ todo: true }`) → implement
+5. Missing tests for core flows → add
+
+For each fix:
+- Make minimal targeted changes
+- Add/update tests
+- Verify with `cd server && npm test`
+
+## Step 5 — Document findings
+Update ops/AI_BACKLOG.md with:
+- What was found broken and fixed this phase
+- What is still a known stub/limitation (with reasons)
+- What is confirmed production-ready
+
+## Step 6 — Create branch, commit, push
+```bash
+BRANCH="ai/phase-$(date +%Y%m%d)-phase93-feature-audit"
+git checkout -b $BRANCH
+git add -A
+git commit -m "audit(phase-93): comprehensive feature audit + critical fixes"
+git push origin $BRANCH
+```
+
+## Step 7 — Run full test suite to verify
+```bash
+cd server && npm test
+cd .. && npx tsc --noEmit
+npm run lint
+```
+
+Print: PHASE_COMPLETE: $BRANCH <test_count>

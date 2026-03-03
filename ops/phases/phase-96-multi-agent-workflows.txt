@@ -1,0 +1,105 @@
+You are the Builder agent for Agentin (GeekSpace 2.0).
+
+## Mission
+Build multi-agent workflows. Users can chain Weebo → Jarvis → Edith to complete
+complex tasks: one agent plans, another executes, another notifies. This is the
+core of Agentin as an AI OS — agents that collaborate like processes on an OS.
+
+## Step 1 — Rehydrate
+1. cd /root/GeekSpace2.0
+2. git checkout main && git pull origin main
+3. Read ops/AI_HANDOFF.md
+4. Read server/src/services/llm.ts and server/src/routes/chat.ts to understand agent architecture
+
+## Step 2 — DB schema
+```sql
+CREATE TABLE IF NOT EXISTS workflows (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  steps TEXT NOT NULL,  -- JSON array of { agent, prompt_template, output_key }
+  trigger TEXT DEFAULT 'manual',  -- 'manual' | 'schedule' | 'event'
+  enabled INTEGER DEFAULT 1,
+  last_run INTEGER,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+);
+CREATE TABLE IF NOT EXISTS workflow_runs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  workflow_id INTEGER NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
+  started_at INTEGER NOT NULL,
+  finished_at INTEGER,
+  status TEXT DEFAULT 'running',  -- 'running' | 'completed' | 'failed'
+  context TEXT,   -- JSON: accumulated outputs from each step
+  error TEXT
+);
+```
+
+## Step 3 — Workflow engine (server/src/services/workflow-engine.ts)
+```typescript
+interface WorkflowStep {
+  agent: 'weebo' | 'jarvis' | 'edith' | 'picoclaw';
+  prompt_template: string;  // can reference {{previous_output}} and {{user_input}}
+  output_key: string;       // key to store this step's output in context
+}
+
+async function runWorkflow(workflowId, userId, userInput): Promise<WorkflowRun>
+```
+- Execute steps sequentially
+- Each step: substitute template variables → call the right LLM agent → store output in context
+- Each step's output is available to next steps via {{step_key}}
+- Save run to workflow_runs with full context JSON
+- On error: mark run as failed, store error message
+
+## Step 4 — Workflow routes (server/src/routes/workflows.ts)
+```
+GET    /api/workflows              — list user's workflows
+POST   /api/workflows              — create workflow { name, description, steps, trigger }
+GET    /api/workflows/:id          — get one workflow
+PATCH  /api/workflows/:id          — update
+DELETE /api/workflows/:id          — delete
+POST   /api/workflows/:id/run      — trigger a run { input? }
+GET    /api/workflows/:id/runs     — list recent runs (last 10)
+GET    /api/workflows/runs/:runId  — get full run with context
+```
+
+## Step 5 — 3 pre-built workflow templates
+Seed these for all users in db/index.ts (if workflows table is empty for them):
+
+1. **Daily Briefing Workflow**
+   Steps: Weebo (summarize today's reminders) → Edith (add motivational note) → notify via Telegram
+
+2. **Task Decomposer**
+   Steps: Jarvis (break complex task into subtasks) → Weebo (create reminder for each subtask)
+
+3. **Research → Summary → Share**
+   Steps: Jarvis (research topic from input) → Weebo (summarize for non-technical) → save to portfolio
+
+## Step 6 — WorkflowsPage frontend (src/dashboard/pages/WorkflowsPage.tsx)
+- List workflows with last run status
+- "New Workflow" button → simple builder:
+  - Name + description
+  - Steps list (add/remove/reorder)
+  - Per step: agent picker dropdown + prompt textarea
+- "Run" button per workflow → shows live run status (polling /runs/:id)
+- Run history expandable per workflow showing context at each step
+- Add to DashboardApp nav under "Automation" group
+
+## Step 7 — Tests (server/src/test/phase96.test.ts)
+Write 30+ tests:
+- Workflow CRUD
+- runWorkflow executes steps in order and builds context
+- Template variable substitution ({{previous_output}}, {{user_input}})
+- Failed step marks run as failed
+- Pre-built templates exist for demo users
+
+## Step 8 — Branch, commit, push
+```bash
+BRANCH="ai/phase-$(date +%Y%m%d)-phase96-multi-agent-workflows"
+git checkout -b $BRANCH
+git add -A
+git commit -m "feat(phase-96): multi-agent workflows — chain Weebo/Jarvis/Edith, builder UI, pre-built templates"
+git push origin $BRANCH
+```
+
+Print: PHASE_COMPLETE: $BRANCH <test_count>
