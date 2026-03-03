@@ -1,8 +1,8 @@
 // InboxPage.tsx -- Phase 97: AI Inbox
 import { useState, useEffect, useCallback } from 'react';
 import {
-  MessageSquare, Send, Archive, Trash2, AlertCircle,
-  RefreshCw, Check, Inbox, Bell,
+  Send, Archive, Trash2, AlertCircle,
+  RefreshCw, Check, Inbox,
 } from 'lucide-react';
 import api from '@/services/api';
 
@@ -44,19 +44,19 @@ function formatTime(ms: number): string {
 }
 
 export function InboxPage() {
-  const [messages, setMessages] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [messages, setMessages] = useState([] as InboxMessage[]);
+  const [filter, setFilter] = useState('all' as Filter);
   const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(null);
-  const [replyMap, setReplyMap] = useState({});
-  const [sending, setSending] = useState(null);
-  const [err, setErr] = useState(null);
+  const [expanded, setExpanded] = useState(null as number | null);
+  const [replyMap, setReplyMap] = useState({} as Record<number, string>);
+  const [sending, setSending] = useState(null as number | null);
+  const [err, setErr] = useState(null as string | null);
 
   const fetchMessages = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
-      const params = {};
+      const params = {} as Record<string, string>;
       if (filter === 'unread') params.unreadOnly = 'true';
       else if (filter !== 'all') params.source = filter;
       const res = await api.get('/inbox', { params });
@@ -70,22 +70,22 @@ export function InboxPage() {
 
   useEffect(() => { fetchMessages(); }, [fetchMessages]);
 
-  const handleMarkRead = async (id) => {
+  const handleMarkRead = async (id: number) => {
     await api.patch('/inbox/' + id + '/read');
     setMessages(prev => prev.map(m => m.id === id ? { ...m, read: 1 } : m));
   };
 
-  const handleArchive = async (id) => {
+  const handleArchive = async (id: number) => {
     await api.patch('/inbox/' + id + '/archive');
     setMessages(prev => prev.filter(m => m.id !== id));
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number) => {
     await api.delete('/inbox/' + id);
     setMessages(prev => prev.filter(m => m.id !== id));
   };
 
-  const handleReply = async (msg) => {
+  const handleReply = async (msg: InboxMessage) => {
     const text = replyMap[msg.id];
     if (!text?.trim()) return;
     setSending(msg.id);
@@ -202,7 +202,7 @@ export function InboxPage() {
                     <p className='text-xs text-purple-400 mb-1 font-medium'>Suggested reply</p>
                     <p className='text-sm text-gray-300'>{msg.suggested_reply}</p>
                     <button
-                      onClick={() => setReplyMap({ ...replyMap, [msg.id]: msg.suggested_reply })}
+                      onClick={() => setReplyMap({ ...replyMap, [msg.id]: msg.suggested_reply ?? '' })}
                       className='mt-2 text-xs text-purple-400 hover:text-purple-300'
                     >
                       Use this
