@@ -928,6 +928,12 @@ try { db.exec(`ALTER TABLE conversation_log ADD COLUMN starred INTEGER DEFAULT 0
 // Phase 37.5: Connection alert opt-in/out
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN notif_connections INTEGER DEFAULT 1`); } catch { /* column already exists */ }
 
+// Phase 89: Stripe billing columns on users
+try { db.exec(`ALTER TABLE users ADD COLUMN stripe_customer_id TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE users ADD COLUMN subscription_plan TEXT DEFAULT 'free'`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'inactive'`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE users ADD COLUMN subscription_expires_at INTEGER DEFAULT NULL`); } catch { /* column already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
