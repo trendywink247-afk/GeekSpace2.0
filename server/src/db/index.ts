@@ -1666,3 +1666,56 @@ try {
     CREATE INDEX IF NOT EXISTS idx_gmail_messages_user ON gmail_messages(user_id, synced_at DESC);
   `);
 } catch { /* table already exists */ }
+
+// Phase 101: deferred flag for inbox messages (deferred during focus mode)
+try { db.exec(`ALTER TABLE inbox_messages ADD COLUMN deferred INTEGER DEFAULT 0`); } catch { /* already exists */ }
+
+// Phase 101: Focus Mode + Habits
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS focus_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      started_at INTEGER NOT NULL,
+      ended_at INTEGER,
+      duration_min INTEGER,
+      goal TEXT,
+      completed INTEGER DEFAULT 0,
+      pomodoro_count INTEGER DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_focus_sessions_user ON focus_sessions(user_id, started_at DESC);
+
+    CREATE TABLE IF NOT EXISTS habits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      description TEXT,
+      frequency TEXT DEFAULT 'daily',
+      target_time TEXT,
+      icon TEXT DEFAULT '⭐',
+      current_streak INTEGER DEFAULT 0,
+      longest_streak INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+    );
+    CREATE INDEX IF NOT EXISTS idx_habits_user ON habits(user_id);
+
+    CREATE TABLE IF NOT EXISTS habit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      habit_id INTEGER NOT NULL REFERENCES habits(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL,
+      logged_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000),
+      note TEXT
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_habit_log_day ON habit_logs(habit_id, date(logged_at/1000, 'unixepoch'));
+    CREATE INDEX IF NOT EXISTS idx_habit_logs_habit ON habit_logs(habit_id, logged_at DESC);
+
+    CREATE TABLE IF NOT EXISTS notification_settings (
+      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      focus_mode_active INTEGER DEFAULT 0,
+      dnd_start TEXT DEFAULT '22:00',
+      dnd_end TEXT DEFAULT '08:00',
+      urgent_bypass INTEGER DEFAULT 1,
+      batch_interval_min INTEGER DEFAULT 30
+    );
+  `);
+} catch { /* tables already exist */ }

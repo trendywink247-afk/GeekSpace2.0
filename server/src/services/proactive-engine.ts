@@ -75,6 +75,14 @@ export async function dailyBriefing(userId: string): Promise<string | null> {
   if (overdueCount > 0) {
     message += ` You have ${overdueCount} overdue ${plural(overdueCount, 'item')}.`;
   }
+  // Phase 101: include habit reminders in daily briefing
+  try {
+    const todayHabits = db.prepare("SELECT name, icon FROM habits WHERE user_id = ?").all(userId) as Array<{ name: string; icon: string }>;
+    if (todayHabits.length > 0) {
+      const habitList = todayHabits.slice(0, 3).map((h: { name: string; icon: string }) => h.icon + " " + h.name).join(", ");
+      message += " Habits today: " + habitList + ".";
+    }
+  } catch { }
   await sendViaTelegram(userId, message);
   recordProactiveMessage(userId, 'daily_briefing', message);
   logger.info({ userId, dueToday, pendingTotal, overdueCount }, 'Daily briefing sent');
@@ -117,6 +125,24 @@ export async function idleCheckIn(userId: string): Promise<string | null> {
   return message;
 }
 
+export async function sendHabitMilestone(userId: string, habitName: string, streak: number): Promise<void> {
+  if (!isProactiveEnabled(userId)) return;
+  const streakStr = String(streak);
+  const msg = "Amazing! You now have a " + streakStr + " day streak on: " + habitName + ". Keep going!";
+  await sendViaTelegram(userId, msg);
+  recordProactiveMessage(userId, "daily_briefing", msg);
+  logger.info({ userId, habitName, streak }, "Habit milestone sent");
+}
+
+export async function sendFocusSessionComplete(userId: string, durationMin: number): Promise<void> {
+  if (!isProactiveEnabled(userId)) return;
+  if (durationMin < 60) return;
+  const minStr = String(durationMin);
+  const msg = "Great focus session (" + minStr + "min)! Take a break before your next sprint.";
+  await sendViaTelegram(userId, msg);
+  recordProactiveMessage(userId, "daily_briefing", msg);
+  logger.info({ userId, durationMin }, "Focus session complete message sent");
+}
 export function getProactiveLog(userId: string, limit = 20): unknown[] {
   try {
     return db.prepare(
