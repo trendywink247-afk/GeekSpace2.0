@@ -37,6 +37,7 @@ usersRouter.get('/me', requireAuth, async (req: AuthRequest, res) => {
       weeklyDigest: !!user.notification_weekly,
       connections: !!user.notification_connections,
       digest: !!user.notification_digest,
+      proactiveEnabled: !!user.proactive_enabled,
     },
     privacy: {
       showProfile: !!user.privacy_show_profile, showActivity: !!user.privacy_show_activity,
@@ -71,7 +72,7 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), async (req
     if (updates.theme.accentColor) { fields.push('theme_accent = ?'); values.push(updates.theme.accentColor); }
   }
   if (updates.notifications) {
-    const m: Record<string, string> = { email: 'notification_email', push: 'notification_push', agentUpdates: 'notification_agent', reminders: 'notification_reminders', weeklyDigest: 'notification_weekly', connections: 'notification_connections', digest: 'notification_digest' };
+    const m: Record<string, string> = { email: 'notification_email', push: 'notification_push', agentUpdates: 'notification_agent', reminders: 'notification_reminders', weeklyDigest: 'notification_weekly', connections: 'notification_connections', digest: 'notification_digest', proactiveEnabled: 'proactive_enabled' };
     for (const [k, c] of Object.entries(m)) { if (updates.notifications[k] !== undefined) { fields.push(`${c} = ?`); values.push(updates.notifications[k] ? 1 : 0); } }
   }
   if (updates.privacy) {

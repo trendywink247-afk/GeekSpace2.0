@@ -58,8 +58,9 @@ const CapabilitiesPage = lazyRetry(() => import('./pages/CapabilitiesPage').then
 const ActivityPage = lazyRetry(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
 const ImageGalleryPage = lazyRetry(() => import('./pages/ImageGalleryPage').then(m => ({ default: m.ImageGalleryPage })));
 const AISpecialistPage = lazyRetry(() => import('./pages/AISpecialistPage').then(m => ({ default: m.AISpecialistPage })));
+const ProactivePage = lazyRetry(() => import('./pages/ProactivePage').then(m => ({ default: m.ProactivePage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive';
 
 interface MenuGroup {
   label: string | null;
@@ -112,6 +113,7 @@ const menuGroups: MenuGroup[] = [
       { id: 'reminders', label: 'Reminders', icon: Bell },
       { id: 'automations', label: 'Automations', icon: Zap },
       { id: 'social-media', label: 'Social Media', icon: Share2 },
+      { id: 'proactive', label: 'Proactive AI', icon: Sparkles },
     ],
   },
   {
@@ -378,6 +380,8 @@ export function DashboardApp() {
         />;
       case 'activity':
         return <ActivityPage />;
+      case 'proactive':
+        return <ProactivePage />;
       case 'tools':
         return <AISpecialistPage />;
       default:

@@ -934,6 +934,23 @@ try { db.exec(`ALTER TABLE users ADD COLUMN subscription_plan TEXT DEFAULT 'free
 try { db.exec(`ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'inactive'`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE users ADD COLUMN subscription_expires_at INTEGER DEFAULT NULL`); } catch { /* column already exists */ }
 
+// Phase 90: Proactive AI messages log
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS proactive_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      sent_at INTEGER NOT NULL,
+      message TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_proactive_messages_user ON proactive_messages(user_id, sent_at DESC);
+  `);
+} catch { /* table already exists */ }
+
+// Phase 90: Proactive messages enabled toggle per user
+try { db.exec(`ALTER TABLE users ADD COLUMN proactive_enabled INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
