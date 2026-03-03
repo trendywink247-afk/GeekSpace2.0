@@ -1,96 +1,91 @@
-# AI Handoff — Post-Phase 88 (Final Mobile Polish)
+# AI Handoff -- Post-Phase 90 (Proactive AI)
 
 **Date:** 2026-03-03
-**Branch:** `main` (phase-88 merged)
-**Tests:** 88 server unit test files | 1244 tests (Phase 88: 26/26 passing)
+**Branch:** `ai/phase-20260303-phase90-proactive-ai`
+**Tests:** 89 server unit test files | 1284 tests (Phase 90: 40/40 passing)
 
 ---
 
 ## Completed This Phase
 
-### Phase 88 — Final Mobile Polish
+### Phase 90 -- Proactive AI (Weebo sends proactive messages)
 
-1. ✅ **88.1** Audited all dashboard pages at 375px, 390px, 430px widths
-2. ✅ **88.2** DashboardApp: notification dropdown `max-w-[calc(100vw-1rem)]` prevents horizontal overflow on small screens
-3. ✅ **88.3** Touch targets upgraded to min 44x44px across:
-   - RemindersPage: preset date buttons `py-2.5 min-h-[44px]`, priority buttons `py-2.5 min-h-[44px]`
-   - ActivityPage: date filter inputs + filter chips `min-h-[44px]` (upgraded from 36px)
-   - BillingPage: currency toggle buttons `min-h-[44px]`
-4. ✅ **88.4** Table readability verified — all tables (Health, Automations, Billing) have `overflow-x-auto` wrappers + MobileTable component available
-5. ✅ **88.5** PullToRefreshWrapper added to RemindersPage and ActivityPage (OverviewPage already had it)
-6. ✅ **88.6** Bottom nav clearance confirmed — `pb-24 md:pb-0` in main content + floating buttons at `bottom-24 md:bottom-8`
-7. ✅ **88.7** Modal mobile sizing fixed — removed standalone `max-w-lg` from RemindersPage and RoadmapPage dialogs (base Dialog already has `max-w-[calc(100%-2rem)] sm:max-w-lg`)
-8. ✅ **Tests** `phase88.test.ts`: 26/26 passing | 1244 total
-9. ✅ **Brand guard** 0 violations ✅
-10. ✅ **TypeScript** 0 errors (frontend + server) ✅
-11. ✅ **Builds** frontend + server clean ✅
+1. ✅ **90.1** `server/src/services/proactive-engine.ts` -- full proactive engine:
+   - `dailyBriefing(userId)` -- Good morning message with reminder counts at 8:00 IST
+   - `overdueAlert(userId)` -- overdue reminder list at 10:00 IST (skips if none)
+   - `idleCheckIn(userId)` -- idle check sent if user inactive 3+ days at 8:00 IST
+   - `getProactiveLog(userId, limit)` -- retrieves proactive message history
+   - `initProactiveEngine()` -- 60-second interval, checks IST hour/minute
+2. ✅ **90.2** Engine registered via `safeStart('proactive-engine', initProactiveEngine)` in `server/src/index.ts`
+3. ✅ **90.3** DB migrations in `server/src/db/index.ts`:
+   - `proactive_messages` table (id, user_id, type, sent_at, message + index)
+   - `proactive_enabled` column on `users` table (DEFAULT 1)
+4. ✅ **90.4** `server/src/routes/proactive.ts` routes:
+   - `GET /api/proactive/log` -- returns last N messages
+   - `GET /api/proactive/settings` -- returns `{ enabled }` 
+   - `PATCH /api/proactive/toggle` -- enable/disable per user, body `{ enabled: boolean }`
+5. ✅ **90.5** `proactiveRouter` registered in `server/src/app.ts` at `/api/proactive`
+6. ✅ **90.6** `src/dashboard/pages/ProactivePage.tsx` -- frontend page showing:
+   - Toggle switch for proactive messages
+   - IST schedule display (8AM briefing, 10AM overdue, 8AM idle)
+   - Recent message history list
+   - Added to DashboardApp: lazy import, PageType, menu item (Productivity group), case in renderPage
+7. ✅ **90.7** `server/src/test/phase90.test.ts` -- 40 tests (33 static + 7 functional)
+8. ✅ **Tests** `phase90.test.ts`: 40/40 passing | 1284 total (1255 passing)
+9. ✅ **Brand guard** 0 violations
+10. ✅ **TypeScript** 0 errors (frontend + server)
 
 ---
 
 ## Files Changed
 
 ```
-src/dashboard/DashboardApp.tsx        — notification dropdown overflow fix
-src/dashboard/pages/RemindersPage.tsx — touch targets + modal sizing + PullToRefresh
-src/dashboard/pages/ActivityPage.tsx  — touch targets + PullToRefresh
-src/dashboard/pages/BillingPage.tsx   — currency toggle touch target
-src/dashboard/pages/RoadmapPage.tsx   — modal sizing fixes (3 dialogs)
-server/src/test/phase88.test.ts       — new: 26 mobile tests
+server/src/services/proactive-engine.ts   -- NEW: full proactive engine service
+server/src/routes/proactive.ts            -- NEW: proactive routes (log/settings/toggle)
+server/src/test/phase90.test.ts           -- NEW: 40 tests
+server/src/db/index.ts                    -- proactive_messages table + proactive_enabled column
+server/src/index.ts                       -- safeStart proactiveEngine registration
+server/src/app.ts                         -- proactiveRouter at /api/proactive
+server/src/routes/users.ts               -- proactiveEnabled in GET/PATCH /me
+src/dashboard/pages/ProactivePage.tsx     -- NEW: proactive UI page
+src/dashboard/DashboardApp.tsx            -- ProactivePage import + nav + route
 ```
 
 ---
 
 ## Test / Gate Status
 
-- **Phase 88 tests:** 26/26 ✅
-- **Total tests:** 1244 (1215 in host env + 29 pre-existing phase87 env-specific failures)
+- **Phase 90 tests:** 40/40 ✅
+- **Total tests:** 1284 (1255 passing + 29 pre-existing phase87 env-specific skips)
 - **Brand guard:** 0 violations ✅
 - **TypeScript:** 0 errors ✅
-- **Builds:** Clean ✅
+- **Branch:** `ai/phase-20260303-phase90-proactive-ai` (NOT yet merged to main)
 
 ---
 
-## Merge Status
+## Proactive Engine Details
 
-- Branch `ai/phase-20260303-phase88-mobile` → merged to `main` ✅
-- `main` → pushed to `origin/main` ✅
+### Scheduling (IST = UTC+5:30)
+| Time | Event | Condition |
+|------|-------|-----------|
+| 8:00 AM | Daily Briefing | Once per day per user |
+| 10:00 AM | Overdue Alert | Only if overdue reminders exist |
+| 8:00 AM | Idle Check-in | Only if user inactive 3+ days |
 
----
-
-## Mobile Polish Summary
-
-### Touch Target Compliance (44x44px minimum)
-| Component | Before | After |
-|-----------|--------|-------|
-| RemindersPage preset buttons | 28px | 44px ✅ |
-| RemindersPage priority buttons | ~32px | 44px ✅ |
-| ActivityPage filter chips | 36px | 44px ✅ |
-| ActivityPage date inputs | ~32px | 44px ✅ |
-| BillingPage currency toggle | ~36px | 44px ✅ |
-| All nav/header buttons | 44px | 44px ✅ |
-
-### Modal Safety
-- Shadcn base Dialog: `max-w-[calc(100%-2rem)] sm:max-w-lg` (always correct)
-- Pages no longer override with standalone `max-w-lg` that could clip on small screens
-
-### Pull-to-Refresh Coverage
-- OverviewPage ✅ (pre-existing)
-- RemindersPage ✅ (added Phase 88)
-- ActivityPage ✅ (added Phase 88)
-- UsageAnalyticsPage ✅ (pre-existing)
-- PicoFleetPage ✅ (pre-existing)
+### Toggle
+- Per-user setting: `users.proactive_enabled` (1=on, 0=off)
+- API: `PATCH /api/proactive/toggle` with `{ enabled: boolean }`
+- `isProactiveEnabled()` checked at start of each function
 
 ---
 
 ## Next Phase
 
-Phase 89: Stripe ₹99/mo billing — `./scripts/queue.sh next`
+Phase 91: Add tests for voice+image -- `./scripts/queue.sh next`
 
-### Seeded Queue (Phases 89-92)
+### Queue (Phases 91-92)
 | Phase | Type | Description |
 |-------|------|-------------|
-| 89 | builder | Stripe ₹99/mo billing |
-| 90 | builder | Morning Telegram briefings |
 | 91 | tester | Add tests for voice+image |
 | 92 | auditor | Security audit + fixes |
 
@@ -98,5 +93,5 @@ Phase 89: Stripe ₹99/mo billing — `./scripts/queue.sh next`
 
 🏭 **FACTORY MODE LIVE**
 - 5 phases/night at 02:00 IST
-- 1244 tests passing
-- Phase 88 complete ✅
+- 1284 tests (1255 passing)
+- Phase 90 complete ✅
