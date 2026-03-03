@@ -210,7 +210,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
 
 // ---- Workflow Card ----
 
-function WorkflowCard({ workflow, onDelete, onRefresh }: { workflow: Workflow; onDelete: () => void; onRefresh: () => void }) {
+function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [running, setRunning] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -430,7 +430,6 @@ export function WorkflowsPage() {
               key={wf.id}
               workflow={wf}
               onDelete={() => void fetchWorkflows()}
-              onRefresh={() => void fetchWorkflows()}
             />
           ))}
         </div>
