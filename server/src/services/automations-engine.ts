@@ -73,6 +73,8 @@ interface ActionConfig {
   body?: string;            // JSON body
   message?: string;         // for send_message / log actions
   reminder_text?: string;   // for create_reminder
+  field?: string;           // for portfolio-update: which field to update (headline/about)
+  value?: string;           // for portfolio-update: new field value
 }
 
 interface ExecutionResult {
@@ -177,21 +179,34 @@ async function executeAction(
 
       case 'whatsapp-message': {
         const message = actionConfig.message || `[Automation] ${automation.name} triggered`;
-        output = `WhatsApp message queued: ${message}`;
-        logger.info({ automationId: automation.id, message }, 'WhatsApp message action (not yet implemented)');
+        output = `WhatsApp message not sent: WhatsApp Business API credentials not configured. Message: ${message}`;
+        logger.warn({ automationId: automation.id, message }, 'WhatsApp message action requires WhatsApp Business API credentials');
         break;
       }
 
       case 'portfolio-update': {
-        output = 'Portfolio update triggered';
-        logger.info({ automationId: automation.id }, 'Portfolio update action');
+        const allowedFields = ['headline', 'about'];
+        const field = actionConfig.field;
+        const value = actionConfig.value ?? '';
+        if (!field || !allowedFields.includes(field)) {
+          output = `Portfolio update skipped: field must be one of ${allowedFields.join(', ')} (got: ${field ?? 'none'})`;
+        } else {
+          db.prepare(`UPDATE portfolios SET ${field} = ? WHERE user_id = ?`).run(value, automation.user_id);
+          const portRow = db.prepare('SELECT username FROM portfolios WHERE user_id = ?').get(automation.user_id) as { username: string } | undefined;
+          if (portRow?.username) {
+            const { cacheDel } = await import('./cache.js');
+            await cacheDel(`portfolio:${portRow.username}`);
+          }
+          output = `Portfolio ${field} updated successfully`;
+          logger.info({ automationId: automation.id, field, userId: automation.user_id }, 'Portfolio update action executed');
+        }
         break;
       }
 
       case 'manychat-broadcast': {
         const message = actionConfig.message || `Broadcast from ${automation.name}`;
-        output = `Broadcast queued: ${message}`;
-        logger.info({ automationId: automation.id, message }, 'ManyChat broadcast action');
+        output = `ManyChat broadcast not sent: ManyChat integration not configured. Message: ${message}`;
+        logger.warn({ automationId: automation.id, message }, 'ManyChat broadcast action requires ManyChat API credentials');
         break;
       }
 
