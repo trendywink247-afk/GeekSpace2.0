@@ -59,8 +59,9 @@ const ActivityPage = lazyRetry(() => import('./pages/ActivityPage').then(m => ({
 const ImageGalleryPage = lazyRetry(() => import('./pages/ImageGalleryPage').then(m => ({ default: m.ImageGalleryPage })));
 const AISpecialistPage = lazyRetry(() => import('./pages/AISpecialistPage').then(m => ({ default: m.AISpecialistPage })));
 const ProactivePage = lazyRetry(() => import('./pages/ProactivePage').then(m => ({ default: m.ProactivePage })));
+const InboxPage = lazyRetry(() => import('./pages/InboxPage').then(m => ({ default: m.InboxPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox';
 
 interface MenuGroup {
   label: string | null;
@@ -114,6 +115,7 @@ const menuGroups: MenuGroup[] = [
       { id: 'automations', label: 'Automations', icon: Zap },
       { id: 'social-media', label: 'Social Media', icon: Share2 },
       { id: 'proactive', label: 'Proactive AI', icon: Sparkles },
+      { id: 'inbox', label: 'AI Inbox', icon: Bell },
     ],
   },
   {
@@ -156,6 +158,7 @@ export function DashboardApp() {
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const swipeHandlers = useSwipeNavigation(location.pathname);
   const [currentPage, setCurrentPage] = useState<PageType>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
@@ -256,7 +259,7 @@ export function DashboardApp() {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -382,6 +385,8 @@ export function DashboardApp() {
         return <ActivityPage />;
       case 'proactive':
         return <ProactivePage />;
+      case 'inbox':
+        return <InboxPage />;
       case 'tools':
         return <AISpecialistPage />;
       default:
@@ -748,6 +753,19 @@ export function DashboardApp() {
             >
               <span className="text-xs text-[#00F0FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
             </div>
+            {/* AI Inbox bell */}
+            <button
+              onClick={() => navigate("/dashboard/inbox")}
+              className="relative p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
+              aria-label="AI Inbox"
+            >
+              <Bell className="w-5 h-5 text-[#6B7280]" />
+              {inboxUnreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] flex items-center justify-center rounded-full bg-[#00F0FF] text-[#05050A] text-[9px] font-bold px-0.5">
+                  {inboxUnreadCount > 9 ? "9+" : inboxUnreadCount}
+                </span>
+              )}
+            </button>
             {/* Notification Bell */}
             <div className="relative">
               <button

@@ -1622,3 +1622,25 @@ try { db.exec(`
 `); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code)`); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_invite_codes_used ON invite_codes(used_at)`); } catch { /* already exists */ }
+
+
+// Phase 97: AI Inbox -- unified message feed from Telegram, WhatsApp, and system events
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS inbox_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      source TEXT NOT NULL,
+      sender TEXT,
+      content TEXT NOT NULL,
+      summary TEXT,
+      priority TEXT DEFAULT 'normal',
+      read INTEGER DEFAULT 0,
+      archived INTEGER DEFAULT 0,
+      suggested_reply TEXT,
+      related_reminder_id INTEGER REFERENCES reminders(id),
+      received_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+    );
+    CREATE INDEX IF NOT EXISTS idx_inbox_user ON inbox_messages(user_id, read, received_at DESC);
+  `);
+} catch { /* table already exists */ }

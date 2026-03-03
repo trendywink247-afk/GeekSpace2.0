@@ -48,6 +48,7 @@ import { jobsRouter } from './routes/jobs.js';
 import { imageAsyncRouter } from './routes/image.js';
 import { reportRouter } from './routes/report.js';
 import { proactiveRouter } from './routes/proactive.js';
+import { inboxRouter } from './routes/inbox.js';
 import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
@@ -426,6 +427,7 @@ export function createApp(): express.Application {
   app.use('/api/image', imageAsyncRouter);
   app.use('/api/report', reportRouter);
   app.use('/api/proactive', proactiveRouter);
+  app.use('/api/inbox', inboxRouter);
 
   // ---- Test routes (only in test mode) ----
   if (config.isTestMode) {
