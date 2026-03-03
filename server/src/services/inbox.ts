@@ -59,13 +59,20 @@ export function addInboxMessage(
   sender: string | null,
   content: string,
 ): number {
-  const stmt = db.prepare(`
-    INSERT INTO inbox_messages (user_id, source, sender, content, priority, received_at)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `);
   const priority = classifyPriority(content);
   const now = Date.now();
-  const result = stmt.run(userId, source, sender, content, priority, now);
+
+  // Phase 101: defer non-urgent messages when focus mode is active
+  let deferred = 0;
+  try {
+    const ns = db.prepare("SELECT focus_mode_active, urgent_bypass FROM notification_settings WHERE user_id = ?").get(userId) as { focus_mode_active: number; urgent_bypass: number } | undefined;
+    if (ns && ns.focus_mode_active === 1) {
+      const bypassUrgent = ns.urgent_bypass !== 0;
+      if (!(bypassUrgent && priority === 'urgent')) { deferred = 1; }
+    }
+  } catch { }
+  const stmt = db.prepare("INSERT INTO inbox_messages (user_id, source, sender, content, priority, received_at, deferred) VALUES (?, ?, ?, ?, ?, ?, ?)");
+  const result = stmt.run(userId, source, sender, content, priority, now, deferred);
   const messageId = result.lastInsertRowid as number;
 
   // Fire-and-forget AI triage (non-blocking)
