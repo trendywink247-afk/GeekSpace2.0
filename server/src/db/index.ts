@@ -1644,3 +1644,25 @@ try {
     CREATE INDEX IF NOT EXISTS idx_inbox_user ON inbox_messages(user_id, read, received_at DESC);
   `);
 } catch { /* table already exists */ }
+
+
+// Phase 100: Gmail integration -- token column + gmail_messages tracking table
+try { db.exec(`ALTER TABLE users ADD COLUMN google_gmail_token TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS gmail_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      gmail_message_id TEXT NOT NULL,
+      thread_id TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      sender TEXT NOT NULL,
+      snippet TEXT,
+      inbox_id INTEGER REFERENCES inbox_messages(id) ON DELETE SET NULL,
+      synced_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_gmail_messages_gid ON gmail_messages(user_id, gmail_message_id);
+    CREATE INDEX IF NOT EXISTS idx_gmail_messages_user ON gmail_messages(user_id, synced_at DESC);
+  `);
+} catch { /* table already exists */ }
