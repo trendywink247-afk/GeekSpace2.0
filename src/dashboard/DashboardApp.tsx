@@ -67,7 +67,10 @@ const FocusPage = lazyRetry(() => import('./pages/FocusPage').then(m => ({ defau
 const ChatPage = lazyRetry(() => import('./pages/ChatPage').then(m => ({ default: m.ChatPage })));
 const MemoryPage = lazyRetry(() => import('./pages/MemoryPage').then(m => ({ default: m.MemoryPage })));
 
+const CalendarPage = lazyRetry(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage })));
+
 type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar';
+
 
 interface MenuGroup {
   label: string | null;
@@ -120,6 +123,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: 'reminders', label: 'Reminders', icon: Bell },
       { id: 'automations', label: 'Automations', icon: Zap },
+      { id: 'calendar', label: 'Calendar', icon: CalendarCheck },
       { id: 'social-media', label: 'Social Media', icon: Share2 },
       { id: 'proactive', label: 'Proactive AI', icon: Sparkles },
       { id: 'focus', label: 'Focus & Habits', icon: Target },
@@ -450,6 +454,8 @@ export function DashboardApp() {
         return <FocusPage />;
       case 'chat':
         return <ChatPage />;
+      case 'calendar':
+        return <CalendarPage />;
       case 'tools':
         return <AISpecialistPage />;
       default:

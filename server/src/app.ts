@@ -55,6 +55,7 @@ import { gmailRouter } from './routes/gmail.js';
 import { analyticsRouter } from './routes/analytics.js';
 import { focusRouter, habitsRouter } from './routes/focus.js';
 import { memoryRouter } from './routes/memory.js';
+import { calendarRouter } from './routes/calendar.js';
 import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
@@ -444,6 +445,7 @@ export function createApp(): express.Application {
   app.use('/api/focus', focusRouter);
   app.use('/api/habits', habitsRouter);
   app.use('/api/memory', memoryRouter);
+  app.use('/api/calendar', calendarRouter);
 
   // ---- Test routes (only in test mode) ----
   if (config.isTestMode) {
