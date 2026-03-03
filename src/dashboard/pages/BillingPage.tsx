@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, Check, ArrowUpRight, Calendar, Zap, TrendingUp, Sparkles, CheckCircle2 } from 'lucide-react';
+import { CreditCard, Check, ArrowUpRight, Calendar, Zap, TrendingUp, Sparkles, CheckCircle2, Lock, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,8 @@ export function BillingPage() {
   const [upgrading, setUpgrading] = useState<string | null>(null);
   const [events, setEvents] = useState<UsageEvent[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [stripeStatus, setStripeStatus] = useState<{ plan: string; status: string; expiresAt: number | null; label: string; isPaid: boolean } | null>(null);
+  const [checkingOut, setCheckingOut] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -48,11 +50,13 @@ export function BillingPage() {
       billingService.getPlans().then(r => r.data),
       billingService.getUsage().then(r => r.data),
       billingService.getEvents().then(r => r.data).catch(() => [] as UsageEvent[]),
-    ]).then(([sub, planList, usageData, eventsData]) => {
+      billingService.getStripeStatus().then(r => r.data).catch(() => null),
+    ]).then(([sub, planList, usageData, eventsData, stripeData]) => {
       setSubscription(sub);
       setPlans(planList);
       setUsage(usageData);
       setEvents(eventsData as UsageEvent[]);
+      if (stripeData) setStripeStatus(stripeData);
       if (sub.currency === 'INR') setCurrency('INR');
     }).catch(() => {
       setToast({ message: 'Failed to load billing data', type: 'error' });
@@ -89,6 +93,23 @@ export function BillingPage() {
       const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Day pass failed';
       setToast({ message, type: 'error' });
     }
+  };
+
+  const handleCheckout = async (plan: 'basic' | 'pro') => {
+    setCheckingOut(plan);
+    try {
+      const { data } = await billingService.createCheckout(plan);
+      window.location.href = data.url;
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Checkout failed';
+      setToast({ message, type: 'error' });
+      setCheckingOut(null);
+    }
+  };
+
+  const formatExpiry = (ts: number | null) => {
+    if (!ts) return null;
+    return new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const price = (plan: PlanDefinition) =>
@@ -172,6 +193,64 @@ export function BillingPage() {
           ))}
         </div>
       </div>
+
+
+      <Card className="border-[#BF5FFF]/30" data-testid="stripe-plans">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Star className="w-5 h-5 text-[#BF5FFF]" />
+            <div>
+              <CardTitle className="text-[#E8E8F0]">Premium Subscription</CardTitle>
+              <p className="text-sm text-[#6B7280]">Basic (Rs 99/mo) and Pro (Rs 299/mo) via Stripe</p>
+            </div>
+            {stripeStatus?.isPaid && (
+              <Badge className="bg-[#BF5FFF]/20 text-[#BF5FFF] border-[#BF5FFF]/30 ml-auto">{stripeStatus.label} Active</Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="p-5 rounded-xl border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/40 transition-all">
+              <div className="font-bold text-[#E8E8F0] mb-1">Basic</div>
+              <div className="text-3xl font-bold text-[#E8E8F0] mb-3">{currency === 'INR' ? '₹99' : '$1.19'}<span className="text-sm font-normal text-[#6B7280]">/month</span></div>
+              <ul className="text-sm text-[#6B7280] space-y-1 mb-4">
+                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Image generation</li>
+                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Voice transcription</li>
+                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> 30 voice calls/day</li>
+              </ul>
+              {stripeStatus?.plan === 'basic' && stripeStatus.isPaid ? (
+                <p className="text-xs text-[#6B7280]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
+              ) : (
+                <Button onClick={() => handleCheckout('basic')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px]" data-testid="upgrade-basic-btn">
+                  {checkingOut === 'basic' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Basic
+                </Button>
+              )}
+            </div>
+            <div className="p-5 rounded-xl border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/40 transition-all">
+              <div className="font-bold text-[#E8E8F0] mb-1">Pro</div>
+              <div className="text-3xl font-bold text-[#E8E8F0] mb-3">{currency === 'INR' ? '₹299' : '$3.59'}<span className="text-sm font-normal text-[#6B7280]">/month</span></div>
+              <ul className="text-sm text-[#6B7280] space-y-1 mb-4">
+                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Everything in Basic</li>
+                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> 100 voice calls/day</li>
+                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Priority support</li>
+              </ul>
+              {stripeStatus?.plan === 'pro' && stripeStatus.isPaid ? (
+                <p className="text-xs text-[#6B7280]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
+              ) : (
+                <Button onClick={() => handleCheckout('pro')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px]" data-testid="upgrade-pro-btn">
+                  {checkingOut === 'pro' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Pro
+                </Button>
+              )}
+            </div>
+          </div>
+          {!stripeStatus?.isPaid && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-[#BF5FFF]/5 border border-[#BF5FFF]/20 text-sm text-[#6B7280]" data-testid="upgrade-to-unlock">
+              <Lock className="w-4 h-4 text-[#BF5FFF] flex-shrink-0" />
+              <span>Upgrade to Basic or Pro to unlock image and voice generation</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Current Plan Card */}
       {subscription && (
