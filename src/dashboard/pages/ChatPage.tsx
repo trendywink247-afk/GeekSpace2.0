@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, Volume2, VolumeX, Mic, RotateCcw, Sparkles } from 'lucide-react';
+import { Send, Volume2, VolumeX, RotateCcw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { agentService } from '@/services/api';
@@ -83,7 +83,7 @@ export function ChatPage() {
 
     try {
       const res = await agentService.chat(text, personality);
-      const reply = res.data.response ?? res.data.message ?? '';
+      const reply = res.data.text ?? '';
       const agentMsg: ChatMessage = {
         id: `a-${Date.now()}`,
         role: 'agent',

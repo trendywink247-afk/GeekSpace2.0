@@ -14,7 +14,6 @@ declare global {
     abort(): void;
     onresult: ((event: SpeechRecognitionEvent) => void) | null;
     onend: (() => void) | null;
-    onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
   }
   interface SpeechRecognitionEvent {
     results: SpeechRecognitionResultList;
@@ -85,11 +84,12 @@ export function useVoice({ onTranscript, onInterim, lang = 'en-US' }: UseVoiceOp
       recognitionRef.current = null;
     };
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+    recognition.onerror = (event: Event) => {
+      const e = event as SpeechRecognitionErrorEvent;
       const msg =
-        event.error === 'not-allowed'
+        e.error === 'not-allowed'
           ? 'Microphone access denied'
-          : event.error === 'no-speech'
+          : e.error === 'no-speech'
           ? 'No speech detected'
           : 'Voice input error';
       setError(msg);
