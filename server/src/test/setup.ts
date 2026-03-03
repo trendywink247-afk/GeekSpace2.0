@@ -90,12 +90,14 @@ export function resetDatabase(): void {
 /**
  * Create a test user and return credentials
  */
-export function createTestUser(email = `test-${Date.now()}@example.com`): {
+export function createTestUser(emailOrOpts: string | { prefix?: string } = {}): {
   id: string;
   email: string;
   username: string;
   password: string;
 } {
+  const prefix = typeof emailOrOpts === 'string' ? emailOrOpts : (emailOrOpts.prefix ?? `test-${Date.now()}`);
+  const email = typeof emailOrOpts === 'string' ? emailOrOpts : `${prefix}-${Date.now()}@example.com`;
   const id = uuid();
   const username = `test_${Date.now()}`;
   const password = 'test-password-123';
