@@ -26,6 +26,7 @@ test.describe('Logout', () => {
       await mobileToggle.click();
       const mobileLogout = page.getByTestId('dashboard-sidebar-mobile').getByTestId('dashboard-logout-button');
       await expect(mobileLogout).toBeVisible({ timeout: 5000 });
+      await mobileLogout.scrollIntoViewIfNeeded();
       await mobileLogout.click({ force: true });
     } else {
       const desktopLogout = page.getByTestId('dashboard-logout-button').first();
