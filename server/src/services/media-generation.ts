@@ -8,6 +8,7 @@ import fsPromises from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { logger } from '../logger.js';
+import { config } from '../config.js';
 
 // Pollinations.AI endpoints (completely free, no API key needed)
 const POLLINATIONS_IMAGE_URL = 'https://image.pollinations.ai/prompt';
@@ -96,7 +97,7 @@ export async function generateImage(
 
   // ── Step 2: HuggingFace FLUX.1-schnell ──
   try {
-    const hfToken = process.env.HF_TOKEN;
+    const hfToken = config.hfToken;
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (hfToken) {
       headers['Authorization'] = `Bearer ${hfToken}`;
@@ -109,20 +110,39 @@ export async function generateImage(
       signal: AbortSignal.timeout(60000),
     });
 
-    if (hfRes.ok) {
-      const buffer = await hfRes.arrayBuffer();
-      const filename = `${crypto.randomUUID()}.jpg`;
-      const filePath = path.join(IMG_CACHE_DIR, filename);
-      await fsPromises.writeFile(filePath, Buffer.from(buffer));
-      const url = `/api/images/cache/${filename}`;
-      logger.info({ prompt: prompt.slice(0, 50), filename }, 'Image generated via HuggingFace FLUX');
-      return { success: true, url, provider: 'huggingface' };
+    if (!hfRes.ok) {
+      if (hfRes.status === 503) {
+        // Model is warming up — common on free tier
+        let estimatedTime = '';
+        try {
+          const body = await hfRes.json() as { estimated_time?: number };
+          if (body.estimated_time) estimatedTime = ` (~${Math.ceil(body.estimated_time)}s estimated)`;
+        } catch { /* ignore */ }
+        logger.warn({ status: 503 }, `HuggingFace model cold-starting${estimatedTime}`);
+        // Don't throw — return early with a user-friendly message
+        return {
+          success: false,
+          url: '',
+          error: `Image model is warming up${estimatedTime}. Please try again in a moment. (Model currently unavailable)`,
+        };
+      }
+      logger.warn(
+        { status: hfRes.status, prompt: prompt.slice(0, 50) },
+        'HuggingFace FLUX request failed'
+      );
+      throw new Error(`HuggingFace returned ${hfRes.status}`);
     }
 
-    logger.warn(
-      { status: hfRes.status, prompt: prompt.slice(0, 50) },
-      'HuggingFace FLUX request failed'
-    );
+    const buffer = await hfRes.arrayBuffer();
+    const contentType = hfRes.headers.get('content-type') || 'image/jpeg';
+    const ext = contentType.includes('png') ? 'png' : 'jpg';
+    const filename = `${crypto.randomUUID()}.${ext}`;
+    const filePath = path.join(IMG_CACHE_DIR, filename);
+    await fsPromises.writeFile(filePath, Buffer.from(buffer));
+    // NOTE: This URL is served by the express.static route in app.ts (added in Task 4)
+    const url = `/api/images/cache/${filename}`;
+    logger.info({ prompt: prompt.slice(0, 50), filename }, 'Image generated via HuggingFace FLUX');
+    return { success: true, url, provider: 'huggingface' };
   } catch (err) {
     logger.error({ err, prompt: prompt.slice(0, 50) }, 'HuggingFace FLUX request error');
   }

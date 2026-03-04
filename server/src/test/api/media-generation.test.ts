@@ -54,6 +54,7 @@ describe('generateImage fallback chain', () => {
       ok: true,
       status: 200,
       arrayBuffer: async () => fakeBuffer,
+      headers: { get: (_: string) => 'image/png' },
     });
     const result = await generateImage('a red cat');
     expect(result.success).toBe(true);
