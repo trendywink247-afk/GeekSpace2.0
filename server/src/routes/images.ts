@@ -12,6 +12,10 @@ import { v4 as uuid } from 'uuid';
 import { logger } from '../logger.js';
 import { generateImage } from '../services/media-generation.js';
 import { config } from '../config.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fsPromises from 'fs/promises';
+import { existsSync } from 'fs';
 
 export const imagesRouter = Router();
 
@@ -367,7 +371,7 @@ imagesRouter.get('/models/available', requireAuth, (_req: AuthRequest, res) => {
 
 // ---- Cleanup expired images -----------------------------------
 
-export function cleanupExpiredImages(): void {
+export async function cleanupExpiredImages(): Promise<void> {
   try {
     const expired = db.prepare(`
       SELECT id, user_id FROM user_images
@@ -382,6 +386,28 @@ export function cleanupExpiredImages(): void {
     }
   } catch (err) {
     logger.error({ err }, 'Image cleanup failed');
+  }
+
+  // Clean HuggingFace cache files older than 24h
+  try {
+    const __routesDirname = path.dirname(fileURLToPath(import.meta.url));
+    const cacheDir = path.join(__routesDirname, '../../../data/img-cache');
+    if (existsSync(cacheDir)) {
+      const files = await fsPromises.readdir(cacheDir);
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      let cleaned = 0;
+      for (const file of files) {
+        const filePath = path.join(cacheDir, file);
+        const s = await fsPromises.stat(filePath);
+        if (s.mtimeMs < cutoff) {
+          await fsPromises.unlink(filePath);
+          cleaned++;
+        }
+      }
+      if (cleaned > 0) logger.info({ cleaned }, 'Cleaned up old HuggingFace cache files');
+    }
+  } catch (err) {
+    logger.error({ err }, 'HuggingFace cache cleanup failed');
   }
 }
 

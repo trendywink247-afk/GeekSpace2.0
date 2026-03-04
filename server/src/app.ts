@@ -9,6 +9,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit, { type Options as RateLimitOptions } from 'express-rate-limit';
 import passport from 'passport';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { config } from './config.js';
 import { logger, requestLogger } from './logger.js';
@@ -419,6 +421,11 @@ export function createApp(): express.Application {
   app.use('/api/dev', devRouter);
   app.use('/api/artifacts', artifactsRouter);
   app.use('/api/templates', templatesRouter);
+  // Serve HuggingFace image cache as static files (Task 4)
+  // Must be BEFORE imagesRouter so /api/images/cache/* doesn't hit the DB lookup
+  const __appDirname = path.dirname(fileURLToPath(import.meta.url));
+  const imgCacheStaticDir = path.join(__appDirname, '../../data/img-cache');
+  app.use('/api/images/cache', express.static(imgCacheStaticDir));
   app.use('/api/images', imagesRouter);
   app.use('/api/videos', videosRouter);
   app.use('/api/social-media', socialMediaRouter);
