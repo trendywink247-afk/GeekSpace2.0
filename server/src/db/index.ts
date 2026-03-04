@@ -1667,7 +1667,10 @@ try {
   `);
 } catch { /* table already exists */ }
 
-// Phase 102: Tables for analytics (additive, from phases 94/96/98/101)
+// Phase 102: Tables for analytics + Phase 101: Focus Mode + Habits (additive)
+// Phase 101: deferred flag for inbox messages (deferred during focus mode)
+try { db.exec(`ALTER TABLE inbox_messages ADD COLUMN deferred INTEGER DEFAULT 0`); } catch { /* already exists */ }
+
 try { db.exec(`
   CREATE TABLE IF NOT EXISTS user_memories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1728,6 +1731,7 @@ try { db.exec(`
     name TEXT NOT NULL,
     description TEXT,
     frequency TEXT DEFAULT 'daily',
+    target_time TEXT,
     icon TEXT DEFAULT 'star',
     current_streak INTEGER DEFAULT 0,
     longest_streak INTEGER DEFAULT 0,
@@ -1742,6 +1746,7 @@ try { db.exec(`
     logged_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000),
     note TEXT
   );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_habit_log_day ON habit_logs(habit_id, date(logged_at/1000, 'unixepoch'));
   CREATE INDEX IF NOT EXISTS idx_habit_logs_user ON habit_logs(user_id, logged_at DESC);
 
   CREATE TABLE IF NOT EXISTS focus_sessions (
@@ -1755,4 +1760,13 @@ try { db.exec(`
     pomodoro_count INTEGER DEFAULT 0
   );
   CREATE INDEX IF NOT EXISTS idx_focus_sessions_user ON focus_sessions(user_id, started_at DESC);
+
+  CREATE TABLE IF NOT EXISTS notification_settings (
+    user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    focus_mode_active INTEGER DEFAULT 0,
+    dnd_start TEXT DEFAULT '22:00',
+    dnd_end TEXT DEFAULT '08:00',
+    urgent_bypass INTEGER DEFAULT 1,
+    batch_interval_min INTEGER DEFAULT 30
+  );
 `); } catch { /* tables already exist */ }

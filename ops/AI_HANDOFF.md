@@ -1,77 +1,95 @@
-# AI Handoff -- Post-Phase 97 (AI Inbox)
+# AI Handoff -- Post-Phase 99 (Voice Interface)
 
 **Date:** 2026-03-03
-**Branch:** `ai/phase-20260303-phase97-ai-inbox`
-**Tests:** 93 server unit test files | 1476 tests (Phase 97: 53/53 passing)
+**Branch:** `ai/phase-20260303-phase99-voice-interface`
+**Tests:** 94 server unit test files | 1536 tests (1507 passing + 29 phase87 env-specific skips)
+**Phase 99 tests:** 60/60
 
 ---
 
 ## Completed This Phase
 
-### Phase 97 -- AI Inbox (unified message feed with AI triage)
+### Phase 99 -- Voice Interface (browser STT + TTS + voice mode + Alt+V shortcut)
 
-1. DB: `inbox_messages` table (user_id, source, sender, content, summary, priority, read, archived, suggested_reply, related_reminder_id, received_at)
-2. `server/src/services/inbox.ts` -- addInboxMessage, triageMessage, getInbox, getUnreadCount, markRead, archiveMessage, deleteMessage, getMessageById
-3. `server/src/routes/inbox.ts` -- CRUD + reply endpoint (inboxRouter)
-4. `server/src/app.ts` -- inboxRouter at /api/inbox
-5. `server/src/services/message-router.ts` -- addInboxMessage side-effect after logConversation
-6. `src/dashboard/pages/InboxPage.tsx` -- filter tabs, message cards, suggested reply, reply input, action buttons
-7. `src/dashboard/DashboardApp.tsx` -- InboxPage lazy import, inbox PageType, nav item (Productivity), bell icon + badge
-8. `server/src/test/phase97.test.ts` -- 53 tests (all passing)
+1. `src/hooks/useVoice.ts` -- NEW: SpeechRecognition hook (isListening, isSupported, startListening, stopListening, error)
+2. `src/hooks/useTTS.ts` -- NEW: speechSynthesis hook (speak, stop, isSpeaking, isSupported) + stripMarkdown helper
+3. `src/components/VoiceButton.tsx` -- NEW: animated mic button (idle/listening/processing, pulsing ring, unsupported graceful degrade)
+4. `src/dashboard/pages/ChatPage.tsx` -- NEW: full-page voice chat (voice mode toggle, auto-TTS on reply, interim transcript)
+5. `src/dashboard/DashboardApp.tsx` -- ChatPage lazy import, 'chat' PageType, Voice Chat nav item (Communication group), Alt+V global shortcut, voiceListening toast
+6. `src/dashboard/pages/SettingsPage.tsx` -- Voice tab: TTS enable/disable toggle, speech rate slider (0.5x-2x), language selector (en-US/en-GB/hi-IN/es-ES), Test Voice button, Alt+V tip
+7. `server/src/test/phase99.test.ts` -- NEW: 60 tests all passing
 
 ---
 
 ## Files Changed
 
 ```
-server/src/db/index.ts                 -- inbox_messages table + index
-server/src/services/inbox.ts           -- NEW: inbox service
-server/src/routes/inbox.ts             -- NEW: inbox routes
-server/src/services/message-router.ts  -- inbox side-effect added
-server/src/app.ts                      -- inboxRouter registered
-server/src/test/phase97.test.ts        -- NEW: 53 tests
-src/dashboard/pages/InboxPage.tsx      -- NEW: inbox UI page
-src/dashboard/DashboardApp.tsx         -- InboxPage + nav + bell icon
+src/hooks/useVoice.ts                  -- NEW: SpeechRecognition hook
+src/hooks/useTTS.ts                    -- NEW: speechSynthesis hook + stripMarkdown
+src/components/VoiceButton.tsx         -- NEW: animated mic button component
+src/dashboard/pages/ChatPage.tsx       -- NEW: full-page voice chat
+src/dashboard/DashboardApp.tsx         -- ChatPage, voice nav, Alt+V shortcut
+src/dashboard/pages/SettingsPage.tsx   -- Voice settings tab
+server/src/test/phase99.test.ts        -- NEW: 60 tests
 ```
+
+---
+
+## Voice Feature Architecture
+
+### useVoice.ts
+- Browser SpeechRecognition (Chrome/Edge) wrapped in clean hook
+- `continuous: false`, `interimResults: true`
+- Callbacks: `onTranscript(text)` for final, `onInterim(text)` for streaming
+- Graceful degrade: `isSupported = false` on unsupported browsers
+- Cleanup: `recognition.abort()` on unmount
+
+### useTTS.ts
+- `window.speechSynthesis` (browser native, no API cost)
+- Strips markdown before speaking (code blocks, bold, italic, links, headings)
+- Picks first English voice available; falls back to default
+- `rate` and `lang` configurable via options
+
+### VoiceButton.tsx
+- 3 states: idle (grey mic), listening (red pulsing), processing (spinner)
+- Unsupported: shows disabled button with tooltip
+- min-w/h-[44px] for touch target compliance
+
+### ChatPage.tsx
+- Full-page chat at /dashboard/chat
+- Voice mode toggle (persisted to localStorage `agentin_voice_settings`)
+- Auto-submits on transcript (via form.requestSubmit())
+- Shows interim text while listening
+- Reads responses aloud when voice mode is on
+
+### Alt+V shortcut
+- Listen from anywhere in DashboardApp
+- Navigates to /dashboard/chat, signals voice listening start
+- Floating "Listening..." toast appears briefly
+
+### Voice Settings (SettingsPage)
+- TTS enable/disable
+- Speech rate slider (0.5-2.0x)
+- Language selector (4 locales)
+- Test Voice button
+- LocalStorage key: `agentin_voice_settings`
 
 ---
 
 ## Test / Gate Status
 
-- **Phase 97 tests:** 53/53
-- **Total tests:** 1476 (1447 passing + 29 phase87 env-specific skips)
+- **Phase 99 tests:** 60/60
+- **Total tests:** 1536 (1507 passing + 29 phase87 env-specific skips)
 - **TypeScript:** 0 errors (frontend + server)
-- **Brand guard:** N/A (no brand-visible changes)
-- **Branch:** `ai/phase-20260303-phase97-ai-inbox` (pushed, NOT merged to main)
+- **Lint:** clean
+- **Branch:** `ai/phase-20260303-phase99-voice-interface` (pushed)
 
 ---
 
-## Inbox Service Details
+## Next Command
 
-### API Routes
-| Method | Route | Purpose |
-|--------|-------|---------|
-| GET | /api/inbox | List messages (params: limit, offset, source, unreadOnly) |
-| GET | /api/inbox/count | Unread count |
-| POST | /api/inbox | Create message (internal/system use) |
-| PATCH | /api/inbox/:id/read | Mark as read |
-| PATCH | /api/inbox/:id/archive | Archive |
-| DELETE | /api/inbox/:id | Delete |
-| POST | /api/inbox/:id/reply | Send reply via telegram/whatsapp |
-
-### Triage
-- Synchronous: classifyPriority (urgent/high/normal by keyword)
-- Async: LLM triage for summary + suggested_reply (fire-and-forget in prod)
-- TEST_MODE: deterministic keyword stubs, no real LLM calls
-
----
-
-## Next Phase
-
-Phase 98: next in queue -- `./scripts/queue.sh next`
-
----
-
-## FACTORY MODE LIVE
-- 1476 tests (1447 passing)
-- Phase 97 complete
+```bash
+cd ~/GeekSpace2.0
+git checkout main && git pull origin main
+cat ops/AI_BACKLOG.md | head -40
+```
