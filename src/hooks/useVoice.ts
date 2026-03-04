@@ -14,7 +14,6 @@ declare global {
     abort(): void;
     onresult: ((event: SpeechRecognitionEvent) => void) | null;
     onend: (() => void) | null;
-    onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
   }
   interface SpeechRecognitionEvent {
     results: SpeechRecognitionResultList;
@@ -85,7 +84,7 @@ export function useVoice({ onTranscript, onInterim, lang = 'en-US' }: UseVoiceOp
       recognitionRef.current = null;
     };
 
-    recognition.onerror = (event: Event) => {
+    recognition.addEventListener('error', (event: Event) => {
       const e = event as SpeechRecognitionErrorEvent;
       const msg =
         e.error === 'not-allowed'
@@ -96,7 +95,7 @@ export function useVoice({ onTranscript, onInterim, lang = 'en-US' }: UseVoiceOp
       setError(msg);
       setIsListening(false);
       recognitionRef.current = null;
-    };
+    });
 
     recognitionRef.current = recognition;
     recognition.start();
