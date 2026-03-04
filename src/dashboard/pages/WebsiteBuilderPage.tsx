@@ -70,6 +70,7 @@ export function WebsiteBuilderPage() {
   const [projectsLoading, setProjectsLoading] = useState(false);
 
   // Dev mode state
+  const [devTitle, setDevTitle] = useState('');
   const [devHtml, setDevHtml] = useState('');
   const [devCss, setDevCss] = useState('');
   const [devJs, setDevJs] = useState('');
@@ -173,17 +174,32 @@ export function WebsiteBuilderPage() {
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>${devCss}</style></head>
 <body>${devHtml}<script>${devJs}<` + `/script></body></html>`;
 
-  // Handle "Let's do it" — save dev changes
+  // Handle "Let's do it" — save dev changes (update existing or create new)
   const handleDevSave = async () => {
-    if (!selectedProject) return;
     setDevSaving(true);
     try {
-      await artifactService.update(selectedProject.id, {
-        html: devHtml,
-        css: devCss,
-        js: devJs,
-      });
-      showToast('Changes saved and deployed!');
+      if (selectedProject) {
+        // Update existing project
+        await artifactService.update(selectedProject.id, {
+          html: devHtml,
+          css: devCss,
+          js: devJs,
+        });
+        showToast('Changes saved and deployed!');
+      } else {
+        // Create a new project from scratch
+        const title = devTitle.trim() || 'My Project';
+        const res = await artifactService.create({
+          title,
+          html: devHtml,
+          css: devCss,
+          js: devJs,
+        });
+        // Select the newly created project so subsequent saves update it
+        setSelectedProject(res.data as Artifact);
+        showToast(`Project "${title}" created!`);
+        await loadProjects();
+      }
       setShowPreview(true);
       // Update iframe
       if (previewRef.current) {
@@ -206,15 +222,26 @@ export function WebsiteBuilderPage() {
     if (!imaginePrompt.trim()) return;
     setImagineLoading(true);
     try {
-      const context = selectedProject
-        ? `The user is working on their project "${selectedProject.title}" (ID: ${selectedProject.id}). They want you to update/modify it. `
-        : 'The user wants you to create a new website. ';
-      const fullPrompt = `${context}Here's what they want: ${imaginePrompt}. Generate the complete code as an artifact with generate_code action.`;
-      const res = await agentService.chat(fullPrompt, 'web');
-      showToast(selectedProject ? 'Project updated! Check My Projects.' : 'New project created! Check My Projects.');
-      // If there's a receipt with artifact info, that's great
-      if (res.data.receipts?.length) {
-        showToast('Done! Switch to My Projects to see the result.');
+      const isEdit = !!selectedProject;
+      const context = isEdit
+        ? `Update the existing project titled "${selectedProject!.title}". `
+        : 'Create a new website. ';
+      const fullPrompt = `${context}${imaginePrompt}`;
+      // Use 'builder' channel so the backend applies the code-generation system prompt,
+      // and pass existingArtifactId when editing so generate_code updates instead of creates.
+      const res = await agentService.chat(fullPrompt, 'builder', isEdit ? selectedProject!.id : undefined);
+      const codeAction = res.data.actions?.find(a => a.tool === 'generate_code');
+      if (codeAction?.success) {
+        showToast(isEdit ? 'Project updated!' : 'New project created! Check My Projects.');
+        if (isEdit && codeAction.artifactId) {
+          // Refresh project list and re-select the updated project
+          await loadProjects();
+        }
+      } else if (res.data.actions?.length) {
+        showToast(isEdit ? 'Project updated! Check My Projects.' : 'New project created! Check My Projects.');
+      } else {
+        // No action block — show the AI text as a hint, but also warn
+        showToast('AI responded but no code was generated. Try being more specific.', 'error');
       }
       setImaginePrompt('');
     } catch {
@@ -485,15 +512,23 @@ export function WebsiteBuilderPage() {
           {/* ---- Dev Mode ---- */}
           {builderMode === 'dev' && (
             <div className="space-y-4">
+              {/* Title input — only shown for new projects */}
               {!selectedProject && (
-                <div className="rounded-xl border border-[#FFD700]/20 bg-[#FFD700]/5 p-4 text-sm text-[#FFD700]">
-                  Select an existing project above to edit, or use &quot;Imagine &amp; Add&quot; to create one first.
+                <div className="rounded-xl border border-[#00F0FF]/15 bg-[#0C0C18]/50 p-4 space-y-3">
+                  <p className="text-sm text-[#6B7280]">
+                    Starting fresh? Give your project a name and start coding below. Or select an existing project above to edit it.
+                  </p>
+                  <input
+                    type="text"
+                    value={devTitle}
+                    onChange={(e) => setDevTitle(e.target.value)}
+                    placeholder="Project name (e.g. Hello World)"
+                    className="w-full bg-[#06060B] border border-[#00F0FF]/20 rounded-xl px-4 py-2.5 text-[#E8E8F0] placeholder-[#6B7280]/50 text-sm focus:border-[#00F0FF]/50 outline-none"
+                  />
                 </div>
               )}
 
-              {selectedProject && (
-                <>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     {/* HTML */}
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 text-sm font-medium text-[#E8E8F0]">
@@ -552,7 +587,7 @@ export function WebsiteBuilderPage() {
                       ) : (
                         <>
                           <Play className="w-4 h-4" />
-                          Let&apos;s do it
+                          {selectedProject ? "Let's do it" : 'Save & Create'}
                         </>
                       )}
                     </button>
@@ -578,23 +613,21 @@ export function WebsiteBuilderPage() {
                   </div>
 
                   {/* Live Preview */}
-                  {showPreview && (
-                    <div className="rounded-2xl border border-[#00F0FF]/20 overflow-hidden">
-                      <div className="flex items-center justify-between px-4 py-2 bg-[#0C0C18] border-b border-[#00F0FF]/10">
-                        <span className="text-xs text-[#6B7280] font-mono">Preview</span>
-                        <button onClick={() => setShowPreview(false)} className="text-[#6B7280] hover:text-[#E8E8F0]">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <iframe
-                        ref={previewRef}
-                        title="Live Preview"
-                        sandbox="allow-scripts"
-                        className="w-full h-[500px] bg-white"
-                      />
-                    </div>
-                  )}
-                </>
+              {showPreview && (
+                <div className="rounded-2xl border border-[#00F0FF]/20 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2 bg-[#0C0C18] border-b border-[#00F0FF]/10">
+                    <span className="text-xs text-[#6B7280] font-mono">Preview</span>
+                    <button onClick={() => setShowPreview(false)} className="text-[#6B7280] hover:text-[#E8E8F0]">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <iframe
+                    ref={previewRef}
+                    title="Live Preview"
+                    sandbox="allow-scripts"
+                    className="w-full h-[500px] bg-white"
+                  />
+                </div>
               )}
             </div>
           )}

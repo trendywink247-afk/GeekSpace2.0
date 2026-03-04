@@ -196,7 +196,7 @@ export const agentService = {
   updateConfig: (data: Partial<AgentConfig>) =>
     api.patch<AgentConfig>('/agent/config', data),
 
-  chat: (message: string, channel: string = 'web') =>
+  chat: (message: string, channel: string = 'web', existingArtifactId?: string) =>
     api.post<{
       text: string;
       route: string;
@@ -213,7 +213,7 @@ export const agentService = {
       }>;
       receiptText?: string;
       receipts?: Array<{ icon: string; text: string; details?: string; link?: string }>;
-    }>('/agent/chat', { message, channel }),
+    }>('/agent/chat', { message, channel, ...(existingArtifactId ? { existingArtifactId } : {}) }),
 
   /** SSE streaming chat — returns a ReadableStream */
   chatStream: async (message: string, channel: string = 'web') => {
@@ -866,6 +866,9 @@ export const artifactService = {
   list: () => api.get<{ artifacts: Artifact[] }>('/artifacts'),
 
   get: (id: string) => api.get<Artifact & { html?: string; css?: string; js?: string }>(`/artifacts/${id}`),
+
+  create: (data: { title: string; html?: string; css?: string; js?: string }) =>
+    api.post<Artifact & { html?: string; css?: string; js?: string }>('/artifacts', data),
 
   update: (id: string, data: { title?: string; html?: string; css?: string; js?: string }) =>
     api.patch<Artifact>(`/artifacts/${id}`, data),

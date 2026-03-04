@@ -138,7 +138,7 @@ export function ChatPage() {
   const meta = personalityMeta[personality];
 
   return (
-    <div className='flex flex-col h-full max-h-[calc(100vh-120px)] bg-[#06060B] rounded-xl border border-[#00F0FF]/10'>
+    <div className='flex flex-col h-[calc(100dvh-180px)] md:h-[calc(100vh-130px)] bg-[#06060B] rounded-xl border border-[#00F0FF]/10'>
       {/* Header */}
       <div className='flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10 flex-shrink-0'>
         <div className='flex items-center gap-3'>

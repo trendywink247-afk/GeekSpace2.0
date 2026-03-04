@@ -58,6 +58,8 @@ export const chatSchema = z.object({
   messageCount: z.number().int().min(0).optional(),
   channel: z.string().max(50).optional(),
   context: z.string().max(50).optional(),
+  // When set by the website builder, generate_code will update this artifact instead of creating a new one
+  existingArtifactId: z.string().uuid().optional(),
   history: z.array(z.object({
     role: z.enum(['user', 'assistant']),
     content: z.string().max(4000),
