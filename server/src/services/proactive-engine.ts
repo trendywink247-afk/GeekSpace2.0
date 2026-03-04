@@ -4,7 +4,7 @@
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 
-export type ProactiveMessageType = 'daily_briefing' | 'overdue_alert' | 'idle_check_in';
+export type ProactiveMessageType = 'daily_briefing' | 'overdue_alert' | 'idle_check_in' | 'weekly_report';
 
 interface UserRow {
   id: string;
@@ -185,7 +185,7 @@ async function runProactiveChecks(): Promise<void> {
       if (hour === 19 && istDate.getDay() === 0) {
         const weekStart = new Date(istDate.getTime() - 7 * 86_400_000).getTime();
         const alreadySentWeekly = db.prepare(
-          "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'daily_briefing' AND sent_at >= ? AND message LIKE 'Your Week in Review%'"
+          "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'weekly_report' AND sent_at >= ?"
         ).get(user.id, weekStart) as { id: number } | undefined;
         if (!alreadySentWeekly) await weeklyReport(user.id);
       }
@@ -222,7 +222,7 @@ export async function weeklyReport(userId: string): Promise<string | null> {
       'Keep building your AI OS. 🚀',
     ].join('\n');
     await sendViaTelegram(userId, message);
-    recordProactiveMessage(userId, 'daily_briefing', message);
+    recordProactiveMessage(userId, 'weekly_report', message);
     logger.info({ userId }, 'Weekly report sent');
     return message;
   } catch (err) {

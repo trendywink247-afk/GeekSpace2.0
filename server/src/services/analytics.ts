@@ -50,7 +50,7 @@ function providerToAgent(provider: string | null, model: string | null): string 
   const p = (provider || '').toLowerCase();
   const m = (model || '').toLowerCase();
   if (p === 'edith' || p === 'kimi' || p === 'moonshot' || m.includes('moonshot') || m.includes('kimi')) return 'edith';
-  if (p === 'picoclaw' || p === 'builtin' || p === 'pico-fleet' || m.includes('pico')) return 'picoclaw';
+  if (p === 'picoclaw' || p === 'builtin' || p === 'pico-fleet' || m.includes('pico')) return 'builtin';
   if (p === 'ollama' || m.includes('llama') || m.includes('ollama')) return 'weebo';
   if (p === 'openrouter' || m.includes('openrouter')) return 'jarvis';
   return 'weebo';
@@ -80,7 +80,7 @@ export async function getDailySnapshots(userId: string, days: number): Promise<D
 
     const tasksCompleted = safeCount(
       `SELECT COUNT(*) as c FROM reminders WHERE user_id = ? AND completed = 1
-       AND datetime(created_at) >= datetime(?, 'unixepoch') AND datetime(created_at) < datetime(?, 'unixepoch')`,
+       AND completed_at >= ? AND completed_at < ?`,
       userId, dayStartMs / 1000, dayEndMs / 1000
     );
 

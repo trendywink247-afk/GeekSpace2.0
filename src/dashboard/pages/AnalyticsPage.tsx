@@ -52,7 +52,7 @@ const AGENT_COLORS: Record<string, string> = {
   weebo: '#00FF88',
   jarvis: '#BF5FFF',
   edith: '#00F0FF',
-  picoclaw: '#F59E0B',
+  builtin: '#F59E0B',
 };
 
 function Sparkline({ data, color = '#00F0FF' }: { data: number[]; color?: string }) {
@@ -188,10 +188,11 @@ export function AnalyticsPage() {
   useEffect(() => { void load(); }, [load]);
 
   const last30 = snapshots.slice(-30);
-  const totalAgentCalls = last30.reduce((s, d) => s + d.agentCalls, 0);
+  const last7 = snapshots.slice(-7);
+  const totalAgentCalls = last7.reduce((s, d) => s + d.agentCalls, 0);
   const totalFocusMin = last30.reduce((s, d) => s + d.focusMinutes, 0);
-  const totalHabits = last30.reduce((s, d) => s + d.habitsLogged, 0);
-  const totalNotes = last30.reduce((s, d) => s + d.notesCreated, 0);
+  const totalHabits = last7.reduce((s, d) => s + d.habitsLogged, 0);
+  const totalNotes = last7.reduce((s, d) => s + d.notesCreated, 0);
   const totalTasks = last30.reduce((s, d) => s + d.tasksCompleted, 0);
   const maxAgentCount = agents.reduce((m, a) => Math.max(m, a.count), 1);
 
