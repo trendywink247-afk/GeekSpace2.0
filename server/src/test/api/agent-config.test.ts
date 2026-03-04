@@ -126,6 +126,27 @@ describe('Agent Config Endpoints', () => {
       cleanupTestUser(user.id);
     });
 
+    it('accepts preferred_image_model and preferred_video_model in config PATCH', async () => {
+      const user = createTestUser();
+
+      const response = await request(app)
+        .patch('/api/agent/config')
+        .set('Authorization', makeAuthHeader(user.id))
+        .send({ preferred_image_model: 'huggingface-flux', preferred_video_model: 'pollinations-video' })
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      expect(response.body.preferred_image_model).toBe('huggingface-flux');
+      expect(response.body.preferred_video_model).toBe('pollinations-video');
+
+      // Verify persisted in DB
+      const config = db.prepare('SELECT preferred_image_model, preferred_video_model FROM agent_configs WHERE user_id = ?').get(user.id) as { preferred_image_model: string; preferred_video_model: string } | undefined;
+      expect(config?.preferred_image_model).toBe('huggingface-flux');
+      expect(config?.preferred_video_model).toBe('pollinations-video');
+
+      cleanupTestUser(user.id);
+    });
+
     it('should not allow patching another user config', async () => {
       const user1 = createTestUser();
       const user2 = createTestUser();

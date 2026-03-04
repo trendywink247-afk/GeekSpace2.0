@@ -1770,3 +1770,7 @@ try { db.exec(`
     batch_interval_min INTEGER DEFAULT 30
   );
 `); } catch { /* tables already exist */ }
+
+// Task 2: preferred media model columns for agent_configs
+try { db.exec("ALTER TABLE agent_configs ADD COLUMN preferred_image_model TEXT DEFAULT 'auto'"); } catch { /* column already exists */ }
+try { db.exec("ALTER TABLE agent_configs ADD COLUMN preferred_video_model TEXT DEFAULT 'auto'"); } catch { /* column already exists */ }
