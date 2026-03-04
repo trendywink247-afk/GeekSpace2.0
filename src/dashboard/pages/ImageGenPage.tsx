@@ -4,7 +4,7 @@ import {
   Clock, Bot, Wifi, WifiOff, Upload, Wand2, ChevronDown,
   Download, X, ZoomIn, AlertCircle
 } from 'lucide-react';
-import { imageService, picoService } from '@/services/api';
+import { imageService, picoService, agentService } from '@/services/api';
 import type { UserImage, ImageModel } from '@/services/api';
 
 // ---- Fleet agent type ----
@@ -62,6 +62,12 @@ export function ImageGenPage() {
   const [showAgentPicker, setShowAgentPicker] = useState(false);
   const [agentLoading, setAgentLoading] = useState(true);
 
+  // Image models panel
+  const [modelStatuses, setModelStatuses] = useState<Record<string, 'ok' | 'down' | 'unknown'>>({});
+  const [preferredImageModel, setPreferredImageModel] = useState<string>('auto');
+  const [savingModel, setSavingModel] = useState<string | null>(null);
+  const [showModelsPanel, setShowModelsPanel] = useState(false);
+
   // Toast
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
@@ -115,6 +121,12 @@ export function ImageGenPage() {
     loadGallery();
     loadModels();
     loadFleet();
+    // Load model statuses and user preference
+    imageService.getModelStatus().then(res => setModelStatuses(res.data.statuses)).catch(() => {});
+    agentService.getConfig().then(res => {
+      const pref = (res.data as unknown as Record<string, unknown>).preferred_image_model as string;
+      if (pref) setPreferredImageModel(pref);
+    }).catch(() => {});
   }, [loadGallery, loadModels, loadFleet]);
 
   // Save assigned agent to localStorage
@@ -183,6 +195,19 @@ export function ImageGenPage() {
     navigator.clipboard.writeText(id);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Set default image model
+  const handleSetDefaultModel = async (modelId: string) => {
+    setSavingModel(modelId);
+    try {
+      await agentService.setImageModel(modelId);
+      setPreferredImageModel(modelId);
+    } catch {
+      // ignore silently — user can retry
+    } finally {
+      setSavingModel(null);
+    }
   };
 
   const currentModel = models.find(m => m.id === selectedModel) || models[0];
@@ -677,6 +702,75 @@ export function ImageGenPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Available Image Models */}
+      <div className="rounded-2xl border border-[#00F0FF]/10 overflow-hidden">
+        <button
+          onClick={() => setShowModelsPanel(p => !p)}
+          className="w-full flex items-center justify-between p-4 hover:bg-[#00F0FF]/5 transition-colors text-left"
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#ADFF2F]" />
+            <span className="text-sm font-semibold text-[#E8E8F0]">Available Image Models</span>
+          </div>
+          <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${showModelsPanel ? 'rotate-180' : ''}`} />
+        </button>
+
+        {showModelsPanel && (
+          <div className="border-t border-[#00F0FF]/10 divide-y divide-[#00F0FF]/5">
+            {models.map(model => {
+              const status = modelStatuses[model.id] ?? 'unknown';
+              const isDefault = preferredImageModel === model.id;
+              const isSaving = savingModel === model.id;
+
+              return (
+                <div key={model.id} className={`flex items-center gap-4 px-4 py-3 ${isDefault ? 'bg-[#ADFF2F]/5' : ''}`}>
+                  {/* Status dot */}
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${
+                    status === 'ok' ? 'bg-[#00FF88]' :
+                    status === 'down' ? 'bg-[#FF6161]' :
+                    'bg-[#6B7280]'
+                  }`} title={status} />
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-[#E8E8F0]">{model.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        model.tier === 'auto' ? 'bg-[#A78BFA]/15 text-[#A78BFA]' :
+                        model.tier === 'free' ? 'bg-[#00FF88]/15 text-[#00FF88]' :
+                        model.tier === 'premium' ? 'bg-[#FFB800]/15 text-[#FFB800]' :
+                        'bg-[#00F0FF]/15 text-[#00F0FF]'
+                      }`}>
+                        {model.cost}
+                      </span>
+                      {isDefault && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#ADFF2F]/15 text-[#ADFF2F] font-medium">
+                          Your default
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-[#6B7280] mt-0.5 truncate">{model.description}</p>
+                  </div>
+
+                  {/* Set as default button */}
+                  <button
+                    onClick={() => handleSetDefaultModel(model.id)}
+                    disabled={isDefault || isSaving}
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      isDefault
+                        ? 'bg-[#ADFF2F]/10 text-[#ADFF2F] cursor-default'
+                        : 'bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 disabled:opacity-50'
+                    }`}
+                  >
+                    {isSaving ? '...' : isDefault ? '✓ Default' : 'Set default'}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
