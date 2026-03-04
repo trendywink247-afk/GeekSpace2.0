@@ -24,6 +24,7 @@ import { executeAction, type ActionResult } from './action-executor.js';
 import { compressPrompt, trimConversationHistory } from '../utils/token-format.js';
 import { isSearchIntent, tavilySearch } from './tavily.js';
 import { extractUrl, firecrawlScrape } from './firecrawl.js';
+import { addInboxMessage } from './inbox.js';
 
 // ---- Task Intent Detection ----
 
@@ -212,6 +213,13 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   logConversation(userId, 'user', msg.text, requestId);
   extractMemories(userId, msg.text);
   logger.debug({ requestId, userId }, 'Activity logged and memories extracted');
+
+  // 4b. Inbox side-effect: store incoming channel message (non-blocking)
+  try {
+    addInboxMessage(userId, msg.channel, msg.senderName || msg.externalId, msg.text);
+  } catch (e) {
+    logger.warn({ err: (e as Error).message }, 'Failed to add message to inbox');
+  }
 
   // 5. Fire keyword automation triggers (non-blocking)
   checkKeywordTriggers(userId, msg.text).catch((e: unknown) => console.debug('[bg]', (e as Error).message));

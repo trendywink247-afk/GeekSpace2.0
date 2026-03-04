@@ -1,0 +1,99 @@
+You are the Builder agent for Agentin (GeekSpace 2.0).
+
+## Mission
+Build the AI Inbox — a unified feed that aggregates messages from Telegram,
+WhatsApp, and activity events. Agents triage messages, surface what needs attention,
+and suggest replies. This is the "nerve center" of Agentin as an AI OS.
+
+## Step 1 — Rehydrate
+1. cd /root/GeekSpace2.0
+2. git checkout main && git pull origin main
+3. Read ops/AI_HANDOFF.md
+4. Read server/src/services/message-router.ts and server/src/routes/chat.ts
+
+## Step 2 — DB schema
+```sql
+CREATE TABLE IF NOT EXISTS inbox_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  source TEXT NOT NULL,       -- 'telegram' | 'whatsapp' | 'system' | 'agent'
+  sender TEXT,                -- display name or phone
+  content TEXT NOT NULL,
+  summary TEXT,               -- AI-generated 1-sentence summary
+  priority TEXT DEFAULT 'normal', -- 'urgent' | 'high' | 'normal' | 'low'
+  read INTEGER DEFAULT 0,
+  archived INTEGER DEFAULT 0,
+  suggested_reply TEXT,       -- AI-generated reply suggestion
+  related_reminder_id INTEGER REFERENCES reminders(id),
+  received_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+);
+CREATE INDEX IF NOT EXISTS idx_inbox_user ON inbox_messages(user_id, read, received_at DESC);
+```
+
+## Step 3 — Inbox service (server/src/services/inbox.ts)
+- `addInboxMessage(userId, source, sender, content)` — insert + trigger AI triage
+- `triageMessage(messageId)` — call LLM to:
+  1. Generate 1-sentence summary (max 100 chars)
+  2. Classify priority (urgent if contains deadline/ASAP/help, high if question, normal otherwise)
+  3. Suggest a short reply (1-2 sentences) if it's a question or needs response
+  4. Detect if related to an existing reminder (keyword match)
+  Update the inbox_messages row with these fields.
+- `getInbox(userId, { unreadOnly, limit })` — return messages newest-first
+- `markRead(userId, messageId)` — set read=1
+- `archiveMessage(userId, messageId)` — set archived=1
+- `getUnreadCount(userId)` — fast count for badge
+
+## Step 4 — Wire message-router.ts to inbox
+When a Telegram or WhatsApp message arrives and is handled by the message router,
+also call `addInboxMessage(userId, 'telegram'/'whatsapp', sender, content)`.
+Do NOT change existing routing logic — just add inbox side-effect.
+
+## Step 5 — Inbox routes (server/src/routes/inbox.ts)
+```
+GET    /api/inbox                  — list messages { unreadOnly?, limit?, offset? }
+GET    /api/inbox/count            — { unread: N }
+PATCH  /api/inbox/:id/read         — mark read
+PATCH  /api/inbox/:id/archive      — archive
+DELETE /api/inbox/:id              — hard delete
+POST   /api/inbox/:id/reply        — send suggested reply via original channel
+```
+
+## Step 6 — InboxPage frontend (src/dashboard/pages/InboxPage.tsx)
+- Header: "AI Inbox" + unread badge count (polling /api/inbox/count every 30s)
+- Filter tabs: All | Unread | Telegram | WhatsApp | System
+- Message cards showing:
+  - Source icon + sender name + relative time
+  - Summary (or first 120 chars of content)
+  - Priority badge (🔴 Urgent / 🟡 High / ⚫ Normal)
+  - Suggested reply in a subtle grey box with "Send" button
+- Click to expand full message
+- Mark read on open
+- Swipe/button to archive
+- Empty state: "No messages yet. Connect Telegram or WhatsApp to get started."
+
+## Step 7 — Notification badge in dashboard header
+In DashboardApp.tsx header, add an inbox bell icon with the unread count badge.
+Clicking it navigates to InboxPage. Use polling (every 60s) to keep count fresh.
+
+## Step 8 — Add to DashboardApp nav
+Add InboxPage under "Communication" group. Show unread count in nav item if > 0.
+
+## Step 9 — Tests (server/src/test/phase97.test.ts)
+Write 30+ tests:
+- inbox CRUD + filtering
+- triageMessage correctly classifies priority from content patterns
+- summary is truncated at 100 chars
+- unread count is accurate
+- markRead / archive / delete work
+- getInbox respects unreadOnly filter
+
+## Step 10 — Branch, commit, push
+```bash
+BRANCH="ai/phase-$(date +%Y%m%d)-phase97-ai-inbox"
+git checkout -b $BRANCH
+git add -A
+git commit -m "feat(phase-97): AI inbox — unified message feed, AI triage, priority, suggested replies, InboxPage"
+git push origin $BRANCH
+```
+
+Print: PHASE_COMPLETE: $BRANCH <test_count>

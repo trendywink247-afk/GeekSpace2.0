@@ -47,6 +47,11 @@ import { voiceRouter } from './routes/voice.js';
 import { jobsRouter } from './routes/jobs.js';
 import { imageAsyncRouter } from './routes/image.js';
 import { reportRouter } from './routes/report.js';
+import { proactiveRouter } from './routes/proactive.js';
+import { inboxRouter } from './routes/inbox.js';
+import { gmailRouter } from './routes/gmail.js';
+import { analyticsRouter } from './routes/analytics.js';
+import { focusRouter, habitsRouter } from './routes/focus.js';
 import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
@@ -101,6 +106,8 @@ export function createApp(): express.Application {
         manifestSrc: ["'self'"],
         // Force HTTP resources to upgrade to HTTPS (safe, widely supported)
         upgradeInsecureRequests: [],
+        // 92.1: CSP violation reporting endpoint
+        reportUri: ['/api/csp-report'],
       },
     } : false,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
@@ -116,7 +123,7 @@ export function createApp(): express.Application {
   // 50.7: HSTS — enforce HTTPS in production for 1 year (includeSubDomains)
   if (config.isProduction) {
     app.use((_req, res, next) => {
-      res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+      res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
       next();
     });
   }
@@ -280,6 +287,13 @@ export function createApp(): express.Application {
   app.use('/api/agent/chat/public', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
   app.use('/api/dashboard/contact', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
 
+  // ---- 92.4: CSP violation reporting endpoint ----
+  app.post('/api/csp-report', (req, res) => {
+    const report = req.body;
+    logger.warn({ cspViolation: report }, 'CSP violation reported');
+    res.status(204).end();
+  });
+
   // ---- Health check ----
   app.get('/api/health', (_req, res) => {
     // 47.1: Live DB check on every call so db status is always fresh (not just cached probe)
@@ -415,6 +429,12 @@ export function createApp(): express.Application {
   app.use('/api/jobs', jobsRouter);
   app.use('/api/image', imageAsyncRouter);
   app.use('/api/report', reportRouter);
+  app.use('/api/proactive', proactiveRouter);
+  app.use('/api/inbox', inboxRouter);
+  app.use('/api/gmail', gmailRouter);
+  app.use('/api/analytics', analyticsRouter);
+  app.use('/api/focus', focusRouter);
+  app.use('/api/habits', habitsRouter);
 
   // ---- Test routes (only in test mode) ----
   if (config.isTestMode) {

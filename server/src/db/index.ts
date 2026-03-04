@@ -934,6 +934,43 @@ try { db.exec(`ALTER TABLE users ADD COLUMN subscription_plan TEXT DEFAULT 'free
 try { db.exec(`ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'inactive'`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE users ADD COLUMN subscription_expires_at INTEGER DEFAULT NULL`); } catch { /* column already exists */ }
 
+// Phase 90: Proactive AI messages log
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS proactive_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      sent_at INTEGER NOT NULL,
+      message TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_proactive_messages_user ON proactive_messages(user_id, sent_at DESC);
+  `);
+} catch { /* table already exists */ }
+
+// Phase 90: Proactive messages enabled toggle per user
+try { db.exec(`ALTER TABLE users ADD COLUMN proactive_enabled INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+
+// Phase 92: JWT token blocklist --- for logout invalidation
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS token_blocklist (
+      jti TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_token_blocklist_expires ON token_blocklist(expires_at);
+  `);
+} catch { /* table already exists */ }
+
+// Phase 92: Cleanup expired blocklist entries on startup
+try {
+  const now = Math.floor(Date.now() / 1000);
+  db.prepare('DELETE FROM token_blocklist WHERE expires_at < ?').run(now);
+} catch { /* non-fatal */ }
+
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
@@ -1585,3 +1622,151 @@ try { db.exec(`
 `); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code)`); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_invite_codes_used ON invite_codes(used_at)`); } catch { /* already exists */ }
+
+
+// Phase 97: AI Inbox -- unified message feed from Telegram, WhatsApp, and system events
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS inbox_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      source TEXT NOT NULL,
+      sender TEXT,
+      content TEXT NOT NULL,
+      summary TEXT,
+      priority TEXT DEFAULT 'normal',
+      read INTEGER DEFAULT 0,
+      archived INTEGER DEFAULT 0,
+      suggested_reply TEXT,
+      related_reminder_id INTEGER REFERENCES reminders(id),
+      received_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+    );
+    CREATE INDEX IF NOT EXISTS idx_inbox_user ON inbox_messages(user_id, read, received_at DESC);
+  `);
+} catch { /* table already exists */ }
+
+
+// Phase 100: Gmail integration -- token column + gmail_messages tracking table
+try { db.exec(`ALTER TABLE users ADD COLUMN google_gmail_token TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS gmail_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      gmail_message_id TEXT NOT NULL,
+      thread_id TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      sender TEXT NOT NULL,
+      snippet TEXT,
+      inbox_id INTEGER REFERENCES inbox_messages(id) ON DELETE SET NULL,
+      synced_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_gmail_messages_gid ON gmail_messages(user_id, gmail_message_id);
+    CREATE INDEX IF NOT EXISTS idx_gmail_messages_user ON gmail_messages(user_id, synced_at DESC);
+  `);
+} catch { /* table already exists */ }
+
+// Phase 102: Tables for analytics + Phase 101: Focus Mode + Habits (additive)
+// Phase 101: deferred flag for inbox messages (deferred during focus mode)
+try { db.exec(`ALTER TABLE inbox_messages ADD COLUMN deferred INTEGER DEFAULT 0`); } catch { /* already exists */ }
+
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS user_memories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    source TEXT DEFAULT 'manual',
+    confidence REAL DEFAULT 1.0,
+    last_used INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000),
+    updated_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_user_memories_key ON user_memories(user_id, key);
+  CREATE INDEX IF NOT EXISTS idx_user_memories_user ON user_memories(user_id, last_used DESC);
+
+  CREATE TABLE IF NOT EXISTS user_workflows (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    steps TEXT NOT NULL DEFAULT '[]',
+    trigger TEXT DEFAULT 'manual',
+    enabled INTEGER DEFAULT 1,
+    last_run INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+  );
+  CREATE INDEX IF NOT EXISTS idx_user_workflows_user ON user_workflows(user_id, created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS user_workflow_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workflow_id INTEGER NOT NULL REFERENCES user_workflows(id) ON DELETE CASCADE,
+    started_at INTEGER NOT NULL,
+    finished_at INTEGER,
+    status TEXT DEFAULT 'running',
+    context TEXT DEFAULT '{}',
+    error TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_user_workflow_runs_wf ON user_workflow_runs(workflow_id, started_at DESC);
+
+  CREATE TABLE IF NOT EXISTS notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    tags TEXT DEFAULT '[]',
+    summary TEXT,
+    linked_reminder_id INTEGER REFERENCES reminders(id) ON DELETE SET NULL,
+    pinned INTEGER DEFAULT 0,
+    archived INTEGER DEFAULT 0,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000),
+    updated_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+  );
+  CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id, archived, updated_at DESC);
+
+  CREATE TABLE IF NOT EXISTS habits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    frequency TEXT DEFAULT 'daily',
+    target_time TEXT,
+    icon TEXT DEFAULT 'star',
+    current_streak INTEGER DEFAULT 0,
+    longest_streak INTEGER DEFAULT 0,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+  );
+  CREATE INDEX IF NOT EXISTS idx_habits_user ON habits(user_id);
+
+  CREATE TABLE IF NOT EXISTS habit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    habit_id INTEGER NOT NULL REFERENCES habits(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    logged_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000),
+    note TEXT
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_habit_log_day ON habit_logs(habit_id, date(logged_at/1000, 'unixepoch'));
+  CREATE INDEX IF NOT EXISTS idx_habit_logs_user ON habit_logs(user_id, logged_at DESC);
+
+  CREATE TABLE IF NOT EXISTS focus_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    started_at INTEGER NOT NULL,
+    ended_at INTEGER,
+    duration_min INTEGER,
+    goal TEXT,
+    completed INTEGER DEFAULT 0,
+    pomodoro_count INTEGER DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS idx_focus_sessions_user ON focus_sessions(user_id, started_at DESC);
+
+  CREATE TABLE IF NOT EXISTS notification_settings (
+    user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    focus_mode_active INTEGER DEFAULT 0,
+    dnd_start TEXT DEFAULT '22:00',
+    dnd_end TEXT DEFAULT '08:00',
+    urgent_bypass INTEGER DEFAULT 1,
+    batch_interval_min INTEGER DEFAULT 30
+  );
+`); } catch { /* tables already exist */ }

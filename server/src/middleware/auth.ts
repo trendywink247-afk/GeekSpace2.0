@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { v4 as uuid } from 'uuid';
 import jwtPkg from 'jsonwebtoken';
 import type { SignOptions } from 'jsonwebtoken';
 import { timingSafeEqual, createHash } from 'crypto';
@@ -21,8 +22,21 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   try {
     const payload = verify(header.slice(7), config.jwtSecret, {
       algorithms: ['HS256'],
-    }) as { sub: string; iat?: number };
+    }) as { sub: string; iat?: number; exp?: number; jti?: string };
     req.userId = payload.sub;
+
+    // 92.6: JWT blocklist --- reject logged-out tokens
+    if (payload.jti) {
+      try {
+        const nowSec = Math.floor(Date.now() / 1000);
+        const blocked = db.prepare('SELECT 1 FROM token_blocklist WHERE jti = ? AND expires_at > ?')
+          .get(payload.jti, nowSec) as { 1: number } | undefined;
+        if (blocked) {
+          res.status(401).json({ error: 'Token has been invalidated. Please log in again.' });
+          return;
+        }
+      } catch { /* non-fatal --- table may not exist on first deploy */ }
+    }
 
     // Prevent caching of authenticated responses
     res.set('Cache-Control', 'no-store');
@@ -86,7 +100,7 @@ export function optionalAuth(req: AuthRequest, _res: Response, next: NextFunctio
 }
 
 export function signToken(userId: string): string {
-  return sign({ sub: userId }, config.jwtSecret, {
+  return sign({ sub: userId, jti: uuid() }, config.jwtSecret, {
     algorithm: 'HS256',
     expiresIn: config.jwtExpiresIn as SignOptions['expiresIn'],
   });

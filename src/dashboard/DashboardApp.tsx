@@ -5,7 +5,8 @@ import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
-  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff
+  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff,
+  Inbox, MessageSquare, Mail, TrendingUp, Target, Mic
 } from 'lucide-react';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -58,8 +59,14 @@ const CapabilitiesPage = lazyRetry(() => import('./pages/CapabilitiesPage').then
 const ActivityPage = lazyRetry(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
 const ImageGalleryPage = lazyRetry(() => import('./pages/ImageGalleryPage').then(m => ({ default: m.ImageGalleryPage })));
 const AISpecialistPage = lazyRetry(() => import('./pages/AISpecialistPage').then(m => ({ default: m.AISpecialistPage })));
+const ProactivePage = lazyRetry(() => import('./pages/ProactivePage').then(m => ({ default: m.ProactivePage })));
+const InboxPage = lazyRetry(() => import('./pages/InboxPage').then(m => ({ default: m.InboxPage })));
+const GmailPage = lazyRetry(() => import('./pages/GmailPage').then(m => ({ default: m.GmailPage })));
+const AnalyticsPage = lazyRetry(() => import('./pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
+const FocusPage = lazyRetry(() => import('./pages/FocusPage').then(m => ({ default: m.FocusPage })));
+const ChatPage = lazyRetry(() => import('./pages/ChatPage').then(m => ({ default: m.ChatPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat';
 
 interface MenuGroup {
   label: string | null;
@@ -112,6 +119,24 @@ const menuGroups: MenuGroup[] = [
       { id: 'reminders', label: 'Reminders', icon: Bell },
       { id: 'automations', label: 'Automations', icon: Zap },
       { id: 'social-media', label: 'Social Media', icon: Share2 },
+      { id: 'proactive', label: 'Proactive AI', icon: Sparkles },
+      { id: 'focus', label: 'Focus & Habits', icon: Target },
+    ],
+  },
+  {
+    label: 'Communication',
+    icon: MessageSquare,
+    items: [
+      { id: 'inbox', label: 'AI Inbox', icon: Inbox },
+      { id: 'gmail', label: 'Gmail', icon: Mail },
+      { id: 'chat', label: 'Voice Chat', icon: Mic },
+    ],
+  },
+  {
+    label: 'Insights',
+    icon: TrendingUp,
+    items: [
+      { id: 'analytics', label: 'Personal Analytics', icon: TrendingUp },
     ],
   },
   {
@@ -154,6 +179,7 @@ export function DashboardApp() {
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const swipeHandlers = useSwipeNavigation(location.pathname);
   const [currentPage, setCurrentPage] = useState<PageType>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
@@ -163,6 +189,7 @@ export function DashboardApp() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [voiceListening, setVoiceListening] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -208,6 +235,20 @@ export function DashboardApp() {
       .catch(() => {});
   }, []);
 
+  // Poll inbox unread count every 60s
+  useEffect(() => {
+    const fetchInboxCount = () => {
+      import('@/services/api').then(({ default: api }) => {
+        api.get('/inbox/count')
+          .then(res => { setInboxUnreadCount((res.data as { unread: number }).unread ?? 0); })
+          .catch(() => {});
+      });
+    };
+    fetchInboxCount();
+    const interval = setInterval(fetchInboxCount, 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Apply stored theme on mount and when user changes
   useEffect(() => {
     if (themeMode) {
@@ -249,12 +290,27 @@ export function DashboardApp() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  // Alt+V — navigate to Voice Chat page and signal listening start
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === 'v') {
+        e.preventDefault();
+        navigate('/dashboard/chat');
+        setCurrentPage('chat');
+        setVoiceListening(true);
+        setTimeout(() => setVoiceListening(false), 200);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [navigate]);
+
   // Sync URL pathname → currentPage (so navigate() calls update the view)
   useEffect(() => {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -378,6 +434,18 @@ export function DashboardApp() {
         />;
       case 'activity':
         return <ActivityPage />;
+      case 'proactive':
+        return <ProactivePage />;
+      case 'inbox':
+        return <InboxPage />;
+      case 'gmail':
+        return <GmailPage />;
+      case 'analytics':
+        return <AnalyticsPage />;
+      case 'focus':
+        return <FocusPage />;
+      case 'chat':
+        return <ChatPage />;
       case 'tools':
         return <AISpecialistPage />;
       default:
@@ -488,6 +556,11 @@ export function DashboardApp() {
                         {item.id === 'connections' && pendingConnectionCount > 0 && (
                           <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none px-1">
                             {pendingConnectionCount > 9 ? '9+' : pendingConnectionCount}
+                          </span>
+                        )}
+                        {item.id === 'inbox' && inboxUnreadCount > 0 && (
+                          <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#00F0FF] text-[#06060B] text-[10px] font-bold leading-none px-1">
+                            {inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}
                           </span>
                         )}
                       </button>
@@ -632,6 +705,16 @@ export function DashboardApp() {
         </div>
       )}
 
+      {/* ---- Voice listening toast (Alt+V) ---- */}
+      {voiceListening && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-welcome-in pointer-events-none">
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card-v2 shadow-2xl">
+            <Mic className="w-4 h-4 text-red-400 animate-pulse" />
+            <span className="text-sm text-[#E8E8F0] font-medium">Listening...</span>
+          </div>
+        </div>
+      )}
+
       {/* ---- Welcome toast ---- */}
       {showWelcome && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-welcome-in">
@@ -743,6 +826,21 @@ export function DashboardApp() {
               }}
             >
               <span className="text-xs text-[#00F0FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
+            </div>
+            {/* Inbox Bell */}
+            <div className="relative">
+              <button
+                onClick={() => navigate('/dashboard/inbox')}
+                className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center relative"
+                aria-label="AI Inbox"
+              >
+                <Inbox className="w-5 h-5 text-[#6B7280]" />
+              </button>
+              {inboxUnreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-[#00F0FF] text-[#06060B] text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none">
+                  {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+                </span>
+              )}
             </div>
             {/* Notification Bell */}
             <div className="relative">
