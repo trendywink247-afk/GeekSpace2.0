@@ -249,43 +249,51 @@ videosRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
 
 // ---- Available models ----------------------------------------
 
-videosRouter.get('/models/available', requireAuth, (_req: AuthRequest, res) => {
-  const models = [
-    {
-      id: 'auto',
-      name: 'Auto Select',
-      description: 'Automatically picks the best model based on your credits',
-      cost: 'Varies',
-      credits: 0,
-      tier: 'auto',
-    },
-    {
-      id: 'pollinations',
-      name: 'Pollinations AI',
-      description: 'Free video generation (3-10s clips)',
-      cost: 'Free',
-      credits: 0,
-      tier: 'free',
-    },
-    {
-      id: 'openrouter-video',
-      name: 'Veo 2',
-      description: 'Google Veo 2 via OpenRouter — higher quality',
-      cost: '15 credits',
-      credits: 15,
-      tier: 'standard',
-    },
-    {
-      id: 'premium',
-      name: 'Premium (AI Enhanced)',
-      description: 'Kimi enhances your prompt for cinematic results',
-      cost: '25 credits',
-      credits: 25,
-      tier: 'premium',
-    },
-  ];
+const VIDEO_MODELS = [
+  { id: 'auto', name: 'Auto Select', description: 'Automatically selects best available video provider', cost: 'Free', credits: 0, tier: 'auto' },
+  { id: 'pollinations-video', name: 'Pollinations Video', description: 'AI video generation via Pollinations — experimental', cost: 'Free', credits: 0, tier: 'free' },
+  { id: 'seedance-lite', name: 'Seedance Lite', description: 'Director Mode video generation integration', cost: 'Free', credits: 0, tier: 'free' },
+  {
+    id: 'openrouter-video',
+    name: 'Veo 2',
+    description: 'Google Veo 2 via OpenRouter — higher quality',
+    cost: '15 credits',
+    credits: 15,
+    tier: 'standard',
+  },
+  {
+    id: 'premium',
+    name: 'Premium (AI Enhanced)',
+    description: 'Kimi enhances your prompt for cinematic results',
+    cost: '25 credits',
+    credits: 25,
+    tier: 'premium',
+  },
+];
 
-  res.json({ models });
+videosRouter.get('/models/available', requireAuth, (_req: AuthRequest, res) => {
+  res.json({ models: VIDEO_MODELS });
+});
+
+videosRouter.get('/models/status', requireAuth, async (_req: AuthRequest, res) => {
+  let pollinationsStatus: 'ok' | 'down' | 'unknown' = 'unknown';
+  try {
+    const r = await fetch(
+      'https://image.pollinations.ai/prompt/test?width=64&height=64&nologo=true',
+      { method: 'HEAD', signal: AbortSignal.timeout(5000) }
+    );
+    pollinationsStatus = r.ok ? 'ok' : 'down';
+  } catch { pollinationsStatus = 'down'; }
+
+  res.json({
+    statuses: {
+      auto: 'ok',
+      'pollinations-video': pollinationsStatus,
+      'seedance-lite': 'ok',
+      'openrouter-video': 'ok',
+      premium: 'ok',
+    }
+  });
 });
 
 // ──────────────────────────────────────────────────────────────
