@@ -17,10 +17,10 @@ const POLLINATIONS_VIDEO_URL = 'https://video.pollinations.ai/prompt';
 // HuggingFace FLUX endpoint (fallback)
 const HF_FLUX_URL = 'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell';
 
-// Image cache dir — go up 3 levels from compiled output (dist/services) to reach data/
+// Image cache dir — go up 3 levels from compiled output (dist/services/) to /app/data/
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, '../../data');
-const IMG_CACHE_DIR = path.join(DATA_DIR, 'images/cache');
+const DATA_DIR = path.join(__dirname, '../../../data');
+const IMG_CACHE_DIR = path.join(DATA_DIR, 'img-cache');
 
 // Ensure cache dir exists at startup
 if (!existsSync(IMG_CACHE_DIR)) {
