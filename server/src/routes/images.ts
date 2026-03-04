@@ -47,6 +47,71 @@ imagesRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   res.json({ images, count: images.length, max: MAX_IMAGES_PER_USER });
 });
 
+// ---- Model status + available (MUST be before /:id to avoid shadowing) ------
+
+// Simple in-memory cache for model status (60s TTL)
+let imageStatusCache: { data: Record<string, 'ok' | 'down' | 'unknown'>; ts: number } | null = null;
+
+async function getImageModelStatuses(): Promise<Record<string, 'ok' | 'down' | 'unknown'>> {
+  if (imageStatusCache && Date.now() - imageStatusCache.ts < 60_000) return imageStatusCache.data;
+
+  // Default statuses for models we don't ping
+  const results: Record<string, 'ok' | 'down' | 'unknown'> = {
+    auto: 'ok',
+    premium: 'ok',
+    'black-forest-labs/flux-1-schnell': 'ok', // OpenRouter — assume ok if configured
+    'black-forest-labs/flux-1-schnell:free': 'unknown',
+  };
+
+  // Ping the providers we can check
+  await Promise.allSettled([
+    (async () => {
+      try {
+        const res = await fetch(
+          'https://image.pollinations.ai/prompt/test?width=64&height=64&nologo=true',
+          { method: 'HEAD', signal: AbortSignal.timeout(5000) }
+        );
+        results['pollinations'] = res.ok ? 'ok' : 'down';
+      } catch { results['pollinations'] = 'down'; }
+    })(),
+    (async () => {
+      try {
+        const res = await fetch(
+          'https://huggingface.co/api/models/black-forest-labs/FLUX.1-schnell',
+          { method: 'GET', signal: AbortSignal.timeout(5000) }
+        );
+        results['huggingface-flux'] = res.ok ? 'ok' : 'down';
+      } catch { results['huggingface-flux'] = 'down'; }
+    })(),
+  ]);
+
+  imageStatusCache = { data: results, ts: Date.now() };
+  return results;
+}
+
+imagesRouter.get('/models/status', requireAuth, async (_req: AuthRequest, res) => {
+  try {
+    const statuses = await getImageModelStatuses();
+    res.json({ statuses });
+  } catch (err) {
+    logger.error({ err }, 'Failed to get image model statuses');
+    res.status(500).json({ error: 'Failed to check model statuses' });
+  }
+});
+
+imagesRouter.get('/models/available', requireAuth, (_req: AuthRequest, res) => {
+  const models = [
+    { id: 'auto', name: 'Auto Select', description: 'Picks the best available provider automatically', cost: 'Free', credits: 0, tier: 'auto' },
+    { id: 'pollinations', name: 'Pollinations FLUX', description: 'Fast FLUX diffusion via Pollinations.AI', cost: 'Free', credits: 0, tier: 'free' },
+    { id: 'huggingface-flux', name: 'HuggingFace FLUX', description: 'FLUX.1-schnell via HuggingFace — fallback when Pollinations is down', cost: 'Free', credits: 0, tier: 'free' },
+    { id: 'black-forest-labs/flux-1-schnell:free', name: 'FLUX Schnell (OpenRouter)', description: 'Fast quality generation via OpenRouter free tier', cost: 'Free', credits: 0, tier: 'free' },
+    { id: 'black-forest-labs/flux-1-schnell', name: 'FLUX Schnell Pro', description: 'Higher quality FLUX via OpenRouter', cost: '15 credits', credits: 15, tier: 'standard' },
+    { id: 'premium', name: 'Premium Enhanced', description: 'Kimi AI enhances your prompt, then generates at best quality', cost: '20 credits', credits: 20, tier: 'premium' },
+  ];
+
+  res.json({ models });
+});
+
 // ---- Get single image ----------------------------------------
 
 imagesRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
@@ -325,72 +390,6 @@ imagesRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
 
   logger.info({ userId, imageId: id }, 'Image deleted');
   res.json({ deleted: true });
-});
-
-// ---- Available models ----------------------------------------
-
-// Simple in-memory cache for model status (60s TTL)
-let imageStatusCache: { data: Record<string, 'ok' | 'down' | 'unknown'>; ts: number } | null = null;
-
-async function getImageModelStatuses(): Promise<Record<string, 'ok' | 'down' | 'unknown'>> {
-  if (imageStatusCache && Date.now() - imageStatusCache.ts < 60_000) return imageStatusCache.data;
-
-  // Default statuses for models we don't ping
-  const results: Record<string, 'ok' | 'down' | 'unknown'> = {
-    auto: 'ok',
-    premium: 'ok',
-    'black-forest-labs/flux-1-schnell': 'ok', // OpenRouter — assume ok if configured
-    'black-forest-labs/flux-1-schnell:free': 'unknown',
-  };
-
-  // Ping the providers we can check
-  await Promise.allSettled([
-    (async () => {
-      try {
-        const res = await fetch(
-          'https://image.pollinations.ai/prompt/test?width=64&height=64&nologo=true',
-          { method: 'HEAD', signal: AbortSignal.timeout(5000) }
-        );
-        results['pollinations'] = res.ok ? 'ok' : 'down';
-      } catch { results['pollinations'] = 'down'; }
-    })(),
-    (async () => {
-      try {
-        const res = await fetch(
-          'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
-          { method: 'GET', signal: AbortSignal.timeout(5000) }
-        );
-        // 200 or 503 both mean the endpoint exists (503 = model loading)
-        results['huggingface-flux'] = (res.ok || res.status === 503) ? 'ok' : 'down';
-      } catch { results['huggingface-flux'] = 'down'; }
-    })(),
-  ]);
-
-  imageStatusCache = { data: results, ts: Date.now() };
-  return results;
-}
-
-imagesRouter.get('/models/status', requireAuth, async (_req: AuthRequest, res) => {
-  try {
-    const statuses = await getImageModelStatuses();
-    res.json({ statuses });
-  } catch (err) {
-    logger.error({ err }, 'Failed to get image model statuses');
-    res.status(500).json({ error: 'Failed to check model statuses' });
-  }
-});
-
-imagesRouter.get('/models/available', requireAuth, (_req: AuthRequest, res) => {
-  const models = [
-    { id: 'auto', name: 'Auto Select', description: 'Picks the best available provider automatically', cost: 'Free', credits: 0, tier: 'auto' },
-    { id: 'pollinations', name: 'Pollinations FLUX', description: 'Fast FLUX diffusion via Pollinations.AI', cost: 'Free', credits: 0, tier: 'free' },
-    { id: 'huggingface-flux', name: 'HuggingFace FLUX', description: 'FLUX.1-schnell via HuggingFace — fallback when Pollinations is down', cost: 'Free', credits: 0, tier: 'free' },
-    { id: 'black-forest-labs/flux-1-schnell:free', name: 'FLUX Schnell (OpenRouter)', description: 'Fast quality generation via OpenRouter free tier', cost: 'Free', credits: 0, tier: 'free' },
-    { id: 'black-forest-labs/flux-1-schnell', name: 'FLUX Schnell Pro', description: 'Higher quality FLUX via OpenRouter', cost: '15 credits', credits: 15, tier: 'standard' },
-    { id: 'premium', name: 'Premium Enhanced', description: 'Kimi AI enhances your prompt, then generates at best quality', cost: '20 credits', credits: 20, tier: 'premium' },
-  ];
-
-  res.json({ models });
 });
 
 // ---- Cleanup expired images -----------------------------------

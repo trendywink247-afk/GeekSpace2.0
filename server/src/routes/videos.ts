@@ -47,6 +47,61 @@ videosRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   res.json({ videos, count: videos.length, max: MAX_VIDEOS_PER_USER });
 });
 
+// ---- Available models + status (MUST be before /:id to avoid shadowing) -----
+
+const VIDEO_MODELS = [
+  { id: 'auto', name: 'Auto Select', description: 'Automatically selects best available video provider', cost: 'Free', credits: 0, tier: 'auto' },
+  { id: 'pollinations-video', name: 'Pollinations Video', description: 'AI video generation via Pollinations — experimental', cost: 'Free', credits: 0, tier: 'free' },
+  { id: 'seedance-lite', name: 'Seedance Lite', description: 'Director Mode video generation integration', cost: 'Free', credits: 0, tier: 'free' },
+  {
+    id: 'openrouter-video',
+    name: 'Veo 2',
+    description: 'Google Veo 2 via OpenRouter — higher quality',
+    cost: '15 credits',
+    credits: 15,
+    tier: 'standard',
+  },
+  {
+    id: 'premium',
+    name: 'Premium (AI Enhanced)',
+    description: 'Kimi enhances your prompt for cinematic results',
+    cost: '25 credits',
+    credits: 25,
+    tier: 'premium',
+  },
+];
+
+// Simple in-memory cache for video model status (60s TTL)
+let videoStatusCache: { data: Record<string, 'ok' | 'down' | 'unknown'>; ts: number } | null = null;
+
+videosRouter.get('/models/available', requireAuth, (_req: AuthRequest, res) => {
+  res.json({ models: VIDEO_MODELS });
+});
+
+videosRouter.get('/models/status', requireAuth, async (_req: AuthRequest, res) => {
+  if (videoStatusCache && Date.now() - videoStatusCache.ts < 60_000) {
+    return res.json({ statuses: videoStatusCache.data });
+  }
+  let pollinationsStatus: 'ok' | 'down' | 'unknown' = 'unknown';
+  try {
+    const r = await fetch(
+      'https://image.pollinations.ai/prompt/test?width=64&height=64&nologo=true',
+      { method: 'HEAD', signal: AbortSignal.timeout(5000) }
+    );
+    pollinationsStatus = r.ok ? 'ok' : 'down';
+  } catch { pollinationsStatus = 'down'; }
+
+  const statuses: Record<string, 'ok' | 'down' | 'unknown'> = {
+    auto: 'ok',
+    'pollinations-video': pollinationsStatus,
+    'seedance-lite': 'ok',
+    'openrouter-video': 'ok',
+    premium: 'ok',
+  };
+  videoStatusCache = { data: statuses, ts: Date.now() };
+  res.json({ statuses });
+});
+
 // ---- Get single video ----------------------------------------
 
 videosRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
@@ -96,6 +151,14 @@ videosRouter.post('/generate', requireAuth, async (req: AuthRequest, res) => {
   const h = Math.min(Math.max(height || 720, 360), 1080);
   const dur = Math.min(Math.max(duration || 5, 3), 10);
   let selectedModel = model || 'pollinations';
+
+  // Resolve advertised model aliases to their underlying generate paths
+  if (selectedModel === 'pollinations-video') {
+    selectedModel = 'pollinations';
+  } else if (selectedModel === 'seedance-lite') {
+    // seedance-lite maps to the free pollinations path as a fallback
+    selectedModel = 'pollinations';
+  }
 
   // Auto select: pick best available model based on credit balance
   if (selectedModel === 'auto') {
@@ -245,55 +308,6 @@ videosRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
 
   logger.info({ userId, videoId: id }, 'Video deleted');
   res.json({ deleted: true });
-});
-
-// ---- Available models ----------------------------------------
-
-const VIDEO_MODELS = [
-  { id: 'auto', name: 'Auto Select', description: 'Automatically selects best available video provider', cost: 'Free', credits: 0, tier: 'auto' },
-  { id: 'pollinations-video', name: 'Pollinations Video', description: 'AI video generation via Pollinations — experimental', cost: 'Free', credits: 0, tier: 'free' },
-  { id: 'seedance-lite', name: 'Seedance Lite', description: 'Director Mode video generation integration', cost: 'Free', credits: 0, tier: 'free' },
-  {
-    id: 'openrouter-video',
-    name: 'Veo 2',
-    description: 'Google Veo 2 via OpenRouter — higher quality',
-    cost: '15 credits',
-    credits: 15,
-    tier: 'standard',
-  },
-  {
-    id: 'premium',
-    name: 'Premium (AI Enhanced)',
-    description: 'Kimi enhances your prompt for cinematic results',
-    cost: '25 credits',
-    credits: 25,
-    tier: 'premium',
-  },
-];
-
-videosRouter.get('/models/available', requireAuth, (_req: AuthRequest, res) => {
-  res.json({ models: VIDEO_MODELS });
-});
-
-videosRouter.get('/models/status', requireAuth, async (_req: AuthRequest, res) => {
-  let pollinationsStatus: 'ok' | 'down' | 'unknown' = 'unknown';
-  try {
-    const r = await fetch(
-      'https://image.pollinations.ai/prompt/test?width=64&height=64&nologo=true',
-      { method: 'HEAD', signal: AbortSignal.timeout(5000) }
-    );
-    pollinationsStatus = r.ok ? 'ok' : 'down';
-  } catch { pollinationsStatus = 'down'; }
-
-  res.json({
-    statuses: {
-      auto: 'ok',
-      'pollinations-video': pollinationsStatus,
-      'seedance-lite': 'ok',
-      'openrouter-video': 'ok',
-      premium: 'ok',
-    }
-  });
 });
 
 // ──────────────────────────────────────────────────────────────
