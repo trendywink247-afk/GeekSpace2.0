@@ -1,13 +1,30 @@
 // ============================================================
 // Image & Video Generation Service
-// Uses free AI models from Pollinations.AI
+// Uses free AI models from Pollinations.AI with HuggingFace FLUX fallback
 // ============================================================
 
+import path from 'path';
+import fsPromises from 'fs/promises';
+import { existsSync, mkdirSync } from 'fs';
+import { fileURLToPath } from 'url';
 import { logger } from '../logger.js';
 
 // Pollinations.AI endpoints (completely free, no API key needed)
 const POLLINATIONS_IMAGE_URL = 'https://image.pollinations.ai/prompt';
 const POLLINATIONS_VIDEO_URL = 'https://video.pollinations.ai/prompt';
+
+// HuggingFace FLUX endpoint (fallback)
+const HF_FLUX_URL = 'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell';
+
+// Image cache dir — go up 3 levels from compiled output (dist/services) to reach data/
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DATA_DIR = path.join(__dirname, '../../data');
+const IMG_CACHE_DIR = path.join(DATA_DIR, 'images/cache');
+
+// Ensure cache dir exists at startup
+if (!existsSync(IMG_CACHE_DIR)) {
+  mkdirSync(IMG_CACHE_DIR, { recursive: true });
+}
 
 export interface ImageGenerationOptions {
   width?: number;
@@ -15,6 +32,7 @@ export interface ImageGenerationOptions {
   seed?: number;
   nologo?: boolean;
   enhance?: boolean;
+  forceProvider?: 'pollinations' | 'huggingface';
 }
 
 export interface VideoGenerationOptions {
@@ -25,55 +43,96 @@ export interface VideoGenerationOptions {
 }
 
 /**
- * Generate an image using Pollinations.AI (free)
- * Returns a URL to the generated image
+ * Generate an image using Pollinations.AI with HuggingFace FLUX.1-schnell fallback.
+ * Waterfall:
+ *   1. Pollinations HEAD check (10s timeout) — return URL if ok
+ *   2. HuggingFace POST (60s timeout) — save to cache, return /api/images/cache/<id>.jpg
+ *   3. Return failure with friendly message
  */
 export async function generateImage(
   prompt: string,
   options: ImageGenerationOptions = {}
-): Promise<{ success: boolean; url: string; error?: string }> {
+): Promise<{ success: boolean; url: string; error?: string; provider?: string }> {
+  const {
+    width = 1024,
+    height = 1024,
+    seed = Math.floor(Math.random() * 1000000),
+    nologo = true,
+    enhance = true,
+    forceProvider,
+  } = options;
+
+  // ── Step 1: Pollinations (skip if forceProvider === 'huggingface') ──
+  if (forceProvider !== 'huggingface') {
+    try {
+      const encodedPrompt = encodeURIComponent(prompt);
+      const params = new URLSearchParams({
+        width: String(width),
+        height: String(height),
+        seed: String(seed),
+        nologo: String(nologo),
+        enhance: String(enhance),
+      });
+      const pollinationsUrl = `${POLLINATIONS_IMAGE_URL}/${encodedPrompt}?${params.toString()}`;
+
+      const checkRes = await fetch(pollinationsUrl, {
+        method: 'HEAD',
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (checkRes.ok) {
+        logger.info({ prompt: prompt.slice(0, 50), width, height }, 'Image generated via Pollinations');
+        return { success: true, url: pollinationsUrl, provider: 'pollinations' };
+      }
+
+      logger.warn(
+        { status: checkRes.status, prompt: prompt.slice(0, 50) },
+        'Pollinations unavailable, trying HuggingFace fallback'
+      );
+    } catch (err) {
+      logger.warn({ err, prompt: prompt.slice(0, 50) }, 'Pollinations request failed, trying HuggingFace fallback');
+    }
+  }
+
+  // ── Step 2: HuggingFace FLUX.1-schnell ──
   try {
-    const {
-      width = 1024,
-      height = 1024,
-      seed = Math.floor(Math.random() * 1000000),
-      nologo = true,
-      enhance = true
-    } = options;
-
-    // Build URL with parameters
-    const encodedPrompt = encodeURIComponent(prompt);
-    const params = new URLSearchParams({
-      width: String(width),
-      height: String(height),
-      seed: String(seed),
-      nologo: String(nologo),
-      enhance: String(enhance)
-    });
-
-    const url = `${POLLINATIONS_IMAGE_URL}/${encodedPrompt}?${params.toString()}`;
-
-    // Verify the image is accessible
-    const checkRes = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(30000) });
-    
-    if (!checkRes.ok) {
-      throw new Error(`Image generation failed: ${checkRes.status}`);
+    const hfToken = process.env.HF_TOKEN;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (hfToken) {
+      headers['Authorization'] = `Bearer ${hfToken}`;
     }
 
-    logger.info({ prompt: prompt.slice(0, 50), width, height }, 'Image generated successfully');
+    const hfRes = await fetch(HF_FLUX_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ inputs: prompt }),
+      signal: AbortSignal.timeout(60000),
+    });
 
-    return {
-      success: true,
-      url
-    };
+    if (hfRes.ok) {
+      const buffer = await hfRes.arrayBuffer();
+      const filename = `${crypto.randomUUID()}.jpg`;
+      const filePath = path.join(IMG_CACHE_DIR, filename);
+      await fsPromises.writeFile(filePath, Buffer.from(buffer));
+      const url = `/api/images/cache/${filename}`;
+      logger.info({ prompt: prompt.slice(0, 50), filename }, 'Image generated via HuggingFace FLUX');
+      return { success: true, url, provider: 'huggingface' };
+    }
+
+    logger.warn(
+      { status: hfRes.status, prompt: prompt.slice(0, 50) },
+      'HuggingFace FLUX request failed'
+    );
   } catch (err) {
-    logger.error({ err, prompt: prompt.slice(0, 50) }, 'Image generation failed');
-    return {
-      success: false,
-      url: '',
-      error: err instanceof Error ? err.message : 'Unknown error'
-    };
+    logger.error({ err, prompt: prompt.slice(0, 50) }, 'HuggingFace FLUX request error');
   }
+
+  // ── Step 3: All providers failed ──
+  return {
+    success: false,
+    url: '',
+    error: 'All image providers are currently unavailable. Please try again in a moment.',
+  };
 }
 
 /**
@@ -128,17 +187,17 @@ export async function generateVideo(
 export async function checkMediaStatus(url: string): Promise<{ ready: boolean; contentType?: string }> {
   try {
     const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
-    
+
     if (res.ok) {
       const contentType = res.headers.get('content-type') || undefined;
       return { ready: true, contentType };
     }
-    
+
     // 202 Accepted means still processing
     if (res.status === 202) {
       return { ready: false };
     }
-    
+
     return { ready: false };
   } catch {
     return { ready: false };
@@ -159,7 +218,7 @@ export async function generateAvatar(
   };
 
   const fullPrompt = `${description}, ${stylePrompts[style]}`;
-  
+
   return generateImage(fullPrompt, {
     width: 512,
     height: 512,
@@ -175,7 +234,7 @@ export async function generateProjectThumbnail(
   description: string
 ): Promise<{ success: boolean; url: string; error?: string }> {
   const prompt = `Project thumbnail for "${projectName}": ${description}. Clean, modern, tech-focused, dark background with colorful accents, professional presentation, high quality digital art`;
-  
+
   return generateImage(prompt, {
     width: 1200,
     height: 630, // Open Graph aspect ratio
