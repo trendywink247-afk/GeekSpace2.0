@@ -137,6 +137,38 @@ artifactsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
   });
 });
 
+// ---- Create Artifact (auth required) ----
+// Allows the Dev Mode builder to create a new artifact directly without going through the AI agent.
+artifactsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
+  const { title, html, css, js } = req.body as Record<string, string>;
+
+  if (!title || title.trim().length === 0) {
+    res.status(400).json({ error: 'title is required' });
+    return;
+  }
+
+  const id = uuid();
+  const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
+  db.prepare(
+    `INSERT INTO generated_artifacts (id, user_id, type, title, html, css, js, expires_at)
+     VALUES (?, ?, 'code', ?, ?, ?, ?, ?)`
+  ).run(id, req.userId!, title.trim(), html || '', css || '', js || '', expiresAt);
+
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.status(201).json({
+    id,
+    title: title.trim(),
+    type: 'code',
+    html: html || '',
+    css: css || '',
+    js: js || '',
+    previewUrl: `${baseUrl}/preview/${req.userId}/${id}`,
+    createdAt: new Date().toISOString(),
+    expiresAt,
+  });
+});
+
 // ---- Save Artifact Permanently (remove expiration) ----
 artifactsRouter.post('/:id/save', requireAuth, (req: AuthRequest, res) => {
   const success = saveArtifactPermanently(req.params.id, req.userId!);

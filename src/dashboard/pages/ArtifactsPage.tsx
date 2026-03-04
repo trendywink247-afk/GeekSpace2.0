@@ -65,8 +65,9 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
     }
   };
 
-  const handleEdit = (artifact: Artifact) => {
+  const handleEdit = async (artifact: Artifact) => {
     setSelectedArtifact(artifact);
+    // Pre-populate with whatever we have (may be empty from list endpoint)
     setEditForm({
       title: artifact.title,
       html: artifact.html || '',
@@ -74,6 +75,18 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
       js: artifact.js || '',
     });
     setShowEditModal(true);
+    // Fetch full artifact (list endpoint omits html/css/js for performance)
+    try {
+      const res = await artifactService.get(artifact.id);
+      setEditForm({
+        title: res.data.title || artifact.title,
+        html: res.data.html || '',
+        css: res.data.css || '',
+        js: res.data.js || '',
+      });
+    } catch (err) {
+      console.error('Failed to load artifact code:', err);
+    }
   };
 
   const handleSaveEdit = async () => {

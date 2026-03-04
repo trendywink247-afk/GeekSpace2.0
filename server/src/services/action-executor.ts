@@ -55,6 +55,38 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const css = (params.css as string) || '';
         const js = (params.js as string) || '';
         const selfDestruct = params.selfDestruct as boolean | undefined;
+        // When injected by the builder route, update an existing artifact instead of creating a new one
+        const existingArtifactId = params.existingArtifactId as string | undefined;
+
+        const baseUrl = params.baseUrl as string | undefined;
+
+        // Check if we should update an existing artifact (builder "edit" flow)
+        if (existingArtifactId) {
+          const existing = db.prepare(
+            'SELECT id FROM generated_artifacts WHERE id = ? AND user_id = ?'
+          ).get(existingArtifactId, userId) as { id: string } | undefined;
+
+          if (existing) {
+            db.prepare(
+              `UPDATE generated_artifacts SET title = ?, html = ?, css = ?, js = ? WHERE id = ? AND user_id = ?`
+            ).run(title, html, css, js, existingArtifactId, userId);
+
+            const previewUrl = baseUrl ? `${baseUrl}/preview/${userId}/${existingArtifactId}` : undefined;
+            return {
+              tool,
+              success: true,
+              message: `Updated project "${title}"${previewUrl ? `. Live preview: ${previewUrl}` : ''}`,
+              artifactId: existingArtifactId,
+              previewUrl,
+              data: { title, html, css, js, previewUrl, updated: true },
+              receipt: previewUrl
+                ? RECEIPT_TEMPLATES.website(title, previewUrl)
+                : RECEIPT_TEMPLATES.project(title),
+            };
+          }
+          // Fall through to create new if existing artifact not found
+        }
+
         const id = uuid();
 
         // Calculate expiration (48 hours for self-destruct, null for saved)
@@ -68,7 +100,6 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         ).run(id, userId, title, html, css, js, expiresAt);
 
         // Build preview URL if baseUrl provided
-        const baseUrl = params.baseUrl as string | undefined;
         const previewUrl = baseUrl ? `${baseUrl}/preview/${userId}/${id}` : undefined;
 
         // Auto-add to portfolio projects so user sees it in their dashboard

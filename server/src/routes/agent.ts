@@ -70,6 +70,7 @@ function buildSystemPrompt(
   user: Record<string, unknown> | undefined,
   userId: string,
   userMessage?: string,
+  channel?: string,
 ): string {
   const personalityId = (agentConfig?.personality as string) || 'jarvis';
   const personality = getPersonality(personalityId);
@@ -85,6 +86,12 @@ function buildSystemPrompt(
   // Keep buildMemoryContext for any additional AI-extracted memory context
   const memoryBlock = buildMemoryContext(userId, userMessage);
 
+  // For the website builder channel, use a code-generation-focused closing instruction
+  // instead of the brevity instruction — otherwise the LLM skips generate_code actions
+  const closingInstruction = channel === 'builder'
+    ? `IMPORTANT: When asked to build or create a website, you MUST emit a generate_code action block with COMPLETE working HTML/CSS/JS code. Do not give short text responses for build requests — always use the action block. Write complete, self-contained code with no placeholders.`
+    : `IMPORTANT: Keep responses SHORT. 1-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain conversational text only.`;
+
   return `${OPENCLAW_IDENTITY}
 
 --- PERSONALITY ---
@@ -97,7 +104,7 @@ Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
 ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
 ${memoryBlock}
 
-IMPORTANT: Keep responses SHORT. 1-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain conversational text only.`;
+${closingInstruction}`;
 }
 
 // ---- Agent Config CRUD ----
@@ -272,11 +279,13 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
   let { message } = req.body as { message: string; channel?: string; context?: string };
   const userId = req.userId!;
   const reqChannel = (req.body as { channel?: string }).channel;
+  // Optional: builder sends this when editing an existing project so generate_code updates it
+  const reqExistingArtifactId = (req.body as { existingArtifactId?: string }).existingArtifactId;
 
   try {
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
-    const systemPrompt = buildSystemPrompt(agentConfig, user, userId, message);
+    const systemPrompt = buildSystemPrompt(agentConfig, user, userId, message, reqChannel);
     const userCredits = (user?.credits as number) || 0;
 
     // Check subscription credits
@@ -480,6 +489,9 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
         for (const action of edithActions) {
           if (action.tool === 'generate_code') {
             action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
+            if (reqExistingArtifactId) {
+              action.params.existingArtifactId = reqExistingArtifactId;
+            }
           }
           const actionResult = await executeAction(userId, action);
           edithActionResults.push(actionResult);
@@ -556,6 +568,9 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
           // Inject baseUrl for generate_code actions to create preview links
           if (action.tool === 'generate_code') {
             action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
+            if (reqExistingArtifactId) {
+              action.params.existingArtifactId = reqExistingArtifactId;
+            }
           }
           const actionResult = await executeAction(userId, action);
           actionResults.push(actionResult);
@@ -603,7 +618,8 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
         return;
       } catch (err) {
         logger.warn({ err, userId }, 'Bridge route failed, falling back to standard router');
-        // Fall through to standard local router
+        // If the response was already partially sent, don't fall through
+        if (res.headersSent) return;
       }
     }
 
@@ -662,6 +678,9 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       // Inject baseUrl for generate_code actions to create preview links
       if (action.tool === 'generate_code') {
         action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
+        if (reqExistingArtifactId) {
+          action.params.existingArtifactId = reqExistingArtifactId;
+        }
       }
       const actionResult = await executeAction(userId, action);
       actionResults.push(actionResult);
@@ -709,7 +728,9 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     res.json(response);
   } catch (err) {
     logger.error({ err, userId }, 'Chat handler error');
-    res.status(500).json({ error: 'Failed to process message. Please try again.' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to process message. Please try again.' });
+    }
   }
 });
 
