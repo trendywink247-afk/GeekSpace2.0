@@ -14,8 +14,8 @@ import { config } from '../config.js';
 const POLLINATIONS_IMAGE_URL = 'https://image.pollinations.ai/prompt';
 const POLLINATIONS_VIDEO_URL = 'https://video.pollinations.ai/prompt';
 
-// HuggingFace FLUX endpoint (fallback)
-const HF_FLUX_URL = 'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell';
+// HuggingFace FLUX endpoint (fallback) — new router.huggingface.co (api-inference.huggingface.co deprecated 2026)
+const HF_FLUX_URL = 'https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell';
 
 // Image cache dir — go up 3 levels from compiled output (dist/services/) to /app/data/
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -111,6 +111,14 @@ export async function generateImage(
     });
 
     if (!hfRes.ok) {
+      if (hfRes.status === 401 || hfRes.status === 403) {
+        logger.warn({ status: hfRes.status }, 'HuggingFace auth failed — HF_TOKEN not set or invalid');
+        return {
+          success: false,
+          url: '',
+          error: 'HuggingFace image generation requires a free API token. Please add HF_TOKEN to your .env file (get one free at huggingface.co/settings/tokens).',
+        };
+      }
       if (hfRes.status === 503) {
         // Model is warming up — common on free tier
         let estimatedTime = '';
@@ -119,11 +127,10 @@ export async function generateImage(
           if (body.estimated_time) estimatedTime = ` (~${Math.ceil(body.estimated_time)}s estimated)`;
         } catch { /* ignore */ }
         logger.warn({ status: 503 }, `HuggingFace model cold-starting${estimatedTime}`);
-        // Don't throw — return early with a user-friendly message
         return {
           success: false,
           url: '',
-          error: `Image model is warming up${estimatedTime}. Please try again in a moment. (Model currently unavailable)`,
+          error: `Image model is warming up${estimatedTime}. Please try again in a moment.`,
         };
       }
       logger.warn(

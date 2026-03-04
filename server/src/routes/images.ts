@@ -76,11 +76,17 @@ async function getImageModelStatuses(): Promise<Record<string, 'ok' | 'down' | '
     })(),
     (async () => {
       try {
+        // Use public model info API (no auth required) to check if HF is reachable
         const res = await fetch(
           'https://huggingface.co/api/models/black-forest-labs/FLUX.1-schnell',
           { method: 'GET', signal: AbortSignal.timeout(5000) }
         );
-        results['huggingface-flux'] = res.ok ? 'ok' : 'down';
+        // HF reachable + token configured = ok; reachable but no token = warn
+        if (res.ok) {
+          results['huggingface-flux'] = config.hfToken ? 'ok' : 'unknown';
+        } else {
+          results['huggingface-flux'] = 'down';
+        }
       } catch { results['huggingface-flux'] = 'down'; }
     })(),
   ]);
@@ -194,6 +200,8 @@ imagesRouter.post('/generate', requireAuth, async (req: AuthRequest, res) => {
       selectedModel = 'black-forest-labs/flux-1-schnell';
     } else if (config.openrouterApiKey) {
       selectedModel = 'black-forest-labs/flux-1-schnell:free';
+    } else if (config.hfToken) {
+      selectedModel = 'huggingface-flux';
     } else {
       selectedModel = 'pollinations';
     }
