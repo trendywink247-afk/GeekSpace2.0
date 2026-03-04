@@ -46,10 +46,8 @@
   }
   html {
     scroll-behavior: smooth;
-    overflow-x: hidden;
-    max-width: 100vw;
-    /* Allow vertical scroll; tell browser we don't use horizontal gestures */
-    touch-action: pan-y;
+    /* NOTE: Do NOT set overflow-x: hidden on html — it breaks wheel/touch scroll
+       by making <html> the scroll container. Keep overflow control on body only. */
   }
   body {
     @apply bg-background text-foreground antialiased;
@@ -57,8 +55,6 @@
     background-color: var(--agentin-black);
     overflow-x: hidden;
     max-width: 100vw;
-    /* Allow vertical scroll; tell browser we don't use horizontal gestures */
-    touch-action: pan-y;
   }
   img, video {
     max-width: 100%;
