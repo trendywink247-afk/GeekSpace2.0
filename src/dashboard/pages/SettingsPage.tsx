@@ -25,6 +25,8 @@ import {
   Moon,
   Sun,
   RotateCcw,
+  Mic,
+  Volume2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +50,38 @@ export function SettingsPage() {
   const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
   const [isExportingMarkdown7Days, setIsExportingMarkdown7Days] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+
+  // Voice settings (localStorage key: agentin_voice_settings)
+  const [voiceSettings, setVoiceSettings] = useState(() => {
+    try {
+      const raw = localStorage.getItem('agentin_voice_settings');
+      if (raw) return JSON.parse(raw) as { enabled: boolean; rate: number; lang: string };
+    } catch {}
+    return { enabled: false, rate: 1, lang: 'en-US' };
+  });
+  const [ttsSample, setTtsSample] = useState(false);
+
+  const saveVoiceSettings = (patch: Partial<typeof voiceSettings>) => {
+    setVoiceSettings((prev) => {
+      const next = { ...prev, ...patch };
+      try { localStorage.setItem('agentin_voice_settings', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  const handleTestVoice = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance('Hello! I am your Agentin AI assistant. How can I help you today?');
+    u.rate = voiceSettings.rate;
+    const voices = window.speechSynthesis.getVoices();
+    const voice = voices.find((v) => v.lang === voiceSettings.lang) || voices.find((v) => v.lang.startsWith('en')) || null;
+    if (voice) u.voice = voice;
+    u.onstart = () => setTtsSample(true);
+    u.onend = () => setTtsSample(false);
+    u.onerror = () => setTtsSample(false);
+    window.speechSynthesis.speak(u);
+  };
   // 60.4: keyboard shortcut cheat sheet
   const [showShortcuts, setShowShortcuts] = useState(false);
   const user = useAuthStore((s) => s.user);
@@ -566,6 +600,9 @@ export function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="theme" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
             <Palette className="w-4 h-4 mr-2" />Theme
+          </TabsTrigger>
+          <TabsTrigger value="voice" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
+            <Mic className="w-4 h-4 mr-2" />Voice
           </TabsTrigger>
         </TabsList>
 
@@ -1654,6 +1691,57 @@ export function SettingsPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="voice" className="space-y-6">
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle className="text-[#E8E8F0] flex items-center gap-2">
+                <Volume2 className="w-5 h-5 text-[#00F0FF]" />Voice Settings
+              </CardTitle>
+              <CardDescription className="text-[#6B7280]">Configure text-to-speech and voice input.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-medium text-[#E8E8F0]">Enable TTS (Text-to-Speech)</h4>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Read agent responses aloud in Voice Chat.</p>
+                </div>
+                <Switch checked={voiceSettings.enabled} onCheckedChange={(v) => saveVoiceSettings({ enabled: v })} aria-label="Enable TTS" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-[#E8E8F0]">Speech Rate</label>
+                  <span className="text-xs text-[#6B7280]">{voiceSettings.rate.toFixed(1)}x</span>
+                </div>
+                <input type="range" min="0.5" max="2" step="0.1" value={voiceSettings.rate} onChange={(e) => saveVoiceSettings({ rate: parseFloat(e.target.value) })} className="w-full accent-[#00F0FF]" />
+                <div className="flex justify-between text-[10px] text-[#6B7280]"><span>0.5x slow</span><span>1x normal</span><span>2x fast</span></div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-[#E8E8F0]">Language</label>
+                <select value={voiceSettings.lang} onChange={(e) => saveVoiceSettings({ lang: e.target.value })} className="w-full bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00F0FF]/40">
+                  <option value="en-US">English (US)</option>
+                  <option value="en-GB">English (UK)</option>
+                  <option value="hi-IN">Hindi (India)</option>
+                  <option value="es-ES">Spanish (Spain)</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={handleTestVoice} disabled={ttsSample} className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10">
+                  {ttsSample ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Volume2 className="w-4 h-4 mr-2" />}
+                  {ttsSample ? "Speaking..." : "Test Voice"}
+                </Button>
+                <p className="text-xs text-[#6B7280]">Plays a sample phrase with your current settings.</p>
+              </div>
+              <div className="rounded-lg bg-[#00F0FF]/5 border border-[#00F0FF]/15 px-4 py-3 flex items-start gap-3">
+                <Mic className="w-4 h-4 text-[#00F0FF] mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm text-[#E8E8F0] font-medium">Keyboard Shortcut</p>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Press Alt + V anywhere to open Voice Chat instantly.</p>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -6,7 +6,7 @@ import {
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
   Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff,
-  Inbox, MessageSquare, Mail, Target
+  Inbox, MessageSquare, Mail, Target, Mic
 } from 'lucide-react';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -64,7 +64,8 @@ const InboxPage = lazyRetry(() => import('./pages/InboxPage').then(m => ({ defau
 const GmailPage = lazyRetry(() => import('./pages/GmailPage').then(m => ({ default: m.GmailPage })));
 const FocusPage = lazyRetry(() => import('./pages/FocusPage').then(m => ({ default: m.FocusPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'focus';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'focus' | 'chat';
+const ChatPage = lazyRetry(() => import('./pages/ChatPage').then(m => ({ default: m.ChatPage })));
 
 interface MenuGroup {
   label: string | null;
@@ -127,6 +128,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: 'inbox', label: 'AI Inbox', icon: Inbox },
       { id: 'gmail', label: 'Gmail', icon: Mail },
+      { id: 'chat', label: 'Voice Chat', icon: Mic },
     ],
   },
   {
@@ -179,6 +181,7 @@ export function DashboardApp() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [voiceListening, setVoiceListening] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -279,12 +282,27 @@ export function DashboardApp() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  // Alt+V — navigate to Voice Chat page and signal listening start
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === 'v') {
+        e.preventDefault();
+        navigate('/dashboard/chat');
+        setCurrentPage('chat');
+        setVoiceListening(true);
+        setTimeout(() => setVoiceListening(false), 200);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [navigate]);
+
   // Sync URL pathname → currentPage (so navigate() calls update the view)
   useEffect(() => {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'focus'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'focus', 'chat'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -416,6 +434,8 @@ export function DashboardApp() {
         return <GmailPage />;
       case 'focus':
         return <FocusPage />;
+      case 'chat':
+        return <ChatPage />;
       case 'tools':
         return <AISpecialistPage />;
       default:
@@ -672,6 +692,16 @@ export function DashboardApp() {
         <div className="fixed top-0 left-0 right-0 z-[99] flex items-center justify-center gap-2 px-4 py-2 text-xs bg-[#FFB800]/8 border-b border-[#FFB800]/20">
           <WifiOff className="w-3 h-3 text-[#FFB800] shrink-0" />
           <span className="text-[#FFB800]/80">{loadErrors} data source{loadErrors > 1 ? 's' : ''} failed to load — some widgets may show cached or empty data</span>
+        </div>
+      )}
+
+      {/* ---- Voice listening toast (Alt+V) ---- */}
+      {voiceListening && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-welcome-in pointer-events-none">
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card-v2 shadow-2xl">
+            <Mic className="w-4 h-4 text-red-400 animate-pulse" />
+            <span className="text-sm text-[#E8E8F0] font-medium">Listening...</span>
+          </div>
         </div>
       )}
 
