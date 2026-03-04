@@ -4,7 +4,7 @@ import {
   Clock, Bot, Wifi, WifiOff, Wand2, ChevronDown,
   Download, X, Play, AlertCircle, RefreshCw
 } from 'lucide-react';
-import { videoService, picoService } from '@/services/api';
+import { videoService, picoService, agentService } from '@/services/api';
 import type { UserVideo, VideoModel, DirectorJob } from '@/services/api';
 
 // ---- Fleet agent type ----
@@ -124,6 +124,11 @@ export function VideoGenPage() {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [videoModels, setVideoModels] = useState<Array<{ id: string; name: string; description: string; cost: string; credits: number; tier: string }>>([]);
+  const [videoModelStatuses, setVideoModelStatuses] = useState<Record<string, 'ok' | 'down' | 'unknown'>>({});
+  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('auto');
+  const [savingVideoModel, setSavingVideoModel] = useState<string | null>(null);
+  const [showVideoModelsPanel, setShowVideoModelsPanel] = useState(false);
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToast({ type, text });
     setTimeout(() => setToast(null), 3500);
@@ -174,6 +179,12 @@ export function VideoGenPage() {
     loadGallery();
     loadModels();
     loadFleet();
+    videoService.getModels().then(res => setVideoModels(res.data.models)).catch(() => {});
+    videoService.getModelStatus().then(res => setVideoModelStatuses(res.data.statuses)).catch(() => {});
+    agentService.getConfig().then(res => {
+      const pref = (res.data as unknown as Record<string, unknown>).preferred_video_model as string;
+      if (pref) setPreferredVideoModel(pref);
+    }).catch(() => {});
   }, [loadGallery, loadModels, loadFleet]);
 
   // Save assigned agent to localStorage
@@ -349,6 +360,18 @@ export function VideoGenPage() {
     setStitchResult(null);
     autoStitchFiredRef.current = false; // 58.13: allow auto-stitch for new job
     void handleDirectorSubmit();
+  };
+
+  const handleSetDefaultVideoModel = async (modelId: string) => {
+    setSavingVideoModel(modelId);
+    try {
+      await agentService.setVideoModel(modelId);
+      setPreferredVideoModel(modelId);
+    } catch {
+      // ignore silently
+    } finally {
+      setSavingVideoModel(null);
+    }
   };
 
   // Handle video generation
@@ -1210,6 +1233,72 @@ export function VideoGenPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Available Video Models */}
+      <div className="rounded-2xl border border-[#A78BFA]/10 overflow-hidden">
+        <button
+          onClick={() => setShowVideoModelsPanel(p => !p)}
+          className="w-full flex items-center justify-between p-4 hover:bg-[#A78BFA]/5 transition-colors text-left"
+        >
+          <div className="flex items-center gap-2">
+            <Film className="w-4 h-4 text-[#A78BFA]" />
+            <span className="text-sm font-semibold text-[#E8E8F0]">Available Video Models</span>
+          </div>
+          <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${showVideoModelsPanel ? 'rotate-180' : ''}`} />
+        </button>
+
+        {showVideoModelsPanel && (
+          <div className="border-t border-[#A78BFA]/10 divide-y divide-[#A78BFA]/5">
+            {videoModels.map(model => {
+              const status = videoModelStatuses[model.id] ?? 'unknown';
+              const isDefault = preferredVideoModel === model.id;
+              const isSaving = savingVideoModel === model.id;
+
+              return (
+                <div key={model.id} className={`flex items-center gap-4 px-4 py-3 ${isDefault ? 'bg-[#A78BFA]/5' : ''}`}>
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${
+                    status === 'ok' ? 'bg-[#00FF88]' :
+                    status === 'down' ? 'bg-[#FF6161]' :
+                    'bg-[#6B7280]'
+                  }`} title={status} />
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-[#E8E8F0]">{model.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        model.tier === 'auto' ? 'bg-[#A78BFA]/15 text-[#A78BFA]' :
+                        model.tier === 'free' ? 'bg-[#00FF88]/15 text-[#00FF88]' :
+                        model.tier === 'premium' ? 'bg-[#FFB800]/15 text-[#FFB800]' :
+                        'bg-[#00F0FF]/15 text-[#00F0FF]'
+                      }`}>
+                        {model.cost}
+                      </span>
+                      {isDefault && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#A78BFA]/15 text-[#A78BFA] font-medium">
+                          Your default
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-[#6B7280] mt-0.5 truncate">{model.description}</p>
+                  </div>
+
+                  <button
+                    onClick={() => handleSetDefaultVideoModel(model.id)}
+                    disabled={isDefault || isSaving}
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      isDefault
+                        ? 'bg-[#A78BFA]/10 text-[#A78BFA] cursor-default'
+                        : 'bg-[#A78BFA]/10 text-[#A78BFA] hover:bg-[#A78BFA]/20 disabled:opacity-50'
+                    }`}
+                  >
+                    {isSaving ? '...' : isDefault ? '✓ Default' : 'Set default'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Usage info */}
