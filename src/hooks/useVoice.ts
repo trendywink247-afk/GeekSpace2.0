@@ -84,7 +84,7 @@ export function useVoice({ onTranscript, onInterim, lang = 'en-US' }: UseVoiceOp
       recognitionRef.current = null;
     };
 
-    recognition.addEventListener('error', (event: Event) => {
+    (recognition as unknown as EventTarget).addEventListener('error', (event: Event) => {
       const e = event as SpeechRecognitionErrorEvent;
       const msg =
         e.error === 'not-allowed'
