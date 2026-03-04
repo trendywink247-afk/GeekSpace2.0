@@ -16,7 +16,7 @@ import { routeChat, deductSubscriptionCredits, type ChatMessage } from './llm.js
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
 import { checkKeywordTriggers } from './automations-engine.js';
-import { sendTelegramMessage } from './telegram.js';
+import { sendTelegramMessage, sendTelegramPhoto, sendTelegramVideo } from './telegram.js';
 import { getPersonalityPrompt, getPersonality } from '../prompts/personalities.js';
 import { OPENCLAW_IDENTITY_COMPACT } from '../prompts/openclaw-system.js';
 import { parseActions } from './action-parser.js';
@@ -25,6 +25,7 @@ import { compressPrompt, trimConversationHistory } from '../utils/token-format.j
 import { isSearchIntent, tavilySearch } from './tavily.js';
 import { extractUrl, firecrawlScrape } from './firecrawl.js';
 import { addInboxMessage } from './inbox.js';
+import { checkContentSafety } from './content-filter.js';
 
 // ---- Task Intent Detection ----
 
@@ -116,6 +117,10 @@ function buildChannelSystemPrompt(
   const userName = (user?.name as string) || 'there';
   const memoryBlock = buildMemoryContext(userId, userMessage);
 
+  // Inject actual current datetime in IST (UTC+5:30) so the LLM never guesses time.
+  const nowIst = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+  const istString = nowIst.toUTCString().replace('GMT', 'IST');
+
   return `${OPENCLAW_IDENTITY_COMPACT}
 
 --- PERSONALITY ---
@@ -124,6 +129,9 @@ ${personalityPrompt}
 --- USER SESSION ---
 Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
 Channel: ${channel}. This is a messaging app — keep responses SHORT and mobile-friendly.${memoryBlock}
+
+--- CURRENT DATE & TIME ---
+Right now it is: ${istString} (India Standard Time, UTC+5:30). Use this exact time when the user asks what time or date it is. Do NOT guess or infer from other context.
 
 IMPORTANT: Max 2-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain text only. Be concise.`;
 }
@@ -219,6 +227,19 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     addInboxMessage(userId, msg.channel, msg.senderName || msg.externalId, msg.text);
   } catch (e) {
     logger.warn({ err: (e as Error).message }, 'Failed to add message to inbox');
+  }
+
+  // 4c. Safety content filter — block sexual violence, drugging, and other severe harm BEFORE LLM
+  const safetyResult = checkContentSafety(msg.text, userId);
+  if (safetyResult.blocked) {
+    logger.warn({ requestId, userId, flags: safetyResult.flags }, 'content-filter: message blocked');
+    await sendChannelResponse({
+      channel: msg.channel,
+      externalId: msg.externalId,
+      text: "I'm not able to help with that. If you're in distress or need support, please contact a crisis helpline.",
+      replyToMessageId: msg.messageId,
+    });
+    return;
   }
 
   // 5. Fire keyword automation triggers (non-blocking)
@@ -444,6 +465,23 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     text: channelReply,
     replyToMessageId: msg.messageId,
   });
+
+  // 11b. For Telegram: send actual photo/video media for any successful generate_image/generate_video actions.
+  //      The text reply (step 11) already contains the URL as a fallback; here we additionally deliver
+  //      the media natively so the user sees the image/video inline in the chat.
+  if (msg.channel === 'telegram') {
+    for (const ar of actionResults) {
+      if (ar.tool === 'generate_image' && ar.success && ar.imageUrl) {
+        await sendTelegramPhoto(msg.externalId, ar.imageUrl).catch((e: unknown) =>
+          logger.warn({ err: (e as Error).message, chatId: msg.externalId }, 'Failed to send Telegram photo'),
+        );
+      } else if (ar.tool === 'generate_video' && ar.success && ar.videoUrl) {
+        await sendTelegramVideo(msg.externalId, ar.videoUrl).catch((e: unknown) =>
+          logger.warn({ err: (e as Error).message, chatId: msg.externalId }, 'Failed to send Telegram video'),
+        );
+      }
+    }
+  }
 
   logger.info({
     requestId,

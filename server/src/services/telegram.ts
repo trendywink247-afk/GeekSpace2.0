@@ -414,6 +414,100 @@ export async function sendTelegramNotification(
   return { messageId: lastMessageId, success: lastMessageId > 0 };
 }
 
+// ---- Send Photo ----
+
+/**
+ * Send an image to a Telegram chat by URL.
+ * Telegram will fetch and display the image inline.
+ */
+export async function sendTelegramPhoto(
+  chatId: string | number,
+  photoUrl: string,
+  caption?: string,
+): Promise<{ messageId: number; success: boolean }> {
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    photo: photoUrl,
+  };
+  if (caption) body.caption = caption.slice(0, 1024); // Telegram caption max 1024 chars
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${TELEGRAM_API}/sendPhoto`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(30000),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        logger.warn({ chatId, status: res.status, error: errText, attempt }, 'Telegram sendPhoto failed');
+        if (res.status >= 400 && res.status < 500) {
+          return { messageId: 0, success: false };
+        }
+        continue;
+      }
+
+      const data = await res.json() as { result?: { message_id: number } };
+      return { messageId: data.result?.message_id || 0, success: true };
+    } catch (err) {
+      logger.warn({ err, chatId, attempt }, 'Telegram sendPhoto attempt failed');
+      if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+  }
+
+  logger.error({ chatId }, 'Telegram sendPhoto failed after 3 attempts');
+  return { messageId: 0, success: false };
+}
+
+// ---- Send Video ----
+
+/**
+ * Send a video to a Telegram chat by URL.
+ * Telegram will fetch and display the video inline.
+ */
+export async function sendTelegramVideo(
+  chatId: string | number,
+  videoUrl: string,
+  caption?: string,
+): Promise<{ messageId: number; success: boolean }> {
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    video: videoUrl,
+  };
+  if (caption) body.caption = caption.slice(0, 1024);
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${TELEGRAM_API}/sendVideo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(60000), // videos can be slow
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        logger.warn({ chatId, status: res.status, error: errText, attempt }, 'Telegram sendVideo failed');
+        if (res.status >= 400 && res.status < 500) {
+          return { messageId: 0, success: false };
+        }
+        continue;
+      }
+
+      const data = await res.json() as { result?: { message_id: number } };
+      return { messageId: data.result?.message_id || 0, success: true };
+    } catch (err) {
+      logger.warn({ err, chatId, attempt }, 'Telegram sendVideo attempt failed');
+      if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+  }
+
+  logger.error({ chatId }, 'Telegram sendVideo failed after 3 attempts');
+  return { messageId: 0, success: false };
+}
+
 // ---- Helpers ----
 
 function splitMessage(text: string, maxLen: number): string[] {
