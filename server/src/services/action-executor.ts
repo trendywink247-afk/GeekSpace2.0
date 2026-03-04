@@ -392,7 +392,19 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const width = params.width as number | undefined;
         const height = params.height as number | undefined;
 
-        const result = await generateImage(prompt, { width, height });
+        // Look up user's preferred image model from agent_configs
+        const agentCfg = db.prepare(
+          'SELECT preferred_image_model FROM agent_configs WHERE user_id = ?'
+        ).get(userId) as { preferred_image_model?: string } | undefined;
+        const preferredModel = agentCfg?.preferred_image_model || 'auto';
+
+        // Map preference to forceProvider
+        const forceProvider: 'pollinations' | 'huggingface' | undefined =
+          preferredModel === 'huggingface-flux' ? 'huggingface' :
+          preferredModel === 'pollinations' ? 'pollinations' :
+          undefined;
+
+        const result = await generateImage(prompt, { width, height, forceProvider });
 
         if (!result.success) {
           return {

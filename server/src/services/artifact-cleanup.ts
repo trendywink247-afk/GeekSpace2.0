@@ -143,7 +143,7 @@ export function startArtifactCleanupScheduler(): void {
   // Run cleanup every 5 minutes
   cleanupInterval = setInterval(() => {
     cleanupExpiredArtifacts();
-    cleanupExpiredImages();
+    cleanupExpiredImages().catch(() => {});
     cleanupExpiredVideos();
   }, 5 * 60 * 1000);
 
@@ -155,7 +155,7 @@ export function startArtifactCleanupScheduler(): void {
 
   // Run immediately on start
   cleanupExpiredArtifacts();
-  cleanupExpiredImages();
+  cleanupExpiredImages().catch(() => {});
   cleanupExpiredVideos();
   sendExpirationWarnings();
   purgeStaleChannelLinks(); // run once on startup to catch any existing stale links

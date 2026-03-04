@@ -81,6 +81,9 @@ export const config = {
   ollamaCloudModel: optional('OLLAMA_CLOUD_MODEL', 'llama3.1:8b'),
   ollamaCloudTimeout: optionalInt('OLLAMA_CLOUD_TIMEOUT_MS', 60000),
 
+  // HuggingFace (image generation fallback — FLUX.1-schnell)
+  hfToken: process.env.HF_TOKEN || '',
+
   // fal.ai — Seedance Director Mode video generation
   falApiKey: process.env.FAL_KEY || '',
   falEnabled: !!process.env.FAL_KEY,

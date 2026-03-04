@@ -261,6 +261,12 @@ export const agentService = {
   // 60.2: Get starred messages
   getStarred: (limit = 50) =>
     api.get<{ messages: ConversationEntry[] }>(`/agent/conversations/starred?limit=${limit}`),
+
+  setImageModel: (modelId: string) =>
+    api.patch<Record<string, unknown>>('/agent/config', { preferred_image_model: modelId }),
+
+  setVideoModel: (modelId: string) =>
+    api.patch<Record<string, unknown>>('/agent/config', { preferred_video_model: modelId }),
 };
 
 // ----- Version -----------------------------------------------
@@ -955,6 +961,9 @@ export const imageService = {
 
   getModels: () =>
     api.get<{ models: ImageModel[] }>('/images/models/available'),
+
+  getModelStatus: () =>
+    api.get<{ statuses: Record<string, 'ok' | 'down' | 'unknown'> }>('/images/models/status'),
 };
 
 // ----- Videos (Video Generator) --------------------------------
@@ -1058,6 +1067,9 @@ export const videoService = {
   // 60.13: Retry a single failed clip
   directorRetryClip: (jobId: string, clipIndex: number) =>
     api.post<{ message: string; clipIndex: number }>(`/videos/director/${jobId}/retry-clip/${clipIndex}`),
+
+  getModelStatus: () =>
+    api.get<{ statuses: Record<string, 'ok' | 'down' | 'unknown'> }>('/videos/models/status'),
 };
 
 // ----- Social Media (Social Media Handler) ---------------------
