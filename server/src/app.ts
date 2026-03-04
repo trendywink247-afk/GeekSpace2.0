@@ -50,6 +50,7 @@ import { reportRouter } from './routes/report.js';
 import { proactiveRouter } from './routes/proactive.js';
 import { inboxRouter } from './routes/inbox.js';
 import { gmailRouter } from './routes/gmail.js';
+import { analyticsRouter } from './routes/analytics.js';
 import { focusRouter, habitsRouter } from './routes/focus.js';
 import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
@@ -431,6 +432,7 @@ export function createApp(): express.Application {
   app.use('/api/proactive', proactiveRouter);
   app.use('/api/inbox', inboxRouter);
   app.use('/api/gmail', gmailRouter);
+  app.use('/api/analytics', analyticsRouter);
   app.use('/api/focus', focusRouter);
   app.use('/api/habits', habitsRouter);
 

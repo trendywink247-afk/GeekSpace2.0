@@ -4,7 +4,7 @@
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 
-export type ProactiveMessageType = 'daily_briefing' | 'overdue_alert' | 'idle_check_in';
+export type ProactiveMessageType = 'daily_briefing' | 'overdue_alert' | 'idle_check_in' | 'weekly_report';
 
 interface UserRow {
   id: string;
@@ -206,9 +206,54 @@ async function runProactiveChecks(): Promise<void> {
         ).get(user.id, new Date(todayStr + 'T00:00:00Z').getTime()) as { id: number } | undefined;
         if (!alreadySentIdle) await idleCheckIn(user.id);
       }
+      // Weekly report every Sunday at 19:00 IST
+      const istDate = new Date(new Date().getTime() + new Date().getTimezoneOffset() * 60 * 1000 + 5.5 * 60 * 60 * 1000);
+      if (hour === 19 && istDate.getDay() === 0) {
+        const weekStart = new Date(istDate.getTime() - 7 * 86_400_000).getTime();
+        const alreadySentWeekly = db.prepare(
+          "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'weekly_report' AND sent_at >= ?"
+        ).get(user.id, weekStart) as { id: number } | undefined;
+        if (!alreadySentWeekly) await weeklyReport(user.id);
+      }
     } catch (err) {
       logger.warn({ err, userId: user.id }, 'Proactive check failed for user');
     }
+  }
+}
+
+
+export async function weeklyReport(userId: string): Promise<string | null> {
+  if (!isProactiveEnabled(userId)) return null;
+  try {
+    const { getWeeklySummary } = await import('./analytics.js');
+    const summary = await getWeeklySummary(userId);
+    const now = new Date();
+    const weekEnd = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    const weekStartDate = new Date(now.getTime() - 7 * 86_400_000);
+    const weekStartStr = weekStartDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    const streakLine = summary.longestHabitStreak
+      ? `Best streak: ${summary.longestHabitStreak.name} at ${summary.longestHabitStreak.streak} day${summary.longestHabitStreak.streak === 1 ? '' : 's'}`
+      : 'No habit streaks yet';
+    const agentName = summary.topAgent.charAt(0).toUpperCase() + summary.topAgent.slice(1);
+    const message = [
+      `📊 Your Week in Review — ${weekStartStr} to ${weekEnd}`,
+      '',
+      `🎯 Tasks: ${summary.taskCompletionRate}% completion rate`,
+      `⏱️ Focus: ${summary.totalFocusHours}h of deep work`,
+      `✅ Habits: ${streakLine}`,
+      `🤖 Favourite agent: ${agentName}`,
+      `📬 Inbox: ${summary.inboxTriagedCount} messages triaged`,
+      `💡 ${summary.aiInsight}`,
+      '',
+      'Keep building your AI OS. 🚀',
+    ].join('\n');
+    await sendViaTelegram(userId, message);
+    recordProactiveMessage(userId, 'weekly_report', message);
+    logger.info({ userId }, 'Weekly report sent');
+    return message;
+  } catch (err) {
+    logger.warn({ err, userId }, 'Weekly report failed');
+    return null;
   }
 }
 
