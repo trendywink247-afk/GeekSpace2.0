@@ -18,7 +18,7 @@ const categoryIcons: Record<string, typeof LayoutTemplate> = {
   other: Folder,
 };
 
-export function TemplateGalleryPage() {
+export function TemplateGalleryPage({ embedded }: { embedded?: boolean }) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [categories, setCategories] = useState<TemplateCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,13 +91,15 @@ export function TemplateGalleryPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#E8E8F0]">Template Gallery</h1>
-        <p className="text-[#6B7280] text-sm mt-1">
-          Start with a professionally designed template
-        </p>
-      </div>
+      {/* Header — hidden when embedded inside another page's tab */}
+      {!embedded && (
+        <div>
+          <h1 className="text-2xl font-bold text-[#E8E8F0]">Template Gallery</h1>
+          <p className="text-[#6B7280] text-sm mt-1">
+            Start with a professionally designed template
+          </p>
+        </div>
+      )}
 
       {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">

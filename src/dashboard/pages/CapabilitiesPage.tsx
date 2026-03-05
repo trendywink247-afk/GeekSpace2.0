@@ -514,8 +514,8 @@ function PipelineVisualizer() {
           <span className="text-sm text-[#00F0FF] font-mono">"build me a hello world page"</span>
         </div>
 
-        {/* Steps — horizontal on desktop, vertical on mobile */}
-        <div className="hidden md:flex items-center gap-2">
+        {/* Steps — horizontal on large desktop, vertical on smaller screens */}
+        <div className="hidden lg:flex items-center gap-2">
           {pipelineSteps.map((step, i) => (
             <div key={i} className="flex items-center flex-1">
               <button
@@ -550,8 +550,8 @@ function PipelineVisualizer() {
           ))}
         </div>
 
-        {/* Mobile vertical pipeline */}
-        <div className="md:hidden space-y-2">
+        {/* Vertical pipeline for smaller screens (including md with open sidebar) */}
+        <div className="lg:hidden space-y-2">
           {pipelineSteps.map((step, i) => (
             <div key={i}>
               <button

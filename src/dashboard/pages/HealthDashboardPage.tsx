@@ -113,9 +113,9 @@ export function HealthDashboardPage() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retriesRef = useRef(0);
-  const MAX_RETRIES = 10;
-  const BASE_DELAY_MS = 3000;
-  const MAX_DELAY_MS = 30000;
+  const MAX_RETRIES = 3;
+  const BASE_DELAY_MS = 2000;
+  const MAX_DELAY_MS = 10000;
   const restIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Define fetchRestHealth first so connect can reference it
@@ -199,18 +199,34 @@ export function HealthDashboardPage() {
   };
 
   useEffect(() => {
+    // Start REST fetch immediately so page loads even if SSE is slow/unavailable
+    fetchRestHealth();
     connect();
     return () => {
       eventSourceRef.current?.close();
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       if (restIntervalRef.current) clearInterval(restIntervalRef.current);
     };
-  }, [connect]);
+  }, [connect, fetchRestHealth]);
 
   if (!snapshot) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
         <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin" />
+        {error && (
+          <div className="text-center space-y-3">
+            <p className="text-sm text-[#6B7280]">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetry}
+              className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

@@ -361,7 +361,7 @@ export function WebsiteBuilderPage() {
         </TabsContent>
 
         <TabsContent value="templates" className="mt-6">
-          <TemplateGalleryPage />
+          <TemplateGalleryPage embedded />
         </TabsContent>
 
         <TabsContent value="builder" className="mt-6">
