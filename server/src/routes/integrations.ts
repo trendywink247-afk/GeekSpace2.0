@@ -518,7 +518,7 @@ integrationsRouter.post('/invite/:token/accept', (req, res) => {
 
   // 36.2 + 37.5: Notify invite owner via Telegram if linked and opted in (notif_connections)
   const agentCfg = db.prepare('SELECT notif_connections FROM agent_configs WHERE user_id = ?').get(invite.user_id) as { notif_connections: number } | undefined;
-  if (agentCfg?.notif_connections !== 0) {
+  if (agentCfg?.notif_connections === 1) {
     const tgLink = db.prepare(
       "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
     ).get(invite.user_id) as { external_id: string } | undefined;
