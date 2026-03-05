@@ -82,7 +82,9 @@ function timeAgo(dateStr: string): string {
   return `${diffDays}d ago`;
 }
 
-type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error';
+type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error' | 'timeout';
+
+const MAX_TELEGRAM_POLL = 30;
 
 export function ConnectionsPage() {
   const { integrations, connectIntegration, disconnectIntegration, loadIntegrations } = useDashboardStore();
@@ -226,6 +228,11 @@ export function ConnectionsPage() {
 
   useEffect(() => {
     if (!polling) return;
+    if (telegramPollAttempts >= MAX_TELEGRAM_POLL) {
+      setPolling(false);
+      setTelegramStep('timeout');
+      return;
+    }
     // Exponential backoff: 1s → 2s → 4s, capped at 5s, with ±500ms jitter
     const base = Math.min(1000 * Math.pow(2, telegramPollAttempts), 5000);
     const jitter = Math.random() * 500 - 250;
@@ -529,6 +536,20 @@ export function ConnectionsPage() {
                 <AlertTriangle className="w-12 h-12 text-[#FF6161] mx-auto mb-2" />
                 <p className="text-sm text-[#E8E8F0]">Connection failed</p>
                 <p className="text-xs text-[#6B7280] mt-1">{telegramLink?.message}</p>
+              </div>
+            )}
+
+            {telegramStep === 'timeout' && (
+              <div className="text-center py-6">
+                <AlertTriangle className="w-12 h-12 text-[#F59E0B] mx-auto mb-2" />
+                <p className="text-sm text-[#E8E8F0]">Still waiting — try clicking the bot link again</p>
+                <p className="text-xs text-[#6B7280] mt-1">No response received after 30 attempts (~2.5 min)</p>
+                <Button
+                  className="mt-4 bg-[#2A2A3A] hover:bg-[#3A3A4A] text-[#E8E8F0]"
+                  onClick={() => { setTelegramPollAttempts(0); setPolling(true); setTelegramStep('open-bot'); }}
+                >
+                  Retry
+                </Button>
               </div>
             )}
           </CardContent>
