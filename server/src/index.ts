@@ -23,6 +23,7 @@ import { startHealthProbeCache } from './routes/health.js';
 import { startModelSyncScheduler } from './services/model-sync.js';
 import { startArtifactCleanupScheduler } from './services/artifact-cleanup.js';
 import { initProactiveEngine } from './services/proactive-engine.js';
+import { startCalendarSyncScheduler } from './services/calendar-sync.js';
 import { startOllamaKeepalive } from './services/llm.js';
 import { startGmailSyncScheduler } from './services/gmail-sync.js';
 
@@ -100,6 +101,7 @@ const httpServer = app.listen(config.port, () => {
     safeStart('weekly-report-scheduler', initWeeklyReportScheduler);
     safeStart('proactive-engine', initProactiveEngine);
     safeStart('gmail-sync', startGmailSyncScheduler);
+    safeStart('calendar-sync', startCalendarSyncScheduler);
 
     // Startup subsystem summary — visible in Docker logs for quick operator verification
     logger.info({

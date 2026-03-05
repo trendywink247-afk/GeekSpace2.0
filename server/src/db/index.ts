@@ -1818,3 +1818,24 @@ try { db.exec(`
 // Task 2: preferred media model columns for agent_configs
 try { db.exec("ALTER TABLE agent_configs ADD COLUMN preferred_image_model TEXT DEFAULT 'auto'"); } catch { /* column already exists */ }
 try { db.exec("ALTER TABLE agent_configs ADD COLUMN preferred_video_model TEXT DEFAULT 'auto'"); } catch { /* column already exists */ }
+// -- Phase 95: Google Calendar integration ------------------------------------
+// Store Google Calendar OAuth tokens per user (JSON: access_token, refresh_token, expiry_date, email)
+try { db.exec(`ALTER TABLE users ADD COLUMN google_calendar_token TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+
+// Track which calendar events have been imported
+try { db.exec(`
+  CREATE TABLE IF NOT EXISTS calendar_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    gcal_event_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    start_time INTEGER NOT NULL,
+    end_time INTEGER,
+    reminder_id TEXT REFERENCES reminders(id) ON DELETE SET NULL,
+    synced_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+  )
+`); } catch { /* already exists */ }
+try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_events_gcal ON calendar_events(user_id, gcal_event_id)`); } catch { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_calendar_events_user ON calendar_events(user_id, start_time)`); } catch { /* already exists */ }
+// Phase 95: auto-reminder toggle per user
+try { db.exec(`ALTER TABLE users ADD COLUMN calendar_auto_reminders INTEGER DEFAULT 1`); } catch { /* column already exists */ }

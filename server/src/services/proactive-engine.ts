@@ -3,6 +3,7 @@
 
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
+import { getTodayEvents } from './calendar-sync.js';
 
 export type ProactiveMessageType = 'daily_briefing' | 'overdue_alert' | 'idle_check_in' | 'weekly_report';
 
@@ -83,9 +84,26 @@ export async function dailyBriefing(userId: string): Promise<string | null> {
       message += " Habits today: " + habitList + ".";
     }
   } catch { }
+  // Phase 95: Include today calendar events in morning briefing
+  const calendarEvents = getTodayEvents(userId);
+  if (calendarEvents.length > 0) {
+    const eventList = calendarEvents.slice(0, 3).map(e => {
+      const d = new Date(e.start_time);
+      const hrs = d.getHours();
+      const mins = d.getMinutes();
+      const ampm = hrs >= 12 ? 'pm' : 'am';
+      const h12 = hrs % 12 || 12;
+      const t = String(h12) + ':' + String(mins).padStart(2, '0') + ampm;
+      return e.title + ' at ' + t;
+    }).join(', ');
+    const moreCount = calendarEvents.length - 3;
+    const moreStr = calendarEvents.length > 3 ? ' and ' + String(moreCount) + ' more' : '';
+    const evtWord = plural(calendarEvents.length, "event");
+    message += ' You have ' + String(calendarEvents.length) + ' calendar ' + evtWord + ' today: ' + eventList + moreStr + '.';
+  }
   await sendViaTelegram(userId, message);
   recordProactiveMessage(userId, 'daily_briefing', message);
-  logger.info({ userId, dueToday, pendingTotal, overdueCount }, 'Daily briefing sent');
+  logger.info({ userId, dueToday, pendingTotal, overdueCount, calEvents: calendarEvents.length }, "Daily briefing sent");
   return message;
 }
 
