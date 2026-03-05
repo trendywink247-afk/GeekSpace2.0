@@ -24,13 +24,14 @@ function TiltCard({ children }: { children: React.ReactNode }) {
 interface AgentStepProps {
   personality: 'edith' | 'jarvis' | 'weebo';
   agentMode: AgentMode;
+  apiKey: string;
   onPersonalityChange: (personality: 'edith' | 'jarvis' | 'weebo') => void;
   onAgentModeChange: (mode: AgentMode) => void;
+  onApiKeyChange: (key: string) => void;
 }
 
-export function AgentStep({ personality, agentMode, onPersonalityChange, onAgentModeChange }: AgentStepProps) {
+export function AgentStep({ personality, agentMode, apiKey, onPersonalityChange, onAgentModeChange, onApiKeyChange }: AgentStepProps) {
   const [showApiKey, setShowApiKey] = useState(false);
-  const [apiKey, setApiKey] = useState('');
 
   return (
     <div className="space-y-6">
@@ -135,7 +136,7 @@ export function AgentStep({ personality, agentMode, onPersonalityChange, onAgent
             <p className="text-xs text-[#6B7280]/70">Add your OpenRouter API key to use your own credits. You can skip this and add it later in settings.</p>
             <Input
               value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(e) => onApiKeyChange(e.target.value)}
               placeholder="sk-or-v1-..."
               type="password"
               className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] text-sm"

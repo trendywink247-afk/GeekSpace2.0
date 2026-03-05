@@ -8,6 +8,7 @@ import { config } from '../config.js';
 import { validateBody, signupSchema, loginSchema, onboardingSchema } from '../middleware/validate.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { logSecurityEvent } from '../services/security-log.js';
+import { encrypt } from '../utils/encryption.js';
 import { requestPasswordReset, verifyResetOTP, resetPassword } from '../services/passwordReset.js';
 import { logger } from '../logger.js';
 import { isLoginBlocked, recordFailedLogin, clearLoginAttempts } from '../services/login-guard.js';
@@ -336,9 +337,20 @@ authRouter.patch('/onboarding/:step', requireAuth, async (req: AuthRequest, res)
       break;
     }
     case 3: { // Agent Preferences
-      const { personality, agentMode } = data;
+      const { personality, agentMode, apiKey } = data as { personality?: string; agentMode?: string; apiKey?: string };
       if (personality) db.prepare('UPDATE agent_configs SET personality = ? WHERE user_id = ?').run(personality, req.userId);
       if (agentMode) db.prepare('UPDATE agent_configs SET mode = ? WHERE user_id = ?').run(agentMode, req.userId);
+      if (apiKey && typeof apiKey === 'string' && apiKey.trim().length > 0) {
+        const key = apiKey.trim();
+        const maskedKey = key.slice(0, 3) + '...' + key.slice(-4);
+        const encryptedKey = encrypt(key);
+        const existingKey = db.prepare('SELECT id FROM api_keys WHERE user_id = ? AND provider = ?').get(req.userId, 'openrouter');
+        if (!existingKey) {
+          db.prepare('INSERT INTO api_keys (id, user_id, provider, label, key_encrypted, masked_key, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+            uuid(), req.userId, 'openrouter', 'OpenRouter (onboarding)', encryptedKey, maskedKey, 1
+          );
+        }
+      }
       break;
     }
     case 4: { // Portfolio Setup
@@ -392,7 +404,7 @@ authRouter.post('/forgot-password', async (req, res) => {
     await new Promise(resolve => setTimeout(resolve, minDelayMs - elapsed));
   }
 
-  res.json({ message: "If that email is registered, you'll receive a reset link." });
+  res.json({ success: true, message: "If that email is registered, you'll receive a reset link.", channel: 'email' });
 });
 
 authRouter.post('/verify-reset-otp', async (req, res) => {
