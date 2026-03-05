@@ -970,6 +970,25 @@ try {
   db.prepare('DELETE FROM token_blocklist WHERE expires_at < ?').run(now);
 } catch { /* non-fatal */ }
 
+// Phase 94: User memories — per-user key-value fact store for long-term agent memory
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_memories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      source TEXT DEFAULT 'manual',
+      confidence REAL DEFAULT 1.0,
+      last_used INTEGER,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_user_memories_key ON user_memories(user_id, key);
+    CREATE INDEX IF NOT EXISTS idx_user_memories_user ON user_memories(user_id, last_used DESC);
+  `);
+} catch { /* table already exists */ }
+
 
 // ── Plan definitions ────────────────────────────────────────
 
@@ -1336,6 +1355,31 @@ function seedDemoData() {
     seedDefaultIntegrations('demo-11');
 
     logger.info('New demo data (demo-9 through demo-11) seeded');
+  }
+
+  // Phase 94: Seed user_memories for demo users (only if empty)
+  const memCount = (db.prepare('SELECT count(*) as cnt FROM user_memories WHERE user_id = ?').get('demo-1') as { cnt: number }).cnt;
+  if (memCount === 0) {
+    const insertMem = db.prepare(`
+      INSERT OR IGNORE INTO user_memories (user_id, key, value, source, confidence, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    const now = Date.now();
+    // Alex
+    insertMem.run('demo-1', 'preferred_name', 'Alex', 'manual', 1.0, now, now);
+    insertMem.run('demo-1', 'timezone', 'PST', 'manual', 1.0, now, now);
+    insertMem.run('demo-1', 'location', 'San Francisco, CA', 'extracted', 0.9, now, now);
+    insertMem.run('demo-1', 'main_project', 'GeekSpace AI OS', 'manual', 1.0, now, now);
+    insertMem.run('demo-1', 'role', 'Senior Developer at TechCorp', 'extracted', 0.85, now, now);
+    // Sarah
+    insertMem.run('demo-2', 'preferred_name', 'Sarah', 'manual', 1.0, now, now);
+    insertMem.run('demo-2', 'timezone', 'EST', 'manual', 1.0, now, now);
+    insertMem.run('demo-2', 'main_project', 'DesignKit component library', 'manual', 1.0, now, now);
+    // Marcus
+    insertMem.run('demo-3', 'preferred_name', 'Marcus', 'manual', 1.0, now, now);
+    insertMem.run('demo-3', 'timezone', 'CST', 'manual', 1.0, now, now);
+    insertMem.run('demo-3', 'main_project', 'StartupOS founder operating system', 'manual', 1.0, now, now);
+    logger.info('Phase 94: user_memories seeded for demo users');
   }
 }
 
