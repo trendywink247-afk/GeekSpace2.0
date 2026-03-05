@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, Sparkles, MapPin, Bot, ArrowLeft, Filter, Eye, Users, Loader2
@@ -35,6 +35,7 @@ export function ExplorePage() {
   const [profiles, setProfiles] = useState<DirectoryProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const profilesRef = useRef<DirectoryProfile[]>([]);
 
   const fetchProfiles = useCallback(async () => {
     setIsLoading(true);
@@ -44,15 +45,15 @@ export function ExplorePage() {
         search: search || undefined,
         tags: activeTag !== 'All' ? [activeTag] : undefined,
       });
+      profilesRef.current = data.profiles;
       setProfiles(data.profiles);
     } catch {
-      if (profiles.length === 0) {
+      if (profilesRef.current.length === 0) {
         setLoadError('Unable to load profiles. Please try again.');
       }
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- profiles.length intentionally excluded to avoid refetch loops when data loads
   }, [search, activeTag]);
 
   useEffect(() => {

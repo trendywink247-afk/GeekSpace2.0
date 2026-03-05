@@ -658,8 +658,8 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
     };
   };
 
-  const isOverdue = (datetime: string) => {
-    return new Date(datetime) < new Date() && !reminders.find(r => r.datetime === datetime)?.completed;
+  const isOverdue = (datetime: string, completed?: boolean) => {
+    return !completed && new Date(datetime) < new Date();
   };
 
   // 39.2: "due soon" = active reminder within the next 24h but not yet overdue
@@ -1226,7 +1226,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                 <div className="space-y-2">
                   {items.map((reminder) => {
                     const formatted = formatDateTime(reminder.datetime);
-                    const overdue = isOverdue(reminder.datetime);
+                    const overdue = isOverdue(reminder.datetime, reminder.completed);
                     const dueSoon = isDueSoon(reminder.datetime, reminder.completed);
                     return (
                       <Card
@@ -1491,7 +1491,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
           ) : (
             filteredReminders.map((reminder) => {
               const formatted = formatDateTime(reminder.datetime);
-              const overdue = isOverdue(reminder.datetime);
+              const overdue = isOverdue(reminder.datetime, reminder.completed);
               const dueSoon = isDueSoon(reminder.datetime, reminder.completed);
 
               return (
