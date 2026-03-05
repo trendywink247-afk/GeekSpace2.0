@@ -1285,7 +1285,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   <Clock className="w-5 h-5 text-[#00F0FF]" />
                   Recent Activity
                 </CardTitle>
-                <Button variant="ghost" size="sm" className="text-[#00F0FF]" onClick={() => onNavigate?.('terminal')}>
+                <Button variant="ghost" size="sm" className="text-[#00F0FF]" onClick={() => onNavigate?.('activity')}>
                   View All
                 </Button>
               </div>

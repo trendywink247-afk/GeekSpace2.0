@@ -163,17 +163,17 @@ describe('B4: Website Builder tab scrollability', () => {
   });
 });
 
-// ─── C4: Connections QR code ──────────────────────────────────────────────
+// ─── C4: Connections WhatsApp Coming Soon ─────────────────────────────────
 
-describe('C4: Connections QR code mobile-safe', () => {
-  it('WhatsApp QR image has max-w-full', () => {
+describe('C4: Connections WhatsApp Coming Soon card', () => {
+  it('WhatsApp shows Coming Soon badge instead of QR', () => {
     const content = readSrc('dashboard/pages/ConnectionsPage.tsx');
-    expect(content).toContain('max-w-full');
+    expect(content).toContain('Coming Soon');
   });
 
-  it('QR container has max-w-[90vw]', () => {
+  it('WhatsApp connect button is replaced with Coming Soon for whatsapp type', () => {
     const content = readSrc('dashboard/pages/ConnectionsPage.tsx');
-    expect(content).toContain('max-w-[90vw]');
+    expect(content).toContain("connection.type === 'whatsapp'");
   });
 });
 

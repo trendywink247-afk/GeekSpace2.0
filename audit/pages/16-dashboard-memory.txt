@@ -1,0 +1,125 @@
+PAGE: Memory Manager
+ROUTE: /dashboard/memory
+STATUS: WORKING
+
+=== DESKTOP VIEW ===
+Full-width layout (space-y-6, overflow-x-hidden on wrapper div).
+
+Header row:
+  - "Memory Manager" title (Syne font, 3xl/4xl)
+  - Subtitle: "{total} memories across {categories} categories"
+  - Export button (outline) — triggers JSON download of current memories array
+  - Refresh button (icon only) — re-fetches memory list
+
+Stats cards: 2-col on mobile, 4-col on md. Cards: Total Memories (brain icon), Categories (tag icon), Avg Confidence % (bar chart icon), This Week count (clock icon).
+
+Search and Filters card:
+  - Search input with magnifier icon (searches key, value, category fields client-side)
+  - Category dropdown (native <select>)
+  - Sort dropdown: Most Recent / Highest Confidence / Most Accessed (all client-side)
+  - Confidence threshold slider (0-100%, step 5, HTML range input with accent-[#00FF88])
+  - Category quick filter pills: each category has a filter pill + "x all" bulk-clear button
+
+Memory list:
+  - Space-y-3 list of Card components
+  - Each card: confidence % indicator (colored circle: green >80%, amber >50%, red <=50%), category badge, access count, key (font-medium, truncate), value (line-clamp-2 collapsed / whitespace-pre-wrap expanded), created/updated/source timestamps
+  - Expand/collapse toggle (ChevronDown/Up), 44px min touch target
+  - Delete button (Trash2), 44px min touch target
+
+Empty state: centered Brain icon + "No memories found" / error message. Retry button if loadError is set.
+
+Bulk actions row: appears at bottom when selectedCategory !== 'all' — "Delete all in {category}" outline red button. Calls handleDeleteByCategory which iterates and calls handleDelete per entry (N individual DELETE requests, not a batch call).
+
+Bulk-clear modal (66.13): fixed inset-0 z-50 overlay with blur background. Shows when bulkClearConfirm is set. Has Cancel and "Clear all" buttons. "Clear all" calls memoryService.bulkClear(category) — a single server call. This modal is the improved path vs. handleDeleteByCategory (which is the older path still present as the bottom "Delete all" button).
+
+Loading state: full-page spinner (replaces content, not inline).
+
+=== MOBILE VIEW ===
+Stats: grid-cols-2 on mobile (stays 2-wide).
+Search/filter row: flex-col on mobile (md:flex-row). Full-width inputs.
+Category dropdown and sort dropdown: flex gap-2, side by side. On very small screens these may wrap to new line.
+Category quick filter pills: flex-wrap gap-2 — wraps to new lines on mobile, readable.
+Memory list cards: full-width, single column. Expand/collapse and delete buttons are 44px minimum.
+No separate list vs. card view mode — always card view.
+Add button placement: NO "add memory" button anywhere on this page. Memories are added by the AI during chat, not manually by users.
+Bulk-clear modal: fixed inset-0 p-4, centered flex — appears correctly on mobile.
+
+=== FUNCTIONALITY CHECK ===
+Load memories — WORKING (GET /api/agent/memory on mount)
+Error handling on load — WORKING (401 → "Session expired", other errors → "Failed to load memories". Retry button shown.)
+Search (client-side) — WORKING (filters key, value, category by case-insensitive includes)
+Category filter — WORKING (dropdown + quick filter pills, client-side)
+Sort by recent/confidence/accessed — WORKING (client-side, no API re-fetch)
+Confidence threshold filter — WORKING (slider, client-side)
+Delete single memory — PARTIAL (calls memoryService.delete(id), but catch block is empty — if API fails, item is still removed from UI. UI state and server state can diverge.)
+Delete confirmation — PARTIAL (uses native window.confirm() dialog. No custom modal. This may be blocked by some browser policies in WebView/PWA contexts.)
+Bulk-clear by category (x all pill button) — WORKING (triggers bulkClearConfirm modal, confirmed via custom modal, calls memoryService.bulkClear(category) = DELETE /agent/memory/bulk?category=X)
+Bulk-delete by category (bottom button) — PARTIAL (loops through individual handleDelete calls — N individual DELETE requests, no batch endpoint used. Also uses window.confirm() which may be blocked.)
+Export memories — WORKING (client-side JSON download via Blob URL, filename geekspace-memories-YYYY-MM-DD.json)
+Refresh — WORKING (re-calls loadMemories())
+Expand/collapse memory value — WORKING (expandedId tracks single expanded card)
+Create new memory — MISSING (no "Add Memory" button/form. Memories are AI-extracted only via chat.)
+Import memories — MISSING (no import button/file input)
+Edit memory — MISSING (no edit button or inline editing. PUT /agent/memory/:id exists but no UI.)
+Search across all memories — WORKING (client-side, instant)
+Memory effect on chat — WORKING on server side: buildMemoryContext() injects relevant memories into LLM system prompt on every /agent/chat call. No UI explanation of this in the page.
+Pagination — MISSING (all memories loaded at once via GET /agent/memory. No limit/offset pagination. For large memory collections this could be slow.)
+
+=== LOGIC ISSUES ===
+1. The bottom "Delete all in {category}" button calls handleDeleteByCategory, which loops over filtered memories and calls handleDelete (window.confirm per item) for each one. This is double-problematic: (a) window.confirm blocks the thread for each item, creating a multi-confirm dialog flood if the category has 10+ entries, and (b) each delete is a separate HTTP request. The new bulk-clear modal (via the "x all" pills) uses the correct server-side batch endpoint. The old bottom button should be removed or wired to the same modal flow.
+
+2. handleDelete uses window.confirm() which does not work in PWA standalone mode (some iOS/Android WebViews block it) and is visually inconsistent with the rest of the app's modal style. Should use the same custom modal pattern as the bulk-clear confirm.
+
+3. The delete catch block is empty:
+   try { await memoryService.delete(id) } catch { /* non-fatal */ }
+   The memory is removed from local state regardless of API success/failure. If the server rejects the delete (e.g., auth failure, DB error), the UI shows it as deleted but it still exists on the server. On next page load, it reappears — confusing the user.
+
+4. No pagination: all memories are returned in a single API call (GET /agent/memory). Looking at the server-side route, there's no limit parameter in the frontend call. For power users with hundreds of memories (AI accumulates them over time), this will cause slow load times and large data payloads.
+
+5. No "Add Memory" form. While memories are primarily AI-extracted, there's no way for users to manually add important facts (e.g., "My timezone is IST"). The server supports POST /agent/memory with full create functionality, but there's no UI.
+
+6. No "Edit Memory" functionality. Users can see and delete memories, but cannot correct wrong information the AI extracted. PUT /agent/memory/:id exists on the server but is not surfaced in the UI.
+
+7. The category quick-filter pills and the category dropdown are duplicated controls — both control selectedCategory. Changing one does not reset the other's visual state (the dropdown still shows the old value if user clicked a pill). They are properly synced via shared selectedCategory state, but visually it can be confusing to have two ways to set the same filter.
+
+8. The Avg Confidence stat is computed client-side: (sum of confidence / length * 100). This is accurate for the currently-loaded data. However, if only a subset of memories is loaded due to future pagination, this average would be misleading.
+
+9. Category is extracted from the memory entries themselves — it comes from the AI memory extraction. There's no predefined set of categories, so the filter list dynamically reflects whatever categories the AI has created. Users cannot create custom categories.
+
+10. The export downloads ALL memories in the current memories state (not just the filtered/visible ones). If the user has filtered to a category, they may expect the export to contain only that category's memories, but it exports everything.
+
+=== IMPROVEMENTS ===
+[HIGH] Add "Add Memory" form — simple modal with category (dropdown of existing categories + "Other"), key, value, confidence fields. Wire to POST /api/agent/memory.
+
+[HIGH] Add "Edit Memory" functionality — inline edit mode or edit modal. Wire to PUT /api/agent/memory/:id.
+
+[HIGH] Replace window.confirm() in handleDelete with the same custom modal pattern used for bulk-clear. Remove the old handleDeleteByCategory bottom button and consolidate to the modal-based handleBulkClear flow.
+
+[HIGH] Fix delete error handling — show an error toast if API call fails and restore the deleted item to local state (store prevMemories before optimistic removal).
+
+[MED] Add pagination or virtual scrolling — load memories in pages of 25-50. Server should support limit/offset parameters.
+
+[MED] Export should respect the current filter — export only visible (filtered) memories, or offer a choice ("Export all" vs "Export filtered").
+
+[MED] Add import functionality — accept a JSON file that was previously exported, validate structure, and bulk-import via POST /api/agent/memory.
+
+[MED] Add an explanation panel on the page about how memories affect chat behavior (e.g., "Your agent automatically uses these memories when chatting with you").
+
+[LOW] Consolidate category filters — remove the native <select> dropdown and use only the pill buttons (or vice versa) to avoid two controls for the same state.
+
+[LOW] Allow users to create/define custom categories (stored as a user preference, not AI-generated).
+
+[LOW] Add a "memory source" breakdown visualization (how many were auto-extracted vs. manually added).
+
+=== SERVER ROUTES USED ===
+GET    /api/agent/memory                    — load all memories (no pagination)
+DELETE /api/agent/memory/:id               — delete single memory
+DELETE /api/agent/memory/bulk?category=X  — bulk delete by category (via memoryService.bulkClear)
+
+Routes available but NOT used by MemoryManagerPage:
+POST   /api/agent/memory                   — create memory (no "Add" UI)
+PUT    /api/agent/memory/:id               — update memory (no "Edit" UI)
+
+How memory affects chat (server-side, not visible in UI):
+  - buildMemoryContext(userId, userMessage) in agent.ts reads from DB and injects relevant memories into the system prompt for every /agent/chat call.
+  - extractMemoriesWithAI() runs as a background task after each chat exchange to auto-extract new memories.

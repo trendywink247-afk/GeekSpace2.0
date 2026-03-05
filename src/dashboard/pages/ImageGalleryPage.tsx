@@ -6,10 +6,10 @@
 
 import { useState, useEffect } from 'react';
 import { Download, ImageIcon, RefreshCw, Loader2 } from 'lucide-react';
-import { imageAsyncService, type ImageGalleryItem } from '@/services/api';
+import { imageService, type UserImage } from '@/services/api';
 
 export function ImageGalleryPage() {
-  const [images, setImages] = useState<ImageGalleryItem[]>([]);
+  const [images, setImages] = useState<UserImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,8 +17,8 @@ export function ImageGalleryPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await imageAsyncService.gallery();
-      setImages(data.images);
+      const res = await imageService.list();
+      setImages(res.data.images);
     } catch {
       setError('Failed to load gallery');
     } finally {
@@ -65,9 +65,9 @@ export function ImageGalleryPage() {
       {!loading && !error && images.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
           <ImageIcon className="w-10 h-10 text-[#6B7280]/40" />
-          <p className="text-[#6B7280] text-sm">No images yet.</p>
+          <p className="text-[#6B7280] text-sm">No images generated yet.</p>
           <p className="text-[#6B7280]/60 text-xs">
-            Type <code className="bg-[#1a1a2e] px-1.5 py-0.5 rounded text-[#A78BFA]">/image [prompt]</code> in chat to generate one.
+            Use <span className="text-[#A78BFA]">Image Generator</span> to create your first image.
           </p>
         </div>
       )}
@@ -82,21 +82,21 @@ export function ImageGalleryPage() {
               <div className="aspect-square bg-[#0A0A1A]">
                 <img
                   src={img.image_url}
-                  alt={img.prompt}
+                  alt={img.prompt ?? ''}
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
               </div>
               {/* Overlay on hover (desktop) */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex flex-col justify-end p-3">
-                <p className="text-xs text-[#E8E8F0] line-clamp-2 mb-1">{img.prompt}</p>
+                <p className="text-xs text-[#E8E8F0] line-clamp-2 mb-1">{img.prompt ?? ''}</p>
                 <span className="text-[10px] text-[#6B7280]">
                   {new Date(img.created_at).toLocaleDateString()}
                 </span>
               </div>
               {/* Bottom bar: always visible with prompt + download (touch-friendly) */}
               <div className="px-2 py-1.5 border-t border-[#A78BFA]/10 flex items-center justify-between gap-1">
-                <p className="text-[10px] text-[#6B7280] truncate flex-1">{img.prompt}</p>
+                <p className="text-[10px] text-[#6B7280] truncate flex-1">{img.prompt ?? ''}</p>
                 <a
                   href={img.image_url}
                   download

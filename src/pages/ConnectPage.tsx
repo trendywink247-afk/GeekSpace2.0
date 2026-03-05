@@ -70,7 +70,7 @@ export function ConnectPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-2">
             <Zap className="w-6 h-6 text-[#00F0FF]" />
-            <span className="text-xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>GeekSpace</span>
+            <span className="text-xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Agentin Chat</span>
           </div>
         </div>
 
@@ -104,11 +104,11 @@ export function ConnectPage() {
                   You are now connected with <span className="text-[#00F0FF] font-medium">{invite?.ownerName}</span>.
                 </p>
                 <p className="text-sm text-[#6B7280] mb-6">
-                  They'll be able to collaborate with you through GeekSpace.
+                  They'll be able to collaborate with you through Agentin Chat.
                 </p>
                 <Link to="/login">
                   <Button className="bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold">
-                    Sign up to GeekSpace
+                    Sign up to Agentin Chat
                   </Button>
                 </Link>
               </div>

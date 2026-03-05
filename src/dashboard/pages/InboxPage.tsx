@@ -240,7 +240,7 @@ export function InboxPage() {
               {!msg.read && (
                 <button
                   onClick={() => handleMarkRead(msg.id)}
-                  className='p-1.5 rounded-lg hover:bg-white/10 text-gray-500 hover:text-green-400 transition-colors'
+                  className='min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-green-400 transition-colors'
                   title='Mark read'
                 >
                   <Check className='w-3.5 h-3.5' />
@@ -248,14 +248,14 @@ export function InboxPage() {
               )}
               <button
                 onClick={() => handleArchive(msg.id)}
-                className='p-1.5 rounded-lg hover:bg-white/10 text-gray-500 hover:text-amber-400 transition-colors'
+                className='min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-amber-400 transition-colors'
                 title='Archive'
               >
                 <Archive className='w-3.5 h-3.5' />
               </button>
               <button
                 onClick={() => handleDelete(msg.id)}
-                className='p-1.5 rounded-lg hover:bg-white/10 text-gray-500 hover:text-red-400 transition-colors'
+                className='min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-red-400 transition-colors'
                 title='Delete'
               >
                 <Trash2 className='w-3.5 h-3.5' />

@@ -1,0 +1,97 @@
+PAGE: Automations
+ROUTE: /dashboard/automations
+STATUS: WORKING
+
+=== DESKTOP VIEW ===
+- Full-width layout with space-y-4 md:space-y-6 container
+- Dry-run result toast (bottom-right, fixed): shows simulated output for 8s
+- Header row: "Automations" title (Syne font, 2xl/4xl), active count + total count, "New Automation" button (min-h-[44px])
+- Stats cards row (grid 2 cols / lg:4 cols): Total, Active, Total Runs, Webhooks count; optional 5th card "Runs (7d)" from server stats endpoint
+- Search bar + status filter tabs (All / Active / Inactive)
+- Automation cards list: each card contains:
+  - Toggle button (ToggleLeft/ToggleRight icons, 44px touch target) with ARIA label
+  - Name + animated green pulse dot when enabled
+  - Description text
+  - Run count + "Last run: <relative time>" when runCount > 0
+  - Trigger badge (color-coded: time=amber, event=green, webhook=cyan, manual=gray, keyword=pink, health_down=red)
+  - Arrow separator
+  - Action badge (n8n-webhook, telegram-message, whatsapp-message, portfolio-update, manychat-broadcast, call_api, create_reminder, log)
+  - Total run count badge
+  - Last status badge (success=green / failed=red) when present
+  - Last run relative time
+  - Next run time (for time-triggered automations, computed client-side from interval_minutes + last_run)
+  - Per-automation trigger error message (auto-clears after 4s)
+  - Action buttons: Test Fire (webhook type only), Run (Play), Dry Run (FlaskConical), Edit (Edit3), Duplicate (Copy), Delete (Trash2)
+  - Test result inline popover: shows message, HTTP status code, latency ms, response body preview (200 chars)
+- Add/Edit dialog: name, description, trigger type select, action type select, enabled toggle, interval minutes (when trigger=time), webhook URL (when action=n8n-webhook or call_api)
+- Run log section (bottom): paginated list of all automation logs (20 per page, Load More button); status filter tabs (All/Success/Failed/Error); each log entry shows automation name, status, output, timestamp
+- Dead-letter log section: failed webhook deliveries with retry button per entry
+
+=== MOBILE VIEW ===
+- Container: px-1 md:px-0 — correct side padding on mobile
+- Stats cards: grid-cols-2 on mobile (wraps at 2 per row), lg:grid-cols-4 on desktop
+- Filter tabs: overflow-x-auto flex-nowrap — horizontally scrollable on narrow screens; tabs have min-h-[44px] each
+- Automation cards: p-3 md:p-5 — reduced padding on mobile
+- Action buttons: 10x10 (h-10 w-10, ~40px) — just under the 44px recommended minimum touch target; press-scale class adds visual feedback
+- Toggle button: min-h-[44px] min-w-[44px] — compliant touch target
+- No FAB button for creating automation; "New Automation" button is in header (accessible but may scroll off screen)
+- Search input: min-h-[44px] — touch target compliant
+- Run log and dead-letter log are full-width scrollable areas
+
+=== FUNCTIONALITY CHECK ===
+List automations — WORKING (GET /automations with Redis cache, 30s TTL)
+Create automation — WORKING (name, description, trigger type, action type, interval, webhook URL; validates name required)
+Edit automation — WORKING (pre-fills form; PATCH /:id updates fields selectively)
+Delete automation — WORKING (DELETE /:id; hot-reloads engine; cache busted)
+Enable/disable toggle — WORKING (PATCH /:id {enabled: bool}; engine hot-reloaded; activity log entry)
+Run/trigger automation manually — WORKING (POST /:id/trigger; uses real engine executeManualTrigger)
+Test fire (webhook) — WORKING (POST /:id/test; shows HTTP status code, latency, response body preview)
+Dry-run simulation — WORKING (POST /:id/dry-run; returns simulatedOutput string describing what would happen)
+Duplicate automation — WORKING (POST /:id/duplicate; creates disabled copy; refreshes list from server)
+Next run preview (time-triggered) — WORKING (client-side computation from trigger_config.interval_minutes + last_run)
+Execution run log — WORKING (GET /automations/logs with pagination and status filter)
+Per-automation run log — WORKING (GET /automations/:id/logs)
+Dead-letter log — WORKING (GET endpoint; shows failed webhook deliveries)
+Dead-letter retry — WORKING (POST /automations/dead-letters/:id/retry)
+Stats summary card — WORKING (GET /automations/stats: total, enabled, disabled, byTrigger, recentRuns)
+Search by name/description — WORKING (client-side filter)
+Filter by status (All/Active/Inactive) — WORKING (client-side filter)
+Cron expression input — MISSING (form uses intervalMinutes integer, not a raw cron expression; no human-readable preview of cron schedule)
+Webhook URL display for incoming webhook triggers — MISSING (no inbound webhook URL shown in UI for webhook-triggered automations; webhook trigger type is outbound-action-based not inbound)
+Action config (message text, payload) — MISSING from UI (form only captures webhookUrl; telegram-message action has no message text field; create_reminder action has no reminder text field — these require manual DB editing or API calls)
+
+=== LOGIC ISSUES ===
+1. Action configuration is incomplete in the UI: when creating a telegram-message automation, there is no field to enter the message text. The actionConfig object is built from only webhookUrl for webhook actions; other action types (telegram-message, create_reminder, log, manychat-broadcast) have no configurable payload in the form — their config will be empty `{}`, making them non-functional until edited via API.
+2. The edit form does not restore webhookUrl from the existing automation's actionConfig (line 181: `webhookUrl: ''`), so editing an existing webhook automation loses the URL unless the user re-enters it.
+3. `fmtNextRun` parses `trigger_config` from a raw JSON string using `JSON.parse(auto.trigger_config)` but the frontend Automation type likely already parses triggerConfig — this double-parse path uses `(auto as unknown as Record<string, unknown>).trigger_config` which may be undefined if the frontend object is already parsed, causing `fmtNextRun` to silently return null for valid time automations.
+4. Run log pagination: clicking "Load More" appends entries to the list but there is no way to go back or reset to page 1 without a full page reload. The offset is additive only.
+5. Stats card "Runs (7d)" is loaded separately from the main automations list and renders conditionally only when `automationStats !== null` — creates a layout shift (5th card appearing after initial render).
+6. No confirmation dialog before deleting an automation — destructive action with no undo.
+7. The toggle button disables the Run (Play) button when `!auto.enabled || isLoading` — but `isLoading` is a global dashboard loading state, meaning all run buttons are briefly disabled during any dashboard load operation.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Add action-specific configuration fields to the create/edit dialog: message text for telegram-message/whatsapp-message, reminder text + schedule for create_reminder, message for log action, payload for call_api. Without this, most action types create non-functional automations.
+Priority HIGH — Restore webhookUrl from existing automation's actionConfig when editing (currently lost on re-edit).
+Priority HIGH — Fix fmtNextRun to use the already-parsed triggerConfig object from the frontend Automation type rather than re-parsing a raw string that may not exist.
+Priority MED — Add a cron expression input (with human-readable preview) as an alternative to the integer interval field for time-based triggers.
+Priority MED — Add delete confirmation dialog (or undo toast) for automation deletion.
+Priority MED — Show a fixed "Add Automation" FAB on mobile so it remains accessible when scrolled down.
+Priority MED — Display the incoming webhook URL (e.g., /api/webhooks/:token) for webhook-trigger automations so users know what URL to point external services at.
+Priority LOW — Stabilize stats card layout by reserving space for it upfront (or including its data in the main automations list response).
+Priority LOW — Add pagination reset button or "Back to top" for the run log.
+Priority LOW — Increase action button touch targets from 40px to 44px (h-10 w-10 = 40px, falls short of WCAG 2.5.5 recommendation).
+
+=== SERVER ROUTES USED ===
+GET    /api/automations                      — list (Redis cached 30s, ?enabled filter)
+POST   /api/automations                      — create
+PATCH  /api/automations/:id                  — update (name, description, trigger, action, enabled, triggerConfig)
+DELETE /api/automations/:id                  — delete
+POST   /api/automations/:id/trigger          — manual trigger (real engine)
+POST   /api/automations/:id/test             — webhook test-fire (HTTP status, latency, body)
+POST   /api/automations/:id/dry-run          — simulate without executing
+POST   /api/automations/:id/duplicate        — create disabled copy
+GET    /api/automations/stats                — summary counts + recent runs (7d)
+GET    /api/automations/logs                 — all automation logs (paginated, status filter)
+GET    /api/automations/:id/logs             — per-automation logs (paginated)
+GET    /api/automations/dead-letters         — failed webhook delivery queue
+POST   /api/automations/dead-letters/:id/retry — retry dead-letter webhook

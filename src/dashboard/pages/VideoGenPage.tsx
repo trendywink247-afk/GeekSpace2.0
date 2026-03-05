@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Film, Sparkles, Send, Loader2, Trash2, Copy, Check,
   Clock, Bot, Wifi, WifiOff, Wand2, ChevronDown,
-  Download, X, Play, AlertCircle, RefreshCw
+  Download, X, Play, AlertCircle, RefreshCw, AlertTriangle
 } from 'lucide-react';
 import { videoService, picoService, agentService } from '@/services/api';
 import type { UserVideo, VideoModel, DirectorJob } from '@/services/api';
@@ -448,6 +448,10 @@ export function VideoGenPage() {
     return Math.max(20, Math.min(est, 120));
   })();
 
+  // Provider availability — all free video providers are currently blocked from Hostinger
+  const BROKEN_VIDEO_PROVIDERS = ['pollinations-video', 'seedance-lite', 'veo2', 'veo2-openrouter', 'pollinations', 'auto', ''];
+  const isProviderBroken = !selectedModel || BROKEN_VIDEO_PROVIDERS.some(p => selectedModel === p || selectedModel.includes(p));
+
   return (
     <div className="space-y-6">
       {/* Toast */}
@@ -627,6 +631,17 @@ export function VideoGenPage() {
         </div>
       </div>
 
+      {/* Provider unavailability warning */}
+      <div className="flex items-start gap-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
+        <AlertTriangle className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-yellow-300 font-medium text-sm">Video generation temporarily unavailable</p>
+          <p className="text-yellow-400/70 text-xs mt-1">
+            Free video providers are currently unreachable from this server. Video generation will be restored when a compatible provider becomes available. No credits will be deducted.
+          </p>
+        </div>
+      </div>
+
       {/* Generation Panel */}
       <div
         className="rounded-2xl border border-[#A78BFA]/20 p-6"
@@ -724,10 +739,15 @@ export function VideoGenPage() {
           </div>
           <button
             onClick={handleGenerate}
-            disabled={generating || !prompt.trim() || videoCount >= maxVideos}
+            disabled={generating || !prompt.trim() || videoCount >= maxVideos || isProviderBroken}
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#A78BFA] text-[#06060B] font-semibold text-sm hover:bg-[#A78BFA]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {generating ? (
+            {isProviderBroken ? (
+              <>
+                <AlertTriangle className="w-4 h-4" />
+                Provider Unavailable
+              </>
+            ) : generating ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Generating...

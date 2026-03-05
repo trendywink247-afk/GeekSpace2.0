@@ -1,0 +1,101 @@
+PAGE: Billing
+ROUTE: /dashboard/billing
+STATUS: WORKING (real subscription data + Stripe checkout integration; usage history is real data)
+
+=== DESKTOP VIEW ===
+- Full-width container, space-y-6, animate-in fade-in
+- Toast: fixed top-right, auto-dismisses after 3s (success/error styling)
+- Header: "Billing" h1 + subtitle + USD/INR currency toggle (min-h-[44px] buttons)
+- Premium Subscription card (Stripe): Basic (Rs 99/mo) + Pro (Rs 299/mo)
+  - Feature list per tier (image gen, voice calls, priority support)
+  - Upgrade buttons (purple) with spinner during checkout
+  - "Active plan" text when plan is already subscribed
+  - Lock explanation banner when no Stripe plan active
+- Current Plan card (credit-based system): shown when subscription exists
+  - Gradient header with CreditCard icon, plan name, status badge
+  - 3 stat boxes: Credits Remaining, Credits Used, Cycle Ends
+  - Progress bar for credit usage (green → amber → red at thresholds)
+- Available Plans grid: 5 plans (free/intro/monthly/halfyear/yearly)
+  - Desktop: grid up to 5 columns
+  - Each card: plan name, price (with slashed old price), agent slots, token budget, Kimi access checkmark
+  - Current plan highlighted with cyan border + "Your Current Plan" banner
+  - Free plan cards are dimmed (opacity-60) and "Free tier" button is disabled
+  - Day pass button shown for free users on free plan card ("Try Weebo for $1/day")
+- Plan Comparison Table: horizontal scroll table with feature rows
+- Usage History card: 30-day daily usage (MobileTable, date/calls/tokens/cost columns)
+- Credit History card: last 20 AI requests with token/cost breakdown
+
+=== MOBILE VIEW ===
+- Currency toggle: min-h-[44px] — correct
+- Stripe plan cards: 2-col grid on sm screens — adequate
+- Available Plans: horizontal snap-scroll carousel on mobile (overflow-x-auto, snap-x)
+  - min-w-[280px] per card, snap-center — good UX
+- Desktop grid (xl:grid-cols-5) is replaced with horizontal scroll on mobile — correct
+- Plan comparison table: overflow-x-auto with min-w-[500px] — scrollable on mobile
+- Usage history: MobileTable component handles column visibility
+- Credit history: same MobileTable
+- Upgrade buttons in plan cards: min-h-[44px] — correct
+
+=== FUNCTIONALITY CHECK ===
+- Load subscription (current plan, credits) — WORKING
+- Load plan definitions — WORKING
+- Load usage history (30 days) — WORKING (real DB data)
+- Load credit event history — WORKING (real DB data)
+- Load Stripe subscription status — WORKING (separate API call, falls back to null)
+- USD/INR currency toggle — WORKING (local state, affects price display)
+- Upgrade to plan (credit-based) — WORKING (POST /billing/upgrade)
+- Stripe checkout flow (Basic/Pro) — WORKING (POST /billing/checkout → redirects to Stripe)
+- Day pass activation — WORKING (POST /billing/daypass)
+- Credit usage progress bar — WORKING (real data)
+- Invoice/billing history — MISSING: no invoice PDF download, no Stripe invoice list
+- Downgrade/cancel subscription — MISSING: no downgrade or cancel button in UI
+- Proration handling — UNKNOWN: upgrade API exists but no UI indication of proration
+- Auto-renewal status — PARTIAL: shows "Renews [date]" for active Stripe plans,
+  but no explicit renewal toggle
+- Payment method management — MISSING: no way to update card from UI
+- Billing address — MISSING
+
+=== LOGIC ISSUES ===
+- Two parallel billing systems exist on one page: credit-based plans (intro/monthly/halfyear/yearly)
+  AND Stripe subscription plans (basic/pro). The relationship between them is unclear to users.
+  A user could be on both systems simultaneously, which may create confusion about what
+  they're actually paying for and what features each system unlocks.
+- The `handleUpgrade` function for credit-based plans silently calls `billingService.upgrade()`
+  with no payment collection — appears to be a free upgrade mechanism for internal plans.
+  This works only if these plans don't require payment (possibly credit-based internal system).
+- Stripe plans show INR prices in the UI header ("Rs 99/mo") but the toggle between USD/INR
+  affects the credit-based plan prices, not the Stripe prices. Stripe prices are hardcoded
+  in the component (₹99/$1.19 and ₹299/$3.59). Inconsistency.
+- `events` state uses type `UsageEvent[]` but is loaded from `billingService.getEvents()`
+  which returns up to 20 items (no pagination shown). UsageAnalyticsPage shows full
+  paginated events — BillingPage shows a truncated subset.
+- `currency` defaults to USD but is set to INR if `sub.currency === 'INR'` — this works
+  but the toggle state could diverge from server if user changes currency in another session.
+- `upgrading` state is per-plan-id but `checkingOut` is per plan-type string ('basic'/'pro').
+  Both spinners display during their respective operations — consistent but uses two separate
+  loading mechanisms for logically similar operations.
+- Plan comparison table uses `PLAN_DISPLAY` data which is hardcoded in the component.
+  If server adds new plans, the comparison table won't reflect them without code changes.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Clarify the relationship between credit plans and Stripe plans with
+  a clear explanation (e.g., "Credit plans for AI usage. Stripe plans unlock features.").
+Priority HIGH — Add downgrade/cancel button for both plan types.
+Priority HIGH — Add Stripe customer portal link so users can manage payment methods.
+Priority MED — Add invoice download/list from Stripe API.
+Priority MED — Stripe prices on the cards should respect the USD/INR toggle (currently only
+  credit-based plan prices update, Stripe prices are hardcoded).
+Priority MED — Add proration preview before upgrade (show "You'll be charged $X today").
+Priority LOW — Paginate credit history (currently shows last 20 events only).
+Priority LOW — Add renewal date to Stripe Active plan display (currently only shows if
+  expiresAt is set).
+
+=== SERVER ROUTES USED ===
+GET    /api/billing/plan           — current subscription (credits, plan, cycle dates)
+GET    /api/billing/plans          — available plan definitions
+GET    /api/billing/usage          — 30-day daily usage history
+GET    /api/billing/events         — last 20 credit usage events
+GET    /api/billing/stripe-status  — Stripe subscription status
+POST   /api/billing/upgrade        — upgrade to credit-based plan
+POST   /api/billing/daypass        — activate $1 day pass
+POST   /api/billing/checkout       — create Stripe checkout session

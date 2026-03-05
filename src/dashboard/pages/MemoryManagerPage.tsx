@@ -14,12 +14,31 @@ import {
   ChevronUp,
   RefreshCw,
   Download,
+  Plus,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { memoryService } from '@/services/api';
+import { notify } from '@/services/notifications';
 
 interface MemoryEntry {
   id: string;
@@ -46,6 +65,12 @@ export function MemoryManagerPage() {
   const [bulkClearing, setBulkClearing] = useState<string | null>(null);
   // 66.13: Confirmation state for bulk-clear modal
   const [bulkClearConfirm, setBulkClearConfirm] = useState<string | null>(null);
+  // Confirmation state for single-entry delete modal
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  // Add/Edit dialog state
+  const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<MemoryEntry | null>(null);
+  const [memoryForm, setMemoryForm] = useState({ key: '', value: '', category: 'general' });
 
   // Load memories from API
   useEffect(() => {
@@ -77,22 +102,24 @@ export function MemoryManagerPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this memory entry?')) return;
     try {
       await memoryService.delete(id);
+      setMemories(prev => prev.filter((m) => m.id !== id));
+      notify('Memory deleted', 'success');
     } catch {
-      // non-fatal — still remove from UI
+      notify('Failed to delete memory', 'error');
     }
-    setMemories(memories.filter((m) => m.id !== id));
   };
 
-  const handleDeleteByCategory = async (category: string) => {
-    if (!confirm(`Delete all memories in category "${category}"?`)) return;
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    const id = deleteConfirmId;
+    setDeleteConfirmId(null);
+    await handleDelete(id);
+  };
 
-    const toDelete = memories.filter((m) => m.category === category);
-    for (const memory of toDelete) {
-      await handleDelete(memory.id);
-    }
+  const handleDeleteByCategory = (category: string) => {
+    setBulkClearConfirm(category);
   };
 
   // 65.7: Bulk-clear by category via server endpoint
@@ -111,6 +138,35 @@ export function MemoryManagerPage() {
       setMemories(prev => prev.filter(m => m.category !== category));
     } catch { /* ignore */ } finally {
       setBulkClearing(null);
+    }
+  };
+
+  const handleSaveMemory = async () => {
+    if (!memoryForm.key.trim() || !memoryForm.value.trim()) return;
+    try {
+      if (editTarget) {
+        const { data } = await memoryService.update(editTarget.id, {
+          key: memoryForm.key,
+          value: memoryForm.value,
+          category: memoryForm.category,
+        });
+        setMemories(prev => prev.map(m => m.id === editTarget.id ? data : m));
+        notify('Memory updated', 'success');
+      } else {
+        const { data } = await memoryService.create({
+          key: memoryForm.key,
+          value: memoryForm.value,
+          category: memoryForm.category,
+          source: 'manual',
+        });
+        setMemories(prev => [data, ...prev]);
+        notify('Memory added', 'success');
+      }
+      setMemoryDialogOpen(false);
+      setEditTarget(null);
+      setMemoryForm({ key: '', value: '', category: 'general' });
+    } catch {
+      notify(editTarget ? 'Failed to update memory' : 'Failed to add memory', 'error');
     }
   };
 
@@ -198,6 +254,17 @@ export function MemoryManagerPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditTarget(null);
+              setMemoryForm({ key: '', value: '', category: 'general' });
+              setMemoryDialogOpen(true);
+            }}
+            className="bg-[#00F0FF] hover:bg-[#00D4B0] text-black"
+          >
+            <Plus className="h-4 w-4 mr-1" /> Add Memory
+          </Button>
           <Button variant="outline" onClick={handleExport} className="border-[#00F0FF]/30">
             <Download className="w-4 h-4 mr-2" />
             Export
@@ -425,7 +492,18 @@ export function MemoryManagerPage() {
                           )}
                         </button>
                         <button
-                          onClick={() => handleDelete(memory.id)}
+                          onClick={() => {
+                            setEditTarget(memory);
+                            setMemoryForm({ key: memory.key, value: memory.value, category: memory.category ?? 'general' });
+                            setMemoryDialogOpen(true);
+                          }}
+                          className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#00F0FF] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                          title="Edit memory"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirmId(memory.id)}
                           className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FF6161] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -487,6 +565,97 @@ export function MemoryManagerPage() {
           </div>
         </div>
       )}
+
+      {/* Single-entry delete confirmation modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0D0D1A] border border-[#FF6161]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FF6161]/10 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-[#FF6161]" />
+              </div>
+              <h3 className="text-base font-semibold text-[#F4F6FF]">Delete this memory entry?</h3>
+            </div>
+            <p className="text-sm text-[#9CA3AF] mb-5">This memory will be permanently removed from the server.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-2 px-4 rounded-xl border border-[#2A2A3A] text-sm text-[#9CA3AF] hover:bg-[#1A1A2E] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void confirmDelete()}
+                className="flex-1 py-2 px-4 rounded-xl bg-[#FF6161]/15 border border-[#FF6161]/30 text-sm text-[#FF6161] hover:bg-[#FF6161]/25 transition-colors font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Memory Dialog */}
+      <Dialog
+        open={memoryDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMemoryDialogOpen(false);
+            setEditTarget(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editTarget ? 'Edit Memory' : 'Add Memory'}</DialogTitle>
+            <DialogDescription>
+              {editTarget
+                ? 'Update this memory entry for your agent.'
+                : 'Add something for your agent to remember.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder="Memory key (e.g. preferred_language)"
+              value={memoryForm.key}
+              onChange={(e) => setMemoryForm((p) => ({ ...p, key: e.target.value }))}
+            />
+            <Textarea
+              placeholder="Memory value — what should your agent remember?"
+              value={memoryForm.value}
+              onChange={(e) => setMemoryForm((p) => ({ ...p, value: e.target.value }))}
+              rows={4}
+              className="resize-none"
+            />
+            <Select
+              value={memoryForm.category}
+              onValueChange={(val) => setMemoryForm((p) => ({ ...p, category: val }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="preference">Preference</SelectItem>
+                <SelectItem value="fact">Fact</SelectItem>
+                <SelectItem value="task">Task</SelectItem>
+                <SelectItem value="context">Context</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setMemoryDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void handleSaveMemory()}
+              disabled={!memoryForm.key.trim() || !memoryForm.value.trim()}
+            >
+              {editTarget ? 'Save Changes' : 'Add Memory'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

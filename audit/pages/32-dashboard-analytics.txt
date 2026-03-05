@@ -1,0 +1,85 @@
+PAGE: Personal Analytics
+ROUTE: /dashboard/analytics
+STATUS: WORKING (real data from backend analytics endpoints)
+
+=== DESKTOP VIEW ===
+- Max-width 5xl container, p-4 md:p-6, space-y-8
+- Header: "Personal Analytics" h1 + subtitle + Refresh button (top-right, min-h-[44px])
+- Error banner: red box shown on API failure
+- Activity Heatmap section: 365-day GitHub-style contribution heatmap
+  - Cells: 12x12px boxes in a week-column layout, color-coded by intensity (0-4 levels)
+  - Tooltip: fixed-position hover tooltip showing date + action count
+  - Legend bar at bottom (Less → More gradient)
+  - Day-of-week labels on left side (M/W/F only shown)
+- "This Week" section (only shown when weekly summary available):
+  - 5 stat cards in responsive grid (2/3/5 cols at sm/md/lg)
+  - Focus Hours, Task Rate, Habits, Agent Chats, Notes
+  - Agent Usage bar chart (30-day horizontal bars, color per agent)
+  - AI Insight text in amber-tinted box with lightbulb emoji
+  - Most active day badge + longest habit streak badge
+- 30-Day Trends section (only shown when 30+ snapshots available):
+  - 2 sparkline charts: Tasks Completed + Focus Minutes (custom SVG polyline)
+  - Total shown in header of each chart
+- Top Topics section: tag cloud of memory/notes topics with occurrence counts
+- Footer: "Weekly report sent every Sunday at 7 PM via Telegram"
+
+=== MOBILE VIEW ===
+- Responsive grid collapses: stat cards 2-col on mobile, filter chips scroll
+- Heatmap is wrapped in overflow-x-auto (scrollable horizontally on narrow screens)
+  - Works correctly on mobile; tooltip uses fixed positioning (may be clipped on small screens)
+- Sparklines use viewBox with preserveAspectRatio="none" — scales OK on mobile
+- Agent usage bars render inline — adequate on mobile
+- Refresh button: min-h-[44px] — correct touch target
+
+=== FUNCTIONALITY CHECK ===
+- Activity heatmap (365 days) — WORKING (GET analytics/heatmap)
+- Daily snapshots (30-day trend data) — WORKING (GET analytics/snapshot)
+- Weekly summary (focus hours, task rate, AI insight, habit streak) — WORKING (GET analytics/weekly)
+- Agent usage breakdown (30-day bar chart) — WORKING (GET analytics/agents)
+- Top topics tag cloud — WORKING (GET analytics/topics)
+- Refresh button — WORKING (re-fetches all 5 endpoints)
+- Time range selector — MISSING: no 7d/30d/90d selector; data range is fixed
+  (snapshots last 30, heatmap last 365, weekly is current week)
+- Export data — MISSING
+- Per-metric chart drilldown — MISSING
+- Habit streak details — PARTIAL (shows name + streak count but no day-by-day breakdown)
+- Chat usage per agent — WORKING (bar chart)
+- Focus minutes — WORKING (derived from snapshots)
+- Task completion rate — WORKING (from weekly summary)
+
+=== LOGIC ISSUES ===
+- Heatmap tooltip uses fixed CSS positioning based on mouse event clientX/Y.
+  On mobile devices this tooltip will never trigger (no hover). On desktop, if the user
+  scrolls horizontally in the overflow-x-auto container, tooltip position will be offset.
+- The `firstDay` logic for the heatmap grid uses `.getUTCDay()` but the points array
+  appears to contain date strings in local time (no timezone info in API response
+  documented). If server returns UTC dates and client is in a different timezone,
+  the first cell offset may be wrong.
+- Weekly summary stat cards mix 7-day computed totals (from snapshots) and weekly summary
+  data — Focus Hours comes from weekly.totalFocusHours, but habits/agent calls/notes come
+  from computed last7 snapshots. Source inconsistency could cause minor discrepancies.
+- The 'totalHabits', 'totalNotes' etc. are computed from snapshots.slice(-7) while
+  agentCalls uses the same slice — but the weekly summary from the server may cover a
+  different week boundary (Mon-Sun vs rolling 7 days). Shown together, could mislead.
+- No empty state for the case where all API calls fail but `error` is null (shouldn't
+  happen but defensive coding is missing for individual section failures).
+- API paths use relative paths without leading slash: `analytics/snapshot` vs
+  `/analytics/snapshot` — works if axios baseURL ends with `/api/` but fragile.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Add time range selector (7d / 30d / 90d) for snapshot trend charts.
+Priority MED — Fix heatmap tooltip to work on mobile (use click/touch instead of hover,
+  or a persistent label that shows on tap).
+Priority MED — Add export to CSV/JSON button for personal analytics data.
+Priority MED — Clarify data source labels in stat cards (e.g., "Focus Hours (this week)"
+  vs "from weekly summary") to prevent user confusion about metric definitions.
+Priority LOW — Add "No data yet" empty state sections per-card (instead of hiding
+  entire sections, show skeleton or placeholder).
+Priority LOW — Add drilldown capability (click a day on heatmap to see what happened).
+
+=== SERVER ROUTES USED ===
+GET    /api/analytics/snapshot     — daily snapshots array (last 30 days)
+GET    /api/analytics/weekly       — current week summary (focus, tasks, habits, AI insight)
+GET    /api/analytics/heatmap      — 365-day activity heatmap intensity data
+GET    /api/analytics/agents       — per-agent usage counts (30 days)
+GET    /api/analytics/topics       — top memory/notes topics with counts

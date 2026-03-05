@@ -1,0 +1,105 @@
+PAGE: Focus & Habits
+ROUTE: /dashboard/focus
+STATUS: WORKING
+
+=== DESKTOP VIEW ===
+- max-w-2xl mx-auto container with p-4 and space-y-6
+- Header: Target icon (cyan) + "Focus Mode" title (2xl bold), Focus Mode toggle button (top-right, ghost sm with Bell/BellOff icon and "Focus ON" / "Focus OFF" text)
+- Deferred messages banner (shown when deferredCount > 0): blue-bordered card showing count + "View now" button
+- Pomodoro Timer card:
+  - CardTitle: Timer icon (cyan) + "Pomodoro Timer"
+  - When NO active session: gray instruction text + "Start Focus" button (cyan background, Play icon)
+  - When session ACTIVE:
+    - TimerRing SVG: 160x160 viewBox, 70px radius circle, cyan progress arc (CSS transition stroke-dashoffset 1s linear)
+    - Center: remaining time (MM:SS) in 3xl cyan monospace font + "remaining" label; or elapsed time + "elapsed" if no duration
+    - Goal text below ring (if set)
+    - "End Session" full-width red button
+- Daily Habits card:
+  - CardTitle: Flame icon (orange) + "Daily Habits"
+  - Add button (Plus icon, cyan ghost, top-right of header, min-h-[36px])
+  - Empty state: instruction text
+  - Habit list: each habit row (bg-[#1a1a2e] rounded):
+    - Emoji icon (large text)
+    - Habit name + streak count (Flame icon + "N day streak")
+    - Log today button: CheckCircle (44px×44px) — green when logged_today, muted otherwise; disabled when already logged
+    - Delete button: inline "x" text (44px×44px) in red
+- Start Focus modal (Dialog): goal input (text), duration Select (25/45/60/90 min), Cancel + Start buttons
+- Add Habit modal (Dialog): habit name input, icon picker grid (10 emoji options), Cancel + Add buttons
+
+=== MOBILE VIEW ===
+- max-w-2xl constrains desktop; full-width on mobile with p-4 padding
+- TimerRing is 192px × 192px (w-48 h-48 mx-auto) — centered and readable on mobile
+- Habit log button: min-h-[44px] min-w-[44px] — compliant touch target
+- Delete habit button: min-h-[44px] min-w-[44px] — compliant touch target
+- Dialog modal: max-w-[calc(100%-2rem)] on mobile — prevents edge overflow
+- Focus Mode toggle button: ghost sm variant — may be slightly small on mobile (no explicit min-h)
+- "End Session" button: full-width py-2 — good touch target
+- Add Habit button: min-h-[36px] — slightly below the 44px recommendation
+- Start Focus button: standard Button, no explicit min-h — likely ~36px
+- No horizontal scroll issues; layout is single-column throughout
+- No FAB; page layout is self-contained with inline action buttons
+
+=== FUNCTIONALITY CHECK ===
+Start focus session (with goal + duration) — WORKING (POST /api/focus/start {goal, durationMin}; session stored in DB)
+Live countdown timer — WORKING (useTimer hook: setInterval every 1s; shows remaining time as MM:SS)
+Timer ring progress animation — WORKING (SVG strokeDashoffset with 1s linear CSS transition)
+End focus session — WORKING (POST /api/focus/end {completed: true}; session closed in DB)
+Active session persistence across reload — WORKING (GET /api/focus/active on mount; restores session state)
+Focus mode toggle (DND mode) — WORKING (PATCH /api/focus/settings {focus_mode_active}; toggles DND)
+Deferred messages count — WORKING (GET /api/focus/deferred; shows count if >0)
+View deferred messages — PARTIAL (clicking "View now" only clears the count and re-loads; does not navigate to a messages/inbox view)
+Add habit — WORKING (POST /api/habits {name, icon}; dialog form)
+Log habit (mark done today) — WORKING (POST /api/habits/:id/log; updates streak; button disabled after logging)
+Delete habit — WORKING (DELETE /api/habits/:id)
+Streak display — WORKING (current_streak shown below habit name; loaded from server on each action)
+logged_today state — WORKING (server returns logged_today boolean; button grayed/disabled correctly)
+Session history — MISSING from UI (GET /api/focus/history endpoint exists on server but is not called or displayed)
+Focus summary/stats — MISSING from UI (GET /api/focus/summary endpoint exists on server but not displayed)
+Habit stats (longest streak, completion rate) — MISSING from UI (GET /api/habits endpoint returns longest_streak and description but UI only shows current_streak)
+Habit frequency/schedule — MISSING from UI (POST /api/habits accepts frequency and targetTime but the Add Habit form has no fields for these)
+Charts/visualizations — MISSING (no streak history chart, no completion heatmap, no session duration trend)
+Focus session notes — MISSING (POST /focus/start accepts goal string but no notes or reflection field)
+DND start/end time configuration — MISSING from UI (PATCH /focus/settings accepts dnd_start, dnd_end, urgent_bypass, batch_interval_min but UI only exposes focus_mode_active toggle)
+Notification batch interval setting — MISSING from UI
+Data persistence to DB — WORKING (focus_sessions table via focus.ts service; habits table via habits.ts service)
+
+=== LOGIC ISSUES ===
+1. "View now" for deferred messages calls `setDeferredCount(0)` and `void load()` — this clears the visual indicator but doesn't actually navigate the user to see the held messages. The deferred messages remain in the DB buffer and the user has no way to read them from the UI; they are presumably delivered when focus mode ends.
+2. `useTimer` uses `Date.now()` on every tick to compute elapsed time from `session.started_at`. If the user's device clock drifts or the browser tab is backgrounded/throttled, the elapsed/remaining calculation may become slightly inaccurate. The session started_at timestamp is an absolute Unix ms, so accuracy should be fine in practice, but the 1-second interval may drift on throttled background tabs (requestAnimationFrame-based approach would be more reliable).
+3. The timer countdown shows remaining time only if the session has a `duration_min` set. If a user starts a session without a duration (open-ended), the timer shows elapsed time with "elapsed" label — this is correct behavior but not obvious from the UI since the duration selector always defaults to 25 min in the modal.
+4. `handleEndFocus` posts `{completed: true}` unconditionally — there is no way to end a session as "abandoned/incomplete" from the UI. This inflates the completion stats.
+5. All API calls in `handleStartFocus`, `handleEndFocus`, `handleLogHabit`, `handleAddHabit`, `handleDeleteHabit`, `toggleFocusMode` silently swallow errors in empty `catch {}` blocks — the user gets no feedback on failure.
+6. The Add Habit modal has no `description` or `frequency` fields despite the server accepting them — these are silently ignored, leaving all habits with null description and null frequency.
+7. Delete habit button uses inline "x" text instead of an icon (e.g., Trash2) — inconsistent with the rest of the design system and visually less clear.
+8. The page `load()` function is called on mount (via useEffect) and after every action — it fires 4 parallel API calls (active session, habits, notification settings, deferred count). If the server is slow, this can create 4 concurrent loading states with no unified loading indicator.
+9. No confirmation before deleting a habit — streak data and log history are lost immediately.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Surface all empty catch blocks: show at minimum a brief error toast when start/end focus, log habit, add habit, or delete habit fails. Silent failures are confusing.
+Priority HIGH — Add confirmation dialog before deleting a habit (to prevent accidental streak loss).
+Priority HIGH — Wire the "View now" button to actually show deferred messages — either navigate to an Inbox/Notifications page or open a modal listing the held messages.
+Priority MED — Add a Focus Summary panel showing total focus time this week, average session length, and completion rate, using the existing GET /api/focus/summary endpoint.
+Priority MED — Add a Habit History panel or streak heatmap (weekly calendar showing logged vs missed days), using data from the habit log table.
+Priority MED — Add frequency and target time fields to the Add Habit modal, passing them to the POST /api/habits endpoint.
+Priority MED — Replace the inline "x" delete button with a Trash2 icon button consistent with the rest of the UI.
+Priority MED — Add DND schedule configuration fields (dnd_start, dnd_end, urgent_bypass, batch_interval_min) to an expandable settings section on this page.
+Priority LOW — Replace the 1-second setInterval in useTimer with a requestAnimationFrame-based approach or at least compensate for drift by recalculating from the absolute start time (already done) rather than incrementing.
+Priority LOW — Add an "End session as incomplete" option (e.g., small "abandon" link) alongside the "End Session" button for honest session tracking.
+Priority LOW — Display the session's elapsed time even after the session ends (in a "Last session" summary row) before it scrolls out of the recent history.
+
+=== SERVER ROUTES USED ===
+GET    /api/focus/active           — get active focus session for user
+POST   /api/focus/start            — start new focus session {goal, durationMin}
+POST   /api/focus/end              — end active session {completed}
+GET    /api/focus/history          — session history (NOT used in UI — endpoint exists but page doesn't call it)
+GET    /api/focus/summary          — aggregate stats (NOT used in UI — endpoint exists but page doesn't call it)
+GET    /api/focus/deferred         — count of messages held during focus mode
+GET    /api/focus/settings         — notification settings (focus_mode_active, dnd_start, dnd_end, etc.)
+PATCH  /api/focus/settings         — update notification settings
+
+GET    /api/habits                 — list habits with streak + logged_today
+POST   /api/habits                 — create habit {name, icon, description, frequency, targetTime}
+DELETE /api/habits/:id             — delete habit
+POST   /api/habits/:id/log         — log habit as done today {note?}
+
+Note: GET /api/habits/:id/stats (habit stats endpoint) exists in the router but is not called by the UI. The habitsRouter is mounted separately from focusRouter in server/src/routes/focus.ts.

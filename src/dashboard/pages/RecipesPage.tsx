@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
   Sunrise,
@@ -15,6 +16,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { recipeService } from '@/services/api';
+import { useDashboardStore } from '@/stores/dashboardStore';
 
 // ----- Icon map ------------------------------------------------
 const iconMap: Record<string, typeof Sunrise> = {
@@ -53,6 +55,8 @@ interface Toast {
 
 // ----- Component -----------------------------------------------
 export function RecipesPage() {
+  const navigate = useNavigate();
+  const { integrations } = useDashboardStore();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -81,6 +85,18 @@ export function RecipesPage() {
   }, [fetchRecipes]);
 
   const handleInstall = async (id: string) => {
+    // Pre-check: if this recipe requires Telegram, verify it's connected
+    const recipe = recipes.find((r) => r.id === id);
+    if (recipe?.requiredIntegrations?.includes('telegram')) {
+      const telegramConnected = integrations.some(
+        (i) => i.name?.toLowerCase().includes('telegram') && i.status === 'connected'
+      );
+      if (!telegramConnected) {
+        showToast('Please connect Telegram first to use this recipe', 'error');
+        setTimeout(() => navigate('/dashboard/connections'), 1500);
+        return;
+      }
+    }
     try {
       setActionLoading(id);
       await recipeService.install(id);

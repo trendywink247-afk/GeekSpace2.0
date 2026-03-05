@@ -142,7 +142,7 @@ export function GmailPage() {
       <Card className="bg-[#0D0D1A] border-white/10">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-[#F4F6FF] text-base">
-            <Mail className="w-ztext-[#00F0FF]" />
+            <Mail className="w-5 h-5 text-[#00F0FF]" />
             Gmail Integration
           </CardTitle>
         </CardHeader>

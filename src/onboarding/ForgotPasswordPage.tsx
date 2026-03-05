@@ -41,7 +41,7 @@ export function ForgotPasswordPage() {
 
     try {
       const res = await authService.requestPasswordReset(email.trim(), 'auto');
-      if (!res.data.success && res.data.error) {
+      if (res.data.error) {
         setError(res.data.error);
         return;
       }

@@ -37,6 +37,7 @@ export function OnboardingWizard() {
   const [isSaving, setIsSaving] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [estimatedTime, setEstimatedTime] = useState(2);
+  const [agentApiKey, setAgentApiKey] = useState('');
 
   // Pre-populate profile fields from the auth store user
   useEffect(() => {
@@ -114,7 +115,7 @@ export function OnboardingWizard() {
       case 1:
         return { bio: onboarding.profile.bio, headline: onboarding.profile.headline, tags: onboarding.profile.tags };
       case 2:
-        return { personality: onboarding.agentPreferences.personality, agentMode: onboarding.agentPreferences.agentMode };
+        return { personality: onboarding.agentPreferences.personality, agentMode: onboarding.agentPreferences.agentMode, apiKey: agentApiKey || undefined };
       case 3:
         return { skills: onboarding.portfolio.skills, headline: onboarding.portfolio.headline, about: onboarding.portfolio.about };
       case 4:
@@ -236,8 +237,10 @@ export function OnboardingWizard() {
           <AgentStep
             personality={onboarding.agentPreferences.personality}
             agentMode={onboarding.agentPreferences.agentMode}
+            apiKey={agentApiKey}
             onPersonalityChange={(personality) => updateOnboarding({ agentPreferences: { ...onboarding.agentPreferences, personality } })}
             onAgentModeChange={(agentMode: AgentMode) => updateOnboarding({ agentPreferences: { ...onboarding.agentPreferences, agentMode } })}
+            onApiKeyChange={setAgentApiKey}
           />
         )}
         {step === 3 && (

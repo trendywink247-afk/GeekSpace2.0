@@ -2,7 +2,7 @@
 // InvitePage — Phase 83 (83.6)
 //
 // Public invite registration page. URL: /invite?code=XXXX
-// Pre-fills invite code from query param. On success → /dashboard
+// Pre-fills invite code from query param. On success → /onboarding
 // ============================================================
 
 import { useState } from 'react';
@@ -59,7 +59,7 @@ export function InvitePage() {
       const { data } = await authService.signup(email, password, username, name, inviteCode.trim().toUpperCase());
       localStorage.setItem('gs_token', data.token);
       setUser(data.user);
-      navigate('/dashboard', { replace: true });
+      navigate('/onboarding', { replace: true });
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } } };
       setError(axiosErr?.response?.data?.error || 'Registration failed. Please try again.');

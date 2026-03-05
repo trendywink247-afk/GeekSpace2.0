@@ -441,6 +441,9 @@ export interface Automation {
   createdAt: string;
   // 62.6: trigger config (interval_minutes for time-based automations)
   triggerConfig?: Record<string, unknown>;
+  // Action configuration payload (message text, webhookUrl, reminder text, etc.)
+  actionConfig?: Record<string, string>;
+  action_config?: string; // raw JSON string as returned by API before parsing
   // Snake_case fields as returned directly from the API (backend does not transform keys)
   run_count?: number;
   last_run?: string | null;

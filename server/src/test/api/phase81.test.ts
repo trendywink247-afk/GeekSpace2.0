@@ -205,7 +205,9 @@ describe('Phase 81 — Image Generation Pipeline', () => {
     it('ImageGalleryPage component exists', () => {
       const src = readFile('src/dashboard/pages/ImageGalleryPage.tsx');
       expect(src).toContain('ImageGalleryPage');
-      expect(src).toContain('imageAsyncService.gallery');
+      // B6: unified to use imageService.list (GET /api/images) instead of the
+      // old /image/gallery endpoint so generated images appear in the gallery
+      expect(src).toContain('imageService');
     });
 
     it('gallery route is registered in DashboardApp', () => {

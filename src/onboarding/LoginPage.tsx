@@ -327,8 +327,8 @@ export function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled
-                  className="border-[#00F0FF]/15 h-12 opacity-50 text-[#6B7280]"
+                  onClick={() => { window.location.href = '/auth/github'; }}
+                  className="border-[#00F0FF]/15 h-12 text-[#E8E8F0] hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5"
                 >
                   <Github className="w-4 h-4 mr-2" />
                   GitHub
@@ -336,14 +336,13 @@ export function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled
-                  className="border-[#00F0FF]/15 h-12 opacity-50 text-[#6B7280]"
+                  onClick={() => { window.location.href = '/auth/google'; }}
+                  className="border-[#00F0FF]/15 h-12 text-[#E8E8F0] hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5"
                 >
                   <Chrome className="w-4 h-4 mr-2" />
                   Google
                 </Button>
               </div>
-              <p className="text-[10px] text-center text-[#6B7280]/50">OAuth coming soon</p>
             </div>
           </form>
 

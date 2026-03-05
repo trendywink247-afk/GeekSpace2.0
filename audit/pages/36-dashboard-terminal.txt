@@ -1,0 +1,106 @@
+PAGE: Terminal
+ROUTE: /dashboard/terminal
+STATUS: WORKING (simulated commands + real AI agent call for 'ai' prefix; real reminder add)
+
+=== DESKTOP VIEW ===
+- Full-height layout: flex flex-col, h-[calc(100dvh-220px)] md:h-[calc(100vh-140px)]
+- Header: "Terminal" title + "AI Ready" badge + Clear button (top row, sm:flex-row)
+- Terminal window: mock macOS window chrome (red/amber/green dots, title bar)
+  - Scrollable output area (overflow-y-auto, font-mono)
+  - Each command block: green prompt + tilde + input text, followed by output text
+  - Error output in red, normal output in white
+  - Copy button appears on hover per output block (top-right, opacity-0 group-hover:opacity-100)
+  - Typing cursor in last input line
+- Input field: at bottom of scroll area, transparent bg, monospace font
+- Quick command buttons below terminal: clickable shortcuts for common commands
+  - 8 buttons: gs me, gs reminders list, gs schedule today, gs credits,
+    gs usage month, gs status, ai "...", help
+  - AI button styled differently (cyan background)
+
+=== MOBILE VIEW ===
+- Height: h-[calc(100dvh-220px)] on mobile — should leave room for dashboard nav
+- Flex layout collapses header to stacked rows on small screens (flex-col sm:flex-row)
+- Input field at bottom of scrollable area — OK for mobile keyboard
+  - When on-screen keyboard appears, the terminal height is recalculated via dvh units,
+    so the input should remain visible above keyboard
+- Quick command buttons: min-h-[44px] on all buttons — correct touch targets
+- Copy button (opacity-0, hover-only): NOT accessible on touch devices (no hover state).
+  Copy functionality is desktop-only.
+- Tab completion: not implemented
+- Command history: arrow up/down implemented via keyboard events (works on physical keyboards,
+  not relevant on mobile virtual keyboards which override arrow keys)
+
+=== FUNCTIONALITY CHECK ===
+Simulated commands (local data from store):
+- gs me — WORKING (shows profile from authStore)
+- gs reminders list — WORKING (shows from dashboardStore reminders)
+- gs schedule today — WORKING (shows next 5 active reminders)
+- gs schedule tomorrow — PARTIAL (hardcoded "No items scheduled yet" — always static)
+- gs portfolio — WORKING (shows URL)
+- gs status — WORKING (shows agent status from dashboardStore)
+- gs credits — WORKING (shows credits + usage from store)
+- gs usage today — PARTIAL (divides monthly usage by 30 — approximation, not real daily data)
+- gs usage month — WORKING (shows monthly totals from dashboardStore.usage)
+- gs integrations — WORKING (shows from dashboardStore.integrations)
+- gs automations — WORKING (shows from dashboardStore.automations)
+- gs deploy — WORKING (simulated deploy output with fake deploy ID, not a real deploy)
+- help — WORKING
+- clear — WORKING (clears history via terminalStore)
+
+Real API calls:
+- ai "prompt" — WORKING (calls POST /api/agent/chat with channel:'terminal')
+  - Shows "Thinking..." placeholder during loading
+  - Shows provider name and latency in response
+- gs reminders add "text" — WORKING (calls dashboardStore.addReminder → real API)
+
+Command history navigation:
+- Arrow Up/Down — WORKING (navigates local history array)
+
+Tab completion — MISSING
+- Unknown commands — WORKING (shows "Command not found" in red)
+- Shell execution (bash/system commands) — MISSING (by design — this is a simulated terminal)
+- Safety guards — N/A (no real shell execution, all safe)
+
+Command persistence:
+- History is stored in terminalStore (Zustand) — survives page navigation within session
+- Does NOT persist across browser refresh (no localStorage/server persistence)
+
+=== LOGIC ISSUES ===
+- `gs usage today` divides monthly totals by 30 to estimate daily usage. This is
+  mathematically wrong and misleading (actual today's usage requires a different API call).
+  Shows as "usage today" but is actually "average daily usage this month".
+- `gs deploy` outputs fake success text with a time-based deploy ID. Users could
+  mistake this for a real deployment trigger. There is no actual deploy happening.
+- `gs schedule tomorrow` is hardcoded — always shows "No items scheduled yet" regardless
+  of actual tomorrow's reminders. Should query the reminders store filtered by date.
+- Commands are matched with `trimmedCmd = cmd.trim().toLowerCase()` — case-insensitive
+  matching is fine, but the user's original case is shown in the input echo, creating
+  a visual mismatch (you type "GS ME", it shows "GS ME" in prompt but matches "gs me").
+- `getResponses()` is called inside the event handler every keystroke. It captures
+  store values via closure correctly since it calls `useDashboardStore.getState()` for
+  integrations/automations, but other values (user, reminders, usage) are captured as
+  React state — these will be stale if the store updates while the terminal is open.
+  This means `gs credits` could show old credit balance if billing updated in background.
+- `addCommand` from terminalStore is called twice for AI commands (once with "Thinking..."
+  placeholder, once with actual response) — both entries get stored. The "Thinking..."
+  entry persists in history with the input, and the response is a separate entry.
+  This creates double entries for AI commands in the history.
+- Copy button is hover-only — inaccessible on mobile.
+- No max history length — history array grows unboundedly in the store.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Fix `gs usage today` to show real today's data (query usage API for today,
+  not divide monthly by 30).
+Priority HIGH — Add visual warning on `gs deploy` that no real deployment is occurring,
+  or wire it to an actual deploy trigger.
+Priority MED — Fix `gs schedule tomorrow` to query real reminder data filtered by date.
+Priority MED — Add tap-accessible copy button on mobile (always visible or accessible
+  via long-press).
+Priority MED — Add max history length to prevent unbounded growth.
+Priority LOW — Add basic tab completion for `gs ` prefix commands.
+Priority LOW — Deduplicate the "Thinking..." + response double-entry pattern for AI commands.
+
+=== SERVER ROUTES USED ===
+POST   /api/agent/chat             — AI agent call (for 'ai "prompt"' commands)
+POST   /api/reminders              — add reminder (via dashboardStore.addReminder)
+(All other commands use local store data only — no additional API calls)

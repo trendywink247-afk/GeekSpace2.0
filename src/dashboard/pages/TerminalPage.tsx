@@ -367,7 +367,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
                   </pre>
                   <button
                     onClick={() => copyToClipboard(cmd.output, cmd.id)}
-                    className="absolute top-0 right-0 p-1.5 rounded bg-[#06060B] border border-[#00F0FF]/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-0 right-0 p-1.5 rounded bg-[#06060B] border border-[#00F0FF]/20 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                   >
                     {copiedId === cmd.id ? (
                       <Check className="w-3 h-3 text-[#00FF88]" />

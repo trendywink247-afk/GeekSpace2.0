@@ -65,10 +65,11 @@ describe('generateImage fallback chain', () => {
   it('returns failure when both Pollinations and HuggingFace fail', async () => {
     // Pollinations HEAD returns 530
     mockFetch.mockResolvedValueOnce({ ok: false, status: 530 });
-    // HuggingFace POST returns 503
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 503 });
+    // HuggingFace POST returns 503 (model warming up / cold start)
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({}) });
     const result = await generateImage('a red cat');
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/unavailable/i);
+    // 503 triggers the "warming up" message (model cold-start on free HF tier)
+    expect(result.error).toMatch(/warming up/i);
   });
 });

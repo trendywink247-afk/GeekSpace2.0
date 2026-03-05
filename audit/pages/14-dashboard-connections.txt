@@ -1,0 +1,139 @@
+PAGE: Connections
+ROUTE: /dashboard/connections
+STATUS: PARTIAL
+
+=== DESKTOP VIEW ===
+Full-width layout with space-y-6 between sections.
+
+Header:
+  - Page title "Connections" (Syne font, 3xl/4xl)
+  - Subtitle showing "{connectedCount} of {integrations.length} services connected"
+  - "End-to-end encrypted" badge (green border)
+  - Invite button (purple) — generates invite link via POST /integrations/invite
+  - "Add New" button (cyan) — scrolls to integration-grid anchor
+
+Stats bar: 4 stat cards in 2/4-col grid: Connected count, Requests Today, Avg Health %, Secure (hardcoded 100%).
+
+Invite link card: appears inline (below stats) when inviteUrl is generated. Shows URL in truncated monospace, copy button (turns green on copy with clipboard). X to dismiss.
+
+Telegram dialog: inline card (not a modal) overlays list when telegramDialog=true. Steps: generating spinner → open-bot step with deep link → success checkmark. Error step shows message.
+  - Telegram dialog is shown inline as a Card, not a modal overlay — can be scrolled past on mobile.
+
+Email dialog: inline Card with email input + "Enable Notifications" button. Shows checkmark on success. X to dismiss.
+
+Status filter chips: All / Connected / Disconnected, persisted to URL ?status= param.
+
+Integration grid: md:grid-cols-2 gap-4. Each card shows:
+  - Icon (colored circle bg), name, last sync time, status (Wifi icon + text), health dot (checking/healthy/unhealthy)
+  - Ping latency badge when pinged
+  - Connect/disconnect toggle (Switch for connected, Button for disconnected, "Coming Soon" badge for WhatsApp)
+  - Expanded section (always expanded on desktop, tap-to-expand on mobile): description, health progress bar, ping button, feature badges, last synced, request count
+  - Telegram card additionally shows: @username and "Last message: Xm ago" when connected
+
+Integration event log: appears at bottom when integrationEvents.length > 0 (last 5 of 10 fetched). Shows action, details, time-ago.
+
+Privacy note card at bottom (static).
+
+Empty state: shown when filter returns no integrations.
+
+=== MOBILE VIEW ===
+useMobileDetect() hook determines isMobile. On mobile:
+  - Cards use p-4 (desktop p-6)
+  - Telegram/Email dialogs use p-4
+  - Connect button is size="default" (larger touch target) vs size="sm" on desktop
+  - Card content is collapsed by default (isExpanded = !isMobile || expandedId === connection.id). Tapping the header row toggles expansion.
+  - Cards collapse to show only: icon, name, last sync time, status icon, and connect/disconnect control.
+  - Header row is cursor-pointer on mobile.
+
+Status filter chips are horizontally scrollable on overflow (flex, no overflow-x:auto wrapper — may clip on small screens).
+
+Grid: md:grid-cols-2, so single column on mobile. All cards visible without horizontal scroll.
+
+Bottom tab bar: pb-24 on mobile from DashboardApp — Connections page content is padded correctly.
+
+Invite link card has truncated URL (truncate class) — readable on mobile.
+
+=== FUNCTIONALITY CHECK ===
+Telegram: real bot link flow — WORKING (POST /integrations/telegram/link → deepLink → poll /integrations/telegram/status with exponential backoff). Already-linked detection works (linked: true → close dialog immediately).
+Telegram disconnect — WORKING (DELETE /integrations/telegram/link via integrationService.unlinkTelegram(), removes channel_links row)
+Telegram username + last ping display — WORKING (GET /integrations/telegram/status on mount if telegram is connected)
+WhatsApp "Coming Soon" badge — WORKING (type === 'whatsapp' shows badge instead of Connect button)
+Email: address input form — WORKING (dialog shows input, PATCH /users/notification-email)
+Email disconnect — PARTIAL (calls integrationService.updateNotificationEmail({ enabled: false }) then disconnectIntegration — but no email address is cleared on server, only enabled flag toggled)
+GitHub: fake connect — WORKING (POST /integrations/github/connect sets status='connected' in integrations table — no actual OAuth)
+Google Calendar: fake connect — WORKING (same pattern as GitHub)
+Twitter: fake connect — WORKING
+LinkedIn: fake connect — WORKING
+n8n, ManyChat: not visible in integration list unless seeded in DB — cannot verify
+Location: fake connect — WORKING
+Status indicators — WORKING (real-time from integrations store + health dot from health check interval)
+Health check polling — WORKING (runs on mount + every 60s for all connected integrations, calls POST /integrations/:type/test)
+Disconnect flow — WORKING (POST /integrations/:id/disconnect)
+Ping latency — WORKING (GET /integrations/:type/ping returns latencyMs, updates pingLatency state)
+Integration event log — WORKING (GET /integrations/events?limit=10)
+Status filter (URL persistence) — WORKING (useSearchParams)
+Mobile tap-to-expand — WORKING
+Invite generation — WORKING (POST /integrations/invite, hardcoded URL as ai.geekspace.space/connect/:token)
+Invite copy — WORKING
+Connecting state isolation — WORKING (per-integration connectingId prevents blocking all buttons)
+
+=== LOGIC ISSUES ===
+1. The Telegram dialog is rendered as an inline Card that pushes content down, not a modal. On long pages, the dialog may not be in view after being opened. No scroll-into-view on open. On mobile, user may not notice it appeared above the grid.
+
+2. The Telegram polling uses exponential backoff (1s → 2s → 4s → 5s cap with ±500ms jitter), but telegramPollAttempts increments indefinitely — there is no max poll attempt limit. If the user leaves the dialog open without completing the link, polling continues indefinitely until closeTelegramDialog() is called.
+
+3. connectingId is set to type but NOT cleared in the finally block for the telegram flow — it returns early before the finally. This means the Telegram "Connecting..." spinner on the button persists even after the dialog opens (since setConnectingId(null) is only in the catch block for telegram, not after dialog open). The finally { setConnectingId(null) } only runs for non-telegram/non-email types.
+   Fix: move setConnectingId(null) into the telegram success/open path.
+
+4. For email, handleConnect returns early after setting emailDialog=true but before the finally block. The finally block sets connectingId(null) after the return, so the button loading state may persist briefly. Actually: `return` inside try exits the try, the finally still runs. This is actually fine.
+
+5. The integration health check fires on mount and every 60s for ALL connected integrations simultaneously. If a user has many integrations, this creates N concurrent POST requests every minute. No throttling or staggering.
+
+6. The "Avg Health %" stat is computed as: sum of connected integrations' health / connected count. This uses the health field from the integrations table, not the live health check results (healthStatus state). The displayed average could be stale.
+
+7. The "Secure 100%" stat card is hardcoded. It does not reflect any real security state.
+
+8. The invite URL is hardcoded as https://ai.geekspace.space/connect/${token} in the server route. For different domain deployments (agentin.chat) this would be wrong.
+
+9. Disconnecting email (handleDisconnect) only calls updateNotificationEmail({ enabled: false }) — it does not clear the stored email address. On reconnect, the old address pre-populates.
+
+10. The health dot (checking/healthy/unhealthy) overlaps visually with the status text on very narrow cards. No ARIA labels on the colored dot — screen readers cannot determine health state.
+
+=== IMPROVEMENTS ===
+[HIGH] Add max poll attempt limit for Telegram linking (e.g., 30 attempts = ~2.5 minutes) with a "still waiting..." status message and a manual "I've completed the steps" refresh button.
+
+[HIGH] Fix connectingId not being cleared after Telegram dialog is opened — add setConnectingId(null) in the telegram link success path.
+
+[HIGH] Convert Telegram and Email dialogs to proper modal overlays (fixed inset-0 backdrop) instead of inline cards. This ensures they're always visible and focused.
+
+[MED] Stagger health check API calls (50-100ms delay between each) to avoid burst of N simultaneous requests every 60 seconds.
+
+[MED] Show real-time healthStatus percentages in the "Avg Health" stat card instead of stale DB values.
+
+[MED] Add a clear-email-on-disconnect option: when email integration is disconnected, clear the stored notification email address from the server.
+
+[MED] Status filter chips need overflow-x:auto wrapper on mobile to prevent clipping.
+
+[LOW] Add ARIA labels to health status dots ("Integration is healthy", "Integration is unhealthy").
+
+[LOW] Make invite URL domain configurable or server-generated (read from config.frontendUrl) rather than hardcoded.
+
+[LOW] The "Secure 100%" badge is misleading — replace with actual encryption status or remove it.
+
+=== SERVER ROUTES USED ===
+GET    /api/integrations                    — load all integrations (on DashboardApp mount + on closeTelegramDialog)
+POST   /api/integrations/:type/connect      — connect non-Telegram/email integrations (fake connect for GitHub, Google Calendar, etc.)
+POST   /api/integrations/:id/disconnect     — disconnect
+POST   /api/integrations/telegram/link      — generate Telegram deep link / check if already linked
+GET    /api/integrations/telegram/status    — poll for link completion + fetch username/lastPing
+DELETE /api/integrations/telegram/link      — unlink Telegram
+PATCH  /api/users/notification-email        — save/disable email notification address
+POST   /api/integrations/:type/test         — health check (60s interval)
+GET    /api/integrations/:type/ping         — latency ping on demand
+POST   /api/integrations/invite             — generate invite link
+GET    /api/integrations/events?limit=10    — integration event log
+
+Routes available but NOT used by ConnectionsPage:
+GET    /api/integrations/invites            — list existing invites (no UI to show them)
+GET    /api/integrations/whatsapp/status    — WhatsApp status (not used since Coming Soon)
+POST   /api/integrations/whatsapp/qr       — new QR-based WhatsApp linking (not wired)

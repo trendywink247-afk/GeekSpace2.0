@@ -35,7 +35,7 @@ function getMsgIcon(type: string): typeof Bell {
 
 function formatDate(ms: number): string {
   const d = new Date(ms);
-  return d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+  return d.toLocaleString(navigator.language, { dateStyle: "medium", timeStyle: "short" });
 }
 
 export function ProactivePage() {

@@ -150,3 +150,8 @@ curl localhost:3001/api/health
 - Clean temp DB (`DB_PATH=/tmp/e2e-test/test.db`) prevents stale user interference
 - Vite preview needs `VITE_API_TARGET` env var for proxy routing to test backend
 - Build with `VITE_TEST_MODE=true VITE_API_URL=/api` to match CI config
+
+## touch-action: pan-y vs useSwipeNavigation (2026-03-04)
+Setting `touch-action: pan-y` globally on html/body suppresses horizontal swipe recognition in Chrome Android's compositor.
+This conflicts with `useSwipeNavigation` (react-swipeable, in DashboardApp.tsx) which relies on horizontal swipe-left/right for page nav.
+If horizontal swipe-navigation breaks on mobile, remove global touch-action or apply it only to non-navigation containers.
