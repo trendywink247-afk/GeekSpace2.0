@@ -174,8 +174,8 @@ export function AutomationsPage() {
     if (!auto) return;
     const existingInterval = (auto.triggerConfig?.interval_minutes as number | undefined) ?? 60;
     // B3: restore actionConfig from stored automation (API returns snake_case action_config or camelCase actionConfig)
-    const storedConfig = (auto as Record<string, unknown>).actionConfig as Record<string, string> | undefined
-      ?? (() => { try { return JSON.parse((auto as Record<string, unknown>).action_config as string || '{}') as Record<string, string>; } catch { return {}; } })();
+    const storedConfig: Record<string, string> = auto.actionConfig
+      ?? (() => { try { return JSON.parse(auto.action_config || '{}') as Record<string, string>; } catch { return {}; } })();
     const restoredWebhookUrl = storedConfig.url ?? storedConfig.webhookUrl ?? '';
     setForm({
       name: auto.name,
