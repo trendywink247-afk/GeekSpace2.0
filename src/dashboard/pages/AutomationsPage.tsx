@@ -108,6 +108,8 @@ export function AutomationsPage() {
     intervalMinutes: 60,
     // 65.8: Webhook URL field for n8n-webhook / call_api
     webhookUrl: '',
+    // B3: action-specific configuration payload
+    actionConfig: {} as Record<string, string>,
   });
   const [saveError, setSaveError] = useState('');
   const [logs, setLogs] = useState<AutomationLog[]>([]);
@@ -132,7 +134,7 @@ export function AutomationsPage() {
   const [dryRunResult, setDryRunResult] = useState<{ id: string; simulatedOutput: string } | null>(null);
 
   const resetForm = () => {
-    setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true, intervalMinutes: 60, webhookUrl: '' });
+    setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true, intervalMinutes: 60, webhookUrl: '', actionConfig: {} });
     setEditingId(null);
     setSaveError('');
   };
@@ -171,6 +173,10 @@ export function AutomationsPage() {
     const auto = automations.find((a) => a.id === id);
     if (!auto) return;
     const existingInterval = (auto.triggerConfig?.interval_minutes as number | undefined) ?? 60;
+    // B3: restore actionConfig from stored automation (API returns snake_case action_config or camelCase actionConfig)
+    const storedConfig = (auto as Record<string, unknown>).actionConfig as Record<string, string> | undefined
+      ?? (() => { try { return JSON.parse((auto as Record<string, unknown>).action_config as string || '{}') as Record<string, string>; } catch { return {}; } })();
+    const restoredWebhookUrl = storedConfig.url ?? storedConfig.webhookUrl ?? '';
     setForm({
       name: auto.name,
       description: auto.description,
@@ -178,7 +184,8 @@ export function AutomationsPage() {
       actionType: auto.actionType,
       enabled: auto.enabled,
       intervalMinutes: existingInterval,
-      webhookUrl: '',
+      webhookUrl: restoredWebhookUrl,
+      actionConfig: storedConfig,
     });
     setEditingId(id);
     setIsAddDialogOpen(true);
@@ -192,11 +199,12 @@ export function AutomationsPage() {
       const triggerConfig = form.triggerType === 'time'
         ? { interval_minutes: form.intervalMinutes }
         : {};
-      // 65.8: Include webhookUrl in actionConfig for webhook action types
+      // B3: build actionConfig — merge form.actionConfig with webhookUrl for url-based actions
       const urlActionTypes = ['n8n-webhook', 'call_api'];
-      const actionConfig = urlActionTypes.includes(form.actionType) && form.webhookUrl
-        ? { url: form.webhookUrl }
-        : {};
+      const builtActionConfig: Record<string, string> = { ...form.actionConfig };
+      if (urlActionTypes.includes(form.actionType) && form.webhookUrl) {
+        builtActionConfig.url = form.webhookUrl;
+      }
       if (editingId) {
         await updateAutomation(editingId, {
           name: form.name,
@@ -205,6 +213,7 @@ export function AutomationsPage() {
           actionType: form.actionType,
           enabled: form.enabled,
           triggerConfig,
+          actionConfig: builtActionConfig,
         });
       } else {
         await addAutomation({
@@ -215,7 +224,7 @@ export function AutomationsPage() {
           config: {},
           enabled: form.enabled,
           triggerConfig,
-          actionConfig,
+          actionConfig: builtActionConfig,
         } as Parameters<typeof addAutomation>[0]);
       }
       setIsAddDialogOpen(false);
@@ -772,6 +781,33 @@ export function AutomationsPage() {
                     <span>⚠</span> Using http:// sends data unencrypted. Use https:// for production.
                   </p>
                 )}
+              </div>
+            )}
+            {/* B3: Action-specific configuration fields */}
+            {(form.actionType === 'telegram-message' || form.actionType === 'whatsapp-message' || form.actionType === 'manychat-broadcast') && (
+              <div className="space-y-1">
+                <label className="text-xs text-[#6B7280]">
+                  {form.actionType === 'telegram-message' ? 'Telegram Message Text' : form.actionType === 'whatsapp-message' ? 'WhatsApp Message Text' : 'Broadcast Message Text'}
+                </label>
+                <textarea
+                  placeholder={form.actionType === 'manychat-broadcast' ? 'Broadcast message to send...' : 'Message to send...'}
+                  value={form.actionConfig.message ?? ''}
+                  onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, message: e.target.value } })}
+                  rows={3}
+                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] text-sm resize-none"
+                />
+              </div>
+            )}
+            {form.actionType === 'create_reminder' && (
+              <div className="space-y-1">
+                <label className="text-xs text-[#6B7280]">Reminder Text</label>
+                <input
+                  type="text"
+                  placeholder="What to remind about..."
+                  value={form.actionConfig.reminder_text ?? ''}
+                  onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, reminder_text: e.target.value } })}
+                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] text-sm"
+                />
               </div>
             )}
             {/* 62.6: Schedule builder — shown when trigger is time-based */}
