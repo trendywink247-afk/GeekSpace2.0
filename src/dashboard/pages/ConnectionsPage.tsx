@@ -27,7 +27,6 @@ import {
   Loader2,
   CheckCircle2,
   Mail,
-  Smartphone,
   Image as ImageIcon,
   Link,
   Copy,
@@ -84,7 +83,6 @@ function timeAgo(dateStr: string): string {
 }
 
 type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error';
-type WhatsAppStep = 'idle' | 'generating' | 'show-qr' | 'waiting' | 'success' | 'error';
 
 export function ConnectionsPage() {
   const { integrations, connectIntegration, disconnectIntegration, loadIntegrations } = useDashboardStore();
@@ -112,13 +110,6 @@ export function ConnectionsPage() {
   const [polling, setPolling] = useState(false);
   const [telegramPollAttempts, setTelegramPollAttempts] = useState(0);
 
-  // WhatsApp dialog state
-  const [whatsappDialog, setWhatsappDialog] = useState(false);
-  const [whatsappStep, setWhatsappStep] = useState<WhatsAppStep>('idle');
-  const [whatsappQR, setWhatsappQR] = useState<string | null>(null);
-  const [whatsappSessionId, setWhatsappSessionId] = useState<string | null>(null);
-  const [whatsappPolling, setWhatsappPolling] = useState(false);
-  const [whatsappPollAttempts, setWhatsappPollAttempts] = useState(0);
 
   // 78.6: Telegram last message time + username (from channel_links via status endpoint)
   const [telegramLastPing, setTelegramLastPing] = useState<string | null>(null);
@@ -246,29 +237,6 @@ export function ConnectionsPage() {
     return () => clearTimeout(timer);
   }, [polling, telegramPollAttempts, pollTelegramStatus]);
 
-  // Poll for WhatsApp link status
-  const pollWhatsAppStatus = useCallback(async () => {
-    if (!whatsappSessionId) return;
-    try {
-      const res = await integrationService.checkWhatsAppQRStatus(whatsappSessionId);
-      if (res.data.linked) {
-        setWhatsappStep('success');
-        setWhatsappPolling(false);
-      }
-    } catch { /* ignore */ }
-  }, [whatsappSessionId]);
-
-  useEffect(() => {
-    if (!whatsappPolling) return;
-    const base = Math.min(1000 * Math.pow(2, whatsappPollAttempts), 5000);
-    const jitter = Math.random() * 500 - 250;
-    const delay = Math.max(500, base + jitter);
-    const timer = setTimeout(() => {
-      pollWhatsAppStatus();
-      setWhatsappPollAttempts(a => a + 1);
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [whatsappPolling, whatsappPollAttempts, pollWhatsAppStatus]);
 
   const handleEmailSave = async () => {
     setEmailSaving(true);
@@ -285,25 +253,6 @@ export function ConnectionsPage() {
   const handleConnect = async (type: IntegrationType) => {
     setConnectingId(type);
     try {
-      if (type === 'whatsapp') {
-        setWhatsappDialog(true);
-        setWhatsappStep('generating');
-        setWhatsappPollAttempts(0);
-        try {
-          const res = await integrationService.linkWhatsAppQR();
-          if (res.data.success && res.data.qrCodeDataUrl) {
-            setWhatsappQR(res.data.qrCodeDataUrl);
-            setWhatsappSessionId(res.data.sessionId);
-            setWhatsappStep('show-qr');
-            setWhatsappPolling(true);
-          } else {
-            setWhatsappStep('error');
-          }
-        } catch {
-          setWhatsappStep('error');
-        }
-        return;
-      }
       if (type === 'email') {
         setEmailAddress('');
         setEmailSaved(false);
@@ -365,9 +314,6 @@ export function ConnectionsPage() {
       // Must delete channel_links row so reconnect starts fresh (not showing "already linked")
       try { await integrationService.unlinkTelegram(); } catch { /* ignore if not linked */ }
     }
-    if (integration?.type === 'whatsapp') {
-      await integrationService.unlinkWhatsApp();
-    }
     notify(`${integration?.name || 'Integration'} disconnected`, 'info');
     disconnectIntegration(id);
   };
@@ -380,17 +326,6 @@ export function ConnectionsPage() {
     setTelegramPollAttempts(0);
     setConnectingId(null);
     // Only reload integrations, not the full dashboard
-    loadIntegrations();
-  };
-
-  const closeWhatsAppDialog = () => {
-    setWhatsappDialog(false);
-    setWhatsappQR(null);
-    setWhatsappSessionId(null);
-    setWhatsappStep('idle');
-    setWhatsappPolling(false);
-    setWhatsappPollAttempts(0);
-    setConnectingId(null);
     loadIntegrations();
   };
 
@@ -600,77 +535,6 @@ export function ConnectionsPage() {
         </Card>
       )}
 
-      {/* WhatsApp Link Wizard with QR */}
-      {whatsappDialog && (
-        <Card className="border-[#25d366]/40 relative overflow-hidden">
-          <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
-            <button onClick={closeWhatsAppDialog} className="absolute top-4 right-4 text-[#6B7280] hover:text-white z-10">
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-[#25d366]/20 flex items-center justify-center">
-                <Smartphone className="w-5 h-5 text-[#25d366]" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-[#E8E8F0]">Connect WhatsApp</h3>
-                <p className="text-xs text-[#6B7280]">Scan QR code with your phone</p>
-              </div>
-            </div>
-
-            {whatsappStep === 'generating' && (
-              <div className="flex flex-col items-center gap-3 py-8">
-                <Loader2 className="w-8 h-8 text-[#25d366] animate-spin" />
-                <p className="text-sm text-[#6B7280]">Generating QR code...</p>
-              </div>
-            )}
-
-            {whatsappStep === 'show-qr' && whatsappQR && (
-              <div className="space-y-4 text-center">
-                <div className="bg-white p-4 rounded-xl inline-block max-w-[90vw] mx-auto">
-                  <img src={whatsappQR} alt="WhatsApp QR Code" className="w-48 h-48 max-w-full" />
-                </div>
-                <p className="text-sm text-[#6B7280]">
-                  Open WhatsApp → Settings → Linked Devices → Link a Device
-                </p>
-                <p className="text-xs text-[#6B7280]">
-                  Scan the QR code above to connect
-                </p>
-                {/* 78.5: WhatsApp platform policy disclaimer */}
-                <div className="bg-[#25d366]/10 border border-[#25d366]/20 rounded-lg px-3 py-2 text-left">
-                  <p className="text-xs text-[#6B7280]">
-                    <span className="text-[#25d366] font-medium">Utility flows only</span> — reminders, OTP, and notifications.
-                    {' '}AI chat is available via the{' '}
-                    <a href="https://ai.agentin.chat" target="_blank" rel="noopener noreferrer" className="text-[#00F0FF] underline">Agentin web app</a>.
-                  </p>
-                </div>
-                <div className="flex items-center justify-center gap-2 text-xs text-[#00FF88]">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Waiting for scan...
-                </div>
-              </div>
-            )}
-
-            {whatsappStep === 'success' && (
-              <div className="flex flex-col items-center gap-4 py-6">
-                <CheckCircle2 className="w-12 h-12 text-[#00FF88]" />
-                <p className="text-sm text-[#E8E8F0] font-medium">WhatsApp connected!</p>
-                <Button className="bg-[#00FF88] hover:bg-[#51EF6B] text-[#0C0C18]" onClick={closeWhatsAppDialog}>
-                  Done
-                </Button>
-              </div>
-            )}
-
-            {whatsappStep === 'error' && (
-              <div className="text-center py-6">
-                <AlertTriangle className="w-12 h-12 text-[#FF6161] mx-auto mb-2" />
-                <p className="text-sm text-[#E8E8F0]">Connection failed</p>
-                <p className="text-xs text-[#6B7280] mt-1">Please try again later</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Email Dialog */}
       {emailDialog && (
@@ -813,6 +677,10 @@ export function ConnectionsPage() {
                       checked={true}
                       onCheckedChange={() => handleDisconnect(connection.id)}
                     />
+                  ) : connection.type === 'whatsapp' ? (
+                    <Badge variant="outline" className="border-[#25d366]/30 text-[#25d366]/60 text-xs px-2 py-1">
+                      Coming Soon
+                    </Badge>
                   ) : (
                     <Button
                       size={isMobile ? 'default' : 'sm'}
