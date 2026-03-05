@@ -245,7 +245,7 @@ export function HealthDashboardPage() {
                     variant="outline"
                     size="sm"
                     onClick={handleRetry}
-                    className="ml-2 h-6 px-2 text-xs border-[#00F0FF]/30 hover:bg-[#00F0FF]/10"
+                    className="ml-2 min-h-[44px] px-3 text-xs border-[#00F0FF]/30 hover:bg-[#00F0FF]/10"
                   >
                     Retry
                   </Button>
