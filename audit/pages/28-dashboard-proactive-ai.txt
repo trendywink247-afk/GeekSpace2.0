@@ -1,0 +1,81 @@
+PAGE: Proactive AI
+ROUTE: /dashboard/proactive
+STATUS: WORKING
+
+=== DESKTOP VIEW ===
+- p-4 md:p-6 container with space-y-6 and pb-24 md:pb-6 (extra bottom padding for mobile FAB clearance)
+- Header: "Proactive AI" title (2xl bold), subtitle: "Weebo sends morning briefings, overdue alerts, and idle check-ins."
+- Refresh button (top-right, ghost icon button) with spinning animation when refreshing; disabled during refresh
+- Error banner: red border/background when API call fails
+- Toggle card:
+  - Bell/BellOff icon (cyan or muted depending on state)
+  - "Proactive Messages" label + state description ("Weebo will send scheduled messages via Telegram." / "Proactive messages are paused.")
+  - Custom toggle switch: inline HTML button with CSS translate animation (cyan when enabled, gray when disabled); disabled during toggle/loading
+- Schedule card (static):
+  - 8:00 AM IST — Daily Briefing (Sunrise icon, cyan)
+  - 10:00 AM IST — Overdue Alert (AlertTriangle icon, amber) — conditional on having overdue reminders
+  - 8:00 AM IST — Idle Check-in (Moon icon, purple) — conditional on 3+ days inactivity
+  - Note: "Messages are delivered via Telegram. Connect Telegram in Connections to receive them."
+- Recent Messages card:
+  - Message count badge in header
+  - Loading skeleton (3 pulse blocks) while loading
+  - Empty state: MessageSquare icon + contextual message (enabled vs disabled)
+  - Message list: each message shows type icon + label + timestamp + full message text
+  - Message types: daily_briefing (Sunrise/cyan), overdue_alert (AlertTriangle/amber), idle_check_in (Moon/purple)
+  - Timestamps formatted as: "5 Mar 2026, 8:00 am" (en-IN locale, medium date + short time)
+
+=== MOBILE VIEW ===
+- p-4 padding on mobile — correct
+- pb-24 bottom padding leaves clearance for potential mobile navigation bar
+- No FAB needed (page is read + toggle only)
+- Toggle switch is custom HTML — accessible via aria-label; disabled state correctly applied
+- Error banner is full-width, readable
+- Message cards are full-width, text wraps naturally
+- Schedule card is purely static text — no interactive elements; readable on all screen sizes
+- Refresh button is ghost icon-only — touch target is icon-sized (16px icon + ghost button padding); may be slightly small for mobile
+
+=== FUNCTIONALITY CHECK ===
+Load proactive message log — WORKING (GET /api/proactive/log; returns last 20 messages)
+Load toggle state — WORKING (GET /api/proactive/settings; reads proactive_enabled from users table)
+Enable/disable proactive messages — WORKING (PATCH /api/proactive/toggle; updates users.proactive_enabled in DB)
+Display message history — WORKING (rendered as list with type labels, icons, timestamps)
+Refresh data — WORKING (manual refresh button calls fetchData with spinner)
+Error handling — WORKING (sets error string, shown in red banner)
+Message type labels (daily_briefing / overdue_alert / idle_check_in) — WORKING (TYPE_LABEL map)
+Message type colors (cyan / amber / purple) — WORKING (TYPE_COLOR map)
+Telegram delivery — WORKING server-side (proactive-engine service sends via Telegram bot on schedule)
+Configuration options (custom schedule, frequency) — MISSING (times are hardcoded; no UI to change schedule)
+History pagination — MISSING (GET /log accepts ?limit param but UI always loads 20, no Load More)
+Clear history — MISSING (no delete/clear option for message log)
+Per-message-type enable/disable — MISSING (single toggle for all proactive messages; cannot disable just overdue alerts while keeping briefings)
+Preview / send test message — MISSING (no "Send test briefing now" button)
+Notification channel selection — MISSING (hardcoded to Telegram; no option to receive via email or WhatsApp)
+
+=== LOGIC ISSUES ===
+1. Schedule card shows "8:00 AM -- Idle Check-in" for the Idle Check-in type but the description says "Sent only if you have been inactive for 3 or more days" — the schedule label is misleading because this is not a fixed 8:00 AM delivery; it is conditional. The user cannot tell from this card when exactly they will receive it.
+2. Both Daily Briefing and Idle Check-in show "8:00 AM" as their time — these are actually different proactive triggers running at different times server-side (the engine handles the logic), but both are labeled 8:00 AM which may confuse users who expect separate times.
+3. The toggle is a custom inline HTML element (`<button>` with CSS classes) rather than the shadcn Switch component used elsewhere in the app — visual inconsistency with the rest of the design system.
+4. `TYPE_LABEL` and `TYPE_COLOR` are initialized as empty Record objects and populated with imperative assignments (e.g., `TYPE_LABEL["daily_briefing"] = "Daily Briefing"`) rather than object literals — this is unusual style and makes the mappings harder to read/maintain.
+5. The `getMsgIcon` function uses `if/else` comparisons but the returned type `typeof Bell` is the icon component — if an unknown message type arrives, it defaults to `Sunrise` icon (the default return), which could be misleading (should default to `MessageSquare` or a generic bell).
+6. `formatDate` uses `en-IN` locale — this is the Indian English locale, not a user-configured locale. This hardcodes IST-style date formatting for all users regardless of their location.
+7. On toggle failure, the error message ("Failed to update setting. Please try again.") appears in the error banner at the top of the page, but the toggle visual state is NOT rolled back — the toggle may briefly show the new state before the error clears it, or it may show the wrong state until the next full data refresh.
+8. `fetchData` is called once on mount. After toggling, the toggle state is updated from the server response (`setEnabled(data.enabled)`) but the message log is NOT refreshed — this is fine since toggling doesn't create new messages.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Replace custom inline toggle button with the shadcn Switch component for visual and accessibility consistency.
+Priority HIGH — Fix toggle optimistic state: if the PATCH call fails, roll back the toggle visual state immediately rather than showing a stale "enabled" state alongside an error banner.
+Priority MED — Add granular controls: allow users to enable/disable each message type independently (daily briefing, overdue alerts, idle check-ins).
+Priority MED — Add a "Send test briefing now" button that triggers an immediate delivery so users can verify their Telegram connection is working.
+Priority MED — Add pagination or "Load More" for the message log (the GET /log endpoint already supports a ?limit param).
+Priority MED — Change `formatDate` locale to use the user's browser locale (`navigator.language`) rather than hardcoding `en-IN`.
+Priority MED — Clarify the schedule card: show that Idle Check-in and Overdue Alert are conditional, not fixed-time. Consider renaming the column header from a time to a condition description.
+Priority LOW — Refactor TYPE_LABEL and TYPE_COLOR to be const object literals for readability.
+Priority LOW — Replace Sunrise as the default getMsgIcon fallback with MessageSquare to avoid a misleading "Daily Briefing" icon for unknown message types.
+Priority LOW — Add a "Clear history" button or auto-truncation notice so the log doesn't silently drop old messages beyond the 20-entry limit.
+
+=== SERVER ROUTES USED ===
+GET    /api/proactive/log        — last 20 (or ?limit) proactive messages sent to user
+GET    /api/proactive/settings   — reads proactive_enabled from users table
+PATCH  /api/proactive/toggle     — enables or disables proactive messages (updates users.proactive_enabled)
+
+Server-side engine: server/src/services/proactive-engine.ts — runs scheduled daily_briefing, overdue_alert, idle_check_in messages via cron/timer; delivers via Telegram. The proactive engine state is not exposed via additional API endpoints (e.g., no "trigger now" endpoint).

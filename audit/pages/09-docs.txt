@@ -1,0 +1,94 @@
+PAGE: Docs Page
+ROUTE: /docs
+STATUS: PLACEHOLDER
+
+=== DESKTOP VIEW ===
+Full dark background page (min-h-screen bg-[#06060B]), max-w-4xl centered with px-6 py-12.
+Back button (ghost) using navigate(-1).
+Header: "Documentation" h1 (text-4xl Syne) + "Everything you need to know about Agentin" subtitle.
+Search bar: full-width input with Search icon (left-aligned), styled with pl-12, py-6, text-lg.
+  Filters docs by section title OR article title (case-insensitive).
+Section cards: accordion-style — click to expand/collapse. Each card shows:
+  - Icon (lucide), section title, section description, ChevronRight (rotates 90deg when open)
+  - Expanded: article list with title + 1-line summary text per article
+Empty state: BookOpen icon + "No docs match your search" message.
+Contact footer: "Need help? Contact us at support@agentin.chat" (text only, no mailto).
+
+Sections hardcoded in source:
+  1. Getting Started (3 articles: Creating Account, First Agent, Dashboard Overview)
+  2. Agent Configuration (3 articles: System Prompts, Models & Creativity, Voice & Mode)
+  3. Connections & Integrations (3 articles: Telegram, GitHub, Google Calendar)
+  4. Automations (3 articles: Creating Automations, n8n Webhooks, Manual Triggers)
+  5. Terminal & API (3 articles: Terminal Commands, REST API Reference, Rate Limits)
+  6. API Keys & Security (3 articles: Managing API Keys, Encryption & Privacy, OAuth Connections)
+
+=== MOBILE VIEW ===
+px-6 at all breakpoints — 20px horizontal padding on 320px screens, acceptable.
+Section cards: full-width, single column layout — works well on mobile.
+Search input: py-6 makes it tall (adequate touch target).
+Article cards when expanded: ml-14 left margin — on very narrow screens (320px) this leaves
+  only ~206px for article content which may feel cramped but is readable.
+No horizontal overflow issues.
+No bottom nav concern (standalone page).
+ChevronRight icon rotation animation (transition-transform duration-300) is smooth on mobile.
+
+=== FUNCTIONALITY CHECK ===
+Search filtering — WORKING (filters by section title or article title, not article summaries)
+Accordion expand/collapse — WORKING (expandedSection state; only one section open at a time)
+Article click propagation — WORKING (e.stopPropagation() prevents collapse when clicking article)
+Empty search state — WORKING (BookOpen icon + message shown when filtered array is empty)
+No real content loading — CONFIRMED PLACEHOLDER (all content hardcoded as static JS arrays)
+No links to actual documentation — BROKEN (article cards are non-interactive divs; clicking
+  does nothing and navigates nowhere)
+No code examples — MISSING
+No search within article summaries — PARTIAL (only title searched, not summary text)
+External resource links — MISSING
+Back navigation — WORKING (navigate(-1) on Back button)
+
+=== LOGIC ISSUES ===
+1. Articles are non-interactive: article cards have hover styles (hover:border-[#00F0FF]/30)
+   suggesting they should be clickable, but they render as plain divs with no href, no onClick,
+   and no navigation. This creates a deceptive affordance — users will try to click them.
+
+2. Search does not include article summaries: filtering uses
+   d.articles.some((a) => a.title.toLowerCase().includes(...)) but does not check a.summary.
+   A user searching "encryption" would find the "API Keys & Security" section (title match)
+   but searching "tokens" or "OAuth" would miss articles where only the summary contains the term.
+
+3. All content is hardcoded placeholder data: no API call is made. Article summaries are
+   1-sentence stubs. This page delivers no real documentation value to users.
+
+4. Rate limit value hardcoded in content: "200 requests per 15-minute window per user" in the
+   Terminal & API section may not match the actual configured server rate limits. No single
+   source of truth.
+
+5. Contact email is plain text, not a mailto: link. Same issue as StatusPage.
+
+6. Only one accordion section can be open at a time (setExpandedSection toggles). For a docs
+   page, users may want multiple sections open to compare content.
+
+7. No anchoring / deep-linking: no way to link to a specific section or article (no hash routing,
+   no section IDs in the URL).
+
+=== IMPROVEMENTS ===
+Priority HIGH — Make articles functional: either add links to real external docs, implement
+  an article detail view, or remove the hover styling if they intentionally do nothing.
+
+Priority HIGH — Replace placeholder content with real documentation or remove the page from
+  navigation until content is ready. Current page misleads users who expect actual help.
+
+Priority MED — Include article summaries in search filtering to improve discoverability.
+
+Priority MED — Make support email a mailto: link.
+
+Priority MED — Add URL hash support so sections can be linked directly
+  (e.g., /docs#connections).
+
+Priority LOW — Allow multiple accordion sections to be open simultaneously.
+
+Priority LOW — Add a "Last updated" date to documentation to set user expectations about
+  content freshness.
+
+=== SERVER ROUTES USED ===
+None. This page makes no API calls. All content is static JavaScript data defined in the
+component file itself. The page is entirely client-side with no backend dependency.

@@ -1,0 +1,98 @@
+PAGE: Status Page
+ROUTE: /status
+STATUS: WORKING
+
+=== DESKTOP VIEW ===
+Full dark background page (min-h-screen bg-[#06060B]), max-w-3xl centered with px-6 py-12.
+Back button (ghost, top-left) using navigate(-1).
+Header row: "System Status" h1 (text-4xl Syne font) + last-checked time + version + uptime.
+Refresh button (top-right): outline style, spins RefreshCw icon while checking.
+Banner card: green ("All Systems Operational") or yellow ("Partial Degradation") depending on
+  whether all known components report 'operational'.
+Per-service cards: one card per component from the API response (filtered to known labels only).
+  Each shows: colored status icon (green checkmark / yellow warning / red X), service name,
+  status text (operational/degraded/down).
+Contact footer: support@agentin.chat text (not a mailto link, just styled span).
+
+Components shown (from COMPONENT_LABELS):
+  Database, Local Engine (ollama), Cloud Engine (openrouter), Premium Engine (edith),
+  Weebo Engine (picoclaw), Bridge Router (bridge), Telegram Bot (telegram), Automation (n8n)
+
+=== MOBILE VIEW ===
+No explicit responsive breakpoints in StatusPage.tsx beyond the shared max-w-3xl container.
+px-6 padding applies at all sizes — on very narrow screens (320px) this still leaves 20px
+  per side which is acceptable.
+Header row uses flex items-center justify-between — on 320px the version+uptime info may
+  overflow or truncate next to the Refresh button, no wrapping guard.
+Service cards use flex items-center justify-between — works at all widths.
+No bottom nav overlap concern (standalone page outside main shell).
+Text sizes use fixed rem values (text-4xl for h1) — h1 may feel oversized on narrow phones
+  but is not broken.
+Refresh button remains at full width of its text + icon; no min-h touch target class set,
+  but the shadcn Button default includes adequate padding.
+
+=== FUNCTIONALITY CHECK ===
+Real API call — WORKING (GET /api/health on mount and on Refresh click)
+Auto-refresh — MISSING (no interval/setInterval; manual Refresh button only)
+Timestamp of last check — WORKING (lastChecked state updated after each successful fetch)
+Version + uptime display — WORKING (parsed from health.version and health.uptime)
+Color-coded status indicators — WORKING (CheckCircle2 green / AlertTriangle yellow / XCircle red)
+Loading state — WORKING ("Checking system status..." text while checking and no data yet)
+Error state (server unreachable) — WORKING (red banner "Unable to Reach Server")
+Overall status banner — WORKING (green vs yellow based on allOk check)
+Service filtering — WORKING (only known COMPONENT_LABELS keys shown; unknown fields ignored)
+Refresh button disabled while fetching — WORKING (disabled={checking})
+RefreshCw spin animation while checking — WORKING (animate-spin conditional class)
+Service down clearly communicated — WORKING (red XCircle icon + "down" label per card)
+
+=== LOGIC ISSUES ===
+1. No auto-refresh: the page only checks once on mount. A status page typically polls every
+   30-60 seconds so users don't need to manually refresh. If a service recovers, the page
+   stays red until manual refresh.
+
+2. Typo in CheckCircle2 className on "All Systems Operational" banner: "w-10 h10" (missing
+   dash before 10). The icon will not render at the correct size — h-10 is missing, so the
+   element gets no explicit height from Tailwind.
+
+3. Header row has no flex-wrap: on mobile, "Last checked: HH:MM:SS AM · v3.1.0 · uptime Xh Ym"
+   can overflow or push against the Refresh button. No wrapping or text truncation is applied.
+
+4. Brand leak: COMPONENT_LABELS includes 'picoclaw' mapped to 'Weebo Engine'. This is an
+   internal mapping artifact — the visible label "Weebo Engine" is fine, but the key 'picoclaw'
+   in the component map is only safe as long as the API returns that key. If the API key changes,
+   the row silently disappears (filtered out). No fallback.
+
+5. "All systems operational" check: uses entries (filtered to known labels). If the API adds
+   new component keys not in COMPONENT_LABELS, they are silently excluded from the allOk
+   calculation. A failing unknown component would not degrade the banner.
+
+6. Contact support line uses a plain <span> instead of a mailto: link, making it harder for
+   users to act on support contact (especially on mobile where tapping opens nothing).
+
+7. No Redis component in COMPONENT_LABELS despite Redis being a critical infrastructure service.
+   Health API returns redis status but it is not shown to users.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Fix h10 typo to h-10 on the CheckCircle2 icon in the "All Systems Operational"
+  banner (line 121 of StatusPage.tsx).
+
+Priority HIGH — Add auto-refresh: setInterval(fetchHealth, 60000) in useEffect, cleared on
+  unmount. Display countdown timer ("Next check in Xs") for transparency.
+
+Priority MED — Wrap header subtitle in a flex-wrap or break it into two lines on mobile to
+  prevent overflow against the Refresh button.
+
+Priority MED — Make support email a mailto: link instead of plain text span.
+
+Priority MED — Add redis to COMPONENT_LABELS since it is part of the production stack and
+  health endpoint returns its status.
+
+Priority LOW — Add uptime formatting: currently shows "Xh Ym" which is fine, but very long
+  uptimes (days) would still show only hours (e.g., "1032h 15m"). Add day-level formatting.
+
+=== SERVER ROUTES USED ===
+GET /api/health — called on mount and on Refresh click. Returns:
+  { ok, status, uptime, version, timestamp, components: Record<string, string> }
+  Known component keys used: database, ollama, openrouter, edith, picoclaw, bridge, telegram, n8n
+
+No authentication required for this page.

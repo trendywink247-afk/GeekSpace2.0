@@ -1,0 +1,66 @@
+PAGE: Recipes
+ROUTE: /dashboard/recipes
+STATUS: PARTIAL
+
+=== DESKTOP VIEW ===
+- Minimal full-width layout with space-y-6
+- Inline toast (top-center, fixed z-[100]): success (green) or error (red) for 3.5s
+- Header: "Recipes" title (Syne font, 3xl/4xl), active count display ("N active of M recipes")
+- Loading spinner (Loader2) while fetching
+- Recipe grid: grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+- Each recipe card:
+  - Icon (mapped from string key: sunrise, git-branch, calendar-check, alert-triangle, activity, eye) with category color background
+  - "Active" badge (green outline) when installed
+  - Category badge (color-coded: productivity=cyan, monitoring=amber, communication=green, analytics=pink)
+  - Recipe name + description text
+  - Required integrations list as small badges
+  - Activate / Deactivate button (with spinner during action)
+- Empty state: BookOpen icon + "No recipes available yet" message
+
+=== MOBILE VIEW ===
+- Grid: grid-cols-1 on mobile, sm:grid-cols-2 from sm breakpoint
+- Cards are full-width on mobile — readable layout
+- Buttons are full-width (w-full) — large touch target
+- Toast is top-center fixed — may be partially hidden by mobile browser chrome (URL bar)
+- No horizontal scroll issues; straightforward stacked layout
+- No FAB; page is browse-and-activate only, no user-created recipes
+
+=== FUNCTIONALITY CHECK ===
+List recipes — WORKING (GET /api/recipes; returns all built-in recipes with install state per user)
+Activate recipe — WORKING (POST /api/recipes/:id/install; server calls installRecipe service)
+Deactivate recipe — WORKING (DELETE /api/recipes/:id/uninstall; server calls uninstallRecipe service)
+Installed state reflected in UI — WORKING (green ring + "Active" badge + deactivate button)
+Loading state — WORKING (spinner while fetchRecipes in progress)
+Error toast — WORKING (shows on fetch failure or install/uninstall failure)
+Success toast — WORKING (shows after activate/deactivate)
+Category/tags display — WORKING (category badge with colors, required integrations badges)
+Create/edit/delete user recipes — MISSING (page only shows server-defined built-in recipes; no user-created recipe flow)
+Apply recipe to chat — MISSING (no "Use in chat" or "Apply now" button; recipes appear to be automation presets that are "installed" but there is no visible direct chat integration from this UI)
+Search/filter by category — MISSING (no search or category filter on the page)
+Recipe detail view (configuration before install) — MISSING (install is immediate with no config step; recipes that require integrations don't check if those integrations are connected before allowing install)
+
+=== LOGIC ISSUES ===
+1. No pre-install integration check: a recipe that lists required integrations (e.g., Telegram) can be installed even if the user has not connected that integration. The UI shows the required integrations as badges but there is no validation or warning before installing.
+2. No pagination or virtual scroll: if the recipe catalog grows large, all recipes are loaded and rendered at once.
+3. Icon map is a fixed hardcoded dictionary with only 6 entries (sunrise, git-branch, calendar-check, alert-triangle, activity, eye). Any recipe with a different icon key will fall back to `BookOpen` — this is a silent fallback with no warning.
+4. Category colors are a fixed map with only 4 entries (productivity, monitoring, communication, analytics). Any recipe with a different category will show `#00F0FF` (default) with no specific color.
+5. On install/uninstall, state is updated optimistically client-side (setRecipes with mapped update) AND then the server is the source of truth on next fetchRecipes — but fetchRecipes is not called after install/uninstall, only the local state is patched. If the server-side install fails partway through (after returning ok), the UI will show the recipe as installed but it may not be.
+6. The `showToast` function returns a cleanup function but the caller (`handleInstall`, `handleUninstall`) does not store or call the cleanup — minor: this means if the component unmounts before the 3.5s timeout, there may be a setState-on-unmounted-component warning.
+7. What "installing" a recipe actually does on the backend (installRecipe service) is not surfaced to the user — no explanation of what automations/reminders/triggers will be created.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Add pre-install integration check: if a recipe requires Telegram and user has no Telegram connected, show a warning or redirect to Connections page before allowing install.
+Priority HIGH — After install/uninstall, call fetchRecipes to sync from server rather than relying solely on local state patch, to catch partial failures.
+Priority MED — Add a recipe detail/preview panel that explains what the recipe will do (what automations it creates, what triggers it sets up) before the user commits to installing it.
+Priority MED — Add category filter tabs or search so users can find relevant recipes as the catalog grows.
+Priority MED — Expand the icon map and category color map to cover all possible recipe definitions, or make them dynamic from the API response.
+Priority LOW — Detect if the user is on a free tier that cannot run certain recipe types, and show an upgrade prompt instead of a broken activation.
+Priority LOW — After install, show a link to the relevant page (e.g., Automations) so the user can see what was created.
+Priority LOW — Fix the `showToast` cleanup leak by properly storing and calling the returned cleanup in useEffect or by restructuring the toast state management.
+
+=== SERVER ROUTES USED ===
+GET    /api/recipes              — list all recipes with install state per user (from getAllRecipes + getInstalledRecipes)
+POST   /api/recipes/:id/install  — activate/install a recipe for the user
+DELETE /api/recipes/:id/uninstall — deactivate/uninstall a recipe for the user
+
+Note: Recipes are server-defined presets (built-in catalog), not user-created. The recipes service (server/src/services/recipes.ts) manages the catalog and per-user install state. No inline server route in index.ts; handled by dedicated recipesRouter.

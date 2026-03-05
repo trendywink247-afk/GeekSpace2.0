@@ -1,0 +1,93 @@
+PAGE: Activity Log
+ROUTE: /dashboard/activity
+STATUS: WORKING (real server data, search, filters, export, delete all functional)
+
+=== DESKTOP VIEW ===
+- Full-width container wrapped in PullToRefreshWrapper, px-0 on desktop
+- Header: "Activity Log" h1 + "N total events recorded" subtitle (cyan count)
+- Top-right action buttons (when entries exist): Export CSV + Clear All
+  - Clear All: 2-step confirmation inline ("Clear all activity?" + Yes/Cancel)
+- Search: full-width Input with Search icon (debounced 400ms → server-side query)
+- Date range filter: From/To date inputs (ISO date) + Clear dates button
+- Filter chips row: All | Portfolio | Reminders | Integrations | Agent (with counts)
+  - Active chip: color-coded background + border per category
+  - Each chip shows count badge
+- Category color legend (below chips)
+- Activity list card (divide-y rows):
+  - Per entry: colored icon box (category-based color), action text (truncated), details (truncated), timestamp + category label
+  - Hover shows delete button (trash icon, group-hover opacity reveal)
+  - Timestamp has `title` attribute showing full date/time on hover
+- Load more button (when more entries exist): shows remaining count
+- Footer: "Showing X of Y events"
+
+=== MOBILE VIEW ===
+- PullToRefreshWrapper: pull-to-refresh gesture enabled
+- px-1 on mobile vs px-0 on desktop (slight padding)
+- Filter chips: flex-wrap — wraps to multiple rows on narrow screens
+  - All chips have min-h-[44px] — correct touch targets
+- Date inputs: min-h-[44px] — correct
+- Export CSV and Clear All buttons: h-8 (32px) — BELOW 44px minimum touch target
+- Delete button (trash, hover-only): opacity-0 group-hover:opacity-100 — NOT accessible
+  on touch devices (no hover). Users on mobile cannot delete individual entries.
+- Search input: min-h-[44px] — correct
+- Load more button: py-2.5 (approximate 40px) — borderline touch target
+- Activity entries: adequate row height for touch
+
+=== FUNCTIONALITY CHECK ===
+- Load activity (server-side, paginated 25/page) — WORKING
+- Server-side text search (debounced) — WORKING (q param to /api/activity)
+- Date-range filter — WORKING (from/to ISO date params to /api/activity)
+- Category filter chips (Portfolio/Reminders/Integrations/Agent) — WORKING
+  NOTE: Category filter is CLIENT-SIDE only (not passed to server). The server is queried
+  without category filter, then client filters the returned 25 items. This means if
+  there are many 'Agent' entries at the bottom of a large dataset, switching to the Agent
+  filter may show 0 entries even though they exist (they were not in the first page).
+- Individual entry delete (hover-reveal trash button) — WORKING (DELETE /api/activity/:id)
+  but inaccessible on mobile.
+- Clear all activity — WORKING (DELETE /api/activity, 2-step confirm)
+- Export CSV — WORKING (GET /api/activity/export, downloads as activity-log.csv)
+- Load more (append) — WORKING (increments offset, appends to existing list)
+- Pull-to-refresh — PARTIAL: `handlePullRefresh` calls `userService.getActivity(50)` but
+  does NOT update the entries state from the response. The pull-to-refresh gesture fires
+  the API call but the result is discarded. The UI does not update.
+- Total count display — WORKING (server returns total in response)
+- Timestamp normalization (SQLite space separator fix) — WORKING (parseSqliteTs function)
+- Empty state — WORKING (correct message based on filters active vs no data)
+
+=== LOGIC ISSUES ===
+- CLIENT-SIDE category filter over server-paginated data: The server returns 25 items per
+  page. Applying a category filter client-side only filters those 25 items. If the user
+  loads the first 25 activities and selects "Agent" filter, they only see Agent entries
+  within those 25 — not all Agent entries in the DB. This is misleading: count badge
+  shows correct count from current page, not total per category in DB.
+- Pull-to-refresh bug: `handlePullRefresh` fires but does not update state:
+  `const res = await userService.getActivity(50)` — result is not used.
+  The wrapper likely provides haptic/visual refresh but no data update happens.
+- Individual delete button is hover-only (group-hover) — entirely inaccessible on mobile.
+  There is no mobile-friendly alternative (no swipe, no long-press, no visible button).
+- The `counts` object (badge numbers per chip) reflects client-loaded entries only, not
+  total DB counts per category. Combined with pagination, these counts are misleading when
+  total > 25 items.
+- `userService.getActivity` and `activityService.export` are two different services for
+  the same data source — slight API surface inconsistency.
+- Date inputs use native HTML date picker — appearance varies by browser/OS.
+  No date range validation (to < from is allowed without warning).
+
+=== IMPROVEMENTS ===
+Priority HIGH — Fix pull-to-refresh to actually update state from response.
+Priority HIGH — Make individual entry delete accessible on mobile (always-visible button
+  or swipe gesture).
+Priority HIGH — Pass category filter as a server-side query param so pagination respects
+  the selected category (not just client-side filtering of first page).
+Priority MED — Add date range validation (prevent from > to).
+Priority MED — Action type filter (currently declared as `actionType` in server route but
+  the frontend Filter component only uses category chips, not action type query param).
+  Wire the existing server capability.
+Priority LOW — Export button and Clear All: increase to min-h-[44px] for mobile.
+Priority LOW — Show total DB counts per category in chip badges (requires server support).
+
+=== SERVER ROUTES USED ===
+GET    /api/activity?limit=&offset=&q=&from=&to=  — paginated activity list
+DELETE /api/activity                               — clear all entries for user
+DELETE /api/activity/:id                           — delete single entry (via userService)
+GET    /api/activity/export                        — CSV download

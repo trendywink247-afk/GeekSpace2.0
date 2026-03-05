@@ -1,0 +1,108 @@
+PAGE: Roadmap
+ROUTE: /dashboard/roadmap
+STATUS: PARTIAL (static roadmap items hardcoded in frontend; user suggestions are dynamic via real API)
+
+=== DESKTOP VIEW ===
+The file is large (53KB). Based on the read preview + full code structure:
+- Page has multiple sections:
+  1. Progress header: "X of Y completed" with progress bar
+  2. Roadmap items grid: hardcoded array of 11 items (completed/in-progress/planned)
+  3. Release notes accordion/list: 3 hardcoded recent phases (72/71/70)
+  4. User suggestions section: "My Suggestions" with dynamic data from API
+  5. Trending suggestion clusters
+  6. Rewards from suggestion voting
+
+- Roadmap items are HARDCODED in the component (not fetched from API):
+  - 11 items with status, quarter, category, description, icon
+  - Statuses: 5 completed, 0 in-progress, 6 planned
+  - Completed: PWA, Social Login, Memory Manager, Quick Actions, Session Management
+  - Planned: Team Workspaces, Live Site Editor, Plugin System, API SDK, Custom Domains, Agent Marketplace
+- Status badges: CheckCircle2 (completed, green), Clock (in-progress, amber), Circle (planned, gray)
+- Progress bar calculated from hardcoded array
+
+Suggestions section:
+- "Submit Suggestion" button opens a Dialog modal
+- Form: Title + Description (min 20 chars) + Tags (comma-separated, max 5)
+- Duplicate detection warning shown if server finds similar suggestion
+- Submit success state (auto-closes after 3s)
+- My Suggestions list: shows user's own suggestions with status, upvote/downvote counts
+  - Edit button for "new" status suggestions
+  - Delete button (window.confirm dialog)
+  - Detail modal with status timeline events
+  - "Show all" toggle for >3 suggestions
+- Voting on suggestions: thumbs up button per suggestion (rate-limited server-side)
+- Trending clusters: top 3 suggestion clusters with overall score
+
+=== MOBILE VIEW ===
+- Grid layout for roadmap items collapses to single column on mobile
+- Dialog modal for suggestion form is standard - should work on mobile
+- Roadmap progress bar is full width
+- Suggestion list scrolls vertically
+- Voting buttons need to be checked for touch target size
+  (ThumbsUp/Down inside a button, likely small)
+- "Show all" toggle button adequate
+- Release notes use ChevronDown accordion — touch target likely adequate
+
+=== FUNCTIONALITY CHECK ===
+Static content:
+- Roadmap items display — WORKING (hardcoded, always renders)
+- Release notes display — WORKING (hardcoded 3 phases shown)
+- Progress bar — WORKING (computed from hardcoded items)
+- Status filters/tabs — UNKNOWN (not visible in preview; may have category filter buttons)
+- Admin editing of roadmap — MISSING: no admin-editable roadmap items;
+  all changes require code deployment
+
+Dynamic content (API-backed):
+- Load my suggestions — WORKING (GET /api/suggestions/mine)
+- Load my rewards — WORKING (GET /api/suggestions/rewards)
+- Load trending clusters — WORKING (GET /api/suggestions/clusters)
+- Submit suggestion — WORKING (POST /api/suggestions, with duplicate check)
+- Duplicate detection warning — WORKING (shown if server returns duplicate_warning:true)
+- Vote on suggestion — WORKING (POST /api/suggestions/:id/vote)
+- Edit own suggestion (new status only) — WORKING (PATCH /api/suggestions/:id)
+- Delete own suggestion — WORKING (DELETE /api/suggestions/:id, window.confirm)
+- View status timeline in detail modal — WORKING (GET /api/suggestions/:id/events)
+- Status change notifications for suggestion owners — mentioned in release notes (Phase 72)
+  but notification delivery is server-side; UI shows timeline events
+
+=== LOGIC ISSUES ===
+- The roadmap items are hardcoded in the frontend. The "current phase" is Phase 102+ but
+  the release notes only show phases 70-72 (Feb 2026). There's a gap — users see release
+  notes that are months old. The roadmap content is stale and requires a code deployment
+  to update.
+- `window.confirm` is used for delete confirmation — not consistent with the rest of the
+  app which uses inline confirmation UI.
+- The suggestion voting uses vote value `1` (hardcoded in handleVote call). The handleVote
+  function signature takes `(id: string)` only, with direction hardcoded to 1. There's no
+  "downvote" handler visible in the preview — the UI shows ThumbsDown icon but it may just
+  call vote with -1 from a separate handler (not visible in truncated read).
+- `voteState` is initialized empty and populated from vote API responses. Initial vote
+  counts are NOT pre-populated from the loaded suggestions data — so before a user votes,
+  the displayed count comes from `mySuggestions` data. After voting, it shows from
+  `voteState`. The display logic likely falls back correctly but there's a potential
+  flash of stale counts.
+- `loadError` is set as a string but only for partial failures ("Some data failed to load.")
+  with no specific indication of which data failed. Success data still renders normally.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Replace hardcoded roadmap items with an admin-editable API endpoint.
+  Current approach requires a full code deploy to update what's "in progress" or "planned".
+Priority HIGH — Update release notes to show recent phases (102, 101, etc.) or make them
+  dynamically fetched from the server (ops/AI_RELEASE_NOTES.md content).
+Priority MED — Replace window.confirm for delete with an inline confirmation UI
+  (consistent with rest of the app's patterns).
+Priority MED — Pre-populate voteState from loaded suggestions data to avoid count flicker.
+Priority LOW — Add category/status filter chips on roadmap items (filter by Platform/AI/UX etc.)
+Priority LOW — Add search/filter for own suggestions section.
+
+=== SERVER ROUTES USED ===
+GET    /api/suggestions/mine               — user's own suggestions
+GET    /api/suggestions/rewards            — voting reward history
+GET    /api/suggestions/clusters           — trending suggestion clusters
+POST   /api/suggestions                    — submit new suggestion
+POST   /api/suggestions/:id/vote           — vote on suggestion
+PATCH  /api/suggestions/:id               — edit own suggestion
+DELETE /api/suggestions/:id               — delete own suggestion
+GET    /api/suggestions/:id/events         — status timeline events for detail modal
+
+Static content: NO API routes used for roadmap items or release notes (hardcoded)

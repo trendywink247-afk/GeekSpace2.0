@@ -1,0 +1,75 @@
+PAGE: AI Inbox
+ROUTE: /dashboard/inbox
+STATUS: WORKING
+
+=== DESKTOP VIEW ===
+- Max-width 3xl container, centered, padded
+- Header row: "AI Inbox" title + cyan unread count badge + refresh button (top-right)
+- Filter chip row: All | Unread | Telegram | WhatsApp | System (horizontal scroll)
+- Message list: each message rendered as a rounded card with source label (TG/WA/SYS),
+  sender name, priority badge (urgent/high/normal colored), unread dot, timestamp
+- Summary/content shown truncated (line-clamp-2)
+- Expanded view (toggled by More/Less button): full content, AI suggested reply box,
+  reply input + send button (only for telegram/whatsapp sources)
+- Per-message action buttons: mark read (check), archive, delete (icon buttons)
+- Loading spinner and empty state with large Inbox icon
+
+=== MOBILE VIEW ===
+- Same single-column layout works on mobile (max-w-3xl with mx-auto collapses fine)
+- Filter chips have overflow-x-auto + pb-1 (scrollable on narrow screens)
+- Action buttons (check, archive, delete) are small icon buttons (~28px tap targets)
+  - HIGH RISK: p-1.5 icon buttons are below 44px minimum touch target
+- Reply input is a standard text input; send button uses p-2 (adequate)
+- No swipe-to-archive gesture — only button-based actions
+
+=== FUNCTIONALITY CHECK ===
+- Fetch messages from /api/inbox — WORKING (GET with optional source/unreadOnly params)
+- Unread count badge (derived locally from fetched messages) — WORKING
+  NOTE: /inbox/count endpoint exists on server but page computes count client-side from message list, not via polling /inbox/count
+- Filter by source (All/Unread/Telegram/WhatsApp/System) — WORKING (passed as ?source= param)
+- Mark as read — WORKING (PATCH /api/inbox/:id/read)
+- Archive — WORKING (PATCH /api/inbox/:id/archive, removes from local list)
+- Delete — WORKING (DELETE /api/inbox/:id, removes from local list)
+- Expand/collapse message — WORKING (local toggle)
+- Suggested reply display — WORKING (purple box, "Use this" pre-fills input)
+- Reply from inbox — WORKING (POST /api/inbox/:id/reply, only for telegram/whatsapp)
+- Reply for 'system' source — MISSING (no reply UI shown for system messages, correct behavior)
+- Auto-refresh / polling — MISSING (no interval polling, only manual refresh button)
+- Error state display — WORKING (red banner with AlertCircle icon)
+
+=== LOGIC ISSUES ===
+- No polling: unread count badge only updates on manual refresh. If Telegram messages
+  arrive while the user is on the page, they won't see the count update without refreshing.
+- Archive removes item from UI but filter state stays on current filter — correct behavior
+  but if user is on 'unread' filter and marks a message read, it stays visible until refresh.
+  Actually re-reading code: mark read only updates read:1 in local state, does NOT remove
+  from 'unread' filtered view automatically. User must switch filters to see effect.
+- The unread badge in the header is derived from local messages array. If user switches to
+  'unread' filter, all visible messages are unread (correct), but the badge still reflects
+  all messages count, not just visible ones.
+- Reply error clears itself only if another error occurs. No way to dismiss error banner
+  except triggering another action.
+- No confirmation on delete (permanent hard delete, no undo).
+- incoming_reply route: POST /api/inbox/:id/reply — the inbox.ts route file was only read
+  partially; need to verify this route actually exists (InboxPage assumes it does).
+
+=== IMPROVEMENTS ===
+Priority HIGH — Poll /api/inbox/count every 60 seconds to update badge in real time
+  (endpoint exists on server but page never calls it)
+Priority HIGH — Action button touch targets are too small (~28px). Wrap in min-h-[44px]
+  min-w-[44px] for mobile accessibility.
+Priority MED — When filter is 'unread' and a message is marked read, remove it from the
+  visible list immediately (currently stays until manual refresh or filter switch).
+Priority MED — Add auto-dismiss or X button on error banner.
+Priority MED — Add confirmation dialog before permanent delete.
+Priority LOW — Add swipe-to-archive gesture on mobile for faster triage.
+Priority LOW — Add pagination or infinite scroll (currently fetches up to 50 items,
+  no load-more mechanism).
+
+=== SERVER ROUTES USED ===
+GET    /api/inbox                  — list messages (source, unreadOnly, limit, offset params)
+GET    /api/inbox/count            — unread count (EXISTS on server, NOT called by page)
+PATCH  /api/inbox/:id/read         — mark as read
+PATCH  /api/inbox/:id/archive      — archive message
+DELETE /api/inbox/:id              — hard delete
+POST   /api/inbox/:id/reply        — send reply (Telegram/WhatsApp only)

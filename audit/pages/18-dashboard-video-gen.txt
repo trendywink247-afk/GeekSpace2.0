@@ -1,0 +1,109 @@
+PAGE: Video Generator
+ROUTE: /dashboard/video-gen
+STATUS: PARTIAL (UI complete and sophisticated; actual video generation BROKEN for free users due to Pollinations video being blocked from Hostinger; Director Mode depends on fal.ai which requires FAL_KEY)
+
+=== DESKTOP VIEW ===
+Header: "Video Generator" with videoCount/maxVideos subtitle and agent assignment badge (same pattern as Image Gen).
+Tab system with two modes:
+  1. "Quick Gen" tab — simple prompt + duration slider (3-10s) + model selector + Generate button
+  2. "Director Mode" tab — AI-powered multi-clip pipeline (6 clips → auto-stitched)
+
+Quick Gen panel:
+  - Model selector dropdown (5 models: Auto, Pollinations Video, Seedance Lite, Veo 2, Premium)
+  - Duration slider (3-10 seconds)
+  - Prompt textarea
+  - Generate button (shows estimated time in toast after generation)
+  - Gallery below with video thumbnails (lazy-loaded via IntersectionObserver), expiry countdown, delete with confirmation
+
+Director Mode panel:
+  - "Movie Idea" textarea
+  - "Expand Idea" button (AI enriches prompt via LLM before submission)
+  - "Queue" button to queue a next idea if a job is running
+  - Active job panel: job status, 6-clip progress grid, per-clip retry button
+  - Auto-stitch fires automatically when all 6 clips succeed (1.5s delay)
+  - Stitch result: download link if ffmpeg available, or individual clip URLs
+  - Job history with status filter (all/done/failed)
+
+Available Video Models accordion at bottom (same pattern as Image Gen).
+Toast notification system (3.5s timeout).
+Delete confirmation flow (two-step: click Delete → confirm button appears).
+
+=== MOBILE VIEW ===
+No portrait lock class found in VideoGenPage.tsx.
+Tab switching is horizontal scroll (overflow-x-auto scrollbar-hide).
+Director Mode clip grid likely wraps well (flex-wrap behavior).
+Duration slider has min-h touch target but no explicit touch sizing mentioned.
+Video gallery grid is 2-column → 3-column at sm → 4-column at lg.
+Delete confirmation may feel cramped on very narrow screens.
+LazyVideo component uses IntersectionObserver with 200px rootMargin — good for mobile performance.
+
+=== FUNCTIONALITY CHECK ===
+Quick Gen — prompt input — WORKING (textarea, character limit 2000)
+Quick Gen — model selector — WORKING (fetches /api/videos/models/available)
+Quick Gen — duration slider — WORKING (3-10s range)
+Quick Gen — Generate button — BROKEN for free users:
+  - 'pollinations-video' and 'seedance-lite' both resolve to 'pollinations' in the server
+  - generateVideo() in media-generation.ts uses video.pollinations.ai which TIMES OUT from Hostinger
+  - 'auto' with zero credits also falls back to 'pollinations'
+  - Generation will return error "Video generation failed" or hang until timeout
+Quick Gen — model 'openrouter-video' (Veo 2) — BROKEN (callOpenRouterVideo always calls generateVideo as fallback — it sends a chat completions request to OpenRouter, ignores the response, then calls generateVideo anyway — net result is always Pollinations call, which is blocked)
+Quick Gen — model 'premium' — BROKEN (enhances prompt via Kimi then calls generateVideo → Pollinations, same problem)
+Quick Gen — video gallery load — WORKING (calls GET /api/videos)
+Quick Gen — polling for processing videos — WORKING (10s interval, checks /:id/status)
+Quick Gen — delete with confirmation — WORKING
+Quick Gen — video preview modal — WORKING (plays video inline, copy URL button)
+
+Director Mode — Expand Idea — WORKING (calls POST /api/videos/director/expand-idea → LLM via routeChat)
+Director Mode — Create job — PARTIAL (route exists, creates DB record, runs runDirectorMode async)
+Director Mode — runDirectorMode service — depends on fal.ai (generateFalClip in fal-video.ts); if FAL_KEY not configured, clips will fail
+Director Mode — job polling (4s interval) — WORKING logic
+Director Mode — auto-stitch — PARTIAL (attempts ffmpeg concat; ffmpeg likely not in Docker container → falls back to soft stitch returning clip URLs only)
+Director Mode — per-clip retry — WORKING route (POST /api/videos/director/:jobId/retry-clip/:clipIndex)
+Director Mode — job history + filter — WORKING UI
+Director Mode — queuing next idea — WORKING UI (state management correct)
+Director Mode — credits check — WORKING server-side (60 credits required, skipped in test mode)
+
+Model status dots — BROKEN (videosRouter.get('/models/status') pings image.pollinations.ai HEAD with 5s timeout — same blocked endpoint. Will report 'down'. seedance-lite, openrouter-video, premium hardcoded 'ok' regardless of actual state)
+Preferred video model — WORKING (agentService.setVideoModel, loaded on mount)
+Available Video Models accordion — WORKING
+
+=== LOGIC ISSUES ===
+1. VIDEO GENERATION COMPLETELY BROKEN FOR FREE USERS: Both 'pollinations-video' and 'seedance-lite' resolve to 'pollinations' on the server, and video.pollinations.ai is TIMEOUT-blocked from Hostinger (as noted in MEMORY.md). There is NO working free video generation path. No user-facing message explains this — users will just see "Video generation failed" toast after the request times out.
+
+2. MISLEADING MODEL NAMES: "Seedance Lite" in the UI implies a working product. In the server it silently maps to 'pollinations'. "Veo 2 (via OpenRouter)" calls the chat completions endpoint (not a video generation API), ignores the response, then calls generateVideo (= Pollinations) anyway. This is a stub that will always fail silently.
+
+3. NO "SERVICE UNAVAILABLE" WARNING: The page shows no banner or warning that video generation is currently not working. Users are presented with an apparently functional UI that will silently fail. This creates bad UX and wastes user credits (premium model deducts 25 credits before the generation attempt, which will fail).
+
+4. CREDIT DEDUCTION BEFORE SUCCESS CHECK: In videosRouter.post('/generate'), for openrouter-video, credits are deducted (15cr) before checking if callOpenRouterVideo succeeded. callOpenRouterVideo always falls back to generateVideo, so credits are deducted and then generation fails. For 'premium' (25cr) — credits deducted only after generateVideo succeeds, but generateVideo (Pollinations) will fail — so no deduction happens but user gets an error. The credit deduction timing is inconsistent across model paths.
+
+5. SOFT STITCH ISSUE: If ffmpeg is not in the Docker container (likely), stitchedUrl will always be null. The UI shows "individual clip URLs ready for download" but the stitchResult state also returns clipUrls. A user has no way to play clips back-to-back in the app — they must manually open each URL. No in-browser sequential clip player is implemented.
+
+6. DIRECTOR MODE REQUIRES FAL_KEY: Director Mode depends on fal.ai for actual clip generation. If FAL_KEY is not set in .env, all director clips will fail. No UI check verifies FAL_KEY availability before allowing the user to start a director job and spend 60 credits.
+
+7. POLLINATIONS STATUS CHECK IS WRONG: Same as Image Gen — the model status ping uses image.pollinations.ai (the image endpoint, not video), and this URL is blocked from Hostinger. All status checks will show 'down' for Pollinations models.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Add a prominent banner on the Video Generator page: "Video generation is temporarily unavailable — no working free provider is reachable from this server. Director Mode via fal.ai may work if FAL_KEY is configured."
+Priority HIGH — Block the Generate button with a clear error if the selected model is known-broken (pollinations, seedance-lite, openrouter-video), rather than letting the request time out and show a generic error.
+Priority HIGH — Do NOT deduct credits for a generation attempt that will fail. Credit deduction should only happen after confirmed URL is produced.
+Priority HIGH — Director Mode: check FAL_KEY presence at startup and surface a warning in the Director Mode panel if it is not configured.
+Priority MED — Implement a simple sequential clip player in the UI for soft-stitch results (a playlist of <video> elements the user can step through).
+Priority MED — Remove or relabel "Seedance Lite" and "Veo 2" model names since neither works as advertised. Mark them as "Coming Soon" or remove entirely.
+Priority MED — Fix model status ping: use the correct video.pollinations.ai endpoint, but mark it as 'down' immediately since it's known-blocked, or remove the Pollinations status check entirely.
+Priority LOW — Add auto-download for stitched video file rather than requiring users to open a local /tmp path.
+
+=== SERVER ROUTES USED ===
+GET  /api/videos                              — list user videos
+GET  /api/videos/models/available             — fetch model list
+GET  /api/videos/models/status                — fetch per-model status (cached 60s; broken ping)
+POST /api/videos/generate                     — generate video (always fails for free models)
+GET  /api/videos/:id/status                   — check video readiness (polling)
+DELETE /api/videos/:id                        — delete video
+POST /api/videos/director/create              — start director job (requires 60 credits)
+GET  /api/videos/director                     — list director jobs
+GET  /api/videos/director/:jobId              — get job status (polling)
+POST /api/videos/director/:jobId/stitch       — stitch clips
+POST /api/videos/director/:jobId/retry-clip/:clipIndex — retry single clip
+POST /api/videos/director/expand-idea         — AI expand idea
+GET  /api/agent/config                        — load preferred_video_model
+GET  /api/pico/agents                         — load fleet agents for picker

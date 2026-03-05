@@ -1,0 +1,86 @@
+PAGE: Usage Analytics
+ROUTE: /dashboard/usage
+STATUS: WORKING (real data, real charts, real API calls)
+
+=== DESKTOP VIEW ===
+- Full-width container with space-y-6, wrapped in PullToRefreshWrapper
+- Header: "Usage Analytics" + subtitle + Day/Week/Month range selector toggle (top-right)
+- 4 KPI cards (2-col mobile, 4-col desktop): Total Cost, Messages, Tokens In/Out, Tool Calls
+  - Loading skeletons while fetching
+  - Each card highlights on hover (color transitions)
+  - Cost card shows forecast badge (amber TrendingUp) when available
+- Cost Over Time area chart (Recharts): 7d/14d/30d range buttons
+  - Area fill gradient (#00FF88), X/Y axes, tooltip with $0.0000 format
+  - Responsive container, 280px height desktop, 180px min-height
+- 2-column grid: Provider Breakdown (pie chart) + Hourly Activity (bar chart)
+  - Pie chart: donut style, colored segments per provider, legend below
+  - Hourly bar chart: request count per hour, rounded bars
+- 3-column grid: Top Tools by Cost (horizontal bar chart, 2-col span) + Billing Summary card
+  - Billing summary: Plan, Credits, Monthly Allowance, Used This Month, Resets date + progress bar
+- Usage Events log: paginated table (50/page) with MobileTable component
+  - Columns: Time, Provider, Model (hidden mobile), Tokens, Cost, Channel (hidden mobile)
+  - Pagination: Prev/Next buttons, page X of Y
+- Provider/model names are aliased (picoclaw → Weebo, ollama → Local Engine, etc.)
+
+=== MOBILE VIEW ===
+- PullToRefreshWrapper enables pull-to-refresh gesture
+- KPI cards: 2-col grid on mobile (grid-cols-2) — good layout
+- Charts use ResponsiveContainer — scale down correctly
+- Recharts SSR guard: mounted state check prevents SSR render (Vite app, not SSR, so fine)
+- Provider breakdown pie and hourly bar charts stack to full-width on mobile (lg:grid-cols-2)
+- Top tools + billing: stacks to full-width on mobile
+- Usage event table: MobileTable hides 'Model' and 'Channel' columns on mobile
+- Range selector buttons: adequate touch target (text size sm, px-3 py-1.5)
+- Chart heights: min-h-[180px] ensures charts don't collapse to zero on mobile
+
+=== FUNCTIONALITY CHECK ===
+- Total cost, messages, tokens, tool calls KPIs — WORKING (real DB data)
+- Day/Week/Month summary range switch — WORKING (re-fetches summary)
+- Cost over time area chart (7d/14d/30d) — WORKING (re-fetches chart data)
+- Provider breakdown pie chart — WORKING
+- Hourly activity bar chart — WORKING (uses latency endpoint)
+- Top tools by cost — WORKING (derived from summary.byTool)
+- Billing summary mini-card — WORKING (plan, credits, usage bar)
+- Usage events log with pagination — WORKING (50 per page)
+- Pull-to-refresh — WORKING
+- Per-model breakdown — WORKING (visible in usage events table)
+- Cost estimate/forecast — WORKING (shown in KPI card when available)
+- Token quota/limit indicators — PARTIAL: shows usage% bar but no hard cap warning
+- Export data — MISSING: no CSV/JSON export button on this page
+  (BillingPage has usage history, this page does not export)
+- Token efficiency metrics (cost per message) — MISSING
+
+=== LOGIC ISSUES ===
+- Initial useEffect has empty deps array `[]` (eslint-disable comment) but captures
+  `summaryRange` and `chartRange` initial values. If component remounts with different
+  defaults (unlikely now, but fragile) it would not pick up the right initial ranges.
+- Error shown ONLY if all 6 endpoints fail (`failures === 6`). If 1-5 fail, partial data
+  is displayed silently with no user notification. A user could see cost = $0.00 with no
+  indication that the data fetch partially failed.
+- `handlePullRefresh` does not update `eventsPage` counter back to 1 when refreshing —
+  if user is on page 3 and pulls to refresh, new data is fetched for page 3 (not page 1).
+- `usageService.latency()` is called to populate hourly data but the parameter name
+  'latency' is semantically misleading — it actually returns hourly request counts.
+  Naming inconsistency between service method name and data purpose.
+- The Billing summary card in this page is a simplified view (plan/credits/allowance/usage).
+  The full BillingPage has more detail. These two pages could show divergent data if
+  billing cache differs.
+- Charts only render client-side due to `mounted` guard. This means there's a brief
+  flash of skeleton → content on first load.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Show partial failure warning when some (not all) endpoints fail.
+Priority HIGH — Add CSV export button for usage events.
+Priority MED — Fix pull-to-refresh to reset events pagination to page 1.
+Priority MED — Add cost-per-message efficiency stat to KPI cards.
+Priority MED — Add quota/limit warning indicator when usage exceeds 80% of monthly allowance.
+Priority LOW — Rename latency() service method to hourlyActivity() for clarity.
+Priority LOW — Add date range filter for usage events table (currently only pagination).
+
+=== SERVER ROUTES USED ===
+GET    /api/usage/summary?range=   — KPI summary (totalCostUSD, messages, tokens, tools, forecast)
+GET    /api/usage/chart?range=     — daily cost data points for area chart
+GET    /api/usage/providers        — per-provider cost breakdown for pie chart
+GET    /api/usage/latency          — hourly activity counts for bar chart
+GET    /api/usage/billing          — billing info (plan, credits, allowance, used, resetDate)
+GET    /api/usage/events?page=&limit= — paginated usage event log

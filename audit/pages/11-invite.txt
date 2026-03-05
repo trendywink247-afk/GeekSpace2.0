@@ -1,0 +1,131 @@
+PAGE: Invite Page
+ROUTE: /invite?code=XXXX
+STATUS: WORKING
+
+=== DESKTOP VIEW ===
+Full dark background (bg-[#05050A]), centered flex layout with p-4, relative overflow-hidden.
+Decorative background: two radial gradient blobs (cyan top-center, green bottom-right),
+  pointer-events-none, opacity-10/8 — subtle ambiance, no performance concern.
+Logo: Hexagon icon in gradient square + "Agentin Chat" text (brand correct on this page).
+Title: "You're Invited" (step='code') or "Create Your Account" (step='register').
+Subtitle: context-appropriate copy per step.
+Card: bg-[#0B0B10], border-[#7B61FF]/20 (purple brand, distinct from main app's cyan theme).
+
+Step 1 (code entry):
+  Invite Code input: monospace, tracking-widest, uppercase auto-transform, Ticket icon prefix.
+  Auto-focus on the code input.
+  Hint text: "Received an invite email? Copy the code from the link."
+  Error display: red badge below input.
+  "Continue" button: purple (bg-[#7B61FF]).
+  "Don't have an invite? Request access" mailto link (hello@agentin.chat).
+
+Step 2 (registration form):
+  Invite code badge: green confirmation showing the code + "change" link to go back.
+  Display Name (optional): User icon prefix input.
+  Username (required): @ prefix, auto-lowercases + strips non-alphanumeric chars.
+  Email (required): Mail icon prefix.
+  Password (required): Lock icon prefix, minLength=8 enforced.
+  Error display: red badge.
+  "Join Beta" submit button: purple, with Loader2 spinner while loading.
+  Terms + Privacy Policy links (routes to /terms and /privacy).
+
+Below card: "Already have an account? Sign in" link to /login.
+
+=== MOBILE VIEW ===
+p-4 outer padding, max-w-md container — single column, mobile-first appropriate.
+Inputs are full-width with icon prefix — readable and touch-friendly.
+"change" link in the invite badge: min-h-[44px] min-w-[44px] flex items-center — touch safe.
+Buttons are full-width, default Button height (adequate for touch).
+No responsive breakpoint changes needed; the layout is inherently single-column.
+Background gradient blobs: overflow-hidden on the page container, no mobile scroll side effects.
+Keyboard on mobile: autoFocus on the invite code input in step 1 will open keyboard
+  immediately on page load, which is generally acceptable for a code entry flow.
+Password input minLength=8 attribute is enforced at HTML level — mobile keyboards may not
+  show a numeric pad for a password input with text type, which is correct (passwords
+  need mixed characters).
+
+=== FUNCTIONALITY CHECK ===
+Query param pre-fill (?code=XXXX) — WORKING (useSearchParams; code auto-uppercased on init)
+Step 1 client-side validation — WORKING (inviteCode.trim().length < 4 check)
+Step 1 does NOT call server — WORKING BY DESIGN (server validates on registration, not pre-check)
+Step 2 form fields rendered — WORKING (name optional, username/email/password required)
+Username sanitization — WORKING (toLowerCase + replace /[^a-z0-9_]/g — strips hyphens too,
+  which is stricter than ProfileStep which allows hyphens via /[^a-z0-9-_]/g; inconsistent)
+Password minimum enforced — WORKING (client: length<8 check + minLength attr; server: bcrypt)
+Registration API call — WORKING (authService.signup with invite_code in payload)
+Token storage on success — WORKING (localStorage.setItem('gs_token', data.token))
+User set in store on success — WORKING (setUser(data.user))
+Redirect to /dashboard on success — WORKING (navigate('/dashboard', { replace: true }))
+Error display — WORKING (server error shown, generic fallback provided)
+Loading state — WORKING (isLoading disables button + shows spinner)
+"change" back to step 1 — WORKING (setStep('code'); setError(''))
+"Already have an account? Sign in" link — WORKING (Link to /login)
+Request access link — WORKING (mailto:hello@agentin.chat)
+Terms/Privacy links — WORKING as navigation (Link to /terms and /privacy — these pages must exist)
+Invite code marked as used on server — WORKING (auth.ts updates invite_codes table post-signup)
+
+=== LOGIC ISSUES ===
+1. Username validation inconsistency: InvitePage strips hyphens (/[^a-z0-9_]/g) but
+   ProfileStep during onboarding allows hyphens (/[^a-z0-9-_]/g). A username with a hyphen
+   can be set during onboarding but cannot be entered on the invite page — the hyphen would
+   be silently removed mid-typing.
+
+2. No server-side invite code pre-validation in step 1: clicking Continue with a syntactically
+   valid but semantically wrong code (e.g., a 4-char code that doesn't exist in the DB)
+   proceeds to the full registration form. The user fills in all fields, submits, then gets
+   the "Invalid invite code" error. This is a poor UX — a quick GET /api/auth/invite/validate
+   call in step 1 would catch bad codes early.
+
+3. Invite code case sensitivity: client uppercases with .toUpperCase() and server compares
+   with .trim().toUpperCase(). This is consistent. However, if a user pastes a code with
+   spaces around it, the trim only happens server-side. Client should trim before display.
+
+4. No check if user is already logged in: if an authenticated user visits /invite, they can
+   attempt registration. This would fail server-side (email/username already taken), but the
+   UX should redirect them to /dashboard with a message instead of showing the registration form.
+
+5. /terms and /privacy routes: the form links to these pages. If they don't exist in the
+   router, clicking them would 404 or show a blank page — creating legal liability for a
+   registration page that references non-functional ToS links.
+
+6. Registration response: the signup endpoint returns user object without `onboardingCompleted`
+   field (unlike login which includes it). After navigating to /dashboard, the app's auth guard
+   should check onboardingCompleted — if it's undefined/null, behavior depends on the
+   authStore's default. A newly-created user should be routed to /onboarding, not /dashboard.
+   The navigate('/dashboard') here may bypass that guard.
+
+7. Error state not cleared on step change: when going back from step 2 to step 1 (via "change"
+   link), setError('') is called explicitly — this is correct. But if an error shows in step 1,
+   then user proceeds to step 2, the step 1 error variable is cleared by setStep transition.
+   This is fine; noting it as correct behavior.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Add pre-validation of invite code in step 1 before advancing to the
+  registration form (GET endpoint to check existence + usage status).
+
+Priority HIGH — Verify /terms and /privacy routes exist in the router. If not, these must be
+  created or the links updated to external URLs before this page can be used in production.
+
+Priority HIGH — After signup, navigate to /onboarding not /dashboard. Newly registered users
+  need onboarding and the signup response does not set onboardingCompleted=true.
+
+Priority MED — Unify username character rules between InvitePage and ProfileStep (either
+  both allow hyphens or neither does).
+
+Priority MED — Add client-side trim of invite code before display and submission to prevent
+  space-padded codes causing confusing validation failures.
+
+Priority MED — Redirect already-authenticated users away from /invite to /dashboard.
+
+Priority LOW — Show a character counter or hint on the username field explaining allowed
+  characters (the silent stripping of hyphens will confuse users trying to type "john-doe").
+
+=== SERVER ROUTES USED ===
+POST /api/auth/signup — called on step 2 form submit. Accepts:
+  { email, password, username, name?, invite_code }
+  Returns { user, token } on success.
+  Returns 403 if invite_code missing/invalid, 409 if invite already used or email/username taken.
+  Internally: creates user, agent_config, features, subscription, portfolio, pico_agents,
+  default integrations records, marks invite_code as used.
+
+No other routes called. The page does not call any pre-validation endpoint for the invite code.

@@ -1,0 +1,94 @@
+PAGE: Health Dashboard
+ROUTE: /dashboard/health
+STATUS: WORKING (real SSE stream with REST fallback; real service health data)
+
+=== DESKTOP VIEW ===
+- Full-width container, space-y-6, animate-in fade-in
+- Header: "API Health" h1 + subtitle with live/disconnected indicator (animated green dot or red dot)
+  - Connected: "Live — updates every 5s" with pulsing green dot
+  - Disconnected: error message + optional Retry button
+  - Top-right: current timestamp badge (updates with each SSE event)
+- Stats row (5 cards, 2-col mobile / 5-col desktop):
+  - Requests, Errors, Avg Latency, Req/min, Uptime
+  - Color-coded: latency >1000ms = amber, errors>0 = red, uptime green
+- Component Status Grid (2-col mobile / 4-col desktop):
+  - Database, Local Engine, Cloud Engine, Premium Engine, Weebo Engine, Bridge, Telegram, n8n Automations
+  - Each card: colored icon + label + status text (green/red/gray)
+  - Status values: ok/reachable/configured/active → green; unreachable/down → red; not_configured/disabled → gray
+- Error Rate card + Memory Usage card (2-col grid)
+  - Error rate: dynamic color (>5% red, >0% amber, 0% green)
+  - Memory: heap used in MB
+- Hot Endpoints table (only shown when topEndpoints.length > 0):
+  - Columns: Endpoint path, Hits, Errors, Avg Latency
+  - Sticky header, hover highlight on rows
+- Footer: active connections count + window reset note
+
+=== MOBILE VIEW ===
+- Stats row collapses to 2-col grid on mobile (grid-cols-2 md:grid-cols-5)
+- Component grid: 2-col on all sizes (grid-cols-2 md:grid-cols-4)
+- Error Rate + Memory: side by side on desktop, stacked on mobile (grid-cols-1 md:grid-cols-2)
+- Hot endpoints table: overflow-x-auto (scrollable on narrow screens)
+- Cards use press-scale class (touch feedback)
+- Retry button: h-6 px-2 (very small — 24px height, well below 44px minimum touch target)
+- Timestamp badge: shrink-0 prevents overflow
+
+=== FUNCTIONALITY CHECK ===
+- SSE stream connection to /api/health/stream — WORKING
+  - Opens EventSource, parses JSON messages, updates snapshot in real time
+  - Handles 'timeout' custom event (server-sent) with immediate reconnect
+  - Exponential backoff: 3s → 6s → 12s → ... → 30s max, up to 10 retries
+  - After 10 retries: falls back to REST polling every 10 seconds
+- REST fallback to /api/health — WORKING (when SSE unavailable)
+- Retry button — WORKING (resets retry counter, clears REST interval, reconnects SSE)
+- Live component status (database, ollama, openrouter, edith, picoclaw, bridge, telegram, n8n) — WORKING
+- Request metrics (total, errors, avg latency, req/min, active connections) — WORKING
+- System uptime + memory — WORKING
+- Error rate calculation — WORKING (errors/total * 100, rounded to 1 decimal)
+- Hot endpoints list — WORKING (conditional render when topEndpoints not empty)
+- Uptime formatting (d/h/m) — WORKING
+- Historical uptime graph — MISSING (no chart of uptime history, only current uptime)
+- Alert thresholds / notifications — MISSING (no email/push alert when service goes down)
+- Admin-only gating — MISSING: this page is accessible to all authenticated users
+  (no admin check in the frontend component; health data may be user-visible by intent)
+- Service latency per-component — MISSING (individual component latency not shown)
+
+=== LOGIC ISSUES ===
+- EventSource does not send authentication headers (browsers don't support this natively).
+  The /api/health/stream endpoint may require auth. If the auth is cookie-based or if the
+  stream endpoint is publicly accessible, this works fine. If it requires a Bearer token,
+  the SSE connection will fail silently (401) and fall back to REST.
+  Need to verify server-side auth on the health stream route.
+- When SSE fallback occurs (REST polling every 10s), `connected` is set to `false`.
+  The UI shows "Disconnected" with an error message even though data is being polled
+  correctly via REST. This is technically accurate but may alarm users unnecessarily.
+  Consider showing "Polling mode" or a separate indicator.
+- Retry button: 24px height (h-6) is too small for mobile touch targets.
+- `retriesRef` is not reset when handleRetry is called INSIDE the onerror handler path
+  (when MAX_RETRIES is hit and REST fallback starts). If the user manually hits Retry,
+  `retriesRef.current = 0` is reset correctly, but if auto-retry somehow triggers again,
+  the counter could reach MAX_RETRIES quickly.
+- `reconnectTimerRef` is cleared on manual retry but the REST interval (`restIntervalRef`)
+  is also cleared on retry — this is correct, but if the user hits Retry while REST
+  polling is active, the interval is cleared and SSE reconnection starts, which is the
+  right behavior.
+- The component always shows 'picoclaw' component data under label 'Weebo Engine' —
+  brand-safe alias is correctly applied.
+- No auto-reconnect after successful REST fallback when SSE eventually becomes available
+  again (stays on polling forever once MAX_RETRIES is hit).
+
+=== IMPROVEMENTS ===
+Priority HIGH — Verify SSE authentication: confirm /api/health/stream does not require
+  auth headers (or uses cookie auth), otherwise the stream will silently fail for all users.
+Priority HIGH — Fix Retry button touch target: change h-6 to min-h-[44px].
+Priority MED — Show "Polling mode (REST)" instead of error/disconnected when REST fallback
+  is active and data is being received successfully.
+Priority MED — Add auto-reconnect to SSE after REST fallback (e.g., try SSE every 60s
+  even while REST polling is active).
+Priority MED — Add per-component latency metric (e.g., "DB: 2ms, Ollama: 450ms").
+Priority LOW — Add historical uptime chart (last 24h or 7d service availability graph).
+Priority LOW — Consider admin-only gating if health data should not be user-visible
+  (currently shows request counts, endpoint paths, error rates — may expose server internals).
+
+=== SERVER ROUTES USED ===
+GET    /api/health/stream          — SSE stream (primary, updates every 5s)
+GET    /api/health                 — REST fallback (used when SSE unavailable)

@@ -1,0 +1,158 @@
+PAGE: Settings
+ROUTE: /dashboard/settings
+STATUS: WORKING (most features functional; very large page with many subsystems)
+
+=== DESKTOP VIEW ===
+- Full-page container using Tabs component (profile/appearance/notifications/memory/security/api-keys)
+- Tabs row with labeled triggers, rendered as horizontal tab bar
+- Profile tab:
+  - Name, username, email, bio, location, website fields
+  - Avatar URL input
+  - "Unsaved changes" warning before navigating away (beforeunload guard)
+  - Save button with loading spinner
+  - Agent personality selector (weebo/edith/jarvis persona switcher)
+  - AI Background generator (text input + generate + preview + apply)
+  - Portfolio personality selector
+- Appearance tab:
+  - Dark/Light/System theme mode selector
+  - Accent color presets (clickable swatches)
+  - Custom accent color hex input
+  - Compact mode toggle
+  - Background preview
+- Notifications tab:
+  - Email/push preference toggles (server-saved)
+  - Weekly digest, security alerts, reminder notifs, connection alerts toggles
+  - Agent-level notification preferences (5 toggles, saved to agent_configs)
+  - Snooze presets editor
+- Memory tab (lazy-loaded when tab is active):
+  - Memory filter (all/agent/user/system)
+  - Memory list with delete per entry
+  - Reaction summary
+  - Starred messages section (toggle show/hide)
+  - Export conversations: JSON all, Markdown all, Markdown last 7 days
+- Security tab (lazy-loaded when tab is active):
+  - Active sessions list with revoke buttons
+  - Preferred model picker (openrouter/ollama/etc.)
+  - Preferred free model picker
+  - Change password form (current/new/confirm)
+  - Account deletion (requires password confirmation, 2-step confirm)
+  - Keyboard shortcuts cheat sheet (toggle with '?' key)
+- API Keys tab:
+  - List of stored API keys (masked)
+  - Add new key form (provider dropdown + key value)
+  - Rotate key (inline form)
+  - Delete key
+- Version number shown from server
+- Toast notification after saving agent config changes
+
+=== MOBILE VIEW ===
+- useMobileDetect() hook used in component (isMobile) but main tabs are not
+  changed for mobile layout — same horizontal TabsList on all sizes
+  - On narrow screens the tab triggers may overflow or wrap (TabsList may truncate)
+  - No mobile-specific dropdown or bottom-sheet replacement for tab navigation
+- Input fields: standard height, adequate for touch
+- Save button: Button component (standard height, likely 40px — below 44px minimum)
+- Session revoke buttons, key delete buttons: small icon/text buttons
+- Snooze presets editor: inline badge + X buttons (small tap targets)
+- Avatar input: plain text input, no camera/upload button on mobile
+- No pull-to-refresh
+
+=== FUNCTIONALITY CHECK ===
+Profile tab:
+- Load profile fields from auth store — WORKING (pre-populated from user object)
+- Save profile (name/username/email/bio/location/website/avatar) — WORKING (PATCH /api/me)
+- Unsaved changes guard — WORKING (beforeunload event)
+- Agent AI background generator — WORKING (POST /api/agent/background)
+- Apply generated background — WORKING (saved to localStorage + user profile)
+
+Appearance tab:
+- Theme mode toggle (dark/light/system) — WORKING (useThemeStore)
+- Accent color presets — WORKING (local theme store)
+- Custom accent hex — WORKING
+- Compact mode toggle — WORKING (authStore)
+
+Notifications tab:
+- Load preferences from server — WORKING (GET /api/agent/config on mount)
+- Save individual toggle — WORKING (PATCH /api/me for email/push; PATCH /api/agent/config for agent notifs)
+- Snooze presets save — WORKING (PATCH /api/agent/config)
+
+Memory tab:
+- List memories — WORKING (GET /api/memory)
+- Filter by type — WORKING
+- Delete memory — WORKING (DELETE /api/memory/:id)
+- Reaction summary — WORKING (GET /api/memory/reactions)
+- Starred messages — WORKING (GET /api/agent/starred)
+- Export JSON — WORKING
+- Export Markdown (all / last 7 days) — WORKING
+
+Security tab:
+- List active sessions — WORKING (GET /api/me/sessions)
+- Revoke session — WORKING (DELETE /api/me/sessions/:id)
+- Get preferred model — WORKING (GET /api/me/model)
+- Set preferred model — WORKING (PUT /api/me/model)
+- Free model list — WORKING (GET /api/models/free)
+- Change password — WORKING (POST /api/auth/change-password)
+- Delete account — WORKING (POST /api/auth/delete-account, requires password)
+- Keyboard shortcut cheat sheet — WORKING ('?' key + Escape)
+
+API Keys tab:
+- List API keys — WORKING (GET /api/api-keys)
+- Add new key — WORKING (POST /api/api-keys)
+- Delete key — WORKING (DELETE /api/api-keys/:id)
+- Rotate key — WORKING (PATCH /api/api-keys/:id)
+
+2FA — MISSING (no 2FA setup or management UI)
+Privacy settings — PARTIAL: privacy state is declared (showInDirectory, showAvatar, etc.)
+  but no save handler uses it — privacy toggles appear to be UI-only, not persisted
+
+=== LOGIC ISSUES ===
+- Privacy toggles (showInDirectory, showAvatar, showLocation, showProjects, showActivity)
+  have state but no save path — they are declared and rendered but no API call saves them.
+  This is a silent placeholder that looks functional but has no effect.
+- Profile form state is initialized from `user?.name || 'Alex Chen'` — if `user` is null
+  on first render, the form shows hardcoded demo values. This is a graceful fallback but
+  a new user would see "Alex Chen" as their default name.
+- handleSave merges server response with existing user object (`{ ...user, ...updatedUser }`)
+  but if the server strips fields from its response (intentionally or due to serialization),
+  the merge could incorrectly preserve stale local values.
+- Agent notification preferences and user-level notification preferences are saved to two
+  different endpoints (PATCH /api/agent/config vs PATCH /api/me). A single "Save" action
+  on the Notifications tab does NOT save both — only user-level notifs auto-save per toggle,
+  and agent notifs are saved separately. The UI does not clearly communicate this split.
+- The SettingsPage was read to line 399 out of ~700+ lines. The render JSX was not fully
+  read; there may be additional issues in the remaining tabs' render code.
+- `hasUnsavedChanges` is only tracked for the profile tab (explicitly set when profile
+  fields change), but the beforeunload guard fires for ALL tabs if this flag is set from
+  a previous profile edit even after saving. The flag may not clear properly.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Privacy toggles need to be wired to a save endpoint or removed until
+  the backend supports them (currently they appear functional but save nothing).
+Priority HIGH — Mobile tab navigation: replace horizontal TabsList with a dropdown or
+  scrollable tab bar to prevent overflow on small screens.
+Priority HIGH — Add 2FA (TOTP) setup in the Security tab.
+Priority MED — Clarify to users that agent notification preferences and email notification
+  preferences are separate with different save triggers.
+Priority MED — Profile fallback values ("Alex Chen", "alex@example.com") should be
+  empty strings so new users aren't confused by demo data.
+Priority MED — Add avatar image upload (file picker) instead of just URL input.
+Priority LOW — Verify hasUnsavedChanges flag resets correctly after save.
+
+=== SERVER ROUTES USED ===
+GET/PATCH  /api/me                      — profile read/update
+GET        /api/me/sessions             — active sessions list
+DELETE     /api/me/sessions/:id         — revoke session
+GET/PUT    /api/me/model                — preferred model
+GET        /api/agent/config            — agent configuration (notif prefs, snooze presets)
+PATCH      /api/agent/config            — update agent configuration
+POST       /api/agent/background        — generate AI background
+GET/DELETE /api/memory                  — list/delete memories
+GET        /api/memory/reactions        — reaction summary
+GET        /api/agent/starred           — starred messages
+GET        /api/memory/export/conversations — JSON export
+GET        /api/memory/export/markdown  — markdown export (all / 7-day)
+GET/POST/DELETE/PATCH /api/api-keys     — API key management
+GET        /api/models/free             — available free models
+GET        /api/version                 — app version
+POST       /api/auth/change-password    — password change
+POST       /api/auth/delete-account     — account deletion

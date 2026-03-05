@@ -1,0 +1,114 @@
+PAGE: Reminders
+ROUTE: /dashboard/reminders
+STATUS: WORKING
+
+=== DESKTOP VIEW ===
+- Full-width layout with space-y-6 container
+- Header row: "Reminders" title (Syne font, 3xl/4xl), active count badge, streak flame badge (when streak > 0), "Add Reminder" button
+- Snooze feedback toast (bottom-right, fixed): shows "Snoozed until <time>" for 3s
+- Undo-bulk-complete toast (bottom-center, fixed): shows "N reminders marked done" with Undo link (5s timer)
+- All caught up banner: green animated banner when all active reminders are cleared
+- Overdue batch banner: pink banner when 4+ overdue items accumulate, with "Mark all complete" action
+- Quick Add card: NLP input with mic button (Web Speech API) and "Add" button; shows parsed preview (text + datetime + recurrence badge); example phrases toggleable
+- Filter row: status tabs (All/Active/Completed), recurrence filter pills (All types / Recurring / One-off), category pills (All/Personal/Work/Health/Other), priority pills (All/Urgent/High/Normal/Low)
+- CSV export and iCal export buttons
+- Sort toggle (Priority / Due date), Group toggle (Date / Category), View toggle (List / Calendar)
+- Active reminders section: grouped by date (Overdue/Today/Tomorrow/This Week/Later) or by category; bulk-select checkboxes; bulk actions (Snooze / Complete / Delete active)
+- Completed reminders section: checkbox select-all, bulk delete, bulk restore-snooze
+- Each reminder card: priority color dot, category color bar, text (inline editable on double-click), relative time + human-readable due label, recurrence badge, channel badge, snooze dropdown (1h / Tomorrow / Next week / Custom datetime), snooze history popover, copy/duplicate button, edit (pencil) button, delete button
+- Calendar view: toggled via view mode, distinct from list layout
+- Edit dialog (shared with Add): natural language tab + legacy manual form tab (title, datetime picker, channel, recurrence select, category, priority)
+- Recurring reminder edit dialog: "This occurrence only" vs "All future occurrences" choice before editing
+
+=== MOBILE VIEW ===
+- PullToRefreshWrapper wraps the entire page — pull-to-refresh supported
+- Header switches to flex-col at md:flex-row breakpoint
+- Filter pills wrap with flex-wrap; multiple rows can form
+- Reminder cards: min-h-[44px] on action buttons, inline edit touch-accessible
+- Mic button: min-h-[44px] min-w-[44px] — touch target compliant
+- Snooze dropdown: rendered as inline popover, not a swipe gesture — no swipe-to-snooze/delete implementation
+- Calendar view is present but not a mobile-optimized swipe calendar; likely renders poorly on small screens
+- Toasts positioned at fixed bottom — may overlap FAB area but there is no FAB button; Add Reminder is in header
+- Filter area can be crowded on narrow screens with 4 rows of pills — horizontal scroll not applied, pills wrap
+
+=== FUNCTIONALITY CHECK ===
+Create reminder (natural language) — WORKING (parseNaturalLanguageReminder + reminderService.create)
+Create reminder (legacy form) — WORKING (text, datetime, channel, recurrence, category, priority)
+Edit reminder — WORKING (dialog pre-fills fields, PATCH /:id endpoint)
+Recurring reminder edit dialog (this occurrence / all future) — WORKING
+Inline quick-edit (double-click text) — WORKING (PATCH /:id with just text field)
+Delete reminder — WORKING (DELETE /:id)
+Mark complete — WORKING (toggleReminder; POST /:id/complete; recurrence auto-spawns next occurrence)
+Snooze (1h / Tomorrow / Next week) — WORKING (POST /:id/snooze with preset; logged to snooze_log)
+Snooze (custom datetime picker) — WORKING (POST /:id/snooze with customDatetime)
+Snooze history popover — WORKING (GET /:id/snooze-history endpoint)
+Snooze feedback toast — WORKING
+Duplicate reminder — WORKING (POST /:id/duplicate server endpoint)
+Overdue visual highlighting — WORKING (red/pink color treatment for past-datetime active reminders)
+Due-soon highlighting — WORKING (within 24h but not yet overdue)
+Streak counter — WORKING (GET /reminders/streak endpoint; flame badge in header)
+Celebration banner (all caught up) — WORKING (client-side transition detection)
+Mark all overdue complete — WORKING (bulk complete API for overdue ids; shown when 4+ overdue)
+Filter by status (All/Active/Completed) — WORKING
+Filter by recurrence (All/Recurring/One-off) — WORKING
+Filter by category — WORKING
+Filter by priority — WORKING
+Search by text — WORKING
+Sort by priority / due date — WORKING
+Group by date / category — WORKING
+Bulk select + bulk snooze (active) — WORKING (bulkSnoozeReminders via dashboardStore)
+Bulk select + bulk complete (active) — WORKING (reminderService.bulkComplete)
+Undo bulk complete toast — WORKING (re-activates via PATCH /:id {completed:false})
+Bulk delete (completed) — WORKING (reminderService.bulkDelete)
+Bulk restore-snooze (completed) — WORKING (reminderService.bulkRestoreSnooze)
+Batch edit priority/category — WORKING (PATCH /batch-edit endpoint)
+CSV export — WORKING (reminderService.exportCsv)
+iCal export — WORKING (reminderService.exportIcs)
+Auto-refresh poll (30s) — WORKING (setInterval calling loadReminders)
+ETag conditional GET (avoid re-sending unchanged list) — WORKING (server-side SHA-256 ETag)
+Near-duplicate warning on create — WORKING (server checks for same text in active reminders)
+Telegram notification delivery when reminder fires — WORKING (handled by automation/reminder scheduler, not front-end; delivery via Telegram bot)
+Voice input (Web Speech API) — PARTIAL (works in Chrome; gracefully degrades with inline message instead of alert() — note: duplicate `return` statement at line 193 is a dead-code bug but not runtime-breaking)
+Calendar view — PARTIAL (toggle exists, implementation not fully visible in audit but view mode state is tracked)
+Filter persistence to localStorage — WORKING
+
+=== LOGIC ISSUES ===
+1. Dead code: `handleVoiceInput` has two consecutive `return` statements at lines 192-194 (the second `return` after the not-supported message is unreachable but causes a TypeScript/lint warning).
+2. `isOverdue` helper function at line 661 does a lookup using `r.datetime === datetime` across all reminders array which is O(n) and potentially incorrect if two reminders share the same datetime string; should look up by id instead.
+3. Filter persistence saves to localStorage immediately on every filter change but does not clear stale values if a user is logged out and another user logs in — filters leak across accounts.
+4. `handleNaturalAdd` always hard-codes `channel: 'telegram'` and `category: 'personal'` regardless of the legacy form defaults or user preferences — no way to customize channel from the NLP flow.
+5. Calendar view toggle exists in UI but the actual calendar rendering is not visible in the audited portion (lines 1050+); if it's a stub or basic month grid, it may not match the rich feature set of the list view.
+6. Overdue banner shows "Mark all complete" only when overdueReminders.length > 3 (more than 3, not 3+). This is inconsistent with the comment "4+ overdue items" — edge case: exactly 3 overdue items get no banner.
+7. Bulk-snooze for active reminders uses `selectedActiveIds` state but bulk operations for completed use `selectedIds` — two separate selection states that cannot be operated on simultaneously (reasonable but potentially confusing UX).
+8. No confirmation dialog before bulk-delete of active reminders — destructive action with no undo.
+9. `parsedReminder.datetime.toISOString()` in `handleNaturalAdd` will use UTC; if the natural language parser produces local time, the stored datetime may be off by the user's UTC offset.
+
+=== IMPROVEMENTS ===
+Priority HIGH — Fix `isOverdue` to look up reminder by id rather than by matching datetime string to avoid false positives.
+Priority HIGH — Add a confirmation step (or undo toast) before bulk-deleting active reminders (currently irreversible with no undo).
+Priority HIGH — Isolate localStorage filter keys per user ID to prevent cross-account filter bleed.
+Priority MED — Remove duplicate `return` statement in `handleVoiceInput` (lines 192-194) to clean up dead code and lint warnings.
+Priority MED — Allow the NLP quick-add flow to inherit channel/category from user preferences or provide a compact selector in the NLP UI rather than hard-coding telegram/personal.
+Priority MED — Adjust overdue banner trigger to `>= 3` (not `> 3`) or update the comment to match the actual threshold.
+Priority MED — Add swipe-to-complete and swipe-to-delete gesture support on mobile reminder cards (currently only button-based actions).
+Priority MED — Verify the calendar view renders correctly on mobile; add week/month navigation buttons with adequate touch targets.
+Priority LOW — Consider merging the two selection states (selectedIds and selectedActiveIds) into a single state to simplify the bulk-action UX.
+Priority LOW — Show a timezone indicator alongside the NLP-parsed datetime preview so users can verify the time is interpreted correctly.
+
+=== SERVER ROUTES USED ===
+GET    /api/reminders                    — list all (with ETag caching)
+POST   /api/reminders                    — create (includes near-duplicate warning)
+PATCH  /api/reminders/batch-edit         — batch update priority/category
+PATCH  /api/reminders/:id                — update single reminder
+DELETE /api/reminders/:id                — delete single reminder
+POST   /api/reminders/:id/complete       — mark complete (auto-spawns next occurrence for recurring)
+POST   /api/reminders/:id/duplicate      — duplicate reminder
+POST   /api/reminders/:id/snooze         — snooze with preset or custom datetime (logged to snooze_log)
+GET    /api/reminders/:id/snooze-history — fetch snooze history for a reminder
+GET    /api/reminders/streak             — get completion streak data
+POST   /api/reminders/bulk-delete        — bulk delete by id array
+POST   /api/reminders/bulk-complete      — bulk mark complete
+POST   /api/reminders/bulk-snooze        — bulk snooze active reminders
+POST   /api/reminders/bulk-restore-snooze — restore completed reminders with snooze preset
+GET    /api/reminders/export/csv         — CSV export
+GET    /api/reminders/export/ics         — iCalendar export
