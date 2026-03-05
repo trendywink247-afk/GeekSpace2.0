@@ -128,7 +128,7 @@ const capabilities: Capability[] = [
     color: '#BF5FFF',
     glow: 'rgba(191,95,255,0.12)',
     title: 'Video Generation',
-    description: 'Generate short video clips from text prompts. Perfect for social media content, product demos, and visual storytelling.',
+    description: 'Generate short video clips from text prompts. Perfect for social media content, product demos, and visual storytelling. (Temporarily unavailable — free providers unreachable from this server.)',
     examples: ['Create a 10s product demo for my app', 'Generate a cinematic intro for my brand', 'Make an animated explainer for my SaaS'],
     badge: 'Pro',
     navigateTo: 'video-gen',
