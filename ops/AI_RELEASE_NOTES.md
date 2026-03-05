@@ -145,3 +145,83 @@
 - First-use guided tour walks new users through key features
 - Generated websites now send a direct preview link in chat instead of "open your dashboard"
 
+
+---
+
+## Post-Phase 102 (2026-03-05) — Full Site Audit + 4 Webview Layout Fixes
+
+*Status: Merged to main · Deployed to production*
+
+### What's New
+- **Site-wide bug sweep**: 36 bugs fixed across 42 pages — chat SSE streaming, automations config, memory CRUD, OAuth display, gallery unification, brand fixes, mobile touch targets (44px minimum), privacy toggles, and video generation warning banner
+- **Image generation**: Now using HuggingFace FLUX via `router.huggingface.co` — fully working in production
+- **Video generation**: Warning banner shown + Generate disabled (no free provider available from Hostinger BOM datacenter)
+- **Chat page**: SSE streaming now correctly handled; conversation history loads on mount
+
+### Layout & UX Fixes (Webview)
+- **Portfolio page**: Header now wraps on medium viewports with sidebar open — no more content clipped by `overflow-x: hidden`
+- **Website Builder → Templates tab**: Fixed double-heading when `TemplateGalleryPage` embedded inside tab (`embedded` prop added)
+- **Capabilities → "What can I do"**: Pipeline layout now uses `lg:` breakpoint (1024px+) instead of `md:` — correct with sidebar open
+- **Health tab**: Loads immediately via parallel REST fallback; reduced SSE retry wait from ~225s to ~14s; loading state shows error + Retry button
+
+---
+
+## Post-Phase 96 (2026-03-05) — Multi-Agent Workflows
+
+*Status: Merged to main*
+
+### What's New
+- **Workflows page** (`/dashboard/workflows`): Build multi-agent chains — connect Weebo, Jarvis, and Edith in sequence. Each node passes its output as context to the next.
+- **Pre-built workflow templates**: Morning Briefing + Research pipeline + Code Review chain included out of the box
+- **Workflow builder UI**: Visual drag-style node list with agent picker, step descriptions, and run history
+
+### Under the Hood
+- `GET/POST /api/workflows` — CRUD for user workflows
+- `POST /api/workflows/:id/run` — execute a workflow chain synchronously, returns full step log
+- `workflow_runner.ts` — orchestrates sequential agent calls, captures per-step output and error state
+- `user_workflows` + `user_workflow_runs` DB tables
+
+---
+
+## Post-Phase 95 (2026-03-05) — Google Calendar Sync
+
+*Status: Merged to main*
+
+### What's New
+- **Calendar page** (`/dashboard/calendar`): Connect your Google Calendar — events sync automatically and appear in a weekly/monthly view
+- **Schedule-aware briefings**: Weebo's morning briefing now includes today's calendar events when Google Calendar is connected
+- **OAuth token storage**: Per-user Google Calendar tokens stored encrypted in DB
+
+### Under the Hood
+- `GET/POST /api/calendar/events` — list + sync calendar events
+- `GET /api/calendar/connect` + `/callback` — Google OAuth 2.0 flow
+- `calendar-sync.ts` — fetches upcoming events, stores in `calendar_events` table
+- `proactive-engine.ts` updated to inject calendar context into briefings
+
+---
+
+## Post-Phase 94 (2026-03-05) — Long-Term Agent Memory
+
+*Status: Merged to main*
+
+### What's New
+- **Memory page** (`/dashboard/memory`): View, search, and delete your AI's long-term memory — facts the agent has extracted from your conversations
+- **Context injection**: Agent now injects relevant memories into each prompt (top 5 by recency + relevance)
+- **Personal memory store**: Per-user, fully isolated memory entries with timestamps
+
+### Under the Hood
+- `GET/POST/DELETE /api/memory` — CRUD for memory entries
+- `memory.ts` service — extract facts from chat, inject into prompt context
+- `user_memory` DB table
+
+---
+
+## Post-Phase 93 (2026-03-05) — Feature Audit + Automation Stub Fixes
+
+*Status: Merged to main*
+
+### What's New
+- Automation stubs wired to real trigger engine — previously no-op stubs now actually schedule/fire
+- 19 new server-side tests covering previously untested automation flows
+- Proactive engine integration verified end-to-end
+

@@ -6,7 +6,7 @@
 <br />
 
 [![Live](https://img.shields.io/badge/LIVE-ai.geekspace.space-7B61FF?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggZD0iTTEyIDJMMTUuMDkgOC4yNiAyMiA5LjI3IDE3IDEzLjE0IDE4LjE4IDIxLjAyIDEyIDE3LjI3IDUuODIgMjEuMDIgNyAxMy4xNCAyIDkuMjcgOC45MSA4LjI2IDEyIDJaIi8+PC9zdmc+)](https://ai.geekspace.space)
-[![Version](https://img.shields.io/badge/v3.0-platform-61FF7B?style=for-the-badge)](https://github.com/trendywink247-afk/GeekSpace2.0/releases)
+[![Version](https://img.shields.io/badge/v3.1-platform-61FF7B?style=for-the-badge)](https://github.com/trendywink247-afk/GeekSpace2.0/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/trendywink247-afk/GeekSpace2.0/ci.yml?branch=main&style=for-the-badge&label=CI&logo=github)](https://github.com/trendywink247-afk/GeekSpace2.0/actions)
 [![License](https://img.shields.io/badge/License-MIT-61FF7B?style=for-the-badge)](LICENSE)
 
@@ -54,7 +54,8 @@ GeekSpace is a personal AI platform that gives every user their own intelligent 
 - Smart routing: Local → Free Cloud → Paid Cloud → Premium
 - SSE streaming responses
 - Specialist sessions for deep tasks
-- Memory, context extraction, chat summarization
+- Long-term memory — per-user fact store, auto-injected into prompts
+- Context extraction, chat summarization
 - Chat search (filter messages by keyword)
 - Chat export (download full conversation history as JSON)
 - Message reactions (emoji reactions on any message)
@@ -81,6 +82,7 @@ GeekSpace is a personal AI platform that gives every user their own intelligent 
 - Recipes: morning briefings, weekly reviews, auto-summaries
 - Cron, webhook, and health-check triggers
 - Telegram & WhatsApp integration
+- Multi-agent workflows — chain Weebo/Jarvis/Edith in sequence
 - Reminders via push, email, or Telegram
 - Recurring reminders (daily, weekly, monthly schedules)
 
@@ -93,9 +95,10 @@ GeekSpace is a personal AI platform that gives every user their own intelligent 
 - API key management with AES-256-GCM encryption
 - Billing with INR/USD pricing (Free → Yearly plans)
 - PWA — installable on mobile and desktop
+- Google Calendar sync — OAuth integration, schedule-aware briefings
+- Focus mode, habits tracker, personal analytics
 - Auth session management (view and revoke active sessions)
 - Activity notification log
-- Build info in health endpoint
 
 </td>
 </tr>
@@ -114,6 +117,10 @@ GeekSpace is a personal AI platform that gives every user their own intelligent 
 - Password reset via OTP (email + Telegram)
 - Daily briefings via Telegram
 - Voice notes (Whisper STT + TTS)
+- Image generation (HuggingFace FLUX) with per-user gallery
+- Google Calendar OAuth sync with briefing integration
+- Multi-agent workflow builder (chain Weebo/Jarvis/Edith)
+- Long-term agent memory with context injection
 
 </details>
 
