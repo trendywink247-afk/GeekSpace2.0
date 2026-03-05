@@ -37,7 +37,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
-import { userService, apiKeyService, memoryService, agentService, versionService, modelService, authService, type UserSession } from '@/services/api';
+import { userService, apiKeyService, memoryService, agentService, versionService, modelService, authService, portfolioService, type UserSession } from '@/services/api';
 import type { ApiProvider, MemoryEntry, FreeModel } from '@/types';
 
 export function SettingsPage() {
@@ -114,12 +114,12 @@ export function SettingsPage() {
   const isMobile = useMobileDetect();
 
   const [profile, setProfile] = useState({
-    name: user?.name || 'Alex Chen',
-    username: user?.username || 'alex',
-    email: user?.email || 'alex@example.com',
-    bio: user?.bio || 'Full-stack developer and AI enthusiast.',
-    location: user?.location || 'San Francisco, CA',
-    website: user?.website || 'alexchen.dev',
+    name: user?.name || '',
+    username: user?.username || '',
+    email: user?.email || '',
+    bio: user?.bio || '',
+    location: user?.location || '',
+    website: user?.website || '',
     avatar: user?.avatar || '',
   });
 
@@ -225,6 +225,9 @@ export function SettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const logout = useAuthStore((s) => s.logout);
+
+  // Privacy save state
+  const [savingPrivacy, setSavingPrivacy] = useState(false);
 
   // Load memories and reaction summary when memory tab is active
   useEffect(() => {
@@ -402,6 +405,18 @@ export function SettingsPage() {
       console.error('[settings] save failed:', err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePrivacySave = async () => {
+    setSavingPrivacy(true);
+    try {
+      await portfolioService.update({ visibility: privacy });
+      showSavedToast();
+    } catch {
+      console.error('[settings] privacy save failed');
+    } finally {
+      setSavingPrivacy(false);
     }
   };
 
@@ -705,7 +720,7 @@ export function SettingsPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-[#6B7280] mb-2 block">Display Name</label>
-                    <Input value={profile.name} onChange={(e) => { setProfile({ ...profile, name: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                    <Input value={profile.name} placeholder="Your name" onChange={(e) => { setProfile({ ...profile, name: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                   </div>
                   <div>
                     <label className="text-sm text-[#6B7280] mb-2 block">Username</label>
@@ -717,7 +732,7 @@ export function SettingsPage() {
                 </div>
                 <div>
                   <label className="text-sm text-[#6B7280] mb-2 block">Email</label>
-                  <Input type="email" value={profile.email} onChange={(e) => { setProfile({ ...profile, email: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                  <Input type="email" value={profile.email} placeholder="your@email.com" onChange={(e) => { setProfile({ ...profile, email: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                 </div>
                 <div>
                   <label className="text-sm text-[#6B7280] mb-2 block">Bio</label>
@@ -1583,6 +1598,19 @@ export function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+          <div className="flex justify-end">
+            <Button
+              onClick={() => void handlePrivacySave()}
+              disabled={savingPrivacy}
+              className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale"
+            >
+              {savingPrivacy ? (
+                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
+              ) : (
+                <><Save className="w-4 h-4 mr-2" />Save Privacy Settings</>
+              )}
+            </Button>
+          </div>
         </TabsContent>
 
         {/* Theme Tab */}
