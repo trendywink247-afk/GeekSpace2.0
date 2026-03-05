@@ -624,7 +624,7 @@ export function WebsiteBuilderPage() {
                   <iframe
                     ref={previewRef}
                     title="Live Preview"
-                    sandbox="allow-scripts"
+                    sandbox="allow-scripts allow-modals allow-forms"
                     className="w-full h-[500px] bg-white"
                   />
                 </div>
