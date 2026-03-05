@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import api from '@/services/api';
+import { toast } from 'sonner';
 import { Target, CheckCircle, Plus, Flame, Timer, Play, Bell, BellOff } from 'lucide-react';
 
 interface FocusSession { id: number; started_at: number; ended_at: number | null; duration_min: number | null; goal: string | null; completed: number; }
@@ -57,7 +58,7 @@ export function FocusPage() {
       setHabits((h.data as { habits: Habit[] }).habits);
       setSettings((ns.data as { settings: NotifSettings }).settings);
       setDeferredCount((d.data as { count: number }).count);
-    } catch { }
+    } catch { toast.error('Failed to load focus data'); }
   }, []);
   useEffect(() => { void load(); }, [load]);
   async function handleStartFocus() {
@@ -66,27 +67,27 @@ export function FocusPage() {
       const res = await api.post("/focus/start", { goal: goalInput || null, durationMin: durInput });
       setSession((res.data as { session: FocusSession }).session);
       setShowStartModal(false); setGoalInput("");
-    } catch { }
+    } catch { toast.error('Failed to start focus session'); }
     setLoading(false);
   }
   async function handleEndFocus() {
     setLoading(true);
-    try { await api.post("/focus/end", { completed: true }); setSession(null); void load(); } catch { }
+    try { await api.post("/focus/end", { completed: true }); setSession(null); void load(); } catch { toast.error('Failed to end focus session'); }
     setLoading(false);
   }
   async function handleLogHabit(id: number) {
-    try { await api.post("/habits/" + id + "/log", {}); void load(); } catch { }
+    try { await api.post("/habits/" + id + "/log", {}); void load(); } catch { toast.error('Failed to log habit'); }
   }
   async function handleAddHabit() {
     if (!newHabitName) return;
-    try { await api.post("/habits", { name: newHabitName, icon: newHabitIcon }); setNewHabitName(""); setNewHabitIcon("⭐"); setShowAddHabit(false); void load(); } catch { }
+    try { await api.post("/habits", { name: newHabitName, icon: newHabitIcon }); setNewHabitName(""); setNewHabitIcon("⭐"); setShowAddHabit(false); void load(); } catch { toast.error('Failed to add habit'); }
   }
   async function handleDeleteHabit(id: number) {
-    try { await api.delete("/habits/" + id); void load(); } catch { }
+    try { await api.delete("/habits/" + id); void load(); } catch { toast.error('Failed to delete habit'); }
   }
   async function toggleFocusMode() {
     const newVal = settings?.focus_mode_active ? 0 : 1;
-    try { const res = await api.patch("/focus/settings", { focus_mode_active: newVal }); setSettings((res.data as { settings: NotifSettings }).settings); } catch { }
+    try { const res = await api.patch("/focus/settings", { focus_mode_active: newVal }); setSettings((res.data as { settings: NotifSettings }).settings); } catch { toast.error('Failed to update focus mode'); }
   }
   const elapsedStr = pad(Math.floor(elapsed / 60)) + ":" + pad(elapsed % 60);
   const remainStr = remaining !== null ? (pad(Math.floor(remaining / 60)) + ":" + pad(remaining % 60)) : "";
