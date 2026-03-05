@@ -82,22 +82,21 @@ describe('Phase 78 — Telegram/WhatsApp Stability + Connections Polish', () => 
     });
   });
 
-  // ── 78.5: WhatsApp platform policy disclaimer ─────────────────────
-  describe('78.5: WhatsApp disclaimer in ConnectionsPage', () => {
-    it('displays utility-flows-only disclaimer in WhatsApp dialog', () => {
+  // ── 78.5: WhatsApp Coming Soon (QR/disclaimer flow removed) ──────────────
+  describe('78.5: WhatsApp Coming Soon state in ConnectionsPage', () => {
+    it('shows Coming Soon badge for WhatsApp (QR/disclaimer flow removed)', () => {
       const src = readFile('src/dashboard/pages/ConnectionsPage.tsx');
-      expect(src).toContain('Utility flows only');
+      expect(src).toContain('Coming Soon');
     });
 
-    it('mentions reminders and OTP in the disclaimer', () => {
+    it('WhatsApp card renders Coming Soon badge not a connect button', () => {
       const src = readFile('src/dashboard/pages/ConnectionsPage.tsx');
-      expect(src).toContain('reminders');
-      expect(src).toContain('OTP');
+      expect(src).toContain("connection.type === 'whatsapp'");
     });
 
-    it('links to Agentin web app in disclaimer', () => {
+    it('WhatsApp is still listed as an integration type', () => {
       const src = readFile('src/dashboard/pages/ConnectionsPage.tsx');
-      expect(src).toContain('Agentin web app');
+      expect(src).toContain('whatsapp');
     });
   });
 
