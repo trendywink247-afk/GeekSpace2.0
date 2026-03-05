@@ -158,7 +158,11 @@ export function ActivityPage() {
     Agent: entries.filter((e) => getCategory(e.icon) === 'Agent').length,
   };
 
-  const handlePullRefresh = async () => { void userService.getActivity(50); };
+  const handlePullRefresh = async () => {
+    const res = await userService.getActivity(50);
+    setEntries(res.data.activity ?? []);
+    setTotal(res.data.total ?? res.data.activity?.length ?? 0);
+  };
 
   return (
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
@@ -346,7 +350,7 @@ export function ActivityPage() {
                         await userService.deleteActivityEntry(entry.id).catch(() => {});
                         setEntries((prev) => prev.filter((e) => e.id !== entry.id));
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded text-[#6B7280] hover:text-[#FF6161] transition-all"
+                      className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1 rounded text-[#6B7280] hover:text-[#FF6161] transition-all"
                       aria-label="Delete this entry"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

@@ -81,7 +81,7 @@ export function StatusPage() {
           <ArrowLeft className="w-4 h-4 mr-2" />Back
         </Button>
 
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
               System Status
@@ -118,7 +118,7 @@ export function StatusPage() {
               <CardContent className="p-6 text-center">
                 {allOk ? (
                   <>
-                    <CheckCircle2 className="w-10 h10 text-[#ADFF2F] mx-auto mb-3" />
+                    <CheckCircle2 className="w-10 h-10 text-[#ADFF2F] mx-auto mb-3" />
                     <h2 className="text-xl font-bold text-[#ADFF2F]">All Systems Operational</h2>
                     <p className="text-sm text-[#6B7280] mt-1">Everything is running smoothly</p>
                   </>

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Bot,
   MessageSquare,
@@ -7,7 +8,6 @@ import {
   Check,
   Sparkles,
   Volume2,
-  Image,
   Brain,
   Save,
   Users,
@@ -73,7 +73,9 @@ function TiltCard({ children }: { children: React.ReactNode }) {
 }
 
 export function AgentSettingsPage() {
+  const navigate = useNavigate();
   const { agent, updateAgent } = useDashboardStore();
+  const isDirty = useRef(false);
 
   // Initialize from store
   const [selectedStyle, setSelectedStyle] = useState<AgentStyle>(agent.mode || 'builder');
@@ -108,8 +110,9 @@ export function AgentSettingsPage() {
     }).catch(() => {});
   }, []);
 
-  // Sync from store when agent data loads/changes
+  // Sync from store when agent data loads/changes — skip if user has unsaved edits
   useEffect(() => {
+    if (isDirty.current) return;
     if (agent.id) {
       setSelectedStyle(agent.mode || 'builder');
       setSelectedVoice(agent.voice || 'friendly');
@@ -168,6 +171,7 @@ export function AgentSettingsPage() {
         formality: formality[0],
         systemPrompt,
       });
+      isDirty.current = false;
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch {
@@ -200,7 +204,7 @@ export function AgentSettingsPage() {
             <label className="text-sm text-[#6B7280] mb-2 block">Agent Name</label>
             <Input
               value={agentName}
-              onChange={(e) => setAgentName(e.target.value)}
+              onChange={(e) => { isDirty.current = true; setAgentName(e.target.value); }}
               className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
               placeholder="What should I call your agent?"
             />
@@ -209,7 +213,7 @@ export function AgentSettingsPage() {
             <label className="text-sm text-[#6B7280] mb-2 block">Display Name</label>
             <Input
               value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              onChange={(e) => { isDirty.current = true; setDisplayName(e.target.value); }}
               maxLength={50}
               className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
               placeholder="e.g. GS Assistant (max 50 chars)"
@@ -220,7 +224,7 @@ export function AgentSettingsPage() {
           <label className="text-sm text-[#6B7280] mb-2 block">Custom Greeting</label>
           <Input
             value={greeting}
-            onChange={(e) => setGreeting(e.target.value)}
+            onChange={(e) => { isDirty.current = true; setGreeting(e.target.value); }}
             maxLength={200}
             className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
             placeholder="e.g. Hey! Ready to help you today. (max 200 chars)"
@@ -309,7 +313,7 @@ export function AgentSettingsPage() {
           {styleOptions.map((style) => (
             <button
               key={style.id}
-              onClick={() => setSelectedStyle(style.id)}
+              onClick={() => { isDirty.current = true; setSelectedStyle(style.id); }}
               className={`p-5 rounded-xl border-2 transition-all duration-300 text-left ${
                 selectedStyle === style.id
                   ? 'border-[#00F0FF] bg-[#00F0FF]/10'
@@ -358,7 +362,7 @@ export function AgentSettingsPage() {
             {voiceOptions.map((voice) => (
               <button
                 key={voice.id}
-                onClick={() => setSelectedVoice(voice.id as 'professional' | 'friendly' | 'witty')}
+                onClick={() => { isDirty.current = true; setSelectedVoice(voice.id as 'professional' | 'friendly' | 'witty'); }}
                 className={`w-full p-4 rounded-xl border transition-all duration-300 flex items-center justify-between ${
                   selectedVoice === voice.id
                     ? 'border-[#00F0FF] bg-[#00F0FF]/10'
@@ -393,7 +397,7 @@ export function AgentSettingsPage() {
             </div>
             <Slider
               value={creativity}
-              onValueChange={setCreativity}
+              onValueChange={(v) => { isDirty.current = true; setCreativity(v); }}
               max={100}
               step={10}
               className="w-full"
@@ -411,7 +415,7 @@ export function AgentSettingsPage() {
             </div>
             <Slider
               value={formality}
-              onValueChange={setFormality}
+              onValueChange={(v) => { isDirty.current = true; setFormality(v); }}
               max={100}
               step={10}
               className="w-full"
@@ -427,12 +431,12 @@ export function AgentSettingsPage() {
       {/* System Prompt */}
       <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Image className="w-5 h-5 text-[#00F0FF]" />
+          <Brain className="w-5 h-5 text-[#00F0FF]" />
           System Instructions
         </h2>
         <Textarea
           value={systemPrompt}
-          onChange={(e) => setSystemPrompt(e.target.value)}
+          onChange={(e) => { isDirty.current = true; setSystemPrompt(e.target.value); }}
           className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[120px] resize-none"
           placeholder="Instructions for how your agent should behave..."
         />
@@ -471,7 +475,7 @@ export function AgentSettingsPage() {
           </div>
           <p className="text-xs text-[#6B7280] mt-3">
             Click any tag to see the full memory. Manage all memories in{' '}
-            <a href="/dashboard/memory" className="text-[#BF5FFF] hover:underline">Memory Manager</a>.
+            <button onClick={() => navigate('/dashboard/memory')} className="text-[#BF5FFF] hover:underline">Memory Manager</button>.
           </p>
         </div>
       )}
