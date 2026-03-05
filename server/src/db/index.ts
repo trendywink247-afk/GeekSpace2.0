@@ -1667,6 +1667,34 @@ try { db.exec(`
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code)`); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_invite_codes_used ON invite_codes(used_at)`); } catch { /* already exists */ }
 
+// Phase 96: User-defined multi-agent workflow builder
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_workflows (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      steps TEXT NOT NULL DEFAULT '[]',
+      trigger TEXT DEFAULT 'manual',
+      enabled INTEGER DEFAULT 1,
+      last_run INTEGER,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_workflows_user ON user_workflows(user_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS user_workflow_runs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workflow_id INTEGER NOT NULL REFERENCES user_workflows(id) ON DELETE CASCADE,
+      started_at INTEGER NOT NULL,
+      finished_at INTEGER,
+      status TEXT DEFAULT 'running',
+      context TEXT DEFAULT '{}',
+      error TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_workflow_runs_wf ON user_workflow_runs(workflow_id, started_at DESC);
+  `);
+} catch { /* tables already exist */ }
 
 // Phase 97: AI Inbox -- unified message feed from Telegram, WhatsApp, and system events
 try {
@@ -1688,7 +1716,6 @@ try {
     CREATE INDEX IF NOT EXISTS idx_inbox_user ON inbox_messages(user_id, read, received_at DESC);
   `);
 } catch { /* table already exists */ }
-
 
 // Phase 100: Gmail integration -- token column + gmail_messages tracking table
 try { db.exec(`ALTER TABLE users ADD COLUMN google_gmail_token TEXT DEFAULT NULL`); } catch { /* column already exists */ }
