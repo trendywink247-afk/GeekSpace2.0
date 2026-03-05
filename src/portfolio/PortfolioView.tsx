@@ -72,6 +72,13 @@ export function PortfolioView() {
   const [contactSent, setContactSent] = useState(false);
   const [contactError, setContactError] = useState('');
 
+  // Ensure social URLs always have a protocol prefix
+  const normalizeUrl = (url: string): string => {
+    if (!url) return '#';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `https://${url}`;
+  };
+
   // 46.6: Email format validation
   const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
   const emailInvalid = contactEmail.trim().length > 0 && !isValidEmail(contactEmail.trim());
@@ -159,9 +166,9 @@ export function PortfolioView() {
   useEffect(() => {
     if (!portfolio) return;
     const name = portfolio.name || username || 'Portfolio';
-    const headline = (portfolio as PortfolioData & { headline?: string }).headline || 'GeekSpace Portfolio';
+    const headline = (portfolio as PortfolioData & { headline?: string }).headline || 'Agentin Chat Portfolio';
     const prevTitle = document.title;
-    document.title = `${name} | GeekSpace`;
+    document.title = `${name} | Agentin Chat`;
 
     const metas: HTMLMetaElement[] = [];
     const addMeta = (property: string, content: string) => {
@@ -173,7 +180,7 @@ export function PortfolioView() {
     };
 
     addMeta('og:title', `${name} — ${headline}`);
-    addMeta('og:description', portfolio.about || `${name}'s professional portfolio on GeekSpace`);
+    addMeta('og:description', portfolio.about || `${name}'s professional portfolio on Agentin Chat`);
     addMeta('og:type', 'profile');
 
     return () => {
@@ -306,16 +313,16 @@ export function PortfolioView() {
               {/* Social Links */}
               <div className="flex items-center justify-center gap-3 mt-6 flex-wrap">
                 {portfolio.social?.github && (
-                  <a href={`https://${portfolio.social.github}`} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#E8E8F0]/10 hover:border-[#E8E8F0]/40 hover:bg-[#E8E8F0]/5 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="GitHub"><Github className="w-5 h-5 text-[#E8E8F0]/70 hover:text-[#E8E8F0]" /></a>
+                  <a href={normalizeUrl(portfolio.social.github)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#E8E8F0]/10 hover:border-[#E8E8F0]/40 hover:bg-[#E8E8F0]/5 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="GitHub"><Github className="w-5 h-5 text-[#E8E8F0]/70 hover:text-[#E8E8F0]" /></a>
                 )}
                 {portfolio.social?.twitter && (
-                  <a href={`https://${portfolio.social.twitter}`} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#1DA1F2]/20 hover:border-[#1DA1F2]/50 hover:bg-[#1DA1F2]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Twitter"><Twitter className="w-5 h-5 text-[#1DA1F2]/70 hover:text-[#1DA1F2]" /></a>
+                  <a href={normalizeUrl(portfolio.social.twitter)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#1DA1F2]/20 hover:border-[#1DA1F2]/50 hover:bg-[#1DA1F2]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Twitter"><Twitter className="w-5 h-5 text-[#1DA1F2]/70 hover:text-[#1DA1F2]" /></a>
                 )}
                 {portfolio.social?.linkedin && (
-                  <a href={`https://${portfolio.social.linkedin}`} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#0A66C2]/20 hover:border-[#0A66C2]/50 hover:bg-[#0A66C2]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="LinkedIn"><Linkedin className="w-5 h-5 text-[#0A66C2]/70 hover:text-[#0A66C2]" /></a>
+                  <a href={normalizeUrl(portfolio.social.linkedin)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#0A66C2]/20 hover:border-[#0A66C2]/50 hover:bg-[#0A66C2]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="LinkedIn"><Linkedin className="w-5 h-5 text-[#0A66C2]/70 hover:text-[#0A66C2]" /></a>
                 )}
                 {portfolio.social?.website && (
-                  <a href={`https://${portfolio.social.website}`} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 hover:bg-[#00F0FF]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Website"><Globe className="w-5 h-5 text-[#00F0FF]/70 hover:text-[#00F0FF]" /></a>
+                  <a href={normalizeUrl(portfolio.social.website)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 hover:bg-[#00F0FF]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Website"><Globe className="w-5 h-5 text-[#00F0FF]/70 hover:text-[#00F0FF]" /></a>
                 )}
                 {portfolio.social?.email && (
                   <a href={`mailto:${portfolio.social.email}`} className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/50 hover:bg-[#BF5FFF]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Email"><Mail className="w-5 h-5 text-[#BF5FFF]/70 hover:text-[#BF5FFF]" /></a>
