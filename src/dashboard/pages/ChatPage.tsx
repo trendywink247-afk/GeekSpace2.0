@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Send, Volume2, VolumeX, RotateCcw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { agentService } from '@/services/api';
+import { agentService, memoryService } from '@/services/api';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useVoice } from '@/hooks/useVoice';
 import { useTTS } from '@/hooks/useTTS';
@@ -66,13 +66,37 @@ export function ChatPage() {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Load conversation history on mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const res = await memoryService.conversations(30);
+        const entries = res.data;
+        if (Array.isArray(entries) && entries.length > 0) {
+          // Server returns newest-first; reverse to show oldest-first in chat
+          const reversed = [...entries].reverse();
+          setMessages(reversed.map((entry) => ({
+            id: entry.id,
+            role: entry.role === 'assistant' ? 'agent' : 'user',
+            content: entry.content,
+            timestamp: entry.createdAt ? new Date(entry.createdAt) : new Date(),
+          })));
+        }
+      } catch {
+        // Fresh start — no history available
+      }
+    };
+    void loadHistory();
+  }, []);
+
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {
     e?.preventDefault();
     const text = input.trim();
     if (!text || isTyping) return;
 
+    const userMsgId = `u-${Date.now()}`;
     const userMsg: ChatMessage = {
-      id: `u-${Date.now()}`,
+      id: userMsgId,
       role: 'user',
       content: text,
       timestamp: new Date(),
@@ -81,31 +105,85 @@ export function ChatPage() {
     setInput('');
     setIsTyping(true);
 
+    // Placeholder for streaming assistant response
+    const assistantMsgId = `a-${Date.now() + 1}`;
+    setMessages((prev) => [
+      ...prev,
+      { id: assistantMsgId, role: 'agent', content: '', timestamp: new Date() },
+    ]);
+
+    let streamedReply = '';
+
     try {
-      const res = await agentService.chat(text, personality);
-      const reply = res.data.text ?? '';
-      const agentMsg: ChatMessage = {
-        id: `a-${Date.now()}`,
-        role: 'agent',
-        content: reply,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, agentMsg]);
+      const response = await agentService.chatStream(text);
+
+      if (!response.ok || !response.body) {
+        throw new Error(`Stream request failed: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          try {
+            const parsed = JSON.parse(data) as { text?: string; done?: boolean };
+            if (parsed.done) continue;
+            const chunk = parsed.text ?? '';
+            if (chunk) {
+              streamedReply += chunk;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantMsgId ? { ...m, content: m.content + chunk } : m,
+                ),
+              );
+            }
+          } catch {
+            // Ignore malformed SSE chunks
+          }
+        }
+      }
 
       // Auto-read if voice mode is on and TTS is supported
-      if (voiceMode && tts.isSupported) {
-        tts.speak(reply);
+      if (voiceMode && tts.isSupported && streamedReply) {
+        tts.speak(streamedReply);
       }
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `e-${Date.now()}`,
+      // Streaming failed — fall back to synchronous call
+      setMessages((prev) => prev.filter((m) => m.id !== assistantMsgId));
+      try {
+        const res = await agentService.chat(text, personality);
+        const reply = res.data.text ?? '';
+        const fallbackMsg: ChatMessage = {
+          id: `a-${Date.now()}`,
           role: 'agent',
-          content: 'Sorry, something went wrong. Please try again.',
+          content: reply,
           timestamp: new Date(),
-        },
-      ]);
+        };
+        setMessages((prev) => [...prev, fallbackMsg]);
+        if (voiceMode && tts.isSupported && reply) {
+          tts.speak(reply);
+        }
+      } catch {
+        setMessages((prev) => prev.filter((m) => m.id !== userMsgId));
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `e-${Date.now()}`,
+            role: 'agent',
+            content: 'Sorry, something went wrong. Please try again.',
+            timestamp: new Date(),
+          },
+        ]);
+      }
     } finally {
       setIsTyping(false);
     }
