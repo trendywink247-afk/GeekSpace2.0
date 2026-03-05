@@ -22,8 +22,35 @@ const parseIntegration = (row: Record<string, unknown>) => ({
 });
 
 integrationsRouter.get('/', requireAuth, (req: AuthRequest, res) => {
-  const rows = db.prepare('SELECT * FROM integrations WHERE user_id = ?').all(req.userId!) as Record<string, unknown>[];
-  res.json(rows.map(parseIntegration));
+  const userId = req.userId!;
+  const rows = db.prepare('SELECT * FROM integrations WHERE user_id = ?').all(userId) as Record<string, unknown>[];
+
+  // Sync status from channel_links (source of truth for telegram/whatsapp)
+  const linked = db.prepare(
+    "SELECT channel FROM channel_links WHERE user_id = ? AND channel IN ('telegram', 'whatsapp')"
+  ).all(userId) as Array<{ channel: string }>;
+  const linkedSet = new Set(linked.map(l => l.channel));
+
+  const result = rows.map(row => {
+    const type = row.type as string;
+    if (linkedSet.has(type) && row.status !== 'connected') {
+      // Real link exists but DB is stale — fix it in place
+      db.prepare(
+        "UPDATE integrations SET status = 'connected', health = 100 WHERE user_id = ? AND type = ?"
+      ).run(userId, type);
+      return parseIntegration({ ...row, status: 'connected', health: 100 });
+    }
+    if (!linkedSet.has(type) && (type === 'telegram' || type === 'whatsapp') && row.status === 'connected') {
+      // Was marked connected but channel_link is gone — fix stale connected status
+      db.prepare(
+        "UPDATE integrations SET status = 'disconnected', health = 0 WHERE user_id = ? AND type = ?"
+      ).run(userId, type);
+      return parseIntegration({ ...row, status: 'disconnected', health: 0 });
+    }
+    return parseIntegration(row);
+  });
+
+  res.json(result);
 });
 
 integrationsRouter.post('/:type/connect', requireAuth, (req: AuthRequest, res) => {
@@ -72,13 +99,18 @@ integrationsRouter.post('/telegram/link', requireAuth, (req: AuthRequest, res) =
 
   // Check if already linked
   const existing = db.prepare(
-    "SELECT id, external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram'"
-  ).get(userId) as { id: string; external_id: string } | undefined;
+    "SELECT id, external_id, external_username FROM channel_links WHERE user_id = ? AND channel = 'telegram'"
+  ).get(userId) as { id: string; external_id: string; external_username: string } | undefined;
 
   if (existing) {
+    // Ensure integrations table is in sync
+    db.prepare(
+      "UPDATE integrations SET status = 'connected', health = 100 WHERE user_id = ? AND type = 'telegram'"
+    ).run(userId);
     res.json({
       linked: true,
       externalId: existing.external_id,
+      username: existing.external_username,
       message: 'Telegram is already linked.',
     });
     return;

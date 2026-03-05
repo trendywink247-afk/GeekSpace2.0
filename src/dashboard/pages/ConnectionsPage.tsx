@@ -120,8 +120,9 @@ export function ConnectionsPage() {
   const [whatsappPolling, setWhatsappPolling] = useState(false);
   const [whatsappPollAttempts, setWhatsappPollAttempts] = useState(0);
 
-  // 78.6: Telegram last message time (from channel_links via status endpoint)
+  // 78.6: Telegram last message time + username (from channel_links via status endpoint)
   const [telegramLastPing, setTelegramLastPing] = useState<string | null>(null);
+  const [telegramUsername, setTelegramUsername] = useState<string | null>(null);
 
   // Health poll state (24.1) — keyed by integration type
   const [healthStatus, setHealthStatus] = useState<Record<string, 'healthy' | 'unhealthy' | 'checking'>>({});
@@ -200,12 +201,15 @@ export function ConnectionsPage() {
     return () => clearInterval(interval);
   }, [integrations]);
 
-  // 78.6: Fetch Telegram lastPing on mount if Telegram is connected
+  // 78.6: Fetch Telegram lastPing + username on mount if Telegram is connected
   useEffect(() => {
     const tg = integrations.find(i => i.type === 'telegram' && i.status === 'connected');
     if (!tg) return;
     integrationService.checkTelegramLink()
-      .then(r => { if (r.data.lastPing) setTelegramLastPing(r.data.lastPing); })
+      .then(r => {
+        if (r.data.lastPing) setTelegramLastPing(r.data.lastPing);
+        if (r.data.username) setTelegramUsername(r.data.username);
+      })
       .catch(() => {});
   }, [integrations]);
 
@@ -314,7 +318,12 @@ export function ConnectionsPage() {
           const res = await integrationService.linkTelegram();
           setTelegramLink(res.data);
           if (res.data.linked) {
-            setTelegramStep('success');
+            // Already connected — close dialog and refresh so tile shows correct state
+            setTelegramDialog(false);
+            setTelegramStep('idle');
+            setTelegramLink(null);
+            setConnectingId(null);
+            loadIntegrations();
           } else {
             setTelegramStep('open-bot');
             setPolling(true);
@@ -872,7 +881,10 @@ export function ConnectionsPage() {
                         ) : (
                           <span>Never synced</span>
                         )}
-                        {/* 78.6: Show last Telegram message time for Telegram connections */}
+                        {/* 78.6: Show Telegram username + last message time */}
+                        {connection.type === 'telegram' && connection.status === 'connected' && telegramUsername && (
+                          <span className="text-[#0088cc] font-medium">@{telegramUsername}</span>
+                        )}
                         {connection.type === 'telegram' && connection.status === 'connected' && telegramLastPing && (
                           <span className="text-[#00F0FF]">Last message: {timeAgo(telegramLastPing)}</span>
                         )}
