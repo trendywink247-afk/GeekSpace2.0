@@ -90,10 +90,6 @@ const webSearchSchema = z.object({
   max_results: z.number().int().min(1).max(10).default(3),
 });
 
-const sendTelegramToolSchema = z.object({
-  message: z.string().min(1).max(4096),
-});
-
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -110,7 +106,6 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_avatar: generateAvatarSchema,
   escalate_to_owner: escalateToOwnerSchema,
   web_search: webSearchSchema,
-  send_telegram: sendTelegramToolSchema,
 };
 
 // ── Types ───────────────────────────────────────────────────
