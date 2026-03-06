@@ -16,7 +16,7 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { QuickActionsWidget } from '@/components/QuickActionsWidget';
 import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPrompt';
 import { DashboardTour } from '@/components/DashboardTour';
-import { AgentSetupWizard } from '@/components/OnboardingWizard';
+import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { lazyRetry } from '@/utils/lazyRetry';
 import { useAuthStore } from '@/stores/authStore';
@@ -204,7 +204,6 @@ export function DashboardApp() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const compactMode = useAuthStore((s) => s.compactMode);
-  const onboarding = useAuthStore((s) => s.onboarding);
   const usage = useDashboardStore((s) => s.usage);
   const agent = useDashboardStore((s) => s.agent);
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
@@ -316,18 +315,17 @@ export function DashboardApp() {
     return () => window.removeEventListener('keydown', handler);
   }, [navigate]);
 
-  // Phase 106: Show onboarding wizard if use_case not set (skip demo sessions and existing users)
+  // Phase 106: Show onboarding wizard if use_case not set (skip demo sessions)
   useEffect(() => {
     if (
       agent.id &&                          // agent config is loaded
       !agent.use_case &&                   // use_case not set yet
       user &&
-      !user.id.startsWith('demo-') &&      // skip for demo sessions
-      !onboarding.completed                // skip for users who already completed onboarding
+      !user.id.startsWith('demo-')         // skip for demo sessions
     ) {
       setShowOnboardingWizard(true);
     }
-  }, [agent.id, agent.use_case, user, onboarding.completed]);
+  }, [agent.id, agent.use_case, user]);
 
   // Sync URL pathname → currentPage (so navigate() calls update the view)
   useEffect(() => {
@@ -1073,7 +1071,7 @@ export function DashboardApp() {
 
       {/* Phase 106: Onboarding wizard overlay */}
       {showOnboardingWizard && (
-        <AgentSetupWizard
+        <OnboardingWizard
           onComplete={() => setShowOnboardingWizard(false)}
           onSkip={() => setShowOnboardingWizard(false)}
         />
