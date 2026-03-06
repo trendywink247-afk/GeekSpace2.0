@@ -16,7 +16,7 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { QuickActionsWidget } from '@/components/QuickActionsWidget';
 import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPrompt';
 import { DashboardTour } from '@/components/DashboardTour';
-import { OnboardingWizard } from '@/components/OnboardingWizard';
+import { AgentSetupWizard } from '@/components/OnboardingWizard';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { lazyRetry } from '@/utils/lazyRetry';
 import { useAuthStore } from '@/stores/authStore';
@@ -1071,7 +1071,7 @@ export function DashboardApp() {
 
       {/* Phase 106: Onboarding wizard overlay */}
       {showOnboardingWizard && (
-        <OnboardingWizard
+        <AgentSetupWizard
           onComplete={() => setShowOnboardingWizard(false)}
           onSkip={() => setShowOnboardingWizard(false)}
         />
