@@ -106,5 +106,18 @@ describe('Phase 104 — ReAct Tool Loop', () => {
     });
   });
 
+  describe('104.5 message-router wired to ReAct loop', () => {
+    it('message-router.ts imports runReActLoop', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/message-router.ts'), 'utf-8');
+      expect(content).toContain('runReActLoop');
+    });
+
+    it('message-router.ts has onStatus callback calling sendChannelResponse', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/message-router.ts'), 'utf-8');
+      expect(content).toContain('onStatus');
+      expect(content).toContain('sendChannelResponse');
+    });
+  });
+
   // Remaining describe blocks will be added in later tasks
 });

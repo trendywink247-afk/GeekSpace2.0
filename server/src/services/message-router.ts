@@ -12,7 +12,8 @@ import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
-import { routeChat, deductSubscriptionCredits, type ChatMessage } from './llm.js';
+import { deductSubscriptionCredits, type ChatMessage } from './llm.js';
+import { runReActLoop } from './react-loop.js';
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
 import { checkKeywordTriggers } from './automations-engine.js';
@@ -385,35 +386,53 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         latencyMs: bridgeResult.latencyMs,
       }, 'Channel message routed via bridge');
     } catch (err) {
-      logger.warn({ err: (err as Error).message }, 'Bridge failed for channel message, falling back to routeChat');
-      // Fallback to routeChat
+      logger.warn({ err: (err as Error).message }, 'Bridge failed for channel message, falling back to ReAct loop');
+      // Fallback to ReAct loop
       const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-      const result = await routeChat(messages, {
+      const reactResult = await runReActLoop(messages, userId, {
         systemPrompt,
         agentName: (agentConfig?.name as string) || 'Geek',
         userCredits,
+        onStatus: async (statusMsg) => {
+          try {
+            await sendChannelResponse({
+              channel: msg.channel,
+              externalId: msg.externalId,
+              text: statusMsg,
+            });
+          } catch { /* non-fatal */ }
+        },
       });
-      replyText = result.reply;
-      provider = result.provider;
-      model = result.model;
-      tokensIn = result.tokensIn;
-      tokensOut = result.tokensOut;
-      creditCost = result.creditCost;
+      replyText = reactResult.text;
+      provider = reactResult.provider;
+      model = reactResult.model;
+      tokensIn = reactResult.tokensIn;
+      tokensOut = reactResult.tokensOut;
+      creditCost = reactResult.creditCost;
     }
   } else {
-    // Bridge not enabled — use routeChat directly
+    // Bridge not enabled — use ReAct loop (routeChat + multi-turn tool use)
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-    const result = await routeChat(messages, {
+    const reactResult = await runReActLoop(messages, userId, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
+      onStatus: async (statusMsg) => {
+        try {
+          await sendChannelResponse({
+            channel: msg.channel,
+            externalId: msg.externalId,
+            text: statusMsg,
+          });
+        } catch { /* non-fatal */ }
+      },
     });
-    replyText = result.reply;
-    provider = result.provider;
-    model = result.model;
-    tokensIn = result.tokensIn;
-    tokensOut = result.tokensOut;
-    creditCost = result.creditCost;
+    replyText = reactResult.text;
+    provider = reactResult.provider;
+    model = reactResult.model;
+    tokensIn = reactResult.tokensIn;
+    tokensOut = reactResult.tokensOut;
+    creditCost = reactResult.creditCost;
   }
 
   // 7b. Parse and execute actions
