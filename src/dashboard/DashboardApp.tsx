@@ -16,6 +16,7 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { QuickActionsWidget } from '@/components/QuickActionsWidget';
 import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPrompt';
 import { DashboardTour } from '@/components/DashboardTour';
+import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { lazyRetry } from '@/utils/lazyRetry';
 import { useAuthStore } from '@/stores/authStore';
@@ -199,6 +200,7 @@ export function DashboardApp() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [voiceListening, setVoiceListening] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const compactMode = useAuthStore((s) => s.compactMode);
@@ -312,6 +314,18 @@ export function DashboardApp() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [navigate]);
+
+  // Phase 106: Show onboarding wizard if use_case not set (skip demo sessions)
+  useEffect(() => {
+    if (
+      agent.id &&                          // agent config is loaded
+      !agent.use_case &&                   // use_case not set yet
+      user &&
+      !user.id.startsWith('demo-')         // skip for demo sessions
+    ) {
+      setShowOnboardingWizard(true);
+    }
+  }, [agent.id, agent.use_case, user]);
 
   // Sync URL pathname → currentPage (so navigate() calls update the view)
   useEffect(() => {
@@ -1054,6 +1068,14 @@ export function DashboardApp() {
       {/* PWA Components */}
       <PWAInstallPrompt />
       <OfflineIndicator />
+
+      {/* Phase 106: Onboarding wizard overlay */}
+      {showOnboardingWizard && (
+        <OnboardingWizard
+          onComplete={() => setShowOnboardingWizard(false)}
+          onSkip={() => setShowOnboardingWizard(false)}
+        />
+      )}
     </div>
   );
 }
