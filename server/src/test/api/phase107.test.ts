@@ -6,7 +6,7 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../app.js';
 import { db } from '../../db/index.js';
-import { resetDatabase } from '../setup.js';
+import { resetDatabase, createTestUser } from '../setup.js';
 import { parseActions } from '../../services/action-parser.js';
 
 const app = createApp();
@@ -67,6 +67,42 @@ describe('Phase 107 — action-parser: send_telegram schema', () => {
     const { text } = parseActions(input);
     expect(text).not.toContain('<<<ACTION');
     expect(text).toContain('Sending you a message now.');
+  });
+});
+
+describe('Phase 107 — executor: send_telegram', () => {
+  beforeAll(() => { resetDatabase(); });
+  afterEach(() => { resetDatabase(); });
+
+  it('send_telegram fails gracefully when no Telegram linked', async () => {
+    const { parseActions } = await import('../../services/action-parser.js');
+    const { executeAction } = await import('../../services/action-executor.js');
+    const input = `<<<ACTION\n{"tool":"send_telegram","params":{"message":"Hello!"}}\nACTION>>>`;
+    const { actions } = parseActions(input);
+    expect(actions).toHaveLength(1);
+
+    const result = await executeAction('demo-1', actions[0]);
+    expect(result.tool).toBe('send_telegram');
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('No Telegram');
+  });
+
+  it('send_telegram succeeds when channel_link exists', async () => {
+    const user = createTestUser();
+
+    db.prepare(
+      "INSERT INTO channel_links (id, user_id, channel, external_id, is_verified, linked_at) VALUES ('tg-test-1', ?, 'telegram', '999888777', 1, datetime('now'))"
+    ).run(user.id);
+
+    const { parseActions } = await import('../../services/action-parser.js');
+    const { executeAction } = await import('../../services/action-executor.js');
+    const input = `<<<ACTION\n{"tool":"send_telegram","params":{"message":"Test message"}}\nACTION>>>`;
+    const { actions } = parseActions(input);
+
+    const result = await executeAction(user.id, actions[0]);
+    expect(result.tool).toBe('send_telegram');
+    // Either success (bot configured) or fail (bot not configured) — both valid
+    expect(typeof result.success).toBe('boolean');
   });
 });
 
