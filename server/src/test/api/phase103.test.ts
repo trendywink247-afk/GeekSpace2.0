@@ -27,4 +27,24 @@ describe('Phase 103: Plan cap fixes', () => {
       expect(content).toMatch(/yearly:\s*100/);
     });
   });
+
+  describe('images.ts sync route caps', () => {
+    it('reads users.plan not subscription_plan', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'routes/images.ts'), 'utf-8');
+      expect(content).not.toContain('subscription_plan');
+    });
+    it('IMAGE_DAILY_CAPS (inline) has pilot not basic', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'routes/images.ts'), 'utf-8');
+      expect(content).toContain('pilot:');
+      expect(content).not.toMatch(/\bbasic:\s*\d/);
+    });
+    it('IMAGE_DAILY_CAPS (inline) has no pro key', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'routes/images.ts'), 'utf-8');
+      expect(content).not.toMatch(/\bpro:\s*\d/);
+    });
+    it('upgrade message does not say Basic or Pro', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'routes/images.ts'), 'utf-8');
+      expect(content).not.toContain('Basic or Pro');
+    });
+  });
 });
