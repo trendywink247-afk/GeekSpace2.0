@@ -85,6 +85,14 @@ const escalateToOwnerSchema = z.object({
   context: z.string().max(500).optional(),
 });
 
+const webSearchSchema = z.object({
+  query: z.string().min(1).max(500),
+});
+
+const telegramNotifySchema = z.object({
+  message: z.string().min(1).max(1000),
+});
+
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -100,6 +108,8 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_video: generateVideoSchema,
   generate_avatar: generateAvatarSchema,
   escalate_to_owner: escalateToOwnerSchema,
+  web_search: webSearchSchema,
+  telegram_notify: telegramNotifySchema,
 };
 
 // ── Types ───────────────────────────────────────────────────
