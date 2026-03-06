@@ -185,30 +185,27 @@ usageRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
 
 const DAILY_MSG_LIMITS: Record<string, number> = {
   free: 30,
-  intro: 150,
+  pilot: 150,
   monthly: 150,
+  intro: 200,
   halfyear: 300,
   yearly: 500,
-  pro: 200,
-  team: 500,
 };
 const DAILY_VOICE_LIMITS: Record<string, number> = {
   free: 5,
-  intro: 30,
+  pilot: 30,
   monthly: 30,
+  intro: 30,
   halfyear: 60,
   yearly: 100,
-  pro: 50,
-  team: 100,
 };
 const DAILY_IMAGE_LIMITS: Record<string, number> = {
   free: 3,
-  intro: 20,
-  monthly: 20,
-  halfyear: 40,
-  yearly: 80,
-  pro: 30,
-  team: 80,
+  pilot: 10,
+  monthly: 10,
+  intro: 15,
+  halfyear: 50,
+  yearly: 100,
 };
 
 usageRouter.get('/today', requireAuth, (req: AuthRequest, res) => {

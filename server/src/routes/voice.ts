@@ -27,13 +27,11 @@ export const voiceRouter = Router();
 
 const VOICE_DAILY_CAPS: Record<string, number> = {
   free: 5,
-  basic: 30,
-  pro: 100,
-  intro: 30,
+  pilot: 30,
   monthly: 30,
+  intro: 30,
   halfyear: 60,
   yearly: 100,
-  team: 100,
 };
 
 function getVoiceCap(userId: string): { used: number; limit: number; allowed: boolean } {
