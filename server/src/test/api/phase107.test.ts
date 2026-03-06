@@ -46,3 +46,26 @@ describe('Phase 107 — action-parser: web_search schema', () => {
     expect(actions).toHaveLength(0);
   });
 });
+
+describe('Phase 107 — action-parser: send_telegram schema', () => {
+  it('accepts valid send_telegram action block', () => {
+    const input = `<<<ACTION\n{"tool":"send_telegram","params":{"message":"Hello! Here is your summary."}}\nACTION>>>`;
+    const { actions } = parseActions(input);
+    expect(actions).toHaveLength(1);
+    expect(actions[0].tool).toBe('send_telegram');
+    expect(actions[0].params.message).toBe('Hello! Here is your summary.');
+  });
+
+  it('rejects send_telegram with empty message', () => {
+    const input = `<<<ACTION\n{"tool":"send_telegram","params":{"message":""}}\nACTION>>>`;
+    const { actions } = parseActions(input);
+    expect(actions).toHaveLength(0);
+  });
+
+  it('strips action block text from response text', () => {
+    const input = `Sending you a message now.\n<<<ACTION\n{"tool":"send_telegram","params":{"message":"hi"}}\nACTION>>>\nDone!`;
+    const { text } = parseActions(input);
+    expect(text).not.toContain('<<<ACTION');
+    expect(text).toContain('Sending you a message now.');
+  });
+});
