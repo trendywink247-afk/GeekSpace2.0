@@ -89,5 +89,22 @@ describe('Phase 104 — ReAct Tool Loop', () => {
     });
   });
 
+  describe('104.4 System prompt documents tools', () => {
+    it('agent.ts buildSystemPrompt mentions web_search tool', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/routes/agent.ts'), 'utf-8');
+      expect(content).toContain('web_search');
+    });
+
+    it('agent.ts buildSystemPrompt mentions <<<ACTION>>> format', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/routes/agent.ts'), 'utf-8');
+      expect(content).toContain('<<<ACTION');
+    });
+
+    it('message-router.ts buildChannelSystemPrompt mentions web_search tool', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/message-router.ts'), 'utf-8');
+      expect(content).toContain('web_search');
+    });
+  });
+
   // Remaining describe blocks will be added in later tasks
 });

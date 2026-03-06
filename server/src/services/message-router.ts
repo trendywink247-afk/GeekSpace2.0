@@ -27,6 +27,25 @@ import { extractUrl, firecrawlScrape } from './firecrawl.js';
 import { addInboxMessage } from './inbox.js';
 import { checkContentSafety } from './content-filter.js';
 
+// ---- ReAct Tool Instructions ----
+// Injected into system prompts so the LLM knows how to call tools.
+const TOOL_INSTRUCTIONS = `
+--- AVAILABLE TOOLS ---
+You can call tools by emitting an action block in your response:
+<<<ACTION
+{"tool": "<tool_name>", "params": {<params>}}
+ACTION>>>
+
+Available tools:
+- web_search: Search the web for current information. Params: {"query": "<search query>"}
+- set_reminder: Create a reminder for the user. Params: {"text": "<reminder text>", "datetime": "<ISO datetime or natural language>", "channel": "telegram|push"}
+- telegram_notify: Send a Telegram message to the user. Params: {"message": "<message text>"}
+- generate_image: Generate an image. Params: {"prompt": "<image description>"}
+- generate_code: Build a website/app. Params: {"title": "<name>", "html": "<html>", "css": "<css>", "js": "<js>"}
+- send_email: Send an email to the user. Params: {"subject": "<subject>", "body": "<body>"}
+
+Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
+
 // ---- Task Intent Detection ----
 
 function detectTaskIntent(message: string): boolean {
@@ -133,7 +152,8 @@ Channel: ${channel}. This is a messaging app — keep responses SHORT and mobile
 --- CURRENT DATE & TIME ---
 Right now it is: ${istString} (India Standard Time, UTC+5:30). Use this exact time when the user asks what time or date it is. Do NOT guess or infer from other context.
 
-IMPORTANT: Max 2-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain text only. Be concise.`;
+IMPORTANT: Max 2-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain text only. Be concise.
+${TOOL_INSTRUCTIONS}`;
 }
 
 // ---- Channel Reply Builder (exported for testing) ----

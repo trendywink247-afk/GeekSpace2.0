@@ -27,6 +27,25 @@ import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../service
 
 export const agentRouter = Router();
 
+// ---- ReAct Tool Instructions ----
+// Injected into system prompts so the LLM knows how to call tools.
+const TOOL_INSTRUCTIONS = `
+--- AVAILABLE TOOLS ---
+You can call tools by emitting an action block in your response:
+<<<ACTION
+{"tool": "<tool_name>", "params": {<params>}}
+ACTION>>>
+
+Available tools:
+- web_search: Search the web for current information. Params: {"query": "<search query>"}
+- set_reminder: Create a reminder for the user. Params: {"text": "<reminder text>", "datetime": "<ISO datetime or natural language>", "channel": "telegram|push"}
+- telegram_notify: Send a Telegram message to the user. Params: {"message": "<message text>"}
+- generate_image: Generate an image. Params: {"prompt": "<image description>"}
+- generate_code: Build a website/app. Params: {"title": "<name>", "html": "<html>", "css": "<css>", "js": "<js>"}
+- send_email: Send an email to the user. Params: {"subject": "<subject>", "body": "<body>"}
+
+Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
+
 // ---- Rate Limit Status tracker (33.4) ----
 // In-memory tracker mirroring the chat rate limiter (60 req / 15 min)
 const _rateLimitTracker = new Map<number, { count: number; windowStart: number }>();
@@ -105,7 +124,8 @@ ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
 ${memoryBlock}
 ${formatMemoryContext(userId)}
 
-${closingInstruction}`;
+${closingInstruction}
+${TOOL_INSTRUCTIONS}`;
 }
 
 // ---- Agent Config CRUD ----
