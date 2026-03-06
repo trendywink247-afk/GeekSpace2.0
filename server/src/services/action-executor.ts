@@ -17,6 +17,7 @@ import { RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
 import { generateImage, generateVideo, generateAvatar } from './media-generation.js';
 import { cacheSet, cacheGet, cacheDel } from './cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from './telegram.js';
+import { tavilySearch } from './tavily.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -548,6 +549,32 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           success: true,
           message: `Escalated to ${ownerUsername} via Telegram`,
           data: { escalationId, question },
+        };
+      }
+
+      // ── web_search ───────────────────────────────────────
+      case 'web_search': {
+        const query = params.query as string;
+        const maxResults = (params.max_results as number) || 3;
+        const { results } = await tavilySearch(query, maxResults);
+
+        if (results.length === 0) {
+          return {
+            tool,
+            success: false,
+            message: `No results found for "${query}". Tavily API may not be configured.`,
+          };
+        }
+
+        const summary = results
+          .map((r, i) => `${i + 1}. **${r.title}**\n   ${r.url}\n   ${r.content}`)
+          .join('\n\n');
+
+        return {
+          tool,
+          success: true,
+          message: `Found ${results.length} results for "${query}"`,
+          data: { query, results, summary },
         };
       }
 
