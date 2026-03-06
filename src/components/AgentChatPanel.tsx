@@ -133,6 +133,11 @@ interface AgentChatPanelProps {
   agentOwner?: string;
 }
 
+const PLAN_DISPLAY: Record<string, string> = {
+  free: 'Free', pilot: 'Pilot', intro: 'Intro', monthly: 'Monthly',
+  halfyear: 'Half-Year', yearly: 'Yearly', basic: 'Basic', pro: 'Pro',
+};
+
 const suggestedPrompts = [
   "What's on my schedule today?",
   "Show me my usage stats",
@@ -228,6 +233,8 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   // Credits remaining from last successful regular chat
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const [creditsTotal, setCreditsTotal] = useState<number | null>(null);
+  const [planLabel, setPlanLabel] = useState<string>('Free');
+  const [planPrice, setPlanPrice] = useState<number | null>(null);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [chatRateLimitRemaining, setChatRateLimitRemaining] = useState<number | null>(null);
   const [chatRateLimitResetAt, setChatRateLimitResetAt] = useState<number | null>(null);
@@ -305,6 +312,8 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       billingService.getPlan().then(({ data }) => {
         setCreditsTotal(data.monthly_credits);
         setCreditsRemaining(data.credits_remaining);
+        setPlanLabel(PLAN_DISPLAY[data.plan] ?? data.plan);
+        setPlanPrice(data.price_usd > 0 ? data.price_usd : null);
       }).catch(() => { /* ignore billing fetch errors */ });
     }
   }, [isOpen]);
@@ -1476,11 +1485,16 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-[#E8E8F0]">You're out of credits</h3>
-                  <p className="text-xs text-[#6B7280]">Upgrade to keep chatting</p>
+                  <p className="text-xs text-[#6B7280]">
+                    {planLabel} plan{planPrice !== null ? ` · $${planPrice.toFixed(2)}/mo` : ''}
+                  </p>
                 </div>
               </div>
               <p className="text-sm text-[#6B7280]">
-                Your monthly credits are used up. Upgrade your plan to continue using the AI agent.
+                {creditsTotal !== null && creditsRemaining !== null
+                  ? `You've used ${(creditsTotal - creditsRemaining).toLocaleString()} / ${creditsTotal.toLocaleString()} credits this cycle.`
+                  : "Your monthly credits are used up."}
+                {' '}Upgrade to keep chatting.
               </p>
               <div className="flex gap-2">
                 <button
