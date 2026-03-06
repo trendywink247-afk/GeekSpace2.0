@@ -37,7 +37,7 @@ export const STRIPE_PLAN_LABELS: Record<string, string> = {
  */
 export async function createCheckoutSession(
   userId: string,
-  plan: 'basic' | 'pro',
+  plan: string,
 ): Promise<string> {
   const stripe = getStripe();
 

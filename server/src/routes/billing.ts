@@ -136,8 +136,9 @@ billingRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
 // POST /api/billing/checkout — create Stripe Checkout session
 billingRouter.post('/checkout', requireAuth, async (req: AuthRequest, res) => {
   const { plan } = req.body as { plan?: string };
-  if (!plan || (plan !== 'basic' && plan !== 'pro')) {
-    res.status(400).json({ error: 'Plan must be "basic" or "pro"' });
+  const PAID_PLANS = ['pilot', 'intro', 'halfyear', 'yearly'];
+  if (!plan || !PAID_PLANS.includes(plan)) {
+    res.status(400).json({ error: `Plan must be one of: ${PAID_PLANS.join(', ')}` });
     return;
   }
   if (!config.stripeEnabled) {
@@ -145,7 +146,7 @@ billingRouter.post('/checkout', requireAuth, async (req: AuthRequest, res) => {
     return;
   }
   try {
-    const url = await createCheckoutSession(req.userId!, plan as 'basic' | 'pro');
+    const url = await createCheckoutSession(req.userId!, plan);
     res.json({ url });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Checkout failed';
