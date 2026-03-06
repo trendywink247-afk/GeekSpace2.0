@@ -69,3 +69,20 @@ describe('Phase 107 — action-parser: send_telegram schema', () => {
     expect(text).toContain('Sending you a message now.');
   });
 });
+
+describe('Phase 107 — executor: web_search graceful empty', () => {
+  beforeAll(() => { resetDatabase(); });
+  afterEach(() => { resetDatabase(); });
+
+  it('POST /api/agent/chat returns 200 (web_search graceful without TAVILY_API_KEY)', async () => {
+    const token = await getDemoToken();
+    // In test env TAVILY_API_KEY is not set, so tavilySearch returns [].
+    // The endpoint should still return 200.
+    const res = await request(app)
+      .post('/api/agent/chat')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ message: 'hello', channel: 'web' })
+      .expect(200);
+    expect(res.body).toHaveProperty('text');
+  });
+});
