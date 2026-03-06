@@ -5,6 +5,7 @@ import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Downloa
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { useAuthStore } from '@/stores/authStore';
 import { agentService, premiumAgentService, publicAgentService, memoryService, billingService, voiceService, jobsService, imageAsyncService } from '@/services/api';
 import type { AgentPersonality, PremiumSession } from '@/types';
 import { CodePreviewCard } from './CodePreviewCard';
@@ -139,11 +140,39 @@ const suggestedPrompts = [
   "Help me with a code review",
 ];
 
+const USE_CASE_TIPS: Record<string, string[]> = {
+  creator: [
+    '/image a futuristic city at sunset',
+    'Write a YouTube script for [your topic]',
+    'Remind me every day at 9am to post content',
+  ],
+  student: [
+    'Explain quantum entanglement simply',
+    'Quiz me on the French Revolution',
+    'Remind me to review notes at 8pm',
+  ],
+  developer: [
+    'Review this code: [paste snippet]',
+    'Write a Python script to parse a CSV',
+    'Remind me to push commits at 6pm',
+  ],
+  business: [
+    'Draft a follow-up email to a client about [project]',
+    'Summarize these meeting notes: [paste]',
+    'Remind me about my 3pm standup',
+  ],
+};
+
 export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelProps) {
   const agent = useDashboardStore((s) => s.agent);
   const updateAgent = useDashboardStore((s) => s.updateAgent);
+  const user = useAuthStore((s) => s.user);
   const isMobile = useMobileDetect();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [tipDismissed, setTipDismissed] = useState(() => {
+    if (typeof window === 'undefined' || !user?.id) return true;
+    return !!localStorage.getItem(`tip-shown-${user.id}`);
+  });
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -1340,6 +1369,39 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                   {prompt}
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* Phase 106: one-time first-chat capability tip */}
+          {!tipDismissed && !agentOwner && messages.length >= 3 && agent.use_case && USE_CASE_TIPS[agent.use_case] && (
+            <div className="mx-4 mb-2">
+              <div className="rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/5 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-[#00F0FF]">💡 Try these commands</span>
+                  <button
+                    onClick={() => {
+                      localStorage.setItem(`tip-shown-${user?.id}`, '1');
+                      setTipDismissed(true);
+                    }}
+                    className="text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+                    aria-label="Dismiss tip"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <ul className="space-y-1">
+                  {USE_CASE_TIPS[agent.use_case].map((tip) => (
+                    <li key={tip} className="text-xs text-[#6B7280]">
+                      <button
+                        onClick={() => setInput(tip)}
+                        className="hover:text-[#E8E8F0] text-left transition-colors"
+                      >
+                        → {tip}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
 
