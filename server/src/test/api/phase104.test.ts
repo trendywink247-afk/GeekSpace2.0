@@ -43,5 +43,19 @@ describe('Phase 104 — ReAct Tool Loop', () => {
     });
   });
 
+  describe('104.2 Executors', () => {
+    it('action-executor.ts handles web_search', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-executor.ts'), 'utf-8');
+      expect(content).toContain("case 'web_search':");
+      expect(content).toContain('tavilySearch');
+    });
+
+    it('action-executor.ts handles telegram_notify', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-executor.ts'), 'utf-8');
+      expect(content).toContain("case 'telegram_notify':");
+      expect(content).toContain('sendTelegramMessage');
+    });
+  });
+
   // Remaining describe blocks will be added in later tasks
 });
