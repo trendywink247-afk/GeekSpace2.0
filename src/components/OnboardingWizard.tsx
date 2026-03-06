@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import type { AgentPersonality } from '@/types';
@@ -75,16 +76,17 @@ const PERSONALITIES: PersonalityOption[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-interface OnboardingWizardProps {
+interface AgentSetupWizardProps {
   onComplete: () => void;
   onSkip: () => void;
 }
 
-export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) {
+export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [useCase, setUseCase] = useState<UseCase | null>(null);
   const [personality, setPersonality] = useState<AgentPersonality>('jarvis');
   const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
   const updateAgent = useDashboardStore((s) => s.updateAgent);
 
   const handleSave = async () => {
@@ -240,7 +242,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
                 <button
                   onClick={async () => {
                     await handleSave();
-                    window.location.href = '/dashboard/connections';
+                    navigate('/dashboard/connections');
                   }}
                   disabled={saving}
                   className="w-full py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00D4E0] disabled:opacity-50 text-black text-sm font-semibold transition-colors"
