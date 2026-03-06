@@ -677,6 +677,8 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       forceProvider: resolvedProvider,
       userId,
       onStatus: () => { /* no-op: JSON endpoint, client gets response only after completion */ },
+      generateCodeBaseUrl: `${req.protocol}://${req.get('host')}`,
+      generateCodeExistingArtifactId: reqExistingArtifactId,
     });
 
     // Alias for downstream code (usage logging, credit deduction, JSON response)
@@ -690,7 +692,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       latencyMs: 0,
     };
     const cleanReply = reactResult.text;
-    const actionResults: ActionResult[] = []; // Tool actions were executed inside the loop
+    const actionResults: ActionResult[] = reactResult.actionResults;
 
     // Determine tier from actual provider used
     const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';

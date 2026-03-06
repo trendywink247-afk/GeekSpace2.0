@@ -393,6 +393,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         systemPrompt,
         agentName: (agentConfig?.name as string) || 'Geek',
         userCredits,
+        generateCodeBaseUrl: config.apiUrl,
         onStatus: async (statusMsg) => {
           try {
             await sendChannelResponse({
@@ -417,6 +418,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
+      generateCodeBaseUrl: config.apiUrl,
       onStatus: async (statusMsg) => {
         try {
           await sendChannelResponse({

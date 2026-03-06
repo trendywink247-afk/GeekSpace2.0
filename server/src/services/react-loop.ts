@@ -14,7 +14,7 @@
 
 import { routeChat, type ChatMessage, type Provider } from './llm.js';
 import { parseActions } from './action-parser.js';
-import { executeAction } from './action-executor.js';
+import { executeAction, type ActionResult } from './action-executor.js';
 import { logger } from '../logger.js';
 
 const MAX_REACT_ITERATIONS = 5;
@@ -23,6 +23,7 @@ export interface ReActResult {
   text: string;
   iterations: number;
   observations: string[];
+  actionResults: ActionResult[];
   provider: string;
   model: string;
   tokensIn: number;
@@ -40,6 +41,8 @@ export interface ReActOpts {
   forceProvider?: Provider;
   userId?: string;
   userPlan?: string;
+  generateCodeBaseUrl?: string;
+  generateCodeExistingArtifactId?: string;
 }
 
 // Map tool name → user-visible status message
@@ -71,6 +74,7 @@ export async function runReActLoop(
 
   const messages = [...initialMessages];
   const observations: string[] = [];
+  const allActionResults: ActionResult[] = [];
   let lastProvider = 'ollama';
   let lastModel = '';
   let totalTokensIn = 0;
@@ -104,6 +108,7 @@ export async function runReActLoop(
         text: cleanText || result.reply,
         iterations: i + 1,
         observations,
+        actionResults: allActionResults,
         provider: lastProvider,
         model: lastModel,
         tokensIn: totalTokensIn,
@@ -119,7 +124,15 @@ export async function runReActLoop(
     const observationParts: string[] = [];
     for (const action of actions) {
       await onStatus(toolStatusMessage(action.tool));
+      // Inject baseUrl for generate_code actions (needed for preview URL generation)
+      if (action.tool === 'generate_code' && opts.generateCodeBaseUrl) {
+        action.params.baseUrl = opts.generateCodeBaseUrl;
+      }
+      if (action.tool === 'generate_code' && opts.generateCodeExistingArtifactId) {
+        action.params.existingArtifactId = opts.generateCodeExistingArtifactId;
+      }
       const actionResult = await executeAction(userId, action);
+      allActionResults.push(actionResult);
 
       // For web_search, use the pre-formatted summary from executor
       const resultDetail = actionResult.success
@@ -148,6 +161,7 @@ export async function runReActLoop(
     text: summary,
     iterations: MAX_REACT_ITERATIONS,
     observations,
+    actionResults: allActionResults,
     provider: lastProvider,
     model: lastModel,
     tokensIn: totalTokensIn,
