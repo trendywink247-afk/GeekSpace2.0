@@ -11,32 +11,35 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const SERVER_ROOT = resolve(__dirname, '../../..');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SERVER_ROOT = path.resolve(__dirname, '../../..');
 
 describe('Phase 104 — ReAct Tool Loop', () => {
   describe('104.1 Tool schemas', () => {
     it('TOOL_SCHEMAS includes web_search', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/services/action-parser.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-parser.ts'), 'utf-8');
       expect(content).toContain("web_search:");
     });
 
     it('TOOL_SCHEMAS includes telegram_notify', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/services/action-parser.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-parser.ts'), 'utf-8');
       expect(content).toContain("telegram_notify:");
     });
 
     it('web_search schema requires query string', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/services/action-parser.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-parser.ts'), 'utf-8');
       expect(content).toContain('webSearchSchema');
       expect(content).toContain("query: z.string()");
     });
 
     it('telegram_notify schema requires message string', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/services/action-parser.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-parser.ts'), 'utf-8');
       expect(content).toContain('telegramNotifySchema');
+      expect(content).toContain("message: z.string()");
     });
   });
 
