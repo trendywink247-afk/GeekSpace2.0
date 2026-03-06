@@ -217,6 +217,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   db.prepare("UPDATE integrations SET last_sync = ? WHERE user_id = ? AND type = ?")
     .run(now, userId, msg.channel);
 
+  // Capture conversation history BEFORE logging current message (prevents duplication in LLM context)
+  const history = getConversationContext(userId);
+
   // 4. Log user message + extract memories
   logConversation(userId, 'user', msg.text, requestId);
   extractMemories(userId, msg.text);
@@ -284,7 +287,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 6. Build messages for LLM
   let systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);
-  const history = getConversationContext(userId);
   const userCredits = (user?.credits as number) || 0;
 
   // 6a. Token compression — compress system prompt + user message for LLM
