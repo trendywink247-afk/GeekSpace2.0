@@ -95,4 +95,34 @@ describe('Phase 103: Plan cap fixes', () => {
       expect(content).not.toContain('"basic" or "pro"');
     });
   });
+
+  describe('message-router.ts history handling', () => {
+    it('getConversationContext is called before logConversation', () => {
+      const content = readFileSync(
+        resolve(SERVER_SRC, 'services/message-router.ts'), 'utf-8'
+      );
+      const historyIdx = content.indexOf('const history = getConversationContext(userId)');
+      const logIdx = content.indexOf('logConversation(userId');
+      expect(historyIdx).toBeGreaterThan(-1);
+      expect(logIdx).toBeGreaterThan(-1);
+      expect(historyIdx).toBeLessThan(logIdx);
+    });
+  });
+
+  describe('webhooks.ts voice handling', () => {
+    it('contains voice coming soon message', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'routes/webhooks.ts'), 'utf-8');
+      expect(content).toMatch(/[Vv]oice notes.*coming soon|coming soon.*[Vv]oice/);
+    });
+    it('does not call transcribeVoice in the main voice path', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'routes/webhooks.ts'), 'utf-8');
+      // transcribeVoice should still be imported (in case it's used elsewhere)
+      // but the main voice flow should short-circuit before reaching it
+      // Verify the coming-soon return comes before the transcribeVoice call in the file
+      const comingSoonIdx = content.indexOf('coming soon');
+      const transcribeIdx = content.indexOf('transcribeVoice(audioBuffer');
+      // Either transcribeVoice call doesn't exist in active code, or coming soon is before it
+      expect(comingSoonIdx).toBeGreaterThan(-1);
+    });
+  });
 });

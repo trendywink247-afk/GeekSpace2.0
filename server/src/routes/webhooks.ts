@@ -223,6 +223,10 @@ async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Pr
     return;
   }
 
+  // Voice transcription is coming soon — return early with helpful message
+  await sendTelegramMessage(chatId, 'Voice notes are coming soon. For now, please type your message. 🎙️');
+  return;
+
   try {
     // 1. Download voice file from Telegram
     logger.info({ chatId, duration: voice.duration, fileId: voice.file_id }, 'Processing voice message');
