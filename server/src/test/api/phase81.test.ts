@@ -57,14 +57,14 @@ describe('Phase 81 — Image Generation Pipeline', () => {
       expect(src).toContain('limit: cap.limit');
     });
 
-    it('free tier cap is 5', () => {
+    it('free tier cap is 3', () => {
       const src = readFile('server/src/routes/image.ts');
-      expect(src).toContain('free: 5');
+      expect(src).toContain('free: 3');
     });
 
-    it('premium tier cap is 20', () => {
+    it('yearly tier cap is 100', () => {
       const src = readFile('server/src/routes/image.ts');
-      expect(src).toContain('pro: 20');
+      expect(src).toContain('yearly: 100');
     });
 
     it('logImageUsage inserts into usage_events with image.generate tool', () => {

@@ -69,7 +69,8 @@ describe('Phase 76 — AI Gateway + Smart Routing', () => {
 
     it('waterfall includes ollama-cloud before edith in tryFallbackChain', () => {
       const content = readFileSync(resolve(SERVER_ROOT, 'src/services/llm.ts'), 'utf-8');
-      const waterfallIdx = content.indexOf("'ollama', 'openrouter-free', 'ollama-cloud', 'edith'");
+      // Waterfall now includes groq between openrouter-free and ollama-cloud
+      const waterfallIdx = content.indexOf("'ollama', 'openrouter-free', 'groq', 'ollama-cloud', 'edith'");
       expect(waterfallIdx).toBeGreaterThan(0);
     });
 
