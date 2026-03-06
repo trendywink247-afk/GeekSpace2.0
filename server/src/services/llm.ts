@@ -833,7 +833,7 @@ export async function routeChat(
       routingReason = 'ollama_unreachable';
     } else if (isGroqAvailable()) {
       provider = 'groq';
-      routingReason = 'openrouter_free_available';
+      routingReason = 'fallback_chain';
     } else if (isOllamaCloudAvailable()) {
       provider = 'ollama-cloud';
       routingReason = 'ollama_cloud_available';

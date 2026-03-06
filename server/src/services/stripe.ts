@@ -1,6 +1,6 @@
 // ============================================================
 // Stripe Billing Service — Phase 89
-// Handles Basic (₹99/mo) and Pro (₹299/mo) subscriptions
+// Handles Pilot / Intro / Half-year / Yearly subscriptions
 // ============================================================
 
 import Stripe from 'stripe';
