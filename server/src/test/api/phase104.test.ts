@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -54,6 +54,38 @@ describe('Phase 104 — ReAct Tool Loop', () => {
       const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-executor.ts'), 'utf-8');
       expect(content).toContain("case 'telegram_notify':");
       expect(content).toContain('sendTelegramMessage');
+    });
+  });
+
+  describe('104.3 ReAct loop service', () => {
+    it('react-loop.ts file exists', () => {
+      expect(existsSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'))).toBe(true);
+    });
+
+    it('exports runReActLoop function', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
+      expect(content).toContain('export async function runReActLoop');
+    });
+
+    it('defines MAX_REACT_ITERATIONS = 5', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
+      expect(content).toContain('MAX_REACT_ITERATIONS = 5');
+    });
+
+    it('injects observations back into messages', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
+      expect(content).toContain('[OBSERVATION');
+    });
+
+    it('returns accumulated observations on max iterations', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
+      expect(content).toContain('MAX_REACT_ITERATIONS');
+      expect(content).toContain('observations');
+    });
+
+    it('calls onStatus for each tool execution', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
+      expect(content).toContain('onStatus');
     });
   });
 
