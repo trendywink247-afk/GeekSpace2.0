@@ -10,7 +10,7 @@ import { config } from '../config.js';
 import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openclaw-system.js';
 import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
-import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations, formatMemoryContext, extractMemoriesFromConversation } from '../services/memory.js';
+import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, logTrainingExample, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations, formatMemoryContext, extractMemoriesFromConversation } from '../services/memory.js';
 import { loadPicoContext, formatContextBlock } from '../services/pico-context.js';
 import { checkContent } from '../services/content-filter.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
@@ -693,6 +693,19 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     // Log the clean reply (without action blocks)
     logConversation(userId, 'assistant', cleanReply || result.reply, result.provider, result.model);
+
+    // Log for fine-tuning dataset (non-blocking)
+    logTrainingExample({
+      userId,
+      input: message,
+      output: cleanReply || result.reply,
+      provider: result.provider,
+      model: result.model,
+      tokensIn: result.tokensIn,
+      tokensOut: result.tokensOut,
+      systemPrompt: systemPrompt?.slice(0, 500),
+      channel: 'web',
+    });
 
     const response: Record<string, unknown> = {
       text: cleanReply || result.reply,

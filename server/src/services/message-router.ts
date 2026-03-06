@@ -14,7 +14,7 @@ import { logger } from '../logger.js';
 import { config } from '../config.js';
 import { routeChat, deductSubscriptionCredits, type ChatMessage } from './llm.js';
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
-import { buildMemoryContext, logConversation, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
+import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
 import { checkKeywordTriggers } from './automations-engine.js';
 import { sendTelegramMessage, sendTelegramPhoto, sendTelegramVideo } from './telegram.js';
 import { getPersonalityPrompt, getPersonality } from '../prompts/personalities.js';
@@ -456,6 +456,18 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 10. Log assistant response (clean text without action blocks)
   logConversation(userId, 'assistant', finalReply, requestId, provider, model);
+
+  // Log for fine-tuning dataset (non-blocking)
+  logTrainingExample({
+    userId,
+    input: msg.text,
+    output: finalReply,
+    provider,
+    model,
+    tokensIn,
+    tokensOut,
+    channel: msg.channel,
+  });
 
   // 79.2: Fire-and-forget Ollama memory extraction (non-blocking)
   extractMemoriesWithOllama(userId, msg.text, finalReply).catch(() => { /* non-fatal */ });
