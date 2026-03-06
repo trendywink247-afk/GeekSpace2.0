@@ -126,27 +126,47 @@ describe('Phase 103: Plan cap fixes', () => {
     });
   });
 
-  describe('Groq tier 3 wiring', () => {
-    it('config.ts has groqApiKey', () => {
+  describe('Together AI tier 3 wiring', () => {
+    it('config.ts has togetherApiKey', () => {
       const content = readFileSync(resolve(SERVER_SRC, 'config.ts'), 'utf-8');
-      expect(content).toContain('groqApiKey');
+      expect(content).toContain('togetherApiKey');
     });
-    it('llm.ts Provider type includes groq', () => {
+    it('llm.ts Provider type includes together', () => {
       const content = readFileSync(resolve(SERVER_SRC, 'services/llm.ts'), 'utf-8');
-      expect(content).toContain("'groq'");
+      expect(content).toContain("'together'");
     });
-    it('llm.ts has callGroq function', () => {
+    it('llm.ts has callTogether function', () => {
       const content = readFileSync(resolve(SERVER_SRC, 'services/llm.ts'), 'utf-8');
-      expect(content).toContain('callGroq');
+      expect(content).toContain('callTogether');
     });
-    it('llm.ts routes to Groq after openrouter-free', () => {
+    it('llm.ts routes to Together AI after openrouter-free', () => {
       const content = readFileSync(resolve(SERVER_SRC, 'services/llm.ts'), 'utf-8');
-      expect(content).toContain('isGroqAvailable');
-      expect(content).toContain('api.groq.com');
+      expect(content).toContain('isTogetherAvailable');
+      expect(content).toContain('api.together.xyz');
     });
-    it('.env.example has GROQ_API_KEY', () => {
+    it('.env.example has TOGETHER_API_KEY', () => {
       const content = readFileSync(resolve(SERVER_SRC, '../../.env.example'), 'utf-8');
-      expect(content).toContain('GROQ_API_KEY');
+      expect(content).toContain('TOGETHER_API_KEY');
+    });
+  });
+
+  describe('training_examples table and logging', () => {
+    it('db/index.ts creates training_examples table', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'db/index.ts'), 'utf-8');
+      expect(content).toContain('training_examples');
+      expect(content).toContain('quality_score');
+    });
+    it('memory.ts exports logTrainingExample', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'services/memory.ts'), 'utf-8');
+      expect(content).toContain('logTrainingExample');
+    });
+    it('agent.ts calls logTrainingExample', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'routes/agent.ts'), 'utf-8');
+      expect(content).toContain('logTrainingExample');
+    });
+    it('message-router.ts calls logTrainingExample', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'services/message-router.ts'), 'utf-8');
+      expect(content).toContain('logTrainingExample');
     });
   });
 });
