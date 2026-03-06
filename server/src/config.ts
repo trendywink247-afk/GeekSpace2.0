@@ -66,6 +66,13 @@ export const config = {
   openrouterFreeBaseUrl: optional('OPENROUTER_FREE_BASE_URL', 'https://openrouter.ai/api/v1'),
   openrouterFreeApiKey: process.env.OPENROUTER_FREE_API_KEY || '',
 
+  // Groq (tier 3 — free LLM, Llama 3.3 70B at ~326 tok/s)
+  groqApiKey: process.env.GROQ_API_KEY || '',
+  groqModel: optional('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+  groqBaseUrl: optional('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+  groqTimeout: optionalInt('GROQ_TIMEOUT_MS', 30000),
+  groqMaxTokens: optionalInt('GROQ_MAX_TOKENS', 1024),
+
   // [DEPRECATED] EDITH / OpenClaw — via edith-bridge (WS→HTTP bridge), replaced by direct Moonshot API
   edithGatewayUrl: process.env.EDITH_GATEWAY_URL || '', // [DEPRECATED]
   edithToken: process.env.EDITH_TOKEN || '', // [DEPRECATED]

@@ -125,4 +125,28 @@ describe('Phase 103: Plan cap fixes', () => {
       expect(comingSoonIdx).toBeGreaterThan(-1);
     });
   });
+
+  describe('Groq tier 3 wiring', () => {
+    it('config.ts has groqApiKey', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'config.ts'), 'utf-8');
+      expect(content).toContain('groqApiKey');
+    });
+    it('llm.ts Provider type includes groq', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'services/llm.ts'), 'utf-8');
+      expect(content).toContain("'groq'");
+    });
+    it('llm.ts has callGroq function', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'services/llm.ts'), 'utf-8');
+      expect(content).toContain('callGroq');
+    });
+    it('llm.ts routes to Groq after openrouter-free', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'services/llm.ts'), 'utf-8');
+      expect(content).toContain('isGroqAvailable');
+      expect(content).toContain('api.groq.com');
+    });
+    it('.env.example has GROQ_API_KEY', () => {
+      const content = readFileSync(resolve(SERVER_SRC, '../../.env.example'), 'utf-8');
+      expect(content).toContain('GROQ_API_KEY');
+    });
+  });
 });
