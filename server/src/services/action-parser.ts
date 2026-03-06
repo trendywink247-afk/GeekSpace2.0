@@ -85,6 +85,11 @@ const escalateToOwnerSchema = z.object({
   context: z.string().max(500).optional(),
 });
 
+const webSearchSchema = z.object({
+  query: z.string().min(1).max(500),
+  max_results: z.number().int().min(1).max(10).default(3),
+});
+
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -100,6 +105,7 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_video: generateVideoSchema,
   generate_avatar: generateAvatarSchema,
   escalate_to_owner: escalateToOwnerSchema,
+  web_search: webSearchSchema,
 };
 
 // ── Types ───────────────────────────────────────────────────
