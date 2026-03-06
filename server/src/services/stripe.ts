@@ -25,6 +25,12 @@ function getStripe(): Stripe {
 // Plan display names for UI
 export const STRIPE_PLAN_LABELS: Record<string, string> = {
   free: 'Free',
+  pilot: 'Pilot',
+  intro: 'Intro',
+  monthly: 'Monthly',
+  halfyear: 'Half-Year',
+  yearly: 'Yearly',
+  // Legacy aliases kept for backward compatibility
   basic: 'Basic',
   pro: 'Pro',
 };
@@ -41,7 +47,7 @@ export async function createCheckoutSession(
 ): Promise<string> {
   const stripe = getStripe();
 
-  const priceId = plan === 'basic' ? config.stripeBasicPriceId : config.stripeProPriceId;
+  const priceId = ['pilot', 'intro', 'monthly'].includes(plan) ? config.stripeBasicPriceId : config.stripeProPriceId;
   if (!priceId) {
     throw new Error(`No Stripe price ID configured for plan: ${plan}`);
   }
@@ -225,5 +231,5 @@ export function isPaidPlan(userId: string): boolean {
   if (!user) return false;
   const plan = user.subscription_plan;
   const status = user.subscription_status;
-  return (plan === 'basic' || plan === 'pro') && status === 'active';
+  return plan !== 'free' && status === 'active';
 }

@@ -62,9 +62,9 @@ usageRouter.get('/billing', requireAuth, (req: AuthRequest, res) => {
 
   res.json({
     plan: user?.plan || 'free',
-    pricePerYear: user?.plan === 'pro' ? 50 : 0,
+    pricePerYear: ['halfyear', 'yearly'].includes(user?.plan as string) ? 50 : 0,
     credits: user?.credits || 0,
-    monthlyAllowance: user?.plan === 'pro' ? 15000 : 5000,
+    monthlyAllowance: ['halfyear', 'yearly'].includes(user?.plan as string) ? 15000 : 5000,
     resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().split('T')[0],
     usageThisMonth: {
       totalCostUSD: +((monthUsage.cost as number) || 0).toFixed(2),

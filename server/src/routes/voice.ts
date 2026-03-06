@@ -90,7 +90,7 @@ voiceRouter.post('/transcribe', requireAuth,
     const cap = getVoiceCap(userId);
     if (!cap.allowed) {
       res.status(429).json({
-        error: 'Voice limit reached. Upgrade to Basic or Pro to unlock more voice calls',
+        error: 'Voice limit reached. Upgrade your plan to unlock more voice calls',
         used: cap.used,
         limit: cap.limit,
       });
@@ -135,7 +135,7 @@ voiceRouter.post('/speak', requireAuth, async (req: AuthRequest, res) => {
   const cap = getVoiceCap(userId);
   if (!cap.allowed) {
     res.status(429).json({
-      error: 'Voice limit reached. Upgrade to Basic or Pro to unlock more voice calls',
+      error: 'Voice limit reached. Upgrade your plan to unlock more voice calls',
       used: cap.used,
       limit: cap.limit,
     });

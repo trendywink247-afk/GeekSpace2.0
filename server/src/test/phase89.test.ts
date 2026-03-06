@@ -73,29 +73,29 @@ describe('89.2 getStatus and isPaidPlan', () => {
     expect(isPaidPlan(user.id)).toBe(false);
   });
 
-  it('isPaidPlan returns true after manual basic plan activation', () => {
-    const user = createTestUser(`phase89-basic-${Date.now()}@example.com`);
-    db.prepare("UPDATE users SET subscription_plan = 'basic', subscription_status = 'active' WHERE id = ?").run(user.id);
+  it('isPaidPlan returns true after manual pilot plan activation', () => {
+    const user = createTestUser(`phase89-pilot-${Date.now()}@example.com`);
+    db.prepare("UPDATE users SET subscription_plan = 'pilot', subscription_status = 'active' WHERE id = ?").run(user.id);
     expect(isPaidPlan(user.id)).toBe(true);
   });
 
-  it('isPaidPlan returns true after manual pro plan activation', () => {
-    const user = createTestUser(`phase89-pro-${Date.now()}@example.com`);
-    db.prepare("UPDATE users SET subscription_plan = 'pro', subscription_status = 'active' WHERE id = ?").run(user.id);
+  it('isPaidPlan returns true after manual yearly plan activation', () => {
+    const user = createTestUser(`phase89-yearly-${Date.now()}@example.com`);
+    db.prepare("UPDATE users SET subscription_plan = 'yearly', subscription_status = 'active' WHERE id = ?").run(user.id);
     expect(isPaidPlan(user.id)).toBe(true);
   });
 
   it('isPaidPlan returns false when status is inactive even if plan is set', () => {
     const user = createTestUser(`phase89-inactive-${Date.now()}@example.com`);
-    db.prepare("UPDATE users SET subscription_plan = 'basic', subscription_status = 'inactive' WHERE id = ?").run(user.id);
+    db.prepare("UPDATE users SET subscription_plan = 'pilot', subscription_status = 'inactive' WHERE id = ?").run(user.id);
     expect(isPaidPlan(user.id)).toBe(false);
   });
 
-  it('getStatus label is "Basic" for basic plan', () => {
+  it('getStatus label is "Pilot" for pilot plan', () => {
     const user = createTestUser(`phase89-label-${Date.now()}@example.com`);
-    db.prepare("UPDATE users SET subscription_plan = 'basic', subscription_status = 'active' WHERE id = ?").run(user.id);
+    db.prepare("UPDATE users SET subscription_plan = 'pilot', subscription_status = 'active' WHERE id = ?").run(user.id);
     const status = getStatus(user.id);
-    expect(status.label).toBe('Basic');
+    expect(status.label).toBe('Pilot');
     expect(status.isPaid).toBe(true);
   });
 });
@@ -154,15 +154,15 @@ describe('89.4 GET /api/billing/status', () => {
 
   it('returns paid status after manual upgrade', async () => {
     const user = createTestUser(`phase89-paid-api-${Date.now()}@example.com`);
-    db.prepare("UPDATE users SET subscription_plan = 'basic', subscription_status = 'active' WHERE id = ?").run(user.id);
+    db.prepare("UPDATE users SET subscription_plan = 'pilot', subscription_status = 'active' WHERE id = ?").run(user.id);
     const token = generateTestToken(user.id);
     const res = await request(app)
       .get('/api/billing/status')
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
-    expect(res.body.plan).toBe('basic');
+    expect(res.body.plan).toBe('pilot');
     expect(res.body.isPaid).toBe(true);
-    expect(res.body.label).toBe('Basic');
+    expect(res.body.label).toBe('Pilot');
   });
 });
 
@@ -173,7 +173,7 @@ describe('89.5 POST /api/billing/checkout', () => {
   it('returns 401 without auth', async () => {
     const res = await request(app)
       .post('/api/billing/checkout')
-      .send({ plan: 'basic' })
+      .send({ plan: 'pilot' })
       .expect(401);
     expect(res.body).toHaveProperty('error');
   });
@@ -186,7 +186,7 @@ describe('89.5 POST /api/billing/checkout', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ plan: 'enterprise' })
       .expect(400);
-    expect(res.body.error).toContain('"basic" or "pro"');
+    expect(res.body.error).toContain('pilot');
   });
 
   it('returns 400 for missing plan', async () => {
@@ -197,7 +197,7 @@ describe('89.5 POST /api/billing/checkout', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({})
       .expect(400);
-    expect(res.body.error).toContain('"basic" or "pro"');
+    expect(res.body.error).toContain('pilot');
   });
 
   it('returns 503 when Stripe not configured', async () => {
@@ -206,7 +206,7 @@ describe('89.5 POST /api/billing/checkout', () => {
     const res = await request(app)
       .post('/api/billing/checkout')
       .set('Authorization', `Bearer ${token}`)
-      .send({ plan: 'basic' });
+      .send({ plan: 'pilot' });
     // Either 503 (stripe not configured) or 500 (stripe error) are acceptable in test mode
     expect([500, 503].includes(res.status)).toBe(true);
   });
@@ -228,7 +228,7 @@ describe('89.6 POST /api/billing/webhook', () => {
 describe('89.7 Image generation plan gating', () => {
   it('images.ts imports db for plan check', () => {
     const content = readServer('routes/images.ts');
-    expect(content).toContain('subscription_plan');
+    expect(content).toContain('SELECT plan FROM users WHERE id = ?');
     expect(content).toContain('upgradeRequired');
   });
 
@@ -237,38 +237,38 @@ describe('89.7 Image generation plan gating', () => {
     expect(content).toContain("free: 3");
   });
 
-  it('basic users have IMAGE_DAILY_CAPS of 20', () => {
+  it('pilot users have IMAGE_DAILY_CAPS of 10', () => {
     const content = readServer('routes/images.ts');
-    expect(content).toContain("basic: 20");
+    expect(content).toContain("pilot: 10");
   });
 
-  it('pro users have IMAGE_DAILY_CAPS of 50', () => {
+  it('yearly users have IMAGE_DAILY_CAPS of 100', () => {
     const content = readServer('routes/images.ts');
-    expect(content).toContain("pro: 50");
+    expect(content).toContain("yearly: 100");
   });
 
   it('shows upgrade message for free users hitting cap', () => {
     const content = readServer('routes/images.ts');
-    expect(content).toContain('Upgrade to Basic or Pro to unlock more image generation');
+    expect(content).toContain('Upgrade your plan to unlock more image generation');
   });
 });
 
 // ── 89.8 Voice gating tests ───────────────────────────────────
 
 describe('89.8 Voice plan gating', () => {
-  it('voice.ts has basic plan cap', () => {
+  it('voice.ts has pilot plan cap', () => {
     const content = readServer('routes/voice.ts');
-    expect(content).toContain('basic: 30');
+    expect(content).toContain('pilot: 30');
   });
 
-  it('voice.ts has pro plan cap of 100', () => {
+  it('voice.ts has yearly plan cap of 100', () => {
     const content = readServer('routes/voice.ts');
-    expect(content).toContain('pro: 100');
+    expect(content).toContain('yearly: 100');
   });
 
   it('shows upgrade message when free users hit voice cap', () => {
     const content = readServer('routes/voice.ts');
-    expect(content).toContain('Voice limit reached. Upgrade to Basic or Pro to unlock more voice calls');
+    expect(content).toContain('Voice limit reached. Upgrade your plan to unlock more voice calls');
   });
 });
 
