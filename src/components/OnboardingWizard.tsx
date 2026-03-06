@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { X, ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import type { AgentPersonality } from '@/types';
 
 // ── Use case definitions ───────────────────────────────────────────────────────
 
 type UseCase = 'creator' | 'student' | 'developer' | 'business';
+type Personality = 'jarvis' | 'edith' | 'weebo';
 
 interface UseCaseOption {
   id: UseCase;
@@ -16,7 +15,7 @@ interface UseCaseOption {
 }
 
 interface PersonalityOption {
-  id: AgentPersonality;
+  id: Personality;
   label: string;
   emoji: string;
   tagline: string;
@@ -76,17 +75,16 @@ const PERSONALITIES: PersonalityOption[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-interface AgentSetupWizardProps {
+interface OnboardingWizardProps {
   onComplete: () => void;
   onSkip: () => void;
 }
 
-export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) {
+export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [useCase, setUseCase] = useState<UseCase | null>(null);
-  const [personality, setPersonality] = useState<AgentPersonality>('jarvis');
+  const [personality, setPersonality] = useState<Personality>('jarvis');
   const [saving, setSaving] = useState(false);
-  const navigate = useNavigate();
   const updateAgent = useDashboardStore((s) => s.updateAgent);
 
   const handleSave = async () => {
@@ -98,6 +96,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
       // updateAgent already handles errors — proceed regardless
     } finally {
       setSaving(false);
+      onComplete();
     }
   };
 
@@ -240,9 +239,12 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
               </div>
               <div className="flex flex-col gap-2">
                 <button
-                  onClick={async () => {
-                    await handleSave();
-                    navigate('/dashboard/connections');
+                  onClick={() => {
+                    handleSave().then(() => {
+                      window.location.href = '/dashboard/connections';
+                    }).catch(() => {
+                      window.location.href = '/dashboard/connections';
+                    });
                   }}
                   disabled={saving}
                   className="w-full py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00D4E0] disabled:opacity-50 text-black text-sm font-semibold transition-colors"
@@ -250,10 +252,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                   Connect Telegram
                 </button>
                 <button
-                  onClick={async () => {
-                    await handleSave();
-                    onComplete();
-                  }}
+                  onClick={handleSave}
                   disabled={saving}
                   className="w-full py-3 rounded-xl border border-white/10 text-sm text-[#6B7280] hover:text-[#E8E8F0] hover:border-white/20 disabled:opacity-50 transition-colors"
                 >
