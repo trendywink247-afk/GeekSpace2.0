@@ -70,6 +70,7 @@ export function resetDatabase(): void {
       'suggestion_scores',
       'suggestion_clusters',
       'suggestions',
+      'training_examples',
       'users',
     ];
 

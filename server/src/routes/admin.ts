@@ -724,6 +724,118 @@ adminRouter.get('/analytics/feedback', requireAdminToken, (_req: Request, res: R
   }
 });
 
+// ── Training Quality Scoring (Phase 105) ──────────────────────────────
+
+// POST /api/admin/training/:id/score
+// Body: { score: 1-5 integer }
+// Updates quality_score on a training_examples row for human-in-the-loop labeling.
+adminRouter.post('/training/:id/score', requireAdminToken, (req: Request, res: Response): void => {
+  const { id } = req.params;
+  const { score } = req.body as { score: unknown };
+
+  // Validate score: must be integer 1–5
+  if (
+    typeof score !== 'number' ||
+    !Number.isInteger(score) ||
+    score < 1 ||
+    score > 5
+  ) {
+    res.status(400).json({ error: 'score must be an integer between 1 and 5' });
+    return;
+  }
+
+  // Check row exists
+  const existing = db.prepare(
+    'SELECT id FROM training_examples WHERE id = ?'
+  ).get(id) as { id: string } | undefined;
+
+  if (!existing) {
+    res.status(404).json({ error: `Training example '${id}' not found` });
+    return;
+  }
+
+  // Update quality_score
+  db.prepare(
+    'UPDATE training_examples SET quality_score = ? WHERE id = ?'
+  ).run(score, id);
+
+  const updated = db.prepare(
+    'SELECT id, user_id, input, output, provider, model, quality_score, created_at FROM training_examples WHERE id = ?'
+  ).get(id) as Record<string, unknown>;
+
+  logger.info({ id, score }, 'Training example scored');
+  res.json(updated);
+});
+
+// GET /api/admin/training
+// Query params:
+//   min_score: number — only return rows with quality_score >= min_score
+//   limit: number     — max rows to return (default 1000)
+// Returns JSONL: one JSON object per line in OpenAI/Together fine-tuning format
+adminRouter.get('/training', requireAdminToken, (req: Request, res: Response): void => {
+  const minScore = req.query.min_score !== undefined ? Number(req.query.min_score) : null;
+  const limitRaw = Number(req.query.limit);
+  const limit = req.query.limit !== undefined && !isNaN(limitRaw) ? Math.min(limitRaw, 10000) : 1000;
+
+  type TrainingRow = {
+    id: string;
+    input: string;
+    output: string;
+    system_prompt: string | null;
+    provider: string;
+    model: string;
+    quality_score: number | null;
+    created_at: string;
+  };
+
+  let rows: TrainingRow[];
+
+  if (minScore !== null && !isNaN(minScore)) {
+    rows = db.prepare(`
+      SELECT id, input, output, system_prompt, provider, model, quality_score, created_at
+      FROM training_examples
+      WHERE quality_score >= ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(minScore, limit) as TrainingRow[];
+  } else {
+    rows = db.prepare(`
+      SELECT id, input, output, system_prompt, provider, model, quality_score, created_at
+      FROM training_examples
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(limit) as TrainingRow[];
+  }
+
+  // Stream as JSONL (application/x-ndjson)
+  res.setHeader('Content-Type', 'application/x-ndjson');
+  res.setHeader('Content-Disposition', 'attachment; filename="training_examples.jsonl"');
+
+  for (const row of rows) {
+    const messages: Array<{ role: string; content: string }> = [];
+
+    if (row.system_prompt) {
+      messages.push({ role: 'system', content: row.system_prompt });
+    }
+    messages.push({ role: 'user', content: row.input });
+    messages.push({ role: 'assistant', content: row.output });
+
+    const line = JSON.stringify({
+      messages,
+      metadata: {
+        id: row.id,
+        provider: row.provider,
+        model: row.model,
+        quality_score: row.quality_score,
+        created_at: row.created_at,
+      },
+    });
+    res.write(line + '\n');
+  }
+
+  res.end();
+});
+
 // ---- serveAdminDashboard — GET /admin (HTML page) ----
 export function serveAdminDashboard(_req: Request, res: Response): void {
   // Admin dashboard is a standalone HTML file with inline scripts.
