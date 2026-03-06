@@ -578,6 +578,38 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         };
       }
 
+      // ── send_telegram ────────────────────────────────────────
+      case 'send_telegram': {
+        const message = params.message as string;
+
+        const link = db.prepare(
+          "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 ORDER BY linked_at DESC LIMIT 1"
+        ).get(userId) as { external_id: string } | undefined;
+
+        if (!link) {
+          return {
+            tool,
+            success: false,
+            message: 'No Telegram account linked. Go to Connections to connect Telegram first.',
+          };
+        }
+
+        try {
+          await sendTelegramNotification(link.external_id, message);
+          return {
+            tool,
+            success: true,
+            message: 'Telegram message sent successfully.',
+          };
+        } catch {
+          return {
+            tool,
+            success: false,
+            message: 'Failed to send Telegram message. Check bot configuration.',
+          };
+        }
+      }
+
       // ── Unknown tool (should not happen after parser validation)
       default:
         return {
