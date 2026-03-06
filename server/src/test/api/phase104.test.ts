@@ -119,5 +119,21 @@ describe('Phase 104 — ReAct Tool Loop', () => {
     });
   });
 
+  describe('104.6 agent.ts wired to ReAct loop', () => {
+    it('agent.ts imports runReActLoop', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/routes/agent.ts'), 'utf-8');
+      expect(content).toContain('runReActLoop');
+    });
+
+    it('agent.ts default chat path calls runReActLoop', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/routes/agent.ts'), 'utf-8');
+      const defaultPathSection = content.slice(
+        content.indexOf('Default: local-first router'),
+        content.indexOf('Default: local-first router') + 1500,
+      );
+      expect(defaultPathSection).toContain('runReActLoop');
+    });
+  });
+
   // Remaining describe blocks will be added in later tasks
 });

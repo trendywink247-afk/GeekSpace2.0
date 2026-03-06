@@ -20,6 +20,7 @@ import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } f
 import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
 import { parseActions, type ParsedAction } from '../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
+import { runReActLoop } from '../services/react-loop.js';
 import { formatReceiptCompact, type ReceiptItem } from '../services/receipts.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from '../services/telegram.js';
@@ -669,13 +670,27 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       }
     }
 
-    const result = await routeChat(messages, {
+    const reactResult = await runReActLoop(messages, userId, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
       forceProvider: resolvedProvider,
       userId,
+      onStatus: () => { /* no-op: JSON endpoint, client gets response only after completion */ },
     });
+
+    // Alias for downstream code (usage logging, credit deduction, JSON response)
+    const result = {
+      reply: reactResult.text,
+      provider: reactResult.provider,
+      model: reactResult.model,
+      tokensIn: reactResult.tokensIn,
+      tokensOut: reactResult.tokensOut,
+      creditCost: reactResult.creditCost,
+      latencyMs: 0,
+    };
+    const cleanReply = reactResult.text;
+    const actionResults: ActionResult[] = []; // Tool actions were executed inside the loop
 
     // Determine tier from actual provider used
     const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';
@@ -694,22 +709,6 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     deductSubscriptionCredits(userId, result.creditCost);
 
     const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? userCredits;
-
-    // Parse and execute any tool actions from LLM response
-    const { text: cleanReply, actions: parsedActions } = parseActions(result.reply);
-    const actionResults: ActionResult[] = [];
-
-    for (const action of parsedActions) {
-      // Inject baseUrl for generate_code actions to create preview links
-      if (action.tool === 'generate_code') {
-        action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
-        if (reqExistingArtifactId) {
-          action.params.existingArtifactId = reqExistingArtifactId;
-        }
-      }
-      const actionResult = await executeAction(userId, action);
-      actionResults.push(actionResult);
-    }
 
     // Log the clean reply (without action blocks)
     logConversation(userId, 'assistant', cleanReply || result.reply, result.provider, result.model);
