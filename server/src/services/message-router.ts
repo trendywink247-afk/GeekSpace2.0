@@ -337,7 +337,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     // Pattern 1: verb + image-type-word (broad verbs, requires explicit image noun)
     const imageVerbNounPattern = /\b(?:generate|create|make|render|produce|show me|i want|give me|can you make|imagine|visualize)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|painting|portrait|wallpaper|sketch)\b/i;
     // Pattern 2: drawing verbs alone — draw/paint/sketch inherently mean image creation
-    const drawingVerbPattern = /\b(?:draw|paint|sketch|imagine|visualize)\b.{0,80}\b(?!reminder|remind|website|site|portfolio|landing|page)\S/i;
+    const drawingVerbPattern = /\b(?:draw|paint|sketch|imagine|visualize)\b\s+\S/i;
     // Guard: skip if this is clearly a reminder/task message
     const isReminderMsg = /\b(?:remind|reminder|schedule|alarm)\b/i.test(msg.text);
 
