@@ -592,112 +592,244 @@ export function parseReminderTime(text: string, userTimezone = 'Asia/Kolkata'): 
   const lower = text.toLowerCase();
   const now = DateTime.now().setZone(userTimezone);
 
-  // "in X minute(s)" / "in X min"
-  let match = lower.match(/\bin\s+(\d+)\s*(?:min(?:ute)?s?)\b/);
-  if (match) {
-    const mins = parseInt(match[1], 10);
-    return toLuxonSqlite(now.plus({ minutes: mins }));
+  // Helper: apply tomorrow shift if "tomorrow" appears in the text
+  function applyTomorrow(target: DateTime): DateTime {
+    if (!/\btomorrow\b/.test(lower)) return target;
+    if (target.startOf('day').valueOf() === now.startOf('day').valueOf()) {
+      return target.plus({ days: 1 });
+    }
+    return target;
   }
 
-  // "in X hour(s)"
+  // Helper: advance target to next day if it's in the past
+  function nextIfPast(target: DateTime): DateTime {
+    return target <= now ? target.plus({ days: 1 }) : target;
+  }
+
+  // Helper: build and return a set-time result
+  function timeResult(hour: number, minute: number): string {
+    let target = now.set({ hour, minute, second: 0, millisecond: 0 });
+    target = applyTomorrow(target);
+    target = nextIfPast(target);
+    return toLuxonSqlite(target);
+  }
+
+  // ── Relative: seconds (for testing) ──────────────────────────────────────
+  let match = lower.match(/\bin\s+(\d+)\s*(?:seconds?|secs?)\b/);
+  if (match) return toLuxonSqlite(now.plus({ seconds: parseInt(match[1], 10) }));
+
+  // ── Relative: minutes ────────────────────────────────────────────────────
+  match = lower.match(/\bin\s+(\d+)\s*(?:min(?:ute)?s?)\b/);
+  if (match) return toLuxonSqlite(now.plus({ minutes: parseInt(match[1], 10) }));
+
+  // "in a minute" / "in one minute"
+  if (/\bin\s+(?:a|one)\s+minute\b/.test(lower)) return toLuxonSqlite(now.plus({ minutes: 1 }));
+
+  // "in a couple of minutes" / "in a few minutes"
+  if (/\bin\s+(?:a\s+couple(?:\s+of)?|a\s+few)\s+minutes?\b/.test(lower)) return toLuxonSqlite(now.plus({ minutes: 5 }));
+
+  // ── Relative: hours ──────────────────────────────────────────────────────
   match = lower.match(/\bin\s+(\d+)\s*(?:hours?|hrs?)\b/);
+  if (match) return toLuxonSqlite(now.plus({ hours: parseInt(match[1], 10) }));
+
+  // "in half an hour" / "in half hour"
+  if (/\bin\s+half\s+an?\s+hour\b/.test(lower)) return toLuxonSqlite(now.plus({ minutes: 30 }));
+
+  // "in X and a half hours" (e.g. "in 1 and a half hours")
+  match = lower.match(/\bin\s+(\d+)\s+and\s+a\s+half\s+hours?\b/);
+  if (match) return toLuxonSqlite(now.plus({ minutes: parseInt(match[1], 10) * 60 + 30 }));
+
+  // ── Relative: days / weeks ───────────────────────────────────────────────
+  match = lower.match(/\bin\s+(\d+)\s+days?\b/);
+  if (match) return toLuxonSqlite(now.plus({ days: parseInt(match[1], 10) }).set({ second: 0, millisecond: 0 }));
+
+  match = lower.match(/\bin\s+(\d+)\s+weeks?\b/);
+  if (match) return toLuxonSqlite(now.plus({ weeks: parseInt(match[1], 10) }).set({ second: 0, millisecond: 0 }));
+
+  // ── Named times ──────────────────────────────────────────────────────────
+
+  // "noon" / "midday" → 12:00
+  if (/\b(?:noon|midday)\b/.test(lower)) return timeResult(12, 0);
+
+  // "midnight" → 00:00
+  if (/\bmidnight\b/.test(lower)) {
+    let target = now.set({ hour: 0, minute: 0, second: 0, millisecond: 0 }).plus({ days: 1 });
+    return toLuxonSqlite(target);
+  }
+
+  // "this morning" → 9am, "this afternoon" → 2pm, "this evening" → 6pm, "this night" → 9pm
+  if (/\bthis\s+morning\b/.test(lower)) return timeResult(9, 0);
+  if (/\bthis\s+afternoon\b/.test(lower)) return timeResult(14, 0);
+  if (/\bthis\s+evening\b/.test(lower)) return timeResult(18, 0);
+  if (/\bthis\s+night\b/.test(lower)) return timeResult(21, 0);
+
+  // "next week" → 7 days from now at 9am
+  if (/\bnext\s+week\b/.test(lower)) {
+    return toLuxonSqlite(now.plus({ weeks: 1 }).set({ hour: 9, minute: 0, second: 0, millisecond: 0 }));
+  }
+
+  // "next month" → 1 month from now at 9am
+  if (/\bnext\s+month\b/.test(lower)) {
+    return toLuxonSqlite(now.plus({ months: 1 }).set({ hour: 9, minute: 0, second: 0, millisecond: 0 }));
+  }
+
+  // Weekday names: "next Monday" / "on Friday" / bare "Monday" → next occurrence
+  const WEEKDAYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const wdMatch = lower.match(/\b(?:next\s+|on\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);
+  if (wdMatch) {
+    const targetWd = WEEKDAYS.indexOf(wdMatch[1]);
+    const currentWd = now.weekday % 7; // luxon: 1=Mon…7=Sun → convert to 0=Sun
+    let daysAhead = targetWd - currentWd;
+    if (daysAhead <= 0 || /\bnext\b/.test(lower)) daysAhead += 7;
+    const hour = /\bevening\b/.test(lower) ? 18 : /\bafternoon\b/.test(lower) ? 14 : /\bnight\b/.test(lower) ? 21 : 9;
+    return toLuxonSqlite(now.plus({ days: daysAhead }).set({ hour, minute: 0, second: 0, millisecond: 0 }));
+  }
+
+  // ── Half-past / quarter-past / quarter-to ────────────────────────────────
+
+  // "half past X" / "half X" (Indian/British: half past 6 = 6:30, half 6 = 6:30)
+  match = lower.match(/\bhalf\s+past\s+(\d{1,2})\b/);
   if (match) {
-    const hours = parseInt(match[1], 10);
-    return toLuxonSqlite(now.plus({ hours }));
+    let hour = parseInt(match[1], 10);
+    if (hour >= 1 && hour <= 7) hour += 12;
+    return timeResult(hour, 30);
   }
-
-  // "in half an hour" / "in 30 minutes"
-  if (/\bin\s+half\s+an?\s+hour\b/.test(lower)) {
-    return toLuxonSqlite(now.plus({ minutes: 30 }));
-  }
-
-  // "in X seconds" (for testing)
-  match = lower.match(/\bin\s+(\d+)\s*(?:seconds?|secs?)\b/);
+  match = lower.match(/\bhalf\s+(\d{1,2})\b/);
   if (match) {
-    const secs = parseInt(match[1], 10);
-    return toLuxonSqlite(now.plus({ seconds: secs }));
+    let hour = parseInt(match[1], 10);
+    if (hour >= 1 && hour <= 7) hour += 12;
+    return timeResult(hour, 30);
   }
 
-  // Bare "9am" / "9pm" / "9:30am" — no "at" prefix, no dot
-  match = lower.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b(?!\s*(?:at\b))/);
+  // "quarter past X" = X:15
+  match = lower.match(/\bquarter\s+past\s+(\d{1,2})\b/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    if (hour >= 1 && hour <= 7) hour += 12;
+    return timeResult(hour, 15);
+  }
+
+  // "quarter to X" = (X-1):45
+  match = lower.match(/\bquarter\s+to\s+(\d{1,2})\b/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    if (hour >= 1 && hour <= 7) hour += 12;
+    hour = hour === 0 ? 23 : hour - 1;
+    return timeResult(hour, 45);
+  }
+
+  // ── Bare time patterns (no "at" prefix) ──────────────────────────────────
+
+  // "9am" / "9pm" / "9:30am" / "9.30pm" — digit+am/pm, no "at" prefix
+  match = lower.match(/\b(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)\b/);
   if (match && !lower.match(/\bat\s+\d/)) {
     let hour = parseInt(match[1], 10);
     const minute = match[2] ? parseInt(match[2], 10) : 0;
     const ampm = match[3];
     if (ampm === 'pm' && hour < 12) hour += 12;
     if (ampm === 'am' && hour === 12) hour = 0;
-    let target = now.set({ hour, minute, second: 0, millisecond: 0 });
-    if (target <= now) target = target.plus({ days: 1 });
-    return toLuxonSqlite(target);
+    return timeResult(hour, minute);
   }
 
-  // Bare "12:30" — colon-separated, no "at" prefix, no am/pm
+  // "H MM am/pm" — space-separated with am/pm, no "at" prefix (e.g. "6 40 pm")
+  match = lower.match(/\b(\d{1,2})\s+(\d{2})\s*(am|pm)\b/);
+  if (match && !lower.match(/\bat\s+\d/)) {
+    let hour = parseInt(match[1], 10);
+    const minute = parseInt(match[2], 10);
+    const ampm = match[3];
+    if (ampm === 'pm' && hour < 12) hour += 12;
+    if (ampm === 'am' && hour === 12) hour = 0;
+    return timeResult(hour, minute);
+  }
+
+  // "12:30" — colon-separated, no "at" prefix, no am/pm
   match = lower.match(/\b(\d{1,2}):(\d{2})\b(?!\s*(?:am|pm))/);
   if (match && !lower.match(/\bat\s+\d/)) {
     let hour = parseInt(match[1], 10);
     const minute = parseInt(match[2], 10);
-    // No am/pm: hour 1–7 treated as PM, otherwise face value
     if (hour >= 1 && hour <= 7) hour += 12;
-    let target = now.set({ hour, minute, second: 0, millisecond: 0 });
-    if (target <= now) target = target.plus({ days: 1 });
-    return toLuxonSqlite(target);
+    return timeResult(hour, minute);
   }
 
-  // "12.30" or "12.30pm" — dot-separated time (common in Indian/European input)
-  // Must be checked before the "at X" branches to avoid partial matches
-  match = lower.match(/\b(\d{1,2})\.(\d{2})\s*(am|pm)?\b/);
+  // "12.30" — dot-separated, no am/pm (already covered above for X.XXam case)
+  match = lower.match(/\b(\d{1,2})\.(\d{2})\b(?!\s*(?:am|pm))/);
+  if (match && !lower.match(/\bat\s+\d/)) {
+    let hour = parseInt(match[1], 10);
+    const minute = parseInt(match[2], 10);
+    if (hour >= 1 && hour <= 7) hour += 12;
+    return timeResult(hour, minute);
+  }
+
+  // ── "at" prefix patterns ──────────────────────────────────────────────────
+
+  // "at noon" / "at midday"
+  if (/\bat\s+(?:noon|midday)\b/.test(lower)) return timeResult(12, 0);
+
+  // "at midnight"
+  if (/\bat\s+midnight\b/.test(lower)) {
+    return toLuxonSqlite(now.set({ hour: 0, minute: 0, second: 0, millisecond: 0 }).plus({ days: 1 }));
+  }
+
+  // "at half past X" / "at half X"
+  match = lower.match(/\bat\s+half\s+past\s+(\d{1,2})\b/) || lower.match(/\bat\s+half\s+(\d{1,2})\b/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    if (hour >= 1 && hour <= 7) hour += 12;
+    return timeResult(hour, 30);
+  }
+
+  // "at quarter past X"
+  match = lower.match(/\bat\s+quarter\s+past\s+(\d{1,2})\b/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    if (hour >= 1 && hour <= 7) hour += 12;
+    return timeResult(hour, 15);
+  }
+
+  // "at quarter to X"
+  match = lower.match(/\bat\s+quarter\s+to\s+(\d{1,2})\b/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    if (hour >= 1 && hour <= 7) hour += 12;
+    hour = hour === 0 ? 23 : hour - 1;
+    return timeResult(hour, 45);
+  }
+
+  // "at H MM (am/pm)?" — space-separated hour and minute with "at" prefix (e.g. "at 6 40", "at 6 40 pm")
+  match = lower.match(/\bat\s+(\d{1,2})\s+(\d{2})\s*(am|pm)?\b/);
   if (match) {
     let hour = parseInt(match[1], 10);
     const minute = parseInt(match[2], 10);
     const ampm = match[3];
     if (ampm === 'pm' && hour < 12) hour += 12;
     else if (ampm === 'am' && hour === 12) hour = 0;
-    // Without am/pm: hour 1–7 treated as PM (afternoon), otherwise face value
     else if (!ampm && hour >= 1 && hour <= 7) hour += 12;
-    let target = now.set({ hour, minute, second: 0, millisecond: 0 });
-    if (target <= now) target = target.plus({ days: 1 });
-    return toLuxonSqlite(target);
+    return timeResult(hour, minute);
   }
 
-  // "at X:XX pm/am" or "at Xpm/am"
-  match = lower.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/);
+  // "at X:XX pm/am" or "at X.XX pm/am" or "at Xpm/am"
+  match = lower.match(/\bat\s+(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)\b/);
   if (match) {
     let hour = parseInt(match[1], 10);
     const minute = match[2] ? parseInt(match[2], 10) : 0;
     const ampm = match[3];
     if (ampm === 'pm' && hour < 12) hour += 12;
     if (ampm === 'am' && hour === 12) hour = 0;
-    let target = now.set({ hour, minute, second: 0, millisecond: 0 });
-    if (target <= now) target = target.plus({ days: 1 });
-    if (/\btomorrow\b/.test(lower)) {
-      const todayStart = now.startOf('day');
-      const targetStart = target.startOf('day');
-      if (targetStart.valueOf() === todayStart.valueOf()) {
-        target = target.plus({ days: 1 });
-      }
-    }
-    return toLuxonSqlite(target);
+    return timeResult(hour, minute);
   }
 
-  // "at X" (24-hour implied, e.g., "at 5" without am/pm → assume PM for 1-7)
-  match = lower.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\b(?!\s*(?:am|pm))/);
+  // "at X" or "at X:XX" (no am/pm → hour 1–7 = PM, 0/8–23 = face value)
+  match = lower.match(/\bat\s+(\d{1,2})(?:[:.](\d{2}))?\b(?!\s*(?:am|pm))/);
   if (match) {
     let hour = parseInt(match[1], 10);
     const minute = match[2] ? parseInt(match[2], 10) : 0;
     if (hour >= 1 && hour <= 7) hour += 12;
-    let target = now.set({ hour, minute, second: 0, millisecond: 0 });
-    if (target <= now) target = target.plus({ days: 1 });
-    if (/\btomorrow\b/.test(lower)) {
-      const todayStart = now.startOf('day');
-      const targetStart = target.startOf('day');
-      if (targetStart.valueOf() === todayStart.valueOf()) {
-        target = target.plus({ days: 1 });
-      }
-    }
-    return toLuxonSqlite(target);
+    return timeResult(hour, minute);
   }
 
-  // "tomorrow morning" (9am) / "tomorrow evening" (6pm) / "tomorrow" (9am)
+  // ── Day-relative patterns ─────────────────────────────────────────────────
+
+  // "tomorrow morning/afternoon/evening/night/tomorrow"
   if (/\btomorrow\b/.test(lower)) {
     const tomorrow = now.plus({ days: 1 });
     let hour = 9;
@@ -708,18 +840,24 @@ export function parseReminderTime(text: string, userTimezone = 'Asia/Kolkata'): 
   }
 
   // "tonight" (9pm)
-  if (/\btonight\b/.test(lower)) {
-    let target = now.set({ hour: 21, minute: 0, second: 0, millisecond: 0 });
-    if (target <= now) target = target.plus({ days: 1 });
-    return toLuxonSqlite(target);
-  }
+  if (/\btonight\b/.test(lower)) return timeResult(21, 0);
 
-  // "after work" / "end of day" (6pm)
-  if (/\b(?:after work|end of (?:the )?day|eod)\b/.test(lower)) {
-    let target = now.set({ hour: 18, minute: 0, second: 0, millisecond: 0 });
-    if (target <= now) target = target.plus({ days: 1 });
-    return toLuxonSqlite(target);
-  }
+  // "morning" / "afternoon" / "evening" / "tonight" alone (no "this"/"tomorrow" prefix)
+  if (/\bmorning\b/.test(lower)) return timeResult(9, 0);
+  if (/\bafternoon\b/.test(lower)) return timeResult(14, 0);
+  if (/\bevening\b/.test(lower)) return timeResult(18, 0);
+
+  // "after work" / "end of day" / "eod" (6pm)
+  if (/\b(?:after work|end of (?:the )?day|eod)\b/.test(lower)) return timeResult(18, 0);
+
+  // "lunch" / "lunchtime" (1pm)
+  if (/\blunch(?:time)?\b/.test(lower)) return timeResult(13, 0);
+
+  // "breakfast" (8am)
+  if (/\bbreakfast\b/.test(lower)) return timeResult(8, 0);
+
+  // "dinner" / "dinnertime" (8pm)
+  if (/\bdinner(?:time)?\b/.test(lower)) return timeResult(20, 0);
 
   // No time expression found → default to 1 hour from now
   return toLuxonSqlite(now.plus({ hours: 1 }));
