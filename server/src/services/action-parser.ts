@@ -222,17 +222,28 @@ export function parseActions(llmResponse: string): ParseResult {
     }
 
     // Basic structure check
-    if (
-      typeof parsed !== 'object' ||
-      parsed === null ||
-      !('tool' in parsed) ||
-      typeof (parsed as Record<string, unknown>).tool !== 'string'
-    ) {
+    if (typeof parsed !== 'object' || parsed === null) {
       logger.warn({ block: rawBlock }, 'Action block missing "tool" field — skipping');
       continue;
     }
 
-    const { tool, params } = parsed as { tool: string; params?: unknown };
+    const parsedObj = parsed as Record<string, unknown>;
+
+    // If LLM omitted the tool wrapper but output generate_code params directly,
+    // infer the tool (stepfun/cheap models sometimes skip the {"tool":...} envelope)
+    if (!('tool' in parsedObj) || typeof parsedObj.tool !== 'string') {
+      if ('template' in parsedObj || ('html' in parsedObj && 'css' in parsedObj)) {
+        parsedObj.tool = 'generate_code';
+        parsedObj.params = { ...parsedObj };
+        delete (parsedObj.params as Record<string, unknown>).tool;
+        delete (parsedObj.params as Record<string, unknown>).params;
+      } else {
+        logger.warn({ block: rawBlock }, 'Action block missing "tool" field — skipping');
+        continue;
+      }
+    }
+
+    const { tool, params } = parsedObj as { tool: string; params?: unknown };
 
     // Validate tool name
     const schema = TOOL_SCHEMAS[tool];
