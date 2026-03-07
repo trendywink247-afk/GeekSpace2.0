@@ -10,7 +10,7 @@ import { config } from '../config.js';
 import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openclaw-system.js';
 import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
-import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, logTrainingExample, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations, formatMemoryContext, extractMemoriesFromConversation } from '../services/memory.js';
+import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations, formatMemoryContext, extractMemoriesFromConversation } from '../services/memory.js';
 import { loadPicoContext, formatContextBlock } from '../services/pico-context.js';
 import { checkContent } from '../services/content-filter.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
@@ -93,17 +93,6 @@ function buildSystemPrompt(
     ? `IMPORTANT: When asked to build or create a website, you MUST emit a generate_code action block with COMPLETE working HTML/CSS/JS code. Do not give short text responses for build requests — always use the action block. Write complete, self-contained code with no placeholders.`
     : `IMPORTANT: Keep responses SHORT. 1-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain conversational text only.`;
 
-  const toolsBlock = `--- AVAILABLE TOOLS ---
-Use <<<ACTION>>> blocks to invoke tools when needed:
-<<<ACTION>>>
-tool: web_search
-query: your search query
-<<<END>>>
-<<<ACTION>>>
-tool: send_telegram
-message: your message text
-<<<END>>>`;
-
   return `${OPENCLAW_IDENTITY}
 
 --- PERSONALITY ---
@@ -116,8 +105,6 @@ Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
 ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
 ${memoryBlock}
 ${formatMemoryContext(userId)}
-
-${toolsBlock}
 
 ${closingInstruction}`;
 }
@@ -713,7 +700,6 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     // Log the clean reply (without action blocks)
     logConversation(userId, 'assistant', cleanReply, result.provider, result.model);
-    logTrainingExample({ userId, input: message, output: cleanReply, provider: result.provider, model: result.model });
 
     const response: Record<string, unknown> = {
       text: cleanReply,
