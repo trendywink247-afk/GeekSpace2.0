@@ -40,7 +40,7 @@ ACTION>>>
 
 Available tools:
 - web_search: Search the web for current information. Params: {"query": "<search query>"}
-- set_reminder: Create a reminder for the user. Params: {"text": "<reminder text>", "datetime": "<ISO datetime or natural language>", "channel": "telegram|push"}
+- set_reminder: Create a reminder for the user. Params: {"text": "<reminder text>", "datetime": "<EXACT time the user said, e.g. '3:30am', 'tomorrow at 9pm', 'in 2 hours' — do NOT convert to ISO or UTC>", "channel": "telegram|push"}
 - telegram_notify: Send a Telegram message to the user. Params: {"message": "<message text>"}
 - generate_image: Generate an image. Params: {"prompt": "<image description>"}
 - generate_code: Build or update a website. Params: {"template": "portfolio|landing|blog|business", "title": "...", "name": "...", "theme": "dark|light|purple|blue|gradient", "profession": "...", "location": "...", "bio": "...", "skills": ["skill1","skill2"], "email": "...", "tagline": "..."}. Use this for both creating AND editing websites (just output updated params — the server handles the rest). Never write raw HTML.

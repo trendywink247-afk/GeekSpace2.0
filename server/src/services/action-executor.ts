@@ -11,6 +11,7 @@ import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { sendAgentEmail, resolveEmailAddress } from './email.js';
 import { parseReminderTime } from './pico-fleet.js';
+import { DateTime } from 'luxon';
 import type { ParsedAction } from './action-parser.js';
 import { config } from '../config.js';
 import { RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
@@ -330,15 +331,30 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const reminderId = uuid();
         const userRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
         const userTimezone = userRow?.timezone || 'Asia/Kolkata';
-        // params.datetime may be a bare time string from the LLM ("12:30", "12.30", "3pm").
-        // A bare time has no timezone context — always parse it through parseReminderTime
-        // so it is interpreted in the user's local timezone before converting to UTC.
-        // Only treat params.datetime as a ready-to-store value when it is a full ISO string
-        // (contains 'T' or starts with a 4-digit year), meaning it already encodes a date+time.
+        // LLMs are unreliable at timezone math — never trust a computed UTC datetime from an LLM.
+        // Strategy:
+        //   1. LLM passes explicit UTC offset (Z / +HH:MM) → trust it, convert to UTC
+        //   2. LLM passes ISO without timezone ("2026-03-08 10:00:00") → treat as user's LOCAL time, convert
+        //   3. LLM passes bare expression ("3:30am", "tomorrow at 9") → parseReminderTime (server handles tz)
+        //   4. Nothing → parseReminderTime from reminder text
         const rawDatetime = params.datetime as string | undefined;
-        const dueAt = rawDatetime && (rawDatetime.includes('T') || /^\d{4}-/.test(rawDatetime))
-          ? rawDatetime
-          : parseReminderTime(rawDatetime ? rawDatetime : text, userTimezone);
+        let dueAt: string | null;
+        const toUtcSqlite = (dt: DateTime) => dt.toUTC().toISO()!.replace('T', ' ').replace(/\.\d{3}Z$/, '');
+        if (!rawDatetime) {
+          // No datetime from LLM — extract from the reminder text
+          dueAt = parseReminderTime(text, userTimezone);
+        } else if (/[Zz]$|[+-]\d{2}:\d{2}$/.test(rawDatetime)) {
+          // Has explicit UTC offset → trust it
+          const dt = DateTime.fromISO(rawDatetime);
+          dueAt = dt.isValid ? toUtcSqlite(dt) : parseReminderTime(text, userTimezone);
+        } else if (rawDatetime.includes('T') || /^\d{4}-\d{2}-\d{2}/.test(rawDatetime)) {
+          // ISO without timezone (LLM computed) → interpret as user's local time
+          const dt = DateTime.fromISO(rawDatetime.replace(' ', 'T'), { zone: userTimezone });
+          dueAt = dt.isValid ? toUtcSqlite(dt) : parseReminderTime(text, userTimezone);
+        } else {
+          // Bare time expression ("3:30am", "tomorrow", "in 2 hours") → server parses with user tz
+          dueAt = parseReminderTime(rawDatetime, userTimezone);
+        }
         // Calculate epoch ms for drift tracking
         const scheduledFor = dueAt ? new Date(dueAt).getTime() : Date.now();
 

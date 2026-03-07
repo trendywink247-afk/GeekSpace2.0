@@ -614,12 +614,20 @@ export function parseReminderTime(text: string, userTimezone = 'Asia/Kolkata'): 
     return toLuxonSqlite(target);
   }
 
+  // ── Urgency shortcuts ────────────────────────────────────────────────────
+  // "asap" / "right now" / "immediately" → 5 minutes
+  if (/\b(?:asap|right\s+now|immediately|urgently|now)\b/.test(lower)) return toLuxonSqlite(now.plus({ minutes: 5 }));
+
   // ── Relative: seconds (for testing) ──────────────────────────────────────
   let match = lower.match(/\bin\s+(\d+)\s*(?:seconds?|secs?)\b/);
   if (match) return toLuxonSqlite(now.plus({ seconds: parseInt(match[1], 10) }));
 
   // ── Relative: minutes ────────────────────────────────────────────────────
   match = lower.match(/\bin\s+(\d+)\s*(?:min(?:ute)?s?)\b/);
+  if (match) return toLuxonSqlite(now.plus({ minutes: parseInt(match[1], 10) }));
+
+  // "after X minutes" / "after X hours" (same as "in X")
+  match = lower.match(/\bafter\s+(\d+)\s*(?:min(?:ute)?s?)\b/);
   if (match) return toLuxonSqlite(now.plus({ minutes: parseInt(match[1], 10) }));
 
   // "in a minute" / "in one minute"
@@ -858,6 +866,55 @@ export function parseReminderTime(text: string, userTimezone = 'Asia/Kolkata'): 
 
   // "dinner" / "dinnertime" (8pm)
   if (/\bdinner(?:time)?\b/.test(lower)) return timeResult(20, 0);
+
+  // ── "at X o'clock" / "X o'clock" ─────────────────────────────────────────
+  match = lower.match(/\b(?:at\s+)?(\d{1,2})\s+o['']?clock\b/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    // Apply morning/afternoon context
+    if (/\b(?:morning|am)\b/.test(lower)) { /* keep as-is */ }
+    else if (/\b(?:afternoon|evening|night|pm)\b/.test(lower) && hour < 12) hour += 12;
+    else if (hour >= 1 && hour <= 7) hour += 12; // evening bias for ambiguous hours
+    return timeResult(hour, 0);
+  }
+
+  // ── "at X in the morning" / "at X in the afternoon/evening" ──────────────
+  match = lower.match(/\bat\s+(\d{1,2})(?:[:.](\d{2}))?\s+in\s+the\s+(morning|afternoon|evening|night)\b/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    const minute = match[2] ? parseInt(match[2], 10) : 0;
+    const period = match[3];
+    if (period === 'morning' && hour === 12) hour = 0;
+    else if (period === 'morning') { /* keep as AM */ }
+    else if ((period === 'afternoon' || period === 'evening' || period === 'night') && hour < 12) hour += 12;
+    return timeResult(hour, minute);
+  }
+
+  // ── "day after tomorrow" ──────────────────────────────────────────────────
+  if (/\bday\s+after\s+tomorrow\b/.test(lower)) {
+    let hour = 9;
+    if (/\bevening\b/.test(lower)) hour = 18;
+    else if (/\bafternoon\b/.test(lower)) hour = 14;
+    else if (/\bnight\b/.test(lower)) hour = 21;
+    // Check for specific time e.g. "day after tomorrow at 3pm"
+    const tMatch = lower.match(/\bat\s+(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\b/);
+    if (tMatch) {
+      hour = parseInt(tMatch[1], 10);
+      const min = tMatch[2] ? parseInt(tMatch[2], 10) : 0;
+      const ap = tMatch[3];
+      if (ap === 'pm' && hour < 12) hour += 12;
+      else if (ap === 'am' && hour === 12) hour = 0;
+      else if (!ap && hour >= 1 && hour <= 7) hour += 12;
+      return toLuxonSqlite(now.plus({ days: 2 }).set({ hour, minute: min, second: 0, millisecond: 0 }));
+    }
+    return toLuxonSqlite(now.plus({ days: 2 }).set({ hour, minute: 0, second: 0, millisecond: 0 }));
+  }
+
+  // ── "end of the week" / "this weekend" ───────────────────────────────────
+  if (/\b(?:end\s+of\s+(?:the\s+)?week|this\s+weekend|on\s+(?:the\s+)?weekend)\b/.test(lower)) {
+    const daysToSat = (6 - now.weekday + 7) % 7 || 7; // days until next Saturday
+    return toLuxonSqlite(now.plus({ days: daysToSat }).set({ hour: 9, minute: 0, second: 0, millisecond: 0 }));
+  }
 
   // No time expression found → default to 1 hour from now
   return toLuxonSqlite(now.plus({ hours: 1 }));
@@ -1133,14 +1190,23 @@ async function executeTask(task: PicoTask): Promise<void> {
         const userId = task.user_id;
         const tzRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
         const userTimezone = tzRow?.timezone || 'Asia/Kolkata';
-        // ISO-guard: if LLM supplied a bare time like "12:30" or "3pm", params.datetime is
-        // truthy but NOT a real datetime — route through parseReminderTime so the user's
-        // IANA timezone is applied before UTC storage. Only trust it directly when it is a
-        // full ISO datetime (contains 'T') or a date-prefixed string (/^\d{4}-/).
+        // LLMs are unreliable at timezone math — never trust a computed UTC datetime.
+        // Treat ISO-without-timezone as user's local time; bare expressions go through parseReminderTime.
         const rawDatetime = taskConfig.datetime as string | undefined;
-        const dueAt = rawDatetime && (rawDatetime.includes('T') || /^\d{4}-/.test(rawDatetime))
-          ? rawDatetime
-          : parseReminderTime(rawDatetime ? rawDatetime : text, userTimezone);
+        const toUtcSqlite2 = (dt: DateTime) => dt.toUTC().toISO()!.replace('T', ' ').replace(/\.\d{3}Z$/, '');
+        let dueAt: string | null;
+        if (!rawDatetime) {
+          dueAt = parseReminderTime(text, userTimezone);
+        } else if (/[Zz]$|[+-]\d{2}:\d{2}$/.test(rawDatetime)) {
+          const dt = DateTime.fromISO(rawDatetime);
+          dueAt = dt.isValid ? toUtcSqlite2(dt) : parseReminderTime(text, userTimezone);
+        } else if (rawDatetime.includes('T') || /^\d{4}-\d{2}-\d{2}/.test(rawDatetime)) {
+          // ISO without timezone → treat as user local time
+          const dt = DateTime.fromISO(rawDatetime.replace(' ', 'T'), { zone: userTimezone });
+          dueAt = dt.isValid ? toUtcSqlite2(dt) : parseReminderTime(text, userTimezone);
+        } else {
+          dueAt = parseReminderTime(rawDatetime, userTimezone);
+        }
         // Use telegram channel if user has Telegram linked, otherwise push
         const hasChannel = db.prepare(
           "SELECT 1 FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
