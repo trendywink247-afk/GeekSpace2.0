@@ -1912,3 +1912,6 @@ try {
 
 // Phase 109: Quality score for conversation rating
 try { db.exec(`ALTER TABLE conversation_log ADD COLUMN quality_score INTEGER DEFAULT NULL`); } catch { /* column already exists */ }
+
+// Phase 110: User timezone for timezone-aware reminder parsing and display
+try { db.exec(`ALTER TABLE users ADD COLUMN timezone TEXT DEFAULT 'Asia/Kolkata'`); } catch { /* column already exists */ }

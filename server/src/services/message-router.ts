@@ -9,6 +9,7 @@
 // ============================================================
 
 import { v4 as uuid } from 'uuid';
+import { DateTime } from 'luxon';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
@@ -137,9 +138,11 @@ function buildChannelSystemPrompt(
   const userName = (user?.name as string) || 'there';
   const memoryBlock = buildMemoryContext(userId, userMessage);
 
-  // Inject actual current datetime in IST (UTC+5:30) so the LLM never guesses time.
-  const nowIst = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
-  const istString = nowIst.toUTCString().replace('GMT', 'IST');
+  // Inject actual current datetime in user's local timezone so the LLM never guesses time.
+  const userTzRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
+  const userTimezone = userTzRow?.timezone || 'Asia/Kolkata';
+  const nowLocal = DateTime.now().setZone(userTimezone);
+  const localTimeString = nowLocal.toFormat("cccc, LLLL d, yyyy 'at' h:mm a z");
 
   return `${OPENCLAW_IDENTITY_COMPACT}
 
@@ -151,7 +154,7 @@ Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
 Channel: ${channel}. This is a messaging app — keep responses SHORT and mobile-friendly.${memoryBlock}
 
 --- CURRENT DATE & TIME ---
-Right now it is: ${istString} (India Standard Time, UTC+5:30). Use this exact time when the user asks what time or date it is. Do NOT guess or infer from other context.
+Right now it is: ${localTimeString}. Use this exact time when the user asks what time or date it is. Do NOT guess or infer from other context.
 
 IMPORTANT: Max 2-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain text only. Be concise.
 ${TOOL_INSTRUCTIONS}`;
@@ -180,14 +183,12 @@ export function buildActionChannelSuffix(finalReply: string, actionResults: Acti
       continue;
     }
     if (ar.tool === 'generate_image' && ar.imageUrl) {
-      channelReply += `\n🖼️ ${ar.imageUrl}`;
+      // Image is sent as a native Telegram photo (see step 11b); skip raw URL in text.
+      // For WhatsApp: sendWhatsAppImage is not yet implemented — no text fallback to avoid raw paths.
       continue;
     }
     if (ar.tool === 'generate_video' && ar.videoUrl) {
-      channelReply += `\n🎬 Video: ${ar.videoUrl}`;
-      if ((ar.data?.estimatedTime as number) > 0) {
-        channelReply += ` (renders in ~${ar.data?.estimatedTime}s)`;
-      }
+      // Video is sent as a native Telegram video (see step 11b); skip raw URL in text.
       continue;
     }
     // For all other actions: append confirmation only if not already in the reply
@@ -504,16 +505,22 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   });
 
   // 11b. For Telegram: send actual photo/video media for any successful generate_image/generate_video actions.
-  //      The text reply (step 11) already contains the URL as a fallback; here we additionally deliver
-  //      the media natively so the user sees the image/video inline in the chat.
+  //      Media is delivered natively so the user sees the image/video inline in the chat.
+  //      Relative paths (e.g. /api/images/cache/xxx.jpg) are made absolute using config.apiUrl.
   if (msg.channel === 'telegram') {
     for (const ar of actionResults) {
       if (ar.tool === 'generate_image' && ar.success && ar.imageUrl) {
-        await sendTelegramPhoto(msg.externalId, ar.imageUrl).catch((e: unknown) =>
+        const absoluteUrl = ar.imageUrl.startsWith('http')
+          ? ar.imageUrl
+          : `${config.apiUrl}${ar.imageUrl}`;
+        await sendTelegramPhoto(msg.externalId, absoluteUrl).catch((e: unknown) =>
           logger.warn({ err: (e as Error).message, chatId: msg.externalId }, 'Failed to send Telegram photo'),
         );
       } else if (ar.tool === 'generate_video' && ar.success && ar.videoUrl) {
-        await sendTelegramVideo(msg.externalId, ar.videoUrl).catch((e: unknown) =>
+        const absoluteUrl = ar.videoUrl.startsWith('http')
+          ? ar.videoUrl
+          : `${config.apiUrl}${ar.videoUrl}`;
+        await sendTelegramVideo(msg.externalId, absoluteUrl).catch((e: unknown) =>
           logger.warn({ err: (e as Error).message, chatId: msg.externalId }, 'Failed to send Telegram video'),
         );
       }

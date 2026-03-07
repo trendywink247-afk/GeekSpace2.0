@@ -31,6 +31,7 @@ usersRouter.get('/me', requireAuth, async (req: AuthRequest, res) => {
     tags: JSON.parse(user.tags as string || '[]'),
     theme: { mode: user.theme_mode, accentColor: user.theme_accent },
     plan: user.plan, credits: user.credits,
+    timezone: user.timezone as string || 'Asia/Kolkata',
     notifications: {
       email: !!user.notification_email, push: !!user.notification_push,
       agentUpdates: !!user.notification_agent, reminders: !!user.notification_reminders,
@@ -165,6 +166,24 @@ usersRouter.patch('/notification-email', requireAuth, validateBody(notificationE
     enabled: !!user.notification_email,
     address: cfg?.notification_email_address ?? null,
   });
+});
+
+usersRouter.patch('/me/timezone', requireAuth, (req: AuthRequest, res) => {
+  const { timezone } = req.body as { timezone?: string };
+  if (!timezone || typeof timezone !== 'string') {
+    res.status(400).json({ error: 'timezone is required' });
+    return;
+  }
+  // Validate it's a real IANA timezone
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+  } catch {
+    res.status(400).json({ error: 'Invalid timezone identifier' });
+    return;
+  }
+  db.prepare('UPDATE users SET timezone = ? WHERE id = ?').run(timezone, req.userId!);
+  cacheDel(`user:me:${req.userId!}`).catch(() => {});
+  res.json({ success: true, timezone });
 });
 
 usersRouter.get('/:username/public', (req, res) => {

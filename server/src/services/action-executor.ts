@@ -287,7 +287,9 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
       case 'set_reminder': {
         const text = params.text as string;
         const reminderId = uuid();
-        const dueAt = params.datetime as string || parseReminderTime(text);
+        const userRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
+        const userTimezone = userRow?.timezone || 'Asia/Kolkata';
+        const dueAt = params.datetime as string || parseReminderTime(text, userTimezone);
         // Calculate epoch ms for drift tracking
         const scheduledFor = dueAt ? new Date(dueAt).getTime() : Date.now();
 
