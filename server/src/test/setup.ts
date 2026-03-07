@@ -59,6 +59,7 @@ export function resetDatabase(): void {
       'portfolios',
       'integrations',
       'api_keys',
+      'gate_api_keys',
       'automations',
       'dev_audit_log',
       'snooze_log',
@@ -170,6 +171,7 @@ export function cleanupTestUser(userId: string): void {
       'portfolios',
       'integrations',
       'api_keys',
+      'gate_api_keys',
       'automations',
     ];
 

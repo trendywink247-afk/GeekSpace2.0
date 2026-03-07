@@ -57,6 +57,7 @@ import { focusRouter, habitsRouter } from './routes/focus.js';
 import { memoryRouter } from './routes/memory.js';
 import { calendarRouter } from './routes/calendar.js';
 import { workflowsRouter } from './routes/workflows.js';
+import { gateRouter } from './routes/gate.js';
 import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
@@ -448,6 +449,7 @@ export function createApp(): express.Application {
   app.use('/api/memory', memoryRouter);
   app.use('/api/calendar', calendarRouter);
   app.use('/api/workflows', workflowsRouter);
+  app.use('/api/gate/v1', gateRouter);
 
   // ---- Test routes (only in test mode) ----
   if (config.isTestMode) {

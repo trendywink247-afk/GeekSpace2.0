@@ -1891,3 +1891,21 @@ try { db.exec(`ALTER TABLE users ADD COLUMN calendar_auto_reminders INTEGER DEFA
 
 // Phase 106: use_case for onboarding wizard
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN use_case TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+
+// Phase 108: Gate API keys for external developer access
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS gate_api_keys (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      label TEXT NOT NULL DEFAULT 'My API Key',
+      key_hash TEXT NOT NULL UNIQUE,
+      key_prefix TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      last_used_at TEXT,
+      is_active INTEGER DEFAULT 1
+    );
+    CREATE INDEX IF NOT EXISTS idx_gate_api_keys_user ON gate_api_keys(user_id);
+    CREATE INDEX IF NOT EXISTS idx_gate_api_keys_hash ON gate_api_keys(key_hash);
+  `);
+} catch { /* table already exists */ }
