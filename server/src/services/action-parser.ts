@@ -12,10 +12,27 @@ import { logger } from '../logger.js';
 // ── Tool Schemas ────────────────────────────────────────────
 
 const generateCodeSchema = z.object({
-  title: z.string().min(1).max(200),
+  title: z.string().min(1).max(200).optional(),
   html: z.string().max(50000).default(''),
   css: z.string().max(50000).default(''),
   js: z.string().max(50000).default(''),
+  // Template-based generation fields (all optional — executor fills defaults)
+  template: z.string().optional(),
+  name: z.string().optional(),
+  theme: z.string().optional(),
+  profession: z.string().optional(),
+  location: z.string().optional(),
+  bio: z.string().optional(),
+  skills: z.array(z.string()).optional(),
+  email: z.string().optional(),
+  tagline: z.string().optional(),
+  productName: z.string().optional(),
+  description: z.string().optional(),
+  features: z.array(z.string()).optional(),
+  cta: z.string().optional(),
+  existingArtifactId: z.string().optional(),
+  baseUrl: z.string().optional(),
+  selfDestruct: z.boolean().optional(),
 });
 
 const portfolioAddProjectSchema = z.object({
