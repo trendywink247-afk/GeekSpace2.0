@@ -75,13 +75,12 @@ ACTION>>>`;
     expect(result.actions[0].params.duration).toBe(5);
   });
 
-  it('parses portfolio_update_theme with valid hex color', () => {
+  it('skips portfolio_update_theme (removed — use generate_code instead)', () => {
     const llm = `<<<ACTION
 { "tool": "portfolio_update_theme", "params": { "accentColor": "#ff2d78" } }
 ACTION>>>`;
     const result = parseActions(llm);
-    expect(result.actions).toHaveLength(1);
-    expect(result.actions[0].params.accentColor).toBe('#ff2d78');
+    expect(result.actions).toHaveLength(0);
   });
 
   // ── Multiple actions ────────────────────────────────────
@@ -131,9 +130,9 @@ ACTION>>>`;
 
   it('skips action blocks with missing required params', () => {
     const llm = `<<<ACTION
-{ "tool": "generate_code", "params": {} }
+{ "tool": "send_email", "params": {} }
 ACTION>>>`;
-    // generate_code requires title (min 1 char)
+    // send_email requires subject and body
     const result = parseActions(llm);
     expect(result.actions).toHaveLength(0);
   });
