@@ -168,15 +168,14 @@ describe('110.2 parseReminderTime timezone correctness', () => {
   });
 
   it('"at 3pm" in America/New_York (EST = UTC-5) produces UTC hour 20', () => {
-    // 3pm EST = 20:00 UTC (winter)
-    // We just verify the output differs from IST/UTC — actual offset varies by DST
+    // 3pm EST = 20:00 UTC (winter). Check the UTC hour directly — avoids
+    // timestamp comparison failures when the UTC-zone "3pm" has already passed
+    // today and would roll to tomorrow, while the NY "3pm" is still tonight.
     const resultNY = parseReminderTime('remind me at 3pm', 'America/New_York');
-    const resultUTC = parseReminderTime('remind me at 3pm', 'UTC');
     expect(resultNY).not.toBeNull();
-    expect(resultUTC).not.toBeNull();
-    // NY result should be LATER in UTC than UTC-zone result (NY is behind UTC)
-    expect(new Date(resultNY!.replace(' ', 'T') + 'Z').getTime())
-      .toBeGreaterThan(new Date(resultUTC!.replace(' ', 'T') + 'Z').getTime());
+    const hour = parseInt(resultNY!.split(' ')[1].split(':')[0], 10);
+    // 3pm NY (EST=UTC-5, EDT=UTC-4) → UTC hour 20 (winter) or 19 (summer)
+    expect(hour === 20 || hour === 19).toBe(true);
   });
 
   it('"in 1 hour" returns a UTC datetime approximately 1 hour from now', () => {

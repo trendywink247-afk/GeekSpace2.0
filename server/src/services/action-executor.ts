@@ -59,10 +59,11 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         let js = (params.js as string) || '';
         let title = params.title as string;
 
-        if (!html && params.template) {
+        // Always render from template when no raw HTML — default to 'portfolio' if LLM omitted template param
+        if (!html) {
           const { renderWebsiteTemplate } = await import('./website-templates.js');
           const rendered = renderWebsiteTemplate({
-            template: params.template as 'portfolio' | 'landing' | 'blog' | 'business',
+            template: (params.template as 'portfolio' | 'landing' | 'blog' | 'business') || 'portfolio',
             title: params.title as string | undefined,
             name: params.name as string | undefined,
             theme: params.theme as 'dark' | 'light' | 'purple' | 'blue' | 'gradient' | undefined,
