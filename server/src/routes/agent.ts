@@ -514,9 +514,12 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     // ---- Image generation fast-path: bypass LLM for image generation requests ----
     if (!forceRoute) {
-      const imageGenPattern = /\b(?:generate|create|make|draw|render|produce|show me|i want|give me|can you make|can you draw|paint)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|drawing|painting|portrait|wallpaper|sketch)\b/i;
-      if (imageGenPattern.test(message)) {
-        const promptMatch = message.match(/\b(?:generate|create|make|draw|render|produce|show me|i want|give me|can you make|can you draw|paint)\b.{0,20}\b(?:image|picture|photo|illustration|artwork|art|drawing|painting|portrait|wallpaper|sketch)\b(?:\s+of\s+|\s+showing\s+|\s+with\s+|\s+)?([\s\S]+)/i);
+      const imageVerbNounPattern = /\b(?:generate|create|make|render|produce|show me|i want|give me|can you make|imagine|visualize)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|painting|portrait|wallpaper|sketch)\b/i;
+      const drawingVerbPattern = /\b(?:draw|paint|sketch|imagine|visualize)\b.{0,80}\b(?!reminder|remind|website|site|portfolio|landing|page)\S/i;
+      const isReminderMsg = /\b(?:remind|reminder|schedule|alarm)\b/i.test(message);
+      if (!isReminderMsg && (imageVerbNounPattern.test(message) || drawingVerbPattern.test(message))) {
+        const promptMatch = message.match(/\b(?:generate|create|make|draw|render|produce|show me|i want|give me|can you make|can you draw|paint|sketch|imagine|visualize)\b.{0,20}\b(?:image|picture|photo|illustration|artwork|art|drawing|painting|portrait|wallpaper|sketch)\b(?:\s+of\s+|\s+showing\s+|\s+with\s+|\s+)?([\s\S]+)/i)
+          ?? message.match(/\b(?:draw|paint|sketch|imagine|visualize)\b\s+(?:me\s+)?(?:a\s+|an\s+|the\s+)?([\s\S]+)/i);
         const rawPrompt = promptMatch?.[1]?.trim() || message;
         const imagePrompt = rawPrompt.replace(/^(?:a\s+|an\s+|the\s+|me\s+)/i, '').trim() || message;
         try {

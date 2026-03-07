@@ -334,11 +334,18 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 5ab. Image generation fast-path — detect image creation intent and execute directly
   {
-    const imagePattern = /\b(?:generate|create|make|draw|render|produce|show me|i want|give me|can you make|can you draw|paint)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|drawing|painting|portrait|wallpaper|sketch)\b/i;
-    if (imagePattern.test(msg.text)) {
+    // Pattern 1: verb + image-type-word (broad verbs, requires explicit image noun)
+    const imageVerbNounPattern = /\b(?:generate|create|make|render|produce|show me|i want|give me|can you make|imagine|visualize)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|painting|portrait|wallpaper|sketch)\b/i;
+    // Pattern 2: drawing verbs alone — draw/paint/sketch inherently mean image creation
+    const drawingVerbPattern = /\b(?:draw|paint|sketch|imagine|visualize)\b.{0,80}\b(?!reminder|remind|website|site|portfolio|landing|page)\S/i;
+    // Guard: skip if this is clearly a reminder/task message
+    const isReminderMsg = /\b(?:remind|reminder|schedule|alarm)\b/i.test(msg.text);
+
+    if (!isReminderMsg && (imageVerbNounPattern.test(msg.text) || drawingVerbPattern.test(msg.text))) {
       try {
         const { executeAction: execImg } = await import('./action-executor.js');
-        const promptMatch = msg.text.match(/\b(?:generate|create|make|draw|render|produce|show me|i want|give me|can you make|can you draw|paint)\b.{0,20}\b(?:image|picture|photo|illustration|artwork|art|drawing|painting|portrait|wallpaper|sketch)\b(?:\s+of\s+|\s+showing\s+|\s+with\s+|\s+)?([\s\S]+)/i);
+        const promptMatch = msg.text.match(/\b(?:generate|create|make|draw|render|produce|show me|i want|give me|can you make|can you draw|paint|sketch|imagine|visualize)\b.{0,20}\b(?:image|picture|photo|illustration|artwork|art|drawing|painting|portrait|wallpaper|sketch)\b(?:\s+of\s+|\s+showing\s+|\s+with\s+|\s+)?([\s\S]+)/i)
+          ?? msg.text.match(/\b(?:draw|paint|sketch|imagine|visualize)\b\s+(?:me\s+)?(?:a\s+|an\s+|the\s+)?([\s\S]+)/i);
         const rawPrompt = promptMatch?.[1]?.trim() || msg.text;
         const prompt = rawPrompt.replace(/^(?:a\s+|an\s+|the\s+|me\s+)/i, '').trim() || msg.text;
 
