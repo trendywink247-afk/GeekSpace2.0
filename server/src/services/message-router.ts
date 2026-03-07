@@ -270,6 +270,68 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // 5. Fire keyword automation triggers (non-blocking)
   checkKeywordTriggers(userId, msg.text).catch((e: unknown) => console.debug('[bg]', (e as Error).message));
 
+  // 5a. Website builder fast-path — detect website creation/edit intent directly
+  //     and execute generate_code without LLM to bypass model format unreliability
+  {
+    const createWebsitePattern = /\b(?:build|create|make|generate)\b.{0,80}\b(?:website|site|portfolio|landing|blog|page)\b/i;
+    const editWebsitePattern = /\b(?:change|update|edit|modify|redesign|redo|refresh|revamp|adjust|tweak|rebuild)\b.{0,80}\b(?:website|site|portfolio|landing|blog|page|theme|background|color)\b/i;
+
+    if (createWebsitePattern.test(msg.text) || editWebsitePattern.test(msg.text)) {
+      try {
+        const text = msg.text.toLowerCase();
+        // Extract params from message
+        const nameMatch = msg.text.match(/\bfor\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/);
+        const themeMatch = text.match(/\b(dark|light|purple|blue|gradient)\b/);
+        const templateMatch = text.match(/\b(landing|blog|business)\b/);
+        const locationMatch = msg.text.match(/\bfrom\s+([A-Z][a-zA-Z\s]{2,20})\b/);
+        const professionMatch = msg.text.match(/\b(developer|designer|engineer|writer|photographer|artist|consultant|manager|teacher|doctor|lawyer|freelancer)\b/i);
+
+        const isEdit = editWebsitePattern.test(msg.text) && !createWebsitePattern.test(msg.text);
+
+        // For edit: load latest artifact + merge; for create: build fresh
+        const { executeAction } = await import('./action-executor.js');
+        const baseUrl = config.apiUrl || `https://api.geekspace.space`;
+
+        let artifactParams: Record<string, unknown> = {
+          template: templateMatch?.[1] || 'portfolio',
+          theme: themeMatch?.[1] || 'dark',
+          baseUrl,
+          selfDestruct: false,
+        };
+        if (nameMatch?.[1]) artifactParams.name = nameMatch[1];
+        if (locationMatch?.[1]) artifactParams.location = locationMatch[1].trim();
+        if (professionMatch?.[1]) artifactParams.profession = professionMatch[1];
+
+        if (isEdit) {
+          const { db } = await import('../db/index.js');
+          const latest = db.prepare(
+            'SELECT id FROM generated_artifacts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
+          ).get(userId) as { id: string } | undefined;
+          if (latest) artifactParams.existingArtifactId = latest.id;
+        }
+
+        const result = await executeAction(userId, { tool: 'generate_code', params: artifactParams });
+
+        if (result.success) {
+          const isUpdated = isEdit && (result.data as Record<string, unknown>)?.updated;
+          let reply = isUpdated
+            ? `Updated! Here's your refreshed site:`
+            : `Here's your website!`;
+          if (result.previewUrl) {
+            reply += `\n🔗 Preview: ${result.previewUrl}\nAlso saved to your Projects.`;
+          }
+          logConversation(userId, 'user', msg.text, requestId);
+          logConversation(userId, 'assistant', reply, requestId, 'builtin', 'website-builder');
+          await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
+          logger.info({ channel: msg.channel, userId, artifactId: result.artifactId, isEdit }, 'Website builder fast-path executed');
+          return;
+        }
+      } catch (e) {
+        logger.warn({ err: (e as Error).message }, 'Website builder fast-path failed, falling through to LLM');
+      }
+    }
+  }
+
   // 5b. Auto-detect task intents (remind, telegram, deploy) — route to Pico Fleet
   // For mixed-intent messages (e.g. "Give me a workout plan and remind me"),
   // queue the tasks but continue to LLM for the content response.
