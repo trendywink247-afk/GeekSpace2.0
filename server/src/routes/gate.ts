@@ -236,8 +236,10 @@ gateRouter.post('/chat', requireGateKey, async (req: GateRequest, res: Response)
     const result = await runReactLoop(messages, { systemPrompt, userId });
 
     if (result.creditCost > 0) {
-      db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(result.creditCost, userId);
-      db.prepare('UPDATE subscriptions SET credits_remaining = MAX(0, credits_remaining - ?) WHERE user_id = ?').run(result.creditCost, userId);
+      db.transaction(() => {
+        db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(result.creditCost, userId);
+        db.prepare('UPDATE subscriptions SET credits_remaining = MAX(0, credits_remaining - ?) WHERE user_id = ?').run(result.creditCost, userId);
+      })();
     }
 
     gateOk(res, {
@@ -281,8 +283,10 @@ gateRouter.post('/image', requireGateKey, async (req: GateRequest, res: Response
     }
 
     const IMAGE_CREDIT_COST = 5;
-    db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(IMAGE_CREDIT_COST, userId);
-    db.prepare('UPDATE subscriptions SET credits_remaining = MAX(0, credits_remaining - ?) WHERE user_id = ?').run(IMAGE_CREDIT_COST, userId);
+    db.transaction(() => {
+      db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(IMAGE_CREDIT_COST, userId);
+      db.prepare('UPDATE subscriptions SET credits_remaining = MAX(0, credits_remaining - ?) WHERE user_id = ?').run(IMAGE_CREDIT_COST, userId);
+    })();
 
     gateOk(res, {
       url: result.url,
