@@ -709,8 +709,8 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             <p className="text-sm font-semibold text-[#E8E8F0]">Approaching daily limit</p>
             <p className="text-xs text-[#6B7280] mt-0.5">
               {todayUsage.messages.percentage >= 1 || todayUsage.tokenPercentage >= 1
-                ? "You've hit your daily limit. Upgrade for more."
-                : `You've used ${Math.round(Math.max(todayUsage.messages.percentage, todayUsage.tokenPercentage) * 100)}% of today's allowance.`}
+                ? `Daily limit reached on your ${(todayUsage.plan ? todayUsage.plan.charAt(0).toUpperCase() + todayUsage.plan.slice(1) : 'Free')} plan — upgrade for more.`
+                : `You've used ${Math.round(Math.max(todayUsage.messages.percentage, todayUsage.tokenPercentage) * 100)}% of today's allowance (${(todayUsage.plan ? todayUsage.plan.charAt(0).toUpperCase() + todayUsage.plan.slice(1) : 'Free')} plan).`}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">

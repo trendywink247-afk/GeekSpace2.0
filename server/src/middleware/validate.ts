@@ -162,6 +162,7 @@ export const agentConfigUpdateSchema = z.object({
   notif_agents: z.number().int().min(0).max(1).optional(),
   notif_daily_briefing: z.number().int().min(0).max(1).optional(),
   notif_connections: z.number().int().min(0).max(1).optional(),
+  use_case: z.string().max(100).nullable().optional(),
 }).strict();
 
 export const userUpdateSchema = z.object({

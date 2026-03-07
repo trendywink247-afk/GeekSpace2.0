@@ -160,6 +160,7 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
     notif_connections: 'notif_connections',
     greeting: 'greeting',
     snooze_presets: 'snooze_presets',
+    use_case: 'use_case',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {

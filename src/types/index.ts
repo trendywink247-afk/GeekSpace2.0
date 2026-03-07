@@ -103,6 +103,7 @@ export interface AgentConfig {
   notif_daily_briefing?: number;
   notif_connections?: number;
   snooze_presets?: string;
+  use_case?: string;  // Phase 106: creator | student | developer | business | null
 }
 
 export interface Personality {

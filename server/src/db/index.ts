@@ -1888,3 +1888,6 @@ try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_events_gcal ON cal
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_calendar_events_user ON calendar_events(user_id, start_time)`); } catch { /* already exists */ }
 // Phase 95: auto-reminder toggle per user
 try { db.exec(`ALTER TABLE users ADD COLUMN calendar_auto_reminders INTEGER DEFAULT 1`); } catch { /* column already exists */ }
+
+// Phase 106: use_case for onboarding wizard
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN use_case TEXT DEFAULT NULL`); } catch { /* column already exists */ }
