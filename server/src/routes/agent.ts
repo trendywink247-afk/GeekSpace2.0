@@ -464,7 +464,55 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       }
     }
 
-    // ---- Auto-route through bridge when enabled ----
+    // ---- Website builder fast-path: bypass LLM for build/edit requests ----
+    if (!forceRoute) {
+      const createWebsitePattern = /\b(?:build|create|make|generate)\b.{0,80}\b(?:website|site|portfolio|landing|blog|page)\b/i;
+      const editWebsitePattern = /\b(?:change|update|edit|modify|redesign|redo|refresh|revamp|adjust|tweak|rebuild)\b.{0,80}\b(?:website|site|portfolio|landing|blog|page|theme|background|color)\b/i;
+      if (createWebsitePattern.test(message) || editWebsitePattern.test(message)) {
+        const { executeAction } = await import('../services/action-executor.js');
+        const msgLower = message.toLowerCase();
+        const nameMatch = message.match(/\b(?:for|name is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/) ?? message.match(/\bmy name is\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/i);
+        const themeMatch = msgLower.match(/\b(dark|light|purple|blue|gradient)\b/);
+        const templateMatch = msgLower.match(/\b(landing|blog|business)\b/);
+        const locationMatch = message.match(/\bfrom\s+([A-Z][a-zA-Z\s]{2,20})\b/);
+        const professionMatch = message.match(/\b(developer|designer|engineer|writer|photographer|artist|consultant|manager|teacher|doctor|lawyer|freelancer)\b/i);
+        const isEdit = editWebsitePattern.test(message) && !createWebsitePattern.test(message);
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const artifactParams: Record<string, unknown> = {
+          template: templateMatch?.[1] || 'portfolio',
+          theme: themeMatch?.[1] || 'dark',
+          baseUrl,
+          selfDestruct: false,
+          ...(nameMatch?.[1] ? { name: nameMatch[1] } : {}),
+          ...(locationMatch?.[1] ? { location: locationMatch[1].trim() } : {}),
+          ...(professionMatch?.[1] ? { profession: professionMatch[1] } : {}),
+        };
+        if (reqExistingArtifactId) {
+          artifactParams.existingArtifactId = reqExistingArtifactId;
+        } else if (isEdit) {
+          const latest = db.prepare('SELECT id FROM generated_artifacts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1').get(userId) as { id: string } | undefined;
+          if (latest) artifactParams.existingArtifactId = latest.id;
+        }
+        const fastResult = await executeAction(userId, { tool: 'generate_code', params: artifactParams });
+        if (fastResult.success) {
+          const isUpdated = isEdit && !!(fastResult.data as Record<string, unknown>)?.updated;
+          const replyText = isUpdated ? `Done! Your site has been updated.` : `Here's your website!`;
+          logConversation(userId, 'assistant', replyText, 'builtin', 'website-builder');
+          res.json({
+            text: replyText,
+            reply: replyText,
+            route: 'website-builder',
+            provider: 'builtin',
+            latencyMs: 0,
+            creditsUsed: 0,
+            actionResults: [{ tool: 'generate_code', success: true, previewUrl: fastResult.previewUrl, artifactId: fastResult.artifactId }],
+          });
+          return;
+        }
+      }
+    }
+
+        // ---- Auto-route through bridge when enabled ----
     if (!forceRoute && config.bridgeEnabled && config.picoClawEnabled) {
       forceRoute = 'bridge';
     }
