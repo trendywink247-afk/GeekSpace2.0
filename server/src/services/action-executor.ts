@@ -51,10 +51,37 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
   switch (tool) {
       // ── generate_code ───────────────────────────────────
       case 'generate_code': {
-        const title = params.title as string;
-        const html = (params.html as string) || '';
-        const css = (params.css as string) || '';
-        const js = (params.js as string) || '';
+        // Template-based path: LLM provides structured params instead of raw HTML.
+        // This avoids token-limit failures on free models — LLM outputs ~200 tokens
+        // of JSON, server renders the full site from a rich template.
+        let html = (params.html as string) || '';
+        let css = (params.css as string) || '';
+        let js = (params.js as string) || '';
+        let title = params.title as string;
+
+        if (!html && params.template) {
+          const { renderWebsiteTemplate } = await import('./website-templates.js');
+          const rendered = renderWebsiteTemplate({
+            template: params.template as 'portfolio' | 'landing' | 'blog' | 'business',
+            title: params.title as string | undefined,
+            name: params.name as string | undefined,
+            theme: params.theme as 'dark' | 'light' | 'purple' | 'blue' | 'gradient' | undefined,
+            profession: params.profession as string | undefined,
+            location: params.location as string | undefined,
+            bio: params.bio as string | undefined,
+            skills: params.skills as string[] | undefined,
+            email: params.email as string | undefined,
+            tagline: params.tagline as string | undefined,
+            productName: params.productName as string | undefined,
+            description: params.description as string | undefined,
+            features: params.features as string[] | undefined,
+            cta: params.cta as string | undefined,
+          });
+          html = rendered.html;
+          css = rendered.css;
+          js = rendered.js;
+          title = title || rendered.title;
+        }
         const selfDestruct = params.selfDestruct as boolean | undefined;
         // When injected by the builder route, update an existing artifact instead of creating a new one
         const existingArtifactId = params.existingArtifactId as string | undefined;
