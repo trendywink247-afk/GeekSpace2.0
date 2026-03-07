@@ -16,7 +16,8 @@ import { config } from '../config.js';
 import { RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
 import { generateImage, generateVideo, generateAvatar } from './media-generation.js';
 import { cacheSet, cacheGet, cacheDel } from './cache.js';
-import { sendTelegramNotification, escapeTelegramHtml } from './telegram.js';
+import { sendTelegramNotification, sendTelegramMessage, escapeTelegramHtml } from './telegram.js';
+import { tavilySearch } from './tavily.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -549,6 +550,70 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           message: `Escalated to ${ownerUsername} via Telegram`,
           data: { escalationId, question },
         };
+      }
+
+      // ── web_search ─────────────────────────────────────────
+      case 'web_search': {
+        const query = params.query as string;
+        try {
+          const searchResult = await tavilySearch(query, 5);
+          if (searchResult.results.length === 0) {
+            return {
+              tool,
+              success: false,
+              message: 'No search results found for that query.',
+            };
+          }
+          const summary = searchResult.results
+            .map((r, i) => `${i + 1}. ${r.title}\n   ${r.content}\n   Source: ${r.url}`)
+            .join('\n\n');
+          return {
+            tool,
+            success: true,
+            message: `Found ${searchResult.results.length} results for "${query}"`,
+            data: { query, results: searchResult.results, summary },
+          };
+        } catch (err) {
+          return {
+            tool,
+            success: false,
+            message: `Web search failed: ${err instanceof Error ? err.message : String(err)}`,
+          };
+        }
+      }
+
+      // ── telegram_notify ────────────────────────────────────
+      case 'telegram_notify': {
+        const message = params.message as string;
+
+        // Look up user's linked Telegram chat ID
+        const telegramLink = db.prepare(
+          "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 ORDER BY linked_at DESC LIMIT 1"
+        ).get(userId) as { external_id: string } | undefined;
+
+        if (!telegramLink) {
+          return {
+            tool,
+            success: false,
+            message: 'No Telegram account connected. Link your Telegram in Connections.',
+          };
+        }
+
+        try {
+          await sendTelegramMessage(telegramLink.external_id, message);
+          return {
+            tool,
+            success: true,
+            message: `Telegram notification sent`,
+            data: { chatId: telegramLink.external_id },
+          };
+        } catch (err) {
+          return {
+            tool,
+            success: false,
+            message: `Telegram send failed: ${err instanceof Error ? err.message : String(err)}`,
+          };
+        }
       }
 
       // ── Unknown tool (should not happen after parser validation)

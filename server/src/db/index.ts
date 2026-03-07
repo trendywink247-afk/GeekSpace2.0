@@ -970,6 +970,28 @@ try {
   db.prepare('DELETE FROM token_blocklist WHERE expires_at < ?').run(now);
 } catch { /* non-fatal */ }
 
+// Phase 103: Training examples — log successful AI conversations for fine-tuning
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS training_examples (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      input TEXT NOT NULL,
+      output TEXT NOT NULL,
+      system_prompt TEXT,
+      provider TEXT NOT NULL,
+      model TEXT NOT NULL,
+      tokens_in INTEGER DEFAULT 0,
+      tokens_out INTEGER DEFAULT 0,
+      channel TEXT DEFAULT 'web',
+      quality_score REAL,
+      created_at DATETIME DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_training_examples_user ON training_examples(user_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_training_examples_provider ON training_examples(provider, model);
+  `);
+} catch { /* table already exists */ }
+
 // Phase 94: User memories — per-user key-value fact store for long-term agent memory
 try {
   db.exec(`

@@ -10,7 +10,7 @@ import { config } from '../config.js';
 import { OPENCLAW_IDENTITY, buildPortfolioVisitorPrompt } from '../prompts/openclaw-system.js';
 import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/personalities.js';
 import { checkKeywordTriggers } from '../services/automations-engine.js';
-import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations, formatMemoryContext, extractMemoriesFromConversation } from '../services/memory.js';
+import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, logTrainingExample, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations, formatMemoryContext, extractMemoriesFromConversation } from '../services/memory.js';
 import { loadPicoContext, formatContextBlock } from '../services/pico-context.js';
 import { checkContent } from '../services/content-filter.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
@@ -20,12 +20,32 @@ import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } f
 import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
 import { parseActions, type ParsedAction } from '../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
+import { runReActLoop } from '../services/react-loop.js';
 import { formatReceiptCompact, type ReceiptItem } from '../services/receipts.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from '../services/telegram.js';
 import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../services/agent-chat.js';
 
 export const agentRouter = Router();
+
+// ---- ReAct Tool Instructions ----
+// Injected into system prompts so the LLM knows how to call tools.
+const TOOL_INSTRUCTIONS = `
+--- AVAILABLE TOOLS ---
+You can call tools by emitting an action block in your response:
+<<<ACTION
+{"tool": "<tool_name>", "params": {<params>}}
+ACTION>>>
+
+Available tools:
+- web_search: Search the web for current information. Params: {"query": "<search query>"}
+- set_reminder: Create a reminder for the user. Params: {"text": "<reminder text>", "datetime": "<ISO datetime or natural language>", "channel": "telegram|push"}
+- telegram_notify: Send a Telegram message to the user. Params: {"message": "<message text>"}
+- generate_image: Generate an image. Params: {"prompt": "<image description>"}
+- generate_code: Build a website/app. Params: {"title": "<name>", "html": "<html>", "css": "<css>", "js": "<js>"}
+- send_email: Send an email to the user. Params: {"subject": "<subject>", "body": "<body>"}
+
+Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
 
 // ---- Rate Limit Status tracker (33.4) ----
 // In-memory tracker mirroring the chat rate limiter (60 req / 15 min)
@@ -105,7 +125,8 @@ ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
 ${memoryBlock}
 ${formatMemoryContext(userId)}
 
-${closingInstruction}`;
+${closingInstruction}
+${TOOL_INSTRUCTIONS}`;
 }
 
 // ---- Agent Config CRUD ----
@@ -649,13 +670,29 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       }
     }
 
-    const result = await routeChat(messages, {
+    const reactResult = await runReActLoop(messages, userId, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
       forceProvider: resolvedProvider,
       userId,
+      onStatus: () => { /* no-op: JSON endpoint, client gets response only after completion */ },
+      generateCodeBaseUrl: `${req.protocol}://${req.get('host')}`,
+      generateCodeExistingArtifactId: reqExistingArtifactId,
     });
+
+    // Alias for downstream code (usage logging, credit deduction, JSON response)
+    const result = {
+      reply: reactResult.text,
+      provider: reactResult.provider,
+      model: reactResult.model,
+      tokensIn: reactResult.tokensIn,
+      tokensOut: reactResult.tokensOut,
+      creditCost: reactResult.creditCost,
+      latencyMs: 0,
+    };
+    const cleanReply = reactResult.text;
+    const actionResults: ActionResult[] = reactResult.actionResults;
 
     // Determine tier from actual provider used
     const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';
@@ -675,24 +712,21 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? userCredits;
 
-    // Parse and execute any tool actions from LLM response
-    const { text: cleanReply, actions: parsedActions } = parseActions(result.reply);
-    const actionResults: ActionResult[] = [];
-
-    for (const action of parsedActions) {
-      // Inject baseUrl for generate_code actions to create preview links
-      if (action.tool === 'generate_code') {
-        action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
-        if (reqExistingArtifactId) {
-          action.params.existingArtifactId = reqExistingArtifactId;
-        }
-      }
-      const actionResult = await executeAction(userId, action);
-      actionResults.push(actionResult);
-    }
-
     // Log the clean reply (without action blocks)
     logConversation(userId, 'assistant', cleanReply || result.reply, result.provider, result.model);
+
+    // Log for fine-tuning dataset (non-blocking)
+    logTrainingExample({
+      userId,
+      input: message,
+      output: cleanReply || result.reply,
+      provider: result.provider,
+      model: result.model,
+      tokensIn: result.tokensIn,
+      tokensOut: result.tokensOut,
+      systemPrompt: systemPrompt?.slice(0, 500),
+      channel: 'web',
+    });
 
     const response: Record<string, unknown> = {
       text: cleanReply || result.reply,

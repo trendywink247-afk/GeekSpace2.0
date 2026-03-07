@@ -123,6 +123,31 @@ export function deleteMemory(userId: string, memoryId: string): boolean {
   return result.changes > 0;
 }
 
+// ---- Training Example Logging ----
+
+export function logTrainingExample(params: {
+  userId: string;
+  input: string;
+  output: string;
+  provider: string;
+  model: string;
+  tokensIn?: number;
+  tokensOut?: number;
+  systemPrompt?: string;
+  channel?: string;
+}): void {
+  const { userId, input, output, provider, model, tokensIn = 0, tokensOut = 0, systemPrompt, channel = 'web' } = params;
+  if (!input?.trim() || !output?.trim()) return;
+  try {
+    db.prepare(`
+      INSERT INTO training_examples (id, user_id, input, output, system_prompt, provider, model, tokens_in, tokens_out, channel)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(uuid(), userId, input.slice(0, 8000), output.slice(0, 8000),
+      systemPrompt ? systemPrompt.slice(0, 2000) : null,
+      provider, model, tokensIn, tokensOut, channel);
+  } catch { /* non-blocking — never fail a user request over logging */ }
+}
+
 // ---- Conversation Logging ----
 
 export function logConversation(

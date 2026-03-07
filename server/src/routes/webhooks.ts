@@ -24,14 +24,7 @@ import {
   startOnboarding,
 } from '../services/onboarding.js';
 import { v4 as uuid } from 'uuid';
-import {
-  isVoiceEnabled,
-  downloadTelegramVoice,
-  transcribeVoice,
-  textToSpeech,
-  sendTelegramVoice,
-  voiceCreditCost,
-} from '../services/voice.js';
+import { isVoiceEnabled } from '../services/voice.js';
 import { db } from '../db/index.js';
 import { cacheGet, cacheSet } from '../services/cache.js';
 import { handleEscalationReply } from '../services/escalation.js';
@@ -223,63 +216,8 @@ async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Pr
     return;
   }
 
-  try {
-    // 1. Download voice file from Telegram
-    logger.info({ chatId, duration: voice.duration, fileId: voice.file_id }, 'Processing voice message');
-    const audioBuffer = await downloadTelegramVoice(voice.file_id);
-
-    // 2. Transcribe with Whisper
-    const transcribedText = await transcribeVoice(audioBuffer, voice.mime_type || 'audio/ogg');
-
-    if (!transcribedText || transcribedText.trim().length === 0) {
-      await sendTelegramMessage(chatId, "I couldn't understand that voice note. Could you try again or type your message?");
-      return;
-    }
-
-    logger.info({ chatId, duration: voice.duration, textLength: transcribedText.length }, 'Voice transcribed');
-
-    // 3. Route transcribed text through normal message handler (captures the reply)
-    // We need the reply text to convert to voice, so we intercept the flow
-    const normalized = {
-      channel: 'telegram' as const,
-      externalId: String(chatId),
-      text: transcribedText,
-      messageId: String(msg.message_id),
-      senderName: [msg.from.first_name, msg.from.last_name].filter(Boolean).join(' '),
-      timestamp: new Date(msg.date * 1000).toISOString(),
-      requestId,
-    };
-
-    // Use handleIncomingMessage which sends the text reply automatically
-    await handleIncomingMessage(normalized);
-
-    // 4. Get the agent's reply from conversation log to generate voice
-    const lastReply = db.prepare(
-      "SELECT content FROM conversations WHERE user_id = ? AND role = 'assistant' ORDER BY created_at DESC LIMIT 1"
-    ).get(link.user_id) as { content: string } | undefined;
-
-    if (lastReply?.content) {
-      try {
-        // 5. Convert reply to speech and send as voice note
-        const speechBuffer = await textToSpeech(lastReply.content);
-        await sendTelegramVoice(chatId, speechBuffer, msg.message_id);
-
-        // 6. Deduct extra voice credits
-        const extraCredits = voiceCreditCost(voice.duration, lastReply.content.length);
-        db.prepare('UPDATE subscriptions SET credits_remaining = MAX(0, credits_remaining - ?) WHERE user_id = ?')
-          .run(extraCredits, link.user_id);
-
-        logger.info({ chatId, extraCredits, duration: voice.duration }, 'Voice reply sent');
-      } catch (ttsErr) {
-        // TTS failed — text reply was already sent, just log
-        logger.warn({ err: (ttsErr as Error).message }, 'TTS failed, text reply already sent');
-      }
-    }
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : 'Unknown error';
-    logger.error({ err: errMsg, chatId }, 'Voice message processing failed');
-    await sendTelegramMessage(chatId, "Sorry, I couldn't process that voice note. Please try again or send a text message.");
-  }
+  // Voice transcription is coming soon — return early with helpful message
+  await sendTelegramMessage(chatId, 'Voice notes are coming soon. For now, please type your message. 🎙️');
 }
 
 // ---- Telegram Bot Command Handler ----
