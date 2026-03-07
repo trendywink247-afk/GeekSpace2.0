@@ -20,6 +20,7 @@ import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } f
 import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
 import { parseActions, type ParsedAction } from '../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
+import { runReactLoop } from '../services/react-loop.js';
 import { formatReceiptCompact, type ReceiptItem } from '../services/receipts.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from '../services/telegram.js';
@@ -650,7 +651,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       }
     }
 
-    const result = await routeChat(messages, {
+    const result = await runReactLoop(messages, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
@@ -676,30 +677,34 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? userCredits;
 
-    // Parse and execute any tool actions from LLM response
-    const { text: cleanReply, actions: parsedActions } = parseActions(result.reply);
-    const actionResults: ActionResult[] = [];
+    // ReAct loop already executed tool actions; collect results and handle generate_code separately
+    let cleanReply = result.text;
+    const actionResults: ActionResult[] = [...result.actions];
 
-    for (const action of parsedActions) {
-      // Inject baseUrl for generate_code actions to create preview links
+    // generate_code was skipped inside the loop (needs baseUrl from HTTP layer) — handle now
+    const { actions: topLevelActions } = parseActions(result.text);
+    for (const action of topLevelActions) {
       if (action.tool === 'generate_code') {
         action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
         if (reqExistingArtifactId) {
           action.params.existingArtifactId = reqExistingArtifactId;
         }
+        const actionResult = await executeAction(userId, action);
+        actionResults.push(actionResult);
       }
-      const actionResult = await executeAction(userId, action);
-      actionResults.push(actionResult);
     }
 
+    // Strip generate_code blocks from final reply text
+    const { text: strippedText } = parseActions(cleanReply);
+    cleanReply = strippedText || cleanReply;
+
     // Log the clean reply (without action blocks)
-    logConversation(userId, 'assistant', cleanReply || result.reply, result.provider, result.model);
+    logConversation(userId, 'assistant', cleanReply, result.provider, result.model);
 
     const response: Record<string, unknown> = {
-      text: cleanReply || result.reply,
+      text: cleanReply,
       route: tier,
       tier,
-      latencyMs: result.latencyMs,
       provider: result.provider,
       model: result.model,
       creditsUsed: result.creditCost,
@@ -726,7 +731,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     }
 
     // Background AI memory extraction (non-blocking)
-    extractMemoriesWithAI(userId, message, cleanReply || result.reply).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
+    extractMemoriesWithAI(userId, message, cleanReply).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
     // Phase 94: also extract into user_memories (flat key-value store)
     extractMemoriesFromConversation(userId, [{ role: 'user', content: message }]);
 

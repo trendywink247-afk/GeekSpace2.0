@@ -147,3 +147,44 @@ describe('Phase 107 — react-loop: return shape', () => {
     expect(typeof result.text).toBe('string');
   });
 });
+
+describe('Phase 107 — agent.ts: chat endpoint with react-loop', () => {
+  beforeAll(() => { resetDatabase(); });
+  afterEach(() => { resetDatabase(); });
+
+  it('POST /api/agent/chat returns 200 with text field', async () => {
+    const token = await getDemoToken();
+    const res = await request(app)
+      .post('/api/agent/chat')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ message: 'What is 2 + 2?', channel: 'web' })
+      .expect(200);
+
+    expect(res.body).toHaveProperty('text');
+    expect(typeof res.body.text).toBe('string');
+    expect(res.body.text.length).toBeGreaterThan(0);
+  });
+
+  it('POST /api/agent/chat response actions field is array when present', async () => {
+    const token = await getDemoToken();
+    const res = await request(app)
+      .post('/api/agent/chat')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ message: 'Say hi', channel: 'web' })
+      .expect(200);
+
+    // actions field is only present when there are tool results; verify shape when present
+    if (res.body.actions !== undefined) {
+      expect(Array.isArray(res.body.actions)).toBe(true);
+    }
+    // Either way the response must have text
+    expect(res.body).toHaveProperty('text');
+  });
+
+  it('POST /api/agent/chat requires auth', async () => {
+    await request(app)
+      .post('/api/agent/chat')
+      .send({ message: 'hi', channel: 'web' })
+      .expect(401);
+  });
+});
