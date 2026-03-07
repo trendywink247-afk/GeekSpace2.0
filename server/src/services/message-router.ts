@@ -320,7 +320,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   //       a short ACTION block instead of writing raw HTML (which hits token limits)
   const websiteIntent = /\b(?:build|create|make|generate|rebuild|update|change|edit|modify|redesign|redo|refresh|revamp|adjust|tweak)\b.{0,60}\b(?:website|site|portfolio|page|landing|blog)\b|\b(?:website|site|portfolio|page|landing|blog)\b.{0,60}\b(?:build|create|make|generate|rebuild|update|change|edit|modify|redesign|redo|refresh|revamp)\b/i;
   if (websiteIntent.test(msg.text)) {
-    systemPrompt += '\n\nCRITICAL: Respond with ONLY the <<<ACTION generate_code ACTION>>> block. Do NOT write HTML, CSS, or JavaScript code directly. Output the action block with JSON params only — keep total response under 200 tokens.';
+    systemPrompt += '\n\nCRITICAL: You MUST use ONLY the generate_code tool (not portfolio_update_theme or any other tool). Output ONLY this block, nothing else:\n<<<ACTION\n{"tool":"generate_code","params":{<params>}}\nACTION>>>\nDo NOT write HTML/CSS/JS directly. Keep params JSON under 150 tokens.';
   }
 
   // 6b. Web search enrichment (Tavily) — runs when search intent detected
