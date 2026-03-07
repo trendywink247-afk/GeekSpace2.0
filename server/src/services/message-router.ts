@@ -180,14 +180,12 @@ export function buildActionChannelSuffix(finalReply: string, actionResults: Acti
       continue;
     }
     if (ar.tool === 'generate_image' && ar.imageUrl) {
-      channelReply += `\n🖼️ ${ar.imageUrl}`;
+      // Image is sent as a native Telegram photo (see step 11b); skip raw URL in text.
+      // For WhatsApp: sendWhatsAppImage is not yet implemented — no text fallback to avoid raw paths.
       continue;
     }
     if (ar.tool === 'generate_video' && ar.videoUrl) {
-      channelReply += `\n🎬 Video: ${ar.videoUrl}`;
-      if ((ar.data?.estimatedTime as number) > 0) {
-        channelReply += ` (renders in ~${ar.data?.estimatedTime}s)`;
-      }
+      // Video is sent as a native Telegram video (see step 11b); skip raw URL in text.
       continue;
     }
     // For all other actions: append confirmation only if not already in the reply
@@ -504,16 +502,22 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   });
 
   // 11b. For Telegram: send actual photo/video media for any successful generate_image/generate_video actions.
-  //      The text reply (step 11) already contains the URL as a fallback; here we additionally deliver
-  //      the media natively so the user sees the image/video inline in the chat.
+  //      Media is delivered natively so the user sees the image/video inline in the chat.
+  //      Relative paths (e.g. /api/images/cache/xxx.jpg) are made absolute using config.apiUrl.
   if (msg.channel === 'telegram') {
     for (const ar of actionResults) {
       if (ar.tool === 'generate_image' && ar.success && ar.imageUrl) {
-        await sendTelegramPhoto(msg.externalId, ar.imageUrl).catch((e: unknown) =>
+        const absoluteUrl = ar.imageUrl.startsWith('http')
+          ? ar.imageUrl
+          : `${config.apiUrl}${ar.imageUrl}`;
+        await sendTelegramPhoto(msg.externalId, absoluteUrl).catch((e: unknown) =>
           logger.warn({ err: (e as Error).message, chatId: msg.externalId }, 'Failed to send Telegram photo'),
         );
       } else if (ar.tool === 'generate_video' && ar.success && ar.videoUrl) {
-        await sendTelegramVideo(msg.externalId, ar.videoUrl).catch((e: unknown) =>
+        const absoluteUrl = ar.videoUrl.startsWith('http')
+          ? ar.videoUrl
+          : `${config.apiUrl}${ar.videoUrl}`;
+        await sendTelegramVideo(msg.externalId, absoluteUrl).catch((e: unknown) =>
           logger.warn({ err: (e as Error).message, chatId: msg.externalId }, 'Failed to send Telegram video'),
         );
       }

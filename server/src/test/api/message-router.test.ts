@@ -28,7 +28,7 @@ describe('buildActionChannelSuffix', () => {
     expect(result).toBe('Some reply');
   });
 
-  it('appends generate_image URL with emoji', () => {
+  it('does NOT append generate_image URL as text (sent as native media instead)', () => {
     const ar: ActionResult = {
       tool: 'generate_image',
       success: true,
@@ -36,10 +36,12 @@ describe('buildActionChannelSuffix', () => {
       imageUrl: 'https://cdn.example.com/img/abc123.png',
     };
     const result = buildActionChannelSuffix('Here is your image!', [ar]);
-    expect(result).toContain('🖼️ https://cdn.example.com/img/abc123.png');
+    // Raw URL must NOT appear in the text reply — image is sent via sendTelegramPhoto
+    expect(result).not.toContain('cdn.example.com/img/abc123.png');
+    expect(result).toBe('Here is your image!');
   });
 
-  it('appends generate_video URL with emoji', () => {
+  it('does NOT append generate_video URL as text (sent as native media instead)', () => {
     const ar: ActionResult = {
       tool: 'generate_video',
       success: true,
@@ -48,11 +50,12 @@ describe('buildActionChannelSuffix', () => {
       data: { estimatedTime: 30 },
     };
     const result = buildActionChannelSuffix('Your video is being generated.', [ar]);
-    expect(result).toContain('🎬 Video: https://cdn.example.com/vid/xyz.mp4');
-    expect(result).toContain('renders in ~30s');
+    // Raw URL must NOT appear in the text reply — video is sent via sendTelegramVideo
+    expect(result).not.toContain('cdn.example.com/vid/xyz.mp4');
+    expect(result).toBe('Your video is being generated.');
   });
 
-  it('does not append estimatedTime when it is 0', () => {
+  it('does not append estimatedTime when video URL absent from text', () => {
     const ar: ActionResult = {
       tool: 'generate_video',
       success: true,
@@ -62,6 +65,7 @@ describe('buildActionChannelSuffix', () => {
     };
     const result = buildActionChannelSuffix('Generating.', [ar]);
     expect(result).not.toContain('renders in');
+    expect(result).toBe('Generating.');
   });
 
   it('appends generate_code preview URL when artifactId and previewUrl present', () => {
@@ -129,7 +133,7 @@ describe('buildActionChannelSuffix', () => {
     expect(occurrences).toBe(1);
   });
 
-  it('appends both image and video URLs when both actions succeed', () => {
+  it('does NOT append image or video URLs as text when both actions succeed', () => {
     const arImg: ActionResult = {
       tool: 'generate_image',
       success: true,
@@ -144,8 +148,10 @@ describe('buildActionChannelSuffix', () => {
       data: { estimatedTime: 15 },
     };
     const result = buildActionChannelSuffix('Generating both!', [arImg, arVid]);
-    expect(result).toContain('🖼️ https://img.example.com/1.png');
-    expect(result).toContain('🎬 Video: https://vid.example.com/1.mp4');
+    // Both are sent as native Telegram media — raw URLs must not appear in text reply
+    expect(result).not.toContain('img.example.com/1.png');
+    expect(result).not.toContain('vid.example.com/1.mp4');
+    expect(result).toBe('Generating both!');
   });
 });
 
