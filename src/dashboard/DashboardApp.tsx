@@ -206,6 +206,7 @@ export function DashboardApp() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const compactMode = useAuthStore((s) => s.compactMode);
+  const onboarding = useAuthStore((s) => s.onboarding);
   const usage = useDashboardStore((s) => s.usage);
   const agent = useDashboardStore((s) => s.agent);
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
@@ -317,17 +318,18 @@ export function DashboardApp() {
     return () => window.removeEventListener('keydown', handler);
   }, [navigate]);
 
-  // Phase 106: Show onboarding wizard if use_case not set (skip demo sessions)
+  // Phase 106: Show onboarding wizard if use_case not set (skip demo sessions and existing users)
   useEffect(() => {
     if (
       agent.id &&                          // agent config is loaded
       !agent.use_case &&                   // use_case not set yet
       user &&
-      !user.id.startsWith('demo-')         // skip for demo sessions
+      !user.id.startsWith('demo-') &&      // skip for demo sessions
+      !onboarding.completed                // skip for users who already completed onboarding
     ) {
       setShowOnboardingWizard(true);
     }
-  }, [agent.id, agent.use_case, user]);
+  }, [agent.id, agent.use_case, user, onboarding.completed]);
 
   // Sync URL pathname → currentPage (so navigate() calls update the view)
   useEffect(() => {
