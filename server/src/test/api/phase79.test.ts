@@ -132,28 +132,26 @@ describe('Phase 79 — Structured Memory Pipeline + Reminder Consistency', () =>
     });
   });
 
-  // ── 79.7: Reminder ↔ memory consistency ─────────────────────────
-  describe('79.7: Reminder delivery enriched with memory context', () => {
-    it('reminder-scheduler imports getRelevantMemories', () => {
+  // ── 79.7: Reminder delivery must NOT leak memory data (phase110 privacy fix) ──
+  describe('79.7: Reminder delivery must not leak memory context into notifications', () => {
+    it('reminder-scheduler does NOT import getRelevantMemories (privacy fix)', () => {
       const src = readFile('server/src/services/reminder-scheduler.ts');
-      expect(src).toContain('getRelevantMemories');
+      expect(src).not.toContain('getRelevantMemories');
     });
 
-    it('deliverReminder calls getRelevantMemories with reminder text', () => {
+    it('deliverReminder does NOT call getRelevantMemories (privacy fix)', () => {
       const src = readFile('server/src/services/reminder-scheduler.ts');
-      expect(src).toContain('getRelevantMemories(reminder.user_id, reminder.text');
+      expect(src).not.toContain('getRelevantMemories(reminder.user_id');
     });
 
-    it('enriches message with context when memories found', () => {
+    it('notification message does NOT append memory context (privacy fix)', () => {
       const src = readFile('server/src/services/reminder-scheduler.ts');
-      expect(src).toContain('💡 Context');
+      expect(src).not.toContain('💡 Context');
     });
 
-    it('context enrichment is non-fatal (try/catch)', () => {
+    it('deliverReminder uses static notification string only', () => {
       const src = readFile('server/src/services/reminder-scheduler.ts');
-      const section = src.slice(src.indexOf('async function deliverReminder'));
-      expect(section).toContain('try {');
-      expect(section).toContain('} catch {');
+      expect(src).toContain('`⏰ Reminder: ${reminder.text}`');
     });
   });
 
