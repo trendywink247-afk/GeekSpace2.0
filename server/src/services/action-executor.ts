@@ -59,35 +59,52 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         let js = (params.js as string) || '';
         let title = params.title as string;
 
+        const existingArtifactId = params.existingArtifactId as string | undefined;
+        const baseUrl = params.baseUrl as string | undefined;
+
+        // For edits: load stored template params and merge with LLM overrides
+        // so e.g. "change theme to blue" doesn't lose name/profession/etc.
+        let storedTemplateParams: Record<string, unknown> = {};
+        if (existingArtifactId && !html) {
+          const existingMeta = db.prepare(
+            'SELECT metadata FROM generated_artifacts WHERE id = ? AND user_id = ?'
+          ).get(existingArtifactId, userId) as { metadata: string } | undefined;
+          if (existingMeta?.metadata) {
+            try { storedTemplateParams = JSON.parse(existingMeta.metadata); } catch { /* ignore */ }
+          }
+        }
+
         // Always render from template when no raw HTML — default to 'portfolio' if LLM omitted template param
+        // Merge stored params (base) with incoming params (overrides)
         if (!html) {
+          const merged = { ...storedTemplateParams, ...params };
           const { renderWebsiteTemplate } = await import('./website-templates.js');
           const rendered = renderWebsiteTemplate({
-            template: (params.template as 'portfolio' | 'landing' | 'blog' | 'business') || 'portfolio',
-            title: params.title as string | undefined,
-            name: params.name as string | undefined,
-            theme: params.theme as 'dark' | 'light' | 'purple' | 'blue' | 'gradient' | undefined,
-            profession: params.profession as string | undefined,
-            location: params.location as string | undefined,
-            bio: params.bio as string | undefined,
-            skills: params.skills as string[] | undefined,
-            email: params.email as string | undefined,
-            tagline: params.tagline as string | undefined,
-            productName: params.productName as string | undefined,
-            description: params.description as string | undefined,
-            features: params.features as string[] | undefined,
-            cta: params.cta as string | undefined,
+            template: (merged.template as 'portfolio' | 'landing' | 'blog' | 'business') || 'portfolio',
+            title: merged.title as string | undefined,
+            name: merged.name as string | undefined,
+            theme: merged.theme as 'dark' | 'light' | 'purple' | 'blue' | 'gradient' | undefined,
+            profession: merged.profession as string | undefined,
+            location: merged.location as string | undefined,
+            bio: merged.bio as string | undefined,
+            skills: merged.skills as string[] | undefined,
+            email: merged.email as string | undefined,
+            tagline: merged.tagline as string | undefined,
+            productName: merged.productName as string | undefined,
+            description: merged.description as string | undefined,
+            features: merged.features as string[] | undefined,
+            cta: merged.cta as string | undefined,
           });
           html = rendered.html;
           css = rendered.css;
           js = rendered.js;
           title = title || rendered.title;
+          // Save merged params for future edits
+          storedTemplateParams = merged;
         }
-        const selfDestruct = params.selfDestruct as boolean | undefined;
-        // When injected by the builder route, update an existing artifact instead of creating a new one
-        const existingArtifactId = params.existingArtifactId as string | undefined;
 
-        const baseUrl = params.baseUrl as string | undefined;
+        const selfDestruct = params.selfDestruct as boolean | undefined;
+        const templateMetadata = JSON.stringify(storedTemplateParams);
 
         // Check if we should update an existing artifact (builder "edit" flow)
         if (existingArtifactId) {
@@ -97,8 +114,8 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
 
           if (existing) {
             db.prepare(
-              `UPDATE generated_artifacts SET title = ?, html = ?, css = ?, js = ? WHERE id = ? AND user_id = ?`
-            ).run(title, html, css, js, existingArtifactId, userId);
+              `UPDATE generated_artifacts SET title = ?, html = ?, css = ?, js = ?, metadata = ? WHERE id = ? AND user_id = ?`
+            ).run(title, html, css, js, templateMetadata, existingArtifactId, userId);
 
             const previewUrl = baseUrl ? `${baseUrl}/preview/${userId}/${existingArtifactId}` : undefined;
             return {
@@ -124,9 +141,9 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           : null;
 
         db.prepare(
-          `INSERT INTO generated_artifacts (id, user_id, type, title, html, css, js, expires_at)
-           VALUES (?, ?, 'code', ?, ?, ?, ?, ?)`,
-        ).run(id, userId, title, html, css, js, expiresAt);
+          `INSERT INTO generated_artifacts (id, user_id, type, title, html, css, js, metadata, expires_at)
+           VALUES (?, ?, 'code', ?, ?, ?, ?, ?, ?)`,
+        ).run(id, userId, title, html, css, js, templateMetadata, expiresAt);
 
         // Build preview URL if baseUrl provided
         const previewUrl = baseUrl ? `${baseUrl}/preview/${userId}/${id}` : undefined;
