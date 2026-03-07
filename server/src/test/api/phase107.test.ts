@@ -122,3 +122,28 @@ describe('Phase 107 — executor: web_search graceful empty', () => {
     expect(res.body).toHaveProperty('text');
   });
 });
+
+describe('Phase 107 — react-loop: return shape', () => {
+  beforeAll(() => { resetDatabase(); });
+  afterEach(() => { resetDatabase(); });
+
+  it('runReactLoop returns required fields', async () => {
+    const { runReactLoop } = await import('../../services/react-loop.js');
+    const result = await runReactLoop(
+      [{ role: 'user', content: 'Say hello in exactly 3 words.' }],
+      {
+        systemPrompt: 'You are a concise assistant.',
+        userId: 'demo-1',
+      }
+    );
+    expect(result).toHaveProperty('text');
+    expect(result).toHaveProperty('actions');
+    expect(result).toHaveProperty('provider');
+    expect(result).toHaveProperty('model');
+    expect(result).toHaveProperty('tokensIn');
+    expect(result).toHaveProperty('tokensOut');
+    expect(result).toHaveProperty('creditCost');
+    expect(Array.isArray(result.actions)).toBe(true);
+    expect(typeof result.text).toBe('string');
+  });
+});
