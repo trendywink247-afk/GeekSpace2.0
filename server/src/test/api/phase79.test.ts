@@ -149,9 +149,11 @@ describe('Phase 79 — Structured Memory Pipeline + Reminder Consistency', () =>
       expect(src).not.toContain('💡 Context');
     });
 
-    it('deliverReminder uses static notification string only', () => {
+    it('deliverReminder notification includes reminder text (no memory context)', () => {
       const src = readFile('server/src/services/reminder-scheduler.ts');
-      expect(src).toContain('`⏰ Reminder: ${reminder.text}`');
+      // Phase 110: message now includes optional local time display but still contains reminder.text
+      expect(src).toContain('${reminder.text}');
+      expect(src).not.toContain('getRelevantMemories');
     });
   });
 

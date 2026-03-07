@@ -13,6 +13,7 @@
 // ============================================================
 
 import { v4 as uuid } from 'uuid';
+import { DateTime } from 'luxon';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { sendTelegramMessage } from './telegram.js';
@@ -201,7 +202,20 @@ async function checkAndDeliverReminders(): Promise<void> {
 // ---- Delivery ----
 
 async function deliverReminder(reminder: DueReminder): Promise<void> {
-  const message = `⏰ Reminder: ${reminder.text}`;
+  // Look up user timezone for local time display in notification
+  const userRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(reminder.user_id) as { timezone?: string } | undefined;
+  const userTimezone = userRow?.timezone || 'Asia/Kolkata';
+
+  let timeDisplay = '';
+  if (reminder.datetime) {
+    try {
+      const localTime = DateTime.fromISO(reminder.datetime.replace(' ', 'T') + (reminder.datetime.includes('T') ? '' : 'Z'), { zone: 'UTC' }).setZone(userTimezone);
+      timeDisplay = ` (${localTime.toFormat('h:mm a z')})`;
+    } catch {
+      // non-fatal — skip time display if datetime is malformed
+    }
+  }
+  const message = `⏰ Reminder${timeDisplay}: ${reminder.text}`;
 
   switch (reminder.channel) {
     case 'telegram': {
@@ -270,7 +284,17 @@ async function tryTelegramAutoDelivery(reminder: DueReminder): Promise<void> {
 
     if (!link) return;
 
-    const result = await sendTelegramMessage(link.external_id, `⏰ Reminder: ${reminder.text}`);
+    // Build message with local time display for auto-delivery too
+    const autoUserRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(reminder.user_id) as { timezone?: string } | undefined;
+    const autoTimezone = autoUserRow?.timezone || 'Asia/Kolkata';
+    let autoTimeDisplay = '';
+    if (reminder.datetime) {
+      try {
+        const localTime = DateTime.fromISO(reminder.datetime.replace(' ', 'T') + (reminder.datetime.includes('T') ? '' : 'Z'), { zone: 'UTC' }).setZone(autoTimezone);
+        autoTimeDisplay = ` (${localTime.toFormat('h:mm a z')})`;
+      } catch { /* non-fatal */ }
+    }
+    const result = await sendTelegramMessage(link.external_id, `⏰ Reminder${autoTimeDisplay}: ${reminder.text}`);
     if (result.success) {
       logger.info({ reminderId: reminder.id, userId: reminder.user_id }, 'Reminder auto-delivered via Telegram (push channel)');
     }

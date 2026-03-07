@@ -167,6 +167,24 @@ usersRouter.patch('/notification-email', requireAuth, validateBody(notificationE
   });
 });
 
+usersRouter.patch('/me/timezone', requireAuth, (req: AuthRequest, res) => {
+  const { timezone } = req.body as { timezone?: string };
+  if (!timezone || typeof timezone !== 'string') {
+    res.status(400).json({ error: 'timezone is required' });
+    return;
+  }
+  // Validate it's a real IANA timezone
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+  } catch {
+    res.status(400).json({ error: 'Invalid timezone identifier' });
+    return;
+  }
+  db.prepare('UPDATE users SET timezone = ? WHERE id = ?').run(timezone, req.userId!);
+  cacheDel(`user:me:${req.userId!}`).catch(() => {});
+  res.json({ success: true, timezone });
+});
+
 usersRouter.get('/:username/public', (req, res) => {
   const user = db.prepare('SELECT * FROM users WHERE username = ?').get(req.params.username) as Record<string, unknown> | undefined;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }

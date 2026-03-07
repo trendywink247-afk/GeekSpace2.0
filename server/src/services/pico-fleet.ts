@@ -12,6 +12,7 @@
 // ============================================================
 
 import { v4 as uuid } from 'uuid';
+import { DateTime } from 'luxon';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
@@ -582,39 +583,39 @@ function extractIntentText(request: string, pattern: RegExp): string {
  * Returns ISO datetime string or null if no time found.
  * Supports: "in X minutes/hours", "at Xpm/am", "tomorrow at X", "tonight", "in half an hour"
  */
-/** Convert Date to SQLite-compatible format: "YYYY-MM-DD HH:MM:SS" */
-function toSqliteDatetime(d: Date): string {
-  return d.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+/** Convert luxon DateTime (in any zone) to SQLite-compatible UTC string: "YYYY-MM-DD HH:MM:SS" */
+function toLuxonSqlite(dt: DateTime): string {
+  return dt.toUTC().toISO()!.replace('T', ' ').replace(/\.\d{3}Z$/, '');
 }
 
-export function parseReminderTime(text: string): string | null {
+export function parseReminderTime(text: string, userTimezone = 'Asia/Kolkata'): string | null {
   const lower = text.toLowerCase();
-  const now = new Date();
+  const now = DateTime.now().setZone(userTimezone);
 
   // "in X minute(s)" / "in X min"
   let match = lower.match(/\bin\s+(\d+)\s*(?:min(?:ute)?s?)\b/);
   if (match) {
     const mins = parseInt(match[1], 10);
-    return toSqliteDatetime(new Date(now.getTime() + mins * 60_000));
+    return toLuxonSqlite(now.plus({ minutes: mins }));
   }
 
   // "in X hour(s)"
   match = lower.match(/\bin\s+(\d+)\s*(?:hours?|hrs?)\b/);
   if (match) {
     const hours = parseInt(match[1], 10);
-    return toSqliteDatetime(new Date(now.getTime() + hours * 3600_000));
+    return toLuxonSqlite(now.plus({ hours }));
   }
 
   // "in half an hour" / "in 30 minutes"
   if (/\bin\s+half\s+an?\s+hour\b/.test(lower)) {
-    return toSqliteDatetime(new Date(now.getTime() + 30 * 60_000));
+    return toLuxonSqlite(now.plus({ minutes: 30 }));
   }
 
   // "in X seconds" (for testing)
   match = lower.match(/\bin\s+(\d+)\s*(?:seconds?|secs?)\b/);
   if (match) {
     const secs = parseInt(match[1], 10);
-    return toSqliteDatetime(new Date(now.getTime() + secs * 1000));
+    return toLuxonSqlite(now.plus({ seconds: secs }));
   }
 
   // "at X:XX pm/am" or "at Xpm/am"
@@ -625,84 +626,62 @@ export function parseReminderTime(text: string): string | null {
     const ampm = match[3];
     if (ampm === 'pm' && hour < 12) hour += 12;
     if (ampm === 'am' && hour === 12) hour = 0;
-    const target = new Date(now);
-    target.setHours(hour, minute, 0, 0);
-    if (target.getTime() <= now.getTime()) {
-      target.setDate(target.getDate() + 1);
-    }
+    let target = now.set({ hour, minute, second: 0, millisecond: 0 });
+    if (target <= now) target = target.plus({ days: 1 });
     if (/\btomorrow\b/.test(lower)) {
-      const todayStart = new Date(now);
-      todayStart.setHours(0, 0, 0, 0);
-      const targetStart = new Date(target);
-      targetStart.setHours(0, 0, 0, 0);
-      if (targetStart.getTime() === todayStart.getTime()) {
-        target.setDate(target.getDate() + 1);
+      const todayStart = now.startOf('day');
+      const targetStart = target.startOf('day');
+      if (targetStart.valueOf() === todayStart.valueOf()) {
+        target = target.plus({ days: 1 });
       }
     }
-    return toSqliteDatetime(target);
+    return toLuxonSqlite(target);
   }
 
-  // "at X" (24-hour implied, e.g., "at 5pm" without am/pm → assume PM for 1-7)
+  // "at X" (24-hour implied, e.g., "at 5" without am/pm → assume PM for 1-7)
   match = lower.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\b(?!\s*(?:am|pm))/);
   if (match) {
     let hour = parseInt(match[1], 10);
     const minute = match[2] ? parseInt(match[2], 10) : 0;
     if (hour >= 1 && hour <= 7) hour += 12;
-    const target = new Date(now);
-    target.setHours(hour, minute, 0, 0);
-    if (target.getTime() <= now.getTime()) {
-      target.setDate(target.getDate() + 1);
-    }
+    let target = now.set({ hour, minute, second: 0, millisecond: 0 });
+    if (target <= now) target = target.plus({ days: 1 });
     if (/\btomorrow\b/.test(lower)) {
-      const todayStart = new Date(now);
-      todayStart.setHours(0, 0, 0, 0);
-      const targetStart = new Date(target);
-      targetStart.setHours(0, 0, 0, 0);
-      if (targetStart.getTime() === todayStart.getTime()) {
-        target.setDate(target.getDate() + 1);
+      const todayStart = now.startOf('day');
+      const targetStart = target.startOf('day');
+      if (targetStart.valueOf() === todayStart.valueOf()) {
+        target = target.plus({ days: 1 });
       }
     }
-    return toSqliteDatetime(target);
+    return toLuxonSqlite(target);
   }
 
   // "tomorrow morning" (9am) / "tomorrow evening" (6pm) / "tomorrow" (9am)
   if (/\btomorrow\b/.test(lower)) {
-    const target = new Date(now);
-    target.setDate(target.getDate() + 1);
-    if (/\bevening\b/.test(lower)) {
-      target.setHours(18, 0, 0, 0);
-    } else if (/\bafternoon\b/.test(lower)) {
-      target.setHours(14, 0, 0, 0);
-    } else if (/\bnight\b/.test(lower)) {
-      target.setHours(21, 0, 0, 0);
-    } else {
-      target.setHours(9, 0, 0, 0);
-    }
-    return toSqliteDatetime(target);
+    const tomorrow = now.plus({ days: 1 });
+    let hour = 9;
+    if (/\bevening\b/.test(lower)) hour = 18;
+    else if (/\bafternoon\b/.test(lower)) hour = 14;
+    else if (/\bnight\b/.test(lower)) hour = 21;
+    return toLuxonSqlite(tomorrow.set({ hour, minute: 0, second: 0, millisecond: 0 }));
   }
 
   // "tonight" (9pm)
   if (/\btonight\b/.test(lower)) {
-    const target = new Date(now);
-    target.setHours(21, 0, 0, 0);
-    if (target.getTime() <= now.getTime()) {
-      target.setDate(target.getDate() + 1);
-    }
-    return toSqliteDatetime(target);
+    let target = now.set({ hour: 21, minute: 0, second: 0, millisecond: 0 });
+    if (target <= now) target = target.plus({ days: 1 });
+    return toLuxonSqlite(target);
   }
 
   // "after work" / "end of day" (6pm)
   if (/\b(?:after work|end of (?:the )?day|eod)\b/.test(lower)) {
-    const target = new Date(now);
-    target.setHours(18, 0, 0, 0);
-    if (target.getTime() <= now.getTime()) {
-      target.setDate(target.getDate() + 1);
-    }
-    return toSqliteDatetime(target);
+    let target = now.set({ hour: 18, minute: 0, second: 0, millisecond: 0 });
+    if (target <= now) target = target.plus({ days: 1 });
+    return toLuxonSqlite(target);
   }
 
   // No time expression found → default to 1 hour from now
-  return toSqliteDatetime(new Date(now.getTime() + 3600_000));
+  return toLuxonSqlite(now.plus({ hours: 1 }));
 }
 
 // ---- Kimi Task Planner ----

@@ -9,6 +9,7 @@
 // ============================================================
 
 import { v4 as uuid } from 'uuid';
+import { DateTime } from 'luxon';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
@@ -137,9 +138,11 @@ function buildChannelSystemPrompt(
   const userName = (user?.name as string) || 'there';
   const memoryBlock = buildMemoryContext(userId, userMessage);
 
-  // Inject actual current datetime in IST (UTC+5:30) so the LLM never guesses time.
-  const nowIst = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
-  const istString = nowIst.toUTCString().replace('GMT', 'IST');
+  // Inject actual current datetime in user's local timezone so the LLM never guesses time.
+  const userTzRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
+  const userTimezone = userTzRow?.timezone || 'Asia/Kolkata';
+  const nowLocal = DateTime.now().setZone(userTimezone);
+  const localTimeString = nowLocal.toFormat("cccc, LLLL d, yyyy 'at' h:mm a z");
 
   return `${OPENCLAW_IDENTITY_COMPACT}
 
@@ -151,7 +154,7 @@ Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
 Channel: ${channel}. This is a messaging app — keep responses SHORT and mobile-friendly.${memoryBlock}
 
 --- CURRENT DATE & TIME ---
-Right now it is: ${istString} (India Standard Time, UTC+5:30). Use this exact time when the user asks what time or date it is. Do NOT guess or infer from other context.
+Right now it is: ${localTimeString}. Use this exact time when the user asks what time or date it is. Do NOT guess or infer from other context.
 
 IMPORTANT: Max 2-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain text only. Be concise.
 ${TOOL_INSTRUCTIONS}`;
