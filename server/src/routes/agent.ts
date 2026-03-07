@@ -531,7 +531,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
               provider: 'builtin',
               latencyMs: 0,
               creditsUsed: 0,
-              actionResults: [{ tool: 'generate_image', success: true, imageUrl: imgFastResult.imageUrl, prompt: imagePrompt }],
+              actionResults: [{ tool: 'generate_image', success: true, imageUrl: imgFastResult.imageUrl, imageId: imgFastResult.imageId, prompt: imagePrompt }],
             });
             return;
           }
