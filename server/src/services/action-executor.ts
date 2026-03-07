@@ -289,7 +289,15 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const reminderId = uuid();
         const userRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
         const userTimezone = userRow?.timezone || 'Asia/Kolkata';
-        const dueAt = params.datetime as string || parseReminderTime(text, userTimezone);
+        // params.datetime may be a bare time string from the LLM ("12:30", "12.30", "3pm").
+        // A bare time has no timezone context — always parse it through parseReminderTime
+        // so it is interpreted in the user's local timezone before converting to UTC.
+        // Only treat params.datetime as a ready-to-store value when it is a full ISO string
+        // (contains 'T' or starts with a 4-digit year), meaning it already encodes a date+time.
+        const rawDatetime = params.datetime as string | undefined;
+        const dueAt = rawDatetime && (rawDatetime.includes('T') || /^\d{4}-/.test(rawDatetime))
+          ? rawDatetime
+          : parseReminderTime(rawDatetime ? rawDatetime : text, userTimezone);
         // Calculate epoch ms for drift tracking
         const scheduledFor = dueAt ? new Date(dueAt).getTime() : Date.now();
 
