@@ -27,7 +27,7 @@ import { cacheGet, cacheSet } from './cache.js';
 // ---- Types ----
 
 export type Intent = 'simple' | 'planning' | 'coding' | 'automation' | 'complex';
-export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'edith' | 'picoclaw' | 'builtin' | 'ollama-cloud';
+export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'edith' | 'picoclaw' | 'builtin' | 'ollama-cloud' | 'together';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -263,6 +263,10 @@ function isOllamaCloudAvailable(): boolean {
 
 function isEdithAvailable(): boolean {
   return !!config.openrouterApiKey && !!config.openrouterBaseUrl;
+}
+
+function isTogetherAvailable(): boolean {
+  return !!config.togetherApiKey;
 }
 
 // Premium plans that can access Edith (Moonshot reasoning) as last resort
@@ -549,6 +553,42 @@ async function callMoonshotReasoning(messages: ChatMessage[]): Promise<{ content
   };
 }
 
+// ---- Together AI (OpenAI-compatible, free tier) ----
+// Default endpoint: https://api.together.xyz/v1 (overridable via TOGETHER_BASE_URL)
+
+async function callTogether(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+  const start = Date.now();
+  const response = await fetch(`${config.togetherBaseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.togetherApiKey}`,
+    },
+    body: JSON.stringify({
+      model: config.togetherModel,
+      messages,
+      max_tokens: config.togetherMaxTokens,
+      temperature: 0.7,
+    }),
+    signal: AbortSignal.timeout(config.togetherTimeout),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Together AI ${response.status}: ${errText}`);
+  }
+
+  const data = await response.json() as {
+    choices: Array<{ message: { content: string } }>;
+    usage?: { prompt_tokens: number; completion_tokens: number };
+  };
+  const content = data.choices[0]?.message?.content || '';
+  const tokensIn = data.usage?.prompt_tokens || 0;
+  const tokensOut = data.usage?.completion_tokens || 0;
+  logger.debug({ provider: 'together', model: config.togetherModel, latencyMs: Date.now() - start, tokensIn, tokensOut }, 'Together AI response');
+  return { content, tokensIn, tokensOut };
+}
+
 // ---- Waterfall Fallback Helper ----
 // Tries each provider in order, skipping unavailable ones.
 // Returns null if all fail (caller uses builtin fallback).
@@ -579,6 +619,11 @@ async function tryFallbackChain(
           const r = await callOllamaCloud(fullMessages);
           return { ...r, provider: 'ollama-cloud' };
         }
+        case 'together': {
+          if (!isTogetherAvailable()) continue;
+          const r = await callTogether(fullMessages);
+          return { ...r, provider: 'together' };
+        }
         case 'edith': {
           if (!isEdithAvailable()) continue;
           const r = await callMoonshotReasoning(fullMessages);
@@ -605,6 +650,7 @@ const FLAT_CREDIT_COSTS: Partial<Record<Provider, number>> = {
   ollama:            1,
   'ollama-cloud':    2,
   'openrouter-free': 2,
+  together:          2,
   picoclaw:          1,
   builtin:           0,
 };
@@ -645,6 +691,7 @@ function estimateCost(provider: Provider, tokensIn: number, tokensOut: number): 
     case 'ollama':          return 0;
     case 'ollama-cloud':    return 0;
     case 'openrouter-free': return 0;
+    case 'together':        return 0;
     case 'openrouter':      return (tokensIn * 0.0000006) + (tokensOut * 0.000002);
     case 'edith':           return (tokensIn * 0.0000012) + (tokensOut * 0.000004);
     case 'picoclaw':        return 0;
@@ -658,7 +705,7 @@ function estimateCost(provider: Provider, tokensIn: number, tokensOut: number): 
 export function getManualOverride(): Provider | null {
   if (!config.isTestMode) return null;
   const envOverride = process.env.FORCE_LLM_PROVIDER as Provider;
-  if (envOverride && ['ollama', 'openrouter', 'openrouter-free', 'edith', 'picoclaw', 'builtin', 'ollama-cloud'].includes(envOverride)) {
+  if (envOverride && ['ollama', 'openrouter', 'openrouter-free', 'edith', 'picoclaw', 'builtin', 'ollama-cloud', 'together'].includes(envOverride)) {
     return envOverride;
   }
   return null;
@@ -732,7 +779,7 @@ export async function routeChat(
   let manualOverride: Provider | null = null;
   if (config.isTestMode) {
     const headerOverride = opts?.requestHeaders?.['x-model-route'] as Provider;
-    if (headerOverride && ['ollama', 'openrouter', 'openrouter-free', 'edith', 'picoclaw', 'builtin', 'ollama-cloud'].includes(headerOverride)) {
+    if (headerOverride && ['ollama', 'openrouter', 'openrouter-free', 'edith', 'picoclaw', 'builtin', 'ollama-cloud', 'together'].includes(headerOverride)) {
       manualOverride = headerOverride;
     }
     if (!manualOverride) manualOverride = getManualOverride();
@@ -784,6 +831,9 @@ export async function routeChat(
     } else if (isOpenRouterFreeAvailable()) {
       provider = 'openrouter-free';
       routingReason = 'ollama_unreachable';
+    } else if (isTogetherAvailable()) {
+      provider = 'together';
+      routingReason = 'fallback_chain';
     } else if (isOllamaCloudAvailable()) {
       provider = 'ollama-cloud';
       routingReason = 'ollama_cloud_available';
@@ -803,6 +853,7 @@ export async function routeChat(
       : provider === 'ollama-cloud' ? config.ollamaCloudModel
       : provider === 'openrouter' ? config.openrouterModel
       : provider === 'edith' ? config.moonshotReasoningModel
+      : provider === 'together' ? config.togetherModel
       : provider,
     intent,
     userId: opts?.userId,
@@ -865,6 +916,12 @@ export async function routeChat(
         model = config.ollamaCloudModel;
         break;
       }
+      case 'together': {
+        const result = await callTogether(fullMessages);
+        reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
+        model = config.togetherModel;
+        break;
+      }
       case 'edith': {
         const result = await callMoonshotReasoning(fullMessages);
         reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
@@ -894,7 +951,7 @@ export async function routeChat(
     // ---- Phase 76 Waterfall Fallback ----
     // Try remaining providers in waterfall order after the failed one.
     // Edith is included only for premium users with credits.
-    const WATERFALL: Provider[] = ['ollama', 'openrouter-free', 'ollama-cloud', 'edith'];
+    const WATERFALL: Provider[] = ['ollama', 'openrouter-free', 'together', 'ollama-cloud', 'edith'];
     const failedIdx = WATERFALL.indexOf(provider);
     const remaining = WATERFALL.slice(failedIdx + 1).filter(p => {
       if (p === 'edith') return isPremium && hasCredits && !overDailyBudget;
@@ -912,6 +969,7 @@ export async function routeChat(
       model = finalProvider === 'ollama' ? config.ollamaModel
         : finalProvider === 'ollama-cloud' ? config.ollamaCloudModel
         : finalProvider === 'edith' ? config.moonshotReasoningModel
+        : finalProvider === 'together' ? config.togetherModel
         : finalProvider;
       routingReason = 'fallback_chain';
     } else {

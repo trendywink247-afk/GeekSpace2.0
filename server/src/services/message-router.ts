@@ -12,9 +12,10 @@ import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
-import { routeChat, deductSubscriptionCredits, type ChatMessage } from './llm.js';
+import { deductSubscriptionCredits, type ChatMessage } from './llm.js';
+import { runReactLoop } from './react-loop.js';
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
-import { buildMemoryContext, logConversation, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
+import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
 import { checkKeywordTriggers } from './automations-engine.js';
 import { sendTelegramMessage, sendTelegramPhoto, sendTelegramVideo } from './telegram.js';
 import { getPersonalityPrompt, getPersonality } from '../prompts/personalities.js';
@@ -26,6 +27,25 @@ import { isSearchIntent, tavilySearch } from './tavily.js';
 import { extractUrl, firecrawlScrape } from './firecrawl.js';
 import { addInboxMessage } from './inbox.js';
 import { checkContentSafety } from './content-filter.js';
+
+// ---- ReAct Tool Instructions ----
+// Injected into system prompts so the LLM knows how to call tools.
+const TOOL_INSTRUCTIONS = `
+--- AVAILABLE TOOLS ---
+You can call tools by emitting an action block in your response:
+<<<ACTION
+{"tool": "<tool_name>", "params": {<params>}}
+ACTION>>>
+
+Available tools:
+- web_search: Search the web for current information. Params: {"query": "<search query>"}
+- set_reminder: Create a reminder for the user. Params: {"text": "<reminder text>", "datetime": "<ISO datetime or natural language>", "channel": "telegram|push"}
+- telegram_notify: Send a Telegram message to the user. Params: {"message": "<message text>"}
+- generate_image: Generate an image. Params: {"prompt": "<image description>"}
+- generate_code: Build a website/app. Params: {"title": "<name>", "html": "<html>", "css": "<css>", "js": "<js>"}
+- send_email: Send an email to the user. Params: {"subject": "<subject>", "body": "<body>"}
+
+Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
 
 // ---- Task Intent Detection ----
 
@@ -133,7 +153,8 @@ Channel: ${channel}. This is a messaging app — keep responses SHORT and mobile
 --- CURRENT DATE & TIME ---
 Right now it is: ${istString} (India Standard Time, UTC+5:30). Use this exact time when the user asks what time or date it is. Do NOT guess or infer from other context.
 
-IMPORTANT: Max 2-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain text only. Be concise.`;
+IMPORTANT: Max 2-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain text only. Be concise.
+${TOOL_INSTRUCTIONS}`;
 }
 
 // ---- Channel Reply Builder (exported for testing) ----
@@ -217,6 +238,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   db.prepare("UPDATE integrations SET last_sync = ? WHERE user_id = ? AND type = ?")
     .run(now, userId, msg.channel);
 
+  // Capture conversation history BEFORE logging current message (prevents duplication in LLM context)
+  const history = getConversationContext(userId);
+
   // 4. Log user message + extract memories
   logConversation(userId, 'user', msg.text, requestId);
   extractMemories(userId, msg.text);
@@ -284,7 +308,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 6. Build messages for LLM
   let systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);
-  const history = getConversationContext(userId);
   const userCredits = (user?.credits as number) || 0;
 
   // 6a. Token compression — compress system prompt + user message for LLM
@@ -363,35 +386,37 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         latencyMs: bridgeResult.latencyMs,
       }, 'Channel message routed via bridge');
     } catch (err) {
-      logger.warn({ err: (err as Error).message }, 'Bridge failed for channel message, falling back to routeChat');
-      // Fallback to routeChat
+      logger.warn({ err: (err as Error).message }, 'Bridge failed for channel message, falling back to ReAct loop');
+      // Fallback to ReAct loop
       const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-      const result = await routeChat(messages, {
+      const reactResult = await runReactLoop(messages, {
         systemPrompt,
         agentName: (agentConfig?.name as string) || 'Geek',
         userCredits,
+        userId,
       });
-      replyText = result.reply;
-      provider = result.provider;
-      model = result.model;
-      tokensIn = result.tokensIn;
-      tokensOut = result.tokensOut;
-      creditCost = result.creditCost;
+      replyText = reactResult.text;
+      provider = reactResult.provider;
+      model = reactResult.model;
+      tokensIn = reactResult.tokensIn;
+      tokensOut = reactResult.tokensOut;
+      creditCost = reactResult.creditCost;
     }
   } else {
-    // Bridge not enabled — use routeChat directly
+    // Bridge not enabled — use ReAct loop (routeChat + multi-turn tool use)
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-    const result = await routeChat(messages, {
+    const reactResult = await runReactLoop(messages, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
+      userId,
     });
-    replyText = result.reply;
-    provider = result.provider;
-    model = result.model;
-    tokensIn = result.tokensIn;
-    tokensOut = result.tokensOut;
-    creditCost = result.creditCost;
+    replyText = reactResult.text;
+    provider = reactResult.provider;
+    model = reactResult.model;
+    tokensIn = reactResult.tokensIn;
+    tokensOut = reactResult.tokensOut;
+    creditCost = reactResult.creditCost;
   }
 
   // 7b. Parse and execute actions
@@ -454,6 +479,18 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 10. Log assistant response (clean text without action blocks)
   logConversation(userId, 'assistant', finalReply, requestId, provider, model);
+
+  // Log for fine-tuning dataset (non-blocking)
+  logTrainingExample({
+    userId,
+    input: msg.text,
+    output: finalReply,
+    provider,
+    model,
+    tokensIn,
+    tokensOut,
+    channel: msg.channel,
+  });
 
   // 79.2: Fire-and-forget Ollama memory extraction (non-blocking)
   extractMemoriesWithOllama(userId, msg.text, finalReply).catch(() => { /* non-fatal */ });

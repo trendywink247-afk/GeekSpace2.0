@@ -27,13 +27,12 @@ export const imageAsyncRouter = Router();
 // ---- Daily image cap per plan ----
 
 const IMAGE_DAILY_CAPS: Record<string, number> = {
-  free: 5,
-  intro: 20,
-  monthly: 20,
-  halfyear: 20,
-  yearly: 20,
-  pro: 20,
-  team: 20,
+  free: 3,
+  pilot: 10,
+  monthly: 10,
+  intro: 15,
+  halfyear: 50,
+  yearly: 100,
 };
 
 function getImageCap(userId: string): { used: number; limit: number; allowed: boolean } {
