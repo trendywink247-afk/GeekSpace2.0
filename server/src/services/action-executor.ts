@@ -261,19 +261,14 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
 
       // ── portfolio_update_theme ──────────────────────────
       case 'portfolio_update_theme': {
-        const theme = JSON.stringify({
-          mode: 'dark',
-          accentColor: params.accentColor as string,
-        });
-
-        db.prepare(
-          `UPDATE users SET theme = ? WHERE id = ?`,
-        ).run(theme, userId);
-
+        const accentColor = params.accentColor as string | undefined;
+        const mode = (params.mode as string | undefined) || 'dark';
+        db.prepare(`UPDATE users SET theme_mode = ?, theme_accent = ? WHERE id = ?`)
+          .run(mode, accentColor || '#7B61FF', userId);
         return {
           tool,
           success: true,
-          message: `Theme accent color updated to ${params.accentColor}`,
+          message: `App theme updated${accentColor ? ` (accent: ${accentColor})` : ''}`,
         };
       }
 

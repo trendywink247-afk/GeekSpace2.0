@@ -43,7 +43,7 @@ Available tools:
 - set_reminder: Create a reminder for the user. Params: {"text": "<reminder text>", "datetime": "<ISO datetime or natural language>", "channel": "telegram|push"}
 - telegram_notify: Send a Telegram message to the user. Params: {"message": "<message text>"}
 - generate_image: Generate an image. Params: {"prompt": "<image description>"}
-- generate_code: Build a website/app using a template (preferred — do NOT write raw HTML inline). Params: {"template": "portfolio|landing|blog|business", "title": "<page title>", "name": "<person or brand name>", "theme": "dark|light|purple|blue|gradient", "profession": "<job title>", "location": "<city/country>", "bio": "<short bio>", "skills": ["skill1","skill2"], "email": "<email>", "tagline": "<one-liner>", "features": ["feature1","feature2"]}. Only include fields relevant to the request.
+- generate_code: Build OR edit a website/app. To CREATE: {"template": "portfolio|landing|blog|business", "title": "...", "name": "...", "theme": "dark|light|purple|blue|gradient", "profession": "...", "location": "...", "bio": "...", "skills": ["skill1","skill2"], "email": "...", "tagline": "..."}. To EDIT/UPDATE an existing website (change theme, update content, etc.): include "existingArtifactId": "<id from context>" plus the updated params. Never write raw HTML. Only include fields relevant to the request.
 - send_email: Send an email to the user. Params: {"subject": "<subject>", "body": "<body>"}
 
 Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
