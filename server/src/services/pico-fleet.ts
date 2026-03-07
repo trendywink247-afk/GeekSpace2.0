@@ -618,6 +618,47 @@ export function parseReminderTime(text: string, userTimezone = 'Asia/Kolkata'): 
     return toLuxonSqlite(now.plus({ seconds: secs }));
   }
 
+  // Bare "9am" / "9pm" / "9:30am" — no "at" prefix, no dot
+  match = lower.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b(?!\s*(?:at\b))/);
+  if (match && !lower.match(/\bat\s+\d/)) {
+    let hour = parseInt(match[1], 10);
+    const minute = match[2] ? parseInt(match[2], 10) : 0;
+    const ampm = match[3];
+    if (ampm === 'pm' && hour < 12) hour += 12;
+    if (ampm === 'am' && hour === 12) hour = 0;
+    let target = now.set({ hour, minute, second: 0, millisecond: 0 });
+    if (target <= now) target = target.plus({ days: 1 });
+    return toLuxonSqlite(target);
+  }
+
+  // Bare "12:30" — colon-separated, no "at" prefix, no am/pm
+  match = lower.match(/\b(\d{1,2}):(\d{2})\b(?!\s*(?:am|pm))/);
+  if (match && !lower.match(/\bat\s+\d/)) {
+    let hour = parseInt(match[1], 10);
+    const minute = parseInt(match[2], 10);
+    // No am/pm: hour 1–7 treated as PM, otherwise face value
+    if (hour >= 1 && hour <= 7) hour += 12;
+    let target = now.set({ hour, minute, second: 0, millisecond: 0 });
+    if (target <= now) target = target.plus({ days: 1 });
+    return toLuxonSqlite(target);
+  }
+
+  // "12.30" or "12.30pm" — dot-separated time (common in Indian/European input)
+  // Must be checked before the "at X" branches to avoid partial matches
+  match = lower.match(/\b(\d{1,2})\.(\d{2})\s*(am|pm)?\b/);
+  if (match) {
+    let hour = parseInt(match[1], 10);
+    const minute = parseInt(match[2], 10);
+    const ampm = match[3];
+    if (ampm === 'pm' && hour < 12) hour += 12;
+    else if (ampm === 'am' && hour === 12) hour = 0;
+    // Without am/pm: hour 1–7 treated as PM (afternoon), otherwise face value
+    else if (!ampm && hour >= 1 && hour <= 7) hour += 12;
+    let target = now.set({ hour, minute, second: 0, millisecond: 0 });
+    if (target <= now) target = target.plus({ days: 1 });
+    return toLuxonSqlite(target);
+  }
+
   // "at X:XX pm/am" or "at Xpm/am"
   match = lower.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/);
   if (match) {
@@ -953,7 +994,14 @@ async function executeTask(task: PicoTask): Promise<void> {
         const userId = task.user_id;
         const tzRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
         const userTimezone = tzRow?.timezone || 'Asia/Kolkata';
-        const dueAt = taskConfig.datetime as string || parseReminderTime(text, userTimezone);
+        // ISO-guard: if LLM supplied a bare time like "12:30" or "3pm", params.datetime is
+        // truthy but NOT a real datetime — route through parseReminderTime so the user's
+        // IANA timezone is applied before UTC storage. Only trust it directly when it is a
+        // full ISO datetime (contains 'T') or a date-prefixed string (/^\d{4}-/).
+        const rawDatetime = taskConfig.datetime as string | undefined;
+        const dueAt = rawDatetime && (rawDatetime.includes('T') || /^\d{4}-/.test(rawDatetime))
+          ? rawDatetime
+          : parseReminderTime(rawDatetime ? rawDatetime : text, userTimezone);
         // Use telegram channel if user has Telegram linked, otherwise push
         const hasChannel = db.prepare(
           "SELECT 1 FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
