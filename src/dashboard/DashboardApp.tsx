@@ -70,8 +70,9 @@ const MemoryPage = lazyRetry(() => import('./pages/MemoryPage').then(m => ({ def
 const WorkflowsPage = lazyRetry(() => import('./pages/WorkflowsPage').then(m => ({ default: m.WorkflowsPage })));
 
 const CalendarPage = lazyRetry(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage })));
+const ConversationRatingPage = lazyRetry(() => import('./pages/ConversationRatingPage').then(m => ({ default: m.ConversationRatingPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training';
 
 
 interface MenuGroup {
@@ -109,6 +110,7 @@ const menuGroups: MenuGroup[] = [
       { id: 'personal-memory', label: 'Personal Memory', icon: Brain },
       { id: 'recipes', label: 'Recipes', icon: BookOpen },
       { id: 'capabilities', label: 'What Can I Do?', icon: Sparkles },
+      { id: 'training', label: 'Conversation Ratings', icon: MessageSquare },
     ],
   },
   {
@@ -332,7 +334,7 @@ export function DashboardApp() {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -474,6 +476,8 @@ export function DashboardApp() {
         return <CalendarPage />;
       case 'workflows':
         return <WorkflowsPage />;
+      case 'training':
+        return <ConversationRatingPage />;
       case 'tools':
         return <AISpecialistPage />;
       default:
