@@ -13,7 +13,7 @@ import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
 import { deductSubscriptionCredits, type ChatMessage } from './llm.js';
-import { runReActLoop } from './react-loop.js';
+import { runReactLoop } from './react-loop.js';
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
 import { checkKeywordTriggers } from './automations-engine.js';
@@ -389,20 +389,11 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       logger.warn({ err: (err as Error).message }, 'Bridge failed for channel message, falling back to ReAct loop');
       // Fallback to ReAct loop
       const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-      const reactResult = await runReActLoop(messages, userId, {
+      const reactResult = await runReactLoop(messages, {
         systemPrompt,
         agentName: (agentConfig?.name as string) || 'Geek',
         userCredits,
-        generateCodeBaseUrl: config.apiUrl,
-        onStatus: async (statusMsg) => {
-          try {
-            await sendChannelResponse({
-              channel: msg.channel,
-              externalId: msg.externalId,
-              text: statusMsg,
-            });
-          } catch { /* non-fatal */ }
-        },
+        userId,
       });
       replyText = reactResult.text;
       provider = reactResult.provider;
@@ -414,20 +405,11 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   } else {
     // Bridge not enabled — use ReAct loop (routeChat + multi-turn tool use)
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-    const reactResult = await runReActLoop(messages, userId, {
+    const reactResult = await runReactLoop(messages, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
-      generateCodeBaseUrl: config.apiUrl,
-      onStatus: async (statusMsg) => {
-        try {
-          await sendChannelResponse({
-            channel: msg.channel,
-            externalId: msg.externalId,
-            text: statusMsg,
-          });
-        } catch { /* non-fatal */ }
-      },
+      userId,
     });
     replyText = reactResult.text;
     provider = reactResult.provider;

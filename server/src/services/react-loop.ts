@@ -1,15 +1,9 @@
 // ============================================================
-// ReAct Loop — Reasoning + Acting Multi-Turn Tool Use
+// ReAct Loop — Multi-turn Tool-Use Reasoning
 //
-// Wraps routeChat() in a loop:
-//   1. LLM generates text (possibly with <<<ACTION>>> blocks)
-//   2. Parse and execute each action
-//   3. Inject results as [OBSERVATION] messages
-//   4. Repeat until no actions remain or max iterations hit
-//   5. If max hit: return accumulated observations summary
-//
-// Status messages are emitted via onStatus callback so callers
-// can notify the user in real-time (SSE write / Telegram send).
+// Runs up to MAX_REACT_ITERATIONS of: LLM → parse actions →
+// execute actions → inject observations → repeat.
+// Returns when no actions in response or max iterations hit.
 // ============================================================
 
 import { routeChat, type ChatMessage, type Provider } from './llm.js';
@@ -19,11 +13,17 @@ import { logger } from '../logger.js';
 
 const MAX_REACT_ITERATIONS = 5;
 
-export interface ReActResult {
+export interface ReactLoopOptions {
+  systemPrompt: string;
+  agentName?: string;
+  userCredits?: number;
+  userId: string;
+  forceProvider?: Provider;
+}
+
+export interface ReactLoopResult {
   text: string;
-  iterations: number;
-  observations: string[];
-  actionResults: ActionResult[];
+  actions: ActionResult[];
   provider: string;
   model: string;
   tokensIn: number;
@@ -31,137 +31,100 @@ export interface ReActResult {
   creditCost: number;
 }
 
-export type StatusCallback = (msg: string) => void | Promise<void>;
-
-export interface ReActOpts {
-  onStatus: StatusCallback;
-  systemPrompt?: string;
-  agentName?: string;
-  userCredits?: number;
-  forceProvider?: Provider;
-  userId?: string;
-  userPlan?: string;
-  generateCodeBaseUrl?: string;
-  generateCodeExistingArtifactId?: string;
-}
-
-// Map tool name → user-visible status message
-function toolStatusMessage(tool: string): string {
-  switch (tool) {
-    case 'web_search': return '🔍 Searching the web…';
-    case 'set_reminder': return '⏰ Setting reminder…';
-    case 'telegram_notify': return '📨 Sending Telegram notification…';
-    case 'send_email': return '📧 Sending email…';
-    case 'generate_image': return '🎨 Generating image…';
-    case 'generate_code': return '💻 Building website…';
-    default: return `🔧 Running ${tool}…`;
-  }
-}
-
-export async function runReActLoop(
-  initialMessages: ChatMessage[],
-  userId: string,
-  opts: ReActOpts,
-): Promise<ReActResult> {
-  const {
-    onStatus,
-    systemPrompt,
-    agentName,
-    userCredits,
-    forceProvider,
-    userPlan,
-  } = opts;
-
-  const messages = [...initialMessages];
-  const observations: string[] = [];
+/**
+ * Run a multi-turn ReAct loop.
+ *
+ * @param messages - The conversation so far (system prompt NOT included — pass via opts.systemPrompt)
+ * @param opts     - LLM routing options including userId (required for action execution)
+ */
+export async function runReactLoop(
+  messages: ChatMessage[],
+  opts: ReactLoopOptions,
+): Promise<ReactLoopResult> {
+  const workingMessages = [...messages];
   const allActionResults: ActionResult[] = [];
-  let lastProvider = 'ollama';
-  let lastModel = '';
+
+  let finalText = '';
   let totalTokensIn = 0;
   let totalTokensOut = 0;
   let totalCreditCost = 0;
+  let lastProvider = '';
+  let lastModel = '';
 
   for (let i = 0; i < MAX_REACT_ITERATIONS; i++) {
-    // Call LLM
-    const result = await routeChat(messages, {
-      systemPrompt,
-      agentName,
-      userCredits,
-      forceProvider,
-      userId,
-      userPlan,
+    const result = await routeChat(workingMessages, {
+      systemPrompt: opts.systemPrompt,
+      agentName: opts.agentName,
+      userCredits: opts.userCredits,
+      forceProvider: opts.forceProvider,
+      userId: opts.userId,
     });
 
-    lastProvider = result.provider;
-    lastModel = result.model;
     totalTokensIn += result.tokensIn;
     totalTokensOut += result.tokensOut;
     totalCreditCost += result.creditCost;
+    lastProvider = result.provider;
+    lastModel = result.model;
 
-    // Parse any tool actions from the response
     const { text: cleanText, actions } = parseActions(result.reply);
 
+    // No actions → LLM is done reasoning
     if (actions.length === 0) {
-      // No tool calls — we're done
-      logger.debug({ iterations: i + 1, userId }, 'react-loop: done (no actions)');
-      return {
-        text: cleanText || result.reply,
-        iterations: i + 1,
-        observations,
-        actionResults: allActionResults,
-        provider: lastProvider,
-        model: lastModel,
-        tokensIn: totalTokensIn,
-        tokensOut: totalTokensOut,
-        creditCost: totalCreditCost,
-      };
+      finalText = cleanText || result.reply;
+      break;
     }
 
-    // Append assistant message (with action blocks) to history
-    messages.push({ role: 'assistant', content: result.reply });
+    logger.debug(
+      { iteration: i + 1, tools: actions.map((a) => a.tool) },
+      'react-loop:iteration',
+    );
 
-    // Execute each action and collect observations
-    const observationParts: string[] = [];
+    // Execute all actions in this iteration and collect observations
+    const observations: string[] = [];
     for (const action of actions) {
-      await onStatus(toolStatusMessage(action.tool));
-      // Inject baseUrl for generate_code actions (needed for preview URL generation)
-      if (action.tool === 'generate_code' && opts.generateCodeBaseUrl) {
-        action.params.baseUrl = opts.generateCodeBaseUrl;
+      if (action.tool === 'generate_code') {
+        // generate_code needs baseUrl injected by the HTTP layer — skip in loop
+        continue;
       }
-      if (action.tool === 'generate_code' && opts.generateCodeExistingArtifactId) {
-        action.params.existingArtifactId = opts.generateCodeExistingArtifactId;
-      }
-      const actionResult = await executeAction(userId, action);
+      const actionResult = await executeAction(opts.userId, action);
       allActionResults.push(actionResult);
 
-      // For web_search, use the pre-formatted summary from executor
-      const resultDetail = actionResult.success
-        ? (actionResult.data?.summary as string | undefined) || actionResult.message
-        : `Error: ${actionResult.message}`;
+      // Format observation for LLM context
+      const obs = actionResult.success
+        ? `[TOOL RESULT: ${action.tool}]\n${actionResult.message}${
+            actionResult.data?.summary
+              ? '\n\n' + String(actionResult.data.summary)
+              : actionResult.data
+              ? '\n' + JSON.stringify(actionResult.data, null, 2).slice(0, 1000)
+              : ''
+          }`
+        : `[TOOL ERROR: ${action.tool}]\n${actionResult.message}`;
 
-      const obsText = `[OBSERVATION tool="${action.tool}"]: ${resultDetail}`;
-      observationParts.push(obsText);
-      observations.push(obsText);
-      logger.debug({ tool: action.tool, success: actionResult.success, userId }, 'react-loop: tool executed');
+      observations.push(obs);
     }
 
-    // Inject observations as a user message for next LLM turn
-    const observationMessage = observationParts.join('\n\n') +
-      '\n\nNow continue answering the user based on the above results. Do not emit more tool calls unless truly necessary.';
-    messages.push({ role: 'user', content: observationMessage });
+    // If all actions were skipped (e.g. only generate_code), stop looping
+    if (observations.length === 0) {
+      finalText = cleanText || result.reply;
+      break;
+    }
+
+    // Inject assistant turn + tool observations back into message history
+    workingMessages.push({ role: 'assistant', content: result.reply });
+    workingMessages.push({
+      role: 'user',
+      content: observations.join('\n\n---\n\n') + '\n\nBased on the above results, continue.',
+    });
+
+    // On final iteration, capture whatever the LLM says
+    if (i === MAX_REACT_ITERATIONS - 1) {
+      finalText = cleanText || result.reply;
+    }
   }
 
-  // Max iterations reached — compose summary from observations
-  logger.warn({ userId, iterations: MAX_REACT_ITERATIONS }, 'react-loop: max iterations reached');
-  const summary = observations.length > 0
-    ? `I gathered the following information while working on your request:\n\n${observations.join('\n\n')}`
-    : 'I was unable to complete that request after several attempts. Please try rephrasing.';
-
   return {
-    text: summary,
-    iterations: MAX_REACT_ITERATIONS,
-    observations,
-    actionResults: allActionResults,
+    text: finalText,
+    actions: allActionResults,
     provider: lastProvider,
     model: lastModel,
     tokensIn: totalTokensIn,

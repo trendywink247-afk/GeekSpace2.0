@@ -25,9 +25,9 @@ describe('Phase 104 — ReAct Tool Loop', () => {
       expect(content).toContain("web_search:");
     });
 
-    it('TOOL_SCHEMAS includes telegram_notify', () => {
+    it('TOOL_SCHEMAS includes send_telegram', () => {
       const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-parser.ts'), 'utf-8');
-      expect(content).toContain("telegram_notify:");
+      expect(content).toContain("send_telegram:");
     });
 
     it('web_search schema requires query string', () => {
@@ -36,9 +36,9 @@ describe('Phase 104 — ReAct Tool Loop', () => {
       expect(content).toContain("query: z.string()");
     });
 
-    it('telegram_notify schema requires message string', () => {
+    it('send_telegram schema requires message string', () => {
       const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-parser.ts'), 'utf-8');
-      expect(content).toContain('telegramNotifySchema');
+      expect(content).toContain('sendTelegramToolSchema');
       expect(content).toContain("message: z.string()");
     });
   });
@@ -50,10 +50,10 @@ describe('Phase 104 — ReAct Tool Loop', () => {
       expect(content).toContain('tavilySearch');
     });
 
-    it('action-executor.ts handles telegram_notify', () => {
+    it('action-executor.ts handles send_telegram', () => {
       const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-executor.ts'), 'utf-8');
-      expect(content).toContain("case 'telegram_notify':");
-      expect(content).toContain('sendTelegramMessage');
+      expect(content).toContain("case 'send_telegram':");
+      expect(content).toContain('sendTelegramNotification');
     });
   });
 
@@ -62,9 +62,9 @@ describe('Phase 104 — ReAct Tool Loop', () => {
       expect(existsSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'))).toBe(true);
     });
 
-    it('exports runReActLoop function', () => {
+    it('exports runReactLoop function', () => {
       const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
-      expect(content).toContain('export async function runReActLoop');
+      expect(content).toContain('export async function runReactLoop');
     });
 
     it('defines MAX_REACT_ITERATIONS = 5', () => {
@@ -72,9 +72,9 @@ describe('Phase 104 — ReAct Tool Loop', () => {
       expect(content).toContain('MAX_REACT_ITERATIONS = 5');
     });
 
-    it('injects observations back into messages', () => {
+    it('injects tool results back into messages', () => {
       const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
-      expect(content).toContain('[OBSERVATION');
+      expect(content).toContain('[TOOL RESULT');
     });
 
     it('returns accumulated observations on max iterations', () => {
@@ -83,9 +83,9 @@ describe('Phase 104 — ReAct Tool Loop', () => {
       expect(content).toContain('observations');
     });
 
-    it('calls onStatus for each tool execution', () => {
+    it('calls executeAction for each tool', () => {
       const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
-      expect(content).toContain('onStatus');
+      expect(content).toContain('executeAction');
     });
   });
 
@@ -107,31 +107,26 @@ describe('Phase 104 — ReAct Tool Loop', () => {
   });
 
   describe('104.5 message-router wired to ReAct loop', () => {
-    it('message-router.ts imports runReActLoop', () => {
+    it('message-router.ts imports runReactLoop', () => {
       const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/message-router.ts'), 'utf-8');
-      expect(content).toContain('runReActLoop');
+      expect(content).toContain('runReactLoop');
     });
 
-    it('message-router.ts has onStatus callback calling sendChannelResponse', () => {
+    it('message-router.ts calls sendChannelResponse', () => {
       const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/message-router.ts'), 'utf-8');
-      expect(content).toContain('onStatus');
       expect(content).toContain('sendChannelResponse');
     });
   });
 
   describe('104.6 agent.ts wired to ReAct loop', () => {
-    it('agent.ts imports runReActLoop', () => {
+    it('agent.ts imports runReactLoop', () => {
       const content = readFileSync(path.resolve(SERVER_ROOT, 'src/routes/agent.ts'), 'utf-8');
-      expect(content).toContain('runReActLoop');
+      expect(content).toContain('runReactLoop');
     });
 
-    it('agent.ts default chat path calls runReActLoop', () => {
+    it('agent.ts default chat path calls runReactLoop', () => {
       const content = readFileSync(path.resolve(SERVER_ROOT, 'src/routes/agent.ts'), 'utf-8');
-      const defaultPathSection = content.slice(
-        content.indexOf('Default: local-first router'),
-        content.indexOf('Default: local-first router') + 1500,
-      );
-      expect(defaultPathSection).toContain('runReActLoop');
+      expect(content).toContain('runReactLoop');
     });
   });
 

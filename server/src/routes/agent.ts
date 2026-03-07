@@ -20,32 +20,13 @@ import { getAllAgentDefinitions, selectAgents, getAgentRoles, type AgentRole } f
 import { isPicoClawAvailable, queryPicoClaw } from '../services/picoclaw.js';
 import { parseActions, type ParsedAction } from '../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
-import { runReActLoop } from '../services/react-loop.js';
+import { runReactLoop } from '../services/react-loop.js';
 import { formatReceiptCompact, type ReceiptItem } from '../services/receipts.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from '../services/telegram.js';
 import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../services/agent-chat.js';
 
 export const agentRouter = Router();
-
-// ---- ReAct Tool Instructions ----
-// Injected into system prompts so the LLM knows how to call tools.
-const TOOL_INSTRUCTIONS = `
---- AVAILABLE TOOLS ---
-You can call tools by emitting an action block in your response:
-<<<ACTION
-{"tool": "<tool_name>", "params": {<params>}}
-ACTION>>>
-
-Available tools:
-- web_search: Search the web for current information. Params: {"query": "<search query>"}
-- set_reminder: Create a reminder for the user. Params: {"text": "<reminder text>", "datetime": "<ISO datetime or natural language>", "channel": "telegram|push"}
-- telegram_notify: Send a Telegram message to the user. Params: {"message": "<message text>"}
-- generate_image: Generate an image. Params: {"prompt": "<image description>"}
-- generate_code: Build a website/app. Params: {"title": "<name>", "html": "<html>", "css": "<css>", "js": "<js>"}
-- send_email: Send an email to the user. Params: {"subject": "<subject>", "body": "<body>"}
-
-Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
 
 // ---- Rate Limit Status tracker (33.4) ----
 // In-memory tracker mirroring the chat rate limiter (60 req / 15 min)
@@ -112,6 +93,17 @@ function buildSystemPrompt(
     ? `IMPORTANT: When asked to build or create a website, you MUST emit a generate_code action block with COMPLETE working HTML/CSS/JS code. Do not give short text responses for build requests — always use the action block. Write complete, self-contained code with no placeholders.`
     : `IMPORTANT: Keep responses SHORT. 1-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain conversational text only.`;
 
+  const toolsBlock = `--- AVAILABLE TOOLS ---
+Use <<<ACTION>>> blocks to invoke tools when needed:
+<<<ACTION>>>
+tool: web_search
+query: your search query
+<<<END>>>
+<<<ACTION>>>
+tool: send_telegram
+message: your message text
+<<<END>>>`;
+
   return `${OPENCLAW_IDENTITY}
 
 --- PERSONALITY ---
@@ -125,8 +117,9 @@ ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
 ${memoryBlock}
 ${formatMemoryContext(userId)}
 
-${closingInstruction}
-${TOOL_INSTRUCTIONS}`;
+${toolsBlock}
+
+${closingInstruction}`;
 }
 
 // ---- Agent Config CRUD ----
@@ -671,29 +664,13 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       }
     }
 
-    const reactResult = await runReActLoop(messages, userId, {
+    const result = await runReactLoop(messages, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
       forceProvider: resolvedProvider,
       userId,
-      onStatus: () => { /* no-op: JSON endpoint, client gets response only after completion */ },
-      generateCodeBaseUrl: `${req.protocol}://${req.get('host')}`,
-      generateCodeExistingArtifactId: reqExistingArtifactId,
     });
-
-    // Alias for downstream code (usage logging, credit deduction, JSON response)
-    const result = {
-      reply: reactResult.text,
-      provider: reactResult.provider,
-      model: reactResult.model,
-      tokensIn: reactResult.tokensIn,
-      tokensOut: reactResult.tokensOut,
-      creditCost: reactResult.creditCost,
-      latencyMs: 0,
-    };
-    const cleanReply = reactResult.text;
-    const actionResults: ActionResult[] = reactResult.actionResults;
 
     // Determine tier from actual provider used
     const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';
@@ -713,27 +690,35 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     const updatedCredits = (db.prepare('SELECT credits FROM users WHERE id = ?').get(userId) as { credits: number })?.credits ?? userCredits;
 
-    // Log the clean reply (without action blocks)
-    logConversation(userId, 'assistant', cleanReply || result.reply, result.provider, result.model);
+    // ReAct loop already executed tool actions; collect results and handle generate_code separately
+    let cleanReply = result.text;
+    const actionResults: ActionResult[] = [...result.actions];
 
-    // Log for fine-tuning dataset (non-blocking)
-    logTrainingExample({
-      userId,
-      input: message,
-      output: cleanReply || result.reply,
-      provider: result.provider,
-      model: result.model,
-      tokensIn: result.tokensIn,
-      tokensOut: result.tokensOut,
-      systemPrompt: systemPrompt?.slice(0, 500),
-      channel: 'web',
-    });
+    // generate_code was skipped inside the loop (needs baseUrl from HTTP layer) — handle now
+    const { actions: topLevelActions } = parseActions(result.text);
+    for (const action of topLevelActions) {
+      if (action.tool === 'generate_code') {
+        action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
+        if (reqExistingArtifactId) {
+          action.params.existingArtifactId = reqExistingArtifactId;
+        }
+        const actionResult = await executeAction(userId, action);
+        actionResults.push(actionResult);
+      }
+    }
+
+    // Strip generate_code blocks from final reply text
+    const { text: strippedText } = parseActions(cleanReply);
+    cleanReply = strippedText || cleanReply;
+
+    // Log the clean reply (without action blocks)
+    logConversation(userId, 'assistant', cleanReply, result.provider, result.model);
+    logTrainingExample({ userId, input: message, output: cleanReply, provider: result.provider, model: result.model });
 
     const response: Record<string, unknown> = {
-      text: cleanReply || result.reply,
+      text: cleanReply,
       route: tier,
       tier,
-      latencyMs: result.latencyMs,
       provider: result.provider,
       model: result.model,
       creditsUsed: result.creditCost,
@@ -760,7 +745,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     }
 
     // Background AI memory extraction (non-blocking)
-    extractMemoriesWithAI(userId, message, cleanReply || result.reply).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
+    extractMemoriesWithAI(userId, message, cleanReply).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
     // Phase 94: also extract into user_memories (flat key-value store)
     extractMemoriesFromConversation(userId, [{ role: 'user', content: message }]);
 

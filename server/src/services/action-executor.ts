@@ -16,7 +16,7 @@ import { config } from '../config.js';
 import { RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
 import { generateImage, generateVideo, generateAvatar } from './media-generation.js';
 import { cacheSet, cacheGet, cacheDel } from './cache.js';
-import { sendTelegramNotification, sendTelegramMessage, escapeTelegramHtml } from './telegram.js';
+import { sendTelegramNotification, escapeTelegramHtml } from './telegram.js';
 import { tavilySearch } from './tavily.js';
 
 // ── Types ───────────────────────────────────────────────────
@@ -552,66 +552,60 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         };
       }
 
-      // ── web_search ─────────────────────────────────────────
+      // ── web_search ───────────────────────────────────────
       case 'web_search': {
         const query = params.query as string;
-        try {
-          const searchResult = await tavilySearch(query, 5);
-          if (searchResult.results.length === 0) {
-            return {
-              tool,
-              success: false,
-              message: 'No search results found for that query.',
-            };
-          }
-          const summary = searchResult.results
-            .map((r, i) => `${i + 1}. ${r.title}\n   ${r.content}\n   Source: ${r.url}`)
-            .join('\n\n');
-          return {
-            tool,
-            success: true,
-            message: `Found ${searchResult.results.length} results for "${query}"`,
-            data: { query, results: searchResult.results, summary },
-          };
-        } catch (err) {
+        const maxResults = (params.max_results as number) || 3;
+        const { results } = await tavilySearch(query, maxResults);
+
+        if (results.length === 0) {
           return {
             tool,
             success: false,
-            message: `Web search failed: ${err instanceof Error ? err.message : String(err)}`,
+            message: `No results found for "${query}". Tavily API may not be configured.`,
           };
         }
+
+        const summary = results
+          .map((r, i) => `${i + 1}. **${r.title}**\n   ${r.url}\n   ${r.content}`)
+          .join('\n\n');
+
+        return {
+          tool,
+          success: true,
+          message: `Found ${results.length} results for "${query}"`,
+          data: { query, results, summary },
+        };
       }
 
-      // ── telegram_notify ────────────────────────────────────
-      case 'telegram_notify': {
+      // ── send_telegram ────────────────────────────────────────
+      case 'send_telegram': {
         const message = params.message as string;
 
-        // Look up user's linked Telegram chat ID
-        const telegramLink = db.prepare(
+        const link = db.prepare(
           "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 ORDER BY linked_at DESC LIMIT 1"
         ).get(userId) as { external_id: string } | undefined;
 
-        if (!telegramLink) {
+        if (!link) {
           return {
             tool,
             success: false,
-            message: 'No Telegram account connected. Link your Telegram in Connections.',
+            message: 'No Telegram account linked. Go to Connections to connect Telegram first.',
           };
         }
 
         try {
-          await sendTelegramMessage(telegramLink.external_id, message);
+          await sendTelegramNotification(link.external_id, message);
           return {
             tool,
             success: true,
-            message: `Telegram notification sent`,
-            data: { chatId: telegramLink.external_id },
+            message: 'Telegram message sent successfully.',
           };
-        } catch (err) {
+        } catch {
           return {
             tool,
             success: false,
-            message: `Telegram send failed: ${err instanceof Error ? err.message : String(err)}`,
+            message: 'Failed to send Telegram message. Check bot configuration.',
           };
         }
       }
