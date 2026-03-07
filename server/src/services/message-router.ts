@@ -359,7 +359,11 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   }
 
   // 6d. Trim conversation history to token budget (3000 token estimate)
-  const trimmedHistory = trimConversationHistory(history, 3000) as ChatMessage[];
+  // For website requests: clear history entirely — prior chatty responses confuse
+  // the model and cause it to ignore the ACTION block instruction.
+  const trimmedHistory = websiteIntent.test(msg.text)
+    ? []
+    : trimConversationHistory(history, 3000) as ChatMessage[];
 
   // 7. Route through bridge (PicoClaw for simple, Kimi for complex) or fallback to routeChat
   let replyText: string;
