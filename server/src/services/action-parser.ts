@@ -100,7 +100,7 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   portfolio_update_bio: portfolioUpdateBioSchema,
   portfolio_update_skills: portfolioUpdateSkillsSchema,
   portfolio_remove_project: portfolioRemoveProjectSchema,
-  portfolio_update_theme: portfolioUpdateThemeSchema,
+  // portfolio_update_theme intentionally removed — use generate_code for website changes
   send_email: sendEmailSchema,
   set_reminder: setReminderSchema,
   crawl_url: crawlUrlSchema,
