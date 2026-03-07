@@ -316,6 +316,13 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   systemPrompt = compressPrompt(systemPrompt);
   const llmUserText = compressPrompt(msg.text);
 
+  // 6a.1 Website build/edit intent — append critical instruction so model outputs
+  //       a short ACTION block instead of writing raw HTML (which hits token limits)
+  const websiteIntent = /\b(?:build|create|make|generate|rebuild|update|change|edit|modify|redesign|redo|refresh|revamp|adjust|tweak)\b.{0,60}\b(?:website|site|portfolio|page|landing|blog)\b|\b(?:website|site|portfolio|page|landing|blog)\b.{0,60}\b(?:build|create|make|generate|rebuild|update|change|edit|modify|redesign|redo|refresh|revamp)\b/i;
+  if (websiteIntent.test(msg.text)) {
+    systemPrompt += '\n\nCRITICAL: Respond with ONLY the <<<ACTION generate_code ACTION>>> block. Do NOT write HTML, CSS, or JavaScript code directly. Output the action block with JSON params only — keep total response under 200 tokens.';
+  }
+
   // 6b. Web search enrichment (Tavily) — runs when search intent detected
   let webSearchUsed = false;
   if (isSearchIntent(msg.text) && process.env.TAVILY_API_KEY) {
