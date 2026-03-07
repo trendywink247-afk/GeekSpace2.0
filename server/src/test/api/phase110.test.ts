@@ -131,7 +131,9 @@ describe('110.1 Timezone column and endpoint', () => {
   it('action-executor.ts looks up users.timezone before calling parseReminderTime', () => {
     const src = readSrc('services', 'action-executor.ts');
     expect(src).toContain('SELECT timezone FROM users WHERE id = ?');
-    expect(src).toContain('parseReminderTime(text, userTimezone)');
+    // parseReminderTime is called with userTimezone; bare params.datetime routes through it too
+    expect(src).toContain('parseReminderTime(');
+    expect(src).toContain('userTimezone');
   });
 
   it('pico-fleet.ts parseReminderTime accepts second userTimezone parameter', () => {
@@ -215,6 +217,54 @@ describe('110.2 parseReminderTime timezone correctness', () => {
     const oneHourMs = 60 * 60 * 1000;
     expect(ms).toBeGreaterThanOrEqual(before + oneHourMs - 5000);
     expect(ms).toBeLessThanOrEqual(after + oneHourMs + 5000);
+  });
+
+  // ── Hotfix: bare time strings from LLM params.datetime must be timezone-aware ──
+
+  it('[hotfix] "12.30" in Asia/Kolkata (IST UTC+5:30) → stored as 07:00 UTC, not 12:30 UTC', () => {
+    // Aliya's exact bug: "12.30" interpreted as 12:30 UTC instead of 12:30 IST
+    const result = parseReminderTime('12.30', 'Asia/Kolkata');
+    expect(result).not.toBeNull();
+    const utcHour = parseInt(result!.split(' ')[1].split(':')[0], 10);
+    const utcMin  = parseInt(result!.split(' ')[1].split(':')[1], 10);
+    // 12:30 IST = 07:00 UTC
+    expect(utcHour).toBe(7);
+    expect(utcMin).toBe(0);
+  });
+
+  it('[hotfix] "12:30" bare time in UTC timezone → stored as 12:30 UTC', () => {
+    const result = parseReminderTime('12:30', 'UTC');
+    expect(result).not.toBeNull();
+    // "at 12:30" pattern — 24h face value in UTC
+    const utcHour = parseInt(result!.split(' ')[1].split(':')[0], 10);
+    expect(utcHour).toBe(12);
+  });
+
+  it('[hotfix] "9am" bare time in America/New_York (EST UTC-5) → stored as 14:00 UTC', () => {
+    const result = parseReminderTime('9am', 'America/New_York');
+    expect(result).not.toBeNull();
+    const utcHour = parseInt(result!.split(' ')[1].split(':')[0], 10);
+    // 9am EST = 14:00 UTC (UTC-5, no DST assumed for test stability)
+    // Accept 14 (EST) or 13 (EDT) depending on test runner's wall clock season
+    expect([13, 14]).toContain(utcHour);
+  });
+
+  it('[hotfix] action-executor does NOT use params.datetime raw when it is a bare time', () => {
+    // Ensures the bypass path is gone: bare times must go through parseReminderTime
+    const src = readSrc('services', 'action-executor.ts');
+    // The old single-line bypass: "params.datetime as string || parseReminderTime(text"
+    expect(src).not.toContain("params.datetime as string || parseReminderTime(text");
+    // The new path guards for full ISO before trusting params.datetime
+    expect(src).toContain("rawDatetime.includes('T')");
+  });
+
+  it('[hotfix] pico-fleet does NOT use taskConfig.datetime raw when it is a bare time', () => {
+    // The fleet worker create_reminder case must apply the same ISO-guard as action-executor.ts
+    const src = readSrc('services', 'pico-fleet.ts');
+    // Old bypass: "taskConfig.datetime as string || parseReminderTime"
+    expect(src).not.toContain("taskConfig.datetime as string || parseReminderTime");
+    // New guard present in fleet worker create_reminder path
+    expect(src).toContain("rawDatetime.includes('T')");
   });
 });
 
