@@ -292,7 +292,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         const { executeAction } = await import('./action-executor.js');
         const baseUrl = config.apiUrl || `https://api.geekspace.space`;
 
-        let artifactParams: Record<string, unknown> = {
+        const artifactParams: Record<string, unknown> = {
           template: templateMatch?.[1] || 'portfolio',
           theme: themeMatch?.[1] || 'dark',
           baseUrl,
