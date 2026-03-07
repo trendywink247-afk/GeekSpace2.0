@@ -653,7 +653,7 @@ export function parseReminderTime(text: string, userTimezone = 'Asia/Kolkata'): 
 
   // "midnight" → 00:00
   if (/\bmidnight\b/.test(lower)) {
-    let target = now.set({ hour: 0, minute: 0, second: 0, millisecond: 0 }).plus({ days: 1 });
+    const target = now.set({ hour: 0, minute: 0, second: 0, millisecond: 0 }).plus({ days: 1 });
     return toLuxonSqlite(target);
   }
 
