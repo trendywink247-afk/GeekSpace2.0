@@ -15,6 +15,15 @@ async function getDemoToken(): Promise<string> {
   return res.body.token as string;
 }
 
+async function createGateKey(dashToken: string): Promise<string> {
+  const res = await request(app)
+    .post('/api/gate/v1/keys')
+    .set('Authorization', `Bearer ${dashToken}`)
+    .send({ label: 'Test' })
+    .expect(201);
+  return res.body.data.key as string;
+}
+
 describe('Phase 108 — Gate key management', () => {
   beforeAll(() => { resetDatabase(); });
   afterEach(() => { resetDatabase(); });
@@ -95,5 +104,109 @@ describe('Phase 108 — Gate key management', () => {
       .expect(400);
     expect(res.body.success).toBe(false);
     expect(res.body.error).toContain('Maximum 5');
+  });
+});
+
+describe('Phase 108 — Gate API: public endpoints', () => {
+  beforeAll(() => { resetDatabase(); });
+  afterEach(() => { resetDatabase(); });
+
+  it('GET /api/gate/v1/usage returns plan + credits with valid Gate key', async () => {
+    const dashToken = await getDemoToken();
+    const gateKey = await createGateKey(dashToken);
+
+    const res = await request(app)
+      .get('/api/gate/v1/usage')
+      .set('Authorization', `Bearer ${gateKey}`)
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveProperty('plan');
+    expect(res.body.data).toHaveProperty('creditsRemaining');
+    expect(res.body.data).toHaveProperty('monthlyCredits');
+    expect(res.body.data).toHaveProperty('walletCredits');
+  });
+
+  it('GET /api/gate/v1/models returns model list', async () => {
+    const dashToken = await getDemoToken();
+    const gateKey = await createGateKey(dashToken);
+
+    const res = await request(app)
+      .get('/api/gate/v1/models')
+      .set('Authorization', `Bearer ${gateKey}`)
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data.models)).toBe(true);
+    expect(res.body.data).toHaveProperty('totalCount');
+  });
+
+  it('GET /api/gate/v1/usage rejects invalid key', async () => {
+    const res = await request(app)
+      .get('/api/gate/v1/usage')
+      .set('Authorization', 'Bearer agtn_invalid000000')
+      .expect(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toBeTruthy();
+  });
+
+  it('GET /api/gate/v1/usage rejects missing key', async () => {
+    const res = await request(app)
+      .get('/api/gate/v1/usage')
+      .expect(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('POST /api/gate/v1/chat returns text response', async () => {
+    const dashToken = await getDemoToken();
+    const gateKey = await createGateKey(dashToken);
+
+    const res = await request(app)
+      .post('/api/gate/v1/chat')
+      .set('Authorization', `Bearer ${gateKey}`)
+      .send({ message: 'What is 2 + 2?' })
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(typeof res.body.data.text).toBe('string');
+    expect(res.body.data.text.length).toBeGreaterThan(0);
+    expect(res.body.data).toHaveProperty('provider');
+    expect(res.body.data).toHaveProperty('tokensIn');
+    expect(Array.isArray(res.body.data.actions)).toBe(true);
+  });
+
+  it('POST /api/gate/v1/chat rejects empty message', async () => {
+    const dashToken = await getDemoToken();
+    const gateKey = await createGateKey(dashToken);
+
+    const res = await request(app)
+      .post('/api/gate/v1/chat')
+      .set('Authorization', `Bearer ${gateKey}`)
+      .send({ message: '' })
+      .expect(400);
+
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toBeTruthy();
+  });
+
+  it('POST /api/gate/v1/image rejects empty prompt', async () => {
+    const dashToken = await getDemoToken();
+    const gateKey = await createGateKey(dashToken);
+
+    const res = await request(app)
+      .post('/api/gate/v1/image')
+      .set('Authorization', `Bearer ${gateKey}`)
+      .send({ prompt: '' })
+      .expect(400);
+
+    expect(res.body.success).toBe(false);
+  });
+
+  it('POST /api/gate/v1/chat rejects missing Authorization', async () => {
+    const res = await request(app)
+      .post('/api/gate/v1/chat')
+      .send({ message: 'hello' })
+      .expect(401);
+    expect(res.body.success).toBe(false);
   });
 });
