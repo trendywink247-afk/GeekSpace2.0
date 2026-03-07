@@ -4,6 +4,23 @@
 
 ---
 
+## Phase 109 (2026-03-07) — Conversation Quality Rating
+
+*Status: Complete, pending merge to main*
+
+### What's New
+- **Rate AI conversations**: New "Conversation Ratings" page at `/dashboard/training` lets you review your past AI conversations and rate them 1-5 stars for quality.
+- **Interactive star rating**: Click any star on a conversation to score it — the rating saves instantly with a confirmation toast and persists across sessions.
+- **Paginated history**: Conversations load in pages of 20, showing your message and the AI's reply side by side for easy review.
+
+### Under the Hood
+- `quality_score INTEGER` column added to `conversation_log` via additive, idempotent ALTER TABLE migration (safe on existing data)
+- `GET /api/agent/conversations/ratings` — paginated conversation pairs with current quality_score
+- `POST /api/agent/conversations/:id/rating` — stores 1-5 star score; validates range, returns 404 for unknown/other-user conversations
+- 9/9 new tests in `phase109.test.ts`
+
+---
+
 ## Post-Phase 82 (2026-03-02) — Store Safety + Polish
 
 *Status: Committed to main*

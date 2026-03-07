@@ -1909,3 +1909,6 @@ try {
     CREATE INDEX IF NOT EXISTS idx_gate_api_keys_hash ON gate_api_keys(key_hash);
   `);
 } catch { /* table already exists */ }
+
+// Phase 109: Quality score for conversation rating
+try { db.exec(`ALTER TABLE conversation_log ADD COLUMN quality_score INTEGER DEFAULT NULL`); } catch { /* column already exists */ }
