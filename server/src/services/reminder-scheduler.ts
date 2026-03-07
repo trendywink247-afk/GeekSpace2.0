@@ -162,7 +162,7 @@ async function checkAndDeliverReminders(): Promise<void> {
     for (const reminder of dueReminders) {
       try {
         const fireTime = Date.now();
-        const scheduledTime = reminder.scheduled_for || new Date(reminder.datetime).getTime();
+        const scheduledTime = reminder.scheduled_for || (reminder.datetime ? new Date(reminder.datetime).getTime() : Date.now());
         const driftMs = fireTime - scheduledTime;
 
         // Log drift for observability

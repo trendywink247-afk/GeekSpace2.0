@@ -949,7 +949,11 @@ async function executeTask(task: PicoTask): Promise<void> {
       case 'create_reminder': {
         const text = String(taskConfig.reminder_text || task.description);
         const reminderId = uuid();
-        const dueAt = parseReminderTime(text);
+        // Look up user timezone (same pattern as action-executor.ts)
+        const userId = task.user_id;
+        const tzRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
+        const userTimezone = tzRow?.timezone || 'Asia/Kolkata';
+        const dueAt = taskConfig.datetime as string || parseReminderTime(text, userTimezone);
         // Use telegram channel if user has Telegram linked, otherwise push
         const hasChannel = db.prepare(
           "SELECT 1 FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"

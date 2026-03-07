@@ -31,6 +31,7 @@ usersRouter.get('/me', requireAuth, async (req: AuthRequest, res) => {
     tags: JSON.parse(user.tags as string || '[]'),
     theme: { mode: user.theme_mode, accentColor: user.theme_accent },
     plan: user.plan, credits: user.credits,
+    timezone: user.timezone as string || 'Asia/Kolkata',
     notifications: {
       email: !!user.notification_email, push: !!user.notification_push,
       agentUpdates: !!user.notification_agent, reminders: !!user.notification_reminders,
