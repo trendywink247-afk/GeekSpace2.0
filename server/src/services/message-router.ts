@@ -334,13 +334,13 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 5ab. Image generation fast-path — detect image creation intent and execute directly
   {
-    const imagePattern = /\b(?:generate|create|make|draw|render|produce)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|drawing)\b/i;
+    const imagePattern = /\b(?:generate|create|make|draw|render|produce|show me|i want|give me|can you make|can you draw|paint)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|drawing|painting|portrait|wallpaper|sketch)\b/i;
     if (imagePattern.test(msg.text)) {
       try {
         const { executeAction: execImg } = await import('./action-executor.js');
-        const promptMatch = msg.text.match(/\b(?:generate|create|make|draw|render|produce)\b.{0,10}\b(?:image|picture|photo|illustration|artwork|art|drawing)\b(?:\s+of\s+|\s+showing\s+|\s+with\s+|\s+)?([\s\S]+)/i);
+        const promptMatch = msg.text.match(/\b(?:generate|create|make|draw|render|produce|show me|i want|give me|can you make|can you draw|paint)\b.{0,20}\b(?:image|picture|photo|illustration|artwork|art|drawing|painting|portrait|wallpaper|sketch)\b(?:\s+of\s+|\s+showing\s+|\s+with\s+|\s+)?([\s\S]+)/i);
         const rawPrompt = promptMatch?.[1]?.trim() || msg.text;
-        const prompt = rawPrompt.replace(/^(?:a\s+|an\s+|the\s+)/i, '').trim() || msg.text;
+        const prompt = rawPrompt.replace(/^(?:a\s+|an\s+|the\s+|me\s+)/i, '').trim() || msg.text;
 
         const imgResult = await execImg(userId, { tool: 'generate_image', params: { prompt } });
 

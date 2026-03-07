@@ -28,6 +28,7 @@ export interface ActionResult {
   artifactId?: string;
   previewUrl?: string;
   imageUrl?: string;  // Set by generate_image / generate_avatar actions
+  imageId?: string;   // DB id of saved image in user_images table
   videoUrl?: string;  // Set by generate_video action
   data?: Record<string, unknown>;
   receipt?: ReceiptItem; // Visual confirmation of action taken
@@ -465,12 +466,25 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           };
         }
 
+        // Persist to user_images table so image appears in dashboard gallery
+        const imageId = `img-${uuid().slice(0, 12)}`;
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        try {
+          db.prepare(`
+            INSERT INTO user_images (id, user_id, prompt, model, image_url, width, height, source, expires_at)
+            VALUES (?, ?, ?, ?, ?, 1024, 1024, 'generated', ?)
+          `).run(imageId, userId, prompt, 'huggingface-flux', result.url, expiresAt);
+        } catch {
+          // Non-fatal: gallery save failure doesn't break image delivery
+        }
+
         return {
           tool,
           success: true,
           message: `Image generated successfully`,
           imageUrl: result.url,
-          data: { url: result.url, prompt },
+          imageId,
+          data: { url: result.url, prompt, imageId },
           receipt: RECEIPT_TEMPLATES.image(prompt),
         };
       }

@@ -514,11 +514,11 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     // ---- Image generation fast-path: bypass LLM for image generation requests ----
     if (!forceRoute) {
-      const imageGenPattern = /\b(?:generate|create|make|draw|render|produce)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|drawing)\b/i;
+      const imageGenPattern = /\b(?:generate|create|make|draw|render|produce|show me|i want|give me|can you make|can you draw|paint)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|drawing|painting|portrait|wallpaper|sketch)\b/i;
       if (imageGenPattern.test(message)) {
-        const promptMatch = message.match(/\b(?:generate|create|make|draw|render|produce)\b.{0,10}\b(?:image|picture|photo|illustration|artwork|art|drawing)\b(?:\s+of\s+|\s+showing\s+|\s+with\s+|\s+)?([\s\S]+)/i);
+        const promptMatch = message.match(/\b(?:generate|create|make|draw|render|produce|show me|i want|give me|can you make|can you draw|paint)\b.{0,20}\b(?:image|picture|photo|illustration|artwork|art|drawing|painting|portrait|wallpaper|sketch)\b(?:\s+of\s+|\s+showing\s+|\s+with\s+|\s+)?([\s\S]+)/i);
         const rawPrompt = promptMatch?.[1]?.trim() || message;
-        const imagePrompt = rawPrompt.replace(/^(?:a\s+|an\s+|the\s+)/i, '').trim() || message;
+        const imagePrompt = rawPrompt.replace(/^(?:a\s+|an\s+|the\s+|me\s+)/i, '').trim() || message;
         try {
           const imgFastResult = await executeAction(userId, { tool: 'generate_image', params: { prompt: imagePrompt } });
           if (imgFastResult.success && imgFastResult.imageUrl) {
