@@ -1972,63 +1972,68 @@ agentRouter.get('/rate-limit-status', requireAuth, (req: AuthRequest, res) => {
 
 // ── Phase 109: Conversation Quality Rating ─────────────────────────────────
 
-agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
+agentRouter.get('/conversations/ratings', requireAuth, (req: AuthRequest, res): void => {
   const userId = req.userId!;
-  const page = Math.max(1, parseInt((req.query.page as string) ?? '1'));
-  const limit = Math.min(50, Math.max(1, parseInt((req.query.limit as string) ?? '20')));
+  const page = Math.max(1, parseInt((req.query.page as string) ?? '1', 10) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt((req.query.limit as string) ?? '20', 10) || 20));
   const offset = (page - 1) * limit;
 
-  const rows = db.prepare(`
-    SELECT
-      a.id,
-      a.content AS assistant_content,
-      a.provider,
-      a.model,
-      a.quality_score,
-      a.created_at,
-      u.content AS user_content
-    FROM conversation_log a
-    LEFT JOIN conversation_log u ON (
-      u.user_id = a.user_id
-      AND u.role = 'user'
-      AND u.created_at = (
-        SELECT MAX(x.created_at) FROM conversation_log x
-        WHERE x.user_id = a.user_id AND x.role = 'user' AND x.created_at <= a.created_at
+  try {
+    const rows = db.prepare(`
+      SELECT
+        a.id,
+        a.content AS assistant_content,
+        a.provider,
+        a.model,
+        a.quality_score,
+        a.created_at,
+        u.content AS user_content
+      FROM conversation_log a
+      LEFT JOIN conversation_log u ON (
+        u.user_id = a.user_id
+        AND u.role = 'user'
+        AND u.created_at = (
+          SELECT MAX(x.created_at) FROM conversation_log x
+          WHERE x.user_id = a.user_id AND x.role = 'user' AND x.created_at <= a.created_at
+        )
       )
-    )
-    WHERE a.user_id = ? AND a.role = 'assistant'
-    ORDER BY a.created_at DESC
-    LIMIT ? OFFSET ?
-  `).all(userId, limit, offset) as Array<{
-    id: string;
-    assistant_content: string;
-    provider: string;
-    model: string;
-    quality_score: number | null;
-    created_at: string;
-    user_content: string | null;
-  }>;
+      WHERE a.user_id = ? AND a.role = 'assistant'
+      ORDER BY a.created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(userId, limit, offset) as Array<{
+      id: string;
+      assistant_content: string;
+      provider: string;
+      model: string;
+      quality_score: number | null;
+      created_at: string;
+      user_content: string | null;
+    }>;
 
-  const total = (db.prepare(`SELECT COUNT(*) as count FROM conversation_log WHERE user_id = ? AND role = 'assistant'`).get(userId) as { count: number }).count;
+    const total = (db.prepare(`SELECT COUNT(*) as count FROM conversation_log WHERE user_id = ? AND role = 'assistant'`).get(userId) as { count: number }).count;
 
-  res.json({
-    conversations: rows.map(r => ({
-      id: r.id,
-      userMessage: r.user_content ?? '',
-      assistantMessage: r.assistant_content,
-      provider: r.provider,
-      model: r.model,
-      qualityScore: r.quality_score,
-      createdAt: r.created_at,
-    })),
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
-  });
+    res.json({
+      conversations: rows.map(r => ({
+        id: r.id,
+        userMessage: r.user_content ?? '',
+        assistantMessage: r.assistant_content,
+        provider: r.provider,
+        model: r.model,
+        qualityScore: r.quality_score,
+        createdAt: r.created_at,
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (err) {
+    logger.error({ err, userId }, 'Failed to fetch conversations for rating');
+    res.status(500).json({ error: 'Failed to fetch conversations' });
+  }
 });
 
-agentRouter.post('/conversations/:id/score', requireAuth, (req: AuthRequest, res): void => {
+agentRouter.post('/conversations/:id/rating', requireAuth, (req: AuthRequest, res): void => {
   const userId = req.userId!;
   const { id } = req.params;
   const { score } = req.body as { score?: unknown };
@@ -2038,12 +2043,17 @@ agentRouter.post('/conversations/:id/score', requireAuth, (req: AuthRequest, res
     return;
   }
 
-  const row = db.prepare('SELECT id FROM conversation_log WHERE id = ? AND user_id = ? AND role = ?').get(id, userId, 'assistant') as { id: string } | undefined;
-  if (!row) {
-    res.status(404).json({ error: 'Conversation not found' });
-    return;
-  }
+  try {
+    const row = db.prepare('SELECT id FROM conversation_log WHERE id = ? AND user_id = ? AND role = ?').get(id, userId, 'assistant') as { id: string } | undefined;
+    if (!row) {
+      res.status(404).json({ error: 'Conversation not found' });
+      return;
+    }
 
-  db.prepare('UPDATE conversation_log SET quality_score = ? WHERE id = ? AND user_id = ?').run(score, id, userId);
-  res.json({ success: true, id, score });
+    db.prepare('UPDATE conversation_log SET quality_score = ? WHERE id = ? AND user_id = ?').run(score, id, userId);
+    res.json({ success: true, id, score });
+  } catch (err) {
+    logger.error({ err, userId, id }, 'Failed to update conversation rating');
+    res.status(500).json({ error: 'Failed to update rating' });
+  }
 });
