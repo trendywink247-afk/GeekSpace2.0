@@ -33,7 +33,7 @@ const PLAN_AGENT_SLOTS: Record<string, number> = {
 // ---- Types ----
 
 export const ALLOWED_TASK_TYPES = [
-  'create_reminder', 'telegram_message', 'call_api', 'n8n_webhook', 'portfolio_deploy', 'social_media_post',
+  'create_reminder', 'telegram_message', 'call_api', 'n8n_webhook', 'portfolio_deploy', 'social_media_post', 'generate_code',
 ] as const;
 export type TaskType = typeof ALLOWED_TASK_TYPES[number];
 
@@ -874,6 +874,7 @@ ALLOWED task_type values (ONLY these):
 - call_api: config needs { "url": "string", "method": "GET|POST|PUT|DELETE", "headers": {}, "body": "string" }
 - n8n_webhook: config needs { "url": "string", "body": "string" }
 - portfolio_deploy: config needs {} (no params needed)
+- generate_code: config needs { "title": "string", "prompt": "string", "existingArtifactId": "string (optional, to update existing site)" }
 
 Each task can target a specific agent slot (1-6). Default is 1.
 
@@ -1221,6 +1222,60 @@ async function executeTask(task: PicoTask): Promise<void> {
       case 'social_media_post': {
         const { executeSocialMediaPostTask } = await import('./social-media.js');
         output = await executeSocialMediaPostTask(task.user_id, taskConfig);
+        break;
+      }
+
+      case 'generate_code': {
+        // Fleet agent builds or updates a website using the LLM + action-executor pipeline.
+        // config: { prompt: string, title?: string, existingArtifactId?: string }
+        const { executeAction } = await import('./action-executor.js');
+        const { parseActions } = await import('./action-parser.js');
+        const { routeChat } = await import('./llm.js');
+        const buildPrompt = String(taskConfig.prompt || task.description);
+        const existingId = taskConfig.existingArtifactId as string | undefined;
+
+        // If updating an existing artifact, fetch its current code for context
+        let contextBlock = '';
+        if (existingId) {
+          const existing = db.prepare('SELECT title, html, css FROM generated_artifacts WHERE id = ? AND user_id = ?')
+            .get(existingId, task.user_id) as { title: string; html: string; css: string } | undefined;
+          if (existing) {
+            contextBlock = `\nExisting project "${existing.title}". Update it based on the request. Current HTML (first 500 chars): ${existing.html.slice(0, 500)}`;
+          }
+        }
+
+        const systemPrompt = `You are a website builder. Generate a complete, visually impressive website using the generate_code tool.
+Always respond with a generate_code action block containing valid HTML, CSS, and JS.
+<<<ACTION
+{"tool": "generate_code", "params": {"title": "<title>", "html": "<html>", "css": "<css>", "js": "<js>"${existingId ? `, "existingArtifactId": "${existingId}"` : ''}}}
+ACTION>>>`;
+
+        const llmResult = await routeChat(
+          [{ role: 'user', content: buildPrompt + contextBlock }],
+          { userId: task.user_id, systemPrompt }
+        );
+        const { actions: parsedActions } = parseActions(llmResult.reply);
+        const codeAction = parsedActions.find(a => a.tool === 'generate_code');
+        if (!codeAction) throw new Error('LLM did not generate a website');
+
+        codeAction.params.baseUrl = config.apiUrl;
+        if (existingId) codeAction.params.existingArtifactId = existingId;
+
+        const result = await executeAction(task.user_id, codeAction);
+        if (!result.success) throw new Error(result.message);
+
+        // Notify user via Telegram if linked
+        const hasChannel = db.prepare(
+          "SELECT 1 FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+        ).get(task.user_id);
+        if (hasChannel && result.previewUrl) {
+          const { sendTelegramMessage } = await import('./telegram.js');
+          const notifyRow = db.prepare("SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram'").get(task.user_id) as { external_id: string } | undefined;
+          if (notifyRow) {
+            await sendTelegramMessage(notifyRow.external_id, `Your website is ready!\n\n${existingId ? 'Updated' : 'Created'}: ${String(result.data?.title ?? 'New Site')}\nPreview: ${result.previewUrl}`);
+          }
+        }
+        output = `Website ${existingId ? 'updated' : 'created'}: ${result.data?.title ?? 'site'}. Preview: ${result.previewUrl ?? 'saved to projects'}`;
         break;
       }
 

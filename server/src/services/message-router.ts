@@ -424,12 +424,21 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   const { text: cleanReply, actions: parsedActions } = parseActions(replyText);
   const actionResults: ActionResult[] = [];
 
+  // Detect edit intent for generate_code: if user says update/change/edit/fix/modify their website,
+  // look up their most recent artifact and inject existingArtifactId so the action updates it in-place.
+  const editWebsiteIntent = /\b(?:update|change|edit|modify|fix|improve|redesign|redo|refresh|revamp|add to|remove from|make it|adjust|tweak)\b/i;
+
   for (const action of parsedActions) {
     // Inject baseUrl for generate_code actions to create preview links
     if (action.tool === 'generate_code') {
       action.params.baseUrl = config.apiUrl;
-      // Self-destruct enabled by default (24h)
-      action.params.selfDestruct = true;
+      // If user is editing (no explicit new site request), inject their latest artifact ID
+      if (!action.params.existingArtifactId && editWebsiteIntent.test(msg.text)) {
+        const latest = db.prepare(
+          `SELECT id FROM generated_artifacts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1`
+        ).get(userId) as { id: string } | undefined;
+        if (latest) action.params.existingArtifactId = latest.id;
+      }
     }
     const actionResult = await executeAction(userId, action);
     actionResults.push(actionResult);
