@@ -512,6 +512,35 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       }
     }
 
+    // ---- Image generation fast-path: bypass LLM for image generation requests ----
+    if (!forceRoute) {
+      const imageGenPattern = /\b(?:generate|create|make|draw|render|produce)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|drawing)\b/i;
+      if (imageGenPattern.test(message)) {
+        const promptMatch = message.match(/\b(?:generate|create|make|draw|render|produce)\b.{0,10}\b(?:image|picture|photo|illustration|artwork|art|drawing)\b(?:\s+of\s+|\s+showing\s+|\s+with\s+|\s+)?([\s\S]+)/i);
+        const rawPrompt = promptMatch?.[1]?.trim() || message;
+        const imagePrompt = rawPrompt.replace(/^(?:a\s+|an\s+|the\s+)/i, '').trim() || message;
+        try {
+          const imgFastResult = await executeAction(userId, { tool: 'generate_image', params: { prompt: imagePrompt } });
+          if (imgFastResult.success && imgFastResult.imageUrl) {
+            const replyText = `Here's your image!`;
+            logConversation(userId, 'assistant', replyText, 'builtin', 'image-generator');
+            res.json({
+              text: replyText,
+              reply: replyText,
+              route: 'image-generator',
+              provider: 'builtin',
+              latencyMs: 0,
+              creditsUsed: 0,
+              actionResults: [{ tool: 'generate_image', success: true, imageUrl: imgFastResult.imageUrl, prompt: imagePrompt }],
+            });
+            return;
+          }
+        } catch (e) {
+          logger.warn({ err: (e as Error).message }, 'Image generation fast-path failed, falling through to LLM');
+        }
+      }
+    }
+
         // ---- Auto-route through bridge when enabled ----
     if (!forceRoute && config.bridgeEnabled && config.picoClawEnabled) {
       forceRoute = 'bridge';

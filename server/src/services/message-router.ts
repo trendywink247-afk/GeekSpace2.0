@@ -332,6 +332,40 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     }
   }
 
+  // 5ab. Image generation fast-path — detect image creation intent and execute directly
+  {
+    const imagePattern = /\b(?:generate|create|make|draw|render|produce)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|drawing)\b/i;
+    if (imagePattern.test(msg.text)) {
+      try {
+        const { executeAction: execImg } = await import('./action-executor.js');
+        const promptMatch = msg.text.match(/\b(?:generate|create|make|draw|render|produce)\b.{0,10}\b(?:image|picture|photo|illustration|artwork|art|drawing)\b(?:\s+of\s+|\s+showing\s+|\s+with\s+|\s+)?([\s\S]+)/i);
+        const rawPrompt = promptMatch?.[1]?.trim() || msg.text;
+        const prompt = rawPrompt.replace(/^(?:a\s+|an\s+|the\s+)/i, '').trim() || msg.text;
+
+        const imgResult = await execImg(userId, { tool: 'generate_image', params: { prompt } });
+
+        if (imgResult.success && imgResult.imageUrl) {
+          const absoluteUrl = imgResult.imageUrl.startsWith('http')
+            ? imgResult.imageUrl
+            : `${config.apiUrl}${imgResult.imageUrl}`;
+
+          const reply = `Here's your image!`;
+          logConversation(userId, 'user', msg.text, requestId);
+          logConversation(userId, 'assistant', reply, requestId, 'builtin', 'image-generator');
+
+          await sendTelegramMessage(msg.externalId, reply).catch(() => {});
+          await sendTelegramPhoto(msg.externalId, absoluteUrl).catch((e: unknown) =>
+            logger.warn({ err: (e as Error).message }, 'Image fast-path: failed to send photo'),
+          );
+          logger.info({ channel: msg.channel, userId, prompt }, 'Image generation fast-path executed');
+          return;
+        }
+      } catch (e) {
+        logger.warn({ err: (e as Error).message }, 'Image generation fast-path failed, falling through to LLM');
+      }
+    }
+  }
+
   // 5b. Auto-detect task intents (remind, telegram, deploy) — route to Pico Fleet
   // For mixed-intent messages (e.g. "Give me a workout plan and remind me"),
   // queue the tasks but continue to LLM for the content response.
