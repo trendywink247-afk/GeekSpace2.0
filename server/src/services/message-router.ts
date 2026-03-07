@@ -280,7 +280,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       try {
         const text = msg.text.toLowerCase();
         // Extract params from message
-        const nameMatch = msg.text.match(/\bfor\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/);
+        const nameMatch = msg.text.match(/\b(?:for|name is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/) ?? msg.text.match(/\bmy name is\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/i);
         const themeMatch = text.match(/\b(dark|light|purple|blue|gradient)\b/);
         const templateMatch = text.match(/\b(landing|blog|business)\b/);
         const locationMatch = msg.text.match(/\bfrom\s+([A-Z][a-zA-Z\s]{2,20})\b/);
