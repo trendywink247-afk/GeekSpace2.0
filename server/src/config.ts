@@ -66,13 +66,6 @@ export const config = {
   openrouterFreeBaseUrl: optional('OPENROUTER_FREE_BASE_URL', 'https://openrouter.ai/api/v1'),
   openrouterFreeApiKey: process.env.OPENROUTER_FREE_API_KEY || '',
 
-  // Together AI (tier 3 — Llama 3.3 70B Instruct Turbo)
-  togetherApiKey: process.env.TOGETHER_API_KEY || '',
-  togetherModel: optional('TOGETHER_MODEL', 'meta-llama/Llama-3.3-70B-Instruct-Turbo'),
-  togetherBaseUrl: optional('TOGETHER_BASE_URL', 'https://api.together.xyz/v1'),
-  togetherTimeout: optionalInt('TOGETHER_TIMEOUT_MS', 30000),
-  togetherMaxTokens: optionalInt('TOGETHER_MAX_TOKENS', 1024),
-
   // [DEPRECATED] EDITH / OpenClaw — via edith-bridge (WS→HTTP bridge), replaced by direct Moonshot API
   edithGatewayUrl: process.env.EDITH_GATEWAY_URL || '', // [DEPRECATED]
   edithToken: process.env.EDITH_TOKEN || '', // [DEPRECATED]
@@ -81,12 +74,7 @@ export const config = {
   moonshotReasoningModel: optional('MOONSHOT_REASONING_MODEL', 'kimi-k2-thinking'),
   moonshotTimeout: optionalInt('MOONSHOT_TIMEOUT_MS', 120000),
   moonshotMaxTokens: optionalInt('MOONSHOT_MAX_TOKENS', 8192),
-
-  // Ollama Cloud (remote Ollama-compatible instance with Bearer auth — middle tier)
-  ollamaCloudBaseUrl: process.env.OLLAMA_CLOUD_BASE_URL || '',
-  ollamaCloudApiKey: process.env.OLLAMA_CLOUD_API_KEY || '',
-  ollamaCloudModel: optional('OLLAMA_CLOUD_MODEL', 'llama3.1:8b'),
-  ollamaCloudTimeout: optionalInt('OLLAMA_CLOUD_TIMEOUT_MS', 60000),
+  // NOTE P3: Together AI and OllamaCloud removed — no API keys, dead providers
 
   // HuggingFace (image generation fallback — FLUX.1-schnell)
   hfToken: process.env.HF_TOKEN || '',

@@ -39,10 +39,6 @@ describe('91.1 computeCreditCost — flat rate providers', () => {
     expect(computeCreditCost('ollama', 10000, 10000)).toBe(1);
   });
 
-  it('ollama-cloud costs 2 credits (flat)', () => {
-    expect(computeCreditCost('ollama-cloud', 500, 500)).toBe(2);
-  });
-
   it('openrouter-free costs 2 credits regardless of tokens', () => {
     expect(computeCreditCost('openrouter-free', 0, 0)).toBe(2);
     expect(computeCreditCost('openrouter-free', 50000, 50000)).toBe(2);

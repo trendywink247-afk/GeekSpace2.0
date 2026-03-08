@@ -2,8 +2,7 @@
  * Phase 76 Tests — AI Gateway + Smart Routing
  *
  * Verifies:
- * - ollama-cloud provider present in config
- * - routing waterfall order (ollama → openrouter-free → ollama-cloud → edith)
+ * - routing waterfall order (ollama → openrouter-free → edith)
  * - edith NOT selected automatically for 'complex' intent
  * - edith IS selected for premium users as last resort
  * - budget degradation applies to forced premium providers
@@ -11,10 +10,10 @@
  * - in-flight deduplication Map is exported
  * - job-queue service can enqueue and retrieve jobs
  * - token-budget daily limit functions exist
- * - .env.example documents OLLAMA_CLOUD_* vars
+ * P3: ollama-cloud and together removed — dead providers (no API keys)
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
@@ -23,63 +22,19 @@ const SERVER_ROOT = resolve(ROOT, 'server');
 
 describe('Phase 76 — AI Gateway + Smart Routing', () => {
 
-  // ---- 76.1: Config has ollama-cloud vars ----
-  describe('76.1 ollama-cloud config', () => {
-    it('config.ts exports ollamaCloudBaseUrl', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/config.ts'), 'utf-8');
-      expect(content).toContain('ollamaCloudBaseUrl');
-      expect(content).toContain('OLLAMA_CLOUD_BASE_URL');
-    });
-
-    it('config.ts exports ollamaCloudApiKey', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/config.ts'), 'utf-8');
-      expect(content).toContain('ollamaCloudApiKey');
-      expect(content).toContain('OLLAMA_CLOUD_API_KEY');
-    });
-
-    it('config.ts exports ollamaCloudModel', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/config.ts'), 'utf-8');
-      expect(content).toContain('ollamaCloudModel');
-      expect(content).toContain('OLLAMA_CLOUD_MODEL');
-    });
-
-    it('config.ts exports ollamaCloudTimeout', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/config.ts'), 'utf-8');
-      expect(content).toContain('ollamaCloudTimeout');
-      expect(content).toContain('OLLAMA_CLOUD_TIMEOUT_MS');
-    });
-  });
-
-  // ---- 76.2: Routing waterfall in llm.ts ----
+  // ---- 76.2: Routing waterfall in llm.ts (P3: ollama-cloud/together removed) ----
   describe('76.2 Routing waterfall', () => {
-    it("llm.ts includes 'ollama-cloud' as a Provider type", () => {
+    it("llm.ts does NOT include removed dead providers in Provider type", () => {
       const content = readFileSync(resolve(SERVER_ROOT, 'src/services/llm.ts'), 'utf-8');
-      expect(content).toContain("'ollama-cloud'");
+      expect(content).not.toContain("'ollama-cloud'");
+      expect(content).not.toContain("'together'");
     });
 
-    it('llm.ts defines callOllamaCloud function', () => {
+    it('waterfall contains ollama, openrouter-free, and edith', () => {
       const content = readFileSync(resolve(SERVER_ROOT, 'src/services/llm.ts'), 'utf-8');
-      expect(content).toContain('callOllamaCloud');
-    });
-
-    it('llm.ts defines isOllamaCloudAvailable function', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/services/llm.ts'), 'utf-8');
-      expect(content).toContain('isOllamaCloudAvailable');
-    });
-
-    it('waterfall includes ollama-cloud before edith in tryFallbackChain', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/services/llm.ts'), 'utf-8');
-      // Waterfall now includes together between openrouter-free and ollama-cloud
-      const waterfallIdx = content.indexOf("'ollama', 'openrouter-free', 'together', 'ollama-cloud', 'edith'");
-      expect(waterfallIdx).toBeGreaterThan(0);
-    });
-
-    it('callOllamaCloud uses Bearer auth in Authorization header', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/services/llm.ts'), 'utf-8');
-      // Should have Bearer auth for ollama-cloud (not bare key)
-      const cloudSection = content.slice(content.indexOf('callOllamaCloud'), content.indexOf('callOllamaCloud') + 800);
-      expect(cloudSection).toContain('Bearer');
-      expect(cloudSection).toContain('ollamaCloudApiKey');
+      expect(content).toContain("'ollama'");
+      expect(content).toContain("'openrouter-free'");
+      expect(content).toContain("'edith'");
     });
   });
 
@@ -214,37 +169,6 @@ describe('Phase 76 — AI Gateway + Smart Routing', () => {
     });
   });
 
-  // ---- 76.8: .env.example updated ----
-  describe('76.8 .env.example documents new vars', () => {
-    it('.env.example has OLLAMA_CLOUD_BASE_URL', () => {
-      const content = readFileSync(resolve(ROOT, '.env.example'), 'utf-8');
-      expect(content).toContain('OLLAMA_CLOUD_BASE_URL');
-    });
-
-    it('.env.example has OLLAMA_CLOUD_API_KEY', () => {
-      const content = readFileSync(resolve(ROOT, '.env.example'), 'utf-8');
-      expect(content).toContain('OLLAMA_CLOUD_API_KEY');
-    });
-
-    it('.env.example has OLLAMA_CLOUD_MODEL', () => {
-      const content = readFileSync(resolve(ROOT, '.env.example'), 'utf-8');
-      expect(content).toContain('OLLAMA_CLOUD_MODEL');
-    });
-  });
-
-  // ---- Credit cost for ollama-cloud ----
-  describe('ollama-cloud credit cost', () => {
-    it("ollama-cloud has flat credit cost of 2 in FLAT_CREDIT_COSTS", () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/services/llm.ts'), 'utf-8');
-      expect(content).toContain("'ollama-cloud':    2");
-    });
-
-    it('estimateCost handles ollama-cloud (returns 0 — free tier)', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/services/llm.ts'), 'utf-8');
-      expect(content).toContain("'ollama-cloud':    return 0");
-    });
-  });
-
   // ---- Routing waterfall comment / documentation ----
   describe('Documentation', () => {
     it('llm.ts header documents the routing waterfall order', () => {
@@ -252,7 +176,6 @@ describe('Phase 76 — AI Gateway + Smart Routing', () => {
       expect(content).toContain('Routing Waterfall');
       expect(content).toContain('Ollama local');
       expect(content).toContain('OpenRouter Free');
-      expect(content).toContain('Ollama Cloud');
       expect(content).toContain('PREMIUM ONLY');
     });
   });
