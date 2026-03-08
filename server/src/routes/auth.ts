@@ -15,6 +15,10 @@ import { isLoginBlocked, recordFailedLogin, clearLoginAttempts } from '../servic
 
 export const authRouter = Router();
 
+function safeJsonArray(val: unknown): unknown[] {
+  try { return JSON.parse(val as string || '[]') as unknown[]; } catch { return []; }
+}
+
 authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
   const { email, password, username, name, invite_code } = req.body as {
     email: string; password: string; username: string; name?: string; invite_code?: string;
@@ -78,7 +82,7 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
     try {
       db.prepare('INSERT INTO pico_agents (id, user_id, slot, name) VALUES (?, ?, 1, ?)').run(uuid(), id, 'Weebo');
     } catch (e) {
-      console.warn('[signup] pico_agents insert skipped:', (e as Error).message);
+      logger.warn({ err: e }, 'pico_agents insert skipped during signup');
     }
 
     // Create default integrations
@@ -181,7 +185,7 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
       website: user.website,
       role: user.role,
       company: user.company,
-      tags: JSON.parse(user.tags as string || '[]'),
+      tags: safeJsonArray(user.tags),
       theme: { mode: user.theme_mode, accentColor: user.theme_accent },
       plan: user.plan,
       credits: user.credits,
@@ -221,7 +225,7 @@ authRouter.post('/demo', (req, res) => {
       website: user.website,
       role: user.role,
       company: user.company,
-      tags: JSON.parse(user.tags as string || '[]'),
+      tags: safeJsonArray(user.tags),
       theme: { mode: user.theme_mode, accentColor: user.theme_accent },
       plan: user.plan,
       credits: user.credits,
