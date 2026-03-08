@@ -5,7 +5,7 @@ import { getRecentBriefings, createBriefing } from '../services/daily-briefing.j
 export const briefingsRouter = Router();
 
 briefingsRouter.get('/', requireAuth, (req: AuthRequest, res) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 10, 50);
   const briefings = getRecentBriefings(req.userId!, limit);
   res.json(briefings);
 });

@@ -775,7 +775,7 @@ adminRouter.post('/training/:id/score', requireAdminToken, (req: Request, res: R
 adminRouter.get('/training', requireAdminToken, (req: Request, res: Response): void => {
   const minScore = req.query.min_score !== undefined ? Number(req.query.min_score) : null;
   const limitRaw = Number(req.query.limit);
-  const limit = req.query.limit !== undefined && !isNaN(limitRaw) ? Math.min(limitRaw, 10000) : 1000;
+  const limit = req.query.limit !== undefined && !isNaN(limitRaw) ? Math.max(1, Math.min(limitRaw, 10000)) : 1000;
 
   type TrainingRow = {
     id: string;
