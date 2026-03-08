@@ -106,7 +106,7 @@ export function ConnectPage() {
                 <p className="text-sm text-[#6B7280] mb-6">
                   They'll be able to collaborate with you through Agentin Chat.
                 </p>
-                <Link to="/login">
+                <Link to="/login?signup=1">
                   <Button className="bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold">
                     Sign up to Agentin Chat
                   </Button>

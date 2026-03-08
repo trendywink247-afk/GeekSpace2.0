@@ -74,6 +74,10 @@ export function LoginPage() {
       setPassword('pass');
       setUsername('alex');
     }
+    // Pre-select signup mode when ?signup=1 (e.g. arriving from an invite link)
+    if (searchParams.get('signup') === '1') {
+      setIsSignup(true);
+    }
     // Show OAuth cancellation / failure errors passed in query string
     const oauthError = searchParams.get('error');
     if (oauthError) {
