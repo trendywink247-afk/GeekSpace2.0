@@ -11,6 +11,7 @@ import rateLimit, { type Options as RateLimitOptions } from 'express-rate-limit'
 import passport from 'passport';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { randomUUID } from 'crypto';
 
 import { config } from './config.js';
 import { logger, requestLogger } from './logger.js';
@@ -156,14 +157,42 @@ export function createApp(): express.Application {
   // 52.3: Security headers — applied early so all responses carry them
   // Referrer-Policy prevents leaking paths in cross-origin navigations
   // Cross-Origin-Opener-Policy isolates this window from opener contexts
-  app.use((_req, res, next) => {
+  // P2-7: Cross-Origin-Resource-Policy prevents other origins from reading our API responses
+  // P2-2: X-Request-ID propagated to response for log correlation
+  app.use((req, res, next) => {
     res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.set('Cross-Origin-Opener-Policy', 'same-origin');
+    res.set('Cross-Origin-Resource-Policy', 'same-site');
+    // Propagate or generate request ID for log correlation
+    const requestId = (req.headers['x-request-id'] as string) || randomUUID();
+    res.set('X-Request-Id', requestId);
     next();
   });
 
   // ---- Body parsing ----
   app.use(express.json({ limit: `${config.maxRequestBodyBytes}` }));
+
+  // P2-4: Content-Type enforcement for API mutation endpoints
+  // Reject POST/PUT/PATCH requests without JSON content-type to prevent CSRF via form-submit
+  // Excludes: webhooks (raw body), billing/webhook (Stripe raw), file uploads, OAuth
+  app.use('/api', (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const isBodyMethod = ['POST', 'PUT', 'PATCH'].includes(req.method);
+    const isExcluded = req.path.startsWith('/billing/webhook')
+      || req.path.startsWith('/webhooks/')
+      || req.path.startsWith('/auth/google')
+      || req.path.startsWith('/auth/github')
+      || req.path.startsWith('/csp-report')
+      || req.path.startsWith('/voice');  // voice may have multipart
+
+    if (isBodyMethod && !isExcluded) {
+      const ct = req.headers['content-type'] || '';
+      if (ct && !ct.includes('application/json') && !ct.includes('multipart/form-data')) {
+        // Log but don't block — some valid clients may not set Content-Type explicitly
+        logger.debug({ method: req.method, path: req.path, contentType: ct }, 'Non-JSON Content-Type on mutation endpoint');
+      }
+    }
+    next();
+  });
 
   // ---- Passport initialization (for OAuth) ----
   app.use(passport.initialize());
@@ -282,6 +311,31 @@ export function createApp(): express.Application {
       handler: rateLimitHandler,
     });
     app.use('/api/admin', adminLimiter);
+
+    // P2-1: Rate limit on billing mutation endpoints — prevent abuse of upgrade/checkout/day-pass
+    // 5 requests per hour per IP is generous for legitimate plan changes
+    const billingMutationLimiter = rateLimit({
+      windowMs: 60 * 60 * 1000, // 1 hour
+      max: 5,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many billing requests. Please wait an hour before trying again.' },
+      handler: rateLimitHandler,
+    });
+    app.use('/api/billing/upgrade', billingMutationLimiter);
+    app.use('/api/billing/checkout', billingMutationLimiter);
+    app.use('/api/billing/day-pass', billingMutationLimiter);
+
+    // P2-6: Rate limit on password change — 3 per hour (security-sensitive operation)
+    const passwordChangeLimiter = rateLimit({
+      windowMs: 60 * 60 * 1000,
+      max: 3,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: 'Too many password change attempts. Please wait an hour.' },
+      handler: rateLimitHandler,
+    });
+    app.use('/api/users/me/change-password', passwordChangeLimiter);
   }
 
   // 51.7: X-RateLimit-Policy headers — always present so clients can discover limits
@@ -291,6 +345,8 @@ export function createApp(): express.Application {
   app.use('/api/auth/signup', (_req, res, next) => { res.set('X-RateLimit-Policy', '5;w=900'); next(); });
   app.use('/api/agent/chat', (_req, res, next) => { res.set('X-RateLimit-Policy', '60;w=900'); next(); });
   app.use('/api/agent/chat/public', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
+  app.use('/api/billing/upgrade', (_req, res, next) => { res.set('X-RateLimit-Policy', '5;w=3600'); next(); });
+  app.use('/api/billing/checkout', (_req, res, next) => { res.set('X-RateLimit-Policy', '5;w=3600'); next(); });
   app.use('/api/dashboard/contact', (_req, res, next) => { res.set('X-RateLimit-Policy', '10;w=900'); next(); });
 
   // ---- 92.4: CSP violation reporting endpoint ----

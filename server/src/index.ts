@@ -49,6 +49,27 @@ function shutdown(signal: string, httpServer: import('http').Server) {
   });
 }
 
+// P2-3: Startup security configuration audit — log which critical keys are present/missing
+// This runs once at boot so operators can spot misconfigured environments immediately
+const securityAudit = {
+  jwtSecret: !!process.env.JWT_SECRET,
+  encryptionKey: !!process.env.ENCRYPTION_KEY,
+  adminToken: !!process.env.ADMIN_TOKEN,
+  stripeEnabled: !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET),
+  tavilySearch: !!process.env.TAVILY_API_KEY,
+  huggingFace: !!process.env.HF_TOKEN,
+  openrouter: !!process.env.OPENROUTER_API_KEY,
+  telegram: !!process.env.TELEGRAM_BOT_TOKEN,
+};
+const missingCritical = Object.entries(securityAudit)
+  .filter(([k, v]) => !v && ['jwtSecret', 'encryptionKey'].includes(k))
+  .map(([k]) => k);
+if (missingCritical.length > 0) {
+  logger.error({ missingKeys: missingCritical }, 'SECURITY: Critical environment variables missing — server may not work correctly');
+} else {
+  logger.info({ securityAudit }, 'Security configuration audit');
+}
+
 // ---- Start server ----
 const httpServer = app.listen(config.port, () => {
   logger.info({
