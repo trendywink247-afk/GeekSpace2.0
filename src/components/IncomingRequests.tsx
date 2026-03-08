@@ -48,8 +48,8 @@ export function IncomingRequests() {
         const data = await response.json();
         setRequests(data.requests);
       }
-    } catch (err) {
-      console.error('Failed to load requests:', err);
+    } catch {
+      // silently fail — UI shows empty state
     } finally {
       setLoading(false);
     }
