@@ -394,7 +394,7 @@ artifactsRouter.post('/:id/export/netlify', requireAuth, async (req: AuthRequest
     res.json({ success: true, url: result.url, message: `Deployed to Netlify: ${result.url}` });
   } catch (err) {
     logger.error({ err, artifactId: req.params.id }, 'Netlify deploy failed');
-    res.status(500).json({ error: 'Deployment failed', details: err instanceof Error ? err.message : 'Unknown error' });
+    res.status(500).json({ error: 'Deployment failed' });
   }
 });
 
@@ -436,7 +436,7 @@ artifactsRouter.post('/:id/export/vercel', requireAuth, async (req: AuthRequest,
     res.json({ success: true, url: result.url, message: `Deployed to Vercel: ${result.url}` });
   } catch (err) {
     logger.error({ err, artifactId: req.params.id }, 'Vercel deploy failed');
-    res.status(500).json({ error: 'Deployment failed', details: err instanceof Error ? err.message : 'Unknown error' });
+    res.status(500).json({ error: 'Deployment failed' });
   }
 });
 

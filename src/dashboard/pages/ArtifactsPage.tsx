@@ -33,8 +33,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
     try {
       const res = await artifactService.list();
       setArtifacts(res.data.artifacts);
-    } catch (err) {
-      console.error('Failed to load artifacts:', err);
+    } catch {
+      // error silently — empty state shown to user
     } finally {
       setLoading(false);
     }
@@ -60,8 +60,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
       setArtifacts(prev => prev.filter(a => a.id !== id));
       setShowDeleteConfirm(false);
       setSelectedArtifact(null);
-    } catch (err) {
-      console.error('Failed to delete:', err);
+    } catch {
+      // deletion failure — artifact remains visible
     }
   };
 
@@ -84,8 +84,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         css: res.data.css || '',
         js: res.data.js || '',
       });
-    } catch (err) {
-      console.error('Failed to load artifact code:', err);
+    } catch {
+      // code load failure — modal shows pre-populated values
     }
   };
 
@@ -95,8 +95,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
       await artifactService.update(selectedArtifact.id, editForm);
       setShowEditModal(false);
       loadArtifacts();
-    } catch (err) {
-      console.error('Failed to update:', err);
+    } catch {
+      // save failure — modal stays open
     }
   };
 
@@ -119,8 +119,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
       const res = await artifactService.getDomain(selectedArtifact.id);
       setDomainInfo(res.data);
       setDomainInput('');
-    } catch (err) {
-      console.error('Failed to set domain:', err);
+    } catch {
+      // domain save failure — modal stays open
     }
   };
 
@@ -134,8 +134,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
       a.download = `${artifact.title.replace(/\s+/g, '_')}.zip`;
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Export failed:', err);
+    } catch {
+      // export failure — user sees no download
     }
   };
 
