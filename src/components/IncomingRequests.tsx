@@ -31,6 +31,8 @@ export function IncomingRequests() {
   const [requests, setRequests] = useState<ContactRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [declineConfirmId, setDeclineConfirmId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     loadRequests();
@@ -67,18 +69,18 @@ export function IncomingRequests() {
         navigate(`/dashboard/agent?conversation=${data.conversationId}`);
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to accept request');
+        setActionError(error.error || 'Failed to accept request');
       }
-    } catch (err) {
-      alert('Something went wrong');
+    } catch {
+      setActionError('Something went wrong');
     } finally {
       setProcessing(null);
     }
   };
 
   const handleDecline = async (requestId: string) => {
-    if (!confirm('Are you sure you want to decline this request?')) return;
-
+    if (declineConfirmId !== requestId) { setDeclineConfirmId(requestId); return; }
+    setDeclineConfirmId(null);
     setProcessing(requestId);
     try {
       const response = await fetch(`/api/contact/${requestId}/decline`, {
@@ -87,14 +89,13 @@ export function IncomingRequests() {
       });
 
       if (response.ok) {
-        // Remove from list
         setRequests(requests.filter(r => r.id !== requestId));
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to decline request');
+        setActionError(error.error || 'Failed to decline request');
       }
-    } catch (err) {
-      alert('Something went wrong');
+    } catch {
+      setActionError('Something went wrong');
     } finally {
       setProcessing(null);
     }
@@ -130,6 +131,13 @@ export function IncomingRequests() {
           Refresh
         </Button>
       </div>
+
+      {actionError && (
+        <div className="p-3 rounded-lg bg-[#FF3366]/10 border border-[#FF3366]/30 text-sm text-[#FF3366] flex items-center justify-between">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError(null)} className="ml-2 text-[#FF3366]/70 hover:text-[#FF3366]"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
 
       {requests.map((request) => (
         <Card key={request.id} className="glass-card-v2 border-[#00F0FF]/20">
@@ -197,10 +205,10 @@ export function IncomingRequests() {
                     variant="outline"
                     onClick={() => handleDecline(request.id)}
                     disabled={processing === request.id}
-                    className="flex-1 border-[#FF3366]/30 text-[#FF3366] hover:bg-[#FF3366]/10"
+                    className={`flex-1 text-[#FF3366] hover:bg-[#FF3366]/10 ${declineConfirmId === request.id ? 'border-[#FF3366]/60 bg-[#FF3366]/10' : 'border-[#FF3366]/30'}`}
                   >
                     <X className="w-4 h-4 mr-1.5" />
-                    Decline
+                    {declineConfirmId === request.id ? 'Confirm?' : 'Decline'}
                   </Button>
                 </div>
               </div>

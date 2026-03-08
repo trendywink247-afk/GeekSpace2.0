@@ -214,6 +214,7 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
   const [expanded, setExpanded] = useState(false);
   const [running, setRunning] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [input, setInput] = useState("");
   const [lastRun, setLastRun] = useState<WorkflowRun | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -236,7 +237,8 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
   };
 
   const handleDelete = async () => {
-    if (!confirm("Delete this workflow?")) return;
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setConfirmDelete(false);
     setDeleting(true);
     try {
       await api.delete("/workflows/" + workflow.id);
@@ -267,8 +269,16 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExpanded(!expanded)}>
               {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400" onClick={handleDelete} disabled={deleting}>
+            <Button
+              variant="ghost"
+              size={confirmDelete ? "sm" : "icon"}
+              className={`h-7 text-red-400 ${confirmDelete ? 'px-2 border border-red-400/40 bg-red-400/10' : 'w-7'}`}
+              onClick={handleDelete}
+              disabled={deleting}
+              title={confirmDelete ? 'Click again to confirm delete' : 'Delete workflow'}
+            >
               <Trash2 className="h-3.5 w-3.5" />
+              {confirmDelete && <span className="text-xs ml-1">Confirm?</span>}
             </Button>
           </div>
         </div>
