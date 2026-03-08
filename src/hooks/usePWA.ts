@@ -36,7 +36,6 @@ export function usePWA() {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
-          console.log('Service Worker registered:', registration.scope);
           setState((prev) => ({ ...prev, serviceWorker: registration }));
         })
         .catch((err) => {
@@ -96,11 +95,9 @@ export function usePWA() {
     const result = await installPrompt.userChoice;
 
     if (result.outcome === 'accepted') {
-      console.log('PWA installation accepted');
       setState((prev) => ({ ...prev, isInstalled: true, canInstall: false }));
       return true;
     } else {
-      console.log('PWA installation dismissed');
       return false;
     }
   }, [installPrompt]);
@@ -143,7 +140,6 @@ export function usePWA() {
         body: JSON.stringify(subscription),
       });
 
-      console.log('Push subscription successful');
       return subscription;
     } catch (err) {
       console.error('Failed to subscribe to push:', err);
@@ -197,7 +193,6 @@ export function usePWA() {
         await registration.sync?.register('sync-reminders');
         // @ts-expect-error - Background Sync API not fully typed
         await registration.sync?.register('sync-messages');
-        console.log('Background sync registered');
       } catch (err) {
         console.error('Background sync failed:', err);
       }

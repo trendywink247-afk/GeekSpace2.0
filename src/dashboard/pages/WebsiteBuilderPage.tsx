@@ -108,7 +108,7 @@ export function WebsiteBuilderPage() {
       const res = await artifactService.list();
       setProjects(res.data.artifacts);
     } catch {
-      console.error('Failed to load projects');
+      // load failure — empty project list shown
     } finally {
       setProjectsLoading(false);
     }
@@ -137,7 +137,7 @@ export function WebsiteBuilderPage() {
         return prev;
       });
     } catch {
-      console.error('Failed to load fleet data');
+      // load failure — empty fleet shown
     } finally {
       setFleetLoading(false);
     }

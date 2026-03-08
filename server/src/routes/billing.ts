@@ -169,9 +169,8 @@ billingRouter.post('/checkout', requireAuth, async (req: AuthRequest, res) => {
   try {
     const url = await createCheckoutSession(req.userId!, plan);
     res.json({ url });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Checkout failed';
-    res.status(500).json({ error: msg });
+  } catch {
+    res.status(500).json({ error: 'Checkout failed' });
   }
 });
 
@@ -188,9 +187,8 @@ billingRouter.post(
     try {
       await handleWebhook(req.body as Buffer, sig);
       res.json({ received: true });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Webhook processing failed';
-      res.status(400).json({ error: msg });
+    } catch {
+      res.status(400).json({ error: 'Webhook processing failed' });
     }
   },
 );

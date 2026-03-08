@@ -53,8 +53,8 @@ export function MediaGalleryPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (err) {
-      console.error('Download failed:', err);
+    } catch {
+      // download failure — user sees no download
     }
   };
 

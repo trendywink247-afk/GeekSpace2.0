@@ -144,8 +144,7 @@ picoRouter.post('/tasks/plan', requireAuth, validateBody(picoTaskPlanSchema), as
       });
       return;
     }
-    const msg = err instanceof Error ? err.message : 'Failed to plan tasks';
-    res.status(500).json({ error: msg });
+    res.status(500).json({ error: 'Task planning failed' });
   }
 });
 
@@ -179,8 +178,7 @@ picoRouter.post('/tasks/plan-premium', requireAuth, validateBody(picoTaskPlanSch
       credits_remaining: updatedSub?.credits_remaining ?? 0,
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Failed to plan tasks with Kimi';
-    res.status(500).json({ error: msg });
+    res.status(500).json({ error: 'Task planning failed' });
   }
 });
 

@@ -22,8 +22,8 @@ recipesRouter.post('/:id/install', requireAuth, async (req: AuthRequest, res) =>
   try {
     installRecipe(req.userId!, req.params.id, req.body.config || {});
     res.json({ ok: true });
-  } catch (err) {
-    res.status(400).json({ error: (err as Error).message });
+  } catch {
+    res.status(400).json({ error: 'Recipe install failed' });
   }
 });
 
@@ -31,7 +31,7 @@ recipesRouter.delete('/:id/uninstall', requireAuth, (req: AuthRequest, res) => {
   try {
     uninstallRecipe(req.userId!, req.params.id);
     res.json({ ok: true });
-  } catch (err) {
-    res.status(400).json({ error: (err as Error).message });
+  } catch {
+    res.status(400).json({ error: 'Recipe uninstall failed' });
   }
 });
