@@ -92,13 +92,12 @@ export function SettingsPage() {
     versionService.get().then(({ data }) => setAppVersion(data.version)).catch(() => {});
     // 38.2: Load real notif preferences from server on mount
     agentService.getConfig().then(({ data }) => {
-      const cfg = data as unknown as Record<string, unknown>;
       setAgentNotifs({
-        notif_reminders: (cfg.notif_reminders as number) ?? 1,
-        notif_escalations: (cfg.notif_escalations as number) ?? 1,
-        notif_agents: (cfg.notif_agents as number) ?? 1,
-        notif_daily_briefing: (cfg.notif_daily_briefing as number) ?? 1,
-        notif_connections: (cfg.notif_connections as number) ?? 1,
+        notif_reminders: data.notif_reminders ?? 1,
+        notif_escalations: data.notif_escalations ?? 1,
+        notif_agents: data.notif_agents ?? 1,
+        notif_daily_briefing: data.notif_daily_briefing ?? 1,
+        notif_connections: data.notif_connections ?? 1,
       });
       // 39.4: preferred free model
       if (cfg.preferred_free_model) setPreferredFreeModel(cfg.preferred_free_model as string);

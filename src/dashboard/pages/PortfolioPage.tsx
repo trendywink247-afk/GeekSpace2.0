@@ -126,7 +126,7 @@ export function PortfolioPage() {
       .then(({ data }) => {
         setHeadline(data.headline || '');
         setAbout(data.about || '');
-        setMetaDescription((data as unknown as Record<string, unknown>).meta_description as string || '');
+        setMetaDescription(data.meta_description || '');
         setAvatar(data.avatar || '');
         setLayout(data.layout || 'classic');
         setSkills(data.skills || []);
@@ -196,7 +196,7 @@ export function PortfolioPage() {
       // Refresh from server response
       setHeadline(data.data.headline || '');
       setAbout(data.data.about || '');
-      setMetaDescription((data.data as unknown as Record<string, unknown>).meta_description as string || '');
+      setMetaDescription(data.data.meta_description || '');
       setAvatar(data.data.avatar || '');
       setLayout(data.data.layout || 'classic');
       setSkills(data.data.skills || []);

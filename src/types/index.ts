@@ -96,6 +96,8 @@ export interface AgentConfig {
   briefing_time?: string; // HH:MM format, e.g. "08:00"
   greeting?: string;      // Custom greeting shown at chat start (max 200 chars)
   preferred_free_model?: string; // 39.4: preferred OpenRouter free model
+  preferred_image_model?: string;
+  preferred_video_model?: string;
   // notification flags (0/1)
   notif_reminders?: number;
   notif_escalations?: number;
@@ -385,6 +387,7 @@ export interface Portfolio {
   view_count?: number;
   // 59.9: SEO meta description (max 160 chars)
   metaDescription?: string;
+  meta_description?: string; // snake_case from API
 }
 
 // ----- Channel Links (Telegram/WhatsApp user mapping) --------
