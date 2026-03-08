@@ -142,7 +142,7 @@ export function VideoGenPage() {
       setVideoCount(res.data.count);
       setMaxVideos(res.data.max);
     } catch {
-      console.error('Failed to load video gallery');
+      // silently fail — UI shows empty gallery
     } finally {
       setGalleryLoading(false);
     }
@@ -154,7 +154,7 @@ export function VideoGenPage() {
       const res = await videoService.getModels();
       setModels(res.data.models);
     } catch {
-      console.error('Failed to load video models');
+      // silently fail — model picker stays hidden
     }
   }, []);
 
@@ -169,7 +169,7 @@ export function VideoGenPage() {
         if (agent) setAssignedAgent(agent);
       }
     } catch {
-      console.error('Failed to load fleet');
+      // silently fail — agent section shows empty state
     } finally {
       setAgentLoading(false);
     }

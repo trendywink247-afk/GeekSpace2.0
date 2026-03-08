@@ -83,7 +83,7 @@ export function ImageGenPage() {
       setImageCount(res.data.count);
       setMaxImages(res.data.max);
     } catch {
-      console.error('Failed to load gallery');
+      // silently fail — UI shows empty gallery
     } finally {
       setGalleryLoading(false);
     }
@@ -95,7 +95,7 @@ export function ImageGenPage() {
       const res = await imageService.getModels();
       setModels(res.data.models);
     } catch {
-      console.error('Failed to load models');
+      // silently fail — model picker stays hidden
     }
   }, []);
 
@@ -111,7 +111,7 @@ export function ImageGenPage() {
         if (agent) setAssignedAgent(agent);
       }
     } catch {
-      console.error('Failed to load fleet');
+      // silently fail — agent section shows empty state
     } finally {
       setAgentLoading(false);
     }

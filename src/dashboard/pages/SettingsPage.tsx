@@ -402,7 +402,7 @@ export function SettingsPage() {
       }
       setHasUnsavedChanges(false);
     } catch (err) {
-      console.error('[settings] save failed:', err);
+      void err; // silently fail — form stays open with current values
     } finally {
       setIsSaving(false);
     }
@@ -414,7 +414,7 @@ export function SettingsPage() {
       await portfolioService.update({ visibility: privacy });
       showSavedToast();
     } catch {
-      console.error('[settings] privacy save failed');
+      // silently fail — privacy state unchanged
     } finally {
       setSavingPrivacy(false);
     }
