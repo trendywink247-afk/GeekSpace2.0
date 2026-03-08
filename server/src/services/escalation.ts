@@ -56,14 +56,16 @@ export async function handleEscalationReply(
     const pendingRaw = await cacheGet(pendingKey);
     if (!pendingRaw) return false;
 
-    const ids: string[] = JSON.parse(pendingRaw);
+    let ids: string[];
+    try { ids = JSON.parse(pendingRaw); } catch { return false; }
     if (!ids.length) return false;
 
     const escalations: Array<{ raw: string; data: EscalationData; idx: number }> = [];
     for (let i = 0; i < ids.length; i++) {
       const escRaw = await cacheGet(`escalation:${ids[i]}`);
       if (!escRaw) continue;
-      const data = JSON.parse(escRaw) as EscalationData;
+      let data: EscalationData;
+      try { data = JSON.parse(escRaw) as EscalationData; } catch { continue; }
       if (data.status !== 'pending') continue;
       escalations.push({ raw: escRaw, data, idx: i });
     }

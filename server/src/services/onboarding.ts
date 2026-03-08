@@ -63,7 +63,7 @@ export function getOrCreateOnboarding(chatId: string): OnboardingSession {
       data: {}
     };
   } else {
-    session.data = JSON.parse(session.data as unknown as string);
+    try { session.data = JSON.parse(session.data as unknown as string); } catch { session.data = {}; }
   }
 
   return session;
