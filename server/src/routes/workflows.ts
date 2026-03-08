@@ -148,8 +148,9 @@ workflowsRouter.post('/:id/run', requireAuth, async (req: AuthRequest, res) => {
     const run = await runUserWorkflow(id, userId, userInput);
     res.json(run);
   } catch (err) {
+    const message = err instanceof Error ? err.message : 'Workflow execution failed';
     logger.error({ err, workflowId: id, userId }, 'Workflow run error');
-    res.status(400).json({ error: 'Workflow execution failed' });
+    res.status(400).json({ error: message });
   }
 });
 
