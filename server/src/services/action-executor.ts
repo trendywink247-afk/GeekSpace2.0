@@ -64,12 +64,16 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         // For edits: load stored template params and merge with LLM overrides
         // so e.g. "change theme to blue" doesn't lose name/profession/etc.
         let storedTemplateParams: Record<string, unknown> = {};
+        let existingHtml: string | undefined;
         if (existingArtifactId && !html) {
-          const existingMeta = db.prepare(
-            'SELECT metadata FROM generated_artifacts WHERE id = ? AND user_id = ?'
-          ).get(existingArtifactId, userId) as { metadata: string } | undefined;
-          if (existingMeta?.metadata) {
-            try { storedTemplateParams = JSON.parse(existingMeta.metadata); } catch { /* ignore */ }
+          const existingArtifact = db.prepare(
+            'SELECT html, metadata FROM generated_artifacts WHERE id = ? AND user_id = ?'
+          ).get(existingArtifactId, userId) as { html: string; metadata: string } | undefined;
+          if (existingArtifact) {
+            existingHtml = existingArtifact.html || undefined;
+            if (existingArtifact.metadata) {
+              try { storedTemplateParams = JSON.parse(existingArtifact.metadata); } catch { /* ignore */ }
+            }
           }
         }
 
@@ -90,8 +94,13 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
               '- Do NOT output markdown, code fences, or any explanation — raw HTML only.',
             ].join('\n');
             try {
+              // When editing an existing custom artifact, pass the existing HTML so the
+              // LLM can modify it rather than generate a new page from scratch.
+              const userContent = existingHtml
+                ? `Here is the existing webpage code:\n\`\`\`html\n${existingHtml.slice(0, 8000)}\n\`\`\`\n\nThe user wants to change: ${userPrompt}\n\nReturn the complete updated HTML with the requested changes applied. Keep all existing functionality intact.`
+                : `Build this website: ${userPrompt}`;
               const llmResult = await routeChat(
-                [{ role: 'user', content: `Build this website: ${userPrompt}` }],
+                [{ role: 'user', content: userContent }],
                 { systemPrompt: sysPrompt, userCredits: 200 },
               );
               // Strip markdown code fences if the model wrapped the output

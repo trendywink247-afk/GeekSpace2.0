@@ -479,17 +479,41 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
         const isEdit = editWebsitePattern.test(message) && !createWebsitePattern.test(message);
         const baseUrl = `${req.protocol}://${req.get('host')}`;
 
-        // Determine whether this is a personal-page request (→ use template system) or a
-        // custom/freeform request (→ pass prompt to LLM for real HTML generation).
-        // Personal signals: explicit template type, name/profession/location, "my portfolio", or an EDIT.
-        // Edits always use the template path because the existing artifact has stored params to merge into.
+        // For edits, look up the target artifact and check whether it was built with the
+        // template system (has a 'template' key in metadata) or with the LLM custom path.
+        // This determines whether to merge template params or to pass the existing HTML to the LLM.
+        let editTargetId: string | undefined = reqExistingArtifactId;
+        let editTargetIsTemplate = false;
+        if (isEdit) {
+          if (!editTargetId) {
+            const latest = db.prepare(
+              'SELECT id, metadata FROM generated_artifacts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
+            ).get(userId) as { id: string; metadata: string } | undefined;
+            if (latest) {
+              editTargetId = latest.id;
+              try { editTargetIsTemplate = !!JSON.parse(latest.metadata || '{}').template; } catch { /* ignore */ }
+            }
+          } else {
+            const existing = db.prepare(
+              'SELECT metadata FROM generated_artifacts WHERE id = ? AND user_id = ?'
+            ).get(editTargetId, userId) as { metadata: string } | undefined;
+            if (existing?.metadata) {
+              try { editTargetIsTemplate = !!JSON.parse(existing.metadata).template; } catch { /* ignore */ }
+            }
+          }
+        }
+
+        // Use template system for: personal-page signals on new creations, or edits to template artifacts.
+        // Use LLM+existing-code path for: custom/freeform edits (e.g. editing a calculator, game, etc.)
         const isPersonalTemplate =
-          isEdit ||
-          !!templateMatch ||
-          !!nameMatch ||
-          !!professionMatch ||
-          !!locationMatch ||
-          /\b(my (portfolio|blog|website|site|page|landing)|portfolio (website|site|page))\b/i.test(message);
+          (isEdit && editTargetIsTemplate) ||
+          (!isEdit && (
+            !!templateMatch ||
+            !!nameMatch ||
+            !!professionMatch ||
+            !!locationMatch ||
+            /\b(my (portfolio|blog|website|site|page|landing)|portfolio (website|site|page))\b/i.test(message)
+          ));
 
         let artifactParams: Record<string, unknown>;
         if (isPersonalTemplate) {
@@ -503,15 +527,13 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
             ...(professionMatch?.[1] ? { profession: professionMatch[1] } : {}),
           };
         } else {
-          // Custom/freeform — LLM generates HTML that actually matches what the user asked for
+          // Custom/freeform — LLM generates or edits HTML matching the user's actual request.
+          // For edits, action-executor loads the existing HTML and passes it to the LLM.
           artifactParams = { prompt: message, baseUrl, selfDestruct: false };
         }
 
-        if (reqExistingArtifactId) {
-          artifactParams.existingArtifactId = reqExistingArtifactId;
-        } else if (isEdit) {
-          const latest = db.prepare('SELECT id FROM generated_artifacts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1').get(userId) as { id: string } | undefined;
-          if (latest) artifactParams.existingArtifactId = latest.id;
+        if (editTargetId) {
+          artifactParams.existingArtifactId = editTargetId;
         }
         const fastResult = await executeAction(userId, { tool: 'generate_code', params: artifactParams });
         if (fastResult.success) {

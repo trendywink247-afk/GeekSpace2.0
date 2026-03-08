@@ -288,19 +288,34 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
         const isEdit = editWebsitePattern.test(msg.text) && !createWebsitePattern.test(msg.text);
 
-        // For edit: load latest artifact + merge; for create: build fresh
         const { executeAction } = await import('./action-executor.js');
         const baseUrl = config.apiUrl || `https://api.geekspace.space`;
 
-        // Personal-page request → template; custom/freeform → LLM generates HTML from prompt.
-        // Edits always use the template path (merge into stored artifact params).
+        // For edits, check the existing artifact's metadata to determine if it's template-based
+        // or custom (LLM-generated). Template artifacts have a 'template' key; custom do not.
+        let editTargetId: string | undefined;
+        let editTargetIsTemplate = false;
+        if (isEdit) {
+          const latest = db.prepare(
+            'SELECT id, metadata FROM generated_artifacts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
+          ).get(userId) as { id: string; metadata: string } | undefined;
+          if (latest) {
+            editTargetId = latest.id;
+            try { editTargetIsTemplate = !!JSON.parse(latest.metadata || '{}').template; } catch { /* ignore */ }
+          }
+        }
+
+        // Use template system for: personal-page signals on new creations, or edits to template artifacts.
+        // Use LLM+existing-code path for: custom/freeform edits (e.g. editing a calculator, game, etc.)
         const isPersonalTemplate =
-          isEdit ||
-          !!templateMatch ||
-          !!nameMatch ||
-          !!professionMatch ||
-          !!locationMatch ||
-          /\b(my (portfolio|blog|website|site|page|landing)|portfolio (website|site|page))\b/i.test(msg.text);
+          (isEdit && editTargetIsTemplate) ||
+          (!isEdit && (
+            !!templateMatch ||
+            !!nameMatch ||
+            !!professionMatch ||
+            !!locationMatch ||
+            /\b(my (portfolio|blog|website|site|page|landing)|portfolio (website|site|page))\b/i.test(msg.text)
+          ));
 
         let artifactParams: Record<string, unknown>;
         if (isPersonalTemplate) {
@@ -314,15 +329,13 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
           if (locationMatch?.[1]) artifactParams.location = locationMatch[1].trim();
           if (professionMatch?.[1]) artifactParams.profession = professionMatch[1];
         } else {
+          // Custom/freeform — LLM generates or edits HTML. For edits, action-executor
+          // loads the existing HTML and passes it to the LLM as context.
           artifactParams = { prompt: msg.text, baseUrl, selfDestruct: false };
         }
 
-        if (isEdit) {
-          const { db } = await import('../db/index.js');
-          const latest = db.prepare(
-            'SELECT id FROM generated_artifacts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
-          ).get(userId) as { id: string } | undefined;
-          if (latest) artifactParams.existingArtifactId = latest.id;
+        if (editTargetId) {
+          artifactParams.existingArtifactId = editTargetId;
         }
 
         const result = await executeAction(userId, { tool: 'generate_code', params: artifactParams });
