@@ -209,6 +209,7 @@ async function executeAgentTask(
   input: string,
   systemPrompt: string,
   userCredits: number,
+  history?: ChatMessage[],
 ): Promise<{
   output: string;
   provider: string;
@@ -223,6 +224,7 @@ async function executeAgentTask(
   const fallbackProvider = tierToProvider(agentDef.fallbackTier) as Provider;
 
   const messages: ChatMessage[] = [
+    ...(history ?? []),
     { role: 'user', content: input },
   ];
 
@@ -322,6 +324,7 @@ export async function bridgeChat(req: BridgeRequest): Promise<BridgeResponse> {
       message,
       agentPrompt,
       userCredits || 0,
+      conversationHistory,
     );
 
     const latencyMs = Date.now() - start;
