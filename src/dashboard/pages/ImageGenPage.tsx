@@ -124,7 +124,7 @@ export function ImageGenPage() {
     // Load model statuses and user preference
     imageService.getModelStatus().then(res => setModelStatuses(res.data.statuses)).catch(() => {});
     agentService.getConfig().then(res => {
-      const pref = (res.data as unknown as Record<string, unknown>).preferred_image_model as string;
+      const pref = res.data.preferred_image_model;
       if (pref) setPreferredImageModel(pref);
     }).catch(() => {});
   }, [loadGallery, loadModels, loadFleet]);

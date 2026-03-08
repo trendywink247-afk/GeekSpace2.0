@@ -276,8 +276,8 @@ export function DashboardApp() {
     agentService.getConfig().then((res) => {
       const color = res.data.accent_color || res.data.accentColor;
       if (color) setAccentColor(color);
-    }).catch((err) => {
-      console.debug('Failed to load accent color:', err);
+    }).catch(() => {
+      // accent color load failure is non-fatal — defaults remain
     });
   }, [setAccentColor]);
 

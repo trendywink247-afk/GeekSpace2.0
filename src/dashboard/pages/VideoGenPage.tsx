@@ -182,7 +182,7 @@ export function VideoGenPage() {
     videoService.getModels().then(res => setVideoModels(res.data.models)).catch(() => {});
     videoService.getModelStatus().then(res => setVideoModelStatuses(res.data.statuses)).catch(() => {});
     agentService.getConfig().then(res => {
-      const pref = (res.data as unknown as Record<string, unknown>).preferred_video_model as string;
+      const pref = res.data.preferred_video_model;
       if (pref) setPreferredVideoModel(pref);
     }).catch(() => {});
   }, [loadGallery, loadModels, loadFleet]);

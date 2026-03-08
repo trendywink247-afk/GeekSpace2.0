@@ -34,7 +34,7 @@ export function validateQuery<T extends z.ZodType>(schema: T) {
       res.status(400).json({ error: 'Invalid query parameters', details: errors });
       return;
     }
-    req.query = result.data as any;
+    req.query = result.data as unknown as typeof req.query;
     next();
   };
 }
