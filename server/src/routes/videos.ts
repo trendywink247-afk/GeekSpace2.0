@@ -453,8 +453,8 @@ videosRouter.get('/director', requireAuth, (req: AuthRequest, res) => {
 
   const jobs = rows.map((r) => ({
     ...r,
-    packet: r.packet ? JSON.parse(r.packet as string) : null,
-    clips: r.clips ? JSON.parse(r.clips as string) : [],
+    packet: r.packet ? (() => { try { return JSON.parse(r.packet as string); } catch { return null; } })() : null,
+    clips: r.clips ? (() => { try { return JSON.parse(r.clips as string); } catch { return []; } })() : [],
   }));
 
   res.json({ jobs });
@@ -481,7 +481,9 @@ videosRouter.post('/director/:jobId/retry-clip/:clipIndex', requireAuth, async (
   if (!row) { res.status(404).json({ error: 'Job not found' }); return; }
   if (!row.packet) { res.status(400).json({ error: 'Job has no director packet — cannot retry clip' }); return; }
 
-  const packet = JSON.parse(row.packet) as DirectorPacket;
+  let packet: DirectorPacket;
+  try { packet = JSON.parse(row.packet) as DirectorPacket; }
+  catch { res.status(500).json({ error: 'Director packet is corrupted' }); return; }
   const shot = packet.shotlist?.[clipIndex];
   if (!shot) { res.status(400).json({ error: `No shot at index ${clipIndex}` }); return; }
 
@@ -506,7 +508,8 @@ videosRouter.post('/director/:jobId/retry-clip/:clipIndex', requireAuth, async (
         height: 720,
       }, clipIndex);
 
-      const clips = JSON.parse(row.clips || '[]') as Array<{ success: boolean; url: string; error?: string }>;
+      let clips: Array<{ success: boolean; url: string; error?: string }> = [];
+      try { clips = JSON.parse(row.clips || '[]') as typeof clips; } catch { clips = []; }
       clips[clipIndex] = result;
 
       db.prepare(
@@ -546,7 +549,8 @@ videosRouter.post('/director/:jobId/stitch', requireAuth, async (req: AuthReques
     return;
   }
   // 60.13: allow partial stitch — accept 'done' or jobs that have at least one successful clip
-  const clipsForCheck = JSON.parse(row.clips || '[]') as Array<{ success?: boolean; url?: string }>;
+  let clipsForCheck: Array<{ success?: boolean; url?: string }> = [];
+  try { clipsForCheck = JSON.parse(row.clips || '[]') as typeof clipsForCheck; } catch { clipsForCheck = []; }
   const hasSuccessfulClips = clipsForCheck.some((c) => c.success && c.url);
   if (row.status === 'running' || row.status === 'pending') {
     res.status(409).json({ error: `Job is ${row.status} — stitch requires completed or partial clips` });
@@ -571,7 +575,8 @@ videosRouter.post('/director/:jobId/stitch', requireAuth, async (req: AuthReques
     }
   }
 
-  const clips = JSON.parse(row.clips || '[]') as Array<{ success?: boolean; url?: string }>;
+  let clips: Array<{ success?: boolean; url?: string }> = [];
+  try { clips = JSON.parse(row.clips || '[]') as typeof clips; } catch { clips = []; }
   const clipUrls = clips.filter((c) => c.success && c.url).map((c) => c.url as string);
 
   if (!clipUrls.length) {
@@ -647,8 +652,8 @@ videosRouter.get('/director/:jobId', requireAuth, (req: AuthRequest, res) => {
 
   res.json({
     ...row,
-    packet: row.packet ? JSON.parse(row.packet as string) : null,
-    clips: row.clips ? JSON.parse(row.clips as string) : [],
+    packet: row.packet ? (() => { try { return JSON.parse(row.packet as string); } catch { return null; } })() : null,
+    clips: row.clips ? (() => { try { return JSON.parse(row.clips as string); } catch { return []; } })() : [],
   });
 });
 

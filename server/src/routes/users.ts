@@ -9,6 +9,10 @@ import { logger } from '../logger.js';
 
 export const usersRouter = Router();
 
+function safeJsonArray(val: unknown): unknown[] {
+  try { return JSON.parse(val as string || '[]') as unknown[]; } catch { return []; }
+}
+
 usersRouter.get('/me', requireAuth, async (req: AuthRequest, res) => {
   // 50.8: Serve from Redis cache when available (60s TTL) — reduces DB load on frequent polls
   const cacheKey = `user:me:${req.userId!}`;
@@ -28,7 +32,7 @@ usersRouter.get('/me', requireAuth, async (req: AuthRequest, res) => {
     id: user.id, email: user.email, username: user.username, name: user.name,
     avatar: user.avatar, bio: user.bio, location: user.location, website: user.website,
     role: user.role, company: user.company,
-    tags: JSON.parse(user.tags as string || '[]'),
+    tags: safeJsonArray(user.tags),
     theme: { mode: user.theme_mode, accentColor: user.theme_accent },
     plan: user.plan, credits: user.credits,
     timezone: user.timezone as string || 'Asia/Kolkata',
@@ -112,8 +116,8 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), async (req
   });
   try {
     updateUser();
-  } catch (err: any) {
-    if (err.message?.includes('UNIQUE constraint')) {
+  } catch (err: unknown) {
+    if ((err as Error).message?.includes('UNIQUE constraint')) {
       res.status(409).json({ error: 'Username already taken' });
       return;
     }
@@ -136,7 +140,7 @@ usersRouter.patch('/me', requireAuth, validateBody(userUpdateSchema), async (req
     id: user.id, email: user.email, username: user.username, name: user.name,
     avatar: user.avatar, bio: user.bio, location: user.location, website: user.website,
     role: user.role, company: user.company,
-    tags: JSON.parse(user.tags as string || '[]'),
+    tags: safeJsonArray(user.tags),
     theme: { mode: user.theme_mode, accentColor: user.theme_accent },
     plan: user.plan, credits: user.credits, createdAt: user.created_at,
   });
@@ -192,7 +196,7 @@ usersRouter.get('/:username/public', (req, res) => {
   res.json({
     id: user.id, username: user.username, name: user.name, avatar: user.avatar,
     bio: user.bio, location: user.privacy_show_location ? user.location : '',
-    tags: JSON.parse(user.tags as string || '[]'),
+    tags: safeJsonArray(user.tags),
     theme: { mode: user.theme_mode, accentColor: user.theme_accent },
     plan: user.plan, createdAt: user.created_at,
   });
