@@ -51,7 +51,7 @@ if (config.googleClientId && config.googleClientSecret) {
           }
 
           // Check if user exists
-          let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+          let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as Record<string, unknown>;
 
           if (user) {
             // Update Google ID if not set
@@ -70,7 +70,7 @@ if (config.googleClientId && config.googleClientSecret) {
                VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
             ).run(userId, email, username, name, avatar, googleId);
 
-            user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+            user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as Record<string, unknown>;
             logger.info({ userId, email }, 'New user created via Google OAuth');
 
             // Initialize agent config
@@ -120,7 +120,7 @@ if (config.githubClientId && config.githubClientSecret) {
           const githubUsername = profile.username;
 
           // Check if user exists
-          let user = db.prepare('SELECT * FROM users WHERE email = ? OR github_id = ?').get(email, githubId) as any;
+          let user = db.prepare('SELECT * FROM users WHERE email = ? OR github_id = ?').get(email, githubId) as Record<string, unknown>;
 
           if (user) {
             // Update GitHub info if not set
@@ -139,7 +139,7 @@ if (config.githubClientId && config.githubClientSecret) {
                VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
             ).run(userId, email, username, name, avatar, githubId, githubUsername);
 
-            user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+            user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as Record<string, unknown>;
             logger.info({ userId, email, githubUsername }, 'New user created via GitHub OAuth');
 
             // Initialize agent config
@@ -189,7 +189,7 @@ router.get('/google/callback', (req, res, next) => {
   next();
 }, passport.authenticate('google', { failureRedirect: `${config.publicUrl}/login?error=${encodeURIComponent('Google sign-in failed')}` }),
   (req, res) => {
-    const user = req.user as any;
+    const user = req.user as { id: string };
     const token = generateToken(user.id);
     res.redirect(`${config.publicUrl}/oauth/callback?token=${token}`);
   }
@@ -207,7 +207,7 @@ router.get('/github/callback', (req, res, next) => {
   next();
 }, passport.authenticate('github', { failureRedirect: `${config.publicUrl}/login?error=${encodeURIComponent('GitHub sign-in failed')}` }),
   (req, res) => {
-    const user = req.user as any;
+    const user = req.user as { id: string };
     const token = generateToken(user.id);
     res.redirect(`${config.publicUrl}/oauth/callback?token=${token}`);
   }

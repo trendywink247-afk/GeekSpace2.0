@@ -7,7 +7,7 @@ import { Router } from "express";
 import { db } from "../db/index.js";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, type AuthRequest } from "../middleware/auth.js";
 import { getOAuth2Client, syncUserCalendar, getUpcomingEvents } from "../services/calendar-sync.js";
 
 const router = Router();
@@ -16,7 +16,7 @@ const CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
 
 // GET /api/calendar/status -- check connection status
 router.get("/status", requireAuth, (req, res) => {
-  const userId = (req as { userId: string } & typeof req).userId;
+  const userId = (req as AuthRequest).userId!;
 
   if (!config.googleClientId || !config.googleClientSecret) {
     return res.json({ available: false, connected: false, message: "Google Calendar not configured" });
@@ -42,7 +42,7 @@ router.get("/status", requireAuth, (req, res) => {
 
 // GET /api/calendar/auth -- redirect to Google OAuth consent
 router.get("/auth", requireAuth, (req, res) => {
-  const userId = (req as { userId: string } & typeof req).userId;
+  const userId = (req as AuthRequest).userId!;
 
   if (!config.googleClientId || !config.googleClientSecret) {
     return res.status(503).json({ error: "Google Calendar not configured" });
@@ -114,7 +114,7 @@ router.get("/callback", async (req, res) => {
 
 // POST /api/calendar/sync -- trigger manual sync
 router.post("/sync", requireAuth, async (req, res) => {
-  const userId = (req as { userId: string } & typeof req).userId;
+  const userId = (req as AuthRequest).userId!;
 
   const row = db.prepare("SELECT google_calendar_token FROM users WHERE id = ?").get(userId) as
     | { google_calendar_token: string | null }
@@ -135,7 +135,7 @@ router.post("/sync", requireAuth, async (req, res) => {
 
 // POST /api/calendar/disconnect -- revoke token + delete events
 router.post("/disconnect", requireAuth, (req, res) => {
-  const userId = (req as { userId: string } & typeof req).userId;
+  const userId = (req as AuthRequest).userId!;
 
   db.prepare("UPDATE users SET google_calendar_token = NULL WHERE id = ?").run(userId);
   db.prepare("DELETE FROM calendar_events WHERE user_id = ?").run(userId);
@@ -151,7 +151,7 @@ router.post("/disconnect", requireAuth, (req, res) => {
 
 // GET /api/calendar/events -- list imported events
 router.get("/events", requireAuth, (req, res) => {
-  const userId = (req as { userId: string } & typeof req).userId;
+  const userId = (req as AuthRequest).userId!;
   const days = Math.min(parseInt(String(req.query.days ?? "7"), 10) || 7, 30);
 
   const events = getUpcomingEvents(userId, days);
