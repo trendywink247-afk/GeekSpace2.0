@@ -94,7 +94,7 @@ habitsRouter.post('/:id/log', requireAuth, (req: AuthRequest, res) => {
     res.status(201).json({ log, streak: habit?.current_streak ?? 0 });
   } catch (err) {
     logger.warn({ err, habitId }, 'Log habit failed');
-    res.status(400).json({ error: (err as Error).message });
+    res.status(400).json({ error: 'Failed to log habit' });
   }
 });
 
@@ -104,7 +104,7 @@ habitsRouter.get('/:id/stats', requireAuth, (req: AuthRequest, res) => {
   try {
     const stats = getHabitStats(req.userId!, habitId);
     res.json({ stats });
-  } catch (err) {
-    res.status(404).json({ error: (err as Error).message });
+  } catch {
+    res.status(404).json({ error: 'Habit not found' });
   }
 });
