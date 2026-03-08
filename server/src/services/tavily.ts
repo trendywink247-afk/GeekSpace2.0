@@ -2,10 +2,17 @@
 // Tavily Web Search Integration
 //
 // Provides real-time web search for user queries that require
-// current information. Gracefully no-ops if key not configured.
+// current information. Returns error if key not configured.
 // ============================================================
 
+import { logger } from '../logger.js';
+
 const TAVILY_BASE = 'https://api.tavily.com';
+
+// FIX P1-9: Warn at module load time so admins know search is disabled
+if (!process.env.TAVILY_API_KEY) {
+  logger.warn('TAVILY_API_KEY not set — web_search tool will return empty results. Add key to .env to enable.');
+}
 
 export interface TavilyResult {
   title: string;
@@ -23,7 +30,8 @@ export async function tavilySearch(
   maxResults: number = 3
 ): Promise<TavilySearchResponse> {
   const apiKey = process.env.TAVILY_API_KEY;
-  if (!apiKey) return { results: [], query };
+  // FIX P1-9: Throw so action-executor returns a visible error instead of silent empty results
+  if (!apiKey) throw new Error('Web search is unavailable: TAVILY_API_KEY not configured. Add it to .env to enable search.');
 
   try {
     const res = await fetch(`${TAVILY_BASE}/search`, {

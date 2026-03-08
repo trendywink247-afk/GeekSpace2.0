@@ -270,8 +270,9 @@ function isTogetherAvailable(): boolean {
 }
 
 // Premium plans that can access Edith (Moonshot reasoning) as last resort
+// FIX P1-1: Include 'monthly' and 'pilot' — paying subscribers deserve premium routing
 function isPremiumPlan(plan?: string): boolean {
-  return ['halfyear', 'yearly'].includes(plan || '');
+  return ['monthly', 'pilot', 'halfyear', 'yearly'].includes(plan || '');
 }
 
 // ---- Provider Callers ----
@@ -824,19 +825,14 @@ export async function routeChat(
       provider = 'picoclaw';
       routingReason = 'ollama_healthy';
     }
-    // Waterfall: ollama → openrouter-free → ollama-cloud → (premium, non-daily-capped) edith → builtin
+    // Waterfall: ollama → openrouter-free → edith (premium only) → builtin
+    // FIX P1-7/P1-8: Removed Together AI and OllamaCloud dead branches (no API keys configured)
     else if (ollamaOk) {
       provider = 'ollama';
       routingReason = 'ollama_healthy';
     } else if (isOpenRouterFreeAvailable()) {
       provider = 'openrouter-free';
       routingReason = 'ollama_unreachable';
-    } else if (isTogetherAvailable()) {
-      provider = 'together';
-      routingReason = 'fallback_chain';
-    } else if (isOllamaCloudAvailable()) {
-      provider = 'ollama-cloud';
-      routingReason = 'ollama_cloud_available';
     } else if (isPremium && hasCredits && !overDailyBudget && isEdithAvailable()) {
       // Edith is last resort — premium users only when all free tiers unavailable AND daily budget not exceeded
       provider = 'edith';
@@ -850,10 +846,8 @@ export async function routeChat(
   logger.info({
     provider,
     model: provider === 'ollama' ? config.ollamaModel
-      : provider === 'ollama-cloud' ? config.ollamaCloudModel
       : provider === 'openrouter' ? config.openrouterModel
       : provider === 'edith' ? config.moonshotReasoningModel
-      : provider === 'together' ? config.togetherModel
       : provider,
     intent,
     userId: opts?.userId,

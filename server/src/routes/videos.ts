@@ -346,7 +346,9 @@ videosRouter.post('/director/expand-idea', requireAuth, async (req: AuthRequest,
 // GET  /api/videos/director         — list user's director jobs
 // ──────────────────────────────────────────────────────────────
 
-const DIRECTOR_CREDITS = 60; // 6 clips × 10 credits each
+// FIX P1-2: 60 credits was way too low — real FAL.ai cost is ~$0.75/job (6 clips × ~$0.025/s × 5s)
+// 750 credits = $0.75 equivalent, covering actual cost with margin
+const DIRECTOR_CREDITS = 750; // 6 clips × fal.ai cost (~$0.025/sec × 5s) = ~$0.75
 const MAX_CONCURRENT_DIRECTOR_JOBS = 1;
 
 videosRouter.post('/director/create', requireAuth, async (req: AuthRequest, res) => {

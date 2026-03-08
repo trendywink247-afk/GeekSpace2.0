@@ -12,13 +12,13 @@ import { cacheGet, cacheSet } from '../services/cache.js';
 export const billingRouter = Router();
 
 // GET /api/billing/plans — list all available plans
+// FIX P1-4: Removed hidden filter for 'monthly' — all plans visible so monthly users see their plan
 billingRouter.get('/plans', async (_req, res) => {
   const cacheKey = 'billing:plans';
   const cached = await cacheGet(cacheKey);
   if (cached) { res.json(JSON.parse(cached)); return; }
 
   const plans = Object.entries(PLAN_DEFINITIONS)
-    .filter(([id]) => id !== 'monthly')
     .map(([id, plan]) => ({ id, ...plan }));
   await cacheSet(cacheKey, JSON.stringify(plans), 3600);
   res.json(plans);
@@ -38,8 +38,19 @@ billingRouter.get('/plan', requireAuth, (req: AuthRequest, res) => {
   res.json(sub);
 });
 
-// POST /api/billing/upgrade — change plan (stub — no real payment yet)
+// POST /api/billing/upgrade — change plan
+// FIX P1-3: If Stripe is configured, require going through /checkout (not this bypass stub).
+// In dev/test mode (no Stripe), allow direct plan switching for testing.
 billingRouter.post('/upgrade', requireAuth, validateBody(billingUpgradeSchema), (req: AuthRequest, res) => {
+  // Block free upgrades when Stripe is configured — use /checkout instead
+  if (config.stripeEnabled) {
+    res.status(403).json({
+      error: 'Payment required. Use /api/billing/checkout to upgrade your plan.',
+      checkoutEndpoint: '/api/billing/checkout',
+    });
+    return;
+  }
+
   const { plan, currency } = req.body;
   const planInfo = PLAN_DEFINITIONS[plan];
   if (!planInfo) { res.status(400).json({ error: 'Invalid plan' }); return; }
@@ -79,8 +90,18 @@ billingRouter.get('/usage', requireAuth, (req: AuthRequest, res) => {
   res.json(usage);
 });
 
-// POST /api/billing/day-pass — $1 for 24hr PicoClaw access (free users only)
+// POST /api/billing/day-pass — 24hr access for free users
+// FIX P1-5: Require Stripe payment when billing is configured; dev-only grant otherwise
 billingRouter.post('/day-pass', requireAuth, async (req: AuthRequest, res) => {
+  // When Stripe is enabled, day-pass requires a real payment intent — not yet implemented
+  if (config.stripeEnabled) {
+    res.status(503).json({
+      error: 'Day pass via Stripe is not yet available. Please upgrade to a paid plan.',
+      upgradeEndpoint: '/api/billing/checkout',
+    });
+    return;
+  }
+
   const sub = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?').get(req.userId!) as { plan: string } | undefined;
   if (sub?.plan !== 'free') {
     res.status(400).json({ error: 'Day pass is only available on the free plan. Upgrade for full access.' });
@@ -96,7 +117,7 @@ billingRouter.post('/day-pass', requireAuth, async (req: AuthRequest, res) => {
     return;
   }
 
-  // Grant the pass (payment hook to be added later)
+  // Grant the pass (dev/demo mode only — Stripe blocks this in production)
   const id = uuid();
   db.prepare(`
     INSERT INTO day_passes (id, user_id, expires_at, credits_granted)
@@ -109,7 +130,7 @@ billingRouter.post('/day-pass', requireAuth, async (req: AuthRequest, res) => {
   ).run(req.userId!);
 
   const inserted = db.prepare('SELECT expires_at FROM day_passes WHERE id = ?').get(id) as { expires_at: string };
-  res.json({ message: 'Day pass activated! You have 24 hours of PicoClaw access.', expiresAt: inserted.expires_at });
+  res.json({ message: 'Day pass activated! You have 24 hours of Weebo access.', expiresAt: inserted.expires_at });
 });
 
 // GET /api/billing/day-pass — check if user has active day pass
