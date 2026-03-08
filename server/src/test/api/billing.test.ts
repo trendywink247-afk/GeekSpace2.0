@@ -39,10 +39,11 @@ describe('Billing', () => {
       }
     });
 
-    it('excludes the "monthly" plan alias', async () => {
+    it('includes the "monthly" plan so monthly subscribers can see their plan', async () => {
       const res = await request(app).get('/api/billing/plans');
       const ids = res.body.map((p: { id: string }) => p.id);
-      expect(ids).not.toContain('monthly');
+      // monthly plan must be visible so monthly subscribers see their current plan
+      expect(ids).toContain('monthly');
     });
   });
 

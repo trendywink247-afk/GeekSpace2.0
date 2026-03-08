@@ -136,11 +136,10 @@ describe('A1: trimConversationHistory', () => {
 // ─── B1: tavily.ts ────────────────────────────────────────────
 
 describe('B: Tavily service', () => {
-  it('tavilySearch returns empty array when no API key', async () => {
+  it('tavilySearch throws when no API key configured', async () => {
     const { tavilySearch } = await import('../services/tavily.js');
-    const result = await tavilySearch('test query');
-    expect(result.results).toBeInstanceOf(Array);
-    expect(result.query).toBe('test query');
+    // Without TAVILY_API_KEY, search should throw a descriptive error
+    await expect(tavilySearch('test query')).rejects.toThrow('TAVILY_API_KEY');
   });
 
   it('isSearchIntent detects search patterns', async () => {

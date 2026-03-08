@@ -159,19 +159,17 @@ async function executeAction(
       case 'telegram-message': {
         const message = actionConfig.message || `[Automation] ${automation.name} triggered`;
         // Try to send via Telegram if user has a linked account
-        try {
-          const link = db.prepare(
-            "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram'"
-          ).get(automation.user_id) as { external_id: string } | undefined;
-          if (link) {
-            const { sendTelegramMessage } = await import('./telegram.js');
-            await sendTelegramMessage(link.external_id, message);
-            output = `Telegram message sent: ${message}`;
-          } else {
-            output = `Message queued (no Telegram link): ${message}`;
-          }
-        } catch (err) {
-          output = `Message queued (send failed): ${message}`;
+        const link = db.prepare(
+          "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram'"
+        ).get(automation.user_id) as { external_id: string } | undefined;
+        if (link) {
+          const { sendTelegramMessage } = await import('./telegram.js');
+          // FIX P1-10: Let Telegram errors propagate so outer catch disables the automation
+          // on repeated failures (invalid chat_id, user blocked, etc.)
+          await sendTelegramMessage(link.external_id, message);
+          output = `Telegram message sent: ${message}`;
+        } else {
+          output = `Message queued (no Telegram link): ${message}`;
         }
         logger.info({ automationId: automation.id, message }, 'Telegram message action');
         break;
@@ -261,6 +259,20 @@ async function executeAction(
         db.prepare('INSERT INTO webhook_dead_letters (id, automation_id, user_id, url, error, payload) VALUES (?, ?, ?, ?, ?, ?)')
           .run(uuid(), automation.id, automation.user_id, actionCfg.url || '', errorMsg, triggerContext || null);
       } catch { /* ignore dead-letter insert failures */ }
+    }
+
+    // FIX P1-10: Auto-disable automation after 5 consecutive failures to prevent dead-letter spam
+    // Count recent consecutive errors from logs
+    const recentErrors = db.prepare(`
+      SELECT COUNT(*) as cnt FROM automation_logs
+      WHERE automation_id = ? AND status = 'error'
+        AND created_at > datetime('now', '-1 hour')
+    `).get(automation.id) as { cnt: number };
+
+    if (recentErrors.cnt >= 5) {
+      db.prepare("UPDATE automations SET enabled = 0, last_status = 'disabled_auto' WHERE id = ?")
+        .run(automation.id);
+      logger.warn({ automationId: automation.id, consecutiveErrors: recentErrors.cnt }, 'Automation auto-disabled after 5 consecutive failures in 1 hour');
     }
 
     logger.warn({ automationId: automation.id, error: errorMsg }, 'Automation execution failed');

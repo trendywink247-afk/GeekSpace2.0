@@ -636,13 +636,23 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
       case 'web_search': {
         const query = params.query as string;
         const maxResults = (params.max_results as number) || 3;
-        const { results } = await tavilySearch(query, maxResults);
+        let results: Awaited<ReturnType<typeof tavilySearch>>['results'];
+        try {
+          const searchResult = await tavilySearch(query, maxResults);
+          results = searchResult.results;
+        } catch (searchErr) {
+          return {
+            tool,
+            success: false,
+            message: searchErr instanceof Error ? searchErr.message : `Search failed for "${query}"`,
+          };
+        }
 
         if (results.length === 0) {
           return {
             tool,
             success: false,
-            message: `No results found for "${query}". Tavily API may not be configured.`,
+            message: `No results found for "${query}".`,
           };
         }
 
