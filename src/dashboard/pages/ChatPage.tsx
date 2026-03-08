@@ -69,42 +69,6 @@ function getVoiceMode(): boolean {
   }
 }
 
-function CodeBlock({ code, lang }: { code: string; lang?: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = () => { navigator.clipboard.writeText(code).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-  return (
-    <div className="relative my-2 rounded-lg overflow-hidden border border-[#00F0FF]/20">
-      <div className="flex items-center justify-between px-3 py-1 bg-[#0A0A1A]">
-        <span className="text-[10px] text-[#6B7280]">{lang || 'code'}</span>
-        <button onClick={handleCopy} className="flex items-center gap-1 text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors" title="Copy code">
-          {copied ? <Check className="w-3 h-3 text-[#00FF88]" /> : <Copy className="w-3 h-3" />}
-          {copied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
-      <pre className="p-3 overflow-x-auto text-xs text-[#E8E8F0] bg-[#06060B] leading-relaxed whitespace-pre"><code>{code}</code></pre>
-    </div>
-  );
-}
-
-function renderMessageContent(content: string): React.ReactNode {
-  const parts: React.ReactNode[] = [];
-  const regex = /```(\w*)\n([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match;
-  let key = 0;
-  while ((match = regex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<p key={key++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex, match.index)}</p>);
-    }
-    parts.push(<CodeBlock key={key++} lang={match[1]} code={match[2]} />);
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < content.length) {
-    parts.push(<p key={key++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex)}</p>);
-  }
-  return parts.length > 0 ? <>{parts}</> : <p style={{ whiteSpace: 'pre-wrap' }}>{content}</p>;
-}
-
 export function ChatPage() {
   const agent = useDashboardStore((s) => s.agent);
   const [messages, setMessages] = useState<ChatMessage[]>([]);

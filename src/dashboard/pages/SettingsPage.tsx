@@ -100,10 +100,10 @@ export function SettingsPage() {
         notif_connections: data.notif_connections ?? 1,
       });
       // 39.4: preferred free model
-      if (cfg.preferred_free_model) setPreferredFreeModel(cfg.preferred_free_model as string);
+      if (data.preferred_free_model) setPreferredFreeModel(data.preferred_free_model as string);
       // 41.6: snooze presets
-      if (cfg.snooze_presets) {
-        try { setSnoozePresets(JSON.parse(cfg.snooze_presets as string) as string[]); } catch { /* ignore */ }
+      if (data.snooze_presets) {
+        try { setSnoozePresets(JSON.parse(data.snooze_presets as string) as string[]); } catch { /* ignore */ }
       }
     }).catch(() => {});
   }, []);
