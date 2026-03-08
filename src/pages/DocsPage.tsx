@@ -103,7 +103,7 @@ export function DocsPage() {
       <div className="max-w-4xl mx-auto px-6 py-12">
         <Button
           variant="ghost"
-          onClick={() => navigate(-1)}
+          onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
           className="text-[#6B7280] hover:text-[#E8E8F0] mb-8"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />Back

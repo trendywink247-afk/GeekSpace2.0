@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, Sparkles, MapPin, Bot, ArrowLeft, Filter, Eye, Users, Loader2
+  Search, Sparkles, MapPin, Bot, ArrowLeft, Eye, Users, Loader2
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
@@ -110,7 +110,6 @@ export function ExplorePage() {
               placeholder="Search by name, skill, or tag..."
               className="pl-12 h-14 md:h-12 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] rounded-xl text-base"
             />
-            <Filter className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
           </div>
 
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">

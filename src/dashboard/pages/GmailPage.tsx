@@ -60,7 +60,7 @@ export function GmailPage() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await api.get<GmailStatus>('/api/gmail/status');
+      const res = await api.get<GmailStatus>('/gmail/status');
       setStatus(res.data);
     } catch {
       setStatus({ available: false, connected: false });
@@ -69,7 +69,7 @@ export function GmailPage() {
 
   const fetchMessages = useCallback(async () => {
     try {
-      const res = await api.get<{ messages: GmailMessage[] }>('/api/gmail/messages');
+      const res = await api.get<{ messages: GmailMessage[] }>('/gmail/messages');
       setMessages(res.data.messages);
     } catch { /* ignore */ }
   }, []);
@@ -77,8 +77,7 @@ export function GmailPage() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      await fetchStatus();
-      await fetchMessages();
+      await Promise.all([fetchStatus(), fetchMessages()]);
       setLoading(false);
     };
     load();
@@ -90,7 +89,7 @@ export function GmailPage() {
 
   const handleDisconnect = async () => {
     try {
-      await api.post('/api/gmail/disconnect', null);
+      await api.post('/gmail/disconnect', null);
       setMessages([]);
       setSelected(null);
       await fetchStatus();
@@ -102,7 +101,7 @@ export function GmailPage() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await api.post('/api/gmail/sync', null);
+      await api.post('/gmail/sync', null);
       await fetchMessages();
       await fetchStatus();
     } catch {
@@ -117,7 +116,7 @@ export function GmailPage() {
     setSending(true);
     setError('');
     try {
-      await api.post(`/api/gmail/reply/${selected.inbox_id}`, { body: replyText });
+      await api.post(`/gmail/reply/${selected.inbox_id}`, { body: replyText });
       setReplyText('');
       setSelected(null);
       await fetchMessages();
