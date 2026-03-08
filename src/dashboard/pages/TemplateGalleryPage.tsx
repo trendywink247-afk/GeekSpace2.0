@@ -54,11 +54,9 @@ export function TemplateGalleryPage({ embedded }: { embedded?: boolean }) {
   const handleClone = async (template: Template) => {
     setCloningId(template.id);
     try {
-      const res = await templateService.clone(template.id, `${template.name} (My Copy)`);
+      await templateService.clone(template.id, `${template.name} (My Copy)`);
       setClonedId(template.id);
       setTimeout(() => setClonedId(null), 2000);
-      // Optionally navigate to the new artifact
-      console.log('Cloned:', res.data);
     } catch (err) {
       console.error('Failed to clone:', err);
     } finally {

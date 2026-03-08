@@ -30,7 +30,7 @@ const requireTestMode = (req: any, res: any, next: any) => {
  *   - userId: filter by user
  */
 router.get('/routing/traces', requireTestMode, (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 100, 1000);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 100, 1000);
   const providerFilter = req.query.provider as string;
   const intentFilter = req.query.intent as string;
   const userIdFilter = req.query.userId as string;
