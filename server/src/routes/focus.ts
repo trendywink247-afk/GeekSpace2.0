@@ -18,8 +18,12 @@ focusRouter.get('/active', requireAuth, (req: AuthRequest, res) => {
 });
 
 focusRouter.post('/start', requireAuth, (req: AuthRequest, res) => {
-  const { goal, durationMin } = req.body as { goal?: string; durationMin?: number };
-  const session = startFocus(req.userId!, goal ?? undefined, durationMin);
+  const { goal, durationMin } = req.body as { goal?: unknown; durationMin?: unknown };
+  const goalStr = typeof goal === 'string' ? goal.trim().slice(0, 200) : undefined;
+  const dur = typeof durationMin === 'number' && Number.isInteger(durationMin) && durationMin >= 1 && durationMin <= 480
+    ? durationMin
+    : undefined;
+  const session = startFocus(req.userId!, goalStr, dur);
   res.status(201).json({ session });
 });
 
@@ -69,8 +73,15 @@ habitsRouter.get('/', requireAuth, (req: AuthRequest, res) => {
 });
 
 habitsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
-  const { name, description, frequency, targetTime, icon } = req.body as { name?: string; description?: string; frequency?: string; targetTime?: string; icon?: string };
+  const body = req.body as { name?: unknown; description?: unknown; frequency?: unknown; targetTime?: unknown; icon?: unknown };
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
   if (!name) { res.status(400).json({ error: 'name is required' }); return; }
+  if (name.length > 200) { res.status(400).json({ error: 'name must be 200 characters or fewer' }); return; }
+  const description = typeof body.description === 'string' ? body.description.trim().slice(0, 500) : undefined;
+  const VALID_FREQUENCIES = ['daily', 'weekly', 'monthly', 'weekdays'];
+  const frequency = typeof body.frequency === 'string' && VALID_FREQUENCIES.includes(body.frequency) ? body.frequency : 'daily';
+  const targetTime = typeof body.targetTime === 'string' ? body.targetTime.slice(0, 10) : undefined;
+  const icon = typeof body.icon === 'string' ? body.icon.slice(0, 50) : undefined;
   const habit = createHabit(req.userId!, { name, description, frequency, targetTime, icon });
   res.status(201).json({ habit });
 });

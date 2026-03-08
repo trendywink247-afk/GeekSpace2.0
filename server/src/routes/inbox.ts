@@ -76,8 +76,10 @@ inboxRouter.post('/:id/reply', requireAuth, async (req: AuthRequest, res) => {
   const msg = getMessageById(userId, id);
   if (!msg) { res.status(404).json({ error: 'Message not found' }); return; }
 
-  const replyText = req.body.text || msg.suggested_reply;
+  const rawText = typeof req.body.text === 'string' ? req.body.text.trim() : '';
+  const replyText = rawText.slice(0, 2000) || msg.suggested_reply;
   if (!replyText) { res.status(400).json({ error: 'No reply text provided' }); return; }
+  if (rawText && rawText.length > 2000) { res.status(400).json({ error: 'reply text must be 2000 characters or fewer' }); return; }
 
   // Only Telegram/WhatsApp can be replied to via channel
   if (msg.source !== 'telegram' && msg.source !== 'whatsapp') {
@@ -107,20 +109,30 @@ inboxRouter.post('/:id/reply', requireAuth, async (req: AuthRequest, res) => {
 // ---- POST /api/inbox (internal/testing) ---- add a message manually
 inboxRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
   const userId = req.userId!;
-  const { source, sender, content } = req.body;
+  const { source, sender, content } = req.body as { source?: unknown; sender?: unknown; content?: unknown };
 
   if (!source || !content) {
     res.status(400).json({ error: 'source and content are required' });
     return;
   }
 
+  if (typeof content !== 'string' || content.length > 4000) {
+    res.status(400).json({ error: 'content must be a string of 4000 characters or fewer' });
+    return;
+  }
+
+  if (sender !== undefined && (typeof sender !== 'string' || sender.length > 200)) {
+    res.status(400).json({ error: 'sender must be a string of 200 characters or fewer' });
+    return;
+  }
+
   const validSources = ['telegram', 'whatsapp', 'system', 'agent'];
-  if (!validSources.includes(source)) {
+  if (!validSources.includes(source as string)) {
     res.status(400).json({ error: 'Invalid source' });
     return;
   }
 
-  const messageId = addInboxMessage(userId, source, sender || null, content);
+  const messageId = addInboxMessage(userId, source as string, sender || null, content);
 
   // Wait for triage to complete so tests can verify
   await triageMessage(messageId);
