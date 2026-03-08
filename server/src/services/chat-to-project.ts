@@ -262,17 +262,9 @@ export async function createProjectFromChat(
       `SELECT projects FROM portfolios WHERE user_id = ?`
     ).get(userId) as { projects: string } | undefined;
 
-    const projects: Array<{
-      id: string;
-      name: string;
-      description: string;
-      tags: string[];
-      liveUrl?: string;
-      repoUrl?: string;
-      createdFromChat?: boolean;
-      sourceChatId?: string;
-      createdAt: string;
-    }> = row ? JSON.parse(row.projects) : [];
+    type ChatProject = { id: string; name: string; description: string; tags: string[]; liveUrl?: string; repoUrl?: string; createdFromChat?: boolean; sourceChatId?: string; createdAt: string };
+    let projects: ChatProject[] = [];
+    try { projects = row ? JSON.parse(row.projects) : []; } catch { projects = []; }
 
     // Check for duplicate names
     const existingIndex = projects.findIndex(
