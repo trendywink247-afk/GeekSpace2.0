@@ -292,15 +292,30 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         const { executeAction } = await import('./action-executor.js');
         const baseUrl = config.apiUrl || `https://api.geekspace.space`;
 
-        const artifactParams: Record<string, unknown> = {
-          template: templateMatch?.[1] || 'portfolio',
-          theme: themeMatch?.[1] || 'dark',
-          baseUrl,
-          selfDestruct: false,
-        };
-        if (nameMatch?.[1]) artifactParams.name = nameMatch[1];
-        if (locationMatch?.[1]) artifactParams.location = locationMatch[1].trim();
-        if (professionMatch?.[1]) artifactParams.profession = professionMatch[1];
+        // Personal-page request → template; custom/freeform → LLM generates HTML from prompt.
+        // Edits always use the template path (merge into stored artifact params).
+        const isPersonalTemplate =
+          isEdit ||
+          !!templateMatch ||
+          !!nameMatch ||
+          !!professionMatch ||
+          !!locationMatch ||
+          /\b(my (portfolio|blog|website|site|page|landing)|portfolio (website|site|page))\b/i.test(msg.text);
+
+        let artifactParams: Record<string, unknown>;
+        if (isPersonalTemplate) {
+          artifactParams = {
+            template: templateMatch?.[1] || 'portfolio',
+            theme: themeMatch?.[1] || 'dark',
+            baseUrl,
+            selfDestruct: false,
+          };
+          if (nameMatch?.[1]) artifactParams.name = nameMatch[1];
+          if (locationMatch?.[1]) artifactParams.location = locationMatch[1].trim();
+          if (professionMatch?.[1]) artifactParams.profession = professionMatch[1];
+        } else {
+          artifactParams = { prompt: msg.text, baseUrl, selfDestruct: false };
+        }
 
         if (isEdit) {
           const { db } = await import('../db/index.js');

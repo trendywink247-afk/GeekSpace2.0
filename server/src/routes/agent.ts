@@ -478,15 +478,35 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
         const professionMatch = message.match(/\b(developer|designer|engineer|writer|photographer|artist|consultant|manager|teacher|doctor|lawyer|freelancer)\b/i);
         const isEdit = editWebsitePattern.test(message) && !createWebsitePattern.test(message);
         const baseUrl = `${req.protocol}://${req.get('host')}`;
-        const artifactParams: Record<string, unknown> = {
-          template: templateMatch?.[1] || 'portfolio',
-          theme: themeMatch?.[1] || 'dark',
-          baseUrl,
-          selfDestruct: false,
-          ...(nameMatch?.[1] ? { name: nameMatch[1] } : {}),
-          ...(locationMatch?.[1] ? { location: locationMatch[1].trim() } : {}),
-          ...(professionMatch?.[1] ? { profession: professionMatch[1] } : {}),
-        };
+
+        // Determine whether this is a personal-page request (→ use template system) or a
+        // custom/freeform request (→ pass prompt to LLM for real HTML generation).
+        // Personal signals: explicit template type, name/profession/location, "my portfolio", or an EDIT.
+        // Edits always use the template path because the existing artifact has stored params to merge into.
+        const isPersonalTemplate =
+          isEdit ||
+          !!templateMatch ||
+          !!nameMatch ||
+          !!professionMatch ||
+          !!locationMatch ||
+          /\b(my (portfolio|blog|website|site|page|landing)|portfolio (website|site|page))\b/i.test(message);
+
+        let artifactParams: Record<string, unknown>;
+        if (isPersonalTemplate) {
+          artifactParams = {
+            template: templateMatch?.[1] || 'portfolio',
+            theme: themeMatch?.[1] || 'dark',
+            baseUrl,
+            selfDestruct: false,
+            ...(nameMatch?.[1] ? { name: nameMatch[1] } : {}),
+            ...(locationMatch?.[1] ? { location: locationMatch[1].trim() } : {}),
+            ...(professionMatch?.[1] ? { profession: professionMatch[1] } : {}),
+          };
+        } else {
+          // Custom/freeform — LLM generates HTML that actually matches what the user asked for
+          artifactParams = { prompt: message, baseUrl, selfDestruct: false };
+        }
+
         if (reqExistingArtifactId) {
           artifactParams.existingArtifactId = reqExistingArtifactId;
         } else if (isEdit) {

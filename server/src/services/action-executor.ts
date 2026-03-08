@@ -53,9 +53,6 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
   switch (tool) {
       // ── generate_code ───────────────────────────────────
       case 'generate_code': {
-        // Template-based path: LLM provides structured params instead of raw HTML.
-        // This avoids token-limit failures on free models — LLM outputs ~200 tokens
-        // of JSON, server renders the full site from a rich template.
         let html = (params.html as string) || '';
         let css = (params.css as string) || '';
         let js = (params.js as string) || '';
@@ -76,33 +73,70 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           }
         }
 
-        // Always render from template when no raw HTML — default to 'portfolio' if LLM omitted template param
-        // Merge stored params (base) with incoming params (overrides)
         if (!html) {
-          const merged = { ...storedTemplateParams, ...params };
-          const { renderWebsiteTemplate } = await import('./website-templates.js');
-          const rendered = renderWebsiteTemplate({
-            template: (merged.template as 'portfolio' | 'landing' | 'blog' | 'business') || 'portfolio',
-            title: merged.title as string | undefined,
-            name: merged.name as string | undefined,
-            theme: merged.theme as 'dark' | 'light' | 'purple' | 'blue' | 'gradient' | undefined,
-            profession: merged.profession as string | undefined,
-            location: merged.location as string | undefined,
-            bio: merged.bio as string | undefined,
-            skills: merged.skills as string[] | undefined,
-            email: merged.email as string | undefined,
-            tagline: merged.tagline as string | undefined,
-            productName: merged.productName as string | undefined,
-            description: merged.description as string | undefined,
-            features: merged.features as string[] | undefined,
-            cta: merged.cta as string | undefined,
-          });
-          html = rendered.html;
-          css = rendered.css;
-          js = rendered.js;
-          title = title || rendered.title;
-          // Save merged params for future edits
-          storedTemplateParams = merged;
+          const userPrompt = params.prompt as string | undefined;
+
+          if (userPrompt) {
+            // ── Prompt-based path: LLM generates custom HTML from the user's actual request ──
+            // Used for freeform requests like "hello world futuristic", "calculator app", "snake game".
+            const { routeChat } = await import('./llm.js');
+            const sysPrompt = [
+              'You are an expert web developer. Generate a complete, self-contained HTML page.',
+              'Rules:',
+              '- Output ONLY valid HTML starting with <!DOCTYPE html> and ending with </html>.',
+              '- Embed ALL CSS inside a <style> tag in <head>.',
+              '- Embed ALL JavaScript inside a <script> tag before </body>.',
+              '- Make it visually impressive and match the user\'s description exactly.',
+              '- Do NOT output markdown, code fences, or any explanation — raw HTML only.',
+            ].join('\n');
+            try {
+              const llmResult = await routeChat(
+                [{ role: 'user', content: `Build this website: ${userPrompt}` }],
+                { systemPrompt: sysPrompt, userCredits: 200 },
+              );
+              // Strip markdown code fences if the model wrapped the output
+              const raw = llmResult.reply.trim()
+                .replace(/^```(?:html)?\r?\n?/i, '')
+                .replace(/\r?\n?```$/i, '');
+              html = (raw.startsWith('<!') || raw.toLowerCase().startsWith('<html'))
+                ? raw
+                : `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${userPrompt.slice(0, 60)}</title><style>body{margin:0;font-family:sans-serif}</style></head><body>${raw}</body></html>`;
+              title = title || userPrompt.slice(0, 60);
+              css = '';
+              js = '';
+            } catch (err) {
+              logger.warn({ err }, 'generate_code LLM generation failed, falling back to template');
+              // Fall through to template render below
+            }
+          }
+
+          // ── Template-based path: structured params → pre-built site template ──
+          // Used when LLM provides structured params (name/theme/template) for personal pages.
+          if (!html) {
+            const merged = { ...storedTemplateParams, ...params };
+            const { renderWebsiteTemplate } = await import('./website-templates.js');
+            const rendered = renderWebsiteTemplate({
+              template: (merged.template as 'portfolio' | 'landing' | 'blog' | 'business') || 'portfolio',
+              title: merged.title as string | undefined,
+              name: merged.name as string | undefined,
+              theme: merged.theme as 'dark' | 'light' | 'purple' | 'blue' | 'gradient' | undefined,
+              profession: merged.profession as string | undefined,
+              location: merged.location as string | undefined,
+              bio: merged.bio as string | undefined,
+              skills: merged.skills as string[] | undefined,
+              email: merged.email as string | undefined,
+              tagline: merged.tagline as string | undefined,
+              productName: merged.productName as string | undefined,
+              description: merged.description as string | undefined,
+              features: merged.features as string[] | undefined,
+              cta: merged.cta as string | undefined,
+            });
+            html = rendered.html;
+            css = rendered.css;
+            js = rendered.js;
+            title = title || rendered.title;
+            storedTemplateParams = merged;
+          }
         }
 
         const selfDestruct = params.selfDestruct as boolean | undefined;
