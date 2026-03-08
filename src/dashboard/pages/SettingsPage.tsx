@@ -43,6 +43,7 @@ import type { ApiProvider, MemoryEntry, FreeModel } from '@/types';
 export function SettingsPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   // 57.9: toast shown after silent agent config saves
   const [savedToast, setSavedToast] = useState(false);
   const showSavedToast = () => { setSavedToast(true); setTimeout(() => setSavedToast(false), 2000); };
@@ -659,9 +660,10 @@ export function SettingsPage() {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         if (file.size > 500 * 1024) {
-                          alert('Image must be under 500 KB');
+                          setAvatarError('Image must be under 500 KB');
                           return;
                         }
+                        setAvatarError(null);
                         const reader = new FileReader();
                         reader.onload = (ev) => {
                           const dataUrl = ev.target?.result as string;
@@ -674,7 +676,8 @@ export function SettingsPage() {
                       }}
                     />
                   </label>
-                  <p className="text-[10px] text-[#6B7280] mt-1">Max 500 KB · JPEG, PNG, WebP</p>
+                  {avatarError && <p className="text-[10px] text-[#FF3366] mt-1">{avatarError}</p>}
+                  {!avatarError && <p className="text-[10px] text-[#6B7280] mt-1">Max 500 KB · JPEG, PNG, WebP</p>}
                 </div>
                 <h3 className="font-semibold text-[#E8E8F0]">{profile.name}</h3>
                 <p className="text-sm text-[#6B7280]">@{profile.username}</p>
