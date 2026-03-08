@@ -1,5 +1,6 @@
 import Redis from 'ioredis';
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 
 let client: Redis | null = null;
 
@@ -12,7 +13,7 @@ function getClient(): Redis | null {
       enableOfflineQueue: false,
     });
     client.on('error', (err: Error) => {
-      console.warn('[cache] Redis error (non-fatal):', err.message);
+      logger.warn({ err }, 'Redis error (non-fatal)');
     });
   }
   return client;
