@@ -73,6 +73,7 @@ function AccountsTab() {
   const [pageId, setPageId] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const loadAccounts = async () => {
     try {
@@ -89,6 +90,7 @@ function AccountsTab() {
 
   const handleCreate = async () => {
     setSaving(true);
+    setSaveError('');
     try {
       await socialMediaService.createAccount({
         platform,
@@ -104,8 +106,8 @@ function AccountsTab() {
       setPageId('');
       setAccessToken('');
       loadAccounts();
-    } catch (err) {
-      console.error('Failed to create account:', err);
+    } catch {
+      setSaveError('Failed to save account. Please check your details and try again.');
     } finally {
       setSaving(false);
     }
@@ -213,8 +215,11 @@ function AccountsTab() {
               </div>
             )}
 
+            {saveError && (
+              <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{saveError}</p>
+            )}
             <div className="flex gap-2 justify-end">
-              <Button variant="ghost" size="sm" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setSaveError(''); }}>Cancel</Button>
               <Button size="sm" onClick={handleCreate} disabled={saving || !accountName}>
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
                 Create
@@ -666,14 +671,9 @@ function PostsTab() {
       try {
         const res = await socialMediaService.getPlans();
 
-        // Load all plan items
-        const items: ContentPlanItem[] = [];
-        for (const plan of res.data) {
-          const planRes = await socialMediaService.getPlan(plan.id);
-          if (planRes.data.items) {
-            items.push(...planRes.data.items.filter(i => i.status !== 'draft'));
-          }
-        }
+        // Load all plan items in parallel
+        const planResponses = await Promise.all(res.data.map(plan => socialMediaService.getPlan(plan.id)));
+        const items: ContentPlanItem[] = planResponses.flatMap(planRes => planRes.data.items?.filter(i => i.status !== 'draft') ?? []);
         setAllItems(items.sort((a, b) => {
           const aTime = a.scheduled_at || a.created_at;
           const bTime = b.scheduled_at || b.created_at;

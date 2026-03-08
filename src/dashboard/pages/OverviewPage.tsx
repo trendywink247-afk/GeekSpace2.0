@@ -383,7 +383,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
     setBriefingTime(time);
     setBriefingSaving(true);
     try {
-      await agentService.updateConfig({ briefing_time: time } as any);
+      await agentService.updateConfig({ briefing_time: time });
     } catch { /* ignore */ }
     setBriefingSaving(false);
   };
@@ -391,7 +391,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
   const handleSelectModel = async (modelId: string) => {
     setModelSaving(modelId);
     try {
-      await agentService.updateConfig({ preferred_free_model: modelId } as any);
+      await agentService.updateConfig({ preferred_free_model: modelId });
       setPreferredModel(modelId);
     } catch { /* ignore */ }
     setModelSaving(null);

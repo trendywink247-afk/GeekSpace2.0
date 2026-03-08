@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, Volume2, VolumeX, RotateCcw, Sparkles } from 'lucide-react';
+import { Send, Volume2, VolumeX, RotateCcw, Sparkles, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { agentService, memoryService } from '@/services/api';
@@ -17,6 +17,46 @@ interface ChatMessage {
 }
 
 const VOICE_SETTINGS_KEY = 'agentin_voice_settings';
+
+function CodeBlock({ code, lang }: { code: string; lang?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="relative my-2 rounded-lg overflow-hidden border border-[#00F0FF]/20">
+      <div className="flex items-center justify-between px-3 py-1 bg-[#0A0A1A]">
+        <span className="text-[10px] text-[#6B7280]">{lang || 'code'}</span>
+        <button onClick={handleCopy} className="flex items-center gap-1 text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors" title="Copy code">
+          {copied ? <Check className="w-3 h-3 text-[#00FF88]" /> : <Copy className="w-3 h-3" />}
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
+      <pre className="p-3 overflow-x-auto text-xs text-[#E8E8F0] bg-[#06060B] leading-relaxed whitespace-pre"><code>{code}</code></pre>
+    </div>
+  );
+}
+
+function renderMessageContent(content: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  const fenceRegex = /```(\w*)?\n?([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let keyIdx = 0;
+  while ((match = fenceRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<span key={keyIdx++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex, match.index)}</span>);
+    }
+    parts.push(<CodeBlock key={keyIdx++} lang={match[1] || ''} code={match[2] || ''} />);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < content.length) {
+    parts.push(<span key={keyIdx++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex)}</span>);
+  }
+  return parts.length > 0 ? <>{parts}</> : content;
+}
 
 function getVoiceMode(): boolean {
   try {
@@ -301,7 +341,7 @@ export function ChatPage() {
                   : 'bg-[#0C0C18] text-[#E8E8F0] border border-[#00F0FF]/10 rounded-tl-sm',
               ].join(' ')}
             >
-              <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+              {msg.role === 'agent' ? renderMessageContent(msg.content) : <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>}
               <p className='text-[9px] text-[#6B7280] mt-1 text-right'>
                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>

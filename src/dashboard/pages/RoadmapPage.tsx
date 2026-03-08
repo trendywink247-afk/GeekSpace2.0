@@ -219,6 +219,7 @@ export function RoadmapPage() {
   // Task 69.10: Suggestion detail modal state
   const [detailSuggestion, setDetailSuggestion] = useState<{id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number} | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   // Phase 72.4: Events for detail modal timeline
   const [detailEvents, setDetailEvents] = useState<Array<{id: string; oldStatus: string; newStatus: string; changedAt: string}>>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -296,7 +297,8 @@ export function RoadmapPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this suggestion? This cannot be undone.')) return;
+    if (confirmDeleteId !== id) { setConfirmDeleteId(id); return; }
+    setConfirmDeleteId(null);
     setDeletingId(id);
     try {
       await suggestionService.delete(id);
@@ -752,10 +754,11 @@ export function RoadmapPage() {
                         <button
                           onClick={() => void handleDelete(s.id)}
                           disabled={deletingId === s.id}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[#FF2D78]/10 text-[#6B7280] hover:text-[#FF2D78] text-xs transition-colors disabled:opacity-50 flex-shrink-0"
+                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors disabled:opacity-50 flex-shrink-0 ${confirmDeleteId === s.id ? 'bg-[#FF2D78]/20 text-[#FF2D78]' : 'bg-transparent hover:bg-[#FF2D78]/10 text-[#6B7280] hover:text-[#FF2D78]'}`}
                           title="Delete suggestion"
                         >
                           <Trash2 className="w-3 h-3" />
+                          {confirmDeleteId === s.id && <span>Confirm?</span>}
                         </button>
                       )}
                       <span
