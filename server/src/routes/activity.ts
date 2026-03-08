@@ -15,10 +15,12 @@ activityRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   // 46.8: Reduced default from 50 to 25 to lower initial payload size
   const limit = Math.min(Number(req.query.limit) || 25, 100);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
-  // 64.3: text search — partial match on action or details
-  const q = typeof req.query.q === 'string' && req.query.q.trim() ? req.query.q.trim() : null;
-  // 64.6: action type filter — exact prefix match on action field
-  const actionType = typeof req.query.type === 'string' && req.query.type.trim() ? req.query.type.trim() : null;
+  // 64.3: text search — partial match on action or details (max 100 chars)
+  const rawQ = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
+  const q = rawQ || null;
+  // 64.6: action type filter — exact prefix match on action field (max 50 chars)
+  const rawType = typeof req.query.type === 'string' ? req.query.type.trim().slice(0, 50) : '';
+  const actionType = rawType || null;
 
   // 65.9: date-range filter — ISO date strings YYYY-MM-DD
   const from = typeof req.query.from === 'string' && req.query.from.match(/^\d{4}-\d{2}-\d{2}$/) ? req.query.from : null;

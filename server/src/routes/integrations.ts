@@ -423,7 +423,17 @@ integrationsRouter.get('/:type/ping', requireAuth, (req: AuthRequest, res) => {
 
 integrationsRouter.post('/invite', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
-  const { email } = req.body as { email?: string };
+  const { email } = req.body as { email?: unknown };
+
+  // Validate email if provided
+  let validatedEmail: string | null = null;
+  if (email !== undefined) {
+    if (typeof email !== 'string' || email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: 'email must be a valid email address (max 255 chars)' });
+      return;
+    }
+    validatedEmail = email.toLowerCase().trim();
+  }
 
   const token = crypto.randomBytes(24).toString('hex');
   const id = uuid();
@@ -431,7 +441,7 @@ integrationsRouter.post('/invite', requireAuth, (req: AuthRequest, res) => {
 
   db.prepare(
     'INSERT INTO connection_invites (id, user_id, token, email, expires_at) VALUES (?, ?, ?, ?, ?)'
-  ).run(id, userId, token, email ?? null, expiresAt);
+  ).run(id, userId, token, validatedEmail, expiresAt);
 
   const inviteUrl = `https://ai.geekspace.space/connect/${token}`;
   res.json({ inviteUrl, token, expiresAt });
@@ -488,7 +498,20 @@ integrationsRouter.get('/invite/:token/info', (req, res) => {
 // Public endpoint — accept invite (mark as used, optionally record acceptor email)
 integrationsRouter.post('/invite/:token/accept', (req, res) => {
   const { token } = req.params;
-  const { acceptorEmail, acceptorName } = req.body as { acceptorEmail?: string; acceptorName?: string };
+  const { acceptorEmail, acceptorName } = req.body as { acceptorEmail?: unknown; acceptorName?: unknown };
+
+  // Validate optional acceptor fields
+  if (acceptorEmail !== undefined && (typeof acceptorEmail !== 'string' || acceptorEmail.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(acceptorEmail))) {
+    res.status(400).json({ error: 'acceptorEmail must be a valid email address (max 255 chars)' });
+    return;
+  }
+  if (acceptorName !== undefined && (typeof acceptorName !== 'string' || acceptorName.length > 100)) {
+    res.status(400).json({ error: 'acceptorName must be a string of 100 characters or fewer' });
+    return;
+  }
+
+  const safeEmail = typeof acceptorEmail === 'string' ? acceptorEmail.toLowerCase().trim() : undefined;
+  const safeName = typeof acceptorName === 'string' ? acceptorName.trim() : undefined;
 
   const invite = db.prepare(
     'SELECT id, user_id, expires_at, used_at FROM connection_invites WHERE token = ?'
@@ -510,7 +533,7 @@ integrationsRouter.post('/invite/:token/accept', (req, res) => {
   // Mark invite as used
   db.prepare('UPDATE connection_invites SET used_at = ? WHERE id = ?').run(Date.now(), invite.id);
 
-  const acceptorDisplay = acceptorName || acceptorEmail || 'Someone';
+  const acceptorDisplay = safeName || safeEmail || 'Someone';
 
   // Log activity for the invite owner
   db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Connection accepted', ?, 'user-check')`)
