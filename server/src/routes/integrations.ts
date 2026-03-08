@@ -279,7 +279,7 @@ integrationsRouter.post('/whatsapp/qr', requireAuth, async (req: AuthRequest, re
     if (result.success) {
       res.json({ success: true, sessionId: result.sessionId, qrCodeDataUrl: result.qrCodeDataUrl });
     } else {
-      res.status(500).json({ success: false, error: result.error });
+      res.status(500).json({ success: false, error: 'Failed to generate QR code' });
     }
   } catch (err) {
     logger.error({ err }, 'Failed to generate WhatsApp QR code');

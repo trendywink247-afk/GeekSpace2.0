@@ -95,9 +95,8 @@ socialMediaRouter.post('/plans/generate', requireAuth, validateBody(contentPlanG
     const plan = await generateContentPlan(req.userId!, req.body.topic, req.body.niche);
     res.status(201).json(plan);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Failed to generate plan';
     logger.error({ err }, 'Content plan generation failed');
-    res.status(500).json({ error: msg });
+    res.status(500).json({ error: 'Failed to generate content plan' });
   }
 });
 
@@ -150,8 +149,7 @@ socialMediaRouter.post('/plans/:planId/items/:itemId/post', requireAuth, async (
     const result = await manualPostItem(req.params.itemId, req.userId!);
     res.json({ success: true, result });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Post failed';
     logger.error({ err, itemId: req.params.itemId }, 'Manual post failed');
-    res.status(500).json({ error: msg });
+    res.status(500).json({ error: 'Failed to post item' });
   }
 });
