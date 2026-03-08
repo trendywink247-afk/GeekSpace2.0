@@ -278,7 +278,7 @@ gateRouter.post('/image', requireGateKey, async (req: GateRequest, res: Response
   try {
     const result = await generateImage(prompt, { width, height });
     if (!result.success) {
-      gateErr(res, result.error ?? 'Image generation failed', 500);
+      gateErr(res, 'Image generation failed', 500);
       return;
     }
 
