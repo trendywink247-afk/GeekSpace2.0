@@ -268,7 +268,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   }
 
   // 5. Fire keyword automation triggers (non-blocking)
-  checkKeywordTriggers(userId, msg.text).catch((e: unknown) => console.debug('[bg]', (e as Error).message));
+  checkKeywordTriggers(userId, msg.text).catch((e: unknown) => logger.debug({ err: (e as Error).message }, 'keyword trigger bg error'));
 
   // 5a. Website builder fast-path — detect website creation/edit intent directly
   //     and execute generate_code without LLM to bypass model format unreliability
