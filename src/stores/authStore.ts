@@ -199,7 +199,8 @@ if (import.meta.env.VITE_TEST_MODE === 'true') {
     useAuthStore.setState(newState);
     // Also directly update localStorage to ensure persist works
     let existingData: Record<string, unknown> = {};
-    try { existingData = JSON.parse(localStorage.getItem('gs-auth') || '{}'); } catch { /* corrupted — start fresh */ }
-    localStorage.setItem('gs-auth', JSON.stringify({ ...existingData, state: { ...existingData.state, ...newState } }));
+    try { existingData = JSON.parse(localStorage.getItem('gs-auth') || '{}') as Record<string, unknown>; } catch { /* corrupted — start fresh */ }
+    const existingState = (existingData.state ?? {}) as Record<string, unknown>;
+    localStorage.setItem('gs-auth', JSON.stringify({ ...existingData, state: { ...existingState, ...newState } }));
   };
 }
