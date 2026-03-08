@@ -126,29 +126,7 @@ describe('Phase 103: Plan cap fixes', () => {
     });
   });
 
-  describe('Together AI tier 3 wiring', () => {
-    it('config.ts has togetherApiKey', () => {
-      const content = readFileSync(resolve(SERVER_SRC, 'config.ts'), 'utf-8');
-      expect(content).toContain('togetherApiKey');
-    });
-    it('llm.ts Provider type includes together', () => {
-      const content = readFileSync(resolve(SERVER_SRC, 'services/llm.ts'), 'utf-8');
-      expect(content).toContain("'together'");
-    });
-    it('llm.ts has callTogether function', () => {
-      const content = readFileSync(resolve(SERVER_SRC, 'services/llm.ts'), 'utf-8');
-      expect(content).toContain('callTogether');
-    });
-    it('llm.ts routes to Together AI after openrouter-free', () => {
-      const content = readFileSync(resolve(SERVER_SRC, 'services/llm.ts'), 'utf-8');
-      expect(content).toContain('isTogetherAvailable');
-      expect(content).toContain('api.together.xyz');
-    });
-    it('.env.example has TOGETHER_API_KEY', () => {
-      const content = readFileSync(resolve(SERVER_SRC, '../../.env.example'), 'utf-8');
-      expect(content).toContain('TOGETHER_API_KEY');
-    });
-  });
+  // Together AI removed in P3 — dead provider (no API keys, never used)
 
   describe('training_examples table and logging', () => {
     it('db/index.ts creates training_examples table', () => {
