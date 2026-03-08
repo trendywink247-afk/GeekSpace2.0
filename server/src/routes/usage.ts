@@ -125,7 +125,7 @@ usageRouter.get('/chart', requireAuth, (req: AuthRequest, res) => {
 
 usageRouter.get('/providers', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
-  const days = parseInt(req.query.days as string) || 30;
+  const days = Math.max(1, Math.min(parseInt(req.query.days as string, 10) || 30, 90));
 
   const rows = db.prepare(`
     SELECT provider, COUNT(*) as requests,
@@ -158,8 +158,8 @@ usageRouter.get('/latency', requireAuth, (req: AuthRequest, res) => {
 
 usageRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
-  const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-  const offset = parseInt(req.query.offset as string) || 0;
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
+  const offset = Math.max(0, parseInt(req.query.offset as string, 10) || 0);
 
   const rows = db.prepare('SELECT * FROM usage_events WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?').all(userId, limit, offset) as Record<string, unknown>[];
   const total = db.prepare('SELECT COUNT(*) as count FROM usage_events WHERE user_id = ?').get(userId) as Record<string, unknown>;
@@ -259,7 +259,7 @@ usageRouter.get('/today', requireAuth, (req: AuthRequest, res) => {
 
 usageRouter.get('/daily', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
-  const days = Math.min(parseInt(req.query.days as string) || 7, 30);
+  const days = Math.max(1, Math.min(parseInt(req.query.days as string, 10) || 7, 30));
 
   // Build a map of the last N days
   const dayMap = new Map<string, { day: string; label: string; messages: number; credits: number }>();

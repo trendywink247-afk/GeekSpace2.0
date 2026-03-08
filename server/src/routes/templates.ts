@@ -19,7 +19,7 @@ templatesRouter.get('/', (req, res) => {
   const category = req.query.category as string | undefined;
   const search = req.query.search as string | undefined;
   const officialOnly = req.query.official === 'true';
-  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 100);
 
   let query = 'SELECT * FROM templates WHERE 1=1';
   const params: unknown[] = [];

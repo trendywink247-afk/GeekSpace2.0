@@ -31,7 +31,7 @@ focusRouter.post('/end', requireAuth, (req: AuthRequest, res) => {
 });
 
 focusRouter.get('/history', requireAuth, (req: AuthRequest, res) => {
-  const limit = Math.min(Number(req.query.limit) || 10, 50);
+  const limit = Math.max(1, Math.min(Number(req.query.limit) || 10, 50));
   const sessions = getFocusHistory(req.userId!, limit);
   res.json({ sessions });
 });
