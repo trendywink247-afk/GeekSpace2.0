@@ -17,7 +17,7 @@ export function MediaGalleryPage() {
       try {
         const stored = localStorage.getItem('geekspace-generated-media');
         if (stored) {
-          setItems(JSON.parse(stored));
+          try { setItems(JSON.parse(stored)); } catch { /* corrupted cache — ignore */ }
         }
       } finally {
         setIsLoading(false);

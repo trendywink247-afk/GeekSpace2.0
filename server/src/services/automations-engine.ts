@@ -95,7 +95,8 @@ async function executeAction(
   triggerContext?: string,
 ): Promise<ExecutionResult> {
   const start = Date.now();
-  const actionConfig: ActionConfig = JSON.parse(automation.action_config || '{}');
+  let actionConfig: ActionConfig;
+  try { actionConfig = JSON.parse(automation.action_config || '{}'); } catch { actionConfig = {} as ActionConfig; }
 
   try {
     let output = '';
@@ -287,7 +288,8 @@ function registerCronTrigger(automation: Automation) {
   // Clear existing timer if any
   unregisterCronTrigger(automation.id);
 
-  const triggerConfig: TriggerConfig = JSON.parse(automation.trigger_config || '{}');
+  let triggerConfig: TriggerConfig;
+  try { triggerConfig = JSON.parse(automation.trigger_config || '{}'); } catch { triggerConfig = {} as TriggerConfig; }
   const intervalMinutes = triggerConfig.interval_minutes || 60;
 
   const timer = setInterval(async () => {
@@ -325,7 +327,8 @@ function startHealthMonitor() {
     ).all() as Automation[];
 
     for (const auto of healthAutomations) {
-      const triggerConfig: TriggerConfig = JSON.parse(auto.trigger_config || '{}');
+      let triggerConfig: TriggerConfig;
+      try { triggerConfig = JSON.parse(auto.trigger_config || '{}'); } catch { continue; }
       const targetUrl = triggerConfig.target_url || triggerConfig.url;
       if (!targetUrl) continue;
 
@@ -351,7 +354,8 @@ export async function checkKeywordTriggers(userId: string, message: string): Pro
   ).all(userId) as Automation[];
 
   for (const auto of keywordAutomations) {
-    const triggerConfig: TriggerConfig = JSON.parse(auto.trigger_config || '{}');
+    let triggerConfig: TriggerConfig;
+    try { triggerConfig = JSON.parse(auto.trigger_config || '{}'); } catch { continue; }
     const keyword = triggerConfig.keyword;
     if (keyword && message.toLowerCase().includes(keyword.toLowerCase())) {
       await executeAction(auto, `keyword:${keyword}`);

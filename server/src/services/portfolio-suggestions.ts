@@ -57,7 +57,8 @@ export function applySuggestion(userId: string, suggestionId: string): boolean {
 
   if (memory.category === 'project') {
     const current = db.prepare('SELECT projects FROM portfolios WHERE user_id = ?').get(userId) as { projects: string } | undefined;
-    const projects = JSON.parse(current?.projects || '[]');
+    let projects: unknown[];
+    try { projects = JSON.parse(current?.projects || '[]'); } catch { projects = []; }
     projects.push({
       name: memory.key,
       description: memory.value,
