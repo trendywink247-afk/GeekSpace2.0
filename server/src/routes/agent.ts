@@ -1341,7 +1341,7 @@ function mapConversation(row: Record<string, unknown>) {
 agentRouter.get('/memory', requireAuth, (req: AuthRequest, res) => {
   const category = req.query.category as string | undefined;
   const search = req.query.search as string | undefined;
-  const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 100, 500);
 
   if (search) {
     const memories = getRelevantMemories(req.userId!, search, limit);
@@ -1405,7 +1405,7 @@ agentRouter.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
 // ---- Conversation History ----
 
 agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
   const search = req.query.search as string | undefined;
   const conversations = getRecentConversations(req.userId!, limit, search);
   res.json((conversations as unknown as Record<string, unknown>[]).map(mapConversation));
@@ -1416,7 +1416,7 @@ agentRouter.get('/conversations', requireAuth, (req: AuthRequest, res) => {
 agentRouter.get('/conversations/export', requireAuth, (req: AuthRequest, res) => {
   try {
     const allConversations = getRecentConversations(req.userId!, 1000);
-    const days = parseInt(req.query.days as string) || 0;
+    const days = Math.max(0, parseInt(req.query.days as string, 10) || 0);
     const conversations = days > 0
       ? allConversations.filter(c => {
           if (!c.created_at) return false;
@@ -1507,7 +1507,7 @@ agentRouter.post('/conversations/:id/star', requireAuth, (req: AuthRequest, res)
 // 60.2: Get all starred messages (must come before /:id/star to avoid route ambiguity)
 agentRouter.get('/conversations/starred', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
-  const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
   const rows = db.prepare(
     'SELECT * FROM conversation_log WHERE user_id = ? AND starred = 1 ORDER BY created_at DESC LIMIT ?'
   ).all(userId, limit) as Record<string, unknown>[];
@@ -1904,7 +1904,7 @@ agentRouter.get('/agents', (_req, res) => {
 // ---- Workflow History ----
 
 agentRouter.get('/workflows', requireAuth, (req: AuthRequest, res) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 100);
   const workflows = getUserWorkflows(req.userId!, limit);
   res.json(workflows);
 });
@@ -1930,7 +1930,7 @@ agentRouter.get('/workflows-analytics', requireAuth, (req: AuthRequest, res) => 
 // ---- Bridge Events (debugging/analytics) ----
 
 agentRouter.get('/bridge-events', requireAuth, (req: AuthRequest, res) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 100);
   const events = getRecentBridgeEvents(req.userId!, limit);
   res.json(events);
 });
@@ -1981,7 +1981,7 @@ agentRouter.post('/send-message', requireAuth, async (req: AuthRequest, res) => 
 });
 
 agentRouter.get('/messages', requireAuth, (req: AuthRequest, res) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 100);
   const messages = getAgentMessages(req.userId!, limit);
   res.json(messages);
 });

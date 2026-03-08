@@ -217,9 +217,9 @@ automationsRouter.post('/:id/duplicate', requireAuth, async (req: AuthRequest, r
 // ---- Execution logs ----
 
 automationsRouter.get('/logs', requireAuth, (req: AuthRequest, res) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
   // 53.7: Pagination support — offset param
-  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+  const offset = Math.max(parseInt(req.query.offset as string, 10) || 0, 0);
   // 63.4: optional status filter (success | failed | error)
   const status = ['success', 'failed', 'error'].includes(req.query.status as string) ? (req.query.status as string) : undefined;
   const logs = getAutomationLogs(req.userId!, undefined, limit, offset, status);
@@ -227,9 +227,9 @@ automationsRouter.get('/logs', requireAuth, (req: AuthRequest, res) => {
 });
 
 automationsRouter.get('/:id/logs', requireAuth, (req: AuthRequest, res) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
   // 53.7: Pagination support — offset param
-  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+  const offset = Math.max(parseInt(req.query.offset as string, 10) || 0, 0);
   const status = ['success', 'failed', 'error'].includes(req.query.status as string) ? (req.query.status as string) : undefined;
   const logs = getAutomationLogs(req.userId!, req.params.id, limit, offset, status);
   res.json({ logs, limit, offset });

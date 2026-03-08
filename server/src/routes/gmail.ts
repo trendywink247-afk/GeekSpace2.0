@@ -149,7 +149,7 @@ gmailRouter.post('/sync', requireAuth, async (req, res) => {
 gmailRouter.get('/messages', requireAuth, (req, res) => {
   const userId = (req as AuthRequest).userId!;
   const limit = Math.min(Number(req.query.limit) || 20, 50);
-  const offset = Number(req.query.offset) || 0;
+  const offset = Math.max(0, Number(req.query.offset) || 0);
 
   const messages = db.prepare(`
     SELECT gm.*, im.priority, im.read, im.archived, im.suggested_reply, im.summary
