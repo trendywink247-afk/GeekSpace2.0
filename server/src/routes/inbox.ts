@@ -20,7 +20,7 @@ inboxRouter.get('/', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
   const unreadOnly = req.query.unreadOnly === 'true' || req.query.unreadOnly === '1';
   const limit = Math.min(parseInt(req.query.limit as string || '50', 10), 200);
-  const offset = parseInt(req.query.offset as string || '0', 10);
+  const offset = Math.max(0, parseInt(req.query.offset as string || '0', 10));
   const source = req.query.source as string | undefined;
 
   const messages = getInbox(userId, { unreadOnly, limit, offset, source });

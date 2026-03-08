@@ -44,14 +44,18 @@ directoryRouter.get('/', validateQuery(directoryQuerySchema), (req, res) => {
 
   const rows = db.prepare(query).all(...params) as Record<string, unknown>[];
 
+  const parseJsonArray = (val: unknown): unknown[] => {
+    try { return JSON.parse(val as string || '[]') as unknown[]; } catch { return []; }
+  };
+
   const profiles = rows.map(row => ({
     username: row.username,
     name: row.name,
     avatar: row.avatar,
     tagline: row.tagline || row.bio || '',
-    tags: JSON.parse(row.tags as string || '[]'),
+    tags: parseJsonArray(row.tags),
     location: row.location,
-    skills: JSON.parse(row.skills as string || '[]'),
+    skills: parseJsonArray(row.skills),
     agentEnabled: !!row.agentEnabled,
   }));
 

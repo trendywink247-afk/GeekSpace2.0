@@ -53,13 +53,17 @@ function isDuplicateView(ip: string, username: string): boolean {
   return false;
 }
 
+function safeJsonParse<T>(val: unknown, fallback: T): T {
+  try { return JSON.parse(val as string || String(fallback)) as T; } catch { return fallback; }
+}
+
 const parsePortfolio = (row: Record<string, unknown>) => ({
   ...row,
-  skills: JSON.parse(row.skills as string || '[]'),
-  projects: JSON.parse(row.projects as string || '[]'),
-  milestones: JSON.parse(row.milestones as string || '[]'),
-  social: JSON.parse(row.social as string || '{}'),
-  visibility: JSON.parse(row.visibility as string || '{}'),
+  skills: safeJsonParse(row.skills, [] as unknown[]),
+  projects: safeJsonParse(row.projects, [] as unknown[]),
+  milestones: safeJsonParse(row.milestones, [] as unknown[]),
+  social: safeJsonParse(row.social, {} as Record<string, unknown>),
+  visibility: safeJsonParse(row.visibility, {} as Record<string, unknown>),
   agentEnabled: !!row.agent_enabled,
   isPublic: !!row.is_public,
 });
@@ -637,8 +641,10 @@ portfolioRouter.get('/:username', async (req, res) => {
         return;
       }
     } catch { /* non-fatal */ }
-    res.json(JSON.parse(cached));
-    return;
+    try {
+      res.json(JSON.parse(cached));
+      return;
+    } catch { /* corrupted cache — fall through to DB */ }
   }
 
   const portfolio = db.prepare('SELECT * FROM portfolios WHERE username = ?').get(req.params.username) as Record<string, unknown> | undefined;

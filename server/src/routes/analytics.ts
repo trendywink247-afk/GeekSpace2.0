@@ -1,6 +1,6 @@
 // Analytics Routes -- Phase 102
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import {
   getDailySnapshots,
   getWeeklySummary,
@@ -16,8 +16,8 @@ analyticsRouter.use(requireAuth);
 
 // GET /api/analytics/snapshot -- last 30 days of DailySnapshot
 analyticsRouter.get('/snapshot', async (req, res) => {
-  const userId = (req as unknown as { userId: string }).userId;
-  const days = Math.min(parseInt((req.query.days as string) || '30', 10), 365);
+  const userId = (req as AuthRequest).userId!;
+  const days = Math.max(1, Math.min(parseInt((req.query.days as string) || '30', 10), 365));
   try {
     const snapshots = await getDailySnapshots(userId, days);
     res.json({ snapshots });
@@ -29,7 +29,7 @@ analyticsRouter.get('/snapshot', async (req, res) => {
 
 // GET /api/analytics/weekly -- current week summary with AI insight
 analyticsRouter.get('/weekly', async (req, res) => {
-  const userId = (req as unknown as { userId: string }).userId;
+  const userId = (req as AuthRequest).userId!;
   try {
     const summary = await getWeeklySummary(userId);
     res.json({ summary });
@@ -41,7 +41,7 @@ analyticsRouter.get('/weekly', async (req, res) => {
 
 // GET /api/analytics/heatmap -- last 365 days activity heatmap
 analyticsRouter.get('/heatmap', async (req, res) => {
-  const userId = (req as unknown as { userId: string }).userId;
+  const userId = (req as AuthRequest).userId!;
   try {
     const heatmap = await getActivityHeatmap(userId);
     res.json({ heatmap });
@@ -53,8 +53,8 @@ analyticsRouter.get('/heatmap', async (req, res) => {
 
 // GET /api/analytics/agents -- agent usage last 30 days
 analyticsRouter.get('/agents', async (req, res) => {
-  const userId = (req as unknown as { userId: string }).userId;
-  const days = Math.min(parseInt((req.query.days as string) || '30', 10), 365);
+  const userId = (req as AuthRequest).userId!;
+  const days = Math.max(1, Math.min(parseInt((req.query.days as string) || '30', 10), 365));
   try {
     const agents = await getAgentUsage(userId, days);
     res.json({ agents });
@@ -66,7 +66,7 @@ analyticsRouter.get('/agents', async (req, res) => {
 
 // GET /api/analytics/topics -- top topics from memories + notes
 analyticsRouter.get('/topics', async (req, res) => {
-  const userId = (req as unknown as { userId: string }).userId;
+  const userId = (req as AuthRequest).userId!;
   try {
     const topics = await getTopics(userId);
     res.json({ topics });
