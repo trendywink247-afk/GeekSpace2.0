@@ -845,7 +845,7 @@ export function AutomationsPage() {
                     min={1}
                     max={10080}
                     value={form.intervalMinutes}
-                    onChange={(e) => setForm({ ...form, intervalMinutes: Math.max(1, parseInt(e.target.value) || 60) })}
+                    onChange={(e) => setForm({ ...form, intervalMinutes: Math.max(1, parseInt(e.target.value, 10) || 60) })}
                     className="w-20 p-1.5 text-xs rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 text-[#E8E8F0]"
                   />
                   <span className="text-xs text-[#6B7280]">minutes</span>

@@ -165,7 +165,7 @@ export function VideoGenPage() {
       setFleetAgents(res.data);
       const savedSlot = localStorage.getItem('vg_assigned_agent');
       if (savedSlot) {
-        const agent = res.data.find((a: FleetAgent) => a.slot === parseInt(savedSlot));
+        const agent = res.data.find((a: FleetAgent) => a.slot === parseInt(savedSlot, 10));
         if (agent) setAssignedAgent(agent);
       }
     } catch {
