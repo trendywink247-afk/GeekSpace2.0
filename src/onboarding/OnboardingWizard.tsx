@@ -306,7 +306,7 @@ export function OnboardingWizard() {
       <div className="space-y-3">
         {/* Main action buttons */}
         <div className="flex items-center gap-3">
-          {step > 0 && step < STEPS.length - 1 && (
+          {step > 0 && (
             <Button
               variant="outline"
               onClick={handleBack}

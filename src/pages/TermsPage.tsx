@@ -38,7 +38,7 @@ export function TermsPage() {
       <div className="max-w-3xl mx-auto px-6 py-12">
         <Button
           variant="ghost"
-          onClick={() => navigate(-1)}
+          onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
           className="text-[#6B7280] hover:text-[#E8E8F0] mb-8"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />Back
@@ -66,7 +66,7 @@ export function TermsPage() {
         <div className="mt-12 p-6 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
           <p className="text-sm text-[#6B7280]">
             Questions about terms? Reach us at{' '}
-            <span className="text-[#00F0FF]">legal@agentin.chat</span>
+            <a href="mailto:legal@agentin.chat" className="text-[#00F0FF] hover:underline">legal@agentin.chat</a>
           </p>
         </div>
       </div>

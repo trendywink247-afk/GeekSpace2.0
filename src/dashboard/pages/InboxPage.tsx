@@ -70,6 +70,12 @@ export function InboxPage() {
 
   useEffect(() => { fetchMessages(); }, [fetchMessages]);
 
+  // Auto-refresh every 30s so new messages appear without manual reload
+  useEffect(() => {
+    const interval = setInterval(() => { void fetchMessages(); }, 30_000);
+    return () => clearInterval(interval);
+  }, [fetchMessages]);
+
   const handleMarkRead = async (id: number) => {
     await api.patch('/inbox/' + id + '/read');
     setMessages(prev => prev.map(m => m.id === id ? { ...m, read: 1 } : m));

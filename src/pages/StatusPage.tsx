@@ -58,6 +58,12 @@ export function StatusPage() {
 
   useEffect(() => { fetchHealth(); }, [fetchHealth]);
 
+  // Auto-refresh every 30s so status reflects current state
+  useEffect(() => {
+    const interval = setInterval(() => { void fetchHealth(); }, 30_000);
+    return () => clearInterval(interval);
+  }, [fetchHealth]);
+
   const getStatusIcon = (s: 'operational' | 'degraded' | 'down') => {
     if (s === 'operational') return <CheckCircle2 className="w-5 h-5 text-[#ADFF2F]" />;
     if (s === 'degraded') return <AlertTriangle className="w-5 h-5 text-[#FFD700]" />;
@@ -77,7 +83,7 @@ export function StatusPage() {
   return (
     <div className="min-h-screen bg-[#06060B] text-[#E8E8F0]">
       <div className="max-w-3xl mx-auto px-6 py-12">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="text-[#6B7280] hover:text-[#E8E8F0] mb-8">
+        <Button variant="ghost" onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')} className="text-[#6B7280] hover:text-[#E8E8F0] mb-8">
           <ArrowLeft className="w-4 h-4 mr-2" />Back
         </Button>
 
