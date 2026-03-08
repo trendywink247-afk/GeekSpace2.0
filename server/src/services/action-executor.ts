@@ -189,7 +189,8 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           `SELECT projects FROM portfolios WHERE user_id = ?`,
         ).get(userId) as { projects: string } | undefined;
 
-        const projects: unknown[] = row ? JSON.parse(row.projects) : [];
+        let projects: unknown[] = [];
+        try { projects = row ? JSON.parse(row.projects) : []; } catch { projects = []; }
 
         projects.push({
           id: uuid(),
@@ -249,9 +250,8 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           `SELECT projects FROM portfolios WHERE user_id = ?`,
         ).get(userId) as { projects: string } | undefined;
 
-        const projects: { name: string; [key: string]: unknown }[] = row
-          ? JSON.parse(row.projects)
-          : [];
+        let projects: { name: string; [key: string]: unknown }[] = [];
+        try { projects = row ? JSON.parse(row.projects) : []; } catch { projects = []; }
 
         const targetTitle = (params.projectTitle as string).toLowerCase();
         const filtered = projects.filter(
