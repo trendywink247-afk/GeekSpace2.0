@@ -173,6 +173,10 @@ gmailRouter.get('/messages', requireAuth, (req, res) => {
 gmailRouter.post('/reply/:id', requireAuth, async (req, res) => {
   const userId = (req as AuthRequest).userId!;
   const gmailRowId = Number(req.params.id);
+  if (!Number.isInteger(gmailRowId) || gmailRowId < 1) {
+    res.status(400).json({ error: 'Invalid message ID' });
+    return;
+  }
   const { body } = req.body as { body?: string };
 
   if (!body?.trim()) {
