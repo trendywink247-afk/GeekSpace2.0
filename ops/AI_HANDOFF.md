@@ -1,3 +1,72 @@
+# AI Handoff — Domain Migration + Security + Docs Sync
+**Date:** 2026-03-09
+**Branch:** ai/master-migration-20260309 — open PR to main when ready
+**Status:** Complete — all 10 tasks done, 7/7 smoke tests passing
+
+## What Was Done This Run
+
+### Domain Migration
+- caddy/Caddyfile: ai/api.geekspace.space → permanent 301 redirect ✅
+- 3 server files: hardcoded geekspace.space removed (message-router, portfolio, integrations) ✅
+- .env: CORS/PUBLIC_URL/API_URL updated to agentin.chat; geekspace.space kept in CORS ✅
+
+### Security Hardening
+- .claude/settings.json: Claude Code deny rules (no .env reads, no pipe-to-shell) ✅
+- .claude/hooks/security-precheck.sh: PreToolUse gate active ✅
+- .claudeignore: .env, keys, secrets blocked from Claude Code context ✅
+- /root/.agentin-secrets: real secrets moved outside repo (chmod 600) ✅
+
+### New LLM Providers (config.ts only — routing wiring still pending in Phase 103)
+- Groq: groqApiKey, groqModel, groqBaseUrl + 2 more fields ✅
+- Gemini Flash: geminiApiKey + 4 fields ✅
+- Together AI: togetherApiKey + 4 fields ✅
+- llm-tool-normalizer.ts: created — handles functionDeclarations vs OpenAI tools ✅
+
+### Docs
+- README, CLAUDE.md, ARCHITECTURE.md, DEPLOYMENT.md, ENV_VARS.md ✅
+- .env.example, API.md, DECISIONS.md ✅
+- All: Agentin brand, agentin.chat domain, new LLM waterfall, secrets management ✅
+
+### MCP Servers
+- github: ✓ Connected
+- memory: ✓ Connected
+- redis: ✗ Not host-exposed (expected — Redis is Docker-only)
+
+## MANUAL STEPS STILL NEEDED (only you can do these)
+
+1. **Google Cloud Console** (console.cloud.google.com)
+   APIs & Services → Credentials → OAuth 2.0 Client
+   ADD redirect URI: https://api.agentin.chat/api/auth/google/callback
+   ADD origin: https://ai.agentin.chat
+   KEEP old geekspace.space entries until traffic fully migrated
+
+2. **GitHub Developer Settings** (github.com/settings/developers → OAuth Apps)
+   Homepage URL: https://ai.agentin.chat
+   ADD callback URL: https://api.agentin.chat/api/auth/github/callback
+
+3. **Telegram webhook** — auto-registers on restart. Already verified ✅
+   (smoke test confirmed: agentin.chat in webhook URL)
+
+4. **Stripe** (if active) — update webhook to api.agentin.chat/api/webhooks/stripe
+
+5. **Resend** — only change RESEND_FROM_EMAIL to agent@agentin.chat after
+   verifying agentin.chat is an approved sender domain in Resend dashboard
+
+6. **Phase 103 wiring** — config.ts has Groq/Gemini/Together keys ready.
+   Next: add callGroq(), callGemini(), callTogether() to llm.ts and update
+   routeChat() waterfall. See ops/DECISIONS.md for routing spec.
+
+## Next Command
+```bash
+cd ~/GeekSpace2.0
+gh pr create --title "feat(migration): domain → agentin.chat + security + docs + LLM providers" \
+  --body "See ops/AI_HANDOFF.md for details" \
+  --base main
+cat ops/AI_BACKLOG.md | head -30
+```
+
+---
+
 # AI Handoff -- Post-Phase 109 (Conversation Quality Rating)
 
 **Date:** 2026-03-07

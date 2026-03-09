@@ -154,3 +154,22 @@
 - Task   : Config verified: TS 0 errors (server + frontend) | phase76 test fix (together re-added)
 - Note   : phase76.test.ts line 30 updated — 'together' is now a real provider again
 - Next   : T7
+
+## CHECKPOINT: T7 — DONE
+- Task   : Phase gate 7/7 passed + commit ca19d90 + push
+- Branch : ai/master-migration-20260309
+- Next   : T8
+
+## CHECKPOINT: T8 — DONE
+- Task   : Production deployed: Docker build + up -d + frontend copy + Caddy restart
+- Note   : Caddy requires restart (not just reload) for bind mount re-read
+- Next   : T9
+
+## CHECKPOINT: T9 — DONE
+- Task   : Smoke tests 7/7 passed
+- Note   : Old domains → 301 to agentin.chat | CORS ok | Telegram webhook ok
+- Next   : T10
+
+## CHECKPOINT: T10 — DONE
+- Task   : Final handoff written to AI_HANDOFF.md
+- Next   : DONE — all tasks complete
