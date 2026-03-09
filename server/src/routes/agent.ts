@@ -102,7 +102,12 @@ query: your search query
 <<<ACTION>>>
 tool: send_telegram
 message: your message text
-<<<END>>>`;
+<<<END>>>
+<<<ACTION>>>
+tool: delete_reminder
+deleteAll: true
+<<<END>>>
+Use delete_reminder with deleteAll:true to wipe all pending reminders, or reminderId:"<id>" to delete one specific reminder.`;
 
   return `${OPENCLAW_IDENTITY}
 

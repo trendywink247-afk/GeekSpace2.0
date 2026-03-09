@@ -743,6 +743,40 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         }
       }
 
+      // ── delete_reminder ──────────────────────────────────────
+      case 'delete_reminder': {
+        const reminderId = params.reminderId as string | undefined;
+        const deleteAll = params.deleteAll as boolean | undefined;
+
+        if (deleteAll) {
+          const { changes } = db.prepare(
+            'DELETE FROM reminders WHERE user_id = ? AND completed = 0'
+          ).run(userId);
+          return {
+            tool,
+            success: true,
+            message: `Deleted ${changes} pending reminder${changes !== 1 ? 's' : ''}.`,
+          };
+        }
+
+        if (reminderId) {
+          const existing = db.prepare(
+            'SELECT id, text FROM reminders WHERE id = ? AND user_id = ?'
+          ).get(reminderId, userId) as { id: string; text: string } | undefined;
+          if (!existing) {
+            return { tool, success: false, message: `Reminder not found.` };
+          }
+          db.prepare('DELETE FROM reminders WHERE id = ? AND user_id = ?').run(reminderId, userId);
+          return {
+            tool,
+            success: true,
+            message: `Deleted reminder: "${existing.text}"`,
+          };
+        }
+
+        return { tool, success: false, message: 'Specify reminderId or set deleteAll: true.' };
+      }
+
       // ── Unknown tool (should not happen after parser validation)
       default:
         return {

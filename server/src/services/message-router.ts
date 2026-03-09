@@ -45,6 +45,7 @@ Available tools:
 - generate_image: Generate an image. Params: {"prompt": "<image description>"}
 - generate_code: Build or update a website. Params: {"template": "portfolio|landing|blog|business", "title": "...", "name": "...", "theme": "dark|light|purple|blue|gradient", "profession": "...", "location": "...", "bio": "...", "skills": ["skill1","skill2"], "email": "...", "tagline": "..."}. Use this for both creating AND editing websites (just output updated params — the server handles the rest). Never write raw HTML.
 - send_email: Send an email to the user. Params: {"subject": "<subject>", "body": "<body>"}
+- delete_reminder: Delete reminders. To delete ALL pending reminders: {"deleteAll": true}. To delete one: {"reminderId": "<id>"}. Use this whenever the user says "delete my reminders", "cancel all reminders", "remove reminders", etc.
 
 Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
 

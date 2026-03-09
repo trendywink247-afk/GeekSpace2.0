@@ -111,6 +111,12 @@ const sendTelegramToolSchema = z.object({
   message: z.string().min(1).max(4096),
 });
 
+const deleteReminderSchema = z.object({
+  // Provide either a specific reminder ID or 'all' to wipe everything
+  reminderId: z.string().optional(),
+  deleteAll: z.boolean().optional(),
+});
+
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -128,6 +134,7 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   escalate_to_owner: escalateToOwnerSchema,
   web_search: webSearchSchema,
   send_telegram: sendTelegramToolSchema,
+  delete_reminder: deleteReminderSchema,
 };
 
 // ── Types ───────────────────────────────────────────────────
