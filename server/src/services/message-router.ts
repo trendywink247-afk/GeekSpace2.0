@@ -290,7 +290,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         const isEdit = editWebsitePattern.test(msg.text) && !createWebsitePattern.test(msg.text);
 
         const { executeAction } = await import('./action-executor.js');
-        const baseUrl = config.apiUrl || `https://api.geekspace.space`;
+        const baseUrl = config.apiUrl || `https://api.agentin.chat`;
 
         // For edits, check the existing artifact's metadata to determine if it's template-based
         // or custom (LLM-generated). Template artifacts have a 'template' key; custom do not.

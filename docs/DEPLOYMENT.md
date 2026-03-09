@@ -1,4 +1,4 @@
-# GeekSpace 2.0 — Deployment Guide
+# Agentin — Deployment Guide
 
 ## Prerequisites
 
@@ -12,6 +12,29 @@
 | Ollama | Running on host or Docker | With 7B+ model |
 
 > **RAM note**: Ollama's `llama3.1:8b` model needs ~5-6 GB RAM on CPU. Budget 12-16 GB total for the full stack.
+
+## Secrets Management
+
+Real secrets (API keys, JWT_SECRET, ENCRYPTION_KEY, tokens) must live in
+`/root/.agentin-secrets`, NOT in the in-repo `.env`.
+
+### One-time VPS setup
+```bash
+cp ~/GeekSpace2.0/.env /root/.agentin-secrets
+chmod 600 /root/.agentin-secrets
+echo 'set -a && source /root/.agentin-secrets && set +a' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### What goes in /root/.agentin-secrets
+`JWT_SECRET`, `ENCRYPTION_KEY`, all `*_API_KEY`, `TELEGRAM_BOT_TOKEN`,
+`TELEGRAM_WEBHOOK_SECRET`, `STRIPE_*`, `ADMIN_*`, `RESEND_API_KEY`, `GITHUB_DEV_TOKEN`
+
+### What stays in .env (safe, non-sensitive)
+`NODE_ENV`, `PORT`, `DB_PATH`, `*_BASE_URL`, `*_TIMEOUT_MS`, `CORS_ORIGINS`,
+`PUBLIC_URL`, `API_URL`, `LOG_LEVEL`, rate limit settings
+
+---
 
 ## Quick Deploy
 
@@ -40,10 +63,10 @@ The bootstrap script handles `.env` creation, secret generation (`JWT_SECRET`, `
 ```
 Internet → Caddy (:443, auto-HTTPS)
                │
-               ├── /api/*  →  GeekSpace (:3001) → Redis (:6379)
+               ├── /api/*  →  Agentin (:3001) → Redis (:6379)
                │                    │
                │                    ├── Ollama (local LLM)
-               │                    └── Moonshot API (cloud LLM)
+               │                    └── Groq/Together AI/Edith (cloud LLM)
                │
                └── /*  →  /var/www/geekspace (SPA files)
 ```
@@ -125,9 +148,9 @@ OLLAMA_BASE_URL=http://localhost:32778
 
 > **Note**: The bot token and webhook secret are read from `.env` only. They are never stored in the database.
 
-## PicoClaw (Automation Sidecar)
+## Automation Sidecar
 
-PicoClaw is a lightweight Node.js sidecar that handles trivial/automation tasks via a fast small model. It runs as a Docker container on the internal network — **never exposed publicly**.
+The automation sidecar is a lightweight Node.js container that handles trivial/automation tasks via a fast small model. It runs on the internal network — **never exposed publicly**.
 
 1. Set in `.env`:
    ```env
@@ -166,7 +189,7 @@ Use `repair.sh` when the API is unreachable or you suspect a port conflict (e.g.
 
 ```bash
 cd GeekSpace2.0
-git pull origin live-production
+git pull origin main
 docker compose up -d --build
 docker cp geekspace-app:/app/dist/. /var/www/geekspace/
 docker compose ps

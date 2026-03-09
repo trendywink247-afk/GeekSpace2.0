@@ -27,7 +27,7 @@ import { cacheGet, cacheSet } from './cache.js';
 
 export type Intent = 'simple' | 'planning' | 'coding' | 'automation' | 'complex';
 // P3: Removed ollama-cloud and together — no API keys, dead providers
-export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'edith' | 'picoclaw' | 'builtin';
+export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'groq' | 'gemini' | 'together' | 'edith' | 'picoclaw' | 'builtin';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';

@@ -59,7 +59,7 @@ export const config = {
   // OpenRouter / OpenAI-compatible fallback (cloud engine)
   openrouterApiKey: process.env.OPENROUTER_API_KEY || '',
   openrouterBaseUrl: optional('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
-  openrouterModel: optional('OPENROUTER_MODEL', 'anthropic/claude-sonnet-4-5-20250929'),
+  openrouterModel: optional('OPENROUTER_MODEL', 'claude-sonnet-4-6'),
   openrouterTimeout: optionalInt('OPENROUTER_TIMEOUT_MS', 90000),
   openrouterMaxTokens: optionalInt('OPENROUTER_MAX_TOKENS', 1024),
   openrouterFreeModel: optional('OPENROUTER_FREE_MODEL', 'meta-llama/llama-3.3-70b-instruct:free'),
@@ -183,6 +183,27 @@ export const config = {
   stripeBasicPriceId: process.env.STRIPE_BASIC_PRICE_ID || '',
   stripeProPriceId: process.env.STRIPE_PRO_PRICE_ID || '',
   stripeEnabled: !!process.env.STRIPE_SECRET_KEY,
+
+  // ---- Groq (free tier — Llama 3.3 70B, 14,400 req/day free) ----
+  groqApiKey: process.env.GROQ_API_KEY ?? '',
+  groqBaseUrl: optional('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+  groqModel: optional('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+  groqTimeoutMs: optionalInt('GROQ_TIMEOUT_MS', 30000),
+  groqMaxTokens: optionalInt('GROQ_MAX_TOKENS', 2048),
+
+  // ---- Gemini Flash 2.0 (free 1M tokens/day + paid degradation fallback) ----
+  geminiApiKey: process.env.GEMINI_API_KEY ?? '',
+  geminiModel: optional('GEMINI_MODEL', 'gemini-2.0-flash-exp'),
+  geminiBaseUrl: optional('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+  geminiTimeoutMs: optionalInt('GEMINI_TIMEOUT_MS', 30000),
+  geminiMaxTokens: optionalInt('GEMINI_MAX_TOKENS', 2048),
+
+  // ---- Together AI (paid primary — Llama 3.1 70B Turbo) ----
+  togetherApiKey: process.env.TOGETHER_API_KEY ?? '',
+  togetherModel: optional('TOGETHER_MODEL', 'meta-llama/Llama-3.1-70B-Instruct-Turbo'),
+  togetherBaseUrl: optional('TOGETHER_BASE_URL', 'https://api.together.xyz/v1'),
+  togetherTimeoutMs: optionalInt('TOGETHER_TIMEOUT_MS', 30000),
+  togetherMaxTokens: optionalInt('TOGETHER_MAX_TOKENS', 2048),
 } as const;
 
 // ---- Startup validation ----

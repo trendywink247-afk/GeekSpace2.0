@@ -1,0 +1,29 @@
+# Secrets — Claude Code must never read these
+.env
+.env.*
+.env.local
+.env.staging
+.env.production
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+/root/.agentin-secrets
+
+# Build artifacts — not useful for coding context
+node_modules/
+dist/
+build/
+.worktrees/
+
+# Large data files
+server/data/*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+npm-debug.log*

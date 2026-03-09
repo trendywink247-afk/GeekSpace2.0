@@ -1,0 +1,42 @@
+{
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git *)", "Bash(npm run *)", "Bash(npm test*)",
+      "Bash(npm install*)", "Bash(npx tsc*)", "Bash(npx vitest*)",
+      "Bash(npx playwright*)", "Bash(docker compose ps)",
+      "Bash(docker compose logs*)", "Bash(docker compose up*)",
+      "Bash(docker compose build*)", "Bash(docker compose exec*)",
+      "Bash(docker exec*)", "Bash(docker cp*)",
+      "Bash(cat ops/*)", "Bash(cat docs/*)", "Bash(cat CLAUDE.md)",
+      "Bash(cat README.md)", "Bash(ls*)", "Bash(echo*)",
+      "Bash(mkdir*)", "Bash(cp *)", "Bash(mv *)",
+      "Bash(grep*)", "Bash(find*)", "Bash(curl -sf*)",
+      "Bash(curl -sI*)", "Bash(./ops/*.sh*)"
+    ],
+    "deny": [
+      "Read(.env)", "Read(.env.*)", "Read(**/.env)",
+      "Read(/root/.agentin-secrets)", "Read(~/.agentin-secrets)",
+      "Read(**/*.pem)", "Read(**/*.key)", "Read(~/.ssh/**)",
+      "Write(.env)", "Write(.env.*)", "Edit(.env)", "Edit(.env.*)",
+      "Bash(curl * | bash*)", "Bash(wget * | sh*)",
+      "Bash(cat .env*)", "Bash(echo $JWT*)", "Bash(echo $*KEY*)",
+      "Bash(rm -rf /*)", "Bash(rm -rf ~*)", "Bash(rm -rf $HOME*)",
+      "Bash(*DROP TABLE*)", "Bash(*DELETE FROM*)",
+      "Bash(pm2 delete*)", "Bash(pm2 stop*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "~/GeekSpace2.0/.claude/hooks/security-precheck.sh"
+      }]
+    }]
+  },
+  "transcriptRetentionDays": 14
+}

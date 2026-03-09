@@ -1,6 +1,6 @@
-# GeekSpace 2.0 — API Reference
+# Agentin — API Reference
 
-Base URL: `http://localhost:3001/api` (dev) or `https://yourdomain.com/api` (prod)
+Base URL: `http://localhost:3001/api` (dev) or `https://api.agentin.chat/api` (prod)
 
 All authenticated endpoints require `Authorization: Bearer <jwt_token>` header.
 

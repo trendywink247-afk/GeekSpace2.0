@@ -87,3 +87,22 @@ cat ops/AI_PHASE_PLAN.md
 git status && git branch --show-current && git log --oneline -5
 cd server && npm test 2>&1 | tail -5
 ```
+
+## DOMAIN MIGRATION (Phase 109+)
+- Production domain: ai.agentin.chat (frontend), api.agentin.chat (API)
+- Old domain: ai.geekspace.space → permanent 301 redirect (keep in CORS during transition)
+- Keep geekspace.space in CORS_ORIGINS for months to avoid breaking bookmarked users
+- Container names unchanged: geekspace-app, geekspace-caddy, geekspace-redis (they are internal)
+- Static file path unchanged: /var/www/geekspace (internal Caddy path — don't rename)
+
+## LLM WATERFALL (Phase 103+)
+- FREE:  Ollama → Groq → Gemini Flash → OpenRouter Free → builtin
+- PAID:  Ollama → Together AI → Gemini Flash → Edith/Kimi K2 → builtin
+- AUTO:  sidecar → Ollama → builtin
+- Tool normalizer: server/src/services/llm-tool-normalizer.ts
+- Gemini uses functionDeclarations NOT OpenAI tools format (normalizer handles)
+
+## CLAUDE CODE SECURITY (Phase 109+)
+- .claude/settings.json: deny rules for .env, secrets, pipe-to-shell, destructive rm
+- /root/.agentin-secrets: all API keys + secrets live here (chmod 600, outside repo)
+- Never use --dangerously-skip-permissions on production VPS

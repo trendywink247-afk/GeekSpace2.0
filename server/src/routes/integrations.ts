@@ -443,7 +443,7 @@ integrationsRouter.post('/invite', requireAuth, (req: AuthRequest, res) => {
     'INSERT INTO connection_invites (id, user_id, token, email, expires_at) VALUES (?, ?, ?, ?, ?)'
   ).run(id, userId, token, validatedEmail, expiresAt);
 
-  const inviteUrl = `https://ai.geekspace.space/connect/${token}`;
+  const inviteUrl = `${config.publicUrl}/connect/${token}`;
   res.json({ inviteUrl, token, expiresAt });
 });
 
@@ -455,7 +455,7 @@ integrationsRouter.get('/invites', requireAuth, (req: AuthRequest, res) => {
 
   const result = invites.map((inv) => ({
     ...inv,
-    inviteUrl: `https://ai.geekspace.space/connect/${inv.token}`,
+    inviteUrl: `${config.publicUrl}/connect/${inv.token}`,
     expired: inv.expires_at < Date.now(),
     used: !!inv.used_at,
   }));

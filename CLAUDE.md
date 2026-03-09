@@ -1,4 +1,4 @@
-# CLAUDE.md — GeekSpace 2.0 Autonomous Master Prompt (Phase 43+)
+# CLAUDE.md — Agentin Autonomous Master Prompt (Phase 109+)
 
 ## Compaction Recovery Rule (MANDATORY — run if conversation was compacted)
 If you see the conversation was compacted (summarized), STOP and rehydrate first:
@@ -20,7 +20,7 @@ If you see the conversation was compacted (summarized), STOP and rehydrate first
 ---
 
 ## 🚀 Mission
-You are the autonomous principal engineer / staff engineer / release engineer for **GeekSpace 2.0**.
+You are the autonomous principal engineer / staff engineer / release engineer for **Agentin**.
 
 Your job is to **continuously improve, harden, wire together, test, and prepare GeekSpace for production scale** in safe autonomous phases.
 
@@ -50,10 +50,10 @@ without breaking existing user flows.
 ## 🧠 Project Context (GeekSpace-specific)
 - **Frontend:** React 19 + TypeScript + Vite + Tailwind + shadcn/Radix + Zustand
 - **Backend:** Express + TypeScript + better-sqlite3 + JWT + Pino
-- **AI stack:** Ollama (local), OpenRouter, Moonshot/Kimi, PicoClaw orchestration
+- **AI stack:** Ollama → Groq/Gemini Flash (free) → OpenRouter Free → Together AI (paid) → Kimi K2/Edith (premium) → automation sidecar
 - **Auth:** JWT + Passport (Google/GitHub OAuth)
 - **Infra:** Docker Compose + Caddy reverse proxy + PM2 (Docker runtime)
-- **Core agents/personas:** Weebo / PicoClaw / Edith / Jarvis (preserve logic)
+- **Core agents/personas:** Weebo / Edith / Jarvis (preserve logic)
 - **Deployment policy:** release from `main` only
 
 ---
@@ -285,14 +285,37 @@ cd server && npm test
 
 ---
 
+## Security State (Phase 109+)
+
+### Domain
+- Production: ai.agentin.chat (frontend), api.agentin.chat (API)
+- Old domain (ai.geekspace.space): permanent 301 redirect — keep in CORS during transition
+
+### Secrets
+- Live API keys: /root/.agentin-secrets (chmod 600, outside repo)
+- In-repo .env: non-sensitive config only (URLs, timeouts, flags)
+
+### Claude Code Boundaries
+- .claude/settings.json: deny .env reads, pipe-to-shell, destructive rm
+- .claude/hooks/security-precheck.sh: PreToolUse gate
+- .claudeignore: .env, secrets, .pem, .key files blocked
+
+### New LLM Providers (Phase 103 config, wiring in Phase 103 impl)
+- Groq: GROQ_API_KEY — free Llama 3.3 70B (OpenAI tool format ✅)
+- Together AI: TOGETHER_API_KEY — paid Llama 3.1 70B (OpenAI tool format ✅)
+- Gemini Flash: GEMINI_API_KEY — free+paid fallback (functionDeclarations format ⚠️)
+- Normalizer: server/src/services/llm-tool-normalizer.ts
+
+---
+
 ## Architecture
 
 ### Stack
 - **Frontend:** React 19 + TypeScript + Vite + Tailwind CSS + Shadcn/Radix UI + Zustand
 - **Backend:** Express + TypeScript + better-sqlite3 + JWT + Pino logging
-- **AI:** Multi-provider LLM routing (Ollama local, OpenRouter cloud, Moonshot reasoning, PicoClaw automation)
+- **AI:** Multi-provider LLM routing (Ollama local, Groq/Gemini Flash free, Together AI paid, Edith/Kimi K2 premium, automation sidecar)
 - **Auth:** JWT + Passport.js (Google OAuth 2.0, GitHub OAuth 2.0 via `server/src/routes/oauth.ts`)
-- **Infra:** Docker Compose (GeekSpace + Redis + PicoClaw sidecar), Caddy reverse proxy, PM2 cluster (2 workers in Docker)
+- **Infra:** Docker Compose (Agentin + Redis + automation sidecar), Caddy reverse proxy, PM2 cluster (2 workers in Docker)
 
 ### Key server files:
 - `server/src/index.ts` — Express app, middleware, routes, subsystem init
@@ -312,7 +335,7 @@ cd server && npm test
 - `src/types/index.ts`
 
 ### Key infra files:
-- `docker-compose.yml` — production containers (geekspace, redis, caddy, picoclaw, edith-bridge)
+- `docker-compose.yml` — production containers (geekspace, redis, caddy, optional: automation sidecar, edith-bridge)
 - `docker-compose.staging.yml` — staging containers (staging-app, staging-redis)
 - `caddy/Caddyfile` — Caddy reverse proxy routes (production + staging + dev)
 - `scripts/staging.sh` — staging deploy script
@@ -340,7 +363,7 @@ cd server && npm test
 ## Environment
 - `.env` is gitignored. `.env.example` tracked.
 - `.env.staging` is gitignored. `.env.staging.example` tracked.
-- Production: ai.geekspace.space (frontend), api.geekspace.space (API)
+- Production: ai.agentin.chat (frontend), api.agentin.chat (API)
 - Staging: staging.agentin.chat (full reverse proxy, isolated DB/Redis)
 - Demo users: alex/sarah/marcus (password: demo123)
 - Production branch: live-production

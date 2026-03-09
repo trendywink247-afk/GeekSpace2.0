@@ -27,7 +27,7 @@ describe('Phase 76 — AI Gateway + Smart Routing', () => {
     it("llm.ts does NOT include removed dead providers in Provider type", () => {
       const content = readFileSync(resolve(SERVER_ROOT, 'src/services/llm.ts'), 'utf-8');
       expect(content).not.toContain("'ollama-cloud'");
-      expect(content).not.toContain("'together'");
+      // 'together' was re-added in migration as a real paid provider (Together AI Llama 3.1 70B)
     });
 
     it('waterfall contains ollama, openrouter-free, and edith', () => {

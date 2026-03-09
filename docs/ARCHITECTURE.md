@@ -1,10 +1,10 @@
-# GeekSpace 2.0 — System Architecture
+# Agentin — System Architecture
 
-> Authoritative reference for how GeekSpace works internally.
+> Authoritative reference for how Agentin works internally.
 
 ## 1. High-Level Overview
 
-GeekSpace is a **Personal AI Operating System** — a self-hosted platform where each user gets their own AI agent with a dashboard, terminal, portfolio, and automation engine.
+Agentin is a **Personal AI Operating System** — a self-hosted platform where each user gets their own AI agent with a dashboard, terminal, portfolio, and automation engine.
 
 ```
 User (Browser)
@@ -24,10 +24,9 @@ User (Browser)
 │  ├── SQLite (WAL)   │
 │  │                  │
 │  ├── Multi-Engine LLM Router
-│  │   ├── Local Engine:      Ollama (free)
-│  │   ├── Cloud Engine:      OpenRouter (paid)
-│  │   ├── Premium Engine:    Moonshot Reasoning (paid)
-│  │   └── Automation Engine: PicoClaw (lightweight)
+│  │   ├── Free:    Ollama → Groq → Gemini Flash → OpenRouter Free → builtin
+│  │   ├── Paid:    Ollama → Together AI → Gemini Flash → Edith/Kimi K2 → builtin
+│  │   └── Auto:    sidecar → Ollama → builtin
 │  │
 │  ├── Personality System (Edith / Jarvis / Weebo)
 │  ├── Credit & Billing System
@@ -71,11 +70,11 @@ Classification rules (in order of precedence):
 ```
 if forceProvider is set → use that provider
 else:
-  simple       → Ollama (fallback: OpenRouter → builtin)
-  coding       → Moonshot (fallback: OpenRouter → Ollama → builtin)
-  complex      → Moonshot (fallback: OpenRouter → Ollama → builtin)
-  planning     → Moonshot (fallback: OpenRouter → Ollama → builtin)
-  automation   → Ollama (fallback: OpenRouter → builtin)
+  simple       → Ollama (fallback: Groq → Gemini Flash → OpenRouter Free → builtin)
+  coding       → Ollama → Groq → Together AI (fallback: Edith/Kimi K2 → builtin)
+  complex      → Together AI (fallback: Edith/Kimi K2 → Groq → builtin)
+  planning     → Together AI (fallback: Edith/Kimi K2 → Groq → builtin)
+  automation   → sidecar → Ollama (fallback: builtin)
 ```
 
 ### 3.3 Provider Details
@@ -85,14 +84,17 @@ else:
 | Ollama (Local) | `OLLAMA_BASE_URL/api/chat` | 120s | None | 1 credit/call |
 | OpenRouter (Cloud) | `OPENROUTER_BASE_URL/chat/completions` | 90s | Bearer API key | 5 cr/1K tokens |
 | OpenRouter Free | `OPENROUTER_FREE_BASE_URL/chat/completions` | 90s | Bearer API key | 2 credits/call |
-| Moonshot Reasoning | `OPENROUTER_BASE_URL/chat/completions` | 120s | Bearer API key | 10 cr/1K tokens (min 10) |
-| PicoClaw | `PICOCLAW_URL` | 5s | None | 1 credit/call |
+| Groq | `GROQ_BASE_URL/chat/completions` | 30s | Bearer API key | 2 credits/call (free tier) |
+| Gemini Flash | `GEMINI_BASE_URL/models/...` | 30s | API key query param | 2 credits/call |
+| Together AI | `TOGETHER_BASE_URL/chat/completions` | 30s | Bearer API key | 5 cr/1K tokens |
+| Edith / Kimi K2 | `EDITH_BASE_URL` | 120s | Bearer API key | 10 cr/1K tokens (min 10) |
+| Automation sidecar | `PICOCLAW_URL` | 5s | None | 1 credit/call |
 | Builtin | N/A | N/A | N/A | 0 (static fallback) |
 
 ### 3.4 Fallback Chain
 
 If a provider fails:
-1. Moonshot fails → try OpenRouter → try Ollama → try builtin
+1. Together AI / Edith fails → try Groq → try Ollama → try builtin
 2. OpenRouter fails → try Ollama → try builtin
 3. Ollama fails → try builtin (static error message)
 
@@ -106,12 +108,22 @@ The builtin fallback returns a message explaining that AI backends are unreachab
 |----------|-------------|
 | Ollama | 1 credit flat |
 | OpenRouter Free | 2 credits flat |
-| PicoClaw | 1 credit flat |
+| Automation sidecar | 1 credit flat |
 | Builtin | 0 credits |
 | OpenRouter (paid) | `totalTokens / 1000 * 5` |
-| Moonshot / Premium | `totalTokens / 1000 * 10` (minimum 10) |
+| Together AI / Edith / Premium | `totalTokens / 1000 * 10` (minimum 10) |
 
 Credits deducted via `deductSubscriptionCredits()` after each call.
+
+### 3.6 Tool Calling Compatibility
+
+| Provider | Tool Format | Notes |
+|----------|-------------|-------|
+| Groq | OpenAI tools ✅ | Llama 3.3 70B native |
+| Together AI | OpenAI tools ✅ | Llama 3.1 70B native |
+| Gemini Flash | functionDeclarations ⚠️ | normalizer handles (llm-tool-normalizer.ts) |
+| OpenRouter | OpenAI tools ✅ | allowlist filtered |
+| Edith / Kimi K2 | OpenAI tools ✅ | via edith-bridge |
 
 ## 4. Chat Handler — Prefix Routing
 
@@ -273,7 +285,7 @@ Zod schemas for all input:
 
 ### Networks
 
-- **`geekspace-net`** — Internal bridge. GeekSpace app, Redis, PicoClaw.
+- **`geekspace-net`** — Internal bridge. Agentin app, Redis, automation sidecar.
 - **`geekspace-shared`** — External. Shared with Ollama and OpenClaw containers for DNS resolution.
 
 ### Volumes
@@ -284,7 +296,7 @@ Zod schemas for all input:
 
 ### EDITH Bridge (Legacy but Active)
 
-The `edith-bridge` service (`bridge/edith-bridge/`) is a WebSocket-to-HTTP bridge for the OpenClaw inference gateway. While the primary premium path now uses direct Moonshot API calls, the bridge remains **deployed and running** for fallback/compatibility.
+The `edith-bridge` service (`bridge/edith-bridge/`) is a WebSocket-to-HTTP bridge for the OpenClaw inference gateway. While the primary premium path now uses direct Edith/Kimi K2 API calls, the bridge remains **deployed and running** for fallback/compatibility.
 
 ## 12. Security
 

@@ -585,7 +585,7 @@ portfolioRouter.get('/:username', async (req, res) => {
     const imageUrl = row.avatar && !row.avatar.match(/^[A-Z]{1,2}$/)
       ? row.avatar
       : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name || username)}&background=00F0FF&color=05050A&size=256`;
-    const pageUrl = `https://ai.geekspace.space/p/${username}`;
+    const pageUrl = `${config.publicUrl}/p/${username}`;
     const safeTitle = htmlEncode(title);
     const safeDescription = htmlEncode(description);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');

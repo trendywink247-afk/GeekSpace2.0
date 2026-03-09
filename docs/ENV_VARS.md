@@ -1,6 +1,8 @@
-# GeekSpace 2.0 — Environment Variables Reference
+# Agentin — Environment Variables Reference
 
-All variables read by `server/src/config.ts`. Synced as of 2026-02-16.
+> ⚠️ Variables marked 🔒 must live in `/root/.agentin-secrets`
+
+All variables read by `server/src/config.ts`. Synced as of 2026-03-09.
 
 ---
 
@@ -10,9 +12,9 @@ All variables read by `server/src/config.ts`. Synced as of 2026-02-16.
 |----------|---------|----------|-------------|
 | `NODE_ENV` | `development` | Yes (prod) | Set to `production` for security features |
 | `PORT` | `3001` | No | Express listen port |
-| `JWT_SECRET` | dev fallback | **Yes** | JWT signing key. Generate: `openssl rand -hex 64` |
+| `JWT_SECRET` | dev fallback | **Yes** | 🔒 JWT signing key. Generate: `openssl rand -hex 64` |
 | `JWT_EXPIRES_IN` | `7d` | No | Token expiry duration |
-| `ENCRYPTION_KEY` | dev fallback | **Yes** | AES key for API-key encryption. Generate: `openssl rand -hex 32` |
+| `ENCRYPTION_KEY` | dev fallback | **Yes** | 🔒 AES key for API-key encryption. Generate: `openssl rand -hex 32` |
 
 ## Database
 
@@ -43,9 +45,9 @@ All variables read by `server/src/config.ts`. Synced as of 2026-02-16.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OPENROUTER_API_KEY` | (empty) | API key from [openrouter.ai/keys](https://openrouter.ai/keys) |
+| `OPENROUTER_API_KEY` | (empty) | 🔒 API key from [openrouter.ai/keys](https://openrouter.ai/keys) |
 | `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | API base URL |
-| `OPENROUTER_MODEL` | `anthropic/claude-sonnet-4-5-20250929` | Paid model identifier |
+| `OPENROUTER_MODEL` | `claude-sonnet-4-6` | Paid model identifier |
 | `OPENROUTER_TIMEOUT_MS` | `90000` | Request timeout in ms |
 | `OPENROUTER_MAX_TOKENS` | `1024` | Max generation tokens |
 
@@ -57,21 +59,51 @@ All variables read by `server/src/config.ts`. Synced as of 2026-02-16.
 | `OPENROUTER_FREE_BASE_URL` | `https://openrouter.ai/api/v1` | Free tier base URL |
 | `OPENROUTER_FREE_API_KEY` | (empty) | Separate API key for free tier (optional) |
 
-## Premium Engine — Moonshot Reasoning
+## Premium Engine — Edith / Kimi K2
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MOONSHOT_REASONING_MODEL` | `kimi-k2-thinking` | Heavy reasoning model (uses OpenRouter API key) |
+| `MOONSHOT_REASONING_MODEL` | `kimi-k2-thinking` | Heavy reasoning model |
 | `MOONSHOT_TIMEOUT_MS` | `120000` | Request timeout in ms |
 | `MOONSHOT_MAX_TOKENS` | `8192` | Max reasoning tokens |
 
-## Automation Engine — PicoClaw
+## Automation Engine — Sidecar
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PICOCLAW_URL` | `http://localhost:8080` | PicoClaw endpoint |
-| `PICOCLAW_ENABLED` | `false` | Enable PicoClaw automation engine |
+| `PICOCLAW_URL` | `http://localhost:8080` | Automation sidecar endpoint |
+| `PICOCLAW_ENABLED` | `false` | Enable automation sidecar |
 | `PICOCLAW_TIMEOUT_MS` | `5000` | Request timeout in ms |
+
+## Groq (free tier — Llama 3.3 70B, 14,400 req/day)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `GROQ_API_KEY` | — | 🔒 console.groq.com |
+| `GROQ_BASE_URL` | `https://api.groq.com/openai/v1` | OpenAI-compatible |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | |
+| `GROQ_TIMEOUT_MS` | `30000` | |
+| `GROQ_MAX_TOKENS` | `2048` | |
+
+## Gemini Flash 2.0 (free 1M tokens/day + paid fallback)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `GEMINI_API_KEY` | — | 🔒 aistudio.google.com |
+| `GEMINI_MODEL` | `gemini-2.0-flash-exp` | |
+| `GEMINI_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta` | |
+| `GEMINI_TIMEOUT_MS` | `30000` | |
+| `GEMINI_MAX_TOKENS` | `2048` | ⚠️ Uses functionDeclarations (not OpenAI format) |
+
+## Together AI (paid primary — Llama 3.1 70B Turbo)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `TOGETHER_API_KEY` | — | 🔒 api.together.ai |
+| `TOGETHER_MODEL` | `meta-llama/Llama-3.1-70B-Instruct-Turbo` | |
+| `TOGETHER_BASE_URL` | `https://api.together.xyz/v1` | OpenAI-compatible |
+| `TOGETHER_TIMEOUT_MS` | `30000` | |
+| `TOGETHER_MAX_TOKENS` | `2048` | |
 
 ## [DEPRECATED] EDITH / OpenClaw Bridge
 
@@ -107,8 +139,8 @@ All variables read by `server/src/config.ts`. Synced as of 2026-02-16.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TELEGRAM_BOT_TOKEN` | (empty) | Bot token for Telegram integration |
-| `TELEGRAM_WEBHOOK_SECRET` | (empty) | Webhook verification secret |
+| `TELEGRAM_BOT_TOKEN` | (empty) | 🔒 Bot token for Telegram integration |
+| `TELEGRAM_WEBHOOK_SECRET` | (empty) | 🔒 Webhook verification secret |
 
 ## Rate Limiting
 
@@ -136,8 +168,8 @@ All variables read by `server/src/config.ts`. Synced as of 2026-02-16.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `RESEND_API_KEY` | (empty) | Resend API key for email sending. Server starts without it (logs warning) |
-| `RESEND_FROM_EMAIL` | `agent@geekspace.space` | From address for agent-sent emails |
+| `RESEND_API_KEY` | (empty) | 🔒 Resend API key for email sending. Server starts without it (logs warning) |
+| `RESEND_FROM_EMAIL` | `agent@agentin.chat` | From address for agent-sent emails |
 
 ## Pico Fleet Worker
 

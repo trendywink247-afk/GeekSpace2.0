@@ -5,7 +5,7 @@
 <br />
 <br />
 
-[![Live](https://img.shields.io/badge/LIVE-ai.geekspace.space-7B61FF?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggZD0iTTEyIDJMMTUuMDkgOC4yNiAyMiA5LjI3IDE3IDEzLjE0IDE4LjE4IDIxLjAyIDEyIDE3LjI3IDUuODIgMjEuMDIgNyAxMy4xNCAyIDkuMjcgOC45MSA4LjI2IDEyIDJaIi8+PC9zdmc+)](https://ai.geekspace.space)
+[![Live](https://img.shields.io/badge/LIVE-ai.agentin.chat-7B61FF?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggZD0iTTEyIDJMMTUuMDkgOC4yNiAyMiA5LjI3IDE3IDEzLjE0IDE4LjE4IDIxLjAyIDEyIDE3LjI3IDUuODIgMjEuMDIgNyAxMy4xNCAyIDkuMjcgOC45MSA4LjI2IDEyIDJaIi8+PC9zdmc+)](https://ai.agentin.chat)
 [![Version](https://img.shields.io/badge/v3.1-platform-61FF7B?style=for-the-badge)](https://github.com/trendywink247-afk/GeekSpace2.0/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/trendywink247-afk/GeekSpace2.0/ci.yml?branch=main&style=for-the-badge&label=CI&logo=github)](https://github.com/trendywink247-afk/GeekSpace2.0/actions)
 [![License](https://img.shields.io/badge/License-MIT-61FF7B?style=for-the-badge)](LICENSE)
@@ -21,15 +21,15 @@
 
 **A self-hosted AI OS — your agent, your dashboard, your portfolio.**
 
-[Live Demo](https://ai.geekspace.space) · [Documentation](docs/) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
+[Live Demo](https://ai.agentin.chat) · [Documentation](docs/) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 
 </div>
 
 ---
 
-## What Is GeekSpace?
+## What Is Agentin?
 
-GeekSpace is a personal AI platform that gives every user their own intelligent agent, public developer portfolio, built-in terminal, and automation engine. Route queries across local and cloud AI, swap personalities, automate workflows, and share your work — all from a single self-hosted dashboard.
+Agentin is a personal AI platform that gives every user their own intelligent agent, public developer portfolio, built-in terminal, and automation engine. Route queries across local and cloud AI, swap personalities, automate workflows, and share your work — all from a single self-hosted dashboard.
 
 **No vendor lock-in. No data leaving your infra unless you choose it.**
 
@@ -65,7 +65,7 @@ GeekSpace is a personal AI platform that gives every user their own intelligent 
 <td width="50%">
 
 **Developer Portfolio**
-- Public profile at `username.geekspace.space`
+- Public profile at `username.agentin.chat`
 - AI-powered visitor chat (talk to someone's agent)
 - Project showcase with AI-generated descriptions
 - Connection tracking and social links
@@ -132,13 +132,13 @@ GeekSpace is a personal AI platform that gives every user their own intelligent 
 graph TB
     Internet((Internet)) --> Caddy[Caddy :443<br/>auto-HTTPS]
 
-    Caddy -->|ai.geekspace.space| App
-    Caddy -->|api.geekspace.space| App
+    Caddy -->|ai.agentin.chat| App
+    Caddy -->|api.agentin.chat| App
 
     subgraph Docker["Docker Compose"]
-        App["GeekSpace :3001<br/>Express + React"]
+        App["Agentin :3001<br/>Express + React"]
         Redis[(Redis :6379)]
-        Pico["Weebo Engine<br/>PicoClaw sidecar"]
+        Pico["Weebo Engine<br/>automation sidecar"]
         App <--> Redis
         App <--> Pico
     end
@@ -146,10 +146,12 @@ graph TB
     App --> SQLite[(SQLite<br/>WAL mode)]
     App --> Router{"AI Router"}
 
-    Router -->|"1 credit"| Ollama["Ollama<br/>llama3.1:8b"]
-    Router -->|"2 credits"| Free["OpenRouter<br/>Free Tier"]
-    Router -->|"5 cr/1K tok"| Cloud["OpenRouter<br/>Paid"]
-    Router -->|"10 cr/1K tok"| Kimi["Kimi K2<br/>Moonshot"]
+    Router -->|"free"| Ollama["Ollama<br/>Local"]
+    Router -->|"free fallback"| Groq["Groq<br/>Llama 3.3 70B"]
+    Router -->|"free fallback"| GemFree["Gemini Flash 2.0"]
+    Router -->|"free fallback"| ORFree["OpenRouter<br/>Free Tier"]
+    Router -->|"paid primary"| Together["Together AI<br/>Llama 3.1 70B"]
+    Router -->|"premium only"| Edith["Edith / Kimi K2"]
 
     style App fill:#7B61FF,stroke:#7B61FF,color:#fff
     style Router fill:#FF61DC,stroke:#FF61DC,color:#fff
@@ -172,7 +174,7 @@ graph TB
 | **Cloud Free** | OpenRouter free tier | 2 credits | Auto-fallback; models rotate on quota |
 | **Cloud Paid** | OpenRouter | 5 cr / 1K tokens | Explicit `/cloud` requests |
 | **Premium** | Kimi K2 (Moonshot) | 10 cr / 1K tokens | Specialist sessions, `/premium` prefix |
-| **Weebo** | PicoClaw sidecar | 1 credit | Background tasks, recipes, heartbeat |
+| **Weebo** | automation sidecar | 1 credit | Background tasks, recipes, heartbeat |
 | **Bridge** | 6 specialists | 1–5 LLM calls | `/bridge`, `/agent:coder`, `/agent:analyst` |
 
 ### Request Flow
@@ -230,7 +232,7 @@ npm run lint                       # ESLint
 |-------|-------------|
 | **Frontend** | React 19, TypeScript, Vite 7, Tailwind CSS, shadcn/ui, Zustand, Recharts, Lucide Icons |
 | **Backend** | Express 4, TypeScript, SQLite (better-sqlite3, WAL), JWT (HS256), Zod, Pino, Helmet |
-| **AI** | Ollama (local), OpenRouter (cloud), Kimi K2 (premium), PicoClaw (background) |
+| **AI** | Ollama + Groq + Gemini Flash + Together AI + Kimi K2 |
 | **Infra** | Docker (Node 20 Alpine), Caddy (auto-HTTPS), Redis 7, PM2 (2 cluster workers) |
 | **Testing** | Vitest, Playwright, supertest |
 | **CI/CD** | GitHub Actions (lint, unit, E2E, smoke tests) |
@@ -309,7 +311,7 @@ Built with obsession by [@trendywink247](https://github.com/trendywink247-afk)
 
 <sub>
 
-[Live App](https://ai.geekspace.space) · [Documentation](docs/) · [Report Bug](https://github.com/trendywink247-afk/GeekSpace2.0/issues/new?template=bug_report.yml) · [Request Feature](https://github.com/trendywink247-afk/GeekSpace2.0/issues/new?template=feature_request.yml)
+[Live App](https://ai.agentin.chat) · [Documentation](docs/) · [Report Bug](https://github.com/trendywink247-afk/GeekSpace2.0/issues/new?template=bug_report.yml) · [Request Feature](https://github.com/trendywink247-afk/GeekSpace2.0/issues/new?template=feature_request.yml)
 
 </sub>
 
