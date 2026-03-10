@@ -56,7 +56,7 @@ if (config.googleClientId && config.googleClientSecret) {
           if (user) {
             // Update Google ID if not set
             if (!user.google_id) {
-              db.prepare('UPDATE users SET google_id = ?, updated_at = datetime("now") WHERE id = ?')
+              db.prepare(`UPDATE users SET google_id = ?, updated_at = datetime('now') WHERE id = ?`)
                 .run(googleId, user.id);
             }
             logger.info({ userId: user.id }, 'User logged in via Google');
@@ -125,7 +125,7 @@ if (config.githubClientId && config.githubClientSecret) {
           if (user) {
             // Update GitHub info if not set
             if (!user.github_id) {
-              db.prepare('UPDATE users SET github_id = ?, github_username = ?, updated_at = datetime("now") WHERE id = ?')
+              db.prepare(`UPDATE users SET github_id = ?, github_username = ?, updated_at = datetime('now') WHERE id = ?`)
                 .run(githubId, githubUsername, user.id);
             }
             logger.info({ userId: user.id }, 'User logged in via GitHub');
