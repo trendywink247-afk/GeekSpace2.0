@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useLayoutEffect } from 'react';
 
 interface UseLogoutBlockerReturn {
   showDialog: boolean;
@@ -21,9 +21,11 @@ interface UseLogoutBlockerReturn {
 export function useLogoutBlocker(onConfirmLogout: () => void): UseLogoutBlockerReturn {
   const [showDialog, setShowDialog] = useState(false);
 
-  useEffect(() => {
-    // Push a sentinel history entry so the first back-press pops to here
-    // (rather than leaving the dashboard entirely).
+  useLayoutEffect(() => {
+    // Push a sentinel history entry BEFORE the browser paints so it is always
+    // in place by the time the user can interact with the dashboard. Using
+    // useLayoutEffect (vs useEffect) closes the race window where a fast
+    // back-press could fire before the sentinel was registered.
     window.history.pushState({ dashboardSentinel: true }, '');
 
     function handlePopState() {

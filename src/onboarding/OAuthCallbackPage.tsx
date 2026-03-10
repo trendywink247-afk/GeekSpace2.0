@@ -40,7 +40,7 @@ export default function OAuthCallbackPage() {
           isLoading: false,
           onboarding: { ...defaultOnboarding, completed: !!u.onboardingCompleted, step: u.onboardingStep ?? 0 },
         });
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       })
       .catch((err: unknown) => {
         console.error('[OAuthCallback] fetch /api/auth/me failed:', err);
