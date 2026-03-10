@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
-import { authService } from '@/services/api';
 
 export default function OAuthCallbackPage() {
   const navigate = useNavigate();
@@ -21,10 +20,18 @@ export default function OAuthCallbackPage() {
       return;
     }
 
+    // Store token first
     localStorage.setItem('gs_token', token);
 
-    authService.me()
-      .then(({ data: user }) => {
+    // Use raw fetch with explicit header to avoid Axios interceptor issues
+    fetch('/api/auth/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((user) => {
         useAuthStore.setState({
           user: user as never,
           token,
@@ -33,10 +40,12 @@ export default function OAuthCallbackPage() {
         });
         navigate('/dashboard', { replace: true });
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        console.error('[OAuthCallback] fetch /api/auth/me failed:', err);
         localStorage.removeItem('gs_token');
         navigate('/login?error=' + encodeURIComponent('OAuth login failed — could not fetch profile'));
       });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
