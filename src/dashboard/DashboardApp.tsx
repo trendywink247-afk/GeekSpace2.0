@@ -26,6 +26,8 @@ import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { agentService, userService, type ActivityEntry } from '@/services/api';
 import { notify } from '@/services/notifications';
 import type { AgentPersonality } from '@/types';
+import { useLogoutBlocker } from '@/hooks/useLogoutBlocker';
+import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog';
 
 const personalityEmojis: Record<AgentPersonality, string> = {
   edith: '🔷',
@@ -205,6 +207,7 @@ export function DashboardApp() {
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const { showDialog, handleStay, handleSignOut } = useLogoutBlocker(logout);
   const compactMode = useAuthStore((s) => s.compactMode);
   const onboarding = useAuthStore((s) => s.onboarding);
   const usage = useDashboardStore((s) => s.usage);
@@ -1082,6 +1085,13 @@ export function DashboardApp() {
           onSkip={() => setShowOnboardingWizard(false)}
         />
       )}
+      <LogoutConfirmDialog
+        open={showDialog}
+        userName={user?.name || user?.username}
+        userEmail={user?.email}
+        onStay={handleStay}
+        onSignOut={handleSignOut}
+      />
     </div>
   );
 }
