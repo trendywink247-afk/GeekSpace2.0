@@ -38,10 +38,10 @@ function App() {
       <ErrorBoundary>
       <div className="min-h-screen bg-[#05050A] text-[#F4F6FF] overflow-x-hidden">
         <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<LandingPage />} />
+          {/* Auth-aware public routes — redirect to dashboard if already signed in */}
+          <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
           <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/portfolio/:username" element={<PortfolioView />} />
           <Route path="/privacy" element={<PrivacyPage />} />
