@@ -1919,3 +1919,5 @@ try { db.exec(`ALTER TABLE users ADD COLUMN timezone TEXT DEFAULT 'Asia/Kolkata'
 // Google/GitHub OAuth identity columns
 try { db.exec(`ALTER TABLE users ADD COLUMN google_id TEXT DEFAULT NULL`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE users ADD COLUMN github_id TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE users ADD COLUMN github_username TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE users ADD COLUMN updated_at TEXT DEFAULT NULL`); } catch { /* column already exists */ }
