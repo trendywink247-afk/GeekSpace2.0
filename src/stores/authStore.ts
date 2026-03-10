@@ -33,7 +33,7 @@ interface AuthStore {
   loginDemo: () => Promise<void>;
 }
 
-const defaultOnboarding: OnboardingState = {
+export const defaultOnboarding: OnboardingState = {
   step: 0,
   completed: false,
   profile: { name: '', username: '', bio: '', headline: '', tags: [] },

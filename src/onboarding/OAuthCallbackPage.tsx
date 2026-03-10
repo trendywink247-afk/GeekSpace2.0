@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore, defaultOnboarding } from '@/stores/authStore';
 
 export default function OAuthCallbackPage() {
   const navigate = useNavigate();
@@ -32,11 +32,13 @@ export default function OAuthCallbackPage() {
         return r.json();
       })
       .then((user) => {
+        const u = user as { onboardingCompleted?: boolean; onboardingStep?: number };
         useAuthStore.setState({
           user: user as never,
           token,
           isAuthenticated: true,
           isLoading: false,
+          onboarding: { ...defaultOnboarding, completed: !!u.onboardingCompleted, step: u.onboardingStep ?? 0 },
         });
         navigate('/dashboard', { replace: true });
       })
