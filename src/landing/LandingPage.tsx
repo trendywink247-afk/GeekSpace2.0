@@ -38,7 +38,7 @@ export function LandingPage() {
   if (isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#05050A] relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0C0C18] via-[#05050A] to-[#0A0A0F]" />
+        <NeuralBackground />
         <div className="relative z-10 w-full max-w-sm mx-auto px-6 text-center">
           <div className="bg-[#0C0C18] border border-white/10 rounded-2xl p-8 space-y-6">
             <div className="w-14 h-14 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto">
