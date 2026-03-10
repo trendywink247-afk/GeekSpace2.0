@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
 import { NeuralBackground } from '@/components/NeuralBackground';
 import { Navigation } from '@/components/Navigation';
 import { HeroSection } from './sections/HeroSection';
@@ -13,6 +14,7 @@ import { PromptTemplatesSection } from './sections/PromptTemplatesSection';
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const onEnterDashboard = () => navigate('/login');
+  const onEnterDashboard = () => navigate(isAuthenticated ? '/dashboard' : '/login');
   const onViewPortfolio = (username: string) => navigate(`/portfolio/${username}`);
   const onWatchDemo = () => navigate('/login?demo=true');
   const onBrowseDirectory = () => navigate('/explore');
