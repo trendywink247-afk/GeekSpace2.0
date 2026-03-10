@@ -96,7 +96,7 @@ export function LoginPage() {
         navigate('/onboarding', { replace: true });
       } else {
         await login(email, password);
-        navigate('/dashboard', { replace: true });
+        navigate('/dashboard');
       }
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { error?: string } } };
@@ -110,7 +110,7 @@ export function LoginPage() {
 
   const handleDemo = async () => {
     await loginDemo();
-    navigate('/dashboard', { replace: true });
+    navigate('/dashboard');
   };
 
   if (isAuthenticated) {
