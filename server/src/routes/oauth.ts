@@ -14,6 +14,30 @@ import { generateToken } from '../middleware/auth.js';
 
 const router = Router();
 
+// Generate a cool unique username like "swift_tiger_42"
+function generateCoolUsername(): string {
+  const adjectives = [
+    'swift', 'bright', 'bold', 'cosmic', 'neon', 'cyber', 'turbo', 'ultra',
+    'hyper', 'solar', 'lunar', 'nova', 'pixel', 'alpha', 'omega', 'delta',
+    'quantum', 'sonic', 'atomic', 'blaze', 'frost', 'storm', 'shadow', 'echo',
+    'flux', 'apex', 'zenith', 'vortex', 'stellar', 'radiant',
+  ];
+  const nouns = [
+    'fox', 'wolf', 'hawk', 'bear', 'tiger', 'panda', 'eagle', 'shark',
+    'phoenix', 'dragon', 'raven', 'falcon', 'lynx', 'jaguar', 'viper',
+    'comet', 'orbit', 'pulse', 'spark', 'byte', 'node', 'core', 'wave',
+    'cipher', 'vector', 'quasar', 'nebula', 'prism', 'zenon', 'nexus',
+  ];
+  const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  const num = Math.floor(Math.random() * 900) + 100; // 100-999
+  const candidate = `${adj}_${noun}_${num}`;
+  // Ensure uniqueness against existing usernames
+  const exists = db.prepare('SELECT 1 FROM users WHERE username = ?').get(candidate);
+  if (exists) return `${adj}_${noun}_${Math.floor(Math.random() * 9000) + 1000}`;
+  return candidate;
+}
+
 // Serialize user for session
 passport.serializeUser((user: Express.User, done) => {
   const u = user as { id: string };
@@ -63,7 +87,7 @@ if (config.googleClientId && config.googleClientSecret) {
           } else {
             // Create new user
             const userId = uuid();
-            const username = email.split('@')[0] + Math.random().toString(36).substring(2, 6);
+            const username = generateCoolUsername();
             
             db.prepare(
               `INSERT INTO users (id, email, username, password_hash, name, avatar, google_id, created_at, updated_at)
@@ -132,7 +156,7 @@ if (config.githubClientId && config.githubClientSecret) {
           } else {
             // Create new user
             const userId = uuid();
-            const username = githubUsername || `user${Math.random().toString(36).substring(2, 8)}`;
+            const username = githubUsername || generateCoolUsername();
             
             db.prepare(
               `INSERT INTO users (id, email, username, password_hash, name, avatar, github_id, github_username, created_at, updated_at)
