@@ -187,7 +187,7 @@ router.get('/google/callback', (req, res, next) => {
     return res.redirect(`${config.publicUrl}/login?error=${encodeURIComponent('Google sign-in was cancelled')}`);
   }
   next();
-}, passport.authenticate('google', { failureRedirect: `${config.publicUrl}/login?error=${encodeURIComponent('Google sign-in failed')}` }),
+}, passport.authenticate('google', { session: false, failureRedirect: `${config.publicUrl}/login?error=${encodeURIComponent('Google sign-in failed')}` }),
   (req, res) => {
     const user = req.user as { id: string };
     const token = generateToken(user.id);
@@ -205,7 +205,7 @@ router.get('/github/callback', (req, res, next) => {
     return res.redirect(`${config.publicUrl}/login?error=${encodeURIComponent('GitHub sign-in was cancelled')}`);
   }
   next();
-}, passport.authenticate('github', { failureRedirect: `${config.publicUrl}/login?error=${encodeURIComponent('GitHub sign-in failed')}` }),
+}, passport.authenticate('github', { session: false, failureRedirect: `${config.publicUrl}/login?error=${encodeURIComponent('GitHub sign-in failed')}` }),
   (req, res) => {
     const user = req.user as { id: string };
     const token = generateToken(user.id);
