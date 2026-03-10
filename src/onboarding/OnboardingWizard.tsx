@@ -386,18 +386,30 @@ export function OnboardingWizard() {
           {step === 5 && "Review everything before launching"}
         </p>
 
-        {/* Escape hatch — sign in as a different account */}
-        {user?.name && (
-          <div className="flex items-center justify-center pt-2">
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 text-xs text-[#6B7280]/40 hover:text-[#6B7280] transition-colors"
-            >
-              <LogOut className="w-3 h-3" />
-              Not {user.name.split(' ')[0]}? Sign in as someone else
-            </button>
-          </div>
-        )}
+        {/* Finish later — skips all setup, goes straight to dashboard */}
+        <div className="flex items-center justify-center gap-4 pt-1">
+          <button
+            onClick={async () => {
+              await completeOnboarding();
+              navigate('/dashboard', { replace: true });
+            }}
+            className="text-xs text-[#6B7280]/50 hover:text-[#6B7280] transition-colors underline underline-offset-2"
+          >
+            I'll finish setup later
+          </button>
+          {user?.name && (
+            <>
+              <span className="text-[#6B7280]/20">|</span>
+              <button
+                onClick={logout}
+                className="flex items-center gap-1 text-xs text-[#6B7280]/40 hover:text-[#6B7280] transition-colors"
+              >
+                <LogOut className="w-3 h-3" />
+                Not {user.name.split(' ')[0]}?
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
