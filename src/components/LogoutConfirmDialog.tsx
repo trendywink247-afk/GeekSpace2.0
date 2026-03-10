@@ -18,6 +18,9 @@ export function LogoutConfirmDialog({ open, userName, userEmail, onStay, onSignO
       onClick={onStay}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="logout-dialog-title"
         className="bg-[#0C0C18] border border-white/10 rounded-2xl p-8 space-y-6 w-full max-w-sm mx-4 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -25,7 +28,7 @@ export function LogoutConfirmDialog({ open, userName, userEmail, onStay, onSignO
           <div className="w-14 h-14 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto mb-4">
             <Hexagon className="w-7 h-7 text-[#00F0FF]" />
           </div>
-          <h2 className="text-xl font-bold text-white mb-1">Leaving so soon?</h2>
+          <h2 id="logout-dialog-title" className="text-xl font-bold text-white mb-1">Leaving so soon?</h2>
           {userName && (
             <p className="text-white/50 text-sm">
               Signed in as <span className="text-white/80 font-medium">{userName}</span>
@@ -50,6 +53,7 @@ export function LogoutConfirmDialog({ open, userName, userEmail, onStay, onSignO
           </Button>
           <Button
             onClick={onStay}
+            autoFocus
             className="w-full bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/20"
           >
             Stay signed in
