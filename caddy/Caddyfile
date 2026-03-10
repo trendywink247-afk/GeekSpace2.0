@@ -29,6 +29,11 @@ dev.geekspace.space {
 ai.agentin.chat {
 	import common_headers
 
+	# Admin is api-domain only — hard block on frontend domain
+	handle /admin* {
+		respond 404
+	}
+
 	# API calls always pass through
 	handle /api/* {
 		reverse_proxy geekspace:3001
