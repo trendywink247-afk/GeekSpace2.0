@@ -331,7 +331,7 @@ export function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => { window.location.href = '/auth/github'; }}
+                  onClick={() => { window.location.href = '/api/oauth/github'; }}
                   className="border-[#00F0FF]/15 h-12 text-[#E8E8F0] hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5"
                 >
                   <Github className="w-4 h-4 mr-2" />
@@ -340,7 +340,7 @@ export function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => { window.location.href = '/auth/google'; }}
+                  onClick={() => { window.location.href = '/api/oauth/google'; }}
                   className="border-[#00F0FF]/15 h-12 text-[#E8E8F0] hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5"
                 >
                   <Chrome className="w-4 h-4 mr-2" />
