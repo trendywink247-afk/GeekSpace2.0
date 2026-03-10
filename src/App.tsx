@@ -14,6 +14,7 @@ import { StatusPage } from './pages/StatusPage';
 import { DocsPage } from './pages/DocsPage';
 import { ConnectPage } from './pages/ConnectPage';
 import { InvitePage } from './pages/InvitePage';
+import OAuthCallbackPage from './onboarding/OAuthCallbackPage';
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -49,6 +50,7 @@ function App() {
           <Route path="/docs" element={<DocsPage />} />
           <Route path="/connect/:token" element={<ConnectPage />} />
           <Route path="/invite" element={<InvitePage />} />
+          <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
           {/* Onboarding — only show if logged in but not completed */}
           <Route
