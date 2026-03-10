@@ -66,8 +66,8 @@ if (config.googleClientId && config.googleClientSecret) {
             const username = email.split('@')[0] + Math.random().toString(36).substring(2, 6);
             
             db.prepare(
-              `INSERT INTO users (id, email, username, name, avatar, google_id, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+              `INSERT INTO users (id, email, username, password_hash, name, avatar, google_id, created_at, updated_at)
+               VALUES (?, ?, ?, 'oauth:google:no-password', ?, ?, ?, datetime('now'), datetime('now'))`
             ).run(userId, email, username, name, avatar, googleId);
 
             user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as Record<string, unknown>;
@@ -135,8 +135,8 @@ if (config.githubClientId && config.githubClientSecret) {
             const username = githubUsername || `user${Math.random().toString(36).substring(2, 8)}`;
             
             db.prepare(
-              `INSERT INTO users (id, email, username, name, avatar, github_id, github_username, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+              `INSERT INTO users (id, email, username, password_hash, name, avatar, github_id, github_username, created_at, updated_at)
+               VALUES (?, ?, ?, 'oauth:github:no-password', ?, ?, ?, ?, datetime('now'), datetime('now'))`
             ).run(userId, email, username, name, avatar, githubId, githubUsername);
 
             user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as Record<string, unknown>;
