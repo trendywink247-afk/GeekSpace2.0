@@ -109,20 +109,8 @@ export function getUserResetChannels(userId: string): { email: string | null; te
  */
 async function sendEmailOTP(email: string, otp: string, userName: string): Promise<boolean> {
   try {
-    // Use existing email service
-    const { sendEmail } = await import('./email.js');
-
-    const subject = 'Your Agentin Password Reset Code';
-    const html = `<p>Hi ${userName},</p>
-             <p>Your password reset code is:</p>
-             <h2 style="font-size: 32px; letter-spacing: 8px; background: #f0f0f0; padding: 20px; text-align: center;">${otp}</h2>
-             <p>This code is valid for <strong>10 minutes</strong>.</p>
-             <p>If you didn't request this, please ignore this email.</p>
-             <p>- Agentin Team</p>`;
-
-    await sendEmail(email, subject, html);
-
-    return true;
+    const { sendPasswordResetOTP } = await import('./email.js');
+    return await sendPasswordResetOTP(email, otp, userName);
   } catch (err) {
     logger.error({ err, email }, 'Failed to send email OTP');
     return false;
