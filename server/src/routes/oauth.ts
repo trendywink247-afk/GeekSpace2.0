@@ -14,6 +14,50 @@ import { generateToken } from '../middleware/auth.js';
 
 const router = Router();
 
+// Provision all default rows a new user needs — mirrors regular signup in auth.ts
+function provisionNewUser(userId: string, username: string, displayName: string) {
+  // Default agent config
+  db.prepare(
+    `INSERT INTO agent_configs (id, user_id, name, display_name, mode, voice, system_prompt)
+     VALUES (?, ?, 'Geek', ?, 'builder', 'friendly', 'You are a helpful personal AI assistant.')`
+  ).run(uuid(), userId, `${displayName}'s AI`);
+
+  // Default features row
+  db.prepare('INSERT INTO features (user_id) VALUES (?)').run(userId);
+
+  // Default free subscription
+  db.prepare('INSERT INTO subscriptions (id, user_id) VALUES (?, ?)').run(uuid(), userId);
+
+  // Default portfolio
+  db.prepare('INSERT INTO portfolios (user_id, username) VALUES (?, ?)').run(userId, username);
+
+  // Default Pico agent
+  try {
+    db.prepare('INSERT INTO pico_agents (id, user_id, slot, name) VALUES (?, ?, 1, ?)').run(uuid(), userId, 'Weebo');
+  } catch { /* table may not exist in older DBs */ }
+
+  // Default integrations
+  const insInt = db.prepare(
+    'INSERT INTO integrations (id, user_id, type, name, description, status, health, requests_today, last_sync, features, permissions) VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?)'
+  );
+  const defaultIntegrations: [string, string, string, string][] = [
+    ['telegram', 'Telegram', 'Send messages, reminders, and receive notifications via Telegram bot', '["Send messages","Receive reminders","Bot commands"]'],
+    ['google-calendar', 'Google Calendar', 'Sync events, schedule reminders, and check availability', '["Event sync","Reminders","Availability check"]'],
+    ['location', 'Location Services', 'Share location for contextual reminders', '["Location queries","Geofenced reminders"]'],
+    ['github', 'GitHub', 'Sync repositories, track issues, and showcase projects', '["Repo sync","Issue tracking","Portfolio showcase"]'],
+    ['twitter', 'Twitter/X', 'Share updates and connect your social presence', '["Auto-share","Social sync","Profile link"]'],
+    ['linkedin', 'LinkedIn', 'Professional profile sync and networking', '["Profile sync","Network updates"]'],
+    ['n8n', 'n8n', 'Workflow automation engine for advanced integrations', '["Custom workflows","Triggers","Webhooks"]'],
+    ['whatsapp', 'WhatsApp', 'Chat with your AI agent via WhatsApp', '["Messages","Voice notes","Media"]'],
+  ];
+  for (const [type, name, desc, feats] of defaultIntegrations) {
+    insInt.run(uuid(), userId, type, name, desc, 'disconnected', '', feats, '[]');
+  }
+
+  // Activity log
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Signed up', 'Welcome to Agentin!', 'user-plus')`).run(uuid(), userId);
+}
+
 // Generate a cool unique username like "swift_tiger_42"
 function generateCoolUsername(): string {
   const adjectives = [
@@ -97,11 +141,8 @@ if (config.googleClientId && config.googleClientSecret) {
             user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as Record<string, unknown>;
             logger.info({ userId, email }, 'New user created via Google OAuth');
 
-            // Initialize agent config
-            db.prepare(
-              `INSERT INTO agent_configs (id, user_id, name, mode, voice, system_prompt, created_at)
-               VALUES (?, ?, 'Alex', 'builder', 'friendly', ?, datetime('now'))`
-            ).run(uuid(), userId, 'You are Alex, a helpful AI assistant.');
+            // Provision all default rows (features, portfolio, integrations, etc.)
+            provisionNewUser(userId, username, name || username);
           }
 
           done(null, user);
@@ -166,11 +207,8 @@ if (config.githubClientId && config.githubClientSecret) {
             user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as Record<string, unknown>;
             logger.info({ userId, email, githubUsername }, 'New user created via GitHub OAuth');
 
-            // Initialize agent config
-            db.prepare(
-              `INSERT INTO agent_configs (id, user_id, name, mode, voice, system_prompt, created_at)
-               VALUES (?, ?, 'Alex', 'builder', 'friendly', ?, datetime('now'))`
-            ).run(uuid(), userId, 'You are Alex, a helpful AI assistant.');
+            // Provision all default rows (features, portfolio, integrations, etc.)
+            provisionNewUser(userId, username, name || username);
 
             // Auto-import GitHub repos to portfolio if available
             if (accessToken) {
