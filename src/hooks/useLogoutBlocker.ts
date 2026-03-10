@@ -5,15 +5,24 @@ import { useBlocker } from 'react-router-dom';
  * Intercepts back/forward navigation away from the dashboard.
  * Returns state and handlers to drive a "sign out?" confirmation dialog.
  */
-export function useLogoutBlocker(onConfirmLogout: () => void) {
+
+function leavingDashboard({ currentLocation, nextLocation }: { currentLocation: { pathname: string }; nextLocation: { pathname: string } }) {
+  return (
+    currentLocation.pathname.startsWith('/dashboard') &&
+    !nextLocation.pathname.startsWith('/dashboard')
+  );
+}
+
+interface UseLogoutBlockerReturn {
+  showDialog: boolean;
+  handleStay: () => void;
+  handleSignOut: () => void;
+}
+
+export function useLogoutBlocker(onConfirmLogout: () => void): UseLogoutBlockerReturn {
   const [showDialog, setShowDialog] = useState(false);
 
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
-    const leavingDashboard =
-      currentLocation.pathname.startsWith('/dashboard') &&
-      !nextLocation.pathname.startsWith('/dashboard');
-    return leavingDashboard;
-  });
+  const blocker = useBlocker(leavingDashboard);
 
   if (blocker.state === 'blocked' && !showDialog) {
     setShowDialog(true);
@@ -25,8 +34,9 @@ export function useLogoutBlocker(onConfirmLogout: () => void) {
   }, [blocker]);
 
   const handleSignOut = useCallback(() => {
+    if (blocker.state !== 'blocked') return;
     setShowDialog(false);
-    if (blocker.state === 'blocked') blocker.proceed();
+    blocker.proceed();
     onConfirmLogout();
   }, [blocker, onConfirmLogout]);
 
