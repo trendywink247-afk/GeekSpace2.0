@@ -60,7 +60,7 @@ function FloatingParticles() {
 export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, signup, loginDemo, isLoading } = useAuthStore();
+  const { login, signup, loginDemo, logout, isLoading, isAuthenticated, user } = useAuthStore();
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -112,6 +112,44 @@ export function LoginPage() {
     await loginDemo();
     navigate('/dashboard', { replace: true });
   };
+
+  // Already signed in — ask before logging out
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#05050A] relative overflow-hidden">
+        <div className="absolute inset-0 gradient-mesh" />
+        <OrbitalRings />
+        <div className="relative z-10 w-full max-w-sm mx-auto px-6 text-center">
+          <div className="bg-[#0C0C18] border border-white/10 rounded-2xl p-8 space-y-6">
+            <div className="w-14 h-14 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto">
+              <Hexagon className="w-7 h-7 text-[#00F0FF]" />
+            </div>
+            <div>
+              <p className="text-white/50 text-sm mb-1">Signed in as</p>
+              <p className="text-white font-semibold">{user?.name || user?.username}</p>
+              <p className="text-white/40 text-sm">{user?.email}</p>
+            </div>
+            <p className="text-white/60 text-sm">Do you want to sign out?</p>
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={() => { logout(); }}
+                variant="outline"
+                className="w-full border-[#FF2D78]/40 text-[#FF2D78] hover:bg-[#FF2D78]/10 hover:border-[#FF2D78]"
+              >
+                Yes, sign out
+              </Button>
+              <Button
+                onClick={() => navigate('/dashboard', { replace: true })}
+                className="w-full bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/20"
+              >
+                Stay signed in
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex relative overflow-hidden">
