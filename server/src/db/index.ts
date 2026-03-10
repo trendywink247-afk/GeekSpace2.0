@@ -1915,3 +1915,7 @@ try { db.exec(`ALTER TABLE conversation_log ADD COLUMN quality_score INTEGER DEF
 
 // Phase 110: User timezone for timezone-aware reminder parsing and display
 try { db.exec(`ALTER TABLE users ADD COLUMN timezone TEXT DEFAULT 'Asia/Kolkata'`); } catch { /* column already exists */ }
+
+// Google/GitHub OAuth identity columns
+try { db.exec(`ALTER TABLE users ADD COLUMN google_id TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE users ADD COLUMN github_id TEXT DEFAULT NULL`); } catch { /* column already exists */ }
