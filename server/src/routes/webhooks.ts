@@ -262,10 +262,20 @@ async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Pr
     const messages: ChatMessage[] = [...history, { role: 'user', content: transcript }];
 
     // 5. Route through LLM
+    // Detect non-Latin script (Devanagari, Telugu, Tamil, Arabic) or Hinglish in transcript
+    const transcriptHasNonLatin = /[\u0900-\u097F\u0C00-\u0C7F\u0600-\u06FF\u0B80-\u0BFF\u0A80-\u0AFF]/.test(transcript);
+    const HINGLISH_WORDS_VOICE = new Set(['aap','kya','kaise','hai','hain','ho','mera','meri','nahi','haan',
+      'yaar','bhai','bolo','main','tum','woh','yeh','karo','batao','kitna','kahan','kab','kaun','kyun',
+      'mujhe','tumhe','theek','accha','chalo','suno','bahut','abhi','lekin','aur','sirf','toh','naam','kaam']);
+    const transcriptWords = transcript.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/);
+    const transcriptIsHinglish = transcriptWords.filter(w => HINGLISH_WORDS_VOICE.has(w)).length >= 2;
+    const voiceNeedsGroq = transcriptHasNonLatin || transcriptIsHinglish;
+
     const llmResponse = await routeChat(messages, {
       systemPrompt: systemPromptWithLang,
       userId: link.user_id,
       userPlan: (sub as { plan?: string } | undefined)?.plan,
+      ...(voiceNeedsGroq ? { forceProvider: 'groq' as const } : {}),
     });
 
     // 6. Log conversation

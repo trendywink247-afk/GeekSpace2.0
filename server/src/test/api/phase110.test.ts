@@ -489,3 +489,115 @@ describe('110.7 IST hardcode removed from message-router', () => {
     expect(src).toContain('DateTime');
   });
 });
+
+// ── 110.8  Multilingual support ───────────────────────────────────────────────
+
+describe('110.8 Multilingual support — routing + TTS voice selection', () => {
+
+  // ---- message-router routing ----
+
+  it('message-router.ts detects non-Latin script via Unicode ranges', () => {
+    const src = readSrc('services', 'message-router.ts');
+    expect(src).toContain('\\u0900-\\u097F'); // Devanagari (Hindi)
+    expect(src).toContain('\\u0C00-\\u0C7F'); // Telugu
+    expect(src).toContain('\\u0B80-\\u0BFF'); // Tamil
+  });
+
+  it('message-router.ts has Hinglish word list with at least 20 words', () => {
+    const src = readSrc('services', 'message-router.ts');
+    expect(src).toContain('HINGLISH_WORDS');
+    expect(src).toContain("'aap'");
+    expect(src).toContain("'kya'");
+    expect(src).toContain("'bhai'");
+    expect(src).toContain("'yaar'");
+    expect(src).toContain("'nahi'");
+  });
+
+  it('message-router.ts routes non-Latin to Groq with forceProvider', () => {
+    const src = readSrc('services', 'message-router.ts');
+    expect(src).toContain('needsGroq');
+    expect(src).toContain("forceProvider: 'groq'");
+  });
+
+  it('message-router.ts imports routeChat directly for multilingual path', () => {
+    const src = readSrc('services', 'message-router.ts');
+    expect(src).toMatch(/import.*routeChat.*from.*llm/);
+  });
+
+  // ---- TTS voice auto-selection ----
+
+  it('voice.ts has detectVoice function with Hindi voice', () => {
+    const src = readSrc('services', 'voice.ts');
+    expect(src).toContain('detectVoice');
+    expect(src).toContain('hi-IN-SwaraNeural');
+  });
+
+  it('voice.ts has Telugu TTS voice', () => {
+    const src = readSrc('services', 'voice.ts');
+    expect(src).toContain('te-IN-ShrutiNeural');
+  });
+
+  it('voice.ts has Tamil TTS voice', () => {
+    const src = readSrc('services', 'voice.ts');
+    expect(src).toContain('ta-IN-PallaviNeural');
+  });
+
+  it('voice.ts detects Devanagari script for Hindi voice selection', () => {
+    const src = readSrc('services', 'voice.ts');
+    expect(src).toContain('\\u0900-\\u097F');
+    expect(src).toContain('hi-IN-SwaraNeural');
+  });
+
+  it('voice.ts strips action blocks from TTS input', () => {
+    const src = readSrc('services', 'voice.ts');
+    expect(src).toContain('<<<ACTION');
+    expect(src).toContain('ACTION>>>');
+  });
+
+  it('voice.ts strips slash characters to prevent "slash" being read aloud', () => {
+    const src = readSrc('services', 'voice.ts');
+    // slash stripping regexes present (e.g. /\/(\w)/g and /\//g)
+    expect(src).toContain("replace(/\\/(\\w)/g");
+    expect(src).toContain("replace(/\\//g");
+  });
+
+  // ---- webhooks.ts voice handler multilingual fix ----
+
+  it('webhooks.ts voice handler detects non-Latin script in transcript', () => {
+    const src = readSrc('routes', 'webhooks.ts');
+    expect(src).toContain('transcriptHasNonLatin');
+    expect(src).toContain('\\u0900-\\u097F');
+  });
+
+  it('webhooks.ts voice handler detects Hinglish in transcript', () => {
+    const src = readSrc('routes', 'webhooks.ts');
+    expect(src).toContain('HINGLISH_WORDS_VOICE');
+    expect(src).toContain('transcriptIsHinglish');
+  });
+
+  it('webhooks.ts voice handler forces Groq for non-Latin transcripts', () => {
+    const src = readSrc('routes', 'webhooks.ts');
+    expect(src).toContain('voiceNeedsGroq');
+    expect(src).toContain("forceProvider: 'groq'");
+  });
+
+  // ---- system prompt language rule ----
+
+  it('message-router.ts buildChannelSystemPrompt has LANGUAGE RULE at top', () => {
+    const src = readSrc('services', 'message-router.ts');
+    expect(src).toContain('LANGUAGE RULE');
+    expect(src).toContain('YOUR IDENTITY');
+  });
+
+  it('message-router.ts system prompt names the agent explicitly at top', () => {
+    const src = readSrc('services', 'message-router.ts');
+    // Agent name is declared at top of prompt, not just in USER SESSION
+    expect(src).toContain('YOUR IDENTITY: Your name is');
+  });
+
+  it('webhooks.ts voice handler has language-match instruction in systemPromptWithLang', () => {
+    const src = readSrc('routes', 'webhooks.ts');
+    expect(src).toContain('systemPromptWithLang');
+    expect(src).toContain('Always reply in the exact same language');
+  });
+});
