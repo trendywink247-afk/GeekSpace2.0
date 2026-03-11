@@ -163,7 +163,8 @@ export interface ParseResult {
 
 // ── Parser ──────────────────────────────────────────────────
 
-const ACTION_REGEX = /<<<ACTION\s*([\s\S]*?)ACTION>>+>/g;
+// Matches <<<ACTION...ACTION>>> (canonical) OR <<<ACTION...>>> (stepfun/cheap model shorthand)
+const ACTION_REGEX = /<<<ACTION\s*([\s\S]*?)(?:ACTION)?>>+>/g;
 
 /**
  * Fix unescaped newlines in JSON string values.
