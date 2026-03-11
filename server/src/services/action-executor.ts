@@ -672,22 +672,24 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const query = params.query as string;
         const maxResults = (params.max_results as number) || 3;
 
-        // If query is a URL and Tavily key missing → use crawl4ai directly
-        const urlMatch = query.match(/https?:\/\/\S+/);
-        if (!process.env.TAVILY_API_KEY && urlMatch) {
+        // If query contains a URL or bare domain and Tavily key missing → use crawl4ai directly
+        const explicitUrlMatch = query.match(/https?:\/\/\S+/);
+        const bareDomainMatch = !explicitUrlMatch && query.match(/\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+\.[a-zA-Z]{2,})\b/);
+        const crawlTarget = explicitUrlMatch ? explicitUrlMatch[0] : (bareDomainMatch ? `https://${bareDomainMatch[1]}` : null);
+        if (!process.env.TAVILY_API_KEY && crawlTarget) {
           try {
-            const content = await fetchAndExtract(urlMatch[0]);
+            const content = await fetchAndExtract(crawlTarget);
             return {
               tool,
               success: true,
-              message: `Fetched ${urlMatch[0]} — ${content.length} chars`,
-              data: { query, results: [], summary: content, url: urlMatch[0] },
+              message: `Fetched ${crawlTarget} — ${content.length} chars`,
+              data: { query, results: [], summary: content, url: crawlTarget },
             };
           } catch (err) {
             return {
               tool,
               success: false,
-              message: err instanceof Error ? err.message : `Failed to fetch ${urlMatch[0]}`,
+              message: err instanceof Error ? err.message : `Failed to fetch ${crawlTarget}`,
             };
           }
         }

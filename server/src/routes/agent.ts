@@ -598,7 +598,9 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
         // ---- Auto-route through bridge when enabled ----
     // URL-containing messages skip bridge and go to runReactLoop so crawl_url tool fires correctly
-    const hasUrl = /https?:\/\/\S+/.test(message);
+    // Also detect bare domains like "ai.agentin.chat" (no https:// prefix)
+    const BARE_DOMAIN_RE = /\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+\.[a-zA-Z]{2,})\b/;
+    const hasUrl = /https?:\/\/\S+/.test(message) || BARE_DOMAIN_RE.test(message);
 
     // Multilingual detection: non-Latin script (Devanagari/Telugu/Tamil/Arabic) or Hinglish
     // Chinese models (qwen3:8b, stepfun) reply in Chinese for these — route to Groq instead
@@ -796,16 +798,19 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     // ---- URL pre-fetch: inject page content so LLM always gets real data ----
     // More reliable than tool-use path: doesn't depend on model format compliance.
+    // Supports both explicit URLs (https://...) and bare domains (ai.agentin.chat)
     let augmentedMessage = message;
     if (hasUrl) {
-      const urlMatch = message.match(/https?:\/\/\S+/);
-      if (urlMatch) {
+      const explicitUrl = message.match(/https?:\/\/\S+/);
+      const bareDomain = !explicitUrl ? message.match(BARE_DOMAIN_RE) : null;
+      const targetUrl = explicitUrl ? explicitUrl[0] : (bareDomain ? `https://${bareDomain[1]}` : null);
+      if (targetUrl) {
         try {
-          const pageContent = await fetchAndExtract(urlMatch[0]);
-          augmentedMessage = `${message}\n\n[Page content from ${urlMatch[0]}]:\n${pageContent}\n\nPlease summarize or answer based on the above content.`;
-          logger.info({ url: urlMatch[0], chars: pageContent.length }, 'web_research: pre-fetched URL for LLM context');
+          const pageContent = await fetchAndExtract(targetUrl);
+          augmentedMessage = `${message}\n\n[Page content from ${targetUrl}]:\n${pageContent}\n\nPlease summarize or answer based on the above content.`;
+          logger.info({ url: targetUrl, chars: pageContent.length }, 'web_research: pre-fetched URL for LLM context');
         } catch (fetchErr) {
-          logger.warn({ url: urlMatch[0], err: (fetchErr as Error).message }, 'web_research: pre-fetch failed, proceeding without content');
+          logger.warn({ url: targetUrl, err: (fetchErr as Error).message }, 'web_research: pre-fetch failed, proceeding without content');
         }
       }
     }
