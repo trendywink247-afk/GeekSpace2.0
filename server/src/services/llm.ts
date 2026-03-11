@@ -261,7 +261,7 @@ function isEdithAvailable(): boolean {
 }
 
 function isGroqAvailable(): boolean {
-  return !!config.groqApiKey;
+  return !!(config.groqApiKey || config.groqApiKey2 || config.groqApiKey3);
 }
 
 function isTogetherAvailable(): boolean {
@@ -371,45 +371,72 @@ async function callOllama(messages: ChatMessage[]): Promise<{ content: string; t
   };
 }
 
-// ---- Groq (T2: Llama 3.3 70B free) ----
+// ---- Groq (T2: Llama 3.3 70B free) — 3-key round-robin pool ----
+// 3 accounts × 14,400 req/day free = ~43,200 req/day total
+
+let groqKeyIndex = 0;
+
+function getGroqKeys(): string[] {
+  return [config.groqApiKey, config.groqApiKey2, config.groqApiKey3].filter(Boolean);
+}
+
+
+function nextGroqKey(): string {
+  const keys = getGroqKeys();
+  if (keys.length === 0) throw new Error('No Groq API keys configured');
+  const key = keys[groqKeyIndex % keys.length];
+  groqKeyIndex = (groqKeyIndex + 1) % keys.length;
+  return key;
+}
 
 async function callGroq(
   messages: ChatMessage[],
-  model?: string,
 ): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
-  if (!config.groqApiKey) throw new Error('Groq API key not configured');
+  const keys = getGroqKeys();
+  if (keys.length === 0) throw new Error('No Groq API keys configured');
 
-  const targetModel = model ?? config.groqModel;
-  const response = await fetch(`${config.groqBaseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.groqApiKey}`,
-    },
-    body: JSON.stringify({
-      model: targetModel,
-      messages,
-      max_tokens: config.groqMaxTokens,
-    }),
-    signal: AbortSignal.timeout(config.groqTimeoutMs),
-  });
+  // Try keys in round-robin order; on 429 rotate to next key
+  let lastError: Error = new Error('Groq: no attempts made');
+  for (let attempt = 0; attempt < keys.length; attempt++) {
+    const apiKey = nextGroqKey();
+    const response = await fetch(`${config.groqBaseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.groqModel,
+        messages,
+        max_tokens: config.groqMaxTokens,
+      }),
+      signal: AbortSignal.timeout(config.groqTimeoutMs),
+    });
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`Groq (${targetModel}) returned ${response.status}: ${text}`);
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      if (response.status === 429) {
+        logger.warn({ keyIndex: groqKeyIndex, attempt }, 'Groq 429 — rotating to next key');
+        lastError = new Error(`Groq key ${attempt + 1} rate-limited (429)`);
+        continue; // try next key
+      }
+      throw new Error(`Groq returned ${response.status}: ${text}`);
+    }
+
+    const data = await response.json() as {
+      choices?: Array<{ message?: { content: string } }>;
+      usage?: { prompt_tokens: number; completion_tokens: number };
+    };
+
+    const content = data.choices?.[0]?.message?.content || '';
+    return {
+      content,
+      tokensIn: data.usage?.prompt_tokens || 0,
+      tokensOut: data.usage?.completion_tokens || 0,
+    };
   }
 
-  const data = await response.json() as {
-    choices?: Array<{ message?: { content: string } }>;
-    usage?: { prompt_tokens: number; completion_tokens: number };
-  };
-
-  const content = data.choices?.[0]?.message?.content || '';
-  return {
-    content,
-    tokensIn: data.usage?.prompt_tokens || 0,
-    tokensOut: data.usage?.completion_tokens || 0,
-  };
+  throw lastError; // all keys rate-limited → fall to next tier
 }
 
 // ---- Together AI (T4: Llama 4 Maverick, paid) ----

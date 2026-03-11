@@ -186,6 +186,8 @@ export const config = {
 
   // ---- Groq (free tier — Llama 3.3 70B, 14,400 req/day free) ----
   groqApiKey: process.env.GROQ_API_KEY ?? '',
+  groqApiKey2: process.env.GROQ_API_KEY_2 ?? '',
+  groqApiKey3: process.env.GROQ_API_KEY_3 ?? '',
   groqBaseUrl: optional('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
   groqModel: optional('GROQ_MODEL', 'llama-3.3-70b-versatile'),
   moonshotBaseModel: optional('MOONSHOT_BASE_MODEL', 'kimi-k2'),
