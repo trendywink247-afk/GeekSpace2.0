@@ -33,17 +33,18 @@
 
 ### BLOCKER-04: Voice Notes (Cap. 14) — OPENAI_API_KEY missing
 - **Impact:** Voice transcription (Whisper) and TTS are disabled. Telegram voice messages can't be transcribed.
-- **isVoiceEnabled() returns false**
-- **Status:** Code ready, just needs key. ⚠️ PARTIAL
+- **Status:** ✅ FIXED — Switched to Groq Whisper STT (GROQ_API_KEY round-robin) + edge-tts TTS (no key needed)
 
 ### BLOCKER-05: Web Research (Cap. 2) — TAVILY_API_KEY missing
-- **Impact:** `web_search` tool will always fail. LLM cannot do real web research.
-- **Status:** ⚠️ PARTIAL — code exists, key missing
+- **Impact:** URL-based research works via crawl4ai. Keyword-only `web_search` tool still needs TAVILY_API_KEY.
+- **Status:** ⚠️ PARTIAL — URL research ✅ fixed; keyword search still needs Tavily key
 
 ### BLOCKER-06: Portfolio Visitor Chat — requireAuth breaks public access
-- **File:** `server/src/routes/portfolio.ts` line 363
-- **Bug:** `/:username/chat` requires auth (JWT). Public visitors can't chat without an account.
-- **Status:** 🔲 NOT FIXED (would need auth change + visitor session logic)
+- **Status:** ✅ FIXED — Added `POST /api/portfolio/:username/visitor-token` (no auth, IP rate limit 5/hour) + `optionalAuth` on chat endpoint; owner credits cover visitor chats
+
+### BLOCKER-07: ACTION_REGEX wrong closing delimiter (action-parser.ts)
+- **Bug:** stepfun/cheap models output `<<<ACTION\n{...}\n>>>` — old regex required `ACTION>>>` → all tools silent on web chat
+- **Status:** ✅ FIXED (commit 5bae407, deployed 2026-03-11)
 
 ---
 

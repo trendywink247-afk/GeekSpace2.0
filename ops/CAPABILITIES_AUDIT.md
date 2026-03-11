@@ -486,6 +486,17 @@ PAID users (sequential):
 
 ---
 
+## ACTION_REGEX Fix — 2026-03-11
+
+- **Status:** ✅ FIXED
+- **Root cause:** `ACTION_REGEX = /<<<ACTION\s*([\s\S]*?)ACTION>>+>/g` required `ACTION>>>` as closing delimiter. stepfun/cheap models output `<<<ACTION\n{...}\n>>>` (no "ACTION" in closer) → blocks were silently skipped → tools (set_reminder, send_email, generate_code) never executed from web chat
+- **Fix:** Made "ACTION" optional: `/<<<ACTION\s*([\s\S]*?)(?:ACTION)?>>+>/g`
+- **Tests:** 2223 passing ✅ | TypeScript: 0 errors ✅
+- **Verified:** `parseActions('<<<ACTION\n{"tool":"set_reminder",...}\n>>>')` → 1 action parsed, tool=set_reminder ✅
+- **Commit:** 5bae407 | **Deployed:** hot-patch + `docker restart geekspace-app` ✅
+
+---
+
 ## Multilingual Voice Fix — 2026-03-11
 
 - **Status:** ✅ FIXED
