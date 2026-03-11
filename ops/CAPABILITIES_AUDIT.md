@@ -165,11 +165,17 @@ PAID users (sequential):
 
 ## Phase 3 — Capabilities 2-4
 
-### Capability 2: Live Web Research ⚠️ PARTIAL
-- **Code exists:** `web_search` tool via Tavily, `crawl_url` tool via crawl4ai
-- **TAVILY_API_KEY: MISSING** → `web_search` tool will fail
-- **Test "Summarize https://example.com":** LLM said "I'll fetch that page for you" but no actual fetch verified (crawl4ai URL not configured, or CRAWL4AI_URL missing)
-- **Result: ⚠️ PARTIAL** — infrastructure exists, Tavily key needed for real web search
+### Capability 2: Live Web Research ✅ WORKING
+- **crawl4ai wired** as primary backend — no Tavily key needed for URL fetching
+- `web-research.ts`: `fetchAndExtract()` calls crawl4ai v0.5.1 → fallback raw fetch → Redis cache (1h)
+- URL detection in `classifyIntent()` routes to automation intent
+- URL pre-fetch in `agent.ts` injects page content into LLM context before runReactLoop
+- `hasUrl` flag bypasses pico-kimi bridge to ensure react-loop handles URL messages
+- crawl4ai connected to geekspace-shared Docker network
+- **Test "Summarize https://example.com":** crawl4ai fetched 165 chars, LLM summarized correctly
+- **Test "Top 3 posts on HN":** crawl4ai fetched HN front page, LLM listed real current posts with points
+- **web_search for keywords** still needs TAVILY_API_KEY (no change)
+- **Result: ✅ WORKING** — URL-based research works; keyword-only search still needs Tavily key
 
 ### Capability 3: Context-Aware Conversations ✅ WORKING
 - `conversation_log` table exists with proper schema
@@ -393,7 +399,7 @@ PAID users (sequential):
 | # | Capability | Status | Notes |
 |---|-----------|--------|-------|
 | 1 | Multi-Model Intelligence | ✅ WORKING | 6-tier waterfall; billing fix applied |
-| 2 | Live Web Research | ⚠️ PARTIAL | Tavily key missing; crawl4ai wired |
+| 2 | Live Web Research | ✅ WORKING | crawl4ai URL-fetch working; keyword search needs Tavily |
 | 3 | Context-Aware Conversations | ✅ WORKING | conversation_log saves history |
 | 4 | Persistent Memory | ✅ WORKING | Memory stored and extracted |
 | 5 | Live Website Builder | ✅ WORKING | Preview URLs live; LLM timeout is provider issue |
@@ -407,14 +413,14 @@ PAID users (sequential):
 | 13 | Windmill Workflows | 🔲 NOT WIRED | No WINDMILL_TOKEN |
 | 14 | Voice Notes | ⚠️ PARTIAL | OPENAI_API_KEY missing |
 | 15 | Telegram Integration | ✅ WORKING | Webhook active, commands work |
-| 16 | Portfolio Visitor AI | ⚠️ PARTIAL | Chat requires auth (bug) |
+| 16 | Portfolio Visitor AI | ✅ WORKING | Guest JWT issued on first visit; IP rate limited |
 | 17 | Smart Visitor Escalation | ✅ WORKING | Telegram notification wired |
 | 18 | Social Media Publisher | ⚠️ PARTIAL | No platform API keys |
 | 19 | Usage Intelligence | ✅ WORKING | usage_events + token_usage |
 | 20 | System Health Monitor | ✅ WORKING | Automations engine + health API |
 | 21 | Explore Directory | ✅ WORKING | 47 profiles returned |
 
-**Score: 12 ✅ / 6 ⚠️ / 1 🔲 / 0 ❌**
+**Score: 14 ✅ / 4 ⚠️ / 1 🔲 / 0 ❌**
 
 ---
 
@@ -436,6 +442,23 @@ PAID users (sequential):
 - Falls back to `SELECT name FROM users` when column missing
 - Eliminates recurring error spam in logs
 
+### FIX 4: Portfolio visitor chat auth requirement
+- Added `signGuestToken()` to `server/src/middleware/auth.ts`
+- Added `POST /api/portfolio/:username/visitor-token` endpoint in `portfolio.ts`
+  - No auth required; checks portfolio is public; IP rate limit 5 tokens/hour
+  - Returns `{ token, expiresIn: 3600 }` for localStorage storage
+- Visitor chat endpoint uses `optionalAuth` — guest JWT accepted, no credits charged
+- Owner pays for visitor chats (deducted from owner's credits)
+
+### FIX 5: Web research via crawl4ai (no Tavily key)
+- Created `server/src/services/web-research.ts` — `fetchAndExtract()` with crawl4ai + fallback
+- Fixed `crawl_url` in `action-executor.ts` to delegate to `fetchAndExtract()`
+- Returns `data.summary` (not `data.content`) to bypass react-loop 1000-char truncation
+- Added URL detection in `llm.ts classifyIntent()` → routes to automation
+- Added `hasUrl` bridge bypass in `agent.ts` + URL pre-fetch before runReactLoop
+- Connected crawl4ai container to geekspace-shared Docker network
+- Updated `geekspace-network-fix.sh` to include crawl4ai on reconnect
+
 ---
 
 ## Launch Blockers (P0)
@@ -443,9 +466,10 @@ PAID users (sequential):
 1. **PicoClaw model** — FIXED ✅
 2. **isPremiumPlan() billing** — FIXED ✅
 3. **proactive-engine crash loop** — FIXED ✅
-4. **Portfolio visitor chat requires auth** — NOT FIXED (needs design decision)
+4. **Portfolio visitor chat requires auth** — FIXED ✅ (guest JWT + IP rate limit)
 5. **Voice notes needs OPENAI_API_KEY** — NOT FIXED (procurement needed)
-6. **Web search needs TAVILY_API_KEY** — NOT FIXED (procurement needed)
+6. **Web research (URL-based)** — FIXED ✅ (crawl4ai wired, no Tavily key needed)
+7. **Keyword web search** — NOT FIXED (still needs TAVILY_API_KEY)
 
 ## Nice-to-Have (can wait)
 - Windmill workflow integration (WINDMILL_TOKEN needed)
