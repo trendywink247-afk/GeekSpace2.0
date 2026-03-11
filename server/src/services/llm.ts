@@ -32,7 +32,7 @@ import { cacheGet, cacheSet } from './cache.js';
 // ---- Types ----
 
 export type Intent = 'simple' | 'planning' | 'coding' | 'automation' | 'complex';
-export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'groq' | 'groq-kimi' | 'gemini' | 'together' | 'edith' | 'picoclaw' | 'builtin';
+export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'groq' | 'kimi' | 'gemini' | 'together' | 'edith' | 'picoclaw' | 'builtin';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -371,9 +371,7 @@ async function callOllama(messages: ChatMessage[]): Promise<{ content: string; t
   };
 }
 
-// ---- Groq (T2: Llama 3.3 70B free / T3: Kimi K2 paid) ----
-
-const GROQ_KIMI_MODEL = config.groqKimiModel ?? 'moonshotai/kimi-k2';
+// ---- Groq (T2: Llama 3.3 70B free) ----
 
 async function callGroq(
   messages: ChatMessage[],
@@ -596,21 +594,22 @@ async function callMoonshotReasoning(messages: ChatMessage[]): Promise<{ content
   };
 }
 
-// ---- Groq Kimi K2 System Budget (T3) ----
+// ---- Kimi K2 (T3) System Budget ----
+// Direct Moonshot API (same endpoint as Edith, but kimi-k2 base model, not kimi-k2.5)
 // Shared system-level monthly budget: $5 = 50,000 units (1 unit = $0.0001)
-// Pricing estimate: $0.50/M input, $2.50/M output
+// Pricing: $0.50/M input, $2.50/M output
 
-const GROQ_KIMI_BUDGET_KEY_PREFIX = 'system:groq_kimi:spend:';
-const GROQ_KIMI_MONTHLY_BUDGET_UNITS = 50_000; // $5.00
+const KIMI_BASE_MODEL = config.moonshotBaseModel ?? 'kimi-k2';
+const KIMI_BUDGET_KEY_PREFIX = 'system:kimi:spend:';
+const KIMI_MONTHLY_BUDGET_UNITS = 50_000; // $5.00
 
-function computeGroqKimiSpendUnits(tokensIn: number, tokensOut: number): number {
-  // cost ($) = tokensIn * 0.5/1M + tokensOut * 2.5/1M
-  // units = cost * 10000 → units = tokensIn * 5/1000 + tokensOut * 25/1000
+function computeKimiSpendUnits(tokensIn: number, tokensOut: number): number {
+  // units = cost * 10000 → (tokensIn * 0.5 + tokensOut * 2.5) / 1M * 10000
   return Math.ceil((tokensIn * 5 + tokensOut * 25) / 1000);
 }
 
-async function getGroqKimiMonthlySpendUnits(): Promise<number> {
-  const key = GROQ_KIMI_BUDGET_KEY_PREFIX + new Date().toISOString().slice(0, 7);
+async function getKimiMonthlySpendUnits(): Promise<number> {
+  const key = KIMI_BUDGET_KEY_PREFIX + new Date().toISOString().slice(0, 7);
   try {
     const val = await cacheGet(key);
     return val ? parseInt(val, 10) || 0 : 0;
@@ -619,21 +618,21 @@ async function getGroqKimiMonthlySpendUnits(): Promise<number> {
   }
 }
 
-async function recordGroqKimiSpend(tokensIn: number, tokensOut: number): Promise<void> {
-  const units = computeGroqKimiSpendUnits(tokensIn, tokensOut);
-  const key = GROQ_KIMI_BUDGET_KEY_PREFIX + new Date().toISOString().slice(0, 7);
+async function recordKimiSpend(tokensIn: number, tokensOut: number): Promise<void> {
+  const units = computeKimiSpendUnits(tokensIn, tokensOut);
+  const key = KIMI_BUDGET_KEY_PREFIX + new Date().toISOString().slice(0, 7);
   try {
-    const current = await getGroqKimiMonthlySpendUnits();
+    const current = await getKimiMonthlySpendUnits();
     await cacheSet(key, String(current + units), 31 * 24 * 60 * 60);
-    logger.debug({ units, total: current + units, budget: GROQ_KIMI_MONTHLY_BUDGET_UNITS }, 'groq_kimi:spend_recorded');
+    logger.debug({ units, total: current + units, budget: KIMI_MONTHLY_BUDGET_UNITS }, 'kimi:spend_recorded');
   } catch {
     // Non-fatal
   }
 }
 
-async function isGroqKimiWithinBudget(): Promise<boolean> {
-  const spend = await getGroqKimiMonthlySpendUnits();
-  return spend < GROQ_KIMI_MONTHLY_BUDGET_UNITS;
+async function isKimiWithinBudget(): Promise<boolean> {
+  const spend = await getKimiMonthlySpendUnits();
+  return spend < KIMI_MONTHLY_BUDGET_UNITS;
 }
 
 // ---- Free Tier Race (T1 + T6 simultaneously) ----
@@ -699,15 +698,15 @@ async function tryFallbackChain(
           const r = await callGroq(fullMessages);
           return { ...r, provider: 'groq' };
         }
-        case 'groq-kimi': {
-          if (!isGroqAvailable()) continue;
-          if (!await isGroqKimiWithinBudget()) {
-            logger.info({ budget: GROQ_KIMI_MONTHLY_BUDGET_UNITS }, 'groq_kimi:monthly_budget_exhausted — skipping T3');
+        case 'kimi': {
+          if (!isEdithAvailable()) continue; // same API key / endpoint as Edith
+          if (!await isKimiWithinBudget()) {
+            logger.info({ budget: KIMI_MONTHLY_BUDGET_UNITS }, 'kimi:monthly_budget_exhausted — skipping T3');
             continue;
           }
-          const r = await callGroq(fullMessages, GROQ_KIMI_MODEL);
-          recordGroqKimiSpend(r.tokensIn, r.tokensOut).catch(() => {});
-          return { ...r, provider: 'groq-kimi' };
+          const r = await callOpenRouterWithModel(fullMessages, KIMI_BASE_MODEL);
+          recordKimiSpend(r.tokensIn, r.tokensOut).catch(() => {});
+          return { ...r, provider: 'kimi' };
         }
         case 'together': {
           if (!isPremium || !isTogetherAvailable() || overDailyBudget) continue;
@@ -740,7 +739,7 @@ const FLAT_CREDIT_COSTS: Partial<Record<Provider, number>> = {
   ollama:            1,
   'openrouter-free': 2,
   groq:              2,
-  'groq-kimi':       5,
+  'kimi':       5,
   picoclaw:          1,
   builtin:           0,
 };
@@ -782,7 +781,7 @@ function estimateCost(provider: Provider, tokensIn: number, tokensOut: number): 
     case 'ollama':          return 0;
     case 'openrouter-free': return 0;
     case 'groq':            return 0;
-    case 'groq-kimi':       return (tokensIn * 0.0000005) + (tokensOut * 0.0000025);
+    case 'kimi':       return (tokensIn * 0.0000005) + (tokensOut * 0.0000025);
     case 'together':        return (tokensIn * 0.00000027) + (tokensOut * 0.00000085);
     case 'openrouter':      return (tokensIn * 0.0000006) + (tokensOut * 0.000002);
     case 'edith':           return (tokensIn * 0.0000012) + (tokensOut * 0.000004);
@@ -796,7 +795,7 @@ function getModelForProvider(provider: Provider, userId?: string): string {
   switch (provider) {
     case 'ollama':          return config.ollamaModel;
     case 'groq':            return config.groqModel;
-    case 'groq-kimi':       return GROQ_KIMI_MODEL;
+    case 'kimi':            return KIMI_BASE_MODEL;
     case 'together':        return config.togetherModel;
     case 'openrouter':      return config.openrouterModel;
     case 'edith':           return config.moonshotReasoningModel;
@@ -811,7 +810,7 @@ function getModelForProvider(provider: Provider, userId?: string): string {
 export function getManualOverride(): Provider | null {
   if (!config.isTestMode) return null;
   const envOverride = process.env.FORCE_LLM_PROVIDER as Provider;
-  const allowed: Provider[] = ['ollama', 'openrouter', 'openrouter-free', 'groq', 'groq-kimi', 'together', 'edith', 'picoclaw', 'builtin'];
+  const allowed: Provider[] = ['ollama', 'openrouter', 'openrouter-free', 'groq', 'kimi', 'together', 'edith', 'picoclaw', 'builtin'];
   if (envOverride && allowed.includes(envOverride)) {
     return envOverride;
   }
@@ -883,7 +882,7 @@ export async function routeChat(
   let manualOverride: Provider | null = null;
   if (config.isTestMode) {
     const headerOverride = opts?.requestHeaders?.['x-model-route'] as Provider;
-    const allowed: Provider[] = ['ollama', 'openrouter', 'openrouter-free', 'groq', 'groq-kimi', 'together', 'edith', 'picoclaw', 'builtin'];
+    const allowed: Provider[] = ['ollama', 'openrouter', 'openrouter-free', 'groq', 'kimi', 'together', 'edith', 'picoclaw', 'builtin'];
     if (headerOverride && allowed.includes(headerOverride)) {
       manualOverride = headerOverride;
     }
@@ -913,7 +912,7 @@ export async function routeChat(
     routingReason = 'manual_override';
 
     // Budget degradation: downgrade paid providers when over budget
-    if ((overBudget || overDailyBudget) && (provider === 'edith' || provider === 'openrouter' || provider === 'together' || provider === 'groq-kimi')) {
+    if ((overBudget || overDailyBudget) && (provider === 'edith' || provider === 'openrouter' || provider === 'together' || provider === 'kimi')) {
       logger.info({ userId: opts?.userId, provider, overBudget, overDailyBudget }, 'Budget exceeded — degrading from paid provider');
       provider = 'openrouter-free';
       routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'budget_degradation';
@@ -1017,11 +1016,11 @@ export async function routeChat(
           model = config.groqModel;
           break;
         }
-        case 'groq-kimi': {
-          const result = await callGroq(fullMessages, GROQ_KIMI_MODEL);
+        case 'kimi': {
+          const result = await callOpenRouterWithModel(fullMessages, KIMI_BASE_MODEL);
           reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
-          model = GROQ_KIMI_MODEL;
-          recordGroqKimiSpend(tokensIn, tokensOut).catch(() => {});
+          model = KIMI_BASE_MODEL;
+          recordKimiSpend(tokensIn, tokensOut).catch(() => {});
           break;
         }
         case 'together': {
@@ -1070,12 +1069,12 @@ export async function routeChat(
       chain = ['groq'];
     } else if (isPremium) {
       // Premium sequential: start from T2 (T1 just failed)
-      const PAID_CHAIN: Provider[] = ['groq', 'groq-kimi', 'together', 'edith'];
+      const PAID_CHAIN: Provider[] = ['groq', 'kimi', 'together', 'edith'];
       const failedIdx = PAID_CHAIN.indexOf(provider);
       chain = failedIdx >= 0 ? PAID_CHAIN.slice(failedIdx + 1) : PAID_CHAIN;
     } else {
       // Free users (race failed): T2 → T3
-      chain = ['groq', 'groq-kimi'];
+      chain = ['groq', 'kimi'];
     }
 
     logger.info({ failedProvider: useRace ? 'race-free' : provider, chain, userId: opts?.userId }, 'llm:starting_fallback_chain');
