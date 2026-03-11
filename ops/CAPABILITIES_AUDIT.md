@@ -297,15 +297,18 @@ PAID users (sequential):
 - DB: channel_links table tracks telegram connections
 - **Result: ✅ WORKING**
 
-### Capability 16: Portfolio Visitor AI ⚠️ PARTIAL
-- `portfolios` table: 53 portfolios exist
-- Public portfolio URL: `/p/[username]` — NOT verified (route may be frontend SPA)
-- Portfolio chat endpoint: `POST /api/portfolio/:username/chat` — REQUIRES AUTH (requireAuth)
-- **Bug:** Visitors can't chat without being logged in — kills "public visitor AI" use case
-- Portfolio contacts table (`portfolio_contacts`) exists for visitor capture
-- `buildOwnerContext()` in memory.ts builds portfolio-specific system prompt
-- Directory: `GET /api/directory` → 200, returns 47 public profiles ✅
-- **Result: ⚠️ PARTIAL** — backend ready, auth requirement on chat breaks public access
+### Capability 16: Portfolio Visitor AI ✅ WORKING
+- `portfolios` table: 56 portfolios exist
+- Public portfolio chat: `POST /api/agent/chat/public/:username` — `optionalAuth` (no login needed) ✅
+- IP rate limit: 10 messages/hour per visitor ✅
+- Guest token: `POST /api/portfolio/:username/visitor-token` → issues 1-hour JWT (5/hour IP limit) ✅
+- `buildOwnerContextForVisitor()` builds portfolio-specific system prompt with owner skills/projects/memories ✅
+- Visitor intent detection: PicoClaw classifies "recruiter" / "collaborator" / "curious" ✅
+- Escalate to owner: `escalate_to_owner` tool sends Telegram notification to portfolio owner ✅
+- **Live test:** `POST /api/agent/chat/public/asif` → AI reply about Asif's tech stack ✅
+- Note: `POST /api/portfolio/:username/chat` is for user-to-user agent messaging (different feature)
+- Directory: `GET /api/directory` → 200, returns 47+ public profiles ✅
+- **Result: ✅ WORKING**
 
 ### Capability 17: Smart Visitor Escalation ✅ WORKING
 - `escalate_to_owner` tool in action-executor.ts
@@ -419,7 +422,7 @@ PAID users (sequential):
 | 13 | Windmill Workflows | 🔲 NOT WIRED | No WINDMILL_TOKEN |
 | 14 | Voice Notes | ✅ WORKING | Groq Whisper STT + edge-tts TTS, no OPENAI_API_KEY needed |
 | 15 | Telegram Integration | ✅ WORKING | Webhook active, commands work |
-| 16 | Portfolio Visitor AI | ✅ WORKING | Guest JWT issued on first visit; IP rate limited |
+| 16 | Portfolio Visitor AI | ✅ WORKING | /api/agent/chat/public/:username — no auth; IP rate limited; live test ✅ |
 | 17 | Smart Visitor Escalation | ✅ WORKING | Telegram notification wired |
 | 18 | Social Media Publisher | ⚠️ PARTIAL | No platform API keys |
 | 19 | Usage Intelligence | ✅ WORKING | usage_events + token_usage |

@@ -39,8 +39,10 @@
 - **Impact:** URL-based research works via crawl4ai. Keyword-only `web_search` tool still needs TAVILY_API_KEY.
 - **Status:** ⚠️ PARTIAL — URL research ✅ fixed; keyword search still needs Tavily key
 
-### BLOCKER-06: Portfolio Visitor Chat — requireAuth breaks public access
-- **Status:** ✅ FIXED — Added `POST /api/portfolio/:username/visitor-token` (no auth, IP rate limit 5/hour) + `optionalAuth` on chat endpoint; owner credits cover visitor chats
+### BLOCKER-06: Portfolio Visitor Chat — public endpoint confirmed working
+- **Correct endpoint:** `POST /api/agent/chat/public/:username` (optionalAuth, IP rate limited 10/hour)
+- **Status:** ✅ CONFIRMED WORKING — live test against /asif returned AI response ✅
+- Note: `POST /api/portfolio/:username/chat` is user-to-user messaging (separate feature)
 
 ### BLOCKER-07: ACTION_REGEX wrong closing delimiter (action-parser.ts)
 - **Bug:** stepfun/cheap models output `<<<ACTION\n{...}\n>>>` — old regex required `ACTION>>>` → all tools silent on web chat
