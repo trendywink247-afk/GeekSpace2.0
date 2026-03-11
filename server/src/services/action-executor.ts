@@ -19,6 +19,7 @@ import { generateImage, generateVideo, generateAvatar } from './media-generation
 import { cacheSet, cacheGet, cacheDel } from './cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from './telegram.js';
 import { tavilySearch } from './tavily.js';
+import { fetchAndExtract } from './web-research.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -429,34 +430,25 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
       }
 
       // ── crawl_url ─────────────────────────────────────────
-      case 'crawl_url': {
+      case 'crawl_url':
+      case 'web_fetch': {
         const url = params.url as string;
-        const priority = (params.priority as number) || 5;
-
-        const resp = await fetch(`${config.crawl4aiUrl}/crawl`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ urls: [url], priority }),
-        });
-
-        if (!resp.ok) {
+        try {
+          const content = await fetchAndExtract(url);
+          return {
+            tool,
+            success: true,
+            message: `Fetched ${url} — ${content.length} chars`,
+            // Use 'summary' key so react-loop injects full content (not 1000-char JSON truncation)
+            data: { url, summary: content },
+          };
+        } catch (err) {
           return {
             tool,
             success: false,
-            message: `Crawl failed with status ${resp.status}`,
+            message: err instanceof Error ? err.message : `Failed to fetch ${url}`,
           };
         }
-
-        const result = await resp.json() as { results?: Array<{ markdown?: string; url?: string }> };
-        const markdown = result.results?.[0]?.markdown || '';
-        const truncated = markdown.length > 4000 ? markdown.slice(0, 4000) + '\n\n[truncated]' : markdown;
-
-        return {
-          tool,
-          success: true,
-          message: `Crawled ${url} — ${markdown.length} chars`,
-          data: { url, content: truncated },
-        };
       }
 
       // ── trigger_workflow ──────────────────────────────────
@@ -679,6 +671,27 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
       case 'web_search': {
         const query = params.query as string;
         const maxResults = (params.max_results as number) || 3;
+
+        // If query is a URL and Tavily key missing → use crawl4ai directly
+        const urlMatch = query.match(/https?:\/\/\S+/);
+        if (!process.env.TAVILY_API_KEY && urlMatch) {
+          try {
+            const content = await fetchAndExtract(urlMatch[0]);
+            return {
+              tool,
+              success: true,
+              message: `Fetched ${urlMatch[0]} — ${content.length} chars`,
+              data: { query, results: [], summary: content, url: urlMatch[0] },
+            };
+          } catch (err) {
+            return {
+              tool,
+              success: false,
+              message: err instanceof Error ? err.message : `Failed to fetch ${urlMatch[0]}`,
+            };
+          }
+        }
+
         let results: Awaited<ReturnType<typeof tavilySearch>>['results'];
         try {
           const searchResult = await tavilySearch(query, maxResults);

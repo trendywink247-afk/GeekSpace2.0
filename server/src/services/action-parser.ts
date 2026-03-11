@@ -127,6 +127,7 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   send_email: sendEmailSchema,
   set_reminder: setReminderSchema,
   crawl_url: crawlUrlSchema,
+  web_fetch: crawlUrlSchema, // alias for crawl_url
   trigger_workflow: triggerWorkflowSchema,
   generate_image: generateImageSchema,
   generate_video: generateVideoSchema,

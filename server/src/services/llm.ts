@@ -197,6 +197,12 @@ export function classifyIntent(message: string, userId?: string): Intent {
   const lower = message.toLowerCase();
   const wordCount = message.split(/\s+/).length;
 
+  // URL detection: treat messages with a URL as automation so tool-use path fires
+  if (/https?:\/\/\S+/.test(message)) {
+    logger.info({ intent: 'automation', userId, messageLength: message.length, reason: 'url_detected' }, 'llm:intent_classified');
+    return 'automation';
+  }
+
   if (wordCount > 80) {
     logger.info({ intent: 'complex', userId, messageLength: message.length, reason: 'word_count_exceeded' }, 'llm:intent_classified');
     return 'complex';

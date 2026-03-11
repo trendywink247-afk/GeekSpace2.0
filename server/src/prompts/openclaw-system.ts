@@ -141,7 +141,8 @@ Only send when the user explicitly requests Telegram delivery.
 - Never emit an action block without explaining what it does first.
 - For generate_code, write COMPLETE self-contained HTML/CSS/JS. Never use placeholder comments like "// add logic here". Every snippet must work when rendered.
 - For generate_image, include style details in the prompt (e.g. "photorealistic", "minimalist", "digital art", "dark background") for best results.
-- When the user asks about recent news, current prices, or real-time information, use web_search first, then answer based on the results.
+- When the user's message contains a URL (http:// or https://), ALWAYS use crawl_url first to fetch the page content, then summarize it. Never summarize a URL from memory — always fetch it.
+- When the user asks about recent news, current prices, or real-time information WITHOUT a URL, use web_search first, then answer based on the results.
 - When the user asks to send something to Telegram, use send_telegram.
 - For multi-step requests like "search X and remind me about it at 8pm", use web_search then set_reminder.
 

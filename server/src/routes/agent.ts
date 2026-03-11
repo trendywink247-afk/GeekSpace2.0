@@ -25,6 +25,7 @@ import { formatReceiptCompact, type ReceiptItem } from '../services/receipts.js'
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from '../services/telegram.js';
 import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../services/agent-chat.js';
+import { fetchAndExtract } from '../services/web-research.js';
 
 export const agentRouter = Router();
 
@@ -592,7 +593,9 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     }
 
         // ---- Auto-route through bridge when enabled ----
-    if (!forceRoute && config.bridgeEnabled && config.picoClawEnabled) {
+    // URL-containing messages skip bridge and go to runReactLoop so crawl_url tool fires correctly
+    const hasUrl = /https?:\/\/\S+/.test(message);
+    if (!forceRoute && config.bridgeEnabled && config.picoClawEnabled && !hasUrl) {
       forceRoute = 'bridge';
     }
 
@@ -775,7 +778,24 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     // ---- Default: local-first router (Ollama → cloud fallback if Ollama down) ----
     const history = getConversationContext(userId);
-    const messages: ChatMessage[] = [...history, { role: 'user', content: message }];
+
+    // ---- URL pre-fetch: inject page content so LLM always gets real data ----
+    // More reliable than tool-use path: doesn't depend on model format compliance.
+    let augmentedMessage = message;
+    if (hasUrl) {
+      const urlMatch = message.match(/https?:\/\/\S+/);
+      if (urlMatch) {
+        try {
+          const pageContent = await fetchAndExtract(urlMatch[0]);
+          augmentedMessage = `${message}\n\n[Page content from ${urlMatch[0]}]:\n${pageContent}\n\nPlease summarize or answer based on the above content.`;
+          logger.info({ url: urlMatch[0], chars: pageContent.length }, 'web_research: pre-fetched URL for LLM context');
+        } catch (fetchErr) {
+          logger.warn({ url: urlMatch[0], err: (fetchErr as Error).message }, 'web_research: pre-fetch failed, proceeding without content');
+        }
+      }
+    }
+
+    const messages: ChatMessage[] = [...history, { role: 'user', content: augmentedMessage }];
     const intent = classifyIntent(message);
 
     // Resolve forced provider from prefix overrides or smart picker
