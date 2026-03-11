@@ -110,19 +110,19 @@ describe('Phase 103: Plan cap fixes', () => {
   });
 
   describe('webhooks.ts voice handling', () => {
-    it('contains voice coming soon message', () => {
+    it('voice pipeline fully implemented with Groq Whisper + edge-tts', () => {
       const content = readFileSync(resolve(SERVER_SRC, 'routes/webhooks.ts'), 'utf-8');
-      expect(content).toMatch(/[Vv]oice notes.*coming soon|coming soon.*[Vv]oice/);
+      // Voice notes are now fully implemented — no longer a stub
+      expect(content).toContain('transcribeVoice(');
+      expect(content).toContain('textToSpeech(');
+      expect(content).not.toMatch(/[Vv]oice notes.*coming soon|coming soon.*[Vv]oice/);
     });
-    it('does not call transcribeVoice in the main voice path', () => {
+    it('voice handler has try/catch error handling', () => {
       const content = readFileSync(resolve(SERVER_SRC, 'routes/webhooks.ts'), 'utf-8');
-      // transcribeVoice should still be imported (in case it's used elsewhere)
-      // but the main voice flow should short-circuit before reaching it
-      // Verify the coming-soon return comes before the transcribeVoice call in the file
-      const comingSoonIdx = content.indexOf('coming soon');
-      const transcribeIdx = content.indexOf('transcribeVoice(audioBuffer');
-      // Either transcribeVoice call doesn't exist in active code, or coming soon is before it
-      expect(comingSoonIdx).toBeGreaterThan(-1);
+      const handlerStart = content.indexOf('handleVoiceMessage');
+      const handlerSnippet = content.slice(handlerStart, handlerStart + 3000);
+      expect(handlerSnippet).toContain('try {');
+      expect(handlerSnippet).toContain('catch (err)');
     });
   });
 

@@ -424,24 +424,25 @@ describe('110.5 Two-user reminder isolation', () => {
 // ── 110.6  Voice note handling ───────────────────────────────────────────────
 
 describe('110.6 Voice note handling', () => {
-  it('webhooks.ts contains "Voice notes are coming soon" message', () => {
+  it('webhooks.ts voice handler uses Groq Whisper transcription (fully implemented)', () => {
     const src = readSrc('routes', 'webhooks.ts');
-    expect(src).toContain('Voice notes are coming soon');
+    // Voice notes are now fully implemented via Groq Whisper + edge-tts
+    expect(src).toContain('transcribeVoice(');
+    expect(src).not.toContain('Voice notes are coming soon');
   });
 
-  it('webhooks.ts handleVoiceMessage returns early with sendTelegramMessage (no throw)', () => {
+  it('webhooks.ts handleVoiceMessage has error handling (try/catch)', () => {
     const src = readSrc('routes', 'webhooks.ts');
-    // The handler sends a polite message and returns before any transcription attempt
-    expect(src).toContain('return;');
-    // There is no raw `throw` in the voice handler section
     const voiceHandlerStart = src.indexOf('handleVoiceMessage');
-    const voiceHandlerSnippet = src.slice(voiceHandlerStart, voiceHandlerStart + 1500);
-    expect(voiceHandlerSnippet).not.toMatch(/\bthrow new Error\b/);
+    const voiceHandlerSnippet = src.slice(voiceHandlerStart, voiceHandlerStart + 3000);
+    expect(voiceHandlerSnippet).toContain('try {');
+    expect(voiceHandlerSnippet).toContain('catch');
   });
 
-  it('webhooks.ts voice path does NOT call transcribeVoice directly', () => {
+  it('webhooks.ts voice path calls textToSpeech and sendTelegramVoice', () => {
     const src = readSrc('routes', 'webhooks.ts');
-    expect(src).not.toContain('transcribeVoice(');
+    expect(src).toContain('textToSpeech(');
+    expect(src).toContain('sendTelegramVoice(');
   });
 
   it('webhooks.ts checks isVoiceEnabled() before processing voice', () => {
