@@ -17,13 +17,21 @@ const CACHE_KEY_MODELS  = 'openrouter:free_models';
 const CACHE_KEY_CURRENT = 'openrouter:current_free_model';
 const CACHE_TTL_SECONDS = 6 * 60 * 60; // 6 hours
 
+// Curated list: ≥24B instruction-following models only.
+// Reasoning/thinking models (deepseek-r1, :thinking) excluded — they don't
+// reliably follow the <<<ACTION>>> custom tool format used by the agent.
 export const DEFAULT_FREE_MODELS: string[] = [
-  'deepseek/deepseek-r1-0528:free',
-  'google/gemma-3-27b-it:free',
-  'meta-llama/llama-3.3-70b-instruct:free',
-  'qwen/qwen3-235b-a22b:free',
-  'mistralai/mistral-small-3.2-24b-instruct:free',
+  'meta-llama/llama-3.3-70b-instruct:free',          // 70B — proven, fast, excellent tool calling
+  'qwen/qwen3-235b-a22b:free',                       // 235B MoE — best quality in free tier
+  'mistralai/mistral-small-3.2-24b-instruct:free',   // 24B — reliable fallback
+  'google/gemma-3-27b-it:free',                      // 27B — consistent instruction following
+  'qwen/qwen3-30b-a3b:free',                         // 30B MoE — lightweight but capable
 ];
+
+// Models to exclude from dynamic OpenRouter fetch.
+// Reasoning/thinking models emit <think> blocks that break the <<<ACTION>>> parser.
+// Nano/mini/tiny/micro models are too small for reliable tool-format compliance.
+const FREE_MODEL_BLOCKLIST = ['nano', 'mini', 'tiny', 'micro', 'deepseek-r1', ':thinking'];
 
 // ---- Types ----
 
@@ -59,9 +67,10 @@ export async function fetchFreeModels(): Promise<string[]> {
     const data = await response.json() as OpenRouterModelsResponse;
     const allModels: OpenRouterModel[] = data.data ?? [];
 
-    // Filter to :free suffix, sort by context_length desc, take top 5
+    // Filter to :free suffix, exclude blocklisted models, sort by context_length desc, take top 5
     const freeModels = allModels
       .filter((m) => m.id.endsWith(':free'))
+      .filter((m) => !FREE_MODEL_BLOCKLIST.some((blocked) => m.id.toLowerCase().includes(blocked)))
       .sort((a, b) => (b.context_length ?? 0) - (a.context_length ?? 0))
       .slice(0, 5)
       .map((m) => m.id);
