@@ -1873,9 +1873,12 @@ agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema
     try {
       const picoAvail = await isPicoClawAvailable();
       if (picoAvail) {
-        const classifyResult = await queryPicoClaw(
-          `Classify this visitor message into exactly one category: "recruiter", "collaborator", or "curious". Only respond with one of those three words.\n\nMessage: "${message}"`,
-        );
+        const classifyResult = await Promise.race([
+          queryPicoClaw(
+            `Classify this visitor message into exactly one category: "recruiter", "collaborator", or "curious". Only respond with one of those three words.\n\nMessage: "${message}"`,
+          ),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('classify timeout')), 4000)),
+        ]);
         const classified = classifyResult.text.trim().toLowerCase();
         if (classified === 'recruiter' || classified === 'collaborator' || classified === 'curious') {
           visitorIntent = classified;

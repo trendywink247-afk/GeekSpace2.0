@@ -425,6 +425,41 @@ export async function sendTelegramPhoto(
   photoUrl: string,
   caption?: string,
 ): Promise<{ messageId: number; success: boolean }> {
+  // If photoUrl is a data: URI (base64 binary), use multipart upload
+  if (photoUrl.startsWith('data:')) {
+    const match = photoUrl.match(/^data:([^;]+);base64,(.+)$/s);
+    if (match) {
+      const [, mimeType, b64] = match;
+      const ext = mimeType.includes('jpeg') || mimeType.includes('jpg') ? 'jpg' : 'png';
+      const buf = Buffer.from(b64, 'base64');
+      const form = new FormData();
+      form.append('chat_id', String(chatId));
+      form.append('photo', new Blob([buf], { type: mimeType }), `screenshot.${ext}`);
+      if (caption) form.append('caption', caption.slice(0, 1024));
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await fetch(`${TELEGRAM_API}/sendPhoto`, {
+            method: 'POST',
+            body: form as unknown as BodyInit,
+            signal: AbortSignal.timeout(60000),
+          });
+          if (!res.ok) {
+            const errText = await res.text().catch(() => '');
+            logger.warn({ chatId, status: res.status, error: errText, attempt }, 'Telegram sendPhoto (multipart) failed');
+            if (res.status >= 400 && res.status < 500) return { messageId: 0, success: false };
+            continue;
+          }
+          const data = await res.json() as { result?: { message_id: number } };
+          return { messageId: data.result?.message_id || 0, success: true };
+        } catch (err) {
+          logger.warn({ err, chatId, attempt }, 'Telegram sendPhoto (multipart) attempt failed');
+          if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        }
+      }
+      return { messageId: 0, success: false };
+    }
+  }
+
   const body: Record<string, unknown> = {
     chat_id: chatId,
     photo: photoUrl,

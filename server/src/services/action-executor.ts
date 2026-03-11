@@ -580,7 +580,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         }
 
         // Save avatar to user profile
-        db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(result.url, userId);
+        db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(result.url, userId);
 
         return {
           tool,

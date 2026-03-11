@@ -30,6 +30,32 @@ import { fetchAndExtract, smartSearch } from './web-research.js';
 import { addInboxMessage } from './inbox.js';
 import { checkContentSafety } from './content-filter.js';
 
+// ---- Screenshot compression using ffmpeg (avoids 413 errors for large screenshots) ----
+async function compressScreenshot(base64Png: string): Promise<string> {
+  const { exec } = await import('child_process');
+  const { promisify } = await import('util');
+  const { writeFile, readFile, unlink } = await import('fs/promises');
+  const { tmpdir } = await import('os');
+  const { join } = await import('path');
+  const execAsync = promisify(exec);
+
+  const id = Math.random().toString(36).slice(2);
+  const inFile = join(tmpdir(), `ss_in_${id}.png`);
+  const outFile = join(tmpdir(), `ss_out_${id}.jpg`);
+
+  try {
+    await writeFile(inFile, Buffer.from(base64Png, 'base64'));
+    // Resize to fit within 1280x4096 box, convert to JPEG (-update 1 = single frame JPEG)
+    // cap height prevents PHOTO_INVALID_DIMENSIONS for tall full-page screenshots
+    await execAsync(`ffmpeg -y -i "${inFile}" -vf "scale=1280:4096:force_original_aspect_ratio=decrease" -q:v 4 -update 1 "${outFile}" 2>/dev/null`);
+    const jpegBuf = await readFile(outFile);
+    return `data:image/jpeg;base64,${jpegBuf.toString('base64')}`;
+  } finally {
+    unlink(inFile).catch(() => {});
+    unlink(outFile).catch(() => {});
+  }
+}
+
 // ---- ReAct Tool Instructions ----
 // Injected into system prompts so the LLM knows how to call tools.
 const TOOL_INSTRUCTIONS = `
@@ -289,11 +315,17 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       try {
         const text = msg.text.toLowerCase();
         // Extract params from message
-        const nameMatch = msg.text.match(/\b(?:for|name is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/) ?? msg.text.match(/\bmy name is\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/i);
+        const nameMatch = msg.text.match(/\b(?:for|name is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/)
+          ?? msg.text.match(/\bmy name is\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/i)
+          ?? msg.text.match(/\b[Ii][''\u2019]m\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/); // "I'm Aliya Shaikh"
         const themeMatch = text.match(/\b(dark|light|purple|blue|gradient)\b/);
         const templateMatch = text.match(/\b(landing|blog|business)\b/);
-        const locationMatch = msg.text.match(/\bfrom\s+([A-Z][a-zA-Z\s]{2,20})\b/);
+        const locationMatch = msg.text.match(/\bfrom\s+([A-Z][a-zA-Z\s]{2,20})\b/)
+          ?? msg.text.match(/\bin\s+([A-Z][a-zA-Z\s]{2,20})(?:[,.]|$)/); // "in Mumbai"
         const professionMatch = msg.text.match(/\b(developer|designer|engineer|writer|photographer|artist|consultant|manager|teacher|doctor|lawyer|freelancer)\b/i);
+        // Extract comma-separated skills: "Skills: Figma, Adobe CC, React" or "skills are Figma and React"
+        const skillsRaw = msg.text.match(/\bskills?[:\s]+([A-Za-z0-9 ,&/]+?)(?:\.|theme|dark|light|\n|$)/i)?.[1];
+        const skillsMatch = skillsRaw ? skillsRaw.split(/[,&]/).map(s => s.trim()).filter(s => s.length > 1) : null;
 
         const isEdit = editWebsitePattern.test(msg.text) && !createWebsitePattern.test(msg.text);
 
@@ -337,6 +369,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
           if (nameMatch?.[1]) artifactParams.name = nameMatch[1];
           if (locationMatch?.[1]) artifactParams.location = locationMatch[1].trim();
           if (professionMatch?.[1]) artifactParams.profession = professionMatch[1];
+          if (skillsMatch?.length) artifactParams.skills = skillsMatch;
         } else {
           // Custom/freeform — LLM generates or edits HTML. For edits, action-executor
           // loads the existing HTML and passes it to the LLM as context.
@@ -365,6 +398,35 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         }
       } catch (e) {
         logger.warn({ err: (e as Error).message }, 'Website builder fast-path failed, falling through to LLM');
+      }
+    }
+  }
+
+  // 5aa. Reminder delete fast-path — directly delete pending reminders without LLM
+  {
+    const deleteAllPattern = /\b(?:cancel|delete|remove|clear|wipe)\b.{0,40}\b(?:all|every).{0,20}\b(?:reminder|reminders|alarm|alarms)\b/i;
+    const deleteSinglePattern = /\b(?:cancel|delete|remove)\b.{0,40}\b(?:reminder|alarm)\b/i;
+    if (deleteAllPattern.test(msg.text)) {
+      const { changes } = db.prepare('DELETE FROM reminders WHERE user_id = ? AND completed = 0').run(userId);
+      const reply = changes > 0 ? `Done! Deleted ${changes} pending reminder${changes !== 1 ? 's' : ''}.` : `You don't have any pending reminders to delete.`;
+      logConversation(userId, 'user', msg.text, requestId);
+      logConversation(userId, 'assistant', reply, requestId, 'builtin', 'delete-reminder');
+      await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
+      logger.info({ channel: msg.channel, userId, changes }, 'Reminder delete-all fast-path executed');
+      return;
+    }
+    // "cancel reminder 3" or "delete my last reminder" — pass to LLM (needs context)
+    // Only delete-all gets the fast-path since it doesn't need specific reminderId
+    if (deleteSinglePattern.test(msg.text) && /\b(last|latest|that|this|it)\b/i.test(msg.text)) {
+      // Fetch the most recent non-completed reminder and delete it
+      const last = db.prepare('SELECT id, text FROM reminders WHERE user_id = ? AND completed = 0 ORDER BY created_at DESC LIMIT 1').get(userId) as { id: string; text: string } | undefined;
+      if (last) {
+        db.prepare('DELETE FROM reminders WHERE id = ?').run(last.id);
+        const reply = `Cancelled: "${last.text}"`;
+        logConversation(userId, 'user', msg.text, requestId);
+        logConversation(userId, 'assistant', reply, requestId, 'builtin', 'delete-reminder');
+        await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
+        return;
       }
     }
   }
@@ -421,11 +483,13 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         try {
           const { fetchScreenshot } = await import('./web-research.js');
           const base64Png = await fetchScreenshot(targetUrl);
+          // Compress PNG → JPEG to stay within Telegram's 10MB photo limit
+          const photoData = await compressScreenshot(base64Png).catch(() => `data:image/png;base64,${base64Png}`);
           const reply = `Here's the screenshot of ${targetUrl}!`;
           logConversation(userId, 'user', msg.text, requestId);
           logConversation(userId, 'assistant', reply, requestId, 'builtin', 'screenshot');
           await sendTelegramMessage(msg.externalId, reply).catch(() => {});
-          await sendTelegramPhoto(msg.externalId, `data:image/png;base64,${base64Png}`).catch((e: unknown) =>
+          await sendTelegramPhoto(msg.externalId, photoData).catch((e: unknown) =>
             logger.warn({ err: (e as Error).message }, 'Screenshot fast-path: failed to send photo'),
           );
           logger.info({ channel: msg.channel, userId, url: targetUrl }, 'Screenshot fast-path executed');
