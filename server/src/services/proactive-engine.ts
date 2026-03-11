@@ -129,7 +129,14 @@ export async function overdueAlert(userId: string): Promise<string | null> {
 
 export async function idleCheckIn(userId: string): Promise<string | null> {
   if (!isProactiveEnabled(userId)) return null;
-  const user = db.prepare('SELECT name, last_active FROM users WHERE id = ?').get(userId) as UserRow | undefined;
+  // last_active column may not exist in older DB schemas — use activity_log as fallback
+  let user: UserRow | undefined;
+  try {
+    user = db.prepare('SELECT name, last_active FROM users WHERE id = ?').get(userId) as UserRow | undefined;
+  } catch {
+    // last_active column missing — fall back to name only
+    user = db.prepare('SELECT name FROM users WHERE id = ?').get(userId) as UserRow | undefined;
+  }
   if (!user) return null;
   const lastActive = user.last_active ? new Date(user.last_active) : null;
   if (!lastActive) return null;

@@ -269,7 +269,7 @@ function isTogetherAvailable(): boolean {
 }
 
 function isPremiumPlan(plan?: string): boolean {
-  return ['monthly', 'pilot', 'halfyear', 'yearly'].includes(plan || '');
+  return ['monthly', 'pilot', 'halfyear', 'yearly', 'pro'].includes(plan || '');
 }
 
 // ---- Provider Callers ----
@@ -1195,7 +1195,7 @@ export async function pickProvider(
     .get(userId) as { model_preference: string } | undefined;
   const preference = (agentConfig?.model_preference || 'auto') as UserModelPreference;
 
-  const isPaidPlan = ['pilot', 'intro', 'halfyear', 'yearly', 'monthly'].includes(userPlan);
+  const isPaidPlan = ['pilot', 'intro', 'halfyear', 'yearly', 'monthly', 'pro'].includes(userPlan);
 
   if (preference === 'local') return 'ollama';
   if (preference === 'cloud') return 'openrouter-free';
