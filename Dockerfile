@@ -29,11 +29,13 @@ RUN cd server && npm run build
 # ---- Stage 2: Production ----
 FROM node:20-slim AS production
 
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git gpg && \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git gpg python3-minimal python3-venv ffmpeg && \
     curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list && \
     apt-get update && apt-get install -y --no-install-recommends gh && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    python3 -m venv /opt/tts-venv && \
+    /opt/tts-venv/bin/pip install --no-cache-dir edge-tts
 
 WORKDIR /app
 

@@ -24,7 +24,17 @@ import {
   startOnboarding,
 } from '../services/onboarding.js';
 import { v4 as uuid } from 'uuid';
-import { isVoiceEnabled } from '../services/voice.js';
+import {
+  isVoiceEnabled,
+  downloadTelegramVoice,
+  transcribeVoice,
+  textToSpeech,
+  sendTelegramVoice,
+  voiceCreditCost,
+} from '../services/voice.js';
+import { routeChat, type ChatMessage, deductSubscriptionCredits } from '../services/llm.js';
+import { getConversationContext, logConversation, extractMemories } from '../services/memory.js';
+import { buildChannelSystemPrompt } from '../services/message-router.js';
 import { db } from '../db/index.js';
 import { cacheGet, cacheSet } from '../services/cache.js';
 import { handleEscalationReply } from '../services/escalation.js';
@@ -208,16 +218,73 @@ async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Pr
   }
 
   // Check credits (voice costs extra)
-  const sub = db.prepare('SELECT credits_remaining FROM subscriptions WHERE user_id = ?')
-    .get(link.user_id) as { credits_remaining: number } | undefined;
+  const sub = db.prepare('SELECT credits_remaining, plan FROM subscriptions WHERE user_id = ?')
+    .get(link.user_id) as { credits_remaining: number; plan?: string } | undefined;
 
   if (sub && sub.credits_remaining < 10) {
     await sendTelegramMessage(chatId, 'Not enough credits for voice processing. Voice notes require extra credits for transcription.');
     return;
   }
 
-  // Voice transcription is coming soon — return early with helpful message
-  await sendTelegramMessage(chatId, 'Voice notes are coming soon. For now, please type your message. 🎙️');
+  const startTime = Date.now();
+
+  try {
+    // 1. Download audio
+    await sendTelegramMessage(chatId, '🎙️ Processing your voice note...');
+    const audioBuffer = await downloadTelegramVoice(voice.file_id);
+    logger.info({ requestId, chatId, bytes: audioBuffer.length }, 'voice:downloaded');
+
+    // 2. Transcribe (Groq Whisper)
+    const transcript = await transcribeVoice(audioBuffer, 'audio/ogg');
+    logger.info({ requestId, chatId, chars: transcript.length, transcript }, 'voice:transcribed');
+
+    if (!transcript) {
+      await sendTelegramMessage(chatId, "Sorry, I couldn't make out what you said. Please try again.");
+      return;
+    }
+
+    // 3. Get user + agent config for system prompt
+    const userRow = db.prepare('SELECT name, username, timezone FROM users WHERE id = ?')
+      .get(link.user_id) as { name: string; username: string; timezone?: string } | undefined;
+    const agentConfig = db.prepare('SELECT name, personality, mode, voice FROM agent_configs WHERE user_id = ?')
+      .get(link.user_id) as Record<string, unknown> | undefined;
+
+    // 4. Build LLM messages
+    const history = getConversationContext(link.user_id) as ChatMessage[];
+    const systemPrompt = buildChannelSystemPrompt(agentConfig, userRow ?? {}, link.user_id, 'telegram_voice', transcript);
+    const messages: ChatMessage[] = [...history, { role: 'user', content: transcript }];
+
+    // 5. Route through LLM
+    const llmResponse = await routeChat(messages, {
+      systemPrompt,
+      userId: link.user_id,
+      userPlan: (sub as { plan?: string } | undefined)?.plan,
+    });
+
+    // 6. Log conversation
+    logConversation(link.user_id, 'user', transcript, requestId);
+    logConversation(link.user_id, 'assistant', llmResponse.reply, requestId, llmResponse.provider, llmResponse.model);
+    extractMemories(link.user_id, transcript);
+
+    // 7. TTS → OGG Opus
+    const audioReply = await textToSpeech(llmResponse.reply);
+    const totalMs = Date.now() - startTime;
+    logger.info({ requestId, chatId, bytes: audioReply.length, totalMs }, 'voice:tts complete');
+
+    // 8. Send voice note (with transcript as caption)
+    const caption = `🎤 "${transcript.slice(0, 200)}"`;
+    await sendTelegramVoice(chatId, audioReply, msg.message_id, caption);
+
+    // 9. Deduct credits
+    const creditCost = voiceCreditCost(voice.duration || 0, llmResponse.reply.length);
+    deductSubscriptionCredits(link.user_id, creditCost);
+
+    logger.info({ requestId, chatId, creditCost, totalMs }, 'voice:pipeline complete');
+
+  } catch (err) {
+    logger.error({ err, requestId, chatId }, 'voice:pipeline error');
+    await sendTelegramMessage(chatId, '⚠️ Voice processing failed. Please try again or send a text message.');
+  }
 }
 
 // ---- Telegram Bot Command Handler ----

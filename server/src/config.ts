@@ -96,8 +96,12 @@ export const config = {
   // Redis (job queue)
   redisUrl: optional('REDIS_URL', 'redis://localhost:6379'),
 
-  // OpenAI (Whisper STT + TTS for voice notes)
+  // OpenAI (kept for optional future use)
   openaiApiKey: process.env.OPENAI_API_KEY || '',
+
+  // Voice: edge-tts (TTS) + Groq Whisper (STT — uses existing GROQ_API_KEY)
+  edgeTtsBin: optional('EDGE_TTS_BIN', '/opt/tts-venv/bin/edge-tts'),
+  ttsVoice: optional('TTS_VOICE', 'en-US-AriaNeural'),
 
   // Telegram
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',

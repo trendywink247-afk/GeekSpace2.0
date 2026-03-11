@@ -124,7 +124,7 @@ function resolveUserFromChannel(channel: string, externalId: string): ResolvedUs
 
 // ---- Channel-Aware System Prompt ----
 
-function buildChannelSystemPrompt(
+export function buildChannelSystemPrompt(
   agentConfig: Record<string, unknown> | undefined,
   user: Record<string, unknown>,
   userId: string,
