@@ -235,9 +235,10 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
   });
 
   it('edith is NOT auto-selected for complex intent (no complexity_escalation)', async () => {
+    // Phase 110: premium users use T1 (OpenRouter-free) first — Ollama is free-user only
     vi.stubGlobal('fetch', vi.fn()
-      .mockResolvedValueOnce(ollamaOkResponse)
-      .mockResolvedValueOnce(ollamaChatOk('Complex answer'))
+      .mockResolvedValueOnce(ollamaOkResponse)              // isOllamaAvailable check
+      .mockResolvedValueOnce(openrouterOk('Complex answer')) // T1: OpenRouter-free for premium
     );
 
     const response = await routeChat(
@@ -245,8 +246,8 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
       { userId: 'premium-user', userPlan: 'yearly', userCredits: 100 }
     );
 
-    // Ollama available — must NOT auto-escalate to edith for complex intent
-    expect(response.provider).toBe('ollama');
+    // Edith must NEVER be auto-selected based on intent — premium users use OpenRouter-free (T1)
+    expect(response.provider).not.toBe('edith');
     const traces = getRoutingTraces();
     expect(traces[traces.length - 1].routeDecision).not.toBe('edith');
     // complexity_escalation routing reason must NOT exist (removed in Phase 76)

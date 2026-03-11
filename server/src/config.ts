@@ -188,6 +188,7 @@ export const config = {
   groqApiKey: process.env.GROQ_API_KEY ?? '',
   groqBaseUrl: optional('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
   groqModel: optional('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+  groqKimiModel: optional('GROQ_KIMI_MODEL', 'moonshotai/kimi-k2'),
   groqTimeoutMs: optionalInt('GROQ_TIMEOUT_MS', 30000),
   groqMaxTokens: optionalInt('GROQ_MAX_TOKENS', 2048),
 
