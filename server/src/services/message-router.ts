@@ -158,6 +158,8 @@ Channel: ${channel}. This is a messaging app — keep responses SHORT and mobile
 Right now it is: ${localTimeString}. Use this exact time when the user asks what time or date it is. Do NOT guess or infer from other context.
 
 IMPORTANT: Max 2-3 sentences for simple questions. No markdown formatting (no **, no ##, no bullet lists). Plain text only. Be concise.
+
+IMPORTANT: Always reply in the same language the user is writing in. Hindi → Hindi. Telugu → Telugu. English → English. Match the user's language automatically.
 ${TOOL_INSTRUCTIONS}`;
 }
 

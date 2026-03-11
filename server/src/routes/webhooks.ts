@@ -252,11 +252,18 @@ async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Pr
     // 4. Build LLM messages
     const history = getConversationContext(link.user_id) as ChatMessage[];
     const systemPrompt = buildChannelSystemPrompt(agentConfig, userRow ?? {}, link.user_id, 'telegram_voice', transcript);
+    const systemPromptWithLang = systemPrompt +
+      '\n\nIMPORTANT: Detect the language of the user\'s message. ' +
+      'Always reply in the exact same language the user spoke in. ' +
+      'If they spoke Hindi, reply in Hindi. ' +
+      'If they spoke Telugu, reply in Telugu. ' +
+      'If they spoke English, reply in English. ' +
+      'Never switch languages unless the user does first.';
     const messages: ChatMessage[] = [...history, { role: 'user', content: transcript }];
 
     // 5. Route through LLM
     const llmResponse = await routeChat(messages, {
-      systemPrompt,
+      systemPrompt: systemPromptWithLang,
       userId: link.user_id,
       userPlan: (sub as { plan?: string } | undefined)?.plan,
     });

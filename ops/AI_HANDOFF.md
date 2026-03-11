@@ -195,3 +195,17 @@ cat ops/AI_BACKLOG.md | head -40
 ## Next Recommended
 - Live Telegram voice test: send voice note to bot, confirm OGG reply received
 - Check /api/agent/voice endpoint (web voice notes from dashboard) if it exists
+
+---
+
+## Multilingual Fix — 2026-03-11
+Removed English language lock from Whisper STT (was already absent; auto-detection confirmed active).
+Agent now replies in Hindi/Telugu/English automatically.
+Affects: voice notes + text chat on all channels.
+
+Files changed:
+- `server/src/routes/webhooks.ts` — added `systemPromptWithLang` with language-match instruction for voice
+- `server/src/services/message-router.ts:162` — appended language-match to `buildChannelSystemPrompt` (covers all text channels)
+- `server/src/services/voice.ts` — no change needed (Whisper auto-detection was already active)
+
+Tests: 2207 passing ✅ | Build: 0 errors ✅ | Hot-patched to production ✅

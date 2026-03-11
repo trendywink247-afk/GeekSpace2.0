@@ -116,3 +116,10 @@ Voice: en-US-AriaNeural (Microsoft neural TTS)
 Output: MP3 → ffmpeg → OGG Opus (Telegram sendVoice format)
 Redis cache: 24h TTL prefix tts: (avoids re-generating same phrases)
 Revisit Kokoro after VPS upgrade or after first revenue.
+
+## Multilingual Support — 2026-03-11
+Root cause: Whisper auto-detection was already active (no language lock existed in Phase 110 implementation).
+Language-match instruction added to all system prompts via buildChannelSystemPrompt() in message-router.ts.
+Single insertion point covers all channels: Telegram text, Telegram voice, web chat.
+Whisper Large v3 Turbo natively supports Hindi, Telugu, English and 99 other languages.
+Voice handler in webhooks.ts also gets explicit per-request language-match instruction appended to systemPromptWithLang.

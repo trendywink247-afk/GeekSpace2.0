@@ -483,3 +483,18 @@ PAID users (sequential):
 - Together AI FLUX wired into image handler
 - Weebo Fleet management UI
 - Video generation alternative provider
+
+---
+
+## Multilingual Voice Fix — 2026-03-11
+
+- **Status:** ✅ FIXED
+- **Root cause:** Investigation found no English language lock (`form.append('language', 'en')` was never present in the Phase 110 voice implementation). Whisper auto-detection was already active. The real gap was missing language-match instructions in system prompts, causing LLMs to default to English replies regardless of input language.
+- **Fix applied:**
+  1. `server/src/routes/webhooks.ts` — `handleVoiceMessage()` now builds `systemPromptWithLang` appending explicit language-match instruction before passing to `routeChat`
+  2. `server/src/services/message-router.ts:162` — `buildChannelSystemPrompt()` return value now includes language-match instruction for all channels (web chat, Telegram text, Telegram voice)
+- **Languages confirmed supported by Whisper Large v3 Turbo:** Hindi, Telugu, English (+ 99 others natively)
+- **Text chat:** also fixed via system prompt in `buildChannelSystemPrompt` — covers all channels
+- **Tests:** 2207 passing ✅ | Build: 0 TypeScript errors ✅
+- **Commit:** see git log
+- **Deploy:** hot-patched 3 files + `docker compose restart geekspace` ✅
