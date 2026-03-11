@@ -109,6 +109,16 @@ export function signToken(userId: string): string {
 // Alias for OAuth compatibility
 export const generateToken = signToken;
 
+/** Issue a short-lived guest JWT for portfolio visitors — no account required.
+ *  sub = 'guest:<uuid>' so DB user lookup in optionalAuth returns nothing (visitorName stays anonymous).
+ *  Stored in localStorage by the frontend; sent as Authorization: Bearer on subsequent messages. */
+export function signGuestToken(): string {
+  return sign({ sub: `guest:${uuid()}`, type: 'visitor' }, config.jwtSecret, {
+    algorithm: 'HS256',
+    expiresIn: '1h',
+  });
+}
+
 // Bearer token middleware — checks Authorization: Bearer <ADMIN_TOKEN>
 export function requireAdminToken(req: Request, res: Response, next: NextFunction): void {
   if (!config.adminToken) {

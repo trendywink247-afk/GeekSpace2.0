@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { randomBytes } from 'crypto';
 import { v4 as uuid } from 'uuid';
-import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { requireAuth, signGuestToken, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, portfolioUpdateSchema, portfolioAiEditSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
@@ -550,6 +550,35 @@ portfolioRouter.delete('/contacts/:id', requireAuth, (req: AuthRequest, res) => 
 portfolioRouter.delete('/contacts', requireAuth, (req: AuthRequest, res) => {
   const result = db.prepare('DELETE FROM portfolio_contacts WHERE user_id = ?').run(req.userId!);
   res.json({ deleted: result.changes });
+});
+
+// ── Visitor guest token — issues a short-lived JWT so visitors can chat without signing up ──
+// IP rate limit: 5 tokens/hour per IP (prevents token farming).
+// The returned token is stored in localStorage by the frontend and sent as Bearer on each chat message.
+portfolioRouter.post('/:username/visitor-token', async (req, res) => {
+  const { username } = req.params;
+
+  const user = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: string } | undefined;
+  if (!user) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const portfolio = db.prepare('SELECT is_public FROM portfolios WHERE user_id = ?').get(user.id) as { is_public: number } | undefined;
+  if (!portfolio?.is_public) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+  const rlKey = `portfolio:guest:token:rl:${ip}`;
+  try {
+    const rlRaw = await cacheGet(rlKey);
+    const count = rlRaw ? parseInt(rlRaw, 10) : 0;
+    if (count >= 5) {
+      res.status(429).json({ error: 'Too many requests. Please try again later.' });
+      return;
+    }
+    await cacheSet(rlKey, String(count + 1), 3600);
+  } catch { /* Redis unavailable — allow through */ }
+
+  const token = signGuestToken();
+  logger.info({ event: 'guest_token_issued', username, ip }, 'Guest visitor token issued');
+  res.json({ token, expiresIn: 3600 });
 });
 
 // ── 34.3: Public view counter (no auth — fire-and-forget on portfolio page load) ──

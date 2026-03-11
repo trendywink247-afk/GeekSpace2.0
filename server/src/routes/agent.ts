@@ -1750,6 +1750,19 @@ agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema
   const { message, messageCount, history } = req.body as { message: string; messageCount?: number; history?: Array<{ role: string; content: string }> };
   const { username } = req.params;
 
+  // IP rate limit: 10 messages/hour per IP — no credits deducted for visitor chats
+  const visitorIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+  const visitorRlKey = `visitor:chat:rl:${visitorIp}`;
+  try {
+    const rlRaw = await cacheGet(visitorRlKey);
+    const rlCount = rlRaw ? parseInt(rlRaw, 10) : 0;
+    if (rlCount >= 10) {
+      res.status(429).json({ error: 'Rate limit exceeded. Please try again in an hour.', retryAfter: 3600 });
+      return;
+    }
+    await cacheSet(visitorRlKey, String(rlCount + 1), 3600);
+  } catch { /* Redis unavailable — allow through */ }
+
   const user = db.prepare('SELECT id, name, location, role, company, agent_chat_enabled FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
   if (!user.agent_chat_enabled) { res.status(403).json({ error: 'Agent chat is not enabled for this user' }); return; }
