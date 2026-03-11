@@ -99,11 +99,15 @@ const MAX_TTS_CHARS = 500;
 
 export async function textToSpeech(text: string): Promise<Buffer> {
   const input = text
+    .replace(/<<<ACTION[\s\S]*?ACTION>>>/g, '')  // strip tool action blocks
     .replace(/"/g, '')
     .replace(/'/g, '')
     .replace(/\n/g, ' ')
-    .replace(/\*+/g, '')   // strip markdown bold
-    .replace(/#+ /g, '')   // strip markdown headers
+    .replace(/\*+/g, '')          // strip markdown bold
+    .replace(/#+ /g, '')          // strip markdown headers
+    .replace(/\/(\w)/g, '$1')     // /remind → remind, /start → start
+    .replace(/\//g, ' ')          // remaining / → space
+    .replace(/ {2,}/g, ' ')       // collapse multiple spaces
     .trim()
     .slice(0, MAX_TTS_CHARS);
 
