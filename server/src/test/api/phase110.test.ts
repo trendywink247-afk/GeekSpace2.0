@@ -496,11 +496,11 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
 
   // ---- message-router routing ----
 
-  it('message-router.ts detects non-Latin script via Unicode ranges', () => {
+  it('message-router.ts detects non-Latin script via Unicode property escapes', () => {
     const src = readSrc('services', 'message-router.ts');
-    expect(src).toContain('\\u0900-\\u097F'); // Devanagari (Hindi)
-    expect(src).toContain('\\u0C00-\\u0C7F'); // Telugu
-    expect(src).toContain('\\u0B80-\\u0BFF'); // Tamil
+    expect(src).toContain('Script=Devanagari'); // Hindi
+    expect(src).toContain('Script=Telugu');
+    expect(src).toContain('Script=Tamil');
   });
 
   it('message-router.ts has Hinglish word list with at least 20 words', () => {
@@ -544,7 +544,7 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
 
   it('voice.ts detects Devanagari script for Hindi voice selection', () => {
     const src = readSrc('services', 'voice.ts');
-    expect(src).toContain('\\u0900-\\u097F');
+    expect(src).toContain('0900-');
     expect(src).toContain('hi-IN-SwaraNeural');
   });
 
@@ -566,7 +566,7 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
   it('webhooks.ts voice handler detects non-Latin script in transcript', () => {
     const src = readSrc('routes', 'webhooks.ts');
     expect(src).toContain('transcriptHasNonLatin');
-    expect(src).toContain('\\u0900-\\u097F');
+    expect(src).toContain('Script=Devanagari');
   });
 
   it('webhooks.ts voice handler detects Hinglish in transcript', () => {

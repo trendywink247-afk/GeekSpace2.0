@@ -116,10 +116,10 @@ export async function textToSpeech(text: string): Promise<Buffer> {
   // Auto-select voice based on script detected in the reply text.
   // Falls back to configured voice (default en-US-AriaNeural) for English/unknown.
   function detectVoice(t: string): string {
-    if (/[\u0900-\u097F]/.test(t)) return 'hi-IN-SwaraNeural';   // Hindi Devanagari
-    if (/[\u0C00-\u0C7F]/.test(t)) return 'te-IN-ShrutiNeural';  // Telugu
-    if (/[\u0B80-\u0BFF]/.test(t)) return 'ta-IN-PallaviNeural'; // Tamil
-    if (/[\u0A80-\u0AFF]/.test(t)) return 'gu-IN-NiranjanNeural';// Gujarati (if supported)
+    if (/[\u0900-\u097F]/u.test(t)) return 'hi-IN-SwaraNeural';   // Hindi Devanagari
+    if (/[\u0C00-\u0C7F]/u.test(t)) return 'te-IN-ShrutiNeural';  // Telugu
+    if (/[\u0B80-\u0BFF]/u.test(t)) return 'ta-IN-PallaviNeural'; // Tamil
+    if (/[\u0A80-\u0AFF]/u.test(t)) return 'gu-IN-NiranjanNeural';// Gujarati (if supported)
     return config.ttsVoice ?? 'en-US-AriaNeural';
   }
   const voice = detectVoice(input);

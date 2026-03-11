@@ -602,7 +602,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     // Multilingual detection: non-Latin script (Devanagari/Telugu/Tamil/Arabic) or Hinglish
     // Chinese models (qwen3:8b, stepfun) reply in Chinese for these — route to Groq instead
-    const msgHasNonLatin = /[\u0900-\u097F\u0C00-\u0C7F\u0600-\u06FF\u0B80-\u0BFF\u0A80-\u0AFF]/.test(message);
+    const msgHasNonLatin = /\p{Script=Devanagari}|\p{Script=Telugu}|\p{Script=Arabic}|\p{Script=Tamil}|\p{Script=Gujarati}/u.test(message);
     const HINGLISH_SET = new Set(['aap','kya','kaise','hai','hain','ho','mera','meri','nahi','haan',
       'yaar','bhai','bolo','main','tum','woh','yeh','karo','batao','kitna','kahan','kab','kaun','kyun',
       'mujhe','tumhe','theek','accha','chalo','suno','bahut','abhi','lekin','sirf','toh','naam','kaam']);

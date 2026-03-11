@@ -263,7 +263,7 @@ async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Pr
 
     // 5. Route through LLM
     // Detect non-Latin script (Devanagari, Telugu, Tamil, Arabic) or Hinglish in transcript
-    const transcriptHasNonLatin = /[\u0900-\u097F\u0C00-\u0C7F\u0600-\u06FF\u0B80-\u0BFF\u0A80-\u0AFF]/.test(transcript);
+    const transcriptHasNonLatin = /\p{Script=Devanagari}|\p{Script=Telugu}|\p{Script=Arabic}|\p{Script=Tamil}|\p{Script=Gujarati}/u.test(transcript);
     const HINGLISH_WORDS_VOICE = new Set(['aap','kya','kaise','hai','hain','ho','mera','meri','nahi','haan',
       'yaar','bhai','bolo','main','tum','woh','yeh','karo','batao','kitna','kahan','kab','kaun','kyun',
       'mujhe','tumhe','theek','accha','chalo','suno','bahut','abhi','lekin','aur','sirf','toh','naam','kaam']);

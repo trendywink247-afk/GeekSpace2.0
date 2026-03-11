@@ -512,7 +512,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // Non-Latin script detection: Hindi (Devanagari), Telugu, Arabic, Tamil, Gujarati etc.
   // Chinese models (qwen3:8b, stepfun) reply in Chinese for these inputs despite instructions.
   // Route to Groq Llama 3.3 70B instead — truly multilingual.
-  const hasNonLatinScript = /[\u0900-\u097F\u0C00-\u0C7F\u0600-\u06FF\u0B80-\u0BFF\u0A80-\u0AFF]/.test(msg.text);
+  const hasNonLatinScript = /\p{Script=Devanagari}|\p{Script=Telugu}|\p{Script=Arabic}|\p{Script=Tamil}|\p{Script=Gujarati}/u.test(msg.text);
 
   // Romanized Hindi (Hinglish) detection — common Hindi words typed in Latin script.
   // e.g. "aap kaise ho", "kya haal hai", "bhai bata do"
