@@ -41,6 +41,9 @@ ACTION>>>
 
 Available tools:
 - web_search: Search the web for current information. Params: {"query": "<search query>"}
+- crawl_url: Fetch and read any website URL. Params: {"url": "<full URL including https://>"}
+- take_screenshot: Take a screenshot of any website. Params: {"url": "<full URL including https://>"}. Use when user says "screenshot", "take a photo of", "show me the website", "capture".
+- get_links: Extract all links from a webpage. Params: {"url": "<full URL>", "filter": "all|internal|external"}. Use when user says "get links", "all links", "links from", "list links".
 - set_reminder: Create a reminder for the user. Params: {"text": "<reminder text>", "datetime": "<EXACT time the user said, e.g. '3:30am', 'tomorrow at 9pm', 'in 2 hours' — do NOT convert to ISO or UTC>", "channel": "telegram|push"}
 - telegram_notify: Send a Telegram message to the user. Params: {"message": "<message text>"}
 - generate_image: Generate an image. Params: {"prompt": "<image description>"}
@@ -407,6 +410,58 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     }
   }
 
+  // 5ac. Screenshot fast-path — detect screenshot intent and execute directly
+  {
+    const screenshotIntent = /\b(?:take|capture|get|show|grab)\s+(?:a\s+)?screenshot\s+(?:of|from)\b|\bscreenshot\s+of\b/i;
+    if (screenshotIntent.test(msg.text)) {
+      const urlMatch = msg.text.match(/https?:\/\/\S+/) ?? msg.text.match(/\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+\.[a-zA-Z]{2,})\b/);
+      let targetUrl = urlMatch?.[0] ?? '';
+      if (targetUrl && !targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`;
+      if (targetUrl) {
+        try {
+          const { fetchScreenshot } = await import('./web-research.js');
+          const base64Png = await fetchScreenshot(targetUrl);
+          const reply = `Here's the screenshot of ${targetUrl}!`;
+          logConversation(userId, 'user', msg.text, requestId);
+          logConversation(userId, 'assistant', reply, requestId, 'builtin', 'screenshot');
+          await sendTelegramMessage(msg.externalId, reply).catch(() => {});
+          await sendTelegramPhoto(msg.externalId, `data:image/png;base64,${base64Png}`).catch((e: unknown) =>
+            logger.warn({ err: (e as Error).message }, 'Screenshot fast-path: failed to send photo'),
+          );
+          logger.info({ channel: msg.channel, userId, url: targetUrl }, 'Screenshot fast-path executed');
+          return;
+        } catch (e) {
+          logger.warn({ err: (e as Error).message }, 'Screenshot fast-path failed, falling through to LLM');
+        }
+      }
+    }
+  }
+
+  // 5ad. Links fast-path — extract all links from a webpage
+  {
+    const linksIntent = /\b(?:get|extract|list|show|find|give me)\s+(?:all\s+)?(?:the\s+)?links\s+(?:from|on|in|of)\b|\ball links\s+(?:from|on|in|of)\b/i;
+    if (linksIntent.test(msg.text)) {
+      const urlMatch = msg.text.match(/https?:\/\/\S+/) ?? msg.text.match(/\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+\.[a-zA-Z]{2,})\b/);
+      let targetUrl = urlMatch?.[0] ?? '';
+      if (targetUrl && !targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`;
+      if (targetUrl) {
+        try {
+          const { extractLinks } = await import('./web-research.js');
+          const links = await extractLinks(targetUrl);
+          const linkList = links.slice(0, 20).map(l => `• ${l.text}: ${l.href}`).join('\n');
+          const reply = `Found ${links.length} links on ${targetUrl}:\n\n${linkList}`;
+          logConversation(userId, 'user', msg.text, requestId);
+          logConversation(userId, 'assistant', reply, requestId, 'builtin', 'links');
+          await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
+          logger.info({ channel: msg.channel, userId, url: targetUrl, count: links.length }, 'Links fast-path executed');
+          return;
+        } catch (e) {
+          logger.warn({ err: (e as Error).message }, 'Links fast-path failed, falling through to LLM');
+        }
+      }
+    }
+  }
+
   // 5b. Auto-detect task intents (remind, telegram, deploy) — route to Pico Fleet
   // For mixed-intent messages (e.g. "Give me a workout plan and remind me"),
   // queue the tasks but continue to LLM for the content response.
@@ -502,15 +557,17 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   const bareDomainInMsg = !explicitResearchUrl ? msg.text.match(BARE_DOMAIN_RE_MSG)?.[1] : null;
   const researchUrl = explicitResearchUrl || (bareDomainInMsg ? `https://${bareDomainInMsg}` : null);
 
-  if (researchUrl && !webSearchUsed) {
+  // URL scraping runs whenever a URL is present — even if Tavily searched, crawl4ai gives
+  // the actual page content which Tavily results cannot replace.
+  if (researchUrl) {
     try {
       const pageContent = await fetchAndExtract(researchUrl);
       if (pageContent) {
         systemPrompt += `\n\nPAGE_CONTENT [${researchUrl}]:\n${pageContent}`;
-        logger.debug({ url: researchUrl }, 'crawl4ai page scraped and injected into prompt');
+        logger.info({ url: researchUrl }, 'crawl4ai page scraped and injected into prompt');
       }
     } catch (e) {
-      logger.debug({ err: (e as Error).message }, 'crawl4ai page scrape failed, continuing');
+      logger.warn({ err: (e as Error).message, url: researchUrl }, 'crawl4ai page scrape failed, continuing');
     }
   }
 
@@ -574,8 +631,11 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       tokensOut = reactResult.tokensOut;
       creditCost = reactResult.creditCost;
     }
-  } else if (config.bridgeEnabled) {
+  } else if (config.bridgeEnabled && !researchUrl && !webSearchUsed) {
     // Use the bridge — routes trivial/simple → PicoClaw (2-5s), complex → Kimi
+    // Skip bridge when URL content or web search results are already injected into the
+    // system prompt — the bridge's stepfun fallback ignores enriched context and outputs
+    // tool_call XML instead of using PAGE_CONTENT/WEB_SEARCH_RESULTS.
     try {
       const bridgeReq: BridgeRequest = {
         userId,
