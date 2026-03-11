@@ -332,10 +332,10 @@ describe('Message router wiring', () => {
     expect(content).toContain('tavilySearch');
   });
 
-  it('imports extractUrl and firecrawlScrape', () => {
+  it('imports extractUrl and web-research for URL scraping', () => {
     const content = readServer('services/message-router.ts');
     expect(content).toContain('extractUrl');
-    expect(content).toContain('firecrawlScrape');
+    expect(content).toContain('fetchAndExtract');
   });
 
   it('compresses systemPrompt before LLM call', () => {

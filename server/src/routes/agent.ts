@@ -100,6 +100,23 @@ Use <<<ACTION>>> blocks to invoke tools when needed:
 tool: web_search
 query: your search query
 <<<END>>>
+Use web_search for general questions, news, or topics. For site-specific queries include the site name (e.g. "BBC news iran israel").
+<<<ACTION>>>
+tool: crawl_url
+url: https://example.com
+<<<END>>>
+Use crawl_url to read the full content of any website URL.
+<<<ACTION>>>
+tool: take_screenshot
+url: https://example.com
+<<<END>>>
+Use take_screenshot to capture a visual screenshot of any webpage and show it to the user.
+<<<ACTION>>>
+tool: get_links
+url: https://example.com
+filter: all
+<<<END>>>
+Use get_links to extract all links from a page. filter: "internal", "external", or "all".
 <<<ACTION>>>
 tool: send_telegram
 message: your message text

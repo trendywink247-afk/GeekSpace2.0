@@ -66,7 +66,7 @@ const sendEmailSchema = z.object({
 
 const crawlUrlSchema = z.object({
   url: z.string().url(),
-  priority: z.number().int().min(1).max(10).default(5),
+  priority: z.coerce.number().int().min(1).max(10).default(5),
 });
 
 const setReminderSchema = z.object({
@@ -104,7 +104,7 @@ const escalateToOwnerSchema = z.object({
 
 const webSearchSchema = z.object({
   query: z.string().min(1).max(500),
-  max_results: z.number().int().min(1).max(10).default(3),
+  max_results: z.coerce.number().int().min(1).max(10).default(3),
 });
 
 const sendTelegramToolSchema = z.object({
@@ -115,6 +115,15 @@ const deleteReminderSchema = z.object({
   // Provide either a specific reminder ID or 'all' to wipe everything
   reminderId: z.string().optional(),
   deleteAll: z.boolean().optional(),
+});
+
+const takeScreenshotSchema = z.object({
+  url: z.string().min(1).max(2000),
+});
+
+const getLinksSchema = z.object({
+  url: z.string().min(1).max(2000),
+  filter: z.enum(['internal', 'external', 'all']).default('all'),
 });
 
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
@@ -136,6 +145,8 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   web_search: webSearchSchema,
   send_telegram: sendTelegramToolSchema,
   delete_reminder: deleteReminderSchema,
+  take_screenshot: takeScreenshotSchema,
+  get_links: getLinksSchema,
 };
 
 // ── Types ───────────────────────────────────────────────────

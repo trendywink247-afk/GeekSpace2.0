@@ -19,7 +19,7 @@ import { generateImage, generateVideo, generateAvatar } from './media-generation
 import { cacheSet, cacheGet, cacheDel } from './cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from './telegram.js';
 import { tavilySearch } from './tavily.js';
-import { fetchAndExtract } from './web-research.js';
+import { fetchAndExtract, fetchScreenshot, extractLinks, smartSearch } from './web-research.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -694,6 +694,26 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           }
         }
 
+        // No TAVILY key: try smartSearch (site-aware crawl4ai fallback)
+        if (!process.env.TAVILY_API_KEY) {
+          try {
+            const smartResult = await smartSearch(query);
+            if (smartResult) {
+              return {
+                tool,
+                success: true,
+                message: `Found results via site search for "${query}"`,
+                data: { query, results: [], summary: smartResult },
+              };
+            }
+          } catch { /* fall through to error */ }
+          return {
+            tool,
+            success: false,
+            message: `No TAVILY_API_KEY configured and no matching news site found for "${query}". Add TAVILY_API_KEY to .env for general web search.`,
+          };
+        }
+
         let results: Awaited<ReturnType<typeof tavilySearch>>['results'];
         try {
           const searchResult = await tavilySearch(query, maxResults);
@@ -724,6 +744,58 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           message: `Found ${results.length} results for "${query}"`,
           data: { query, results, summary },
         };
+      }
+
+      // ── take_screenshot ──────────────────────────────────────
+      case 'take_screenshot': {
+        const rawUrl = params.url as string;
+        const targetUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+        try {
+          const base64Png = await fetchScreenshot(targetUrl);
+          const dataUrl = `data:image/png;base64,${base64Png}`;
+          logger.info({ url: targetUrl }, 'take_screenshot: success');
+          return {
+            tool,
+            success: true,
+            message: `Screenshot captured for ${targetUrl}`,
+            imageUrl: dataUrl,
+            data: { url: targetUrl },
+          };
+        } catch (err) {
+          return {
+            tool,
+            success: false,
+            message: err instanceof Error ? err.message : `Failed to screenshot ${targetUrl}`,
+          };
+        }
+      }
+
+      // ── get_links ────────────────────────────────────────────
+      case 'get_links': {
+        const rawUrl = params.url as string;
+        const filter = (params.filter as 'internal' | 'external' | 'all') || 'all';
+        const targetUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+        try {
+          const links = await extractLinks(targetUrl, filter);
+          if (links.length === 0) {
+            return { tool, success: true, message: `No ${filter} links found on ${targetUrl}`, data: { links: [] } };
+          }
+          const formatted = links.slice(0, 50)
+            .map((l, i) => `${i + 1}. [${l.text.slice(0, 80)}](${l.href}) (${l.type})`)
+            .join('\n');
+          return {
+            tool,
+            success: true,
+            message: `Found ${links.length} ${filter} links on ${targetUrl}`,
+            data: { links: links.slice(0, 50), summary: formatted, total: links.length },
+          };
+        } catch (err) {
+          return {
+            tool,
+            success: false,
+            message: err instanceof Error ? err.message : `Failed to extract links from ${targetUrl}`,
+          };
+        }
       }
 
       // ── send_telegram ────────────────────────────────────────

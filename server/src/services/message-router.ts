@@ -25,7 +25,8 @@ import { parseActions } from './action-parser.js';
 import { executeAction, type ActionResult } from './action-executor.js';
 import { compressPrompt, trimConversationHistory } from '../utils/token-format.js';
 import { isSearchIntent, tavilySearch } from './tavily.js';
-import { extractUrl, firecrawlScrape } from './firecrawl.js';
+import { extractUrl } from './firecrawl.js';
+import { fetchAndExtract, smartSearch } from './web-research.js';
 import { addInboxMessage } from './inbox.js';
 import { checkContentSafety } from './content-filter.js';
 
@@ -459,38 +460,57 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     systemPrompt += '\n\nCRITICAL: You MUST use ONLY the generate_code tool (not portfolio_update_theme or any other tool). Output ONLY this block, nothing else:\n<<<ACTION\n{"tool":"generate_code","params":{<params>}}\nACTION>>>\nDo NOT write HTML/CSS/JS directly. Keep params JSON under 150 tokens.';
   }
 
-  // 6b. Web search enrichment (Tavily) — runs when search intent detected
+  // 6b. Web search enrichment — Tavily (keyword) + crawl4ai smart search fallback
   let webSearchUsed = false;
-  if (isSearchIntent(msg.text) && process.env.TAVILY_API_KEY) {
-    try {
-      const searchResult = await tavilySearch(msg.text);
-      if (searchResult.results.length > 0) {
-        const context = searchResult.results
-          .map((r) => `[${r.title}]: ${r.content}`)
-          .join('\n');
-        systemPrompt += `\n\nWEB_SEARCH_RESULTS:\n${context}`;
-        webSearchUsed = true;
-        logger.debug({ query: msg.text, resultCount: searchResult.results.length }, 'Tavily search enriched prompt');
+  if (isSearchIntent(msg.text)) {
+    if (process.env.TAVILY_API_KEY) {
+      try {
+        const searchResult = await tavilySearch(msg.text);
+        if (searchResult.results.length > 0) {
+          const context = searchResult.results
+            .map((r) => `[${r.title}]: ${r.content}`)
+            .join('\n');
+          systemPrompt += `\n\nWEB_SEARCH_RESULTS:\n${context}`;
+          webSearchUsed = true;
+          logger.debug({ query: msg.text, resultCount: searchResult.results.length }, 'Tavily search enriched prompt');
+        }
+      } catch (e) {
+        logger.debug({ err: (e as Error).message }, 'Tavily search failed, trying smart search fallback');
       }
-    } catch (e) {
-      logger.debug({ err: (e as Error).message }, 'Tavily search failed, continuing');
+    }
+    // Smart search fallback: crawl4ai site-specific search (BBC, CNN, Reddit, etc.)
+    if (!webSearchUsed) {
+      try {
+        const smartResult = await smartSearch(msg.text);
+        if (smartResult) {
+          systemPrompt += `\n\nWEB_SEARCH_RESULTS:\n${smartResult}`;
+          webSearchUsed = true;
+          logger.debug({ query: msg.text }, 'Smart search fallback enriched prompt');
+        }
+      } catch (e) {
+        logger.debug({ err: (e as Error).message }, 'Smart search fallback failed, continuing');
+      }
     }
   }
 
-  // 6c. URL scraping enrichment (Firecrawl) — runs when URL found in message
+  // 6c. URL scraping enrichment via crawl4ai — runs when URL (explicit or bare domain) found in message
   //     Also handles /research <url> command
-  const researchUrl = msg.text.startsWith('/research ')
+  const BARE_DOMAIN_RE_MSG = /\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+\.[a-zA-Z]{2,})\b/;
+  const explicitResearchUrl = msg.text.startsWith('/research ')
     ? msg.text.replace('/research ', '').trim()
     : extractUrl(msg.text);
-  if (researchUrl && process.env.FIRECRAWL_API_KEY) {
+  const bareDomainInMsg = !explicitResearchUrl ? msg.text.match(BARE_DOMAIN_RE_MSG)?.[1] : null;
+  const researchUrl = explicitResearchUrl || (bareDomainInMsg ? `https://${bareDomainInMsg}` : null);
+
+  if (researchUrl && !webSearchUsed) {
     try {
-      const scraped = await firecrawlScrape(researchUrl);
-      if (scraped.content) {
-        systemPrompt += `\n\nPAGE_CONTENT [${scraped.title}]:\n${scraped.content}`;
-        logger.debug({ url: researchUrl }, 'Firecrawl page scraped and injected');
+      const pageContent = await fetchAndExtract(researchUrl);
+      if (pageContent) {
+        systemPrompt += `\n\nPAGE_CONTENT [${researchUrl}]:\n${pageContent}`;
+        logger.debug({ url: researchUrl }, 'crawl4ai page scraped and injected into prompt');
       }
     } catch (e) {
-      logger.debug({ err: (e as Error).message }, 'Firecrawl scrape failed, continuing');
+      logger.debug({ err: (e as Error).message }, 'crawl4ai page scrape failed, continuing');
     }
   }
 
@@ -710,7 +730,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   //      Relative paths (e.g. /api/images/cache/xxx.jpg) are made absolute using config.apiUrl.
   if (msg.channel === 'telegram') {
     for (const ar of actionResults) {
-      if (ar.tool === 'generate_image' && ar.success && ar.imageUrl) {
+      if ((ar.tool === 'generate_image' || ar.tool === 'take_screenshot') && ar.success && ar.imageUrl) {
         const absoluteUrl = ar.imageUrl.startsWith('http')
           ? ar.imageUrl
           : `${config.apiUrl}${ar.imageUrl}`;
