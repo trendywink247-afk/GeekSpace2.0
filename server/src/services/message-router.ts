@@ -13,7 +13,7 @@ import { DateTime } from 'luxon';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
-import { deductSubscriptionCredits, type ChatMessage } from './llm.js';
+import { deductSubscriptionCredits, routeChat, type ChatMessage } from './llm.js';
 import { runReactLoop } from './react-loop.js';
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
@@ -509,7 +509,37 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   let tokensOut = 0;
   let creditCost = 0;
 
-  if (config.bridgeEnabled) {
+  // Non-Latin script detection: Hindi (Devanagari), Telugu, Arabic, etc.
+  // Chinese models (qwen3:8b, stepfun) reply in Chinese for these inputs despite instructions.
+  // Route to Groq Llama 3.3 70B instead — truly multilingual.
+  const hasNonLatinScript = /[\u0900-\u097F\u0C00-\u0C7F\u0600-\u06FF\u0B80-\u0BFF\u0A80-\u0AFF]/.test(msg.text);
+
+  if (hasNonLatinScript) {
+    logger.info({ userId, script: 'non-latin' }, 'Non-Latin script detected — routing to Groq for multilingual support');
+    const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
+    try {
+      const result = await routeChat(messages, {
+        systemPrompt,
+        userId,
+        forceProvider: 'groq',
+      });
+      replyText = result.reply;
+      provider = result.provider;
+      model = result.model;
+      tokensIn = result.tokensIn;
+      tokensOut = result.tokensOut;
+      creditCost = result.creditCost;
+    } catch (err) {
+      logger.warn({ err: (err as Error).message }, 'Groq failed for non-Latin message, falling back to ReAct loop');
+      const reactResult = await runReactLoop(messages, { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', userCredits, userId });
+      replyText = reactResult.text;
+      provider = reactResult.provider;
+      model = reactResult.model;
+      tokensIn = reactResult.tokensIn;
+      tokensOut = reactResult.tokensOut;
+      creditCost = reactResult.creditCost;
+    }
+  } else if (config.bridgeEnabled) {
     // Use the bridge — routes trivial/simple → PicoClaw (2-5s), complex → Kimi
     try {
       const bridgeReq: BridgeRequest = {
