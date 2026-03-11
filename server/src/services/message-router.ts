@@ -509,13 +509,28 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   let tokensOut = 0;
   let creditCost = 0;
 
-  // Non-Latin script detection: Hindi (Devanagari), Telugu, Arabic, etc.
+  // Non-Latin script detection: Hindi (Devanagari), Telugu, Arabic, Tamil, Gujarati etc.
   // Chinese models (qwen3:8b, stepfun) reply in Chinese for these inputs despite instructions.
   // Route to Groq Llama 3.3 70B instead — truly multilingual.
   const hasNonLatinScript = /[\u0900-\u097F\u0C00-\u0C7F\u0600-\u06FF\u0B80-\u0BFF\u0A80-\u0AFF]/.test(msg.text);
 
-  if (hasNonLatinScript) {
-    logger.info({ userId, script: 'non-latin' }, 'Non-Latin script detected — routing to Groq for multilingual support');
+  // Romanized Hindi (Hinglish) detection — common Hindi words typed in Latin script.
+  // e.g. "aap kaise ho", "kya haal hai", "bhai bata do"
+  const HINGLISH_WORDS = new Set(['aap','kya','kaise','hai','hain','ho','mera','meri','tera','teri',
+    'nahi','haan','yaar','bhai','bolo','main','tum','woh','yeh','karo','batao','samjho',
+    'kitna','kahan','kab','kaun','kyun','mujhe','tumhe','apna','apni','hamara','hamari',
+    'isko','usko','iski','uski','theek','accha','acha','chalo','suno','dekho','jana',
+    'kuch','bahut','thoda','zyada','abhi','phir','lekin','aur','par','sirf','toh',
+    'didi','bhaiya','beta','yaar','dost','mere','tere','unka','unki','naam','kaam']);
+  const msgWords = msg.text.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/);
+  const hinglishMatches = msgWords.filter(w => HINGLISH_WORDS.has(w)).length;
+  const hasHinglish = hinglishMatches >= 2;
+
+  const needsGroq = hasNonLatinScript || hasHinglish;
+
+  if (needsGroq) {
+    const reason = hasNonLatinScript ? 'non-latin-script' : 'hinglish';
+    logger.info({ userId, reason }, 'Multilingual input detected — routing to Groq');
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
     try {
       const result = await routeChat(messages, {
