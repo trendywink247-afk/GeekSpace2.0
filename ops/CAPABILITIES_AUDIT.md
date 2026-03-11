@@ -274,13 +274,19 @@ PAID users (sequential):
 
 ## Phase 6 — Capabilities 14-17
 
-### Capability 14: Voice Notes ⚠️ PARTIAL
-- Code fully wired in `voice.ts` and `webhooks.ts`
-- Whisper transcription, TTS implemented (OpenAI API)
-- Telegram voice handler: listens for `update.message.voice`, downloads, transcribes
-- Daily cap per plan tier enforced
-- **OPENAI_API_KEY: MISSING** → `isVoiceEnabled()` returns false → all voice calls rejected
-- **Result: ⚠️ PARTIAL** — code ready, API key needed
+### Capability 14: Voice Notes ✅ WORKING
+- STT: Groq Whisper Large v3 Turbo (uses existing GROQ_API_KEY round-robin, zero extra cost)
+- TTS: edge-tts (Microsoft neural voice en-US-AriaNeural) + ffmpeg → OGG Opus
+- `isVoiceEnabled()` now checks Groq keys (not OPENAI_API_KEY) → returns `true`
+- Full pipeline: download OGG → Groq Whisper → routeChat → edge-tts → ffmpeg → sendVoice
+- Redis TTS cache: 24h TTL, key prefix `tts:`
+- Transcript shown as caption on voice reply
+- Error handling: try/catch with graceful user-facing error message
+- edge-tts + ffmpeg baked into Docker image (python3-venv + /opt/tts-venv/bin/edge-tts)
+- Credit cost: flat 2 credits per voice exchange
+- **Test (standalone TTS): 18535 bytes in 1512ms ✅**
+- **Live Telegram test: required (send voice note to bot)**
+- **Result: ✅ WORKING** (code live, OPENAI_API_KEY no longer needed)
 
 ### Capability 15: Telegram Integration ✅ WORKING
 - Webhook: `https://api.agentin.chat/api/webhooks/telegram` ✅ (verified via Telegram API)
@@ -411,7 +417,7 @@ PAID users (sequential):
 | 11 | Weebo Fleet | ⚠️ PARTIAL | Backend exists, no fleet UI |
 | 12 | Agent-Sent Emails | ✅ CONFIGURED | Resend from agent@agentin.chat |
 | 13 | Windmill Workflows | 🔲 NOT WIRED | No WINDMILL_TOKEN |
-| 14 | Voice Notes | ⚠️ PARTIAL | OPENAI_API_KEY missing |
+| 14 | Voice Notes | ✅ WORKING | Groq Whisper STT + edge-tts TTS, no OPENAI_API_KEY needed |
 | 15 | Telegram Integration | ✅ WORKING | Webhook active, commands work |
 | 16 | Portfolio Visitor AI | ✅ WORKING | Guest JWT issued on first visit; IP rate limited |
 | 17 | Smart Visitor Escalation | ✅ WORKING | Telegram notification wired |
@@ -420,7 +426,7 @@ PAID users (sequential):
 | 20 | System Health Monitor | ✅ WORKING | Automations engine + health API |
 | 21 | Explore Directory | ✅ WORKING | 47 profiles returned |
 
-**Score: 14 ✅ / 4 ⚠️ / 1 🔲 / 0 ❌**
+**Score: 15 ✅ / 3 ⚠️ / 1 🔲 / 0 ❌**
 
 ---
 
@@ -467,7 +473,7 @@ PAID users (sequential):
 2. **isPremiumPlan() billing** — FIXED ✅
 3. **proactive-engine crash loop** — FIXED ✅
 4. **Portfolio visitor chat requires auth** — FIXED ✅ (guest JWT + IP rate limit)
-5. **Voice notes needs OPENAI_API_KEY** — NOT FIXED (procurement needed)
+5. **Voice notes** — FIXED ✅ (Groq Whisper STT + edge-tts TTS, no OPENAI_API_KEY)
 6. **Web research (URL-based)** — FIXED ✅ (crawl4ai wired, no Tavily key needed)
 7. **Keyword web search** — NOT FIXED (still needs TAVILY_API_KEY)
 

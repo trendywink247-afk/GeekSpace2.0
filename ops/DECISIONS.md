@@ -106,3 +106,13 @@ cd server && npm test 2>&1 | tail -5
 - .claude/settings.json: deny rules for .env, secrets, pipe-to-shell, destructive rm
 - /root/.agentin-secrets: all API keys + secrets live here (chmod 600, outside repo)
 - Never use --dangerously-skip-permissions on production VPS
+
+## Voice Pipeline — 2026-03-11
+TTS: edge-tts (not Kokoro/OpenAI) — RAM at 75%, swap at 2GB.
+Kokoro would add 600MB container. OpenAI costs money. edge-tts is zero footprint.
+STT: Groq Whisper Large v3 Turbo (not OpenAI Whisper) — free, uses existing GROQ_API_KEY round-robin.
+Binary: /opt/tts-venv/bin/edge-tts (Python venv in Docker image)
+Voice: en-US-AriaNeural (Microsoft neural TTS)
+Output: MP3 → ffmpeg → OGG Opus (Telegram sendVoice format)
+Redis cache: 24h TTL prefix tts: (avoids re-generating same phrases)
+Revisit Kokoro after VPS upgrade or after first revenue.

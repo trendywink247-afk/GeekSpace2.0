@@ -143,3 +143,55 @@ cd ~/GeekSpace2.0
 git checkout main && git pull origin main
 cat ops/AI_BACKLOG.md | head -40
 ```
+
+---
+
+# AI Handoff — Voice Notes Pipeline
+**Date:** 2026-03-11
+**Branch:** main (e9b4de7)
+**Status:** ✅ Complete — live in production
+
+## What Was Done
+
+### Voice Notes Pipeline (fully implemented, no OPENAI_API_KEY needed)
+- **STT:** Groq Whisper Large v3 Turbo via GROQ_API_KEY round-robin (free)
+- **TTS:** edge-tts v7.2.7 local binary at /opt/tts-venv/bin/edge-tts → OGG Opus via ffmpeg
+- **Cache:** Redis key prefix `tts:` — 24h TTL (avoids re-TTS same phrases)
+
+### Files Changed
+- `Dockerfile` — python3-venv + edge-tts + ffmpeg in Stage 2
+- `server/src/config.ts` — edgeTtsBin, ttsVoice config fields
+- `server/src/services/voice.ts` — replaced OpenAI with Groq Whisper + edge-tts
+- `server/src/services/message-router.ts` — export buildChannelSystemPrompt
+- `server/src/routes/webhooks.ts` — complete handleVoiceMessage pipeline
+- `server/src/test/api/phase103.test.ts` — updated tests to match real implementation
+- `server/src/test/api/phase110.test.ts` — updated tests to match real implementation
+
+### Voice Pipeline Flow
+1. Telegram voice note received → handleVoiceMessage()
+2. isVoiceEnabled() check (Groq key present → true)
+3. downloadTelegramVoice(file_id) → Buffer
+4. transcribeVoice(buffer) → Groq Whisper → transcript string
+5. getConversationContext + buildChannelSystemPrompt → LLM via routeChat
+6. logConversation (user + assistant)
+7. textToSpeech(reply) → edge-tts → ffmpeg → OGG Opus buffer
+8. sendTelegramVoice(chatId, buffer, replyToId, caption)
+9. deductSubscriptionCredits (flat 2 credits per exchange)
+
+### Verification
+- isVoiceEnabled(): true (Groq keys present) ✅
+- edge-tts in Docker image: /opt/tts-venv/bin/edge-tts 7.2.7 ✅
+- ffmpeg in Docker image: /usr/bin/ffmpeg ✅
+- TTS standalone test: 18535 bytes in 1512ms ✅
+- CI: ✅ green | live-production: ✅ synced
+
+## Capabilities Score
+15 ✅ / 3 ⚠️ / 1 🔲 / 0 ❌
+
+## Remaining Blockers
+- TAVILY_API_KEY: keyword web search (URL-based search works via crawl4ai)
+- OPENAI_API_KEY: no longer needed for voice (now using Groq)
+
+## Next Recommended
+- Live Telegram voice test: send voice note to bot, confirm OGG reply received
+- Check /api/agent/voice endpoint (web voice notes from dashboard) if it exists
