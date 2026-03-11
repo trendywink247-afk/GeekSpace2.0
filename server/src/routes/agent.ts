@@ -110,7 +110,11 @@ deleteAll: true
 <<<END>>>
 Use delete_reminder with deleteAll:true to wipe all pending reminders, or reminderId:"<id>" to delete one specific reminder.`;
 
-  return `${OPENCLAW_IDENTITY}
+  return `LANGUAGE RULE: Detect the language the user writes in. ALWAYS reply in that exact language — no exceptions. Hindi → Hindi. Telugu → Telugu. Tamil → Tamil. English → English. Never switch languages unless the user does first.
+
+YOUR IDENTITY: Your name is ${agentName}. If asked who you are or what your name is, say your name is ${agentName}.
+
+${OPENCLAW_IDENTITY}
 
 --- PERSONALITY ---
 ${personalityPrompt}
@@ -118,7 +122,7 @@ ${personalityPrompt}
 ${formatContextBlock(picoCtx)}
 
 --- USER SESSION ---
-Agent name: ${agentName}. User: ${userName}. Voice: ${voice}. Mode: ${mode}.
+User: ${userName}. Voice: ${voice}. Mode: ${mode}.
 ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
 ${memoryBlock}
 ${formatMemoryContext(userId)}
@@ -595,7 +599,18 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
         // ---- Auto-route through bridge when enabled ----
     // URL-containing messages skip bridge and go to runReactLoop so crawl_url tool fires correctly
     const hasUrl = /https?:\/\/\S+/.test(message);
-    if (!forceRoute && config.bridgeEnabled && config.picoClawEnabled && !hasUrl) {
+
+    // Multilingual detection: non-Latin script (Devanagari/Telugu/Tamil/Arabic) or Hinglish
+    // Chinese models (qwen3:8b, stepfun) reply in Chinese for these — route to Groq instead
+    const msgHasNonLatin = /[\u0900-\u097F\u0C00-\u0C7F\u0600-\u06FF\u0B80-\u0BFF\u0A80-\u0AFF]/.test(message);
+    const HINGLISH_SET = new Set(['aap','kya','kaise','hai','hain','ho','mera','meri','nahi','haan',
+      'yaar','bhai','bolo','main','tum','woh','yeh','karo','batao','kitna','kahan','kab','kaun','kyun',
+      'mujhe','tumhe','theek','accha','chalo','suno','bahut','abhi','lekin','sirf','toh','naam','kaam']);
+    const msgWords = message.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/);
+    const msgIsHinglish = !forceRoute && msgWords.filter(w => HINGLISH_SET.has(w)).length >= 2;
+    const webChatNeedsGroq = !forceRoute && (msgHasNonLatin || msgIsHinglish);
+
+    if (!forceRoute && config.bridgeEnabled && config.picoClawEnabled && !hasUrl && !webChatNeedsGroq) {
       forceRoute = 'bridge';
     }
 
@@ -804,6 +819,9 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       resolvedProvider = 'ollama';
     } else if (forceRoute === 'pico') {
       resolvedProvider = 'picoclaw';
+    } else if (webChatNeedsGroq) {
+      resolvedProvider = 'groq';
+      logger.info({ userId, reason: msgHasNonLatin ? 'non-latin-script' : 'hinglish' }, 'web chat multilingual — routing to Groq');
     } else {
       const smartProvider = await pickProvider(userId, message, userPlan);
       if (smartProvider !== 'ollama') {
