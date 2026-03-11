@@ -198,9 +198,9 @@ export const config = {
   geminiTimeoutMs: optionalInt('GEMINI_TIMEOUT_MS', 30000),
   geminiMaxTokens: optionalInt('GEMINI_MAX_TOKENS', 2048),
 
-  // ---- Together AI (paid primary — Llama 3.1 70B Turbo) ----
+  // ---- Together AI (paid primary — Llama 4 Maverick 17B×128E) ----
   togetherApiKey: process.env.TOGETHER_API_KEY ?? '',
-  togetherModel: optional('TOGETHER_MODEL', 'meta-llama/Llama-3.1-70B-Instruct-Turbo'),
+  togetherModel: optional('TOGETHER_MODEL', 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8'),
   togetherBaseUrl: optional('TOGETHER_BASE_URL', 'https://api.together.xyz/v1'),
   togetherTimeoutMs: optionalInt('TOGETHER_TIMEOUT_MS', 30000),
   togetherMaxTokens: optionalInt('TOGETHER_MAX_TOKENS', 2048),
