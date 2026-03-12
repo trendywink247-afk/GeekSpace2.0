@@ -13,8 +13,11 @@ import {
   parseTelegramUpdate,
   extractBotCommand,
   sendTelegramMessage,
+  sendTelegramButtons,
   getBotUsername,
   answerCallbackQuery,
+  getTelegramFileUrl,
+  downloadTelegramFile,
   type TelegramUpdate,
 } from '../services/telegram.js';
 import { handleIncomingMessage, sendChannelResponse } from '../services/message-router.js';
@@ -118,6 +121,86 @@ webhooksRouter.post('/telegram', async (req, res) => {
         // Answer the callback query immediately
         await answerCallbackQuery(callbackQueryId);
 
+        // ── Reminder action buttons ──────────────────────────────────────
+        if (callbackData.startsWith('reminder:')) {
+          const [, action, reminderId] = callbackData.split(':');
+          const link = db.prepare(
+            "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+          ).get(callbackChatId) as { user_id: string } | undefined;
+
+          if (link && reminderId) {
+            if (action === 'done') {
+              db.prepare("UPDATE reminders SET completed = 1, completed_at = ? WHERE id = ? AND user_id = ?")
+                .run(Date.now(), reminderId, link.user_id);
+              await sendTelegramMessage(callbackChatId, '✅ Reminder marked as done!');
+            } else if (action === 'snooze') {
+              // Snooze by 1 hour
+              const reminder = db.prepare("SELECT datetime, text FROM reminders WHERE id = ? AND user_id = ?")
+                .get(reminderId, link.user_id) as { datetime: string; text: string } | undefined;
+              if (reminder) {
+                const snoozedAt = new Date(Date.now() + 3600_000);
+                const newDatetime = snoozedAt.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+                const newScheduledFor = snoozedAt.getTime();
+                db.prepare("UPDATE reminders SET datetime = ?, scheduled_for = ? WHERE id = ? AND user_id = ?")
+                  .run(newDatetime, newScheduledFor, reminderId, link.user_id);
+                db.prepare("INSERT OR IGNORE INTO snooze_log (reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?)")
+                  .run(reminderId, link.user_id, Date.now(), '1h', newDatetime);
+                await sendTelegramMessage(callbackChatId, `💤 Snoozed! "${reminder.text}" will remind you in 1 hour.`);
+              }
+            } else if (action === 'delete') {
+              db.prepare("DELETE FROM reminders WHERE id = ? AND user_id = ?").run(reminderId, link.user_id);
+              await sendTelegramMessage(callbackChatId, '🗑️ Reminder deleted.');
+            }
+          }
+          return;
+        }
+
+        // ── Photo analysis save buttons ──────────────────────────────────
+        if (callbackData.startsWith('photo:')) {
+          const [, action, encodedContent] = callbackData.split(':');
+          if (action === 'save' && encodedContent) {
+            const link2 = db.prepare(
+              "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+            ).get(callbackChatId) as { user_id: string } | undefined;
+            if (link2) {
+              const content = decodeURIComponent(encodedContent);
+              db.prepare(`
+                INSERT INTO notes (user_id, title, content, tags, created_at, updated_at)
+                VALUES (?, ?, ?, ?, unixepoch('now')*1000, unixepoch('now')*1000)
+              `).run(link2.user_id, `📸 Photo Analysis`, content, JSON.stringify(['photo', 'telegram']));
+              await sendTelegramMessage(callbackChatId, '✅ Saved as a note!');
+            }
+          } else if (action === 'dismiss') {
+            await sendTelegramMessage(callbackChatId, 'OK, not saved.');
+          }
+          return;
+        }
+
+        // ── Focus session buttons ────────────────────────────────────────
+        if (callbackData.startsWith('focus:')) {
+          const [, action] = callbackData.split(':');
+          const link = db.prepare(
+            "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+          ).get(callbackChatId) as { user_id: string } | undefined;
+
+          if (link) {
+            if (action === 'done') {
+              // Mark the most recent active focus session as completed
+              const session = db.prepare(
+                "SELECT id FROM focus_sessions WHERE user_id = ? AND completed = 0 ORDER BY started_at DESC LIMIT 1"
+              ).get(link.user_id) as { id: number } | undefined;
+              if (session) {
+                db.prepare("UPDATE focus_sessions SET completed = 1, ended_at = ? WHERE id = ?")
+                  .run(Date.now(), session.id);
+              }
+              await sendTelegramMessage(callbackChatId, '🎉 Focus session complete! Great work.');
+            } else if (action === 'pause') {
+              await sendTelegramMessage(callbackChatId, '⏸️ Session paused. Take a short break — type "resume focus" when ready.');
+            }
+          }
+          return;
+        }
+
         // Try to handle as onboarding callback
         const handled = await handleOnboardingCallback(callbackChatId, callbackData);
         if (handled) {
@@ -157,6 +240,18 @@ webhooksRouter.post('/telegram', async (req, res) => {
     // Handle voice messages
     if (update.message?.voice) {
       await handleVoiceMessage(update, requestId);
+      return;
+    }
+
+    // Handle photo messages — describe image using vision LLM
+    if (update.message?.photo && update.message.photo.length > 0) {
+      await handlePhotoMessage(update, requestId);
+      return;
+    }
+
+    // Handle document messages — extract text/PDF to note
+    if (update.message?.document) {
+      await handleDocumentMessage(update, requestId);
       return;
     }
 
@@ -301,6 +396,156 @@ async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Pr
   } catch (err) {
     logger.error({ err, requestId, chatId }, 'voice:pipeline error');
     await sendTelegramMessage(chatId, '⚠️ Voice processing failed. Please try again or send a text message.');
+  }
+}
+
+// ---- Photo Message Handler (Vision LLM) ----
+
+async function handlePhotoMessage(update: TelegramUpdate, requestId: string): Promise<void> {
+  const msg = update.message!;
+  const chatId = msg.chat.id;
+  const caption = msg.caption || '';
+
+  const link = db.prepare(
+    "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+  ).get(String(chatId)) as { user_id: string } | undefined;
+  if (!link) {
+    await sendTelegramMessage(chatId, 'Link your account first to use photo analysis.');
+    return;
+  }
+
+  // Get the largest photo variant (last in array)
+  const photos = msg.photo!;
+  const largest = photos[photos.length - 1];
+
+  await sendTelegramMessage(chatId, '🖼️ Analysing your image...');
+
+  try {
+    const fileUrl = await getTelegramFileUrl(largest.file_id);
+    if (!fileUrl) {
+      await sendTelegramMessage(chatId, '⚠️ Could not access the image. Please try again.');
+      return;
+    }
+
+    // Use vision-capable LLM (Groq llama-3.2-90b-vision-preview or OpenRouter)
+    const { routeChat } = await import('../services/llm.js');
+    const userMessage = caption
+      ? `Describe this image and answer: ${caption}`
+      : 'Describe this image in detail. What do you see?';
+
+    const result = await routeChat(
+      [{ role: 'user', content: [
+        { type: 'text', text: userMessage },
+        { type: 'image_url', image_url: { url: fileUrl } },
+      ] as unknown as string }],
+      {
+        systemPrompt: 'You are a helpful AI assistant. Describe images clearly and concisely.',
+        forceProvider: 'groq',
+        userId: link.user_id,
+      }
+    );
+
+    await sendTelegramMessage(chatId, result.reply || 'I could not analyse this image.');
+
+    // Offer to save as note
+    await sendTelegramButtons(chatId,
+      'Would you like to save this analysis as a note?',
+      [[
+        { text: '📝 Save as note', callback_data: `photo:save:${encodeURIComponent(result.reply.slice(0, 200))}` },
+        { text: '❌ No thanks', callback_data: 'photo:dismiss' },
+      ]]
+    );
+  } catch (err) {
+    logger.warn({ err, requestId, chatId }, 'Photo analysis failed');
+    await sendTelegramMessage(chatId, '⚠️ Image analysis failed. Try adding a text caption with your question.');
+  }
+}
+
+// ---- Document Message Handler (PDF/text → note) ----
+
+async function handleDocumentMessage(update: TelegramUpdate, requestId: string): Promise<void> {
+  const msg = update.message!;
+  const chatId = msg.chat.id;
+  const doc = msg.document!;
+  const caption = msg.caption || '';
+
+  const link = db.prepare(
+    "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+  ).get(String(chatId)) as { user_id: string } | undefined;
+  if (!link) {
+    await sendTelegramMessage(chatId, 'Link your account first to use document processing.');
+    return;
+  }
+
+  const mimeType = doc.mime_type || '';
+  const fileName = doc.file_name || 'document';
+  const maxSize = 5 * 1024 * 1024; // 5MB limit
+
+  if (doc.file_size && doc.file_size > maxSize) {
+    await sendTelegramMessage(chatId, `⚠️ File too large (${Math.round(doc.file_size / 1024)}KB). Max 5MB supported.`);
+    return;
+  }
+
+  // Only support text-extractable formats
+  const supported = mimeType.includes('text') || mimeType.includes('pdf') ||
+    mimeType.includes('markdown') || fileName.endsWith('.txt') || fileName.endsWith('.md');
+
+  if (!supported) {
+    await sendTelegramMessage(chatId, `📎 Got "${fileName}". I can extract text from .txt, .md, and .pdf files. For other formats, try copying the text directly.`);
+    return;
+  }
+
+  await sendTelegramMessage(chatId, `📄 Processing "${fileName}"...`);
+
+  try {
+    const buffer = await downloadTelegramFile(doc.file_id);
+    if (!buffer) {
+      await sendTelegramMessage(chatId, '⚠️ Could not download the file. Please try again.');
+      return;
+    }
+
+    // Extract text content
+    let textContent = '';
+    if (mimeType.includes('text') || fileName.endsWith('.txt') || fileName.endsWith('.md')) {
+      textContent = buffer.toString('utf-8').slice(0, 10000);
+    } else if (mimeType.includes('pdf')) {
+      // For PDFs, extract raw text (basic extraction without heavy libraries)
+      const rawText = buffer.toString('latin1');
+      // Extract visible text between BT/ET PDF blocks (rudimentary)
+      const matches = rawText.match(/\(([^)]{2,200})\)/g);
+      if (matches && matches.length > 5) {
+        textContent = matches.map(m => m.slice(1, -1)).join(' ').slice(0, 8000);
+      } else {
+        textContent = `[PDF: ${fileName}] — Could not extract text automatically.`;
+      }
+    }
+
+    if (!textContent.trim()) {
+      await sendTelegramMessage(chatId, `📄 "${fileName}" appears to be empty or unreadable.`);
+      return;
+    }
+
+    // Save as note
+    const title = caption || `📄 ${fileName}`;
+    const noteContent = caption
+      ? `Caption: ${caption}\n\n---\n${textContent}`
+      : textContent;
+
+    db.prepare(`
+      INSERT INTO notes (user_id, title, content, tags, created_at, updated_at)
+      VALUES (?, ?, ?, ?, unixepoch('now')*1000, unixepoch('now')*1000)
+    `).run(link.user_id, title, noteContent.slice(0, 20000), JSON.stringify(['document', 'telegram']));
+
+    const preview = textContent.slice(0, 200);
+    await sendTelegramMessage(chatId,
+      `✅ Saved "${title}" as a note!\n\nPreview:\n${preview}${textContent.length > 200 ? '...' : ''}\n\n` +
+      `Use /search ${fileName.split('.')[0]} to find it later.`
+    );
+
+    logger.info({ requestId, chatId, userId: link.user_id, fileName, chars: textContent.length }, 'document:saved_as_note');
+  } catch (err) {
+    logger.warn({ err, requestId, chatId }, 'Document processing failed');
+    await sendTelegramMessage(chatId, '⚠️ Document processing failed. Please try again.');
   }
 }
 

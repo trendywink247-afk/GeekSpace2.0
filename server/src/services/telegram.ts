@@ -32,6 +32,21 @@ export interface TelegramUpdate {
       message_id: number;
       text?: string;
     };
+    photo?: Array<{
+      file_id: string;
+      file_unique_id: string;
+      width: number;
+      height: number;
+      file_size?: number;
+    }>;
+    document?: {
+      file_id: string;
+      file_unique_id: string;
+      file_name?: string;
+      mime_type?: string;
+      file_size?: number;
+    };
+    caption?: string;
   };
   callback_query?: {
     id: string;
@@ -265,6 +280,40 @@ export async function answerCallbackQuery(
   } catch (err) {
     logger.warn({ err, callbackQueryId }, 'Failed to answer callback query');
     return false;
+  }
+}
+
+// ---- Get Telegram File URL ----
+
+/**
+ * Resolves a Telegram file_id to a public download URL.
+ * Returns null if the file can't be resolved.
+ */
+export async function getTelegramFileUrl(fileId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${TELEGRAM_API}/getFile?file_id=${encodeURIComponent(fileId)}`, {
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json() as { ok: boolean; result?: { file_path: string } };
+    if (!data.ok || !data.result?.file_path) return null;
+    return `https://api.telegram.org/file/bot${config.telegramBotToken}/${data.result.file_path}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Downloads a Telegram file as a Buffer.
+ */
+export async function downloadTelegramFile(fileId: string): Promise<Buffer | null> {
+  const url = await getTelegramFileUrl(fileId);
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
+    if (!res.ok) return null;
+    return Buffer.from(await res.arrayBuffer());
+  } catch {
+    return null;
   }
 }
 

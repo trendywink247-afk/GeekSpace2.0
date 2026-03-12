@@ -29,6 +29,7 @@ import { extractUrl } from './firecrawl.js';
 import { fetchAndExtract, smartSearch } from './web-research.js';
 import { addInboxMessage } from './inbox.js';
 import { checkContentSafety } from './content-filter.js';
+import { isLaunchModeRequest, runMultiAgentOrchestration } from './multi-agent-orchestrator.js';
 
 // ---- Resolve agent name from config + personality (never returns 'Geek') ----
 function resolveAgentName(
@@ -878,6 +879,33 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   let tokensIn = 0;
   let tokensOut = 0;
   let creditCost = 0;
+
+  // ── Launch Mode: Multi-Agent Parallel Orchestration ─────────────────────
+  if (isLaunchModeRequest(msg.text)) {
+    logger.info({ userId, msg: msg.text }, 'multi-agent:launch-mode-detected');
+    try {
+      const orchResult = await runMultiAgentOrchestration(msg.text, userId, userCredits);
+      replyText = orchResult.text;
+      provider = 'multi-agent';
+      model = `parallel(${orchResult.totalAgents})`;
+      tokensIn = 0;
+      tokensOut = 0;
+      creditCost = orchResult.totalAgents * 2;
+    } catch (err) {
+      logger.warn({ err: (err as Error).message, userId }, 'multi-agent:failed, falling back to single agent');
+      // Fall through to normal routing
+      replyText = '';
+      provider = '';
+      model = '';
+    }
+    if (replyText) {
+      // Skip to response delivery
+      await deductSubscriptionCredits(userId, creditCost);
+      await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+      logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed');
+      return;
+    }
+  }
 
   // Non-Latin script detection: Hindi (Devanagari), Telugu, Arabic, Tamil, Gujarati etc.
   // Chinese models (qwen3:8b, stepfun) reply in Chinese for these inputs despite instructions.

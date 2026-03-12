@@ -17,7 +17,7 @@ import { config } from '../config.js';
 import { RECEIPT_TEMPLATES, type ReceiptItem } from './receipts.js';
 import { generateImage, generateVideo, generateAvatar } from './media-generation.js';
 import { cacheSet, cacheGet, cacheDel } from './cache.js';
-import { sendTelegramNotification, escapeTelegramHtml } from './telegram.js';
+import { sendTelegramNotification, escapeTelegramHtml, sendTelegramButtons } from './telegram.js';
 import { tavilySearch } from './tavily.js';
 import { fetchAndExtract, fetchScreenshot, extractLinks, smartSearch } from './web-research.js';
 
@@ -434,6 +434,26 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         ).run(uuid(), userId, text);
 
         const recurMsg = recurrence ? ` (repeats ${recurrence})` : '';
+
+        // Send inline keyboard confirmation via Telegram (non-blocking)
+        const tgLink = db.prepare(
+          "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 ORDER BY linked_at DESC LIMIT 1"
+        ).get(userId) as { external_id: string } | undefined;
+        if (tgLink) {
+          const timeLabel = dueAt
+            ? new Date(dueAt).toLocaleString('en-IN', { timeZone: userTimezone, month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : 'soon';
+          void sendTelegramButtons(
+            tgLink.external_id,
+            `🔔 Reminder set: "${text}"\n⏰ ${timeLabel}${recurMsg}`,
+            [[
+              { text: '✅ Done', callback_data: `reminder:done:${reminderId}` },
+              { text: '💤 Snooze 1h', callback_data: `reminder:snooze:${reminderId}` },
+              { text: '🗑️ Delete', callback_data: `reminder:delete:${reminderId}` },
+            ]],
+          );
+        }
+
         return {
           tool,
           success: true,
@@ -995,6 +1015,20 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
             INSERT INTO reminders (id, user_id, text, datetime, channel, category, created_by)
             VALUES (?, ?, ?, ?, 'push', 'focus', 'agent')
           `).run(uuid(), userId, `Focus session complete: ${goal}`, endTime);
+        }
+        // Send focus start with inline "Done early" button via Telegram
+        const focusTgLink = db.prepare(
+          "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 ORDER BY linked_at DESC LIMIT 1"
+        ).get(userId) as { external_id: string } | undefined;
+        if (focusTgLink) {
+          void sendTelegramButtons(
+            focusTgLink.external_id,
+            `🎯 Focus started: "${goal}"\n⏱️ ${durationMin} min — you've got this!`,
+            [[
+              { text: '✅ Done early', callback_data: `focus:done:${userId}` },
+              { text: '⏸️ Pause', callback_data: `focus:pause:${userId}` },
+            ]],
+          );
         }
         return {
           tool,
