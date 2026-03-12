@@ -100,9 +100,9 @@ interface LLMCacheEntry {
 
 const llmCache = new Map<string, LLMCacheEntry>();
 
-function makeCacheKey(messages: ChatMessage[], systemPrompt?: string): string {
+function makeCacheKey(messages: ChatMessage[], systemPrompt?: string, userId?: string): string {
   return createHash('md5')
-    .update(JSON.stringify({ messages, systemPrompt: systemPrompt ?? '' }))
+    .update(JSON.stringify({ messages, systemPrompt: systemPrompt ?? '', userId: userId ?? '' }))
     .digest('hex');
 }
 
@@ -876,12 +876,15 @@ export async function routeChat(
   fullMessages.push(...messages);
 
   // ---- Cache check ----
+  const NEVER_CACHE = /^(hi+|hey|hello|test(?:ing)?|ok|okay|sup|yo|thanks|ty|yes|no|sure|nope)[\s!.?]*$/i;
+  const lastMsgContent = (messages[messages.length - 1]?.content as string) || '';
   const isCacheable =
     !opts?.forceProvider &&
     messages.length === 1 &&
-    messages[0].role === 'user';
+    messages[0].role === 'user' &&
+    !NEVER_CACHE.test(lastMsgContent.trim());
 
-  const cacheKey = isCacheable ? makeCacheKey(messages, opts?.systemPrompt) : '';
+  const cacheKey = isCacheable ? makeCacheKey(messages, opts?.systemPrompt, opts?.userId) : '';
 
   if (isCacheable && cacheKey) {
     const memHit = getMemCached(cacheKey);

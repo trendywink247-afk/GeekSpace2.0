@@ -30,6 +30,17 @@ import { fetchAndExtract, smartSearch } from './web-research.js';
 import { addInboxMessage } from './inbox.js';
 import { checkContentSafety } from './content-filter.js';
 
+// ---- Resolve agent name from config + personality (never returns 'Geek') ----
+function resolveAgentName(
+  agentConfig: Record<string, unknown> | null | undefined,
+  personalityId?: string,
+): string {
+  if (agentConfig?.name && typeof agentConfig.name === 'string' && agentConfig.name.trim()) {
+    return agentConfig.name.trim();
+  }
+  return getPersonality(personalityId || 'jarvis').name;
+}
+
 // ---- Screenshot compression using ffmpeg (avoids 413 errors for large screenshots) ----
 async function compressScreenshot(base64Png: string): Promise<string> {
   const { exec } = await import('child_process');
@@ -76,8 +87,79 @@ Available tools:
 - generate_code: Build or update a website. Params: {"template": "portfolio|landing|blog|business", "title": "...", "name": "...", "theme": "dark|light|purple|blue|gradient", "profession": "...", "location": "...", "bio": "...", "skills": ["skill1","skill2"], "email": "...", "tagline": "..."}. Use this for both creating AND editing websites (just output updated params — the server handles the rest). Never write raw HTML.
 - send_email: Send an email to the user. Params: {"subject": "<subject>", "body": "<body>"}
 - delete_reminder: Delete reminders. To delete ALL pending reminders: {"deleteAll": true}. To delete one: {"reminderId": "<id>"}. Use this whenever the user says "delete my reminders", "cancel all reminders", "remove reminders", etc.
+- list_reminders: Show pending reminders. Params: {}. ALWAYS use this when user says "what reminders do I have", "show my reminders", "list reminders", "any reminders?", "what have I got scheduled". NEVER guess or invent reminders — always call this tool.
+- create_note: Save a note. Params: {"title": "<title>", "content": "<note content>", "tags": ["<tag1>"]}. Use when user says "save this", "take note", "note this down", "remember this".
+- search_notes: Search saved notes. Params: {"query": "<search term>", "limit": 5}. Use when user says "find my note", "search notes", "what did I save about".
+- track_habit: Log a habit completion for today. Params: {"habitName": "<habit name>", "note": "<optional note>"}. Use when user says "I did X", "track my X", "log X habit", "mark X as done".
+- start_focus: Start a focus/Pomodoro session. Params: {"goal": "<what to focus on>", "duration_min": 25}. Use when user says "start focus", "pomodoro", "focus mode", "I need to focus on".
+- create_flashcards: Create study flashcards. Params: {"topic": "<topic>", "cards": [{"q": "<question>", "a": "<answer>"}]}. Use when user says "make flashcards", "create quiz", "study cards for".
+- meeting_notes: Save structured meeting notes. Params: {"title": "<meeting title>", "attendees": ["<name>"], "agenda": "<agenda>", "notes": "<notes>", "action_items": ["<item>"]}. Use when user says "save meeting notes", "meeting summary", "record this meeting".
+- code_review: Review code for bugs and improvements. Params: {"code": "<code>", "language": "<lang>", "focus": "<what to check>"}. Use when user says "review this code", "check my code", "what's wrong with".
+- github_pr: Generate a PR description. Params: {"title": "<PR title>", "changes": "<what changed>", "branch": "<branch>", "base": "main"}. Use when user says "write PR description", "create pull request description", "PR for".
+- seo_audit: Audit a website's SEO. Params: {"url": "<URL>"}. Use when user says "check SEO", "audit SEO", "how's my SEO", "SEO score".
+- generate_social_post: Write a social media post. Params: {"topic": "<topic>", "platform": "twitter|linkedin|instagram|facebook", "tone": "professional|casual|funny|inspiring"}. Use when user says "write a tweet", "LinkedIn post", "social post about".
+- create_automation: Create a new automation workflow. Params: {"name": "<name>", "description": "<desc>", "trigger": "manual|daily|weekly", "steps": [{"action": "<tool>", "params": {}}]}. Use when user says "create automation", "set up workflow", "automate this".
+- youtube_summarize: Summarize a YouTube video. Params: {"url": "<YouTube URL>"}. Use when user says "summarize this video", "what's this YouTube about", "YouTube summary".
+- get_briefing: Get a daily or weekly briefing. Params: {"type": "daily|weekly"}. Use when user says "morning briefing", "daily summary", "what's on my agenda", "weekly report".
+- list_workflows: List all automations. Params: {}. Use when user says "show my automations", "list workflows", "what automations do I have".
+- run_workflow: Run an automation by ID. Params: {"workflowId": <number>}. Use when user says "run automation #N", "execute workflow", "trigger workflow N".
+- generate_video_story: Write a video story script. Params: {"topic": "<topic>", "style": "cinematic|documentary|comedy|dramatic", "duration_sec": 60}. Use when user says "write a video script", "video story for", "create video content".
+- summarize_url: Summarize a web page. Params: {"url": "<URL>", "format": "bullets|paragraph|tldr"}. Use when user says "summarize this URL", "what's on this page", "TL;DR this link".
 
 Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
+
+// ---- Tool Trigger Detection ----
+// Detects phrases that should bypass the bridge and use the ReAct loop directly,
+// ensuring TOOL_INSTRUCTIONS are available and actions are executed.
+function hasToolTrigger(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    // Notes
+    /\b(save\s+(a\s+)?note|take\s+note|note\s+(this|it)|write\s+(this|it)\s+down|remember\s+this|jot\s+(this|it)|save\s+this)\b/i.test(lower) ||
+    /\bsearch\s+(my\s+)?notes?\b/i.test(lower) ||
+    /\bfind\s+(my\s+)?note\b/i.test(lower) ||
+    // Habits
+    /\b(track|log|mark|did|completed?)\s+(my\s+)?habit\b/i.test(lower) ||
+    /\bi\s+(did|completed?|finished?|tracked?)\s+\w/i.test(lower) ||
+    // Focus
+    /\b(start\s+focus|pomodoro|focus\s+mode|focus\s+(session|timer)|i\s+need\s+to\s+focus)\b/i.test(lower) ||
+    // Flashcards
+    /\b(make|create|generate)\s+flashcards?\b/i.test(lower) ||
+    /\bstudy\s+cards?\b/i.test(lower) ||
+    // Meeting notes
+    /\b(save|take|record|write)\s+(meeting\s+notes?|minutes)\b/i.test(lower) ||
+    /\bmeeting\s+(summary|recap|notes?)\b/i.test(lower) ||
+    // Code review
+    /\b(review|check|analyse?|audit)\s+(this|my)?\s+code\b/i.test(lower) ||
+    // PR
+    /\b(write|create|generate)\s+(a\s+)?pr\s+(description|summary)\b/i.test(lower) ||
+    /\bpull\s+request\s+description\b/i.test(lower) ||
+    // SEO
+    /\b(check|audit|analyse?|analyse?)\s+(seo|my\s+seo)\b/i.test(lower) ||
+    /\bseo\s+(score|audit|check)\b/i.test(lower) ||
+    // Social posts
+    /\b(write|create|generate)\s+(a\s+)?(tweet|linkedin|instagram|facebook)\s+post\b/i.test(lower) ||
+    /\bsocial\s+(media\s+)?post\b/i.test(lower) ||
+    // Automation
+    /\b(create|set\s+up|add)\s+(an?\s+)?automation\b/i.test(lower) ||
+    /\b(create|set\s+up|build)\s+(a\s+)?workflow\b/i.test(lower) ||
+    // YouTube
+    /\b(summarize|summarise)\s+(this\s+)?(youtube|video)\b/i.test(lower) ||
+    /\byoutube\s+summary\b/i.test(lower) ||
+    // Briefing
+    /\b(morning|daily|weekly)\s+briefing\b/i.test(lower) ||
+    /\b(show|give)\s+(me\s+)?(my\s+)?(daily|weekly)?\s+(briefing|agenda|summary|report)\b/i.test(lower) ||
+    /\bwhat.{0,20}(my\s+)?agenda\b/i.test(lower) ||
+    // Workflows
+    /\b(show|list)\s+(my\s+)?automations?\b/i.test(lower) ||
+    /\blist\s+(my\s+)?workflows?\b/i.test(lower) ||
+    /\brun\s+(automation|workflow)\s*(#?\d+)?\b/i.test(lower) ||
+    // Video story
+    /\b(write|create|generate)\s+(a\s+)?(video\s+story|video\s+script)\b/i.test(lower) ||
+    // Summarize URL
+    /\b(summarize|tldr|tl;dr|summarise)\s+(this\s+)?(url|link|page|article|website)\b/i.test(lower)
+  );
+}
 
 // ---- Task Intent Detection ----
 
@@ -431,7 +513,39 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     }
   }
 
-  // 5ab. Image generation fast-path — detect image creation intent and execute directly
+  // 5ab. List reminders fast-path — query DB directly, never hallucinate
+  {
+    const listPattern = /\b(?:what|show|list|any|do i have|see my)\b.{0,30}\b(?:reminder|reminders|alarm|alarms)\b/i;
+    const altPattern = /\b(?:reminder|reminders).*\b(?:do i have|i have|pending|scheduled|upcoming)\b/i;
+    if (listPattern.test(msg.text) || altPattern.test(msg.text)) {
+      const rows = db.prepare(`
+        SELECT text, datetime as scheduled_time FROM reminders
+        WHERE user_id = ? AND completed = 0
+        ORDER BY datetime ASC LIMIT 10
+      `).all(userId) as Array<{text:string; scheduled_time:string}>;
+
+      let reply: string;
+      if (rows.length === 0) {
+        reply = "You have no pending reminders.";
+      } else {
+        const { DateTime: DT } = await import('luxon');
+        const userTz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as {timezone?:string} | undefined)?.timezone || 'Asia/Kolkata';
+        const list = rows.map((r, i) => {
+          let time = r.scheduled_time;
+          try { time = DT.fromSQL(r.scheduled_time, {zone:'utc'}).setZone(userTz).toFormat('dd MMM, h:mm a'); } catch { /* raw */ }
+          return `${i + 1}. ${r.text} — ${time}`;
+        }).join('\n');
+        reply = `Your ${rows.length} pending reminder${rows.length !== 1 ? 's' : ''}:\n${list}`;
+      }
+      logConversation(userId, 'user', msg.text, requestId);
+      logConversation(userId, 'assistant', reply, requestId, 'builtin', 'list-reminders');
+      await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
+      logger.info({ channel: msg.channel, userId, count: rows.length }, 'Reminder list fast-path executed');
+      return;
+    }
+  }
+
+  // 5ac. Image generation fast-path — detect image creation intent and execute directly
   {
     // Pattern 1: verb + image-type-word (broad verbs, requires explicit image noun)
     const imageVerbNounPattern = /\b(?:generate|create|make|render|produce|show me|i want|give me|can you make|imagine|visualize)\b.{0,60}\b(?:image|picture|photo|illustration|artwork|art|painting|portrait|wallpaper|sketch)\b/i;
@@ -526,6 +640,66 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     }
   }
 
+  // 5ae. get_briefing fast-path — assemble stats without LLM
+  {
+    const briefingPattern = /\b(morning|daily|weekly)\s+briefing\b|\b(show|give)\s+(me\s+)?(my\s+)?(daily|weekly)?\s+(briefing|agenda)\b|\bwhat.{0,20}on\s+my\s+agenda\b/i;
+    if (briefingPattern.test(msg.text)) {
+      const isWeekly = /weekly/i.test(msg.text);
+      const type = isWeekly ? 'weekly' : 'daily';
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+      const since = isWeekly ? now - 7 * dayMs : now - dayMs;
+      const pendingReminders = (db.prepare(`SELECT COUNT(*) as n FROM reminders WHERE user_id = ? AND completed = 0`).get(userId) as { n: number }).n;
+      const habitsDone = (db.prepare(`SELECT COUNT(*) as n FROM habit_logs WHERE user_id = ? AND logged_at > ?`).get(userId, since) as { n: number }).n;
+      const notesSaved = (db.prepare(`SELECT COUNT(*) as n FROM notes WHERE user_id = ? AND created_at > ? AND archived = 0`).get(userId, since) as { n: number }).n;
+      const focusSessions = (db.prepare(`SELECT COUNT(*) as n, SUM(duration_min) as total FROM focus_sessions WHERE user_id = ? AND started_at > ?`).get(userId, since) as { n: number; total: number | null });
+      const upcomingReminders = db.prepare(`SELECT text, datetime FROM reminders WHERE user_id = ? AND completed = 0 ORDER BY datetime ASC LIMIT 3`).all(userId) as Array<{ text: string; datetime: string }>;
+      const recentNotes = db.prepare(`SELECT title FROM notes WHERE user_id = ? AND archived = 0 ORDER BY updated_at DESC LIMIT 3`).all(userId) as Array<{ title: string }>;
+      const lines: string[] = [
+        `Your ${type} briefing:`,
+        `• Pending reminders: ${pendingReminders}`,
+        `• Habits logged (${isWeekly ? '7 days' : 'today'}): ${habitsDone}`,
+        `• Notes saved: ${notesSaved}`,
+        `• Focus sessions: ${focusSessions.n}${focusSessions.total ? ` (${focusSessions.total} min)` : ''}`,
+      ];
+      if (upcomingReminders.length) {
+        lines.push('', 'Upcoming:');
+        upcomingReminders.forEach(r => {
+          let t = r.datetime;
+          try { t = new Date(r.datetime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' }); } catch { }
+          lines.push(`  ${r.text} — ${t}`);
+        });
+      }
+      if (recentNotes.length) lines.push('', `Recent notes: ${recentNotes.map(n => n.title).join(', ')}`);
+      const reply = lines.join('\n');
+      logConversation(userId, 'user', msg.text, requestId);
+      logConversation(userId, 'assistant', reply, requestId, 'builtin', 'briefing');
+      await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
+      logger.info({ channel: msg.channel, userId }, 'Briefing fast-path executed');
+      return;
+    }
+  }
+
+  // 5af. list_workflows fast-path — list DB workflows without LLM
+  {
+    const listWfPattern = /\b(show|list|what)\s+(are\s+)?(my\s+)?(automations?|workflows?)\b/i;
+    if (listWfPattern.test(msg.text)) {
+      const rows = db.prepare(`SELECT id, name, trigger, enabled FROM user_workflows WHERE user_id = ? ORDER BY created_at DESC LIMIT 15`).all(userId) as Array<{id:number; name:string; trigger:string; enabled:number}>;
+      let reply: string;
+      if (rows.length === 0) {
+        reply = 'You have no automations yet. Say "create automation" to make one.';
+      } else {
+        const list = rows.map((w, i) => `${i + 1}. ${w.enabled ? '✓' : '⏸'} ${w.name} (id:${w.id}, trigger:${w.trigger})`).join('\n');
+        reply = `Your automations (${rows.length}):\n${list}`;
+      }
+      logConversation(userId, 'user', msg.text, requestId);
+      logConversation(userId, 'assistant', reply, requestId, 'builtin', 'list-workflows');
+      await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
+      logger.info({ channel: msg.channel, userId, count: rows.length }, 'List workflows fast-path executed');
+      return;
+    }
+  }
+
   // 5b. Auto-detect task intents (remind, telegram, deploy) — route to Pico Fleet
   // For mixed-intent messages (e.g. "Give me a workout plan and remind me"),
   // queue the tasks but continue to LLM for the content response.
@@ -566,6 +740,8 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // 6. Build messages for LLM
   let systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);
   const userCredits = (user?.credits as number) || 0;
+  const effectivePersonalityId = (agentConfig?.personality as string) || 'jarvis';
+  const resolvedAgentName = resolveAgentName(agentConfig, effectivePersonalityId);
 
   // 6a. Token compression — compress system prompt + user message for LLM
   //     (msg.text kept original for logging/memory/channel delivery)
@@ -687,7 +863,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       creditCost = result.creditCost;
     } catch (err) {
       logger.warn({ err: (err as Error).message }, 'Groq failed for non-Latin message, falling back to ReAct loop');
-      const reactResult = await runReactLoop(messages, { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', userCredits, userId });
+      const reactResult = await runReactLoop(messages, { systemPrompt, agentName: resolvedAgentName, userCredits, userId });
       replyText = reactResult.text;
       provider = reactResult.provider;
       model = reactResult.model;
@@ -695,10 +871,11 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       tokensOut = reactResult.tokensOut;
       creditCost = reactResult.creditCost;
     }
-  } else if (config.bridgeEnabled && !researchUrl && !webSearchUsed) {
+  } else if (config.bridgeEnabled && !researchUrl && !webSearchUsed && !hasToolTrigger(msg.text)) {
     // Use the bridge — routes trivial/simple → PicoClaw (2-5s), complex → Kimi
-    // Skip bridge when URL content or web search results are already injected into the
-    // system prompt — the bridge's stepfun fallback ignores enriched context and outputs
+    // Skip bridge when URL content, web search results, or Phase 2 tool keywords are present —
+    // the bridge's PicoClaw path doesn't have tool execution capabilities, and
+    // the bridge's stepfun fallback ignores enriched context and outputs
     // tool_call XML instead of using PAGE_CONTENT/WEB_SEARCH_RESULTS.
     try {
       const bridgeReq: BridgeRequest = {

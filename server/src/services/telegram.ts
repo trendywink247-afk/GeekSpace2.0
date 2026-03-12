@@ -95,6 +95,12 @@ export function extractBotCommand(update: TelegramUpdate): { command: string; ar
 /** Strip action blocks, markdown formatting, and other LLM artifacts for plain-text Telegram */
 function sanitizeForTelegram(text: string): string {
   return text
+    // Strip XML tool call blocks that LLMs sometimes emit
+    .replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '')
+    .replace(/<function[^>]*>[\s\S]*?<\/function>/g, '')
+    .replace(/<tool_response>[\s\S]*?<\/tool_response>/g, '')
+    .replace(/<function_calls>[\s\S]*?<\/function_calls>/g, '')
+    .replace(/<(?!(?:br|b|i|em|strong|p)\b)[a-zA-Z][^>]*>[\s\S]*?<\/[a-zA-Z][^>]*>/g, '')
     // Strip well-formed action blocks: <<<ACTION {...} ACTION>>>
     .replace(/<<<ACTION[\s\S]*?ACTION>>>/g, '')
     // Strip malformed action-like tags: <<word or <<<word

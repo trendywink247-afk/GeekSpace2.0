@@ -864,6 +864,420 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         return { tool, success: false, message: 'Specify reminderId or set deleteAll: true.' };
       }
 
+      case 'list_reminders': {
+        const rows = db.prepare(`
+          SELECT id, text, datetime as scheduled_time, channel
+          FROM reminders
+          WHERE user_id = ? AND completed = 0
+          ORDER BY datetime ASC
+          LIMIT 10
+        `).all(userId) as Array<{id:string; text:string; scheduled_time:string; channel:string}>;
+
+        if (rows.length === 0) {
+          return { tool, success: true, message: 'You have no pending reminders.' };
+        }
+
+        const list = rows.map((r, i) => {
+          let time = r.scheduled_time;
+          try {
+            time = new Date(r.scheduled_time).toLocaleString('en-IN',
+              { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' });
+          } catch { /* use raw */ }
+          return `${i + 1}. ${r.text} — ${time}`;
+        }).join('\n');
+
+        return { tool, success: true, message: `Your ${rows.length} pending reminder(s):\n${list}` };
+      }
+
+      // ── create_note ──────────────────────────────────────────
+      case 'create_note': {
+        const title = params.title as string;
+        const content = params.content as string;
+        const tags = (params.tags as string[]) || [];
+        db.prepare(`
+          INSERT INTO notes (user_id, title, content, tags, created_at, updated_at)
+          VALUES (?, ?, ?, ?, unixepoch('now')*1000, unixepoch('now')*1000)
+        `).run(userId, title, content, JSON.stringify(tags));
+        return {
+          tool,
+          success: true,
+          message: `Note "${title}" saved${tags.length ? ` [${tags.join(', ')}]` : ''}.`,
+          receipt: RECEIPT_TEMPLATES.memory(title),
+        };
+      }
+
+      // ── search_notes ─────────────────────────────────────────
+      case 'search_notes': {
+        const query = (params.query as string).toLowerCase();
+        const limit = (params.limit as number) || 5;
+        const rows = db.prepare(`
+          SELECT id, title, content, tags, created_at FROM notes
+          WHERE user_id = ? AND archived = 0
+            AND (lower(title) LIKE ? OR lower(content) LIKE ?)
+          ORDER BY updated_at DESC LIMIT ?
+        `).all(userId, `%${query}%`, `%${query}%`, limit) as Array<{id:number; title:string; content:string; tags:string; created_at:number}>;
+        if (rows.length === 0) return { tool, success: true, message: `No notes found for "${query}".` };
+        const list = rows.map((r, i) => {
+          const preview = r.content.slice(0, 100).replace(/\n/g, ' ');
+          const date = new Date(r.created_at).toLocaleDateString('en-IN');
+          return `${i + 1}. **${r.title}** (${date})\n   ${preview}…`;
+        }).join('\n\n');
+        return { tool, success: true, message: `Found ${rows.length} note(s):\n\n${list}`, data: { rows } };
+      }
+
+      // ── track_habit ──────────────────────────────────────────
+      case 'track_habit': {
+        const habitName = (params.habitName as string).trim();
+        const note = (params.note as string) || null;
+        // Find existing habit (case-insensitive)
+        let habit = db.prepare(`
+          SELECT id, name, current_streak, longest_streak FROM habits
+          WHERE user_id = ? AND lower(name) = lower(?) LIMIT 1
+        `).get(userId, habitName) as { id: number; name: string; current_streak: number; longest_streak: number } | undefined;
+        // Create if missing
+        if (!habit) {
+          const r = db.prepare(`
+            INSERT INTO habits (user_id, name, description, frequency, icon, current_streak, longest_streak, created_at)
+            VALUES (?, ?, '', 'daily', 'star', 0, 0, unixepoch('now')*1000)
+          `).run(userId, habitName);
+          habit = { id: r.lastInsertRowid as number, name: habitName, current_streak: 0, longest_streak: 0 };
+        }
+        // Log today (UNIQUE index prevents double-log)
+        try {
+          db.prepare(`
+            INSERT INTO habit_logs (habit_id, user_id, logged_at, note)
+            VALUES (?, ?, unixepoch('now')*1000, ?)
+          `).run(habit.id, userId, note);
+        } catch {
+          return { tool, success: false, message: `"${habit.name}" already logged today!` };
+        }
+        // Update streak
+        const newStreak = habit.current_streak + 1;
+        const newLongest = Math.max(newStreak, habit.longest_streak);
+        db.prepare(`UPDATE habits SET current_streak = ?, longest_streak = ? WHERE id = ?`)
+          .run(newStreak, newLongest, habit.id);
+        const msg = newStreak > 1
+          ? `✅ "${habit.name}" logged! 🔥 ${newStreak}-day streak${newLongest > habit.longest_streak ? ' (new record!)' : ''}`
+          : `✅ "${habit.name}" logged for today!`;
+        return { tool, success: true, message: msg, data: { habitId: habit.id, streak: newStreak } };
+      }
+
+      // ── start_focus ──────────────────────────────────────────
+      case 'start_focus': {
+        const goal = params.goal as string;
+        const durationMin = (params.duration_min as number) || 25;
+        const now = Date.now();
+        db.prepare(`
+          INSERT INTO focus_sessions (user_id, started_at, duration_min, goal, completed, pomodoro_count)
+          VALUES (?, ?, ?, ?, 0, 0)
+        `).run(userId, now, durationMin, goal);
+        // Set a reminder to end the session
+        const { parseReminderTime } = await import('./pico-fleet.js');
+        const userRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
+        const userTz = userRow?.timezone || 'Asia/Kolkata';
+        const endTime = parseReminderTime(`in ${durationMin} minutes`, userTz);
+        if (endTime) {
+          db.prepare(`
+            INSERT INTO reminders (id, user_id, text, datetime, channel, category, created_by)
+            VALUES (?, ?, ?, ?, 'push', 'focus', 'agent')
+          `).run(uuid(), userId, `Focus session complete: ${goal}`, endTime);
+        }
+        return {
+          tool,
+          success: true,
+          message: `🎯 Focus session started! Goal: "${goal}" — ${durationMin} min timer set.`,
+          data: { goal, durationMin, startedAt: now },
+          receipt: RECEIPT_TEMPLATES.reminder(`Focus: ${goal}`, `in ${durationMin} min`),
+        };
+      }
+
+      // ── create_flashcards ────────────────────────────────────
+      case 'create_flashcards': {
+        const topic = params.topic as string;
+        const cards = params.cards as Array<{ q: string; a: string }>;
+        const content = cards.map((c, i) => `Q${i + 1}: ${c.q}\nA${i + 1}: ${c.a}`).join('\n\n');
+        db.prepare(`
+          INSERT INTO notes (user_id, title, content, tags, created_at, updated_at)
+          VALUES (?, ?, ?, ?, unixepoch('now')*1000, unixepoch('now')*1000)
+        `).run(userId, `Flashcards: ${topic}`, content, JSON.stringify(['flashcard', topic]));
+        return {
+          tool,
+          success: true,
+          message: `Created ${cards.length} flashcards for "${topic}" and saved to Notes.`,
+          data: { topic, count: cards.length },
+          receipt: RECEIPT_TEMPLATES.memory(`Flashcards: ${topic}`),
+        };
+      }
+
+      // ── meeting_notes ────────────────────────────────────────
+      case 'meeting_notes': {
+        const title = params.title as string;
+        const attendees = (params.attendees as string[]) || [];
+        const agenda = (params.agenda as string) || '';
+        const notes = params.notes as string;
+        const actionItems = (params.action_items as string[]) || [];
+        const content = [
+          attendees.length ? `**Attendees:** ${attendees.join(', ')}` : '',
+          agenda ? `**Agenda:** ${agenda}` : '',
+          `**Notes:**\n${notes}`,
+          actionItems.length ? `**Action Items:**\n${actionItems.map((a, i) => `${i + 1}. ${a}`).join('\n')}` : '',
+        ].filter(Boolean).join('\n\n');
+        db.prepare(`
+          INSERT INTO notes (user_id, title, content, tags, created_at, updated_at)
+          VALUES (?, ?, ?, ?, unixepoch('now')*1000, unixepoch('now')*1000)
+        `).run(userId, title, content, JSON.stringify(['meeting', 'notes']));
+        return {
+          tool,
+          success: true,
+          message: `Meeting notes saved: "${title}"${actionItems.length ? ` (${actionItems.length} action items)` : ''}.`,
+          receipt: RECEIPT_TEMPLATES.memory(title),
+        };
+      }
+
+      // ── code_review ──────────────────────────────────────────
+      case 'code_review': {
+        const code = params.code as string;
+        const language = (params.language as string) || 'unknown';
+        const focus = (params.focus as string) || 'general quality, bugs, and improvements';
+        const { routeChat } = await import('./llm.js');
+        const sysPrompt = 'You are an expert code reviewer. Be concise, specific, and actionable. Focus on real issues, not style nits.';
+        const userContent = `Review this ${language} code. Focus on: ${focus}\n\n\`\`\`${language}\n${code}\n\`\`\`\n\nProvide: 1) Overall assessment 2) Critical issues 3) Suggestions`;
+        try {
+          const result = await routeChat(
+            [{ role: 'user', content: userContent }],
+            { systemPrompt: sysPrompt, userCredits: 100 },
+          );
+          return { tool, success: true, message: result.reply, data: { language, focus } };
+        } catch (err) {
+          return { tool, success: false, message: `Code review failed: ${err instanceof Error ? err.message : String(err)}` };
+        }
+      }
+
+      // ── github_pr ────────────────────────────────────────────
+      case 'github_pr': {
+        const title = params.title as string;
+        const changes = params.changes as string;
+        const branch = (params.branch as string) || 'feature-branch';
+        const base = (params.base as string) || 'main';
+        const { routeChat } = await import('./llm.js');
+        const sysPrompt = 'You are a senior engineer. Write clear, professional GitHub PR descriptions. Use markdown.';
+        const userContent = `Write a PR description.\nTitle: ${title}\nBranch: ${branch} → ${base}\nChanges:\n${changes}\n\nFormat: ## Summary, ## Changes, ## Testing`;
+        try {
+          const result = await routeChat(
+            [{ role: 'user', content: userContent }],
+            { systemPrompt: sysPrompt, userCredits: 100 },
+          );
+          return { tool, success: true, message: result.reply, data: { title, branch, base } };
+        } catch (err) {
+          return { tool, success: false, message: `PR generation failed: ${err instanceof Error ? err.message : String(err)}` };
+        }
+      }
+
+      // ── seo_audit ────────────────────────────────────────────
+      case 'seo_audit': {
+        const url = params.url as string;
+        try {
+          const content = await fetchAndExtract(url);
+          const { routeChat } = await import('./llm.js');
+          const sysPrompt = 'You are an SEO expert. Analyze the page content for SEO issues. Be brief and actionable.';
+          const userContent = `Audit this page for SEO:\nURL: ${url}\n\nContent (first 3000 chars):\n${content.slice(0, 3000)}\n\nCheck: title, meta description, headings, keyword density, content quality, page structure. Score out of 10 and list top 5 improvements.`;
+          const result = await routeChat(
+            [{ role: 'user', content: userContent }],
+            { systemPrompt: sysPrompt, userCredits: 150 },
+          );
+          return { tool, success: true, message: result.reply, data: { url } };
+        } catch (err) {
+          return { tool, success: false, message: `SEO audit failed: ${err instanceof Error ? err.message : String(err)}` };
+        }
+      }
+
+      // ── generate_social_post ─────────────────────────────────
+      case 'generate_social_post': {
+        const topic = params.topic as string;
+        const platform = (params.platform as string) || 'twitter';
+        const tone = (params.tone as string) || 'professional';
+        const limits: Record<string, number> = { twitter: 280, linkedin: 3000, instagram: 2200, facebook: 63206 };
+        const charLimit = limits[platform] || 280;
+        const { routeChat } = await import('./llm.js');
+        const sysPrompt = `You are a social media expert. Write engaging ${platform} posts. Be ${tone}. Stay under ${charLimit} characters.`;
+        const userContent = `Write a ${tone} ${platform} post about: ${topic}\n\nInclude relevant hashtags. No markdown formatting — plain text only.`;
+        try {
+          const result = await routeChat(
+            [{ role: 'user', content: userContent }],
+            { systemPrompt: sysPrompt, userCredits: 80 },
+          );
+          return { tool, success: true, message: result.reply, data: { topic, platform, tone } };
+        } catch (err) {
+          return { tool, success: false, message: `Social post generation failed: ${err instanceof Error ? err.message : String(err)}` };
+        }
+      }
+
+      // ── create_automation ────────────────────────────────────
+      case 'create_automation': {
+        const name = params.name as string;
+        const description = (params.description as string) || '';
+        const trigger = (params.trigger as string) || 'manual';
+        const steps = params.steps as Array<{ action: string; params: Record<string, unknown> }>;
+        db.prepare(`
+          INSERT INTO user_workflows (user_id, name, description, steps, trigger, enabled, created_at)
+          VALUES (?, ?, ?, ?, ?, 1, unixepoch('now')*1000)
+        `).run(userId, name, description, JSON.stringify(steps), trigger);
+        return {
+          tool,
+          success: true,
+          message: `Automation "${name}" created (${steps.length} step${steps.length !== 1 ? 's' : ''}, trigger: ${trigger}).`,
+          receipt: RECEIPT_TEMPLATES.automation(name),
+        };
+      }
+
+      // ── youtube_summarize ────────────────────────────────────
+      case 'youtube_summarize': {
+        const url = params.url as string;
+        try {
+          const content = await fetchAndExtract(url);
+          const { routeChat } = await import('./llm.js');
+          const sysPrompt = 'You are a helpful assistant. Summarize YouTube video content concisely.';
+          const userContent = `Summarize this YouTube video content:\nURL: ${url}\n\nExtracted content:\n${content.slice(0, 4000)}\n\nProvide: main topic, key points (5 bullets), and key takeaways.`;
+          const result = await routeChat(
+            [{ role: 'user', content: userContent }],
+            { systemPrompt: sysPrompt, userCredits: 120 },
+          );
+          return { tool, success: true, message: result.reply, data: { url } };
+        } catch (err) {
+          return { tool, success: false, message: `YouTube summarize failed: ${err instanceof Error ? err.message : String(err)}` };
+        }
+      }
+
+      // ── get_briefing ─────────────────────────────────────────
+      case 'get_briefing': {
+        const type = (params.type as string) || 'daily';
+        const now = Date.now();
+        const dayMs = 24 * 60 * 60 * 1000;
+        const since = type === 'weekly' ? now - 7 * dayMs : now - dayMs;
+        // Collect stats
+        const pendingReminders = (db.prepare(`SELECT COUNT(*) as n FROM reminders WHERE user_id = ? AND completed = 0`).get(userId) as { n: number }).n;
+        const habitsDone = (db.prepare(`SELECT COUNT(*) as n FROM habit_logs WHERE user_id = ? AND logged_at > ?`).get(userId, since) as { n: number }).n;
+        const notesSaved = (db.prepare(`SELECT COUNT(*) as n FROM notes WHERE user_id = ? AND created_at > ? AND archived = 0`).get(userId, since) as { n: number }).n;
+        const focusSessions = (db.prepare(`SELECT COUNT(*) as n, SUM(duration_min) as total FROM focus_sessions WHERE user_id = ? AND started_at > ?`).get(userId, since) as { n: number; total: number | null });
+        const recentNotes = db.prepare(`SELECT title FROM notes WHERE user_id = ? AND archived = 0 ORDER BY updated_at DESC LIMIT 3`).all(userId) as Array<{ title: string }>;
+        const upcomingReminders = db.prepare(`SELECT text, datetime FROM reminders WHERE user_id = ? AND completed = 0 ORDER BY datetime ASC LIMIT 3`).all(userId) as Array<{ text: string; datetime: string }>;
+
+        const lines: string[] = [
+          `📋 **Your ${type === 'weekly' ? 'Weekly' : 'Daily'} Briefing**`,
+          '',
+          `📌 Pending reminders: ${pendingReminders}`,
+          `✅ Habits logged (${type === 'weekly' ? '7 days' : 'today'}): ${habitsDone}`,
+          `📝 Notes saved: ${notesSaved}`,
+          `🎯 Focus sessions: ${focusSessions.n}${focusSessions.total ? ` (${focusSessions.total} min total)` : ''}`,
+        ];
+        if (upcomingReminders.length) {
+          lines.push('', '⏰ **Upcoming:**');
+          upcomingReminders.forEach(r => {
+            let t = r.datetime;
+            try { t = new Date(r.datetime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' }); } catch { }
+            lines.push(`  • ${r.text} — ${t}`);
+          });
+        }
+        if (recentNotes.length) {
+          lines.push('', '📄 **Recent notes:**');
+          recentNotes.forEach(n => lines.push(`  • ${n.title}`));
+        }
+        return { tool, success: true, message: lines.join('\n') };
+      }
+
+      // ── list_workflows ───────────────────────────────────────
+      case 'list_workflows': {
+        const rows = db.prepare(`
+          SELECT id, name, description, trigger, enabled, last_run
+          FROM user_workflows WHERE user_id = ?
+          ORDER BY created_at DESC LIMIT 15
+        `).all(userId) as Array<{id:number; name:string; description:string; trigger:string; enabled:number; last_run:number|null}>;
+        if (rows.length === 0) return { tool, success: true, message: 'You have no automations yet. Create one with create_automation.' };
+        const list = rows.map((w, i) => {
+          const status = w.enabled ? '✅' : '⏸';
+          const lastRun = w.last_run ? new Date(w.last_run).toLocaleDateString('en-IN') : 'never';
+          return `${i + 1}. ${status} **${w.name}** (id: ${w.id}) — trigger: ${w.trigger} — last run: ${lastRun}`;
+        }).join('\n');
+        return { tool, success: true, message: `Your automations (${rows.length}):\n\n${list}`, data: { workflows: rows } };
+      }
+
+      // ── run_workflow ─────────────────────────────────────────
+      case 'run_workflow': {
+        const workflowId = params.workflowId as number;
+        const wf = db.prepare(`
+          SELECT id, name, steps, enabled FROM user_workflows WHERE id = ? AND user_id = ?
+        `).get(workflowId, userId) as { id: number; name: string; steps: string; enabled: number } | undefined;
+        if (!wf) return { tool, success: false, message: `Workflow #${workflowId} not found.` };
+        if (!wf.enabled) return { tool, success: false, message: `Workflow "${wf.name}" is disabled.` };
+        let steps: Array<{ action: string; params?: Record<string, unknown> }> = [];
+        try { steps = JSON.parse(wf.steps); } catch { return { tool, success: false, message: 'Workflow has invalid steps definition.' }; }
+        const results: string[] = [];
+        for (const step of steps.slice(0, 5)) {
+          try {
+            const stepResult = await runAction(userId, step.action, step.params || {});
+            results.push(`✅ ${step.action}: ${stepResult.message.slice(0, 100)}`);
+          } catch (err) {
+            results.push(`❌ ${step.action}: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+        db.prepare(`UPDATE user_workflows SET last_run = unixepoch('now')*1000 WHERE id = ?`).run(workflowId);
+        return {
+          tool,
+          success: true,
+          message: `Ran "${wf.name}" (${steps.length} steps):\n${results.join('\n')}`,
+          receipt: RECEIPT_TEMPLATES.automation(wf.name),
+        };
+      }
+
+      // ── generate_video_story ─────────────────────────────────
+      case 'generate_video_story': {
+        const topic = params.topic as string;
+        const style = (params.style as string) || 'cinematic';
+        const durationSec = (params.duration_sec as number) || 60;
+        const { routeChat } = await import('./llm.js');
+        const sysPrompt = 'You are a professional screenwriter and video director. Write compelling video scripts.';
+        const userContent = `Write a ${style} video story script about: ${topic}\nTarget duration: ${durationSec} seconds\n\nFormat:\n- TITLE\n- HOOK (opening 5 seconds)\n- ACT 1, 2, 3 (with scene descriptions and dialogue/narration)\n- CTA (call to action)\n- VISUAL NOTES`;
+        try {
+          const result = await routeChat(
+            [{ role: 'user', content: userContent }],
+            { systemPrompt: sysPrompt, userCredits: 150 },
+          );
+          // Save to notes
+          db.prepare(`
+            INSERT INTO notes (user_id, title, content, tags, created_at, updated_at)
+            VALUES (?, ?, ?, ?, unixepoch('now')*1000, unixepoch('now')*1000)
+          `).run(userId, `Video Story: ${topic}`, result.reply, JSON.stringify(['video', 'script', style]));
+          return { tool, success: true, message: result.reply, data: { topic, style, durationSec } };
+        } catch (err) {
+          return { tool, success: false, message: `Video story generation failed: ${err instanceof Error ? err.message : String(err)}` };
+        }
+      }
+
+      // ── summarize_url ────────────────────────────────────────
+      case 'summarize_url': {
+        const url = (params.url as string).trim();
+        const format = (params.format as string) || 'bullets';
+        const targetUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+        try {
+          const content = await fetchAndExtract(targetUrl);
+          const { routeChat } = await import('./llm.js');
+          const formatInstructions = {
+            bullets: 'Summarize as 5-7 bullet points. Be concise.',
+            paragraph: 'Summarize in 2-3 short paragraphs.',
+            tldr: 'Give a 1-2 sentence TL;DR summary.',
+          }[format] || 'Summarize as bullet points.';
+          const sysPrompt = 'You are a helpful assistant that summarizes web content accurately and concisely.';
+          const userContent = `${formatInstructions}\n\nURL: ${targetUrl}\nContent:\n${content.slice(0, 4000)}`;
+          const result = await routeChat(
+            [{ role: 'user', content: userContent }],
+            { systemPrompt: sysPrompt, userCredits: 100 },
+          );
+          return { tool, success: true, message: result.reply, data: { url: targetUrl, format } };
+        } catch (err) {
+          return { tool, success: false, message: `URL summarize failed: ${err instanceof Error ? err.message : String(err)}` };
+        }
+      }
+
       // ── Unknown tool (should not happen after parser validation)
       default:
         return {
