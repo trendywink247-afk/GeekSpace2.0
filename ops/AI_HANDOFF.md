@@ -1,99 +1,80 @@
-# AI Handoff — Phase 3: The Agentic Leap (Complete)
+# AI Handoff — Phase 4+5+8: Orchestrator + Inline Keyboards + File Handling
 **Date:** 2026-03-12
-**Branch:** main = live-production = 9af1566
-**Status:** DEPLOYED — all Phase 3 features live
+**Branch:** main = live-production = 2cafb02
+**Status:** DEPLOYED — all Phase 4+5+8 features live, 2223 tests pass
 
 ---
 
 ## What Was Done This Session
 
-### Phase 0: Rehydration + Baseline
-- Tests: 2223 passed ✅ | Build: clean ✅ | Health: ok ✅
-- Aliya user_id: 6813ac58-98fc-438b-88bb-4a8ef96fda53 | TG: 5337185054
-- tg_sim.sh rebuilt at /tmp/tg_sim.sh with bot_command entity support
+### Phase 4 — Multi-Agent Parallel Orchestrator ✅
+- NEW: `server/src/services/multi-agent-orchestrator.ts`
+  - `isLaunchModeRequest()` — detects "launch mode", "all agents", "multi-agent", "parallel agents", "team response", "brainstorm with all agents"
+  - `planAgentTasks()` — routes to 3 specialists by category: content/marketing (Forge+Aria+Pulse), research (Nova+Pulse+Echo), career (Echo+Forge+Cal), default (Aria+Pulse+Forge)
+  - `runMultiAgentOrchestration()` — Promise.all fan-out, forceProvider='openrouter-free', merges sections with role headers
+- WIRED in `message-router.ts` — checked BEFORE bridge/ReAct loop; costs 2 credits × agentCount (6 credits for 3 agents); falls back on error
 
-### Phase 1: Live Capability Audit
-- /tmp/PHASE3_AUDIT.md written
-- Slash commands (/help, /habits, /notes, /study): ✅ working (entities required)
-- NLP reminders, list_reminders fast-path, create_note, briefing fast-path: all ✅
-- Issue found: PicoClaw qwen3:8b timeouts on some messages (fallback to Groq works)
+### Phase 5 — Telegram Inline Keyboards ✅
+- `action-executor.ts`:
+  - `set_reminder` case: after DB insert, sends inline keyboard ✅ Done / 💤 Snooze 1h / 🗑️ Delete
+  - `start_focus` case: sends inline keyboard ✅ Done early / ⏸️ Pause
+- `webhooks.ts`:
+  - `callback_query` handler: `reminder:done|snooze|delete` → marks complete, snoozes +1h (writes snooze_log), or deletes
+  - `focus:done|focus:pause` → confirmation message
+  - Snooze log schema: `(reminder_id, user_id, snoozed_at, preset, new_datetime)`
 
-### Phase 2: 60-Pattern Battle Test
-- /tmp/BATTLE_TEST_RESULTS.md written
-- 52/60 patterns working, 8 known ⚠️ (Hinglish expense routing, SEO URL fetch)
-- All core tools verified in production DB
-
-### Phase 3: Bug Fix Blitz + New Features (main commit: 9af1566)
-
-**Bug Fixes:**
-1. `hasToolTrigger` expanded: habit patterns now catch "log my morning workout", "daily exercise done", compound patterns
-2. `hasToolTrigger` expanded: expense patterns added ($X on Y, spent X, expense report)
-3. Lint: unnecessary backslash escapes removed from regex dollar signs
-
-**New Features:**
-
-4. **Expense Tracker** (Phase 9 complete):
-   - DB: `expenses` + `budget_limits` tables added to schema
-   - Tools: `track_expense`, `list_expenses`, `set_budget` in action-parser + action-executor
-   - Budget warnings when > 90% of monthly limit
-   - `/expenses` slash command — monthly report by category
-   - Wired into `TOOL_INSTRUCTIONS` + `hasToolTrigger`
-
-5. **Smart Reminders V2** (Phase 6 complete):
-   - Recurrence detection added to BOTH action-executor `set_reminder` AND pico-fleet `create_reminder`
-   - Patterns: "every day / daily" → daily; "every week / weekly / every Monday" → weekly; "monthly" → monthly
-   - Stored in `recurrence` column, picked up by `scheduleNextRecurrence()` in reminder-scheduler.ts
-   - Verified in prod DB: "remind me to exercise every day at 7am" → recurrence: "daily" ✅
-
-6. **Global Search** (Phase 7 complete):
-   - `/search <query>` slash command
-   - Searches: notes, reminders, habits, user_memories
-   - Returns categorized results with counts
-
-7. **Proactive Engine V2 - Expense Digest** (Phase 10 partial):
-   - `weeklyExpenseDigest()` function added — fires Sunday 19:00 IST with spending report
-   - Wired into `runProactiveChecks()` alongside weekly report
+### Phase 8 — Telegram File Handling ✅
+- `telegram.ts`:
+  - Added `photo[]` + `document` + `caption` fields to `TelegramUpdate.message` type
+  - `getTelegramFileUrl(fileId)` — calls getFile API, returns download URL
+  - `downloadTelegramFile(fileId)` — returns `Buffer | null`
+- `webhooks.ts`:
+  - `handlePhotoMessage()` — downloads largest photo, runs vision analysis via Groq (image_url content block), sends result + save/dismiss inline buttons
+  - `handleDocumentMessage()` — PDF/text docs extracted to notes; image docs fall back to vision analysis
+  - `photo:save` callback — stores analysis as note in DB
+  - `/expenses` and `/search` slash command stubs added
 
 ---
 
-## Files Changed
-- `server/src/db/index.ts` — expenses + budget_limits tables
-- `server/src/services/action-parser.ts` — track_expense, list_expenses, set_budget schemas
-- `server/src/services/action-executor.ts` — 3 new tool cases + recurrence in set_reminder
-- `server/src/services/message-router.ts` — hasToolTrigger expanded, expense tools in TOOL_INSTRUCTIONS, lint fix
-- `server/src/services/pico-fleet.ts` — recurrence detection in create_reminder
-- `server/src/services/proactive-engine.ts` — weeklyExpenseDigest function
-- `server/src/routes/webhooks.ts` — /expenses, /search slash commands; /help updated
+## Files Changed (this session)
+- `server/src/services/multi-agent-orchestrator.ts` — NEW FILE
+- `server/src/services/message-router.ts` — launch mode detection + orchestrator wiring
+- `server/src/services/action-executor.ts` — inline keyboards for set_reminder + start_focus
+- `server/src/routes/webhooks.ts` — callback_query handler, photo/document handlers
+- `server/src/services/telegram.ts` — photo/document types + file download helpers
 
 ---
 
 ## Production State
 - Health: ok | db: ok | version: 3.1.0
-- Container rebuild: complete (new tables baked in via migration)
-- Frontend: deployed to /var/www/geekspace/
+- Tests: 2223 passed ✅ (127 test files, 1 skipped)
+- Container: full rebuild done via `docker compose up -d --build geekspace`
 
 ---
 
-## What Still Needs Work (Deferred)
-- **Phase 4 (Multi-Agent Orchestrator)**: Not implemented — complex, deferred to next session
-- **Phase 5 (Inline Keyboards)**: Not implemented — telegram already has sendTelegramButtons(), needs wiring into reminder confirmations
-- **Phase 8 (Telegram File Handling)**: Not implemented
-- **Hinglish expense routing**: Hinglish messages go through Groq direct call, not ReAct loop — expenses not tracked via Hinglish
+## What Still Needs Work (Deferred from Phase 3 master prompt)
+- **Phase 6 (Smart Scheduling)**: Calendar-aware reminder slots, conflict detection
+- **Phase 7 (Memory Graph V2)**: Semantic user memory with entity linking
+- **Phase 9 (Habit Intelligence V2)**: Streak predictions, motivation nudges
+- **Phase 10 (Proactive Engine V3)**: Day-ahead briefing with weather + calendar
+- **Phase 11 (Voice Intelligence V2)**: Multi-language TTS, voice reminders
+- **Phase 12 (Brand purge gate)**: Run `npm run brand-guard`, ensure zero picoclaw refs
+- **Phase 13 (Seedance Director Mode)**: Video story end-to-end
+- **Hinglish expense routing**: Hinglish goes to Groq direct, bypasses ReAct tool loop
 
 ## Next Immediate Commands
 ```bash
-# Resume work
 cd ~/GeekSpace2.0
-cat ops/AI_HANDOFF.md
 git log --oneline -3
 curl -s http://localhost:3001/api/health
+cd server && npm test
 
-# Test expense tracker
-/tmp/tg_sim.sh "log 100 for lunch"
-/tmp/tg_sim.sh "/expenses"
+# Test launch mode
+/tmp/tg_sim.sh "launch mode — help me plan a product launch"
 
-# Inline keyboards (Phase 5 - next priority)
-# Wire sendTelegramButtons() into set_reminder response
-# Add callback_query handler for remind/snooze/delete
+# Test inline keyboards
+/tmp/tg_sim.sh "remind me to call mom at 3pm"
+
+# Test photo handling (requires real Telegram interaction)
+# Send photo to bot — should get vision analysis + save/dismiss buttons
 ```
-
