@@ -124,6 +124,30 @@ export function PortfolioView() {
     portfolioService.recordView(username).catch(() => {});
   }, [username]);
 
+  // Visitor intent detection — ping backend after 60s or on page leave
+  // Only fires for visits from professional sources (LinkedIn, GitHub, Google, Twitter/X)
+  useEffect(() => {
+    if (!username) return;
+    const start = Date.now();
+
+    const ping = () => {
+      const duration = Math.round((Date.now() - start) / 1000);
+      const body = JSON.stringify({ duration_seconds: duration, referrer: document.referrer });
+      navigator.sendBeacon(
+        `/api/portfolio/${username}/ping`,
+        new Blob([body], { type: 'application/json' }),
+      );
+    };
+
+    window.addEventListener('beforeunload', ping);
+    const timer = setTimeout(ping, 60000);
+
+    return () => {
+      window.removeEventListener('beforeunload', ping);
+      clearTimeout(timer);
+    };
+  }, [username]);
+
   // Fetch agent status when portfolio is loaded
   useEffect(() => {
     if (!username || !portfolio?.agentEnabled) return;

@@ -581,6 +581,49 @@ portfolioRouter.post('/:username/visitor-token', async (req, res) => {
   res.json({ token, expiresIn: 3600 });
 });
 
+// ── Visitor intent ping — fires when visitor spends 60s+ from a professional source ──
+// No auth required. Responds immediately; Telegram alert sent async (non-blocking).
+portfolioRouter.post('/:username/ping', async (req, res) => {
+  res.json({ ok: true }); // respond immediately — don't block client
+
+  try {
+    const { username } = req.params;
+    const { duration_seconds, referrer } = req.body as { duration_seconds?: number; referrer?: string };
+
+    if (!duration_seconds || duration_seconds < 60) return;
+
+    const professionalSources = ['linkedin.com', 'github.com', 'google.com', 'twitter.com', 'x.com'];
+    const ref = referrer || '';
+    const matchedSource = professionalSources.find(s => ref.includes(s));
+    if (!matchedSource) return;
+
+    // portfolios table is keyed by user_id — look up via username → user_id
+    const user = db.prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: string } | undefined;
+    if (!user) return;
+
+    // Verify portfolio exists and is public
+    const portfolio = db.prepare('SELECT is_public FROM portfolios WHERE user_id = ?').get(user.id) as { is_public: number } | undefined;
+    if (!portfolio?.is_public) return;
+
+    // Get owner's verified Telegram chat id
+    const link = db.prepare(
+      "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1"
+    ).get(user.id) as { external_id: string } | undefined;
+    if (!link) return;
+
+    const sourceName = matchedSource.replace('.com', '');
+    const secs = Math.round(duration_seconds);
+    const msg = `👤 Portfolio Alert: Someone spent ${secs}s reading your portfolio (via ${sourceName}). Looks like a serious lead! 🎯`;
+
+    const { sendTelegramMessage } = await import('../services/telegram.js');
+    await sendTelegramMessage(link.external_id, msg);
+
+    logger.info({ event: 'portfolio_intent_ping', username, sourceName, duration_seconds: secs }, 'Portfolio intent alert sent');
+  } catch {
+    // Non-fatal — never let this affect the response
+  }
+});
+
 // ── 34.3: Public view counter (no auth — fire-and-forget on portfolio page load) ──
 portfolioRouter.post('/:username/view', (req, res) => {
   const { username } = req.params;
