@@ -227,19 +227,29 @@ async function runProactiveChecks(): Promise<void> {
   }
 
   if (minute !== 0) return;
-  let users: Array<{ id: string }> = [];
+  let users: Array<{ id: string; timezone?: string }> = [];
   try {
-    users = db.prepare('SELECT id FROM users WHERE proactive_enabled != 0').all() as Array<{ id: string }>;
+    users = db.prepare('SELECT id, timezone FROM users WHERE proactive_enabled != 0').all() as Array<{ id: string; timezone?: string }>;
   } catch {
-    users = db.prepare('SELECT id FROM users').all() as Array<{ id: string }>;
+    users = db.prepare('SELECT id, timezone FROM users').all() as Array<{ id: string; timezone?: string }>;
   }
   for (const user of users) {
     try {
       if (hour === 8) {
-        const alreadySent = db.prepare(
-          "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'daily_briefing' AND sent_at >= ?"
-        ).get(user.id, new Date(todayStr + 'T00:00:00Z').getTime()) as { id: number } | undefined;
-        if (!alreadySent) await dailyBriefing(user.id);
+        // Check if it's morning (7-9am) in the user's timezone
+        const userTimezone = user.timezone || 'Asia/Kolkata';
+        const hourInUserTz = parseInt(
+          new Date().toLocaleString('en-US', { timeZone: userTimezone, hour: 'numeric', hour12: false }),
+          10
+        );
+        if (hourInUserTz < 7 || hourInUserTz > 9) {
+          logger.debug({ userId: user.id, userTimezone, hourInUserTz }, 'Skipping briefing — not morning for user');
+        } else {
+          const alreadySent = db.prepare(
+            "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'daily_briefing' AND sent_at >= ?"
+          ).get(user.id, new Date(todayStr + 'T00:00:00Z').getTime()) as { id: number } | undefined;
+          if (!alreadySent) await dailyBriefing(user.id);
+        }
       } else if (hour === 10) {
         const alreadySent = db.prepare(
           "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'overdue_alert' AND sent_at >= ?"
