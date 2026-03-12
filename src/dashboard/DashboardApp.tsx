@@ -13,6 +13,7 @@ import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentDesignWizard } from '@/components/AgentDesignWizard';
 import { CommandPalette } from '@/components/CommandPalette';
+import { GlobalSearch } from '@/components/GlobalSearch';
 import { QuickActionsWidget } from '@/components/QuickActionsWidget';
 import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPrompt';
 import { DashboardTour } from '@/components/DashboardTour';
@@ -202,6 +203,7 @@ export function DashboardApp() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [voiceListening, setVoiceListening] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
@@ -294,12 +296,18 @@ export function DashboardApp() {
     }
   }, []);
 
-  // Cmd+K / Ctrl+K global shortcut opens command palette
+  // Cmd+K / Ctrl+K — command palette; Ctrl+Shift+K — global data search
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setCommandPaletteOpen(true);
+        if (e.shiftKey) {
+          // Ctrl+Shift+K → standalone data search modal
+          setSearchOpen(prev => !prev);
+        } else {
+          // Ctrl+K → command palette (includes Search Data tab)
+          setCommandPaletteOpen(true);
+        }
       }
     };
     window.addEventListener('keydown', handler);
@@ -1056,6 +1064,9 @@ export function DashboardApp() {
 
       {/* Command Palette (Ctrl+K) */}
       <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+
+      {/* Global Data Search (Ctrl+Shift+K) */}
+      {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} />}
 
       {/* First-use guided tour */}
       <DashboardTour

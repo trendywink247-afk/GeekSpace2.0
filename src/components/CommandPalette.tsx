@@ -25,8 +25,11 @@ import {
   Command,
   Sparkles,
   Clock,
+  Target,
+  Brain,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import type { SearchResult } from '@/components/GlobalSearch';
 
 interface CommandItem {
   id: string;
@@ -43,14 +46,35 @@ interface CommandPaletteProps {
   onClose: () => void;
 }
 
+type PaletteTab = 'commands' | 'search';
+
+const DATA_TYPE_ICONS: Record<string, React.ReactNode> = {
+  note:     <FileText className="w-4 h-4 text-[#00F0FF]" />,
+  reminder: <Bell     className="w-4 h-4 text-[#FFB800]" />,
+  habit:    <Target   className="w-4 h-4 text-[#00FF88]" />,
+  memory:   <Brain    className="w-4 h-4 text-[#BF5FFF]" />,
+};
+
+const DATA_TYPE_LABELS: Record<string, string> = {
+  note:     'Note',
+  reminder: 'Reminder',
+  habit:    'Habit',
+  memory:   'Memory',
+};
+
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
   const { logout } = useAuthStore();
-  const [search, setSearch] = useState('');
+  const [tab, setTab]           = useState<PaletteTab>('commands');
+  const [search, setSearch]     = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const inputRef  = useRef<HTMLInputElement>(null);
+  const listRef   = useRef<HTMLDivElement>(null);
+  const itemRefs  = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // --- Data search state ---
+  const [dataResults, setDataResults] = useState<SearchResult[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
 
   const commands: CommandItem[] = [
     // Navigation
@@ -279,6 +303,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     if (isOpen) {
       setSearch('');
       setSelectedIndex(0);
+      setDataResults([]);
+      setTab('commands');
       inputRef.current?.focus();
     }
   }, [isOpen]);
@@ -287,23 +313,73 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     setSelectedIndex(0);
   }, [search]);
 
+  // Debounced data search when on 'search' tab
+  useEffect(() => {
+    if (tab !== 'search' || search.trim().length < 2) {
+      if (tab === 'search') setDataResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setDataLoading(true);
+      try {
+        const token = localStorage.getItem('gs_token') ?? '';
+        const res   = await fetch(`/api/search?q=${encodeURIComponent(search.trim())}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { results: SearchResult[] };
+        setDataResults(data.results ?? []);
+      } catch {
+        setDataResults([]);
+      } finally {
+        setDataLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search, tab]);
+
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-[20vh]"
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-[15vh]"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div className="w-full max-w-2xl mx-4 glass-card-v2 border border-[#00F0FF]/20 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
-        {/* Header */}
+        {/* Tab strip */}
+        <div className="flex border-b border-[#00F0FF]/10">
+          <button
+            onClick={() => { setTab('commands'); setSearch(''); }}
+            className={`flex-1 py-2.5 text-xs font-medium tracking-wide transition-colors ${
+              tab === 'commands'
+                ? 'text-[#00F0FF] border-b-2 border-[#00F0FF]'
+                : 'text-[#6B7280] hover:text-[#E8E8F0]'
+            }`}
+          >
+            Commands
+          </button>
+          <button
+            onClick={() => { setTab('search'); setSearch(''); setDataResults([]); }}
+            className={`flex-1 py-2.5 text-xs font-medium tracking-wide transition-colors flex items-center justify-center gap-1.5 ${
+              tab === 'search'
+                ? 'text-[#00F0FF] border-b-2 border-[#00F0FF]'
+                : 'text-[#6B7280] hover:text-[#E8E8F0]'
+            }`}
+          >
+            <Search className="w-3 h-3" />
+            Search Data
+          </button>
+        </div>
+
+        {/* Header input */}
         <div className="flex items-center gap-3 p-4 border-b border-[#00F0FF]/10">
           <Search className="w-5 h-5 text-[#6B7280]" />
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search commands..."
+            placeholder={tab === 'commands' ? 'Search commands...' : 'Search notes, reminders, habits, memories...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -314,82 +390,149 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           </kbd>
         </div>
 
-        {/* Commands List */}
-        <div ref={listRef} className="max-h-[60vh] overflow-y-auto p-2">
-          {flatCommands.length === 0 ? (
-            <div className="p-8 text-center text-[#6B7280]">
-              <Command className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No commands found</p>
-              <p className="text-sm mt-1">Try a different search</p>
-            </div>
-          ) : (
-            Object.entries(groupedCommands).map(([category, items]) => (
-              <div key={category} className="mb-2">
-                <div className="px-3 py-2 text-xs font-medium text-[#6B7280] uppercase tracking-wider">
-                  {category}
-                </div>
-                {items.map((cmd) => {
-                  const globalIdx = flatCommands.findIndex((c) => c.id === cmd.id);
-                  const isSelected = globalIdx === selectedIndex;
-                  
-                  return (
-                    <button
-                      key={cmd.id}
-                      ref={(el) => { itemRefs.current[globalIdx] = el; }}
-                      onClick={cmd.action}
-                      onMouseEnter={() => setSelectedIndex(globalIdx)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
-                        isSelected
-                          ? 'bg-[#00F0FF]/20 border border-[#00F0FF]/30'
-                          : 'hover:bg-[#00F0FF]/10'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        isSelected ? 'bg-[#00F0FF]/30 text-[#00F0FF]' : 'bg-[#06060B] text-[#6B7280]'
-                      }`}>
-                        {cmd.icon}
-                      </div>
-                      <div className="flex-1 text-left">
-                        <div className={`font-medium ${isSelected ? 'text-[#E8E8F0]' : 'text-[#6B7280]'}`}>
-                          {cmd.title}
-                        </div>
-                        {cmd.subtitle && (
-                          <div className="text-xs text-[#6B7280]/70">{cmd.subtitle}</div>
-                        )}
-                      </div>
-                      {cmd.shortcut && (
-                        <div className="flex items-center gap-1">
-                          {cmd.shortcut.split(' ').map((key, i) => (
-                            <kbd key={i} className="px-1.5 py-0.5 text-xs bg-[#06060B] rounded text-[#6B7280]">
-                              {key}
-                            </kbd>
-                          ))}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+        {/* Commands tab body */}
+        {tab === 'commands' && (
+          <div ref={listRef} className="max-h-[55vh] overflow-y-auto p-2">
+            {flatCommands.length === 0 ? (
+              <div className="p-8 text-center text-[#6B7280]">
+                <Command className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>No commands found</p>
+                <p className="text-sm mt-1">Try a different search</p>
               </div>
-            ))
-          )}
-        </div>
+            ) : (
+              Object.entries(groupedCommands).map(([category, items]) => (
+                <div key={category} className="mb-2">
+                  <div className="px-3 py-2 text-xs font-medium text-[#6B7280] uppercase tracking-wider">
+                    {category}
+                  </div>
+                  {items.map((cmd) => {
+                    const globalIdx = flatCommands.findIndex((c) => c.id === cmd.id);
+                    const isSelected = globalIdx === selectedIndex;
+
+                    return (
+                      <button
+                        key={cmd.id}
+                        ref={(el) => { itemRefs.current[globalIdx] = el; }}
+                        onClick={cmd.action}
+                        onMouseEnter={() => setSelectedIndex(globalIdx)}
+                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+                          isSelected
+                            ? 'bg-[#00F0FF]/20 border border-[#00F0FF]/30'
+                            : 'hover:bg-[#00F0FF]/10'
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          isSelected ? 'bg-[#00F0FF]/30 text-[#00F0FF]' : 'bg-[#06060B] text-[#6B7280]'
+                        }`}>
+                          {cmd.icon}
+                        </div>
+                        <div className="flex-1 text-left">
+                          <div className={`font-medium ${isSelected ? 'text-[#E8E8F0]' : 'text-[#6B7280]'}`}>
+                            {cmd.title}
+                          </div>
+                          {cmd.subtitle && (
+                            <div className="text-xs text-[#6B7280]/70">{cmd.subtitle}</div>
+                          )}
+                        </div>
+                        {cmd.shortcut && (
+                          <div className="flex items-center gap-1">
+                            {cmd.shortcut.split(' ').map((key, i) => (
+                              <kbd key={i} className="px-1.5 py-0.5 text-xs bg-[#06060B] rounded text-[#6B7280]">
+                                {key}
+                              </kbd>
+                            ))}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* Search Data tab body */}
+        {tab === 'search' && (
+          <div className="max-h-[55vh] overflow-y-auto">
+            {dataLoading && (
+              <div className="flex justify-center py-6">
+                <div className="w-5 h-5 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            {!dataLoading && dataResults.length > 0 && (
+              <div className="divide-y divide-[#1A1A2E] p-2">
+                {dataResults.map(r => (
+                  <div
+                    key={`${r.type}-${r.id}`}
+                    className="flex items-center gap-3 px-3 py-3 hover:bg-[#00F0FF]/10 rounded-xl cursor-pointer transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#06060B] flex items-center justify-center flex-shrink-0">
+                      {DATA_TYPE_ICONS[r.type] ?? <Search className="w-4 h-4 text-[#6B7280]" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#E8E8F0] truncate font-medium">{r.title}</p>
+                      {r.snippet && r.snippet !== r.title && (
+                        <p className="text-xs text-[#6B7280] truncate mt-0.5">
+                          {r.snippet.slice(0, 80)}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-[#4B5563] uppercase tracking-wide flex-shrink-0 border border-[#2A2A3A] px-1.5 py-0.5 rounded">
+                      {DATA_TYPE_LABELS[r.type] ?? r.type}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!dataLoading && search.trim().length >= 2 && dataResults.length === 0 && (
+              <div className="p-8 text-center text-[#6B7280]">
+                <Search className="w-10 h-10 mx-auto mb-3 opacity-20" />
+                <p>No results for &ldquo;{search}&rdquo;</p>
+              </div>
+            )}
+            {!dataLoading && search.trim().length < 2 && (
+              <div className="p-6 text-center">
+                <p className="text-sm text-[#4B5563]">Type 2+ characters to search across all your data</p>
+                <div className="flex justify-center gap-4 mt-4 text-xs text-[#4B5563]">
+                  <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-[#00F0FF]" /> Notes</span>
+                  <span className="flex items-center gap-1"><Bell className="w-3 h-3 text-[#FFB800]" /> Reminders</span>
+                  <span className="flex items-center gap-1"><Target className="w-3 h-3 text-[#00FF88]" /> Habits</span>
+                  <span className="flex items-center gap-1"><Brain className="w-3 h-3 text-[#BF5FFF]" /> Memories</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-[#00F0FF]/10 text-xs text-[#6B7280]">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-[#06060B] rounded">↑↓</kbd>
-              to navigate
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-[#06060B] rounded">↵</kbd>
-              to select
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 bg-[#06060B] rounded">ESC</kbd>
-            to close
-          </div>
+          {tab === 'commands' ? (
+            <>
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-[#06060B] rounded">↑↓</kbd>
+                  to navigate
+                </span>
+                <span className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-[#06060B] rounded">↵</kbd>
+                  to select
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 bg-[#06060B] rounded">ESC</kbd>
+                to close
+              </div>
+            </>
+          ) : (
+            <div className="flex w-full justify-between">
+              <span>Live search across all data sources</span>
+              <div className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 bg-[#06060B] rounded">ESC</kbd>
+                to close
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
