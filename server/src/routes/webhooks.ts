@@ -426,19 +426,27 @@ async function handleTelegramCommand(
     case '/help': {
       await sendTelegramMessage(chatId,
         `Agentin Bot Commands:\n\n` +
+        `ACCOUNT\n` +
         `/start — Get started\n` +
         `/link — Link your Agentin account\n` +
         `/unlink — Unlink your account\n` +
         `/credits — Check credit balance\n` +
-        `/model — View and switch AI models\n` +
         `/status — Connection status\n` +
-        `/tasks — View recent tasks\n` +
+        `/model — View and switch AI models\n\n` +
+        `PRODUCTIVITY\n` +
+        `/habits — View and track daily habits\n` +
+        `/study — Study dashboard (flashcards + focus)\n` +
+        `/notes — View recent notes\n` +
+        `/remind <text> — Set a quick reminder\n\n` +
+        `SETTINGS\n` +
+        `/proactive — Toggle proactive AI messages\n` +
         `/agents — List your agents\n` +
+        `/tasks — View recent tasks\n` +
         `/cancel — Cancel a queued task\n` +
-        `/remind <text> — Set a quick reminder\n` +
         `/deploy — Deploy your portfolio\n` +
         `/help — Show this message\n\n` +
-        `Or just type a message to chat with your AI agent!`
+        `Or just type anything to chat with your AI agent!\n` +
+        `Try: "morning briefing", "take note: ...", "make flashcards for Python"`
       );
       break;
     }
@@ -623,6 +631,99 @@ async function handleTelegramCommand(
         await sendTelegramMessage(chatId, `✅ Switched to ${match.display_name}.\n${match.summary}`);
       } else {
         await sendTelegramMessage(chatId, `Model not found: "${cmd.args.trim()}"\nUse /model to see available models.`);
+      }
+      break;
+    }
+
+    case '/proactive': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+      const toggle = cmd.args.trim().toLowerCase();
+      if (toggle === 'off') {
+        db.prepare("UPDATE users SET proactive_enabled = 0 WHERE id = ?").run(link.user_id);
+        await sendTelegramMessage(chatId, 'Proactive messages turned OFF. You can turn them back on with /proactive on');
+      } else if (toggle === 'on') {
+        db.prepare("UPDATE users SET proactive_enabled = 1 WHERE id = ?").run(link.user_id);
+        await sendTelegramMessage(chatId, 'Proactive messages turned ON. You\'ll get daily briefings at 8am and weekly reports on Sundays.');
+      } else {
+        const user = db.prepare('SELECT proactive_enabled FROM users WHERE id = ?').get(link.user_id) as { proactive_enabled: number } | undefined;
+        const status = user?.proactive_enabled !== 0 ? 'ON' : 'OFF';
+        await sendTelegramMessage(chatId,
+          `Proactive messages: ${status}\n\n` +
+          `Scheduled:\n• Daily briefing: 8am IST\n• Overdue alerts: 10am IST\n• Weekly report: Sunday 9am IST\n\n` +
+          `/proactive on — Enable\n/proactive off — Disable`
+        );
+      }
+      break;
+    }
+
+    case '/study': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first.'); return; }
+      // Show study stats: flashcard decks, focus sessions, recent notes
+      const notesCount = (db.prepare("SELECT COUNT(*) as n FROM notes WHERE user_id = ? AND archived = 0 AND tags LIKE '%flashcard%'").get(link.user_id) as { n: number }).n;
+      const focusCount = (db.prepare("SELECT COUNT(*) as n FROM focus_sessions WHERE user_id = ? AND started_at > ?").get(link.user_id, Date.now() - 7 * 24 * 60 * 60 * 1000) as { n: number }).n;
+      const focusMin = (db.prepare("SELECT COALESCE(SUM(duration_min),0) as t FROM focus_sessions WHERE user_id = ? AND started_at > ?").get(link.user_id, Date.now() - 7 * 24 * 60 * 60 * 1000) as { t: number }).t;
+      const recentFlashcards = db.prepare("SELECT title FROM notes WHERE user_id = ? AND archived = 0 AND tags LIKE '%flashcard%' ORDER BY updated_at DESC LIMIT 5").all(link.user_id) as Array<{ title: string }>;
+      await sendTelegramMessage(chatId,
+        `Your Study Dashboard (7 days):\n\n` +
+        `Flashcard decks: ${notesCount}\nFocus sessions: ${focusCount} (${focusMin} min total)\n\n` +
+        (recentFlashcards.length ? `Recent decks:\n${recentFlashcards.map(f => `• ${f.title}`).join('\n')}\n\n` : '') +
+        `Commands:\n• "make flashcards for [topic]" — Create a deck\n• "start focus: [goal]" — 25-min Pomodoro\n• "study cards for [topic]" — Create quiz cards`
+      );
+      break;
+    }
+
+    case '/habits': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first.'); return; }
+      const habits = db.prepare(
+        "SELECT name, current_streak, longest_streak FROM habits WHERE user_id = ? ORDER BY current_streak DESC"
+      ).all(link.user_id) as Array<{ name: string; current_streak: number; longest_streak: number }>;
+      // Check which habits were logged today
+      const today = new Date().toISOString().slice(0, 10);
+      const loggedToday = db.prepare(
+        "SELECT h.name FROM habit_logs hl JOIN habits h ON hl.habit_id = h.id WHERE hl.user_id = ? AND date(hl.logged_at/1000, 'unixepoch') = ?"
+      ).all(link.user_id, today) as Array<{ name: string }>;
+      const loggedNames = new Set(loggedToday.map(l => l.name));
+      if (habits.length === 0) {
+        await sendTelegramMessage(chatId, 'You have no habits yet. Say "track my morning workout" to start a habit!');
+      } else {
+        const lines = habits.map(h => {
+          const done = loggedNames.has(h.name) ? '✅' : '⬜';
+          const streak = h.current_streak > 0 ? ` 🔥${h.current_streak}d` : '';
+          return `${done} ${h.name}${streak}`;
+        });
+        await sendTelegramMessage(chatId,
+          `Your Habits (${today}):\n\n${lines.join('\n')}\n\n` +
+          `To log a habit: "I did my [habit name]"\nTo add new: "track my [habit name]"`
+        );
+      }
+      break;
+    }
+
+    case '/notes': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first.'); return; }
+      const notes = db.prepare(
+        "SELECT title, created_at FROM notes WHERE user_id = ? AND archived = 0 ORDER BY updated_at DESC LIMIT 10"
+      ).all(link.user_id) as Array<{ title: string; created_at: number }>;
+      if (notes.length === 0) {
+        await sendTelegramMessage(chatId, 'No notes yet. Say "take note: [content]" to save one!');
+      } else {
+        const list = notes.map((n, i) => `${i + 1}. ${n.title}`).join('\n');
+        await sendTelegramMessage(chatId,
+          `Your recent notes (${notes.length}):\n\n${list}\n\n` +
+          `To search: "find my notes about [topic]"\nTo add: "take note: [content]"`
+        );
       }
       break;
     }

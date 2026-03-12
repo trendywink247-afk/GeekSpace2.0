@@ -75,7 +75,7 @@ export function isSearchIntent(message: string): boolean {
   // NEVER search: pure math expressions
   if (/^[\d\s+\-*/().^%=,]+$/.test(lower)) return false;
   // NEVER search: word math like "15 times 7" or "what is 2+2"
-  if (/^(what\s+is\s+)?[\d]+\s*([\+\-\*\/x×÷]|plus|minus|times|divided by|mod)\s*[\d]+[\s?]*$/i.test(lower)) return false;
+  if (/^(what\s+is\s+)?[\d]+\s*([+\-*/x×÷]|plus|minus|times|divided by|mod)\s*[\d]+[\s?]*$/i.test(lower)) return false;
   // NEVER search: ultra-short with no question mark
   if (lower.split(/\s+/).length <= 2 && !lower.includes('?')) return false;
   // NEVER search: simple greetings and interjections
