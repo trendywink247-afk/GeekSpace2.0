@@ -83,7 +83,7 @@ export function getCachedComponents(): ComponentStatus {
 // ── Health alert tracking ───────────────────────────────────
 // Track previous component states so we can alert on transitions.
 let prevComponents: ComponentStatus = {};
-let alertSentAt: Record<string, number> = {}; // prevent re-alerting within 1h
+const alertSentAt: Record<string, number> = {}; // prevent re-alerting within 1h
 
 async function sendHealthAlert(service: string, prevStatus: string, newStatus: string): Promise<void> {
   try {
