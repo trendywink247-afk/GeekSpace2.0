@@ -243,6 +243,11 @@ const setBudgetSchema = z.object({
   period: z.enum(['daily', 'weekly', 'monthly']).default('monthly'),
 });
 
+// Context threading — FTS5 search over conversation history + memories
+const searchMemorySchema = z.object({
+  query: z.string().min(1).max(500),
+});
+
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -287,6 +292,8 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   track_expense: trackExpenseSchema,
   list_expenses: listExpensesSchema,
   set_budget: setBudgetSchema,
+  // Context threading
+  search_memory: searchMemorySchema,
 };
 
 // ── Types ───────────────────────────────────────────────────

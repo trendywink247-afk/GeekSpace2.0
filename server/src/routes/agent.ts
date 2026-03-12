@@ -125,7 +125,12 @@ message: your message text
 tool: delete_reminder
 deleteAll: true
 <<<END>>>
-Use delete_reminder with deleteAll:true to wipe all pending reminders, or reminderId:"<id>" to delete one specific reminder.`;
+Use delete_reminder with deleteAll:true to wipe all pending reminders, or reminderId:"<id>" to delete one specific reminder.
+<<<ACTION>>>
+tool: search_memory
+query: what did I say about my project last week
+<<<END>>>
+Use search_memory when the user asks "what did I say about X", "find my note about Y", "do you remember when I mentioned Z", or any question about past conversations or saved memories.`;
 
   return `LANGUAGE RULE: Detect the language the user writes in. ALWAYS reply in that exact language — no exceptions. Hindi → Hindi. Telugu → Telugu. Tamil → Tamil. English → English. Never switch languages unless the user does first.
 

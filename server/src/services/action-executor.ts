@@ -1490,6 +1490,60 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         };
       }
 
+      // ── search_memory ─────────────────────────────────────────
+      case 'search_memory': {
+        const query = (params.query as string)?.trim();
+        if (!query) return { tool, success: false, message: 'Please provide a search query.' };
+
+        // FTS5 full-text search over conversation history
+        let convResults: Array<{ content: string; created_at: string }> = [];
+        try {
+          convResults = db.prepare(`
+            SELECT content, created_at FROM conversation_fts
+            WHERE conversation_fts MATCH ? AND user_id = ?
+            ORDER BY rank LIMIT 5
+          `).all(query, userId) as Array<{ content: string; created_at: string }>;
+        } catch {
+          // FTS5 not available or query syntax error — fall through to memories-only
+        }
+
+        // Also search user_memories (key + value LIKE)
+        const memResults = db.prepare(`
+          SELECT key, value FROM user_memories
+          WHERE user_id = ? AND (lower(key) LIKE ? OR lower(value) LIKE ?)
+          LIMIT 5
+        `).all(userId, `%${query.toLowerCase()}%`, `%${query.toLowerCase()}%`) as Array<{ key: string; value: string }>;
+
+        if (convResults.length === 0 && memResults.length === 0) {
+          return {
+            tool, success: true,
+            message: `I couldn't find anything about "${query}" in our past conversations or your memories.`,
+          };
+        }
+
+        const parts: string[] = [];
+        if (convResults.length > 0) {
+          const convText = convResults.map(r => {
+            const rawDate = r.created_at;
+            const date = rawDate
+              ? new Date(typeof rawDate === 'number' ? rawDate : rawDate).toLocaleDateString('en-IN')
+              : '';
+            return `[${date}] ${String(r.content).slice(0, 200)}`;
+          }).join('\n');
+          parts.push(`**From past conversations:**\n${convText}`);
+        }
+        if (memResults.length > 0) {
+          const memText = memResults.map(r => `• ${r.key}: ${r.value}`).join('\n');
+          parts.push(`**From memories:**\n${memText}`);
+        }
+
+        return {
+          tool,
+          success: true,
+          message: `Found ${convResults.length + memResults.length} result(s) for "${query}":\n\n${parts.join('\n\n')}`,
+        };
+      }
+
       // ── Unknown tool (should not happen after parser validation)
       default:
         return {

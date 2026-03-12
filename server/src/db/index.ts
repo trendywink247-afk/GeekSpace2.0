@@ -1583,6 +1583,34 @@ try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_user ON agent_memory(
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_category ON agent_memory(user_id, category)`); } catch { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_conversation_log_user ON conversation_log(user_id, created_at)`); } catch { /* already exists */ }
 
+// ── Context Threading: FTS5 full-text search over conversation history ────────
+try {
+  db.exec(`
+    CREATE VIRTUAL TABLE IF NOT EXISTS conversation_fts USING fts5(
+      content,
+      user_id UNINDEXED,
+      created_at UNINDEXED,
+      content='conversation_log',
+      content_rowid='rowid'
+    )
+  `);
+  // Populate existing rows (idempotent: CREATE IF NOT EXISTS prevents double-table)
+  db.exec(`
+    INSERT INTO conversation_fts(rowid, content, user_id, created_at)
+    SELECT rowid, content, user_id, created_at FROM conversation_log
+  `);
+} catch { /* FTS5 already exists or SQLite build lacks FTS5 — non-fatal */ }
+
+// Keep FTS index in sync with new conversation_log inserts
+try {
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS conv_fts_insert AFTER INSERT ON conversation_log BEGIN
+      INSERT INTO conversation_fts(rowid, content, user_id, created_at)
+      VALUES (new.rowid, new.content, new.user_id, new.created_at);
+    END
+  `);
+} catch { /* already exists */ }
+
 // ── Phase 68.1: Suggestion status history ────────────────────────────────────
 try { db.exec(`
   CREATE TABLE IF NOT EXISTS suggestion_events (
