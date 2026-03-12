@@ -81,9 +81,17 @@ export function trimConversationHistory(
   let total = 0;
   const trimmed: Array<{ role: string; content: string }> = [];
   for (let i = messages.length - 1; i >= 0; i--) {
-    total += messages[i].content.length;
-    if (total > maxChars) break;
-    trimmed.unshift(messages[i]);
+    const msg = messages[i];
+    if (total + msg.content.length > maxChars) {
+      // Always include the most recent message even if it needs truncation —
+      // dropping it entirely would strip all context from the follow-up.
+      if (trimmed.length === 0 && total === 0) {
+        trimmed.unshift({ ...msg, content: msg.content.slice(0, maxChars) + '\n[...truncated]' });
+      }
+      break;
+    }
+    total += msg.content.length;
+    trimmed.unshift(msg);
   }
   return trimmed;
 }

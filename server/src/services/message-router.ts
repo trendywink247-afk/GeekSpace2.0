@@ -421,7 +421,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     .run(now, userId, msg.channel);
 
   // Capture conversation history BEFORE logging current message (prevents duplication in LLM context)
-  const history = getConversationContext(userId);
+  const history = getConversationContext(userId, 16000);
 
   // 4. Log user message + extract memories
   logConversation(userId, 'user', msg.text, requestId);
