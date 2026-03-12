@@ -105,6 +105,9 @@ Available tools:
 - run_workflow: Run an automation by ID. Params: {"workflowId": <number>}. Use when user says "run automation #N", "execute workflow", "trigger workflow N".
 - generate_video_story: Write a video story script. Params: {"topic": "<topic>", "style": "cinematic|documentary|comedy|dramatic", "duration_sec": 60}. Use when user says "write a video script", "video story for", "create video content".
 - summarize_url: Summarize a web page. Params: {"url": "<URL>", "format": "bullets|paragraph|tldr"}. Use when user says "summarize this URL", "what's on this page", "TL;DR this link".
+- track_expense: Log an expense. Params: {"amount": <number>, "category": "food|transport|shopping|entertainment|health|utilities|rent|education|travel|other", "description": "<what was bought>", "currency": "USD"}. Use when user says "I spent X on Y", "log $X for food", "add expense: X", "paid X for Y".
+- list_expenses: List expenses. Params: {"period": "today|week|month|all", "category": "<optional filter>"}. Use when user says "show my expenses", "how much did I spend", "spending report", "what have I bought".
+- set_budget: Set a spending budget. Params: {"category": "food|total|...", "amount": <number>, "period": "daily|weekly|monthly"}. Use when user says "set budget", "spending limit", "my food budget is X".
 
 Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
 
@@ -118,9 +121,12 @@ function hasToolTrigger(message: string): boolean {
     /\b(save\s+(a\s+)?note|take\s+note|note\s+(this|it)|write\s+(this|it)\s+down|remember\s+this|jot\s+(this|it)|save\s+this)\b/i.test(lower) ||
     /\bsearch\s+(my\s+)?notes?\b/i.test(lower) ||
     /\bfind\s+(my\s+)?note\b/i.test(lower) ||
-    // Habits
-    /\b(track|log|mark|did|completed?)\s+(my\s+)?habit\b/i.test(lower) ||
-    /\bi\s+(did|completed?|finished?|tracked?)\s+\w/i.test(lower) ||
+    // Habits — catch "log my workout", "track my running", "did my yoga", "morning workout done"
+    /\b(track|log|mark|did|done|completed?|finished?)\s+(my\s+)?\w+\s+(habit|workout|exercise|run|yoga|meditation|reading|study|training)\b/i.test(lower) ||
+    /\b(track|log|mark|did|done|completed?)\s+(my\s+)?habit\b/i.test(lower) ||
+    /\bi\s+(did|completed?|finished?|tracked?)\s+(my\s+)?\w/i.test(lower) ||
+    /\b(morning|evening|daily)\s+(workout|run|exercise|yoga|meditation|routine)\s+(done|completed?|logged?|tracked?)\b/i.test(lower) ||
+    /\b(log|track)\s+(morning|evening|daily|my)\s+\w+(ing)?\b/i.test(lower) ||
     // Focus
     /\b(start\s+focus|pomodoro|focus\s+mode|focus\s+(session|timer)|i\s+need\s+to\s+focus)\b/i.test(lower) ||
     // Flashcards
@@ -157,7 +163,14 @@ function hasToolTrigger(message: string): boolean {
     // Video story
     /\b(write|create|generate)\s+(a\s+)?(video\s+story|video\s+script)\b/i.test(lower) ||
     // Summarize URL
-    /\b(summarize|tldr|tl;dr|summarise)\s+(this\s+)?(url|link|page|article|website)\b/i.test(lower)
+    /\b(summarize|tldr|tl;dr|summarise)\s+(this\s+)?(url|link|page|article|website)\b/i.test(lower) ||
+    // Expenses
+    /\b(track|log|add|record|spent?|paid?)\s+(an?\s+)?(expense|purchase|payment)\b/i.test(lower) ||
+    /\bi\s+(spent|paid|bought|purchased)\s+[$₹€£]?\d/i.test(lower) ||
+    /\b[$₹€£]\d+(\.\d+)?\s+(on|for)\s+\w/i.test(lower) ||
+    /\bshow\s+(my\s+)?(spending|expenses|purchases)\b/i.test(lower) ||
+    /\b(how\s+much\s+(have\s+i\s+)?spent|my\s+expenses|expense\s+(report|summary|tracker))\b/i.test(lower) ||
+    /\b(set\s+)?(monthly|weekly|daily)?\s*(budget|spending\s+limit)\b/i.test(lower)
   );
 }
 

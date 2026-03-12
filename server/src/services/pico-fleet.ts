@@ -1213,8 +1213,21 @@ async function executeTask(task: PicoTask): Promise<void> {
         ).get(task.user_id);
         const channel = hasChannel ? 'telegram' : 'push';
         const scheduledFor = dueAt ? new Date(dueAt).getTime() : Date.now();
-        db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, created_by, pico_task_id, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-          .run(reminderId, task.user_id, text, dueAt, channel, 'general', 'pico-fleet', task.id, scheduledFor);
+
+        // Detect recurrence patterns (Smart Reminders V2)
+        let picoRecurrence: string | null = null;
+        const lowerReminderText = text.toLowerCase();
+        if (/\b(every\s+day|daily|har\s+roz|roz)\b/i.test(lowerReminderText)) {
+          picoRecurrence = 'daily';
+        } else if (/\b(every\s+week|weekly|once\s+a\s+week)\b/i.test(lowerReminderText) ||
+                   /\bevery\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(lowerReminderText)) {
+          picoRecurrence = 'weekly';
+        } else if (/\b(every\s+month|monthly|once\s+a\s+month)\b/i.test(lowerReminderText)) {
+          picoRecurrence = 'monthly';
+        }
+
+        db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurrence, created_by, pico_task_id, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          .run(reminderId, task.user_id, text, dueAt, channel, 'general', picoRecurrence, 'pico-fleet', task.id, scheduledFor);
         const timeNote = dueAt ? ` (due ${new Date(dueAt).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })})` : '';
         output = `Reminder created: ${text}${timeNote}`;
 

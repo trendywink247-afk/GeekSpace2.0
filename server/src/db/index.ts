@@ -1862,6 +1862,27 @@ try { db.exec(`
     urgent_bypass INTEGER DEFAULT 1,
     batch_interval_min INTEGER DEFAULT 30
   );
+
+  CREATE TABLE IF NOT EXISTS expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    amount REAL NOT NULL,
+    category TEXT NOT NULL DEFAULT 'other',
+    description TEXT NOT NULL DEFAULT '',
+    date TEXT NOT NULL DEFAULT (date('now')),
+    currency TEXT NOT NULL DEFAULT 'USD',
+    created_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000)
+  );
+  CREATE INDEX IF NOT EXISTS idx_expenses_user ON expenses(user_id, date DESC);
+
+  CREATE TABLE IF NOT EXISTS budget_limits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    category TEXT NOT NULL DEFAULT 'total',
+    amount REAL NOT NULL,
+    period TEXT NOT NULL DEFAULT 'monthly',
+    UNIQUE(user_id, category, period)
+  );
 `); } catch { /* tables already exist */ }
 
 // Task 2: preferred media model columns for agent_configs

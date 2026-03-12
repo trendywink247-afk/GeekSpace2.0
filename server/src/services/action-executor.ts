@@ -412,19 +412,33 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         }
         const category = (params.category as string) || 'general';
 
+        // ── Smart Reminders V2: detect recurrence patterns ─────────────────
+        // Detect "every day", "daily", "weekly", "every Monday", "every week"
+        let recurrence: string | null = null;
+        const lowerText = text.toLowerCase();
+        if (/\b(every\s+day|daily|cada\s+dia|roz|har\s+roz)\b/i.test(lowerText)) {
+          recurrence = 'daily';
+        } else if (/\b(every\s+week|weekly|once\s+a\s+week)\b/i.test(lowerText) ||
+                   /\bevery\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(lowerText)) {
+          recurrence = 'weekly';
+        } else if (/\b(every\s+month|monthly|once\s+a\s+month)\b/i.test(lowerText)) {
+          recurrence = 'monthly';
+        }
+
         db.prepare(
-          'INSERT INTO reminders (id, user_id, text, datetime, channel, category, created_by, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        ).run(reminderId, userId, text, dueAt, channel, category, 'agent', scheduledFor);
+          'INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurrence, created_by, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).run(reminderId, userId, text, dueAt, channel, category, recurrence, 'agent', scheduledFor);
 
         db.prepare(
           `INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`
         ).run(uuid(), userId, text);
 
+        const recurMsg = recurrence ? ` (repeats ${recurrence})` : '';
         return {
           tool,
           success: true,
-          message: `Reminder set: "${text}"${dueAt ? ` (${dueAt})` : ''}`,
-          data: { reminderId, text, datetime: dueAt, channel },
+          message: `Reminder set: "${text}"${dueAt ? ` at ${dueAt}` : ''}${recurMsg}`,
+          data: { reminderId, text, datetime: dueAt, channel, recurrence },
           receipt: RECEIPT_TEMPLATES.reminder(text, dueAt || 'soon'),
         };
       }
@@ -1276,6 +1290,117 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         } catch (err) {
           return { tool, success: false, message: `URL summarize failed: ${err instanceof Error ? err.message : String(err)}` };
         }
+      }
+
+      // ── Expense Tracker ──────────────────────────────────────────────────
+
+      case 'track_expense': {
+        const amount = params.amount as number;
+        const category = (params.category as string) || 'other';
+        const description = (params.description as string) || '';
+        const date = (params.date as string) || new Date().toISOString().slice(0, 10);
+        const currency = (params.currency as string) || 'USD';
+        db.prepare(`
+          INSERT INTO expenses (user_id, amount, category, description, date, currency)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(userId, amount, category, description, date, currency);
+
+        // Check budget if set
+        const budgetRow = db.prepare(`
+          SELECT amount FROM budget_limits
+          WHERE user_id = ? AND (category = ? OR category = 'total') AND period = 'monthly'
+          ORDER BY category DESC LIMIT 1
+        `).get(userId, category) as { amount: number } | undefined;
+
+        const monthStart = new Date();
+        monthStart.setDate(1);
+        const monthStr = monthStart.toISOString().slice(0, 10);
+        const spent = db.prepare(`
+          SELECT COALESCE(SUM(amount), 0) AS total FROM expenses
+          WHERE user_id = ? AND date >= ? AND (? = 'total' OR category = ?)
+        `).get(userId, monthStr, category, category) as { total: number };
+
+        let budgetMsg = '';
+        if (budgetRow && spent.total > budgetRow.amount * 0.9) {
+          const pct = Math.round((spent.total / budgetRow.amount) * 100);
+          budgetMsg = pct >= 100
+            ? ` ⚠️ Budget exceeded! ${currency}${spent.total.toFixed(2)} of ${currency}${budgetRow.amount.toFixed(2)}`
+            : ` (${pct}% of monthly budget used)`;
+        }
+
+        const emoji: Record<string, string> = {
+          food: '🍽️', transport: '🚗', shopping: '🛍️', entertainment: '🎬',
+          health: '💊', utilities: '💡', rent: '🏠', education: '📚',
+          travel: '✈️', other: '💳',
+        };
+        const icon = emoji[category] || '💳';
+        return {
+          tool, success: true,
+          message: `${icon} Logged ${currency}${amount.toFixed(2)} for ${category}: "${description}"${budgetMsg}`,
+        };
+      }
+
+      case 'list_expenses': {
+        const period = (params.period as string) || 'month';
+        const filterCat = params.category as string | undefined;
+
+        const now = new Date();
+        let dateFrom = '1970-01-01';
+        if (period === 'today') {
+          dateFrom = now.toISOString().slice(0, 10);
+        } else if (period === 'week') {
+          const d = new Date(now);
+          d.setDate(d.getDate() - 7);
+          dateFrom = d.toISOString().slice(0, 10);
+        } else if (period === 'month') {
+          dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+        }
+
+        const rows = db.prepare(`
+          SELECT amount, category, description, date, currency
+          FROM expenses
+          WHERE user_id = ? AND date >= ? ${filterCat ? 'AND category = ?' : ''}
+          ORDER BY date DESC, created_at DESC LIMIT 20
+        `).all(userId, dateFrom, ...(filterCat ? [filterCat] : [])) as Array<{
+          amount: number; category: string; description: string; date: string; currency: string;
+        }>;
+
+        if (rows.length === 0) {
+          return { tool, success: true, message: `No expenses found for ${period}.` };
+        }
+
+        const total = rows.reduce((s, r) => s + r.amount, 0);
+        const currency = rows[0].currency;
+        const byCat: Record<string, number> = {};
+        for (const r of rows) byCat[r.category] = (byCat[r.category] || 0) + r.amount;
+
+        const topRows = rows.slice(0, 10);
+        const lines = topRows.map(r => `• ${r.date} ${r.category}: ${currency}${r.amount.toFixed(2)}${r.description ? ` — ${r.description}` : ''}`);
+        const catSummary = Object.entries(byCat)
+          .sort((a, b) => b[1] - a[1])
+          .map(([cat, amt]) => `${cat}: ${currency}${amt.toFixed(2)}`)
+          .join(', ');
+
+        return {
+          tool, success: true,
+          message: `Expenses (${period}): ${currency}${total.toFixed(2)} total\n\nBy category: ${catSummary}\n\nRecent:\n${lines.join('\n')}`,
+          data: { total, currency, count: rows.length, byCategory: byCat },
+        };
+      }
+
+      case 'set_budget': {
+        const category = (params.category as string) || 'total';
+        const amount = params.amount as number;
+        const period = (params.period as string) || 'monthly';
+        db.prepare(`
+          INSERT INTO budget_limits (user_id, category, amount, period)
+          VALUES (?, ?, ?, ?)
+          ON CONFLICT(user_id, category, period) DO UPDATE SET amount = excluded.amount
+        `).run(userId, category, amount, period);
+        return {
+          tool, success: true,
+          message: `Budget set: ${amount} per ${period} for ${category}.`,
+        };
       }
 
       // ── Unknown tool (should not happen after parser validation)

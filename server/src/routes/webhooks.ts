@@ -437,7 +437,9 @@ async function handleTelegramCommand(
         `/habits — View and track daily habits\n` +
         `/study — Study dashboard (flashcards + focus)\n` +
         `/notes — View recent notes\n` +
-        `/remind <text> — Set a quick reminder\n\n` +
+        `/remind <text> — Set a quick reminder\n` +
+        `/expenses — Monthly expense report\n` +
+        `/search <keyword> — Search notes, reminders & habits\n\n` +
         `SETTINGS\n` +
         `/proactive — Toggle proactive AI messages\n` +
         `/agents — List your agents\n` +
@@ -723,6 +725,118 @@ async function handleTelegramCommand(
         await sendTelegramMessage(chatId,
           `Your recent notes (${notes.length}):\n\n${list}\n\n` +
           `To search: "find my notes about [topic]"\nTo add: "take note: [content]"`
+        );
+      }
+      break;
+    }
+
+    case '/expenses': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first.'); return; }
+
+      // Check if expenses table exists (may need migration)
+      const hasTable = db.prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='expenses'"
+      ).get() as { name: string } | undefined;
+
+      if (!hasTable) {
+        await sendTelegramMessage(chatId, 'Expense tracker is being set up. Try again in a moment!');
+        return;
+      }
+
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      const monthStr = monthStart.toISOString().slice(0, 10);
+
+      const rows = db.prepare(`
+        SELECT amount, category, description, date, currency
+        FROM expenses WHERE user_id = ? AND date >= ?
+        ORDER BY date DESC, created_at DESC LIMIT 15
+      `).all(link.user_id, monthStr) as Array<{ amount: number; category: string; description: string; date: string; currency: string }>;
+
+      if (rows.length === 0) {
+        await sendTelegramMessage(chatId,
+          'No expenses this month yet.\n\nTo log one: "I spent $25 on food" or "log $50 transport to office"'
+        );
+        return;
+      }
+
+      const total = rows.reduce((s, r) => s + r.amount, 0);
+      const currency = rows[0].currency;
+      const byCat: Record<string, number> = {};
+      for (const r of rows) byCat[r.category] = (byCat[r.category] || 0) + r.amount;
+
+      const catLines = Object.entries(byCat)
+        .sort((a, b) => b[1] - a[1])
+        .map(([cat, amt]) => `• ${cat}: ${currency}${amt.toFixed(2)}`)
+        .join('\n');
+
+      const recentLines = rows.slice(0, 5)
+        .map(r => `  ${r.date} ${r.category}: ${currency}${r.amount.toFixed(2)}${r.description ? ' — ' + r.description : ''}`)
+        .join('\n');
+
+      await sendTelegramMessage(chatId,
+        `Monthly Expenses (${monthStr.slice(0, 7)}):\n\nTotal: ${currency}${total.toFixed(2)}\n\nBy category:\n${catLines}\n\nRecent:\n${recentLines}\n\nTo add: "I spent $X on [category]"`
+      );
+      break;
+    }
+
+    case '/search': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first.'); return; }
+
+      const query = cmd.args.trim();
+      if (!query) {
+        await sendTelegramMessage(chatId, 'Search across notes, reminders, habits, and memories.\n\nUsage: /search [keyword]\nExample: /search python flashcards');
+        return;
+      }
+
+      const like = `%${query}%`;
+      const results: string[] = [];
+
+      // Search notes
+      const notes = db.prepare(`
+        SELECT title, content FROM notes WHERE user_id = ? AND archived = 0
+        AND (title LIKE ? OR content LIKE ?) LIMIT 3
+      `).all(link.user_id, like, like) as Array<{ title: string; content: string }>;
+      if (notes.length) {
+        results.push(`Notes (${notes.length}):\n${notes.map(n => `  • ${n.title}`).join('\n')}`);
+      }
+
+      // Search reminders
+      const reminders = db.prepare(`
+        SELECT text, datetime FROM reminders WHERE user_id = ? AND completed = 0
+        AND text LIKE ? LIMIT 3
+      `).all(link.user_id, like) as Array<{ text: string; datetime: string }>;
+      if (reminders.length) {
+        results.push(`Reminders (${reminders.length}):\n${reminders.map(r => `  • ${r.text}${r.datetime ? ' @ ' + r.datetime : ''}`).join('\n')}`);
+      }
+
+      // Search habits
+      const habits = db.prepare(`
+        SELECT name, current_streak FROM habits WHERE user_id = ? AND name LIKE ? LIMIT 3
+      `).all(link.user_id, like) as Array<{ name: string; current_streak: number }>;
+      if (habits.length) {
+        results.push(`Habits (${habits.length}):\n${habits.map(h => `  • ${h.name} (${h.current_streak}d streak)`).join('\n')}`);
+      }
+
+      // Search memories
+      const memories = db.prepare(`
+        SELECT content FROM user_memories WHERE user_id = ? AND content LIKE ? LIMIT 3
+      `).all(link.user_id, like) as Array<{ content: string }>;
+      if (memories.length) {
+        results.push(`Memories (${memories.length}):\n${memories.map(m => `  • ${m.content.slice(0, 80)}...`).join('\n')}`);
+      }
+
+      if (results.length === 0) {
+        await sendTelegramMessage(chatId, `No results found for "${query}". Try a different keyword.`);
+      } else {
+        await sendTelegramMessage(chatId,
+          `Search results for "${query}":\n\n${results.join('\n\n')}`
         );
       }
       break;

@@ -238,7 +238,10 @@ async function runProactiveChecks(): Promise<void> {
         const alreadySentWeekly = db.prepare(
           "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'weekly_report' AND sent_at >= ?"
         ).get(user.id, weekStart) as { id: number } | undefined;
-        if (!alreadySentWeekly) await weeklyReport(user.id);
+        if (!alreadySentWeekly) {
+          await weeklyReport(user.id);
+          await weeklyExpenseDigest(user.id);
+        }
       }
     } catch (err) {
       logger.warn({ err, userId: user.id }, 'Proactive check failed for user');
@@ -282,10 +285,54 @@ export async function weeklyReport(userId: string): Promise<string | null> {
   }
 }
 
+export async function weeklyExpenseDigest(userId: string): Promise<string | null> {
+  if (!isProactiveEnabled(userId)) return null;
+  try {
+    // Check if expenses table exists
+    const hasTable = db.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='expenses'"
+    ).get() as { name: string } | undefined;
+    if (!hasTable) return null;
+
+    const weekStart = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
+    const rows = db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) AS total, currency,
+             category, COUNT(*) AS cnt
+      FROM expenses WHERE user_id = ? AND date >= ?
+      GROUP BY category ORDER BY total DESC
+    `).all(userId, weekStart) as Array<{ total: number; currency: string; category: string; cnt: number }>;
+
+    if (!rows.length) return null;
+
+    const currency = rows[0].currency;
+    const grandTotal = rows.reduce((s, r) => s + r.total, 0);
+    const catLines = rows.slice(0, 5).map(r => `  ${r.category}: ${currency}${r.total.toFixed(2)} (${r.cnt}x)`).join('\n');
+
+    const message = [
+      `💰 Weekly Expense Digest`,
+      ``,
+      `Total spent: ${currency}${grandTotal.toFixed(2)}`,
+      ``,
+      `By category:`,
+      catLines,
+      ``,
+      `Type /expenses for full report.`,
+    ].join('\n');
+
+    await sendViaTelegram(userId, message);
+    recordProactiveMessage(userId, 'weekly_report', message);
+    logger.info({ userId, total: grandTotal }, 'Weekly expense digest sent');
+    return message;
+  } catch (err) {
+    logger.warn({ err, userId }, 'Weekly expense digest failed');
+    return null;
+  }
+}
+
 export function initProactiveEngine(): void {
   if (proactiveTimer) return;
   proactiveTimer = setInterval(() => {
     void runProactiveChecks();
   }, 60_000);
-  logger.info('Proactive engine started (daily_briefing@08:00 IST, overdue_alert@10:00 IST, idle_check_in@08:00 IST)');
+  logger.info('Proactive engine started (daily_briefing@08:00 IST, overdue_alert@10:00 IST, idle_check_in@08:00 IST, expense_digest@19:00 IST Sunday)');
 }

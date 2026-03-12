@@ -222,6 +222,27 @@ const summarizeUrlSchema = z.object({
   format: z.enum(['bullets', 'paragraph', 'tldr']).default('bullets'),
 });
 
+// ── Expense Tracker tools ──────────────────────────────────
+
+const trackExpenseSchema = z.object({
+  amount: z.coerce.number().positive(),
+  category: z.enum(['food', 'transport', 'shopping', 'entertainment', 'health', 'utilities', 'rent', 'education', 'travel', 'other']).default('other'),
+  description: z.string().min(1).max(500).default(''),
+  date: z.string().max(20).optional(),
+  currency: z.string().max(5).default('USD'),
+});
+
+const listExpensesSchema = z.object({
+  period: z.enum(['today', 'week', 'month', 'all']).default('month'),
+  category: z.string().max(50).optional(),
+});
+
+const setBudgetSchema = z.object({
+  category: z.string().max(50).default('total'),
+  amount: z.coerce.number().positive(),
+  period: z.enum(['daily', 'weekly', 'monthly']).default('monthly'),
+});
+
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -262,6 +283,10 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   run_workflow: runWorkflowSchema,
   generate_video_story: generateVideoStorySchema,
   summarize_url: summarizeUrlSchema,
+  // Expense tracker tools
+  track_expense: trackExpenseSchema,
+  list_expenses: listExpensesSchema,
+  set_budget: setBudgetSchema,
 };
 
 // ── Types ───────────────────────────────────────────────────
