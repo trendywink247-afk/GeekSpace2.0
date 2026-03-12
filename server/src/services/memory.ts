@@ -354,14 +354,20 @@ Assistant said: "${assistantResponse.slice(0, 400)}"`;
       return;
     }
 
+    let saved = 0;
     for (const fact of facts.slice(0, 5)) {
       if (!fact.category || !fact.key || !fact.value) continue;
       const val = String(fact.value);
       if (val.length < 2 || val.length > 300) continue;
+      // Write to agent_memory (categorised store used by buildMemoryContext)
       upsertMemory(userId, fact.category, fact.key, val, 0.75, 'ollama-extract');
+      // Also write to user_memories (used by /search, formatMemoryContext, and briefing)
+      const umKey = fact.key.toLowerCase().replace(/\s+/g, '_').slice(0, 100);
+      upsertUserMemory(userId, umKey, val.slice(0, 500), 'llm_extraction', 0.8);
+      saved++;
     }
 
-    logger.debug({ userId, count: facts.length }, 'Ollama memory extraction complete');
+    logger.debug({ userId, count: facts.length, saved }, 'Ollama memory extraction complete');
   } catch (err) {
     // Non-fatal: fall back to regex extraction
     logger.debug({ error: (err as Error).message }, 'Ollama memory extraction failed (non-fatal), falling back to regex');
