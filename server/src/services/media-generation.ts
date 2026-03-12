@@ -164,48 +164,20 @@ export async function generateImage(
 
 /**
  * Generate a video using Pollinations.AI (free)
- * Note: Video generation takes longer (30-120 seconds)
+ * Note: Video generation is currently disabled — all providers are blocked from this server region
  */
 export async function generateVideo(
   prompt: string,
   options: VideoGenerationOptions = {}
 ): Promise<{ success: boolean; url: string; estimatedTime?: number; error?: string }> {
-  try {
-    const {
-      width = 1280,
-      height = 720,
-      duration = 5,
-      fps = 24
-    } = options;
-
-    // Build URL with parameters
-    const encodedPrompt = encodeURIComponent(prompt);
-    const params = new URLSearchParams({
-      width: String(width),
-      height: String(height),
-      duration: String(duration),
-      fps: String(fps)
-    });
-
-    const url = `${POLLINATIONS_VIDEO_URL}/${encodedPrompt}?${params.toString()}`;
-
-    logger.info({ prompt: prompt.slice(0, 50), width, height, duration }, 'Video generation initiated');
-
-    // Video generation is async - return the URL immediately
-    // The client will need to poll or wait for the video to be ready
-    return {
-      success: true,
-      url,
-      estimatedTime: duration * 6 // rough estimate: 6x real-time
-    };
-  } catch (err) {
-    logger.error({ err, prompt: prompt.slice(0, 50) }, 'Video generation failed');
-    return {
-      success: false,
-      url: '',
-      error: err instanceof Error ? err.message : 'Unknown error'
-    };
-  }
+  // Video generation providers (Pollinations, Seedance, Veo2, etc.) are blocked from this VPS
+  // Return early to prevent credit deduction and API calls
+  logger.warn({ prompt: prompt.slice(0, 50) }, 'Video generation requested but providers are blocked from this server region');
+  return {
+    success: false,
+    url: '',
+    error: 'Video generation is temporarily unavailable from this server region. Please try image generation instead.',
+  };
 }
 
 /**

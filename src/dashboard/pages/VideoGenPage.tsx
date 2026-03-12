@@ -741,11 +741,12 @@ export function VideoGenPage() {
             onClick={handleGenerate}
             disabled={generating || !prompt.trim() || videoCount >= maxVideos || isProviderBroken}
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#A78BFA] text-[#06060B] font-semibold text-sm hover:bg-[#A78BFA]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={isProviderBroken ? "Video generation is temporarily unavailable from this server region" : ""}
           >
             {isProviderBroken ? (
               <>
                 <AlertTriangle className="w-4 h-4" />
-                Provider Unavailable
+                Unavailable
               </>
             ) : generating ? (
               <>
@@ -761,11 +762,21 @@ export function VideoGenPage() {
           </button>
         </div>
 
+        {/* Unavailable notice */}
+        {isProviderBroken && (
+          <p className="text-xs text-[#FF6161] mt-3 flex items-center gap-1.5">
+            <AlertTriangle className="w-3 h-3" />
+            Video generation is temporarily unavailable from this server region. Image generation works fine!
+          </p>
+        )}
+
         {/* 64.10: Estimated runtime display */}
-        <p className="text-xs text-[#6B7280] mt-3 flex items-center gap-1.5">
-          <AlertCircle className="w-3 h-3" />
-          Est. ~{estimatedSeconds}s for {duration}s clip · The video will appear below once ready.
-        </p>
+        {!isProviderBroken && (
+          <p className="text-xs text-[#6B7280] mt-3 flex items-center gap-1.5">
+            <AlertCircle className="w-3 h-3" />
+            Est. ~{estimatedSeconds}s for {duration}s clip · The video will appear below once ready.
+          </p>
+        )}
       </div>
 
       {/* Gallery */}
