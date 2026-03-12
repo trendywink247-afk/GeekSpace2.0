@@ -475,13 +475,66 @@ async function handlePhotoMessage(update: TelegramUpdate, requestId: string): Pr
       }
     );
 
-    await sendTelegramMessage(chatId, result.reply || 'I could not analyse this image.');
+    let analysisText = result.reply || 'I could not analyse this image.';
+
+    // Auto-detect expense from receipt/bill photo
+    const userId = link.user_id;
+    const priceMatch = analysisText.match(/(?:₹|Rs\.?|INR|rupees?)\s*([0-9,]+(?:\.\d{1,2})?)/i)
+      ?? analysisText.match(/([0-9,]+(?:\.\d{1,2})?)\s*(?:₹|Rs\.?|INR|rupees?)/i)
+      ?? analysisText.match(/(?:total|amount|paid|bill)[:\s]+([0-9,]+(?:\.\d{1,2})?)/i);
+
+    if (priceMatch) {
+      const amount = parseFloat(priceMatch[1].replace(/,/g, ''));
+      if (amount > 0 && amount < 1000000) {
+        const merchantCategoryMap: Record<string, string> = {
+          swiggy: 'food', zomato: 'food', blinkit: 'groceries', zepto: 'groceries',
+          amazon: 'shopping', flipkart: 'shopping', myntra: 'shopping',
+          ola: 'transport', uber: 'transport', rapido: 'transport',
+          netflix: 'entertainment', spotify: 'entertainment', hotstar: 'entertainment',
+          airtel: 'utilities', jio: 'utilities', bsnl: 'utilities',
+        };
+        const lowerText = analysisText.toLowerCase();
+        let category = 'other';
+        let merchant = '';
+        for (const [key, cat] of Object.entries(merchantCategoryMap)) {
+          if (lowerText.includes(key)) { category = cat; merchant = key; break; }
+        }
+
+        try {
+          db.prepare(`
+            INSERT INTO expenses (user_id, amount, category, description, date, currency)
+            VALUES (?, ?, ?, ?, date('now'), 'INR')
+          `).run(userId, amount, category, merchant ? `Auto-detected from photo (${merchant})` : 'Auto-detected from photo');
+
+          // Check budget (budget_limits.amount is the limit)
+          const budget = db.prepare(
+            `SELECT amount FROM budget_limits WHERE user_id = ? AND category = ? AND period = 'monthly'`
+          ).get(userId, category) as { amount: number } | undefined;
+          const monthSpent = db.prepare(`
+            SELECT COALESCE(SUM(amount), 0) as total FROM expenses
+            WHERE user_id = ? AND category = ? AND strftime('%Y-%m', date) = strftime('%Y-%m', 'now')
+          `).get(userId, category) as { total: number };
+
+          let budgetMsg = '';
+          if (budget && monthSpent.total >= budget.amount * 0.9) {
+            const pct = Math.round((monthSpent.total / budget.amount) * 100);
+            budgetMsg = `\n⚠️ You've spent ₹${monthSpent.total.toFixed(0)} of ₹${budget.amount} ${category} budget (${pct}%).`;
+          }
+
+          analysisText = `${analysisText}\n\n✅ Auto-logged: ₹${amount.toFixed(0)} ${category}${merchant ? ` (${merchant})` : ''}${budgetMsg}`;
+        } catch (e) {
+          logger.warn({ err: (e as Error).message }, 'Failed to auto-log expense from photo');
+        }
+      }
+    }
+
+    await sendTelegramMessage(chatId, analysisText);
 
     // Offer to save as note
     await sendTelegramButtons(chatId,
       'Would you like to save this analysis as a note?',
       [[
-        { text: '📝 Save as note', callback_data: `photo:save:${encodeURIComponent(result.reply.slice(0, 200))}` },
+        { text: '📝 Save as note', callback_data: `photo:save:${encodeURIComponent(analysisText.slice(0, 200))}` },
         { text: '❌ No thanks', callback_data: 'photo:dismiss' },
       ]]
     );
