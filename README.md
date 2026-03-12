@@ -21,6 +21,8 @@
 
 **A self-hosted AI OS — your agent, your dashboard, your portfolio.**
 
+> v3.1.0 · 2223 tests passing · main = live-production
+
 [Live Demo](https://ai.agentin.chat) · [Documentation](docs/) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 
 </div>
@@ -50,16 +52,16 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 <td width="50%">
 
 **AI Agent & Chat**
-- 3 Personalities — Edith (CTO), Jarvis (butler), Weebo (sidekick)
-- Smart routing: Local → Free Cloud → Paid Cloud → Premium
-- SSE streaming responses
-- Specialist sessions for deep tasks
+- 9 Personalities — Weebo, Edith, Jarvis, Aria, Forge, Pulse, Echo, Cal, Nova
+- Named agent routing: "hey Aria", "@Nova", "Forge:" switches mid-message
+- 6-tier LLM waterfall: Ollama → Groq → Kimi → Together AI → Edith → OpenRouter free
+- Multi-Agent Orchestrator — "launch mode" fan-out to 3 parallel specialists
+- ReAct loop with 17 tools (notes, habits, reminders, expenses, focus, briefings, etc.)
+- Hinglish routing — Indian language patterns + merchant auto-categories
 - Long-term memory — per-user fact store, auto-injected into prompts
-- Context extraction, chat summarization
-- Chat search (filter messages by keyword)
-- Chat export (download full conversation history as JSON)
-- Message reactions (emoji reactions on any message)
-- AI model preference setting (per-user routing override)
+- Conversation context preserved across long replies (16K char window)
+- SSE streaming responses
+- Chat search, export, reactions, AI model preference
 
 </td>
 <td width="50%">
@@ -79,12 +81,14 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 
 **Automations & Background**
 - Weebo Engine — up to 3 background agents per user
-- Recipes: morning briefings, weekly reviews, auto-summaries
+- Proactive Engine V3 — 30-min reminder previews, habit idle nudges at 11:00 IST
+- Daily briefings with habit insights + active streaks + at-risk habits
+- Telegram integration — inline keyboards (Done/Snooze/Delete), photo vision, file/doc handling
+- Reminders via push, email, or Telegram; smart recurrence (daily/weekly/monthly)
+- Expense tracker — track spend, categories, budget limits, weekly digest
+- Habit Intelligence V2 — streak tracking, status icons, motivational nudges
+- Focus/Pomodoro sessions, note-taking, global search across all data
 - Cron, webhook, and health-check triggers
-- Telegram & WhatsApp integration
-- Multi-agent workflows — chain Weebo/Jarvis/Edith in sequence
-- Reminders via push, email, or Telegram
-- Recurring reminders (daily, weekly, monthly schedules)
 
 </td>
 <td>
@@ -116,11 +120,15 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 - OAuth signup (GitHub, Google) — framework ready
 - Password reset via OTP (email + Telegram)
 - Daily briefings via Telegram
-- Voice notes (Whisper STT + TTS)
+- Voice notes (Groq Whisper STT + edge-tts TTS, multilingual Hindi/Telugu/English)
 - Image generation (HuggingFace FLUX) with per-user gallery
+- Web research — Tavily search + crawl4ai scraping + screenshot fast-path
 - Google Calendar OAuth sync with briefing integration
 - Multi-agent workflow builder (chain Weebo/Jarvis/Edith)
 - Long-term agent memory with context injection
+- Expense tracker with INR support and budget alerts
+- Habit Intelligence V2 — streaks, at-risk detection, daily nudges
+- Global search across notes, reminders, habits, memories
 
 </details>
 
@@ -168,14 +176,15 @@ graph TB
 
 ### AI Routing
 
-| Engine | Backend | Cost | Use Case |
-|--------|---------|------|----------|
-| **Local AI** | Ollama | 1 credit | Default — fast, private, offline-capable |
-| **Cloud Free** | OpenRouter free tier | 2 credits | Auto-fallback; models rotate on quota |
-| **Cloud Paid** | OpenRouter | 5 cr / 1K tokens | Explicit `/cloud` requests |
-| **Premium** | Kimi K2 (Moonshot) | 10 cr / 1K tokens | Specialist sessions, `/premium` prefix |
-| **Weebo** | automation sidecar | 1 credit | Background tasks, recipes, heartbeat |
-| **Bridge** | 6 specialists | 1–5 LLM calls | `/bridge`, `/agent:coder`, `/agent:analyst` |
+| Tier | Backend | Cost | Use Case |
+|------|---------|------|----------|
+| **T1 Local** | Ollama qwen3:8b | 1 credit | Default — fast, private, offline-capable |
+| **T2 Groq** | Llama 3.3 70B | 2 credits | Auto-fallback on Ollama busy |
+| **T3 Kimi** | Kimi K2 (Moonshot) | 3 credits | Complex reasoning |
+| **T4 Together** | Llama 4 Maverick 17B×128E | 5 credits | Paid primary cloud |
+| **T5 Edith** | Premium sidecar | 10 cr / 1K tokens | Specialist sessions, `/premium` |
+| **T6 OpenRouter** | Free tier (25 models) | 2 credits | Free cloud fallback, model rotation |
+| **Multi-Agent** | 3× parallel agents | 6 credits | "launch mode" / parallel brainstorm |
 
 ### Request Flow
 

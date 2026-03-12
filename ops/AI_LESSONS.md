@@ -44,6 +44,22 @@
 - Used in `index.ts` to decide which worker runs schedulers (primary only)
 - If misconfigured or not using PM2, all workers may try to run schedulers → duplicates
 
+## Conversation Context
+
+### getConversationContext maxChars=4096 wipes history after long replies
+- `getConversationContext(userId, maxChars=4096)` removes messages from the oldest end until total fits 4096 chars
+- If a single assistant message is >4096 chars (e.g. detailed notes), the while-loop removes ALL messages and returns `[]`
+- `trimConversationHistory` also had the same bug: if the most recent message alone exceeded the token budget, it returned `[]` instead of truncating
+- **Symptoms:** Follow-up question like "give me with articles and formulae" after a long notes reply → LLM interprets "articles" as "news articles" (zero context)
+- **Fix (2026-03-12):** `getConversationContext` call changed to 16K budget; `trimConversationHistory` now truncates the most-recent message instead of dropping everything
+- **Rule:** Never use a char/token limit that can result in empty history. Always preserve at least the most-recent exchange (even truncated)
+
+### Tool result messages should include full content
+- `create_note` previously returned `message: 'Note "Title" saved.'` — no content
+- ReAct loop injects this as the LLM observation → LLM says "Done." because there's nothing else to relay
+- **Fix (2026-03-12):** Tool result message now includes `\n\n{full_content}` so LLM has content to present
+- **Rule:** Tool results should include everything the user would want to see in the reply, not just a confirmation string
+
 ## Action System
 
 ### Action blocks in LLM output

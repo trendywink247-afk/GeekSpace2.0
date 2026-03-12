@@ -1,6 +1,6 @@
 # GeekSpace 2.0 — Project Structure
 
-> File and directory map. Updated 2026-02-17.
+> File and directory map. Updated 2026-03-12.
 
 ```
 GeekSpace2.0/
@@ -9,7 +9,7 @@ GeekSpace2.0/
 │   ├── components/                      #   Shared components
 │   │   └── ui/                          #   shadcn/ui primitives (button, card, dialog, etc.)
 │   ├── dashboard/                       #   Authenticated dashboard app
-│   │   └── pages/                       #   Dashboard pages (Overview, Usage, Billing, Settings, Terminal, Health, Connections, Agent)
+│   │   └── pages/                       #   Dashboard pages (Overview, Usage, Billing, Settings, Terminal, Health, Connections, Agent, MediaGallery, MemoryManager, TrainingRatings)
 │   ├── landing/                         #   Public landing page
 │   │   └── sections/                    #   Landing page sections (Hero, Features, CTA, etc.)
 │   ├── portfolio/                       #   Public user portfolio view + AI visitor chat
@@ -25,27 +25,37 @@ GeekSpace2.0/
 ├── server/                              # Express API (TypeScript)
 │   └── src/
 │       ├── routes/                      #   Route handlers
-│       │   ├── auth.ts                  #     Login, signup, me
+│       │   ├── auth.ts                  #     Login, signup, me, delete-account
+│       │   ├── oauth.ts                 #     Google + GitHub OAuth (Passport.js)
 │       │   ├── agent.ts                 #     Chat, config, premium, bridge, portfolios
-│       │   ├── billing.ts              #     Plans, subscription, usage
-│       │   ├── health.ts               #     Health check + SSE stream
-│       │   ├── reminders.ts            #     CRUD reminders
-│       │   ├── webhooks.ts             #     Telegram + n8n webhooks
-│       │   └── users.ts               #     User profile, notification settings
+│       │   ├── billing.ts               #     Plans, subscription, usage
+│       │   ├── health.ts                #     Health check + SSE stream
+│       │   ├── reminders.ts             #     CRUD reminders + snooze
+│       │   ├── webhooks.ts              #     Telegram webhooks, slash commands, callback_query
+│       │   └── users.ts                 #     User profile, notification settings
 │       ├── services/                    #   Business logic
-│       │   ├── llm.ts                  #     LLM router + credit deduction
+│       │   ├── llm.ts                  #     6-tier LLM router + credit deduction
+│       │   ├── react-loop.ts           #     ReAct tool loop (max 5 iterations)
+│       │   ├── action-parser.ts        #     Tool call parsing (<<<ACTION>>> format)
+│       │   ├── action-executor.ts      #     Tool execution (17 tools)
+│       │   ├── multi-agent-orchestrator.ts # Parallel 3-agent fan-out (launch mode)
+│       │   ├── message-router.ts       #     Cross-channel message routing + fast-paths
+│       │   ├── pico-kimi-bridge.ts     #     PicoClaw/Kimi bridge for simple queries
 │       │   ├── premium-agent.ts        #     Specialist sessions
-│       │   ├── pico-kimi-bridge.ts     #     Multi-agent orchestration
 │       │   ├── agent-registry.ts       #     Specialist agent definitions
 │       │   ├── workflow-engine.ts      #     Multi-step workflow tracking
-│       │   ├── telegram.ts             #     Telegram Bot API
-│       │   ├── message-router.ts       #     Cross-channel message routing
-│       │   ├── memory.ts              #     Conversation memory
-│       │   ├── email.ts               #     Resend email integration
-│       │   └── daily-briefing.ts      #     Scheduled daily briefings
+│       │   ├── proactive-engine.ts     #     Scheduled nudges (reminders, habits, briefing)
+│       │   ├── habits.ts               #     Habit Intelligence V2 (streaks, insights)
+│       │   ├── telegram.ts             #     Telegram Bot API + file/photo handling
+│       │   ├── memory.ts               #     Conversation memory + context window
+│       │   ├── email.ts                #     Resend email integration
+│       │   ├── daily-briefing.ts       #     Daily briefings with habit insights
+│       │   ├── tavily.ts               #     Tavily web search integration
+│       │   ├── web-research.ts         #     fetchAndExtract + smartSearch
+│       │   └── cache.ts                #     Redis cache wrapper (TTL-aware)
 │       ├── prompts/                     #   System prompts
 │       │   ├── openclaw-system.ts      #     Main agent identity + portfolio prompt
-│       │   └── personalities.ts        #     Edith / Jarvis / Weebo definitions
+│       │   └── personalities.ts        #     9 personalities: Weebo/Edith/Jarvis/Aria/Forge/Pulse/Echo/Cal/Nova
 │       ├── middleware/                  #   Express middleware
 │       │   ├── auth.ts                 #     JWT authentication
 │       │   └── validate.ts             #     Zod request validation schemas
@@ -97,9 +107,11 @@ GeekSpace2.0/
 
 | URL Pattern | Handled By | Notes |
 |-------------|------------|-------|
-| `https://ai.geekspace.space/api/*` | Caddy -> Express (:3001) | API reverse proxy |
-| `https://ai.geekspace.space/assets/*` | Caddy -> `/var/www/geekspace/` | Static assets (immutable cache) |
-| `https://ai.geekspace.space/*` | Caddy -> `/var/www/geekspace/index.html` | SPA fallback |
+| `https://ai.agentin.chat/api/*` | Caddy → Express (:3001) | API reverse proxy |
+| `https://api.agentin.chat/*` | Caddy → Express (:3001) | API-only subdomain |
+| `https://ai.agentin.chat/assets/*` | Caddy → `/var/www/geekspace/` | Static assets (immutable cache) |
+| `https://ai.agentin.chat/*` | Caddy → `/var/www/geekspace/index.html` | SPA fallback |
+| `https://ai.geekspace.space/*` | 301 → ai.agentin.chat | Legacy domain redirect |
 
 ## Database
 

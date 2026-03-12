@@ -1,12 +1,19 @@
-# AI Handoff — Phase 4 Completion Run: Brand Purge + Hinglish + Habit V2 + Proactive V3
+# AI Handoff — Phase 5 Ready
 **Date:** 2026-03-12
-**Branch:** main = live-production = 19aa040
-**Status:** DEPLOYED | CI: green | Health: ok | v3.1.0
+**Branch:** main = live-production = 7b53142
+**Status:** DEPLOYED | CI: green | Health: ok | v3.1.0 | Tests: 2223 ✅
 
-## Previous
-Phase 4+5+8 commit: 2cafb02 — Multi-Agent Orchestrator, Inline Keyboards, File Handling
+---
 
-## What Was Done This Session (Phase 4 Completion Run)
+## What Was Done This Session (2026-03-12 — Bug Fix Run)
+
+### Bug Fixes Shipped
+- **`create_note` "Done." bug**: `action-executor.ts` — tool result now includes full note content in message; LLM can relay it instead of saying "Done."
+- **"send notes here" routing**: `message-router.ts` — added 3 new `hasToolTrigger` patterns for note retrieval ("show/send/give me notes", "notes here", "what notes have I saved") → now routes to ReAct loop instead of bridge
+- **Conversation context wipeout**: `message-router.ts` — `getConversationContext` budget raised 4096→16000 chars; after long assistant replies (e.g. big notes) history was stripped to empty
+- **`trimConversationHistory` drop-all bug**: `token-format.ts` — now truncates most-recent oversized message instead of returning `[]`; follow-up messages always have context
+
+### Previous Session (Phase 4 Completion Run — 2026-03-12)
 - Brand purge: Zero user-visible GeekSpace/PicoClaw/OpenClaw refs in UI
 - Hinglish routing: hasToolTrigger patterns + hinglishToEnglish() + Indian merchant auto-categories
 - Habit Intelligence V2: getHabitInsights(), /habits V2 with status icons+nudges, briefing integration
@@ -16,15 +23,20 @@ Phase 4+5+8 commit: 2cafb02 — Multi-Agent Orchestrator, Inline Keyboards, File
 - VPS hardened: Redis TTLs all set, SQLite integrity OK, memory healthy
 - Battle test: 30+ patterns verified
 
-## Next Session Priorities (Phase 5)
-1. Voice Intelligence V2 — multi-language TTS response routing, voice reminders
-2. Smart Scheduling — calendar conflict detection when setting reminders
-3. AI Email Composer — draft from bullets, Resend integration
-4. Smart Search UI — Ctrl+K dashboard (phase-103)
-5. Seedance Director Mode — add FAL_KEY to .env, test fal.ai
-6. Onboarding hardening — prevent in-progress onboarding blocking established Telegram users
+---
 
-## Start Commands
+## Current Commit Log (last 5)
+```
+7b53142 fix: preserve conversation context after long LLM responses
+76b3554 fix: create_note returns full content; add note retrieval patterns to hasToolTrigger
+7bf4537 ops: Phase 4 completion run — final report + handoff
+19aa040 feat: Phase 4 — Brand purge, Hinglish fix, Habit V2, Proactive V3, VPS hardening
+2b9facd ops: update handoff for Phase 4+5+8 completion
+```
+
+---
+
+## Start Commands (Next Session)
 ```bash
 cd ~/GeekSpace2.0
 git log --oneline -5
@@ -35,76 +47,54 @@ cat ops/AI_HANDOFF.md
 
 ---
 
-## Previous Session — Phase 4+5+8: Multi-Agent Orchestrator, Inline Keyboards, File Handling
+## Next Session Priorities (Phase 5)
 
-### Phase 4 — Multi-Agent Parallel Orchestrator ✅
-- NEW: `server/src/services/multi-agent-orchestrator.ts`
-  - `isLaunchModeRequest()` — detects "launch mode", "all agents", "multi-agent", "parallel agents", "team response", "brainstorm with all agents"
-  - `planAgentTasks()` — routes to 3 specialists by category: content/marketing (Forge+Aria+Pulse), research (Nova+Pulse+Echo), career (Echo+Forge+Cal), default (Aria+Pulse+Forge)
-  - `runMultiAgentOrchestration()` — Promise.all fan-out, forceProvider='openrouter-free', merges sections with role headers
-- WIRED in `message-router.ts` — checked BEFORE bridge/ReAct loop; costs 2 credits × agentCount (6 credits for 3 agents); falls back on error
+### P0 — Critical
+1. **Conversation context quality**: Monitor if 16K budget is sufficient; consider per-message truncation cap for very long assistant replies stored in conversation_log
+2. **Health monitor Telegram alerts** — no push notification when component goes down (P1 TODO from audit)
 
-### Phase 5 — Telegram Inline Keyboards ✅
-- `action-executor.ts`:
-  - `set_reminder` case: after DB insert, sends inline keyboard ✅ Done / 💤 Snooze 1h / 🗑️ Delete
-  - `start_focus` case: sends inline keyboard ✅ Done early / ⏸️ Pause
-- `webhooks.ts`:
-  - `callback_query` handler: `reminder:done|snooze|delete` → marks complete, snoozes +1h (writes snooze_log), or deletes
-  - `focus:done|focus:pause` → confirmation message
-  - Snooze log schema: `(reminder_id, user_id, snoozed_at, preset, new_datetime)`
+### P1 — High Value
+3. **Voice Intelligence V2** — multi-language TTS response routing, voice reminders via Telegram
+4. **Smart Scheduling** — calendar conflict detection when setting reminders (check Google Calendar)
+5. **AI Email Composer** — draft from bullet points, Resend integration
+6. **Smart Search UI** — Ctrl+K dashboard (phase-103 design)
+7. **Onboarding hardening** — prevent in-progress onboarding blocking established Telegram users
 
-### Phase 8 — Telegram File Handling ✅
-- `telegram.ts`:
-  - Added `photo[]` + `document` + `caption` fields to `TelegramUpdate.message` type
-  - `getTelegramFileUrl(fileId)` — calls getFile API, returns download URL
-  - `downloadTelegramFile(fileId)` — returns `Buffer | null`
-- `webhooks.ts`:
-  - `handlePhotoMessage()` — downloads largest photo, runs vision analysis via Groq (image_url content block), sends result + save/dismiss inline buttons
-  - `handleDocumentMessage()` — PDF/text docs extracted to notes; image docs fall back to vision analysis
-  - `photo:save` callback — stores analysis as note in DB
-  - `/expenses` and `/search` slash command stubs added
-
----
-
-## Files Changed (this session)
-- `server/src/services/multi-agent-orchestrator.ts` — NEW FILE
-- `server/src/services/message-router.ts` — launch mode detection + orchestrator wiring
-- `server/src/services/action-executor.ts` — inline keyboards for set_reminder + start_focus
-- `server/src/routes/webhooks.ts` — callback_query handler, photo/document handlers
-- `server/src/services/telegram.ts` — photo/document types + file download helpers
+### P2 — Deferred
+8. **Seedance Director Mode** — add FAL_KEY to .env, test fal.ai video generation
+9. **Memory Graph V2** — semantic entity linking in user memories
+10. **WhatsApp integration** — current is stub-only; needs real API
 
 ---
 
 ## Production State
 - Health: ok | db: ok | version: 3.1.0
 - Tests: 2223 passed ✅ (127 test files, 1 skipped)
-- Container: full rebuild done via `docker compose up -d --build geekspace`
+- Container: hot-patched (message-router.js, action-executor.js, token-format.js)
+- Next full rebuild needed before major structural changes
 
 ---
 
-## What Still Needs Work (Deferred from Phase 3 master prompt)
-- **Phase 6 (Smart Scheduling)**: Calendar-aware reminder slots, conflict detection
-- **Phase 7 (Memory Graph V2)**: Semantic user memory with entity linking
-- **Phase 9 (Habit Intelligence V2)**: Streak predictions, motivation nudges
-- **Phase 10 (Proactive Engine V3)**: Day-ahead briefing with weather + calendar
-- **Phase 11 (Voice Intelligence V2)**: Multi-language TTS, voice reminders
-- **Phase 12 (Brand purge gate)**: Run `npm run brand-guard`, ensure zero picoclaw refs
-- **Phase 13 (Seedance Director Mode)**: Video story end-to-end
-- **Hinglish expense routing**: Hinglish goes to Groq direct, bypasses ReAct tool loop
+## Key Service Files Changed Recently
+| File | Change | Commit |
+|------|--------|--------|
+| `server/src/services/action-executor.ts` | create_note includes content in message | 76b3554 |
+| `server/src/services/message-router.ts` | note retrieval patterns + 16K context budget | 7b53142, 76b3554 |
+| `server/src/utils/token-format.ts` | trimConversationHistory truncates instead of drops | 7b53142 |
+| `server/src/services/habits.ts` | getHabitInsights() + HabitInsight interface | 19aa040 |
+| `server/src/services/proactive-engine.ts` | sendReminderPreviews(), sendHabitNudges() | 19aa040 |
+| `server/src/services/daily-briefing.ts` | habit insights in LLM prompt | 19aa040 |
+| `server/src/routes/webhooks.ts` | /habits V2, /search fix, callback_query, photo/doc | 2b9facd |
 
-## Next Immediate Commands
-```bash
-cd ~/GeekSpace2.0
-git log --oneline -3
-curl -s http://localhost:3001/api/health
-cd server && npm test
+---
 
-# Test launch mode
-/tmp/tg_sim.sh "launch mode — help me plan a product launch"
-
-# Test inline keyboards
-/tmp/tg_sim.sh "remind me to call mom at 3pm"
-
-# Test photo handling (requires real Telegram interaction)
-# Send photo to bot — should get vision analysis + save/dismiss buttons
-```
+## Phase Completion Summary
+| Phase | Features | Status |
+|-------|----------|--------|
+| Phase 1 | Bug fixes (XML strip, cache collision, search emoji) | ✅ |
+| Phase 2 | 17 new tools, 6 personalities, health alerts | ✅ |
+| Phase 3 | Expense Tracker, Smart Reminders V2, Global Search | ✅ |
+| Phase 4 (Multi-Agent) | Multi-Agent Orchestrator, Inline Keyboards, File Handling | ✅ |
+| Phase 4 (Completion) | Brand purge, Hinglish, Habit V2, Proactive V3 | ✅ |
+| Bug Fix Run | create_note content, notes routing, context wipeout | ✅ |
+| **Phase 5** | Voice V2, Smart Scheduling, Email Composer, Search UI | 🔲 Next |

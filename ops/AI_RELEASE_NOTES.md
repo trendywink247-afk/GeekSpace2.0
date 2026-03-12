@@ -1,6 +1,75 @@
-# Release Notes — GeekSpace 2.0
+# Release Notes — Agentin Chat
 
 > User-facing changes by phase. Written before each merge to live-production.
+
+---
+
+## Bug Fix Run (2026-03-12) — Context + Notes Fixes
+
+*Status: Deployed to live-production (7b53142)*
+
+### What's Fixed
+- **Notes now show full content**: When you ask Agentin to write a detailed note (e.g. "make notes on the President of India"), the full content is now shown immediately in the reply — no more "Done." responses
+- **"Send me my notes" now works**: Phrases like "send the notes here", "show me my notes", "give me my notes" now correctly fetch and display your saved notes
+- **Follow-up questions work after long replies**: Asking follow-up questions after Agentin gives a long answer (e.g. detailed notes, research summaries) now correctly understands the context. Previously, the conversation history was silently dropped, causing nonsensical replies
+
+---
+
+## Phase 4 Completion Run (2026-03-12) — Brand + Hinglish + Habit V2 + Proactive V3
+
+*Status: Deployed to live-production (19aa040)*
+
+### What's New
+- **Hinglish support**: You can now chat in mixed Hindi-English naturally — "kal 9 baje reminder set karo", "aaj gym kiya", "Swiggy pe 200 spent" all work correctly
+- **Indian merchant auto-categories**: Swiggy, Zomato, Ola, Uber, Amazon, Flipkart, Netflix, Hotstar expenses are auto-categorized
+- **Habit Intelligence V2**: `/habits` now shows streak status with icons (🔥 on track, ⚠️ at risk, ❌ broken, 🆕 new) and personalized nudges
+- **Habit insights in daily briefing**: Active streaks and at-risk habits appear in your morning briefing
+- **30-min reminder preview**: You get a preview message 30 minutes before any reminder fires
+- **Habit idle nudge**: If you haven't logged a habit in 2+ days, Agentin nudges you at 11:00 AM IST
+- **Brand refresh**: All UI strings now say "Agentin" — no more GeekSpace/PicoClaw references anywhere
+
+### Under the Hood
+- `preview_sent` column added to reminders (additive migration, safe on existing data)
+- Redis dedup for all proactive messages (no spam)
+- `/search` bug fixed: was looking for wrong column name in memories table
+
+---
+
+## Phase 4+5+8 (2026-03-12) — Multi-Agent, Inline Keyboards, File Handling
+
+*Status: Deployed to live-production (2b9facd)*
+
+### What's New
+- **Multi-Agent Orchestrator**: Say "launch mode — help me plan X" or "brainstorm with all agents" to fan out to 3 parallel specialists (Forge+Aria+Pulse for content, Nova+Pulse+Echo for research, Echo+Forge+Cal for career)
+- **Reminder action buttons**: When Agentin sets a reminder via Telegram, you get ✅ Done / 💤 Snooze 1h / 🗑️ Delete buttons inline
+- **Focus session buttons**: Starting a focus session gives ✅ Done early / ⏸️ Pause buttons
+- **Photo analysis**: Send any photo to Agentin on Telegram — it analyses it with vision AI and offers to save as a note
+- **Document handling**: Send PDF or text files — Agentin extracts the content and saves it as a note
+
+---
+
+## Phase 3 (2026-03-12) — Expense Tracker + Smart Reminders + Global Search
+
+*Status: Deployed to live-production (3f99c73)*
+
+### What's New
+- **Expense Tracker**: "I spent ₹200 on Swiggy" → logs automatically. `/expenses` shows your spending. Set budget limits and get alerts at 90%
+- **Recurring reminders**: "Remind me every day at 9am" / "weekly Monday reminder" — Agentin detects recurrence automatically
+- **Global search**: `/search <query>` searches across notes, reminders, habits, and memories
+- **Budget alerts**: Get notified on Telegram when you hit 90% of any budget category
+
+---
+
+## Phase 2 (2026-03-12) — 17 New Tools + 9 Personalities
+
+*Status: Deployed to live-production (2bce2d8)*
+
+### What's New
+- **17 new tools**: create_note, track_habit, start_focus, create_flashcards, meeting_notes, code_review, github_pr, seo_audit, generate_social_post, create_automation, youtube_summarize, get_briefing, list_workflows, run_workflow, generate_video_story, summarize_url, search_notes
+- **6 new personalities**: Aria (creative strategist), Forge (senior engineer), Pulse (growth marketer), Echo (research analyst), Cal (career coach), Nova (data scientist). Plus existing Weebo, Edith, Jarvis
+- **Named agent routing**: "@Nova what's the data?" or "hey Forge, review this code" switches agent mid-conversation
+- **Slash commands**: /proactive, /study, /habits, /notes, /expenses, /search
+- **Health alerts**: State-transition Telegram alerts for admin users
 
 ---
 

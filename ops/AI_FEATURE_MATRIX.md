@@ -1,7 +1,7 @@
 # AI Feature Matrix — GeekSpace 2.0
 
 > Living document. Updated each phase. Tracks to-and-fro verification status.
-> Last updated: Post-Phase 75 (2026-02-28)
+> Last updated: 2026-03-12 (Phase 4 Completion + Bug Fix Run)
 
 ## Legend
 - ✅ Verified this phase
@@ -28,7 +28,28 @@
 | **API Keys** | GET/POST/DELETE /api-keys, rotate, default | ✅ | ✅ | — | ✅ | ⚠️ | None known (api-keys.test.ts Ph74) | Phase 74 |
 | **Contact Requests** | POST /contact/request, accept/decline, preferences | ✅ | ✅ | — | ✅ | ⚠️ | Rate-limit SQL bug fixed Ph74 (contact.test.ts) | Phase 74 |
 
+| **Expense Tracker** | POST/GET /expenses, /budget | ✅ | ✅ | ✅ | ✅ | ⚠️ | Budget alert at 90% via Telegram | 2026-03-12 |
+| **Habit Intelligence V2** | /habits slash, getHabitInsights() | ✅ | ✅ | ✅ | ✅ | ⚠️ | Streaks, status icons, briefing integration | 2026-03-12 |
+| **Notes (create + search)** | create_note, search_notes tools | ✅ | ✅ | ✅ | ✅ | ⚠️ | Full content in reply; retrieval routing fixed | 2026-03-12 |
+| **Focus Sessions** | start_focus tool, Telegram buttons | ✅ | ✅ | ✅ | ✅ | ⚠️ | Done early / Pause inline keyboard | 2026-03-12 |
+| **Multi-Agent Orchestrator** | isLaunchModeRequest, runMultiAgentOrchestration | ✅ | ✅ | — | ✅ | ⚠️ | 3 parallel agents, 6 credits | 2026-03-12 |
+| **Telegram Inline Keyboards** | callback_query handler | ✅ | ✅ | — | ✅ | ⚠️ | Reminder + focus buttons | 2026-03-12 |
+| **Telegram File Handling** | handlePhotoMessage, handleDocumentMessage | ✅ | ✅ | — | ✅ | ⚠️ | Photo vision (Groq) + doc extraction | 2026-03-12 |
+| **Voice Notes** | Groq Whisper STT + edge-tts TTS | ✅ | ✅ | — | ✅ | ⚠️ | Multilingual Hindi/Telugu/English | 2026-03-12 |
+| **Web Research** | Tavily + crawl4ai + fetchAndExtract | ✅ | ✅ | — | ✅ | ⚠️ | Screenshot fast-path, links fast-path | 2026-03-12 |
+| **Proactive Engine V3** | sendReminderPreviews, sendHabitNudges | ✅ | ✅ | — | ✅ | ⚠️ | IST-aware, Redis dedup | 2026-03-12 |
+| **Daily Briefing** | generateBriefing, habit insights | ✅ | ✅ | — | ✅ | ⚠️ | Active streaks + at-risk in LLM prompt | 2026-03-12 |
+| **Hinglish Routing** | hasToolTrigger + hinglishToEnglish | ✅ | ✅ | — | ✅ | ⚠️ | Indian merchants auto-categorized | 2026-03-12 |
+| **Google/GitHub OAuth** | /api/oauth/google, /api/oauth/github | ✅ | ✅ | ✅ | ✅ | ✅ | Passport.js, JWT-only, no sessions | 2026-03-12 |
+| **Context Preservation** | getConversationContext(16K), trimConversationHistory | ✅ | ✅ | — | ✅ | ⚠️ | Truncates instead of drops long messages | 2026-03-12 |
+| **Global Search** | /search slash command | ✅ | ✅ | — | ✅ | ⚠️ | notes/reminders/habits/memories | 2026-03-12 |
+
 ## To-and-Fro Gap Summary (Open Items)
 | Gap | Fix Phase | Priority |
 |-----|-----------|----------|
 | Billing history UI is placeholder only | Future | Low |
+| Telegram file handling E2E needs real Telegram | Phase 5 | Medium |
+| Health monitor Telegram alerts missing | Phase 5 | High |
+| Voice Intelligence V2 (multi-lang TTS responses) | Phase 5 | High |
+| Smart Scheduling (calendar conflict detection) | Phase 5 | High |
+| Seedance Director Mode (FAL_KEY needed) | Phase 5 | Low |
