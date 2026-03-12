@@ -1200,18 +1200,28 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
 
       // ── create_automation ────────────────────────────────────
       case 'create_automation': {
-        const name = params.name as string;
-        const description = (params.description as string) || '';
-        const trigger = (params.trigger as string) || 'manual';
-        const steps = params.steps as Array<{ action: string; params: Record<string, unknown> }>;
+        const autoId = uuid();
+        const name = (params.name as string) || 'My Automation';
+        const triggerType = (params.trigger_type as string) || 'manual';
+        const actionType = (params.action_type as string) || 'telegram-message';
+        const triggerConfig = JSON.stringify({
+          schedule: params.schedule || '',
+          keyword: params.keyword || '',
+        });
+        const actionConfig = JSON.stringify({
+          message: params.message || '',
+          reminder_text: params.reminder_text || '',
+          url: params.webhook_url || '',
+        });
         db.prepare(`
-          INSERT INTO user_workflows (user_id, name, description, steps, trigger, enabled, created_at)
-          VALUES (?, ?, ?, ?, ?, 1, unixepoch('now')*1000)
-        `).run(userId, name, description, JSON.stringify(steps), trigger);
+          INSERT INTO automations (id, user_id, name, trigger_type, trigger_config, action_type, action_config, enabled, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
+        `).run(autoId, userId, name, triggerType, triggerConfig, actionType, actionConfig);
         return {
           tool,
           success: true,
-          message: `Automation "${name}" created (${steps.length} step${steps.length !== 1 ? 's' : ''}, trigger: ${trigger}).`,
+          message: `Automation "${name}" created! You can see it in your dashboard under Automations.`,
+          data: { id: autoId },
           receipt: RECEIPT_TEMPLATES.automation(name),
         };
       }
@@ -1274,17 +1284,13 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
       // ── list_workflows ───────────────────────────────────────
       case 'list_workflows': {
         const rows = db.prepare(`
-          SELECT id, name, description, trigger, enabled, last_run
-          FROM user_workflows WHERE user_id = ?
-          ORDER BY created_at DESC LIMIT 15
-        `).all(userId) as Array<{id:number; name:string; description:string; trigger:string; enabled:number; last_run:number|null}>;
-        if (rows.length === 0) return { tool, success: true, message: 'You have no automations yet. Create one with create_automation.' };
-        const list = rows.map((w, i) => {
-          const status = w.enabled ? '✅' : '⏸';
-          const lastRun = w.last_run ? new Date(w.last_run).toLocaleDateString('en-IN') : 'never';
-          return `${i + 1}. ${status} **${w.name}** (id: ${w.id}) — trigger: ${w.trigger} — last run: ${lastRun}`;
-        }).join('\n');
-        return { tool, success: true, message: `Your automations (${rows.length}):\n\n${list}`, data: { workflows: rows } };
+          SELECT id, name, trigger_type, action_type, enabled, run_count, last_run
+          FROM automations WHERE user_id = ?
+          ORDER BY created_at DESC LIMIT 20
+        `).all(userId) as Array<{id: string; name: string; trigger_type: string; action_type: string; enabled: number; run_count: number; last_run: string}>;
+        if (rows.length === 0) return { tool, success: true, message: 'You have no automations yet. Create one by describing what you want to automate.' };
+        const list = rows.map((r, i) => `${i + 1}. **${r.name}** — ${r.trigger_type}→${r.action_type} (${r.enabled ? '✅ active' : '⏸ paused'}, run ${r.run_count}x)`).join('\n');
+        return { tool, success: true, message: `Your automations (${rows.length}):\n\n${list}`, data: { automations: rows } };
       }
 
       // ── run_workflow ─────────────────────────────────────────
