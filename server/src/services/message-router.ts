@@ -161,6 +161,35 @@ function hasToolTrigger(message: string): boolean {
   );
 }
 
+// ---- Named Agent Detection ----
+// Detects when the user addresses a specific named agent by name.
+// Returns the personality ID to use, or null if no named agent detected.
+function detectNamedAgent(message: string): string | null {
+  const lower = message.toLowerCase().trim();
+  // Check for "hey <name>", "<name>,", "<name>:", "@<name>" patterns
+  const AGENT_NAMES: Record<string, string> = {
+    aria: 'aria',
+    forge: 'forge',
+    pulse: 'pulse',
+    echo: 'echo',
+    cal: 'cal',
+    nova: 'nova',
+    edith: 'edith',
+    jarvis: 'jarvis',
+    weebo: 'weebo',
+  };
+  for (const [name, personalityId] of Object.entries(AGENT_NAMES)) {
+    // Match: "hey aria", "aria,", "aria:", "@aria", "ask aria", "tell aria"
+    const patterns = [
+      new RegExp(`^(?:hey|hi|ok|ask|tell|use)?\\s*${name}[,:\\s]`, 'i'),
+      new RegExp(`^@${name}\\b`, 'i'),
+      new RegExp(`\\b${name}[,:]\\s`, 'i'),
+    ];
+    if (patterns.some(p => p.test(lower))) return personalityId;
+  }
+  return null;
+}
+
 // ---- Task Intent Detection ----
 
 function detectTaskIntent(message: string): boolean {
@@ -740,8 +769,19 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // 6. Build messages for LLM
   let systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);
   const userCredits = (user?.credits as number) || 0;
-  const effectivePersonalityId = (agentConfig?.personality as string) || 'jarvis';
-  const resolvedAgentName = resolveAgentName(agentConfig, effectivePersonalityId);
+  // Check if user is addressing a named agent (e.g. "hey Aria,", "Forge:", "@nova")
+  const namedAgent = detectNamedAgent(msg.text);
+  const effectivePersonalityId = namedAgent || (agentConfig?.personality as string) || 'jarvis';
+  const resolvedAgentName = namedAgent
+    ? getPersonality(namedAgent).name
+    : resolveAgentName(agentConfig, effectivePersonalityId);
+  // If user addressed a specific named agent, rebuild system prompt with that personality
+  if (namedAgent) {
+    const overriddenConfig = { ...(agentConfig || {}), personality: namedAgent, name: getPersonality(namedAgent).name };
+    systemPrompt = buildChannelSystemPrompt(overriddenConfig, user, userId, msg.channel, msg.text);
+    systemPrompt = compressPrompt(systemPrompt);
+    logger.info({ userId, namedAgent, resolvedAgentName }, 'Named agent routing: overriding personality');
+  }
 
   // 6a. Token compression — compress system prompt + user message for LLM
   //     (msg.text kept original for logging/memory/channel delivery)
