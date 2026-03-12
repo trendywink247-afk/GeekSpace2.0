@@ -122,6 +122,9 @@ function hasToolTrigger(message: string): boolean {
     /\b(save\s+(a\s+)?note|take\s+note|note\s+(this|it)|write\s+(this|it)\s+down|remember\s+this|jot\s+(this|it)|save\s+this)\b/i.test(lower) ||
     /\bsearch\s+(my\s+)?notes?\b/i.test(lower) ||
     /\bfind\s+(my\s+)?note\b/i.test(lower) ||
+    /\b(show|send|give|get|display)\s+(me\s+)?(my\s+)?(the\s+)?notes?\b/i.test(lower) ||
+    /\bnotes?\s+(here|to\s+me|please|now)\b/i.test(lower) ||
+    /\bwhat.{0,20}\b(note|notes)\b.{0,20}\b(save[d]?|store[d]?|have)\b/i.test(lower) ||
     // Habits — catch "log my workout", "track my running", "did my yoga", "morning workout done"
     /\b(track|log|mark|did|done|completed?|finished?)\s+(my\s+)?\w+\s+(habit|workout|exercise|run|yoga|meditation|reading|study|training)\b/i.test(lower) ||
     /\b(track|log|mark|did|done|completed?)\s+(my\s+)?habit\b/i.test(lower) ||

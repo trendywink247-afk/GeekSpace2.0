@@ -973,7 +973,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         return {
           tool,
           success: true,
-          message: `Note "${title}" saved${tags.length ? ` [${tags.join(', ')}]` : ''}.`,
+          message: `✅ Note saved: "${title}"${tags.length ? ` [${tags.join(', ')}]` : ''}\n\n${content}`,
           receipt: RECEIPT_TEMPLATES.memory(title),
         };
       }
