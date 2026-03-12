@@ -203,6 +203,34 @@ webhooksRouter.post('/telegram', async (req, res) => {
           return;
         }
 
+        // ── Habit coach callbacks ──────────────────────────────────────────────
+        if (callbackData.startsWith('habit:')) {
+          const parts = callbackData.split(':');
+          const action = parts[1]; // keep | reschedule | skip_week
+          const habitId = parts[parts.length - 1];
+          const habitLink = db.prepare(
+            "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+          ).get(callbackChatId) as { user_id: string } | undefined;
+
+          if (habitLink && habitId) {
+            if (action === 'keep') {
+              await sendTelegramMessage(callbackChatId, "That's the spirit! I'll keep cheering you on 🎯");
+            } else if (action === 'reschedule') {
+              const timeSlot = parts[2]; // 'evening'
+              const newTime = timeSlot === 'evening' ? '20:00' : '09:00';
+              db.prepare("UPDATE habits SET reminder_time = ? WHERE id = ? AND user_id = ?")
+                .run(newTime, habitId, habitLink.user_id);
+              await sendTelegramMessage(callbackChatId, `Done! Moved to ${timeSlot} (${newTime}). See you then 🌙`);
+            } else if (action === 'skip_week') {
+              const skipUntil = Math.floor(Date.now() / 1000) + 604800; // +7 days
+              db.prepare("UPDATE habits SET skip_until = ? WHERE id = ? AND user_id = ?")
+                .run(skipUntil, habitId, habitLink.user_id);
+              await sendTelegramMessage(callbackChatId, "No worries! Taking a week off. I'll check back in 7 days 🙏");
+            }
+          }
+          return;
+        }
+
         // Try to handle as onboarding callback
         const handled = await handleOnboardingCallback(callbackChatId, callbackData);
         if (handled) {

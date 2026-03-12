@@ -1945,3 +1945,7 @@ try { db.exec(`ALTER TABLE users ADD COLUMN updated_at TEXT DEFAULT NULL`); } ca
 
 // Phase 4: 30-min reminder preview tracking column
 try { db.exec(`ALTER TABLE reminders ADD COLUMN preview_sent INTEGER`); } catch { /* column already exists */ }
+
+// Habit Coach Mode: per-habit reminder time + skip_until for snooze-this-week
+try { db.exec(`ALTER TABLE habits ADD COLUMN reminder_time TEXT DEFAULT '09:00'`); } catch { /* already exists */ }
+try { db.exec(`ALTER TABLE habits ADD COLUMN skip_until INTEGER DEFAULT 0`); } catch { /* already exists */ }

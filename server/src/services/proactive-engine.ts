@@ -402,7 +402,7 @@ async function sendReminderPreviews(): Promise<void> {
 async function sendHabitNudges(): Promise<void> {
   const { cacheGet, cacheSet } = await import('./cache.js');
   const { getHabitInsights } = await import('./habits.js');
-  const { sendTelegramNotification, escapeTelegramHtml: escHtml } = await import('./telegram.js');
+  const { sendTelegramButtons } = await import('./telegram.js');
 
   const users = db.prepare(`
     SELECT DISTINCT u.id, cl.external_id as chat_id
@@ -410,6 +410,8 @@ async function sendHabitNudges(): Promise<void> {
     JOIN channel_links cl ON cl.user_id = u.id
     WHERE cl.channel = 'telegram' AND cl.is_verified = 1
   `).all() as Array<{id:string; chat_id:string}>;
+
+  const now = Math.floor(Date.now() / 1000);
 
   for (const user of users) {
     const rateLimitKey = `habit_nudge:${user.id}`;
@@ -423,12 +425,32 @@ async function sendHabitNudges(): Promise<void> {
 
     if (!idle.length) continue;
 
-    const h = idle[0];
-    await sendTelegramNotification(user.chat_id,
-      `💪 Hey! Noticed you haven't logged <b>${escHtml(h.name)}</b> in ${h.daysSinceLast} days.\n\nJust say <i>"I did ${escHtml(h.name)} today"</i> to get back on track!`
-    ).catch(() => {});
+    let nudgeSent = false;
+    for (const habit of idle) {
+      // Check if user has skipped this habit for the week
+      const habitRow = db.prepare('SELECT skip_until FROM habits WHERE id = ?')
+        .get(habit.id) as { skip_until: number | null } | undefined;
+      if (habitRow?.skip_until && habitRow.skip_until > now) continue;
 
-    await cacheSet(rateLimitKey, '1', 86400).catch(() => {});
+      const nudgeText = `Hey! Noticed "${habit.name}" has been quiet lately. Life gets busy 💙\n\nWant to adjust the schedule?`;
+
+      await sendTelegramButtons(user.chat_id, nudgeText, [
+        [
+          { text: '💪 Keep Going', callback_data: `habit:keep:${habit.id}` },
+          { text: '🌙 Move to Evening', callback_data: `habit:reschedule:evening:${habit.id}` },
+        ],
+        [
+          { text: '⏭️ Skip This Week', callback_data: `habit:skip_week:${habit.id}` },
+        ],
+      ]).catch(() => {});
+
+      nudgeSent = true;
+      break; // one nudge per user per day
+    }
+
+    if (nudgeSent) {
+      await cacheSet(rateLimitKey, '1', 86400).catch(() => {});
+    }
   }
 }
 
