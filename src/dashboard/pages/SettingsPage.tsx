@@ -270,7 +270,7 @@ export function SettingsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `geekspace-conversations-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `agentin-conversations-${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -290,7 +290,7 @@ export function SettingsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `geekspace-chat-7days-${new Date().toISOString().slice(0, 10)}.md`;
+      a.download = `agentin-chat-7days-${new Date().toISOString().slice(0, 10)}.md`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -310,7 +310,7 @@ export function SettingsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `geekspace-chat-${new Date().toISOString().slice(0, 10)}.md`;
+      a.download = `agentin-chat-${new Date().toISOString().slice(0, 10)}.md`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -954,7 +954,7 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {[
-                { value: 'auto', label: 'Auto (Recommended)', desc: 'GeekSpace picks the best engine for each task' },
+                { value: 'auto', label: 'Auto (Recommended)', desc: 'Agentin picks the best engine for each task' },
                 { value: 'local', label: 'Local Engine (Ollama)', desc: 'Fastest, no cloud — runs on-device' },
                 { value: 'cloud', label: 'Cloud Engine (OpenRouter)', desc: 'More capable, uses your credits' },
                 { value: 'premium', label: 'Premium (Edith / Kimi K2)', desc: 'Most powerful — highest credit cost' },
@@ -1005,7 +1005,7 @@ export function SettingsPage() {
                 }}
                 className="w-full px-3 py-2 bg-[#06060B] border border-[#00F0FF]/20 rounded-xl text-[#E8E8F0] text-sm focus:outline-none focus:border-[#00F0FF]/40"
               >
-                <option value="auto">Auto (GeekSpace selects best available)</option>
+                <option value="auto">Auto (Agentin selects best available)</option>
                 {freeModels.map((m) => (
                   <option key={m.id} value={m.id}>{m.displayName}</option>
                 ))}
@@ -1781,7 +1781,7 @@ export function SettingsPage() {
       {/* App Version Footer */}
       {appVersion && (
         <div className="mt-6 text-center">
-          <p className="text-xs text-[#4B5563]">GeekSpace v{appVersion}</p>
+          <p className="text-xs text-[#4B5563]">Agentin v{appVersion}</p>
         </div>
       )}
     </div>

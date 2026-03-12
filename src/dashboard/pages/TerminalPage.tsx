@@ -346,7 +346,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
           <div className="w-3 h-3 rounded-full bg-[#FFB800]" />
           <div className="w-3 h-3 rounded-full bg-[#00FF88]" />
           <div className="flex-1 text-center">
-            <span className="text-xs text-[#6B7280] font-mono">{user?.username || 'user'}@geekspace ~ terminal</span>
+            <span className="text-xs text-[#6B7280] font-mono">{user?.username || 'user'}@agentin ~ terminal</span>
           </div>
           <TerminalIcon className="w-4 h-4 text-[#6B7280]" />
         </div>

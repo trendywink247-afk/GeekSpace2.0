@@ -188,3 +188,60 @@ export function getHabitStats(userId: string, habitId: number): {
 
   return { habit_id: habitId, habit, days, totalLogs };
 }
+
+// ---- Habit Insights (V2) ----
+
+export interface HabitInsight {
+  id: number;
+  name: string;
+  streak: number;
+  bestStreak: number;
+  daysSinceLast: number;
+  totalLogs: number;
+  status: 'on_track' | 'at_risk' | 'broken' | 'new';
+  nudge: string;
+}
+
+export function getHabitInsights(userId: string): HabitInsight[] {
+  const rows = db.prepare(`
+    SELECT h.id, h.name, h.current_streak as streak, h.longest_streak as best_streak,
+           COUNT(hl.id) as total_logs,
+           MAX(hl.logged_at) as last_logged_ms
+    FROM habits h
+    LEFT JOIN habit_logs hl ON hl.habit_id = h.id AND hl.user_id = h.user_id
+    WHERE h.user_id = ?
+    GROUP BY h.id
+  `).all(userId) as Array<{id:number;name:string;streak:number;best_streak:number;total_logs:number;last_logged_ms:number|null}>;
+
+  return rows.map(h => {
+    const daysSinceLast = h.last_logged_ms
+      ? Math.floor((Date.now() - h.last_logged_ms) / 86400000)
+      : 999;
+    const streak = h.streak || 0;
+    const bestStreak = h.best_streak || 0;
+
+    let status: HabitInsight['status'];
+    let nudge: string;
+
+    if (!h.total_logs) {
+      status = 'new';
+      nudge = `You added "${h.name}" but haven't logged it yet. Today's a great day to start! 🌟`;
+    } else if (daysSinceLast === 0) {
+      status = 'on_track';
+      nudge = streak > 1
+        ? `"${h.name}" done today! 🔥 ${streak}-day streak — keep it going!`
+        : `"${h.name}" done today! Great start!`;
+    } else if (daysSinceLast === 1) {
+      status = 'at_risk';
+      nudge = `"${h.name}" not logged today yet — don't break your ${streak}-day streak!`;
+    } else if (daysSinceLast <= 3) {
+      status = 'at_risk';
+      nudge = `"${h.name}" paused ${daysSinceLast} days. You've done it ${h.total_logs} times — jump back in!`;
+    } else {
+      status = 'broken';
+      nudge = `"${h.name}" hasn't been logged in ${daysSinceLast} days. Fresh start — no pressure 💪`;
+    }
+
+    return { id: h.id, name: h.name, streak, bestStreak, daysSinceLast, totalLogs: h.total_logs, status, nudge };
+  });
+}

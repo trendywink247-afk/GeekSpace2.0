@@ -1942,3 +1942,6 @@ try { db.exec(`ALTER TABLE users ADD COLUMN google_id TEXT DEFAULT NULL`); } cat
 try { db.exec(`ALTER TABLE users ADD COLUMN github_id TEXT DEFAULT NULL`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE users ADD COLUMN github_username TEXT DEFAULT NULL`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE users ADD COLUMN updated_at TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+
+// Phase 4: 30-min reminder preview tracking column
+try { db.exec(`ALTER TABLE reminders ADD COLUMN preview_sent INTEGER`); } catch { /* column already exists */ }

@@ -13,11 +13,13 @@ import {
   parseTelegramUpdate,
   extractBotCommand,
   sendTelegramMessage,
+  sendTelegramNotification,
   sendTelegramButtons,
   getBotUsername,
   answerCallbackQuery,
   getTelegramFileUrl,
   downloadTelegramFile,
+  escapeTelegramHtml,
   type TelegramUpdate,
 } from '../services/telegram.js';
 import { handleIncomingMessage, sendChannelResponse } from '../services/message-router.js';
@@ -930,28 +932,21 @@ async function handleTelegramCommand(
         "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
       ).get(String(chatId)) as { user_id: string } | undefined;
       if (!link) { await sendTelegramMessage(chatId, 'Link your account first.'); return; }
-      const habits = db.prepare(
-        "SELECT name, current_streak, longest_streak FROM habits WHERE user_id = ? ORDER BY current_streak DESC"
-      ).all(link.user_id) as Array<{ name: string; current_streak: number; longest_streak: number }>;
-      // Check which habits were logged today
-      const today = new Date().toISOString().slice(0, 10);
-      const loggedToday = db.prepare(
-        "SELECT h.name FROM habit_logs hl JOIN habits h ON hl.habit_id = h.id WHERE hl.user_id = ? AND date(hl.logged_at/1000, 'unixepoch') = ?"
-      ).all(link.user_id, today) as Array<{ name: string }>;
-      const loggedNames = new Set(loggedToday.map(l => l.name));
-      if (habits.length === 0) {
-        await sendTelegramMessage(chatId, 'You have no habits yet. Say "track my morning workout" to start a habit!');
+      const { getHabitInsights } = await import('../services/habits.js');
+      const insights = getHabitInsights(link.user_id);
+      let habitsMsg: string;
+      if (!insights.length) {
+        habitsMsg = `🎯 <b>Your Habits</b>\n\nNo habits tracked yet!\n\nTo start, just say:\n• "I did my morning workout today"\n• "track habit: meditation"\n• "I completed my reading habit"\n\nI'll track streaks, send nudges, and celebrate your wins!`;
       } else {
-        const lines = habits.map(h => {
-          const done = loggedNames.has(h.name) ? '✅' : '⬜';
-          const streak = h.current_streak > 0 ? ` 🔥${h.current_streak}d` : '';
-          return `${done} ${h.name}${streak}`;
-        });
-        await sendTelegramMessage(chatId,
-          `Your Habits (${today}):\n\n${lines.join('\n')}\n\n` +
-          `To log a habit: "I did my [habit name]"\nTo add new: "track my [habit name]"`
-        );
+        const lines = insights.map(h => {
+          const icon = { on_track: '✅', at_risk: '⚠️', broken: '❌', new: '🆕' }[h.status];
+          const streakTxt = h.streak > 0 ? ` 🔥 ${h.streak}d` : '';
+          const bestTxt = h.bestStreak > h.streak && h.bestStreak > 1 ? ` (best: ${h.bestStreak})` : '';
+          return `${icon} <b>${escapeTelegramHtml(h.name)}</b>${streakTxt}${bestTxt}\n   <i>${escapeTelegramHtml(h.nudge)}</i>`;
+        }).join('\n\n');
+        habitsMsg = `🎯 <b>Your Habits</b>\n\n${lines}`;
       }
+      await sendTelegramNotification(chatId, habitsMsg);
       break;
     }
 
@@ -1071,10 +1066,10 @@ async function handleTelegramCommand(
 
       // Search memories
       const memories = db.prepare(`
-        SELECT content FROM user_memories WHERE user_id = ? AND content LIKE ? LIMIT 3
-      `).all(link.user_id, like) as Array<{ content: string }>;
+        SELECT value FROM user_memories WHERE user_id = ? AND (key LIKE ? OR value LIKE ?) LIMIT 3
+      `).all(link.user_id, like, like) as Array<{ value: string }>;
       if (memories.length) {
-        results.push(`Memories (${memories.length}):\n${memories.map(m => `  • ${m.content.slice(0, 80)}...`).join('\n')}`);
+        results.push(`Memories (${memories.length}):\n${memories.map(m => `  • ${m.value.slice(0, 80)}`).join('\n')}`);
       }
 
       if (results.length === 0) {

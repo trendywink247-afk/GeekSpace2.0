@@ -171,7 +171,25 @@ function hasToolTrigger(message: string): boolean {
     /\b[$₹€£]\d+(\.\d+)?\s+(on|for)\s+\w/i.test(lower) ||
     /\bshow\s+(my\s+)?(spending|expenses|purchases)\b/i.test(lower) ||
     /\b(how\s+much\s+(have\s+i\s+)?spent|my\s+expenses|expense\s+(report|summary|tracker))\b/i.test(lower) ||
-    /\b(set\s+)?(monthly|weekly|daily)?\s*(budget|spending\s+limit)\b/i.test(lower)
+    /\b(set\s+)?(monthly|weekly|daily)?\s*(budget|spending\s+limit)\b/i.test(lower) ||
+    // === HINGLISH PATTERNS ===
+    // Hinglish expense
+    /[₹$]\d|\d+\s*(rupay?|rs\.?|bucks?)\b/i.test(lower) ||
+    /kharch|kharcha|paisa\s+(gaya|diya|lagay)|bill\s+(pay|diya)/i.test(lower) ||
+    /(swiggy|zomato|ola|uber|amazon|flipkart|netflix|hotstar)\s+pe\b/i.test(lower) ||
+    /\b(pe|par|mein)\s+\d+\s*(rupay?|rs)/i.test(lower) ||
+    // Hinglish habits
+    /\b(gym|yoga|meditation|exercise|workout|padhai|study)\s+(kiya|ki|kar[ae]?)\b/i.test(lower) ||
+    /\b(aaj|kal)\s+(mein?ne?|maine)\s+\w+\s+(kiya|ki)\b/i.test(lower) ||
+    /habit\s+(log|track)\s+kar/i.test(lower) ||
+    // Hinglish reminders
+    /\bkal\b.*\b(baj[ae]?|subah|shaam|raat)\b/i.test(lower) ||
+    /\b(subah|shaam|raat)\b.*\d+.*\breminder\b/i.test(lower) ||
+    /yaad\s+dila(o|na)|remind\s+kar(o|na)/i.test(lower) ||
+    /\breminder\s+(set|lagao|chahiye)\b/i.test(lower) ||
+    // Hinglish notes
+    /\bnote\s+banana|save\s+kar(o|na)\b/i.test(lower) ||
+    /\byan?\s+(note|likh)\b/i.test(lower)
   );
 }
 

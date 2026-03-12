@@ -72,12 +72,28 @@ async function generateBriefing(userId: string): Promise<string> {
 
   const streakNote = data.streak > 0 ? `${data.streak}-day completion streak` : 'no active streak';
   const overdueNote = data.overdueCount > 0 ? ` (${data.overdueCount} overdue)` : '';
+
+  // Habit insights section
+  let habitSection = '';
+  try {
+    const { getHabitInsights } = await import('./habits.js');
+    const insights = getHabitInsights(userId);
+    const onTrack = insights.filter(h => h.status === 'on_track');
+    const atRisk = insights.filter(h => h.status === 'at_risk' || h.status === 'broken').slice(0, 2);
+    if (onTrack.length) {
+      habitSection += `\n- Active habit streaks: ${onTrack.map(h => `${h.name} (${h.streak}d)`).join(', ')}`;
+    }
+    if (atRisk.length) {
+      habitSection += `\n- Habits needing attention: ${atRisk.map(h => h.name).join(', ')}`;
+    }
+  } catch { /* habits section optional */ }
+
   const prompt = `Generate a concise daily briefing (3-5 sentences) based on this data:
 - ${data.pendingReminders} pending reminders${overdueNote}, ${data.dueToday} due today
 - ${data.completedYesterday} reminders completed yesterday
 - ${data.recentMessages} AI messages sent in the last 24h
-- Completion streak: ${streakNote}
-Be conversational and upbeat. Mention the streak if > 1. If there are overdue items, gently remind. Keep it short and actionable.`;
+- Completion streak: ${streakNote}${habitSection}
+Be conversational and upbeat. Mention active habit streaks if present. If there are overdue items or at-risk habits, gently remind. Keep it short and actionable.`;
 
   const picoAvailable = await isPicoClawAvailable();
 

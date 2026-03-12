@@ -205,6 +205,12 @@ async function runProactiveChecks(): Promise<void> {
   const hour = getISTHour();
   const minute = getISTMinute();
   const todayStr = getISTDateStr();
+
+  // 30-min preview runs every 30 min (minute 0 or 30)
+  if (minute === 0 || minute === 30) {
+    await sendReminderPreviews().catch(err => logger.warn({ err }, 'Reminder preview failed'));
+  }
+
   if (minute !== 0) return;
   let users: Array<{ id: string }> = [];
   try {
@@ -230,6 +236,10 @@ async function runProactiveChecks(): Promise<void> {
           "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'idle_check_in' AND sent_at >= ?"
         ).get(user.id, new Date(todayStr + 'T00:00:00Z').getTime()) as { id: number } | undefined;
         if (!alreadySentIdle) await idleCheckIn(user.id);
+      }
+      // Habit idle nudge at 11:00 IST daily
+      if (hour === 11) {
+        await sendHabitNudges().catch(err => logger.warn({ err }, 'Habit nudge failed'));
       }
       // Weekly report every Sunday at 19:00 IST
       const istDate = new Date(new Date().getTime() + new Date().getTimezoneOffset() * 60 * 1000 + 5.5 * 60 * 60 * 1000);
@@ -329,10 +339,88 @@ export async function weeklyExpenseDigest(userId: string): Promise<string | null
   }
 }
 
+// ── Reminder 30-min preview ──────────────────────────────────
+
+async function sendReminderPreviews(): Promise<void> {
+  const { cacheGet, cacheSet } = await import('./cache.js');
+  const { sendTelegramNotification, escapeTelegramHtml: escHtml } = await import('./telegram.js');
+  const now = Date.now();
+  const windowStart = now + 25 * 60 * 1000;   // 25 min from now
+  const windowEnd   = now + 35 * 60 * 1000;   // 35 min from now
+
+  const users = db.prepare(`
+    SELECT DISTINCT u.id, cl.external_id as chat_id
+    FROM users u
+    JOIN channel_links cl ON cl.user_id = u.id
+    WHERE cl.channel = 'telegram' AND cl.is_verified = 1
+  `).all() as Array<{id:string; chat_id:string}>;
+
+  for (const user of users) {
+    const upcoming = db.prepare(`
+      SELECT id, text, scheduled_for FROM reminders
+      WHERE user_id = ? AND completed = 0
+      AND scheduled_for BETWEEN ? AND ?
+      AND (preview_sent IS NULL OR preview_sent < ?)
+    `).all(user.id, windowStart, windowEnd, now - 300_000) as Array<{id:number; text:string; scheduled_for:number}>;
+
+    for (const r of upcoming) {
+      // Redis dedup: don't preview same reminder twice
+      const dedupKey = `preview:${r.id}`;
+      const already = await cacheGet(dedupKey).catch(() => null);
+      if (already) continue;
+
+      const minutesLeft = Math.round((r.scheduled_for - now) / 60_000);
+      await sendTelegramNotification(user.chat_id,
+        `📌 <b>Heads up!</b> "${escHtml(r.text)}" is due in ~${minutesLeft} minutes`
+      ).catch(() => {});
+
+      try {
+        db.prepare('UPDATE reminders SET preview_sent = ? WHERE id = ?').run(now, r.id);
+        await cacheSet(dedupKey, '1', 3600);
+      } catch { /* non-fatal */ }
+    }
+  }
+}
+
+// ── Habit idle nudge ─────────────────────────────────────────
+
+async function sendHabitNudges(): Promise<void> {
+  const { cacheGet, cacheSet } = await import('./cache.js');
+  const { getHabitInsights } = await import('./habits.js');
+  const { sendTelegramNotification, escapeTelegramHtml: escHtml } = await import('./telegram.js');
+
+  const users = db.prepare(`
+    SELECT DISTINCT u.id, cl.external_id as chat_id
+    FROM users u
+    JOIN channel_links cl ON cl.user_id = u.id
+    WHERE cl.channel = 'telegram' AND cl.is_verified = 1
+  `).all() as Array<{id:string; chat_id:string}>;
+
+  for (const user of users) {
+    const rateLimitKey = `habit_nudge:${user.id}`;
+    const alreadyNudged = await cacheGet(rateLimitKey).catch(() => null);
+    if (alreadyNudged) continue;
+
+    const insights = getHabitInsights(user.id);
+    const idle = insights
+      .filter(h => (h.status === 'at_risk' || h.status === 'broken') && h.daysSinceLast >= 2)
+      .sort((a, b) => b.daysSinceLast - a.daysSinceLast);
+
+    if (!idle.length) continue;
+
+    const h = idle[0];
+    await sendTelegramNotification(user.chat_id,
+      `💪 Hey! Noticed you haven't logged <b>${escHtml(h.name)}</b> in ${h.daysSinceLast} days.\n\nJust say <i>"I did ${escHtml(h.name)} today"</i> to get back on track!`
+    ).catch(() => {});
+
+    await cacheSet(rateLimitKey, '1', 86400).catch(() => {});
+  }
+}
+
 export function initProactiveEngine(): void {
   if (proactiveTimer) return;
   proactiveTimer = setInterval(() => {
     void runProactiveChecks();
   }, 60_000);
-  logger.info('Proactive engine started (daily_briefing@08:00 IST, overdue_alert@10:00 IST, idle_check_in@08:00 IST, expense_digest@19:00 IST Sunday)');
+  logger.info('Proactive engine started (daily_briefing@08:00 IST, overdue_alert@10:00 IST, idle_check_in@08:00 IST, expense_digest@19:00 IST Sunday, 30min_preview, habit_nudge@11:00 IST)');
 }

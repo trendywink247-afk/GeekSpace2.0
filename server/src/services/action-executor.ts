@@ -21,6 +21,44 @@ import { sendTelegramNotification, escapeTelegramHtml, sendTelegramButtons } fro
 import { tavilySearch } from './tavily.js';
 import { fetchAndExtract, fetchScreenshot, extractLinks, smartSearch } from './web-research.js';
 
+// ── Hinglish Preprocessor ────────────────────────────────────
+
+// Pre-process Hinglish time expressions into English before LLM datetime parsing
+export function hinglishToEnglish(text: string): string {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowDate = tomorrow.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const todayDate = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  return text
+    .replace(/\bkal\b/gi, `tomorrow (${tomorrowDate})`)
+    .replace(/\baaj\b/gi, `today (${todayDate})`)
+    .replace(/\bsubah\b/gi, 'morning')
+    .replace(/\bshaam\b/gi, 'evening 6pm')
+    .replace(/\braat\b/gi, 'night 10pm')
+    .replace(/\bduphar\b/gi, 'afternoon 2pm')
+    .replace(/(\d+)\s*baj[ae]?/gi, "$1 o'clock")
+    .replace(/\bdo ghante\b/gi, '2 hours')
+    .replace(/\bek ghante?\b/gi, '1 hour')
+    .replace(/\bteen ghante?\b/gi, '3 hours')
+    .replace(/\bbaad mein\b/gi, 'later');
+}
+
+// Indian merchant → category mapping
+const INDIAN_MERCHANT_CATS: Record<string, string> = {
+  swiggy: 'food', zomato: 'food', dunzo: 'food', blinkit: 'food', zepto: 'food',
+  'big basket': 'food', bigbasket: 'food', instamart: 'food',
+  ola: 'transport', uber: 'transport', rapido: 'transport', metro: 'transport',
+  amazon: 'shopping', flipkart: 'shopping', meesho: 'shopping', myntra: 'shopping',
+  ajio: 'shopping', nykaa: 'shopping', dmart: 'shopping',
+  netflix: 'entertainment', prime: 'entertainment', hotstar: 'entertainment',
+  jiocinema: 'entertainment', spotify: 'entertainment', gaana: 'entertainment',
+  pharmeasy: 'health', netmeds: 'health', 'apollo pharmacy': 'health',
+  aws: 'tech', digitalocean: 'tech', hostinger: 'tech',
+  jio: 'utilities', airtel: 'utilities', electricity: 'utilities', bsnl: 'utilities',
+};
+
 // ── Types ───────────────────────────────────────────────────
 
 export interface ActionResult {
@@ -371,7 +409,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
 
       // ── set_reminder ────────────────────────────────────────
       case 'set_reminder': {
-        const text = params.text as string;
+        const text = hinglishToEnglish(params.text as string);
         const reminderId = uuid();
         const userRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
         const userTimezone = userRow?.timezone || 'Asia/Kolkata';
@@ -1330,10 +1368,19 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
 
       case 'track_expense': {
         const amount = params.amount as number;
-        const category = (params.category as string) || 'other';
+        let category = (params.category as string) || 'other';
         const description = (params.description as string) || '';
         const date = (params.date as string) || new Date().toISOString().slice(0, 10);
         const currency = (params.currency as string) || 'USD';
+
+        // Auto-detect category from description using Indian merchant list
+        if (category === 'other' && description) {
+          const d = description.toLowerCase();
+          for (const [key, cat] of Object.entries(INDIAN_MERCHANT_CATS)) {
+            if (d.includes(key)) { category = cat; break; }
+          }
+        }
+
         db.prepare(`
           INSERT INTO expenses (user_id, amount, category, description, date, currency)
           VALUES (?, ?, ?, ?, ?, ?)

@@ -48,7 +48,7 @@ export function MediaGalleryPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `geekspace-${item.type}-${item.id}.${item.type === 'image' ? 'png' : 'mp4'}`;
+      a.download = `agentin-${item.type}-${item.id}.${item.type === 'image' ? 'png' : 'mp4'}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
