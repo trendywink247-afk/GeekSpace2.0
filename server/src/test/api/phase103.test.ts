@@ -101,7 +101,7 @@ describe('Phase 103: Plan cap fixes', () => {
       const content = readFileSync(
         resolve(SERVER_SRC, 'services/message-router.ts'), 'utf-8'
       );
-      const historyIdx = content.indexOf('const history = getConversationContext(userId)');
+      const historyIdx = content.indexOf('const history = getConversationContext(userId');
       const logIdx = content.indexOf('logConversation(userId');
       expect(historyIdx).toBeGreaterThan(-1);
       expect(logIdx).toBeGreaterThan(-1);
