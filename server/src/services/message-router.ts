@@ -30,6 +30,7 @@ import { fetchAndExtract, smartSearch } from './web-research.js';
 import { addInboxMessage } from './inbox.js';
 import { checkContentSafety } from './content-filter.js';
 import { isLaunchModeRequest, runMultiAgentOrchestration } from './multi-agent-orchestrator.js';
+import { isResearchRequest, runResearchJob } from './research-job.js';
 
 // ---- Resolve agent name from config + personality (never returns 'Geek') ----
 function resolveAgentName(
@@ -763,6 +764,23 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       logger.info({ channel: msg.channel, userId, count: rows.length }, 'List workflows fast-path executed');
       return;
     }
+  }
+
+  // 5ag. Async research fast-path (Telegram only)
+  // For web chat, streaming SSE handles long responses fine — no need for async delivery.
+  // Fire-and-forget: sends "On it!" immediately, then delivers Tavily results when done.
+  if (msg.channel === 'telegram' && isResearchRequest(msg.text) && !hasToolTrigger(msg.text)) {
+    await sendChannelResponse({
+      channel: msg.channel,
+      externalId: msg.externalId,
+      text: "On it! Researching now — I'll send results in a few minutes 🔍",
+      replyToMessageId: msg.messageId,
+    });
+    logConversation(userId, 'user', msg.text, requestId);
+    logConversation(userId, 'assistant', "Researching...", requestId, 'builtin', 'research-job');
+    runResearchJob({ query: msg.text, chatId: msg.externalId }).catch(() => {});
+    logger.info({ channel: msg.channel, userId, query: msg.text.slice(0, 60) }, 'Research fast-path fired');
+    return;
   }
 
   // 5b. Auto-detect task intents (remind, telegram, deploy) — route to Pico Fleet
