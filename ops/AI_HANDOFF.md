@@ -1,11 +1,41 @@
-# AI Handoff — Phase 4+5+8: Orchestrator + Inline Keyboards + File Handling
+# AI Handoff — Phase 4 Completion Run: Brand Purge + Hinglish + Habit V2 + Proactive V3
 **Date:** 2026-03-12
-**Branch:** main = live-production = 2cafb02
-**Status:** DEPLOYED — all Phase 4+5+8 features live, 2223 tests pass
+**Branch:** main = live-production = 19aa040
+**Status:** DEPLOYED | CI: green | Health: ok | v3.1.0
+
+## Previous
+Phase 4+5+8 commit: 2cafb02 — Multi-Agent Orchestrator, Inline Keyboards, File Handling
+
+## What Was Done This Session (Phase 4 Completion Run)
+- Brand purge: Zero user-visible GeekSpace/PicoClaw/OpenClaw refs in UI
+- Hinglish routing: hasToolTrigger patterns + hinglishToEnglish() + Indian merchant auto-categories
+- Habit Intelligence V2: getHabitInsights(), /habits V2 with status icons+nudges, briefing integration
+- Proactive Engine V3: sendReminderPreviews() every 30min, sendHabitNudges() at 11:00 IST
+- preview_sent column added to reminders (additive migration)
+- /search bug fixed: user_memories.content → .value
+- VPS hardened: Redis TTLs all set, SQLite integrity OK, memory healthy
+- Battle test: 30+ patterns verified
+
+## Next Session Priorities (Phase 5)
+1. Voice Intelligence V2 — multi-language TTS response routing, voice reminders
+2. Smart Scheduling — calendar conflict detection when setting reminders
+3. AI Email Composer — draft from bullets, Resend integration
+4. Smart Search UI — Ctrl+K dashboard (phase-103)
+5. Seedance Director Mode — add FAL_KEY to .env, test fal.ai
+6. Onboarding hardening — prevent in-progress onboarding blocking established Telegram users
+
+## Start Commands
+```bash
+cd ~/GeekSpace2.0
+git log --oneline -5
+curl -s http://localhost:3001/api/health
+cd server && npm test
+cat ops/AI_HANDOFF.md
+```
 
 ---
 
-## What Was Done This Session
+## Previous Session — Phase 4+5+8: Multi-Agent Orchestrator, Inline Keyboards, File Handling
 
 ### Phase 4 — Multi-Agent Parallel Orchestrator ✅
 - NEW: `server/src/services/multi-agent-orchestrator.ts`
