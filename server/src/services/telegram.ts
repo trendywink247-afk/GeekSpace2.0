@@ -325,7 +325,7 @@ export async function registerTelegramWebhook(webhookUrl: string): Promise<boole
   try {
     const body: Record<string, unknown> = {
       url: webhookUrl,
-      allowed_updates: ['message'],
+      allowed_updates: ['message', 'callback_query'],
       max_connections: 40,
     };
     if (config.telegramWebhookSecret) {
