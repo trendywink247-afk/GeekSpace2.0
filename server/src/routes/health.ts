@@ -80,6 +80,41 @@ export function getCachedComponents(): ComponentStatus {
   return cachedComponents;
 }
 
+// ── Health alert tracking ───────────────────────────────────
+// Track previous component states so we can alert on transitions.
+let prevComponents: ComponentStatus = {};
+let alertSentAt: Record<string, number> = {}; // prevent re-alerting within 1h
+
+async function sendHealthAlert(service: string, prevStatus: string, newStatus: string): Promise<void> {
+  try {
+    // Rate limit: max 1 alert per service per hour
+    const now = Date.now();
+    if (alertSentAt[service] && now - alertSentAt[service] < 60 * 60 * 1000) return;
+    alertSentAt[service] = now;
+
+    const emoji = newStatus === 'down' || newStatus === 'unreachable' ? '🔴' : '🟢';
+    const msg = `${emoji} Health Alert: <b>${service}</b> changed from <b>${prevStatus}</b> → <b>${newStatus}</b>`;
+    logger.warn({ service, prevStatus, newStatus }, 'Health state transition detected');
+
+    // Send to admin users with Telegram linked
+    const adminUsers = db.prepare(
+      "SELECT u.id FROM users u JOIN channel_links cl ON cl.user_id = u.id WHERE cl.channel = 'telegram' AND cl.is_verified = 1 AND u.role = 'admin' LIMIT 3"
+    ).all() as Array<{ id: string }>;
+
+    if (adminUsers.length === 0) return;
+
+    const { sendTelegramNotification } = await import('../services/telegram.js');
+    for (const admin of adminUsers) {
+      const link = db.prepare(
+        "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 LIMIT 1"
+      ).get(admin.id) as { external_id: string } | undefined;
+      if (link) await sendTelegramNotification(link.external_id, msg).catch(() => {});
+    }
+  } catch (err) {
+    logger.warn({ err, service }, 'Failed to send health alert');
+  }
+}
+
 /**
  * Start background probe cache — runs probes every 30s in parallel.
  * Call once at server startup. Safe to call in each cluster worker.
@@ -87,7 +122,22 @@ export function getCachedComponents(): ComponentStatus {
 export function startHealthProbeCache(): void {
   const refresh = async () => {
     try {
-      cachedComponents = await runProbes();
+      const newComponents = await runProbes();
+      // Check for state transitions and send alerts
+      for (const [service, newStatus] of Object.entries(newComponents)) {
+        const prevStatus = prevComponents[service];
+        if (prevStatus && prevStatus !== newStatus) {
+          const isNowBad = newStatus === 'down' || newStatus === 'unreachable';
+          const wasGood = prevStatus === 'ok' || prevStatus === 'reachable' || prevStatus === 'active';
+          const isNowGood = newStatus === 'ok' || newStatus === 'reachable' || newStatus === 'active';
+          const wasBad = prevStatus === 'down' || prevStatus === 'unreachable';
+          if ((wasGood && isNowBad) || (wasBad && isNowGood)) {
+            sendHealthAlert(service, prevStatus, newStatus).catch(() => {});
+          }
+        }
+      }
+      prevComponents = { ...newComponents };
+      cachedComponents = newComponents;
       cacheAge = Date.now();
     } catch (err) {
       logger.warn({ err }, 'Health probe refresh failed');
