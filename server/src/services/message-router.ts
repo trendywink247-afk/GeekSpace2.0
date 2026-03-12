@@ -413,6 +413,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     return;
   }
 
+  try {
   // 3. Update last_message_at in channel_links + last_sync in integrations (78.6: reflect real activity time)
   const now = new Date().toISOString();
   db.prepare('UPDATE channel_links SET last_message_at = ? WHERE channel = ? AND external_id = ?')
@@ -1159,6 +1160,15 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     latencyMs: Date.now() - startTime,
     creditCost,
   }, 'Channel message processed');
+  } catch (err: unknown) {
+    logger.error({ err: (err as Error).message, requestId, channel: msg.channel }, 'Unhandled error in handleIncomingMessage');
+    await sendChannelResponse({
+      channel: msg.channel,
+      externalId: msg.externalId,
+      text: "Something went wrong on my end. Please try again in a moment.",
+      replyToMessageId: msg.messageId,
+    }).catch(() => { /* last-resort — don't throw */ });
+  }
 }
 
 // ---- Channel Dispatchers ----
