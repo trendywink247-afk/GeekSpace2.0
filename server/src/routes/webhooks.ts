@@ -143,8 +143,8 @@ webhooksRouter.post('/telegram', async (req, res) => {
                 const snoozedAt = new Date(Date.now() + 3600_000);
                 const newDatetime = snoozedAt.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
                 const newScheduledFor = snoozedAt.getTime();
-                db.prepare("UPDATE reminders SET datetime = ?, scheduled_for = ? WHERE id = ? AND user_id = ?")
-                  .run(newDatetime, newScheduledFor, reminderId, link.user_id);
+                db.prepare("UPDATE reminders SET datetime = ?, scheduled_for = ?, snooze_until = ? WHERE id = ? AND user_id = ?")
+                  .run(newDatetime, newScheduledFor, newScheduledFor, reminderId, link.user_id);
                 db.prepare("INSERT OR IGNORE INTO snooze_log (reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?)")
                   .run(reminderId, link.user_id, Date.now(), '1h', newDatetime);
                 await sendTelegramMessage(callbackChatId, `💤 Snoozed! "${reminder.text}" will remind you in 1 hour.`);
