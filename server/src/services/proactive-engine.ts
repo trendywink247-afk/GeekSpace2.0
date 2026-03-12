@@ -4,6 +4,7 @@
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { getTodayEvents } from './calendar-sync.js';
+import { textToSpeech, sendTelegramVoice } from './voice.js';
 
 export type ProactiveMessageType = 'daily_briefing' | 'overdue_alert' | 'idle_check_in' | 'weekly_report';
 
@@ -102,6 +103,20 @@ export async function dailyBriefing(userId: string): Promise<string | null> {
     message += ' You have ' + String(calendarEvents.length) + ' calendar ' + evtWord + ' today: ' + eventList + moreStr + '.';
   }
   await sendViaTelegram(userId, message);
+  // Fire-and-forget: send TTS voice note after text message — failure must not block text delivery
+  {
+    const tgLink = db.prepare(
+      "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 LIMIT 1"
+    ).get(userId) as { external_id: string } | undefined;
+    if (tgLink) {
+      const chatId = tgLink.external_id;
+      textToSpeech(message).then((audioBuffer: Buffer) => {
+        return sendTelegramVoice(chatId, audioBuffer);
+      }).catch((e: unknown) => {
+        logger.warn({ err: (e as Error).message }, 'Voice briefing TTS failed — text sent OK');
+      });
+    }
+  }
   recordProactiveMessage(userId, 'daily_briefing', message);
   logger.info({ userId, dueToday, pendingTotal, overdueCount, calEvents: calendarEvents.length }, "Daily briefing sent");
   return message;
