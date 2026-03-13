@@ -293,10 +293,21 @@ function parseReminderIntent(message: string): { text: string; datetime: string 
   match = message.match(/set\s+(?:a\s+)?reminder\s+(?:for\s+)?(.+?)\s+(?:to\s+)(.+)/i);
   if (match) return { text: match[2].trim(), datetime: match[1].trim() };
 
-  // Hinglish: "yaad dila dena TASK kal/aaj TIME baje"
-  match = message.match(/yaad\s+dila(?:o|na|dena)\s+(.+?)\s+(kal|aaj|parso)\s*(\d{1,2}\s*baje)?/i);
+  // Hinglish: "yaad dila dena kal/aaj TIME TASK" (time-first order)
+  // Note: "dila dena" / "dila do" / "dila na" are two words; "dilao" is one word
+  match = message.match(/yaad\s+dila(?:o|\s+(?:do|dena|na))\s+(kal|aaj|parso|subah|shaam)\s*(\d{1,2}\s*baje)?\s+(.+)/i);
   if (match) {
-    const when = match[2].toLowerCase() === 'kal' ? 'tomorrow' : match[2].toLowerCase() === 'aaj' ? 'today' : 'day after tomorrow';
+    const whenMap: Record<string, string> = { kal: 'tomorrow', aaj: 'today', parso: 'day after tomorrow', subah: 'tomorrow morning', shaam: 'tomorrow evening' };
+    const when = whenMap[match[1].toLowerCase()] || match[1];
+    const time = match[2] ? ` at ${match[2].replace(/\s*baje/, '')}` : '';
+    return { text: match[3].trim(), datetime: `${when}${time}` };
+  }
+
+  // Hinglish: "yaad dila dena TASK kal/aaj TIME baje" (task-first order)
+  match = message.match(/yaad\s+dila(?:o|\s+(?:do|dena|na))\s+(.+?)\s+(kal|aaj|parso|subah|shaam)\s*(\d{1,2}\s*baje)?/i);
+  if (match) {
+    const whenMap: Record<string, string> = { kal: 'tomorrow', aaj: 'today', parso: 'day after tomorrow', subah: 'tomorrow morning', shaam: 'tomorrow evening' };
+    const when = whenMap[match[2].toLowerCase()] || match[2];
     const time = match[3] ? ` at ${match[3].replace(/\s*baje/, '')}` : '';
     return { text: match[1].trim(), datetime: `${when}${time}` };
   }
@@ -304,6 +315,12 @@ function parseReminderIntent(message: string): { text: string; datetime: string 
   // Hinglish: "remind karo/karna TASK TIME"
   match = message.match(/remind\s+kar(?:o|na)\s+(.+?)\s+(kal|aaj|tomorrow|today|\d{1,2}\s*(?:am|pm|baje)|\d{1,2}:\d{2})/i);
   if (match) return { text: match[1].trim(), datetime: match[2].trim() };
+
+  // Hinglish: "remind karo/karna TASK" (no explicit time — default 1h)
+  match = message.match(/remind\s+kar(?:o|na)\s+(.{3,})/i);
+  if (match && !/\b(what|show|list|cancel|delete|how|kya)\b/i.test(match[1])) {
+    return { text: match[1].trim(), datetime: 'in 1 hour' };
+  }
 
   // Simple: "remind me to TASK" (no time — let server default)
   match = message.match(/remind\s+me\s+(?:to\s+)?(.{3,})/i);
