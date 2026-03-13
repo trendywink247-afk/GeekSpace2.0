@@ -1211,16 +1211,21 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
       case 'create_automation': {
         const autoId = uuid();
         const name = (params.name as string) || 'My Automation';
-        const triggerType = (params.trigger_type as string) || 'manual';
-        const actionType = (params.action_type as string) || 'telegram-message';
+        // Schema sends 'trigger' (manual|daily|weekly); fall back to 'trigger_type' for legacy callers
+        const triggerType = (params.trigger as string) || (params.trigger_type as string) || 'manual';
+        // Derive actionType from first step if provided; fall back to legacy 'action_type' param
+        const steps = (params.steps as Array<{ action: string; params?: Record<string, unknown> }> | undefined) || [];
+        const actionType = steps[0]?.action || (params.action_type as string) || 'telegram-message';
         const triggerConfig = JSON.stringify({
           schedule: params.schedule || '',
           keyword: params.keyword || '',
+          steps,
         });
         const actionConfig = JSON.stringify({
           message: params.message || '',
           reminder_text: params.reminder_text || '',
           url: params.webhook_url || '',
+          steps,
         });
         db.prepare(`
           INSERT INTO automations (id, user_id, name, trigger_type, trigger_config, action_type, action_config, enabled, created_at)

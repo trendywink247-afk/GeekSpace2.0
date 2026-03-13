@@ -130,7 +130,12 @@ Use delete_reminder with deleteAll:true to wipe all pending reminders, or remind
 tool: search_memory
 query: what did I say about my project last week
 <<<END>>>
-Use search_memory when the user asks "what did I say about X", "find my note about Y", "do you remember when I mentioned Z", or any question about past conversations or saved memories.`;
+Use search_memory when the user asks "what did I say about X", "find my note about Y", "do you remember when I mentioned Z", or any question about past conversations or saved memories.
+<<<ACTION>>>
+tool: portfolio_update_skills
+skills: ["Skill 1", "Skill 2", "Skill 3"]
+<<<END>>>
+Use portfolio_update_skills when the user says "update my skills", "add skills to my portfolio", "my skills are X, Y, Z", or similar. Pass skills as a JSON array of strings.`;
 
   return `LANGUAGE RULE: Detect the language the user writes in. ALWAYS reply in that exact language — no exceptions. Hindi → Hindi. Telugu → Telugu. Tamil → Tamil. English → English. Never switch languages unless the user does first.
 
@@ -333,10 +338,32 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
   const reqChannel = (req.body as { channel?: string }).channel;
   // Optional: builder sends this when editing an existing project so generate_code updates it
   const reqExistingArtifactId = (req.body as { existingArtifactId?: string }).existingArtifactId;
-  // Guest/visitor tokens have sub = 'guest:UUID' — route to public portfolio chat handler instead
+  // Guest/visitor tokens have sub = 'guest:UUID' — route to portfolio chat logic
   const isGuestUser = userId.startsWith('guest:');
   if (isGuestUser) {
-    res.status(403).json({ error: 'Please use the portfolio chat endpoint for visitor access.' });
+    const portfolioUsername = req.portfolioUsername ||
+      (req.body as { portfolioUsername?: string }).portfolioUsername;
+    if (!portfolioUsername) {
+      res.status(403).json({ error: 'Please use the portfolio chat endpoint for visitor access.' });
+      return;
+    }
+    // Look up portfolio owner and serve a basic response via Groq
+    try {
+      const ownerRow = db.prepare('SELECT id, name, role, company FROM users WHERE username = ?').get(portfolioUsername) as Record<string, unknown> | undefined;
+      if (!ownerRow) { res.status(404).json({ error: 'Portfolio not found' }); return; }
+      const portfolioRow = db.prepare('SELECT about, skills, projects FROM portfolios WHERE user_id = ?').get(ownerRow.id as string) as Record<string, unknown> | undefined;
+      const agentCfg = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(ownerRow.id as string) as Record<string, unknown> | undefined;
+      const skills: string[] = JSON.parse((portfolioRow?.skills as string) || '[]');
+      const ownerName = (ownerRow.name as string) || portfolioUsername;
+      const agentName = ((agentCfg?.name as string) || 'Jarvis');
+      const sysPrompt = `You are ${agentName}, the AI assistant for ${ownerName}'s portfolio. ${ownerName} is a ${ownerRow.role || 'professional'}${ownerRow.company ? ` at ${ownerRow.company}` : ''}. Skills: ${skills.slice(0, 10).join(', ')}. About: ${(portfolioRow?.about as string || '').slice(0, 300)}. Answer visitor questions about ${ownerName} concisely and professionally.`;
+      const { routeChat } = await import('../services/llm.js');
+      const guestMessage = (req.body as { message: string }).message || '';
+      const result = await routeChat([{ role: 'user', content: guestMessage }], { systemPrompt: sysPrompt, forceProvider: 'groq' });
+      res.json({ reply: result.reply, agentName, ownerName });
+    } catch (guestErr) {
+      res.json({ reply: `Hi! I'm the AI assistant for ${portfolioUsername}'s portfolio. How can I help you?`, agentName: 'Jarvis', ownerName: portfolioUsername });
+    }
     return;
   }
 

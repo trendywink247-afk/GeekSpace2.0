@@ -576,7 +576,7 @@ portfolioRouter.post('/:username/visitor-token', async (req, res) => {
     await cacheSet(rlKey, String(count + 1), 3600);
   } catch { /* Redis unavailable — allow through */ }
 
-  const token = signGuestToken();
+  const token = signGuestToken(username);
   logger.info({ event: 'guest_token_issued', username, ip }, 'Guest visitor token issued');
   res.json({ token, expiresIn: 3600 });
 });

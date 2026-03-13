@@ -111,6 +111,7 @@ Available tools:
 - track_expense: Log an expense. Params: {"amount": <number>, "category": "food|transport|shopping|entertainment|health|utilities|rent|education|travel|other", "description": "<what was bought>", "currency": "USD"}. Use when user says "I spent X on Y", "log $X for food", "add expense: X", "paid X for Y".
 - list_expenses: List expenses. Params: {"period": "today|week|month|all", "category": "<optional filter>"}. Use when user says "show my expenses", "how much did I spend", "spending report", "what have I bought".
 - set_budget: Set a spending budget. Params: {"category": "food|total|...", "amount": <number>, "period": "daily|weekly|monthly"}. Use when user says "set budget", "spending limit", "my food budget is X".
+- portfolio_update_skills: Update portfolio skills list. Params: {"skills": ["Skill1", "Skill2"]}. Use when user says "update my skills", "my skills are X, Y, Z", "add skills to my portfolio".
 
 Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
 
@@ -152,6 +153,10 @@ function hasToolTrigger(message: string): boolean {
     // Social posts
     /\b(write|create|generate)\s+(a\s+)?(tweet|linkedin|instagram|facebook)\s+post\b/i.test(lower) ||
     /\bsocial\s+(media\s+)?post\b/i.test(lower) ||
+    // Portfolio skills update
+    /\bupdate\s+(my\s+)?skills?\b/i.test(lower) ||
+    /\bmy\s+skills?\s+(are|is)\b/i.test(lower) ||
+    /\badd\s+skills?\s+(to\s+)?(my\s+)?portfolio\b/i.test(lower) ||
     // Automation
     /\b(create|set\s+up|add)\s+(an?\s+)?automation\b/i.test(lower) ||
     /\b(create|set\s+up|build)\s+(a\s+)?workflow\b/i.test(lower) ||
@@ -908,7 +913,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // 5ae. get_briefing fast-path — assemble stats without LLM
   {
     const briefingPattern = /\b(morning|daily|weekly)\s+(briefing|summary)\b|\b(show|give)\s+(me\s+)?(my\s+)?(?:(?:daily|weekly)\s+)?(briefing|agenda|summary)\b|\bwhat.{0,20}on\s+my\s+agenda\b/i;
-    if (briefingPattern.test(msg.text)) {
+    // Guard: skip briefing fast-path when user is creating/managing an automation or workflow
+    const isAutomationCreate = /\b(create|set\s+up|add|build)\s+(an?\s+)?(automation|workflow)\b/i.test(msg.text);
+    if (!isAutomationCreate && briefingPattern.test(msg.text)) {
       const isWeekly = /weekly/i.test(msg.text);
       const type = isWeekly ? 'weekly' : 'daily';
       const now = Date.now();

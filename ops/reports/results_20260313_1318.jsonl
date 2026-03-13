@@ -1,0 +1,371 @@
+{"ts":"2026-03-13T11:05:53Z","status":"PASS","label":"phase0_smoke","text":"hello from phase 0 test","http":200}
+{"ts":"2026-03-13T11:10:17Z","status":"PASS","label":"routing_simple_math","text":"what is 2 + 2?","http":200}
+{"ts":"2026-03-13T11:10:26Z","status":"PASS","label":"routing_simple_geo","text":"capital of India?","http":200}
+{"ts":"2026-03-13T11:10:36Z","status":"PASS","label":"routing_simple_time","text":"what time is it?","http":200}
+{"ts":"2026-03-13T11:10:45Z","status":"PASS","label":"routing_identity","text":"who are you?","http":200}
+{"ts":"2026-03-13T11:10:54Z","status":"PASS","label":"routing_greeting","text":"hello","http":200}
+{"ts":"2026-03-13T11:11:34Z","status":"PASS","label":"routing_medium_explain","text":"explain how recursion works in programming","http":200}
+{"ts":"2026-03-13T11:11:46Z","status":"PASS","label":"routing_creative","text":"write a poem about Mumbai monsoon","http":200}
+{"ts":"2026-03-13T11:11:58Z","status":"PASS","label":"routing_medium_compare","text":"what are the pros and cons of React vs Vue?","http":200}
+{"ts":"2026-03-13T11:12:10Z","status":"PASS","label":"routing_medium_history","text":"summarize the French Revolution in 5 points","http":200}
+{"ts":"2026-03-13T11:12:53Z","status":"PASS","label":"routing_complex_arch","text":"design a URL shortener system — architecture, DB schema, API design, scaling","http":200}
+{"ts":"2026-03-13T11:13:08Z","status":"PASS","label":"routing_complex_business","text":"analyze my fashion blog business model and suggest monetization strategies","http":200}
+{"ts":"2026-03-13T11:13:53Z","status":"PASS","label":"routing_launch_mode","text":"launch mode: help me plan the public launch of my fashion blog Aliya's Style","http":200}
+{"ts":"2026-03-13T11:14:18Z","status":"PASS","label":"routing_all_agents","text":"all agents: what tech stack should I use for a portfolio site in 2024?","http":200}
+{"ts":"2026-03-13T11:14:44Z","status":"PASS","label":"routing_multiagent","text":"multi-agent: analyze my decision to quit job and blog full-time","http":200}
+{"ts":"2026-03-13T11:14:54Z","status":"PASS","label":"focus_1","text":"start a 25-minute focus session — writing blog post","http":200}
+{"ts":"2026-03-13T11:15:03Z","status":"PASS","label":"focus_2","text":"pomodoro mode — working on Figma designs","http":200}
+{"ts":"2026-03-13T11:15:12Z","status":"PASS","label":"focus_3","text":"start focus: studying for exam, 45 minutes","http":200}
+{"ts":"2026-03-13T11:15:22Z","status":"PASS","label":"focus_4","text":"I need to focus — 30 min, no distractions","http":200}
+{"ts":"2026-03-13T11:16:01Z","status":"PASS","label":"flash_1","text":"make flashcards for Python list comprehensions","http":200}
+{"ts":"2026-03-13T11:16:10Z","status":"FAIL","label":"verify_SELECT COUNT(*) FROM usage_events WHERE user_id='OCI runtime exec failed: exec failed: unable to start container process: exec: "sqlite3": executable file not found in $PATH'","check":"content_match","expected":"nonempty"}
+{"ts":"2026-03-13T11:16:13Z","status":"PASS","label":"flash_2","text":"create study cards for React hooks — useState, useEffect, useRef","http":200}
+{"ts":"2026-03-13T11:16:22Z","status":"PASS","label":"routing_usage_events_logged","check":"db_count","count":458}
+{"ts":"2026-03-13T11:16:25Z","status":"PASS","label":"flash_3","text":"flashcards for Indian history — Mughal Empire key dates","http":200}
+{"ts":"2026-03-13T11:17:18Z","status":"PASS","label":"meeting_1","text":"save meeting notes: standup with team, attendees: Aliya Priya Ravi, discussed Q1","http":200}
+{"ts":"2026-03-13T11:17:30Z","status":"PASS","label":"meeting_2","text":"meeting summary: brand review call, agreed on new color palette, next step is mo","http":200}
+{"ts":"2026-03-13T11:17:42Z","status":"PASS","label":"meeting_3","text":"record this: client call with FashionBrand, they want 3 posts per week, rate 150","http":200}
+{"ts":"2026-03-13T11:18:23Z","status":"PASS","label":"rem_en_explicit_1","text":"remind me tomorrow at 9am to call mom","http":200}
+{"ts":"2026-03-13T11:18:24Z","status":"PASS","label":"code_review_1","text":"review this code: function add(a,b){return a+b} — any issues?","http":200}
+{"ts":"2026-03-13T11:18:32Z","status":"PASS","label":"rem_en_explicit_2","text":"set a reminder for Monday at 6pm — team standup","http":200}
+{"ts":"2026-03-13T11:18:37Z","status":"PASS","label":"github_pr_1","text":"write a PR description: added dark mode toggle to settings page, branch feat/dar","http":200}
+{"ts":"2026-03-13T11:18:41Z","status":"PASS","label":"rem_en_explicit_3","text":"remind me on Friday at 10am to submit invoice","http":200}
+{"ts":"2026-03-13T11:18:49Z","status":"PASS","label":"seo_audit_1","text":"check SEO for https://example.com","http":200}
+{"ts":"2026-03-13T11:18:51Z","status":"PASS","label":"rem_en_explicit_4","text":"remind me next Sunday at 8am to meal prep","http":200}
+{"ts":"2026-03-13T11:19:30Z","status":"PASS","label":"rem_en_relative_1","text":"remind me in 30 minutes to drink water","http":200}
+{"ts":"2026-03-13T11:19:39Z","status":"PASS","label":"rem_en_relative_2","text":"set an alarm in 2 hours to check the oven","http":200}
+{"ts":"2026-03-13T11:19:48Z","status":"PASS","label":"rem_en_relative_3","text":"remind me in 1 hour to take my medicine","http":200}
+{"ts":"2026-03-13T11:20:27Z","status":"PASS","label":"rem_en_recurring_1","text":"remind me every day at 7am to exercise","http":200}
+{"ts":"2026-03-13T11:20:36Z","status":"PASS","label":"rem_en_recurring_2","text":"daily reminder at 10pm to journal","http":200}
+{"ts":"2026-03-13T11:20:46Z","status":"PASS","label":"rem_en_recurring_3","text":"remind me every Monday at 9am for the weekly review","http":200}
+{"ts":"2026-03-13T11:21:09Z","status":"PASS","label":"web_summarize_1","text":"summarize https://example.com","http":200}
+{"ts":"2026-03-13T11:21:21Z","status":"PASS","label":"web_summarize_2","text":"TL;DR this page: https://en.wikipedia.org/wiki/Hyderabad","http":200}
+{"ts":"2026-03-13T11:21:25Z","status":"PASS","label":"rem_hi_1","text":"kal subah 9 baje remind karo gym ke liye","http":200}
+{"ts":"2026-03-13T11:21:28Z","status":"PASS","label":"img_sunset_1","text":"generate an image of a golden sunset over Hyderabad","http":200}
+{"ts":"2026-03-13T11:21:33Z","status":"PASS","label":"web_summarize_3","text":"what's on https://news.ycombinator.com?","http":200}
+{"ts":"2026-03-13T11:21:34Z","status":"PASS","label":"rem_hi_2","text":"aaj raat 10 baje reminder set karo presentation ke liye","http":200}
+{"ts":"2026-03-13T11:21:43Z","status":"PASS","label":"rem_hi_3","text":"yaad dila dena kal 3 baje meeting ke liye","http":200}
+{"ts":"2026-03-13T11:21:52Z","status":"PASS","label":"rem_hi_4","text":"kal 7 baje mujhe yaad dilana — doctor appointment","http":200}
+{"ts":"2026-03-13T11:21:56Z","status":"PASS","label":"img_avatar_1","text":"create a professional headshot avatar for my profile","http":200}
+{"ts":"2026-03-13T11:22:01Z","status":"PASS","label":"rem_hi_5","text":"remind kar do 30 minute mein","http":200}
+{"ts":"2026-03-13T11:22:11Z","status":"PASS","label":"rem_hi_6","text":"har roz subah 6 baje yoga reminder chahiye","http":200}
+{"ts":"2026-03-13T11:22:19Z","status":"PASS","label":"web_screenshot_1","text":"take a screenshot of https://example.com","http":200}
+{"ts":"2026-03-13T11:22:20Z","status":"PASS","label":"rem_hi_7","text":"aaj shaam 5 baje reminder — client call","http":200}
+{"ts":"2026-03-13T11:22:24Z","status":"PASS","label":"img_logo_1","text":"make a minimalist logo for my fashion blog Aliya's Style","http":200}
+{"ts":"2026-03-13T11:22:34Z","status":"PASS","label":"web_screenshot_2","text":"show me what https://google.com looks like","http":200}
+{"ts":"2026-03-13T11:22:58Z","status":"PASS","label":"img_saree_1","text":"generate an Instagram-worthy product photo of a saree","http":200}
+{"ts":"2026-03-13T11:23:09Z","status":"PASS","label":"rem_te_1","text":"remind cheyyi tomorrow 7am ki gym ki","http":200}
+{"ts":"2026-03-13T11:23:18Z","status":"PASS","label":"rem_te_2","text":"nenu oka reminder pettali — tomorrow 7am ki gym ki","http":200}
+{"ts":"2026-03-13T11:23:26Z","status":"PASS","label":"img_traditional_1","text":"image of a woman in traditional Indian attire at a palace","http":200}
+{"ts":"2026-03-13T11:23:27Z","status":"PASS","label":"rem_te_3","text":"oka reminder set cheyyi — kal 9 baje office ki","http":200}
+{"ts":"2026-03-13T11:23:29Z","status":"PASS","label":"web_links_1","text":"get all links from https://example.com","http":200}
+{"ts":"2026-03-13T11:24:01Z","status":"PASS","label":"web_youtube_1","text":"summarize this YouTube video: https://www.youtube.com/watch?v=dQw4w9WgXcQ","http":200}
+{"ts":"2026-03-13T11:24:06Z","status":"PASS","label":"rem_casual_1","text":"hey remind me abt the meeting tmrw 9am","http":200}
+{"ts":"2026-03-13T11:24:16Z","status":"PASS","label":"rem_casual_2","text":"dont forget to remind me — client call @ 4","http":200}
+{"ts":"2026-03-13T11:24:25Z","status":"PASS","label":"rem_casual_3","text":"can u remind me to eat lunch at 1?","http":200}
+{"ts":"2026-03-13T11:24:41Z","status":"PASS","label":"img_hi_1","text":"koi image banao — ek saree pehni ladki ki, Charminar background","http":200}
+{"ts":"2026-03-13T11:24:46Z","status":"PASS","label":"web_research_1","text":"research best budget smartphones under 15000 rupees India 2024","http":200}
+{"ts":"2026-03-13T11:25:04Z","status":"PASS","label":"rem_list_1","text":"what reminders do I have?","http":200}
+{"ts":"2026-03-13T11:25:05Z","status":"PASS","label":"web_research_2","text":"compare React vs Vue for a solo developer building a SaaS in India","http":200}
+{"ts":"2026-03-13T11:25:09Z","status":"PASS","label":"img_hi_2","text":"ek beautiful sunrise over Hyderabad city generate karo","http":200}
+{"ts":"2026-03-13T11:25:13Z","status":"PASS","label":"rem_list_2","text":"show my reminders","http":200}
+{"ts":"2026-03-13T11:25:22Z","status":"PASS","label":"rem_list_3","text":"list all reminders please","http":200}
+{"ts":"2026-03-13T11:25:23Z","status":"PASS","label":"web_research_3","text":"top 5 AI tools for content creators in 2024","http":200}
+{"ts":"2026-03-13T11:25:31Z","status":"PASS","label":"rem_list_4","text":"mere kitne reminders hain?","http":200}
+{"ts":"2026-03-13T11:25:41Z","status":"PASS","label":"web_research_4","text":"best Instagram growth strategies for fashion bloggers India","http":200}
+{"ts":"2026-03-13T11:26:11Z","status":"PASS","label":"rem_slash_1","text":"/remind call sister tomorrow at 8pm","http":200}
+{"ts":"2026-03-13T11:26:21Z","status":"PASS","label":"img_avatar_cyber_1","text":"create a cyberpunk-style avatar for gaming","http":200}
+{"ts":"2026-03-13T11:26:39Z","status":"PASS","label":"web_search_1","text":"what's the weather in Hyderabad today?","http":200}
+{"ts":"2026-03-13T11:26:40Z","status":"PASS","label":"rem_delete_1","text":"delete all my reminders","http":200}
+{"ts":"2026-03-13T11:26:49Z","status":"PASS","label":"img_moodboard_1","text":"generate a mood board image for sustainable fashion — earthy tones","http":200}
+{"ts":"2026-03-13T11:26:51Z","status":"PASS","label":"web_search_2","text":"latest news about AI in India","http":200}
+{"ts":"2026-03-13T11:27:03Z","status":"PASS","label":"web_search_3","text":"who won IPL 2024?","http":200}
+{"ts":"2026-03-13T11:27:07Z","status":"PASS","label":"G1_reminders_db","check":"db_count","count":64}
+{"ts":"2026-03-13T11:27:46Z","status":"PASS","label":"web_conv_research_1","text":"tell me about sustainable fashion brands in India","http":200}
+{"ts":"2026-03-13T11:28:04Z","status":"PASS","label":"web_conv_research_2","text":"pros and cons of becoming a full-time content creator in India","http":200}
+{"ts":"2026-03-13T11:28:04Z","status":"PASS","label":"img_diwali_1","text":"generate image: festive Diwali outfit flat lay with gold jewelry","http":200}
+{"ts":"2026-03-13T11:28:32Z","status":"PASS","label":"img_creator_1","text":"make an illustration of a content creator at her desk, coffee and camera","http":200}
+{"ts":"2026-03-13T11:28:56Z","status":"PASS","label":"note_create_1","text":"save a note: buy birthday gift for sister by Friday","http":200}
+{"ts":"2026-03-13T11:29:00Z","status":"PASS","label":"img_te_1","text":"oka image create cheyyi — beautiful sunrise over Hyderabad","http":200}
+{"ts":"2026-03-13T11:29:05Z","status":"PASS","label":"note_create_2","text":"note this: meeting agenda — discuss Q1, budget review, team outing","http":200}
+{"ts":"2026-03-13T11:29:15Z","status":"PASS","label":"note_create_3","text":"remember this: WiFi password is BlueSky2024@","http":200}
+{"ts":"2026-03-13T11:29:24Z","status":"PASS","label":"note_create_4","text":"save this idea: launch a sustainable fashion capsule wardrobe guide","http":200}
+{"ts":"2026-03-13T11:29:33Z","status":"PASS","label":"note_create_5","text":"write down: blog content calendar for March — 8 posts scheduled","http":200}
+{"ts":"2026-03-13T11:29:36Z","status":"FAIL","label":"G10_images_db","check":"no_images"}
+{"ts":"2026-03-13T11:30:02Z","status":"PASS","label":"G10_images_db","check":"user_images=3"}
+{"ts":"2026-03-13T11:30:07Z","status":"PASS","label":"social_tweet_1","text":"write a tweet about my new fashion blog launch","http":200}
+{"ts":"2026-03-13T11:30:12Z","status":"PASS","label":"note_hi_1","text":"yeh note kar lo: khaana order karna hai — Swiggy pe","http":200}
+{"ts":"2026-03-13T11:30:19Z","status":"PASS","label":"social_linkedin_1","text":"LinkedIn post about sustainable fashion trends in India","http":200}
+{"ts":"2026-03-13T11:30:21Z","status":"PASS","label":"note_hi_2","text":"save kar do — kal bank jaana hai 11 baje","http":200}
+{"ts":"2026-03-13T11:30:31Z","status":"PASS","label":"note_hi_3","text":"likh lo: Zara ki phone number hai 98765-43210","http":200}
+{"ts":"2026-03-13T11:30:31Z","status":"PASS","label":"social_ig_1","text":"Instagram caption for a festive outfit photo — Diwali vibes","http":200}
+{"ts":"2026-03-13T11:30:43Z","status":"PASS","label":"social_gen_1","text":"generate a social post: announcing my collab with Hyderabad brand","http":200}
+{"ts":"2026-03-13T11:30:55Z","status":"PASS","label":"social_tweet_3","text":"write 3 tweet ideas about work-life balance for creators","http":200}
+{"ts":"2026-03-13T11:31:10Z","status":"PASS","label":"note_show_1","text":"show my notes","http":200}
+{"ts":"2026-03-13T11:31:19Z","status":"PASS","label":"note_show_2","text":"send notes here","http":200}
+{"ts":"2026-03-13T11:31:28Z","status":"PASS","label":"note_show_3","text":"what notes have I saved?","http":200}
+{"ts":"2026-03-13T11:31:37Z","status":"PASS","label":"note_show_4","text":"list all my notes","http":200}
+{"ts":"2026-03-13T11:31:37Z","status":"PASS","label":"content_script_1","text":"write a video script for a 60-second fashion tips reel","http":200}
+{"ts":"2026-03-13T11:31:40Z","status":"PASS","label":"web_build_1","text":"build a landing page for my fashion blog Aliya's Style — dark theme, sustainable","http":200}
+{"ts":"2026-03-13T11:31:46Z","status":"PASS","label":"note_show_5","text":"mere notes dikhao","http":200}
+{"ts":"2026-03-13T11:31:50Z","status":"PASS","label":"content_blog_1","text":"blog post intro: 5 affordable ways to build a capsule wardrobe in India","http":200}
+{"ts":"2026-03-13T11:32:02Z","status":"PASS","label":"social_hi_1","text":"mujhe ek tweet likhne mein help karo — new collection launch ke liye","http":200}
+{"ts":"2026-03-13T11:32:26Z","status":"PASS","label":"note_search_1","text":"find my note about birthday gift","http":200}
+{"ts":"2026-03-13T11:32:34Z","status":"PASS","label":"web_build_2","text":"create a portfolio page for me: Aliya Bhatt, fashion blogger, Hyderabad, skills:","http":200}
+{"ts":"2026-03-13T11:32:35Z","status":"PASS","label":"note_search_2","text":"search notes for WiFi","http":200}
+{"ts":"2026-03-13T11:32:44Z","status":"PASS","label":"note_search_3","text":"do I have any note about the blog?","http":200}
+{"ts":"2026-03-13T11:32:44Z","status":"PASS","label":"content_email_1","text":"draft an email to a brand for a collaboration inquiry","http":200}
+{"ts":"2026-03-13T11:32:53Z","status":"PASS","label":"note_search_4","text":"find what I wrote about the bank","http":200}
+{"ts":"2026-03-13T11:32:56Z","status":"PASS","label":"content_bio_1","text":"write a professional bio for my Instagram page","http":200}
+{"ts":"2026-03-13T11:33:09Z","status":"PASS","label":"content_pitch_1","text":"help me write a pitch email to fashion magazines for coverage","http":200}
+{"ts":"2026-03-13T11:33:24Z","status":"PASS","label":"web_build_3","text":"build a pricing page: Basic 5000 rupees, Standard 12000, Premium 25000 — photogr","http":200}
+{"ts":"2026-03-13T11:33:32Z","status":"PASS","label":"note_slash_1","text":"/notes","http":200}
+{"ts":"2026-03-13T11:33:51Z","status":"PASS","label":"brief_morning_1","text":"give me my morning briefing","http":200}
+{"ts":"2026-03-13T11:34:03Z","status":"PASS","label":"brief_daily_1","text":"daily summary please","http":200}
+{"ts":"2026-03-13T11:34:13Z","status":"PASS","label":"web_build_4","text":"make an interactive quiz page: Are you a sustainable fashion fan?","http":200}
+{"ts":"2026-03-13T11:34:15Z","status":"PASS","label":"brief_agenda_1","text":"what's on my agenda today?","http":200}
+{"ts":"2026-03-13T11:34:27Z","status":"PASS","label":"brief_weekly_1","text":"weekly review — what should I focus on?","http":200}
+{"ts":"2026-03-13T11:35:03Z","status":"PASS","label":"web_build_5","text":"create a contact form page for my fashion blog","http":200}
+{"ts":"2026-03-13T11:35:53Z","status":"PASS","label":"web_build_6","text":"build a blog layout for my fashion website — include: hero, latest posts, newsle","http":200}
+{"ts":"2026-03-13T11:36:06Z","status":"PASS","label":"habit_create_1","text":"I want to track my water intake daily","http":200}
+{"ts":"2026-03-13T11:36:15Z","status":"PASS","label":"habit_create_2","text":"create a habit to meditate for 10 minutes every day","http":200}
+{"ts":"2026-03-13T11:36:22Z","status":"PASS","label":"auto_create_1","text":"create an automation to send me my morning briefing at 7am every day","http":200}
+{"ts":"2026-03-13T11:36:24Z","status":"PASS","label":"habit_create_3","text":"track my running habit — goal is 5km every morning","http":200}
+{"ts":"2026-03-13T11:36:33Z","status":"PASS","label":"habit_create_4","text":"I want to build a habit of reading for 20 minutes each night","http":200}
+{"ts":"2026-03-13T11:36:34Z","status":"PASS","label":"auto_create_2","text":"set up a workflow to remind me every Sunday to plan the week","http":200}
+{"ts":"2026-03-13T11:36:46Z","status":"PASS","label":"auto_create_3","text":"automate a weekly expense summary every Friday at 6pm","http":200}
+{"ts":"2026-03-13T11:36:58Z","status":"PASS","label":"auto_create_4","text":"set up daily habit check-in at 9pm","http":200}
+{"ts":"2026-03-13T11:37:01Z","status":"WARN","label":"G11_websites_db","check":"no_recent_artifacts"}
+{"ts":"2026-03-13T11:37:13Z","status":"PASS","label":"habit_log_1","text":"I drank 2 liters of water today","http":200}
+{"ts":"2026-03-13T11:37:22Z","status":"PASS","label":"habit_log_2","text":"completed my meditation","http":200}
+{"ts":"2026-03-13T11:37:31Z","status":"PASS","label":"habit_log_3","text":"morning run done — 5km in 35 minutes","http":200}
+{"ts":"2026-03-13T11:37:40Z","status":"PASS","label":"habit_log_4","text":"read for 20 minutes tonight ✅","http":200}
+{"ts":"2026-03-13T11:37:41Z","status":"PASS","label":"auto_list_1","text":"show my automations","http":200}
+{"ts":"2026-03-13T11:37:50Z","status":"PASS","label":"auto_list_2","text":"list all my workflows","http":200}
+{"ts":"2026-03-13T11:37:59Z","status":"PASS","label":"auto_list_3","text":"which automations are active?","http":200}
+{"ts":"2026-03-13T11:38:08Z","status":"PASS","label":"auto_slash_tasks","text":"/tasks","http":200}
+{"ts":"2026-03-13T11:38:19Z","status":"PASS","label":"habit_hi_1","text":"gym kiya aaj","http":200}
+{"ts":"2026-03-13T11:38:28Z","status":"PASS","label":"habit_hi_2","text":"yoga kar liya aaj subah","http":200}
+{"ts":"2026-03-13T11:38:38Z","status":"PASS","label":"habit_hi_3","text":"aaj paani 3 liter piya","http":200}
+{"ts":"2026-03-13T11:38:47Z","status":"PASS","label":"habit_hi_4","text":"subah 6 baje uthkar run kiya","http":200}
+{"ts":"2026-03-13T11:38:47Z","status":"PASS","label":"auto_pause_1","text":"pause my daily briefing automation","http":200}
+{"ts":"2026-03-13T11:38:56Z","status":"PASS","label":"habit_hi_5","text":"dhyan kar liya","http":200}
+{"ts":"2026-03-13T11:38:56Z","status":"PASS","label":"auto_delete_1","text":"delete the expense summary workflow","http":200}
+{"ts":"2026-03-13T11:39:06Z","status":"PASS","label":"auto_count_1","text":"how many automations do I have running?","http":200}
+{"ts":"2026-03-13T11:39:35Z","status":"PASS","label":"habit_status_1","text":"how am I doing with my habits this week?","http":200}
+{"ts":"2026-03-13T11:39:44Z","status":"PASS","label":"habit_status_2","text":"show my habit streaks","http":200}
+{"ts":"2026-03-13T11:39:53Z","status":"PASS","label":"habit_status_3","text":"what's my streak for meditation?","http":200}
+{"ts":"2026-03-13T11:40:03Z","status":"PASS","label":"habit_status_4","text":"meri habits kaisi ja rahi hain?","http":200}
+{"ts":"2026-03-13T11:40:12Z","status":"PASS","label":"habit_slash_1","text":"/habits","http":200}
+{"ts":"2026-03-13T11:40:49Z","status":"PASS","label":"G3_habits_db","check":"db_count","count":7}
+{"ts":"2026-03-13T11:41:59Z","status":"PASS","label":"port_bio_1","text":"update my portfolio bio to: Fashion blogger and content creator from Hyderabad w","http":200}
+{"ts":"2026-03-13T11:42:11Z","status":"PASS","label":"port_project_1","text":"add a project: Festive Lookbook 2024 — seasonal Indian festival fashion guide wi","http":200}
+{"ts":"2026-03-13T11:42:24Z","status":"PASS","label":"port_project_2","text":"add project: Style Diaries Podcast — weekly fashion conversations, 200 episodes","http":200}
+{"ts":"2026-03-13T11:42:36Z","status":"PASS","label":"port_skills_1","text":"update my skills: Fashion Photography, Styling, Content Writing, Instagram Growt","http":200}
+{"ts":"2026-03-13T11:42:36Z","status":"PASS","label":"exp_en_1","text":"I spent 500 rupees on groceries today","http":200}
+{"ts":"2026-03-13T11:42:45Z","status":"PASS","label":"exp_en_2","text":"paid 1200 for electricity bill","http":200}
+{"ts":"2026-03-13T11:42:48Z","status":"PASS","label":"port_theme_1","text":"change my portfolio theme to dark","http":200}
+{"ts":"2026-03-13T11:42:55Z","status":"PASS","label":"exp_en_3","text":"spent ₹2500 on a dress from Zara","http":200}
+{"ts":"2026-03-13T11:42:56Z","status":"PASS","label":"mem_plant_1","text":"my name is Aliya Bhatt and I'm a fashion blogger from Hyderabad","http":200}
+{"ts":"2026-03-13T11:42:57Z","status":"PASS","label":"port_theme_2","text":"make my portfolio theme purple","http":200}
+{"ts":"2026-03-13T11:43:04Z","status":"PASS","label":"exp_en_4","text":"lunch cost me 350 rupees at the café","http":200}
+{"ts":"2026-03-13T11:43:05Z","status":"PASS","label":"mem_plant_2","text":"I have 52000 Instagram followers and my blog is called Aliya's Style","http":200}
+{"ts":"2026-03-13T11:43:13Z","status":"PASS","label":"exp_en_5","text":"Amazon order: ₹1800 for skincare","http":200}
+{"ts":"2026-03-13T11:43:14Z","status":"PASS","label":"mem_plant_3","text":"my sister's name is Zara and she lives in Mumbai","http":200}
+{"ts":"2026-03-13T11:43:28Z","status":"PASS","label":"mem_plant_4","text":"remember I prefer TypeScript over JavaScript","http":200}
+{"ts":"2026-03-13T11:43:37Z","status":"PASS","label":"mem_plant_5","text":"I use pnpm not npm","http":200}
+{"ts":"2026-03-13T11:43:46Z","status":"PASS","label":"mem_plant_6","text":"note that my monthly budget is 50000 rupees","http":200}
+{"ts":"2026-03-13T11:43:46Z","status":"PASS","label":"port_show_1","text":"show my portfolio","http":200}
+{"ts":"2026-03-13T11:43:52Z","status":"PASS","label":"exp_hi_1","text":"swiggy pe 350 rupay kharch kiye","http":200}
+{"ts":"2026-03-13T11:43:56Z","status":"PASS","label":"port_show_2","text":"what does my portfolio look like?","http":200}
+{"ts":"2026-03-13T11:44:00Z","status":"PASS","label":"mem_plant_7","text":"my favorite color is emerald green","http":200}
+{"ts":"2026-03-13T11:44:02Z","status":"PASS","label":"exp_hi_2","text":"₹800 petrol ke liye","http":200}
+{"ts":"2026-03-13T11:44:05Z","status":"PASS","label":"port_remove_1","text":"remove the Style Diaries project from my portfolio","http":200}
+{"ts":"2026-03-13T11:44:10Z","status":"PASS","label":"mem_plant_8","text":"I work best late at night after 10pm","http":200}
+{"ts":"2026-03-13T11:44:11Z","status":"PASS","label":"exp_hi_3","text":"uber pe 200 laga","http":200}
+{"ts":"2026-03-13T11:44:14Z","status":"PASS","label":"port_hi_1","text":"mera portfolio update karo — bio mein sustainable fashion expert likhna","http":200}
+{"ts":"2026-03-13T11:44:19Z","status":"PASS","label":"mem_plant_9","text":"my camera is a Sony A7III","http":200}
+{"ts":"2026-03-13T11:44:21Z","status":"PASS","label":"exp_hi_4","text":"blinkit se khaana mangaya — ₹650","http":200}
+{"ts":"2026-03-13T11:44:28Z","status":"PASS","label":"mem_plant_10","text":"I'm allergic to peanuts","http":200}
+{"ts":"2026-03-13T11:44:30Z","status":"PASS","label":"exp_hi_5","text":"salon me 1500 kharch hua","http":200}
+{"ts":"2026-03-13T11:44:39Z","status":"PASS","label":"exp_hi_6","text":"doodh aur sabji — 300 rupay","http":200}
+{"ts":"2026-03-13T11:44:48Z","status":"PASS","label":"exp_hi_7","text":"coffee pe 180 laga café mein","http":200}
+{"ts":"2026-03-13T11:45:23Z","status":"PASS","label":"mem_recall_1","text":"what's my name?","http":200}
+{"ts":"2026-03-13T11:45:33Z","status":"PASS","label":"mem_recall_2","text":"how many Instagram followers do I have?","http":200}
+{"ts":"2026-03-13T11:45:37Z","status":"PASS","label":"exp_te_1","text":"swiggy lo 400 rupees tinnanu","http":200}
+{"ts":"2026-03-13T11:45:42Z","status":"PASS","label":"mem_recall_3","text":"tell me about my sister","http":200}
+{"ts":"2026-03-13T11:45:47Z","status":"PASS","label":"exp_te_2","text":"auto ki 150 rupees ayyindi","http":200}
+{"ts":"2026-03-13T11:45:51Z","status":"PASS","label":"mem_recall_4","text":"what city am I from?","http":200}
+{"ts":"2026-03-13T11:46:05Z","status":"PASS","label":"mem_recall_5","text":"what's my tech preference for package manager?","http":200}
+{"ts":"2026-03-13T11:46:15Z","status":"PASS","label":"mem_recall_6","text":"what's my monthly budget?","http":200}
+{"ts":"2026-03-13T11:46:16Z","status":"PASS","label":"exp_list_1","text":"show my expenses this month","http":200}
+{"ts":"2026-03-13T11:46:24Z","status":"PASS","label":"mem_recall_7","text":"what camera do I use for content creation?","http":200}
+{"ts":"2026-03-13T11:46:25Z","status":"PASS","label":"exp_list_2","text":"how much have I spent this week?","http":200}
+{"ts":"2026-03-13T11:46:34Z","status":"PASS","label":"exp_list_3","text":"what did I spend the most on?","http":200}
+{"ts":"2026-03-13T11:46:37Z","status":"PASS","label":"pers_switch_weebo","text":"/model weebo","http":200}
+{"ts":"2026-03-13T11:46:44Z","status":"PASS","label":"exp_list_4","text":"is mahine kitna kharcha hua?","http":200}
+{"ts":"2026-03-13T11:46:46Z","status":"PASS","label":"pers_weebo_test","text":"hi! what can you help me with today?","http":200}
+{"ts":"2026-03-13T11:46:53Z","status":"PASS","label":"exp_slash_1","text":"/expenses","http":200}
+{"ts":"2026-03-13T11:46:58Z","status":"PASS","label":"pers_weebo_emo","text":"I'm feeling stuck on my blog ideas","http":200}
+{"ts":"2026-03-13T11:47:10Z","status":"PASS","label":"pers_switch_edith","text":"/model edith","http":200}
+{"ts":"2026-03-13T11:47:19Z","status":"PASS","label":"mem_general_1","text":"what do you know about me?","http":200}
+{"ts":"2026-03-13T11:47:19Z","status":"PASS","label":"pers_edith_test","text":"what should I work on today?","http":200}
+{"ts":"2026-03-13T11:47:22Z","status":"PASS","label":"exp_budget_1","text":"set my monthly food budget to 5000 rupees","http":200}
+{"ts":"2026-03-13T11:47:29Z","status":"PASS","label":"mem_general_2","text":"tell me everything you remember about me","http":200}
+{"ts":"2026-03-13T11:47:31Z","status":"PASS","label":"exp_budget_2","text":"what's my budget for this month?","http":200}
+{"ts":"2026-03-13T11:47:32Z","status":"PASS","label":"pers_edith_decision","text":"I need to decide between Notion and Obsidian for my notes","http":200}
+{"ts":"2026-03-13T11:47:38Z","status":"PASS","label":"mem_search_1","text":"search my memory for budget","http":200}
+{"ts":"2026-03-13T11:47:44Z","status":"PASS","label":"pers_switch_forge","text":"/model forge","http":200}
+{"ts":"2026-03-13T11:47:53Z","status":"PASS","label":"pers_forge_test","text":"how do I set up a Redis cache in Node.js?","http":200}
+{"ts":"2026-03-13T11:47:55Z","status":"PASS","label":"G12_memory_db","check":"memory_count=2"}
+{"ts":"2026-03-13T11:48:05Z","status":"PASS","label":"pers_forge_review","text":"review my API design: POST /api/users, GET /api/users/:id","http":200}
+{"ts":"2026-03-13T11:48:11Z","status":"PASS","label":"G4_expenses_db","check":"db_count","count":36}
+{"ts":"2026-03-13T11:48:57Z","status":"PASS","label":"pers_switch_echo","text":"/model echo","http":200}
+{"ts":"2026-03-13T11:49:07Z","status":"PASS","label":"pers_echo_test","text":"I'm struggling to stay motivated with my blog","http":200}
+{"ts":"2026-03-13T11:49:19Z","status":"PASS","label":"pers_echo_habits","text":"how do I build better habits?","http":200}
+{"ts":"2026-03-13T11:49:30Z","status":"PASS","label":"web_build_1","text":"build a landing page for my fashion blog Aliya's Style — dark theme, sustainable","http":200}
+{"ts":"2026-03-13T11:49:31Z","status":"PASS","label":"pers_switch_aria","text":"/model aria","http":200}
+{"ts":"2026-03-13T11:49:40Z","status":"PASS","label":"pers_aria_test","text":"I want to rebrand my fashion blog — give me wild ideas","http":200}
+{"ts":"2026-03-13T11:49:53Z","status":"PASS","label":"pers_aria_creative","text":"what should my Instagram aesthetic be?","http":200}
+{"ts":"2026-03-13T11:50:05Z","status":"PASS","label":"pers_switch_pulse","text":"/model pulse","http":200}
+{"ts":"2026-03-13T11:50:14Z","status":"PASS","label":"pers_pulse_test","text":"analyze the fashion influencer market in India","http":200}
+{"ts":"2026-03-13T11:50:21Z","status":"PASS","label":"web_build_2","text":"create a portfolio page for me: Aliya Bhatt, fashion blogger, Hyderabad, skills:","http":200}
+{"ts":"2026-03-13T11:50:26Z","status":"PASS","label":"pers_pulse_metrics","text":"what metrics should I track for my blog?","http":200}
+{"ts":"2026-03-13T11:51:07Z","status":"PASS","label":"web_build_3","text":"build a pricing page: Basic 5000 rupees, Standard 12000, Premium 25000 — photogr","http":200}
+{"ts":"2026-03-13T11:51:19Z","status":"PASS","label":"pers_switch_cal","text":"/model cal","http":200}
+{"ts":"2026-03-13T11:51:28Z","status":"PASS","label":"pers_cal_test","text":"help me organize my week","http":200}
+{"ts":"2026-03-13T11:51:40Z","status":"PASS","label":"pers_cal_priority","text":"I have 5 deadlines next week — prioritize them","http":200}
+{"ts":"2026-03-13T11:51:52Z","status":"PASS","label":"pers_switch_nova","text":"/model nova","http":200}
+{"ts":"2026-03-13T11:51:58Z","status":"PASS","label":"web_build_4","text":"make an interactive quiz page: Are you a sustainable fashion fan?","http":200}
+{"ts":"2026-03-13T11:52:01Z","status":"PASS","label":"pers_nova_test","text":"research the history of Indian fashion design","http":200}
+{"ts":"2026-03-13T11:52:14Z","status":"PASS","label":"pers_nova_research","text":"explain the business model of fashion influencers","http":200}
+{"ts":"2026-03-13T11:52:26Z","status":"PASS","label":"pers_switch_jarvis","text":"/model jarvis","http":200}
+{"ts":"2026-03-13T11:52:43Z","status":"PASS","label":"web_build_5","text":"create a contact form page for my fashion blog","http":200}
+{"ts":"2026-03-13T11:53:28Z","status":"PASS","label":"web_build_6","text":"build a blog layout for my fashion website — include: hero, latest posts, newsle","http":200}
+{"ts":"2026-03-13T11:55:58Z","status":"PASS","label":"slash_start","text":"/start","http":200}
+{"ts":"2026-03-13T11:56:07Z","status":"PASS","label":"slash_help","text":"/help","http":200}
+{"ts":"2026-03-13T11:56:16Z","status":"PASS","label":"slash_credits","text":"/credits","http":200}
+{"ts":"2026-03-13T11:56:33Z","status":"PASS","label":"slash_status","text":"/status","http":200}
+{"ts":"2026-03-13T11:56:42Z","status":"PASS","label":"slash_tasks","text":"/tasks","http":200}
+{"ts":"2026-03-13T11:56:52Z","status":"PASS","label":"slash_agents","text":"/agents","http":200}
+{"ts":"2026-03-13T11:57:01Z","status":"PASS","label":"slash_habits","text":"/habits","http":200}
+{"ts":"2026-03-13T11:57:10Z","status":"PASS","label":"slash_notes","text":"/notes","http":200}
+{"ts":"2026-03-13T11:57:19Z","status":"PASS","label":"slash_expenses","text":"/expenses","http":200}
+{"ts":"2026-03-13T11:57:28Z","status":"PASS","label":"slash_reminders","text":"/reminders","http":200}
+{"ts":"2026-03-13T11:58:29Z","status":"PASS","label":"slash_model_weebo","text":"/model weebo","http":200}
+{"ts":"2026-03-13T11:58:39Z","status":"PASS","label":"slash_model_edith","text":"/model edith","http":200}
+{"ts":"2026-03-13T11:58:48Z","status":"PASS","label":"slash_model_forge","text":"/model forge","http":200}
+{"ts":"2026-03-13T11:58:57Z","status":"PASS","label":"slash_model_echo","text":"/model echo","http":200}
+{"ts":"2026-03-13T11:59:06Z","status":"PASS","label":"slash_model_aria","text":"/model aria","http":200}
+{"ts":"2026-03-13T11:59:20Z","status":"PASS","label":"slash_model_pulse","text":"/model pulse","http":200}
+{"ts":"2026-03-13T11:59:29Z","status":"PASS","label":"slash_model_cal","text":"/model cal","http":200}
+{"ts":"2026-03-13T11:59:39Z","status":"PASS","label":"slash_model_nova","text":"/model nova","http":200}
+{"ts":"2026-03-13T11:59:48Z","status":"PASS","label":"slash_model_jarvis","text":"/model jarvis","http":200}
+{"ts":"2026-03-13T12:00:44Z","status":"PASS","label":"slash_proactive","text":"/proactive","http":200}
+{"ts":"2026-03-13T12:00:53Z","status":"PASS","label":"slash_study","text":"/study","http":200}
+{"ts":"2026-03-13T12:01:02Z","status":"PASS","label":"slash_search","text":"/search fashion trends India 2024","http":200}
+{"ts":"2026-03-13T12:01:14Z","status":"PASS","label":"slash_cancel","text":"/cancel","http":200}
+{"ts":"2026-03-13T12:03:02Z","status":"PASS","label":"email_tasks_1","text":"email me a summary of my tasks for today","http":200}
+{"ts":"2026-03-13T12:03:17Z","status":"PASS","label":"email_code_1","text":"send the code we just generated to my inbox","http":200}
+{"ts":"2026-03-13T12:03:30Z","status":"PASS","label":"email_habits_1","text":"email me my weekly habit report","http":200}
+{"ts":"2026-03-13T12:03:45Z","status":"PASS","label":"email_expenses_1","text":"send me a formatted expense summary by email","http":200}
+{"ts":"2026-03-13T12:04:00Z","status":"PASS","label":"email_portfolio_1","text":"mail me my portfolio preview link","http":200}
+{"ts":"2026-03-13T12:07:03Z","status":"PASS","label":"P4_voice_graceful","http":200}
+{"ts":"2026-03-13T12:07:25Z","status":"PASS","label":"port_setup_bio","text":"update my portfolio bio: Aliya Bhatt — fashion blogger, Hyderabad, 5 years, sust","http":200}
+{"ts":"2026-03-13T12:08:15Z","status":"PASS","label":"P4_visitor_token","token_len":219}
+{"ts":"2026-03-13T12:10:21Z","status":"PASS","label":"P4_portfolio_page","check":"portfolio_api_200"}
+{"ts":"2026-03-13T12:10:21Z","status":"FAIL","label":"P4_portfolio_chat","check":"timeout_on_chat"}
+{"ts":"2026-03-13T12:11:49Z","status":"PASS","label":"chain_research_post_remind","text":"research the top fashion trends for 2024, then create a social media post about ","http":200}
+{"ts":"2026-03-13T12:13:03Z","status":"PASS","label":"chain_build_email","text":"build me a portfolio page and then email me the preview link","http":200}
+{"ts":"2026-03-13T12:13:54Z","status":"PASS","label":"chain_crawl_note","text":"summarize https://example.com and save it as a note","http":200}
+{"ts":"2026-03-13T12:14:13Z","status":"PASS","label":"chain_habit_remind","text":"track my morning gym habit and set a reminder for tomorrow's gym session at 6am","http":200}
+{"ts":"2026-03-13T12:15:33Z","status":"PASS","label":"ctx_fact_1","text":"I am Aliya Bhatt, 27 years old, fashion blogger","http":200}
+{"ts":"2026-03-13T12:15:42Z","status":"PASS","label":"ctx_fact_2","text":"I have a Sony A7III camera and a Ring light setup","http":200}
+{"ts":"2026-03-13T12:15:51Z","status":"PASS","label":"ctx_fact_3","text":"my blog Aliya's Style has 52000 Instagram followers","http":200}
+{"ts":"2026-03-13T12:16:01Z","status":"PASS","label":"ctx_fact_4","text":"I want to launch an online course by June 2024 — charging 2999 rupees","http":200}
+{"ts":"2026-03-13T12:16:10Z","status":"PASS","label":"ctx_fact_5","text":"I earn about 60000 rupees per month from collaborations","http":200}
+{"ts":"2026-03-13T12:17:14Z","status":"PASS","label":"ctx_fact_6","text":"my biggest challenge is content consistency and burnout","http":200}
+{"ts":"2026-03-13T12:17:24Z","status":"PASS","label":"ctx_fact_7","text":"I use Canva for graphics, Lightroom for photos, CapCut for reels","http":200}
+{"ts":"2026-03-13T12:17:33Z","status":"PASS","label":"ctx_fact_8","text":"my audience is 70% female, 60% from Tier 1 Indian cities","http":200}
+{"ts":"2026-03-13T12:17:42Z","status":"PASS","label":"ctx_fact_9","text":"my 3-month goal is to hit 75000 followers and launch the course","http":200}
+{"ts":"2026-03-13T12:17:51Z","status":"PASS","label":"ctx_fact_10","text":"I work from home in Hyderabad and my partner is also a content creator","http":200}
+{"ts":"2026-03-13T12:18:40Z","status":"PASS","label":"ctx_recall_deep","text":"based on everything you know about me — give me a 30-day action plan to hit my g","http":200}
+{"ts":"2026-03-13T12:19:25Z","status":"PASS","label":"proactive_check","text":"have you been sending me proactive check-ins?","http":200}
+{"ts":"2026-03-13T12:21:12Z","status":"PASS","label":"hindi_pure_1","text":"नमस्ते, आप क्या कर सकते हो?","http":200}
+{"ts":"2026-03-13T12:21:24Z","status":"PASS","label":"hindi_pure_2","text":"मुझे कल सुबह 9 बजे याद दिलाना","http":200}
+{"ts":"2026-03-13T12:21:36Z","status":"PASS","label":"hindi_pure_3","text":"आज मेरे कितने credits बचे हैं?","http":200}
+{"ts":"2026-03-13T12:22:38Z","status":"PASS","label":"hi_credits","text":"meri abhi kitni credits bachi hain?","http":200}
+{"ts":"2026-03-13T12:22:48Z","status":"PASS","label":"hi_plan","text":"aaj ka kya plan hai?","http":200}
+{"ts":"2026-03-13T12:22:57Z","status":"PASS","label":"hi_notes","text":"notes dikhao mujhe","http":200}
+{"ts":"2026-03-13T12:23:06Z","status":"PASS","label":"hi_casual","text":"kya chal raha hai?","http":200}
+{"ts":"2026-03-13T12:23:15Z","status":"PASS","label":"hi_casual_2","text":"bhai sab theek hai?","http":200}
+{"ts":"2026-03-13T12:23:24Z","status":"PASS","label":"hi_help","text":"yaar mujhe help chahiye blog ke liye","http":200}
+{"ts":"2026-03-13T12:23:39Z","status":"PASS","label":"hi_wait","text":"thoda ruko — ek kaam karna hai pehle","http":200}
+{"ts":"2026-03-13T12:23:48Z","status":"PASS","label":"hi_agree","text":"bilkul sahi baat hai","http":200}
+{"ts":"2026-03-13T12:23:57Z","status":"PASS","label":"hi_ok","text":"accha theek hai, kar do","http":200}
+{"ts":"2026-03-13T12:24:56Z","status":"PASS","label":"hi_gym","text":"gym kiya aaj subah 6 baje — 1 hour","http":200}
+{"ts":"2026-03-13T12:25:05Z","status":"PASS","label":"hi_swiggy","text":"swiggy se khaana mangaya — 450 rupay","http":200}
+{"ts":"2026-03-13T12:25:14Z","status":"PASS","label":"hi_reminder","text":"kal subah 7 baje run ke liye reminder chahiye","http":200}
+{"ts":"2026-03-13T12:25:24Z","status":"PASS","label":"hi_delete_remind","text":"mere sabhi reminders delete kar do","http":200}
+{"ts":"2026-03-13T12:25:33Z","status":"PASS","label":"hi_expenses","text":"is hafte kitna kharcha hua total?","http":200}
+{"ts":"2026-03-13T12:25:42Z","status":"PASS","label":"hi_habit_check","text":"meri habit check karo — kya streak chal raha hai?","http":200}
+{"ts":"2026-03-13T12:27:49Z","status":"PASS","label":"te_reminder_1","text":"nenu oka reminder pettali — tomorrow 7am ki gym ki","http":200}
+{"ts":"2026-03-13T12:27:58Z","status":"PASS","label":"te_notes","text":"naa notes anni chupu","http":200}
+{"ts":"2026-03-13T12:28:07Z","status":"PASS","label":"te_habits","text":"naa habits check cheyyi","http":200}
+{"ts":"2026-03-13T12:28:17Z","status":"PASS","label":"te_credits","text":"credits ela unnai?","http":200}
+{"ts":"2026-03-13T12:28:26Z","status":"PASS","label":"te_image","text":"oka image create cheyyi — Charminar beautiful sunset","http":200}
+{"ts":"2026-03-13T12:28:54Z","status":"PASS","label":"te_compliment","text":"meeru chala helpful ga unnaru!","http":200}
+{"ts":"2026-03-13T12:29:50Z","status":"PASS","label":"edge_emoji_1","text":"😂😂😂","http":200}
+{"ts":"2026-03-13T12:29:59Z","status":"PASS","label":"edge_emoji_2","text":"🙏","http":200}
+{"ts":"2026-03-13T12:30:08Z","status":"PASS","label":"edge_emoji_3","text":"❤️🔥💯✨","http":200}
+{"ts":"2026-03-13T12:30:17Z","status":"PASS","label":"edge_question","text":"?","http":200}
+{"ts":"2026-03-13T12:30:27Z","status":"PASS","label":"edge_ok","text":"ok","http":200}
+{"ts":"2026-03-13T12:30:36Z","status":"PASS","label":"edge_dot","text":".","http":200}
+{"ts":"2026-03-13T12:30:45Z","status":"PASS","label":"edge_spaces","text":"    ","http":200}
+{"ts":"2026-03-13T12:32:32Z","status":"PASS","label":"sec_xss","text":"<script>alert('xss')</script>","http":200}
+{"ts":"2026-03-13T12:32:41Z","status":"PASS","label":"sec_sqli","text":"'; DROP TABLE users; --","http":200}
+{"ts":"2026-03-13T12:32:50Z","status":"PASS","label":"sec_ssti","text":"{{7*7}}","http":200}
+{"ts":"2026-03-13T12:33:44Z","status":"PASS","label":"P6_server_survived","http":200}
+{"ts":"2026-03-13T12:33:44Z","status":"PASS","label":"P6_no_xss","check":"no_script_in_response"}
+{"ts":"2026-03-13T12:33:44Z","status":"PASS","label":"P6_sqli_guard","check":"users_count=53"}
+{"ts":"2026-03-13T12:35:42Z","status":"PASS","label":"P7_credits_api","check":"credits=12849"}
+{"ts":"2026-03-13T12:35:50Z","status":"PASS","label":"usage_credits_1","text":"how many credits do I have left?","http":200}
+{"ts":"2026-03-13T12:35:59Z","status":"PASS","label":"usage_plan_1","text":"what's my current plan?","http":200}
+{"ts":"2026-03-13T12:36:08Z","status":"PASS","label":"usage_slash_credits","text":"/credits","http":200}
+{"ts":"2026-03-13T12:36:53Z","status":"PASS","label":"P7_health_api","check":"health_200"}
+{"ts":"2026-03-13T12:37:01Z","status":"PASS","label":"P7_directory_security","check":"no_secrets_in_directory"}
+{"ts":"2026-03-13T12:37:10Z","status":"PASS","label":"P7_webhook_no_secret","http":403}
+{"ts":"2026-03-13T12:37:10Z","status":"PASS","label":"P7_webhook_wrong_secret","http":403}
+{"ts":"2026-03-13T12:38:17Z","status":"PASS","label":"J1_start","text":"/start","http":200}
+{"ts":"2026-03-13T12:38:26Z","status":"PASS","label":"J1_hello","text":"hello","http":200}
+{"ts":"2026-03-13T12:38:36Z","status":"PASS","label":"J1_capabilities","text":"what can you do?","http":200}
+{"ts":"2026-03-13T12:38:51Z","status":"PASS","label":"J1_first_reminder","text":"remind me tomorrow at 9am to post my blog article","http":200}
+{"ts":"2026-03-13T12:39:01Z","status":"PASS","label":"J1_first_website","text":"build me a simple fashion blog landing page","http":200}
+{"ts":"2026-03-13T12:39:46Z","status":"PASS","label":"J1_credits_check","text":"/credits","http":200}
+{"ts":"2026-03-13T12:41:44Z","status":"PASS","label":"P8_J1_complete","check":"reminder_and_website"}
+{"ts":"2026-03-13T12:42:59Z","status":"PASS","label":"J2_briefing","text":"morning briefing please","http":200}
+{"ts":"2026-03-13T12:43:11Z","status":"PASS","label":"J2_habit","text":"gym kiya aaj","http":200}
+{"ts":"2026-03-13T12:43:20Z","status":"PASS","label":"J2_expense","text":"swiggy pe 350 rupay kharch kiye","http":200}
+{"ts":"2026-03-13T12:43:29Z","status":"PASS","label":"J2_note","text":"add a note: blog ideas — winter fashion, sustainable guide, affordable luxury","http":200}
+{"ts":"2026-03-13T12:43:39Z","status":"PASS","label":"J2_reminder","text":"remind me at 2pm to edit today's photos","http":200}
+{"ts":"2026-03-13T12:44:48Z","status":"PASS","label":"J2_tweet","text":"write a tweet about my new collab with a Hyderabad brand","http":200}
+{"ts":"2026-03-13T12:45:00Z","status":"PASS","label":"J2_research","text":"research best editing apps for fashion photography 2024","http":200}
+{"ts":"2026-03-13T12:45:18Z","status":"PASS","label":"J2_image","text":"generate an image of festive Indian fashion for my blog thumbnail","http":200}
+{"ts":"2026-03-13T12:45:47Z","status":"PASS","label":"J2_expense_summary","text":"how much have I spent this week?","http":200}
+{"ts":"2026-03-13T12:45:56Z","status":"PASS","label":"J2_habit_check","text":"show my habits — how's my streak?","http":200}
+{"ts":"2026-03-13T12:46:05Z","status":"PASS","label":"J2_credits","text":"/credits","http":200}
+{"ts":"2026-03-13T12:46:22Z","status":"PASS","label":"P8_J2_complete","check":"all_j2_messages_sent"}
+{"ts":"2026-03-13T12:47:23Z","status":"PASS","label":"J3_plan_start","text":"I want to plan my content calendar for next month","http":200}
+{"ts":"2026-03-13T12:47:38Z","status":"PASS","label":"J3_context","text":"I post 3 times a week on Instagram and 2 blog posts per month","http":200}
+{"ts":"2026-03-13T12:47:47Z","status":"PASS","label":"J3_audience","text":"my audience loves sustainable fashion and budget styling tips","http":200}
+{"ts":"2026-03-13T12:48:03Z","status":"PASS","label":"J3_ideas","text":"suggest 12 Instagram post ideas for March with captions","http":200}
+{"ts":"2026-03-13T12:48:18Z","status":"PASS","label":"J3_save_note","text":"save these ideas as a note titled March Content Plan","http":200}
+{"ts":"2026-03-13T12:48:28Z","status":"PASS","label":"J3_reminders","text":"set reminders for every Monday and Thursday at 10am to post content","http":200}
+{"ts":"2026-03-13T12:48:45Z","status":"PASS","label":"J3_automation","text":"create an automation: remind me every Sunday at 7pm to plan next week content","http":200}
+{"ts":"2026-03-13T12:48:54Z","status":"PASS","label":"J3_website","text":"build a simple content calendar page I can share with my manager","http":200}
+{"ts":"2026-03-13T12:50:09Z","status":"PASS","label":"P8_J3_complete","check":"all_j3_messages_sent"}
+{"ts":"2026-03-13T13:00:15Z","status":"FAIL","label":"retest_auto_create_1","text":"create automation morning briefing"}
+{"ts":"2026-03-13T13:03:16Z","status":"FAIL","label":"retest_auto_create_1","text":"create automation morning briefing"}
+{"ts":"2026-03-13T13:05:00Z","status":"PASS","label":"retest_auto_create_1"}
+{"ts":"2026-03-13T13:05:48Z","status":"PASS","label":"retest_portfolio_skills"}
+{"ts":"2026-03-13T13:06:53Z","status":"PASS","label":"retest_portfolio_chat"}

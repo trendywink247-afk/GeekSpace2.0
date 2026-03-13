@@ -10,6 +10,8 @@ const { sign, verify, TokenExpiredError } = jwtPkg;
 
 export interface AuthRequest extends Request {
   userId?: string;
+  /** Set when a guest/visitor JWT contains a portfolioUsername claim */
+  portfolioUsername?: string;
 }
 
 export function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
@@ -22,8 +24,9 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   try {
     const payload = verify(header.slice(7), config.jwtSecret, {
       algorithms: ['HS256'],
-    }) as { sub: string; iat?: number; exp?: number; jti?: string };
+    }) as { sub: string; iat?: number; exp?: number; jti?: string; portfolioUsername?: string };
     req.userId = payload.sub;
+    if (payload.portfolioUsername) req.portfolioUsername = payload.portfolioUsername;
 
     // 92.6: JWT blocklist --- reject logged-out tokens
     if (payload.jti) {
@@ -111,9 +114,12 @@ export const generateToken = signToken;
 
 /** Issue a short-lived guest JWT for portfolio visitors — no account required.
  *  sub = 'guest:<uuid>' so DB user lookup in optionalAuth returns nothing (visitorName stays anonymous).
- *  Stored in localStorage by the frontend; sent as Authorization: Bearer on subsequent messages. */
-export function signGuestToken(): string {
-  return sign({ sub: `guest:${uuid()}`, type: 'visitor' }, config.jwtSecret, {
+ *  Stored in localStorage by the frontend; sent as Authorization: Bearer on subsequent messages.
+ *  portfolioUsername (optional) is embedded so /api/agent/chat can route visitor requests. */
+export function signGuestToken(portfolioUsername?: string): string {
+  const payload: Record<string, unknown> = { sub: `guest:${uuid()}`, type: 'visitor' };
+  if (portfolioUsername) payload.portfolioUsername = portfolioUsername;
+  return sign(payload, config.jwtSecret, {
     algorithm: 'HS256',
     expiresIn: '1h',
   });

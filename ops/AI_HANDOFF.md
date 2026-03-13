@@ -61,3 +61,33 @@ cd server && npm test
 3. Telegram progressive message editing (streaming)
 4. WhatsApp integration planning
 5. More Hinglish test coverage
+
+---
+
+## V4 Sim Run — 2026-03-13
+
+### What Was Done
+- Ran v4 sub-agent orchestration harness (371 patterns, 14 groups, 8 phases)
+- Fix 1: create_automation briefing fast-path guard + trigger field fix (message-router.ts, action-executor.ts)
+- Fix 2: portfolio_update_skills added to toolsBlock + hasToolTrigger (agent.ts, message-router.ts)
+- Fix 3: portfolio visitor chat routing via guest JWT portfolioUsername (auth.ts, portfolio.ts, agent.ts)
+- Brand guard fix: RoadmapPage.tsx "PicoClaw timeout" → "AI sidecar timeout"
+
+### Test Counts
+- v4 sim: 365/371 PASS (98.4%) | Unit tests: 2223/2223 PASS
+
+### Start Commands (Next Session)
+```bash
+cd ~/GeekSpace2.0
+git log --oneline -5
+cat ops/AI_HANDOFF.md
+curl -s localhost:3001/api/health | python3 -m json.tool
+bash /tmp/agentin-v4/report.sh 2>/dev/null || echo "Re-run Phase 0 setup"
+```
+
+### Next Session Priorities
+1. Sparse memory capture — LLM doesn't reliably call store_memory tool (only 2/10 facts stored)
+2. Rate limiter architecture — 20/60s per chat_id prevents batch testing; consider test mode bypass
+3. Automation list/edit/delete flows — only create was retested after fix
+4. Phase 87 tests (29 skipped) — investigate why skipped
+

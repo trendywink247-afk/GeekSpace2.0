@@ -67,7 +67,7 @@ const releaseNotes: ReleaseNote[] = [
       'Expense fast-path — auto-categorizes spending in 660ms, zero AI credits',
       'Focus session fast-path — instant Pomodoro start via regex parser',
       'Portfolio visitor AI now responds in 4.8s (was 30s+ timeout)',
-      'PicoClaw timeout reduced 60s → 10s (5.5x latency improvement)',
+      'AI sidecar timeout reduced 60s → 10s (5.5x latency improvement)',
       'Uptime Kuma monitoring deployed at status.agentin.chat',
       'Freed 900MB RAM by stopping unused containers',
     ],

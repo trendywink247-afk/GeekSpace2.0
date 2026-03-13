@@ -123,3 +123,23 @@ Language-match instruction added to all system prompts via buildChannelSystemPro
 Single insertion point covers all channels: Telegram text, Telegram voice, web chat.
 Whisper Large v3 Turbo natively supports Hindi, Telugu, English and 99 other languages.
 Voice handler in webhooks.ts also gets explicit per-request language-match instruction appended to systemPromptWithLang.
+
+---
+
+## V4 Sim Session Decisions — 2026-03-13
+
+### Bug Fixes
+- create_automation: Added isAutomationCreate guard in briefing fast-path. Read trigger || trigger_type in executor.
+- portfolio_update_skills: Exposed tool to LLM via toolsBlock. Added hasToolTrigger patterns.
+- portfolio visitor chat: Guest JWT now carries portfolioUsername. Agent serves portfolio-context Groq response.
+
+### Architecture
+- No new fast-paths added this session
+- Guest JWT schema extended: added optional portfolioUsername field
+
+### Deferred
+- Video generation: FAL_KEY available but provider blocked from BOM datacenter — deferred
+- Windmill: No WINDMILL_TOKEN — deferred
+- Memory capture reliability: LLM tool-calling for store_memory is inconsistent — investigate prompt
+- Rate limiter test mode: Consider DISABLE_RATE_LIMIT=test env var for harness runs
+
