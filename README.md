@@ -21,7 +21,7 @@
 
 **A self-hosted AI OS — your agent, your dashboard, your portfolio.**
 
-> v3.1.0 · 2223 tests passing · main = live-production
+> v3.1.0 · Phase 6 complete · 2223 tests passing · 20/21 capabilities · main = live-production
 
 [Live Demo](https://ai.agentin.chat) · [Documentation](docs/) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 
@@ -39,8 +39,10 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 
 - **Local-first AI** — Ollama runs on your hardware. Cloud is optional fallback, not the default.
 - **One platform, not 10 tools** — Agent, portfolio, reminders, automations, billing, terminal — unified.
-- **Personality system** — Three distinct AI personalities with different expertise and tone.
-- **Background agents** — Weebo Engine runs tasks while you sleep (briefings, recipes, memory).
+- **9 AI personalities** — Weebo, Edith, Jarvis, Aria, Forge, Pulse, Echo, Cal, Nova — switch mid-message.
+- **Telegram-native** — Full AI on Telegram: voice notes, inline keyboards, receipt OCR, proactive nudges.
+- **Hinglish-first** — Built for Indian users. "swiggy pe 350 rupay" just works.
+- **Background agents** — Weebo Engine + proactive briefings, habit nudges, expense digests.
 - **Credit economy** — Fair usage with transparent per-call costs and multiple pricing tiers.
 
 ---
@@ -129,6 +131,16 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 - Expense tracker with INR support and budget alerts
 - Habit Intelligence V2 — streaks, at-risk detection, daily nudges
 - Global search across notes, reminders, habits, memories
+- Agent-as-Researcher — async Tavily research with Telegram delivery
+- Context threading — FTS5 full-text search + search_memory tool
+- Ctrl+K global search UI across all data types
+- Smart Expense Categorizer — photo receipt → Groq vision → auto-log
+- Habit Coach Mode — compassionate nudges with reschedule/skip buttons
+- Daily Operator Mode — morning briefing as Telegram voice note
+- Agentic Portfolio — visitor intent detection + Telegram alerts to owner
+- Telegram Memory Capture — LLM fact extraction per conversation turn
+- Fast-path routing — expense, focus, image, website, screenshot, links bypass LLM (0 credits, <700ms)
+- Uptime monitoring — status.agentin.chat via Uptime Kuma
 
 </details>
 
@@ -154,12 +166,12 @@ graph TB
     App --> SQLite[(SQLite<br/>WAL mode)]
     App --> Router{"AI Router"}
 
-    Router -->|"free"| Ollama["Ollama<br/>Local"]
-    Router -->|"free fallback"| Groq["Groq<br/>Llama 3.3 70B"]
-    Router -->|"free fallback"| GemFree["Gemini Flash 2.0"]
-    Router -->|"free fallback"| ORFree["OpenRouter<br/>Free Tier"]
-    Router -->|"paid primary"| Together["Together AI<br/>Llama 3.1 70B"]
-    Router -->|"premium only"| Edith["Edith / Kimi K2"]
+    Router -->|"T1 local"| Ollama["Ollama<br/>qwen3:8b"]
+    Router -->|"T2 free"| Groq["Groq<br/>Llama 3.3 70B"]
+    Router -->|"T3 free"| Kimi["Kimi K2<br/>Moonshot"]
+    Router -->|"T4 paid"| Together["Together AI<br/>Llama 4 Maverick"]
+    Router -->|"T5 premium"| Edith["Edith<br/>Premium"]
+    Router -->|"T6 free"| ORFree["OpenRouter<br/>Free Tier"]
 
     style App fill:#7B61FF,stroke:#7B61FF,color:#fff
     style Router fill:#FF61DC,stroke:#FF61DC,color:#fff
