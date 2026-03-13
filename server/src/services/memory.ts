@@ -68,6 +68,8 @@ export function upsertMemory(
   confidence = 1.0,
   source = 'observed',
 ): void {
+  // Skip for guest/visitor users — no FK row in users table
+  if (userId.startsWith('guest:')) return;
   db.prepare(`
     INSERT INTO agent_memory (id, user_id, category, key, value, confidence, source)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -158,6 +160,10 @@ export function logConversation(
   providerOrModel?: string,
   modelParam?: string,
 ): void {
+  // Guest/visitor tokens have sub = 'guest:UUID' — skip conversation logging
+  // (no row in users table, FOREIGN KEY constraint would fail)
+  if (userId.startsWith('guest:')) return;
+
   // Support both old signature and new signature with requestId
   let requestId = '';
   let provider = '';

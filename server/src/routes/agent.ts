@@ -326,11 +326,19 @@ Rules:
 // Auto-fallback: if Ollama is down, routes to cloud only when user has credits
 
 agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
+  // Override the global 30s timeout for AI chat — allow up to 120s
+  res.setTimeout(120000);
   let { message } = req.body as { message: string; channel?: string; context?: string };
   const userId = req.userId!;
   const reqChannel = (req.body as { channel?: string }).channel;
   // Optional: builder sends this when editing an existing project so generate_code updates it
   const reqExistingArtifactId = (req.body as { existingArtifactId?: string }).existingArtifactId;
+  // Guest/visitor tokens have sub = 'guest:UUID' — route to public portfolio chat handler instead
+  const isGuestUser = userId.startsWith('guest:');
+  if (isGuestUser) {
+    res.status(403).json({ error: 'Please use the portfolio chat endpoint for visitor access.' });
+    return;
+  }
 
   try {
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;

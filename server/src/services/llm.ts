@@ -800,6 +800,8 @@ export function computeCreditCost(provider: Provider, tokensIn: number, tokensOu
 }
 
 export function deductSubscriptionCredits(userId: string, credits: number): void {
+  // Skip for guest/visitor users — no FK row in users or subscriptions table
+  if (userId.startsWith('guest:')) return;
   if (credits <= 0) return;
   db.prepare(`
     UPDATE subscriptions

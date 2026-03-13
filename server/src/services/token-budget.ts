@@ -43,6 +43,8 @@ export function getUserTokenUsage(userId: string): { used: number; budget: numbe
 }
 
 export function recordTokenUsage(userId: string, tokens: number): void {
+  // Skip for guest/visitor users — no FK row in users table
+  if (userId.startsWith('guest:')) return;
   const now = new Date();
   const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
