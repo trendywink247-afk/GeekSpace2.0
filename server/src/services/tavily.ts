@@ -89,6 +89,14 @@ export function isSearchIntent(message: string): boolean {
   if (/^what\s+is\s+[a-z]+[\s?]*$/i.test(lower) && !/\b(latest|current|recent|today|news|update|price|stock|weather|score|result)\b/i.test(lower)) return false;
   // NEVER search: "how does X work" / "explain X" / "tell me about" — LLM knowledge
   if (/^(how\s+does|explain|tell\s+me\s+about|describe)\s+/i.test(lower)) return false;
+  // NEVER search: habit completions ("gym done", "did my running today", "log meditation")
+  if (/\b(done|completed?|finished?|logged?|tracked?|kiya|ki|kara)\b/i.test(lower) && /\b(gym|yoga|meditation|workout|running|exercise|walk|reading|study|stretching|journal|pushup|plank|water|habit)\b/i.test(lower)) return false;
+  // NEVER search: expense tracking ("spent 200 on uber", "swiggy pe 350")
+  if (/\b(spent|paid|expense|kharcha|kharche|rupay|rupees?)\b/i.test(lower) && /\d/.test(lower)) return false;
+  // NEVER search: reminders ("remind me to X", "set a reminder")
+  if (/\b(remind\s+me|set\s+(?:a\s+)?reminder|yaad\s+dila)\b/i.test(lower)) return false;
+  // NEVER search: focus sessions ("start a 25 min focus", "pomodoro")
+  if (/\b(focus\s+session|pomodoro|deep\s+work)\b/i.test(lower)) return false;
 
   const patterns = [
     /\b(search|find|look up|google|what is|who is)\b/i,

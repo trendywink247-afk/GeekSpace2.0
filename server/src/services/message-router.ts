@@ -403,9 +403,9 @@ function detectNamedAgent(message: string): string | null {
 function detectTaskIntent(message: string): boolean {
   const lower = message.toLowerCase().trim();
   if (lower.endsWith('?') || lower.split(' ').length < 3) return false;
+  // NOTE: Reminder patterns ("remind me", "set a reminder") intentionally excluded —
+  // they are handled by parseReminderIntent() fast-path (0 credits, <700ms).
   const patterns = [
-    /\bremind\s+me\b/i,
-    /\bset\s+(?:a\s+)?reminder\b/i,
     /\bsend\s+(?:a\s+)?(?:telegram|tg)\s+(?:message|notification|alert)\b/i,
     /\bsend\s+(?:a\s+)?message\s+(?:on|via|through)\s+telegram\b/i,
     /\bnotify\s+(?:me\s+)?(?:on|via)\s+telegram\b/i,
