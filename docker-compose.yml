@@ -206,6 +206,19 @@ services:
         limits:
           memory: 512M
 
+  # ---- Uptime Kuma (Status Monitoring) ----
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: geekspace-uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "3100:3001"
+    volumes:
+      - uptime-kuma-data:/app/data
+    mem_limit: 128m
+    networks:
+      - geekspace-net
+
 volumes:
   geekspace-data:
     driver: local
@@ -218,6 +231,8 @@ volumes:
   caddy_data:
     driver: local
   caddy_config:
+    driver: local
+  uptime-kuma-data:
     driver: local
 
 networks:

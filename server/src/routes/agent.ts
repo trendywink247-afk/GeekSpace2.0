@@ -1820,6 +1820,8 @@ agentRouter.get('/can-chat-public/:username', (_req, res) => {
 // ---- Public Portfolio Chat (real LLM-powered) ----
 
 agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
+  // Override the global 30s timeout for visitor chat — allow up to 120s
+  res.setTimeout(120000);
   const { message, messageCount, history } = req.body as { message: string; messageCount?: number; history?: Array<{ role: string; content: string }> };
   const { username } = req.params;
 
@@ -1941,12 +1943,37 @@ agentRouter.post('/chat/public/:username', optionalAuth, validateBody(chatSchema
   }
   chatMessages.push({ role: 'user', content: message });
 
+  // ---- LLM call: Groq first (fast ~1-2s), fall back to openrouter-free ----
+  let result: Awaited<ReturnType<typeof routeChat>> | null = null;
   try {
-    const result = await routeChat(
+    result = await routeChat(
       chatMessages,
-      { systemPrompt, agentName, forceProvider: 'openrouter-free' },
+      { systemPrompt, agentName, forceProvider: 'groq' },
     );
+  } catch (groqErr) {
+    logger.warn({ err: (groqErr as Error).message }, 'visitor-chat: Groq failed, falling back to openrouter-free');
+    try {
+      result = await routeChat(
+        chatMessages,
+        { systemPrompt, agentName, forceProvider: 'openrouter-free' },
+      );
+    } catch (orErr) {
+      logger.warn({ err: (orErr as Error).message }, 'visitor-chat: openrouter-free also failed');
+    }
+  }
 
+  if (!result) {
+    res.json({
+      reply: `Hi! I'm ${agentName}, ${ownerName}'s assistant. I'm having trouble connecting right now, but you can learn more from the portfolio above.`,
+      agentName,
+      ownerName,
+      personality: personalityId,
+      personalityEmoji: personality.emoji,
+    });
+    return;
+  }
+
+  try {
     // Parse for escalation actions
     let finalReply = result.reply;
     const { text: cleanReply, actions } = parseActions(result.reply);

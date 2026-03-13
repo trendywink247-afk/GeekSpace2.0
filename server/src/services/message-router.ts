@@ -172,6 +172,9 @@ function hasToolTrigger(message: string): boolean {
     // Expenses
     /\b(track|log|add|record|spent?|paid?)\s+(an?\s+)?(expense|purchase|payment)\b/i.test(lower) ||
     /\bi\s+(spent|paid|bought|purchased)\s+[$₹€£]?\d/i.test(lower) ||
+    /\bspent\s+[$₹€£]?\d/i.test(lower) ||
+    /\bpaid\s+[$₹€£]?\d/i.test(lower) ||
+    /\b\d+\s*(?:rupay?|rs\.?|rupees?|bucks?|dollars?)?\s+(?:on|for|at)\s+\w/i.test(lower) ||
     /\b[$₹€£]\d+(\.\d+)?\s+(on|for)\s+\w/i.test(lower) ||
     /\bshow\s+(my\s+)?(spending|expenses|purchases)\b/i.test(lower) ||
     /\b(how\s+much\s+(have\s+i\s+)?spent|my\s+expenses|expense\s+(report|summary|tracker))\b/i.test(lower) ||
@@ -195,6 +198,66 @@ function hasToolTrigger(message: string): boolean {
     /\bnote\s+banana|save\s+kar(o|na)\b/i.test(lower) ||
     /\byan?\s+(note|likh)\b/i.test(lower)
   );
+}
+
+// ---- Expense Fast-Path Parser ----
+// Parses common expense messages directly without LLM, returning structured data
+// for executeAction('track_expense', ...).
+function parseExpenseIntent(message: string): { amount: number; description: string; category: string } | null {
+  const lower = message.toLowerCase();
+
+  // Pattern: "spent/paid [currency] NUMBER on/for DESCRIPTION"
+  let match = lower.match(/(?:spent|paid|kharch|kharcha)\s*[$₹€£]?\s*(\d+(?:\.\d+)?)\s*(?:rupay?|rs\.?|rupees?|bucks?|dollars?)?\s*(?:on|for|pe|par|mein|at)\s+(.+)/i);
+  if (match) {
+    return { amount: parseFloat(match[1]), description: match[2].trim().slice(0, 100), category: guessCategory(match[2]) };
+  }
+
+  // Pattern: "NUMBER on/for DESCRIPTION" (e.g., "450 on uber")
+  match = lower.match(/^[$₹€£]?\s*(\d+(?:\.\d+)?)\s*(?:rupay?|rs\.?|rupees?|bucks?|dollars?)?\s+(?:on|for|pe|par|at)\s+(.+)/i);
+  if (match && parseFloat(match[1]) > 0) {
+    return { amount: parseFloat(match[1]), description: match[2].trim().slice(0, 100), category: guessCategory(match[2]) };
+  }
+
+  // Pattern: "MERCHANT pe NUMBER rupay" (Hinglish)
+  match = lower.match(/(swiggy|zomato|ola|uber|amazon|flipkart|netflix|hotstar|jio|airtel|bigbasket|blinkit|dunzo|myntra|meesho|rapido|paytm)\s+(?:pe|par|se|mein)\s*[$₹]?\s*(\d+)/i);
+  if (match) {
+    return { amount: parseFloat(match[2]), description: match[1], category: guessCategory(match[1]) };
+  }
+
+  return null;
+}
+
+function guessCategory(text: string): string {
+  const t = text.toLowerCase();
+  if (/swiggy|zomato|food|khana|restaurant|cafe|pizza|burger|biryani|chai/i.test(t)) return 'food';
+  if (/uber|ola|rapido|cab|taxi|auto|bus|train|metro|petrol|diesel|fuel/i.test(t)) return 'transport';
+  if (/amazon|flipkart|myntra|meesho|shopping|clothes|shoes|dress|saree/i.test(t)) return 'shopping';
+  if (/netflix|hotstar|prime|spotify|movie|cinema|theatre|entertainment/i.test(t)) return 'entertainment';
+  if (/jio|airtel|vodafone|phone|mobile|recharge|internet|wifi/i.test(t)) return 'utilities';
+  if (/rent|electricity|water|gas|bill|maintenance/i.test(t)) return 'bills';
+  if (/doctor|hospital|medicine|pharmacy|medical|health/i.test(t)) return 'health';
+  if (/gym|yoga|fitness|sports|swimming/i.test(t)) return 'fitness';
+  if (/grocery|groceries|vegetables|fruits|milk|bigbasket|blinkit|dunzo/i.test(t)) return 'groceries';
+  return 'other';
+}
+
+// ---- Focus Fast-Path Parser ----
+// Parses focus session requests directly without LLM.
+function parseFocusIntent(message: string): { goal: string; duration_min: number } | null {
+  const lower = message.toLowerCase();
+  if (!/\b(focus|pomodoro|concentrate|deep\s+work)\b/i.test(lower)) return null;
+
+  // Extract duration
+  const durationMatch = lower.match(/(\d+)\s*(?:min(?:ute)?s?|m\b)/);
+  const duration = durationMatch ? parseInt(durationMatch[1]) : 25;
+
+  // Extract goal — everything after "on", "to", "for" following focus keyword
+  const goalMatch = lower.match(/(?:focus|pomodoro|concentrate)\s+(?:on|to|for)\s+(.+)/i) ||
+                    lower.match(/\d+\s*min(?:ute)?s?\s+(?:to|on|for)\s+(.+)/i) ||
+                    lower.match(/(?:focus\s+session\s+(?:to|on|for)\s+)(.+)/i);
+  const goal = goalMatch ? goalMatch[1].trim().slice(0, 100) : 'Deep work';
+
+  return { goal, duration_min: Math.min(Math.max(duration, 5), 120) };
 }
 
 // ---- Named Agent Detection ----
@@ -945,6 +1008,40 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed');
       return;
     }
+  }
+
+  // ── Expense fast-path: parse amount + merchant directly, bypass LLM ──
+  const expenseMatch = parseExpenseIntent(msg.text);
+  if (expenseMatch) {
+    logger.info({ expenseMatch, userId }, 'Expense fast-path triggered');
+    const action = { tool: 'track_expense', params: { amount: expenseMatch.amount, description: expenseMatch.description, category: expenseMatch.category } };
+    const result = await executeAction(userId, action);
+    replyText = result.message || `Logged ${expenseMatch.amount} for ${expenseMatch.description || expenseMatch.category || 'expense'}`;
+    provider = 'fast-path';
+    model = 'expense-parser';
+    tokensIn = 0;
+    tokensOut = 0;
+    creditCost = 0;
+    await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (expense fast-path)');
+    return;
+  }
+
+  // ── Focus fast-path: parse duration + goal directly, bypass LLM ──
+  const focusMatch = parseFocusIntent(msg.text);
+  if (focusMatch) {
+    logger.info({ focusMatch, userId }, 'Focus fast-path triggered');
+    const action = { tool: 'start_focus', params: { goal: focusMatch.goal, duration_min: focusMatch.duration_min } };
+    const result = await executeAction(userId, action);
+    replyText = result.message || `Focus session started: ${focusMatch.goal} (${focusMatch.duration_min} min)`;
+    provider = 'fast-path';
+    model = 'focus-parser';
+    tokensIn = 0;
+    tokensOut = 0;
+    creditCost = 0;
+    await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (focus fast-path)');
+    return;
   }
 
   // Non-Latin script detection: Hindi (Devanagari), Telugu, Arabic, Tamil, Gujarati etc.
