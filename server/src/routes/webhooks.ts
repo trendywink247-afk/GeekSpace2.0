@@ -854,6 +854,16 @@ async function handleTelegramCommand(
       break;
     }
 
+    case '/reminders': {
+      // List pending reminders — alias for the list-reminders fast-path
+      const normalized = parseTelegramUpdate(update);
+      if (normalized) {
+        normalized.text = 'show my reminders';
+        await handleIncomingMessage({ ...normalized, requestId });
+      }
+      break;
+    }
+
     case '/remind': {
       if (!cmd.args.trim()) {
         await sendTelegramMessage(chatId, 'Usage: /remind <text>\nExample: /remind check email in 30 minutes');

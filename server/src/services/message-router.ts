@@ -654,7 +654,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     const createWebsitePattern = /\b(?:build|create|make|generate)\b.{0,80}\b(?:website|site|portfolio|landing|blog|page)\b/i;
     const editWebsitePattern = /\b(?:change|update|edit|modify|redesign|redo|refresh|revamp|adjust|tweak|rebuild)\b.{0,80}\b(?:website|site|portfolio|landing|blog|page|theme|background|color)\b/i;
 
-    if (createWebsitePattern.test(msg.text) || editWebsitePattern.test(msg.text)) {
+    // Guard: skip website builder if this is a launch mode / multi-agent request
+    const isLaunchMsg = /\blaunch\s+mode\b/i.test(msg.text);
+    if (!isLaunchMsg && (createWebsitePattern.test(msg.text) || editWebsitePattern.test(msg.text))) {
       try {
         const text = msg.text.toLowerCase();
         // Extract params from message
@@ -750,6 +752,8 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     const deleteAllPattern = /\b(?:cancel|delete|remove|clear|wipe)\b.{0,40}\b(?:all|every).{0,20}\b(?:reminder|reminders|alarm|alarms)\b/i;
     const deleteSinglePattern = /\b(?:cancel|delete|remove)\b.{0,40}\b(?:reminder|alarm)\b/i;
     if (deleteAllPattern.test(msg.text)) {
+      // Clear FK references in inbox_messages before deleting (no ON DELETE CASCADE)
+      db.prepare('UPDATE inbox_messages SET related_reminder_id = NULL WHERE user_id = ? AND related_reminder_id IN (SELECT id FROM reminders WHERE user_id = ? AND completed = 0)').run(userId, userId);
       const { changes } = db.prepare('DELETE FROM reminders WHERE user_id = ? AND completed = 0').run(userId);
       const reply = changes > 0 ? `Done! Deleted ${changes} pending reminder${changes !== 1 ? 's' : ''}.` : `You don't have any pending reminders to delete.`;
       logConversation(userId, 'user', msg.text, requestId);
@@ -761,9 +765,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     // "cancel reminder 3" or "delete my last reminder" — pass to LLM (needs context)
     // Only delete-all gets the fast-path since it doesn't need specific reminderId
     if (deleteSinglePattern.test(msg.text) && /\b(last|latest|that|this|it)\b/i.test(msg.text)) {
-      // Fetch the most recent non-completed reminder and delete it
       const last = db.prepare('SELECT id, text FROM reminders WHERE user_id = ? AND completed = 0 ORDER BY created_at DESC LIMIT 1').get(userId) as { id: string; text: string } | undefined;
       if (last) {
+        db.prepare('UPDATE inbox_messages SET related_reminder_id = NULL WHERE related_reminder_id = ?').run(last.id);
         db.prepare('DELETE FROM reminders WHERE id = ?').run(last.id);
         const reply = `Cancelled: "${last.text}"`;
         logConversation(userId, 'user', msg.text, requestId);
@@ -903,7 +907,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 5ae. get_briefing fast-path — assemble stats without LLM
   {
-    const briefingPattern = /\b(morning|daily|weekly)\s+briefing\b|\b(show|give)\s+(me\s+)?(my\s+)?(daily|weekly)?\s+(briefing|agenda)\b|\bwhat.{0,20}on\s+my\s+agenda\b/i;
+    const briefingPattern = /\b(morning|daily|weekly)\s+(briefing|summary)\b|\b(show|give)\s+(me\s+)?(my\s+)?(?:(?:daily|weekly)\s+)?(briefing|agenda|summary)\b|\bwhat.{0,20}on\s+my\s+agenda\b/i;
     if (briefingPattern.test(msg.text)) {
       const isWeekly = /weekly/i.test(msg.text);
       const type = isWeekly ? 'weekly' : 'daily';
@@ -1241,7 +1245,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     'kitna','kahan','kab','kaun','kyun','mujhe','tumhe','apna','apni','hamara','hamari',
     'isko','usko','iski','uski','theek','accha','acha','chalo','suno','dekho','jana',
     'kuch','bahut','thoda','zyada','abhi','phir','lekin','aur','par','sirf','toh',
-    'didi','bhaiya','beta','yaar','dost','mere','tere','unka','unki','naam','kaam']);
+    'didi','bhaiya','beta','yaar','dost','mere','tere','unka','unki','naam','kaam',
+    'aaj','kal','kaisa','mausam','haal','wala','wali','achha','sunao','dikhao',
+    'khana','paani','ghar','bahar','andar','upar','neeche','pehle','baad','saath']);
   const msgWords = msg.text.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/);
   const hinglishMatches = msgWords.filter(w => HINGLISH_WORDS.has(w)).length;
   const hasHinglish = hinglishMatches >= 2;
