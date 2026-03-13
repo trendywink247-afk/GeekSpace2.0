@@ -10,6 +10,8 @@ import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
 import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
+import { upsertMemoryVector } from './search-vector.js';
+import { indexMemory } from './search-index.js';
 
 // ---- Schema (called on init) ----
 
@@ -673,6 +675,12 @@ export function upsertUserMemory(
       confidence = excluded.confidence,
       updated_at = ?
   `).run(userId, key, value, source, confidence, now, now, now);
+
+  // Async: push to Qdrant (semantic) + Meilisearch (instant search)
+  if (!userId.startsWith('guest:')) {
+    upsertMemoryVector(userId, key, value, source).catch(() => {});
+    indexMemory(userId, key, value).catch(() => {});
+  }
 
   return db.prepare(
     'SELECT * FROM user_memories WHERE user_id = ? AND key = ?'

@@ -5,8 +5,9 @@ import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { getTodayEvents } from './calendar-sync.js';
 import { textToSpeech, sendTelegramVoice } from './voice.js';
+import { eventBus } from './event-bus.js';
 
-export type ProactiveMessageType = 'daily_briefing' | 'overdue_alert' | 'idle_check_in' | 'weekly_report';
+export type ProactiveMessageType = 'daily_briefing' | 'overdue_alert' | 'idle_check_in' | 'weekly_report' | 'streak_milestone' | 'expense_spike';
 
 interface UserRow {
   id: string;
@@ -48,8 +49,45 @@ function isProactiveEnabled(userId: string): boolean {
   }
 }
 
+type ProactiveType = 'daily_briefing' | 'overdue_alert' | 'habit_nudge' | 'idle_check_in' | 'weekly_report' | 'streak_milestone' | 'expense_spike';
+
+function isTypeEnabled(userId: string, type: ProactiveType): boolean {
+  if (!isProactiveEnabled(userId)) return false;
+  try {
+    const row = db.prepare('SELECT proactive_preferences FROM agent_configs WHERE user_id = ?')
+      .get(userId) as { proactive_preferences: string } | undefined;
+    if (!row?.proactive_preferences) return true;
+    const prefs = JSON.parse(row.proactive_preferences);
+    return prefs[type] !== false;
+  } catch {
+    return true;
+  }
+}
+
+const MAX_PROACTIVE_PER_DAY = 8;
+const MIN_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+
+function isThrottled(userId: string): boolean {
+  try {
+    const dayAgo = Date.now() - 86_400_000;
+    const todayCount = (db.prepare(
+      'SELECT COUNT(*) as c FROM proactive_messages WHERE user_id = ? AND sent_at >= ?'
+    ).get(userId, dayAgo) as { c: number })?.c ?? 0;
+    if (todayCount >= MAX_PROACTIVE_PER_DAY) return true;
+
+    const lastSent = db.prepare(
+      'SELECT sent_at FROM proactive_messages WHERE user_id = ? ORDER BY sent_at DESC LIMIT 1'
+    ).get(userId) as { sent_at: number } | undefined;
+    if (lastSent && (Date.now() - lastSent.sent_at) < MIN_INTERVAL_MS) return true;
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export async function dailyBriefing(userId: string): Promise<string | null> {
-  if (!isProactiveEnabled(userId)) return null;
+  if (!isTypeEnabled(userId, 'daily_briefing')) return null;
   const user = db.prepare('SELECT name FROM users WHERE id = ?').get(userId) as { name: string } | undefined;
   if (!user) return null;
   const firstName = (user.name || 'there').split(' ')[0];
@@ -123,7 +161,7 @@ export async function dailyBriefing(userId: string): Promise<string | null> {
 }
 
 export async function overdueAlert(userId: string): Promise<string | null> {
-  if (!isProactiveEnabled(userId)) return null;
+  if (!isTypeEnabled(userId, 'overdue_alert')) return null;
   const now = new Date();
   const overdueReminders = db.prepare(
     'SELECT text FROM reminders WHERE user_id = ? AND completed = 0 AND datetime < ? LIMIT 5'
@@ -143,7 +181,7 @@ export async function overdueAlert(userId: string): Promise<string | null> {
 }
 
 export async function idleCheckIn(userId: string): Promise<string | null> {
-  if (!isProactiveEnabled(userId)) return null;
+  if (!isTypeEnabled(userId, 'idle_check_in')) return null;
   // last_active column may not exist in older DB schemas — use activity_log as fallback
   let user: UserRow | undefined;
   try {
@@ -166,7 +204,7 @@ export async function idleCheckIn(userId: string): Promise<string | null> {
 }
 
 export async function sendHabitMilestone(userId: string, habitName: string, streak: number): Promise<void> {
-  if (!isProactiveEnabled(userId)) return;
+  if (!isTypeEnabled(userId, 'streak_milestone')) return;
   const streakStr = String(streak);
   const msg = "Amazing! You now have a " + streakStr + " day streak on: " + habitName + ". Keep going!";
   await sendViaTelegram(userId, msg);
@@ -195,87 +233,95 @@ export function getProactiveLog(userId: string, limit = 20): unknown[] {
 
 let proactiveTimer: ReturnType<typeof setInterval> | null = null;
 
-function getISTHour(): number {
-  const now = new Date();
-  const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
-  const istMs = utcMs + 5.5 * 60 * 60 * 1000;
-  return new Date(istMs).getHours();
+function getUserHour(timezone: string): number {
+  return parseInt(
+    new Date().toLocaleString('en-US', { timeZone: timezone, hour: 'numeric', hour12: false }),
+    10
+  );
 }
 
-function getISTMinute(): number {
-  const now = new Date();
-  const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
-  const istMs = utcMs + 5.5 * 60 * 60 * 1000;
-  return new Date(istMs).getMinutes();
+function getUserMinute(timezone: string): number {
+  return parseInt(
+    new Date().toLocaleString('en-US', { timeZone: timezone, minute: 'numeric' }),
+    10
+  );
 }
 
-function getISTDateStr(): string {
-  const now = new Date();
-  const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
-  const istMs = utcMs + 5.5 * 60 * 60 * 1000;
-  return new Date(istMs).toISOString().slice(0, 10);
+function getUserDateStr(timezone: string): string {
+  const d = new Date();
+  const year = d.toLocaleString('en-US', { timeZone: timezone, year: 'numeric' });
+  const month = d.toLocaleString('en-US', { timeZone: timezone, month: '2-digit' });
+  const day = d.toLocaleString('en-US', { timeZone: timezone, day: '2-digit' });
+  return `${year}-${month}-${day}`;
 }
 
 async function runProactiveChecks(): Promise<void> {
-  const hour = getISTHour();
-  const minute = getISTMinute();
-  const todayStr = getISTDateStr();
-
-  // 30-min preview runs every 30 min (minute 0 or 30)
-  if (minute === 0 || minute === 30) {
+  // Reminder previews run every 30 min — timezone-independent
+  // Use a reasonable default timezone just for the minute check
+  const globalMinute = getUserMinute('Asia/Kolkata');
+  if (globalMinute === 0 || globalMinute === 30) {
     await sendReminderPreviews().catch(err => logger.warn({ err }, 'Reminder preview failed'));
   }
 
-  if (minute !== 0) return;
+  if (globalMinute !== 0) return;
+
   let users: Array<{ id: string; timezone?: string }> = [];
   try {
     users = db.prepare('SELECT id, timezone FROM users WHERE proactive_enabled != 0').all() as Array<{ id: string; timezone?: string }>;
   } catch {
     users = db.prepare('SELECT id, timezone FROM users').all() as Array<{ id: string; timezone?: string }>;
   }
+
   for (const user of users) {
     try {
+      if (isThrottled(user.id)) continue;
+
+      const tz = user.timezone || 'Asia/Kolkata';
+      const hour = getUserHour(tz);
+      const todayStr = getUserDateStr(tz);
+      const dayStart = new Date(todayStr + 'T00:00:00Z').getTime();
+
+      // Daily briefing at 8am user-local
       if (hour === 8) {
-        // Check if it's morning (7-9am) in the user's timezone
-        const userTimezone = user.timezone || 'Asia/Kolkata';
-        const hourInUserTz = parseInt(
-          new Date().toLocaleString('en-US', { timeZone: userTimezone, hour: 'numeric', hour12: false }),
-          10
-        );
-        if (hourInUserTz < 7 || hourInUserTz > 9) {
-          logger.debug({ userId: user.id, userTimezone, hourInUserTz }, 'Skipping briefing — not morning for user');
-        } else {
-          const alreadySent = db.prepare(
-            "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'daily_briefing' AND sent_at >= ?"
-          ).get(user.id, new Date(todayStr + 'T00:00:00Z').getTime()) as { id: number } | undefined;
-          if (!alreadySent) await dailyBriefing(user.id);
-        }
-      } else if (hour === 10) {
+        const alreadySent = db.prepare(
+          "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'daily_briefing' AND sent_at >= ?"
+        ).get(user.id, dayStart) as { id: number } | undefined;
+        if (!alreadySent) await dailyBriefing(user.id);
+      }
+
+      // Overdue alert at 10am user-local
+      if (hour === 10) {
         const alreadySent = db.prepare(
           "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'overdue_alert' AND sent_at >= ?"
-        ).get(user.id, new Date(todayStr + 'T00:00:00Z').getTime()) as { id: number } | undefined;
+        ).get(user.id, dayStart) as { id: number } | undefined;
         if (!alreadySent) await overdueAlert(user.id);
       }
+
+      // Idle check-in at 8am user-local
       if (hour === 8) {
         const alreadySentIdle = db.prepare(
           "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'idle_check_in' AND sent_at >= ?"
-        ).get(user.id, new Date(todayStr + 'T00:00:00Z').getTime()) as { id: number } | undefined;
+        ).get(user.id, dayStart) as { id: number } | undefined;
         if (!alreadySentIdle) await idleCheckIn(user.id);
       }
-      // Habit idle nudge at 11:00 IST daily
+
+      // Habit nudge at 11am user-local
       if (hour === 11) {
         await sendHabitNudges().catch(err => logger.warn({ err }, 'Habit nudge failed'));
       }
-      // Weekly report every Sunday at 19:00 IST
-      const istDate = new Date(new Date().getTime() + new Date().getTimezoneOffset() * 60 * 1000 + 5.5 * 60 * 60 * 1000);
-      if (hour === 19 && istDate.getDay() === 0) {
-        const weekStart = new Date(istDate.getTime() - 7 * 86_400_000).getTime();
-        const alreadySentWeekly = db.prepare(
-          "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'weekly_report' AND sent_at >= ?"
-        ).get(user.id, weekStart) as { id: number } | undefined;
-        if (!alreadySentWeekly) {
-          await weeklyReport(user.id);
-          await weeklyExpenseDigest(user.id);
+
+      // Weekly report on Sunday at 7pm user-local
+      if (hour === 19) {
+        const userDate = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+        if (userDate.getDay() === 0) {
+          const weekStart = Date.now() - 7 * 86_400_000;
+          const alreadySentWeekly = db.prepare(
+            "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'weekly_report' AND sent_at >= ?"
+          ).get(user.id, weekStart) as { id: number } | undefined;
+          if (!alreadySentWeekly) {
+            await weeklyReport(user.id);
+            await weeklyExpenseDigest(user.id);
+          }
         }
       }
     } catch (err) {
@@ -286,7 +332,7 @@ async function runProactiveChecks(): Promise<void> {
 
 
 export async function weeklyReport(userId: string): Promise<string | null> {
-  if (!isProactiveEnabled(userId)) return null;
+  if (!isTypeEnabled(userId, 'weekly_report')) return null;
   try {
     const { getWeeklySummary } = await import('./analytics.js');
     const summary = await getWeeklySummary(userId);
@@ -321,7 +367,7 @@ export async function weeklyReport(userId: string): Promise<string | null> {
 }
 
 export async function weeklyExpenseDigest(userId: string): Promise<string | null> {
-  if (!isProactiveEnabled(userId)) return null;
+  if (!isTypeEnabled(userId, 'weekly_report')) return null;
   try {
     // Check if expenses table exists
     const hasTable = db.prepare(
@@ -424,6 +470,8 @@ async function sendHabitNudges(): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
 
   for (const user of users) {
+    if (isThrottled(user.id)) continue;
+    if (!isTypeEnabled(user.id, 'habit_nudge')) continue;
     const rateLimitKey = `habit_nudge:${user.id}`;
     const alreadyNudged = await cacheGet(rateLimitKey).catch(() => null);
     if (alreadyNudged) continue;
@@ -469,5 +517,25 @@ export function initProactiveEngine(): void {
   proactiveTimer = setInterval(() => {
     void runProactiveChecks();
   }, 60_000);
-  logger.info('Proactive engine started (daily_briefing@08:00 IST, overdue_alert@10:00 IST, idle_check_in@08:00 IST, expense_digest@19:00 IST Sunday, 30min_preview, habit_nudge@11:00 IST)');
+
+  // Event-driven proactive messages
+  eventBus.on('streak.milestone', async ({ userId, habitName, streak }) => {
+    if (!isTypeEnabled(userId, 'streak_milestone') || isThrottled(userId)) return;
+    const emojis = streak >= 30 ? '\u{1F3C6}\u{1F525}' : streak >= 21 ? '\u{1F525}\u{1F4AA}' : '\u{1F4AA}\u2728';
+    const msg = `${emojis} ${streak}-day streak on "${habitName}"! You're building something real. Keep it up!`;
+    const sent = await sendViaTelegram(userId, msg);
+    if (sent) recordProactiveMessage(userId, 'streak_milestone', msg);
+    logger.info({ userId: userId.slice(0, 8), habitName, streak }, 'Streak milestone fired');
+  });
+
+  eventBus.on('expense.spike', async ({ userId, amount, category, averageForCategory }) => {
+    if (!isTypeEnabled(userId, 'expense_spike') || isThrottled(userId)) return;
+    const ratio = Math.round(amount / averageForCategory);
+    const msg = `\u{1F4CA} Heads up \u2014 you just logged \u20B9${amount} on ${category}. Your monthly average for ${category} is \u20B9${averageForCategory}. That's ${ratio}x the usual.`;
+    const sent = await sendViaTelegram(userId, msg);
+    if (sent) recordProactiveMessage(userId, 'expense_spike', msg);
+    logger.info({ userId: userId.slice(0, 8), category, amount }, 'Expense spike alert fired');
+  });
+
+  logger.info('Proactive engine started (daily_briefing@08:00, overdue@10:00, idle@08:00, habit_nudge@11:00, weekly@19:00 Sun — all per-user timezone)');
 }

@@ -317,15 +317,37 @@ cd server && npm test
 - **Auth:** JWT + Passport.js (Google OAuth 2.0, GitHub OAuth 2.0 via `server/src/routes/oauth.ts`)
 - **Infra:** Docker Compose (Agentin + Redis + automation sidecar), Caddy reverse proxy, PM2 cluster (2 workers in Docker)
 
+### Message Router Pipeline (architectural heart)
+`server/src/services/message-router.ts` processes ALL incoming messages (Telegram, WhatsApp, web chat) through this pipeline:
+
+1. **Channel detection** — normalize input from Telegram/WhatsApp/web
+2. **User resolution** — resolve user from channel ID or JWT
+3. **Credit check** — verify token budget before LLM calls
+4. **Memory injection** — load user memories + conversation context
+5. **Fast-path evaluation** — 10 regex-based fast-paths that skip LLM entirely (0 credits, <700ms):
+   - image, website, screenshot, links, expense, focus, reminder, habit, briefing, list-reminders
+6. **Intent classification** — `detectTaskIntent()` for background tasks, `hasToolTrigger()` for 17 tool categories
+7. **Provider routing** — select LLM provider based on intent complexity
+8. **ReAct loop** — `react-loop.ts` runs up to 5 iterations with tool execution (`action-parser.ts` → `action-executor.ts`)
+9. **Response formatting** — channel-specific formatting (sanitizeForTelegram, etc.)
+10. **Delivery** — send response via appropriate channel
+
+**Important ordering:** `detectTaskIntent()` runs BEFORE fast-paths. Fast-path guards (`isReminderMsg`, `isLaunchMsg`, `isSearchIntent`) prevent false positives.
+
 ### Key server files:
 - `server/src/index.ts` — Express app, middleware, routes, subsystem init
 - `server/src/app.ts` — Express app factory (tests)
 - `server/src/config.ts` — env vars
 - `server/src/db/index.ts` — SQLite schema, migrations, seed
-- `server/src/services/llm.ts` — LLM router
+- `server/src/services/llm.ts` — LLM router (6-tier waterfall: Ollama → Groq → Gemini Flash → OpenRouter → Together AI → Kimi K2)
+- `server/src/services/react-loop.ts` — ReAct reasoning loop (max 5 iterations)
+- `server/src/services/action-parser.ts` — tool schema definitions + ACTION_REGEX parsing
+- `server/src/services/action-executor.ts` — executes all 17 tool actions
 - `server/src/services/edith.ts` — Kimi/Moonshot client
 - `server/src/services/automations-engine.ts` — cron/webhook triggers
-- `server/src/services/message-router.ts` — Telegram/WhatsApp handler
+- `server/src/services/message-router.ts` — multi-channel message handler + fast-paths
+- `server/src/services/searxng.ts` — SearXNG metasearch (primary, free)
+- `server/src/services/tavily.ts` — Tavily web search (paid fallback)
 - `server/src/routes/oauth.ts` — Google + GitHub OAuth 2.0
 
 ### Key frontend files:
@@ -343,7 +365,28 @@ cd server && npm test
 - `scripts/autonomy-run.sh` — autonomy orchestrator (pre-flight + audit)
 - `ops/AUTONOMY.md` — autonomy rules, roles, cadence, stop conditions
 
+### Reference docs (in `docs/`):
+- `docs/DEPLOYMENT.md` — full deployment guide
+- `docs/RUNBOOK.md` — operational runbook
+- `docs/API.md` — API endpoint reference
+- `docs/ARCHITECTURE.md` — system design
+- `docs/ENV_VARS.md` — all environment variables
+
 ### shadcn/ui: New York style. Add via `npx shadcn@latest add <component>`
+
+---
+
+## CI Pipeline (`.github/workflows/ci.yml`)
+4-stage pipeline — all must pass before merge to `main`:
+1. **static-checks** — lint (changed files only, `--max-warnings=0`) + `tsc --noEmit` (frontend + server)
+2. **unit-tests** — `cd server && npm test` (Vitest)
+3. **e2e-tests** — Playwright headless Chromium (60s timeout per test)
+4. **smoke-tests** — builds server, starts on :3001, waits for health endpoint
+
+### Test config
+- Vitest: `pool: 'forks'` with `singleFork: true` — sequential execution for SQLite DB isolation
+- Coverage thresholds: conservative (15% lines, 10% functions)
+- `TEST_MODE=true` enables seed data
 
 ---
 

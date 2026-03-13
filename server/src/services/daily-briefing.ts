@@ -5,6 +5,10 @@ import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
 import { routeChat, type ChatMessage } from './llm.js';
 import { sendBriefingEmail } from './email.js';
 
+// DEPRECATED: The scheduler in this file is no longer started.
+// proactive-engine.ts handles all scheduled briefings.
+// createBriefing() is kept as a utility for on-demand /api/briefings/trigger calls.
+
 let schedulerInterval: ReturnType<typeof setInterval> | null = null;
 
 interface BriefingData {

@@ -471,16 +471,16 @@ describe('110.7 IST hardcode removed from message-router', () => {
     expect(src).toContain('DateTime');
   });
 
-  it('proactive-engine.ts still has getISTHour function (IST default for proactive checks is intentional)', () => {
+  it('proactive-engine.ts uses per-user timezone (getUserHour) instead of IST hardcoding', () => {
     const src = readSrc('services', 'proactive-engine.ts');
-    expect(src).toContain('getISTHour');
+    expect(src).toContain('getUserHour');
+    expect(src).toContain('Asia/Kolkata'); // default timezone
   });
 
-  it('proactive-engine.ts getISTHour uses 5.5 * 60 * 60 * 1000 (intentional IST default for proactive)', () => {
+  it('proactive-engine.ts has throttling (MAX_PROACTIVE_PER_DAY)', () => {
     const src = readSrc('services', 'proactive-engine.ts');
-    // This is the correct usage — proactive engine schedules based on IST as the server's
-    // default timezone. The hardcode in message-router was the bug; proactive-engine is fine.
-    expect(src).toContain('5.5 * 60 * 60 * 1000');
+    expect(src).toContain('MAX_PROACTIVE_PER_DAY');
+    expect(src).toContain('isThrottled');
   });
 
   it('reminder-scheduler.ts uses luxon DateTime for local time display in notifications', () => {

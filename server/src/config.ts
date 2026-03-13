@@ -188,6 +188,16 @@ export const config = {
   stripeProPriceId: process.env.STRIPE_PRO_PRICE_ID || '',
   stripeEnabled: !!process.env.STRIPE_SECRET_KEY,
 
+  // ---- Meilisearch (typo-tolerant instant search) ----
+  meilisearchUrl: optional('MEILISEARCH_URL', 'http://geekspace-meilisearch:7700'),
+  meilisearchApiKey: optional('MEILISEARCH_API_KEY', 'agentin-meili-2026'),
+
+  // ---- Qdrant (vector DB for semantic memory) ----
+  qdrantUrl: optional('QDRANT_URL', 'http://geekspace-qdrant:6333'),
+
+  // ---- Embedding (via Ollama nomic-embed-text) ----
+  embeddingModel: optional('EMBEDDING_MODEL', 'nomic-embed-text'),
+
   // ---- Groq (free tier — Llama 3.3 70B, 14,400 req/day free) ----
   groqApiKey: process.env.GROQ_API_KEY ?? '',
   groqApiKey2: process.env.GROQ_API_KEY_2 ?? '',

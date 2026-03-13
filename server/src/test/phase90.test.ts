@@ -52,9 +52,10 @@ describe('90.1 proactive-engine.ts exports', () => {
     expect(src).toContain('60_000');
   });
 
-  it('IST offset is 5.5 hours from UTC', () => {
+  it('uses per-user timezone with Asia/Kolkata default', () => {
     const src = readFile('server/src/services/proactive-engine.ts');
-    expect(src).toContain('5.5 * 60 * 60 * 1000');
+    expect(src).toContain('getUserHour');
+    expect(src).toContain("Asia/Kolkata");
   });
 
   it('daily briefing fires at IST hour 8', () => {

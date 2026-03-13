@@ -17,7 +17,8 @@ import { initTelegramBot } from './services/telegram.js';
 import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
 import { initSocialMediaTables } from './services/social-media.js';
 import { seedDefaultTemplates } from './routes/templates.js';
-import { startBriefingScheduler } from './services/daily-briefing.js';
+// DEPRECATED: briefing scheduler removed — proactive-engine.ts handles all scheduled briefings
+// import { startBriefingScheduler } from './services/daily-briefing.js';
 import { startReminderScheduler } from './services/reminder-scheduler.js';
 import { startHealthProbeCache } from './routes/health.js';
 import { startModelSyncScheduler } from './services/model-sync.js';
@@ -112,7 +113,8 @@ const httpServer = app.listen(config.port, () => {
     safeStart('pico-worker', startPicoWorker);
     safeStart('telegram-bot', () => initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)')));
     safeStart('ollama-keepalive', startOllamaKeepalive);
-    safeStart('briefing-scheduler', startBriefingScheduler);
+    // DEPRECATED: briefing scheduler removed — proactive-engine.ts handles all scheduled briefings
+    // safeStart('briefing-scheduler', startBriefingScheduler);
     safeStart('reminder-scheduler', startReminderScheduler);
     safeStart('memory-sync', startMemorySyncScheduler);
     safeStart('memory-weekly-summary', startWeeklySummaryScheduler);
@@ -124,12 +126,24 @@ const httpServer = app.listen(config.port, () => {
     safeStart('gmail-sync', startGmailSyncScheduler);
     safeStart('calendar-sync', startCalendarSyncScheduler);
 
+    // Initialize Meilisearch + Qdrant (non-blocking, graceful if unavailable)
+    safeStart('meilisearch-init', async () => {
+      const { initMeilisearch } = await import('./services/search-index.js');
+      await initMeilisearch();
+    });
+    safeStart('qdrant-init', async () => {
+      const { initQdrant } = await import('./services/search-vector.js');
+      await initQdrant();
+    });
+
     // Startup subsystem summary — visible in Docker logs for quick operator verification
     logger.info({
       telegram: !!config.telegramBotToken,
       whatsapp: !!(config.whatsappToken && config.whatsappBusinessId),
       email: !!(config.resendApiKey || config.smtpHost),
       ollama: config.ollamaBaseUrl,
+      meilisearch: config.meilisearchUrl,
+      qdrant: config.qdrantUrl,
       version: APP_VERSION,
     }, 'GeekSpace subsystem startup complete');
 

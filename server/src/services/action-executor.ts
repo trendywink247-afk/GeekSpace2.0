@@ -21,6 +21,9 @@ import { sendTelegramNotification, escapeTelegramHtml, sendTelegramButtons } fro
 import { tavilySearch } from './tavily.js';
 import { searxngSearch } from './searxng.js';
 import { fetchAndExtract, fetchScreenshot, extractLinks, smartSearch } from './web-research.js';
+import { indexNote, indexReminder, indexHabit, indexMemory } from './search-index.js';
+import { semanticSearch, upsertMemoryVector } from './search-vector.js';
+import { eventBus } from './event-bus.js';
 
 // ── Hinglish Preprocessor ────────────────────────────────────
 
@@ -471,6 +474,10 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         db.prepare(
           `INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Created reminder', ?, 'bell')`
         ).run(uuid(), userId, text);
+        // Index in Meilisearch (async)
+        indexReminder(userId, reminderId, text).catch(() => {});
+
+        eventBus.emit('reminder.created', { userId, reminderId, text });
 
         const recurMsg = recurrence ? ` (repeats ${recurrence})` : '';
 
@@ -975,10 +982,12 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const title = params.title as string;
         const content = params.content as string;
         const tags = (params.tags as string[]) || [];
-        db.prepare(`
+        const noteResult = db.prepare(`
           INSERT INTO notes (user_id, title, content, tags, created_at, updated_at)
           VALUES (?, ?, ?, ?, unixepoch('now')*1000, unixepoch('now')*1000)
         `).run(userId, title, content, JSON.stringify(tags));
+        // Index in Meilisearch (async, non-blocking)
+        indexNote(userId, String(noteResult.lastInsertRowid), title, content).catch(() => {});
         return {
           tool,
           success: true,
@@ -1022,6 +1031,8 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
             VALUES (?, ?, '', 'daily', 'star', 0, 0, unixepoch('now')*1000)
           `).run(userId, habitName);
           habit = { id: r.lastInsertRowid as number, name: habitName, current_streak: 0, longest_streak: 0 };
+          // Index new habit in Meilisearch (async)
+          indexHabit(userId, String(habit.id), habitName).catch(() => {});
         }
         // Log today (UNIQUE index prevents double-log)
         try {
@@ -1037,6 +1048,10 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const newLongest = Math.max(newStreak, habit.longest_streak);
         db.prepare(`UPDATE habits SET current_streak = ?, longest_streak = ? WHERE id = ?`)
           .run(newStreak, newLongest, habit.id);
+        eventBus.emit('habit.logged', { userId, habitName: habit.name, streak: newStreak });
+        if ([7, 14, 21, 30, 50, 100].includes(newStreak)) {
+          eventBus.emit('streak.milestone', { userId, habitName: habit.name, streak: newStreak });
+        }
         const msg = newStreak > 1
           ? `✅ "${habit.name}" logged! 🔥 ${newStreak}-day streak${newLongest > habit.longest_streak ? ' (new record!)' : ''}`
           : `✅ "${habit.name}" logged for today!`;
@@ -1406,6 +1421,16 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           VALUES (?, ?, ?, ?, ?, ?)
         `).run(userId, amount, category, description, date, currency);
 
+        // Check for expense spike (>2x category average over last 30 days)
+        try {
+          const avgRow = db.prepare(
+            'SELECT AVG(amount) as avg FROM expenses WHERE user_id = ? AND category = ? AND date >= ?'
+          ).get(userId, category, new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)) as { avg: number } | undefined;
+          if (avgRow?.avg && amount > avgRow.avg * 2) {
+            eventBus.emit('expense.spike', { userId, amount, category, averageForCategory: Math.round(avgRow.avg) });
+          }
+        } catch { /* non-fatal */ }
+
         // Check budget if set
         const budgetRow = db.prepare(`
           SELECT amount FROM budget_limits
@@ -1509,7 +1534,14 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const query = (params.query as string)?.trim();
         if (!query) return { tool, success: false, message: 'Please provide a search query.' };
 
-        // FTS5 full-text search over conversation history
+        // 1) Semantic search via Qdrant (meaning-based, not just keywords)
+        let vecResults: Array<{ key: string; value: string; score: number }> = [];
+        try {
+          const sr = await semanticSearch(userId, query, 5);
+          vecResults = sr.map(r => ({ key: r.key, value: r.value, score: r.score }));
+        } catch { /* semantic search unavailable — continue with keyword search */ }
+
+        // 2) FTS5 full-text search over conversation history
         let convResults: Array<{ content: string; created_at: string }> = [];
         try {
           convResults = db.prepare(`
@@ -1521,14 +1553,14 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           // FTS5 not available or query syntax error — fall through to memories-only
         }
 
-        // Also search user_memories (key + value LIKE)
+        // 3) Keyword search over user_memories (key + value LIKE)
         const memResults = db.prepare(`
           SELECT key, value FROM user_memories
           WHERE user_id = ? AND (lower(key) LIKE ? OR lower(value) LIKE ?)
           LIMIT 5
         `).all(userId, `%${query.toLowerCase()}%`, `%${query.toLowerCase()}%`) as Array<{ key: string; value: string }>;
 
-        if (convResults.length === 0 && memResults.length === 0) {
+        if (convResults.length === 0 && memResults.length === 0 && vecResults.length === 0) {
           return {
             tool, success: true,
             message: `I couldn't find anything about "${query}" in our past conversations or your memories.`,
@@ -1536,6 +1568,11 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         }
 
         const parts: string[] = [];
+        // Semantic results first (highest quality)
+        if (vecResults.length > 0) {
+          const vecText = vecResults.map(r => `• ${r.key}: ${r.value} (${Math.round(r.score * 100)}% match)`).join('\n');
+          parts.push(`**Semantic matches:**\n${vecText}`);
+        }
         if (convResults.length > 0) {
           const convText = convResults.map(r => {
             const rawDate = r.created_at;
@@ -1551,10 +1588,11 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           parts.push(`**From memories:**\n${memText}`);
         }
 
+        const totalResults = vecResults.length + convResults.length + memResults.length;
         return {
           tool,
           success: true,
-          message: `Found ${convResults.length + memResults.length} result(s) for "${query}":\n\n${parts.join('\n\n')}`,
+          message: `Found ${totalResults} result(s) for "${query}":\n\n${parts.join('\n\n')}`,
         };
       }
 

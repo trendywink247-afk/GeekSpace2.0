@@ -1240,6 +1240,49 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     return;
   }
 
+  // ── Notification preference fast-path: "turn off habit reminders" / "enable streak notifications" ──
+  const proactiveTypePattern = /\b(?:turn\s+(?:off|on)|(?:dis|en)able|stop|start)\s+(?:the\s+)?(.+?)\s*(?:notification|alert|reminder|nudge|message)s?\b/i;
+  const proactiveTypeMatch = msg.text.match(proactiveTypePattern);
+  if (proactiveTypeMatch) {
+    const isEnable = /\b(?:on|enable|start)\b/i.test(msg.text);
+    const typeRaw = proactiveTypeMatch[1].toLowerCase().trim();
+    const typeMap: Record<string, string> = {
+      'briefing': 'daily_briefing', 'morning': 'daily_briefing', 'daily': 'daily_briefing',
+      'overdue': 'overdue_alert',
+      'habit': 'habit_nudge',
+      'idle': 'idle_check_in', 'check in': 'idle_check_in', 'checkin': 'idle_check_in',
+      'weekly': 'weekly_report',
+      'streak': 'streak_milestone',
+      'expense': 'expense_spike', 'spending': 'expense_spike',
+    };
+    const proactiveType = typeMap[typeRaw];
+    if (proactiveType) {
+      try {
+        const existing = db.prepare('SELECT proactive_preferences FROM agent_configs WHERE user_id = ?')
+          .get(userId) as { proactive_preferences: string } | undefined;
+        const prefs = existing?.proactive_preferences ? JSON.parse(existing.proactive_preferences) : {};
+        prefs[proactiveType] = isEnable;
+        db.prepare('UPDATE agent_configs SET proactive_preferences = ? WHERE user_id = ?')
+          .run(JSON.stringify(prefs), userId);
+        const action = isEnable ? 'enabled' : 'disabled';
+        const label = proactiveType.replace(/_/g, ' ');
+        replyText = `${label.charAt(0).toUpperCase() + label.slice(1)} notifications ${action}.`;
+        provider = 'fast-path';
+        model = 'notif-pref';
+        tokensIn = 0;
+        tokensOut = 0;
+        creditCost = 0;
+        logConversation(userId, 'user', msg.text, requestId);
+        logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'notif-pref-fast-path');
+        await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+        logger.info({ channel: msg.channel, userId, proactiveType, isEnable, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (notif-pref fast-path)');
+        return;
+      } catch (err) {
+        logger.warn({ err, userId }, 'Failed to update proactive preferences');
+      }
+    }
+  }
+
   // Non-Latin script detection: Hindi (Devanagari), Telugu, Arabic, Tamil, Gujarati etc.
   // Chinese models (qwen3:8b, stepfun) reply in Chinese for these inputs despite instructions.
   // Route to Groq Llama 3.3 70B instead — truly multilingual.
