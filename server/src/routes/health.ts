@@ -42,8 +42,8 @@ async function runProbes(): Promise<ComponentStatus> {
     dbOk = row?.ok === 1;
   } catch { /* db not ready */ }
 
-  // Ollama, Edith, PicoClaw — run in PARALLEL
-  const [ollamaOk, edithOk, picoOk] = await Promise.all([
+  // Ollama, Edith, PicoClaw, SearXNG, Meilisearch, Qdrant — run in PARALLEL
+  const [ollamaOk, edithOk, picoOk, searxngOk, meiliOk, qdrantOk] = await Promise.all([
     // Ollama
     (async () => {
       if (!config.ollamaBaseUrl) return false;
@@ -59,6 +59,27 @@ async function runProbes(): Promise<ComponentStatus> {
     edithProbe().catch(() => false),
     // PicoClaw
     config.picoClawEnabled ? picoClawProbe().catch(() => false) : Promise.resolve(false),
+    // SearXNG
+    (async () => {
+      try {
+        const r = await fetch('http://geekspace-searxng:8080/healthz', { signal: AbortSignal.timeout(3000) });
+        return r.ok;
+      } catch { return false; }
+    })(),
+    // Meilisearch
+    (async () => {
+      try {
+        const r = await fetch('http://geekspace-meilisearch:7700/health', { signal: AbortSignal.timeout(3000) });
+        return r.ok;
+      } catch { return false; }
+    })(),
+    // Qdrant
+    (async () => {
+      try {
+        const r = await fetch('http://geekspace-qdrant:6333/healthz', { signal: AbortSignal.timeout(3000) });
+        return r.ok || r.status === 200;
+      } catch { return false; }
+    })(),
   ]);
 
   const bridgeOk = config.bridgeEnabled && (ollamaOk || edithOk || !!config.openrouterApiKey);
@@ -72,6 +93,9 @@ async function runProbes(): Promise<ComponentStatus> {
     bridge: bridgeOk ? 'active' : (config.bridgeEnabled ? 'no_backends' : 'disabled'),
     telegram: config.telegramBotToken ? 'configured' : 'not_configured',
     n8n: config.n8nBaseUrl ? 'configured' : 'not_configured',
+    searxng: searxngOk ? 'reachable' : 'unreachable',
+    meilisearch: meiliOk ? 'reachable' : 'unreachable',
+    qdrant: qdrantOk ? 'reachable' : 'unreachable',
   };
 }
 

@@ -213,6 +213,61 @@ async function sendSingleChunk(
   return { messageId: 0, success: false };
 }
 
+// ---- Edit Message ----
+
+export async function editTelegramMessage(
+  chatId: string | number,
+  messageId: number,
+  text: string,
+  parseMode: 'Markdown' | 'HTML' = 'Markdown',
+): Promise<boolean> {
+  if (!text?.trim()) return false;
+
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    message_id: messageId,
+    text,
+    parse_mode: parseMode,
+  };
+
+  try {
+    const res = await fetch(`${TELEGRAM_API}/editMessageText`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      // "message is not modified" is not a real error — text was the same
+      if (errText.includes('message is not modified')) return true;
+      logger.warn({ chatId, messageId, status: res.status, error: errText }, 'Telegram editMessageText failed');
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    logger.warn({ err, chatId, messageId }, 'Telegram editMessageText failed');
+    return false;
+  }
+}
+
+// ---- Typing Indicator ----
+
+export async function sendTelegramTyping(chatId: string | number): Promise<void> {
+  try {
+    await fetch(`${TELEGRAM_API}/sendChatAction`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, action: 'typing' }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch {
+    // Best effort — don't log, don't throw
+  }
+}
+
 // ---- Send Message with Inline Buttons ----
 
 export async function sendTelegramButtons(

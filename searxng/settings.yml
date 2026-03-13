@@ -1,0 +1,40 @@
+use_default_settings: true
+
+general:
+  instance_name: "Agentin Search"
+  debug: false
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "en"
+  formats:
+    - html
+    - json
+
+server:
+  secret_key: "agentin-searxng-2026-secret"
+  limiter: false
+  image_proxy: false
+  port: 8888
+  bind_address: "0.0.0.0"
+
+ui:
+  static_use_hash: true
+
+engines:
+  - name: google
+    engine: google
+    shortcut: g
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+  - name: bing
+    engine: bing
+    shortcut: b
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: wp
+  - name: brave
+    engine: brave
+    shortcut: br

@@ -19,6 +19,7 @@ import { generateImage, generateVideo, generateAvatar } from './media-generation
 import { cacheSet, cacheGet, cacheDel } from './cache.js';
 import { sendTelegramNotification, escapeTelegramHtml, sendTelegramButtons } from './telegram.js';
 import { tavilySearch } from './tavily.js';
+import { searxngSearch } from './searxng.js';
 import { fetchAndExtract, fetchScreenshot, extractLinks, smartSearch } from './web-research.js';
 
 // ── Hinglish Preprocessor ────────────────────────────────────
@@ -766,8 +767,25 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           }
         }
 
-        // No TAVILY key: try smartSearch (site-aware crawl4ai fallback)
-        if (!process.env.TAVILY_API_KEY) {
+        // Try SearXNG first (free, self-hosted, unlimited)
+        let results: Awaited<ReturnType<typeof tavilySearch>>['results'] = [];
+        try {
+          const searxResult = await searxngSearch(query, maxResults);
+          results = searxResult.results;
+        } catch {
+          // SearXNG failed, try Tavily fallback
+        }
+
+        // Tavily fallback if SearXNG returned nothing
+        if (results.length === 0 && process.env.TAVILY_API_KEY) {
+          try {
+            const searchResult = await tavilySearch(query, maxResults);
+            results = searchResult.results;
+          } catch { /* fall through */ }
+        }
+
+        // Smart search fallback (crawl4ai site-specific)
+        if (results.length === 0) {
           try {
             const smartResult = await smartSearch(query);
             if (smartResult) {
@@ -778,23 +796,14 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
                 data: { query, results: [], summary: smartResult },
               };
             }
-          } catch { /* fall through to error */ }
-          return {
-            tool,
-            success: false,
-            message: `No TAVILY_API_KEY configured and no matching news site found for "${query}". Add TAVILY_API_KEY to .env for general web search.`,
-          };
+          } catch { /* fall through */ }
         }
 
-        let results: Awaited<ReturnType<typeof tavilySearch>>['results'];
-        try {
-          const searchResult = await tavilySearch(query, maxResults);
-          results = searchResult.results;
-        } catch (searchErr) {
+        if (results.length === 0) {
           return {
             tool,
             success: false,
-            message: searchErr instanceof Error ? searchErr.message : `Search failed for "${query}"`,
+            message: `No search results found for "${query}". Try rephrasing your query.`,
           };
         }
 

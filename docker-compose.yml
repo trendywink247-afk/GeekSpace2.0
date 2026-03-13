@@ -219,6 +219,70 @@ services:
     networks:
       - geekspace-net
 
+  # ---- SearXNG (Free Metasearch — replaces Tavily) ----
+  searxng:
+    image: searxng/searxng:latest
+    container_name: geekspace-searxng
+    restart: unless-stopped
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - searxng-data:/etc/searxng
+    networks:
+      - geekspace-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---- Meilisearch (Typo-tolerant instant search) ----
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    container_name: geekspace-meilisearch
+    restart: unless-stopped
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-agentin-meili-2026}
+      - MEILI_ENV=production
+      - MEILI_MAX_INDEXING_MEMORY=100Mb
+    volumes:
+      - meilisearch-data:/meili_data
+    networks:
+      - geekspace-net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---- Qdrant (Vector DB for semantic memory search) ----
+  qdrant:
+    image: qdrant/qdrant:v1.13.2
+    container_name: geekspace-qdrant
+    restart: unless-stopped
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - geekspace-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   geekspace-data:
     driver: local
@@ -233,6 +297,12 @@ volumes:
   caddy_config:
     driver: local
   uptime-kuma-data:
+    driver: local
+  searxng-data:
+    driver: local
+  meilisearch-data:
+    driver: local
+  qdrant-data:
     driver: local
 
 networks:

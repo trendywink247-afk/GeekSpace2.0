@@ -18,13 +18,14 @@ import { runReactLoop } from './react-loop.js';
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
 import { checkKeywordTriggers } from './automations-engine.js';
-import { sendTelegramMessage, sendTelegramPhoto, sendTelegramVideo } from './telegram.js';
+import { sendTelegramMessage, sendTelegramPhoto, sendTelegramVideo, sendTelegramTyping } from './telegram.js';
 import { getPersonalityPrompt, getPersonality } from '../prompts/personalities.js';
 import { OPENCLAW_IDENTITY_COMPACT } from '../prompts/openclaw-system.js';
 import { parseActions } from './action-parser.js';
 import { executeAction, type ActionResult } from './action-executor.js';
 import { compressPrompt, trimConversationHistory } from '../utils/token-format.js';
 import { isSearchIntent, tavilySearch } from './tavily.js';
+import { searxngSearch } from './searxng.js';
 import { extractUrl } from './firecrawl.js';
 import { fetchAndExtract, smartSearch } from './web-research.js';
 import { addInboxMessage } from './inbox.js';
@@ -260,6 +261,114 @@ function parseFocusIntent(message: string): { goal: string; duration_min: number
   return { goal, duration_min: Math.min(Math.max(duration, 5), 120) };
 }
 
+// ---- Reminder Fast-Path Parser ----
+// Parses common reminder messages directly without LLM.
+// Returns { text, datetime } for executeAction('set_reminder', ...).
+function parseReminderIntent(message: string): { text: string; datetime: string } | null {
+  const lower = message.toLowerCase();
+
+  // Must contain a reminder keyword
+  if (!/\b(remind|reminder|yaad\s+dila|alert\s+me)\b/i.test(lower)) return null;
+
+  // Pattern: "remind me to TASK at/in/on TIME"
+  let match = message.match(/remind\s+me\s+(?:to\s+)?(.+?)\s+(?:at|by|on|around)\s+(.+)/i);
+  if (match) return { text: match[1].trim(), datetime: match[2].trim() };
+
+  // Pattern: "remind me in DURATION to TASK"
+  match = message.match(/remind\s+me\s+in\s+(\d+\s*(?:min(?:ute)?s?|hours?|hrs?|days?))\s+(?:to\s+)?(.+)/i);
+  if (match) return { text: match[2].trim(), datetime: `in ${match[1].trim()}` };
+
+  // Pattern: "remind me TASK tomorrow/today"
+  match = message.match(/remind\s+me\s+(?:to\s+)?(.+?)\s+(tomorrow|today|tonight|kal|aaj)\s*(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm|baje)?)?/i);
+  if (match) {
+    const timeStr = match[3] ? `${match[2]} at ${match[3]}` : match[2];
+    return { text: match[1].trim(), datetime: timeStr.trim() };
+  }
+
+  // Pattern: "reminder: TASK at TIME" or "reminder TASK at TIME"
+  match = message.match(/reminder[:\s]+(.+?)\s+(?:at|by|on)\s+(.+)/i);
+  if (match) return { text: match[1].trim(), datetime: match[2].trim() };
+
+  // Pattern: "set a reminder for TIME to TASK"
+  match = message.match(/set\s+(?:a\s+)?reminder\s+(?:for\s+)?(.+?)\s+(?:to\s+)(.+)/i);
+  if (match) return { text: match[2].trim(), datetime: match[1].trim() };
+
+  // Hinglish: "yaad dila dena TASK kal/aaj TIME baje"
+  match = message.match(/yaad\s+dila(?:o|na|dena)\s+(.+?)\s+(kal|aaj|parso)\s*(\d{1,2}\s*baje)?/i);
+  if (match) {
+    const when = match[2].toLowerCase() === 'kal' ? 'tomorrow' : match[2].toLowerCase() === 'aaj' ? 'today' : 'day after tomorrow';
+    const time = match[3] ? ` at ${match[3].replace(/\s*baje/, '')}` : '';
+    return { text: match[1].trim(), datetime: `${when}${time}` };
+  }
+
+  // Hinglish: "remind karo/karna TASK TIME"
+  match = message.match(/remind\s+kar(?:o|na)\s+(.+?)\s+(kal|aaj|tomorrow|today|\d{1,2}\s*(?:am|pm|baje)|\d{1,2}:\d{2})/i);
+  if (match) return { text: match[1].trim(), datetime: match[2].trim() };
+
+  // Simple: "remind me to TASK" (no time — let server default)
+  match = message.match(/remind\s+me\s+(?:to\s+)?(.{3,})/i);
+  if (match && !/\b(what|show|list|cancel|delete|how)\b/i.test(match[1])) {
+    return { text: match[1].trim(), datetime: 'in 1 hour' };
+  }
+
+  return null;
+}
+
+// ---- Habit Fast-Path Parser ----
+// Parses habit completion messages directly without LLM.
+// Returns { habitName, note } for executeAction('track_habit', ...).
+function parseHabitIntent(message: string): { habitName: string; note: string } | null {
+  const lower = message.toLowerCase();
+
+  // Pattern: "log/track/mark HABIT" or "HABIT done/completed/kiya"
+  let match: RegExpMatchArray | null;
+
+  // "log morning workout", "track meditation", "mark gym as done"
+  match = lower.match(/\b(?:log|track|mark)\s+(?:my\s+)?(.+?)(?:\s+(?:as\s+)?(?:done|completed?|finished?))?$/i);
+  if (match && match[1].length >= 2 && match[1].length <= 50) {
+    const habit = match[1].replace(/\s+(habit|session|routine)$/i, '').trim();
+    if (habit.length >= 2) return { habitName: habit, note: '' };
+  }
+
+  // "gym done", "meditation completed", "workout finished"
+  match = lower.match(/^(.+?)\s+(?:done|completed?|finished?|logged?|tracked?)$/i);
+  if (match && match[1].length >= 2 && match[1].length <= 40 && !/\b(remind|expense|focus|note|search)\b/i.test(match[1])) {
+    return { habitName: match[1].trim(), note: '' };
+  }
+
+  // "did my gym", "did yoga today", "completed running"
+  match = lower.match(/\b(?:i\s+)?(?:did|completed?|finished?)\s+(?:my\s+)?(.+?)(?:\s+today|\s+aaj)?$/i);
+  if (match && match[1].length >= 2 && match[1].length <= 40 && !/\b(remind|task|work|homework|assignment)\b/i.test(match[1])) {
+    return { habitName: match[1].trim(), note: '' };
+  }
+
+  // Hinglish: "gym kiya", "yoga ki", "meditation kara", "exercise kiya aaj"
+  match = lower.match(/^(.+?)\s+(?:kiya|ki|kara|kar\s*liya|ho\s*gaya|ho\s*gayi)(?:\s+(?:aaj|today))?$/i);
+  if (match && match[1].length >= 2 && match[1].length <= 40) {
+    return { habitName: match[1].trim(), note: '' };
+  }
+
+  // "aaj gym kiya", "aaj maine yoga ki"
+  match = lower.match(/\b(?:aaj|today)\s+(?:maine?\s+)?(.+?)\s+(?:kiya|ki|kara|kar\s*liya)$/i);
+  if (match && match[1].length >= 2 && match[1].length <= 40) {
+    return { habitName: match[1].trim(), note: '' };
+  }
+
+  // "walked 5km", "ran 3 miles", "read 30 pages"
+  match = lower.match(/^(walked|ran|read|studied|meditated|exercised|jogged|swam|cycled)\s+(.+)/i);
+  if (match) {
+    return { habitName: match[1], note: match[2].trim() };
+  }
+
+  // "drank 8 glasses of water", "had 2 liters water"
+  match = lower.match(/\b(?:drank|had)\s+(\d+)\s+(?:glasses?|liters?|litres?|cups?)\s+(?:of\s+)?water/i);
+  if (match) {
+    return { habitName: 'water', note: `${match[1]} glasses` };
+  }
+
+  return null;
+}
+
 // ---- Named Agent Detection ----
 // Detects when the user addresses a specific named agent by name.
 // Returns the personality ID to use, or null if no named agent detected.
@@ -465,13 +574,19 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   const { userId, agentConfig, user, subscription } = resolved;
   logger.debug({ requestId, userId }, 'User resolved');
 
+  // 2a. Send typing indicator for Telegram (immediate feedback)
+  if (msg.channel === 'telegram') {
+    sendTelegramTyping(msg.externalId).catch(() => {});
+  }
+
   // 2. Check credits
   if (subscription && subscription.credits_remaining <= 0) {
     logger.info({ requestId, userId }, 'User has no credits');
+    const resetDate = subscription.billing_cycle_end?.split('T')[0] || 'next cycle';
     await sendChannelResponse({
       channel: msg.channel,
       externalId: msg.externalId,
-      text: `You've used all your credits for this cycle. They reset on ${subscription.billing_cycle_end.split('T')[0]}.`,
+      text: `Hey! You've used all your credits for this billing cycle.\n\nCredits reset on ${resetDate}.\n\nTip: Upgrade your plan for more credits, or wait for the reset. Fast-path features (expenses, reminders, habits, focus) still work for free!`,
       replyToMessageId: msg.messageId,
     });
     return;
@@ -912,10 +1027,25 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     systemPrompt += '\n\nCRITICAL: You MUST use ONLY the generate_code tool (not portfolio_update_theme or any other tool). Output ONLY this block, nothing else:\n<<<ACTION\n{"tool":"generate_code","params":{<params>}}\nACTION>>>\nDo NOT write HTML/CSS/JS directly. Keep params JSON under 150 tokens.';
   }
 
-  // 6b. Web search enrichment — Tavily (keyword) + crawl4ai smart search fallback
+  // 6b. Web search enrichment — SearXNG (free, primary) → Tavily (fallback) → crawl4ai smart search
   let webSearchUsed = false;
   if (isSearchIntent(msg.text)) {
-    if (process.env.TAVILY_API_KEY) {
+    // Try SearXNG first (free, self-hosted, unlimited)
+    try {
+      const searxResult = await searxngSearch(msg.text, 5);
+      if (searxResult.results.length > 0) {
+        const context = searxResult.results
+          .map((r) => `[${r.title}]: ${r.content}`)
+          .join('\n');
+        systemPrompt += `\n\nWEB_SEARCH_RESULTS:\n${context}`;
+        webSearchUsed = true;
+        logger.debug({ query: msg.text, resultCount: searxResult.results.length }, 'SearXNG search enriched prompt');
+      }
+    } catch (e) {
+      logger.debug({ err: (e as Error).message }, 'SearXNG search failed, trying Tavily fallback');
+    }
+    // Tavily fallback (paid, higher quality for complex queries)
+    if (!webSearchUsed && process.env.TAVILY_API_KEY) {
       try {
         const searchResult = await tavilySearch(msg.text);
         if (searchResult.results.length > 0) {
@@ -1041,6 +1171,44 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     creditCost = 0;
     await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
     logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (focus fast-path)');
+    return;
+  }
+
+  // ── Reminder fast-path: parse "remind me to X at Y" directly, bypass LLM ──
+  const reminderMatch = parseReminderIntent(msg.text);
+  if (reminderMatch) {
+    logger.info({ reminderMatch, userId }, 'Reminder fast-path triggered');
+    const action = { tool: 'set_reminder', params: { text: reminderMatch.text, datetime: reminderMatch.datetime, channel: msg.channel === 'telegram' ? 'telegram' : 'push' } };
+    const result = await executeAction(userId, action);
+    replyText = result.message || `Reminder set: ${reminderMatch.text}`;
+    provider = 'fast-path';
+    model = 'reminder-parser';
+    tokensIn = 0;
+    tokensOut = 0;
+    creditCost = 0;
+    logConversation(userId, 'user', msg.text, requestId);
+    logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'reminder-fast-path');
+    await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (reminder fast-path)');
+    return;
+  }
+
+  // ── Habit fast-path: parse "gym done" / "log meditation" directly, bypass LLM ──
+  const habitMatch = parseHabitIntent(msg.text);
+  if (habitMatch) {
+    logger.info({ habitMatch, userId }, 'Habit fast-path triggered');
+    const action = { tool: 'track_habit', params: { habitName: habitMatch.habitName, note: habitMatch.note } };
+    const result = await executeAction(userId, action);
+    replyText = result.message || `Logged: ${habitMatch.habitName}`;
+    provider = 'fast-path';
+    model = 'habit-parser';
+    tokensIn = 0;
+    tokensOut = 0;
+    creditCost = 0;
+    logConversation(userId, 'user', msg.text, requestId);
+    logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'habit-fast-path');
+    await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (habit fast-path)');
     return;
   }
 
