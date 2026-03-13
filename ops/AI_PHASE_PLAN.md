@@ -1,5 +1,22 @@
 # AI Phase Plan
 
+# Phase 7 Plan (Next Session)
+
+## Container Deployments
+1. SearXNG — free metasearch (replace Tavily)
+2. Qdrant — vector DB for semantic memory
+3. Meilisearch — typo-tolerant search
+
+## Feature Fast-Paths
+4. Reminder fast-path (parse "remind me X at Y" directly)
+5. Habit fast-path (parse "gym kiya aaj" directly)
+
+## UX Improvements
+6. Streaming responses for Telegram (chunked delivery)
+7. Better error messages for rate-limited users
+
+---
+
 ## Phase 81 — COMPLETE ✓
 **Tests:** 1009/1009 | **Branch:** merged to main
 Image Generation Pipeline: async POST /api/image/generate (job-queue), daily cap free=5/premium=20, GET /gallery, GET /file/:id, ImageGalleryPage, /image chat command, inline image bubbles, cap error UX, 32 new tests

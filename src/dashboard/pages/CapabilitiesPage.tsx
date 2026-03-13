@@ -12,7 +12,8 @@ import {
   MessageSquare, Code, Zap, Brain, Globe, Mic, ImageIcon, Film,
   User, Bell, Mail, Cpu, ChevronRight, Sparkles, Eye, TrendingUp,
   Shield, ArrowRight, CheckCircle2, ExternalLink, Star, Lock,
-  Workflow, Play, Copy, Check, Layers, Telescope, Activity
+  Workflow, Play, Copy, Check, Layers, Telescope, Activity,
+  Camera, Link, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -93,6 +94,30 @@ const capabilities: Capability[] = [
     badge: 'Core',
     wow: 'Persistent memory extracted from every chat',
   },
+  {
+    id: 'hinglish',
+    category: 'chat',
+    icon: Globe,
+    color: '#00F0FF',
+    glow: 'rgba(0,240,255,0.12)',
+    title: 'Hinglish & Indian Languages',
+    description: 'Talk to your agent in Hinglish, Hindi, or Tanglish. It understands "kal subah 8 baje remind karo" as naturally as English. Built for Indian users first.',
+    examples: ['kal subah 8 baje remind karo gym ke liye', 'swiggy pe 350 rupay kharcha hua', 'mujhe ek tweet likhne mein help karo'],
+    badge: 'New',
+    wow: 'Native Hinglish, Hindi, and Tanglish understanding',
+  },
+  {
+    id: 'researcher',
+    category: 'chat',
+    icon: Telescope,
+    color: '#00F0FF',
+    glow: 'rgba(0,240,255,0.12)',
+    title: 'Agent-as-Researcher',
+    description: 'Ask for deep research and your agent launches an async investigation — searching the web, synthesizing findings, and delivering a structured report via Telegram when done.',
+    examples: ['Research best budget phones under 15000 in India', 'Compare React vs Vue for a solo dev', 'Find top 5 AI tools for content creators 2024'],
+    badge: 'New',
+    wow: 'Async research delivered to your Telegram',
+  },
 
   // ── CREATE ────────────────────────────────────────────────
   {
@@ -146,6 +171,30 @@ const capabilities: Capability[] = [
     badge: 'Pro',
     wow: 'Auto-updates your profile picture on creation',
   },
+  {
+    id: 'flashcards',
+    category: 'create',
+    icon: Layers,
+    color: '#BF5FFF',
+    glow: 'rgba(191,95,255,0.12)',
+    title: 'Flashcards & Study',
+    description: 'Create study flashcards from any topic. The agent generates question-answer pairs for spaced repetition learning.',
+    examples: ['make flashcards for React hooks', 'create study cards for Python list comprehensions', 'quiz me on JavaScript closures'],
+    badge: 'Core',
+    wow: 'Auto-generated Q&A pairs from any topic',
+  },
+  {
+    id: 'code-tools',
+    category: 'create',
+    icon: Code,
+    color: '#BF5FFF',
+    glow: 'rgba(191,95,255,0.12)',
+    title: 'Code Review & PR',
+    description: 'Paste code for an instant review, or describe your changes for a professional PR description. Built for developers shipping fast.',
+    examples: ['review this code: function add(a,b) { return a+b }', 'write a PR description for: added dark mode', 'audit SEO of my portfolio page'],
+    badge: 'Core',
+    wow: 'Instant code review + PR descriptions',
+  },
 
   // ── AUTOMATE ──────────────────────────────────────────────
   {
@@ -160,6 +209,66 @@ const capabilities: Capability[] = [
     badge: 'Core',
     navigateTo: 'reminders',
     wow: 'Works on Telegram, WhatsApp, and push',
+  },
+  {
+    id: 'expense-tracker',
+    category: 'automate',
+    icon: TrendingUp,
+    color: '#00FF88',
+    glow: 'rgba(0,255,136,0.12)',
+    title: 'Expense Tracker',
+    description: 'Track spending in natural language — English or Hinglish. Auto-categorizes merchants (Swiggy→food, Uber→transport) and shows monthly summaries. Zero-latency regex fast-path.',
+    examples: ['spent 450 on uber to airport', 'swiggy pe 350 rupay kharch kiye', 'show my expenses this month'],
+    badge: 'New',
+    wow: 'Auto-categorizes Indian merchants, 660ms response',
+  },
+  {
+    id: 'habit-tracker',
+    category: 'automate',
+    icon: CheckCircle2,
+    color: '#00FF88',
+    glow: 'rgba(0,255,136,0.12)',
+    title: 'Habit Tracker & Coach',
+    description: 'Track daily habits with streaks, get compassionate nudge notifications when you miss a day, and view weekly progress. Includes Reschedule/Skip buttons on Telegram.',
+    examples: ['gym kiya aaj', 'track my meditation habit daily', 'show my habits — how is my streak?'],
+    badge: 'New',
+    wow: 'Compassionate AI coach with Telegram inline buttons',
+  },
+  {
+    id: 'focus-sessions',
+    category: 'automate',
+    icon: Play,
+    color: '#00FF88',
+    glow: 'rgba(0,255,136,0.12)',
+    title: 'Focus Sessions',
+    description: 'Start a Pomodoro timer with one message. The agent parses your goal and duration, starts the session instantly, and notifies you when it ends.',
+    examples: ['start a 25 minute focus session to write my blog', 'pomodoro — working on Figma designs', 'focus mode for deep work'],
+    badge: 'Core',
+    wow: 'Instant start with zero-latency regex parser',
+  },
+  {
+    id: 'proactive-engine',
+    category: 'automate',
+    icon: Sparkles,
+    color: '#00FF88',
+    glow: 'rgba(0,255,136,0.12)',
+    title: 'Proactive Engine',
+    description: 'Your agent reaches out first — morning briefings, reminder previews 30 minutes ahead, habit nudges at 11am, and weekly expense digests. You never have to ask.',
+    examples: ['morning briefing sent automatically at 7am', 'reminder preview 30 min before due', 'habit nudge: "You haven\'t logged yoga today"'],
+    badge: 'New',
+    wow: 'Agent reaches out first — no prompting needed',
+  },
+  {
+    id: 'daily-operator',
+    category: 'automate',
+    icon: Mic,
+    color: '#00FF88',
+    glow: 'rgba(0,255,136,0.12)',
+    title: 'Daily Operator Mode',
+    description: 'Get your morning briefing as a voice note on Telegram. Synthesized via edge-tts, delivered as an audio message you can listen to on your commute.',
+    examples: ['morning voice briefing on Telegram', 'daily summary as audio message', 'briefing with tasks + habits + weather'],
+    badge: 'New',
+    wow: 'Voice briefing delivered to Telegram every morning',
   },
   {
     id: 'automations',
@@ -264,6 +373,18 @@ const capabilities: Capability[] = [
     navigateTo: 'social-media',
     wow: 'Draft, schedule, and publish from one prompt',
   },
+  {
+    id: 'multi-agent',
+    category: 'connect',
+    icon: Cpu,
+    color: '#F59E0B',
+    glow: 'rgba(245,158,11,0.12)',
+    title: 'Multi-Agent Launch Mode',
+    description: 'Say "launch mode" and 3 specialized agents (Forge, Aria, Pulse) tackle your question simultaneously from different angles — technical, creative, and trending.',
+    examples: ['launch mode: plan my app launch strategy', 'all agents: best tech stack for 2024?', 'multi-agent: analyze my career switch'],
+    badge: 'New',
+    wow: '3 agents working in parallel on one question',
+  },
 
   // ── ANALYZE ───────────────────────────────────────────────
   {
@@ -306,6 +427,18 @@ const capabilities: Capability[] = [
     wow: 'Triggers automations on health events',
   },
   {
+    id: 'global-search',
+    category: 'analyze',
+    icon: Search,
+    color: '#EC4899',
+    glow: 'rgba(236,72,153,0.12)',
+    title: 'Ctrl+K Global Search',
+    description: 'Press Cmd/Ctrl+K anywhere in the dashboard to instantly search across notes, reminders, habits, and memories. Finds what you need in milliseconds.',
+    examples: ['Ctrl+K → search "meeting notes"', 'Quick find across all your data', 'Search habits, notes, reminders at once'],
+    badge: 'Core',
+    wow: 'Instant cross-entity search from anywhere',
+  },
+  {
     id: 'telescope',
     category: 'analyze',
     icon: Telescope,
@@ -341,6 +474,10 @@ const hiddenPowers = [
   { icon: Code, color: '#BF5FFF', title: 'Code is yours forever', description: 'Every website, snippet, and artifact your agent generates is saved with a permanent preview link. It also appears in your portfolio Projects.' },
   { icon: Shield, color: '#00F0FF', title: 'Multi-tier keyword routing', description: 'The escalation system uses 3-tier matching: native Telegram reply, keyword scoring, and smart fall-through — so chat requests never get eaten.' },
   { icon: Star, color: '#F59E0B', title: 'Credits forecast your month', description: 'The sidebar shows your current spend and forecasts your full monthly bill — so you never get surprised at the end of the cycle.' },
+  { icon: Camera, color: '#00FF88', title: 'Receipt OCR → auto expense', description: 'Send a photo of any receipt on Telegram — Groq vision reads it, extracts amount and merchant, and auto-logs the expense. No typing needed.' },
+  { icon: Eye, color: '#00F0FF', title: 'Screenshot fast-path', description: 'Say "take screenshot of [URL]" and your agent captures a full-page screenshot via crawl4ai and sends it as a Telegram photo in seconds.' },
+  { icon: Link, color: '#BF5FFF', title: 'Links extraction', description: 'Say "get links from [URL]" and your agent crawls the page, extracts every link, and sends you a clean formatted list — perfect for research.' },
+  { icon: Brain, color: '#EC4899', title: 'Context threading via FTS5', description: 'Your agent runs full-text search over your entire conversation history — it can recall what you discussed weeks ago and weave it into the current reply.' },
 ];
 
 // ── Category config ────────────────────────────────────────
