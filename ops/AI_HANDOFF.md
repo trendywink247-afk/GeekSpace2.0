@@ -1,33 +1,50 @@
-# AI Handoff — Phase 6
+# AI Handoff — Phase 7 + Bug Fix Cycle
 **Date:** 2026-03-13
-**Branch:** main = live-production = 7bac442
-**Status:** DEPLOYED | CI: green | Health: ok | v3.1.0 | Tests: 2223 pass
+**Branch:** main = live-production = a792abe
+**Status:** DEPLOYED | CI: green | Health: ok | v3.2.0 | Tests: 2223 pass
 
 ---
 
 ## What Was Done This Session (2026-03-13)
 
-### Fixes Applied
-1. **PicoClaw timeout 60s → 10s** — `.env` PICOCLAW_TIMEOUT_MS changed from 60000 to 10000. 5.5x latency improvement.
-2. **Expense fast-path** — `message-router.ts` parseExpenseIntent() + guessCategory() — regex parser bypasses LLM, auto-categorizes (660ms, 0 credits)
-3. **Focus fast-path** — `message-router.ts` parseFocusIntent() — regex parser for pomodoro/focus (700ms, 0 credits)
-4. **Portfolio visitor Groq-first** — `agent.ts` — res.setTimeout(120000) + Groq-first with openrouter-free fallback (4.8s vs 30s+ timeout)
-5. **hasToolTrigger gaps** — Added "spent NUMBER", "paid NUMBER" patterns without requiring "I" prefix
-6. **Guest user FK guards** — memory.ts, token-budget.ts, llm.ts, agent.ts — skip DB writes for guest:* userIds
+### Phase 7 — Infrastructure + Fast-Paths (297b3f2)
+1. **SearXNG deployed** — free metasearch, replaces Tavily as primary search (142MB)
+2. **Meilisearch deployed** — typo-tolerant instant search (7MB)
+3. **Qdrant deployed** — vector DB for semantic memory (21MB)
+4. **Reminder fast-path** — parseReminderIntent(), English + Hinglish, 0 credits, <700ms
+5. **Habit fast-path** — parseHabitIntent(), "gym done" / "yoga kiya aaj", 0 credits, <700ms
+6. **Telegram typing indicator** — sendChatAction('typing') on every message
+7. **Better rate limit errors** — explains reset date + free fast-path features
 
-### Infrastructure
-- Uptime Kuma deployed at status.agentin.chat (port 3100)
-- Stopped unused: Windmill (670MB), staging (210MB), edith-bridge (30MB) — freed ~900MB
-- RAM available: 6.1GB (was 4.6GB)
+### Bug Fix Cycle — 9 Bugs (4a63370 → 36cc8d6 → a792abe)
+Testing: 5 parallel agents, 75+ patterns, all verified live via Telegram.
 
-### Score
-- 20/21 capabilities working (95%)
-- 42 tools tested, 40 operational
-- 2223 unit tests pass
-- Only Video Generation blocked (FAL_KEY missing, providers unreachable from VPS)
+1. **detectTaskIntent bypass** — removed reminder patterns that intercepted fast-path
+2. **SearXNG false positives** — added exclusion guards for habits/expenses/reminders/focus
+3. **Hinglish "yaad dila dena"** — regex handles two-word form "dila dena" not just "dilao"
+4. **Briefing regex** — "show me my agenda" now matches (optional group fix)
+5. **HINGLISH_WORDS expanded** — 20 new words (aaj, kal, kaisa, mausam, etc.)
+6. **FK constraint on reminder delete** — NULL related_reminder_id before DELETE
+7. **Launch mode + website builder** — isLaunchMsg guard prevents hijacking
+8. **/reminders slash command** — added to webhooks.ts handleTelegramCommand
+9. **Rate limiting spacing** — 8-10s between test patterns (not a code bug)
+
+### Test Results
+- Habits: 15/15 (100%), avg 554ms
+- Expenses: 10/10
+- Focus: 5/5
+- Reminders: all English + Hinglish patterns
+- Search: 5/5 (SearXNG/Tavily)
+- Named agents: 5/5
+- Ambiguous: 4/4 no false triggers
+- Briefing: 5/5
+- Slash commands: 5/5
+
+### 10 Fast-Paths (all complete)
+image, website, screenshot, links, expense, focus, reminder, habit, briefing, list-reminders
 
 ## Current Containers
-geekspace-app, geekspace-caddy, geekspace-redis, geekspace-picoclaw, geekspace-uptime-kuma, crawl4ai, cronicle, dozzle, healthchecks, ollama
+geekspace-app, geekspace-caddy, geekspace-redis, geekspace-picoclaw, geekspace-searxng, geekspace-meilisearch, geekspace-qdrant, geekspace-uptime-kuma, crawl4ai, cronicle, dozzle, healthchecks, ollama
 
 ## Start Commands (Next Session)
 ```bash
@@ -39,8 +56,8 @@ cd server && npm test
 ```
 
 ## Next Session Priorities
-1. Deploy SearXNG (replace paid Tavily, ~250MB)
-2. Deploy Qdrant (semantic memory search, ~200MB)
-3. Deploy Meilisearch (typo-tolerant search, ~75MB)
-4. More fast-paths (reminder parser, habit parser)
-5. WhatsApp integration planning
+1. Wire Meilisearch indexing (notes/reminders/habits → instant search)
+2. Wire Qdrant embeddings (nomic-embed-text → semantic memory)
+3. Telegram progressive message editing (streaming)
+4. WhatsApp integration planning
+5. More Hinglish test coverage

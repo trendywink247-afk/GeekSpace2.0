@@ -6,7 +6,7 @@
 <br />
 
 [![Live](https://img.shields.io/badge/LIVE-ai.agentin.chat-7B61FF?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggZD0iTTEyIDJMMTUuMDkgOC4yNiAyMiA5LjI3IDE3IDEzLjE0IDE4LjE4IDIxLjAyIDEyIDE3LjI3IDUuODIgMjEuMDIgNyAxMy4xNCAyIDkuMjcgOC45MSA4LjI2IDEyIDJaIi8+PC9zdmc+)](https://ai.agentin.chat)
-[![Version](https://img.shields.io/badge/v3.1-platform-61FF7B?style=for-the-badge)](https://github.com/trendywink247-afk/GeekSpace2.0/releases)
+[![Version](https://img.shields.io/badge/v3.2-platform-61FF7B?style=for-the-badge)](https://github.com/trendywink247-afk/GeekSpace2.0/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/trendywink247-afk/GeekSpace2.0/ci.yml?branch=main&style=for-the-badge&label=CI&logo=github)](https://github.com/trendywink247-afk/GeekSpace2.0/actions)
 [![License](https://img.shields.io/badge/License-MIT-61FF7B?style=for-the-badge)](LICENSE)
 
@@ -21,7 +21,7 @@
 
 **A self-hosted AI OS — your agent, your dashboard, your portfolio.**
 
-> v3.1.0 · Phase 6 complete · 2223 tests passing · 20/21 capabilities · main = live-production
+> v3.2.0 · Phase 7 complete · 2223 tests passing · 10 fast-paths · SearXNG + Meilisearch + Qdrant · main = live-production
 
 [Live Demo](https://ai.agentin.chat) · [Documentation](docs/) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 
@@ -124,7 +124,7 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 - Daily briefings via Telegram
 - Voice notes (Groq Whisper STT + edge-tts TTS, multilingual Hindi/Telugu/English)
 - Image generation (HuggingFace FLUX) with per-user gallery
-- Web research — Tavily search + crawl4ai scraping + screenshot fast-path
+- Web research — SearXNG (free, self-hosted) + Tavily (paid fallback) + crawl4ai scraping + screenshot fast-path
 - Google Calendar OAuth sync with briefing integration
 - Multi-agent workflow builder (chain Weebo/Jarvis/Edith)
 - Long-term agent memory with context injection
@@ -139,7 +139,10 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 - Daily Operator Mode — morning briefing as Telegram voice note
 - Agentic Portfolio — visitor intent detection + Telegram alerts to owner
 - Telegram Memory Capture — LLM fact extraction per conversation turn
-- Fast-path routing — expense, focus, image, website, screenshot, links bypass LLM (0 credits, <700ms)
+- Fast-path routing — 10 fast-paths (image, website, screenshot, links, expense, focus, reminder, habit, briefing, list-reminders) bypass LLM (0 credits, <700ms)
+- SearXNG self-hosted search — free metasearch replacing paid Tavily as primary
+- Meilisearch instant search — typo-tolerant search for notes/reminders/habits
+- Qdrant vector DB — semantic memory search for conversation context
 - Uptime monitoring — status.agentin.chat via Uptime Kuma
 
 </details>

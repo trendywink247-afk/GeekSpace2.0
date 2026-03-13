@@ -1,19 +1,44 @@
 # AI Phase Plan
 
-# Phase 7 Plan (Next Session)
+# Phase 7 — COMPLETE ✓ (+ 9 Bug Fixes)
+Commit: a792abe | main = live-production | Tests: 2223/2223
 
-## Container Deployments
-1. SearXNG — free metasearch (replace Tavily)
-2. Qdrant — vector DB for semantic memory
-3. Meilisearch — typo-tolerant search
+## Shipped
+1. SearXNG — free metasearch (primary, replaces Tavily) ✅
+2. Qdrant — vector DB for semantic memory ✅
+3. Meilisearch — typo-tolerant instant search ✅
+4. Reminder fast-path — "remind me X at Y", Hinglish ✅
+5. Habit fast-path — "gym done", "yoga kiya aaj" ✅
+6. Telegram typing indicator + editMessageText ✅
+7. Better rate limit error messages ✅
 
-## Feature Fast-Paths
-4. Reminder fast-path (parse "remind me X at Y" directly)
-5. Habit fast-path (parse "gym kiya aaj" directly)
+## Bug Fixes (75+ patterns tested, 5 parallel agents)
+8. detectTaskIntent bypass — removed reminder patterns intercepting fast-path ✅
+9. SearXNG false positive guards — habit/expense/reminder/focus exclusions ✅
+10. Hinglish "yaad dila dena" — two-word regex fix ✅
+11. Briefing regex — "show me my agenda" optional group fix ✅
+12. HINGLISH_WORDS expanded — 20 new words ✅
+13. FK constraint on reminder deletion ✅
+14. Launch mode + website builder guard ✅
+15. /reminders slash command added ✅
+16. 10 fast-paths complete (image, website, screenshot, links, expense, focus, reminder, habit, briefing, list-reminders) ✅
 
-## UX Improvements
-6. Streaming responses for Telegram (chunked delivery)
-7. Better error messages for rate-limited users
+# Phase 8 Plan (Next Session)
+
+## Meilisearch Integration
+1. Index notes/reminders/habits/memories into Meilisearch
+2. Wire Ctrl+K search to use Meilisearch (typo-tolerant)
+
+## Qdrant Integration
+3. Pull nomic-embed-text embedding model to Ollama
+4. Embedding pipeline: on memory create → embed → store in Qdrant
+5. Semantic memory search via Qdrant nearest neighbors
+
+## Telegram Streaming
+6. Progressive message editing (send "..." → edit with chunks)
+
+## UX
+7. WhatsApp integration planning/scaffolding
 
 ---
 

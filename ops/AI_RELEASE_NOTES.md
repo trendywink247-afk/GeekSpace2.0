@@ -4,6 +4,39 @@
 
 ---
 
+## Phase 7 (2026-03-13) — Infrastructure + Fast-Paths + 9 Bug Fixes
+
+*Status: Deployed to live-production (a792abe)*
+
+### What's New
+- **SearXNG self-hosted search**: Free metasearch engine replaces paid Tavily as primary search provider. Redis caching (1h TTL)
+- **Meilisearch**: Typo-tolerant instant search engine deployed for future notes/reminders/habits search
+- **Qdrant vector DB**: Semantic memory search deployed for future conversation context retrieval
+- **Reminder fast-path**: "remind me to X at Y", "yaad dila dena kal 9 baje meeting" — all work instantly, 0 credits, <700ms
+- **Habit fast-path**: "gym done", "yoga kiya aaj", "log meditation" — instant logging, 0 credits
+- **10 total fast-paths**: image, website, screenshot, links, expense, focus, reminder, habit, briefing, list-reminders — all bypass LLM
+- **Telegram typing indicator**: Shows "typing..." while processing every message
+- **/reminders slash command**: Lists all pending reminders in Telegram
+
+### What's Fixed (9 bugs from 75+ pattern testing)
+- **Reminder fast-path now works**: detectTaskIntent() was intercepting reminder messages before they reached the fast-path — patterns removed
+- **No more false web searches**: Habit messages like "did my running today" no longer trigger SearXNG searches
+- **Hinglish reminders work**: "yaad dila dena" (two separate words) now correctly parsed — was expecting concatenated "diladena"
+- **"Show me my agenda" works**: Briefing regex fixed for optional daily/weekly prefix
+- **Better Hinglish detection**: 20 new common words added (aaj, kal, kaisa, mausam, etc.) — prevents Chinese PicoClaw routing
+- **Reminder deletion works**: FK constraint error resolved — inbox_messages references cleared before delete
+- **Launch mode not hijacked**: "launch mode: create a blog outline" no longer triggers website builder
+- **Telegram rate limit spacing**: Test patterns spaced 8-10s apart to avoid Telegram API limits
+
+### Under the Hood
+- 3 commits: 4a63370, 36cc8d6, a792abe
+- 5 parallel test agents verified 75+ patterns across all capabilities
+- Search pipeline: SearXNG (free) → Tavily (paid fallback) → crawl4ai smart search
+- Health endpoint: 12 services monitored (added searxng, meilisearch, qdrant)
+- All 2223 tests passing, CI green on every commit
+
+---
+
 ## Bug Fix Run (2026-03-12) — Context + Notes Fixes
 
 *Status: Deployed to live-production (7b53142)*
