@@ -160,6 +160,7 @@ export function CalendarPage() {
           onClick={() => void fetchData(true)}
           disabled={refreshing}
           aria-label="Refresh"
+          className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
         >
           <RefreshCw className={"h-4 w-4 " + spinCls} />
         </Button>
@@ -212,7 +213,7 @@ export function CalendarPage() {
                   size="sm"
                   onClick={() => void handleSync()}
                   disabled={syncing}
-                  className="gap-1.5"
+                  className="gap-1.5 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                 >
                   <RefreshCw className={"h-3.5 w-3.5" + (syncing ? " animate-spin" : "")} />
                   {syncing ? "Syncing..." : "Sync Now"}
@@ -222,7 +223,7 @@ export function CalendarPage() {
                   size="sm"
                   onClick={() => void handleDisconnect()}
                   disabled={disconnecting}
-                  className="gap-1.5 text-red-400 hover:text-red-300 border-red-500/30 hover:border-red-500/50"
+                  className="gap-1.5 text-red-400 hover:text-red-300 border-red-500/30 hover:border-red-500/50 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                 >
                   <Unlink className="h-3.5 w-3.5" />
                   {disconnecting ? "Disconnecting..." : "Disconnect"}
@@ -242,7 +243,7 @@ export function CalendarPage() {
                   </p>
                 </div>
               </div>
-              <Button size="sm" onClick={handleConnect} className="gap-1.5 shrink-0">
+              <Button size="sm" onClick={handleConnect} className="gap-1.5 shrink-0 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
                 <Link2 className="h-3.5 w-3.5" />
                 Connect Google Calendar
                 <ExternalLink className="h-3 w-3 opacity-60" />

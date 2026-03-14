@@ -533,14 +533,14 @@ export function DashboardApp() {
         <button
           onClick={() => setSidebarOpen(false)}
           className="md:hidden p-2 rounded-lg hover:bg-[#00F0FF]/10"
-          aria-label="Close menu"
+          aria-label="Close navigation menu"
         >
           <X className="w-5 h-5 text-[#6B7280]" />
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">
+      <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#00F0FF]/20 hover:scrollbar-thumb-[#00F0FF]/40">
         {menuGroups.map((group, groupIdx) => (
           <div key={group.label ?? 'ungrouped'}>
             {group.label && group.icon ? (
@@ -587,7 +587,7 @@ export function DashboardApp() {
                         aria-current={isPageActive(item.id) ? 'page' : undefined}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 min-h-[38px] ${
                           isPageActive(item.id)
-                            ? 'text-[#00F0FF] bg-[#00F0FF]/5'
+                            ? 'text-[#00F0FF] bg-[#00F0FF]/15'
                             : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0]'
                         }`}
                       >
@@ -624,7 +624,7 @@ export function DashboardApp() {
                     aria-current={isPageActive(item.id) ? 'page' : undefined}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
                       isPageActive(item.id)
-                        ? 'text-[#00F0FF]'
+                        ? 'text-[#00F0FF] bg-[#00F0FF]/15'
                         : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
                     }`}
                   >
@@ -659,7 +659,7 @@ export function DashboardApp() {
             aria-current={isPageActive('roadmap') ? 'page' : undefined}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
               isPageActive('roadmap')
-                ? 'text-[#00F0FF]'
+                ? 'text-[#00F0FF] bg-[#00F0FF]/15'
                 : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
             }`}
           >
@@ -768,7 +768,7 @@ export function DashboardApp() {
             <span className="text-sm text-[#E8E8F0] font-medium">
               Welcome to Agentin! Your AI command center is ready.
             </span>
-            <button onClick={() => setShowWelcome(false)} className="ml-2 text-[#6B7280] hover:text-[#E8E8F0]">
+            <button onClick={() => setShowWelcome(false)} className="ml-2 text-[#6B7280] hover:text-[#E8E8F0]" aria-label="Dismiss welcome message">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -877,12 +877,12 @@ export function DashboardApp() {
               <button
                 onClick={() => navigate('/dashboard/inbox')}
                 className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center relative"
-                aria-label="AI Inbox"
+                aria-label="View inbox"
               >
                 <Inbox className="w-5 h-5 text-[#6B7280]" />
               </button>
               {inboxUnreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-[#00F0FF] text-[#06060B] text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none">
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-[#00F0FF] text-[#06060B] text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none" aria-label={`${inboxUnreadCount} unread inbox messages`}>
                   {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
                 </span>
               )}
@@ -905,12 +905,12 @@ export function DashboardApp() {
                   }
                 }}
                 className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center relative"
-                aria-label="Activity log"
+                aria-label="View notifications"
               >
                 <Bell className="w-5 h-5 text-[#6B7280]" />
               </button>
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none">
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none" aria-label={`${unreadCount} unread notifications`}>
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
@@ -918,7 +918,7 @@ export function DashboardApp() {
                 <div className="absolute right-0 top-12 w-80 max-w-[calc(100vw-1rem)] bg-[#0C0C18] border border-[#00F0FF]/20 rounded-xl shadow-2xl z-50 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10">
                     <span className="text-sm font-semibold text-[#E8E8F0]">Recent Activity</span>
-                    <button onClick={() => setNotifOpen(false)} className="text-[#6B7280] hover:text-[#E8E8F0]">
+                    <button onClick={() => setNotifOpen(false)} className="text-[#6B7280] hover:text-[#E8E8F0]" aria-label="Close notifications">
                       <X className="w-4 h-4" />
                     </button>
                   </div>

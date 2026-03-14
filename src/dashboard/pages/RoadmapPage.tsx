@@ -484,7 +484,7 @@ export function RoadmapPage() {
         <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
           Agentin Roadmap
         </h1>
-        <p className="text-[#6B7280]">
+        <p className="text-[#9CA3AF]">
           Building the future of AI-powered personal workspaces. Here's what we're working on.
         </p>
       </div>
@@ -497,7 +497,7 @@ export function RoadmapPage() {
           </div>
           <div>
             <h2 className="text-xl font-bold text-[#E8E8F0]">Recent Changes</h2>
-            <p className="text-sm text-[#6B7280]">Latest shipped improvements</p>
+            <p className="text-sm text-[#9CA3AF]">Latest shipped improvements</p>
           </div>
         </div>
         <div className="space-y-3">
@@ -518,11 +518,11 @@ export function RoadmapPage() {
                         {note.phase}
                       </Badge>
                       <span className="font-semibold text-[#E8E8F0] text-sm">{note.title}</span>
-                      <span className="text-xs text-[#6B7280] ml-auto">{note.date}</span>
+                      <span className="text-xs text-[#9CA3AF] ml-auto">{note.date}</span>
                     </div>
                     <ul className="space-y-1">
                       {note.items.map((item, i) => (
-                        <li key={i} className="text-xs text-[#6B7280] flex items-start gap-1.5">
+                        <li key={i} className="text-xs text-[#9CA3AF] flex items-start gap-1.5">
                           <span className="text-[#00FF88] mt-0.5 flex-shrink-0">+</span>
                           {item}
                         </li>
@@ -540,7 +540,7 @@ export function RoadmapPage() {
       <Card className="border-[#00F0FF]/20">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-[#6B7280]">Overall Progress</span>
+            <span className="text-sm text-[#9CA3AF]">Overall Progress</span>
             <span className="text-sm font-medium text-[#E8E8F0]">{Math.round(progressPercent)}%</span>
           </div>
           <div className="h-3 bg-[#06060B] rounded-full overflow-hidden mb-4">
@@ -556,11 +556,11 @@ export function RoadmapPage() {
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-[#FFB800]" />
-              <span className="text-[#6B7280]">0 In Progress</span>
+              <span className="text-[#9CA3AF]">0 In Progress</span>
             </div>
             <div className="flex items-center gap-2">
               <Circle className="w-4 h-4 text-[#00F0FF]" />
-              <span className="text-[#6B7280]">{plannedCount} Planned</span>
+              <span className="text-[#9CA3AF]">{plannedCount} Planned</span>
             </div>
           </div>
         </CardContent>
@@ -576,7 +576,7 @@ export function RoadmapPage() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-[#E8E8F0]">Q1 2026</h2>
-              <p className="text-sm text-[#6B7280]">Recently Shipped</p>
+              <p className="text-sm text-[#9CA3AF]">Recently Shipped</p>
             </div>
           </div>
 
@@ -593,8 +593,8 @@ export function RoadmapPage() {
                         <h3 className="font-semibold text-[#E8E8F0]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[#6B7280]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#6B7280]">
+                      <p className="text-sm text-[#9CA3AF]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#9CA3AF]">
                         {item.category}
                       </Badge>
                     </div>
@@ -613,7 +613,7 @@ export function RoadmapPage() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-[#E8E8F0]">Q2 2026</h2>
-              <p className="text-sm text-[#6B7280]">Coming Next</p>
+              <p className="text-sm text-[#9CA3AF]">Coming Next</p>
             </div>
           </div>
 
@@ -630,8 +630,8 @@ export function RoadmapPage() {
                         <h3 className="font-semibold text-[#E8E8F0]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[#6B7280]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#6B7280]">
+                      <p className="text-sm text-[#9CA3AF]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#9CA3AF]">
                         {item.category}
                       </Badge>
                     </div>
@@ -646,11 +646,11 @@ export function RoadmapPage() {
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-[#6B7280]/20 flex items-center justify-center">
-              <Rocket className="w-5 h-5 text-[#6B7280]" />
+              <Rocket className="w-5 h-5 text-[#9CA3AF]" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-[#E8E8F0]">Q3-Q4 2026</h2>
-              <p className="text-sm text-[#6B7280]">Future Vision</p>
+              <p className="text-sm text-[#9CA3AF]">Future Vision</p>
             </div>
           </div>
 
@@ -659,7 +659,7 @@ export function RoadmapPage() {
               <Card key={item.id} className="border-[#00F0FF]/10 hover:border-[#00F0FF]/30 transition-all opacity-80">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#6B7280]/10 flex items-center justify-center text-[#6B7280]">
+                    <div className="w-10 h-10 rounded-lg bg-[#6B7280]/10 flex items-center justify-center text-[#9CA3AF]">
                       {item.icon}
                     </div>
                     <div className="flex-1">
@@ -667,8 +667,8 @@ export function RoadmapPage() {
                         <h3 className="font-semibold text-[#E8E8F0]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[#6B7280]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#6B7280]">
+                      <p className="text-sm text-[#9CA3AF]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#9CA3AF]">
                         {item.category}
                       </Badge>
                     </div>
@@ -689,10 +689,10 @@ export function RoadmapPage() {
                 <Lightbulb className="w-5 h-5 text-[#00F0FF]" />
                 <h3 className="text-lg font-semibold text-[#E8E8F0]">Suggest & Earn</h3>
               </div>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[#9CA3AF]">
                 Submit feature ideas. Earn credits when they're accepted, shipped, or go live.
               </p>
-              <div className="flex gap-4 mt-2 text-xs text-[#6B7280]">
+              <div className="flex gap-4 mt-2 text-xs text-[#9CA3AF]">
                 <span className="flex items-center gap-1"><span className="text-[#00FF88] font-bold">+10</span> Accepted</span>
                 <span className="flex items-center gap-1"><span className="text-[#BF5FFF] font-bold">+50</span> Shipped</span>
                 <span className="flex items-center gap-1"><span className="text-[#F59E0B] font-bold">+100</span> Live</span>
@@ -738,7 +738,7 @@ export function RoadmapPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[#E8E8F0] text-sm">Description <span className="text-[#FF2D78]">*</span> <span className="text-[#6B7280] font-normal">(min 20 chars)</span></Label>
+                      <Label className="text-[#E8E8F0] text-sm">Description <span className="text-[#FF2D78]">*</span> <span className="text-[#9CA3AF] font-normal">(min 20 chars)</span></Label>
                       <Textarea
                         placeholder="Describe the feature and why it would be useful..."
                         value={formBody}
@@ -746,10 +746,10 @@ export function RoadmapPage() {
                         rows={4}
                         className="bg-[#05050A] border-[#00F0FF]/20 text-[#E8E8F0] resize-none"
                       />
-                      <p className="text-right text-xs text-[#6B7280]">{formBody.length}/2000</p>
+                      <p className="text-right text-xs text-[#9CA3AF]">{formBody.length}/2000</p>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[#E8E8F0] text-sm">Tags <span className="text-[#6B7280] font-normal">(comma-separated, max 5)</span></Label>
+                      <Label className="text-[#E8E8F0] text-sm">Tags <span className="text-[#9CA3AF] font-normal">(comma-separated, max 5)</span></Label>
                       <Input
                         placeholder="e.g. calendar, mobile, ai"
                         value={formTags}
@@ -800,7 +800,7 @@ export function RoadmapPage() {
                 ))}
               </div>
             ) : mySuggestions.length === 0 ? (
-              <p className="text-xs text-[#6B7280]">No suggestions yet. Be the first to suggest a feature!</p>
+              <p className="text-xs text-[#9CA3AF]">No suggestions yet. Be the first to suggest a feature!</p>
             ) : (
               <div className="space-y-2">
                 {(showAllSuggestions ? mySuggestions : mySuggestions.slice(0, 5)).map(s => {
@@ -812,7 +812,7 @@ export function RoadmapPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-[#E8E8F0] truncate">{s.title}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-[#6B7280]">{new Date(s.created_at).toLocaleDateString()}</p>
+                          <p className="text-xs text-[#9CA3AF]">{new Date(s.created_at).toLocaleDateString()}</p>
                           <span className="flex items-center gap-0.5 text-xs text-[#00F0FF]">
                             <ThumbsUp className="w-2.5 h-2.5" /> {upvotes}
                           </span>
@@ -836,16 +836,16 @@ export function RoadmapPage() {
                             .catch(() => {})
                             .finally(() => setLoadingEvents(false));
                         }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#BF5FFF]/10 hover:bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs font-medium transition-colors flex-shrink-0"
-                        title="View details"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#BF5FFF]/10 hover:bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs font-medium transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
+                        aria-label="View details"
                       >
                         <Eye className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => void handleVote(s.id)}
                         disabled={vs?.voting}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] text-xs font-medium transition-colors disabled:opacity-50 flex-shrink-0"
-                        title="Upvote this suggestion"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] text-xs font-medium transition-colors disabled:opacity-50 flex-shrink-0 min-h-[44px]"
+                        aria-label="Upvote this suggestion"
                       >
                         <ThumbsUp className="w-3 h-3" />
                         <span>{upvotes}</span>
@@ -854,8 +854,8 @@ export function RoadmapPage() {
                       {s.status === 'new' && (
                         <button
                           onClick={() => { setEditingSuggestion(s); setEditTitle(s.title); setEditBody(s.body); setEditError(''); }}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[#00F0FF]/10 text-[#6B7280] hover:text-[#00F0FF] text-xs transition-colors flex-shrink-0"
-                          title="Edit suggestion"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[#00F0FF]/10 text-[#9CA3AF] hover:text-[#00F0FF] text-xs transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
+                          aria-label="Edit suggestion"
                         >
                           <Pencil className="w-3 h-3" />
                         </button>
@@ -864,8 +864,8 @@ export function RoadmapPage() {
                         <button
                           onClick={() => void handleDelete(s.id)}
                           disabled={deletingId === s.id}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors disabled:opacity-50 flex-shrink-0 ${confirmDeleteId === s.id ? 'bg-[#FF2D78]/20 text-[#FF2D78]' : 'bg-transparent hover:bg-[#FF2D78]/10 text-[#6B7280] hover:text-[#FF2D78]'}`}
-                          title="Delete suggestion"
+                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors disabled:opacity-50 flex-shrink-0 ${confirmDeleteId === s.id ? 'bg-[#FF2D78]/20 text-[#FF2D78]' : 'bg-transparent hover:bg-[#FF2D78]/10 text-[#9CA3AF] hover:text-[#FF2D78]'}`}
+                          aria-label="Delete suggestion"
                         >
                           <Trash2 className="w-3 h-3" />
                           {confirmDeleteId === s.id && <span>Confirm?</span>}
@@ -909,7 +909,7 @@ export function RoadmapPage() {
                         {cluster.name || cluster.canonical_summary}
                       </p>
                       {cluster.name && cluster.name !== cluster.canonical_summary && (
-                        <p className="text-xs text-[#6B7280] truncate">{cluster.canonical_summary}</p>
+                        <p className="text-xs text-[#9CA3AF] truncate">{cluster.canonical_summary}</p>
                       )}
                     </div>
                     {cluster.total_votes !== undefined && (
@@ -939,7 +939,7 @@ export function RoadmapPage() {
                     <Gift className="w-4 h-4 text-[#F59E0B] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-[#E8E8F0]">{getRewardLabel(r.eventType)}</p>
-                      <p className="text-xs text-[#6B7280]">{new Date(r.createdAt).toLocaleDateString()}</p>
+                      <p className="text-xs text-[#9CA3AF]">{new Date(r.createdAt).toLocaleDateString()}</p>
                     </div>
                     <span className="text-sm font-bold text-[#F59E0B] flex-shrink-0">+{r.credits}</span>
                   </div>
@@ -957,7 +957,7 @@ export function RoadmapPage() {
           <h3 className="text-lg font-semibold text-[#E8E8F0] mb-2">
             Have a feature request?
           </h3>
-          <p className="text-sm text-[#6B7280] mb-4">
+          <p className="text-sm text-[#9CA3AF] mb-4">
             We're building Agentin for you. Let us know what you'd like to see next.
           </p>
           <button
@@ -1023,21 +1023,21 @@ export function RoadmapPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[#E8E8F0] text-sm">Description <span className="text-[#6B7280] font-normal">(min 20 chars)</span></Label>
+                <Label className="text-[#E8E8F0] text-sm">Description <span className="text-[#9CA3AF] font-normal">(min 20 chars)</span></Label>
                 <Textarea
                   value={editBody}
                   onChange={e => setEditBody(e.target.value)}
                   rows={4}
                   className="bg-[#05050A] border-[#00F0FF]/20 text-[#E8E8F0] resize-none"
                 />
-                <p className="text-right text-xs text-[#6B7280]">{editBody.length}/2000</p>
+                <p className="text-right text-xs text-[#9CA3AF]">{editBody.length}/2000</p>
               </div>
               {editError && <p className="text-xs text-[#FF2D78]">{editError}</p>}
               <div className="flex gap-2">
                 <Button
                   onClick={() => setEditingSuggestion(null)}
                   variant="outline"
-                  className="flex-1 border-[#00F0FF]/20 text-[#6B7280]"
+                  className="flex-1 border-[#00F0FF]/20 text-[#9CA3AF]"
                 >
                   Cancel
                 </Button>
@@ -1074,7 +1074,7 @@ export function RoadmapPage() {
                 >
                   {getStatusLabel(detailSuggestion.status)}
                 </span>
-                <span className="text-xs text-[#6B7280]">
+                <span className="text-xs text-[#9CA3AF]">
                   Submitted {new Date(detailSuggestion.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                 </span>
               </div>
@@ -1083,7 +1083,7 @@ export function RoadmapPage() {
                 <p className="text-sm text-[#C4C8D4] leading-relaxed whitespace-pre-wrap">{detailSuggestion.body}</p>
               </div>
               {/* Vote counts — always show, using voteState with suggestion fallback */}
-              <div className="flex items-center gap-4 text-xs text-[#6B7280]">
+              <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
                 <span className="flex items-center gap-1">
                   <ThumbsUp className="w-3.5 h-3.5 text-[#00F0FF]" />
                   {(voteState[detailSuggestion.id]?.upvotes ?? detailSuggestion.upvotes ?? 0)} upvotes
@@ -1094,21 +1094,21 @@ export function RoadmapPage() {
                 </span>
               </div>
               {/* Phase 72.4: Status Timeline */}
-              {loadingEvents && <p className="text-xs text-[#6B7280]">Loading history…</p>}
+              {loadingEvents && <p className="text-xs text-[#9CA3AF]">Loading history…</p>}
               {detailEvents.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-[#6B7280]">Status History</p>
+                  <p className="text-xs font-semibold text-[#9CA3AF]">Status History</p>
                   <div className="space-y-1.5">
                     {detailEvents.map(ev => (
                       <div key={ev.id} className="flex items-center gap-2 text-xs">
                         <span className="px-1.5 py-0.5 rounded border" style={{ color: getStatusColor(ev.oldStatus), borderColor: `${getStatusColor(ev.oldStatus)}40`, backgroundColor: `${getStatusColor(ev.oldStatus)}10` }}>
                           {getStatusLabel(ev.oldStatus)}
                         </span>
-                        <ArrowRight className="w-3 h-3 text-[#6B7280]" />
+                        <ArrowRight className="w-3 h-3 text-[#9CA3AF]" />
                         <span className="px-1.5 py-0.5 rounded border" style={{ color: getStatusColor(ev.newStatus), borderColor: `${getStatusColor(ev.newStatus)}40`, backgroundColor: `${getStatusColor(ev.newStatus)}10` }}>
                           {getStatusLabel(ev.newStatus)}
                         </span>
-                        <span className="text-[#6B7280] ml-auto">
+                        <span className="text-[#9CA3AF] ml-auto">
                           {new Date(ev.changedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
                       </div>
@@ -1120,7 +1120,7 @@ export function RoadmapPage() {
               <div className="flex justify-end">
                 <button
                   onClick={() => setDetailSuggestion(null)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#06060B] border border-[#BF5FFF]/20 text-[#6B7280] hover:text-[#E8E8F0] text-xs transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#06060B] border border-[#BF5FFF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] text-xs transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                   Close

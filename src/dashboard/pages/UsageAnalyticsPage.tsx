@@ -194,7 +194,7 @@ export function UsageAnalyticsPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <AlertTriangle className="w-10 h-10 text-[#FF6161]" />
-        <p className="text-[#6B7280]">{error}</p>
+        <p className="text-[#9CA3AF]">{error}</p>
         <Button variant="outline" onClick={() => window.location.reload()} className="border-[#00F0FF]/30">
           Retry
         </Button>
@@ -211,17 +211,17 @@ export function UsageAnalyticsPage() {
           <h1 className="text-2xl md:text-3xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
             Usage Analytics
           </h1>
-          <p className="text-sm text-[#6B7280] mt-1">Deep-dive into your AI costs and activity</p>
+          <p className="text-sm text-[#9CA3AF] mt-1">Deep-dive into your AI costs and activity</p>
         </div>
         <div className="flex gap-1 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
           {(['day', 'week', 'month'] as SummaryRange[]).map((r) => (
             <button
               key={r}
               onClick={() => handleSummaryRange(r)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                 summaryRange === r
                   ? 'bg-[#00F0FF] text-white'
-                  : 'text-[#6B7280] hover:text-[#E8E8F0]'
+                  : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
               }`}
             >
               {r.charAt(0).toUpperCase() + r.slice(1)}
@@ -261,7 +261,7 @@ export function UsageAnalyticsPage() {
                 <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#00FF88] transition-colors font-mono">
                   ${(summary?.totalCostUSD ?? 0).toFixed(2)}
                 </div>
-                <div className="text-xs sm:text-sm text-[#6B7280]">Total Cost</div>
+                <div className="text-xs sm:text-sm text-[#9CA3AF]">Total Cost</div>
               </CardContent>
             </Card>
 
@@ -276,7 +276,7 @@ export function UsageAnalyticsPage() {
                 <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors">
                   {fmt(summary?.totalMessages ?? 0)}
                 </div>
-                <div className="text-xs sm:text-sm text-[#6B7280]">Messages</div>
+                <div className="text-xs sm:text-sm text-[#9CA3AF]">Messages</div>
               </CardContent>
             </Card>
 
@@ -291,7 +291,7 @@ export function UsageAnalyticsPage() {
                 <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#FFB800] transition-colors">
                   {fmt(summary?.totalTokensIn ?? 0)} / {fmt(summary?.totalTokensOut ?? 0)}
                 </div>
-                <div className="text-xs sm:text-sm text-[#6B7280]">Tokens In / Out</div>
+                <div className="text-xs sm:text-sm text-[#9CA3AF]">Tokens In / Out</div>
               </CardContent>
             </Card>
 
@@ -306,7 +306,7 @@ export function UsageAnalyticsPage() {
                 <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#FF2D78] transition-colors">
                   {fmt(summary?.totalToolCalls ?? 0)}
                 </div>
-                <div className="text-xs sm:text-sm text-[#6B7280]">Tool Calls</div>
+                <div className="text-xs sm:text-sm text-[#9CA3AF]">Tool Calls</div>
               </CardContent>
             </Card>
           </>
@@ -326,10 +326,10 @@ export function UsageAnalyticsPage() {
                 <button
                   key={r}
                   onClick={() => handleChartRange(r)}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                     chartRange === r
                       ? 'bg-[#00F0FF] text-white'
-                      : 'text-[#6B7280] hover:text-[#E8E8F0]'
+                      : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
                   }`}
                 >
                   {r}
@@ -383,7 +383,7 @@ export function UsageAnalyticsPage() {
             {loading ? (
               <Skeleton className="w-full h-[220px] rounded-lg" />
             ) : pieData.length === 0 ? (
-              <div className="flex items-center justify-center h-[220px] text-sm text-[#6B7280]">No provider data</div>
+              <div className="flex items-center justify-center h-[220px] text-sm text-[#9CA3AF]">No provider data</div>
             ) : (
               <>
                 <div className="min-h-[180px] h-[220px]">
@@ -416,7 +416,7 @@ export function UsageAnalyticsPage() {
                   {pieData.map((p) => (
                     <div key={p.provider} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
-                      <span className="text-xs text-[#6B7280]">{friendlyProvider(p.provider)}</span>
+                      <span className="text-xs text-[#9CA3AF]">{friendlyProvider(p.provider)}</span>
                     </div>
                   ))}
                 </div>
@@ -434,7 +434,7 @@ export function UsageAnalyticsPage() {
             {loading ? (
               <Skeleton className="w-full h-[250px] rounded-lg" />
             ) : hourlyData.length === 0 ? (
-              <div className="flex items-center justify-center h-[250px] text-sm text-[#6B7280]">No activity data</div>
+              <div className="flex items-center justify-center h-[250px] text-sm text-[#9CA3AF]">No activity data</div>
             ) : (
               <div className="min-h-[180px] h-[250px]">
                 {mounted && (
@@ -468,7 +468,7 @@ export function UsageAnalyticsPage() {
             {loading ? (
               <Skeleton className="w-full h-[200px] rounded-lg" />
             ) : toolData.length === 0 ? (
-              <div className="flex items-center justify-center h-[200px] text-sm text-[#6B7280]">No tool usage data</div>
+              <div className="flex items-center justify-center h-[200px] text-sm text-[#9CA3AF]">No tool usage data</div>
             ) : (
               <div className="min-h-[180px] h-[200px]">
                 {mounted && (
@@ -510,7 +510,7 @@ export function UsageAnalyticsPage() {
                 ))}
               </div>
             ) : !billing ? (
-              <div className="text-sm text-[#6B7280]">No billing data</div>
+              <div className="text-sm text-[#9CA3AF]">No billing data</div>
             ) : (
               <div className="space-y-4">
                 {[
@@ -521,14 +521,14 @@ export function UsageAnalyticsPage() {
                   { label: 'Resets', value: new Date(billing.resetDate).toLocaleDateString() },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between text-sm">
-                    <span className="text-[#6B7280]">{item.label}</span>
+                    <span className="text-[#9CA3AF]">{item.label}</span>
                     <span className="text-[#E8E8F0] font-mono">{item.value}</span>
                   </div>
                 ))}
 
                 {/* Usage progress bar */}
                 <div className="pt-2">
-                  <div className="flex items-center justify-between text-xs text-[#6B7280] mb-1.5">
+                  <div className="flex items-center justify-between text-xs text-[#9CA3AF] mb-1.5">
                     <span>Usage</span>
                     <span>{billing.monthlyAllowance > 0 ? `${Math.min(100, ((billing.usageThisMonth?.totalCostUSD ?? 0) / billing.monthlyAllowance * 100)).toFixed(0)}%` : '0%'}</span>
                   </div>
@@ -553,7 +553,7 @@ export function UsageAnalyticsPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold">Usage Events</CardTitle>
             {eventsTotal > 0 && (
-              <Badge variant="outline" className="border-[#00F0FF]/30 text-[#6B7280]">
+              <Badge variant="outline" className="border-[#00F0FF]/30 text-[#9CA3AF]">
                 {eventsTotal.toLocaleString()} total
               </Badge>
             )}
@@ -567,7 +567,7 @@ export function UsageAnalyticsPage() {
               ))}
             </div>
           ) : events.length === 0 ? (
-            <div className="text-center py-8 text-sm text-[#6B7280]">No usage events yet</div>
+            <div className="text-center py-8 text-sm text-[#9CA3AF]">No usage events yet</div>
           ) : (
             <>
               <MobileTable<UsageEvent>
@@ -575,7 +575,7 @@ export function UsageAnalyticsPage() {
                   {
                     key: 'time', label: 'Time', primary: true,
                     render: (event) => (
-                      <span className="text-[#6B7280] font-mono text-xs">
+                      <span className="text-[#9CA3AF] font-mono text-xs">
                         {new Date(event.createdAt).toLocaleString(undefined, {
                           month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
                         })}
@@ -583,13 +583,13 @@ export function UsageAnalyticsPage() {
                     ),
                   },
                   { key: 'provider', label: 'Provider', render: (event) => <span className="text-[#E8E8F0]">{friendlyProvider(event.provider)}</span> },
-                  { key: 'model', label: 'Model', hideOnMobile: true, render: (event) => <span className="text-[#6B7280] font-mono text-xs">{friendlyModel(event.model)}</span> },
+                  { key: 'model', label: 'Model', hideOnMobile: true, render: (event) => <span className="text-[#9CA3AF] font-mono text-xs">{friendlyModel(event.model)}</span> },
                   { key: 'tokens', label: 'Tokens', render: (event) => <span className="text-[#E8E8F0] font-mono text-xs">{fmt(event.tokensIn)} / {fmt(event.tokensOut)}</span> },
                   { key: 'cost', label: 'Cost', render: (event) => <span className="text-[#00FF88] font-mono text-xs">{fmtCost(event.costUSD)}</span> },
                   {
                     key: 'channel', label: 'Channel', hideOnMobile: true,
                     render: (event) => (
-                      <Badge variant="outline" className="border-[#00F0FF]/30 text-[#6B7280] text-xs">
+                      <Badge variant="outline" className="border-[#00F0FF]/30 text-[#9CA3AF] text-xs">
                         {event.channel}
                       </Badge>
                     ),
@@ -603,7 +603,7 @@ export function UsageAnalyticsPage() {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4">
-                  <span className="text-xs text-[#6B7280]">
+                  <span className="text-xs text-[#9CA3AF]">
                     Page {eventsPage} of {totalPages}
                   </span>
                   <div className="flex gap-2">
@@ -612,7 +612,7 @@ export function UsageAnalyticsPage() {
                       size="sm"
                       disabled={eventsPage <= 1}
                       onClick={() => handleEventsPage(eventsPage - 1)}
-                      className="border-[#00F0FF]/30 text-[#6B7280] hover:text-[#E8E8F0] disabled:opacity-40"
+                      className="border-[#00F0FF]/30 text-[#9CA3AF] hover:text-[#E8E8F0] disabled:opacity-40"
                     >
                       <ChevronLeft className="w-4 h-4 mr-1" />
                       Prev
@@ -622,7 +622,7 @@ export function UsageAnalyticsPage() {
                       size="sm"
                       disabled={eventsPage >= totalPages}
                       onClick={() => handleEventsPage(eventsPage + 1)}
-                      className="border-[#00F0FF]/30 text-[#6B7280] hover:text-[#E8E8F0] disabled:opacity-40"
+                      className="border-[#00F0FF]/30 text-[#9CA3AF] hover:text-[#E8E8F0] disabled:opacity-40"
                     >
                       Next
                       <ChevronRight className="w-4 h-4 ml-1" />

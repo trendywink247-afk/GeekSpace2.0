@@ -159,7 +159,8 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
                   setWhatsappState('idle');
                   setWhatsappPolling(false);
                 }}
-                className="text-[#6B7280] hover:text-white"
+                aria-label="Close WhatsApp connection dialog"
+                className="text-[#6B7280] hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -306,7 +307,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
 
               {opt.id === 'whatsapp' && isError && (
                 <div className="mt-2 p-3 rounded-xl bg-[#FF3366]/5 border border-[#FF3366]/20 flex items-center gap-2">
-                  <span className="text-sm text-[#FF3366]">Failed to connect. Please try again.</span>
+                  <span className="text-sm text-[#FF3366]" role="alert" aria-live="assertive">Failed to connect. Please try again.</span>
                 </div>
               )}
             </div>
@@ -317,7 +318,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors min-h-[44px] px-4"
+          className="text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors min-h-[44px] px-4 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded"
         >
           I'll do this later
         </button>

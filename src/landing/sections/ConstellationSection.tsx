@@ -79,7 +79,7 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
     <section
       ref={sectionRef}
       id="constellation"
-      className="relative min-h-screen flex items-center justify-center py-20 overflow-hidden"
+      className="relative min-h-screen flex items-center justify-center py-20 md:py-28 lg:py-32 overflow-hidden"
     >
       {/* Galaxy Background Effect */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -102,7 +102,7 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
           return (
             <div
               key={i}
-              className={`absolute w-2 h-2 rounded-full transition-all duration-500 ${
+              className={`absolute w-2 h-2 rounded-full motion-safe:transition-all motion-safe:duration-500 ${
                 isVisible ? 'opacity-100' : 'opacity-0'
               }`}
               style={{
@@ -118,7 +118,7 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
         })}
         
         {/* Connecting Lines (SVG) */}
-        <svg className="absolute inset-0 w-full h-full opacity-20">
+        <svg className="absolute inset-0 w-full h-full opacity-20" aria-hidden="true" role="presentation">
           {[...Array(12)].map((_, i) => {
             const angle1 = (i / 12) * Math.PI * 2;
             const angle2 = ((i + 1) / 12) * Math.PI * 2;
@@ -153,7 +153,7 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
           {/* Header */}
           <div className="text-center mb-8">
             <h2 
-              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4"
+              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
               style={{ fontFamily: 'Syne, sans-serif' }}
             >
               Company <span className="text-gradient">Constellation</span>
@@ -176,12 +176,13 @@ export function ConstellationSection({ onViewPortfolio, onBrowseDirectory }: Con
 
           {/* Company Preview Grid */}
           <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-6">
-            {filteredCompanies.map((company, i) => (
+            {filteredCompanies.map((company) => (
               <button
-                key={i}
+                key={company.name}
                 onClick={() => onViewPortfolio?.(company.name)}
-                className="aspect-square rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20 flex items-center justify-center cursor-pointer hover:border-[#00F0FF]/50 hover:scale-105 transition-all duration-300 group"
+                className="aspect-square rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20 flex items-center justify-center cursor-pointer hover:border-[#00F0FF]/50 motion-safe:hover:scale-105 transition-all duration-300 group"
                 title={company.displayName}
+                aria-label={company.displayName}
               >
                 <company.icon 
                   className="w-6 h-6 transition-colors duration-300" 

@@ -40,7 +40,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
     <section
       ref={sectionRef}
       id="engine"
-      className="relative min-h-screen flex items-center justify-center py-20 overflow-hidden"
+      className="relative min-h-screen flex items-center justify-center py-20 md:py-28 lg:py-32 overflow-hidden"
     >
       {/* Hexagonal Grid Background */}
       <div className="absolute inset-0 pointer-events-none opacity-10">
@@ -98,9 +98,9 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
 
             {/* Feature Grid */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-              {engineFeatures.map((feature, i) => (
+              {engineFeatures.map((feature) => (
                 <div
-                  key={i}
+                  key={feature.label}
                   className="p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 group"
                 >
                   <feature.icon className="w-6 h-6 text-[#00F0FF] mb-2 group-hover:scale-110 transition-transform" />
@@ -113,7 +113,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
             <Button
               size="lg"
               onClick={() => onBuildWorkflow ? onBuildWorkflow() : navigate('/login?redirect=automations')}
-              className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#00F0FF]/30 group"
+              className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 motion-safe:hover:scale-105 hover:shadow-xl hover:shadow-[#00F0FF]/30 group"
             >
               Build a Workflow
               <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
@@ -128,9 +128,9 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
           >
             <div className="relative w-72 h-72 md:w-96 md:h-96">
               {/* Outer gear rings */}
-              <div className="absolute inset-0 border-2 border-dashed border-[#00F0FF]/30 rounded-full animate-spin" style={{ animationDuration: '30s' }} />
-              <div className="absolute inset-8 border border-[#00F0FF]/20 rounded-full" style={{ animation: 'spin 20s linear infinite reverse' }} />
-              <div className="absolute inset-16 border border-[#00F0FF]/15 rounded-full animate-spin" style={{ animationDuration: '15s' }} />
+              <div className="absolute inset-0 border-2 border-dashed border-[#00F0FF]/30 rounded-full motion-safe:animate-spin" style={{ animationDuration: '30s' }} />
+              <div className="absolute inset-8 border border-[#00F0FF]/20 rounded-full motion-safe:animate-spin" style={{ animationDuration: '20s', animationDirection: 'reverse' }} />
+              <div className="absolute inset-16 border border-[#00F0FF]/15 rounded-full motion-safe:animate-spin" style={{ animationDuration: '15s' }} />
               
               {/* Central Engine */}
               <div className="absolute inset-0 flex items-center justify-center">
@@ -159,10 +159,11 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
                   </div>
 
                   {/* Orbiting nodes */}
-                  {[...Array(5)].map((_, i) => (
+                  {['Triggers', 'APIs', 'AI Actions', 'Workflows', 'Power'].map((label, i) => (
                     <div
-                      key={i}
-                      className="absolute w-10 h-10 rounded-full bg-[#0C0C18] border border-[#00F0FF]/40 flex items-center justify-center"
+                      key={label}
+                      className="absolute w-11 h-11 rounded-full bg-[#0C0C18] border border-[#00F0FF]/40 flex items-center justify-center"
+                      aria-label={label}
                       style={{
                         top: `${50 + 42 * Math.sin((i * Math.PI * 2) / 5)}%`,
                         left: `${50 + 42 * Math.cos((i * Math.PI * 2) / 5)}%`,
@@ -181,7 +182,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
               </div>
 
               {/* Connection lines */}
-              <svg className="absolute inset-0 w-full h-full opacity-30">
+              <svg className="absolute inset-0 w-full h-full opacity-30" aria-hidden="true" role="presentation">
                 {[...Array(6)].map((_, i) => {
                   const angle = (i / 6) * Math.PI * 2;
                   const x1 = 50 + 20 * Math.cos(angle);
@@ -190,7 +191,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
                   const y2 = 50 + 45 * Math.sin(angle);
                   return (
                     <line
-                      key={i}
+                      key={`line-${Math.round(angle * 100)}`}
                       x1={`${x1}%`}
                       y1={`${y1}%`}
                       x2={`${x2}%`}

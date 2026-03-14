@@ -249,7 +249,7 @@ export function MemoryManagerPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Memory Manager
           </h1>
-          <p className="text-[#6B7280]">
+          <p className="text-[#9CA3AF]">
             {stats.total} memories across {stats.categories} categories
           </p>
         </div>
@@ -269,7 +269,7 @@ export function MemoryManagerPage() {
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button onClick={loadMemories} variant="outline" className="border-[#00F0FF]/30">
+          <Button onClick={loadMemories} variant="outline" className="border-[#00F0FF]/30 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Refresh memories">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
@@ -285,7 +285,7 @@ export function MemoryManagerPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">{stats.total}</div>
-                <div className="text-xs text-[#6B7280]">Total Memories</div>
+                <div className="text-xs text-[#9CA3AF]">Total Memories</div>
               </div>
             </div>
           </CardContent>
@@ -298,7 +298,7 @@ export function MemoryManagerPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">{stats.categories}</div>
-                <div className="text-xs text-[#6B7280]">Categories</div>
+                <div className="text-xs text-[#9CA3AF]">Categories</div>
               </div>
             </div>
           </CardContent>
@@ -311,7 +311,7 @@ export function MemoryManagerPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">{stats.avgConfidence}%</div>
-                <div className="text-xs text-[#6B7280]">Avg Confidence</div>
+                <div className="text-xs text-[#9CA3AF]">Avg Confidence</div>
               </div>
             </div>
           </CardContent>
@@ -324,7 +324,7 @@ export function MemoryManagerPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">{stats.thisWeek}</div>
-                <div className="text-xs text-[#6B7280]">This Week</div>
+                <div className="text-xs text-[#9CA3AF]">This Week</div>
               </div>
             </div>
           </CardContent>
@@ -336,7 +336,7 @@ export function MemoryManagerPage() {
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
               <Input
                 placeholder="Search memories..."
                 value={searchQuery}
@@ -370,7 +370,7 @@ export function MemoryManagerPage() {
 
           {/* 65.2: Confidence threshold slider */}
           <div className="flex items-center gap-3">
-            <span className="text-xs text-[#6B7280] whitespace-nowrap">Min confidence: <span className="text-[#00FF88] font-mono">{minConfidence}%</span></span>
+            <span className="text-xs text-[#9CA3AF] whitespace-nowrap">Min confidence: <span className="text-[#00FF88] font-mono">{minConfidence}%</span></span>
             <input
               type="range"
               min={0}
@@ -393,7 +393,7 @@ export function MemoryManagerPage() {
                     className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                       selectedCategory === cat
                         ? 'bg-[#00F0FF] text-white'
-                        : 'bg-[#06060B] text-[#6B7280] hover:text-white'
+                        : 'bg-[#06060B] text-[#9CA3AF] hover:text-white'
                     }`}
                   >
                     {cat}
@@ -403,7 +403,7 @@ export function MemoryManagerPage() {
                     onClick={() => void handleBulkClear(cat)}
                     disabled={bulkClearing === cat}
                     title={`Clear all ${cat} memories`}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF6161]/10 text-[#FF6161]/60 hover:text-[#FF6161] hover:bg-[#FF6161]/20 transition-colors disabled:opacity-40"
+                    className="text-xs px-1.5 py-0.5 rounded bg-[#FF6161]/10 text-[#FF6161]/60 hover:text-[#FF6161] hover:bg-[#FF6161]/20 transition-colors disabled:opacity-40"
                   >
                     {bulkClearing === cat ? '…' : '✕ all'}
                   </button>
@@ -421,7 +421,7 @@ export function MemoryManagerPage() {
           <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">
             {loadError ? 'Could not load memories' : 'No memories found'}
           </h3>
-          <p className="text-[#6B7280] max-w-sm mx-auto">
+          <p className="text-[#9CA3AF] max-w-sm mx-auto">
             {loadError || 'Your agent will build memories as you chat. They\'ll appear here for you to review and manage.'}
           </p>
           {loadError && (
@@ -460,7 +460,7 @@ export function MemoryManagerPage() {
                           <Badge className="bg-[#00F0FF]/20 text-[#00F0FF]">
                             {memory.category}
                           </Badge>
-                          <span className="text-xs text-[#6B7280]">
+                          <span className="text-xs text-[#9CA3AF]">
                             {memory.accessCount} accesses
                           </span>
                         </div>
@@ -468,12 +468,12 @@ export function MemoryManagerPage() {
                         <h4 className="font-medium text-[#E8E8F0] mb-1 truncate">{memory.key}</h4>
                         
                         {expandedId === memory.id ? (
-                          <p className="text-sm text-[#6B7280] whitespace-pre-wrap">{memory.value}</p>
+                          <p className="text-sm text-[#9CA3AF] whitespace-pre-wrap">{memory.value}</p>
                         ) : (
-                          <p className="text-sm text-[#6B7280] line-clamp-2">{memory.value}</p>
+                          <p className="text-sm text-[#9CA3AF] line-clamp-2">{memory.value}</p>
                         )}
                         
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-[#6B7280]">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-[#9CA3AF]">
                           <span className="whitespace-nowrap">Created: {formatDate(memory.createdAt)}</span>
                           <span className="whitespace-nowrap">Updated: {formatDate(memory.updatedAt)}</span>
                           <span className="whitespace-nowrap">Source: {memory.source}</span>
@@ -483,7 +483,8 @@ export function MemoryManagerPage() {
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <button
                           onClick={() => setExpandedId(expandedId === memory.id ? null : memory.id)}
-                          className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                          className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                          aria-label={expandedId === memory.id ? 'Collapse memory' : 'Expand memory'}
                         >
                           {expandedId === memory.id ? (
                             <ChevronUp className="w-4 h-4" />
@@ -497,14 +498,15 @@ export function MemoryManagerPage() {
                             setMemoryForm({ key: memory.key, value: memory.value, category: memory.category ?? 'general' });
                             setMemoryDialogOpen(true);
                           }}
-                          className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#00F0FF] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-                          title="Edit memory"
+                          className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#00F0FF] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                          aria-label="Edit memory"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(memory.id)}
-                          className="p-2.5 rounded-lg bg-[#06060B] text-[#6B7280] hover:text-[#FF6161] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                          className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#FF6161] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                          aria-label="Delete memory"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -542,7 +544,7 @@ export function MemoryManagerPage() {
               </div>
               <div>
                 <h3 className="text-base font-semibold text-[#F4F6FF]">Clear all memories?</h3>
-                <p className="text-xs text-[#6B7280]">Category: <span className="text-[#E8E8F0] font-medium">{bulkClearConfirm}</span></p>
+                <p className="text-xs text-[#9CA3AF]">Category: <span className="text-[#E8E8F0] font-medium">{bulkClearConfirm}</span></p>
               </div>
             </div>
             <p className="text-sm text-[#9CA3AF] mb-5">

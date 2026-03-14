@@ -28,8 +28,8 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   return (
     <div className="relative my-2 rounded-lg overflow-hidden border border-[#00F0FF]/20">
       <div className="flex items-center justify-between px-3 py-1 bg-[#0A0A1A]">
-        <span className="text-[10px] text-[#6B7280]">{lang || 'code'}</span>
-        <button onClick={handleCopy} className="flex items-center gap-1 text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors" title="Copy code">
+        <span className="text-xs text-[#9CA3AF]">{lang || 'code'}</span>
+        <button onClick={handleCopy} className="flex items-center gap-1 text-xs text-[#9CA3AF] hover:text-[#00F0FF] transition-colors min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" title="Copy code" aria-label="Copy code">
           {copied ? <Check className="w-3 h-3 text-[#00FF88]" /> : <Copy className="w-3 h-3" />}
           {copied ? 'Copied!' : 'Copy'}
         </button>
@@ -268,15 +268,16 @@ export function ChatPage() {
           </div>
           <div>
             <h2 className='text-sm font-semibold text-[#E8E8F0]'>{agentName}</h2>
-            <p className='text-[10px] text-[#6B7280]'>AI Assistant</p>
+            <p className='text-xs text-[#9CA3AF]'>AI Assistant</p>
           </div>
         </div>
         <div className='flex items-center gap-2'>
           {tts.isSpeaking && (
             <button
               onClick={() => tts.stop()}
-              className='p-1.5 rounded-lg hover:bg-[#00F0FF]/10 text-[#00F0FF]'
+              className='p-1.5 rounded-lg hover:bg-[#00F0FF]/10 text-[#00F0FF] min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50'
               title='Stop speaking'
+              aria-label='Stop speaking'
             >
               <VolumeX className='w-4 h-4' />
             </button>
@@ -284,10 +285,10 @@ export function ChatPage() {
           <button
             onClick={toggleVoiceMode}
             className={[
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50',
               voiceMode
                 ? 'bg-[#00F0FF]/20 text-[#00F0FF] ring-1 ring-[#00F0FF]/40'
-                : 'hover:bg-[#00F0FF]/10 text-[#6B7280]',
+                : 'hover:bg-[#00F0FF]/10 text-[#9CA3AF]',
             ].join(' ')}
             title={voiceMode ? 'Voice mode on — responses will be read aloud' : 'Enable voice mode'}
           >
@@ -296,8 +297,9 @@ export function ChatPage() {
           </button>
           <button
             onClick={clearChat}
-            className='p-1.5 rounded-lg hover:bg-[#00F0FF]/10 text-[#6B7280] hover:text-[#E8E8F0]'
+            className='p-1.5 rounded-lg hover:bg-[#00F0FF]/10 text-[#9CA3AF] hover:text-[#E8E8F0] min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50'
             title='Clear chat'
+            aria-label='Clear chat'
           >
             <RotateCcw className='w-4 h-4' />
           </button>
@@ -316,7 +318,7 @@ export function ChatPage() {
             </div>
             <div>
               <p className='text-[#E8E8F0] font-medium'>Chat with {agentName}</p>
-              <p className='text-xs text-[#6B7280] mt-1'>
+              <p className='text-xs text-[#9CA3AF] mt-1'>
                 {voice.isSupported ? 'Type or speak to get started' : 'Type a message to get started'}
               </p>
             </div>
@@ -342,7 +344,7 @@ export function ChatPage() {
               ].join(' ')}
             >
               {msg.role === 'agent' ? renderMessageContent(msg.content) : <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>}
-              <p className='text-[9px] text-[#6B7280] mt-1 text-right'>
+              <p className='text-xs text-[#9CA3AF] mt-1 text-right'>
                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
@@ -361,7 +363,7 @@ export function ChatPage() {
         )}
         {interimText && (
           <div className='flex justify-end'>
-            <div className='max-w-[80%] px-3 py-2 rounded-xl text-sm bg-[#00F0FF]/5 text-[#6B7280] border border-dashed border-[#00F0FF]/20 italic'>
+            <div className='max-w-[80%] px-3 py-2 rounded-xl text-sm bg-[#00F0FF]/5 text-[#9CA3AF] border border-dashed border-[#00F0FF]/20 italic'>
               {interimText}
             </div>
           </div>
@@ -393,12 +395,13 @@ export function ChatPage() {
           <Button
             type='submit'
             disabled={!input.trim() || isTyping}
-            className='bg-[#00F0FF] hover:bg-[#00D4B0] text-black h-10 px-3 min-w-[44px]'
+            className='bg-[#00F0FF] hover:bg-[#00D4B0] text-black h-10 px-3 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50'
+            aria-label='Send message'
           >
             <Send className='w-4 h-4' />
           </Button>
         </form>
-        <p className='text-[9px] text-[#4B5563] mt-1.5 text-center'>
+        <p className='text-xs text-[#4B5563] mt-1.5 text-center'>
           Press Alt+V from anywhere to open voice chat instantly
         </p>
       </div>

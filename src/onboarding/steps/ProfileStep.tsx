@@ -22,23 +22,25 @@ export function ProfileStep({ name, username, onNameChange, onUsernameChange }: 
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-sm text-[#6B7280] mb-2 block">Display Name *</label>
+          <label className="text-sm text-[#9CA3AF] mb-2 block">Display Name *</label>
           <Input
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             placeholder="Alex Chen"
             className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
             required
+            aria-required="true"
           />
         </div>
         <div>
-          <label className="text-sm text-[#6B7280] mb-2 block">Username *</label>
+          <label className="text-sm text-[#9CA3AF] mb-2 block">Username *</label>
           <Input
             value={username}
             onChange={(e) => onUsernameChange(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
             placeholder="alex"
             className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
             required
+            aria-required="true"
           />
           <p className="text-xs text-[#6B7280] mt-1">
             Your URL: <span className="text-[#00F0FF]">{username || 'you'}.agentin.chat</span>

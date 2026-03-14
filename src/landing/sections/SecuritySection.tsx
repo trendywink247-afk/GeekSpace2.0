@@ -40,7 +40,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
     <section
       ref={sectionRef}
       id="security"
-      className="relative min-h-screen flex items-center justify-center py-20 overflow-hidden"
+      className="relative min-h-screen flex items-center justify-center py-20 md:py-28 lg:py-32 overflow-hidden"
     >
       {/* Shield Wireframe Background */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -94,9 +94,9 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
           >
             <div className="relative w-72 h-72 md:w-96 md:h-96">
               {/* Outer rings */}
-              <div className="absolute inset-0 border border-[#00F0FF]/20 rounded-full animate-pulse" />
-              <div className="absolute inset-8 border border-[#00F0FF]/15 rounded-full" style={{ animation: 'pulse 3s ease-in-out 0.5s infinite' }} />
-              <div className="absolute inset-16 border border-[#00F0FF]/10 rounded-full" style={{ animation: 'pulse 3s ease-in-out 1s infinite' }} />
+              <div className="absolute inset-0 border border-[#00F0FF]/20 rounded-full motion-safe:animate-pulse" />
+              <div className="absolute inset-8 border border-[#00F0FF]/15 rounded-full motion-safe:animate-pulse" style={{ animationDuration: '3s', animationDelay: '0.5s' }} />
+              <div className="absolute inset-16 border border-[#00F0FF]/10 rounded-full motion-safe:animate-pulse" style={{ animationDuration: '3s', animationDelay: '1s' }} />
               
               {/* Central Shield */}
               <div className="absolute inset-0 flex items-center justify-center">
@@ -128,23 +128,28 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                   </div>
 
                   {/* Orbiting security icons */}
-                  {[...Array(4)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute w-10 h-10 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 flex items-center justify-center"
-                      style={{
-                        top: `${50 + 48 * Math.sin((i * Math.PI) / 2)}%`,
-                        left: `${50 + 48 * Math.cos((i * Math.PI) / 2)}%`,
-                        transform: 'translate(-50%, -50%)',
-                        animation: `float 4s ease-in-out ${i * 0.5}s infinite`,
-                      }}
-                    >
-                      {i === 0 && <Lock className="w-5 h-5 text-[#00F0FF]" />}
-                      {i === 1 && <Eye className="w-5 h-5 text-[#FF2D78]" />}
-                      {i === 2 && <AlertTriangle className="w-5 h-5 text-[#FFB800]" />}
-                      {i === 3 && <Server className="w-5 h-5 text-[#00FF88]" />}
-                    </div>
-                  ))}
+                  {[...Array(4)].map((_, i) => {
+                    const orbitLabels = ['Tenant Isolation', 'Audit Logs', 'Emergency Stop', 'Encryption'];
+                    return (
+                      <div
+                        key={i}
+                        className="absolute w-11 h-11 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 flex items-center justify-center"
+                        role="img"
+                        aria-label={orbitLabels[i]}
+                        style={{
+                          top: `${50 + 48 * Math.sin((i * Math.PI) / 2)}%`,
+                          left: `${50 + 48 * Math.cos((i * Math.PI) / 2)}%`,
+                          transform: 'translate(-50%, -50%)',
+                          animation: `float 4s ease-in-out ${i * 0.5}s infinite`,
+                        }}
+                      >
+                        {i === 0 && <Lock className="w-5 h-5 text-[#00F0FF]" />}
+                        {i === 1 && <Eye className="w-5 h-5 text-[#FF2D78]" />}
+                        {i === 2 && <AlertTriangle className="w-5 h-5 text-[#FFB800]" />}
+                        {i === 3 && <Server className="w-5 h-5 text-[#00FF88]" />}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -195,7 +200,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                   navigate('/docs');
                 }
               }}
-              className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#00F0FF]/30 group"
+              className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 motion-safe:hover:scale-105 hover:shadow-xl hover:shadow-[#00F0FF]/30 group"
             >
               Review Security
               <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />

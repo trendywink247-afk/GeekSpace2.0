@@ -40,7 +40,7 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
     <section
       ref={sectionRef}
       id="persona"
-      className="relative min-h-screen flex items-center justify-center py-20 overflow-hidden"
+      className="relative min-h-screen flex items-center justify-center py-20 md:py-28 lg:py-32 overflow-hidden"
     >
       {/* Spotlight Background */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -109,10 +109,11 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
                   </div>
 
                   {/* Orbiting elements */}
-                  {[...Array(4)].map((_, i) => (
+                  {personaFeatures.map((feature, i) => (
                     <div
-                      key={i}
-                      className="absolute w-8 h-8 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 flex items-center justify-center"
+                      key={feature.label}
+                      className="absolute w-11 h-11 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 flex items-center justify-center"
+                      aria-label={feature.label}
                       style={{
                         top: `${50 + 45 * Math.sin((i * Math.PI) / 2)}%`,
                         left: `${50 + 45 * Math.cos((i * Math.PI) / 2)}%`,
@@ -150,10 +151,11 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
 
             {/* Feature Grid */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-              {personaFeatures.map((feature, i) => (
+              {personaFeatures.map((feature) => (
                 <div
-                  key={i}
+                  key={feature.label}
                   className="p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 group"
+                  style={{ WebkitBackdropFilter: 'blur(12px)' }}
                 >
                   <feature.icon className="w-6 h-6 text-[#00F0FF] mb-2 group-hover:scale-110 transition-transform" />
                   <div className="font-medium text-[#E8E8F0]">{feature.label}</div>
@@ -165,7 +167,7 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
             <Button
               size="lg"
               onClick={() => onDesignAssistant ? onDesignAssistant() : navigate('/login?redirect=design')}
-              className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#00F0FF]/30 group"
+              className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 motion-safe:hover:scale-105 hover:shadow-xl hover:shadow-[#00F0FF]/30 group"
             >
               Design Your Assistant
               <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />

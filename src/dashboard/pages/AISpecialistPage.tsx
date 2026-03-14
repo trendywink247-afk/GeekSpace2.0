@@ -26,7 +26,7 @@ export function AISpecialistPage() {
         </div>
         <div>
           <h1 className="text-xl font-semibold text-[#E8E8F0]">AI Specialist Tools</h1>
-          <p className="text-sm text-[#6B7280]">Developer utilities for working with AI</p>
+          <p className="text-sm text-[#9CA3AF]">Developer utilities for working with AI</p>
         </div>
       </div>
 
@@ -40,10 +40,10 @@ export function AISpecialistPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap flex-shrink-0 border-b-2 transition-colors ${
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap flex-shrink-0 border-b-2 transition-colors min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                   active
                     ? 'border-[#7B61FF] text-[#E8E8F0]'
-                    : 'border-transparent text-[#6B7280] hover:text-[#A0A0B0]'
+                    : 'border-transparent text-[#9CA3AF] hover:text-[#A0A0B0]'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />

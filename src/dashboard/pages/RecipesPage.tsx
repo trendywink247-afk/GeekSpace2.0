@@ -168,7 +168,7 @@ export function RecipesPage() {
         >
           Recipes
         </h1>
-        <p className="text-[#6B7280]">
+        <p className="text-[#9CA3AF]">
           <span className="text-[#00F0FF] font-medium">{activeCount}</span> active of{' '}
           {recipes.length} recipes
         </p>
@@ -178,7 +178,7 @@ export function RecipesPage() {
       {recipes.length === 0 ? (
         <div className="text-center py-12">
           <BookOpen className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
-          <p className="text-[#6B7280]">No recipes available yet</p>
+          <p className="text-[#9CA3AF]">No recipes available yet</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -227,17 +227,17 @@ export function RecipesPage() {
 
                   {/* Name + Description */}
                   <h3 className="font-semibold text-[#E8E8F0] mb-1">{recipe.name}</h3>
-                  <p className="text-sm text-[#6B7280] mb-4 flex-1">{recipe.description}</p>
+                  <p className="text-sm text-[#9CA3AF] mb-4 flex-1">{recipe.description}</p>
 
                   {/* Required Integrations */}
                   {recipe.requiredIntegrations.length > 0 && (
                     <div className="mb-4">
-                      <span className="text-xs text-[#6B7280]">Requires: </span>
+                      <span className="text-xs text-[#9CA3AF]">Requires: </span>
                       {recipe.requiredIntegrations.map((int) => (
                         <Badge
                           key={int}
                           variant="outline"
-                          className="text-[10px] border-[#00F0FF]/20 text-[#6B7280] mr-1"
+                          className="text-xs border-[#00F0FF]/20 text-[#9CA3AF] mr-1"
                         >
                           {int}
                         </Badge>
@@ -249,7 +249,7 @@ export function RecipesPage() {
                   {recipe.installed ? (
                     <Button
                       variant="outline"
-                      className="w-full border-[#6B7280]/30 text-[#6B7280] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
+                      className="w-full border-[#6B7280]/30 text-[#9CA3AF] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
                       onClick={() => handleUninstall(recipe.id)}
                       disabled={isActionInProgress}
                     >

@@ -115,7 +115,7 @@ export function InvitePage() {
                     data-testid="invite-code-input"
                   />
                 </div>
-                <p className="text-[11px] text-[#6B7280] mt-1.5">
+                <p className="text-xs text-[#9CA3AF] mt-1.5">
                   Received an invite email? Copy the code from the link.
                 </p>
               </div>
@@ -153,7 +153,7 @@ export function InvitePage() {
                 <button
                   type="button"
                   onClick={() => { setStep('code'); setError(''); }}
-                  className="ml-auto text-[10px] text-[#6B7280] hover:text-[#A7ACB8] underline min-h-[44px] min-w-[44px] flex items-center justify-end pr-1"
+                  className="ml-auto text-sm text-[#6B7280] hover:text-[#A7ACB8] underline min-h-[44px] min-w-[44px] flex items-center justify-end pr-1"
                 >
                   change
                 </button>
@@ -221,7 +221,7 @@ export function InvitePage() {
               </div>
 
               {error && (
-                <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2" role="alert" aria-live="polite">
                   {error}
                 </p>
               )}
@@ -229,7 +229,7 @@ export function InvitePage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] text-white"
+                className="w-full bg-[#7B61FF] hover:bg-[#6B51EF] text-white h-12"
                 data-testid="invite-register-submit"
               >
                 {isLoading ? (
@@ -239,7 +239,7 @@ export function InvitePage() {
                 )}
               </Button>
 
-              <p className="text-center text-[11px] text-[#6B7280]">
+              <p className="text-center text-xs text-[#9CA3AF]">
                 By joining, you agree to our{' '}
                 <Link to="/terms" className="text-[#7B61FF] hover:underline">Terms</Link>
                 {' '}and{' '}

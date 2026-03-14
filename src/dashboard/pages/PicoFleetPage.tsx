@@ -487,7 +487,7 @@ export function PicoFleetPage() {
               <XCircle className="w-4 h-4 text-[#FF6161] shrink-0" />
             )}
             <span className="text-sm text-[#E8E8F0]">{toast.message}</span>
-            <button onClick={() => setToast(null)} className="ml-2 text-[#6B7280] hover:text-[#E8E8F0]">
+            <button onClick={() => setToast(null)} className="ml-2 text-[#9CA3AF] hover:text-[#E8E8F0] min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss notification">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -500,7 +500,7 @@ export function PicoFleetPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Weebo's
           </h1>
-          <p className="text-[#6B7280]">
+          <p className="text-[#9CA3AF]">
             <span className="text-[#00FF88] font-medium">{agents.length}</span> agent{agents.length !== 1 ? 's' : ''} deployed
             {' '}&middot;{' '}
             <span className="text-[#00F0FF] font-medium">{totalCompleted}</span> tasks completed
@@ -510,7 +510,7 @@ export function PicoFleetPage() {
           onClick={() => loadData()}
           disabled={refreshing}
           variant="outline"
-          className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 text-[#6B7280] hover:text-[#E8E8F0]"
+          className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 text-[#9CA3AF] hover:text-[#E8E8F0] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
         >
           <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           Refresh
@@ -572,7 +572,7 @@ export function PicoFleetPage() {
                               size="sm"
                               onClick={() => handleDeleteAgent(agent)}
                               aria-label={`Remove ${agent.name}`}
-                              className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 press-scale"
+                              className="text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 press-scale"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -590,7 +590,7 @@ export function PicoFleetPage() {
                             return (
                               <span
                                 key={toolId}
-                                className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border"
+                                className="px-2 py-0.5 rounded text-xs font-bold tracking-wide border"
                                 style={{ borderColor: `${tool.color}40`, color: tool.color, backgroundColor: `${tool.color}10` }}
                               >
                                 {tool.short}
@@ -601,16 +601,16 @@ export function PicoFleetPage() {
                       )}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="p-3 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
-                          <div className="text-xs text-[#6B7280] mb-1">Completed</div>
+                          <div className="text-xs text-[#9CA3AF] mb-1">Completed</div>
                           <div className="text-xl font-bold text-[#00FF88] font-mono">{agent.tasks_completed}</div>
                         </div>
                         <div className="p-3 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
-                          <div className="text-xs text-[#6B7280] mb-1">Failed</div>
+                          <div className="text-xs text-[#9CA3AF] mb-1">Failed</div>
                           <div className="text-xl font-bold text-[#FF6161] font-mono">{agent.tasks_failed}</div>
                         </div>
                       </div>
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xs text-[#6B7280] flex items-center gap-1">
+                        <span className="text-xs text-[#9CA3AF] flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           Slot {slotNum}
                         </span>
@@ -640,7 +640,7 @@ export function PicoFleetPage() {
                 return (
                   <Card key={slotNum} className="border-[#00F0FF]/30 border-dashed">
                     <CardContent className={`flex flex-col items-center gap-3 min-h-[180px] ${isMobile ? 'p-3' : 'p-4'}`}>
-                      <p className="text-sm text-[#6B7280]">Choose personality</p>
+                      <p className="text-sm text-[#9CA3AF]">Choose personality</p>
                       <div className="flex gap-2">
                         {personalities.map((p) => (
                           <button
@@ -670,7 +670,7 @@ export function PicoFleetPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => { setCreatingSlot(null); setNewAgentName(''); setNewAgentPersonality('weebo'); }}
-                          className="border-[#00F0FF]/30 text-[#6B7280]"
+                          className="border-[#00F0FF]/30 text-[#9CA3AF]"
                         >
                           Cancel
                         </Button>
@@ -700,7 +700,7 @@ export function PicoFleetPage() {
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-medium text-[#E8E8F0]">Deploy Agent</p>
-                      <p className="text-xs text-[#6B7280]">Slot {slotNum} available</p>
+                      <p className="text-xs text-[#9CA3AF]">Slot {slotNum} available</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -729,7 +729,7 @@ export function PicoFleetPage() {
                 <Button
                   onClick={handlePlanTask}
                   disabled={!taskInput.trim() || planning}
-                  className="bg-[#00F0FF] hover:bg-[#00D4B0] min-w-[100px]"
+                  className="bg-[#00F0FF] hover:bg-[#00D4B0] min-w-[100px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                 >
                   {planning ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -741,7 +741,7 @@ export function PicoFleetPage() {
                   )}
                 </Button>
               </div>
-              <p className="text-xs text-[#6B7280] mt-2">
+              <p className="text-xs text-[#9CA3AF] mt-2">
                 The planner will break your request into tasks and assign them to available agents.
               </p>
             </CardContent>
@@ -774,7 +774,7 @@ export function PicoFleetPage() {
                 </button>
                 <button
                   onClick={() => setShowEscalateDialog(false)}
-                  className="px-3 py-1.5 rounded-lg border border-[#00F0FF]/30 text-[#6B7280] text-sm"
+                  className="px-3 py-1.5 rounded-lg border border-[#00F0FF]/30 text-[#9CA3AF] text-sm"
                 >
                   Cancel
                 </button>
@@ -788,7 +788,7 @@ export function PicoFleetPage() {
               <CardTitle className="text-lg text-[#E8E8F0] flex items-center gap-2">
                 <Activity className="w-4 h-4 text-[#00FF88]" />
                 Recent Activity
-                <Badge variant="outline" className="ml-2 border-[#00F0FF]/20 text-[#6B7280] text-xs">
+                <Badge variant="outline" className="ml-2 border-[#00F0FF]/20 text-[#9CA3AF] text-xs">
                   {recentTasks.length}
                 </Badge>
               </CardTitle>
@@ -796,7 +796,7 @@ export function PicoFleetPage() {
             <CardContent className="pt-0">
               {recentTasks.length === 0 ? (
                 <div className="text-center py-6">
-                  <p className="text-[#6B7280] text-sm">No recent activity.</p>
+                  <p className="text-[#9CA3AF] text-sm">No recent activity.</p>
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -818,7 +818,7 @@ export function PicoFleetPage() {
                       >
                         {task.status}
                       </span>
-                      <span className="text-xs text-[#6B7280] shrink-0 hidden sm:block">
+                      <span className="text-xs text-[#9CA3AF] shrink-0 hidden sm:block">
                         {formatTime(task.completed_at || task.started_at || task.created_at || null)}
                       </span>
                     </div>
@@ -832,9 +832,9 @@ export function PicoFleetPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-[#E8E8F0] flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#6B7280]" />
+                <Clock className="w-4 h-4 text-[#9CA3AF]" />
                 Task History
-                <Badge variant="outline" className="ml-2 border-[#00F0FF]/20 text-[#6B7280] text-xs">
+                <Badge variant="outline" className="ml-2 border-[#00F0FF]/20 text-[#9CA3AF] text-xs">
                   {tasks.length}
                 </Badge>
               </CardTitle>
@@ -843,7 +843,7 @@ export function PicoFleetPage() {
               {tasks.length === 0 ? (
                 <div className="text-center py-10">
                   <AlertCircle className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-                  <p className="text-[#6B7280] text-sm">No tasks yet. Use Quick Task above to get started.</p>
+                  <p className="text-[#9CA3AF] text-sm">No tasks yet. Use Quick Task above to get started.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -867,10 +867,10 @@ export function PicoFleetPage() {
                             <span className="flex-1 text-sm text-[#E8E8F0] truncate">
                               {task.description}
                             </span>
-                            <span className="text-xs text-[#6B7280] hidden sm:block shrink-0">
+                            <span className="text-xs text-[#9CA3AF] hidden sm:block shrink-0">
                               {task.agent_name}
                             </span>
-                            <span className="text-xs text-[#6B7280] hidden md:block shrink-0 min-w-[70px] text-right">
+                            <span className="text-xs text-[#9CA3AF] hidden md:block shrink-0 min-w-[70px] text-right">
                               {formatTime(task.completed_at || task.started_at || task.created_at)}
                             </span>
                             {task.status === 'queued' && (
@@ -878,16 +878,17 @@ export function PicoFleetPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => { e.stopPropagation(); handleCancelTask(task.id); }}
-                                className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 shrink-0 press-scale"
+                                className="text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 shrink-0 press-scale"
                                 title="Cancel task"
+                                aria-label="Cancel task"
                               >
                                 <X className="w-4 h-4" />
                               </Button>
                             )}
                             {isExpanded ? (
-                              <ChevronUp className="w-4 h-4 text-[#6B7280] shrink-0" />
+                              <ChevronUp className="w-4 h-4 text-[#9CA3AF] shrink-0" />
                             ) : (
-                              <ChevronDown className="w-4 h-4 text-[#6B7280] shrink-0" />
+                              <ChevronDown className="w-4 h-4 text-[#9CA3AF] shrink-0" />
                             )}
                           </div>
                         </button>
@@ -895,34 +896,34 @@ export function PicoFleetPage() {
                           <div className="mt-1 ml-4 p-4 rounded-lg bg-[#06060B]/80 border border-[#00F0FF]/10 animate-in slide-in-from-top-2 duration-200">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                               <div>
-                                <div className="text-xs text-[#6B7280]">Status</div>
+                                <div className="text-xs text-[#9CA3AF]">Status</div>
                                 <div className="text-sm font-medium capitalize" style={{ color: getStatusColor(task.status) }}>
                                   {task.status}
                                 </div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#6B7280]">Agent</div>
+                                <div className="text-xs text-[#9CA3AF]">Agent</div>
                                 <div className="text-sm text-[#E8E8F0]">{task.agent_name}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#6B7280]">Started</div>
+                                <div className="text-xs text-[#9CA3AF]">Started</div>
                                 <div className="text-sm text-[#E8E8F0]">{formatTime(task.started_at)}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#6B7280]">Completed</div>
+                                <div className="text-xs text-[#9CA3AF]">Completed</div>
                                 <div className="text-sm text-[#E8E8F0]">{formatTime(task.completed_at)}</div>
                               </div>
                             </div>
                             {task.result && (
                               <div>
-                                <div className="text-xs text-[#6B7280] mb-1">Result</div>
+                                <div className="text-xs text-[#9CA3AF] mb-1">Result</div>
                                 <pre className="text-sm text-[#E8E8F0] bg-[#0C0C18] p-3 rounded-lg border border-[#00F0FF]/10 overflow-x-auto whitespace-pre-wrap font-mono text-xs">
                                   {task.result}
                                 </pre>
                               </div>
                             )}
                             {!task.result && task.status !== 'queued' && task.status !== 'running' && (
-                              <div className="text-xs text-[#6B7280] italic">No result data available.</div>
+                              <div className="text-xs text-[#9CA3AF] italic">No result data available.</div>
                             )}
                           </div>
                         )}
@@ -939,7 +940,7 @@ export function PicoFleetPage() {
         <TabsContent value="config" className="mt-6 space-y-6">
           {/* Agent selector */}
           <div className="flex items-center gap-4">
-            <label className="text-sm text-[#6B7280] shrink-0">Configure agent:</label>
+            <label className="text-sm text-[#9CA3AF] shrink-0">Configure agent:</label>
             <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
               <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] max-w-[300px]">
                 <SelectValue placeholder="Select an agent..." />
@@ -957,7 +958,7 @@ export function PicoFleetPage() {
           {!selectedAgent ? (
             <div className="text-center py-16">
               <Bot className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-3" />
-              <p className="text-[#6B7280]">Select an agent above to configure.</p>
+              <p className="text-[#9CA3AF]">Select an agent above to configure.</p>
             </div>
           ) : (
             <>
@@ -991,7 +992,7 @@ export function PicoFleetPage() {
                         )}
                       </div>
                       <h3 className="font-semibold text-[#E8E8F0] mb-1">{p.name}</h3>
-                      <p className="text-sm text-[#6B7280]">{p.desc}</p>
+                      <p className="text-sm text-[#9CA3AF]">{p.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -1029,7 +1030,7 @@ export function PicoFleetPage() {
                         )}
                       </div>
                       <h3 className="font-semibold text-[#E8E8F0] mb-1">{m.name}</h3>
-                      <p className="text-sm text-[#6B7280]">{m.desc}</p>
+                      <p className="text-sm text-[#9CA3AF]">{m.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -1058,7 +1059,7 @@ export function PicoFleetPage() {
                       }`}
                     >
                       <div className="text-sm font-medium text-[#E8E8F0]">{opt.label}</div>
-                      <div className="text-xs text-[#6B7280]">{opt.desc}</div>
+                      <div className="text-xs text-[#9CA3AF]">{opt.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -1086,7 +1087,7 @@ export function PicoFleetPage() {
                     >
                       <div className="text-left">
                         <div className="font-medium text-[#E8E8F0]">{v.name}</div>
-                        <div className="text-sm text-[#6B7280]">{v.desc}</div>
+                        <div className="text-sm text-[#9CA3AF]">{v.desc}</div>
                       </div>
                       {cfgVoice === v.id && (
                         <div className="w-5 h-5 rounded-full bg-[#00F0FF] flex items-center justify-center shrink-0">
@@ -1102,7 +1103,7 @@ export function PicoFleetPage() {
               <div className="p-6 rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/20 space-y-6">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label htmlFor="slider-creativity" className="text-sm text-[#6B7280]">Creativity</label>
+                    <label htmlFor="slider-creativity" className="text-sm text-[#9CA3AF]">Creativity</label>
                     <span className="text-sm text-[#E8E8F0] font-mono">{cfgCreativity[0]}%</span>
                   </div>
                   <Slider
@@ -1113,14 +1114,14 @@ export function PicoFleetPage() {
                     step={10}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-[#6B7280] mt-1">
+                  <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
                     <span>Conservative</span>
                     <span>Creative</span>
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label htmlFor="slider-formality" className="text-sm text-[#6B7280]">Formality</label>
+                    <label htmlFor="slider-formality" className="text-sm text-[#9CA3AF]">Formality</label>
                     <span className="text-sm text-[#E8E8F0] font-mono">{cfgFormality[0]}%</span>
                   </div>
                   <Slider
@@ -1131,7 +1132,7 @@ export function PicoFleetPage() {
                     step={10}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-[#6B7280] mt-1">
+                  <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
                     <span>Casual</span>
                     <span>Formal</span>
                   </div>
@@ -1141,7 +1142,7 @@ export function PicoFleetPage() {
               {/* System Prompt & Custom Commands */}
               <div className="p-6 rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/20 space-y-4">
                 <div>
-                  <label className="text-sm text-[#6B7280] block mb-2">System Prompt</label>
+                  <label className="text-sm text-[#9CA3AF] block mb-2">System Prompt</label>
                   <Textarea
                     value={cfgSystemPrompt}
                     onChange={(e) => { setCfgSystemPrompt(e.target.value); setConfigDirty(true); }}
@@ -1150,7 +1151,7 @@ export function PicoFleetPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-[#6B7280] block mb-2">Custom Commands</label>
+                  <label className="text-sm text-[#9CA3AF] block mb-2">Custom Commands</label>
                   <Textarea
                     value={cfgCustomCommands}
                     onChange={(e) => { setCfgCustomCommands(e.target.value); setConfigDirty(true); }}
@@ -1184,7 +1185,7 @@ export function PicoFleetPage() {
                         }`}
                       >
                         <tool.icon className="w-5 h-5" style={{ color: isActive ? tool.color : '#6B7280' }} />
-                        <span className={`text-sm font-medium ${isActive ? 'text-[#E8E8F0]' : 'text-[#6B7280]'}`}>
+                        <span className={`text-sm font-medium ${isActive ? 'text-[#E8E8F0]' : 'text-[#9CA3AF]'}`}>
                           {tool.label}
                         </span>
                         {isActive && (
@@ -1217,7 +1218,7 @@ export function PicoFleetPage() {
                       <div className="text-sm font-medium text-[#E8E8F0]">
                         Agent {cfgEnabled ? 'Enabled' : 'Disabled'}
                       </div>
-                      <div className="text-xs text-[#6B7280]">
+                      <div className="text-xs text-[#9CA3AF]">
                         {cfgEnabled && agents.filter(a => a.enabled).length <= 1
                           ? 'Last active agent — cannot be disabled'
                           : cfgEnabled ? 'This agent will process tasks' : 'This agent is paused and will not process tasks'}
@@ -1256,7 +1257,7 @@ export function PicoFleetPage() {
               </CardHeader>
               <CardContent className="pt-0 space-y-4">
                 <div>
-                  <label className="text-sm text-[#6B7280] block mb-1">Name</label>
+                  <label className="text-sm text-[#9CA3AF] block mb-1">Name</label>
                   <Input
                     value={cronName}
                     onChange={e => setCronName(e.target.value)}
@@ -1266,7 +1267,7 @@ export function PicoFleetPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-sm text-[#6B7280] block mb-1">Task Type</label>
+                    <label className="text-sm text-[#9CA3AF] block mb-1">Task Type</label>
                     <Select value={cronTaskType} onValueChange={setCronTaskType}>
                       <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]">
                         <SelectValue />
@@ -1279,7 +1280,7 @@ export function PicoFleetPage() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm text-[#6B7280] block mb-1">Interval</label>
+                    <label className="text-sm text-[#9CA3AF] block mb-1">Interval</label>
                     <Select value={String(cronInterval)} onValueChange={v => setCronInterval(Number(v))}>
                       <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]">
                         <SelectValue />
@@ -1292,7 +1293,7 @@ export function PicoFleetPage() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm text-[#6B7280] block mb-1">Agent Slot</label>
+                    <label className="text-sm text-[#9CA3AF] block mb-1">Agent Slot</label>
                     <Select value={String(cronAgentSlot)} onValueChange={v => setCronAgentSlot(Number(v))}>
                       <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]">
                         <SelectValue />
@@ -1311,7 +1312,7 @@ export function PicoFleetPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-[#6B7280] block mb-1">Config (JSON)</label>
+                  <label className="text-sm text-[#9CA3AF] block mb-1">Config (JSON)</label>
                   <Textarea
                     value={cronConfig}
                     onChange={e => setCronConfig(e.target.value)}
@@ -1323,7 +1324,7 @@ export function PicoFleetPage() {
                   <Button
                     variant="outline"
                     onClick={resetCronForm}
-                    className="border-[#00F0FF]/30 text-[#6B7280]"
+                    className="border-[#00F0FF]/30 text-[#9CA3AF]"
                   >
                     Cancel
                   </Button>
@@ -1351,8 +1352,8 @@ export function PicoFleetPage() {
           {cronJobs.length === 0 && !showCronForm ? (
             <div className="text-center py-16">
               <Timer className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-3" />
-              <p className="text-[#6B7280] mb-2">No cron jobs yet.</p>
-              <p className="text-xs text-[#6B7280]">Create recurring tasks that run on a schedule.</p>
+              <p className="text-[#9CA3AF] mb-2">No cron jobs yet.</p>
+              <p className="text-xs text-[#9CA3AF]">Create recurring tasks that run on a schedule.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -1375,7 +1376,7 @@ export function PicoFleetPage() {
                               {typeLabel}
                             </Badge>
                           </div>
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-[#6B7280]">
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-[#9CA3AF]">
                             <span className="flex items-center gap-1">
                               <Timer className="w-3 h-3" />
                               Every {intervalLabel}
@@ -1403,7 +1404,7 @@ export function PicoFleetPage() {
                             size="sm"
                             onClick={() => handleEditCron(job)}
                             aria-label={`Edit cron job ${job.name}`}
-                            className="text-[#6B7280] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 p-0"
+                            className="text-[#9CA3AF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 p-0"
                           >
                             <Edit3 className="w-4 h-4" />
                           </Button>
@@ -1412,7 +1413,7 @@ export function PicoFleetPage() {
                             size="sm"
                             onClick={() => handleDeleteCron(job.id)}
                             aria-label={`Delete cron job ${job.name}`}
-                            className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0"
+                            className="text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>

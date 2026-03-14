@@ -320,7 +320,7 @@ export function WebsiteBuilderPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[#E8E8F0]">Website Builder</h1>
-        <p className="text-sm text-[#6B7280] mt-1">Build, manage, and deploy your web projects</p>
+        <p className="text-sm text-[#9CA3AF] mt-1">Build, manage, and deploy your web projects</p>
       </div>
 
       {/* Toast */}
@@ -367,20 +367,20 @@ export function WebsiteBuilderPage() {
         <TabsContent value="builder" className="mt-6">
           {/* Project selector */}
           <div className="mb-6">
-            <label className="text-sm text-[#6B7280] mb-2 block">Working on:</label>
+            <label className="text-sm text-[#9CA3AF] mb-2 block">Working on:</label>
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setSelectedProject(null)}
                 className={`px-3 py-2 rounded-lg text-sm transition-colors ${
                   !selectedProject
                     ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/30'
-                    : 'bg-[#0C0C18] text-[#6B7280] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
+                    : 'bg-[#0C0C18] text-[#9CA3AF] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
                 }`}
               >
                 New Project
               </button>
               {projectsLoading ? (
-                <div className="flex items-center gap-2 text-[#6B7280] text-sm px-3">
+                <div className="flex items-center gap-2 text-[#9CA3AF] text-sm px-3">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Loading...
                 </div>
@@ -392,7 +392,7 @@ export function WebsiteBuilderPage() {
                     className={`px-3 py-2 rounded-lg text-sm transition-colors truncate max-w-[200px] ${
                       selectedProject?.id === p.id
                         ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/30'
-                        : 'bg-[#0C0C18] text-[#6B7280] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
+                        : 'bg-[#0C0C18] text-[#9CA3AF] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
                     }`}
                   >
                     {p.title}
@@ -412,7 +412,7 @@ export function WebsiteBuilderPage() {
                   ? 'border-[#ADFF2F]/40 bg-[#ADFF2F]/5'
                   : 'border-[#00F0FF]/10 hover:border-[#ADFF2F]/30 bg-[#0C0C18]/50'
               }`}
-              style={{ backdropFilter: 'blur(8px)' }}
+              style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -422,10 +422,10 @@ export function WebsiteBuilderPage() {
                 </div>
                 <div>
                   <h3 className="text-[#E8E8F0] font-semibold">Imagine & Add</h3>
-                  <p className="text-xs text-[#6B7280]">Let AI build it for you</p>
+                  <p className="text-xs text-[#9CA3AF]">Let AI build it for you</p>
                 </div>
               </div>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[#9CA3AF]">
                 Describe what you want and the agent will create or update your project.
               </p>
             </button>
@@ -443,20 +443,20 @@ export function WebsiteBuilderPage() {
                   ? 'border-[#00F0FF]/40 bg-[#00F0FF]/5'
                   : 'border-[#00F0FF]/10 hover:border-[#00F0FF]/30 bg-[#0C0C18]/50'
               }`}
-              style={{ backdropFilter: 'blur(8px)' }}
+              style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                   builderMode === 'dev' ? 'bg-[#00F0FF]/20' : 'bg-[#00F0FF]/10'
                 }`}>
-                  <Terminal className={`w-5 h-5 ${builderMode === 'dev' ? 'text-[#00F0FF]' : 'text-[#6B7280]'}`} />
+                  <Terminal className={`w-5 h-5 ${builderMode === 'dev' ? 'text-[#00F0FF]' : 'text-[#9CA3AF]'}`} />
                 </div>
                 <div>
                   <h3 className="text-[#E8E8F0] font-semibold">Feelin&apos; to be a Dev</h3>
-                  <p className="text-xs text-[#6B7280]">I&apos;ll input on it myself</p>
+                  <p className="text-xs text-[#9CA3AF]">I&apos;ll input on it myself</p>
                 </div>
               </div>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[#9CA3AF]">
                 Write HTML, CSS, and JavaScript directly. Full control over your code.
               </p>
             </button>
@@ -471,7 +471,7 @@ export function WebsiteBuilderPage() {
                   {selectedProject ? `Update "${selectedProject.title}"` : 'Create Something New'}
                 </h3>
               </div>
-              <p className="text-sm text-[#6B7280] mb-4">
+              <p className="text-sm text-[#9CA3AF] mb-4">
                 {selectedProject
                   ? 'Describe changes you want — the agent will update your existing project.'
                   : 'Describe what you want to build — the agent will create a new project for you.'}
@@ -515,7 +515,7 @@ export function WebsiteBuilderPage() {
               {/* Title input — only shown for new projects */}
               {!selectedProject && (
                 <div className="rounded-xl border border-[#00F0FF]/15 bg-[#0C0C18]/50 p-4 space-y-3">
-                  <p className="text-sm text-[#6B7280]">
+                  <p className="text-sm text-[#9CA3AF]">
                     Starting fresh? Give your project a name and start coding below. Or select an existing project above to edit it.
                   </p>
                   <input
@@ -605,7 +605,7 @@ export function WebsiteBuilderPage() {
                           }, 50);
                         }
                       }}
-                      className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors text-sm"
+                      className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors text-sm"
                     >
                       <Eye className="w-4 h-4" />
                       {showPreview ? 'Hide Preview' : 'Preview'}
@@ -616,8 +616,8 @@ export function WebsiteBuilderPage() {
               {showPreview && (
                 <div className="rounded-2xl border border-[#00F0FF]/20 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-2 bg-[#0C0C18] border-b border-[#00F0FF]/10">
-                    <span className="text-xs text-[#6B7280] font-mono">Preview</span>
-                    <button onClick={() => setShowPreview(false)} className="text-[#6B7280] hover:text-[#E8E8F0]">
+                    <span className="text-xs text-[#9CA3AF] font-mono">Preview</span>
+                    <button onClick={() => setShowPreview(false)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#E8E8F0] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Close preview">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -647,7 +647,7 @@ export function WebsiteBuilderPage() {
                   <h3 className="text-lg font-semibold text-[#E8E8F0] flex items-center gap-2">
                     <Bot className="w-5 h-5 text-[#00FF88]" />
                     Assigned Weebos
-                    <span className="text-xs text-[#6B7280] font-normal ml-1">
+                    <span className="text-xs text-[#9CA3AF] font-normal ml-1">
                       {assignedAgents.length}/{MAX_ASSIGNED} max
                     </span>
                   </h3>
@@ -656,8 +656,8 @@ export function WebsiteBuilderPage() {
                 {assignedAgents.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-[#00FF88]/20 p-8 text-center">
                     <Bot className="w-10 h-10 text-[#00FF88]/30 mx-auto mb-3" />
-                    <p className="text-[#6B7280] text-sm">No agents assigned yet.</p>
-                    <p className="text-[#6B7280] text-xs mt-1">Assign agents from your fleet below, or deploy a new one.</p>
+                    <p className="text-[#9CA3AF] text-sm">No agents assigned yet.</p>
+                    <p className="text-[#9CA3AF] text-xs mt-1">Assign agents from your fleet below, or deploy a new one.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -676,7 +676,7 @@ export function WebsiteBuilderPage() {
                               <span className="text-xl">{personality}</span>
                               <div>
                                 <div className="font-semibold text-[#E8E8F0] text-sm">{agent.name}</div>
-                                <div className="text-xs text-[#6B7280] capitalize">Slot {agent.slot} &middot; {agent.personality}</div>
+                                <div className="text-xs text-[#9CA3AF] capitalize">Slot {agent.slot} &middot; {agent.personality}</div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -693,8 +693,8 @@ export function WebsiteBuilderPage() {
                               {/* Unassign */}
                               <button
                                 onClick={() => toggleAssign(agent.slot)}
-                                className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
-                                title="Unassign from Builder"
+                                className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                                aria-label={`Unassign ${agent.name} from Builder`}
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -704,11 +704,11 @@ export function WebsiteBuilderPage() {
                           {/* Stats row */}
                           <div className="flex gap-3 mb-3">
                             <div className="flex-1 p-2.5 rounded-lg bg-[#06060B] border border-[#00FF88]/10">
-                              <div className="text-xs text-[#6B7280]">Completed</div>
+                              <div className="text-xs text-[#9CA3AF]">Completed</div>
                               <div className="text-lg font-bold text-[#00FF88] font-mono">{agent.tasks_completed}</div>
                             </div>
                             <div className="flex-1 p-2.5 rounded-lg bg-[#06060B] border border-[#FF6161]/10">
-                              <div className="text-xs text-[#6B7280]">Failed</div>
+                              <div className="text-xs text-[#9CA3AF]">Failed</div>
                               <div className="text-lg font-bold text-[#FF6161] font-mono">{agent.tasks_failed}</div>
                             </div>
                           </div>
@@ -716,7 +716,7 @@ export function WebsiteBuilderPage() {
                           {/* Current work progress */}
                           {agentTasks.length > 0 ? (
                             <div className="space-y-2">
-                              <div className="text-xs text-[#6B7280] font-medium">Current Work</div>
+                              <div className="text-xs text-[#9CA3AF] font-medium">Current Work</div>
                               {agentTasks.slice(0, 2).map(task => (
                                 <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
                                   {task.status === 'running' ? (
@@ -725,7 +725,7 @@ export function WebsiteBuilderPage() {
                                     <Clock className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
                                   )}
                                   <span className="text-xs text-[#E8E8F0] truncate flex-1">{task.description}</span>
-                                  <span className="text-[10px] capitalize shrink-0"
+                                  <span className="text-xs capitalize shrink-0"
                                     style={{ color: task.status === 'running' ? '#FFB800' : '#00F0FF' }}>
                                     {task.status}
                                   </span>
@@ -734,12 +734,12 @@ export function WebsiteBuilderPage() {
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
-                              <CheckCircle className="w-3.5 h-3.5 text-[#6B7280]" />
-                              <span className="text-xs text-[#6B7280]">No active tasks — ready for work</span>
+                              <CheckCircle className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                              <span className="text-xs text-[#9CA3AF]">No active tasks — ready for work</span>
                             </div>
                           )}
 
-                          <div className="mt-2 text-[10px] text-[#6B7280] flex items-center gap-1">
+                          <div className="mt-2 text-xs text-[#9CA3AF] flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             Created {formatTimeAgo(agent.created_at)}
                           </div>
@@ -781,7 +781,7 @@ export function WebsiteBuilderPage() {
                       )}
                     </button>
                   </div>
-                  <p className="text-xs text-[#6B7280] mt-2">
+                  <p className="text-xs text-[#9CA3AF] mt-2">
                     The planner will break your request into tasks and assign them to available agents.
                   </p>
                 </div>
@@ -807,9 +807,9 @@ export function WebsiteBuilderPage() {
                           <span className="text-lg">{personality}</span>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium text-[#E8E8F0] truncate">{agent.name}</div>
-                            <div className="text-xs text-[#6B7280]">Slot {agent.slot}</div>
+                            <div className="text-xs text-[#9CA3AF]">Slot {agent.slot}</div>
                           </div>
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px]"
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs"
                             style={{ background: `${color}15`, color }}>
                             {statusMeta[agent.status]?.label ?? agent.status}
                           </div>
@@ -831,7 +831,7 @@ export function WebsiteBuilderPage() {
 
                   {creatingSlot !== null ? (
                     <div className="rounded-2xl border border-dashed border-[#00F0FF]/30 p-5 max-w-md">
-                      <p className="text-sm text-[#6B7280] mb-3">Choose personality for Slot {creatingSlot}</p>
+                      <p className="text-sm text-[#9CA3AF] mb-3">Choose personality for Slot {creatingSlot}</p>
                       <div className="flex gap-2 mb-3">
                         {([
                           { id: 'weebo' as const, emoji: '🤖', label: 'Weebo', color: '#00FF88' },
@@ -863,7 +863,7 @@ export function WebsiteBuilderPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => { setCreatingSlot(null); setNewAgentName(''); }}
-                          className="px-4 py-2 rounded-xl border border-[#00F0FF]/20 text-[#6B7280] text-sm hover:text-[#E8E8F0] transition-colors"
+                          className="px-4 py-2 rounded-xl border border-[#00F0FF]/20 text-[#9CA3AF] text-sm hover:text-[#E8E8F0] transition-colors"
                         >
                           Cancel
                         </button>
@@ -885,7 +885,7 @@ export function WebsiteBuilderPage() {
                           className="flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-[#00F0FF]/20 hover:border-[#00FF88]/40 hover:bg-[#00FF88]/5 transition-all cursor-pointer group"
                         >
                           <Plus className="w-5 h-5 text-[#00F0FF] group-hover:text-[#00FF88]" />
-                          <span className="text-sm text-[#6B7280] group-hover:text-[#E8E8F0]">Slot {slot}</span>
+                          <span className="text-sm text-[#9CA3AF] group-hover:text-[#E8E8F0]">Slot {slot}</span>
                         </button>
                       ))}
                     </div>
@@ -897,7 +897,7 @@ export function WebsiteBuilderPage() {
               {assignedAgents.length > 0 && (
                 <div className="pt-4 border-t border-[#00F0FF]/10">
                   <details className="group">
-                    <summary className="text-xs text-[#6B7280] cursor-pointer hover:text-[#E8E8F0] transition-colors flex items-center gap-1">
+                    <summary className="text-xs text-[#9CA3AF] cursor-pointer hover:text-[#E8E8F0] transition-colors flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
                       Manage assigned agents
                     </summary>
@@ -910,7 +910,7 @@ export function WebsiteBuilderPage() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => toggleAssign(agent.slot)}
-                              className="px-3 py-1 rounded-lg text-xs text-[#6B7280] border border-[#00F0FF]/10 hover:text-[#E8E8F0] hover:border-[#00F0FF]/30 transition-colors"
+                              className="px-3 py-1 rounded-lg text-xs text-[#9CA3AF] border border-[#00F0FF]/10 hover:text-[#E8E8F0] hover:border-[#00F0FF]/30 transition-colors"
                             >
                               Unassign
                             </button>

@@ -157,7 +157,7 @@ function AccountsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-[#6B7280]">Connect your social media accounts for automated posting.</p>
+        <p className="text-sm text-[#9CA3AF]">Connect your social media accounts for automated posting.</p>
         <Button size="sm" onClick={() => setShowForm(!showForm)} className="bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20">
           <Plus className="w-4 h-4 mr-1" /> Add Account
         </Button>
@@ -169,7 +169,7 @@ function AccountsTab() {
           <CardContent className="p-4 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-[#6B7280] mb-1 block">Platform</label>
+                <label className="text-xs text-[#9CA3AF] mb-1 block">Platform</label>
                 <Select value={platform} onValueChange={setPlatform}>
                   <SelectTrigger className="bg-[#06060B] border-[#1a1a2e]"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -179,13 +179,13 @@ function AccountsTab() {
                 </Select>
               </div>
               <div>
-                <label className="text-xs text-[#6B7280] mb-1 block">Account Name</label>
+                <label className="text-xs text-[#9CA3AF] mb-1 block">Account Name</label>
                 <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="My Business Account" className="bg-[#06060B] border-[#1a1a2e]" />
               </div>
             </div>
 
             <div>
-              <label className="text-xs text-[#6B7280] mb-1 block">Posting Method</label>
+              <label className="text-xs text-[#9CA3AF] mb-1 block">Posting Method</label>
               <Select value={postingMethod} onValueChange={setPostingMethod}>
                 <SelectTrigger className="bg-[#06060B] border-[#1a1a2e]"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -197,7 +197,7 @@ function AccountsTab() {
 
             {postingMethod === 'webhook' && (
               <div>
-                <label className="text-xs text-[#6B7280] mb-1 block">Webhook URL</label>
+                <label className="text-xs text-[#9CA3AF] mb-1 block">Webhook URL</label>
                 <Input value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} placeholder="https://your-webhook.example.com/post" className="bg-[#06060B] border-[#1a1a2e]" />
               </div>
             )}
@@ -205,11 +205,11 @@ function AccountsTab() {
             {postingMethod === 'api' && (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-[#6B7280] mb-1 block">Page ID</label>
+                  <label className="text-xs text-[#9CA3AF] mb-1 block">Page ID</label>
                   <Input value={pageId} onChange={(e) => setPageId(e.target.value)} placeholder="Page/Account ID" className="bg-[#06060B] border-[#1a1a2e]" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6B7280] mb-1 block">Access Token</label>
+                  <label className="text-xs text-[#9CA3AF] mb-1 block">Access Token</label>
                   <Input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Long-lived access token" className="bg-[#06060B] border-[#1a1a2e]" />
                 </div>
               </div>
@@ -231,7 +231,7 @@ function AccountsTab() {
 
       {/* Account Cards */}
       {accounts.length === 0 && !showForm && (
-        <div className="text-center py-12 text-[#6B7280]">
+        <div className="text-center py-12 text-[#9CA3AF]">
           <Share2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">No social accounts connected yet.</p>
         </div>
@@ -262,12 +262,12 @@ function AccountsTab() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-[#E8E8F0] truncate">{account.account_name}</span>
                     <StatusBadge status={account.status} />
-                    <Badge variant="outline" className="text-xs text-[#6B7280] border-[#1a1a2e]">
+                    <Badge variant="outline" className="text-xs text-[#9CA3AF] border-[#1a1a2e]">
                       {account.posting_method === 'webhook' ? <Webhook className="w-3 h-3 mr-1" /> : <Key className="w-3 h-3 mr-1" />}
                       {account.posting_method}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-[#6B7280]">
+                  <div className="flex items-center gap-3 mt-1 text-xs text-[#9CA3AF]">
                     <span>{account.posts_count} posts</span>
                     {account.last_post_at && (
                       <span>Last: {new Date(account.last_post_at).toLocaleDateString()}</span>
@@ -276,13 +276,13 @@ function AccountsTab() {
                 </div>
 
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleToggleStatus(account)} title={account.status === 'active' ? 'Pause' : 'Activate'}>
-                    {account.status === 'active' ? <ToggleRight className="w-4 h-4 text-[#00FF88]" /> : <ToggleLeft className="w-4 h-4 text-[#6B7280]" />}
+                  <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handleToggleStatus(account)} aria-label={account.status === 'active' ? 'Pause ' + account.account_name : 'Activate ' + account.account_name}>
+                    {account.status === 'active' ? <ToggleRight className="w-4 h-4 text-[#00FF88]" /> : <ToggleLeft className="w-4 h-4 text-[#9CA3AF]" />}
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleTest(account.id)} disabled={testing === account.id}>
+                  <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handleTest(account.id)} disabled={testing === account.id} aria-label={'Test ' + account.account_name}>
                     {testing === account.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-[#00F0FF]" />}
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleDelete(account.id)}>
+                  <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handleDelete(account.id)} aria-label={'Delete ' + account.account_name}>
                     <Trash2 className="w-4 h-4 text-[#FF6161]" />
                   </Button>
                 </div>
@@ -470,11 +470,11 @@ function ContentPlanTab() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <label className="text-xs text-[#6B7280] mb-1 block">Topic</label>
+              <label className="text-xs text-[#9CA3AF] mb-1 block">Topic</label>
               <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., AI tools for developers" className="bg-[#06060B] border-[#1a1a2e]" />
             </div>
             <div>
-              <label className="text-xs text-[#6B7280] mb-1 block">Niche</label>
+              <label className="text-xs text-[#9CA3AF] mb-1 block">Niche</label>
               <Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g., Tech startups" className="bg-[#06060B] border-[#1a1a2e]" />
             </div>
             <Button onClick={handleGenerate} disabled={generating || !topic || !niche} className="w-full bg-gradient-to-r from-[#00F0FF]/20 to-[#FF2D78]/20 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40">
@@ -498,7 +498,7 @@ function ContentPlanTab() {
                     <span className="text-sm text-[#E8E8F0]">{plan.title}</span>
                     <StatusBadge status={plan.status} />
                   </div>
-                  <span className="text-xs text-[#6B7280]">{new Date(plan.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-[#9CA3AF]">{new Date(plan.created_at).toLocaleDateString()}</span>
                 </button>
               ))}
             </div>
@@ -527,9 +527,9 @@ function ContentPlanTab() {
               <h3 className="text-sm font-medium text-[#E8E8F0]">{activePlan.title}</h3>
               <div className="flex items-center gap-2 mt-1">
                 <StatusBadge status={activePlan.status} />
-                <span className="text-xs text-[#6B7280]">{items.length} items</span>
+                <span className="text-xs text-[#9CA3AF]">{items.length} items</span>
                 {activePlan.start_date && (
-                  <span className="text-xs text-[#6B7280]">Starts: {new Date(activePlan.start_date).toLocaleDateString()}</span>
+                  <span className="text-xs text-[#9CA3AF]">Starts: {new Date(activePlan.start_date).toLocaleDateString()}</span>
                 )}
               </div>
             </div>
@@ -542,7 +542,7 @@ function ContentPlanTab() {
               <Button size="sm" variant="ghost" onClick={() => { setActivePlan(null); loadData(); }}>
                 Back
               </Button>
-              <Button size="sm" variant="ghost" onClick={handleDeletePlan} className="text-[#FF6161]">
+              <Button size="sm" variant="ghost" onClick={handleDeletePlan} className="text-[#FF6161] min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Delete plan">
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
@@ -553,11 +553,11 @@ function ContentPlanTab() {
             <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[#1a1a2e] space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-[#6B7280] mb-1 block">Start Date</label>
+                  <label className="text-xs text-[#9CA3AF] mb-1 block">Start Date</label>
                   <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-[#0C0C18] border-[#1a1a2e]" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6B7280] mb-1 block">Social Account</label>
+                  <label className="text-xs text-[#9CA3AF] mb-1 block">Social Account</label>
                   <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
                     <SelectTrigger className="bg-[#0C0C18] border-[#1a1a2e]"><SelectValue placeholder="Select account" /></SelectTrigger>
                     <SelectContent>
@@ -588,23 +588,23 @@ function ContentPlanTab() {
               <div key={item.id} className={`p-3 rounded-lg border transition-colors ${item.enabled ? 'bg-[#06060B] border-[#1a1a2e]' : 'bg-[#06060B]/50 border-[#1a1a2e]/50 opacity-60'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-[#6B7280]">Slot {item.slot}</span>
+                    <span className="text-xs font-mono text-[#9CA3AF]">Slot {item.slot}</span>
                     <StatusIcon status={item.status} />
                     <StatusBadge status={item.status} />
                   </div>
                   <div className="flex items-center gap-1">
                     <Switch checked={!!item.enabled} onCheckedChange={() => handleToggleItem(item)} />
                     {editingItem === item.id ? (
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleSaveItem(item)}>
+                      <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handleSaveItem(item)} aria-label="Save changes">
                         <CheckCircle className="w-4 h-4 text-[#00FF88]" />
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setEditingItem(item.id); setEditCaption(item.caption); setEditMediaId(item.media_id); }}>
-                        <Edit3 className="w-4 h-4 text-[#6B7280]" />
+                      <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => { setEditingItem(item.id); setEditCaption(item.caption); setEditMediaId(item.media_id); }} aria-label="Edit item">
+                        <Edit3 className="w-4 h-4 text-[#9CA3AF]" />
                       </Button>
                     )}
                     {item.enabled && activePlan.status === 'active' && item.status !== 'posted' && (
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handlePostNow(item)} disabled={postingItem === item.id}>
+                      <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handlePostNow(item)} disabled={postingItem === item.id} aria-label="Post now">
                         {postingItem === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-[#00F0FF]" />}
                       </Button>
                     )}
@@ -627,7 +627,7 @@ function ContentPlanTab() {
                 {item.media_id && editingItem !== item.id && (
                   <div className="mt-2 flex items-center gap-2">
                     {item.media_type === 'image' ? <Image className="w-4 h-4 text-[#00F0FF]" /> : item.media_type === 'video' ? <Film className="w-4 h-4 text-[#FFB800]" /> : null}
-                    <span className="text-xs text-[#6B7280] font-mono">{item.media_id}</span>
+                    <span className="text-xs text-[#9CA3AF] font-mono">{item.media_id}</span>
                     {item.media_url && (
                       <a href={item.media_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#00F0FF] hover:underline">
                         <Eye className="w-3 h-3 inline mr-1" />preview
@@ -638,7 +638,7 @@ function ContentPlanTab() {
 
                 {/* Scheduled time */}
                 {item.scheduled_at && (
-                  <div className="mt-1 text-xs text-[#6B7280]">
+                  <div className="mt-1 text-xs text-[#9CA3AF]">
                     <Clock className="w-3 h-3 inline mr-1" />
                     {new Date(item.scheduled_at).toLocaleString()}
                   </div>
@@ -703,7 +703,7 @@ function PostsTab() {
       {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
         {['all', 'scheduled', 'posted', 'failed'].map((f) => (
-          <Button key={f} size="sm" variant={filter === f ? 'default' : 'ghost'} onClick={() => setFilter(f)} className={filter === f ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'}>
+          <Button key={f} size="sm" variant={filter === f ? 'default' : 'ghost'} onClick={() => setFilter(f)} className={filter === f ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#9CA3AF]'}>
             {f.charAt(0).toUpperCase() + f.slice(1)}
             {f !== 'all' && (
               <span className="ml-1 text-xs opacity-60">({allItems.filter(i => f === 'all' || i.status === f).length})</span>
@@ -713,7 +713,7 @@ function PostsTab() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-12 text-[#6B7280]">
+        <div className="text-center py-12 text-[#9CA3AF]">
           <Clock className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">No posts to show.</p>
         </div>
@@ -727,17 +727,17 @@ function PostsTab() {
                 <StatusIcon status={item.status} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-mono text-[#6B7280]">Day {item.day_number}</span>
+                    <span className="text-xs font-mono text-[#9CA3AF]">Day {item.day_number}</span>
                     <StatusBadge status={item.status} />
                     {item.media_type && (
-                      <Badge variant="outline" className="text-xs text-[#6B7280] border-[#1a1a2e]">
+                      <Badge variant="outline" className="text-xs text-[#9CA3AF] border-[#1a1a2e]">
                         {item.media_type === 'image' ? <Image className="w-3 h-3 mr-1" /> : <Film className="w-3 h-3 mr-1" />}
                         {item.media_type}
                       </Badge>
                     )}
                   </div>
                   <p className="text-sm text-[#E8E8F0] mt-1 line-clamp-2">{item.caption}</p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-[#6B7280]">
+                  <div className="flex items-center gap-3 mt-1 text-xs text-[#9CA3AF]">
                     {item.scheduled_at && <span><Clock className="w-3 h-3 inline mr-1" />{new Date(item.scheduled_at).toLocaleString()}</span>}
                     {item.posted_at && <span><CheckCircle className="w-3 h-3 inline mr-1" />Posted {new Date(item.posted_at).toLocaleString()}</span>}
                   </div>
@@ -765,7 +765,7 @@ export function SocialMediaPage() {
         </div>
         <div>
           <h1 className="text-xl font-bold text-[#E8E8F0]">Social Media Handler</h1>
-          <p className="text-sm text-[#6B7280]">Connect accounts, generate content plans, and auto-post on schedule.</p>
+          <p className="text-sm text-[#9CA3AF]">Connect accounts, generate content plans, and auto-post on schedule.</p>
         </div>
       </div>
 

@@ -215,7 +215,7 @@ export function HealthDashboardPage() {
         <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin" />
         {error && (
           <div className="text-center space-y-3">
-            <p className="text-sm text-[#6B7280]">{error}</p>
+            <p className="text-sm text-[#9CA3AF]">{error}</p>
             <Button
               variant="outline"
               size="sm"
@@ -246,7 +246,7 @@ export function HealthDashboardPage() {
           >
             API Health
           </h1>
-          <p className="text-[#6B7280] flex items-center gap-2 text-sm md:text-base">
+          <p className="text-[#9CA3AF] flex items-center gap-2 text-sm md:text-base">
             {connected ? (
               <>
                 <span className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse shrink-0" />
@@ -261,7 +261,7 @@ export function HealthDashboardPage() {
                     variant="outline"
                     size="sm"
                     onClick={handleRetry}
-                    className="ml-2 min-h-[44px] px-3 text-xs border-[#00F0FF]/30 hover:bg-[#00F0FF]/10"
+                    className="ml-2 min-h-[44px] px-3 text-xs border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                   >
                     Retry
                   </Button>
@@ -291,7 +291,7 @@ export function HealthDashboardPage() {
             <CardContent className="p-3 md:p-4">
               <div className="flex items-center gap-2 mb-1">
                 <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-                <span className="text-xs text-[#6B7280]">{stat.label}</span>
+                <span className="text-xs text-[#9CA3AF]">{stat.label}</span>
               </div>
               <p className="text-2xl md:text-xl font-bold text-[#E8E8F0]">{stat.value}</p>
             </CardContent>
@@ -327,12 +327,12 @@ export function HealthDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-[#00F0FF]/20">
           <CardContent className="p-5">
-            <h3 className="text-sm text-[#6B7280] mb-2">Error Rate (5-min window)</h3>
+            <h3 className="text-sm text-[#9CA3AF] mb-2">Error Rate (5-min window)</h3>
             <div className="flex items-end gap-3">
               <span className="text-3xl font-bold" style={{ color: errorRate > 5 ? '#FF6161' : errorRate > 0 ? '#FFB800' : '#00FF88' }}>
                 {errorRate}%
               </span>
-              <span className="text-sm text-[#6B7280] mb-1">
+              <span className="text-sm text-[#9CA3AF] mb-1">
                 {snapshot.metrics.totalErrors} / {snapshot.metrics.totalRequests} requests
               </span>
             </div>
@@ -340,10 +340,10 @@ export function HealthDashboardPage() {
         </Card>
         <Card className="border-[#00F0FF]/20">
           <CardContent className="p-5">
-            <h3 className="text-sm text-[#6B7280] mb-2">Memory Usage</h3>
+            <h3 className="text-sm text-[#9CA3AF] mb-2">Memory Usage</h3>
             <div className="flex items-end gap-3">
               <span className="text-3xl font-bold text-[#00F0FF]">{snapshot.system.memoryMb} MB</span>
-              <span className="text-sm text-[#6B7280] mb-1">heap used</span>
+              <span className="text-sm text-[#9CA3AF] mb-1">heap used</span>
             </div>
           </CardContent>
         </Card>
@@ -358,10 +358,10 @@ export function HealthDashboardPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#00F0FF]/10">
-                    <th className="text-left text-[#6B7280] font-medium px-4 py-3">Endpoint</th>
-                    <th className="text-right text-[#6B7280] font-medium px-4 py-3">Hits</th>
-                    <th className="text-right text-[#6B7280] font-medium px-4 py-3">Errors</th>
-                    <th className="text-right text-[#6B7280] font-medium px-4 py-3">Avg Latency</th>
+                    <th className="text-left text-[#9CA3AF] font-medium px-4 py-3">Endpoint</th>
+                    <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Hits</th>
+                    <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Errors</th>
+                    <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Avg Latency</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -370,7 +370,7 @@ export function HealthDashboardPage() {
                       <td className="px-4 py-2.5 font-mono text-[#E8E8F0] text-xs whitespace-nowrap">{ep.path}</td>
                       <td className="px-4 py-2.5 text-right text-[#E8E8F0]">{ep.count}</td>
                       <td className="px-4 py-2.5 text-right" style={{ color: ep.errors > 0 ? '#FF6161' : '#00FF88' }}>{ep.errors}</td>
-                      <td className="px-4 py-2.5 text-right" style={{ color: ep.avgMs > 1000 ? '#FFB800' : '#6B7280' }}>{ep.avgMs}ms</td>
+                      <td className="px-4 py-2.5 text-right" style={{ color: ep.avgMs > 1000 ? '#FFB800' : '#9CA3AF' }}>{ep.avgMs}ms</td>
                     </tr>
                   ))}
                 </tbody>
@@ -381,7 +381,7 @@ export function HealthDashboardPage() {
       )}
 
       {/* Footer */}
-      <div className="text-center text-xs text-[#6B7280]/50 py-2">
+      <div className="text-center text-xs text-[#9CA3AF]/50 py-2">
         {snapshot.metrics.activeConnections} active stream{snapshot.metrics.activeConnections !== 1 ? 's' : ''} · Window resets every 5 min
       </div>
     </div>

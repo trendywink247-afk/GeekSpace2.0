@@ -946,6 +946,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 onClick={resetChat}
                 className="p-2.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 title="Reset chat"
+                aria-label="Reset chat"
               >
                 <RotateCcw className="w-4 h-4 text-[#6B7280]" />
               </button>
@@ -953,8 +954,9 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             <button
               onClick={handleExport}
               disabled={isExporting}
-              className="p-2.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-2.5 rounded-lg hover:bg-[#00F0FF]/10 active:bg-[#00F0FF]/20 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               title="Export all conversations (JSON)"
+              aria-label="Download chat history"
             >
               <Download className={`w-4 h-4 ${isExporting ? 'text-[#00F0FF] animate-pulse' : 'text-[#6B7280]'}`} />
             </button>
@@ -972,12 +974,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               onClick={() => { setSearchOpen(v => !v); setSearchTerm(''); }}
               className={`p-2.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${searchOpen ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'hover:bg-[#00F0FF]/10 text-[#6B7280]'}`}
               title="Search messages"
+              aria-label="Toggle search"
             >
               <Search className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
               className="p-2.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Close chat panel"
             >
               <X className="w-5 h-5 text-[#6B7280]" />
             </button>
@@ -1420,7 +1424,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           {showScrollToBottom && (
             <button
               onClick={scrollToBottom}
-              className="sticky bottom-4 ml-auto mr-2 flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition-all relative"
+              className="sticky bottom-4 ml-auto mr-2 flex items-center justify-center w-11 h-11 rounded-full shadow-lg transition-all relative"
               style={{ background: 'rgba(0,240,255,0.15)', border: '1px solid rgba(0,240,255,0.4)', color: '#00F0FF' }}
               aria-label="Scroll to bottom"
             >
@@ -1542,7 +1546,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/5 border border-[#00F0FF]/20" data-testid="reply-to-banner">
               <span className="text-[10px] text-[#00F0FF] flex-shrink-0">↩ Replying to</span>
               <span className="text-[11px] text-[#9CA3AF] truncate flex-1">{replyTo.content.slice(0, 60)}{replyTo.content.length > 60 ? '…' : ''}</span>
-              <button onClick={() => setReplyTo(null)} className="text-[#6B7280] hover:text-[#E8E8F0] text-xs flex-shrink-0">✕</button>
+              <button onClick={() => setReplyTo(null)} className="text-[#6B7280] hover:text-[#E8E8F0] text-xs flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss reply">✕</button>
             </div>
           )}
           <div className="flex items-center gap-2">

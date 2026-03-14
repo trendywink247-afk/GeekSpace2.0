@@ -83,7 +83,7 @@ export function StatusPage() {
   return (
     <div className="min-h-screen bg-[#06060B] text-[#E8E8F0]">
       <div className="max-w-3xl mx-auto px-6 py-12">
-        <Button variant="ghost" onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')} className="text-[#6B7280] hover:text-[#E8E8F0] mb-8">
+        <Button variant="ghost" onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')} className="text-[#9CA3AF] hover:text-[#E8E8F0] mb-8 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
           <ArrowLeft className="w-4 h-4 mr-2" />Back
         </Button>
 
@@ -92,7 +92,7 @@ export function StatusPage() {
             <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
               System Status
             </h1>
-            <p className="text-[#6B7280]">
+            <p className="text-[#9CA3AF]">
               {lastChecked ? `Last checked: ${lastChecked.toLocaleTimeString()}` : 'Checking…'}
               {health && ` · v${health.version} · uptime ${Math.floor(health.uptime / 3600)}h ${Math.floor((health.uptime % 3600) / 60)}m`}
             </p>
@@ -101,7 +101,7 @@ export function StatusPage() {
             variant="outline"
             onClick={fetchHealth}
             disabled={checking}
-            className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10"
+            className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
             Refresh
@@ -113,7 +113,7 @@ export function StatusPage() {
             <CardContent className="p-6 text-center">
               <XCircle className="w-10 h-10 text-[#FF6161] mx-auto mb-3" />
               <h2 className="text-xl font-bold text-[#FF6161]">Unable to Reach Server</h2>
-              <p className="text-sm text-[#6B7280] mt-1">Could not connect to the health endpoint</p>
+              <p className="text-sm text-[#9CA3AF] mt-1">Could not connect to the health endpoint</p>
             </CardContent>
           </Card>
         )}
@@ -126,13 +126,13 @@ export function StatusPage() {
                   <>
                     <CheckCircle2 className="w-10 h-10 text-[#ADFF2F] mx-auto mb-3" />
                     <h2 className="text-xl font-bold text-[#ADFF2F]">All Systems Operational</h2>
-                    <p className="text-sm text-[#6B7280] mt-1">Everything is running smoothly</p>
+                    <p className="text-sm text-[#9CA3AF] mt-1">Everything is running smoothly</p>
                   </>
                 ) : (
                   <>
                     <AlertTriangle className="w-10 h-10 text-[#FFD700] mx-auto mb-3" />
                     <h2 className="text-xl font-bold text-[#FFD700]">Partial Degradation</h2>
-                    <p className="text-sm text-[#6B7280] mt-1">Some services are experiencing issues</p>
+                    <p className="text-sm text-[#9CA3AF] mt-1">Some services are experiencing issues</p>
                   </>
                 )}
               </CardContent>
@@ -162,11 +162,11 @@ export function StatusPage() {
         )}
 
         {!health && !error && checking && (
-          <div className="text-center text-[#6B7280] py-12">Checking system status…</div>
+          <div className="text-center text-[#9CA3AF] py-12">Checking system status…</div>
         )}
 
         <div className="mt-12 p-6 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
-          <p className="text-sm text-[#6B7280]">
+          <p className="text-sm text-[#9CA3AF]">
             Experiencing issues? Contact us at{' '}
             <span className="text-[#00F0FF]">support@agentin.chat</span>
           </p>

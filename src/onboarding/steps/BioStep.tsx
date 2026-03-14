@@ -61,14 +61,14 @@ export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChan
 
       {/* Tags first — needed for magic */}
       <div>
-        <label className="text-sm text-[#6B7280] mb-2 block">Tags (select up to 3)</label>
+        <label className="text-sm text-[#9CA3AF] mb-2 block">Tags (select up to 3)</label>
         <div className="flex flex-wrap gap-2">
           {TAG_OPTIONS.map((tag) => (
             <button
               key={tag}
               type="button"
               onClick={() => toggleTag(tag)}
-              className={`px-4 py-2 min-h-[44px] rounded-full text-sm transition-all ${
+              className={`px-4 py-2 min-h-[44px] rounded-full text-sm transition-all focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                 tags.includes(tag)
                   ? 'bg-[#00F0FF]/20 border border-[#00F0FF] text-[#00F0FF]'
                   : 'bg-[#06060B] border border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/50'
@@ -103,7 +103,7 @@ export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChan
       )}
 
       <div>
-        <label className="text-sm text-[#6B7280] mb-2 block">Headline / Tagline</label>
+        <label className="text-sm text-[#9CA3AF] mb-2 block">Headline / Tagline</label>
         <Input
           value={headline}
           onChange={(e) => onHeadlineChange(e.target.value)}
@@ -112,15 +112,15 @@ export function BioStep({ bio, headline, tags, name, onBioChange, onHeadlineChan
         />
       </div>
       <div>
-        <label className="text-sm text-[#6B7280] mb-2 block">Short Bio (min 10 characters)</label>
+        <label className="text-sm text-[#9CA3AF] mb-2 block">Short Bio (min 10 characters)</label>
         <textarea
           value={bio}
           onChange={(e) => onBioChange(e.target.value)}
           placeholder="What do you do? What are you into?"
-          className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF] placeholder:text-[#6B7280]/50"
+          className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] text-base min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 placeholder:text-[#6B7280]/50"
         />
         {bio.length > 0 && bio.length < 10 && (
-          <p className="text-xs text-[#FF3366] mt-1">Bio must be at least 10 characters</p>
+          <p className="text-xs text-[#FF3366] mt-1" role="alert" aria-live="polite">Bio must be at least 10 characters</p>
         )}
       </div>
 

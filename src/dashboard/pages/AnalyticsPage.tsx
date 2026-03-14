@@ -56,7 +56,7 @@ const AGENT_COLORS: Record<string, string> = {
 };
 
 function Sparkline({ data, color = '#00F0FF' }: { data: number[]; color?: string }) {
-  if (!data.length) return <div className="h-12 flex items-center text-[#6B7280] text-xs">No data</div>;
+  if (!data.length) return <div className="h-12 flex items-center text-[#9CA3AF] text-xs">No data</div>;
   const max = Math.max(...data, 1);
   const w = 300;
   const h = 48;
@@ -97,7 +97,7 @@ function HeatmapGrid({ points }: { points: HeatmapPoint[] }) {
       <div className="flex gap-1">
         <div className="flex flex-col gap-1 mr-1 mt-5">
           {dayLabels.map((d, i) => (
-            <div key={i} className="h-3 text-[10px] text-[#6B7280] leading-3">{i % 2 === 1 ? d : ''}</div>
+            <div key={i} className="h-3 text-xs text-[#9CA3AF] leading-3">{i % 2 === 1 ? d : ''}</div>
           ))}
         </div>
         <div className="flex gap-1">
@@ -115,7 +115,7 @@ function HeatmapGrid({ points }: { points: HeatmapPoint[] }) {
           ))}
         </div>
       </div>
-      <div className="flex items-center gap-2 mt-2 text-xs text-[#6B7280]">
+      <div className="flex items-center gap-2 mt-2 text-xs text-[#9CA3AF]">
         <span>Less</span>
         {INTENSITY_COLORS.map((cls, i) => (
           <div key={i} className={`w-3 h-3 rounded-sm ${cls}`} />
@@ -147,7 +147,7 @@ function StatCard({
       </div>
       <div>
         <div className="text-lg font-bold text-[#F4F6FF]">{value}</div>
-        <div className="text-xs text-[#6B7280]">{label}</div>
+        <div className="text-xs text-[#9CA3AF]">{label}</div>
       </div>
     </div>
   );
@@ -204,12 +204,12 @@ export function AnalyticsPage() {
             <TrendingUp className="w-6 h-6 text-[#00F0FF]" />
             Personal Analytics
           </h1>
-          <p className="text-sm text-[#6B7280] mt-1">Your activity patterns across Agentin</p>
+          <p className="text-sm text-[#9CA3AF] mt-1">Your activity patterns across Agentin</p>
         </div>
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0e0e1a] border border-[#1a1a2e] text-[#6B7280] hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all text-sm min-h-[44px]"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0e0e1a] border border-[#1a1a2e] text-[#9CA3AF] hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all text-sm min-h-[44px]"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -226,7 +226,7 @@ export function AnalyticsPage() {
           Activity Heatmap &mdash; Last 365 Days
         </h2>
         {loading ? (
-          <div className="h-24 flex items-center justify-center text-[#6B7280] text-sm">Loading...</div>
+          <div className="h-24 flex items-center justify-center text-[#9CA3AF] text-sm">Loading...</div>
         ) : (
           <HeatmapGrid points={heatmap} />
         )}
@@ -248,7 +248,7 @@ export function AnalyticsPage() {
 
           {agents.length > 0 && (
             <div className="bg-[#0a0a12] border border-[#1a1a2e] rounded-xl p-5">
-              <h3 className="text-xs font-semibold text-[#6B7280] mb-3 flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-[#9CA3AF] mb-3 flex items-center gap-2">
                 <Users className="w-3.5 h-3.5" />
                 Agent Usage (30 days)
               </h3>
@@ -262,7 +262,7 @@ export function AnalyticsPage() {
                         style={{ width: `${(a.count / maxAgentCount) * 100}%`, backgroundColor: AGENT_COLORS[a.agent] ?? '#6B7280' }}
                       />
                     </div>
-                    <span className="text-xs text-[#6B7280] w-8 text-right">{a.count}</span>
+                    <span className="text-xs text-[#9CA3AF] w-8 text-right">{a.count}</span>
                   </div>
                 ))}
               </div>
@@ -276,7 +276,7 @@ export function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[#6B7280]">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-[#9CA3AF]">
             <span className="px-2 py-1 rounded-full bg-[#BF5FFF]/20 text-[#BF5FFF] font-medium">{weekly.mostActiveDay}</span>
             <span>is your most active day</span>
             {weekly.longestHabitStreak && (
@@ -298,14 +298,14 @@ export function AnalyticsPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-[#0a0a12] border border-[#1a1a2e] rounded-xl p-4">
-              <div className="text-xs text-[#6B7280] mb-2 flex items-center justify-between">
+              <div className="text-xs text-[#9CA3AF] mb-2 flex items-center justify-between">
                 <span>Tasks Completed</span>
                 <span className="text-[#00FF88]">{totalTasks} total</span>
               </div>
               <Sparkline data={last30.map((d) => d.tasksCompleted)} color="#00FF88" />
             </div>
             <div className="bg-[#0a0a12] border border-[#1a1a2e] rounded-xl p-4">
-              <div className="text-xs text-[#6B7280] mb-2 flex items-center justify-between">
+              <div className="text-xs text-[#9CA3AF] mb-2 flex items-center justify-between">
                 <span>Focus Minutes</span>
                 <span className="text-[#00F0FF]">{Math.round((totalFocusMin / 60) * 10) / 10}h total</span>
               </div>
@@ -317,21 +317,21 @@ export function AnalyticsPage() {
 
       {topics.length > 0 && (
         <section className="bg-[#0a0a12] border border-[#1a1a2e] rounded-xl p-5">
-          <h3 className="text-xs font-semibold text-[#6B7280] mb-3">Top Topics from Memories &amp; Notes</h3>
+          <h3 className="text-xs font-semibold text-[#9CA3AF] mb-3">Top Topics from Memories &amp; Notes</h3>
           <div className="flex flex-wrap gap-2">
             {topics.map((t) => (
               <span
                 key={t.topic}
                 className="px-2 py-1 rounded-full text-xs border border-[#00F0FF]/20 text-[#00F0FF] bg-[#00F0FF]/5 hover:bg-[#00F0FF]/10 transition-colors"
               >
-                {t.topic} <span className="text-[#6B7280]">{t.count}</span>
+                {t.topic} <span className="text-[#9CA3AF]">{t.count}</span>
               </span>
             ))}
           </div>
         </section>
       )}
 
-      <p className="text-xs text-[#6B7280] text-center pb-4">
+      <p className="text-xs text-[#9CA3AF] text-center pb-4">
         Weekly report sent every Sunday at 7 PM via Telegram
       </p>
     </div>

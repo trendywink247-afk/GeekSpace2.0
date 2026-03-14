@@ -521,7 +521,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             {greeting}, <span className="text-gradient-lime">{user?.name?.split(' ')[0] || 'there'}</span>
           </h1>
-          <p className="text-[#6B7280]">
+          <p className="text-[#9CA3AF]">
             Your agent has handled <span className="text-[#00F0FF] font-medium">{stats.messagesSent || 0} messages</span> — <span className="text-[#ADFF2F] font-medium">{credits.toLocaleString()} credits</span> remaining
           </p>
         </div>
@@ -530,7 +530,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            className="border-[#00F0FF]/30 text-[#6B7280] hover:text-[#E8E8F0]"
+            className="border-[#00F0FF]/30 text-[#9CA3AF] hover:text-[#E8E8F0]"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -539,7 +539,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             <div className="text-2xl font-mono text-[#E8E8F0]">
               {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
             </div>
-            <div className="text-sm text-[#6B7280]">
+            <div className="text-sm text-[#9CA3AF]">
               {currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
             </div>
           </div>
@@ -555,7 +555,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             onClick={() => { setLoadErrDismissed(true); void loadDashboard(); }}
             className="text-xs underline hover:no-underline"
           >Retry</button>
-          <button onClick={() => setLoadErrDismissed(true)} aria-label="Dismiss" className="ml-1 p-0.5 rounded hover:bg-[#F59E0B]/20">
+          <button onClick={() => setLoadErrDismissed(true)} aria-label="Dismiss" className="ml-1 p-0.5 rounded hover:bg-[#F59E0B]/20 min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -571,11 +571,11 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-[#00FF88]" />
               <span className="text-sm font-semibold text-[#E8E8F0]">Getting Started</span>
-              <span className="text-xs text-[#6B7280]">({onboardingDone.length}/{ONBOARDING_ITEMS.length} done)</span>
+              <span className="text-xs text-[#9CA3AF]">({onboardingDone.length}/{ONBOARDING_ITEMS.length} done)</span>
             </div>
             <button
               onClick={dismissOnboarding}
-              className="p-1 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 transition-colors"
+              className="p-1 rounded-lg text-[#9CA3AF] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
               aria-label="Dismiss checklist"
             >
               <X className="w-4 h-4" />
@@ -612,7 +612,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   {!done && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onNavigate?.(item.page); }}
-                      className="text-[10px] text-[#00F0FF] hover:underline flex-shrink-0"
+                      className="text-xs text-[#00F0FF] hover:underline flex-shrink-0"
                     >
                       Go →
                     </button>
@@ -635,7 +635,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-[#E8E8F0]">Get reminders on Telegram</p>
-            <p className="text-xs text-[#6B7280] mt-0.5">Connect Telegram to receive reminders and agent alerts directly in your chat.</p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">Connect Telegram to receive reminders and agent alerts directly in your chat.</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button
@@ -647,7 +647,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             </Button>
             <button
               onClick={dismissTelegramBanner}
-              className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors"
+              className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
               aria-label="Dismiss banner"
             >
               <X className="w-4 h-4" />
@@ -669,7 +669,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             <p className="text-sm font-semibold text-[#E8E8F0]">
               {overdueCount} overdue reminder{overdueCount !== 1 ? 's' : ''}
             </p>
-            <p className="text-xs text-[#6B7280] mt-0.5">You have reminders that have passed their due time.</p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">You have reminders that have passed their due time.</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button
@@ -682,7 +682,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             </Button>
             <button
               onClick={() => setOverdueAlertDismissed(true)}
-              className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors"
+              className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
               aria-label="Dismiss alert"
             >
               <X className="w-4 h-4" />
@@ -707,7 +707,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-[#E8E8F0]">Approaching daily limit</p>
-            <p className="text-xs text-[#6B7280] mt-0.5">
+            <p className="text-xs text-[#9CA3AF] mt-0.5">
               {todayUsage.messages.percentage >= 1 || todayUsage.tokenPercentage >= 1
                 ? `Daily limit reached on your ${(todayUsage.plan ? todayUsage.plan.charAt(0).toUpperCase() + todayUsage.plan.slice(1) : 'Free')} plan — upgrade for more.`
                 : `You've used ${Math.round(Math.max(todayUsage.messages.percentage, todayUsage.tokenPercentage) * 100)}% of today's allowance (${(todayUsage.plan ? todayUsage.plan.charAt(0).toUpperCase() + todayUsage.plan.slice(1) : 'Free')} plan).`}
@@ -726,7 +726,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             )}
             <button
               onClick={() => setUsageBannerDismissed(true)}
-              className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors"
+              className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
               aria-label="Dismiss"
             >
               <X className="w-4 h-4" />
@@ -755,7 +755,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </div>
               <button
                 onClick={() => onNavigate?.('reminders')}
-                className="text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+                className="text-xs text-[#9CA3AF] hover:text-[#00F0FF] transition-colors"
               >
                 View all
               </button>
@@ -773,7 +773,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   >
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dot }} />
-                      <span className="text-[11px] text-[#6B7280] flex-shrink-0">{timeStr}</span>
+                      <span className="text-[11px] text-[#9CA3AF] flex-shrink-0">{timeStr}</span>
                     </div>
                     <p className="text-xs text-[#E8E8F0] truncate">{r.text}</p>
                   </div>
@@ -797,7 +797,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             </div>
             <button
               onClick={() => onNavigate?.('capabilities')}
-              className="flex items-center gap-1 text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+              className="flex items-center gap-1 text-xs text-[#9CA3AF] hover:text-[#00F0FF] transition-colors"
             >
               See all 20+ powers
               <ChevronDown className="w-3 h-3 -rotate-90" />
@@ -808,12 +808,12 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               <button
                 key={i}
                 onClick={() => onNavigate?.(item.page)}
-                className="flex flex-col items-start gap-2 p-4 bg-[#070710] hover:bg-[#0D0D1A] transition-colors text-left group"
+                className="flex flex-col items-start gap-2 p-4 bg-[#070710] hover:bg-[#0D0D1A] transition-colors text-left group focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
               >
                 <span className="text-2xl">{item.emoji}</span>
                 <div>
                   <div className="text-xs font-semibold text-[#E8E8F0] group-hover:text-white transition-colors">{item.label}</div>
-                  <div className="text-[10px] text-[#6B7280] mt-0.5 leading-tight">{item.sub}</div>
+                  <div className="text-xs text-[#9CA3AF] mt-0.5 leading-tight">{item.sub}</div>
                 </div>
                 <div className="w-full h-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: item.color }} />
               </button>
@@ -841,7 +841,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               localStorage.setItem('gs_stat_order', JSON.stringify(next));
               dragSrcIdx.current = null;
             }}
-            className="group press-scale touch-highlight transition-all duration-300 hover:scale-[1.02] relative cursor-grab active:cursor-grabbing"
+            className="group press-scale touch-highlight transition-all duration-300 hover:scale-[1.02] relative cursor-grab active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
             style={{
               background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
               border: `1px solid ${stat.color}20`,
@@ -871,7 +871,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               >
                 {stat.value}
               </div>
-              <div className="text-sm text-[#6B7280]">{stat.label}</div>
+              <div className="text-sm text-[#9CA3AF]">{stat.label}</div>
               {statSparklines[origIdx].length > 1 ? (
                 <div className="mt-2 h-8 -mx-1">
                   <ResponsiveContainer width="100%" height="100%">
@@ -904,7 +904,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               )}
               {/* Drag handle indicator */}
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-30 transition-opacity">
-                <GripVertical className="w-3 h-3 text-[#6B7280]" />
+                <GripVertical className="w-3 h-3 text-[#9CA3AF]" />
               </div>
             </CardContent>
           </Card>
@@ -926,7 +926,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 <Gauge className="w-4 h-4 text-[#00F0FF]" />
                 <span className="text-sm font-semibold text-[#E8E8F0]">Today's Usage</span>
                 <span
-                  className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                  className="text-xs px-1.5 py-0.5 rounded-full font-medium"
                   style={{ background: 'rgba(0,240,255,0.1)', color: '#00F0FF' }}
                 >
                   {todayUsage.plan}
@@ -934,7 +934,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </div>
               <button
                 onClick={() => onNavigate?.('usage')}
-                className="text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+                className="text-xs text-[#9CA3AF] hover:text-[#00F0FF] transition-colors"
               >
                 Full stats →
               </button>
@@ -950,8 +950,8 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 return (
                   <div key={item.label}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-[#6B7280]">{item.label}</span>
-                      <span className="text-[10px] font-mono" style={{ color: barColor }}>
+                      <span className="text-xs text-[#9CA3AF]">{item.label}</span>
+                      <span className="text-xs font-mono" style={{ color: barColor }}>
                         {item.used}/{item.limit}
                       </span>
                     </div>
@@ -984,32 +984,32 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </div>
               <button
                 onClick={() => onNavigate?.('usage')}
-                className="text-[10px] text-[#6B7280] hover:text-[#7B61FF] transition-colors"
+                className="text-xs text-[#9CA3AF] hover:text-[#7B61FF] transition-colors"
               >
                 Full stats →
               </button>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <div className="text-xs text-[#6B7280] mb-1">Used Today</div>
+                <div className="text-xs text-[#9CA3AF] mb-1">Used Today</div>
                 <div className="text-base font-mono font-semibold text-[#E8E8F0]">
                   {todayUsage.tokenUsed.toLocaleString()}
                 </div>
-                <div className="text-[10px] text-[#6B7280]">
+                <div className="text-xs text-[#9CA3AF]">
                   of {todayUsage.tokenBudget.toLocaleString()}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-[#6B7280] mb-1">Est. Cost</div>
+                <div className="text-xs text-[#9CA3AF] mb-1">Est. Cost</div>
                 <div className="text-base font-mono font-semibold text-[#61FF7B]">
                   ${((todayUsage.tokenUsed / 1_000_000) * 0.5).toFixed(4)}
                 </div>
-                <div className="text-[10px] text-[#6B7280]">~$0.50/1M tokens</div>
+                <div className="text-xs text-[#9CA3AF]">~$0.50/1M tokens</div>
               </div>
               <div>
-                <div className="text-xs text-[#6B7280] mb-1">Compression</div>
+                <div className="text-xs text-[#9CA3AF] mb-1">Compression</div>
                 <div className="text-base font-mono font-semibold text-[#00F0FF]">~25%</div>
-                <div className="text-[10px] text-[#6B7280]">tokens saved</div>
+                <div className="text-xs text-[#9CA3AF]">tokens saved</div>
               </div>
             </div>
           </CardContent>
@@ -1029,7 +1029,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               <Flame className="w-5 h-5 text-[#F59E0B]" />
             </div>
             <div className="flex-1">
-              <div className="text-sm text-[#6B7280]">Reminder Streak</div>
+              <div className="text-sm text-[#9CA3AF]">Reminder Streak</div>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-xl font-bold text-[#F59E0B]">{reminderStreak.streak}</span>
                 <span className="text-sm text-[#E8E8F0]">day{reminderStreak.streak !== 1 ? 's' : ''}</span>
@@ -1042,7 +1042,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xs text-[#6B7280]">Best</div>
+              <div className="text-xs text-[#9CA3AF]">Best</div>
               <div className="text-sm font-semibold text-[#E8E8F0]">{reminderStreak.longestStreak}d</div>
             </div>
           </CardContent>
@@ -1062,17 +1062,17 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               <TrendingUp className="w-5 h-5 text-[#00FF88]" />
             </div>
             <div className="flex-1">
-              <div className="text-sm text-[#6B7280]">Agent Satisfaction</div>
+              <div className="text-sm text-[#9CA3AF]">Agent Satisfaction</div>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-xl font-bold text-[#00FF88]">{agentQuality.satisfactionRate}%</span>
                 {agentQuality.trend === 'up' && <ArrowUpRight className="w-4 h-4 text-[#00FF88]" />}
                 {agentQuality.trend === 'down' && <ArrowDownRight className="w-4 h-4 text-[#FF2D78]" />}
-                <span className="text-xs text-[#6B7280]">
+                <span className="text-xs text-[#9CA3AF]">
                   {agentQuality.trend === 'up' ? 'improving' : agentQuality.trend === 'down' ? 'declining' : 'stable'}
                 </span>
               </div>
             </div>
-            <div className="text-xs text-[#6B7280]">Based on your reactions</div>
+            <div className="text-xs text-[#9CA3AF]">Based on your reactions</div>
           </CardContent>
         </Card>
       )}
@@ -1093,8 +1093,9 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             {/* 62.9: Collapse toggle */}
             <button
               onClick={() => toggleSection('briefing')}
-              className="text-[#6B7280] hover:text-[#FFD700] transition-colors p-1 rounded ml-auto text-xs"
+              className="text-[#9CA3AF] hover:text-[#FFD700] transition-colors p-1 rounded ml-auto text-xs min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
               title={sectionVisible.briefing ? 'Collapse' : 'Expand'}
+              aria-label={sectionVisible.briefing ? 'Collapse briefing' : 'Expand briefing'}
             >
               {sectionVisible.briefing ? '▲' : '▼'}
             </button>
@@ -1107,7 +1108,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                     setTimeout(() => setBriefingCopied(false), 1500);
                   }).catch(() => {});
                 }}
-                className="text-[#6B7280] hover:text-[#FFD700] transition-colors p-1 rounded"
+                className="text-[#9CA3AF] hover:text-[#FFD700] transition-colors p-1 rounded min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                 aria-label="Copy briefing"
               >
                 {briefingCopied ? <Check className="w-4 h-4 text-[#00FF88]" /> : <Copy className="w-4 h-4" />}
@@ -1121,7 +1122,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               <p className="text-sm text-[#E8E8F0] leading-relaxed whitespace-pre-line">
                 {latestBriefing.content}
               </p>
-              <p className="text-xs text-[#6B7280] mt-3 font-mono">
+              <p className="text-xs text-[#9CA3AF] mt-3 font-mono">
                 {new Date(latestBriefing.created_at).toLocaleString('en-US', {
                   weekday: 'short',
                   month: 'short',
@@ -1132,20 +1133,20 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </p>
             </>
           ) : (
-            <p className="text-sm text-[#6B7280]">
+            <p className="text-sm text-[#9CA3AF]">
               No briefing yet — your first will arrive at the scheduled time below.
             </p>
           )}
           <div className="mt-3 flex items-center gap-2 border-t border-[#FFD700]/10 pt-3">
-            <Clock className="w-4 h-4 text-[#6B7280] shrink-0" />
-            <span className="text-xs text-[#6B7280]">Deliver daily at</span>
+            <Clock className="w-4 h-4 text-[#9CA3AF] shrink-0" />
+            <span className="text-xs text-[#9CA3AF]">Deliver daily at</span>
             <input
               type="time"
               value={briefingTime}
               onChange={(e) => handleBriefingTimeChange(e.target.value)}
               className="bg-[#06060B] border border-[#FFD700]/20 text-[#E8E8F0] text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-[#FFD700]/40"
             />
-            <span className={`text-xs ${briefingSaving ? 'text-[#6B7280]' : 'text-[#00FF88]'}`}>
+            <span className={`text-xs ${briefingSaving ? 'text-[#9CA3AF]' : 'text-[#00FF88]'}`}>
               {briefingSaving ? 'Saving…' : 'Saved'}
             </span>
           </div>
@@ -1154,8 +1155,8 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
 
       {/* ─── Bento Charts Row ─── */}
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm text-[#6B7280] font-medium">Analytics</span>
-        <button onClick={() => toggleSection('charts')} className="text-xs text-[#6B7280] hover:text-[#00F0FF] transition-colors">{sectionVisible.charts ? '▲ Collapse' : '▼ Expand'}</button>
+        <span className="text-sm text-[#9CA3AF] font-medium">Analytics</span>
+        <button onClick={() => toggleSection('charts')} className="text-xs text-[#9CA3AF] hover:text-[#00F0FF] transition-colors">{sectionVisible.charts ? '▲ Collapse' : '▼ Expand'}</button>
       </div>
       {sectionVisible.charts && <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Activity Chart — spans 2 cols */}
@@ -1172,13 +1173,13 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 <Activity className="w-5 h-5 text-[#00F0FF]" />
                 Weekly Activity
               </CardTitle>
-              <Badge variant="outline" className="border-[#00F0FF]/30 text-[#6B7280]">
+              <Badge variant="outline" className="border-[#00F0FF]/30 text-[#9CA3AF]">
                 Last 7 days
               </Badge>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="min-h-[200px] h-[250px]">
+            <div className="min-h-[180px] h-[180px] sm:h-[200px] lg:h-[250px]">
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={weeklyChartData}>
@@ -1227,7 +1228,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="min-h-[200px] h-[200px]">
+            <div className="min-h-[180px] h-[180px] sm:h-[200px] lg:h-[250px]">
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -1260,7 +1261,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               {taskCompletionData.map((item) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-xs text-[#6B7280]">{item.name}</span>
+                  <span className="text-xs text-[#9CA3AF]">{item.name}</span>
                 </div>
               ))}
             </div>
@@ -1312,9 +1313,9 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors truncate">{entry.action}</div>
-                        {entry.details && <div className="text-xs text-[#6B7280] truncate">{entry.details}</div>}
+                        {entry.details && <div className="text-xs text-[#9CA3AF] truncate">{entry.details}</div>}
                       </div>
-                      <div className="text-xs text-[#6B7280] font-mono flex-shrink-0">{relTime}</div>
+                      <div className="text-xs text-[#9CA3AF] font-mono flex-shrink-0">{relTime}</div>
                     </div>
                   );
                 }) : recentActivity.length > 0 ? recentActivity.map((activity, i) => (
@@ -1328,12 +1329,12 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-medium text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors">{activity.action}</div>
-                      <div className="text-xs text-[#6B7280]">{activity.detail}</div>
+                      <div className="text-xs text-[#9CA3AF]">{activity.detail}</div>
                     </div>
-                    <div className="text-xs text-[#6B7280] font-mono">{activity.time}</div>
+                    <div className="text-xs text-[#9CA3AF] font-mono">{activity.time}</div>
                   </div>
                 )) : (
-                  <div className="text-center py-8 text-[#6B7280] text-sm">No recent activity yet</div>
+                  <div className="text-center py-8 text-[#9CA3AF] text-sm">No recent activity yet</div>
                 )}
               </div>
             </CardContent>
@@ -1353,7 +1354,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="min-h-[200px] h-[200px] sm:h-[180px]">
+              <div className="min-h-[180px] h-[180px] sm:h-[200px] lg:h-[250px]">
                 {mounted && (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={hourlyActivityData}>
@@ -1418,7 +1419,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-medium text-[#E8E8F0]">{service.name}</div>
-                      <div className="text-xs text-[#6B7280]">Synced {service.lastSync}</div>
+                      <div className="text-xs text-[#9CA3AF]">Synced {service.lastSync}</div>
                     </div>
                     <div className={`w-2 h-2 rounded-full ${
                       service.status === 'connected' ? 'bg-[#ADFF2F]' :
@@ -1426,7 +1427,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                     }`} />
                   </div>
                 )) : (
-                  <div className="text-center py-6 text-[#6B7280] text-sm">
+                  <div className="text-center py-6 text-[#9CA3AF] text-sm">
                     No services connected yet.
                     <Button variant="ghost" size="sm" className="text-[#00F0FF] ml-1" onClick={() => onNavigate?.('connections')}>
                       Connect one
@@ -1448,7 +1449,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base font-semibold text-[#BF5FFF]">Portfolio</CardTitle>
-                  <button onClick={() => onNavigate?.('portfolio')} className="text-xs text-[#6B7280] hover:text-[#BF5FFF] transition-colors">View →</button>
+                  <button onClick={() => onNavigate?.('portfolio')} className="text-xs text-[#9CA3AF] hover:text-[#BF5FFF] transition-colors">View →</button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -1460,7 +1461,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   ].map((item) => (
                     <div key={item.label} className="text-center rounded-lg p-2" style={{ background: 'rgba(191, 95, 255, 0.06)' }}>
                       <div className="text-lg font-bold text-[#BF5FFF]">{item.value}</div>
-                      <div className="text-[10px] text-[#6B7280]">{item.label}</div>
+                      <div className="text-xs text-[#9CA3AF]">{item.label}</div>
                     </div>
                   ))}
                 </div>
@@ -1480,7 +1481,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
                 <button
                   onClick={() => onNavigate?.('capabilities')}
-                  className="flex items-center gap-1 text-xs text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+                  className="flex items-center gap-1 text-xs text-[#9CA3AF] hover:text-[#00F0FF] transition-colors"
                 >
                   <Sparkles className="w-3 h-3" />
                   All powers
@@ -1493,7 +1494,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   <button
                     key={i}
                     onClick={action.action}
-                    className="flex flex-col items-start gap-1.5 p-3 rounded-xl transition-all duration-300 text-left group press-scale touch-highlight hover:scale-[1.02] border border-white/5 hover:border-white/12"
+                    className="flex flex-col items-start gap-1.5 p-3 rounded-xl transition-all duration-300 text-left group press-scale touch-highlight hover:scale-[1.02] border border-white/5 hover:border-white/12 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                     style={{ background: `${action.color}06` }}
                   >
                     <div
@@ -1504,7 +1505,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                     </div>
                     <div>
                       <div className="text-xs text-[#E8E8F0] font-semibold leading-tight">{action.label}</div>
-                      <div className="text-[10px] text-[#6B7280] mt-0.5">{(action as { desc?: string }).desc}</div>
+                      <div className="text-xs text-[#9CA3AF] mt-0.5">{(action as { desc?: string }).desc}</div>
                     </div>
                   </button>
                 ))}
@@ -1527,10 +1528,10 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold">Public Portfolio</h2>
-                  <p className="text-xs text-[#6B7280]">{user?.username || 'alex'}.agentin.chat</p>
+                  <p className="text-xs text-[#9CA3AF]">{user?.username || 'alex'}.agentin.chat</p>
                 </div>
               </div>
-              <p className="text-sm text-[#6B7280] mb-4">
+              <p className="text-sm text-[#9CA3AF] mb-4">
                 Your public profile where others can learn about you and ask your agent questions.
               </p>
               <div className="flex gap-2">
@@ -1564,7 +1565,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 <CardTitle className="text-lg font-semibold">Agent Status</CardTitle>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${agent.status === 'online' ? 'bg-[#ADFF2F] animate-pulse' : agent.status === 'error' ? 'bg-[#FF2D78]' : 'bg-[#6B7280]'}`} />
-                  <span className={`text-xs ${agent.status === 'online' ? 'text-[#ADFF2F]' : agent.status === 'error' ? 'text-[#FF2D78]' : 'text-[#6B7280]'}`}>
+                  <span className={`text-xs ${agent.status === 'online' ? 'text-[#ADFF2F]' : agent.status === 'error' ? 'text-[#FF2D78]' : 'text-[#9CA3AF]'}`}>
                     {agent.status === 'online' ? 'Online' : agent.status === 'error' ? 'Error' : 'Offline'}
                   </span>
                 </div>
@@ -1579,7 +1580,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   { label: 'Uptime', value: stats.agentUptime || '99.99%' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="text-[#6B7280]">{item.label}</span>
+                    <span className="text-[#9CA3AF]">{item.label}</span>
                     <span className="text-[#E8E8F0] font-mono">{item.value}</span>
                   </div>
                 ))}
@@ -1603,7 +1604,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               <TrendingUp className="w-5 h-5 text-[#00FF88]" />
               7-Day Activity Trend
             </CardTitle>
-            <Badge variant="outline" className="border-[#00FF88]/30 text-[#6B7280]">
+            <Badge variant="outline" className="border-[#00FF88]/30 text-[#9CA3AF]">
               Messages &amp; Tokens
             </Badge>
           </div>
@@ -1631,7 +1632,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               </ResponsiveContainer>
             )}
           </div>
-          <div className="flex items-center gap-4 mt-2 text-xs text-[#6B7280]">
+          <div className="flex items-center gap-4 mt-2 text-xs text-[#9CA3AF]">
             <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-[#00FF88] rounded inline-block" />Messages sent</span>
             <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-[#BF5FFF] rounded inline-block" />Tokens used</span>
           </div>
@@ -1653,18 +1654,18 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 <CardTitle className="text-lg font-semibold">Available AI Models</CardTitle>
               </div>
               {modelsLastUpdated && (
-                <span className="text-xs text-[#6B7280]">
+                <span className="text-xs text-[#9CA3AF]">
                   Updated {new Date(modelsLastUpdated).toLocaleDateString()}
                 </span>
               )}
             </div>
-            <p className="text-sm text-[#6B7280] mt-1">Free models via OpenRouter — refreshed daily. Pin one or let auto-select decide.</p>
+            <p className="text-sm text-[#9CA3AF] mt-1">Free models via OpenRouter — refreshed daily. Pin one or let auto-select decide.</p>
           </CardHeader>
           <CardContent>
             {/* Auto-select — full-width row */}
             <button
               onClick={() => handleSelectModel('auto')}
-              className={`w-full text-left p-3 rounded-lg border transition-colors mb-3 ${
+              className={`w-full text-left p-3 rounded-lg border transition-colors mb-3 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                 preferredModel === 'auto'
                   ? 'border-[#00F0FF] bg-[#00F0FF]/10'
                   : 'border-[#1E1E2A] bg-[#0F0F18] hover:border-[#00F0FF]/40'
@@ -1673,7 +1674,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <span className="text-sm font-medium text-[#E8E8F0]">Auto-select</span>
-                  <p className="text-xs text-[#6B7280] mt-0.5">System picks the best available model for each request</p>
+                  <p className="text-xs text-[#9CA3AF] mt-0.5">System picks the best available model for each request</p>
                 </div>
                 {preferredModel === 'auto' && <Check className="w-4 h-4 text-[#00F0FF] shrink-0" />}
               </div>
@@ -1686,7 +1687,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   key={model.id}
                   onClick={() => handleSelectModel(model.id)}
                   disabled={modelSaving === model.id}
-                  className={`text-left p-3 rounded-lg border transition-all duration-200 hover:scale-[1.02] ${
+                  className={`text-left p-3 rounded-lg border transition-all duration-200 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                     preferredModel === model.id
                       ? 'border-[#00F0FF] bg-[#00F0FF]/10'
                       : 'border-[#1E1E2A] bg-[#0F0F18] hover:border-[#00F0FF]/40'
@@ -1694,12 +1695,12 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                 >
                   {/* Header row: provider badge + badges */}
                   <div className="flex items-start justify-between gap-1 mb-2">
-                    <div className="w-7 h-7 rounded-md bg-[#1E1E2A] flex items-center justify-center text-[10px] font-bold text-[#00F0FF] shrink-0">
+                    <div className="w-7 h-7 rounded-md bg-[#1E1E2A] flex items-center justify-center text-xs font-bold text-[#00F0FF] shrink-0">
                       {model.provider.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       {model.isNew && (
-                        <span className="text-[9px] px-1 py-0.5 rounded bg-[#ADFF2F]/20 text-[#ADFF2F] font-medium leading-none">NEW</span>
+                        <span className="text-xs px-1 py-0.5 rounded bg-[#ADFF2F]/20 text-[#ADFF2F] font-medium leading-none">NEW</span>
                       )}
                       {preferredModel === model.id && <Check className="w-3.5 h-3.5 text-[#00F0FF]" />}
                     </div>
@@ -1707,13 +1708,13 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                   {/* Name */}
                   <div className="text-xs font-semibold text-[#E8E8F0] leading-snug mb-1">{model.displayName}</div>
                   {/* Summary */}
-                  <p className="text-[11px] text-[#6B7280] leading-snug line-clamp-2 mb-2">{model.summary}</p>
+                  <p className="text-[11px] text-[#9CA3AF] leading-snug line-clamp-2 mb-2">{model.summary}</p>
                   {/* Meta badges */}
                   <div className="flex items-center gap-1 flex-wrap">
                     {model.parameters && (
-                      <span className="text-[10px] px-1 py-0.5 rounded bg-[#1E1E2A] text-[#6B7280] font-mono">{model.parameters}</span>
+                      <span className="text-xs px-1 py-0.5 rounded bg-[#1E1E2A] text-[#9CA3AF] font-mono">{model.parameters}</span>
                     )}
-                    <span className="text-[10px] px-1 py-0.5 rounded bg-[#1E1E2A] text-[#6B7280] font-mono">
+                    <span className="text-xs px-1 py-0.5 rounded bg-[#1E1E2A] text-[#9CA3AF] font-mono">
                       {model.contextLength >= 1000 ? `${Math.round(model.contextLength / 1000)}K` : model.contextLength}ctx
                     </span>
                   </div>
@@ -1721,7 +1722,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               ))}
             </div>
 
-            <p className="text-xs text-[#6B7280] mt-4">
+            <p className="text-xs text-[#9CA3AF] mt-4">
               Tip: Use <code className="text-[#00F0FF] bg-[#1E1E2A] px-1 rounded">/model</code> in Telegram to switch, or let auto-select handle it.
             </p>
 
@@ -1730,7 +1731,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
               <div className="mt-4 border-t border-[#1E1E2A] pt-3">
                 <button
                   onClick={() => setShowChangelog(!showChangelog)}
-                  className="flex items-center gap-1 text-xs text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+                  className="flex items-center gap-1 text-xs text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors"
                 >
                   {showChangelog ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   Recent changes ({changelog.length})
@@ -1745,7 +1746,7 @@ export function OverviewPage({ onViewPortfolio, onNavigate, onRefresh, onOpenCha
                         }>
                           {entry.event === 'added' ? '+' : entry.event === 'removed' ? '-' : entry.event === 'returned' ? '↩' : '🔍'}
                         </span>
-                        <span className="text-[#6B7280] truncate">{entry.displayName}</span>
+                        <span className="text-[#9CA3AF] truncate">{entry.displayName}</span>
                         <span className="text-[#555] ml-auto shrink-0">{new Date(entry.timestamp).toLocaleDateString()}</span>
                       </div>
                     ))}

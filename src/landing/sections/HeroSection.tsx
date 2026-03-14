@@ -14,18 +14,34 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
   const [isLoaded, setIsLoaded] = useState(false);
   const [typedText, setTypedText] = useState('');
   const [orbHover, setOrbHover] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   const fullText = 'YOUR AGENTS. YOUR RULES.';
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 100);
     return () => clearTimeout(timer);
   }, []);
 
-  // Typewriter effect for subtext
+  // Typewriter effect for subtext — skipped when prefers-reduced-motion
   useEffect(() => {
     if (!isLoaded) return;
     const phrases = ['Build autonomous agents.', 'Deploy in seconds.', 'Scale without limits.', 'Chat with intelligence.'];
+
+    // Respect reduced-motion: show first phrase statically, no animation loop
+    if (reducedMotion) {
+      setTypedText(phrases[0]);
+      return;
+    }
+
     let phraseIndex = 0;
     let charIndex = 0;
     let isDeleting = false;
@@ -60,7 +76,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
       clearTimeout(startDelay);
       clearTimeout(timeout);
     };
-  }, [isLoaded]);
+  }, [isLoaded, reducedMotion]);
 
   return (
     <section
@@ -78,6 +94,8 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
         }`}
         onMouseEnter={() => setOrbHover(true)}
         onMouseLeave={() => setOrbHover(false)}
+        onTouchStart={() => setOrbHover(true)}
+        onTouchEnd={() => setOrbHover(false)}
       >
         <div className="relative w-48 h-48 md:w-72 md:h-72">
           {/* Outer plasma ring */}
@@ -150,7 +168,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
 
         {/* Main Headline — Glitch Effect */}
         <h1
-          className={`text-4xl sm:text-5xl md:text-6xl lg:text-8xl xl:text-9xl font-extrabold mb-4 transition-all duration-700 delay-200 glitch-text ${
+          className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-4 max-w-full transition-all duration-700 delay-200 glitch-text ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ fontFamily: 'Syne, sans-serif', lineHeight: 1.0 }}
@@ -165,7 +183,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          <span className="font-mono text-base md:text-lg text-[#6B7280]">
+          <span className="font-mono text-base md:text-lg text-[#6B7280] text-shimmer">
             {typedText}
             <span className="typewriter-cursor ml-0.5">&nbsp;</span>
           </span>
@@ -180,7 +198,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
           <Button
             size="lg"
             onClick={onEnterDashboard}
-            className="w-full sm:w-auto relative overflow-hidden bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] px-8 py-6 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,212,0.3)] group"
+            className="w-full sm:w-auto min-h-[48px] relative overflow-hidden bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] px-8 py-6 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,212,0.3)] group"
           >
             <span className="relative z-10 flex items-center">
               {onEnterDashboard ? 'Enter Dashboard' : 'Explore the Network'}
@@ -191,7 +209,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
             size="lg"
             variant="outline"
             onClick={() => onWatchDemo ? onWatchDemo() : navigate('/login?demo=true')}
-            className="w-full sm:w-auto border-[#FF2D78]/40 text-[#E8E8F0] hover:bg-[#FF2D78]/5 hover:border-[#FF2D78]/60 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
+            className="w-full sm:w-auto min-h-[48px] border-[#FF2D78]/40 text-[#E8E8F0] hover:bg-[#FF2D78]/5 hover:border-[#FF2D78]/60 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
           >
             <Play className="mr-2 w-5 h-5 text-[#FF2D78]" />
             Watch Demo
@@ -200,7 +218,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
       </div>
 
       {/* Bottom Gradient Fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#06060B] to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#06060B] to-transparent pointer-events-none safe-area-pb" />
     </section>
   );
 }

@@ -97,7 +97,7 @@ export function FocusPage() {
         <h1 className="text-2xl font-bold text-[#F4F6FF] flex items-center gap-2">
           <Target className="text-[#00F0FF]" size={24} /> Focus Mode
         </h1>
-        <Button variant="ghost" size="sm" onClick={toggleFocusMode} className="gap-1 text-xs">
+        <Button variant="ghost" size="sm" onClick={toggleFocusMode} className="gap-1 text-xs min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label={settings?.focus_mode_active ? "Turn focus mode off" : "Turn focus mode on"}>
           {settings?.focus_mode_active ? <BellOff size={14} /> : <Bell size={14} />}
           {settings?.focus_mode_active ? "Focus ON" : "Focus OFF"}
         </Button>
@@ -118,12 +118,12 @@ export function FocusPage() {
                 <div className="text-xs text-[#E8E8F0]/60">{remaining !== null ? "remaining" : "elapsed"}</div>
               </TimerRing>
               {session.goal && <p className="text-center text-sm text-[#E8E8F0]/80">Goal: {session.goal}</p>}
-              <button onClick={handleEndFocus} disabled={loading} className="w-full py-2 px-4 rounded bg-red-600 hover:bg-red-700 text-white font-medium">End Session</button>
+              <button onClick={handleEndFocus} disabled={loading} className="w-full h-14 px-8 rounded bg-red-600 hover:bg-red-700 text-white font-medium focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">End Session</button>
             </div>
           ) : (
             <div className="text-center space-y-4">
               <p className="text-[#E8E8F0]/60 text-sm">Start a focus session to track your deep work.</p>
-              <Button onClick={() => setShowStartModal(true)} className="bg-[#00F0FF] text-black hover:bg-[#00d4e0]"><Play size={16} className="mr-1" /> Start Focus</Button>
+              <Button onClick={() => setShowStartModal(true)} className="bg-[#00F0FF] text-black hover:bg-[#00d4e0] h-14 px-8 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"><Play size={16} className="mr-1" /> Start Focus</Button>
             </div>
           )}
         </CardContent>
@@ -132,7 +132,7 @@ export function FocusPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-[#F4F6FF] flex items-center gap-2"><Flame size={18} className="text-orange-400" /> Daily Habits</CardTitle>
-            <Button size="sm" variant="ghost" onClick={() => setShowAddHabit(true)} className="text-[#00F0FF] min-h-[36px]"><Plus size={16} /></Button>
+            <Button size="sm" variant="ghost" onClick={() => setShowAddHabit(true)} className="text-[#00F0FF] min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Add habit"><Plus size={16} /></Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -150,8 +150,8 @@ export function FocusPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className={"min-h-[44px] min-w-[44px] rounded flex items-center justify-center " + (h.logged_today ? "text-green-400" : "text-[#E8E8F0]/40 hover:text-green-300")} onClick={() => { if (!h.logged_today) void handleLogHabit(h.id); }} disabled={h.logged_today} aria-label={"Log " + h.name}><CheckCircle size={20} /></button>
-                    <button className="min-h-[44px] min-w-[44px] rounded text-red-400/40 hover:text-red-400 text-sm flex items-center justify-center" onClick={() => void handleDeleteHabit(h.id)}>x</button>
+                    <button className={"min-h-[44px] min-w-[44px] rounded flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 " + (h.logged_today ? "text-green-400" : "text-[#E8E8F0]/40 hover:text-green-300")} onClick={() => { if (!h.logged_today) void handleLogHabit(h.id); }} disabled={h.logged_today} aria-label={"Log " + h.name}><CheckCircle size={20} /></button>
+                    <button className="min-h-[44px] min-w-[44px] rounded text-red-400/40 hover:text-red-400 text-sm flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => void handleDeleteHabit(h.id)} aria-label={"Delete " + h.name}>x</button>
                   </div>
                 </div>
               ))}

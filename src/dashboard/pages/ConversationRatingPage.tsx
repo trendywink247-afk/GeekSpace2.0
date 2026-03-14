@@ -35,7 +35,7 @@ function StarRating({ score, onRate }: { score: number | null; onRate: (s: numbe
             onClick={() => onRate(s)}
             onMouseEnter={() => setHovered(s)}
             onMouseLeave={() => setHovered(null)}
-            className="transition-colors"
+            className="transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded"
             aria-label={`Rate ${s} star${s > 1 ? 's' : ''}`}
           >
             <Star

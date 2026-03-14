@@ -165,7 +165,7 @@ export function ForgotPasswordPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <button onClick={() => navigate('/')} className="inline-flex items-center gap-2 mb-6 group">
+          <button onClick={() => navigate('/')} aria-label="Return to home" className="inline-flex items-center gap-2 mb-6 group">
             <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/20 flex items-center justify-center group-hover:bg-[#00F0FF]/30 transition-colors">
               <Hexagon className="w-6 h-6 text-[#00F0FF]" />
             </div>
@@ -217,6 +217,7 @@ export function ForgotPasswordPage() {
           className="p-6 rounded-2xl space-y-4"
           style={{
             background: 'rgba(11, 11, 16, 0.8)',
+            WebkitBackdropFilter: 'blur(20px)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(0, 240, 255, 0.2)',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
@@ -226,7 +227,7 @@ export function ForgotPasswordPage() {
           {step === 'email' && (
             <form onSubmit={handleRequestReset} className="space-y-4">
               <div>
-                <label className="text-sm text-[#6B7280] mb-2 block">Email address</label>
+                <label className="text-sm text-[#9CA3AF] mb-2 block">Email address</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                   <Input
@@ -241,7 +242,7 @@ export function ForgotPasswordPage() {
                 </div>
               </div>
 
-              {error && <p className="text-sm text-[#FF3366]">{error}</p>}
+              {error && <p className="text-sm text-[#FF3366]" role="alert" aria-live="polite">{error}</p>}
 
               <Button type="submit" disabled={isLoading} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base">
                 {isLoading ? (
@@ -260,7 +261,7 @@ export function ForgotPasswordPage() {
           {step === 'otp' && (
             <form onSubmit={handleVerifyOTP} className="space-y-4">
               <div>
-                <label className="text-sm text-[#6B7280] mb-3 block">Enter 6-digit code</label>
+                <label className="text-sm text-[#9CA3AF] mb-3 block">Enter 6-digit code</label>
                 <div className="flex gap-2 justify-center">
                   {otp.map((digit, i) => (
                     <input
@@ -268,11 +269,12 @@ export function ForgotPasswordPage() {
                       ref={(el) => { otpRefs.current[i] = el; }}
                       type="text"
                       inputMode="numeric"
-                      maxLength={6}
+                      maxLength={1}
                       value={digit}
                       onChange={(e) => handleOtpChange(i, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                      className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl bg-[#06060B]/60 border border-[#00F0FF]/30 text-[#E8E8F0] focus:border-[#00F0FF] focus:ring-1 focus:ring-[#00F0FF] outline-none transition-all"
+                      aria-label={`Digit ${i + 1} of 6`}
+                      className="w-11 h-11 sm:w-12 sm:h-12 text-center text-xl font-bold rounded-xl bg-[#06060B]/60 border border-[#00F0FF]/30 text-[#E8E8F0] focus:border-[#00F0FF] focus:ring-1 focus:ring-[#00F0FF] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 outline-none transition-all"
                     />
                   ))}
                 </div>
@@ -281,7 +283,7 @@ export function ForgotPasswordPage() {
                 </p>
               </div>
 
-              {error && <p className="text-sm text-[#FF3366]">{error}</p>}
+              {error && <p className="text-sm text-[#FF3366]" role="alert" aria-live="polite">{error}</p>}
 
               <Button type="submit" disabled={isLoading || otp.join('').length !== 6} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base">
                 {isLoading ? (
@@ -312,7 +314,7 @@ export function ForgotPasswordPage() {
           {step === 'password' && (
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
-                <label className="text-sm text-[#6B7280] mb-2 block">New password</label>
+                <label className="text-sm text-[#9CA3AF] mb-2 block">New password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                   <Input
@@ -328,7 +330,7 @@ export function ForgotPasswordPage() {
                 </div>
               </div>
               <div>
-                <label className="text-sm text-[#6B7280] mb-2 block">Confirm password</label>
+                <label className="text-sm text-[#9CA3AF] mb-2 block">Confirm password</label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                   <Input
@@ -358,7 +360,7 @@ export function ForgotPasswordPage() {
                 ))}
               </div>
 
-              {error && <p className="text-sm text-[#FF3366]">{error}</p>}
+              {error && <p className="text-sm text-[#FF3366]" role="alert" aria-live="polite">{error}</p>}
 
               <Button type="submit" disabled={isLoading} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base">
                 {isLoading ? (

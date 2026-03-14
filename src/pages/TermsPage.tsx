@@ -39,7 +39,7 @@ export function TermsPage() {
         <Button
           variant="ghost"
           onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
-          className="text-[#6B7280] hover:text-[#E8E8F0] mb-8"
+          className="text-[#9CA3AF] hover:text-[#E8E8F0] mb-8 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />Back
         </Button>
@@ -47,7 +47,7 @@ export function TermsPage() {
         <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
           Terms of Service
         </h1>
-        <p className="text-[#6B7280] mb-8">Last updated: February 2026</p>
+        <p className="text-[#9CA3AF] mb-8">Last updated: February 2026</p>
 
         <div className="space-y-8">
           {sections.map((section) => (
@@ -57,14 +57,14 @@ export function TermsPage() {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-[#E8E8F0] mb-2">{section.title}</h2>
-                <p className="text-[#6B7280] leading-relaxed">{section.content}</p>
+                <p className="text-[#9CA3AF] leading-relaxed">{section.content}</p>
               </div>
             </div>
           ))}
         </div>
 
         <div className="mt-12 p-6 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
-          <p className="text-sm text-[#6B7280]">
+          <p className="text-sm text-[#9CA3AF]">
             Questions about terms? Reach us at{' '}
             <a href="mailto:legal@agentin.chat" className="text-[#00F0FF] hover:underline">legal@agentin.chat</a>
           </p>

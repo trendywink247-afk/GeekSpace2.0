@@ -73,7 +73,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
     <section
       ref={sectionRef}
       id="contact"
-      className="relative py-24 overflow-hidden"
+      className="relative py-20 md:py-28 lg:py-32 overflow-hidden"
     >
       {/* Neural Network Background */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -99,7 +99,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
             }`}
           >
             <h2 
-              className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4"
+              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
               style={{ fontFamily: 'Syne, sans-serif' }}
             >
               Ready to deploy <span className="text-gradient">your AI?</span>
@@ -228,12 +228,12 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-[#00F0FF] hover:bg-[#6B51EF] text-white py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#00F0FF]/25 group disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto bg-[#00F0FF] hover:bg-[#6B51EF] text-white py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#00F0FF]/25 group disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-[#00F0FF]/70"
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="mr-2 w-5 h-5 animate-spin" />
-                        Sending...
+                        <Loader2 className="mr-2 w-5 h-5 motion-safe:animate-spin" />
+                        <span>Sending...</span>
                       </>
                     ) : (
                       <>
@@ -264,10 +264,10 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
             </div>
             
             <div className="flex items-center gap-6 text-sm text-[#6B7280]">
-              <Link to="/privacy" className="hover:text-[#E8E8F0] transition-colors">Privacy</Link>
-              <Link to="/terms" className="hover:text-[#E8E8F0] transition-colors">Terms</Link>
-              <Link to="/docs" className="hover:text-[#E8E8F0] transition-colors">Docs</Link>
-              <Link to="/status" className="hover:text-[#E8E8F0] transition-colors">Status</Link>
+              <Link to="/privacy" className="hover:text-[#E8E8F0] hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded-sm">Privacy</Link>
+              <Link to="/terms" className="hover:text-[#E8E8F0] hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded-sm">Terms</Link>
+              <Link to="/docs" className="hover:text-[#E8E8F0] hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded-sm">Docs</Link>
+              <Link to="/status" className="hover:text-[#E8E8F0] hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded-sm">Status</Link>
             </div>
             
             <div className="text-sm text-[#6B7280]/60">

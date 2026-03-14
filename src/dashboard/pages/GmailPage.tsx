@@ -182,12 +182,12 @@ export function GmailPage() {
                   </span>
                 )}
                 <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}
-                  className="border-white/10 text-[#E8E8F0] hover:bg-white/5 text-xs h-8 min-h-[32px]">
+                  className="border-white/10 text-[#E8E8F0] hover:bg-white/5 text-xs h-8 min-h-[44px]">
                   <RefreshCw className={`w-3 h-3 mr-1 ${syncing ? 'animate-spin' : ''}`} />
                   {syncing ? 'Syncing...' : 'Sync now'}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleDisconnect}
-                  className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs h-8 min-h-[32px]">
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs h-8 min-h-[44px]">
                   <Unlink className="w-3 h-3 mr-1" />
                   Disconnect
                 </Button>
@@ -212,7 +212,7 @@ export function GmailPage() {
         <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
           <X className="w-4 h-4 shrink-0" />
           {error}
-          <button onClick={() => setError('')} className="ml-auto"><X className="w-3 h-3" /></button>
+          <button onClick={() => setError('')} className="ml-auto min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss error"><X className="w-3 h-3" /></button>
         </div>
       )}
 
@@ -245,7 +245,7 @@ export function GmailPage() {
                       {msg.subject}
                     </span>
                     {msg.priority && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 ${PRIORITY_COLOR[msg.priority] || PRIORITY_COLOR.normal}`}>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full border shrink-0 ${PRIORITY_COLOR[msg.priority] || PRIORITY_COLOR.normal}`}>
                         {msg.priority}
                       </span>
                     )}
@@ -255,7 +255,7 @@ export function GmailPage() {
                     <div className="text-[#E8E8F0]/30 text-xs mt-1 line-clamp-2">{msg.snippet}</div>
                   )}
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-[#E8E8F0]/20 text-[10px]">{timeSince(msg.synced_at)}</span>
+                    <span className="text-[#E8E8F0]/20 text-xs">{timeSince(msg.synced_at)}</span>
                     <ChevronRight className="w-3 h-3 text-[#E8E8F0]/20" />
                   </div>
                 </button>
@@ -276,7 +276,8 @@ export function GmailPage() {
                       <p className="text-[#E8E8F0]/50 text-xs mt-0.5 truncate">{selected.sender}</p>
                     </div>
                     <button onClick={() => setSelected(null)}
-                      className="text-[#E8E8F0]/30 hover:text-[#E8E8F0]/60 shrink-0">
+                      className="text-[#E8E8F0]/30 hover:text-[#E8E8F0]/60 shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                      aria-label="Close detail view">
                       <X className="w-4 h-4" />
                     </button>
                   </div>

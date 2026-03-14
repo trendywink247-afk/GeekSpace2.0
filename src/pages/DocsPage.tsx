@@ -104,7 +104,7 @@ export function DocsPage() {
         <Button
           variant="ghost"
           onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
-          className="text-[#6B7280] hover:text-[#E8E8F0] mb-8"
+          className="text-[#9CA3AF] hover:text-[#E8E8F0] mb-8 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />Back
         </Button>
@@ -113,17 +113,17 @@ export function DocsPage() {
           <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
             Documentation
           </h1>
-          <p className="text-[#6B7280]">Everything you need to know about Agentin</p>
+          <p className="text-[#9CA3AF]">Everything you need to know about Agentin</p>
         </div>
 
         {/* Search */}
         <div className="relative mb-8">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
           <Input
             placeholder="Search documentation..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 py-6 text-lg bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0]"
+            className="pl-12 py-6 text-lg bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
           />
         </div>
 
@@ -142,10 +142,10 @@ export function DocsPage() {
                   </div>
                   <div className="flex-1">
                     <h2 className="font-semibold text-[#E8E8F0]">{section.title}</h2>
-                    <p className="text-sm text-[#6B7280]">{section.description}</p>
+                    <p className="text-sm text-[#9CA3AF]">{section.description}</p>
                   </div>
                   <ChevronRight
-                    className={`w-5 h-5 text-[#6B7280] transition-transform duration-300 ${
+                    className={`w-5 h-5 text-[#9CA3AF] transition-transform duration-300 ${
                       expandedSection === section.id ? 'rotate-90' : ''
                     }`}
                   />
@@ -160,7 +160,7 @@ export function DocsPage() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <h3 className="font-medium text-sm text-[#E8E8F0] mb-1">{article.title}</h3>
-                        <p className="text-xs text-[#6B7280]">{article.summary}</p>
+                        <p className="text-xs text-[#9CA3AF]">{article.summary}</p>
                       </div>
                     ))}
                   </div>
@@ -173,12 +173,12 @@ export function DocsPage() {
         {filtered.length === 0 && (
           <div className="text-center py-12">
             <BookOpen className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
-            <p className="text-[#6B7280]">No docs match your search</p>
+            <p className="text-[#9CA3AF]">No docs match your search</p>
           </div>
         )}
 
         <div className="mt-12 p-6 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
-          <p className="text-sm text-[#6B7280]">
+          <p className="text-sm text-[#9CA3AF]">
             Need help? Contact us at{' '}
             <span className="text-[#00F0FF]">support@agentin.chat</span>
           </p>

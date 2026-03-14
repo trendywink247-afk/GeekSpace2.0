@@ -520,7 +520,7 @@ export function SettingsPage() {
               <h2 className="text-lg font-bold text-[#F4F6FF]" style={{ fontFamily: 'Syne, sans-serif' }}>
                 Keyboard Shortcuts
               </h2>
-              <button onClick={() => setShowShortcuts(false)} className="text-[#6B7280] hover:text-[#F4F6FF] transition-colors text-lg leading-none">✕</button>
+              <button onClick={() => setShowShortcuts(false)} className="text-[#9CA3AF] hover:text-[#F4F6FF] transition-colors text-lg leading-none min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close shortcuts">✕</button>
             </div>
             <div className="space-y-4">
               {[
@@ -541,7 +541,7 @@ export function SettingsPage() {
                 ]},
               ].map(({ group, items }) => (
                 <div key={group}>
-                  <p className="text-[10px] uppercase tracking-widest text-[#6B7280] mb-1.5">{group}</p>
+                  <p className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-1.5">{group}</p>
                   <div className="space-y-1">
                     {items.map(({ key, desc }) => (
                       <div key={key} className="flex items-center justify-between">
@@ -553,7 +553,7 @@ export function SettingsPage() {
                 </div>
               ))}
             </div>
-            <p className="mt-5 text-[11px] text-[#6B7280] text-center">Press <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">?</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">Esc</kbd> to close</p>
+            <p className="mt-5 text-[11px] text-[#9CA3AF] text-center">Press <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">?</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">Esc</kbd> to close</p>
           </div>
         </div>
       )}
@@ -562,7 +562,7 @@ export function SettingsPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Settings
           </h1>
-          <p className="text-[#6B7280]">Manage your account preferences</p>
+          <p className="text-[#9CA3AF]">Manage your account preferences</p>
         </div>
         <div className="flex flex-col items-end gap-2">
           {/* 46.4: Unsaved changes warning banner */}
@@ -576,13 +576,13 @@ export function SettingsPage() {
               variant="outline"
               size="sm"
               onClick={() => setShowShortcuts(true)}
-              className="border-[#00F0FF]/20 text-[#6B7280] hover:text-[#00F0FF] hover:border-[#00F0FF]/40 text-xs"
+              className="border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#00F0FF] hover:border-[#00F0FF]/40 text-xs"
               title="Keyboard shortcuts (?)"
               data-testid="shortcuts-btn"
             >
               <kbd className="text-xs font-mono mr-1">?</kbd>Shortcuts
             </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">
+          <Button onClick={handleSave} disabled={isSaving} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
             {isSaving ? (
               <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
             ) : (
@@ -675,17 +675,17 @@ export function SettingsPage() {
                       }}
                     />
                   </label>
-                  {avatarError && <p className="text-[10px] text-[#FF3366] mt-1">{avatarError}</p>}
-                  {!avatarError && <p className="text-[10px] text-[#6B7280] mt-1">Max 500 KB · JPEG, PNG, WebP</p>}
+                  {avatarError && <p className="text-xs text-[#FF3366] mt-1">{avatarError}</p>}
+                  {!avatarError && <p className="text-xs text-[#9CA3AF] mt-1">Max 500 KB · JPEG, PNG, WebP</p>}
                 </div>
                 <h3 className="font-semibold text-[#E8E8F0]">{profile.name}</h3>
-                <p className="text-sm text-[#6B7280]">@{profile.username}</p>
+                <p className="text-sm text-[#9CA3AF]">@{profile.username}</p>
                 {/* 77.6: Dynamic plan badge */}
                 {(() => {
                   const plan = user?.plan as string | undefined;
                   if (!plan || plan === 'free') {
                     return (
-                      <Badge variant="outline" className="mt-3 border-[#6B7280]/30 text-[#6B7280]">
+                      <Badge variant="outline" className="mt-3 border-[#6B7280]/30 text-[#9CA3AF]">
                         Free Plan
                       </Badge>
                     );
@@ -716,37 +716,37 @@ export function SettingsPage() {
             <Card className="lg:col-span-2 border-[#00F0FF]/20">
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
-                <CardDescription className="text-[#6B7280]">Update your public profile</CardDescription>
+                <CardDescription className="text-[#9CA3AF]">Update your public profile</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-2 block">Display Name</label>
+                    <label className="text-sm text-[#9CA3AF] mb-2 block">Display Name</label>
                     <Input value={profile.name} placeholder="Your name" onChange={(e) => { setProfile({ ...profile, name: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                   </div>
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-2 block">Username</label>
+                    <label className="text-sm text-[#9CA3AF] mb-2 block">Username</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]">@</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]">@</span>
                       <Input value={profile.username} onChange={(e) => { setProfile({ ...profile, username: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] pl-8" />
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-[#6B7280] mb-2 block">Email</label>
+                  <label className="text-sm text-[#9CA3AF] mb-2 block">Email</label>
                   <Input type="email" value={profile.email} placeholder="your@email.com" onChange={(e) => { setProfile({ ...profile, email: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                 </div>
                 <div>
-                  <label className="text-sm text-[#6B7280] mb-2 block">Bio</label>
+                  <label className="text-sm text-[#9CA3AF] mb-2 block">Bio</label>
                   <textarea value={profile.bio} onChange={(e) => { setProfile({ ...profile, bio: e.target.value }); setHasUnsavedChanges(true); }} className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF]" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-2 block">Location</label>
+                    <label className="text-sm text-[#9CA3AF] mb-2 block">Location</label>
                     <Input value={profile.location} onChange={(e) => { setProfile({ ...profile, location: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                   </div>
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-2 block">Website</label>
+                    <label className="text-sm text-[#9CA3AF] mb-2 block">Website</label>
                     <Input value={profile.website} onChange={(e) => { setProfile({ ...profile, website: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
                   </div>
                 </div>
@@ -760,7 +760,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription className="text-[#6B7280]">Choose how you want to be notified</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Choose how you want to be notified</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {[
@@ -779,7 +779,7 @@ export function SettingsPage() {
                     </div>
                     <div>
                       <div className="font-medium text-[#E8E8F0]">{item.title}</div>
-                      <div className="text-sm text-[#6B7280]">{item.desc}</div>
+                      <div className="text-sm text-[#9CA3AF]">{item.desc}</div>
                     </div>
                   </div>
                   <Switch
@@ -798,7 +798,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Telegram Alerts</CardTitle>
-              <CardDescription className="text-[#6B7280]">Choose which alerts are sent to your Telegram</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Choose which alerts are sent to your Telegram</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {([
@@ -811,7 +811,7 @@ export function SettingsPage() {
                 <div key={item.key} className="flex items-center justify-between">
                   <div>
                     <div className="font-medium text-[#E8E8F0] text-sm">{item.title}</div>
-                    <div className="text-xs text-[#6B7280] mt-0.5">{item.desc}</div>
+                    <div className="text-xs text-[#9CA3AF] mt-0.5">{item.desc}</div>
                   </div>
                   <Switch
                     checked={agentNotifs[item.key] === 1}
@@ -830,7 +830,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Snooze Presets</CardTitle>
-              <CardDescription className="text-[#6B7280]">Choose which snooze options appear when delaying a reminder</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Choose which snooze options appear when delaying a reminder</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {(['1h', '3h', 'tomorrow', 'next-week'] as const).map((preset) => {
@@ -861,7 +861,7 @@ export function SettingsPage() {
           <Card className="border-[#FF6161]/20">
             <CardHeader>
               <CardTitle className="text-[#E8E8F0]">Reset Agent Configuration</CardTitle>
-              <CardDescription className="text-[#6B7280]">Restore all agent notification and snooze settings to their defaults</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Restore all agent notification and snooze settings to their defaults</CardDescription>
             </CardHeader>
             <CardContent>
               <Button
@@ -886,7 +886,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Active Sessions</CardTitle>
-                  <CardDescription className="text-[#6B7280]">Devices where you are currently signed in</CardDescription>
+                  <CardDescription className="text-[#9CA3AF]">Devices where you are currently signed in</CardDescription>
                 </div>
                 {sessions.length > 1 && (
                   <Button
@@ -906,14 +906,14 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {sessionsLoading ? (
-                <div className="flex items-center gap-2 py-4 text-[#6B7280]">
+                <div className="flex items-center gap-2 py-4 text-[#9CA3AF]">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm">Loading sessions...</span>
                 </div>
               ) : sessions.length === 0 ? (
                 <div className="text-center py-6">
                   <Monitor className="w-8 h-8 text-[#00F0FF]/30 mx-auto mb-2" />
-                  <p className="text-sm text-[#6B7280]">No active sessions found</p>
+                  <p className="text-sm text-[#9CA3AF]">No active sessions found</p>
                 </div>
               ) : (
                 sessions.map((s) => (
@@ -924,7 +924,7 @@ export function SettingsPage() {
                         <div className="text-sm font-medium text-[#E8E8F0] truncate max-w-[200px]">
                           {s.user_agent.slice(0, 40) || 'Unknown browser'}
                         </div>
-                        <div className="text-xs text-[#6B7280]">
+                        <div className="text-xs text-[#9CA3AF]">
                           {s.ip || 'Unknown IP'} · Last seen {new Date(s.last_seen).toLocaleDateString()}
                         </div>
                       </div>
@@ -940,7 +940,7 @@ export function SettingsPage() {
                   </div>
                 ))
               )}
-              <p className="text-xs text-[#6B7280] pt-1">
+              <p className="text-xs text-[#9CA3AF] pt-1">
                 Note: Revoking a session marks it inactive in the database but existing tokens remain valid until they expire.
               </p>
             </CardContent>
@@ -950,7 +950,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Preferred AI Engine</CardTitle>
-              <CardDescription className="text-[#6B7280]">Choose which AI model powers your assistant</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Choose which AI model powers your assistant</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {[
@@ -970,11 +970,11 @@ export function SettingsPage() {
                   }`}
                 >
                   <div className="font-medium text-sm">{opt.label}</div>
-                  <div className="text-xs text-[#6B7280] mt-0.5">{opt.desc}</div>
+                  <div className="text-xs text-[#9CA3AF] mt-0.5">{opt.desc}</div>
                 </button>
               ))}
               {modelSaving && (
-                <div className="flex items-center gap-2 text-[#6B7280] text-sm">
+                <div className="flex items-center gap-2 text-[#9CA3AF] text-sm">
                   <Loader2 className="w-3 h-3 animate-spin" />Saving...
                 </div>
               )}
@@ -985,7 +985,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Preferred Free Model</CardTitle>
-              <CardDescription className="text-[#6B7280]">
+              <CardDescription className="text-[#9CA3AF]">
                 Pick which OpenRouter free model to use when cloud mode is selected
               </CardDescription>
             </CardHeader>
@@ -1011,11 +1011,11 @@ export function SettingsPage() {
                 ))}
               </select>
               {freeModelSaving && (
-                <div className="flex items-center gap-2 text-[#6B7280] text-sm">
+                <div className="flex items-center gap-2 text-[#9CA3AF] text-sm">
                   <Loader2 className="w-3 h-3 animate-spin" />Saving...
                 </div>
               )}
-              <p className="text-xs text-[#6B7280]">
+              <p className="text-xs text-[#9CA3AF]">
                 Only applies when your engine is set to Cloud or Auto. Free models have usage limits.
               </p>
             </CardContent>
@@ -1025,11 +1025,11 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Change Password</CardTitle>
-              <CardDescription className="text-[#6B7280]">Update your account password</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Update your account password</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm text-[#6B7280] mb-2 block">Current Password</label>
+                <label className="text-sm text-[#9CA3AF] mb-2 block">Current Password</label>
                 <Input
                   type="password"
                   value={pwCurrent}
@@ -1039,7 +1039,7 @@ export function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="text-sm text-[#6B7280] mb-2 block">New Password</label>
+                <label className="text-sm text-[#9CA3AF] mb-2 block">New Password</label>
                 <Input
                   type="password"
                   value={pwNew}
@@ -1083,7 +1083,7 @@ export function SettingsPage() {
                 })()}
               </div>
               <div>
-                <label className="text-sm text-[#6B7280] mb-2 block">Confirm New Password</label>
+                <label className="text-sm text-[#9CA3AF] mb-2 block">Confirm New Password</label>
                 <Input
                   type="password"
                   value={pwConfirm}
@@ -1146,7 +1146,7 @@ export function SettingsPage() {
               <CardTitle className="text-red-400 flex items-center gap-2">
                 <Trash2 className="w-4 h-4" /> Danger Zone
               </CardTitle>
-              <CardDescription className="text-[#6B7280]">
+              <CardDescription className="text-[#9CA3AF]">
                 Permanently delete your account and all associated data. This cannot be undone.
               </CardDescription>
             </CardHeader>
@@ -1181,7 +1181,7 @@ export function SettingsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); setDeleteError(''); }}
-                      className="border-[#00F0FF]/20 text-[#6B7280]"
+                      className="border-[#00F0FF]/20 text-[#9CA3AF]"
                     >
                       Cancel
                     </Button>
@@ -1224,7 +1224,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>API Keys</CardTitle>
-                  <CardDescription className="text-[#6B7280]">Manage provider keys for &quot;Bring Your Own&quot; mode</CardDescription>
+                  <CardDescription className="text-[#9CA3AF]">Manage provider keys for &quot;Bring Your Own&quot; mode</CardDescription>
                 </div>
                 <Button onClick={() => setShowAddKey(true)} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
                   <Plus className="w-4 h-4 mr-2" />Add Key
@@ -1235,8 +1235,8 @@ export function SettingsPage() {
               {apiKeys.length === 0 && !showAddKey && (
                 <div className="text-center py-8">
                   <Key className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-                  <p className="text-[#6B7280] mb-2">No API keys added yet</p>
-                  <p className="text-sm text-[#6B7280]">Add your provider keys to use your own credits</p>
+                  <p className="text-[#9CA3AF] mb-2">No API keys added yet</p>
+                  <p className="text-sm text-[#9CA3AF]">Add your provider keys to use your own credits</p>
                 </div>
               )}
 
@@ -1249,7 +1249,7 @@ export function SettingsPage() {
                       </div>
                       <div className="min-w-0">
                         <div className="font-medium text-[#E8E8F0] truncate">{key.label}</div>
-                        <div className="text-sm text-[#6B7280] font-mono truncate">
+                        <div className="text-sm text-[#9CA3AF] font-mono truncate">
                           {key.maskedKey.length > 12
                             ? `${key.maskedKey.slice(0, 4)}...${key.maskedKey.slice(-4)}`
                             : key.maskedKey}
@@ -1289,7 +1289,7 @@ export function SettingsPage() {
               {showAddKey && (
                 <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 space-y-3">
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-2 block">Provider</label>
+                    <label className="text-sm text-[#9CA3AF] mb-2 block">Provider</label>
                     <div className="flex gap-2 flex-wrap">
                       {(['openai', 'anthropic', 'qwen', 'openrouter'] as ApiProvider[]).map((p) => (
                         <button
@@ -1298,7 +1298,7 @@ export function SettingsPage() {
                           className={`px-3 py-2 min-h-[44px] rounded-lg text-sm capitalize transition-all ${
                             newKeyProvider === p
                               ? 'bg-[#00F0FF]/20 border border-[#00F0FF] text-[#00F0FF]'
-                              : 'bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280]'
+                              : 'bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF]'
                           }`}
                         >
                           {p}
@@ -1307,7 +1307,7 @@ export function SettingsPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-2 block">API Key</label>
+                    <label className="text-sm text-[#9CA3AF] mb-2 block">API Key</label>
                     <Input
                       type="password"
                       value={newKeyValue}
@@ -1338,7 +1338,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Agent Memory</CardTitle>
-                  <CardDescription className="text-[#6B7280]">What your AI assistant remembers about you</CardDescription>
+                  <CardDescription className="text-[#9CA3AF]">What your AI assistant remembers about you</CardDescription>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {['all', 'fact', 'preference'].map((cat) => (
@@ -1348,7 +1348,7 @@ export function SettingsPage() {
                       className={`px-3 py-2 min-h-[44px] rounded-lg text-xs capitalize transition-all ${
                         memoryFilter === cat
                           ? 'bg-[#00F0FF]/20 border border-[#00F0FF] text-[#00F0FF]'
-                          : 'bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280]'
+                          : 'bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF]'
                       }`}
                     >
                       {cat}
@@ -1365,8 +1365,8 @@ export function SettingsPage() {
               ) : memories.length === 0 ? (
                 <div className="text-center py-8">
                   <Brain className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-                  <p className="text-[#6B7280] mb-2">No memories yet</p>
-                  <p className="text-sm text-[#6B7280]">Your agent learns about you through conversations</p>
+                  <p className="text-[#9CA3AF] mb-2">No memories yet</p>
+                  <p className="text-sm text-[#9CA3AF]">Your agent learns about you through conversations</p>
                 </div>
               ) : (
                 memories.map((memory) => (
@@ -1382,10 +1382,10 @@ export function SettingsPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-[#E8E8F0]">{memory.key}</span>
-                          <Badge variant="outline" className="text-[10px] border-[#00F0FF]/30 text-[#6B7280]">{memory.category}</Badge>
+                          <Badge variant="outline" className="text-xs border-[#00F0FF]/30 text-[#9CA3AF]">{memory.category}</Badge>
                         </div>
-                        <p className="text-sm text-[#6B7280]">{memory.value}</p>
-                        <div className="flex items-center gap-3 mt-2 text-[10px] text-[#6B7280]/60">
+                        <p className="text-sm text-[#9CA3AF]">{memory.value}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-[#9CA3AF]/60">
                           <span className="flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> {new Date(memory.updatedAt || memory.createdAt).toLocaleDateString()}</span>
                           <span>Confidence: {Math.round(memory.confidence * 100)}%</span>
                           <span>Source: {memory.source}</span>
@@ -1412,7 +1412,7 @@ export function SettingsPage() {
                 <CardTitle className="text-sm flex items-center gap-2">
                   <span className="text-base">✨</span> Top Reactions
                 </CardTitle>
-                <CardDescription className="text-[#6B7280] text-xs">
+                <CardDescription className="text-[#9CA3AF] text-xs">
                   Your most-used reactions on agent messages
                 </CardDescription>
               </CardHeader>
@@ -1444,12 +1444,12 @@ export function SettingsPage() {
                 </CardTitle>
                 <button
                   onClick={() => setShowStarred(s => !s)}
-                  className="text-xs text-[#6B7280] hover:text-[#F59E0B] transition-colors"
+                  className="text-xs text-[#9CA3AF] hover:text-[#F59E0B] transition-colors"
                 >
                   {showStarred ? 'Hide' : 'Show'}
                 </button>
               </div>
-              <CardDescription className="text-[#6B7280] text-xs">Messages you've starred from your conversation history</CardDescription>
+              <CardDescription className="text-[#9CA3AF] text-xs">Messages you've starred from your conversation history</CardDescription>
             </CardHeader>
             {showStarred && (
               <CardContent className="space-y-2 max-h-64 overflow-y-auto">
@@ -1461,7 +1461,7 @@ export function SettingsPage() {
                       <span className="text-xs mt-0.5">{msg.role === 'user' ? '👤' : '🤖'}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-[#E8E8F0] line-clamp-2">{msg.content}</p>
-                        <p className="text-[10px] text-[#4B5563] mt-0.5">{new Date(msg.createdAt).toLocaleDateString()}</p>
+                        <p className="text-xs text-[#4B5563] mt-0.5">{new Date(msg.createdAt).toLocaleDateString()}</p>
                       </div>
                       <button
                         onClick={() => {
@@ -1469,7 +1469,7 @@ export function SettingsPage() {
                             setStarredMessages(prev => prev.filter(m => m.id !== msg.id));
                           }).catch(() => {});
                         }}
-                        className="shrink-0 text-[#F59E0B] hover:text-[#6B7280] transition-colors"
+                        className="shrink-0 text-[#F59E0B] hover:text-[#9CA3AF] transition-colors"
                         title="Unstar"
                         data-testid={`unstar-msg-${msg.id}`}
                       >
@@ -1488,7 +1488,7 @@ export function SettingsPage() {
                 <Brain className="w-5 h-5 text-[#00F0FF] flex-shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">How Memory Works</h4>
-                  <p className="text-xs text-[#6B7280]">
+                  <p className="text-xs text-[#9CA3AF]">
                     Your agent learns about you through conversations — extracting facts, preferences, and context.
                     Memories improve response quality over time. You can delete any memory at any time.
                   </p>
@@ -1502,7 +1502,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Chat History Export</h4>
-                  <p className="text-xs text-[#6B7280]">Download your full conversation history as a JSON file.</p>
+                  <p className="text-xs text-[#9CA3AF]">Download your full conversation history as a JSON file.</p>
                 </div>
                 <Button
                   variant="outline"
@@ -1522,7 +1522,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Export as Markdown</h4>
-                  <p className="text-xs text-[#6B7280]">Download chat history as a readable Markdown (.md) file.</p>
+                  <p className="text-xs text-[#9CA3AF]">Download chat history as a readable Markdown (.md) file.</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -1564,7 +1564,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Privacy Controls</CardTitle>
-              <CardDescription className="text-[#6B7280]">Control what is visible on your public portfolio</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Control what is visible on your public portfolio</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {[
@@ -1577,7 +1577,7 @@ export function SettingsPage() {
                 <div key={item.key} className="flex items-center justify-between">
                   <div>
                     <div className="font-medium text-[#E8E8F0]">{item.title}</div>
-                    <div className="text-sm text-[#6B7280]">{item.desc}</div>
+                    <div className="text-sm text-[#9CA3AF]">{item.desc}</div>
                   </div>
                   <Switch
                     checked={privacy[item.key as keyof typeof privacy]}
@@ -1593,7 +1593,7 @@ export function SettingsPage() {
                 <Shield className="w-5 h-5 text-[#00F0FF] flex-shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">What We Never Show</h4>
-                  <p className="text-xs text-[#6B7280]">
+                  <p className="text-xs text-[#9CA3AF]">
                     Raw chat logs, internal system data, precise location (only city if enabled), and API keys are never exposed publicly.
                   </p>
                 </div>
@@ -1620,12 +1620,12 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Appearance</CardTitle>
-              <CardDescription className="text-[#6B7280]">Customize the look of your dashboard</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Customize the look of your dashboard</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* 56.7: Prominent 3-way theme toggle with icons */}
               <div>
-                <label className="text-sm text-[#6B7280] mb-3 block">Theme Mode</label>
+                <label className="text-sm text-[#9CA3AF] mb-3 block">Theme Mode</label>
                 <div className="inline-flex rounded-xl border border-[#00F0FF]/20 bg-[#06060B] p-1 gap-1">
                   {([
                     { id: 'dark', label: 'Dark', Icon: Moon },
@@ -1641,7 +1641,7 @@ export function SettingsPage() {
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         themeMode === id
                           ? 'bg-[#00F0FF]/15 text-[#00F0FF] shadow-inner'
-                          : 'text-[#6B7280] hover:text-[#E8E8F0]'
+                          : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -1649,13 +1649,13 @@ export function SettingsPage() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-[#6B7280]">
+                <p className="mt-2 text-xs text-[#9CA3AF]">
                   {themeMode === 'system' ? 'Follows your OS preference' : themeMode === 'dark' ? 'Dark mode active' : 'Light mode active'}
                 </p>
               </div>
 
               <div>
-                <label className="text-sm text-[#6B7280] mb-3 block">Accent Color</label>
+                <label className="text-sm text-[#9CA3AF] mb-3 block">Accent Color</label>
                 <div className="flex gap-3 flex-wrap">
                   {accentPresets.map((color) => (
                     <button
@@ -1669,14 +1669,14 @@ export function SettingsPage() {
                   ))}
                 </div>
                 <div className="mt-3 flex items-center gap-3">
-                  <label className="text-sm text-[#6B7280]">Custom:</label>
+                  <label className="text-sm text-[#9CA3AF]">Custom:</label>
                   <input
                     type="color"
                     value={accentColor}
                     onChange={(e) => { setAccentColor(e.target.value); void agentService.updateConfig({ accentColor: e.target.value }).then(() => showSavedToast()).catch(() => {}); }}
                     className="w-8 h-8 rounded cursor-pointer bg-transparent"
                   />
-                  <span className="text-sm font-mono text-[#6B7280]">{accentColor}</span>
+                  <span className="text-sm font-mono text-[#9CA3AF]">{accentColor}</span>
                 </div>
               </div>
 
@@ -1684,7 +1684,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between py-3 border-t border-[#00F0FF]/10">
                 <div>
                   <p className="text-sm font-medium text-[#E8E8F0]">Compact Mode</p>
-                  <p className="text-xs text-[#6B7280] mt-0.5">Reduce card padding and spacing for a denser layout</p>
+                  <p className="text-xs text-[#9CA3AF] mt-0.5">Reduce card padding and spacing for a denser layout</p>
                 </div>
                 <Switch
                   checked={compactMode}
@@ -1695,7 +1695,7 @@ export function SettingsPage() {
 
               {/* AI Background Generator */}
               <div className="space-y-3">
-                <label className="text-sm text-[#6B7280] block">AI-Generated Background</label>
+                <label className="text-sm text-[#9CA3AF] block">AI-Generated Background</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -1714,7 +1714,7 @@ export function SettingsPage() {
                       className="h-24 rounded-xl border border-[#00F0FF]/20"
                       style={{ background: bgPreview.gradient }}
                     />
-                    <p className="text-xs text-[#6B7280]">"{bgPreview.name}" — click Apply to use this background</p>
+                    <p className="text-xs text-[#9CA3AF]">"{bgPreview.name}" — click Apply to use this background</p>
                     <div className="flex gap-2">
                       <Button onClick={handleApplyBg} size="sm" className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">Apply</Button>
                       <Button onClick={handleGenerateBg} variant="outline" size="sm" className="border-[#00F0FF]/30">Try another</Button>
@@ -1732,23 +1732,23 @@ export function SettingsPage() {
               <CardTitle className="text-[#E8E8F0] flex items-center gap-2">
                 <Volume2 className="w-5 h-5 text-[#00F0FF]" />Voice Settings
               </CardTitle>
-              <CardDescription className="text-[#6B7280]">Configure text-to-speech and voice input.</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Configure text-to-speech and voice input.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-medium text-[#E8E8F0]">Enable TTS (Text-to-Speech)</h4>
-                  <p className="text-xs text-[#6B7280] mt-0.5">Read agent responses aloud in Voice Chat.</p>
+                  <p className="text-xs text-[#9CA3AF] mt-0.5">Read agent responses aloud in Voice Chat.</p>
                 </div>
                 <Switch checked={voiceSettings.enabled} onCheckedChange={(v) => saveVoiceSettings({ enabled: v })} aria-label="Enable TTS" />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-[#E8E8F0]">Speech Rate</label>
-                  <span className="text-xs text-[#6B7280]">{voiceSettings.rate.toFixed(1)}x</span>
+                  <span className="text-xs text-[#9CA3AF]">{voiceSettings.rate.toFixed(1)}x</span>
                 </div>
                 <input type="range" min="0.5" max="2" step="0.1" value={voiceSettings.rate} onChange={(e) => saveVoiceSettings({ rate: parseFloat(e.target.value) })} className="w-full accent-[#00F0FF]" />
-                <div className="flex justify-between text-[10px] text-[#6B7280]"><span>0.5x slow</span><span>1x normal</span><span>2x fast</span></div>
+                <div className="flex justify-between text-xs text-[#9CA3AF]"><span>0.5x slow</span><span>1x normal</span><span>2x fast</span></div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[#E8E8F0]">Language</label>
@@ -1764,13 +1764,13 @@ export function SettingsPage() {
                   {ttsSample ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Volume2 className="w-4 h-4 mr-2" />}
                   {ttsSample ? "Speaking..." : "Test Voice"}
                 </Button>
-                <p className="text-xs text-[#6B7280]">Plays a sample phrase with your current settings.</p>
+                <p className="text-xs text-[#9CA3AF]">Plays a sample phrase with your current settings.</p>
               </div>
               <div className="rounded-lg bg-[#00F0FF]/5 border border-[#00F0FF]/15 px-4 py-3 flex items-start gap-3">
                 <Mic className="w-4 h-4 text-[#00F0FF] mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-[#E8E8F0] font-medium">Keyboard Shortcut</p>
-                  <p className="text-xs text-[#6B7280] mt-0.5">Press Alt + V anywhere to open Voice Chat instantly.</p>
+                  <p className="text-xs text-[#9CA3AF] mt-0.5">Press Alt + V anywhere to open Voice Chat instantly.</p>
                 </div>
               </div>
             </CardContent>

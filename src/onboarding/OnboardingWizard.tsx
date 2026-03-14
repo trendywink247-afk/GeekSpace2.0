@@ -199,6 +199,7 @@ export function OnboardingWizard() {
                       : 'bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280]'
                 }`}
                 title={s.name}
+                aria-current={isActive ? 'step' : undefined}
               >
                 {isCompleted ? <Check className="w-5 h-5 sm:w-6 sm:h-6" /> : s.emoji}
               </div>
@@ -275,7 +276,7 @@ export function OnboardingWizard() {
       {/* Skip Modal */}
       {showSkipModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-card-v2 border border-[#00F0FF]/20 rounded-2xl p-6 max-w-sm w-full">
+          <div className="glass-card-v2 border border-[#00F0FF]/20 rounded-2xl p-6 max-w-xs sm:max-w-sm w-full">
             <h3 className="text-lg font-semibold text-[#E8E8F0] mb-4">Skip this step?</h3>
             <p className="text-sm text-[#6B7280] mb-4">
               You can always complete this later in your dashboard settings.
@@ -283,7 +284,7 @@ export function OnboardingWizard() {
             <div className="space-y-2 mb-4">
               {SKIP_REASONS.map((reason, i) => (
                 <button
-                  key={i}
+                  key={reason}
                   onClick={() => handleSkip(i === 3)}
                   className="w-full text-left px-4 py-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 text-sm text-[#6B7280] hover:border-[#00F0FF]/50 hover:text-[#E8E8F0] transition-all"
                 >
@@ -361,7 +362,7 @@ export function OnboardingWizard() {
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={() => setShowSkipModal(true)}
-              className="text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors flex items-center gap-1"
+              className="text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded px-2 py-1"
             >
               <SkipForward className="w-4 h-4" />
               Skip this step
@@ -369,7 +370,7 @@ export function OnboardingWizard() {
             <span className="text-[#6B7280]/30">|</span>
             <button
               onClick={() => handleSkip(true)}
-              className="text-sm text-[#6B7280] hover:text-[#FF3366] transition-colors"
+              className="text-sm text-[#6B7280] hover:text-[#FF3366] transition-colors focus-visible:ring-2 focus-visible:ring-[#FF3366]/50 rounded px-2 py-1"
             >
               Skip all setup
             </button>

@@ -70,11 +70,11 @@ export function ExplorePage() {
   return (
     <div className="min-h-screen">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#06060B]/80 backdrop-blur-xl border-b border-[#00F0FF]/20">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#06060B]/80 backdrop-blur-xl border-b border-[#00F0FF]/20" style={{ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')} className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-[#6B7280]" />
+            <button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')} className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-[#00F0FF]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Go back">
+              <ArrowLeft className="w-5 h-5 text-[#9CA3AF]" />
             </button>
             <div className="flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-[#00F0FF]" />
@@ -95,7 +95,7 @@ export function ExplorePage() {
           <h1 className="text-3xl md:text-5xl font-bold mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>
             Discover <span className="text-gradient">AI People</span>
           </h1>
-          <p className="text-base md:text-lg text-[#6B7280] max-w-xl mx-auto px-2">
+          <p className="text-base md:text-lg text-[#9CA3AF] max-w-xl mx-auto px-2">
             Browse the network of AI-powered professionals. Explore portfolios, chat with their agents, and connect.
           </p>
         </div>
@@ -103,7 +103,7 @@ export function ExplorePage() {
         {/* Search + Filters */}
         <div className="mb-8 space-y-4">
           <div className="relative max-w-xl mx-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -118,10 +118,10 @@ export function ExplorePage() {
                 <button
                   key={tag}
                   onClick={() => setActiveTag(tag)}
-                  className={`px-4 py-1.5 min-h-[44px] md:min-h-[36px] rounded-full text-sm transition-all whitespace-nowrap shrink-0 press-scale ${
+                  className={`px-4 py-1.5 min-h-[44px] rounded-full text-sm transition-all whitespace-nowrap shrink-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                     activeTag === tag
                       ? 'bg-[#00F0FF] text-white'
-                      : 'bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/50'
+                      : 'bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] hover:border-[#00F0FF]/50'
                   }`}
                 >
                   {tag}
@@ -132,7 +132,7 @@ export function ExplorePage() {
         </div>
 
         {/* Results count */}
-        <div className="flex items-center gap-2 text-sm text-[#6B7280] mb-4">
+        <div className="flex items-center gap-2 text-sm text-[#9CA3AF] mb-4">
           <Users className="w-4 h-4" />
           {isLoading ? (
             <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" />Loading...</span>
@@ -172,7 +172,7 @@ export function ExplorePage() {
                 {/* Avatar + status */}
                 <div className="relative mb-4">
                   {profile.avatar && profile.avatar.startsWith('http') ? (
-                    <img src={profile.avatar} alt={profile.name} className="w-16 h-16 rounded-full bg-[#0C0C18] group-hover:scale-110 transition-transform" />
+                    <img src={profile.avatar} alt={profile.name} loading="lazy" className="w-16 h-16 rounded-full bg-[#0C0C18] group-hover:scale-110 transition-transform" />
                   ) : (
                     <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${avatarGradients[i % avatarGradients.length]} flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform`}>
                       {profile.avatar || profile.name?.[0] || '?'}
@@ -189,11 +189,11 @@ export function ExplorePage() {
                 <h3 className="font-semibold text-[#E8E8F0] text-lg group-hover:text-[#00F0FF] transition-colors">
                   {profile.name}
                 </h3>
-                <p className="text-sm text-[#6B7280] mt-1 line-clamp-2">{profile.tagline}</p>
+                <p className="text-sm text-[#9CA3AF] mt-1 line-clamp-2">{profile.tagline}</p>
 
                 {/* Location */}
                 {profile.location && (
-                  <div className="flex items-center gap-1 mt-2 text-xs text-[#6B7280]">
+                  <div className="flex items-center gap-1 mt-2 text-xs text-[#9CA3AF]">
                     <MapPin className="w-3 h-3" />
                     {profile.location}
                   </div>
@@ -202,7 +202,7 @@ export function ExplorePage() {
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1 mt-3">
                   {profile.tags.slice(0, 3).map((tag) => (
-                    <Badge key={tag} variant="outline" className="border-[#00F0FF]/20 text-[#6B7280] text-xs">
+                    <Badge key={tag} variant="outline" className="border-[#00F0FF]/20 text-[#9CA3AF] text-xs">
                       {tag}
                     </Badge>
                   ))}
@@ -220,7 +220,7 @@ export function ExplorePage() {
                   {isAuthenticated && profile.agentEnabled && (
                     <button
                       onClick={(e) => handleAgentChat(e, profile)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20 text-xs text-[#00FF88] hover:bg-[#00FF88]/20 transition-colors press-scale"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20 text-xs text-[#00FF88] hover:bg-[#00FF88]/20 transition-colors press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                       title="Send a message to their agent"
                     >
                       <Bot className="w-3.5 h-3.5" />
@@ -229,7 +229,7 @@ export function ExplorePage() {
                   )}
                   <button
                     onClick={() => navigate(`/portfolio/${profile.username}`)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-xs text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors press-scale"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-xs text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     View
@@ -243,7 +243,7 @@ export function ExplorePage() {
         {!isLoading && profiles.length === 0 && (
           <div className="text-center py-20">
             <Search className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
-            <p className="text-[#6B7280]">{loadError || 'No people found matching your search'}</p>
+            <p className="text-[#9CA3AF]">{loadError || 'No people found matching your search'}</p>
             {loadError && (
               <button
                 onClick={fetchProfiles}

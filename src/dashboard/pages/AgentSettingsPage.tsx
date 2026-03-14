@@ -188,7 +188,7 @@ export function AgentSettingsPage() {
         <h1 className="text-3xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
           Agent Settings
         </h1>
-        <p className="text-[#6B7280]">
+        <p className="text-[#9CA3AF]">
           Customize how your AI assistant behaves and responds
         </p>
       </div>
@@ -201,7 +201,7 @@ export function AgentSettingsPage() {
         </h2>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm text-[#6B7280] mb-2 block">Agent Name</label>
+            <label className="text-sm text-[#9CA3AF] mb-2 block">Agent Name</label>
             <Input
               value={agentName}
               onChange={(e) => { isDirty.current = true; setAgentName(e.target.value); }}
@@ -210,7 +210,7 @@ export function AgentSettingsPage() {
             />
           </div>
           <div>
-            <label className="text-sm text-[#6B7280] mb-2 block">Display Name</label>
+            <label className="text-sm text-[#9CA3AF] mb-2 block">Display Name</label>
             <Input
               value={displayName}
               onChange={(e) => { isDirty.current = true; setDisplayName(e.target.value); }}
@@ -221,7 +221,7 @@ export function AgentSettingsPage() {
           </div>
         </div>
         <div className="mt-4">
-          <label className="text-sm text-[#6B7280] mb-2 block">Custom Greeting</label>
+          <label className="text-sm text-[#9CA3AF] mb-2 block">Custom Greeting</label>
           <Input
             value={greeting}
             onChange={(e) => { isDirty.current = true; setGreeting(e.target.value); }}
@@ -229,7 +229,7 @@ export function AgentSettingsPage() {
             className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
             placeholder="e.g. Hey! Ready to help you today. (max 200 chars)"
           />
-          <p className="text-xs text-[#6B7280] mt-1">
+          <p className="text-xs text-[#9CA3AF] mt-1">
             Shown at the start of every new chat session.
           </p>
         </div>
@@ -247,7 +247,7 @@ export function AgentSettingsPage() {
               <TiltCard key={p.id}>
                 <button
                   onClick={() => handlePersonalitySwitch(p.id as AgentPersonality)}
-                  className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-center ${
+                  className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                     selectedPersonality === p.id
                       ? 'border-[#00F0FF] bg-[#00F0FF]/10 shadow-[0_0_20px_rgba(123,97,255,0.15)]'
                       : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
@@ -255,7 +255,7 @@ export function AgentSettingsPage() {
                 >
                   <div className="text-4xl mb-3">{p.emoji}</div>
                   <h3 className="font-semibold text-[#E8E8F0] mb-1">{p.name}</h3>
-                  <p className="text-sm text-[#6B7280]">{p.description}</p>
+                  <p className="text-sm text-[#9CA3AF]">{p.description}</p>
                   {selectedPersonality === p.id && (
                     <div className="mt-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00F0FF]/20 text-[#00F0FF] text-xs">
                       <Check className="w-3 h-3" /> Active
@@ -290,14 +290,14 @@ export function AgentSettingsPage() {
             <button
               key={opt.value}
               onClick={() => handleSavePref('model_preference', opt.value)}
-              className={`p-3 rounded-xl border text-left transition-all ${
+              className={`p-3 rounded-xl border text-left transition-all focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                 selectedModelPref === opt.value
                   ? 'border-[#00F0FF] bg-[#00F0FF]/10'
                   : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
               }`}
             >
               <div className="text-sm font-medium text-[#E8E8F0]">{opt.label}</div>
-              <div className="text-xs text-[#6B7280]">{opt.desc}</div>
+              <div className="text-xs text-[#9CA3AF]">{opt.desc}</div>
             </button>
           ))}
         </div>
@@ -314,7 +314,7 @@ export function AgentSettingsPage() {
             <button
               key={style.id}
               onClick={() => { isDirty.current = true; setSelectedStyle(style.id); }}
-              className={`p-5 rounded-xl border-2 transition-all duration-300 text-left ${
+              className={`p-5 rounded-xl border-2 transition-all duration-300 text-left focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                 selectedStyle === style.id
                   ? 'border-[#00F0FF] bg-[#00F0FF]/10'
                   : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
@@ -334,12 +334,12 @@ export function AgentSettingsPage() {
                 )}
               </div>
               <h3 className="font-semibold text-[#E8E8F0] mb-1">{style.name}</h3>
-              <p className="text-sm text-[#6B7280] mb-3">{style.description}</p>
+              <p className="text-sm text-[#9CA3AF] mb-3">{style.description}</p>
               <div className="flex flex-wrap gap-1">
                 {style.features.map((feature, i) => (
                   <span
                     key={i}
-                    className="px-2 py-0.5 text-xs rounded-full bg-[#06060B] text-[#6B7280]"
+                    className="px-2 py-0.5 text-xs rounded-full bg-[#06060B] text-[#9CA3AF]"
                   >
                     {feature}
                   </span>
@@ -363,7 +363,7 @@ export function AgentSettingsPage() {
               <button
                 key={voice.id}
                 onClick={() => { isDirty.current = true; setSelectedVoice(voice.id as 'professional' | 'friendly' | 'witty'); }}
-                className={`w-full p-4 rounded-xl border transition-all duration-300 flex items-center justify-between ${
+                className={`w-full p-4 rounded-xl border transition-all duration-300 flex items-center justify-between focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                   selectedVoice === voice.id
                     ? 'border-[#00F0FF] bg-[#00F0FF]/10'
                     : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
@@ -371,7 +371,7 @@ export function AgentSettingsPage() {
               >
                 <div className="text-left">
                   <div className="font-medium text-[#E8E8F0]">{voice.name}</div>
-                  <div className="text-sm text-[#6B7280]">{voice.description}</div>
+                  <div className="text-sm text-[#9CA3AF]">{voice.description}</div>
                 </div>
                 {selectedVoice === voice.id && (
                   <div className="w-5 h-5 rounded-full bg-[#00F0FF] flex items-center justify-center">
@@ -392,7 +392,7 @@ export function AgentSettingsPage() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm text-[#6B7280]">Creativity</label>
+              <label className="text-sm text-[#9CA3AF]">Creativity</label>
               <span className="text-sm text-[#E8E8F0] font-mono">{creativity[0]}%</span>
             </div>
             <Slider
@@ -402,7 +402,7 @@ export function AgentSettingsPage() {
               step={10}
               className="w-full"
             />
-            <div className="flex justify-between text-xs text-[#6B7280] mt-1">
+            <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
               <span>Conservative</span>
               <span>Creative</span>
             </div>
@@ -410,7 +410,7 @@ export function AgentSettingsPage() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm text-[#6B7280]">Formality</label>
+              <label className="text-sm text-[#9CA3AF]">Formality</label>
               <span className="text-sm text-[#E8E8F0] font-mono">{formality[0]}%</span>
             </div>
             <Slider
@@ -420,7 +420,7 @@ export function AgentSettingsPage() {
               step={10}
               className="w-full"
             />
-            <div className="flex justify-between text-xs text-[#6B7280] mt-1">
+            <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
               <span>Casual</span>
               <span>Formal</span>
             </div>
@@ -440,7 +440,7 @@ export function AgentSettingsPage() {
           className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[120px] resize-none"
           placeholder="Instructions for how your agent should behave..."
         />
-        <p className="text-xs text-[#6B7280] mt-2">
+        <p className="text-xs text-[#9CA3AF] mt-2">
           These instructions guide your agent's behavior. Be specific about what you want.
         </p>
       </div>
@@ -467,13 +467,13 @@ export function AgentSettingsPage() {
                       <span className="text-xs px-2 py-0.5 rounded-full bg-[#BF5FFF]/20 text-[#BF5FFF]">{mem.category}</span>
                       <span className="text-sm font-medium">{mem.key}</span>
                     </div>
-                    <p className="text-sm text-[#6B7280] leading-relaxed">{mem.value}</p>
+                    <p className="text-sm text-[#9CA3AF] leading-relaxed">{mem.value}</p>
                   </div>
                 </PopoverContent>
               </Popover>
             ))}
           </div>
-          <p className="text-xs text-[#6B7280] mt-3">
+          <p className="text-xs text-[#9CA3AF] mt-3">
             Click any tag to see the full memory. Manage all memories in{' '}
             <button onClick={() => navigate('/dashboard/memory')} className="text-[#BF5FFF] hover:underline">Memory Manager</button>.
           </p>

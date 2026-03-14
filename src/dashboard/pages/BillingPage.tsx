@@ -173,7 +173,7 @@ export function BillingPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Billing
           </h1>
-          <p className="text-[#6B7280]">Manage your plan and credits</p>
+          <p className="text-[#9CA3AF]">Manage your plan and credits</p>
         </div>
 
         {/* Currency toggle */}
@@ -185,7 +185,7 @@ export function BillingPage() {
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all min-h-[44px] ${
                 currency === c
                   ? 'bg-[#00F0FF] text-white'
-                  : 'text-[#6B7280] hover:text-[#E8E8F0]'
+                  : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
               }`}
             >
               {c === 'USD' ? '$ USD' : '₹ INR'}
@@ -201,7 +201,7 @@ export function BillingPage() {
             <Star className="w-5 h-5 text-[#BF5FFF]" />
             <div>
               <CardTitle className="text-[#E8E8F0]">Premium Subscription</CardTitle>
-              <p className="text-sm text-[#6B7280]">Basic (Rs 99/mo) and Pro (Rs 299/mo) via Stripe</p>
+              <p className="text-sm text-[#9CA3AF]">Basic (Rs 99/mo) and Pro (Rs 299/mo) via Stripe</p>
             </div>
             {stripeStatus?.isPaid && (
               <Badge className="bg-[#BF5FFF]/20 text-[#BF5FFF] border-[#BF5FFF]/30 ml-auto">{stripeStatus.label} Active</Badge>
@@ -212,14 +212,14 @@ export function BillingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="p-5 rounded-xl border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/40 transition-all">
               <div className="font-bold text-[#E8E8F0] mb-1">Basic</div>
-              <div className="text-3xl font-bold text-[#E8E8F0] mb-3">{currency === 'INR' ? '₹99' : '$1.19'}<span className="text-sm font-normal text-[#6B7280]">/month</span></div>
-              <ul className="text-sm text-[#6B7280] space-y-1 mb-4">
+              <div className="text-3xl font-bold text-[#E8E8F0] mb-3">{currency === 'INR' ? '₹99' : '$1.19'}<span className="text-sm font-normal text-[#9CA3AF]">/month</span></div>
+              <ul className="text-sm text-[#9CA3AF] space-y-1 mb-4">
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Image generation</li>
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Voice transcription</li>
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> 30 voice calls/day</li>
               </ul>
               {stripeStatus?.plan === 'basic' && stripeStatus.isPaid ? (
-                <p className="text-xs text-[#6B7280]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
+                <p className="text-xs text-[#9CA3AF]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
               ) : (
                 <Button onClick={() => handleCheckout('basic')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px]" data-testid="upgrade-basic-btn">
                   {checkingOut === 'basic' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Basic
@@ -228,14 +228,14 @@ export function BillingPage() {
             </div>
             <div className="p-5 rounded-xl border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/40 transition-all">
               <div className="font-bold text-[#E8E8F0] mb-1">Pro</div>
-              <div className="text-3xl font-bold text-[#E8E8F0] mb-3">{currency === 'INR' ? '₹299' : '$3.59'}<span className="text-sm font-normal text-[#6B7280]">/month</span></div>
-              <ul className="text-sm text-[#6B7280] space-y-1 mb-4">
+              <div className="text-3xl font-bold text-[#E8E8F0] mb-3">{currency === 'INR' ? '₹299' : '$3.59'}<span className="text-sm font-normal text-[#9CA3AF]">/month</span></div>
+              <ul className="text-sm text-[#9CA3AF] space-y-1 mb-4">
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Everything in Basic</li>
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> 100 voice calls/day</li>
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Priority support</li>
               </ul>
               {stripeStatus?.plan === 'pro' && stripeStatus.isPaid ? (
-                <p className="text-xs text-[#6B7280]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
+                <p className="text-xs text-[#9CA3AF]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
               ) : (
                 <Button onClick={() => handleCheckout('pro')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px]" data-testid="upgrade-pro-btn">
                   {checkingOut === 'pro' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Pro
@@ -244,7 +244,7 @@ export function BillingPage() {
             </div>
           </div>
           {!stripeStatus?.isPaid && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-[#BF5FFF]/5 border border-[#BF5FFF]/20 text-sm text-[#6B7280]" data-testid="upgrade-to-unlock">
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-[#BF5FFF]/5 border border-[#BF5FFF]/20 text-sm text-[#9CA3AF]" data-testid="upgrade-to-unlock">
               <Lock className="w-4 h-4 text-[#BF5FFF] flex-shrink-0" />
               <span>Upgrade to Basic or Pro to unlock image and voice generation</span>
             </div>
@@ -263,7 +263,7 @@ export function BillingPage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-[#E8E8F0] capitalize">{subscription.plan} Plan</h2>
-                  <p className="text-sm text-[#6B7280]">
+                  <p className="text-sm text-[#9CA3AF]">
                     {subscription.price_usd > 0
                       ? `${currency === 'INR' ? `₹${subscription.price_inr.toLocaleString()}` : `$${subscription.price_usd}`} / ${plans.find(p => p.id === subscription.plan)?.intervalLabel || 'cycle'}`
                       : 'Free forever'}
@@ -280,40 +280,40 @@ export function BillingPage() {
               <div className="p-4 rounded-xl bg-[#06060B]/80 border border-[#00F0FF]/10">
                 <div className="flex items-center gap-2 mb-2">
                   <Zap className="w-4 h-4 text-[#00F0FF]" />
-                  <span className="text-xs text-[#6B7280]">Credits Remaining</span>
+                  <span className="text-xs text-[#9CA3AF]">Credits Remaining</span>
                 </div>
                 <div className="text-2xl font-bold text-[#E8E8F0] font-mono">
                   {formatCredits(subscription.credits_remaining)}
                 </div>
-                <div className="text-xs text-[#6B7280]">of {formatCredits(subscription.monthly_credits)}</div>
+                <div className="text-xs text-[#9CA3AF]">of {formatCredits(subscription.monthly_credits)}</div>
               </div>
               <div className="p-4 rounded-xl bg-[#06060B]/80 border border-[#00F0FF]/10">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-[#FFB800]" />
-                  <span className="text-xs text-[#6B7280]">Credits Used</span>
+                  <span className="text-xs text-[#9CA3AF]">Credits Used</span>
                 </div>
                 <div className="text-2xl font-bold text-[#E8E8F0] font-mono">
                   {formatCredits(subscription.credits_used_this_cycle)}
                 </div>
-                <div className="text-xs text-[#6B7280]">this cycle</div>
+                <div className="text-xs text-[#9CA3AF]">this cycle</div>
               </div>
               <div className="p-4 rounded-xl bg-[#06060B]/80 border border-[#00F0FF]/10">
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="w-4 h-4 text-[#00FF88]" />
-                  <span className="text-xs text-[#6B7280]">Cycle Ends</span>
+                  <span className="text-xs text-[#9CA3AF]">Cycle Ends</span>
                 </div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">
                   {formatDate(subscription.billing_cycle_end)}
                 </div>
-                <div className="text-xs text-[#6B7280]">{subscription.billing_interval_days} day cycle</div>
+                <div className="text-xs text-[#9CA3AF]">{subscription.billing_interval_days} day cycle</div>
               </div>
             </div>
 
             {/* Progress bar */}
             <div className="mt-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-[#6B7280]">Credit usage</span>
-                <span className="text-xs text-[#6B7280] font-mono">{usedPercent.toFixed(1)}%</span>
+                <span className="text-xs text-[#9CA3AF]">Credit usage</span>
+                <span className="text-xs text-[#9CA3AF] font-mono">{usedPercent.toFixed(1)}%</span>
               </div>
               <div className="h-3 sm:h-2 bg-[#06060B] rounded-full overflow-hidden">
                 <div
@@ -389,30 +389,30 @@ export function BillingPage() {
                       <div className="flex items-baseline flex-wrap gap-2">
                         <span className="text-4xl font-bold text-[#E8E8F0]">{price(plan)}</span>
                         {display.oldPrice > 0 && (
-                          <span className="text-lg text-[#6B7280] line-through">{oldPrice(plan)}</span>
+                          <span className="text-lg text-[#9CA3AF] line-through">{oldPrice(plan)}</span>
                         )}
                         {plan.priceUsd > 0 && (
-                          <span className="text-sm text-[#6B7280]">/ {plan.intervalLabel}</span>
+                          <span className="text-sm text-[#9CA3AF]">/ {plan.intervalLabel}</span>
                         )}
                       </div>
-                      <div className="text-sm text-[#6B7280]">{plan.description}</div>
+                      <div className="text-sm text-[#9CA3AF]">{plan.description}</div>
 
                       {/* Features */}
                       <div className="space-y-2 py-2 border-t border-[#00F0FF]/10">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-[#6B7280]">Agent Slots</span>
+                          <span className="text-[#9CA3AF]">Agent Slots</span>
                           <span className="text-[#E8E8F0] font-medium">{display.agentSlots}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-[#6B7280]">Token Budget</span>
+                          <span className="text-[#9CA3AF]">Token Budget</span>
                           <span className="text-[#E8E8F0] font-medium">{display.tokenBudget}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-[#6B7280]">Kimi Access</span>
+                          <span className="text-[#9CA3AF]">Kimi Access</span>
                           {display.hasKimi ? (
                             <CheckCircle2 className="w-4 h-4 text-[#00FF88]" />
                           ) : (
-                            <span className="text-[#6B7280]">—</span>
+                            <span className="text-[#9CA3AF]">—</span>
                           )}
                         </div>
                       </div>
@@ -510,30 +510,30 @@ export function BillingPage() {
                     <div className="flex items-baseline flex-wrap gap-2">
                       <span className="text-3xl font-bold text-[#E8E8F0]">{price(plan)}</span>
                       {display.oldPrice > 0 && (
-                        <span className="text-sm text-[#6B7280] line-through">{oldPrice(plan)}</span>
+                        <span className="text-sm text-[#9CA3AF] line-through">{oldPrice(plan)}</span>
                       )}
                       {plan.priceUsd > 0 && (
-                        <span className="text-sm text-[#6B7280]">/ {plan.intervalLabel}</span>
+                        <span className="text-sm text-[#9CA3AF]">/ {plan.intervalLabel}</span>
                       )}
                     </div>
-                    <div className="text-sm text-[#6B7280]">{plan.description}</div>
+                    <div className="text-sm text-[#9CA3AF]">{plan.description}</div>
 
                     {/* Features */}
                     <div className="space-y-2 py-2 border-t border-[#00F0FF]/10">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#6B7280]">Agent Slots</span>
+                        <span className="text-[#9CA3AF]">Agent Slots</span>
                         <span className="text-[#E8E8F0] font-medium">{display.agentSlots}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#6B7280]">Token Budget</span>
+                        <span className="text-[#9CA3AF]">Token Budget</span>
                         <span className="text-[#E8E8F0] font-medium">{display.tokenBudget}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#6B7280]">Kimi Access</span>
+                        <span className="text-[#9CA3AF]">Kimi Access</span>
                         {display.hasKimi ? (
                           <CheckCircle2 className="w-4 h-4 text-[#00FF88]" />
                         ) : (
-                          <span className="text-[#6B7280]">—</span>
+                          <span className="text-[#9CA3AF]">—</span>
                         )}
                       </div>
                     </div>
@@ -584,14 +584,14 @@ export function BillingPage() {
             <Sparkles className="w-5 h-5 text-[#FFB800]" />
             Plan Comparison
           </CardTitle>
-          <p className="text-sm text-[#6B7280]">Compare features across all plans</p>
+          <p className="text-sm text-[#9CA3AF]">Compare features across all plans</p>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto -mx-4 px-4">
             <table className="w-full min-w-[500px]">
               <thead>
                 <tr className="border-b border-[#00F0FF]/20">
-                  <th className="text-left py-3 px-2 text-sm font-medium text-[#6B7280]">Feature</th>
+                  <th className="text-left py-3 px-2 text-sm font-medium text-[#9CA3AF]">Feature</th>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
                     return (
@@ -600,7 +600,7 @@ export function BillingPage() {
                           <span className="text-[#E8E8F0] capitalize">{plan.id}</span>
                           {display?.badge && (
                             <span
-                              className="text-[10px] px-1.5 py-0.5 rounded"
+                              className="text-xs px-1.5 py-0.5 rounded"
                               style={{
                                 backgroundColor: `${display.badgeColor}20`,
                                 color: display.badgeColor,
@@ -617,7 +617,7 @@ export function BillingPage() {
               </thead>
               <tbody>
                 <tr className="border-b border-[#00F0FF]/10">
-                  <td className="py-3 px-2 text-sm text-[#6B7280]">Agent Slots</td>
+                  <td className="py-3 px-2 text-sm text-[#9CA3AF]">Agent Slots</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
                     return (
@@ -628,7 +628,7 @@ export function BillingPage() {
                   })}
                 </tr>
                 <tr className="border-b border-[#00F0FF]/10">
-                  <td className="py-3 px-2 text-sm text-[#6B7280]">Token Budget</td>
+                  <td className="py-3 px-2 text-sm text-[#9CA3AF]">Token Budget</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
                     return (
@@ -639,7 +639,7 @@ export function BillingPage() {
                   })}
                 </tr>
                 <tr className="border-b border-[#00F0FF]/10">
-                  <td className="py-3 px-2 text-sm text-[#6B7280]">Kimi Access</td>
+                  <td className="py-3 px-2 text-sm text-[#9CA3AF]">Kimi Access</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
                     return (
@@ -647,14 +647,14 @@ export function BillingPage() {
                         {display?.hasKimi ? (
                           <CheckCircle2 className="w-5 h-5 text-[#00FF88] mx-auto" />
                         ) : (
-                          <span className="text-[#6B7280]">—</span>
+                          <span className="text-[#9CA3AF]">—</span>
                         )}
                       </td>
                     );
                   })}
                 </tr>
                 <tr className="border-b border-[#00F0FF]/10">
-                  <td className="py-3 px-2 text-sm text-[#6B7280]">Credits / Cycle</td>
+                  <td className="py-3 px-2 text-sm text-[#9CA3AF]">Credits / Cycle</td>
                   {plans.map((plan) => (
                     <td key={plan.id} className="text-center py-3 px-2 text-sm text-[#E8E8F0]">
                       {formatCredits(plan.credits)}
@@ -662,7 +662,7 @@ export function BillingPage() {
                   ))}
                 </tr>
                 <tr>
-                  <td className="py-3 px-2 text-sm text-[#6B7280]">Price</td>
+                  <td className="py-3 px-2 text-sm text-[#9CA3AF]">Price</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
                     return (
@@ -670,7 +670,7 @@ export function BillingPage() {
                         <div className="flex flex-col items-center gap-1">
                           <span className="text-sm font-bold text-[#E8E8F0]">{price(plan)}</span>
                           {display?.oldPrice > 0 && (
-                            <span className="text-xs text-[#6B7280] line-through">{oldPrice(plan)}</span>
+                            <span className="text-xs text-[#9CA3AF] line-through">{oldPrice(plan)}</span>
                           )}
                         </div>
                       </td>
@@ -687,21 +687,21 @@ export function BillingPage() {
       <Card className="border-[#00F0FF]/20">
         <CardHeader>
           <CardTitle className="text-[#E8E8F0]">Usage History</CardTitle>
-          <p className="text-sm text-[#6B7280]">Last 30 days of daily usage</p>
+          <p className="text-sm text-[#9CA3AF]">Last 30 days of daily usage</p>
         </CardHeader>
         <CardContent>
           {usage.length === 0 ? (
             <div className="text-center py-8">
               <TrendingUp className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-              <p className="text-[#6B7280]">No usage data yet</p>
-              <p className="text-sm text-[#6B7280]">Start chatting and usage will appear here</p>
+              <p className="text-[#9CA3AF]">No usage data yet</p>
+              <p className="text-sm text-[#9CA3AF]">Start chatting and usage will appear here</p>
             </div>
           ) : (
             <MobileTable<DailyUsage>
               columns={[
                 { key: 'day', label: 'Date', primary: true, render: (row) => <span className="text-[#E8E8F0]">{formatDate(row.day)}</span> },
-                { key: 'calls', label: 'Calls', render: (row) => <span className="text-[#6B7280] font-mono">{row.calls}</span> },
-                { key: 'tokens', label: 'Tokens', render: (row) => <span className="text-[#6B7280] font-mono">{(row.total_tokens ?? 0).toLocaleString()}</span> },
+                { key: 'calls', label: 'Calls', render: (row) => <span className="text-[#9CA3AF] font-mono">{row.calls}</span> },
+                { key: 'tokens', label: 'Tokens', render: (row) => <span className="text-[#9CA3AF] font-mono">{(row.total_tokens ?? 0).toLocaleString()}</span> },
                 { key: 'cost', label: 'Cost', render: (row) => <span className="text-[#E8E8F0] font-mono">${(row.total_cost ?? 0).toFixed(4)}</span> },
               ]}
               data={usage}
@@ -716,14 +716,14 @@ export function BillingPage() {
       <Card className="border-[#00F0FF]/20">
         <CardHeader>
           <CardTitle className="text-[#E8E8F0]">Credit History</CardTitle>
-          <p className="text-sm text-[#6B7280]">Last 20 AI requests with cost breakdown</p>
+          <p className="text-sm text-[#9CA3AF]">Last 20 AI requests with cost breakdown</p>
         </CardHeader>
         <CardContent>
           {events.length === 0 ? (
             <div className="text-center py-8">
               <Zap className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-              <p className="text-[#6B7280]">No credit events yet</p>
-              <p className="text-sm text-[#6B7280]">Credit usage will appear here after your first AI request</p>
+              <p className="text-[#9CA3AF]">No credit events yet</p>
+              <p className="text-sm text-[#9CA3AF]">Credit usage will appear here after your first AI request</p>
             </div>
           ) : (
             <MobileTable<UsageEvent>
@@ -741,13 +741,13 @@ export function BillingPage() {
                 {
                   key: 'channel',
                   label: 'Channel',
-                  render: (row) => <span className="text-[#6B7280] capitalize">{row.channel || '—'}</span>,
+                  render: (row) => <span className="text-[#9CA3AF] capitalize">{row.channel || '—'}</span>,
                 },
                 {
                   key: 'model',
                   label: 'Model',
                   render: (row) => (
-                    <span className="text-[#6B7280] font-mono text-xs truncate max-w-[100px] block">
+                    <span className="text-[#9CA3AF] font-mono text-xs truncate max-w-[100px] block">
                       {row.model || row.provider || '—'}
                     </span>
                   ),
@@ -758,7 +758,7 @@ export function BillingPage() {
                   render: (row) => {
                     const tokensIn = (row as unknown as Record<string, number>).tokens_in ?? row.tokensIn ?? 0;
                     const tokensOut = (row as unknown as Record<string, number>).tokens_out ?? row.tokensOut ?? 0;
-                    return <span className="text-[#6B7280] font-mono">{(tokensIn + tokensOut).toLocaleString()}</span>;
+                    return <span className="text-[#9CA3AF] font-mono">{(tokensIn + tokensOut).toLocaleString()}</span>;
                   },
                 },
                 {

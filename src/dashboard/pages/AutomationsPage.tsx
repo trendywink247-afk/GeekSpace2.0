@@ -361,7 +361,7 @@ export function AutomationsPage() {
   const getHttpStatusBg = (status: number): string => {
     if (status >= 200 && status < 300) return 'bg-[#00FF88]/10 border-[#00FF88]/20 text-[#00FF88]';
     if (status >= 400) return 'bg-[#FF6161]/10 border-[#FF6161]/20 text-[#FF6161]';
-    return 'bg-[#6B7280]/10 border-[#6B7280]/20 text-[#6B7280]';
+    return 'bg-[#6B7280]/10 border-[#6B7280]/20 text-[#9CA3AF]';
   };
 
   return (
@@ -373,7 +373,7 @@ export function AutomationsPage() {
             <FlaskConical className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-medium text-xs mb-0.5">Dry Run Result</p>
-              <p className="text-[11px] text-[#F59E0B]/80">{dryRunResult.simulatedOutput}</p>
+              <p className="text-xs text-[#F59E0B]/80">{dryRunResult.simulatedOutput}</p>
             </div>
             <button onClick={() => setDryRunResult(null)} className="text-[#F59E0B]/60 hover:text-[#F59E0B] ml-auto">✕</button>
           </div>
@@ -385,7 +385,7 @@ export function AutomationsPage() {
           <h1 className="text-2xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Automations
           </h1>
-          <p className="text-sm md:text-base text-[#6B7280]">
+          <p className="text-sm md:text-base text-[#9CA3AF]">
             <span className="text-[#00F0FF] font-medium">{enabledCount}</span> active of {automations.length} total
           </p>
         </div>
@@ -404,7 +404,7 @@ export function AutomationsPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">{automations.length}</div>
-                <div className="text-xs text-[#6B7280]">Total</div>
+                <div className="text-xs text-[#9CA3AF]">Total</div>
               </div>
             </div>
           </CardContent>
@@ -417,7 +417,7 @@ export function AutomationsPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">{enabledCount}</div>
-                <div className="text-xs text-[#6B7280]">Active</div>
+                <div className="text-xs text-[#9CA3AF]">Active</div>
               </div>
             </div>
           </CardContent>
@@ -430,7 +430,7 @@ export function AutomationsPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#E8E8F0]">{totalRuns}</div>
-                <div className="text-xs text-[#6B7280]">Total Runs</div>
+                <div className="text-xs text-[#9CA3AF]">Total Runs</div>
               </div>
             </div>
           </CardContent>
@@ -445,7 +445,7 @@ export function AutomationsPage() {
                 <div className="text-2xl font-bold text-[#E8E8F0]">
                   {automations.filter((a) => a.triggerType === 'webhook').length}
                 </div>
-                <div className="text-xs text-[#6B7280]">Webhooks</div>
+                <div className="text-xs text-[#9CA3AF]">Webhooks</div>
               </div>
             </div>
           </CardContent>
@@ -460,7 +460,7 @@ export function AutomationsPage() {
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-[#E8E8F0]">{automationStats.recentRuns}</div>
-                  <div className="text-xs text-[#6B7280]">Runs (7d)</div>
+                  <div className="text-xs text-[#9CA3AF]">Runs (7d)</div>
                 </div>
               </div>
             </CardContent>
@@ -471,7 +471,7 @@ export function AutomationsPage() {
       {/* Filters & Search */}
       <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
           <Input
             placeholder="Search automations..."
             value={searchQuery}
@@ -513,7 +513,7 @@ export function AutomationsPage() {
                       {auto.enabled ? (
                         <ToggleRight className="w-8 h-5 text-[#00FF88]" />
                       ) : (
-                        <ToggleLeft className="w-8 h-5 text-[#6B7280]" />
+                        <ToggleLeft className="w-8 h-5 text-[#9CA3AF]" />
                       )}
                     </button>
 
@@ -525,7 +525,7 @@ export function AutomationsPage() {
                           <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" />
                         )}
                       </div>
-                      <p className="text-sm text-[#6B7280] mb-1">{auto.description}</p>
+                      <p className="text-sm text-[#9CA3AF] mb-1">{auto.description}</p>
 
                       {(auto.run_count ?? 0) > 0 && (
                         <p className="text-xs text-[#8888AA] mb-2">
@@ -545,16 +545,16 @@ export function AutomationsPage() {
                         </Badge>
 
                         {/* Arrow */}
-                        <span className="text-[#6B7280]">&rarr;</span>
+                        <span className="text-[#9CA3AF]">&rarr;</span>
 
                         {/* Action badge */}
-                        <Badge variant="outline" className="border-[#00F0FF]/30 text-[#6B7280]">
+                        <Badge variant="outline" className="border-[#00F0FF]/30 text-[#9CA3AF]">
                           <ActionIcon className="w-3 h-3 mr-1" />
                           {actionLabels[auto.actionType]}
                         </Badge>
 
                         {/* Run count */}
-                        <Badge variant="outline" className="border-[#00F0FF]/20 text-[#6B7280]">
+                        <Badge variant="outline" className="border-[#00F0FF]/20 text-[#9CA3AF]">
                           <Play className="w-3 h-3 mr-1" />
                           {auto.runCount} runs
                         </Badge>
@@ -575,7 +575,7 @@ export function AutomationsPage() {
                         )}
 
                         {/* Last run */}
-                        <span className="text-xs text-[#6B7280]">
+                        <span className="text-xs text-[#9CA3AF]">
                           <Clock className="w-3 h-3 inline mr-1" />
                           {formatLastRun(auto.lastRun)}
                         </span>
@@ -600,14 +600,14 @@ export function AutomationsPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className={`text-xs font-medium ${testResult.success ? 'text-[#00FF88]' : 'text-[#FF6161]'}`}>{testResult.message}</span>
                             {testResult.statusCode != null && testResult.statusCode > 0 && (
-                              <span className="text-[10px] text-[#6B7280] font-mono bg-[#0C0C18] px-1.5 py-0.5 rounded">{testResult.statusCode}</span>
+                              <span className="text-xs text-[#9CA3AF] font-mono bg-[#0C0C18] px-1.5 py-0.5 rounded">{testResult.statusCode}</span>
                             )}
                             {testResult.latencyMs != null && (
-                              <span className="text-[10px] text-[#6B7280]">{testResult.latencyMs}ms</span>
+                              <span className="text-xs text-[#9CA3AF]">{testResult.latencyMs}ms</span>
                             )}
                           </div>
                           {testResult.responseBody && (
-                            <pre className="text-[9px] text-[#6B7280] font-mono max-h-[60px] overflow-auto whitespace-pre-wrap break-all">{testResult.responseBody.slice(0, 200)}</pre>
+                            <pre className="text-xs text-[#9CA3AF] font-mono max-h-[60px] overflow-auto whitespace-pre-wrap break-all">{testResult.responseBody.slice(0, 200)}</pre>
                           )}
                         </div>
                       )}
@@ -619,7 +619,7 @@ export function AutomationsPage() {
                           onClick={() => handleTestFire(auto.id)}
                           disabled={testingId === auto.id}
                           aria-label={`Test ${auto.name}`}
-                          className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 p-0 press-scale"
+                          className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                         >
                           {testingId === auto.id ? (
                             <RefreshCw className="w-4 h-4 animate-spin" />
@@ -634,7 +634,7 @@ export function AutomationsPage() {
                         onClick={() => handleTrigger(auto.id)}
                         disabled={!auto.enabled || isLoading}
                         aria-label={`Run ${auto.name}`}
-                        className="text-[#00FF88] hover:text-[#00FF88] hover:bg-[#00FF88]/10 h-10 w-10 p-0 press-scale"
+                        className="text-[#00FF88] hover:text-[#00FF88] hover:bg-[#00FF88]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                       >
                         <Play className="w-4 h-4" />
                       </Button>
@@ -646,7 +646,7 @@ export function AutomationsPage() {
                         aria-label={`Dry run ${auto.name}`}
                         title="Simulate (dry run)"
                         data-testid={`dry-run-btn-${auto.id}`}
-                        className="text-[#6B7280] hover:text-[#F59E0B] hover:bg-[#F59E0B]/10 h-10 w-10 p-0 press-scale"
+                        className="text-[#9CA3AF] hover:text-[#F59E0B] hover:bg-[#F59E0B]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                       >
                         <FlaskConical className="w-4 h-4" />
                       </Button>
@@ -655,7 +655,7 @@ export function AutomationsPage() {
                         size="sm"
                         onClick={() => handleOpenEdit(auto.id)}
                         aria-label={`Edit ${auto.name}`}
-                        className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 p-0 press-scale"
+                        className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                       >
                         <Edit3 className="w-4 h-4" />
                       </Button>
@@ -665,7 +665,7 @@ export function AutomationsPage() {
                         onClick={() => void handleDuplicate(auto.id)}
                         aria-label={`Duplicate ${auto.name}`}
                         title="Duplicate"
-                        className="text-[#6B7280] hover:text-[#A78BFA] hover:bg-[#A78BFA]/10 h-10 w-10 p-0 press-scale"
+                        className="text-[#9CA3AF] hover:text-[#A78BFA] hover:bg-[#A78BFA]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                       >
                         <Copy className="w-4 h-4" />
                       </Button>
@@ -674,7 +674,7 @@ export function AutomationsPage() {
                         size="sm"
                         onClick={() => handleDelete(auto.id)}
                         aria-label={`Delete ${auto.name}`}
-                        className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 press-scale"
+                        className="text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -692,7 +692,7 @@ export function AutomationsPage() {
         ) : (
           <div className="text-center py-12">
             <Zap className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
-            <p className="text-[#6B7280] mb-4">
+            <p className="text-[#9CA3AF] mb-4">
               {searchQuery || filter !== 'all' ? 'No automations match your filters' : 'No automations yet'}
             </p>
             {!searchQuery && filter === 'all' && (
@@ -715,7 +715,7 @@ export function AutomationsPage() {
           </DialogHeader>
           <div className="space-y-4 pt-3 md:pt-4">
             <div>
-              <label className="text-sm text-[#6B7280] mb-2 block">Name</label>
+              <label className="text-sm text-[#9CA3AF] mb-2 block">Name</label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -724,7 +724,7 @@ export function AutomationsPage() {
               />
             </div>
             <div>
-              <label className="text-sm text-[#6B7280] mb-2 block">Description</label>
+              <label className="text-sm text-[#9CA3AF] mb-2 block">Description</label>
               <Input
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -734,7 +734,7 @@ export function AutomationsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-[#6B7280] mb-2 block">Trigger</label>
+                <label className="text-sm text-[#9CA3AF] mb-2 block">Trigger</label>
                 <select
                   value={form.triggerType}
                   onChange={(e) => setForm({ ...form, triggerType: e.target.value as AutomationTrigger })}
@@ -749,7 +749,7 @@ export function AutomationsPage() {
                 </select>
               </div>
               <div>
-                <label className="text-sm text-[#6B7280] mb-2 block">Action</label>
+                <label className="text-sm text-[#9CA3AF] mb-2 block">Action</label>
                 <select
                   value={form.actionType}
                   onChange={(e) => setForm({ ...form, actionType: e.target.value as AutomationAction })}
@@ -768,7 +768,7 @@ export function AutomationsPage() {
             {/* 65.8: Webhook URL input + https warning for n8n-webhook / call_api */}
             {(form.actionType === 'n8n-webhook' || form.actionType === 'call_api') && (
               <div className="space-y-1">
-                <label className="text-xs text-[#6B7280]">Webhook URL</label>
+                <label className="text-xs text-[#9CA3AF]">Webhook URL</label>
                 <input
                   type="url"
                   placeholder="https://your-webhook-endpoint.com/..."
@@ -786,7 +786,7 @@ export function AutomationsPage() {
             {/* B3: Action-specific configuration fields */}
             {(form.actionType === 'telegram-message' || form.actionType === 'whatsapp-message' || form.actionType === 'manychat-broadcast') && (
               <div className="space-y-1">
-                <label className="text-xs text-[#6B7280]">
+                <label className="text-xs text-[#9CA3AF]">
                   {form.actionType === 'telegram-message' ? 'Telegram Message Text' : form.actionType === 'whatsapp-message' ? 'WhatsApp Message Text' : 'Broadcast Message Text'}
                 </label>
                 <textarea
@@ -800,7 +800,7 @@ export function AutomationsPage() {
             )}
             {form.actionType === 'create_reminder' && (
               <div className="space-y-1">
-                <label className="text-xs text-[#6B7280]">Reminder Text</label>
+                <label className="text-xs text-[#9CA3AF]">Reminder Text</label>
                 <input
                   type="text"
                   placeholder="What to remind about..."
@@ -813,7 +813,7 @@ export function AutomationsPage() {
             {/* 62.6: Schedule builder — shown when trigger is time-based */}
             {form.triggerType === 'time' && (
               <div className="rounded-lg border border-[#00F0FF]/20 bg-[#06060B] p-3 space-y-3">
-                <p className="text-xs text-[#6B7280] font-medium">Schedule</p>
+                <p className="text-xs text-[#9CA3AF] font-medium">Schedule</p>
                 <div className="flex flex-wrap gap-2">
                   {([
                     { label: 'Every 15 min', value: 15 },
@@ -831,7 +831,7 @@ export function AutomationsPage() {
                       className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
                         form.intervalMinutes === value
                           ? 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[#00F0FF]'
-                          : 'bg-[#0C0C18] border-[#00F0FF]/20 text-[#6B7280] hover:text-[#E8E8F0]'
+                          : 'bg-[#0C0C18] border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0]'
                       }`}
                     >
                       {label}
@@ -839,7 +839,7 @@ export function AutomationsPage() {
                   ))}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#6B7280]">Custom:</span>
+                  <span className="text-xs text-[#9CA3AF]">Custom:</span>
                   <input
                     type="number"
                     min={1}
@@ -848,15 +848,15 @@ export function AutomationsPage() {
                     onChange={(e) => setForm({ ...form, intervalMinutes: Math.max(1, parseInt(e.target.value, 10) || 60) })}
                     className="w-20 p-1.5 text-xs rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 text-[#E8E8F0]"
                   />
-                  <span className="text-xs text-[#6B7280]">minutes</span>
+                  <span className="text-xs text-[#9CA3AF]">minutes</span>
                 </div>
               </div>
             )}
             {/* 54.2: Webhook payload preview — shown when trigger is webhook */}
             {form.triggerType === 'webhook' && (
               <div className="rounded-lg border border-[#00F0FF]/20 bg-[#06060B] p-3">
-                <p className="text-xs text-[#6B7280] mb-2 font-medium">Incoming Webhook Payload Preview</p>
-                <pre className="text-[11px] text-[#00F0FF] overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
+                <p className="text-xs text-[#9CA3AF] mb-2 font-medium">Incoming Webhook Payload Preview</p>
+                <pre className="text-xs text-[#00F0FF] overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
 {`{
   "event": "webhook.trigger",
   "automationId": "<auto-id>",
@@ -864,7 +864,7 @@ export function AutomationsPage() {
   "payload": { "key": "value" }
 }`}
                 </pre>
-                <p className="text-[10px] text-[#6B7280] mt-2">POST this JSON to <code className="text-[#FFB800]">/api/webhooks/receive/&lt;auto-id&gt;</code></p>
+                <p className="text-xs text-[#9CA3AF] mt-2">POST this JSON to <code className="text-[#FFB800]">/api/webhooks/receive/&lt;auto-id&gt;</code></p>
               </div>
             )}
             {saveError && (
@@ -900,7 +900,7 @@ export function AutomationsPage() {
           <select
             value={logsStatusFilter}
             onChange={(e) => setLogsStatusFilter(e.target.value as typeof logsStatusFilter)}
-            className="text-xs px-2 py-1 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280] focus:outline-none"
+            className="text-xs px-2 py-1 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] focus:outline-none"
             aria-label="Filter logs by status"
           >
             <option value="">All statuses</option>
@@ -913,8 +913,8 @@ export function AutomationsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardContent className="py-10 text-center">
               <Clock className="w-10 h-10 text-[#00F0FF]/20 mx-auto mb-3" />
-              <p className="text-[#6B7280]">No automation runs yet</p>
-              <p className="text-sm text-[#6B7280]">Trigger an automation to see its history here</p>
+              <p className="text-[#9CA3AF]">No automation runs yet</p>
+              <p className="text-sm text-[#9CA3AF]">Trigger an automation to see its history here</p>
             </CardContent>
           </Card>
         ) : (
@@ -923,10 +923,10 @@ export function AutomationsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#00F0FF]/10 bg-[#06060B]">
-                    <th className="text-left px-4 py-3 text-[#6B7280] font-medium">Status</th>
-                    <th className="text-left px-4 py-3 text-[#6B7280] font-medium">Output</th>
-                    <th className="text-left px-4 py-3 text-[#6B7280] font-medium">Duration</th>
-                    <th className="text-left px-4 py-3 text-[#6B7280] font-medium">Time</th>
+                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium">Status</th>
+                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium">Output</th>
+                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium">Duration</th>
+                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium">Time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -951,7 +951,7 @@ export function AutomationsPage() {
                         <td className="px-4 py-3 hidden sm:table-cell">
                           {(() => {
                             const httpCode = parseHttpStatus(output);
-                            if (!httpCode) return <span className="text-[#6B7280] text-xs">—</span>;
+                            if (!httpCode) return <span className="text-[#9CA3AF] text-xs">—</span>;
                             return (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold border ${getHttpStatusBg(httpCode)}`}>
                                 {httpCode}
@@ -959,7 +959,7 @@ export function AutomationsPage() {
                             );
                           })()}
                         </td>
-                        <td className="px-4 py-3 text-[#6B7280] max-w-[200px] text-xs">
+                        <td className="px-4 py-3 text-[#9CA3AF] max-w-[200px] text-xs">
                           {/* 46.5: Pretty-print JSON output if parseable, otherwise truncate */}
                           {output ? (() => {
                             try {
@@ -974,10 +974,10 @@ export function AutomationsPage() {
                             }
                           })() : '—'}
                         </td>
-                        <td className="px-4 py-3 text-[#6B7280] font-mono text-xs hidden md:table-cell">
+                        <td className="px-4 py-3 text-[#9CA3AF] font-mono text-xs hidden md:table-cell">
                           {durationMs > 0 ? `${durationMs}ms` : '—'}
                         </td>
-                        <td className="px-4 py-3 text-[#6B7280] text-xs whitespace-nowrap">
+                        <td className="px-4 py-3 text-[#9CA3AF] text-xs whitespace-nowrap">
                           {createdAt ? new Date(createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                         </td>
                       </tr>
@@ -1025,13 +1025,13 @@ export function AutomationsPage() {
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-medium text-[#E8E8F0] truncate">{auto?.name ?? dl.automation_id.slice(0, 8)}</span>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-xs text-[#6B7280] whitespace-nowrap">{new Date(dl.failed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="text-xs text-[#9CA3AF] whitespace-nowrap">{new Date(dl.failed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                           {/* 55.6: Retry button */}
                           <button
                             onClick={() => handleRetryDeadLetter(dl.id)}
                             disabled={retryingDeadLetterId === dl.id}
                             aria-label="Retry failed webhook"
-                            className="text-[10px] px-2 py-0.5 rounded border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 disabled:opacity-50 transition-colors"
+                            className="text-xs px-2 py-0.5 rounded border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 disabled:opacity-50 transition-colors"
                           >
                             {retryingDeadLetterId === dl.id ? '...' : 'Retry'}
                           </button>
@@ -1041,7 +1041,7 @@ export function AutomationsPage() {
                       {dl.retry_count > 0 && (
                         <span className="text-xs text-amber-400">Retried {dl.retry_count}×</span>
                       )}
-                      <span className="text-xs text-[#6B7280] truncate font-mono">{dl.url}</span>
+                      <span className="text-xs text-[#9CA3AF] truncate font-mono">{dl.url}</span>
                     </div>
                   );
                 })}

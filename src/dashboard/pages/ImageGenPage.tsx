@@ -239,7 +239,7 @@ export function ImageGenPage() {
         >
           <div className="max-w-4xl w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <div className="text-sm text-[#6B7280] truncate flex-1 mr-4">
+              <div className="text-sm text-[#9CA3AF] truncate flex-1 mr-4">
                 {previewImage.prompt}
               </div>
               <div className="flex items-center gap-2">
@@ -247,14 +247,15 @@ export function ImageGenPage() {
                   href={previewImage.image_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
-                  title="Download"
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  aria-label="Download image"
                 >
                   <Download className="w-4 h-4" />
                 </a>
                 <button
                   onClick={() => setPreviewImage(null)}
-                  className="p-2 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  aria-label="Close preview"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -268,12 +269,12 @@ export function ImageGenPage() {
             />
             <div className="flex items-center justify-between mt-3">
               <div className="flex items-center gap-3">
-                <span className="text-xs text-[#6B7280]">{previewImage.width}x{previewImage.height}</span>
-                <span className="text-xs text-[#6B7280]">{previewImage.model}</span>
+                <span className="text-xs text-[#9CA3AF]">{previewImage.width}x{previewImage.height}</span>
+                <span className="text-xs text-[#9CA3AF]">{previewImage.model}</span>
               </div>
               <button
                 onClick={() => handleCopyId(previewImage.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-xs text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-xs text-[#9CA3AF] hover:text-[#00F0FF] transition-colors"
               >
                 {copiedId === previewImage.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 {copiedId === previewImage.id ? 'Copied!' : previewImage.id}
@@ -287,7 +288,7 @@ export function ImageGenPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#E8E8F0]">Image Generator</h1>
-          <p className="text-sm text-[#6B7280] mt-1">
+          <p className="text-sm text-[#9CA3AF] mt-1">
             Create and edit AI images &middot; {imageCount}/{maxImages} saved
           </p>
         </div>
@@ -304,18 +305,18 @@ export function ImageGenPage() {
               </span>
               <div className="text-left">
                 <div className="text-sm font-medium text-[#E8E8F0]">{assignedAgent.name}</div>
-                <div className="text-[10px] text-[#6B7280]">Assigned agent</div>
+                <div className="text-xs text-[#9CA3AF]">Assigned agent</div>
               </div>
               <div
                 className="w-2 h-2 rounded-full"
                 style={{ backgroundColor: statusColor[assignedAgent.status] || '#6B7280' }}
               />
-              <ChevronDown className="w-3.5 h-3.5 text-[#6B7280]" />
+              <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF]" />
             </button>
           ) : (
             <button
               onClick={() => setShowAgentPicker(!showAgentPicker)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-[#00F0FF]/20 hover:border-[#00F0FF]/40 text-[#6B7280] hover:text-[#E8E8F0] transition-colors text-sm"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-[#00F0FF]/20 hover:border-[#00F0FF]/40 text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors text-sm"
             >
               <Bot className="w-4 h-4" />
               {agentLoading ? 'Loading...' : 'Assign Agent'}
@@ -326,10 +327,10 @@ export function ImageGenPage() {
           {showAgentPicker && (
             <div className="absolute top-full right-0 mt-2 w-72 rounded-xl border border-[#00F0FF]/20 bg-[#0C0C18] shadow-2xl z-30 overflow-hidden">
               <div className="p-3 border-b border-[#00F0FF]/10">
-                <p className="text-xs text-[#6B7280]">Choose an agent from your fleet</p>
+                <p className="text-xs text-[#9CA3AF]">Choose an agent from your fleet</p>
               </div>
               {fleetAgents.length === 0 ? (
-                <div className="p-4 text-center text-sm text-[#6B7280]">
+                <div className="p-4 text-center text-sm text-[#9CA3AF]">
                   No agents in your fleet. Deploy one from the Fleet page.
                 </div>
               ) : (
@@ -360,7 +361,7 @@ export function ImageGenPage() {
                         </span>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-[#E8E8F0]">{agent.name}</div>
-                          <div className="text-xs text-[#6B7280]">Slot {agent.slot} &middot; {agent.tasks_completed} tasks done</div>
+                          <div className="text-xs text-[#9CA3AF]">Slot {agent.slot} &middot; {agent.tasks_completed} tasks done</div>
                         </div>
                         <div className="flex items-center gap-1.5">
                           {agent.status === 'active' ? (
@@ -368,7 +369,7 @@ export function ImageGenPage() {
                           ) : (
                             <WifiOff className="w-3 h-3" style={{ color }} />
                           )}
-                          <span className="text-[10px] capitalize" style={{ color }}>
+                          <span className="text-xs capitalize" style={{ color }}>
                             {agent.status}
                           </span>
                         </div>
@@ -392,7 +393,7 @@ export function ImageGenPage() {
               ? 'border-[#ADFF2F]/40 bg-[#ADFF2F]/5'
               : 'border-[#00F0FF]/10 hover:border-[#ADFF2F]/30 bg-[#0C0C18]/50'
           }`}
-          style={{ backdropFilter: 'blur(8px)' }}
+          style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         >
           <div className="flex items-center gap-3 mb-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -402,10 +403,10 @@ export function ImageGenPage() {
             </div>
             <div>
               <h3 className="text-[#E8E8F0] font-semibold">Imagine</h3>
-              <p className="text-xs text-[#6B7280]">Text to image</p>
+              <p className="text-xs text-[#9CA3AF]">Text to image</p>
             </div>
           </div>
-          <p className="text-sm text-[#6B7280]">
+          <p className="text-sm text-[#9CA3AF]">
             Describe what you want and the AI will generate it from scratch.
           </p>
         </button>
@@ -417,20 +418,20 @@ export function ImageGenPage() {
               ? 'border-[#00F0FF]/40 bg-[#00F0FF]/5'
               : 'border-[#00F0FF]/10 hover:border-[#00F0FF]/30 bg-[#0C0C18]/50'
           }`}
-          style={{ backdropFilter: 'blur(8px)' }}
+          style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         >
           <div className="flex items-center gap-3 mb-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
               mode === 'edit' ? 'bg-[#00F0FF]/20' : 'bg-[#00F0FF]/10'
             }`}>
-              <Upload className={`w-5 h-5 ${mode === 'edit' ? 'text-[#00F0FF]' : 'text-[#6B7280]'}`} />
+              <Upload className={`w-5 h-5 ${mode === 'edit' ? 'text-[#00F0FF]' : 'text-[#9CA3AF]'}`} />
             </div>
             <div>
               <h3 className="text-[#E8E8F0] font-semibold">Upload & Edit</h3>
-              <p className="text-xs text-[#6B7280]">Reference image + prompt</p>
+              <p className="text-xs text-[#9CA3AF]">Reference image + prompt</p>
             </div>
           </div>
-          <p className="text-sm text-[#6B7280]">
+          <p className="text-sm text-[#9CA3AF]">
             Upload an image as reference and describe the changes you want.
           </p>
         </button>
@@ -449,7 +450,7 @@ export function ImageGenPage() {
           {/* Reference image upload (edit mode) */}
           {mode === 'edit' && (
             <div className="mb-5">
-              <label className="text-sm text-[#6B7280] mb-2 block">Reference Image (optional)</label>
+              <label className="text-sm text-[#9CA3AF] mb-2 block">Reference Image (optional)</label>
               <div className="flex gap-3 items-start">
                 {referencePreview ? (
                   <div className="relative group">
@@ -461,6 +462,7 @@ export function ImageGenPage() {
                     <button
                       onClick={() => { setReferencePreview(''); setReferenceUrl(''); }}
                       className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#FF6161] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Remove reference image"
                     >
                       <X className="w-3 h-3 text-white" />
                     </button>
@@ -468,10 +470,11 @@ export function ImageGenPage() {
                 ) : (
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-24 h-24 rounded-xl border-2 border-dashed border-[#00F0FF]/20 hover:border-[#00F0FF]/40 flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
+                    className="w-24 h-24 rounded-xl border-2 border-dashed border-[#00F0FF]/20 hover:border-[#00F0FF]/40 flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                    aria-label="Upload reference image"
                   >
-                    <Upload className="w-5 h-5 text-[#6B7280]" />
-                    <span className="text-[10px] text-[#6B7280]">Upload</span>
+                    <Upload className="w-5 h-5 text-[#9CA3AF]" />
+                    <span className="text-xs text-[#9CA3AF]">Upload</span>
                   </button>
                 )}
                 <input
@@ -481,7 +484,7 @@ export function ImageGenPage() {
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-                <p className="text-xs text-[#6B7280] mt-1 flex-1">
+                <p className="text-xs text-[#9CA3AF] mt-1 flex-1">
                   Upload a reference image and describe the edits you want.
                   The AI will generate a new image based on your instructions.
                 </p>
@@ -500,13 +503,13 @@ export function ImageGenPage() {
                 <Sparkles className="w-3.5 h-3.5 text-[#ADFF2F]" />
                 {currentModel?.name || 'Select Model'}
                 {currentModel?.tier === 'auto' ? (
-                  <span className="text-[10px] text-[#A78BFA] ml-1">Auto</span>
+                  <span className="text-xs text-[#A78BFA] ml-1">Auto</span>
                 ) : currentModel?.credits ? (
-                  <span className="text-[10px] text-[#FFB800] ml-1">{currentModel.credits}cr</span>
+                  <span className="text-xs text-[#FFB800] ml-1">{currentModel.credits}cr</span>
                 ) : (
-                  <span className="text-[10px] text-[#00FF88] ml-1">Free</span>
+                  <span className="text-xs text-[#00FF88] ml-1">Free</span>
                 )}
-                <ChevronDown className="w-3 h-3 text-[#6B7280]" />
+                <ChevronDown className="w-3 h-3 text-[#9CA3AF]" />
               </button>
 
               {showModelPicker && (
@@ -521,7 +524,7 @@ export function ImageGenPage() {
                     >
                       <div className="flex-1">
                         <div className="text-sm font-medium text-[#E8E8F0]">{m.name}</div>
-                        <div className="text-xs text-[#6B7280]">{m.description}</div>
+                        <div className="text-xs text-[#9CA3AF]">{m.description}</div>
                       </div>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                         m.tier === 'auto' ? 'bg-[#A78BFA]/10 text-[#A78BFA]' :
@@ -548,7 +551,7 @@ export function ImageGenPage() {
                     className={`px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
                       width === preset.w && height === preset.h
                         ? 'bg-[#ADFF2F]/15 text-[#ADFF2F] border border-[#ADFF2F]/30'
-                        : 'bg-[#06060B] text-[#6B7280] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
+                        : 'bg-[#06060B] text-[#9CA3AF] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
                     }`}
                   >
                     {preset.label}
@@ -576,7 +579,7 @@ export function ImageGenPage() {
 
           {/* Generate button */}
           <div className="flex items-center justify-between mt-4">
-            <div className="text-xs text-[#6B7280]">
+            <div className="text-xs text-[#9CA3AF]">
               {imageCount >= maxImages ? (
                 <span className="text-[#FF6161]">Image limit reached ({maxImages}/{maxImages})</span>
               ) : (
@@ -614,11 +617,11 @@ export function ImageGenPage() {
           <h2 className="text-lg font-semibold text-[#E8E8F0] flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-[#ADFF2F]" />
             Your Gallery
-            <span className="text-xs text-[#6B7280] font-normal ml-1">
+            <span className="text-xs text-[#9CA3AF] font-normal ml-1">
               {imageCount}/{maxImages}
             </span>
           </h2>
-          <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
+          <div className="flex items-center gap-1.5 text-xs text-[#9CA3AF]">
             <Clock className="w-3 h-3" />
             Images expire in 24h
           </div>
@@ -631,8 +634,8 @@ export function ImageGenPage() {
         ) : images.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#00F0FF]/20 p-12 text-center">
             <ImageIcon className="w-10 h-10 text-[#ADFF2F]/30 mx-auto mb-3" />
-            <p className="text-[#6B7280] text-sm">No images yet.</p>
-            <p className="text-[#6B7280] text-xs mt-1">Select a mode above and start generating!</p>
+            <p className="text-[#9CA3AF] text-sm">No images yet.</p>
+            <p className="text-[#9CA3AF] text-xs mt-1">Select a mode above and start generating!</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -663,15 +666,15 @@ export function ImageGenPage() {
                   <p className="text-xs text-[#E8E8F0] truncate mb-1.5">{img.prompt}</p>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 text-[#6B7280]" />
-                      <span className="text-[10px] text-[#6B7280]">{timeLeft(img.expires_at)}</span>
+                      <Clock className="w-3 h-3 text-[#9CA3AF]" />
+                      <span className="text-xs text-[#9CA3AF]">{timeLeft(img.expires_at)}</span>
                     </div>
                     <div className="flex gap-1">
                       {/* Copy ID */}
                       <button
                         onClick={() => handleCopyId(img.id)}
-                        className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 transition-colors"
-                        title={`Copy ID: ${img.id}`}
+                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                        aria-label={`Copy ID: ${img.id}`}
                       >
                         {copiedId === img.id ? (
                           <Check className="w-3.5 h-3.5 text-[#00FF88]" />
@@ -682,8 +685,8 @@ export function ImageGenPage() {
                       {/* Delete */}
                       <button
                         onClick={() => handleDelete(img.id)}
-                        className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
-                        title="Delete"
+                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                        aria-label="Delete image"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -692,12 +695,12 @@ export function ImageGenPage() {
 
                   {/* Model & source badge */}
                   <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
                       img.source === 'edited' ? 'bg-[#00F0FF]/10 text-[#00F0FF]' : 'bg-[#ADFF2F]/10 text-[#ADFF2F]'
                     }`}>
                       {img.source === 'edited' ? 'Edited' : 'Generated'}
                     </span>
-                    <span className="text-[10px] text-[#6B7280]">{img.model}</span>
+                    <span className="text-xs text-[#9CA3AF]">{img.model}</span>
                   </div>
                 </div>
               </div>
@@ -716,7 +719,7 @@ export function ImageGenPage() {
             <Sparkles className="w-4 h-4 text-[#ADFF2F]" />
             <span className="text-sm font-semibold text-[#E8E8F0]">Available Image Models</span>
           </div>
-          <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${showModelsPanel ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-4 h-4 text-[#9CA3AF] transition-transform ${showModelsPanel ? 'rotate-180' : ''}`} />
         </button>
 
         {showModelsPanel && (
@@ -739,7 +742,7 @@ export function ImageGenPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-medium text-[#E8E8F0]">{model.name}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
                         model.tier === 'auto' ? 'bg-[#A78BFA]/15 text-[#A78BFA]' :
                         model.tier === 'free' ? 'bg-[#00FF88]/15 text-[#00FF88]' :
                         model.tier === 'premium' ? 'bg-[#FFB800]/15 text-[#FFB800]' :
@@ -748,12 +751,12 @@ export function ImageGenPage() {
                         {model.cost}
                       </span>
                       {isDefault && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#ADFF2F]/15 text-[#ADFF2F] font-medium">
+                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#ADFF2F]/15 text-[#ADFF2F] font-medium">
                           Your default
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-[#6B7280] mt-0.5 truncate">{model.description}</p>
+                    <p className="text-xs text-[#9CA3AF] mt-0.5 truncate">{model.description}</p>
                   </div>
 
                   {/* Set as default button */}
@@ -777,8 +780,8 @@ export function ImageGenPage() {
 
       {/* Usage info */}
       <div className="rounded-xl border border-[#00F0FF]/10 p-4 flex items-start gap-3">
-        <AlertCircle className="w-4 h-4 text-[#6B7280] shrink-0 mt-0.5" />
-        <div className="text-xs text-[#6B7280] space-y-1">
+        <AlertCircle className="w-4 h-4 text-[#9CA3AF] shrink-0 mt-0.5" />
+        <div className="text-xs text-[#9CA3AF] space-y-1">
           <p>Images are saved for <strong className="text-[#E8E8F0]">24 hours</strong> and then automatically deleted.</p>
           <p>Use the <strong className="text-[#E8E8F0]">Copy ID</strong> button to get an image ID you can reference in your Website Builder projects.</p>
           <p>Maximum <strong className="text-[#E8E8F0]">{maxImages} images</strong> at a time. Delete old ones to make room for new ones.</p>

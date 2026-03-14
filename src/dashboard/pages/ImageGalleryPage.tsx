@@ -37,7 +37,7 @@ export function ImageGalleryPage() {
           </div>
           <div>
             <h1 className="text-lg font-semibold text-[#E8E8F0]">Image Gallery</h1>
-            <p className="text-xs text-[#6B7280]">Your last 30 generated images</p>
+            <p className="text-xs text-[#9CA3AF]">Your last 30 generated images</p>
           </div>
         </div>
         <button
@@ -82,7 +82,7 @@ export function ImageGalleryPage() {
               <div className="aspect-square bg-[#0A0A1A]">
                 <img
                   src={img.image_url}
-                  alt={img.prompt ?? ''}
+                  alt={img.prompt || 'Generated image'}
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
@@ -90,23 +90,23 @@ export function ImageGalleryPage() {
               {/* Overlay on hover (desktop) */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex flex-col justify-end p-3">
                 <p className="text-xs text-[#E8E8F0] line-clamp-2 mb-1">{img.prompt ?? ''}</p>
-                <span className="text-[10px] text-[#6B7280]">
+                <span className="text-xs text-[#9CA3AF]">
                   {new Date(img.created_at).toLocaleDateString()}
                 </span>
               </div>
               {/* Bottom bar: always visible with prompt + download (touch-friendly) */}
               <div className="px-2 py-1.5 border-t border-[#A78BFA]/10 flex items-center justify-between gap-1">
-                <p className="text-[10px] text-[#6B7280] truncate flex-1">{img.prompt ?? ''}</p>
+                <p className="text-xs text-[#9CA3AF] truncate flex-1">{img.prompt ?? ''}</p>
                 <a
                   href={img.image_url}
                   download
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center min-w-[36px] min-h-[36px] text-[#A78BFA] hover:text-[#C4B5FD] transition-colors flex-shrink-0"
+                  className="flex items-center justify-center min-w-[44px] min-h-[44px] text-[#A78BFA] hover:text-[#C4B5FD] active:text-[#C4B5FD] transition-colors flex-shrink-0"
                   onClick={(e) => e.stopPropagation()}
                   aria-label="Download image"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-4 h-4" />
                 </a>
               </div>
             </div>

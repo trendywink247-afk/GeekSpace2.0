@@ -79,7 +79,7 @@ export function ConnectPage() {
             {stage === 'loading' && (
               <div className="text-center py-8">
                 <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin mx-auto mb-4" />
-                <p className="text-[#6B7280]">Loading invite...</p>
+                <p className="text-[#9CA3AF]">Loading invite...</p>
               </div>
             )}
 
@@ -87,9 +87,9 @@ export function ConnectPage() {
               <div className="text-center py-8">
                 <XCircle className="w-12 h-12 text-[#FF6161] mx-auto mb-4" />
                 <h2 className="text-xl font-bold mb-2">Invalid Invite</h2>
-                <p className="text-[#6B7280] mb-6">{errorMsg}</p>
+                <p className="text-[#9CA3AF] mb-6">{errorMsg}</p>
                 <Link to="/">
-                  <Button variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF]">
+                  <Button variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
                     Go to Homepage
                   </Button>
                 </Link>
@@ -100,14 +100,14 @@ export function ConnectPage() {
               <div className="text-center py-8">
                 <CheckCircle2 className="w-12 h-12 text-[#00FF88] mx-auto mb-4" />
                 <h2 className="text-xl font-bold mb-2">Connection Established!</h2>
-                <p className="text-[#6B7280] mb-2">
+                <p className="text-[#9CA3AF] mb-2">
                   You are now connected with <span className="text-[#00F0FF] font-medium">{invite?.ownerName}</span>.
                 </p>
-                <p className="text-sm text-[#6B7280] mb-6">
+                <p className="text-sm text-[#9CA3AF] mb-6">
                   They'll be able to collaborate with you through Agentin Chat.
                 </p>
                 <Link to="/login?signup=1">
-                  <Button className="bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold">
+                  <Button className="bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
                     Sign up to Agentin Chat
                   </Button>
                 </Link>
@@ -132,7 +132,7 @@ export function ConnectPage() {
                   <h2 className="text-xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
                     {invite.ownerName}
                   </h2>
-                  <p className="text-sm text-[#6B7280]">@{invite.ownerUsername}</p>
+                  <p className="text-sm text-[#9CA3AF]">@{invite.ownerUsername}</p>
                   <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20">
                     <UserPlus className="w-4 h-4 text-[#00F0FF]" />
                     <span className="text-sm text-[#00F0FF]">Invited you to connect</span>
@@ -142,7 +142,7 @@ export function ConnectPage() {
                 {/* Accept form */}
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm text-[#6B7280] block mb-1.5">Your name <span className="text-[#6B7280]/60">(optional)</span></label>
+                    <label className="text-sm text-[#9CA3AF] block mb-1.5">Your name <span className="text-[#9CA3AF]/60">(optional)</span></label>
                     <Input
                       placeholder="e.g. Alex Smith"
                       value={name}
@@ -151,7 +151,7 @@ export function ConnectPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-[#6B7280] block mb-1.5">Your email <span className="text-[#6B7280]/60">(optional)</span></label>
+                    <label className="text-sm text-[#9CA3AF] block mb-1.5">Your email <span className="text-[#9CA3AF]/60">(optional)</span></label>
                     <Input
                       type="email"
                       placeholder="e.g. you@example.com"
@@ -163,7 +163,7 @@ export function ConnectPage() {
                   <Button
                     onClick={handleAccept}
                     disabled={stage === 'submitting'}
-                    className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold"
+                    className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                   >
                     {stage === 'submitting' ? (
                       <>
@@ -177,7 +177,7 @@ export function ConnectPage() {
                       </>
                     )}
                   </Button>
-                  <p className="text-xs text-center text-[#6B7280]">
+                  <p className="text-xs text-center text-[#9CA3AF]">
                     Invite expires {new Date(invite.expiresAt).toLocaleDateString()}
                   </p>
                 </div>

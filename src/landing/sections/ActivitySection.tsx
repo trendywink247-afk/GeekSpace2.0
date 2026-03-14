@@ -63,7 +63,7 @@ export function ActivitySection() {
     <section
       ref={sectionRef}
       id="activity"
-      className="relative py-24 overflow-hidden"
+      className="relative py-20 md:py-28 lg:py-32 overflow-hidden"
     >
       {/* Data River Background */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -88,7 +88,7 @@ export function ActivitySection() {
             }`}
           >
             <h2 
-              className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4"
+              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
               style={{ fontFamily: 'Syne, sans-serif' }}
             >
               Live <span className="text-gradient">Activity</span>
@@ -109,7 +109,7 @@ export function ActivitySection() {
                       <stat.icon className="w-6 h-6 text-[#00F0FF]" />
                     </div>
                     <div>
-                      <div className="text-3xl font-bold text-[#E8E8F0]">{stat.value}</div>
+                      <div className="text-2xl sm:text-3xl font-bold text-[#E8E8F0]">{stat.value}</div>
                       <div className="text-sm text-[#6B7280]">{stat.label}</div>
                     </div>
                   </div>
@@ -132,19 +132,20 @@ export function ActivitySection() {
                   style={{ transitionDelay: `${i * 50}ms` }}
                 >
                   {/* Company Avatar */}
-                  <div 
+                  <div
                     className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: `${activity.color}20` }}
                   >
-                    <activity.icon 
-                      className="w-5 h-5" 
+                    <activity.icon
+                      className="w-5 h-5"
                       style={{ color: activity.color }}
+                      aria-label={activity.action}
                     />
                   </div>
 
                   {/* Activity Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
                       <span className="font-medium text-[#E8E8F0]">{activity.company}</span>
                       <span className="text-[#6B7280]">AI</span>
                       <span className="text-[#6B7280]">{activity.action}</span>
@@ -154,8 +155,8 @@ export function ActivitySection() {
                   {/* Time & Status */}
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <span className="text-sm text-[#6B7280]/70 font-mono">{activity.time}</span>
-                    <div 
-                      className="w-2 h-2 rounded-full animate-pulse"
+                    <div
+                      className="w-2 h-2 rounded-full motion-safe:animate-pulse"
                       style={{ backgroundColor: activity.color }}
                     />
                   </div>
@@ -165,7 +166,7 @@ export function ActivitySection() {
 
             {/* Live Indicator */}
             <div className="mt-6 flex items-center justify-center gap-2 text-sm text-[#6B7280]">
-              <div className="w-2 h-2 bg-[#00FF88] rounded-full animate-pulse" />
+              <div className="w-2 h-2 bg-[#00FF88] rounded-full motion-safe:animate-pulse" />
               <span className="font-mono">Live updates from the network</span>
             </div>
           </div>

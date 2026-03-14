@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Hexagon, Mail, Lock, ArrowRight, Github, User, Chrome, Zap } from 'lucide-react';
+import { Hexagon, Mail, Lock, ArrowRight, Github, User, Chrome, Zap, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,6 +66,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -223,7 +224,7 @@ export function LoginPage() {
         >
           {/* Mobile Logo (hidden on desktop since left panel shows it) */}
           <div className="text-center mb-8 md:hidden">
-            <button onClick={() => navigate('/')} className="inline-flex items-center gap-2.5 mb-6 group">
+            <button onClick={() => navigate('/')} aria-label="Return to home" className="inline-flex items-center gap-2.5 mb-6 group">
               <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center group-hover:bg-[#00F0FF]/15 group-hover:border-[#00F0FF]/40 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(0,240,255,0.15)]">
                 <Hexagon className="w-6 h-6 text-[#00F0FF]" />
               </div>
@@ -251,13 +252,14 @@ export function LoginPage() {
               className="p-6 rounded-2xl space-y-4 plasma-border"
               style={{
                 background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.9), rgba(16, 16, 30, 0.8))',
+                WebkitBackdropFilter: 'blur(24px) saturate(1.3)',
                 backdropFilter: 'blur(24px) saturate(1.3)',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 60px rgba(0, 240, 255, 0.04)',
               }}
             >
               {isSignup && (
                 <div>
-                  <label className="text-sm text-[#6B7280] mb-2 block">Username</label>
+                  <label className="text-sm text-[#9CA3AF] mb-2 block">Username</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                     <Input
@@ -274,7 +276,7 @@ export function LoginPage() {
                 </div>
               )}
               <div>
-                <label className="text-sm text-[#6B7280] mb-2 block">Email</label>
+                <label className="text-sm text-[#9CA3AF] mb-2 block">Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                   <Input
@@ -289,18 +291,26 @@ export function LoginPage() {
                 </div>
               </div>
               <div>
-                <label className="text-sm text-[#6B7280] mb-2 block">Password</label>
+                <label className="text-sm text-[#9CA3AF] mb-2 block">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                   <Input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="pl-10 bg-[#06060B]/60 border-[#00F0FF]/20 text-[#E8E8F0] focus:border-[#00F0FF]/50 focus:ring-[#00F0FF]/10"
+                    className="pl-10 pr-12 bg-[#06060B]/60 border-[#00F0FF]/20 text-[#E8E8F0] focus:border-[#00F0FF]/50 focus:ring-[#00F0FF]/10"
                     required
                     data-testid="login-password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -316,7 +326,7 @@ export function LoginPage() {
               )}
 
               {error && (
-                <p className="text-sm text-[#FF3366]" data-testid="login-error">{error}</p>
+                <p className="text-sm text-[#FF3366]" role="alert" aria-live="polite" data-testid="login-error">{error}</p>
               )}
 
               <Button
@@ -392,7 +402,7 @@ export function LoginPage() {
             {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
               onClick={() => { setIsSignup(!isSignup); setError(''); }}
-              className="text-[#00F0FF] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center"
+              className="text-[#00F0FF] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded"
             >
               {isSignup ? 'Sign In' : 'Sign Up'}
             </button>

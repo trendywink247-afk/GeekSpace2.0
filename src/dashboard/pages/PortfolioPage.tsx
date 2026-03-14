@@ -373,9 +373,9 @@ export function PortfolioPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Portfolio
           </h1>
-          <p className="text-[#6B7280]">Manage your public portfolio</p>
+          <p className="text-[#9CA3AF]">Manage your public portfolio</p>
           {portfolioStats !== null && (
-            <p className="text-xs text-[#6B7280] mt-1">
+            <p className="text-xs text-[#9CA3AF] mt-1">
               <Eye className="w-3 h-3 inline mr-1 text-[#00F0FF]" />
               {portfolioStats.totalViews} total views · {portfolioStats.recentViews} this week
               {/* 49.4: Show last-viewed in visitor's local timezone */}
@@ -413,7 +413,7 @@ export function PortfolioPage() {
                 href={`/portfolio/${user.username}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
               >
                 <ExternalLink className="w-4 h-4" />
                 View Live
@@ -451,7 +451,7 @@ export function PortfolioPage() {
             <span className="text-sm font-semibold text-[#E8E8F0]">
               Profile {completionPct}% complete
             </span>
-            <span className="text-xs text-[#6B7280]">{completedCount}/{completionItems.length} fields</span>
+            <span className="text-xs text-[#9CA3AF]">{completedCount}/{completionItems.length} fields</span>
           </div>
           <div className="w-full bg-[#06060B] rounded-full h-2 mb-3">
             <div
@@ -495,7 +495,7 @@ export function PortfolioPage() {
               <Link className="w-4 h-4 text-[#00F0FF]" />
               <span className="text-sm font-semibold text-[#E8E8F0]">Share Your Portfolio</span>
             </div>
-            <p className="text-xs text-[#6B7280] truncate">
+            <p className="text-xs text-[#9CA3AF] truncate">
               {`${window.location.origin}/portfolio/${user.username}`}
             </p>
           </div>
@@ -564,7 +564,7 @@ export function PortfolioPage() {
             <TabsTrigger value="messages" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white whitespace-nowrap press-scale relative">
               Messages
               {contacts.length > 0 && (
-                <span className="ml-1.5 bg-[#FF2D78] text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
+                <span className="ml-1.5 bg-[#FF2D78] text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
                   {contacts.length}
                 </span>
               )}
@@ -577,12 +577,12 @@ export function PortfolioPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Profile Details</CardTitle>
-              <CardDescription className="text-[#6B7280]">Your public portfolio headline, bio, and layout</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Your public portfolio headline, bio, and layout</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm text-[#6B7280] block">Headline</label>
+                  <label className="text-sm text-[#9CA3AF] block">Headline</label>
                   <button
                     onClick={() => handleGenerate('headline', `${about}\n${skills.join(', ')}`, setHeadline)}
                     disabled={generatingField === 'headline'}
@@ -605,7 +605,7 @@ export function PortfolioPage() {
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm text-[#6B7280] block">Bio</label>
+                  <label className="text-sm text-[#9CA3AF] block">Bio</label>
                   <button
                     onClick={() => handleGenerate('about', `${headline}\n${skills.join(', ')}`, setAbout)}
                     disabled={generatingField === 'about'}
@@ -628,7 +628,7 @@ export function PortfolioPage() {
               </div>
               {/* 59.9: SEO meta description */}
               <div>
-                <label className="text-sm text-[#6B7280] mb-1.5 block flex items-center gap-1.5">
+                <label className="text-sm text-[#9CA3AF] mb-1.5 block flex items-center gap-1.5">
                   SEO Meta Description
                   <span className="text-xs text-[#4B5563]">(shown in Google search results, max 160 chars)</span>
                 </label>
@@ -642,7 +642,7 @@ export function PortfolioPage() {
                 <p className="text-xs text-[#4B5563] mt-1 text-right">{metaDescription.length}/160</p>
               </div>
               <div>
-                <label className="text-sm text-[#6B7280] mb-2 block">Avatar URL</label>
+                <label className="text-sm text-[#9CA3AF] mb-2 block">Avatar URL</label>
                 <Input
                   value={avatar}
                   onChange={(e) => setAvatar(e.target.value)}
@@ -651,7 +651,7 @@ export function PortfolioPage() {
                 />
               </div>
               <div>
-                <label className="text-sm text-[#6B7280] mb-3 block">Theme Layout</label>
+                <label className="text-sm text-[#9CA3AF] mb-3 block">Theme Layout</label>
                 <div className="grid grid-cols-3 gap-3">
                   {/* Active layout options */}
                   {([
@@ -662,10 +662,10 @@ export function PortfolioPage() {
                     <button
                       key={opt.id}
                       onClick={() => setLayout(opt.id)}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all press-scale ${
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                         layout === opt.id
                           ? 'border-[#00F0FF] bg-[#00F0FF]/10 text-[#00F0FF]'
-                          : 'border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/40'
+                          : 'border-[#00F0FF]/20 text-[#9CA3AF] hover:border-[#00F0FF]/40'
                       }`}
                     >
                       {/* Visual preview thumbnail */}
@@ -721,7 +721,7 @@ export function PortfolioPage() {
                       </div>
                       <div className="text-center">
                         <div className="text-xs font-semibold">{opt.label}</div>
-                        <div className={`text-[10px] ${layout === opt.id ? 'text-[#00F0FF]/70' : 'text-[#6B7280]/70'}`}>{opt.desc}</div>
+                        <div className={`text-xs ${layout === opt.id ? 'text-[#00F0FF]/70' : 'text-[#9CA3AF]/70'}`}>{opt.desc}</div>
                       </div>
                     </button>
                   ))}
@@ -734,14 +734,14 @@ export function PortfolioPage() {
                   ]).map((opt) => (
                     <div
                       key={opt.id}
-                      className="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-dashed border-[#6B7280]/20 text-[#6B7280]/50 opacity-60 cursor-not-allowed"
+                      className="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-dashed border-[#6B7280]/20 text-[#9CA3AF]/50 opacity-60 cursor-not-allowed"
                     >
                       <div className="w-full h-12 rounded-lg bg-[#06060B] border border-[#6B7280]/10 flex items-center justify-center">
-                        <span className="text-[9px] font-semibold uppercase tracking-wider text-[#6B7280]/40">Soon</span>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-[#9CA3AF]/40">Soon</span>
                       </div>
                       <div className="text-center">
                         <div className="text-xs font-semibold">{opt.label}</div>
-                        <div className="text-[10px] text-[#6B7280]/40">{opt.desc}</div>
+                        <div className="text-xs text-[#9CA3AF]/40">{opt.desc}</div>
                       </div>
                     </div>
                   ))}
@@ -758,7 +758,7 @@ export function PortfolioPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Skills</CardTitle>
-                  <CardDescription className="text-[#6B7280]">Add technologies and skills you want to showcase</CardDescription>
+                  <CardDescription className="text-[#9CA3AF]">Add technologies and skills you want to showcase</CardDescription>
                 </div>
                 <Button
                   onClick={async () => {
@@ -811,7 +811,7 @@ export function PortfolioPage() {
               {skills.length === 0 ? (
                 <div className="text-center py-8">
                   <Code2 className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-                  <p className="text-[#6B7280]">No skills added yet</p>
+                  <p className="text-[#9CA3AF]">No skills added yet</p>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -838,7 +838,7 @@ export function PortfolioPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Projects</CardTitle>
-                  <CardDescription className="text-[#6B7280]">Showcase your best work</CardDescription>
+                  <CardDescription className="text-[#9CA3AF]">Showcase your best work</CardDescription>
                 </div>
                 <Button
                   onClick={() => { setEditingProject({ ...emptyProject }); setEditingProjectIdx(null); }}
@@ -855,7 +855,7 @@ export function PortfolioPage() {
                 <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 space-y-3">
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm text-[#6B7280] mb-1 block">Name *</label>
+                      <label className="text-sm text-[#9CA3AF] mb-1 block">Name *</label>
                       <Input
                         value={editingProject.name}
                         onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
@@ -864,7 +864,7 @@ export function PortfolioPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm text-[#6B7280] mb-1 block">URL</label>
+                      <label className="text-sm text-[#9CA3AF] mb-1 block">URL</label>
                       <Input
                         value={editingProject.url}
                         onChange={(e) => setEditingProject({ ...editingProject, url: e.target.value })}
@@ -875,7 +875,7 @@ export function PortfolioPage() {
                   </div>
                   {/* 47.5: Image URL field — preserves existing value on edit */}
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-1 block">Image URL <span className="text-[#374151]">(optional)</span></label>
+                    <label className="text-sm text-[#9CA3AF] mb-1 block">Image URL <span className="text-[#374151]">(optional)</span></label>
                     <Input
                       value={editingProject.imageUrl ?? ''}
                       onChange={(e) => setEditingProject({ ...editingProject, imageUrl: e.target.value })}
@@ -884,7 +884,7 @@ export function PortfolioPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-1 block">Description</label>
+                    <label className="text-sm text-[#9CA3AF] mb-1 block">Description</label>
                     <textarea
                       value={editingProject.description}
                       onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
@@ -893,7 +893,7 @@ export function PortfolioPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-1 block">Tags</label>
+                    <label className="text-sm text-[#9CA3AF] mb-1 block">Tags</label>
                     <div className="flex gap-2 mb-2">
                       <Input
                         value={tagInput}
@@ -912,7 +912,7 @@ export function PortfolioPage() {
                           <Badge
                             key={tag}
                             variant="outline"
-                            className="border-[#00F0FF]/30 text-[#6B7280] cursor-pointer hover:border-[#FF6161]/30 hover:text-[#FF6161] min-h-[44px] px-3 py-1.5 press-scale"
+                            className="border-[#00F0FF]/30 text-[#9CA3AF] cursor-pointer hover:border-[#FF6161]/30 hover:text-[#FF6161] min-h-[44px] px-3 py-1.5 press-scale"
                             onClick={() => setEditingProject({ ...editingProject, tags: editingProject.tags!.filter((t) => t !== tag) })}
                           >
                             {tag} <X className="w-3 h-3 ml-1" />
@@ -932,7 +932,7 @@ export function PortfolioPage() {
                 </div>
                 {/* 55.3: Inline live preview */}
                 <div className="hidden md:flex flex-col gap-2">
-                  <p className="text-xs text-[#6B7280] font-medium">Live Preview</p>
+                  <p className="text-xs text-[#9CA3AF] font-medium">Live Preview</p>
                   <div className="rounded-xl border border-[#00F0FF]/20 bg-[#06060B] overflow-hidden">
                     {editingProject.imageUrl && (
                       <img
@@ -950,12 +950,12 @@ export function PortfolioPage() {
                         <p className="text-xs text-[#00F0FF] truncate">{editingProject.url}</p>
                       )}
                       {editingProject.description && (
-                        <p className="text-xs text-[#6B7280] line-clamp-3">{editingProject.description}</p>
+                        <p className="text-xs text-[#9CA3AF] line-clamp-3">{editingProject.description}</p>
                       )}
                       {(editingProject.tags || []).length > 0 && (
                         <div className="flex flex-wrap gap-1 pt-1">
                           {editingProject.tags!.slice(0, 4).map((tag) => (
-                            <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/20">
+                            <span key={tag} className="text-xs px-1.5 py-0.5 rounded bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/20">
                               {tag}
                             </span>
                           ))}
@@ -970,7 +970,7 @@ export function PortfolioPage() {
               {projects.length === 0 && !editingProject && (
                 <div className="text-center py-8">
                   <FolderGit2 className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-                  <p className="text-[#6B7280]">No projects yet</p>
+                  <p className="text-[#9CA3AF]">No projects yet</p>
                 </div>
               )}
 
@@ -989,19 +989,19 @@ export function PortfolioPage() {
                     setDraggedIndex(null);
                   }}
                   onDragEnd={() => setDraggedIndex(null)}
-                  className={`p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 group hover:border-[#00F0FF]/40 transition-all press-scale w-full cursor-grab active:cursor-grabbing ${draggedIndex === idx ? 'opacity-50' : ''}`}
+                  className={`p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 group hover:border-[#00F0FF]/40 transition-all press-scale w-full cursor-grab active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${draggedIndex === idx ? 'opacity-50' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-2 flex-1 min-w-0">
-                      <GripVertical className="w-4 h-4 text-[#6B7280]/40 mt-0.5 flex-shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+                      <GripVertical className="w-4 h-4 text-[#9CA3AF]/40 mt-0.5 flex-shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity" aria-hidden="true" />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-[#E8E8F0]">{project.name}</h3>
-                        {project.description && <p className="text-sm text-[#6B7280] mt-1">{project.description}</p>}
+                        {project.description && <p className="text-sm text-[#9CA3AF] mt-1">{project.description}</p>}
                         {project.url && <p className="text-xs text-[#00F0FF] mt-1 truncate">{project.url}</p>}
                         {(project.tags || []).length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {project.tags!.map((tag) => (
-                              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#0C0C18] text-[#6B7280]">{tag}</span>
+                              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#0C0C18] text-[#9CA3AF]">{tag}</span>
                             ))}
                           </div>
                         )}
@@ -1012,7 +1012,8 @@ export function PortfolioPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => { setEditingProject({ ...project }); setEditingProjectIdx(idx); }}
-                        className="text-[#00F0FF] hover:text-[#00F0FF] min-h-[44px] min-w-[44px] press-scale"
+                        className="text-[#00F0FF] hover:text-[#00F0FF] min-h-[44px] min-w-[44px] press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                        aria-label="Edit project"
                       >
                         Edit
                       </Button>
@@ -1020,7 +1021,8 @@ export function PortfolioPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => deleteProject(idx)}
-                        className="text-[#FF6161] hover:text-[#FF6161] min-h-[44px] min-w-[44px] press-scale"
+                        className="text-[#FF6161] hover:text-[#FF6161] min-h-[44px] min-w-[44px] press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                        aria-label="Delete project"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -1039,7 +1041,7 @@ export function PortfolioPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Milestones</CardTitle>
-                  <CardDescription className="text-[#6B7280]">Key achievements and career highlights</CardDescription>
+                  <CardDescription className="text-[#9CA3AF]">Key achievements and career highlights</CardDescription>
                 </div>
                 <Button
                   onClick={() => { setEditingMilestone({ ...emptyMilestone }); setEditingMilestoneIdx(null); }}
@@ -1055,7 +1057,7 @@ export function PortfolioPage() {
                 <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 space-y-3">
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm text-[#6B7280] mb-1 block">Title *</label>
+                      <label className="text-sm text-[#9CA3AF] mb-1 block">Title *</label>
                       <Input
                         value={editingMilestone.title}
                         onChange={(e) => setEditingMilestone({ ...editingMilestone, title: e.target.value })}
@@ -1064,7 +1066,7 @@ export function PortfolioPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm text-[#6B7280] mb-1 block">Date</label>
+                      <label className="text-sm text-[#9CA3AF] mb-1 block">Date</label>
                       <Input
                         value={editingMilestone.date}
                         onChange={(e) => setEditingMilestone({ ...editingMilestone, date: e.target.value })}
@@ -1074,7 +1076,7 @@ export function PortfolioPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-1 block">Description</label>
+                    <label className="text-sm text-[#9CA3AF] mb-1 block">Description</label>
                     <textarea
                       value={editingMilestone.description}
                       onChange={(e) => setEditingMilestone({ ...editingMilestone, description: e.target.value })}
@@ -1096,7 +1098,7 @@ export function PortfolioPage() {
               {milestones.length === 0 && !editingMilestone && (
                 <div className="text-center py-8">
                   <Award className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-                  <p className="text-[#6B7280]">No milestones yet</p>
+                  <p className="text-[#9CA3AF]">No milestones yet</p>
                 </div>
               )}
 
@@ -1113,14 +1115,15 @@ export function PortfolioPage() {
                         <div className="min-w-0">
                           <div className="text-xs text-[#00F0FF] font-mono mb-1">{milestone.date}</div>
                           <div className="font-medium text-[#E8E8F0]">{milestone.title}</div>
-                          {milestone.description && <div className="text-sm text-[#6B7280] mt-1">{milestone.description}</div>}
+                          {milestone.description && <div className="text-sm text-[#9CA3AF] mt-1">{milestone.description}</div>}
                         </div>
                         <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0 mt-2 md:mt-0">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => { setEditingMilestone({ ...milestone }); setEditingMilestoneIdx(idx); }}
-                            className="text-[#00F0FF] hover:text-[#00F0FF] min-h-[44px] min-w-[44px] press-scale"
+                            className="text-[#00F0FF] hover:text-[#00F0FF] min-h-[44px] min-w-[44px] press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                            aria-label="Edit milestone"
                           >
                             Edit
                           </Button>
@@ -1128,7 +1131,8 @@ export function PortfolioPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteMilestone(idx)}
-                            className="text-[#FF6161] hover:text-[#FF6161] min-h-[44px] min-w-[44px] press-scale"
+                            className="text-[#FF6161] hover:text-[#FF6161] min-h-[44px] min-w-[44px] press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                            aria-label="Delete milestone"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -1147,7 +1151,7 @@ export function PortfolioPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Social Links</CardTitle>
-              <CardDescription className="text-[#6B7280]">Connect your online presence — all fields are optional</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Connect your online presence — all fields are optional</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {([
@@ -1158,7 +1162,7 @@ export function PortfolioPage() {
                 { key: 'email' as const, label: 'Email', placeholder: 'you@example.com' },
               ]).map((field) => (
                 <div key={field.key}>
-                  <label className="text-sm text-[#6B7280] mb-2 block">{field.label}</label>
+                  <label className="text-sm text-[#9CA3AF] mb-2 block">{field.label}</label>
                   <Input
                     value={social[field.key] || ''}
                     onChange={(e) => setSocial({ ...social, [field.key]: e.target.value })}
@@ -1179,7 +1183,7 @@ export function PortfolioPage() {
                 <Sparkles className="w-5 h-5 text-[#00F0FF]" />
                 AI Portfolio Editor
               </CardTitle>
-              <CardDescription className="text-[#6B7280]">
+              <CardDescription className="text-[#9CA3AF]">
                 Describe changes in plain English and let AI update your portfolio
               </CardDescription>
             </CardHeader>
@@ -1201,7 +1205,7 @@ export function PortfolioPage() {
                   <><Sparkles className="w-4 h-4 mr-2" />Apply AI Edit</>
                 )}
               </Button>
-              <p className="text-xs text-[#6B7280] text-center">
+              <p className="text-xs text-[#9CA3AF] text-center">
                 Changes are applied locally — review them in the other tabs, then click Save Changes to persist.
               </p>
             </CardContent>
@@ -1213,7 +1217,7 @@ export function PortfolioPage() {
                 <Bot className="w-5 h-5 text-[#BF5FFF]" />
                 Portfolio Agent Personality
               </CardTitle>
-              <CardDescription className="text-[#6B7280]">
+              <CardDescription className="text-[#9CA3AF]">
                 Choose how your public portfolio agent greets and responds to visitors
               </CardDescription>
             </CardHeader>
@@ -1230,7 +1234,7 @@ export function PortfolioPage() {
                     key={p.id}
                     onClick={() => handlePersonalitySave(p.id)}
                     disabled={personalitySaving}
-                    className={`flex-1 min-w-[100px] flex flex-col items-center gap-2 px-4 py-4 rounded-xl border transition-all ${
+                    className={`flex-1 min-w-[100px] flex flex-col items-center gap-2 px-4 py-4 rounded-xl border transition-all focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                       portfolioPersonality === p.id
                         ? 'border-[#BF5FFF]/60 bg-[#BF5FFF]/10'
                         : 'border-[#BF5FFF]/20 bg-[#06060B] hover:border-[#BF5FFF]/40'
@@ -1238,7 +1242,7 @@ export function PortfolioPage() {
                   >
                     <span className="text-2xl">{p.emoji}</span>
                     <span className="text-sm font-medium text-[#E8E8F0]">{p.label}</span>
-                    <span className="text-xs text-[#6B7280]">{p.desc}</span>
+                    <span className="text-xs text-[#9CA3AF]">{p.desc}</span>
                     {portfolioPersonality === p.id && !personalitySaving && (
                       <span className="text-xs text-[#BF5FFF]">
                         {personalitySaved ? 'Saved!' : 'Active'}
@@ -1250,7 +1254,7 @@ export function PortfolioPage() {
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-[#6B7280] mt-4 text-center">
+              <p className="text-xs text-[#9CA3AF] mt-4 text-center">
                 This also applies to your agent in the dashboard. Change it anytime in Agent Settings.
               </p>
             </CardContent>
@@ -1265,7 +1269,7 @@ export function PortfolioPage() {
                 <Lightbulb className="w-5 h-5 text-[#00F0FF]" />
                 Memory-Driven Suggestions
               </CardTitle>
-              <CardDescription className="text-[#6B7280]">
+              <CardDescription className="text-[#9CA3AF]">
                 AI found these portfolio-worthy items from your conversations
               </CardDescription>
             </CardHeader>
@@ -1277,8 +1281,8 @@ export function PortfolioPage() {
               ) : suggestions.length === 0 ? (
                 <div className="text-center py-12">
                   <Lightbulb className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
-                  <p className="text-[#6B7280] mb-2">No suggestions yet</p>
-                  <p className="text-sm text-[#6B7280]/70">
+                  <p className="text-[#9CA3AF] mb-2">No suggestions yet</p>
+                  <p className="text-sm text-[#9CA3AF]/70">
                     Chat with your agent about projects and accomplishments — suggestions will appear here.
                   </p>
                 </div>
@@ -1295,12 +1299,12 @@ export function PortfolioPage() {
                             <Badge variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF]">
                               {suggestion.field}
                             </Badge>
-                            <span className="text-xs text-[#6B7280]">
+                            <span className="text-xs text-[#9CA3AF]">
                               {Math.round(suggestion.confidence * 100)}% confidence
                             </span>
                           </div>
                           <p className="text-sm text-[#E8E8F0] mb-1">{suggestion.reason}</p>
-                          <p className="text-sm text-[#6B7280] line-clamp-2">{suggestion.suggestedValue}</p>
+                          <p className="text-sm text-[#9CA3AF] line-clamp-2">{suggestion.suggestedValue}</p>
                         </div>
                         <Button
                           onClick={() => handleApplySuggestion(suggestion.id)}
@@ -1319,7 +1323,7 @@ export function PortfolioPage() {
                   ))}
                 </div>
               )}
-              <p className="text-xs text-[#6B7280] text-center pt-4">
+              <p className="text-xs text-[#9CA3AF] text-center pt-4">
                 Suggestions are based on memories from your agent conversations. Review before applying.
               </p>
             </CardContent>
@@ -1336,7 +1340,7 @@ export function PortfolioPage() {
                     <BarChart3 className="w-5 h-5 text-[#00F0FF]" />
                     Portfolio Analytics
                   </CardTitle>
-                  <CardDescription className="text-[#6B7280]">
+                  <CardDescription className="text-[#9CA3AF]">
                     Track views and visitor insights
                   </CardDescription>
                 </div>
@@ -1345,7 +1349,7 @@ export function PortfolioPage() {
                   <input type="date" value={analyticsFrom} onChange={(e) => setAnalyticsFrom(e.target.value)}
                     className="text-xs px-2 py-1.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] h-8"
                     aria-label="Analytics export from date" />
-                  <span className="text-xs text-[#6B7280]">–</span>
+                  <span className="text-xs text-[#9CA3AF]">–</span>
                   <input type="date" value={analyticsTo} onChange={(e) => setAnalyticsTo(e.target.value)}
                     className="text-xs px-2 py-1.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] h-8"
                     aria-label="Analytics export to date" />
@@ -1367,17 +1371,17 @@ export function PortfolioPage() {
                 <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
                   <div className="flex items-center gap-2 mb-2">
                     <Eye className="w-4 h-4 text-[#00F0FF]" />
-                    <span className="text-xs text-[#6B7280]">Total Views</span>
+                    <span className="text-xs text-[#9CA3AF]">Total Views</span>
                   </div>
                   <div className="text-2xl font-bold text-[#E8E8F0]">
                     {portfolioStats ? portfolioStats.totalViews.toLocaleString() : '—'}
                   </div>
-                  <div className="text-xs text-[#6B7280]">all time</div>
+                  <div className="text-xs text-[#9CA3AF]">all time</div>
                 </div>
                 <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/10">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="w-4 h-4 text-[#00FF88]" />
-                    <span className="text-xs text-[#6B7280]">Views This Week</span>
+                    <span className="text-xs text-[#9CA3AF]">Views This Week</span>
                   </div>
                   <div className="text-2xl font-bold text-[#E8E8F0]">
                     {portfolioStats ? portfolioStats.recentViews.toLocaleString() : '—'}
@@ -1403,7 +1407,7 @@ export function PortfolioPage() {
               {/* 30-day bar chart */}
               {portfolioStats && portfolioStats.dailyBreakdown.length > 0 ? (
                 <div>
-                  <p className="text-xs text-[#6B7280] mb-3">Daily views — last 30 days</p>
+                  <p className="text-xs text-[#9CA3AF] mb-3">Daily views — last 30 days</p>
                   <ResponsiveContainer width="100%" height={140}>
                     <BarChart data={portfolioStats.dailyBreakdown} barSize={8}>
                       <XAxis
@@ -1429,7 +1433,7 @@ export function PortfolioPage() {
                   <div className="p-6 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/20 text-center">
                     <BarChart3 className="w-12 h-12 text-[#00F0FF]/50 mx-auto mb-3" />
                     <h4 className="text-base font-medium text-[#E8E8F0] mb-1">No visits yet</h4>
-                    <p className="text-sm text-[#6B7280]">
+                    <p className="text-sm text-[#9CA3AF]">
                       Share your portfolio link to start tracking visitors.
                     </p>
                   </div>
@@ -1449,7 +1453,7 @@ export function PortfolioPage() {
                     <Eye className="w-5 h-5 text-[#00F0FF]" />
                     Live Preview
                   </CardTitle>
-                  <CardDescription className="text-[#6B7280]">
+                  <CardDescription className="text-[#9CA3AF]">
                     This is how your public portfolio looks to visitors
                   </CardDescription>
                 </div>
@@ -1475,7 +1479,7 @@ export function PortfolioPage() {
                       <div className="w-3 h-3 rounded-full bg-[#FFB800]/40" />
                       <div className="w-3 h-3 rounded-full bg-[#00FF88]/40" />
                     </div>
-                    <span className="text-xs text-[#6B7280] font-mono truncate">
+                    <span className="text-xs text-[#9CA3AF] font-mono truncate">
                       {window.location.origin}/portfolio/{user.username}
                     </span>
                   </div>
@@ -1490,8 +1494,8 @@ export function PortfolioPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center px-6">
                   <Eye className="w-12 h-12 text-[#00F0FF]/30 mb-4" />
-                  <p className="text-[#6B7280] mb-2">No username set</p>
-                  <p className="text-sm text-[#6B7280]/70">
+                  <p className="text-[#9CA3AF] mb-2">No username set</p>
+                  <p className="text-sm text-[#9CA3AF]/70">
                     Set a username in your profile to see a preview
                   </p>
                 </div>
@@ -1505,11 +1509,11 @@ export function PortfolioPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Portfolio Messages</CardTitle>
-              <CardDescription className="text-[#6B7280]">Messages sent by visitors to your public portfolio</CardDescription>
+              <CardDescription className="text-[#9CA3AF]">Messages sent by visitors to your public portfolio</CardDescription>
             </CardHeader>
             <CardContent>
               {contacts.length === 0 ? (
-                <p className="text-sm text-[#6B7280] text-center py-8">No messages yet. Share your portfolio to get started.</p>
+                <p className="text-sm text-[#9CA3AF] text-center py-8">No messages yet. Share your portfolio to get started.</p>
               ) : (
                 <div className="space-y-3">
                   {contacts.map((c) => (
@@ -1526,10 +1530,10 @@ export function PortfolioPage() {
                               Reply
                             </a>
                           )}
-                          <span className="text-xs text-[#6B7280]">{new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                          <span className="text-xs text-[#9CA3AF]">{new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                         </div>
                       </div>
-                      {c.sender_email && <span className="text-xs text-[#6B7280]">{c.sender_email}</span>}
+                      {c.sender_email && <span className="text-xs text-[#9CA3AF]">{c.sender_email}</span>}
                       <p className="text-sm text-[#E8E8F0] mt-1 whitespace-pre-wrap">{c.message}</p>
                     </div>
                   ))}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   Code2,
   FileText,
@@ -106,6 +106,7 @@ export function PromptTemplatesSection() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('All');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const filteredTemplates = activeCategory === 'All'
     ? templates
@@ -126,13 +127,13 @@ export function PromptTemplatesSection() {
   };
 
   return (
-    <section id="templates" className="relative py-24 px-4">
+    <section id="templates" className="relative py-20 md:py-28 lg:py-32 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+            whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6"
           >
@@ -141,22 +142,23 @@ export function PromptTemplatesSection() {
           </motion.div>
 
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+            whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl font-bold mb-4"
+            transition={prefersReducedMotion ? undefined : { delay: 0.1 }}
+            className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
+            style={{ fontFamily: 'Syne, sans-serif' }}
           >
-            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text' }}>
               8 Ways to Start
             </span>
           </motion.h2>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+            whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
+            transition={prefersReducedMotion ? undefined : { delay: 0.2 }}
             className="text-lg text-slate-400 max-w-2xl mx-auto"
           >
             Don\'t stare at a blank screen. Pick a template, fill in the blanks, watch the magic happen.
@@ -165,16 +167,17 @@ export function PromptTemplatesSection() {
 
         {/* Category Filter */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+          whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
+          transition={prefersReducedMotion ? undefined : { delay: 0.3 }}
           className="flex flex-wrap justify-center gap-2 mb-12"
         >
           {categories.map((category) => (
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
+              aria-current={activeCategory === category ? 'page' : undefined}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                 activeCategory === category
                   ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/25'
@@ -191,10 +194,10 @@ export function PromptTemplatesSection() {
           {filteredTemplates.map((template, index) => (
             <motion.div
               key={template.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+              whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.1 * index }}
+              transition={prefersReducedMotion ? undefined : { delay: 0.1 * index }}
               className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300"
             >
               {/* Icon */}
@@ -228,14 +231,15 @@ export function PromptTemplatesSection() {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleTryTemplate(template)}
-                  className="flex-1 py-2 px-4 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg text-sm font-medium transition-colors"
+                  className="flex-1 py-2 px-4 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                 >
                   Try It
                 </button>
                 <button
                   onClick={() => handleCopy(template)}
-                  className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg transition-colors"
+                  className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                   title="Copy prompt"
+                  aria-label="Copy prompt to clipboard"
                 >
                   {copiedId === template.id ? (
                     <Check className="w-4 h-4 text-emerald-400" />
@@ -255,10 +259,10 @@ export function PromptTemplatesSection() {
 
         {/* Bottom CTA */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+          whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.5 }}
+          transition={prefersReducedMotion ? undefined : { delay: 0.5 }}
           className="text-center mt-16"
         >
           <p className="text-slate-400 mb-4">

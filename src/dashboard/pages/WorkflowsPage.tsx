@@ -149,7 +149,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-muted-foreground font-medium">Step {idx + 1}</span>
                 {steps.length > 1 && (
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeStep(idx)}>
+                  <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => removeStep(idx)} aria-label={"Remove step " + (idx + 1)}>
                     <Trash2 className="h-3 w-3 text-red-400" />
                   </Button>
                 )}
@@ -266,16 +266,16 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExpanded(!expanded)}>
+            <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => setExpanded(!expanded)} aria-label={expanded ? "Collapse workflow" : "Expand workflow"}>
               {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
             </Button>
             <Button
               variant="ghost"
               size={confirmDelete ? "sm" : "icon"}
-              className={`h-7 text-red-400 ${confirmDelete ? 'px-2 border border-red-400/40 bg-red-400/10' : 'w-7'}`}
+              className={`min-h-[44px] text-red-400 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${confirmDelete ? 'px-2 border border-red-400/40 bg-red-400/10' : 'min-w-[44px]'}`}
               onClick={handleDelete}
               disabled={deleting}
-              title={confirmDelete ? 'Click again to confirm delete' : 'Delete workflow'}
+              aria-label={confirmDelete ? 'Confirm delete workflow' : 'Delete workflow'}
             >
               <Trash2 className="h-3.5 w-3.5" />
               {confirmDelete && <span className="text-xs ml-1">Confirm?</span>}
@@ -375,7 +375,7 @@ export function WorkflowsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => void fetchWorkflows(true)} disabled={refreshing} aria-label="Refresh">
+          <Button variant="ghost" size="icon" onClick={() => void fetchWorkflows(true)} disabled={refreshing} aria-label="Refresh" className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
             <RefreshCw className={"h-4 w-4 " + spinCls} />
           </Button>
           <Button onClick={() => setShowForm(true)} size="sm" className="bg-cyan-500 hover:bg-cyan-600 text-black">

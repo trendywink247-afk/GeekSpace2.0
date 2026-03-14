@@ -24,7 +24,7 @@ export function PWAInstallPrompt() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="font-semibold text-[#E8E8F0]">Install Agentin</h3>
-                <p className="text-sm text-[#6B7280] mt-0.5">
+                <p className="text-sm text-[#9CA3AF] mt-0.5">
                   {isMobile 
                     ? 'Add to home screen for quick access' 
                     : 'Install as app for better experience'}
@@ -32,7 +32,8 @@ export function PWAInstallPrompt() {
               </div>
               <button
                 onClick={dismiss}
-                className="p-1 rounded-lg text-[#6B7280] hover:text-white hover:bg-[#00F0FF]/10 transition-colors"
+                aria-label="Dismiss install prompt"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#6B7280] hover:text-white hover:bg-[#00F0FF]/10 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>

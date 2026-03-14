@@ -177,7 +177,7 @@ export function NeuralBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 z-0"
+      className="absolute inset-0 z-0 pointer-events-none"
       style={{ background: '#06060B' }}
     />
   );

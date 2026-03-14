@@ -44,14 +44,14 @@ export function AgentStep({ personality, agentMode, apiKey, onPersonalityChange,
 
       {/* Personality picker */}
       <div>
-        <label className="text-sm text-[#6B7280] mb-3 block">Choose your agent's personality</label>
+        <label className="text-sm text-[#9CA3AF] mb-3 block">Choose your agent's personality</label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {personalities.map((p) => (
             <button
               key={p.id}
               type="button"
               onClick={() => onPersonalityChange(p.id)}
-              className={`p-4 rounded-xl border-2 transition-all text-left ${
+              className={`p-4 rounded-xl border-2 transition-all text-left focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                 personality === p.id
                   ? 'border-[#00F0FF] bg-[#00F0FF]/10'
                   : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
@@ -82,14 +82,14 @@ export function AgentStep({ personality, agentMode, apiKey, onPersonalityChange,
 
       {/* Agent mode picker */}
       <div>
-        <label className="text-sm text-[#6B7280] mb-3 block">Choose your agent's mode</label>
+        <label className="text-sm text-[#9CA3AF] mb-3 block">Choose your agent's mode</label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {agentModes.map((mode) => (
             <TiltCard key={mode.id}>
               <button
                 type="button"
                 onClick={() => onAgentModeChange(mode.id)}
-                className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                className={`w-full p-4 rounded-xl border-2 transition-all text-left focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                   agentMode === mode.id
                     ? 'border-[#00F0FF] bg-[#00F0FF]/10'
                     : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
@@ -109,7 +109,7 @@ export function AgentStep({ personality, agentMode, apiKey, onPersonalityChange,
                 <p className="text-xs text-[#6B7280] mt-0.5">{mode.description}</p>
                 <div className="flex flex-wrap gap-1 mt-2">
                   {mode.features.map((f) => (
-                    <span key={f} className="px-2 py-0.5 text-[10px] rounded-full bg-[#0C0C18] text-[#6B7280]">{f}</span>
+                    <span key={f} className="px-2 py-0.5 text-xs rounded-full bg-[#0C0C18] text-[#6B7280]">{f}</span>
                   ))}
                 </div>
               </button>
@@ -123,7 +123,7 @@ export function AgentStep({ personality, agentMode, apiKey, onPersonalityChange,
         <button
           type="button"
           onClick={() => setShowApiKey(!showApiKey)}
-          className="w-full px-4 py-3 flex items-center justify-between text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+          className="w-full px-4 py-3 min-h-[44px] flex items-center justify-between text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
         >
           <span className="flex items-center gap-2">
             <Key className="w-4 h-4" />

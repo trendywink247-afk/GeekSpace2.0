@@ -121,7 +121,7 @@ export function ProactivePage() {
             </div>
             <button onClick={handleToggle} disabled={toggling || loading}
               aria-label={enabled ? "Disable proactive messages" : "Enable proactive messages"}
-              className={"relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 " + toggleBg}
+              className={"relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 disabled:opacity-50 min-w-[44px] min-h-[44px] items-center " + toggleBg}
             >
               <span className={"pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out " + knobPos} />
             </button>

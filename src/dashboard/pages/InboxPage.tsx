@@ -124,8 +124,8 @@ export function InboxPage() {
         </div>
         <button
           onClick={fetchMessages}
-          className='p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors'
-          title='Refresh'
+          className='p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50'
+          aria-label='Refresh inbox'
         >
           <RefreshCw className='w-4 h-4' />
         </button>
@@ -143,7 +143,7 @@ export function InboxPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={'px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ' + (
+            className={'px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ' + (
               filter === f
                 ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                 : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
@@ -222,12 +222,13 @@ export function InboxPage() {
                       value={replyMap[msg.id] ?? ''}
                       onChange={e => setReplyMap({ ...replyMap, [msg.id]: e.target.value })}
                       placeholder='Type a reply...'
-                      className='flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50'
+                      className='flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50'
                     />
                     <button
                       onClick={() => handleReply(msg)}
                       disabled={sending === msg.id || !replyMap[msg.id]?.trim()}
-                      className='p-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg disabled:opacity-40 transition-colors'
+                      className='p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg disabled:opacity-40 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50'
+                      aria-label='Send reply'
                     >
                       <Send className='w-4 h-4' />
                     </button>
@@ -247,7 +248,7 @@ export function InboxPage() {
                 <button
                   onClick={() => handleMarkRead(msg.id)}
                   className='min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-green-400 transition-colors'
-                  title='Mark read'
+                  aria-label='Mark read'
                 >
                   <Check className='w-3.5 h-3.5' />
                 </button>
@@ -255,14 +256,14 @@ export function InboxPage() {
               <button
                 onClick={() => handleArchive(msg.id)}
                 className='min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-amber-400 transition-colors'
-                title='Archive'
+                aria-label='Archive'
               >
                 <Archive className='w-3.5 h-3.5' />
               </button>
               <button
                 onClick={() => handleDelete(msg.id)}
                 className='min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-500 hover:text-red-400 transition-colors'
-                title='Delete'
+                aria-label='Delete'
               >
                 <Trash2 className='w-3.5 h-3.5' />
               </button>

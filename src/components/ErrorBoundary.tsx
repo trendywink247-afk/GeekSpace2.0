@@ -40,16 +40,19 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return this.props.fallback ?? (
-        <div className="flex items-center justify-center h-full min-h-[200px] p-8">
-          <div className="text-center">
-            <p className="text-red-400 text-sm font-medium mb-2">Something went wrong</p>
-            <p className="text-[#6B7280] text-xs">{this.state.error?.message}</p>
+        <div className="flex items-center justify-center h-full min-h-[200px] p-8 bg-[#06060B]">
+          <div className="text-center max-w-sm">
+            <div className="w-12 h-12 rounded-xl bg-[#FF2D78]/10 border border-[#FF2D78]/20 flex items-center justify-center mx-auto mb-4">
+              <span className="text-xl">⚡</span>
+            </div>
+            <p className="text-[#E8E8F0] text-base font-semibold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>Something went wrong</p>
+            <p className="text-[#9CA3AF] text-sm mb-4">{this.state.error?.message}</p>
             <button
               onClick={() => {
                 sessionStorage.removeItem('error-boundary-reloaded');
                 window.location.reload();
               }}
-              className="mt-4 text-xs text-[#00F0FF] hover:underline"
+              className="px-6 py-2.5 min-h-[44px] rounded-xl text-sm font-medium text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
             >
               Reload page
             </button>

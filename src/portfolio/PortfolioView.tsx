@@ -255,7 +255,7 @@ export function PortfolioView() {
   if (!portfolio) {
     return (
       <div className="min-h-screen bg-[#06060B] flex flex-col items-center justify-center gap-4">
-        <p className="text-[#6B7280] text-lg">Portfolio not found</p>
+        <p className="text-[#9CA3AF] text-lg">Portfolio not found</p>
         <Button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/explore')} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
           {isAuthenticated ? 'Back to Dashboard' : 'Browse Directory'}
         </Button>
@@ -269,8 +269,8 @@ export function PortfolioView() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#06060B]/80 backdrop-blur-xl border-b border-[#00F0FF]/20">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => isAuthenticated ? navigate('/dashboard') : navigate('/')} className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-[#6B7280]" />
+            <button onClick={() => isAuthenticated ? navigate('/dashboard') : navigate('/')} className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Go back">
+              <ArrowLeft className="w-5 h-5 text-[#9CA3AF]" />
             </button>
             <div className="flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-[#00F0FF]" />
@@ -315,7 +315,7 @@ export function PortfolioView() {
               )}
               <h1 className="text-3xl md:text-5xl font-bold mb-3 break-words" style={{ fontFamily: 'Syne, sans-serif', textWrap: 'balance' }}>{displayName}</h1>
               <p className="text-base md:text-2xl text-[#00F0FF] mb-5 px-2 font-medium break-words">{portfolio.headline}</p>
-              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-sm text-[#6B7280]">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-sm text-[#9CA3AF]">
                 {portfolio.role && portfolio.company && (
                   <span className="flex items-center gap-1"><Briefcase className="w-4 h-4 shrink-0" />{portfolio.role} @ {portfolio.company}</span>
                 )}
@@ -323,12 +323,12 @@ export function PortfolioView() {
                   <span className="flex items-center gap-1"><MapPin className="w-4 h-4 shrink-0" />{portfolio.location}</span>
                 )}
                 {(portfolio.connectionCount ?? 0) > 0 && (
-                  <span className="text-xs text-[#6B7280] flex items-center gap-1">
+                  <span className="text-xs text-[#9CA3AF] flex items-center gap-1">
                     {portfolio.connectionCount} connection{portfolio.connectionCount !== 1 ? 's' : ''}
                   </span>
                 )}
                 {((portfolio as PortfolioData & { viewCount?: number }).viewCount ?? 0) > 0 && (
-                  <span className="flex items-center gap-1 text-xs text-[#6B7280]">
+                  <span className="flex items-center gap-1 text-xs text-[#9CA3AF]">
                     <Eye className="w-3.5 h-3.5 shrink-0" />
                     {(portfolio as PortfolioData & { viewCount?: number }).viewCount?.toLocaleString()} view{(portfolio as PortfolioData & { viewCount?: number }).viewCount !== 1 ? 's' : ''}
                   </span>
@@ -354,7 +354,7 @@ export function PortfolioView() {
                 {/* 37.1: Contact button */}
                 <button
                   onClick={() => { setContactOpen(true); setContactSent(false); setContactError(''); }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/30 hover:bg-[#00F0FF]/20 transition-all text-[#00F0FF] text-sm font-medium press-scale"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/30 hover:bg-[#00F0FF]/20 transition-all text-[#00F0FF] text-sm font-medium press-scale min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                   aria-label="Send message"
                 >
                   <Send className="w-4 h-4" />
@@ -366,7 +366,7 @@ export function PortfolioView() {
             {/* Bio */}
             <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20 mb-8">
               <h2 className="text-lg font-semibold mb-3">About</h2>
-              <p className="text-[#6B7280] leading-relaxed break-words">{portfolio.about}</p>
+              <p className="text-[#9CA3AF] leading-relaxed break-words">{portfolio.about}</p>
             </div>
 
             {/* Skills */}
@@ -409,10 +409,10 @@ export function PortfolioView() {
                             {project.aiGenerated && (
                               <Badge variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF] text-xs">AI</Badge>
                             )}
-                            {hasUrl && <Globe className="w-3.5 h-3.5 text-[#6B7280] group-hover:text-[#00F0FF] transition-colors" />}
+                            {hasUrl && <Globe className="w-3.5 h-3.5 text-[#9CA3AF] group-hover:text-[#00F0FF] transition-colors" />}
                           </div>
                         </div>
-                        <p className="text-sm text-[#6B7280] leading-relaxed break-words">{project.description}</p>
+                        <p className="text-sm text-[#9CA3AF] leading-relaxed break-words">{project.description}</p>
                         {project.tags && project.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-3">
                             {project.tags.map((tag) => (
@@ -443,7 +443,7 @@ export function PortfolioView() {
                       <div className="pb-4">
                         <div className="text-xs text-[#00F0FF] font-mono mb-1">{milestone.date}</div>
                         <div className="font-medium text-[#E8E8F0]">{milestone.title}</div>
-                        <div className="text-sm text-[#6B7280]">{milestone.description}</div>
+                        <div className="text-sm text-[#9CA3AF]">{milestone.description}</div>
                       </div>
                     </div>
                   ))}
@@ -460,10 +460,10 @@ export function PortfolioView() {
                   </div>
                   <div className="min-w-0">
                     <h2 className="text-base md:text-lg font-semibold">Chat with {firstName}'s Agent</h2>
-                    <p className="text-sm text-[#6B7280]">Ask questions, explore projects, or just say hello</p>
+                    <p className="text-sm text-[#9CA3AF]">Ask questions, explore projects, or just say hello</p>
                   </div>
                 </div>
-                <Button onClick={() => setChatOpen(true)} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] min-h-[48px] press-scale">
+                <Button onClick={() => setChatOpen(true)} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] min-h-[48px] press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
                   <MessageSquare className="w-4 h-4 mr-2" />Start Conversation
                 </Button>
               </div>
@@ -488,7 +488,7 @@ export function PortfolioView() {
                     <div className="font-semibold text-sm">{pMeta.emoji} {firstName}'s Agent</div>
                     <div className="flex items-center gap-2" data-testid="portfolio-agent-status">
                       {isStatusLoading ? (
-                        <div className="text-xs text-[#6B7280]">Checking...</div>
+                        <div className="text-xs text-[#9CA3AF]">Checking...</div>
                       ) : agentStatus?.status === 'active' ? (
                         <div className="flex items-center gap-1">
                           <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" />
@@ -497,14 +497,14 @@ export function PortfolioView() {
                       ) : (
                         <div className="flex items-center gap-1">
                           <div className="w-2 h-2 rounded-full bg-[#6B7280]" />
-                          <div className="text-xs text-[#6B7280]">Inactive</div>
+                          <div className="text-xs text-[#9CA3AF]">Inactive</div>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-                <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors">
-                  <X className="w-4 h-4 text-[#6B7280]" />
+                <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Close chat">
+                  <X className="w-4 h-4 text-[#9CA3AF]" />
                 </button>
               </div>
 
@@ -544,9 +544,9 @@ export function PortfolioView() {
                 {/* Suggested questions - disabled when agent is inactive */}
                 {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'active' && (
                   <div className="space-y-1.5 pt-1">
-                    <p className="text-[10px] text-[#6B7280] uppercase tracking-wider">Try asking</p>
+                    <p className="text-xs text-[#9CA3AF] uppercase tracking-wider">Try asking</p>
                     {pMeta.questions.map((q) => (
-                      <button key={q} onClick={() => handleSendMessage(q)} className="block w-full text-left px-3 py-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-xs text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors">
+                      <button key={q} onClick={() => handleSendMessage(q)} className="block w-full text-left px-3 py-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-xs text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors">
                         {q}
                       </button>
                     ))}
@@ -555,8 +555,8 @@ export function PortfolioView() {
                 {/* Inactive state message */}
                 {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'inactive' && (
                   <div className="p-3 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-center">
-                    <p className="text-xs text-[#6B7280]">Agent is currently inactive</p>
-                    <p className="text-[10px] text-[#6B7280]/70 mt-1">Chat functionality is disabled</p>
+                    <p className="text-xs text-[#9CA3AF]">Agent is currently inactive</p>
+                    <p className="text-xs text-[#9CA3AF]/70 mt-1">Chat functionality is disabled</p>
                   </div>
                 )}
                 <div ref={chatEndRef} />
@@ -575,8 +575,9 @@ export function PortfolioView() {
                 <Button
                   onClick={() => handleSendMessage()}
                   disabled={!chatMessage.trim() || isTyping || agentStatus?.status === 'inactive'}
-                  className="bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50"
+                  className="bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                   title={agentStatus?.status === 'inactive' ? 'Agent is currently inactive' : ''}
+                  aria-label="Send message"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
@@ -615,7 +616,7 @@ export function PortfolioView() {
                 <div className="font-semibold text-sm">{pMeta.emoji} {firstName}'s Agent</div>
                 <div className="flex items-center gap-2" data-testid="portfolio-agent-status">
                     {isStatusLoading ? (
-                      <div className="text-xs text-[#6B7280]">Checking...</div>
+                      <div className="text-xs text-[#9CA3AF]">Checking...</div>
                     ) : agentStatus?.status === 'active' ? (
                       <div className="flex items-center gap-1">
                         <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" />
@@ -624,14 +625,14 @@ export function PortfolioView() {
                     ) : (
                       <div className="flex items-center gap-1">
                         <div className="w-2 h-2 rounded-full bg-[#6B7280]" />
-                        <div className="text-xs text-[#6B7280]">Inactive</div>
+                        <div className="text-xs text-[#9CA3AF]">Inactive</div>
                       </div>
                     )}
                   </div>
               </div>
             </div>
             <button onClick={() => setChatOpen(false)} className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
-              <X className="w-5 h-5 text-[#6B7280]" />
+              <X className="w-5 h-5 text-[#9CA3AF]" />
             </button>
           </div>
 
@@ -671,9 +672,9 @@ export function PortfolioView() {
             {/* Suggested questions - disabled when agent is inactive */}
             {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'active' && (
               <div className="space-y-1.5 pt-1">
-                <p className="text-[10px] text-[#6B7280] uppercase tracking-wider">Try asking</p>
+                <p className="text-xs text-[#9CA3AF] uppercase tracking-wider">Try asking</p>
                 {pMeta.questions.map((q) => (
-                  <button key={q} onClick={() => handleSendMessage(q)} className="block w-full text-left px-3 py-2.5 min-h-[44px] rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-sm text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors">
+                  <button key={q} onClick={() => handleSendMessage(q)} className="block w-full text-left px-3 py-2.5 min-h-[44px] rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-sm text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors">
                     {q}
                   </button>
                 ))}
@@ -682,8 +683,8 @@ export function PortfolioView() {
             {/* Inactive state message */}
             {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'inactive' && (
               <div className="p-3 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-center">
-                <p className="text-sm text-[#6B7280]">Agent is currently inactive</p>
-                <p className="text-xs text-[#6B7280]/70 mt-1">Chat functionality is disabled</p>
+                <p className="text-sm text-[#9CA3AF]">Agent is currently inactive</p>
+                <p className="text-xs text-[#9CA3AF]/70 mt-1">Chat functionality is disabled</p>
               </div>
             )}
             <div ref={chatEndRef} />
@@ -702,8 +703,9 @@ export function PortfolioView() {
             <Button
               onClick={() => handleSendMessage()}
               disabled={!chatMessage.trim() || isTyping || agentStatus?.status === 'inactive'}
-              className="bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50"
+              className="bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
               title={agentStatus?.status === 'inactive' ? 'Agent is currently inactive' : ''}
+              aria-label="Send message"
             >
               <Send className="w-4 h-4" />
             </Button>
@@ -714,7 +716,7 @@ export function PortfolioView() {
       {/* Footer */}
       <footer className="py-8 border-t border-[#00F0FF]/10">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <p className="text-sm text-[#6B7280]">
+          <p className="text-sm text-[#9CA3AF]">
             Powered by <span className="text-[#00F0FF]">Agentin</span> — Your AI, Your Domain
           </p>
         </div>
@@ -726,7 +728,7 @@ export function PortfolioView() {
           <div className="w-full max-w-md rounded-2xl border border-[#00F0FF]/20 p-6" style={{ background: '#06060B' }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-[#E8E8F0]">Message {displayName}</h2>
-              <button onClick={() => setContactOpen(false)} className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] transition-colors" aria-label="Close"><X className="w-5 h-5" /></button>
+              <button onClick={() => setContactOpen(false)} className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Close"><X className="w-5 h-5" /></button>
             </div>
 
             {contactSent ? (
@@ -735,13 +737,13 @@ export function PortfolioView() {
                   <Send className="w-6 h-6 text-[#00FF88]" />
                 </div>
                 <p className="text-[#00FF88] font-semibold mb-1">Message sent!</p>
-                <p className="text-sm text-[#6B7280]">{displayName} will be notified.</p>
+                <p className="text-sm text-[#9CA3AF]">{displayName} will be notified.</p>
                 <button onClick={() => setContactOpen(false)} className="mt-4 text-sm text-[#00F0FF] hover:underline">Close</button>
               </div>
             ) : (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-[#6B7280] mb-1 block">Your name *</label>
+                  <label className="text-xs text-[#9CA3AF] mb-1 block">Your name *</label>
                   <Input
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
@@ -750,7 +752,7 @@ export function PortfolioView() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6B7280] mb-1 block">Email (optional)</label>
+                  <label className="text-xs text-[#9CA3AF] mb-1 block">Email (optional)</label>
                   <Input
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
@@ -764,7 +766,7 @@ export function PortfolioView() {
                   )}
                 </div>
                 <div>
-                  <label className="text-xs text-[#6B7280] mb-1 block">Message * <span className="text-[#4B5563]">({contactMessage.length}/1000)</span></label>
+                  <label className="text-xs text-[#9CA3AF] mb-1 block">Message * <span className="text-[#4B5563]">({contactMessage.length}/1000)</span></label>
                   <textarea
                     value={contactMessage}
                     onChange={(e) => setContactMessage(e.target.value.slice(0, 1000))}
