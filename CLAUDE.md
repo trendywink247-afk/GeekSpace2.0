@@ -186,6 +186,12 @@ docker compose ps
 docker compose logs -f geekspace-app
 ```
 
+### v5 Full-Stack Audit (run after any server change)
+```bash
+JWT_SECRET=... WEBHOOK_SECRET=... ADMIN_TOKEN=... node ops/aliya-sim-v5.mjs --web-only
+# Must stay at 100% (98/98). Flags: --tg-only, --only=W04, --verbose, --dry-run, --resume
+```
+
 ### Staging
 ```bash
 ./scripts/staging.sh                    # Build + deploy staging containers
@@ -324,8 +330,8 @@ cd server && npm test
 2. **User resolution** — resolve user from channel ID or JWT
 3. **Credit check** — verify token budget before LLM calls
 4. **Memory injection** — load user memories + conversation context
-5. **Fast-path evaluation** — 10 regex-based fast-paths that skip LLM entirely (0 credits, <700ms):
-   - image, website, screenshot, links, expense, focus, reminder, habit, briefing, list-reminders
+5. **Fast-path evaluation** — 11 regex-based fast-paths that skip LLM entirely (0 credits, <700ms):
+   - image, website, screenshot, links, expense, multi-expense, focus, reminder, habit, briefing, list-reminders, notification-prefs
 6. **Intent classification** — `detectTaskIntent()` for background tasks, `hasToolTrigger()` for 17 tool categories
 7. **Provider routing** — select LLM provider based on intent complexity
 8. **ReAct loop** — `react-loop.ts` runs up to 5 iterations with tool execution (`action-parser.ts` → `action-executor.ts`)
@@ -342,13 +348,34 @@ cd server && npm test
 - `server/src/services/llm.ts` — LLM router (6-tier waterfall: Ollama → Groq → Gemini Flash → OpenRouter → Together AI → Kimi K2)
 - `server/src/services/react-loop.ts` — ReAct reasoning loop (max 5 iterations)
 - `server/src/services/action-parser.ts` — tool schema definitions + ACTION_REGEX parsing
-- `server/src/services/action-executor.ts` — executes all 17 tool actions
-- `server/src/services/edith.ts` — Kimi/Moonshot client
-- `server/src/services/automations-engine.ts` — cron/webhook triggers
+- `server/src/services/action-executor.ts` — executes all tool actions (42+ tools)
 - `server/src/services/message-router.ts` — multi-channel message handler + fast-paths
 - `server/src/services/searxng.ts` — SearXNG metasearch (primary, free)
 - `server/src/services/tavily.ts` — Tavily web search (paid fallback)
 - `server/src/routes/oauth.ts` — Google + GitHub OAuth 2.0
+
+### Proactive & scheduling:
+- `server/src/services/proactive-engine.ts` — proactive message dispatcher (morning brief, overdue alerts, habit nudges, streak celebrations, expense spike alerts)
+- `server/src/services/durable-scheduler.ts` — SQLite-backed restart-safe job queue (replaces fragile setInterval)
+- `server/src/services/morning-brief.ts` — rich personalized daily briefing with inline action buttons
+- `server/src/services/event-bus.ts` — typed EventBus (AgentinEvents: reminder.created, habit.logged, streak.milestone, expense.spike)
+
+### Search & memory:
+- `server/src/services/search-index.ts` — Meilisearch client (typo-tolerant instant search)
+- `server/src/services/search-vector.ts` — Qdrant + Ollama nomic-embed-text (768-dim semantic search)
+- `server/src/services/graph-memory.ts` — entity extraction + relationship graph (people, companies, places)
+- `server/src/services/memory.ts` — user memory CRUD + conversation logging
+
+### Persona & Telegram:
+- `server/src/services/persona-engine.ts` — 5 personas × 14 actions (template + LLM fallback for button responses)
+- `server/src/services/telegram-cards.ts` — unified card builders (reminder/habit/expense/note/focus) with inline keyboards
+- `server/src/services/message-dispatcher.ts` — multi-channel abstraction (Telegram → WhatsApp → Email fallback)
+
+### Browser & integrations:
+- `server/src/services/browser-agent.ts` — Playwright headless Chromium client (navigate, extract, fill forms, screenshot)
+- `server/src/services/gmail-sync.ts` — Gmail OAuth + IMAP sync (15min scheduler)
+- `server/src/services/calendar-sync.ts` — Google Calendar OAuth + event sync (30min scheduler)
+- `browser-agent/server.js` — standalone Playwright REST API (Docker service)
 
 ### Key frontend files:
 - `src/App.tsx`, `src/stores/authStore.ts`, `src/stores/dashboardStore.ts`
@@ -357,13 +384,11 @@ cd server && npm test
 - `src/types/index.ts`
 
 ### Key infra files:
-- `docker-compose.yml` — production containers (geekspace, redis, caddy, optional: automation sidecar, edith-bridge)
-- `docker-compose.staging.yml` — staging containers (staging-app, staging-redis)
-- `caddy/Caddyfile` — Caddy reverse proxy routes (production + staging + dev)
-- `scripts/staging.sh` — staging deploy script
-- `scripts/smoke-staging.sh` — staging smoke tests
-- `scripts/autonomy-run.sh` — autonomy orchestrator (pre-flight + audit)
-- `ops/AUTONOMY.md` — autonomy rules, roles, cadence, stop conditions
+- `docker-compose.yml` — 9 containers: geekspace, redis, caddy, picoclaw, browser, searxng, meilisearch, qdrant, uptime-kuma
+- `browser-agent/` — Playwright Docker service (Dockerfile + server.js)
+- `caddy/Caddyfile` — Caddy reverse proxy routes
+- `ops/aliya-sim-v5.mjs` — v5 full-stack audit harness (32 sub-agents, 98+ tests, must stay 100%)
+- `ops/bulk-index.mjs` — bulk retrospective index (Meilisearch + Qdrant population)
 
 ### Reference docs (in `docs/`):
 - `docs/DEPLOYMENT.md` — full deployment guide
@@ -396,10 +421,18 @@ cd server && npm test
 - CI lint: changed-file lint with --max-warnings=0
 - Vite base path: must use base: '/' for SPA routes
 - dotenv: run server from project root for correct .env
-- Ollama on VPS: port 32778 (not 11434)
+- Ollama on VPS: port 32778 (not 11434), model: qwen3:8b + nomic-embed-text
 - Helmet/CSP: blocks inline onclick handlers
 - Telegram: sanitizeForTelegram() strips markdown before sending
 - Port 3001 conflicts: fuser -k 3001/tcp
+- Meilisearch document IDs: alphanumeric + hyphens + underscores ONLY (no colons)
+- JWT format: `{ sub: userId, jti: uuid }` — NOT `{ userId }`. Auth middleware reads `payload.sub`
+- OAuth connect buttons: must fetch with `Accept: application/json` + Bearer token (can't bare-redirect to auth endpoints)
+- PicoClaw timeout: 5s (falls back to Groq). Don't increase — qwen3:8b is too slow on VPS
+- After frontend build: `cp -r dist/. /var/www/geekspace/` (Caddy serves host volume)
+- Persona button system: old callback format `reminder:done:ID`, new format `rem_done:ID` — both supported
+- Durable scheduler: `scheduled_jobs` table persists across restarts. Stuck `running` jobs auto-recover to `pending`
+- Entity extraction: runs async on every user message via graph-memory.ts. Non-blocking, regex-based NER
 
 ---
 
