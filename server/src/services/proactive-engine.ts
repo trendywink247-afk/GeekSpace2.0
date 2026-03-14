@@ -512,7 +512,7 @@ async function sendHabitNudges(): Promise<void> {
   }
 }
 
-export function initProactiveEngine(): void {
+export async function initProactiveEngine(): Promise<void> {
   if (proactiveTimer) return;
   proactiveTimer = setInterval(() => {
     void runProactiveChecks();
@@ -537,5 +537,62 @@ export function initProactiveEngine(): void {
     logger.info({ userId: userId.slice(0, 8), category, amount }, 'Expense spike alert fired');
   });
 
-  logger.info('Proactive engine started (daily_briefing@08:00, overdue@10:00, idle@08:00, habit_nudge@11:00, weekly@19:00 Sun — all per-user timezone)');
+  // ── Durable scheduler: restart-safe job queue ──────────────
+  try {
+    const { startJobRunner, registerHandler, scheduleRecurringDaily, scheduleJob } = await import('./durable-scheduler.js');
+
+    // Register handlers for durable jobs
+    registerHandler('morning_brief', async (job) => {
+      if (!isTypeEnabled(job.userId, 'daily_briefing') || isThrottled(job.userId)) return;
+      await dailyBriefing(job.userId);
+      // Reschedule for tomorrow
+      const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
+      scheduleRecurringDaily(job.userId, 'morning_brief', 8, tz);
+    });
+
+    registerHandler('overdue_alert', async (job) => {
+      if (!isTypeEnabled(job.userId, 'overdue_alert') || isThrottled(job.userId)) return;
+      await overdueAlert(job.userId);
+      const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
+      scheduleRecurringDaily(job.userId, 'overdue_alert', 10, tz);
+    });
+
+    registerHandler('habit_nudge', async (job) => {
+      if (!isTypeEnabled(job.userId, 'habit_nudge') || isThrottled(job.userId)) return;
+      await sendHabitNudges();
+      const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
+      scheduleRecurringDaily(job.userId, 'habit_nudge', 21, tz); // 9pm nudge
+    });
+
+    registerHandler('weekly_report', async (job) => {
+      if (!isTypeEnabled(job.userId, 'weekly_report') || isThrottled(job.userId)) return;
+      await weeklyReport(job.userId);
+      await weeklyExpenseDigest(job.userId);
+      // Reschedule for next Sunday 7pm
+      const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
+      const nextSunday = Date.now() + 7 * 86_400_000;
+      scheduleJob(job.userId, 'weekly_report', nextSunday, {}, { dedupeKey: `weekly_report:${job.userId}:${new Date(nextSunday).toISOString().slice(0, 10)}` });
+    });
+
+    // Start the runner (polls every 30s for due jobs)
+    startJobRunner(30_000);
+
+    // Seed initial recurring jobs for all proactive-enabled users
+    try {
+      const users = db.prepare('SELECT id, timezone FROM users WHERE proactive_enabled != 0').all() as Array<{ id: string; timezone?: string }>;
+      for (const user of users) {
+        const tz = user.timezone || 'Asia/Kolkata';
+        scheduleRecurringDaily(user.id, 'morning_brief', 8, tz);
+        scheduleRecurringDaily(user.id, 'overdue_alert', 10, tz);
+        scheduleRecurringDaily(user.id, 'habit_nudge', 21, tz);
+      }
+      logger.info({ userCount: users.length }, 'Seeded recurring durable jobs');
+    } catch (err) {
+      logger.warn({ err }, 'Failed to seed durable jobs (non-fatal)');
+    }
+  } catch (err) {
+    logger.warn({ err }, 'Durable scheduler init failed (falling back to setInterval only)');
+  }
+
+  logger.info('Proactive engine started (setInterval + durable scheduler — per-user timezone)');
 }
