@@ -20,6 +20,21 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: { componentStack: string }) {
     console.error('ErrorBoundary caught:', error, info);
+
+    // Auto-reload on chunk load errors (stale cache after deploy)
+    const isChunkError = error.message?.includes('Loading chunk') ||
+      error.message?.includes('Failed to fetch') ||
+      error.message?.includes('Element type is invalid') ||
+      error.message?.includes('is not a function') ||
+      error.message?.includes('Minified React error #130');
+
+    if (isChunkError && !sessionStorage.getItem('error-boundary-reloaded')) {
+      sessionStorage.setItem('error-boundary-reloaded', '1');
+      window.location.reload();
+      return;
+    }
+    // Clear the flag after a successful render (in case it was set)
+    sessionStorage.removeItem('error-boundary-reloaded');
   }
 
   render() {
@@ -30,10 +45,13 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="text-red-400 text-sm font-medium mb-2">Something went wrong</p>
             <p className="text-[#6B7280] text-xs">{this.state.error?.message}</p>
             <button
-              onClick={() => this.setState({ hasError: false })}
+              onClick={() => {
+                sessionStorage.removeItem('error-boundary-reloaded');
+                window.location.reload();
+              }}
               className="mt-4 text-xs text-[#00F0FF] hover:underline"
             >
-              Try again
+              Reload page
             </button>
           </div>
         </div>
