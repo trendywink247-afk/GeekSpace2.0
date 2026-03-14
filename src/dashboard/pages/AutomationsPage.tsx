@@ -22,7 +22,6 @@ import {
   FileText,
   Phone,
   Bell,
-  Copy,
   FlaskConical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -90,8 +89,6 @@ export function AutomationsPage() {
     addAutomation,
     updateAutomation,
     deleteAutomation,
-    triggerAutomation,
-    isLoading,
   } = useDashboardStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,14 +125,9 @@ export function AutomationsPage() {
   const [deadLetters, setDeadLetters] = useState<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number; retry_count: number; last_error: string | null }>>([]);
   // 55.6: Dead-letter retry state
   const [retryingDeadLetterId, setRetryingDeadLetterId] = useState<string | null>(null);
-  // 51.5: Track per-automation trigger errors (auto-clear after 4s)
-  const [triggerErrors, setTriggerErrors] = useState<Record<string, string>>({});
+  const [triggerErrors] = useState<Record<string, string>>({});
   // 61.8: Dry-run result popover
   const [dryRunResult, setDryRunResult] = useState<{ id: string; simulatedOutput: string } | null>(null);
-  // Per-automation run history (expanded inline)
-  const [expandedRunsId, setExpandedRunsId] = useState<string | null>(null);
-  const [perAutoLogs, setPerAutoLogs] = useState<AutomationLog[]>([]);
-  const [perAutoLogsLoading, setPerAutoLogsLoading] = useState(false);
 
   const resetForm = () => {
     setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true, intervalMinutes: 60, webhookUrl: '', actionConfig: {} });
@@ -268,60 +260,6 @@ export function AutomationsPage() {
     await deleteAutomation(id);
   };
 
-  // 61.8: Dry-run simulation
-  const handleDryRun = async (id: string) => {
-    try {
-      const { data } = await automationService.dryRun(id);
-      setDryRunResult({ id, simulatedOutput: data.simulatedOutput });
-      setTimeout(() => setDryRunResult(null), 8000);
-    } catch {
-      setDryRunResult({ id, simulatedOutput: 'Dry-run failed — automation may not be found.' });
-      setTimeout(() => setDryRunResult(null), 4000);
-    }
-  };
-
-  // Toggle per-automation run history
-  const handleToggleRunHistory = async (id: string) => {
-    if (expandedRunsId === id) {
-      setExpandedRunsId(null);
-      setPerAutoLogs([]);
-      return;
-    }
-    setExpandedRunsId(id);
-    setPerAutoLogsLoading(true);
-    try {
-      const r = await automationLogService.forAutomation(id, 10, 0);
-      setPerAutoLogs(r.data.logs);
-    } catch {
-      setPerAutoLogs([]);
-    } finally {
-      setPerAutoLogsLoading(false);
-    }
-  };
-
-  // 59.4: Duplicate automation — call API directly, refresh list from server
-  const handleDuplicate = async (id: string) => {
-    try {
-      await automationService.duplicate(id);
-      const fresh = await automationService.list();
-      useDashboardStore.setState({ automations: fresh.data });
-    } catch {
-      // silently ignore
-    }
-  };
-
-  const handleTrigger = async (id: string) => {
-    try {
-      await triggerAutomation(id);
-    } catch {
-      // 51.5: Show per-automation error message for 4s
-      setTriggerErrors((prev) => ({ ...prev, [id]: 'Trigger failed — check webhook URL or retry' }));
-      setTimeout(() => setTriggerErrors((prev) => { const next = { ...prev }; delete next[id]; return next; }), 4000);
-    }
-    // 49.2/49.5: Refresh logs and dead-letters after trigger so the panel shows the new log entry
-    automationLogService.list(20, 0).then((r) => { setLogs(r.data.logs); setLogsOffset(0); setLogsHasMore(r.data.logs.length === 20); }).catch(() => {});
-    automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => {});
-  };
 
   // 55.6: Retry a failed dead-letter webhook
   const handleRetryDeadLetter = async (id: string) => {
@@ -448,78 +386,19 @@ export function AutomationsPage() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-[#00F0FF]/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-[#00F0FF]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#E8E8F0]">{automations.length}</div>
-                <div className="text-xs text-[#9CA3AF]">Total</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#00F0FF]/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-[#00FF88]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#E8E8F0]">{enabledCount}</div>
-                <div className="text-xs text-[#9CA3AF]">Active</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#00F0FF]/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FFB800]/10 flex items-center justify-center">
-                <Play className="w-5 h-5 text-[#FFB800]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#E8E8F0]">{totalRuns}</div>
-                <div className="text-xs text-[#9CA3AF]">Total Runs</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#00F0FF]/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FF2D78]/10 flex items-center justify-center">
-                <Webhook className="w-5 h-5 text-[#FF2D78]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#E8E8F0]">
-                  {automations.filter((a) => a.triggerType === 'webhook').length}
-                </div>
-                <div className="text-xs text-[#9CA3AF]">Webhooks</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        {/* 64.5: Recent runs stat from server */}
-        {automationStats !== null && (
-          <Card className="border-[#BF5FFF]/20">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#BF5FFF]/10 flex items-center justify-center">
-                  <Activity className="w-5 h-5 text-[#BF5FFF]" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-[#E8E8F0]">{automationStats.recentRuns}</div>
-                  <div className="text-xs text-[#9CA3AF]">Runs (7d)</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      {/* Stats Row */}
+      <div className="flex items-center gap-4 overflow-x-auto pb-1 scrollbar-hide">
+        {[
+          { label: 'Total', value: automations.length, color: '#00F0FF' },
+          { label: 'Active', value: enabledCount, color: '#00FF88' },
+          { label: 'Runs', value: totalRuns, color: '#FFB800' },
+          ...(automationStats ? [{ label: '7d Runs', value: automationStats.recentRuns, color: '#8B5CF6' }] : []),
+        ].map(s => (
+          <div key={s.label} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0C0C18]/60 border border-white/5 shrink-0">
+            <span className="text-lg font-bold" style={{ color: s.color }}>{s.value}</span>
+            <span className="text-xs text-[#8892B0]">{s.label}</span>
+          </div>
+        ))}
       </div>
 
       {/* Filters & Search */}
@@ -647,142 +526,54 @@ export function AutomationsPage() {
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      {testResult?.id === auto.id && (
-                        <div className={`rounded-lg border p-2 max-w-[240px] space-y-1 ${testResult.success ? 'bg-[#00FF88]/5 border-[#00FF88]/20' : 'bg-[#FF6161]/5 border-[#FF6161]/20'}`}>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-xs font-medium ${testResult.success ? 'text-[#00FF88]' : 'text-[#FF6161]'}`}>{testResult.message}</span>
-                            {testResult.statusCode != null && testResult.statusCode > 0 && (
-                              <span className="text-xs text-[#9CA3AF] font-mono bg-[#0C0C18] px-1.5 py-0.5 rounded">{testResult.statusCode}</span>
-                            )}
-                            {testResult.latencyMs != null && (
-                              <span className="text-xs text-[#9CA3AF]">{testResult.latencyMs}ms</span>
-                            )}
-                          </div>
-                          {testResult.responseBody && (
-                            <pre className="text-xs text-[#9CA3AF] font-mono max-h-[60px] overflow-auto whitespace-pre-wrap break-all">{testResult.responseBody.slice(0, 200)}</pre>
-                          )}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1">
+                    {/* Actions — clean 3-button layout */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {/* Primary: Run */}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleTestFire(auto.id)}
                         disabled={testingId === auto.id}
-                        aria-label={`Test ${auto.name}`}
-                        title="Test Now"
-                        className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                        title="Test fire"
+                        className="text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px] p-0"
                       >
-                        {testingId === auto.id ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Send className="w-4 h-4" />
-                        )}
+                        {testingId === auto.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleTrigger(auto.id)}
-                        disabled={!auto.enabled || isLoading}
-                        aria-label={`Run ${auto.name}`}
-                        className="text-[#00FF88] hover:text-[#00FF88] hover:bg-[#00FF88]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
-                      >
-                        <Play className="w-4 h-4" />
-                      </Button>
-                      {/* 61.8: Dry-run button */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => void handleDryRun(auto.id)}
-                        aria-label={`Dry run ${auto.name}`}
-                        title="Simulate (dry run)"
-                        data-testid={`dry-run-btn-${auto.id}`}
-                        className="text-[#9CA3AF] hover:text-[#F59E0B] hover:bg-[#F59E0B]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
-                      >
-                        <FlaskConical className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => void handleToggleRunHistory(auto.id)}
-                        aria-label={`Run history for ${auto.name}`}
-                        title="Run history"
-                        className={`min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${expandedRunsId === auto.id ? 'text-[#FFB800] bg-[#FFB800]/10' : 'text-[#9CA3AF] hover:text-[#FFB800] hover:bg-[#FFB800]/10'}`}
-                      >
-                        <Clock className="w-4 h-4" />
-                      </Button>
+                      {/* Edit */}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleOpenEdit(auto.id)}
-                        aria-label={`Edit ${auto.name}`}
-                        className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                        title="Edit"
+                        className="text-[#8892B0] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px] p-0"
                       >
                         <Edit3 className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => void handleDuplicate(auto.id)}
-                        aria-label={`Duplicate ${auto.name}`}
-                        title="Duplicate"
-                        className="text-[#9CA3AF] hover:text-[#A78BFA] hover:bg-[#A78BFA]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
+                      {/* Delete */}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(auto.id)}
-                        aria-label={`Delete ${auto.name}`}
-                        className="text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                        title="Delete"
+                        className="text-[#8892B0] hover:text-[#FF2D78] hover:bg-[#FF2D78]/10 min-h-[44px] min-w-[44px] p-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
-                      </div>
                     </div>
+                    {/* Test result toast */}
+                    {testResult?.id === auto.id && (
+                      <div className={`mt-2 rounded-lg border px-3 py-2 text-xs ${testResult.success ? 'bg-[#00FF88]/5 border-[#00FF88]/20 text-[#00FF88]' : 'bg-[#FF2D78]/5 border-[#FF2D78]/20 text-[#FF2D78]'}`}>
+                        {testResult.message}
+                        {testResult.statusCode ? ` · ${testResult.statusCode}` : ''}
+                        {testResult.latencyMs ? ` · ${testResult.latencyMs}ms` : ''}
+                      </div>
+                    )}
                     {/* 51.5: Trigger error feedback — auto-clears after 4s */}
                     {triggerErrors[auto.id] && (
                       <p className="text-xs text-[#FF6161] mt-2 pl-1">{triggerErrors[auto.id]}</p>
                     )}
                   </div>
-                  {/* Inline per-automation run history */}
-                  {expandedRunsId === auto.id && (
-                    <div className="mt-3 pt-3 border-t border-[#00F0FF]/10">
-                      <p className="text-xs text-[#9CA3AF] font-medium mb-2">Recent Runs</p>
-                      {perAutoLogsLoading ? (
-                        <div className="flex items-center gap-2 py-2">
-                          <RefreshCw className="w-3 h-3 animate-spin text-[#00F0FF]" />
-                          <span className="text-xs text-[#9CA3AF]">Loading...</span>
-                        </div>
-                      ) : perAutoLogs.length === 0 ? (
-                        <p className="text-xs text-[#9CA3AF] py-2">No runs recorded yet</p>
-                      ) : (
-                        <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
-                          {perAutoLogs.map((log) => {
-                            const rawLog = log as unknown as Record<string, unknown>;
-                            const logStatus = (rawLog.status as string) ?? log.status ?? 'unknown';
-                            const logOutput = (rawLog.output as string) ?? log.output ?? '';
-                            const logDuration = (rawLog.duration_ms as number) ?? log.durationMs ?? 0;
-                            const logCreated = (rawLog.created_at as string) ?? log.createdAt ?? '';
-                            return (
-                              <div key={log.id} className="flex items-center gap-2 text-xs px-2 py-1.5 rounded bg-[#06060B] border border-[#00F0FF]/10">
-                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${logStatus === 'success' ? 'bg-[#00FF88]' : 'bg-[#FF6161]'}`} />
-                                <span className={logStatus === 'success' ? 'text-[#00FF88]' : 'text-[#FF6161]'}>{logStatus}</span>
-                                <span className="text-[#9CA3AF] truncate flex-1">{logOutput || 'No output'}</span>
-                                {logDuration > 0 && <span className="text-[#9CA3AF] font-mono flex-shrink-0">{logDuration}ms</span>}
-                                <span className="text-[#9CA3AF] flex-shrink-0 whitespace-nowrap">
-                                  {logCreated ? fmtRelativeTime(logCreated) : ''}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* Run history available in Recent Runs section below */}
                 </CardContent>
               </Card>
             );
