@@ -701,9 +701,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     return;
   }
 
-  // 5. Fire keyword automation triggers (non-blocking)
-  checkKeywordTriggers(userId, msg.text).catch((e: unknown) => logger.debug({ err: (e as Error).message }, 'keyword trigger bg error'));
-
   // 5a. Website builder fast-path — detect website creation/edit intent directly
   //     and execute generate_code without LLM to bypass model format unreliability
   {
@@ -1653,6 +1650,11 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     latencyMs: Date.now() - startTime,
     creditCost,
   }, 'Channel message processed');
+
+  // Fire-and-forget: check keyword automation triggers after response is sent
+  checkKeywordTriggers(userId, msg.text).catch((e: unknown) =>
+    logger.debug({ err: (e as Error).message }, 'keyword trigger bg error'));
+
   } catch (err: unknown) {
     logger.error({ err: (err as Error).message, requestId, channel: msg.channel }, 'Unhandled error in handleIncomingMessage');
     await sendChannelResponse({

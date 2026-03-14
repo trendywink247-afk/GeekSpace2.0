@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Zap,
   Plus,
@@ -9,20 +9,26 @@ import {
   CalendarClock,
   Activity,
   Search,
-  ToggleLeft,
-  ToggleRight,
   Edit3,
   Send,
   Globe,
-  MessageSquare,
   RefreshCw,
   Hand,
   Hash,
   HeartPulse,
   FileText,
-  Phone,
   Bell,
   FlaskConical,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  ArrowRight,
+  CheckCircle2,
+  XCircle,
+  Pause,
+  Timer,
+  BarChart3,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,56 +38,184 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { automationLogService, automationService } from '@/services/api';
-import type { AutomationTrigger, AutomationAction, AutomationLog } from '@/types';
+import type { AutomationTrigger, AutomationAction, AutomationLog, Automation } from '@/types';
 
-const triggerIcons: Record<AutomationTrigger, typeof Clock> = {
-  time: CalendarClock,
-  event: Activity,
-  webhook: Webhook,
-  manual: Hand,
-  keyword: Hash,
-  health_down: HeartPulse,
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const TRIGGER_META: Record<AutomationTrigger, { icon: typeof Clock; label: string; color: string; description: string }> = {
+  time: { icon: CalendarClock, label: 'Scheduled', color: '#FFB800', description: 'Run on a schedule' },
+  event: { icon: Activity, label: 'Event', color: '#00FF88', description: 'When an event fires' },
+  webhook: { icon: Webhook, label: 'Webhook', color: '#00F0FF', description: 'When a URL is called' },
+  manual: { icon: Hand, label: 'Manual', color: '#6B7280', description: 'Trigger by hand' },
+  keyword: { icon: Hash, label: 'Keyword', color: '#FF2D78', description: 'When a message matches' },
+  health_down: { icon: HeartPulse, label: 'Health Check', color: '#FF6161', description: 'When a URL is down' },
 };
 
-const triggerLabels: Record<AutomationTrigger, string> = {
-  time: 'Scheduled',
-  event: 'Event-based',
-  webhook: 'Webhook',
-  manual: 'Manual',
-  keyword: 'Keyword',
-  health_down: 'Health Check',
+const ACTION_META: Record<AutomationAction, { icon: typeof Send; label: string; description: string }> = {
+  'telegram-message': { icon: Send, label: 'Telegram Message', description: 'Send a Telegram message' },
+  'n8n-webhook': { icon: Globe, label: 'n8n Webhook', description: 'Call an n8n webhook URL' },
+  'call_api': { icon: Globe, label: 'API Call', description: 'Call any HTTP endpoint' },
+  'create_reminder': { icon: Bell, label: 'Create Reminder', description: 'Set a new reminder' },
+  'portfolio-update': { icon: RefreshCw, label: 'Portfolio Update', description: 'Update your portfolio' },
+  'whatsapp-message': { icon: Send, label: 'WhatsApp Message', description: 'Send a WhatsApp message' },
+  'manychat-broadcast': { icon: Send, label: 'ManyChat Broadcast', description: 'Send a broadcast message' },
+  'log': { icon: FileText, label: 'Log', description: 'Log a message' },
 };
 
-const triggerColors: Record<AutomationTrigger, string> = {
-  time: '#FFB800',
-  event: '#00FF88',
-  webhook: '#00F0FF',
-  manual: '#6B7280',
-  keyword: '#FF2D78',
-  health_down: '#FF6161',
-};
+interface TemplateItem {
+  name: string;
+  description: string;
+  icon: string;
+  triggerType: AutomationTrigger;
+  triggerConfig: Record<string, unknown>;
+  actionType: AutomationAction;
+  actionConfig: Record<string, string>;
+}
 
-const actionIcons: Record<AutomationAction, typeof Send> = {
-  'n8n-webhook': Globe,
-  'telegram-message': Send,
-  'whatsapp-message': Send,
-  'portfolio-update': RefreshCw,
-  'manychat-broadcast': MessageSquare,
-  'call_api': Phone,
-  'create_reminder': Bell,
-  'log': FileText,
-};
+const TEMPLATES: TemplateItem[] = [
+  {
+    name: 'Morning Brief',
+    description: 'Daily AI briefing to Telegram at 7am',
+    icon: '\u2600\uFE0F',
+    triggerType: 'time',
+    triggerConfig: { interval_minutes: 1440 },
+    actionType: 'telegram-message',
+    actionConfig: { message: 'Good morning! Here is your daily briefing.' },
+  },
+  {
+    name: 'Expense Alert',
+    description: 'Alert when you log an expense over \u20B91000',
+    icon: '\uD83D\uDCB8',
+    triggerType: 'keyword',
+    triggerConfig: { keyword: 'spent' },
+    actionType: 'telegram-message',
+    actionConfig: { message: '\uD83D\uDCB8 New expense logged. Check your budget!' },
+  },
+  {
+    name: 'Site Monitor',
+    description: 'Check if a URL is down every hour',
+    icon: '\uD83D\uDD0D',
+    triggerType: 'health_down',
+    triggerConfig: { target_url: 'https://your-site.com' },
+    actionType: 'telegram-message',
+    actionConfig: { message: '\uD83D\uDEA8 Site is down! {{url}} returned error.' },
+  },
+  {
+    name: 'Weekly Summary',
+    description: 'Weekly habit and expense report',
+    icon: '\uD83D\uDCCA',
+    triggerType: 'time',
+    triggerConfig: { interval_minutes: 10080 },
+    actionType: 'telegram-message',
+    actionConfig: { message: 'Here is your weekly summary...' },
+  },
+  {
+    name: 'Webhook \u2192 Telegram',
+    description: 'Forward webhook payloads to Telegram',
+    icon: '\uD83D\uDD17',
+    triggerType: 'webhook',
+    triggerConfig: {},
+    actionType: 'telegram-message',
+    actionConfig: { message: 'Webhook received: {{payload}}' },
+  },
+];
 
-const actionLabels: Record<AutomationAction, string> = {
-  'n8n-webhook': 'n8n Webhook',
-  'telegram-message': 'Telegram Message',
-  'whatsapp-message': 'WhatsApp Message',
-  'portfolio-update': 'Portfolio Update',
-  'manychat-broadcast': 'ManyChat Broadcast',
-  'call_api': 'API Call',
-  'create_reminder': 'Create Reminder',
-  'log': 'Log',
-};
+const SCHEDULE_PRESETS = [
+  { label: '15 min', value: 15 },
+  { label: '30 min', value: 30 },
+  { label: '1 hour', value: 60 },
+  { label: '2 hours', value: 120 },
+  { label: '6 hours', value: 360 },
+  { label: 'Daily', value: 1440 },
+  { label: 'Weekly', value: 10080 },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function getTriggerSummary(auto: Automation): string {
+  if (auto.triggerType === 'time') {
+    const cfg = auto.triggerConfig ?? tryParseJSON((auto as unknown as Record<string, unknown>).trigger_config as string);
+    const mins = (cfg?.interval_minutes as number) || 60;
+    if (mins < 60) return `Every ${mins} minutes`;
+    if (mins === 60) return 'Every hour';
+    if (mins === 1440) return 'Every day';
+    if (mins === 10080) return 'Every week';
+    return `Every ${Math.round(mins / 60)} hours`;
+  }
+  if (auto.triggerType === 'webhook') return 'When webhook is called';
+  if (auto.triggerType === 'manual') return 'Manual trigger';
+  if (auto.triggerType === 'keyword') {
+    const cfg = auto.triggerConfig ?? tryParseJSON((auto as unknown as Record<string, unknown>).trigger_config as string);
+    return `When message contains "${(cfg?.keyword as string) || '...'}"`;
+  }
+  if (auto.triggerType === 'health_down') {
+    const cfg = auto.triggerConfig ?? tryParseJSON((auto as unknown as Record<string, unknown>).trigger_config as string);
+    return `When ${(cfg?.target_url as string) || 'URL'} is down`;
+  }
+  if (auto.triggerType === 'event') return 'When an event fires';
+  return auto.triggerType;
+}
+
+function getActionSummary(auto: Automation): string {
+  if (auto.actionType === 'telegram-message') return 'Send Telegram message';
+  if (auto.actionType === 'whatsapp-message') return 'Send WhatsApp message';
+  if (auto.actionType === 'n8n-webhook' || auto.actionType === 'call_api') {
+    const cfg = resolveActionConfig(auto);
+    return `Call ${cfg.url || 'webhook'}`;
+  }
+  if (auto.actionType === 'create_reminder') return 'Create a reminder';
+  if (auto.actionType === 'portfolio-update') return 'Update portfolio';
+  if (auto.actionType === 'log') return 'Log message';
+  if (auto.actionType === 'manychat-broadcast') return 'Send broadcast';
+  return auto.actionType;
+}
+
+function getStatusBadge(auto: Automation): { label: string; color: string; bg: string } {
+  if (!auto.enabled) return { label: 'Paused', color: '#6B7280', bg: 'rgba(107,114,128,0.12)' };
+  if (auto.lastStatus === 'error' || auto.lastStatus === 'failed')
+    return { label: 'Error', color: '#FF6161', bg: 'rgba(255,97,97,0.12)' };
+  return { label: 'Active', color: '#00FF88', bg: 'rgba(0,255,136,0.12)' };
+}
+
+function fmtRelativeTime(ts: string | null | undefined): string {
+  if (!ts) return 'Never';
+  const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 172800) return 'Yesterday';
+  return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function tryParseJSON(str: string | undefined | null): Record<string, unknown> | null {
+  if (!str) return null;
+  try { return JSON.parse(str) as Record<string, unknown>; } catch { return null; }
+}
+
+function resolveActionConfig(auto: Automation): Record<string, string> {
+  if (auto.actionConfig && Object.keys(auto.actionConfig).length > 0) return auto.actionConfig;
+  const parsed = tryParseJSON(auto.action_config);
+  return (parsed as Record<string, string>) ?? {};
+}
+
+function parseHttpStatus(output: string): number | null {
+  const match = output.match(/^HTTP (\d{3})/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+function getHttpStatusBg(status: number): string {
+  if (status >= 200 && status < 300) return 'bg-[#00FF88]/10 border-[#00FF88]/20 text-[#00FF88]';
+  if (status >= 400) return 'bg-[#FF6161]/10 border-[#FF6161]/20 text-[#FF6161]';
+  return 'bg-[#6B7280]/10 border-[#6B7280]/20 text-[#9CA3AF]';
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 export function AutomationsPage() {
   const {
@@ -89,51 +223,83 @@ export function AutomationsPage() {
     addAutomation,
     updateAutomation,
     deleteAutomation,
+    triggerAutomation,
   } = useDashboardStore();
 
+  // --- UI State ---
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // --- Form State ---
   const [form, setForm] = useState({
     name: '',
     description: '',
     triggerType: 'time' as AutomationTrigger,
     actionType: 'telegram-message' as AutomationAction,
     enabled: true,
-    // 62.6: Cron builder — stores interval in minutes for time-based triggers
     intervalMinutes: 60,
-    // 65.8: Webhook URL field for n8n-webhook / call_api
     webhookUrl: '',
-    // B3: action-specific configuration payload
+    keywordValue: '',
+    healthUrl: '',
     actionConfig: {} as Record<string, string>,
   });
   const [saveError, setSaveError] = useState('');
+
+  // --- Logs state ---
   const [logs, setLogs] = useState<AutomationLog[]>([]);
-  // 53.7: Pagination state for automation logs
   const [logsOffset, setLogsOffset] = useState(0);
   const [logsHasMore, setLogsHasMore] = useState(false);
   const [logsLoadingMore, setLogsLoadingMore] = useState(false);
-  // 63.4: Run log status filter
   const [logsStatusFilter, setLogsStatusFilter] = useState<'' | 'success' | 'failed' | 'error'>('');
+
+  // --- Per-automation run history ---
+  const [expandedRunHistory, setExpandedRunHistory] = useState<string | null>(null);
+  const [runHistoryLogs, setRunHistoryLogs] = useState<AutomationLog[]>([]);
+  const [runHistoryLoading, setRunHistoryLoading] = useState(false);
+
+  // --- Action feedback ---
   const [testingId, setTestingId] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string; statusCode?: number; latencyMs?: number; responseBody?: string } | null>(null);
-  // 64.5: Automation stats
-  const [automationStats, setAutomationStats] = useState<{ total: number; enabled: number; disabled: number; recentRuns: number } | null>(null);
-
-  // 37.4: Dead-letter log
-  const [deadLetters, setDeadLetters] = useState<Array<{ id: string; automation_id: string; url: string; error: string; payload: string | null; failed_at: number; retry_count: number; last_error: string | null }>>([]);
-  // 55.6: Dead-letter retry state
-  const [retryingDeadLetterId, setRetryingDeadLetterId] = useState<string | null>(null);
-  const [triggerErrors] = useState<Record<string, string>>({});
-  // 61.8: Dry-run result popover
+  const [testResult, setTestResult] = useState<{
+    id: string;
+    success: boolean;
+    message: string;
+    statusCode?: number;
+    latencyMs?: number;
+    responseBody?: string;
+  } | null>(null);
+  const [runningId, setRunningId] = useState<string | null>(null);
   const [dryRunResult, setDryRunResult] = useState<{ id: string; simulatedOutput: string } | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
-  const resetForm = () => {
-    setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true, intervalMinutes: 60, webhookUrl: '', actionConfig: {} });
-    setEditingId(null);
-    setSaveError('');
-  };
+  // --- Stats ---
+  const [automationStats, setAutomationStats] = useState<{
+    total: number;
+    enabled: number;
+    disabled: number;
+    recentRuns: number;
+  } | null>(null);
+
+  // --- Dead letters ---
+  const [deadLetters, setDeadLetters] = useState<Array<{
+    id: string;
+    automation_id: string;
+    url: string;
+    error: string;
+    payload: string | null;
+    failed_at: number;
+    retry_count: number;
+    last_error: string | null;
+  }>>([]);
+  const [retryingDeadLetterId, setRetryingDeadLetterId] = useState<string | null>(null);
+
+  // --- Confirm delete ---
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // ---------------------------------------------------------------------------
+  // Data loading
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     automationLogService.list(20, 0, logsStatusFilter || undefined).then((r) => {
@@ -142,11 +308,9 @@ export function AutomationsPage() {
       setLogsHasMore(r.data.logs.length === 20);
     }).catch(() => setLogs([]));
     automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => setDeadLetters([]));
-    // 64.5: load stats
     automationService.getStats().then((r) => setAutomationStats(r.data)).catch(() => {});
   }, [logsStatusFilter]);
 
-  // 53.7: Load more logs handler
   const handleLoadMoreLogs = async () => {
     setLogsLoadingMore(true);
     try {
@@ -160,19 +324,79 @@ export function AutomationsPage() {
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // Per-automation run history
+  // ---------------------------------------------------------------------------
+
+  const toggleRunHistory = useCallback(async (autoId: string) => {
+    if (expandedRunHistory === autoId) {
+      setExpandedRunHistory(null);
+      setRunHistoryLogs([]);
+      return;
+    }
+    setExpandedRunHistory(autoId);
+    setRunHistoryLoading(true);
+    try {
+      const r = await automationLogService.forAutomation(autoId, 10, 0);
+      setRunHistoryLogs(r.data.logs);
+    } catch {
+      setRunHistoryLogs([]);
+    } finally {
+      setRunHistoryLoading(false);
+    }
+  }, [expandedRunHistory]);
+
+  // ---------------------------------------------------------------------------
+  // Form logic
+  // ---------------------------------------------------------------------------
+
+  const resetForm = () => {
+    setForm({
+      name: '',
+      description: '',
+      triggerType: 'time',
+      actionType: 'telegram-message',
+      enabled: true,
+      intervalMinutes: 60,
+      webhookUrl: '',
+      keywordValue: '',
+      healthUrl: '',
+      actionConfig: {},
+    });
+    setEditingId(null);
+    setSaveError('');
+  };
+
   const handleOpenAdd = () => {
     resetForm();
-    setIsAddDialogOpen(true);
+    setIsDialogOpen(true);
+  };
+
+  const handleUseTemplate = (t: TemplateItem) => {
+    setForm({
+      name: t.name,
+      description: t.description,
+      triggerType: t.triggerType,
+      actionType: t.actionType,
+      enabled: true,
+      intervalMinutes: (t.triggerConfig.interval_minutes as number) || 60,
+      webhookUrl: '',
+      keywordValue: (t.triggerConfig.keyword as string) || '',
+      healthUrl: (t.triggerConfig.target_url as string) || '',
+      actionConfig: { ...t.actionConfig },
+    });
+    setEditingId(null);
+    setSaveError('');
+    setIsDialogOpen(true);
   };
 
   const handleOpenEdit = (id: string) => {
     const auto = automations.find((a) => a.id === id);
     if (!auto) return;
     const existingInterval = (auto.triggerConfig?.interval_minutes as number | undefined) ?? 60;
-    // B3: restore actionConfig from stored automation (API returns snake_case action_config or camelCase actionConfig)
-    const storedConfig: Record<string, string> = auto.actionConfig
-      ?? (() => { try { return JSON.parse(auto.action_config || '{}') as Record<string, string>; } catch { return {}; } })();
+    const storedConfig = resolveActionConfig(auto);
     const restoredWebhookUrl = storedConfig.url ?? storedConfig.webhookUrl ?? '';
+    const trigCfg = auto.triggerConfig ?? tryParseJSON((auto as unknown as Record<string, unknown>).trigger_config as string) ?? {};
     setForm({
       name: auto.name,
       description: auto.description,
@@ -181,48 +405,50 @@ export function AutomationsPage() {
       enabled: auto.enabled,
       intervalMinutes: existingInterval,
       webhookUrl: restoredWebhookUrl,
+      keywordValue: (trigCfg.keyword as string) || '',
+      healthUrl: (trigCfg.target_url as string) || '',
       actionConfig: storedConfig,
     });
     setEditingId(id);
-    setIsAddDialogOpen(true);
+    setSaveError('');
+    setIsDialogOpen(true);
   };
 
-  // Validate action-specific required fields
-  const getActionValidationError = (): string => {
+  const getValidationError = (): string => {
     if (!form.name.trim()) return 'Name is required';
     const at = form.actionType;
-    if ((at === 'telegram-message' || at === 'whatsapp-message' || at === 'manychat-broadcast') && !form.actionConfig.message?.trim()) {
+    if ((at === 'telegram-message' || at === 'whatsapp-message' || at === 'manychat-broadcast') && !form.actionConfig.message?.trim())
       return 'Message text is required for this action';
-    }
-    if ((at === 'n8n-webhook' || at === 'call_api') && !form.webhookUrl.trim()) {
+    if ((at === 'n8n-webhook' || at === 'call_api') && !form.webhookUrl.trim())
       return 'Webhook URL is required for this action';
-    }
-    if (at === 'create_reminder' && !form.actionConfig.reminder_text?.trim()) {
+    if (at === 'create_reminder' && !form.actionConfig.reminder_text?.trim())
       return 'Reminder text is required';
-    }
+    if (form.triggerType === 'keyword' && !form.keywordValue.trim())
+      return 'Keyword is required for keyword triggers';
+    if (form.triggerType === 'health_down' && !form.healthUrl.trim())
+      return 'URL is required for health check triggers';
     return '';
   };
 
-  const actionValidationError = getActionValidationError();
+  const validationError = getValidationError();
 
   const handleSave = async () => {
-    const validationErr = getActionValidationError();
-    if (validationErr) {
-      setSaveError(validationErr);
-      return;
-    }
+    const err = getValidationError();
+    if (err) { setSaveError(err); return; }
     setSaveError('');
     try {
-      // 62.6: build triggerConfig for time-based automations
-      const triggerConfig = form.triggerType === 'time'
-        ? { interval_minutes: form.intervalMinutes }
-        : {};
-      // B3: build actionConfig — merge form.actionConfig with webhookUrl for url-based actions
-      const urlActionTypes = ['n8n-webhook', 'call_api'];
+      // Build trigger config
+      let triggerConfig: Record<string, unknown> = {};
+      if (form.triggerType === 'time') triggerConfig = { interval_minutes: form.intervalMinutes };
+      else if (form.triggerType === 'keyword') triggerConfig = { keyword: form.keywordValue };
+      else if (form.triggerType === 'health_down') triggerConfig = { target_url: form.healthUrl };
+
+      // Build action config
       const builtActionConfig: Record<string, string> = { ...form.actionConfig };
-      if (urlActionTypes.includes(form.actionType) && form.webhookUrl) {
+      if ((form.actionType === 'n8n-webhook' || form.actionType === 'call_api') && form.webhookUrl) {
         builtActionConfig.url = form.webhookUrl;
       }
+
       if (editingId) {
         await updateAutomation(editingId, {
           name: form.name,
@@ -245,31 +471,35 @@ export function AutomationsPage() {
           actionConfig: builtActionConfig,
         } as Parameters<typeof addAutomation>[0]);
       }
-      setIsAddDialogOpen(false);
+      setIsDialogOpen(false);
       resetForm();
+      // Refresh stats
+      automationService.getStats().then((r) => setAutomationStats(r.data)).catch(() => {});
     } catch {
       setSaveError('Failed to save automation. Please try again.');
     }
   };
+
+  // ---------------------------------------------------------------------------
+  // Actions
+  // ---------------------------------------------------------------------------
 
   const handleToggle = async (id: string, enabled: boolean) => {
     await updateAutomation(id, { enabled: !enabled });
   };
 
   const handleDelete = async (id: string) => {
+    setConfirmDeleteId(null);
     await deleteAutomation(id);
+    automationService.getStats().then((r) => setAutomationStats(r.data)).catch(() => {});
   };
 
-
-  // 55.6: Retry a failed dead-letter webhook
-  const handleRetryDeadLetter = async (id: string) => {
-    setRetryingDeadLetterId(id);
+  const handleRun = async (id: string) => {
+    setRunningId(id);
     try {
-      await automationService.retryDeadLetter(id);
-      // Refresh dead-letter list
-      automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => {});
+      await triggerAutomation(id);
     } catch { /* ignore */ } finally {
-      setRetryingDeadLetterId(null);
+      setRunningId(null);
     }
   };
 
@@ -280,11 +510,9 @@ export function AutomationsPage() {
     const isUrlAction = auto && (auto.actionType === 'n8n-webhook' || auto.actionType === 'call_api');
     try {
       if (isUrlAction) {
-        // URL-based actions: use the /test endpoint (sends real HTTP request)
         const res = await automationService.testFire(id);
         setTestResult({ id, success: res.data.success, message: res.data.message, statusCode: res.data.statusCode, latencyMs: res.data.latencyMs, responseBody: res.data.responseBody });
       } else {
-        // Non-URL actions: use dry-run to simulate
         const res = await automationService.dryRun(id);
         setTestResult({ id, success: true, message: res.data.simulatedOutput });
       }
@@ -295,6 +523,41 @@ export function AutomationsPage() {
       setTimeout(() => setTestResult(null), 5000);
     }
   };
+
+  const handleDryRun = async (id: string) => {
+    try {
+      const res = await automationService.dryRun(id);
+      setDryRunResult({ id, simulatedOutput: res.data.simulatedOutput });
+      setTimeout(() => setDryRunResult(null), 6000);
+    } catch { /* ignore */ }
+  };
+
+  const handleDuplicate = async (id: string) => {
+    setDuplicatingId(id);
+    try {
+      const res = await automationService.duplicate(id);
+      // Add to local store
+      const store = useDashboardStore.getState();
+      useDashboardStore.setState({ automations: [res.data, ...store.automations] });
+      automationService.getStats().then((r) => setAutomationStats(r.data)).catch(() => {});
+    } catch { /* ignore */ } finally {
+      setDuplicatingId(null);
+    }
+  };
+
+  const handleRetryDeadLetter = async (id: string) => {
+    setRetryingDeadLetterId(id);
+    try {
+      await automationService.retryDeadLetter(id);
+      automationService.getDeadLetters().then((r) => setDeadLetters(r.data)).catch(() => {});
+    } catch { /* ignore */ } finally {
+      setRetryingDeadLetterId(null);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Derived
+  // ---------------------------------------------------------------------------
 
   const filtered = automations
     .filter((a) => {
@@ -308,57 +571,15 @@ export function AutomationsPage() {
     );
 
   const enabledCount = automations.filter((a) => a.enabled).length;
-  const totalRuns = automations.reduce((acc, a) => acc + a.runCount, 0);
+  const showTemplates = automations.length <= 3;
 
-  // 50.2: Unified relative-time formatter — consistent casing and language
-  const fmtRelativeTime = (ts: string | null | undefined): string => {
-    if (!ts) return 'Never';
-    const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
-    if (diff < 60) return 'Just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 172800) return 'Yesterday';
-    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  };
-
-  const formatLastRun = fmtRelativeTime;
-  const fmtRunTime = fmtRelativeTime;
-
-  // 52.9: Compute "next run" for time-triggered automations
-  const fmtNextRun = (auto: typeof automations[number]): string | null => {
-    if (auto.triggerType !== 'time' && (auto as unknown as Record<string, unknown>).trigger_type !== 'time') return null;
-    try {
-      const triggerConfig = JSON.parse(((auto as unknown as Record<string, unknown>).trigger_config as string) || '{}') as { interval_minutes?: number };
-      const intervalMs = (triggerConfig.interval_minutes || 60) * 60 * 1000;
-      const lastRunTs = auto.last_run ? new Date(auto.last_run).getTime() : null;
-      const nextTs = lastRunTs ? lastRunTs + intervalMs : Date.now() + intervalMs;
-      const diff = Math.floor((nextTs - Date.now()) / 1000);
-      if (diff <= 0) return 'due now';
-      if (diff < 60) return `in ${diff}s`;
-      if (diff < 3600) return `in ${Math.floor(diff / 60)}m`;
-      if (diff < 86400) return `in ${Math.floor(diff / 3600)}h`;
-      return `in ${Math.floor(diff / 86400)}d`;
-    } catch {
-      return null;
-    }
-  };
-
-
-  // Extract HTTP status code from output string like "HTTP 200 OK" or "HTTP 404 Not Found"
-  const parseHttpStatus = (output: string): number | null => {
-    const match = output.match(/^HTTP (\d{3})/);
-    return match ? parseInt(match[1], 10) : null;
-  };
-
-  const getHttpStatusBg = (status: number): string => {
-    if (status >= 200 && status < 300) return 'bg-[#00FF88]/10 border-[#00FF88]/20 text-[#00FF88]';
-    if (status >= 400) return 'bg-[#FF6161]/10 border-[#FF6161]/20 text-[#FF6161]';
-    return 'bg-[#6B7280]/10 border-[#6B7280]/20 text-[#9CA3AF]';
-  };
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
-    <div data-testid="automations-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
-      {/* 61.8: Dry-run result toast */}
+    <div data-testid="automations-page" className="space-y-5 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
+      {/* Dry-run result toast */}
       {dryRunResult && (
         <div className="fixed bottom-6 right-6 z-50 max-w-sm px-4 py-3 rounded-xl bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-[#F59E0B] text-sm shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="dry-run-result">
           <div className="flex items-start gap-2">
@@ -367,177 +588,203 @@ export function AutomationsPage() {
               <p className="font-medium text-xs mb-0.5">Dry Run Result</p>
               <p className="text-xs text-[#F59E0B]/80">{dryRunResult.simulatedOutput}</p>
             </div>
-            <button onClick={() => setDryRunResult(null)} className="text-[#F59E0B]/60 hover:text-[#F59E0B] ml-auto">✕</button>
+            <button onClick={() => setDryRunResult(null)} className="text-[#F59E0B]/60 hover:text-[#F59E0B] ml-auto min-h-[44px] min-w-[44px] flex items-center justify-center">
+              <XCircle className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
-        <div>
-          <h1 className="text-2xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
-            Automations
-          </h1>
-          <p className="text-sm md:text-base text-[#9CA3AF]">
-            <span className="text-[#00F0FF] font-medium">{enabledCount}</span> active of {automations.length} total
-          </p>
+
+      {/* ================================================================== */}
+      {/* SECTION 1: HEADER + STATS                                          */}
+      {/* ================================================================== */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center flex-shrink-0">
+            <Zap className="w-5 h-5 text-[#00F0FF]" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-[#E8E8F0]" style={{ fontFamily: 'Syne, sans-serif' }}>
+              Automations
+              <span className="ml-2 text-base font-normal text-[#8892B0]">({automations.length})</span>
+            </h1>
+          </div>
         </div>
-        <Button onClick={handleOpenAdd} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale min-h-[44px]">
+        <Button
+          onClick={handleOpenAdd}
+          className="bg-[#00F0FF] hover:bg-[#00D4B0] text-[#06060B] font-semibold min-h-[44px] px-5 press-scale"
+        >
           <Plus className="w-4 h-4 mr-2" />New Automation
         </Button>
       </div>
 
-      {/* Stats Row */}
-      <div className="flex items-center gap-4 overflow-x-auto pb-1 scrollbar-hide">
+      {/* Compact stat pills */}
+      <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide">
         {[
-          { label: 'Total', value: automations.length, color: '#00F0FF' },
-          { label: 'Active', value: enabledCount, color: '#00FF88' },
-          { label: 'Runs', value: totalRuns, color: '#FFB800' },
-          ...(automationStats ? [{ label: '7d Runs', value: automationStats.recentRuns, color: '#8B5CF6' }] : []),
+          { label: 'Total', value: automationStats?.total ?? automations.length, icon: BarChart3, color: '#00F0FF' },
+          { label: 'Active', value: automationStats?.enabled ?? enabledCount, icon: CheckCircle2, color: '#00FF88' },
+          { label: 'Runs (7d)', value: automationStats?.recentRuns ?? 0, icon: Timer, color: '#8B5CF6' },
         ].map(s => (
-          <div key={s.label} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0C0C18]/60 border border-white/5 shrink-0">
-            <span className="text-lg font-bold" style={{ color: s.color }}>{s.value}</span>
+          <div
+            key={s.label}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0C0C18]/80 border border-white/5 shrink-0"
+          >
+            <s.icon className="w-4 h-4" style={{ color: s.color }} />
+            <span className="text-lg font-bold tabular-nums" style={{ color: s.color, fontFamily: 'Space Grotesk, sans-serif' }}>{s.value}</span>
             <span className="text-xs text-[#8892B0]">{s.label}</span>
           </div>
         ))}
       </div>
 
-      {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+      {/* ================================================================== */}
+      {/* SECTION 2: TEMPLATE GALLERY                                        */}
+      {/* ================================================================== */}
+      {showTemplates && (
+        <div>
+          <h2 className="text-sm font-semibold text-[#8892B0] uppercase tracking-wider mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>
+            Quick Start Templates
+          </h2>
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory md:grid md:grid-cols-5 md:overflow-visible">
+            {TEMPLATES.map((t) => (
+              <button
+                key={t.name}
+                type="button"
+                onClick={() => handleUseTemplate(t)}
+                className="snap-start flex-shrink-0 w-[180px] md:w-auto p-4 rounded-2xl bg-[#0C0C18]/80 border border-white/5 hover:border-[#00F0FF]/30 transition-all duration-200 text-left group"
+              >
+                <div className="text-2xl mb-2">{t.icon}</div>
+                <h3 className="text-sm font-semibold text-[#E8E8F0] mb-1 group-hover:text-[#00F0FF] transition-colors" style={{ fontFamily: 'Syne, sans-serif' }}>{t.name}</h3>
+                <p className="text-xs text-[#8892B0] leading-relaxed mb-3">{t.description}</p>
+                <span className="text-xs text-[#00F0FF] font-medium">Use Template <ArrowRight className="w-3 h-3 inline ml-1" /></span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================== */}
+      {/* FILTERS & SEARCH                                                   */}
+      {/* ================================================================== */}
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
           <Input
             placeholder="Search automations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[44px]"
+            className="pl-10 bg-[#0C0C18] border-[#00F0FF]/20 text-[#E8E8F0] h-11 text-base"
           />
         </div>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/20 overflow-x-auto flex-nowrap w-auto">
-            <TabsTrigger value="all" className="data-[state=active]:bg-[#00F0FF] min-h-[44px] flex-none">All</TabsTrigger>
-            <TabsTrigger value="active" className="data-[state=active]:bg-[#00F0FF] min-h-[44px] flex-none">Active</TabsTrigger>
-            <TabsTrigger value="inactive" className="data-[state=active]:bg-[#00F0FF] min-h-[44px] flex-none">Inactive</TabsTrigger>
+          <TabsList className="bg-[#0C0C18] border border-white/5 overflow-x-auto flex-nowrap w-auto">
+            <TabsTrigger value="all" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-[#06060B] min-h-[44px] flex-none px-4">All</TabsTrigger>
+            <TabsTrigger value="active" className="data-[state=active]:bg-[#00FF88] data-[state=active]:text-[#06060B] min-h-[44px] flex-none px-4">Active</TabsTrigger>
+            <TabsTrigger value="inactive" className="data-[state=active]:bg-[#6B7280] data-[state=active]:text-white min-h-[44px] flex-none px-4">Paused</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
-      {/* Automation List */}
-      <div className="space-y-4">
+      {/* ================================================================== */}
+      {/* SECTION 3: AUTOMATION CARDS                                         */}
+      {/* ================================================================== */}
+      <div className="space-y-3">
         {filtered.length > 0 ? (
           filtered.map((auto) => {
-            const TriggerIcon = triggerIcons[auto.triggerType] || Zap;
-            const ActionIcon = actionIcons[auto.actionType] || Zap;
-            const triggerColor = triggerColors[auto.triggerType];
+            const statusBadge = getStatusBadge(auto);
+            const TriggerIcon = TRIGGER_META[auto.triggerType]?.icon || Zap;
+            const triggerColor = TRIGGER_META[auto.triggerType]?.color || '#6B7280';
+            const runCount = auto.run_count ?? auto.runCount ?? 0;
+            const lastRun = auto.last_run ?? auto.lastRun ?? null;
+            const isExpanded = expandedRunHistory === auto.id;
+
             return (
               <Card
                 key={auto.id}
-                className={`bg-[#0C0C18] border-[#00F0FF]/20 transition-all duration-300 hover:border-[#00F0FF]/40 press-scale ${
-                  !auto.enabled ? 'opacity-60' : ''
-                }`}
+                className={`bg-[#0C0C18]/80 border border-white/5 rounded-2xl transition-all duration-300 hover:border-[#00F0FF]/20 ${!auto.enabled ? 'opacity-60' : ''}`}
               >
-                <CardContent className="p-3 md:p-5">
+                <CardContent className="p-4 md:p-5">
+                  {/* Main card row */}
                   <div className="flex items-start gap-3 md:gap-4">
-                    {/* Toggle */}
+                    {/* Toggle button */}
                     <button
                       onClick={() => handleToggle(auto.id, auto.enabled)}
                       aria-label={auto.enabled ? `Disable ${auto.name}` : `Enable ${auto.name}`}
-                      className="flex-shrink-0 mt-1 press-scale min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      className="flex-shrink-0 mt-1 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl transition-colors hover:bg-white/5"
                     >
-                      {auto.enabled ? (
-                        <ToggleRight className="w-8 h-5 text-[#00FF88]" />
-                      ) : (
-                        <ToggleLeft className="w-8 h-5 text-[#9CA3AF]" />
-                      )}
+                      <div className={`w-10 h-6 rounded-full flex items-center transition-colors duration-200 ${auto.enabled ? 'bg-[#00FF88]/20 justify-end' : 'bg-white/10 justify-start'}`}>
+                        <div className={`w-5 h-5 rounded-full mx-0.5 transition-colors duration-200 ${auto.enabled ? 'bg-[#00FF88]' : 'bg-[#6B7280]'}`} />
+                      </div>
                     </button>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-[#E8E8F0]">{auto.name}</h3>
-                        {auto.enabled && (
-                          <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" />
-                        )}
-                      </div>
-                      <p className="text-sm text-[#9CA3AF] mb-1">{auto.description}</p>
-
-                      {(auto.run_count ?? 0) > 0 && (
-                        <p className="text-xs text-[#8888AA] mb-2">
-                          Ran {auto.run_count} time{auto.run_count !== 1 ? 's' : ''}
-                          {' · '}Last run: {fmtRunTime(auto.last_run)}
-                        </p>
-                      )}
-
-                      <div className="flex items-center gap-3 flex-wrap">
-                        {/* Trigger badge */}
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="font-semibold text-[#E8E8F0] text-base" style={{ fontFamily: 'Syne, sans-serif' }}>{auto.name}</h3>
                         <Badge
-                          variant="outline"
-                          style={{ borderColor: `${triggerColor}40`, color: triggerColor }}
+                          className="text-[10px] font-medium border px-2 py-0.5"
+                          style={{
+                            background: statusBadge.bg,
+                            color: statusBadge.color,
+                            borderColor: `${statusBadge.color}30`,
+                          }}
                         >
-                          <TriggerIcon className="w-3 h-3 mr-1" />
-                          {triggerLabels[auto.triggerType]}
+                          {statusBadge.label === 'Active' && <span className="w-1.5 h-1.5 rounded-full bg-[#00FF88] inline-block mr-1.5 animate-pulse" />}
+                          {statusBadge.label === 'Error' && <XCircle className="w-3 h-3 mr-1 inline" />}
+                          {statusBadge.label === 'Paused' && <Pause className="w-3 h-3 mr-1 inline" />}
+                          {statusBadge.label}
                         </Badge>
+                      </div>
 
-                        {/* Arrow */}
-                        <span className="text-[#9CA3AF]">&rarr;</span>
+                      {/* When / Do summary */}
+                      <div className="flex items-center gap-2 text-sm text-[#9CA3AF] mb-1.5">
+                        <TriggerIcon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: triggerColor }} />
+                        <span>{getTriggerSummary(auto)}</span>
+                        <ArrowRight className="w-3 h-3 text-[#8892B0] flex-shrink-0" />
+                        <span>{getActionSummary(auto)}</span>
+                      </div>
 
-                        {/* Action badge */}
-                        <Badge variant="outline" className="border-[#00F0FF]/30 text-[#9CA3AF]">
-                          <ActionIcon className="w-3 h-3 mr-1" />
-                          {actionLabels[auto.actionType]}
-                        </Badge>
-
-                        {/* Run count */}
-                        <Badge variant="outline" className="border-[#00F0FF]/20 text-[#9CA3AF]">
-                          <Play className="w-3 h-3 mr-1" />
-                          {auto.runCount} runs
-                        </Badge>
-
-                        {/* 64.2: last_status badge */}
-                        {auto.lastStatus && (
-                          <Badge
-                            variant="outline"
-                            className={
-                              auto.lastStatus === 'success'
-                                ? 'border-[#00FF88]/30 text-[#00FF88]'
-                                : 'border-[#FF6161]/30 text-[#FF6161]'
-                            }
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${auto.lastStatus === 'success' ? 'bg-[#00FF88]' : 'bg-[#FF6161]'}`} />
-                            {auto.lastStatus === 'success' ? 'ok' : auto.lastStatus}
-                          </Badge>
-                        )}
-
-                        {/* Last run */}
-                        <span className="text-xs text-[#9CA3AF]">
-                          <Clock className="w-3 h-3 inline mr-1" />
-                          {formatLastRun(auto.lastRun)}
+                      {/* Run stats line */}
+                      <div className="flex items-center gap-3 text-xs text-[#8892B0] flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Last run: {fmtRelativeTime(lastRun)}
                         </span>
-
-                        {/* 52.9: Next run for time-triggered automations */}
-                        {auto.enabled && (() => {
-                          const next = fmtNextRun(auto);
-                          return next ? (
-                            <span className="text-xs text-[#FFB800]">
-                              <CalendarClock className="w-3 h-3 inline mr-1" />
-                              Next: {next}
-                            </span>
-                          ) : null;
-                        })()}
+                        <span className="flex items-center gap-1">
+                          <Play className="w-3 h-3" />
+                          {runCount} run{runCount !== 1 ? 's' : ''}
+                        </span>
+                        {auto.lastStatus && (
+                          <span className={`flex items-center gap-1 ${auto.lastStatus === 'success' ? 'text-[#00FF88]' : 'text-[#FF6161]'}`}>
+                            {auto.lastStatus === 'success' ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                            {auto.lastStatus === 'success' ? 'ok' : auto.lastStatus}
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    {/* Actions — clean 3-button layout */}
+                    {/* Action buttons */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      {/* Primary: Run */}
+                      {/* Run Now */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRun(auto.id)}
+                        disabled={runningId === auto.id}
+                        title="Run now"
+                        className="text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px] p-0"
+                      >
+                        {runningId === auto.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                      </Button>
+                      {/* Test Fire */}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleTestFire(auto.id)}
                         disabled={testingId === auto.id}
-                        title="Test fire"
-                        className="text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px] p-0"
+                        title="Test fire (dry run)"
+                        className="text-[#F59E0B] hover:bg-[#F59E0B]/10 min-h-[44px] min-w-[44px] p-0"
                       >
-                        {testingId === auto.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                        {testingId === auto.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
                       </Button>
                       {/* Edit */}
                       <Button
@@ -549,259 +796,427 @@ export function AutomationsPage() {
                       >
                         <Edit3 className="w-4 h-4" />
                       </Button>
+                      {/* Duplicate */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDuplicate(auto.id)}
+                        disabled={duplicatingId === auto.id}
+                        title="Duplicate"
+                        className="text-[#8892B0] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px] p-0"
+                      >
+                        {duplicatingId === auto.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
+                      </Button>
                       {/* Delete */}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(auto.id)}
+                        onClick={() => setConfirmDeleteId(auto.id)}
                         title="Delete"
                         className="text-[#8892B0] hover:text-[#FF2D78] hover:bg-[#FF2D78]/10 min-h-[44px] min-w-[44px] p-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                    {/* Test result toast */}
-                    {testResult?.id === auto.id && (
-                      <div className={`mt-2 rounded-lg border px-3 py-2 text-xs ${testResult.success ? 'bg-[#00FF88]/5 border-[#00FF88]/20 text-[#00FF88]' : 'bg-[#FF2D78]/5 border-[#FF2D78]/20 text-[#FF2D78]'}`}>
-                        {testResult.message}
-                        {testResult.statusCode ? ` · ${testResult.statusCode}` : ''}
-                        {testResult.latencyMs ? ` · ${testResult.latencyMs}ms` : ''}
+                  </div>
+
+                  {/* Confirm delete inline */}
+                  {confirmDeleteId === auto.id && (
+                    <div className="mt-3 flex items-center gap-3 bg-[#FF2D78]/5 border border-[#FF2D78]/20 rounded-xl px-4 py-3">
+                      <span className="text-sm text-[#FF2D78]">Delete this automation?</span>
+                      <div className="flex-1" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="text-[#9CA3AF] hover:text-[#E8E8F0] min-h-[44px]"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleDelete(auto.id)}
+                        className="bg-[#FF2D78] hover:bg-[#FF2D78]/80 text-white min-h-[44px]"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Test result inline */}
+                  {testResult?.id === auto.id && (
+                    <div className={`mt-3 rounded-xl border px-4 py-2.5 text-xs flex items-center gap-2 ${testResult.success ? 'bg-[#00FF88]/5 border-[#00FF88]/20 text-[#00FF88]' : 'bg-[#FF2D78]/5 border-[#FF2D78]/20 text-[#FF2D78]'}`}>
+                      {testResult.success ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <XCircle className="w-4 h-4 flex-shrink-0" />}
+                      <span className="flex-1">{testResult.message}</span>
+                      {testResult.statusCode ? <span className="font-mono">{testResult.statusCode}</span> : null}
+                      {testResult.latencyMs ? <span className="font-mono">{testResult.latencyMs}ms</span> : null}
+                    </div>
+                  )}
+
+                  {/* Run history toggle + expandable */}
+                  <div className="mt-3 pt-3 border-t border-white/5">
+                    <button
+                      type="button"
+                      onClick={() => toggleRunHistory(auto.id)}
+                      className="flex items-center gap-2 text-xs text-[#8892B0] hover:text-[#00F0FF] transition-colors min-h-[44px]"
+                    >
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      Run history
+                    </button>
+
+                    {isExpanded && (
+                      <div className="mt-2 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                        {runHistoryLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="w-4 h-4 animate-spin text-[#00F0FF]" />
+                          </div>
+                        ) : runHistoryLogs.length === 0 ? (
+                          <p className="text-xs text-[#8892B0] py-2 pl-1">No runs yet</p>
+                        ) : (
+                          runHistoryLogs.map((log) => {
+                            const rawLog = log as unknown as Record<string, unknown>;
+                            const status = (rawLog.status as string) ?? log.status ?? 'unknown';
+                            const output = (rawLog.output as string) ?? log.output ?? '';
+                            const durationMs = (rawLog.duration_ms as number) ?? log.durationMs ?? 0;
+                            const createdAt = (rawLog.created_at as string) ?? log.createdAt ?? '';
+                            return (
+                              <div key={log.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#06060B]/60 border border-white/[0.03]">
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${status === 'success' ? 'bg-[#00FF88]' : 'bg-[#FF6161]'}`} />
+                                <span className="text-xs text-[#9CA3AF] flex-shrink-0 w-20">
+                                  {createdAt ? fmtRelativeTime(createdAt) : '--'}
+                                </span>
+                                <span className="text-xs text-[#8892B0] truncate flex-1">{output || '--'}</span>
+                                {durationMs > 0 && (
+                                  <span className="text-[10px] text-[#8892B0] font-mono flex-shrink-0">{durationMs}ms</span>
+                                )}
+                              </div>
+                            );
+                          })
+                        )}
                       </div>
                     )}
-                    {/* 51.5: Trigger error feedback — auto-clears after 4s */}
-                    {triggerErrors[auto.id] && (
-                      <p className="text-xs text-[#FF6161] mt-2 pl-1">{triggerErrors[auto.id]}</p>
-                    )}
                   </div>
-                  {/* Run history available in Recent Runs section below */}
                 </CardContent>
               </Card>
             );
           })
         ) : (
-          <div className="text-center py-12">
-            <Zap className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
-            <p className="text-[#9CA3AF] mb-4">
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/5 flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-8 h-8 text-[#00F0FF]/30" />
+            </div>
+            <p className="text-[#9CA3AF] mb-1">
               {searchQuery || filter !== 'all' ? 'No automations match your filters' : 'No automations yet'}
             </p>
+            <p className="text-sm text-[#8892B0] mb-4">Create your first automation to get started</p>
             {!searchQuery && filter === 'all' && (
-              <Button onClick={handleOpenAdd} variant="outline" className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10">
-                Create your first automation
+              <Button onClick={handleOpenAdd} variant="outline" className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 min-h-[44px]">
+                <Plus className="w-4 h-4 mr-2" /> Create Automation
               </Button>
             )}
           </div>
         )}
       </div>
 
-      {/* Add / Edit Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="glass-card-v2 border border-[#00F0FF]/30 text-[#E8E8F0] max-w-md mx-2 md:mx-auto p-4 md:p-6">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+      {/* ================================================================== */}
+      {/* SECTION 4: CREATE / EDIT DIALOG                                     */}
+      {/* ================================================================== */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="bg-[#0C0C18]/95 backdrop-blur-xl border border-white/10 text-[#E8E8F0] max-w-lg mx-2 md:mx-auto p-0 rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="px-5 pt-5 pb-0">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2" style={{ fontFamily: 'Syne, sans-serif' }}>
               <Zap className="w-5 h-5 text-[#00F0FF]" />
               {editingId ? 'Edit Automation' : 'New Automation'}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-3 md:pt-4">
-            <div>
-              <label className="text-sm text-[#9CA3AF] mb-2 block">Name</label>
-              <Input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="e.g., Morning briefing, Deploy webhook..."
-                className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-[#9CA3AF] mb-2 block">Description</label>
-              <Input
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="What does this automation do?"
-                className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+
+          <div className="px-5 pb-5 space-y-5">
+            {/* Section 1: Name & Description */}
+            <div className="space-y-3">
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-2 block">Trigger</label>
-                <select
-                  value={form.triggerType}
-                  onChange={(e) => setForm({ ...form, triggerType: e.target.value as AutomationTrigger })}
-                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0]"
-                >
-                  <option value="time">Scheduled (Time)</option>
-                  <option value="event">Event-based</option>
-                  <option value="webhook">Webhook</option>
-                  <option value="manual">Manual</option>
-                  <option value="keyword">Keyword Match</option>
-                  <option value="health_down">Health Check</option>
-                </select>
+                <label className="text-xs font-medium text-[#8892B0] mb-1.5 block uppercase tracking-wider">Name</label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="e.g., Morning briefing, Deploy webhook..."
+                  className="bg-[#06060B] border-white/10 text-[#E8E8F0] h-11 text-base focus:border-[#00F0FF]/50"
+                />
               </div>
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-2 block">Action</label>
-                <select
-                  value={form.actionType}
-                  onChange={(e) => setForm({ ...form, actionType: e.target.value as AutomationAction })}
-                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0]"
-                >
-                  <option value="telegram-message">Telegram Message</option>
-                  <option value="n8n-webhook">n8n Webhook</option>
-                  <option value="portfolio-update">Portfolio Update</option>
-                  <option value="manychat-broadcast">ManyChat Broadcast</option>
-                  <option value="call_api">API Call</option>
-                  <option value="create_reminder">Create Reminder</option>
-                  <option value="log">Log</option>
-                </select>
+                <label className="text-xs font-medium text-[#8892B0] mb-1.5 block uppercase tracking-wider">Description</label>
+                <Input
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="What does this automation do?"
+                  className="bg-[#06060B] border-white/10 text-[#E8E8F0] h-11 text-base focus:border-[#00F0FF]/50"
+                />
               </div>
             </div>
-            {/* 65.8: Webhook URL input + https warning for n8n-webhook / call_api */}
-            {(form.actionType === 'n8n-webhook' || form.actionType === 'call_api') && (
-              <div className="space-y-1">
-                <label className="text-xs text-[#9CA3AF]">Webhook URL</label>
-                <input
-                  type="url"
-                  placeholder="https://your-webhook-endpoint.com/..."
-                  value={form.webhookUrl}
-                  onChange={(e) => setForm({ ...form, webhookUrl: e.target.value })}
-                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] text-sm"
-                />
-                {form.webhookUrl && form.webhookUrl.startsWith('http://') && !form.webhookUrl.startsWith('https://') && (
-                  <p className="text-xs flex items-center gap-1.5 text-[#F59E0B]">
-                    <span>⚠</span> Using http:// sends data unencrypted. Use https:// for production.
-                  </p>
-                )}
-              </div>
-            )}
-            {/* B3: Action-specific configuration fields */}
-            {(form.actionType === 'telegram-message' || form.actionType === 'whatsapp-message' || form.actionType === 'manychat-broadcast') && (
-              <div className="space-y-1">
-                <label className="text-xs text-[#9CA3AF]">
-                  {form.actionType === 'telegram-message' ? 'Telegram Message Text' : form.actionType === 'whatsapp-message' ? 'WhatsApp Message Text' : 'Broadcast Message Text'}
-                </label>
-                <textarea
-                  placeholder={form.actionType === 'manychat-broadcast' ? 'Broadcast message to send...' : 'Message to send...'}
-                  value={form.actionConfig.message ?? ''}
-                  onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, message: e.target.value } })}
-                  rows={3}
-                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] text-sm resize-none"
-                />
-              </div>
-            )}
-            {form.actionType === 'create_reminder' && (
-              <div className="space-y-1">
-                <label className="text-xs text-[#9CA3AF]">Reminder Text</label>
-                <input
-                  type="text"
-                  placeholder="What to remind about..."
-                  value={form.actionConfig.reminder_text ?? ''}
-                  onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, reminder_text: e.target.value } })}
-                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] text-sm"
-                />
-              </div>
-            )}
-            {form.actionType === 'log' && (
-              <div className="space-y-1">
-                <label className="text-xs text-[#9CA3AF]">Log Message</label>
-                <input
-                  type="text"
-                  placeholder="Message to log..."
-                  value={form.actionConfig.message ?? ''}
-                  onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, message: e.target.value } })}
-                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] text-sm"
-                />
-              </div>
-            )}
-            {/* 62.6: Schedule builder — shown when trigger is time-based */}
-            {form.triggerType === 'time' && (
-              <div className="rounded-lg border border-[#00F0FF]/20 bg-[#06060B] p-3 space-y-3">
-                <p className="text-xs text-[#9CA3AF] font-medium">Schedule</p>
-                <div className="flex flex-wrap gap-2">
-                  {([
-                    { label: 'Every 15 min', value: 15 },
-                    { label: 'Every 30 min', value: 30 },
-                    { label: 'Every hour', value: 60 },
-                    { label: 'Every 2h', value: 120 },
-                    { label: 'Every 6h', value: 360 },
-                    { label: 'Daily', value: 1440 },
-                    { label: 'Weekly', value: 10080 },
-                  ] as const).map(({ label, value }) => (
+
+            {/* Section 2: WHEN (Trigger) */}
+            <div>
+              <label className="text-xs font-medium text-[#8892B0] mb-2.5 block uppercase tracking-wider">When (Trigger)</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {(Object.entries(TRIGGER_META) as [AutomationTrigger, typeof TRIGGER_META[AutomationTrigger]][]).map(([key, meta]) => {
+                  const isSelected = form.triggerType === key;
+                  const Icon = meta.icon;
+                  return (
                     <button
-                      key={value}
+                      key={key}
                       type="button"
-                      onClick={() => setForm({ ...form, intervalMinutes: value })}
-                      className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                        form.intervalMinutes === value
-                          ? 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[#00F0FF]'
-                          : 'bg-[#0C0C18] border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0]'
+                      onClick={() => setForm({ ...form, triggerType: key })}
+                      className={`flex flex-col items-start gap-1.5 p-3 rounded-xl border transition-all duration-200 text-left min-h-[44px] ${
+                        isSelected
+                          ? 'border-[#00F0FF]/50 bg-[#00F0FF]/5'
+                          : 'border-white/5 bg-[#06060B] hover:border-white/10'
                       }`}
                     >
-                      {label}
+                      <Icon className="w-4 h-4" style={{ color: isSelected ? meta.color : '#8892B0' }} />
+                      <span className={`text-xs font-medium ${isSelected ? 'text-[#E8E8F0]' : 'text-[#9CA3AF]'}`}>{meta.label}</span>
+                      <span className="text-[10px] text-[#8892B0] leading-tight">{meta.description}</span>
                     </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#9CA3AF]">Custom:</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={10080}
-                    value={form.intervalMinutes}
-                    onChange={(e) => setForm({ ...form, intervalMinutes: Math.max(1, parseInt(e.target.value, 10) || 60) })}
-                    className="w-20 p-1.5 text-xs rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 text-[#E8E8F0]"
-                  />
-                  <span className="text-xs text-[#9CA3AF]">minutes</span>
-                </div>
+                  );
+                })}
               </div>
-            )}
-            {/* 54.2: Webhook payload preview — shown when trigger is webhook */}
-            {form.triggerType === 'webhook' && (
-              <div className="rounded-lg border border-[#00F0FF]/20 bg-[#06060B] p-3">
-                <p className="text-xs text-[#9CA3AF] mb-2 font-medium">Incoming Webhook Payload Preview</p>
-                <pre className="text-xs text-[#00F0FF] overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
+
+              {/* Trigger config fields */}
+              {form.triggerType === 'time' && (
+                <div className="mt-3 rounded-xl border border-white/5 bg-[#06060B] p-3 space-y-3">
+                  <p className="text-xs text-[#8892B0] font-medium">Schedule</p>
+                  <div className="flex flex-wrap gap-2">
+                    {SCHEDULE_PRESETS.map(({ label, value }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setForm({ ...form, intervalMinutes: value })}
+                        className={`text-xs px-3 py-2 rounded-lg border transition-colors min-h-[44px] ${
+                          form.intervalMinutes === value
+                            ? 'bg-[#00F0FF]/10 border-[#00F0FF]/40 text-[#00F0FF]'
+                            : 'bg-[#0C0C18] border-white/5 text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-white/10'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#8892B0]">Custom:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10080}
+                      value={form.intervalMinutes}
+                      onChange={(e) => setForm({ ...form, intervalMinutes: Math.max(1, parseInt(e.target.value, 10) || 60) })}
+                      className="w-20 p-2 text-sm rounded-lg bg-[#0C0C18] border border-white/10 text-[#E8E8F0] h-11"
+                    />
+                    <span className="text-xs text-[#8892B0]">minutes</span>
+                  </div>
+                </div>
+              )}
+
+              {form.triggerType === 'webhook' && (
+                <div className="mt-3 rounded-xl border border-white/5 bg-[#06060B] p-3">
+                  <p className="text-xs text-[#8892B0] mb-2 font-medium">Incoming Webhook</p>
+                  <p className="text-xs text-[#9CA3AF] mb-2">POST to this URL to trigger the automation:</p>
+                  <code className="text-xs text-[#FFB800] bg-[#FFB800]/5 px-2 py-1 rounded block break-all">/api/webhooks/receive/&lt;auto-id&gt;</code>
+                  <pre className="text-xs text-[#00F0FF]/60 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed mt-2 p-2 bg-[#0C0C18] rounded-lg border border-white/[0.03]">
 {`{
   "event": "webhook.trigger",
   "automationId": "<auto-id>",
-  "timestamp": "${new Date().toISOString()}",
   "payload": { "key": "value" }
 }`}
-                </pre>
-                <p className="text-xs text-[#9CA3AF] mt-2">POST this JSON to <code className="text-[#FFB800]">/api/webhooks/receive/&lt;auto-id&gt;</code></p>
+                  </pre>
+                </div>
+              )}
+
+              {form.triggerType === 'keyword' && (
+                <div className="mt-3 rounded-xl border border-white/5 bg-[#06060B] p-3 space-y-2">
+                  <label className="text-xs text-[#8892B0] font-medium block">Keyword to match</label>
+                  <Input
+                    value={form.keywordValue}
+                    onChange={(e) => setForm({ ...form, keywordValue: e.target.value })}
+                    placeholder="e.g., spent, reminder, alert..."
+                    className="bg-[#0C0C18] border-white/10 text-[#E8E8F0] h-11 text-base"
+                  />
+                </div>
+              )}
+
+              {form.triggerType === 'health_down' && (
+                <div className="mt-3 rounded-xl border border-white/5 bg-[#06060B] p-3 space-y-2">
+                  <label className="text-xs text-[#8892B0] font-medium block">URL to monitor</label>
+                  <Input
+                    type="url"
+                    value={form.healthUrl}
+                    onChange={(e) => setForm({ ...form, healthUrl: e.target.value })}
+                    placeholder="https://your-site.com"
+                    className="bg-[#0C0C18] border-white/10 text-[#E8E8F0] h-11 text-base"
+                  />
+                </div>
+              )}
+
+              {form.triggerType === 'manual' && (
+                <div className="mt-3 rounded-xl border border-white/5 bg-[#06060B] p-3">
+                  <p className="text-xs text-[#9CA3AF]">No configuration needed. You will trigger this manually.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Section 3: DO (Action) */}
+            <div>
+              <label className="text-xs font-medium text-[#8892B0] mb-2.5 block uppercase tracking-wider">Do (Action)</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.entries(ACTION_META) as [AutomationAction, typeof ACTION_META[AutomationAction]][]).map(([key, meta]) => {
+                  const isSelected = form.actionType === key;
+                  const Icon = meta.icon;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setForm({ ...form, actionType: key })}
+                      className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all duration-200 text-left min-h-[44px] ${
+                        isSelected
+                          ? 'border-[#00F0FF]/50 bg-[#00F0FF]/5'
+                          : 'border-white/5 bg-[#06060B] hover:border-white/10'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 flex-shrink-0" style={{ color: isSelected ? '#00F0FF' : '#8892B0' }} />
+                      <div className="min-w-0">
+                        <span className={`text-xs font-medium block ${isSelected ? 'text-[#E8E8F0]' : 'text-[#9CA3AF]'}`}>{meta.label}</span>
+                        <span className="text-[10px] text-[#8892B0] block truncate">{meta.description}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Action config fields */}
+              {(form.actionType === 'telegram-message' || form.actionType === 'whatsapp-message' || form.actionType === 'manychat-broadcast') && (
+                <div className="mt-3 space-y-1.5">
+                  <label className="text-xs text-[#8892B0] font-medium">Message text</label>
+                  <textarea
+                    placeholder="Message to send..."
+                    value={form.actionConfig.message ?? ''}
+                    onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, message: e.target.value } })}
+                    rows={3}
+                    className="w-full p-3 rounded-xl bg-[#06060B] border border-white/10 text-[#E8E8F0] text-base resize-none focus:border-[#00F0FF]/50 focus:outline-none transition-colors"
+                  />
+                </div>
+              )}
+
+              {(form.actionType === 'n8n-webhook' || form.actionType === 'call_api') && (
+                <div className="mt-3 space-y-1.5">
+                  <label className="text-xs text-[#8892B0] font-medium">Webhook URL</label>
+                  <Input
+                    type="url"
+                    placeholder="https://your-webhook-endpoint.com/..."
+                    value={form.webhookUrl}
+                    onChange={(e) => setForm({ ...form, webhookUrl: e.target.value })}
+                    className="bg-[#06060B] border-white/10 text-[#E8E8F0] h-11 text-base"
+                  />
+                  {form.webhookUrl && form.webhookUrl.startsWith('http://') && !form.webhookUrl.startsWith('https://') && (
+                    <p className="text-xs flex items-center gap-1.5 text-[#F59E0B]">
+                      <span className="text-sm">!</span> Using http:// sends data unencrypted. Use https:// for production.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {form.actionType === 'create_reminder' && (
+                <div className="mt-3 space-y-1.5">
+                  <label className="text-xs text-[#8892B0] font-medium">Reminder text</label>
+                  <Input
+                    placeholder="What to remind about..."
+                    value={form.actionConfig.reminder_text ?? ''}
+                    onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, reminder_text: e.target.value } })}
+                    className="bg-[#06060B] border-white/10 text-[#E8E8F0] h-11 text-base"
+                  />
+                </div>
+              )}
+
+              {form.actionType === 'log' && (
+                <div className="mt-3 space-y-1.5">
+                  <label className="text-xs text-[#8892B0] font-medium">Log message</label>
+                  <Input
+                    placeholder="Message to log..."
+                    value={form.actionConfig.message ?? ''}
+                    onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, message: e.target.value } })}
+                    className="bg-[#06060B] border-white/10 text-[#E8E8F0] h-11 text-base"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Section 4: Preview */}
+            <div className="rounded-xl border border-[#00F0FF]/10 bg-[#00F0FF]/[0.02] p-4">
+              <p className="text-xs text-[#8892B0] font-medium mb-2 uppercase tracking-wider">Preview</p>
+              <p className="text-sm text-[#E8E8F0]">
+                <span style={{ color: TRIGGER_META[form.triggerType]?.color || '#9CA3AF' }}>
+                  {form.triggerType === 'time' ? (() => {
+                    const m = form.intervalMinutes;
+                    if (m < 60) return `Every ${m} minutes`;
+                    if (m === 60) return 'Every hour';
+                    if (m === 1440) return 'Every day';
+                    if (m === 10080) return 'Every week';
+                    return `Every ${Math.round(m / 60)} hours`;
+                  })() : TRIGGER_META[form.triggerType]?.label || form.triggerType}
+                </span>
+                <ArrowRight className="w-3.5 h-3.5 inline mx-2 text-[#8892B0]" />
+                <span className="text-[#00F0FF]">{ACTION_META[form.actionType]?.label || form.actionType}</span>
+              </p>
+              {editingId && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDryRun(editingId)}
+                  className="mt-2 text-[#F59E0B] hover:bg-[#F59E0B]/10 min-h-[44px] text-xs"
+                >
+                  <FlaskConical className="w-3.5 h-3.5 mr-1.5" />
+                  Test Dry Run
+                </Button>
+              )}
+            </div>
+
+            {/* Error */}
+            {saveError && (
+              <div className="flex items-center gap-2 text-sm text-[#FF6161] bg-[#FF6161]/5 border border-[#FF6161]/20 rounded-xl px-4 py-2.5">
+                <XCircle className="w-4 h-4 flex-shrink-0" />
+                {saveError}
               </div>
             )}
-            {saveError && (
-              <p className="text-sm text-[#FF6161] mt-2">{saveError}</p>
-            )}
-            <div className="flex gap-3 pt-2">
+
+            {/* Section 5: Save */}
+            <div className="flex gap-3 pt-1">
               <Button
                 variant="outline"
-                onClick={() => { setIsAddDialogOpen(false); resetForm(); }}
-                className="flex-1 border-[#00F0FF]/30 min-h-[44px] press-scale"
+                onClick={() => { setIsDialogOpen(false); resetForm(); }}
+                className="flex-1 border-white/10 hover:bg-white/5 min-h-[44px] press-scale"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={!!actionValidationError}
-                className="flex-1 bg-[#00F0FF] hover:bg-[#00D4B0] min-h-[44px] press-scale"
+                disabled={!!validationError}
+                className="flex-1 bg-[#00F0FF] hover:bg-[#00D4B0] text-[#06060B] font-semibold min-h-[44px] press-scale disabled:opacity-40"
               >
-                {editingId ? 'Save Changes' : 'Create'}
+                {editingId ? 'Save Changes' : 'Create Automation'}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Recent Runs */}
-      <div className="mt-6">
+      {/* ================================================================== */}
+      {/* SECTION 6: RECENT RUNS (global logs)                                */}
+      {/* ================================================================== */}
+      <div className="mt-2">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-[#E8E8F0]" style={{ fontFamily: 'Syne, sans-serif' }}>
             Recent Runs
           </h2>
-          {/* 63.4: Status filter */}
           <select
             value={logsStatusFilter}
             onChange={(e) => setLogsStatusFilter(e.target.value as typeof logsStatusFilter)}
-            className="text-xs px-2 py-1 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] focus:outline-none"
+            className="text-xs px-3 py-2 rounded-lg bg-[#0C0C18] border border-white/10 text-[#9CA3AF] focus:outline-none focus:border-[#00F0FF]/30 min-h-[44px]"
             aria-label="Filter logs by status"
           >
             <option value="">All statuses</option>
@@ -810,24 +1225,26 @@ export function AutomationsPage() {
             <option value="error">Error</option>
           </select>
         </div>
+
         {logs.length === 0 ? (
-          <Card className="border-[#00F0FF]/20">
-            <CardContent className="py-10 text-center">
+          <Card className="bg-[#0C0C18]/80 border border-white/5 rounded-2xl">
+            <CardContent className="py-12 text-center">
               <Clock className="w-10 h-10 text-[#00F0FF]/20 mx-auto mb-3" />
               <p className="text-[#9CA3AF]">No automation runs yet</p>
-              <p className="text-sm text-[#9CA3AF]">Trigger an automation to see its history here</p>
+              <p className="text-sm text-[#8892B0]">Trigger an automation to see its history here</p>
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-[#00F0FF]/20 overflow-hidden">
+          <Card className="bg-[#0C0C18]/80 border border-white/5 rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#00F0FF]/10 bg-[#06060B]">
-                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium">Status</th>
-                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium">Output</th>
-                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium">Duration</th>
-                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium">Time</th>
+                  <tr className="border-b border-white/5 bg-[#06060B]/50">
+                    <th className="text-left px-4 py-3 text-[#8892B0] font-medium text-xs uppercase tracking-wider">Status</th>
+                    <th className="text-left px-4 py-3 text-[#8892B0] font-medium text-xs uppercase tracking-wider hidden sm:table-cell">Code</th>
+                    <th className="text-left px-4 py-3 text-[#8892B0] font-medium text-xs uppercase tracking-wider">Output</th>
+                    <th className="text-left px-4 py-3 text-[#8892B0] font-medium text-xs uppercase tracking-wider hidden md:table-cell">Duration</th>
+                    <th className="text-left px-4 py-3 text-[#8892B0] font-medium text-xs uppercase tracking-wider">Time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -838,9 +1255,9 @@ export function AutomationsPage() {
                     const durationMs = (rawLog.duration_ms as number) ?? log.durationMs ?? 0;
                     const createdAt = (rawLog.created_at as string) ?? log.createdAt ?? '';
                     return (
-                      <tr key={log.id} className="border-b border-[#00F0FF]/10 hover:bg-[#00F0FF]/5 transition-colors">
+                      <tr key={log.id} className="border-b border-white/[0.03] hover:bg-[#00F0FF]/[0.02] transition-colors">
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                             status === 'success'
                               ? 'bg-[#00FF88]/10 text-[#00FF88] border border-[#00FF88]/20'
                               : 'bg-[#FF6161]/10 text-[#FF6161] border border-[#FF6161]/20'
@@ -852,7 +1269,7 @@ export function AutomationsPage() {
                         <td className="px-4 py-3 hidden sm:table-cell">
                           {(() => {
                             const httpCode = parseHttpStatus(output);
-                            if (!httpCode) return <span className="text-[#9CA3AF] text-xs">—</span>;
+                            if (!httpCode) return <span className="text-[#8892B0] text-xs">--</span>;
                             return (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold border ${getHttpStatusBg(httpCode)}`}>
                                 {httpCode}
@@ -860,26 +1277,25 @@ export function AutomationsPage() {
                             );
                           })()}
                         </td>
-                        <td className="px-4 py-3 text-[#9CA3AF] max-w-[200px] text-xs">
-                          {/* 46.5: Pretty-print JSON output if parseable, otherwise truncate */}
+                        <td className="px-4 py-3 text-[#9CA3AF] max-w-[240px] text-xs">
                           {output ? (() => {
                             try {
                               const parsed = JSON.parse(output);
                               return (
-                                <pre className="text-xs text-[#8888AA] p-2 bg-black/20 rounded overflow-auto max-h-24 whitespace-pre-wrap break-all">
+                                <pre className="text-xs text-[#8892B0] p-2 bg-[#06060B]/50 rounded-lg overflow-auto max-h-24 whitespace-pre-wrap break-all">
                                   {JSON.stringify(parsed, null, 2)}
                                 </pre>
                               );
                             } catch {
                               return <span className="truncate block">{output}</span>;
                             }
-                          })() : '—'}
+                          })() : <span className="text-[#8892B0]">--</span>}
                         </td>
-                        <td className="px-4 py-3 text-[#9CA3AF] font-mono text-xs hidden md:table-cell">
-                          {durationMs > 0 ? `${durationMs}ms` : '—'}
+                        <td className="px-4 py-3 text-[#8892B0] font-mono text-xs hidden md:table-cell">
+                          {durationMs > 0 ? `${durationMs}ms` : '--'}
                         </td>
                         <td className="px-4 py-3 text-[#9CA3AF] text-xs whitespace-nowrap">
-                          {createdAt ? new Date(createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                          {createdAt ? fmtRelativeTime(createdAt) : '--'}
                         </td>
                       </tr>
                     );
@@ -887,20 +1303,19 @@ export function AutomationsPage() {
                 </tbody>
               </table>
             </div>
-            {/* 53.7: Load More button for paginated logs */}
             {logsHasMore && (
-              <div className="flex justify-center p-3 border-t border-[#00F0FF]/10">
+              <div className="flex justify-center p-3 border-t border-white/5">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleLoadMoreLogs}
                   disabled={logsLoadingMore}
-                  className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10"
+                  className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px]"
                 >
                   {logsLoadingMore ? (
-                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : (
-                    <Clock className="w-4 h-4 mr-2" />
+                    <ChevronDown className="w-4 h-4 mr-2" />
                   )}
                   Load More Runs
                 </Button>
@@ -909,40 +1324,43 @@ export function AutomationsPage() {
           </Card>
         )}
 
-        {/* 37.4: Dead-letter panel — only shown when there are failures */}
+        {/* Dead-letter panel */}
         {deadLetters.length > 0 && (
-          <Card style={{ background: 'rgba(255,97,97,0.04)', border: '1px solid rgba(255,97,97,0.2)' }}>
+          <Card className="mt-4 bg-[#FF6161]/[0.03] border border-[#FF6161]/20 rounded-2xl">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Bell className="w-4 h-4 text-[#FF6161]" />
-                <span className="text-sm font-semibold text-[#FF6161]">Failed Webhook Deliveries</span>
-                <Badge style={{ background: 'rgba(255,97,97,0.15)', color: '#FF6161', border: '1px solid rgba(255,97,97,0.3)' }}>{deadLetters.length}</Badge>
+                <span className="text-sm font-semibold text-[#FF6161]" style={{ fontFamily: 'Syne, sans-serif' }}>Failed Deliveries</span>
+                <Badge className="bg-[#FF6161]/10 text-[#FF6161] border border-[#FF6161]/20">{deadLetters.length}</Badge>
               </div>
               <div className="space-y-2">
                 {deadLetters.slice(0, 5).map((dl) => {
                   const auto = automations.find((a) => a.id === dl.automation_id);
                   return (
-                    <div key={dl.id} className="flex flex-col gap-0.5 bg-[#0C0C18] rounded-lg px-3 py-2 border border-[#FF6161]/10">
+                    <div key={dl.id} className="flex flex-col gap-1 bg-[#0C0C18] rounded-xl px-4 py-3 border border-[#FF6161]/10">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-medium text-[#E8E8F0] truncate">{auto?.name ?? dl.automation_id.slice(0, 8)}</span>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-xs text-[#9CA3AF] whitespace-nowrap">{new Date(dl.failed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                          {/* 55.6: Retry button */}
-                          <button
+                          <span className="text-xs text-[#8892B0] whitespace-nowrap">
+                            {fmtRelativeTime(new Date(dl.failed_at).toISOString())}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleRetryDeadLetter(dl.id)}
                             disabled={retryingDeadLetterId === dl.id}
-                            aria-label="Retry failed webhook"
-                            className="text-xs px-2 py-0.5 rounded border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 disabled:opacity-50 transition-colors"
+                            className="text-xs text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px] px-3"
                           >
-                            {retryingDeadLetterId === dl.id ? '...' : 'Retry'}
-                          </button>
+                            {retryingDeadLetterId === dl.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                            {retryingDeadLetterId === dl.id ? '' : 'Retry'}
+                          </Button>
                         </div>
                       </div>
                       <span className="text-xs text-[#FF6161] truncate">{dl.last_error ?? dl.error}</span>
                       {dl.retry_count > 0 && (
-                        <span className="text-xs text-amber-400">Retried {dl.retry_count}×</span>
+                        <span className="text-xs text-[#F59E0B]">Retried {dl.retry_count}x</span>
                       )}
-                      <span className="text-xs text-[#9CA3AF] truncate font-mono">{dl.url}</span>
+                      <span className="text-xs text-[#8892B0] truncate font-mono">{dl.url}</span>
                     </div>
                   );
                 })}
