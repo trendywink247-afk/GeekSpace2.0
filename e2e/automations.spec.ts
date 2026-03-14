@@ -23,11 +23,11 @@ test.describe('Automations Page', () => {
     await expect(allTab).toBeVisible();
   });
 
-  test('should show Active and Inactive tabs', async ({ page }) => {
+  test('should show Active and Paused tabs', async ({ page }) => {
     const activeTab = page.getByRole('tab', { name: /^Active$/i }).first();
-    const inactiveTab = page.getByRole('tab', { name: /^Inactive$/i }).first();
+    const pausedTab = page.getByRole('tab', { name: /^Paused$/i }).first();
     await expect(activeTab).toBeVisible();
-    await expect(inactiveTab).toBeVisible();
+    await expect(pausedTab).toBeVisible();
   });
 
   test('should show Recent Runs section', async ({ page }) => {
