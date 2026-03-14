@@ -101,6 +101,24 @@ export function buildHabitCard(habit: { id: number | string; name: string; strea
   };
 }
 
+// ── Multi-Expense Card ───────────────────────────────────────
+
+export function buildMultiExpenseCard(expenses: Array<{ id: number | string; description: string; amount: number; category: string }>, currency = '₹'): TelegramCard {
+  const total = expenses.reduce((s, e) => s + e.amount, 0);
+  const lines = expenses.map(e => `  ${currency}${e.amount} — ${escapeMarkdown(e.description)} (${e.category})`).join('\n');
+  const ids = expenses.map(e => e.id).join(',');
+  return {
+    text: `💸 *${expenses.length} expenses logged*\n${lines}\n\n*Total: ${currency}${total}*`,
+    parse_mode: 'Markdown',
+    reply_markup: {
+      inline_keyboard: [[
+        { text: '✅ All correct', callback_data: `exp_ok:${expenses[0].id}` },
+        { text: '🗑 Delete all', callback_data: `exp_delete_multi:${ids}` },
+      ]],
+    },
+  };
+}
+
 // ── Expense Card ─────────────────────────────────────────────
 
 export function buildExpenseCard(expense: { id: number | string; description: string; amount: number; currency?: string }): TelegramCard {

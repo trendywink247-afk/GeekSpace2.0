@@ -18,7 +18,7 @@ import { runReactLoop } from './react-loop.js';
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
 import { checkKeywordTriggers } from './automations-engine.js';
-import { sendTelegramMessage, sendTelegramPhoto, sendTelegramVideo, sendTelegramTyping } from './telegram.js';
+import { sendTelegramMessage, sendTelegramPhoto, sendTelegramVideo, sendTelegramTyping, sendTelegramButtons } from './telegram.js';
 import { getPersonalityPrompt, getPersonality } from '../prompts/personalities.js';
 import { OPENCLAW_IDENTITY_COMPACT } from '../prompts/openclaw-system.js';
 import { parseActions } from './action-parser.js';
@@ -28,6 +28,7 @@ import { isSearchIntent, tavilySearch } from './tavily.js';
 import { searxngSearch } from './searxng.js';
 import { extractUrl } from './firecrawl.js';
 import { fetchAndExtract, smartSearch } from './web-research.js';
+import { buildHabitCard, buildExpenseCard, buildMultiExpenseCard, buildFocusCard, storeTelegramMessage } from './telegram-cards.js';
 import { addInboxMessage } from './inbox.js';
 import { checkContentSafety } from './content-filter.js';
 import { isLaunchModeRequest, runMultiAgentOrchestration } from './multi-agent-orchestrator.js';
@@ -212,8 +213,14 @@ function hasToolTrigger(message: string): boolean {
 function parseExpenseIntent(message: string): { amount: number; description: string; category: string } | null {
   const lower = message.toLowerCase();
 
-  // Pattern: "spent/paid [currency] NUMBER on/for DESCRIPTION"
-  let match = lower.match(/(?:spent|paid|kharch|kharcha)\s*[$₹€£]?\s*(\d+(?:\.\d+)?)\s*(?:rupay?|rs\.?|rupees?|bucks?|dollars?)?\s*(?:on|for|pe|par|mein|at)\s+(.+)/i);
+  // Pattern: "I/i spent/paid [currency] NUMBER on/for DESCRIPTION"
+  let match = lower.match(/\bi\s+(?:spent|paid)\s*[$₹€£]?\s*(\d+(?:\.\d+)?)\s*(?:rupay?|rs\.?|rupees?|bucks?|dollars?)?\s*(?:on|for|pe|par|mein|at)\s+(.+)/i);
+  if (match) {
+    return { amount: parseFloat(match[1]), description: match[2].trim().slice(0, 100), category: guessCategory(match[2]) };
+  }
+
+  // Pattern: "spent/paid/bought/purchased/ordered [currency] NUMBER on/for DESCRIPTION"
+  match = lower.match(/(?:spent|paid|bought|purchased|ordered|kharch|kharcha)\s*[$₹€£]?\s*(\d+(?:\.\d+)?)\s*(?:rupay?|rs\.?|rupees?|bucks?|dollars?)?\s*(?:on|for|pe|par|mein|at)\s+(.+)/i);
   if (match) {
     return { amount: parseFloat(match[1]), description: match[2].trim().slice(0, 100), category: guessCategory(match[2]) };
   }
@@ -231,6 +238,43 @@ function parseExpenseIntent(message: string): { amount: number; description: str
   }
 
   return null;
+}
+
+// ---- Multi-Expense Parser ----
+// Parses "spent 200 on uber, 500 on zomato, 150 on coffee" into an array
+function parseMultiExpenseIntent(message: string): Array<{ amount: number; description: string; category: string }> | null {
+  const lower = message.toLowerCase();
+  // Must start with a spending verb
+  if (!/\b(spent|paid|bought|purchased|ordered|kharch|kharcha)\b/i.test(lower)) return null;
+
+  const results: Array<{ amount: number; description: string; category: string }> = [];
+
+  // Split by comma, "and", "aur", "+"
+  const parts = lower.split(/\s*(?:,|;|&|(?:\band\b)|(?:\baur\b)|(?:\bplus\b)|\+)\s*/);
+
+  for (const part of parts) {
+    // Pattern: [currency] NUMBER on/for/pe DESCRIPTION
+    const match = part.match(/[$₹€£]?\s*(\d+(?:\.\d+)?)\s*(?:rupay?|rs\.?|rupees?|bucks?|dollars?)?\s*(?:on|for|pe|par|mein|at)\s+(.+)/i);
+    if (match && parseFloat(match[1]) > 0) {
+      results.push({
+        amount: parseFloat(match[1]),
+        description: match[2].trim().slice(0, 100),
+        category: guessCategory(match[2]),
+      });
+      continue;
+    }
+    // Pattern: DESCRIPTION NUMBER (e.g. "zomato 500")
+    const match2 = part.match(/([a-z][a-z\s]{1,30}?)\s+[$₹]?\s*(\d+(?:\.\d+)?)/i);
+    if (match2 && parseFloat(match2[2]) > 0) {
+      results.push({
+        amount: parseFloat(match2[2]),
+        description: match2[1].trim().slice(0, 100),
+        category: guessCategory(match2[1]),
+      });
+    }
+  }
+
+  return results.length >= 2 ? results : null; // only return if 2+ expenses found
 }
 
 function guessCategory(text: string): string {
@@ -276,31 +320,31 @@ function parseReminderIntent(message: string): { text: string; datetime: string 
   if (!/\b(remind|reminder|yaad\s+dila|alert\s+me)\b/i.test(lower)) return null;
 
   // Pattern: "remind me to TASK at/in/on TIME"
-  let match = message.match(/remind\s+me\s+(?:to\s+)?(.+?)\s+(?:at|by|on|around)\s+(.+)/i);
+  let match = lower.match(/remind\s+me\s+(?:to\s+)?(.+?)\s+(?:at|by|on|around)\s+(.+)/i);
   if (match) return { text: match[1].trim(), datetime: match[2].trim() };
 
   // Pattern: "remind me in DURATION to TASK"
-  match = message.match(/remind\s+me\s+in\s+(\d+\s*(?:min(?:ute)?s?|hours?|hrs?|days?))\s+(?:to\s+)?(.+)/i);
+  match = lower.match(/remind\s+me\s+in\s+(\d+\s*(?:min(?:ute)?s?|hours?|hrs?|days?))\s+(?:to\s+)?(.+)/i);
   if (match) return { text: match[2].trim(), datetime: `in ${match[1].trim()}` };
 
   // Pattern: "remind me TASK tomorrow/today"
-  match = message.match(/remind\s+me\s+(?:to\s+)?(.+?)\s+(tomorrow|today|tonight|kal|aaj)\s*(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm|baje)?)?/i);
+  match = lower.match(/remind\s+me\s+(?:to\s+)?(.+?)\s+(tomorrow|today|tonight|kal|aaj)\s*(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm|baje)?)?/i);
   if (match) {
     const timeStr = match[3] ? `${match[2]} at ${match[3]}` : match[2];
     return { text: match[1].trim(), datetime: timeStr.trim() };
   }
 
   // Pattern: "reminder: TASK at TIME" or "reminder TASK at TIME"
-  match = message.match(/reminder[:\s]+(.+?)\s+(?:at|by|on)\s+(.+)/i);
+  match = lower.match(/reminder[:\s]+(.+?)\s+(?:at|by|on)\s+(.+)/i);
   if (match) return { text: match[1].trim(), datetime: match[2].trim() };
 
   // Pattern: "set a reminder for TIME to TASK"
-  match = message.match(/set\s+(?:a\s+)?reminder\s+(?:for\s+)?(.+?)\s+(?:to\s+)(.+)/i);
+  match = lower.match(/set\s+(?:a\s+)?reminder\s+(?:for\s+)?(.+?)\s+(?:to\s+)(.+)/i);
   if (match) return { text: match[2].trim(), datetime: match[1].trim() };
 
   // Hinglish: "yaad dila dena kal/aaj TIME TASK" (time-first order)
   // Note: "dila dena" / "dila do" / "dila na" are two words; "dilao" is one word
-  match = message.match(/yaad\s+dila(?:o|\s+(?:do|dena|na))\s+(kal|aaj|parso|subah|shaam)\s*(\d{1,2}\s*baje)?\s+(.+)/i);
+  match = lower.match(/yaad\s+dila(?:o|\s+(?:do|dena|na))\s+(kal|aaj|parso|subah|shaam)\s*(\d{1,2}\s*baje)?\s+(.+)/i);
   if (match) {
     const whenMap: Record<string, string> = { kal: 'tomorrow', aaj: 'today', parso: 'day after tomorrow', subah: 'tomorrow morning', shaam: 'tomorrow evening' };
     const when = whenMap[match[1].toLowerCase()] || match[1];
@@ -309,7 +353,7 @@ function parseReminderIntent(message: string): { text: string; datetime: string 
   }
 
   // Hinglish: "yaad dila dena TASK kal/aaj TIME baje" (task-first order)
-  match = message.match(/yaad\s+dila(?:o|\s+(?:do|dena|na))\s+(.+?)\s+(kal|aaj|parso|subah|shaam)\s*(\d{1,2}\s*baje)?/i);
+  match = lower.match(/yaad\s+dila(?:o|\s+(?:do|dena|na))\s+(.+?)\s+(kal|aaj|parso|subah|shaam)\s*(\d{1,2}\s*baje)?/i);
   if (match) {
     const whenMap: Record<string, string> = { kal: 'tomorrow', aaj: 'today', parso: 'day after tomorrow', subah: 'tomorrow morning', shaam: 'tomorrow evening' };
     const when = whenMap[match[2].toLowerCase()] || match[2];
@@ -318,17 +362,17 @@ function parseReminderIntent(message: string): { text: string; datetime: string 
   }
 
   // Hinglish: "remind karo/karna TASK TIME"
-  match = message.match(/remind\s+kar(?:o|na)\s+(.+?)\s+(kal|aaj|tomorrow|today|\d{1,2}\s*(?:am|pm|baje)|\d{1,2}:\d{2})/i);
+  match = lower.match(/remind\s+kar(?:o|na)\s+(.+?)\s+(kal|aaj|tomorrow|today|\d{1,2}\s*(?:am|pm|baje)|\d{1,2}:\d{2})/i);
   if (match) return { text: match[1].trim(), datetime: match[2].trim() };
 
   // Hinglish: "remind karo/karna TASK" (no explicit time — default 1h)
-  match = message.match(/remind\s+kar(?:o|na)\s+(.{3,})/i);
+  match = lower.match(/remind\s+kar(?:o|na)\s+(.{3,})/i);
   if (match && !/\b(what|show|list|cancel|delete|how|kya)\b/i.test(match[1])) {
     return { text: match[1].trim(), datetime: 'in 1 hour' };
   }
 
   // Simple: "remind me to TASK" (no time — let server default)
-  match = message.match(/remind\s+me\s+(?:to\s+)?(.{3,})/i);
+  match = lower.match(/remind\s+me\s+(?:to\s+)?(.{3,})/i);
   if (match && !/\b(what|show|list|cancel|delete|how)\b/i.test(match[1])) {
     return { text: match[1].trim(), datetime: 'in 1 hour' };
   }
@@ -1168,6 +1212,35 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     }
   }
 
+  // ── Multi-expense fast-path: "spent 200 on uber, 500 on zomato, 150 on coffee" ──
+  const multiExpenseMatch = parseMultiExpenseIntent(msg.text);
+  if (multiExpenseMatch) {
+    logger.info({ count: multiExpenseMatch.length, userId }, 'Multi-expense fast-path triggered');
+    const loggedExpenses: Array<{ id: number; description: string; amount: number; category: string }> = [];
+    for (const exp of multiExpenseMatch) {
+      const action = { tool: 'track_expense', params: { amount: exp.amount, description: exp.description, category: exp.category } };
+      const result = await executeAction(userId, action);
+      const expId = (result.data as Record<string, unknown>)?.expenseId;
+      if (expId) loggedExpenses.push({ id: Number(expId), description: exp.description, amount: exp.amount, category: exp.category });
+    }
+    const total = multiExpenseMatch.reduce((s, e) => s + e.amount, 0);
+    replyText = `Logged ${multiExpenseMatch.length} expenses totalling ₹${total}`;
+    provider = 'fast-path';
+    model = 'multi-expense-parser';
+    tokensIn = 0; tokensOut = 0; creditCost = 0;
+    logConversation(userId, 'user', msg.text, requestId);
+    logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'multi-expense-fast-path');
+    if (msg.channel === 'telegram' && msg.externalId && loggedExpenses.length > 0) {
+      const card = buildMultiExpenseCard(loggedExpenses);
+      const sent = await sendTelegramButtons(msg.externalId, card.text, card.reply_markup.inline_keyboard);
+      if (sent?.messageId) storeTelegramMessage(userId, msg.externalId, sent.messageId, 'expense', String(loggedExpenses[0].id));
+    } else {
+      await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    }
+    logger.info({ channel: msg.channel, userId, provider, count: multiExpenseMatch.length, total, latencyMs: Date.now() - startTime }, 'Channel message processed (multi-expense fast-path)');
+    return;
+  }
+
   // ── Expense fast-path: parse amount + merchant directly, bypass LLM ──
   const expenseMatch = parseExpenseIntent(msg.text);
   if (expenseMatch) {
@@ -1180,7 +1253,15 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     tokensIn = 0;
     tokensOut = 0;
     creditCost = 0;
-    await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    // Send button card on Telegram, plain text elsewhere
+    const expId = (result.data as Record<string, unknown>)?.expenseId;
+    if (msg.channel === 'telegram' && msg.externalId && expId) {
+      const card = buildExpenseCard({ id: Number(expId), description: expenseMatch.description, amount: expenseMatch.amount });
+      const sent = await sendTelegramButtons(msg.externalId, card.text, card.reply_markup.inline_keyboard);
+      if (sent?.messageId) storeTelegramMessage(userId, msg.externalId, sent.messageId, 'expense', String(expId));
+    } else {
+      await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    }
     logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (expense fast-path)');
     return;
   }
@@ -1197,7 +1278,15 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     tokensIn = 0;
     tokensOut = 0;
     creditCost = 0;
-    await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    // Send button card on Telegram, plain text elsewhere
+    const focData = result.data as Record<string, unknown> | undefined;
+    if (msg.channel === 'telegram' && msg.externalId && focData?.sessionId) {
+      const card = buildFocusCard({ id: Number(focData.sessionId), goal: focusMatch.goal, durationMin: focusMatch.duration_min });
+      const sent = await sendTelegramButtons(msg.externalId, card.text, card.reply_markup.inline_keyboard);
+      if (sent?.messageId) storeTelegramMessage(userId, msg.externalId, sent.messageId, 'focus', String(focData.sessionId));
+    } else {
+      await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    }
     logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (focus fast-path)');
     return;
   }
@@ -1238,7 +1327,15 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     creditCost = 0;
     logConversation(userId, 'user', msg.text, requestId);
     logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'habit-fast-path');
-    await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    // Send button card on Telegram, plain text elsewhere
+    const habData = result.data as Record<string, unknown> | undefined;
+    if (msg.channel === 'telegram' && msg.externalId && habData?.habitId) {
+      const card = buildHabitCard({ id: Number(habData.habitId), name: habitMatch.habitName, streak: Number(habData.streak ?? 0) });
+      const sent = await sendTelegramButtons(msg.externalId, card.text, card.reply_markup.inline_keyboard);
+      if (sent?.messageId) storeTelegramMessage(userId, msg.externalId, sent.messageId, 'habit', String(habData.habitId));
+    } else {
+      await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    }
     logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (habit fast-path)');
     return;
   }

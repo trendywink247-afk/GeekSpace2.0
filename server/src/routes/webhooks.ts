@@ -420,10 +420,22 @@ webhooksRouter.post('/telegram', async (req, res) => {
 
           case 'exp_delete': {
             db.prepare('DELETE FROM expenses WHERE id = ? AND user_id = ?').run(entityId, userId);
-            const quip = await getPersonaResponse(userId, 'expense_delete', {
+            const quipDel = await getPersonaResponse(userId, 'expense_delete', {
               entityType: 'expense', entityTitle: 'expense', alreadyDone: false, persona
             });
-            await editToCompleted('💸 Expense', quip, 'deleted');
+            await editToCompleted('💸 Expense', quipDel, 'deleted');
+            return;
+          }
+
+          case 'exp_delete_multi': {
+            const ids = entityId.split(',').filter(Boolean);
+            for (const id of ids) {
+              db.prepare('DELETE FROM expenses WHERE id = ? AND user_id = ?').run(id.trim(), userId);
+            }
+            const quipMulti = await getPersonaResponse(userId, 'expense_delete', {
+              entityType: 'expense', entityTitle: `${ids.length} expenses`, alreadyDone: false, persona
+            });
+            await editToCompleted(`💸 ${ids.length} expenses`, quipMulti, 'deleted');
             return;
           }
 

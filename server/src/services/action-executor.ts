@@ -1069,6 +1069,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           INSERT INTO focus_sessions (user_id, started_at, duration_min, goal, completed, pomodoro_count)
           VALUES (?, ?, ?, ?, 0, 0)
         `).run(userId, now, durationMin, goal);
+        const sessionId = Number((db.prepare('SELECT last_insert_rowid() as id').get() as { id: number } | undefined)?.id ?? 0);
         // Set a reminder to end the session
         const { parseReminderTime } = await import('./pico-fleet.js');
         const userRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
@@ -1098,7 +1099,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           tool,
           success: true,
           message: `🎯 Focus session started! Goal: "${goal}" — ${durationMin} min timer set.`,
-          data: { goal, durationMin, startedAt: now },
+          data: { sessionId, goal, durationMin, startedAt: now },
           receipt: RECEIPT_TEMPLATES.reminder(`Focus: ${goal}`, `in ${durationMin} min`),
         };
       }
@@ -1418,10 +1419,11 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           }
         }
 
-        db.prepare(`
+        const expenseInsert = db.prepare(`
           INSERT INTO expenses (user_id, amount, category, description, date, currency)
           VALUES (?, ?, ?, ?, ?, ?)
         `).run(userId, amount, category, description, date, currency);
+        const expenseId = expenseInsert.lastInsertRowid;
 
         // Check for expense spike (>2x category average over last 30 days)
         try {
@@ -1465,6 +1467,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         return {
           tool, success: true,
           message: `${icon} Logged ${currency}${amount.toFixed(2)} for ${category}: "${description}"${budgetMsg}`,
+          data: { expenseId: Number(expenseId), description, amount, category },
         };
       }
 
