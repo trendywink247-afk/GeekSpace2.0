@@ -15,6 +15,7 @@ import {
   sendTelegramMessage,
   sendTelegramNotification,
   sendTelegramButtons,
+  editTelegramMessage,
   getBotUsername,
   answerCallbackQuery,
   getTelegramFileUrl,
@@ -43,6 +44,8 @@ import { buildChannelSystemPrompt } from '../services/message-router.js';
 import { db } from '../db/index.js';
 import { cacheGet, cacheSet } from '../services/cache.js';
 import { handleEscalationReply } from '../services/escalation.js';
+import { getPersonaResponse } from '../services/persona-engine.js';
+import { buildSnoozeMenuCard, buildCompletedText } from '../services/telegram-cards.js';
 
 // Extend Express Request to include requestId for pipeline tracing
 interface RequestWithId {
@@ -118,117 +121,356 @@ webhooksRouter.post('/telegram', async (req, res) => {
       const callbackData = update.callback_query.data;
       const callbackChatId = String(update.callback_query.message?.chat?.id);
       const callbackQueryId = update.callback_query.id;
+      const callbackMessageId = update.callback_query.message?.message_id;
 
       if (callbackData && callbackChatId) {
         // Answer the callback query immediately
         await answerCallbackQuery(callbackQueryId);
 
-        // ── Reminder action buttons ──────────────────────────────────────
-        if (callbackData.startsWith('reminder:')) {
-          const [, action, reminderId] = callbackData.split(':');
-          const link = db.prepare(
-            "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
-          ).get(callbackChatId) as { user_id: string } | undefined;
+        // Resolve user from channel link
+        const link = db.prepare(
+          "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+        ).get(callbackChatId) as { user_id: string } | undefined;
 
-          if (link && reminderId) {
-            if (action === 'done') {
-              db.prepare("UPDATE reminders SET completed = 1, completed_at = ? WHERE id = ? AND user_id = ?")
-                .run(Date.now(), reminderId, link.user_id);
-              await sendTelegramMessage(callbackChatId, '✅ Reminder marked as done!');
-            } else if (action === 'snooze') {
-              // Snooze by 1 hour
+        // Get persona for persona-voiced responses
+        let persona = 'weebo';
+        let userId = '';
+        if (link) {
+          userId = link.user_id;
+          const agentConfig = db.prepare('SELECT personality FROM agent_configs WHERE user_id = ?')
+            .get(userId) as { personality: string } | undefined;
+          persona = agentConfig?.personality ?? 'weebo';
+        }
+
+        // Helper: edit original message to completed state (removes buttons, adds quip)
+        async function editToCompleted(originalText: string, quip: string, state: 'done' | 'deleted' | 'snoozed') {
+          const newText = buildCompletedText(originalText, quip, state);
+          if (callbackMessageId) {
+            try {
+              // Edit in-place — removes inline keyboard and shows completed state
+              const edited = await editTelegramMessage(callbackChatId, callbackMessageId, newText, 'Markdown');
+              if (edited) return;
+            } catch {
+              // 48h expired or edit failed — fall through to new message
+            }
+          }
+          await sendTelegramMessage(callbackChatId, newText);
+        }
+
+        // Helper: send snooze sub-menu by editing original message buttons
+        async function showSnoozeMenu(reminderId: string, reminderText: string) {
+          const snoozeCard = buildSnoozeMenuCard(reminderId, reminderText);
+          if (callbackMessageId) {
+            try {
+              const edited = await editTelegramMessage(
+                callbackChatId,
+                callbackMessageId,
+                snoozeCard.text,
+                'Markdown',
+                snoozeCard.reply_markup,
+              );
+              if (edited) return;
+            } catch {
+              // Fall through to new message
+            }
+          }
+          await sendTelegramButtons(callbackChatId, snoozeCard.text, snoozeCard.reply_markup.inline_keyboard);
+        }
+
+        // ────────────────────────────────────────────────────────────────
+        // OLD FORMAT HANDLERS (reminder:done:ID, focus:done, habit:keep:ID)
+        // Kept for backwards compat — old cards still exist in chat history
+        // ────────────────────────────────────────────────────────────────
+
+        if (callbackData.startsWith('reminder:') && link) {
+          const [, oldAction, reminderId] = callbackData.split(':');
+          if (reminderId) {
+            if (oldAction === 'done') {
+              const reminder = db.prepare('SELECT text, completed FROM reminders WHERE id = ? AND user_id = ?')
+                .get(reminderId, userId) as { text: string; completed: number } | undefined;
+              if (reminder) {
+                const alreadyDone = !!reminder.completed;
+                if (!alreadyDone) {
+                  db.prepare("UPDATE reminders SET completed = 1, completed_at = ? WHERE id = ? AND user_id = ?")
+                    .run(Date.now(), reminderId, userId);
+                }
+                const quip = await getPersonaResponse(userId, alreadyDone ? 'already_done' : 'done', {
+                  entityType: 'reminder', entityTitle: reminder.text, alreadyDone, persona
+                });
+                await editToCompleted(`🔔 ${reminder.text}`, quip, 'done');
+              }
+            } else if (oldAction === 'snooze') {
               const reminder = db.prepare("SELECT datetime, text FROM reminders WHERE id = ? AND user_id = ?")
-                .get(reminderId, link.user_id) as { datetime: string; text: string } | undefined;
+                .get(reminderId, userId) as { datetime: string; text: string } | undefined;
               if (reminder) {
                 const snoozedAt = new Date(Date.now() + 3600_000);
                 const newDatetime = snoozedAt.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
-                const newScheduledFor = snoozedAt.getTime();
                 db.prepare("UPDATE reminders SET datetime = ?, scheduled_for = ?, snooze_until = ? WHERE id = ? AND user_id = ?")
-                  .run(newDatetime, newScheduledFor, newScheduledFor, reminderId, link.user_id);
-                db.prepare("INSERT OR IGNORE INTO snooze_log (reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?)")
-                  .run(reminderId, link.user_id, Date.now(), '1h', newDatetime);
-                await sendTelegramMessage(callbackChatId, `💤 Snoozed! "${reminder.text}" will remind you in 1 hour.`);
+                  .run(newDatetime, snoozedAt.getTime(), snoozedAt.getTime(), reminderId, userId);
+                const quip = await getPersonaResponse(userId, 'snooze', {
+                  entityType: 'reminder', entityTitle: reminder.text, alreadyDone: false, snoozeMinutes: 60, persona
+                });
+                await editToCompleted(`🔔 ${reminder.text}`, quip, 'snoozed');
               }
-            } else if (action === 'delete') {
-              db.prepare("DELETE FROM reminders WHERE id = ? AND user_id = ?").run(reminderId, link.user_id);
-              await sendTelegramMessage(callbackChatId, '🗑️ Reminder deleted.');
+            } else if (oldAction === 'delete') {
+              const reminder = db.prepare('SELECT text FROM reminders WHERE id = ? AND user_id = ?')
+                .get(reminderId, userId) as { text: string } | undefined;
+              if (reminder) {
+                // NULL FK references before delete
+                db.prepare("UPDATE inbox_messages SET related_reminder_id = NULL WHERE related_reminder_id = ?").run(reminderId);
+                db.prepare("DELETE FROM reminders WHERE id = ? AND user_id = ?").run(reminderId, userId);
+                const quip = await getPersonaResponse(userId, 'delete', {
+                  entityType: 'reminder', entityTitle: reminder.text, alreadyDone: false, persona
+                });
+                await editToCompleted(`🔔 ${reminder.text}`, quip, 'deleted');
+              }
             }
           }
           return;
         }
 
-        // ── Photo analysis save buttons ──────────────────────────────────
+        // ── Photo analysis save buttons (unchanged) ──────────────────────
         if (callbackData.startsWith('photo:')) {
-          const [, action, encodedContent] = callbackData.split(':');
-          if (action === 'save' && encodedContent) {
-            const link2 = db.prepare(
-              "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
-            ).get(callbackChatId) as { user_id: string } | undefined;
-            if (link2) {
-              const content = decodeURIComponent(encodedContent);
-              db.prepare(`
-                INSERT INTO notes (user_id, title, content, tags, created_at, updated_at)
-                VALUES (?, ?, ?, ?, unixepoch('now')*1000, unixepoch('now')*1000)
-              `).run(link2.user_id, `📸 Photo Analysis`, content, JSON.stringify(['photo', 'telegram']));
-              await sendTelegramMessage(callbackChatId, '✅ Saved as a note!');
-            }
-          } else if (action === 'dismiss') {
+          const [, photoAction, encodedContent] = callbackData.split(':');
+          if (photoAction === 'save' && encodedContent && link) {
+            const content = decodeURIComponent(encodedContent);
+            db.prepare(`
+              INSERT INTO notes (user_id, title, content, tags, created_at, updated_at)
+              VALUES (?, ?, ?, ?, unixepoch('now')*1000, unixepoch('now')*1000)
+            `).run(userId, '📸 Photo Analysis', content, JSON.stringify(['photo', 'telegram']));
+            const quip = await getPersonaResponse(userId, 'note_pin', {
+              entityType: 'note', entityTitle: 'Photo Analysis', alreadyDone: false, persona
+            });
+            await sendTelegramMessage(callbackChatId, quip);
+          } else if (photoAction === 'dismiss') {
             await sendTelegramMessage(callbackChatId, 'OK, not saved.');
           }
           return;
         }
 
-        // ── Focus session buttons ────────────────────────────────────────
-        if (callbackData.startsWith('focus:')) {
-          const [, action] = callbackData.split(':');
-          const link = db.prepare(
-            "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
-          ).get(callbackChatId) as { user_id: string } | undefined;
+        // ── Focus session buttons (old format) ──────────────────────────
+        if (callbackData.startsWith('focus:') && link) {
+          const [, focusAction] = callbackData.split(':');
+          if (focusAction === 'done') {
+            const session = db.prepare(
+              "SELECT id, goal FROM focus_sessions WHERE user_id = ? AND completed = 0 ORDER BY started_at DESC LIMIT 1"
+            ).get(userId) as { id: number; goal: string } | undefined;
+            if (session) {
+              db.prepare("UPDATE focus_sessions SET completed = 1, ended_at = ? WHERE id = ?")
+                .run(Date.now(), session.id);
+              const quip = await getPersonaResponse(userId, 'focus_end', {
+                entityType: 'focus', entityTitle: session.goal || 'focus session', alreadyDone: false, persona
+              });
+              await editToCompleted(`🎯 ${session.goal || 'Focus session'}`, quip, 'done');
+            }
+          } else if (focusAction === 'pause') {
+            await sendTelegramMessage(callbackChatId, '⏸️ Session paused. Type "resume focus" when ready.');
+          }
+          return;
+        }
 
-          if (link) {
-            if (action === 'done') {
-              // Mark the most recent active focus session as completed
-              const session = db.prepare(
-                "SELECT id FROM focus_sessions WHERE user_id = ? AND completed = 0 ORDER BY started_at DESC LIMIT 1"
-              ).get(link.user_id) as { id: number } | undefined;
-              if (session) {
-                db.prepare("UPDATE focus_sessions SET completed = 1, ended_at = ? WHERE id = ?")
-                  .run(Date.now(), session.id);
+        // ── Habit coach callbacks (old format) ──────────────────────────
+        if (callbackData.startsWith('habit:') && link) {
+          const parts = callbackData.split(':');
+          const habitAction = parts[1];
+          const habitId = parts[parts.length - 1];
+          if (habitId) {
+            const habit = db.prepare('SELECT name, current_streak FROM habits WHERE id = ? AND user_id = ?')
+              .get(habitId, userId) as { name: string; current_streak: number } | undefined;
+            if (habit) {
+              if (habitAction === 'keep') {
+                const quip = await getPersonaResponse(userId, 'habit_logged', {
+                  entityType: 'habit', entityTitle: habit.name, alreadyDone: false, streakCount: habit.current_streak, persona
+                });
+                await sendTelegramMessage(callbackChatId, quip);
+              } else if (habitAction === 'reschedule') {
+                const timeSlot = parts[2];
+                const newTime = timeSlot === 'evening' ? '20:00' : '09:00';
+                db.prepare("UPDATE habits SET reminder_time = ? WHERE id = ? AND user_id = ?")
+                  .run(newTime, habitId, userId);
+                await sendTelegramMessage(callbackChatId, `Done! Moved to ${timeSlot} (${newTime}). See you then 🌙`);
+              } else if (habitAction === 'skip_week') {
+                const skipUntil = Math.floor(Date.now() / 1000) + 604800;
+                db.prepare("UPDATE habits SET skip_until = ? WHERE id = ? AND user_id = ?")
+                  .run(skipUntil, habitId, userId);
+                const quip = await getPersonaResponse(userId, 'habit_skip', {
+                  entityType: 'habit', entityTitle: habit.name, alreadyDone: false, streakCount: habit.current_streak, persona
+                });
+                await sendTelegramMessage(callbackChatId, quip);
               }
-              await sendTelegramMessage(callbackChatId, '🎉 Focus session complete! Great work.');
-            } else if (action === 'pause') {
-              await sendTelegramMessage(callbackChatId, '⏸️ Session paused. Take a short break — type "resume focus" when ready.');
             }
           }
           return;
         }
 
-        // ── Habit coach callbacks ──────────────────────────────────────────────
-        if (callbackData.startsWith('habit:')) {
-          const parts = callbackData.split(':');
-          const action = parts[1]; // keep | reschedule | skip_week
-          const habitId = parts[parts.length - 1];
-          const habitLink = db.prepare(
-            "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
-          ).get(callbackChatId) as { user_id: string } | undefined;
+        // ────────────────────────────────────────────────────────────────
+        // NEW FORMAT HANDLERS (rem_done:ID, hab_logged:ID, exp_ok:ID, etc.)
+        // ────────────────────────────────────────────────────────────────
 
-          if (habitLink && habitId) {
-            if (action === 'keep') {
-              await sendTelegramMessage(callbackChatId, "That's the spirit! I'll keep cheering you on 🎯");
-            } else if (action === 'reschedule') {
-              const timeSlot = parts[2]; // 'evening'
-              const newTime = timeSlot === 'evening' ? '20:00' : '09:00';
-              db.prepare("UPDATE habits SET reminder_time = ? WHERE id = ? AND user_id = ?")
-                .run(newTime, habitId, habitLink.user_id);
-              await sendTelegramMessage(callbackChatId, `Done! Moved to ${timeSlot} (${newTime}). See you then 🌙`);
-            } else if (action === 'skip_week') {
-              const skipUntil = Math.floor(Date.now() / 1000) + 604800; // +7 days
-              db.prepare("UPDATE habits SET skip_until = ? WHERE id = ? AND user_id = ?")
-                .run(skipUntil, habitId, habitLink.user_id);
-              await sendTelegramMessage(callbackChatId, "No worries! Taking a week off. I'll check back in 7 days 🙏");
-            }
+        const newParts = callbackData.split(':');
+        const action = newParts[0];
+        const entityId = newParts[1] || '';
+        const extra = newParts[2];
+
+        // Skip new-format handling if user not linked
+        if (!link) {
+          // Try onboarding callback as last resort
+          const handled = await handleOnboardingCallback(callbackChatId, callbackData);
+          if (!handled) {
+            logger.info({ callbackData, chatId: callbackChatId }, 'Unhandled callback query (no user link)');
           }
           return;
+        }
+
+        switch (action) {
+          case 'rem_done': {
+            const reminder = db.prepare('SELECT text, completed FROM reminders WHERE id = ? AND user_id = ?')
+              .get(entityId, userId) as { text: string; completed: number } | undefined;
+            if (!reminder) return;
+            const alreadyDone = !!reminder.completed;
+            if (!alreadyDone) {
+              db.prepare("UPDATE reminders SET completed = 1, completed_at = ? WHERE id = ? AND user_id = ?")
+                .run(Date.now(), entityId, userId);
+            }
+            const quip = await getPersonaResponse(userId, alreadyDone ? 'already_done' : 'done', {
+              entityType: 'reminder', entityTitle: reminder.text, alreadyDone, persona
+            });
+            await editToCompleted(`🔔 ${reminder.text}`, quip, 'done');
+            return;
+          }
+
+          case 'rem_delete': {
+            const reminder = db.prepare('SELECT text FROM reminders WHERE id = ? AND user_id = ?')
+              .get(entityId, userId) as { text: string } | undefined;
+            if (!reminder) return;
+            db.prepare("UPDATE inbox_messages SET related_reminder_id = NULL WHERE related_reminder_id = ?").run(entityId);
+            db.prepare("DELETE FROM reminders WHERE id = ? AND user_id = ?").run(entityId, userId);
+            const quip = await getPersonaResponse(userId, 'delete', {
+              entityType: 'reminder', entityTitle: reminder.text, alreadyDone: false, persona
+            });
+            await editToCompleted(`🔔 ${reminder.text}`, quip, 'deleted');
+            return;
+          }
+
+          case 'rem_snooze': {
+            const reminder = db.prepare("SELECT text FROM reminders WHERE id = ? AND user_id = ?")
+              .get(entityId, userId) as { text: string } | undefined;
+            if (!reminder) return;
+            await showSnoozeMenu(entityId, reminder.text);
+            return;
+          }
+
+          case 'rem_snooze_confirm': {
+            const minutes = parseInt(extra || '60', 10);
+            const reminder = db.prepare("SELECT text, datetime FROM reminders WHERE id = ? AND user_id = ?")
+              .get(entityId, userId) as { text: string; datetime: string } | undefined;
+            if (!reminder) return;
+            const snoozedAt = new Date(Date.now() + minutes * 60 * 1000);
+            const newDatetime = snoozedAt.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+            db.prepare("UPDATE reminders SET datetime = ?, scheduled_for = ?, snooze_until = ? WHERE id = ? AND user_id = ?")
+              .run(newDatetime, snoozedAt.getTime(), snoozedAt.getTime(), entityId, userId);
+            const quip = await getPersonaResponse(userId, 'snooze', {
+              entityType: 'reminder', entityTitle: reminder.text, alreadyDone: false, snoozeMinutes: minutes, persona
+            });
+            await editToCompleted(`🔔 ${reminder.text}`, quip, 'snoozed');
+            return;
+          }
+
+          case 'hab_logged': {
+            const habit = db.prepare('SELECT id, name, current_streak, longest_streak FROM habits WHERE id = ? AND user_id = ?')
+              .get(entityId, userId) as { id: number; name: string; current_streak: number; longest_streak: number } | undefined;
+            if (!habit) return;
+            let alreadyLogged = false;
+            let streak = habit.current_streak || 0;
+            try {
+              db.prepare('INSERT INTO habit_logs (habit_id, user_id, logged_at) VALUES (?, ?, ?)')
+                .run(habit.id, userId, Date.now());
+              streak = (habit.current_streak || 0) + 1;
+              const longest = Math.max(streak, habit.longest_streak || 0);
+              db.prepare('UPDATE habits SET current_streak = ?, longest_streak = ? WHERE id = ?')
+                .run(streak, longest, habit.id);
+            } catch {
+              alreadyLogged = true;
+            }
+            const quip = await getPersonaResponse(userId, alreadyLogged ? 'already_done' : 'habit_logged', {
+              entityType: 'habit', entityTitle: habit.name, alreadyDone: alreadyLogged, streakCount: streak, persona
+            });
+            await editToCompleted(`💪 ${habit.name}`, quip, 'done');
+            return;
+          }
+
+          case 'hab_skip': {
+            const habit = db.prepare('SELECT name, current_streak FROM habits WHERE id = ? AND user_id = ?')
+              .get(entityId, userId) as { name: string; current_streak: number } | undefined;
+            if (!habit) return;
+            const quip = await getPersonaResponse(userId, 'habit_skip', {
+              entityType: 'habit', entityTitle: habit.name, alreadyDone: false, streakCount: habit.current_streak, persona
+            });
+            await editToCompleted(`💪 ${habit.name}`, quip, 'deleted');
+            return;
+          }
+
+          case 'exp_ok': {
+            const quip = await getPersonaResponse(userId, 'expense_ok', {
+              entityType: 'expense', entityTitle: 'expense', alreadyDone: false, persona
+            });
+            await editToCompleted('💸 Expense', quip, 'done');
+            return;
+          }
+
+          case 'exp_delete': {
+            db.prepare('DELETE FROM expenses WHERE id = ? AND user_id = ?').run(entityId, userId);
+            const quip = await getPersonaResponse(userId, 'expense_delete', {
+              entityType: 'expense', entityTitle: 'expense', alreadyDone: false, persona
+            });
+            await editToCompleted('💸 Expense', quip, 'deleted');
+            return;
+          }
+
+          case 'note_pin': {
+            db.prepare('UPDATE notes SET pinned = 1 WHERE id = ? AND user_id = ?').run(entityId, userId);
+            const quip = await getPersonaResponse(userId, 'note_pin', {
+              entityType: 'note', entityTitle: 'note', alreadyDone: false, persona
+            });
+            await editToCompleted('📝 Note', quip, 'done');
+            return;
+          }
+
+          case 'note_delete': {
+            db.prepare('DELETE FROM notes WHERE id = ? AND user_id = ?').run(entityId, userId);
+            const quip = await getPersonaResponse(userId, 'note_delete', {
+              entityType: 'note', entityTitle: 'note', alreadyDone: false, persona
+            });
+            await editToCompleted('📝 Note', quip, 'deleted');
+            return;
+          }
+
+          case 'foc_end': {
+            const session = db.prepare(
+              "SELECT id, goal FROM focus_sessions WHERE user_id = ? AND completed = 0 ORDER BY started_at DESC LIMIT 1"
+            ).get(userId) as { id: number; goal: string } | undefined;
+            if (session) {
+              db.prepare("UPDATE focus_sessions SET completed = 1, ended_at = ? WHERE id = ?")
+                .run(Date.now(), session.id);
+              const quip = await getPersonaResponse(userId, 'focus_end', {
+                entityType: 'focus', entityTitle: session.goal || 'focus', alreadyDone: false, persona
+              });
+              await editToCompleted(`🎯 ${session.goal || 'Focus'}`, quip, 'done');
+            }
+            return;
+          }
+
+          case 'foc_extend': {
+            const mins = parseInt(extra || '15', 10);
+            const quip = await getPersonaResponse(userId, 'focus_extend', {
+              entityType: 'focus', entityTitle: 'focus', alreadyDone: false, snoozeMinutes: mins, persona
+            });
+            await sendTelegramMessage(callbackChatId, quip);
+            return;
+          }
+
+          default:
+            break;
         }
 
         // Try to handle as onboarding callback

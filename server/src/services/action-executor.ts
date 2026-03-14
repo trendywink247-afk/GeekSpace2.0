@@ -76,6 +76,7 @@ export interface ActionResult {
   videoUrl?: string;  // Set by generate_video action
   data?: Record<string, unknown>;
   receipt?: ReceiptItem; // Visual confirmation of action taken
+  cardSent?: boolean;    // True when a Telegram inline card was sent — caller should skip duplicate text
 }
 
 // ── Portfolio cache helper ───────────────────────────────────
@@ -506,6 +507,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           message: `Reminder set: "${text}"${dueAt ? ` at ${dueAt}` : ''}${recurMsg}`,
           data: { reminderId, text, datetime: dueAt, channel, recurrence },
           receipt: RECEIPT_TEMPLATES.reminder(text, dueAt || 'soon'),
+          cardSent: !!tgLink,  // if card was sent via Telegram, skip duplicate text
         };
       }
 

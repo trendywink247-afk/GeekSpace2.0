@@ -1011,6 +1011,23 @@ try {
   `);
 } catch { /* table already exists */ }
 
+// Persona button system: store Telegram message_ids for card editing
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS telegram_messages (
+    id           TEXT PRIMARY KEY,
+    user_id      TEXT NOT NULL,
+    chat_id      TEXT NOT NULL,
+    message_id   INTEGER NOT NULL,
+    entity_type  TEXT NOT NULL,
+    entity_id    TEXT NOT NULL,
+    card_state   TEXT NOT NULL DEFAULT 'active',
+    created_at   INTEGER NOT NULL
+  )
+`).run();
+
+try { db.prepare('CREATE INDEX IF NOT EXISTS idx_tgmsg_entity ON telegram_messages(entity_type, entity_id)').run(); } catch { /* exists */ }
+try { db.prepare('CREATE INDEX IF NOT EXISTS idx_tgmsg_user ON telegram_messages(user_id, chat_id)').run(); } catch { /* exists */ }
+
 
 // ── Plan definitions ────────────────────────────────────────
 

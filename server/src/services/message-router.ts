@@ -1216,7 +1216,10 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     creditCost = 0;
     logConversation(userId, 'user', msg.text, requestId);
     logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'reminder-fast-path');
-    await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    // Skip duplicate text if an inline card was already sent via Telegram
+    if (!(result.cardSent && msg.channel === 'telegram')) {
+      await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    }
     logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (reminder fast-path)');
     return;
   }

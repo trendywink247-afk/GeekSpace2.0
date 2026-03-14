@@ -220,6 +220,7 @@ export async function editTelegramMessage(
   messageId: number,
   text: string,
   parseMode: 'Markdown' | 'HTML' = 'Markdown',
+  replyMarkup?: { inline_keyboard: Array<Array<{ text: string; callback_data: string }>> },
 ): Promise<boolean> {
   if (!text?.trim()) return false;
 
@@ -229,6 +230,9 @@ export async function editTelegramMessage(
     text,
     parse_mode: parseMode,
   };
+  if (replyMarkup) {
+    body.reply_markup = replyMarkup;
+  }
 
   try {
     const res = await fetch(`${TELEGRAM_API}/editMessageText`, {
