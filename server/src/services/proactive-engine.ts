@@ -566,6 +566,21 @@ export async function initProactiveEngine(): Promise<void> {
     registerHandler('morning_brief', async (job) => {
       if (!isTypeEnabled(job.userId, 'daily_briefing') || isThrottled(job.userId)) return;
       await dailyBriefing(job.userId);
+
+      // Schedule pre-meeting briefs for today's calendar events
+      try {
+        const events = getTodayEvents(job.userId);
+        for (const evt of events) {
+          const briefTime = evt.start_time - 15 * 60_000; // 15 min before
+          if (briefTime > Date.now()) {
+            scheduleJob(job.userId, 'pre_meeting_brief', briefTime,
+              { title: evt.title, startTime: evt.start_time },
+              { dedupeKey: `pre_meeting:${evt.title}:${evt.start_time}` }
+            );
+          }
+        }
+      } catch { /* calendar not connected */ }
+
       // Reschedule for tomorrow
       const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
       scheduleRecurringDaily(job.userId, 'morning_brief', 8, tz);
@@ -625,6 +640,40 @@ export async function initProactiveEngine(): Promise<void> {
         scheduleJob(monitor.user_id, 'page_monitor', Date.now() + monitor.frequency_hours * 3600000, { monitorId: monId }, { dedupeKey: `pagemon:${monId}` });
       } catch (err) {
         logger.warn({ err, monitorId: monId }, 'Page monitor check failed');
+      }
+    });
+
+    registerHandler('pre_meeting_brief', async (job) => {
+      const eventTitle = job.payload.title as string;
+      const eventTime = job.payload.startTime as number;
+
+      // Get related memories/entities
+      let contextLines = '';
+      try {
+        const { recallEntity } = await import('./graph-memory.js');
+        // Try to find entities matching attendee names from the event title
+        const words = eventTitle.split(/\s+/).filter(w => w.length > 2 && /^[A-Z]/.test(w));
+        for (const word of words) {
+          const entity = recallEntity(job.userId, word);
+          if (entity) {
+            contextLines += `\n\u{1F4CC} About ${entity.entity.name}: mentioned ${entity.mentions} times`;
+            if (entity.relations.length > 0) {
+              contextLines += ` (connected to ${entity.relations.map((r: any) => r.related_name).join(', ')})`;
+            }
+          }
+        }
+      } catch { /* graph memory not available */ }
+
+      const timeStr = new Date(eventTime).toLocaleTimeString('en-IN', {
+        hour: '2-digit', minute: '2-digit', hour12: true,
+        timeZone: (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as any)?.timezone || 'Asia/Kolkata'
+      });
+
+      const msg = `\u{1F4C5} *${eventTitle}* is in 15 minutes (${timeStr})${contextLines}\n\nAnything you want to prepare?`;
+
+      if (!isThrottled(job.userId)) {
+        await sendViaTelegram(job.userId, msg);
+        recordProactiveMessage(job.userId, 'daily_briefing', msg);
       }
     });
 

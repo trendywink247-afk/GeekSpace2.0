@@ -124,6 +124,27 @@ export async function assembleMorningBrief(userId: string): Promise<{
     sections.push(expLine);
   }
 
+  // 8. Gmail inbox summary (if connected)
+  try {
+    const gmailToken = db.prepare('SELECT google_gmail_token FROM users WHERE id = ?').get(userId) as { google_gmail_token: string | null } | undefined;
+    if (gmailToken?.google_gmail_token) {
+      const unreadCount = (db.prepare(
+        'SELECT COUNT(*) as c FROM gmail_messages WHERE user_id = ? AND synced_at >= ?'
+      ).get(userId, Date.now() - 24 * 3600_000) as { c: number })?.c ?? 0;
+
+      if (unreadCount > 0) {
+        // Get top 3 most recent
+        const recent = db.prepare(`
+          SELECT sender, subject FROM gmail_messages
+          WHERE user_id = ? ORDER BY synced_at DESC LIMIT 3
+        `).all(userId) as Array<{ sender: string; subject: string }>;
+
+        const lines = recent.map(m => `  \u2022 ${m.sender?.split('<')[0]?.trim() || 'Unknown'}: ${m.subject?.slice(0, 50) || '(no subject)'}`);
+        sections.push(`\n\u{1F4E7} *Inbox:* ${unreadCount} new email${unreadCount > 1 ? 's' : ''}\n${lines.join('\n')}`);
+      }
+    }
+  } catch { /* Gmail not connected — skip */ }
+
   if (recentMemory) {
     sections.push(`\n\u{1F9E0} I remember: ${recentMemory.key} \u2014 ${recentMemory.value.slice(0, 80)}`);
   }

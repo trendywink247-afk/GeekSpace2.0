@@ -14,7 +14,7 @@ export type ScheduledJobType =
   | 'morning_brief' | 'overdue_alert' | 'idle_checkin'
   | 'habit_nudge' | 'weekly_report' | 'reminder_preview'
   | 'streak_celebration' | 'expense_alert'
-  | 'page_monitor' | 'custom';
+  | 'page_monitor' | 'pre_meeting_brief' | 'custom';
 
 export interface ScheduledJob {
   id: string;

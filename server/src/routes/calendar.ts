@@ -12,7 +12,7 @@ import { getOAuth2Client, syncUserCalendar, getUpcomingEvents } from "../service
 
 const router = Router();
 
-const CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
+const CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar.events"];
 
 // GET /api/calendar/status -- check connection status
 router.get("/status", requireAuth, (req, res) => {

@@ -1628,6 +1628,64 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         return { tool, success: true, message: parts.join('\n') };
       }
 
+      // ── check_calendar ────────────────────────────────────────
+      case 'check_calendar': {
+        const days = (params.days as number) || 7;
+        try {
+          const { getUpcomingEvents } = await import('./calendar-sync.js');
+          const events = getUpcomingEvents(userId, days);
+          if (!events || events.length === 0) return { tool, success: true, message: 'No upcoming events found.' };
+
+          const lines = events.map((e: any) => {
+            const date = new Date(e.start_time).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+            const time = new Date(e.start_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            return `\u2022 ${e.title} \u2014 ${date} at ${time}`;
+          });
+          return { tool, success: true, message: `\u{1F4C5} Upcoming events (${days} days):\n${lines.join('\n')}` };
+        } catch {
+          return { tool, success: true, message: 'Calendar not connected. Connect via /dashboard/calendar.' };
+        }
+      }
+
+      // ── create_calendar_event ──────────────────────────────────
+      case 'create_calendar_event': {
+        const title = params.title as string;
+        const startTime = params.start_time as string;
+        const duration = (params.duration_minutes as number) || 60;
+        const attendees = params.attendees as string[] | undefined;
+        const location = params.location as string | undefined;
+        if (!title || !startTime) return { tool, success: false, message: 'Need a title and start time.' };
+
+        try {
+          const { createCalendarEvent } = await import('./calendar-sync.js');
+          const result = await createCalendarEvent(userId, title, startTime, duration, attendees, location);
+          if (result.success) {
+            return { tool, success: true, message: `\u{1F4C5} Event created: "${title}" at ${new Date(startTime).toLocaleString('en-IN')}` };
+          }
+          return { tool, success: false, message: `Failed to create event: ${result.error}` };
+        } catch {
+          return { tool, success: false, message: 'Calendar not connected.' };
+        }
+      }
+
+      // ── read_inbox ─────────────────────────────────────────────
+      case 'read_inbox': {
+        const limit = (params.limit as number) || 5;
+        try {
+          const { getGmailMessages } = await import('./gmail-sync.js');
+          const messages = getGmailMessages(userId, limit);
+          if (!messages || messages.length === 0) return { tool, success: true, message: 'No new emails.' };
+
+          const lines = messages.map((m: any, i: number) => {
+            const sender = m.sender?.split('<')[0]?.trim() || 'Unknown';
+            return `${i + 1}. ${sender}: ${m.subject || '(no subject)'}`;
+          });
+          return { tool, success: true, message: `\u{1F4E7} Inbox (${messages.length} messages):\n${lines.join('\n')}` };
+        } catch {
+          return { tool, success: true, message: 'Gmail not connected. Connect via /dashboard/gmail.' };
+        }
+      }
+
       // ── search_memory ─────────────────────────────────────────
       case 'search_memory': {
         const query = (params.query as string)?.trim();

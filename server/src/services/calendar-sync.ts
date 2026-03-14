@@ -164,6 +164,54 @@ export function getUpcomingEvents(userId: string, days = 7): Array<{ id: number;
   } catch { return []; }
 }
 
+export async function createCalendarEvent(
+  userId: string,
+  title: string,
+  startTime: string | Date,
+  durationMinutes: number = 60,
+  attendees?: string[],
+  location?: string
+): Promise<{ success: boolean; eventId?: string; error?: string }> {
+  try {
+    const token = getUserCalendarToken(userId);
+    if (!token) return { success: false, error: 'Calendar not connected' };
+
+    const auth = getOAuth2Client(JSON.stringify(token));
+    if (!auth) return { success: false, error: 'OAuth client unavailable' };
+
+    const calendar = google.calendar({ version: 'v3', auth });
+
+    const start = new Date(startTime);
+    const end = new Date(start.getTime() + durationMinutes * 60_000);
+
+    const event: calendar_v3.Schema$Event = {
+      summary: title,
+      start: { dateTime: start.toISOString() },
+      end: { dateTime: end.toISOString() },
+    };
+    if (location) event.location = location;
+    if (attendees?.length) {
+      event.attendees = attendees.map(email => ({ email }));
+    }
+
+    const res = await calendar.events.insert({
+      calendarId: 'primary',
+      requestBody: event,
+    });
+
+    // Also store locally
+    const gcalEventId = res.data.id || '';
+    db.prepare(`
+      INSERT OR REPLACE INTO calendar_events (user_id, gcal_event_id, title, start_time, end_time, synced_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(userId, gcalEventId, title, start.getTime(), end.getTime(), Date.now());
+
+    return { success: true, eventId: gcalEventId };
+  } catch (err) {
+    return { success: false, error: (err as Error).message?.slice(0, 100) };
+  }
+}
+
 let calendarSyncTimer: ReturnType<typeof setInterval> | null = null;
 
 export function startCalendarSyncScheduler(): void {
