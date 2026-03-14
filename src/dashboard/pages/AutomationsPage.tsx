@@ -546,8 +546,8 @@ export function AutomationsPage() {
       <div className="space-y-4">
         {filtered.length > 0 ? (
           filtered.map((auto) => {
-            const TriggerIcon = triggerIcons[auto.triggerType];
-            const ActionIcon = actionIcons[auto.actionType];
+            const TriggerIcon = triggerIcons[auto.triggerType] || Zap;
+            const ActionIcon = actionIcons[auto.actionType] || Zap;
             const triggerColor = triggerColors[auto.triggerType];
             return (
               <Card
