@@ -24,7 +24,7 @@ interface ComponentStatus {
   ollama: string;
   openrouter: string;
   edith: string;
-  picoclaw: string;
+  weebo: string;
   bridge: string;
   telegram: string;
   n8n: string;
@@ -78,7 +78,7 @@ const componentIcons: Record<string, typeof Database> = {
   ollama: Cpu,
   openrouter: Wifi,
   edith: Server,
-  picoclaw: Zap,
+  weebo: Zap,
   bridge: ArrowUpRight,
   telegram: Send,
   n8n: RefreshCw,
@@ -89,7 +89,7 @@ const componentLabels: Record<string, string> = {
   ollama: 'Local Engine',
   openrouter: 'Cloud Engine',
   edith: 'Premium Engine',
-  picoclaw: 'Weebo Engine',
+  weebo: 'Weebo Engine',
   bridge: 'Bridge',
   telegram: 'Telegram',
   n8n: 'n8n Automations',

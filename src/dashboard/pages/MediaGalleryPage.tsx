@@ -15,7 +15,7 @@ export function MediaGalleryPage() {
     const loadMedia = () => {
       setIsLoading(true);
       try {
-        const stored = localStorage.getItem('geekspace-generated-media');
+        const stored = localStorage.getItem('agentin-generated-media');
         if (stored) {
           try { setItems(JSON.parse(stored)); } catch { /* corrupted cache — ignore */ }
         }
@@ -30,7 +30,7 @@ export function MediaGalleryPage() {
   const handleDelete = (id: string) => {
     const updated = items.filter((item) => item.id !== id);
     setItems(updated);
-    localStorage.setItem('geekspace-generated-media', JSON.stringify(updated));
+    localStorage.setItem('agentin-generated-media', JSON.stringify(updated));
   };
 
   const handleFavorite = (id: string, isFavorite: boolean) => {
@@ -38,7 +38,7 @@ export function MediaGalleryPage() {
       item.id === id ? { ...item, isFavorite } : item
     );
     setItems(updated);
-    localStorage.setItem('geekspace-generated-media', JSON.stringify(updated));
+    localStorage.setItem('agentin-generated-media', JSON.stringify(updated));
   };
 
   const handleDownload = async (item: MediaItem) => {

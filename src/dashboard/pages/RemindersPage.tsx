@@ -66,7 +66,7 @@ export function RemindersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   // 60.5: persist filters to localStorage
-  const LS_KEY = 'geekspace:reminders:filters';
+  const LS_KEY = 'agentin:reminders:filters';
   const loadFilters = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; } };
   const savedFilters = loadFilters();
   const [filter, setFilterRaw] = useState<'all' | 'active' | 'completed'>(savedFilters.filter ?? 'all');

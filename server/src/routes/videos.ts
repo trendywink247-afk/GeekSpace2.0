@@ -194,9 +194,16 @@ videosRouter.post('/generate', requireAuth, async (req: AuthRequest, res) => {
         : selectedModel;
 
       const orResult = await callOpenRouterVideo(prompt, orModel, w, h, dur);
+      if (!orResult.success) {
+        return res.status(502).json({
+          error: orResult.error || 'Video generation is currently unavailable in your region. No credits were charged.',
+          code: 'VIDEO_GENERATION_UNAVAILABLE',
+        });
+      }
       videoUrl = orResult.url;
       estimatedTime = orResult.estimatedTime || 30;
 
+      // Deduct credits AFTER successful generation only
       if (!orModel.includes(':free')) {
         db.prepare(`
           UPDATE subscriptions
@@ -210,11 +217,16 @@ videosRouter.post('/generate', requireAuth, async (req: AuthRequest, res) => {
       const enhancedPrompt = await enhanceVideoPromptWithKimi(prompt);
       const result = await generateVideo(enhancedPrompt, { width: w, height: h, duration: dur });
       if (!result.success) {
-        return res.status(500).json({ error: result.error || 'Premium video generation failed' });
+        // No credits deducted — generation failed before any charge
+        return res.status(502).json({
+          error: result.error || 'Premium video generation is currently unavailable. No credits were charged.',
+          code: 'VIDEO_GENERATION_UNAVAILABLE',
+        });
       }
       videoUrl = result.url;
       estimatedTime = result.estimatedTime || 30;
 
+      // Deduct credits AFTER successful generation only
       db.prepare(`
         UPDATE subscriptions
         SET credits_remaining = MAX(0, credits_remaining - 25),

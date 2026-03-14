@@ -2045,3 +2045,50 @@ db.prepare(`
   )
 `).run();
 try { db.prepare('CREATE INDEX IF NOT EXISTS idx_relation_from ON memory_relations(from_entity_id)').run(); } catch { /* exists */ }
+
+// ── Agentin Docs ────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+    user_id TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT 'Untitled',
+    content TEXT NOT NULL DEFAULT '[]',
+    content_text TEXT NOT NULL DEFAULT '',
+    icon TEXT,
+    cover_url TEXT,
+    folder_id TEXT,
+    parent_id TEXT,
+    is_published INTEGER NOT NULL DEFAULT 0,
+    public_slug TEXT UNIQUE,
+    word_count INTEGER NOT NULL DEFAULT 0,
+    source TEXT NOT NULL DEFAULT 'web',
+    tags TEXT NOT NULL DEFAULT '[]',
+    pinned INTEGER NOT NULL DEFAULT 0,
+    archived INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS doc_folders (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    icon TEXT,
+    parent_id TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS document_versions (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+    document_id TEXT NOT NULL,
+    content TEXT NOT NULL,
+    word_count INTEGER NOT NULL DEFAULT 0,
+    saved_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+try { db.prepare('CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id)').run(); } catch { /* exists */ }
+try { db.prepare('CREATE INDEX IF NOT EXISTS idx_documents_folder ON documents(folder_id)').run(); } catch { /* exists */ }
+try { db.prepare('CREATE INDEX IF NOT EXISTS idx_documents_slug ON documents(public_slug)').run(); } catch { /* exists */ }
+try { db.prepare('CREATE INDEX IF NOT EXISTS idx_doc_folders_user ON doc_folders(user_id)').run(); } catch { /* exists */ }
+try { db.prepare('CREATE INDEX IF NOT EXISTS idx_document_versions_doc ON document_versions(document_id)').run(); } catch { /* exists */ }

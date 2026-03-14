@@ -6,7 +6,7 @@ import {
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
   Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff, GitBranch,
-  Inbox, MessageSquare, Mail, TrendingUp, Target, Mic
+  Inbox, MessageSquare, Mail, TrendingUp, Target, Mic, FileText
 } from 'lucide-react';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -74,8 +74,9 @@ const WorkflowsPage = lazyRetry(() => import('./pages/WorkflowsPage').then(m => 
 
 const CalendarPage = lazyRetry(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage })));
 const ConversationRatingPage = lazyRetry(() => import('./pages/ConversationRatingPage').then(m => ({ default: m.ConversationRatingPage })));
+const DocsWorkspacePage = lazyRetry(() => import('./pages/DocsWorkspacePage').then(m => ({ default: m.DocsWorkspacePage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs';
 
 
 interface MenuGroup {
@@ -135,6 +136,7 @@ const menuGroups: MenuGroup[] = [
       { id: 'proactive', label: 'Proactive AI', icon: Sparkles },
       { id: 'focus', label: 'Focus & Habits', icon: Target },
       { id: 'workflows', label: 'Workflows', icon: GitBranch },
+      { id: 'docs', label: 'Docs', icon: FileText },
     ],
   },
   {
@@ -489,6 +491,8 @@ export function DashboardApp() {
         return <CalendarPage />;
       case 'workflows':
         return <WorkflowsPage />;
+      case 'docs':
+        return <DocsWorkspacePage />;
       case 'training':
         return <ConversationRatingPage />;
       case 'tools':

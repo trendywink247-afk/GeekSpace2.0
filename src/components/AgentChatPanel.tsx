@@ -215,6 +215,12 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
   // 81.8: Image cap error shown inline
   const [imageCapError, setImageCapError] = useState<string | null>(null);
 
+  // Streaming perf: buffer tokens in a ref, flush to state via RAF (avoids re-render per token)
+  const streamBufferRef = useRef('');
+  const rafRef = useRef<number>(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const [isStreamActive, setIsStreamActive] = useState(false);
+
   // 82.7: AI safety footer — dismissed per session via sessionStorage
   const [safetyDismissed, setSafetyDismissed] = useState(() =>
     typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ai-disclaimer-dismissed') === '1'
@@ -331,6 +337,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
     const rlTimer = setInterval(fetchRL, 60000);
     return () => clearInterval(rlTimer);
   }, [isOpen, agentOwner]);
+
+  // Cleanup: cancel RAF loop and abort in-flight stream on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   // Ctrl+F / Cmd+F to open search
   useEffect(() => {
@@ -550,8 +564,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           await doRegularChat();
           return;
         }
+
+        // Abort any in-flight stream before starting a new one
+        abortControllerRef.current?.abort();
+        const ac = new AbortController();
+        abortControllerRef.current = ac;
+
         // Attempt SSE streaming
-        const res = await agentService.chatStream(content);
+        const res = await agentService.chatStream(content, 'web', ac.signal);
 
         // Capture rate limit remaining from response headers
         const rlRemaining = res.headers.get('RateLimit-Remaining') ?? res.headers.get('ratelimit-remaining');
@@ -568,11 +588,24 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         // Add empty streaming message
         setAgentMsg({ content: '', isStreaming: true });
         setIsTyping(false);
+        setIsStreamActive(true);
+
+        // Reset stream buffer
+        streamBufferRef.current = '';
+
+        // RAF flush loop: reads from mutable ref, writes to state at most once per frame
+        const flushBuffer = () => {
+          const buffered = streamBufferRef.current;
+          if (buffered) {
+            setAgentMsg({ content: buffered });
+          }
+          rafRef.current = requestAnimationFrame(flushBuffer);
+        };
+        rafRef.current = requestAnimationFrame(flushBuffer);
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
-        let accumulated = '';
         let gotError = false;
 
         while (true) {
@@ -596,12 +629,15 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               }
 
               if (chunk.text) {
-                accumulated += chunk.text;
-                setAgentMsg({ content: accumulated });
+                // Accumulate into mutable ref — zero renders per token
+                streamBufferRef.current += chunk.text;
               }
 
               if (chunk.done) {
-                setAgentMsg({ isStreaming: false, provider: chunk.provider, model: chunk.model });
+                // Final flush: cancel RAF, push final content + clear streaming flag
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = 0;
+                setAgentMsg({ content: streamBufferRef.current, isStreaming: false, provider: chunk.provider, model: chunk.model });
               }
             } catch {
               // skip malformed chunks
@@ -609,17 +645,41 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           }
         }
 
+        // Stop RAF loop
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = 0;
+        }
+
         // Streaming ended — check if we actually got content
-        if (!accumulated || gotError) {
+        if (!streamBufferRef.current || gotError) {
           // Stream was empty or errored — fall back to regular chat
           setIsTyping(true);
+          setIsStreamActive(false);
           await doRegularChat();
           return;
         }
 
         // Ensure streaming flag is cleared
-        setAgentMsg({ isStreaming: false });
-      } catch {
+        setAgentMsg({ content: streamBufferRef.current, isStreaming: false });
+        setIsStreamActive(false);
+      } catch (err) {
+        // Stop RAF loop on error
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = 0;
+        }
+        setIsStreamActive(false);
+
+        // If aborted by user, keep whatever was streamed so far
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          const partial = streamBufferRef.current;
+          if (partial) {
+            setAgentMsg({ content: partial, isStreaming: false });
+          }
+          return;
+        }
+
         // Full fallback — try regular chat
         try {
           setIsTyping(true);
@@ -645,6 +705,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         }
       } finally {
         setIsTyping(false);
+        abortControllerRef.current = null;
       }
     })();
   }, [input, isTyping, premiumSession, agentOwner, messages, replyTo]);
@@ -1163,7 +1224,11 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                               : part
                           );
                         })()
-                      : (msg.role === 'agent' ? renderMessageContent(msg.content) : msg.content)}
+                      : (msg.role === 'agent'
+                        ? (msg.isStreaming
+                          ? <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</span>
+                          : renderMessageContent(msg.content))
+                        : msg.content)}
                     {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-[#00F0FF] ml-0.5 animate-pulse rounded-sm" />}
                     {msg.provider && !msg.isStreaming && (
                       <span className="block mt-1.5 text-[10px] text-[#6B7280]/60 flex items-center gap-1">
@@ -1366,6 +1431,27 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Stop generating button — shown while SSE stream is active */}
+          {isStreamActive && (
+            <div className="flex justify-center py-1">
+              <button
+                onClick={() => {
+                  abortControllerRef.current?.abort();
+                  abortControllerRef.current = null;
+                  setIsStreamActive(false);
+                  if (rafRef.current) {
+                    cancelAnimationFrame(rafRef.current);
+                    rafRef.current = 0;
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1A1A2E] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-all min-h-[36px]"
+              >
+                <Square className="w-3 h-3" />
+                Stop generating
+              </button>
             </div>
           )}
 

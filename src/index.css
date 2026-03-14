@@ -434,6 +434,41 @@
   50% { opacity: 1; transform: scale(1.2); }
 }
 
+/* ─── Aurora Background Effect (static radial gradients) ─── */
+.aurora-bg {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(0,240,255,0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(255,45,120,0.02) 0%, transparent 50%);
+}
+
+/* ─── iOS Rubber-Band Scroll Prevention ─── */
+.no-overscroll {
+  overscroll-behavior: none;
+}
+
+/* ─── Hardware Acceleration Hint ─── */
+.will-animate {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* ─── Streaming Cursor for Chat ─── */
+.streaming-cursor::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: currentColor;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  animation: blink-cursor 0.7s step-end infinite;
+}
+
+@keyframes blink-cursor {
+  50% { opacity: 0; }
+}
+
 /* ─── Reduced Motion ─── */
 @media (prefers-reduced-motion: reduce) {
   .animate-shimmer {
@@ -465,7 +500,8 @@
   .typewriter-cursor,
   .text-shimmer,
   .animate-page-enter,
-  .animate-sheet-up {
+  .animate-sheet-up,
+  .streaming-cursor::after {
     animation: none !important;
   }
   .text-shimmer {

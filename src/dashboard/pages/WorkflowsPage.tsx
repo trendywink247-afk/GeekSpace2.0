@@ -13,7 +13,7 @@ import api from "@/services/api";
 // ---- Types ----
 
 interface WorkflowStep {
-  agent: "weebo" | "jarvis" | "edith" | "picoclaw";
+  agent: "weebo" | "jarvis" | "edith" | "weebofleet";
   prompt_template: string;
   output_key: string;
 }
@@ -45,14 +45,14 @@ const AGENT_COLORS: Record<string, string> = {
   weebo: "text-green-400",
   jarvis: "text-purple-400",
   edith: "text-cyan-400",
-  picoclaw: "text-amber-400",
+  weebofleet: "text-amber-400",
 };
 
 const AGENT_LABELS: Record<string, string> = {
   weebo: "Weebo",
   jarvis: "Jarvis",
   edith: "Edith",
-  picoclaw: "WeeboFleet",
+  weebofleet: "WeeboFleet",
 };
 
 // ---- Helpers ----
@@ -166,7 +166,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                     <option value="weebo">Weebo</option>
                     <option value="jarvis">Jarvis</option>
                     <option value="edith">Edith</option>
-                    <option value="picoclaw">WeeboFleet</option>
+                    <option value="weebofleet">WeeboFleet</option>
                   </select>
                 </div>
                 <div>

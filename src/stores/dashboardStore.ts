@@ -39,7 +39,7 @@ const fallbackAgent: AgentConfig = {
   id: '', userId: '', name: 'Geek', displayName: 'Your AI',
   mode: 'builder', voice: 'friendly',
   systemPrompt: 'You are a helpful personal AI assistant.',
-  primaryModel: 'geekspace-default', fallbackModel: 'ollama-qwen2.5',
+  primaryModel: 'agentin-default', fallbackModel: 'ollama-qwen2.5',
   creativity: 70, formality: 50, monthlyBudgetUSD: 5, status: 'offline',
 };
 

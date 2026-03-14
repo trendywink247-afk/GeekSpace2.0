@@ -124,6 +124,8 @@ function hasToolTrigger(message: string): boolean {
   return (
     // Notes
     /\b(save\s+(a\s+)?note|take\s+note|note\s+(this|it)|write\s+(this|it)\s+down|remember\s+this|jot\s+(this|it)|save\s+this)\b/i.test(lower) ||
+    // Memory / "remember X" commands (anchored to start to avoid "do you remember" false positives)
+    /^(?:(?:please\s+)?(?:remember|save|note\s+down|keep\s+in\s+mind)\s+(?:that\s+)?|(?:don'?t|never)\s+forget\s+(?:that\s+)?|always\s+remember\s+)/i.test(lower.trim()) ||
     /\bsearch\s+(my\s+)?notes?\b/i.test(lower) ||
     /\bfind\s+(my\s+)?note\b/i.test(lower) ||
     /\b(show|send|give|get|display)\s+(me\s+)?(my\s+)?(the\s+)?notes?\b/i.test(lower) ||

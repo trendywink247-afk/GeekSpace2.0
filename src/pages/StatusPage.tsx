@@ -9,7 +9,7 @@ const COMPONENT_LABELS: Record<string, string> = {
   ollama: 'Local Engine',
   openrouter: 'Cloud Engine',
   edith: 'Premium Engine',
-  picoclaw: 'Weebo Engine',
+  weebo: 'Weebo Engine',
   bridge: 'Bridge Router',
   telegram: 'Telegram Bot',
   n8n: 'Automation (n8n)',

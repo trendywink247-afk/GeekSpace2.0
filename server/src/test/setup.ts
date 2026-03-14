@@ -43,6 +43,9 @@ export function resetDatabase(): void {
   try {
     // Clean up test data in reverse dependency order
     const tables = [
+      'document_versions',
+      'documents',
+      'doc_folders',
       'activity_log',
       'security_events',
       'usage_events',

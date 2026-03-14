@@ -59,6 +59,7 @@ import { memoryRouter } from './routes/memory.js';
 import { calendarRouter } from './routes/calendar.js';
 import { workflowsRouter } from './routes/workflows.js';
 import searchRouter from './routes/search.js';
+import { docsRouter } from './routes/docs.js';
 import { gateRouter } from './routes/gate.js';
 import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
@@ -507,6 +508,7 @@ export function createApp(): express.Application {
   app.use('/api/calendar', calendarRouter);
   app.use('/api/workflows', workflowsRouter);
   app.use('/api/search', searchRouter);
+  app.use('/api/docs', docsRouter);
   app.use('/api/gate/v1', gateRouter);
 
   // ---- Test routes (only in test mode) ----

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, Volume2, VolumeX, RotateCcw, Sparkles, Copy, Check } from 'lucide-react';
+import { Send, Volume2, VolumeX, RotateCcw, Sparkles, Copy, Check, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { agentService, memoryService } from '@/services/api';
@@ -79,6 +79,12 @@ export function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Streaming perf: buffer tokens in a ref, flush to state via RAF
+  const streamBufferRef = useRef('');
+  const rafRef = useRef<number>(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const [isStreamActive, setIsStreamActive] = useState(false);
+
   const personality: AgentPersonality = agent?.personality ?? 'weebo';
   const agentName = personality === 'edith' ? 'Edith' : personality === 'jarvis' ? 'Jarvis' : 'Weebo';
 
@@ -105,6 +111,14 @@ export function ChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  // Cleanup: cancel RAF loop and abort in-flight stream on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   // Load conversation history on mount
   useEffect(() => {
@@ -152,14 +166,36 @@ export function ChatPage() {
       { id: assistantMsgId, role: 'agent', content: '', timestamp: new Date() },
     ]);
 
-    let streamedReply = '';
+    // Abort any in-flight stream before starting a new one
+    abortControllerRef.current?.abort();
+    const ac = new AbortController();
+    abortControllerRef.current = ac;
+
+    // Reset stream buffer
+    streamBufferRef.current = '';
 
     try {
-      const response = await agentService.chatStream(text);
+      const response = await agentService.chatStream(text, 'web', ac.signal);
 
       if (!response.ok || !response.body) {
         throw new Error(`Stream request failed: ${response.status}`);
       }
+
+      setIsStreamActive(true);
+
+      // RAF flush loop: reads from mutable ref, writes to state at most once per frame
+      const flushBuffer = () => {
+        const buffered = streamBufferRef.current;
+        if (buffered) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsgId ? { ...m, content: buffered } : m,
+            ),
+          );
+        }
+        rafRef.current = requestAnimationFrame(flushBuffer);
+      };
+      rafRef.current = requestAnimationFrame(flushBuffer);
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -179,12 +215,8 @@ export function ChatPage() {
             if (parsed.done) continue;
             const chunk = parsed.text ?? '';
             if (chunk) {
-              streamedReply += chunk;
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMsgId ? { ...m, content: m.content + chunk } : m,
-                ),
-              );
+              // Accumulate into mutable ref — zero renders per token
+              streamBufferRef.current += chunk;
             }
           } catch {
             // Ignore malformed SSE chunks
@@ -192,11 +224,49 @@ export function ChatPage() {
         }
       }
 
-      // Auto-read if voice mode is on and TTS is supported
-      if (voiceMode && tts.isSupported && streamedReply) {
-        tts.speak(streamedReply);
+      // Stop RAF loop
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
       }
-    } catch {
+
+      // Final flush with complete content
+      const finalContent = streamBufferRef.current;
+      if (finalContent) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsgId ? { ...m, content: finalContent } : m,
+          ),
+        );
+      }
+
+      setIsStreamActive(false);
+
+      // Auto-read if voice mode is on and TTS is supported
+      if (voiceMode && tts.isSupported && finalContent) {
+        tts.speak(finalContent);
+      }
+    } catch (err) {
+      // Stop RAF loop on error
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+      }
+      setIsStreamActive(false);
+
+      // If aborted by user, keep whatever was streamed so far
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        const partial = streamBufferRef.current;
+        if (partial) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsgId ? { ...m, content: partial } : m,
+            ),
+          );
+        }
+        return;
+      }
+
       // Streaming failed — fall back to synchronous call
       setMessages((prev) => prev.filter((m) => m.id !== assistantMsgId));
       try {
@@ -226,6 +296,7 @@ export function ChatPage() {
       }
     } finally {
       setIsTyping(false);
+      abortControllerRef.current = null;
     }
   }, [input, isTyping, personality, voiceMode, tts]);
 
@@ -359,6 +430,26 @@ export function ChatPage() {
                 <span className='w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-bounce' style={{ animationDelay: '300ms' }} />
               </div>
             </div>
+          </div>
+        )}
+        {/* Stop generating button — shown while SSE stream is active */}
+        {isStreamActive && (
+          <div className='flex justify-center py-1'>
+            <button
+              onClick={() => {
+                abortControllerRef.current?.abort();
+                abortControllerRef.current = null;
+                setIsStreamActive(false);
+                if (rafRef.current) {
+                  cancelAnimationFrame(rafRef.current);
+                  rafRef.current = 0;
+                }
+              }}
+              className='flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-all min-h-[36px]'
+            >
+              <Square className='w-3 h-3' />
+              Stop generating
+            </button>
           </div>
         )}
         {interimText && (

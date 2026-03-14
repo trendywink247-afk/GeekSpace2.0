@@ -47,7 +47,7 @@ const TOOLTIP_STYLE = {
 };
 
 const PROVIDER_LABELS: Record<string, string> = {
-  picoclaw: 'Weebo',
+  picoclaw: 'Weebo Engine',
   ollama: 'Local Engine',
   openrouter: 'Cloud Engine',
   'openrouter-free': 'Cloud Engine',
@@ -56,7 +56,7 @@ const PROVIDER_LABELS: Record<string, string> = {
 };
 
 const MODEL_LABELS: Record<string, string> = {
-  'picoclaw-haiku': 'Weebo',
+  'picoclaw-haiku': 'Weebo Engine',
 };
 
 function friendlyProvider(p: string) { return PROVIDER_LABELS[p] || p; }

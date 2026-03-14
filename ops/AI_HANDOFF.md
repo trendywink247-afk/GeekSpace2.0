@@ -1,52 +1,109 @@
-# AI Handoff — v5 Full-Stack Audit + Meilisearch/Qdrant Wiring
-**Date:** 2026-03-13
-**Branch:** main (pending commit)
-**Status:** BUILD GREEN | Tests: 2223 pass | Health: 12/12 OK | v3.1.0
+# AI Handoff — v2 Overhaul: Phases 1-4 + 15-16 (Bug Fixes + Agentin Docs)
+**Date:** 2026-03-15
+**Branch:** ai/v2-overhaul-phase1-6
+**Status:** BUILD GREEN | Tests: 2253 pass | Health: 12/12 OK | v3.1.0
+**Model:** claude-opus-4-6
 
 ---
 
 ## What Was Done This Session
 
-### v5 Full-Stack Audit Harness (ops/aliya-sim-v5.mjs)
-- Created comprehensive test harness: 32 sub-agents, 170+ test cases
-- Covers: Web API (W01-W18), Telegram (T01-T11), Mobile (M01), New Services (N01), Brand Guard, Admin
-- JWT generation via HMAC-SHA256 (no password needed)
-- State persistence + resume capability
-- **Result: 170/170 PASS (100%)**
+### Audit Reality Check
+Ran comprehensive investigation of the 47 bugs claimed in v2 audit prompt. Found that **most bugs were already fixed** in prior sessions:
+- 9 of 20 Phase 1-3 "bugs" were already resolved (streaming, OAuth, gallery, toggles, PWA, etc.)
+- Only 4 confirmed real bugs: video credits, BLOCKER-006, brand leaks, streaming perf
 
-### Meilisearch Wiring (server/src/services/search-index.ts)
-- Full Meilisearch client with typo-tolerant search
-- Index `content` with filterable user_id, type, created_at
-- Auto-indexes on: create_note, set_reminder, track_habit, upsertUserMemory
-- Verified: "biryni" (misspelled) finds "biryani" in 10ms
+### Bug Fixes (Phases 1-4)
 
-### Qdrant + Embedding Wiring (server/src/services/search-vector.ts)
-- Qdrant client + Ollama nomic-embed-text (768-dim)
-- Collection `user_memories` with cosine similarity
-- Auto-embeds on every upsertUserMemory() call
-- search_memory tool upgraded: semantic -> FTS5 -> keyword (3-tier)
+**1. Video Credits Deducted on Failure** (server/src/routes/videos.ts)
+- Moved credit deduction to AFTER successful generation for OpenRouter and Premium video
+- Added clear error response with `code: 'VIDEO_GENERATION_UNAVAILABLE'`
+- Director Mode was already correct (deducts after async completion)
 
-### CLAUDE.md Improvements
-- Root: fixed stale domains, Ollama model reference
-- GeekSpace2.0: Added Message Router Pipeline, CI Pipeline, docs/ reference
+**2. BLOCKER-006: "Remember X" Not Persisting** (server/src/services/message-router.ts)
+- Added anchored regex in `hasToolTrigger()` to catch "remember that...", "remember my...", "don't forget...", "keep in mind...", "always remember..."
+- Anchored to start of message to avoid false positives on "do you remember..."
 
-## Files Changed
-- `ops/aliya-sim-v5.mjs` — NEW: v5 test harness (32 sub-agents, 170+ tests)
-- `server/src/services/search-index.ts` — NEW: Meilisearch client
-- `server/src/services/search-vector.ts` — NEW: Qdrant + embedding client
-- `server/src/config.ts` — added Meilisearch/Qdrant/embedding config
-- `server/src/services/action-executor.ts` — wired indexing + semantic search
-- `server/src/services/memory.ts` — wired Qdrant + Meilisearch on upsert
-- `server/src/index.ts` — init both services on startup
-- `CLAUDE.md` (root + GeekSpace2.0) — improved docs
-- `ops/CAPABILITIES_AUDIT.md` — v5 audit report
+**3. Brand Leaks Cleaned** (10 files)
+- HealthDashboardPage, UsageAnalyticsPage, WorkflowsPage, StatusPage: picoclaw→branded names
+- RemindersPage, MediaGalleryPage: localStorage keys geekspace→agentin
+- dashboardStore: model name geekspace-default→agentin-default
+
+**4. Chat Streaming Performance** (AgentChatPanel.tsx, ChatPage.tsx, api.ts)
+- Added `useRef` buffer + `requestAnimationFrame` flush loop (1 setState/frame vs 50-100/sec)
+- Added `AbortController` for stream cancellation
+- Added "Stop generating" button during active streaming
+- Deferred markdown rendering until stream completes
+- Added `signal` parameter to `chatStream()` API
+
+**5. CSS Utilities** (src/index.css)
+- Added `.aurora-bg`, `.no-overscroll`, `.will-animate`, `.streaming-cursor`
+- Updated reduced-motion media query
+
+### New Feature: Agentin Docs (Phases 15-16)
+
+**Backend** (server/src/routes/docs.ts — NEW)
+- 3 new DB tables: documents, doc_folders, document_versions
+- 18 REST endpoints: CRUD, folders, versions, search, publish, quick-capture, AI actions
+- content_text extraction + word count auto-calculation
+- 30 new tests (all passing)
+
+**Frontend** (src/dashboard/pages/DocsWorkspacePage.tsx — NEW)
+- Three-panel workspace: sidebar (folders/smart views) + document grid + AI actions panel
+- BlockNote block editor with dark theme, auto-save, lazy loading
+- Quick capture bar with Enter-to-save
+- AI Actions panel: Clean Up, Expand, Summarize, Extract Tasks, Make Formal, Make Casual, Brainstorm
+- Wired into dashboard sidebar under Productivity → Docs
+
+### Parallel Agent Execution
+Spawned 7 parallel agents for independent work streams:
+- BugFixer-Beta, BugFixer-Alpha, BrandGuard, StreamingOptimizer, FeatureBuilder-Docs, CSSBuilder, Research
+
+## Files Changed (22 modified, 3 new)
+- `server/src/routes/videos.ts` — credit deduction fix
+- `server/src/services/message-router.ts` — BLOCKER-006 fix
+- `server/src/db/index.ts` — 3 new tables
+- `server/src/app.ts` — docs route registration
+- `server/src/routes/docs.ts` — NEW: 18 endpoints
+- `server/src/test/api/docs.test.ts` — NEW: 30 tests
+- `server/src/test/setup.ts` — test table creation
+- `src/components/AgentChatPanel.tsx` — streaming perf
+- `src/dashboard/pages/ChatPage.tsx` — streaming perf
+- `src/services/api.ts` — AbortSignal support
+- `src/dashboard/DashboardApp.tsx` — docs page wiring
+- `src/dashboard/pages/DocsWorkspacePage.tsx` — NEW: full editor
+- `src/dashboard/pages/HealthDashboardPage.tsx` — brand fix
+- `src/dashboard/pages/UsageAnalyticsPage.tsx` — brand fix
+- `src/dashboard/pages/WorkflowsPage.tsx` — brand fix
+- `src/dashboard/pages/RemindersPage.tsx` — brand fix
+- `src/dashboard/pages/MediaGalleryPage.tsx` — brand fix
+- `src/pages/StatusPage.tsx` — brand fix
+- `src/stores/dashboardStore.ts` — brand fix
+- `src/index.css` — CSS utilities
+- `package.json` — BlockNote deps
+- `ops/runtime/` — phase checkpoints + state tracking
+
+## Test Results
+- Server tests: **2253/2253 PASS** (up from 2223, +30 docs tests)
+- Frontend TypeScript: **0 errors**
+- Server TypeScript: **0 errors**
+- Frontend build: **SUCCESS** (20.93s)
+- Server build: **SUCCESS**
+- Docker health: **12/12 services OK**
+- Production deployed and verified
 
 ## Next Session Priorities
-1. Bulk index existing data into Meilisearch (notes, reminders, habits, memories)
-2. Wire Ctrl+K UI search to hit Meilisearch
-3. Fix Ollama keep_alive=-1 error (change to "24h")
-4. Bulk embed existing memories into Qdrant
-5. Wire Meilisearch into /search Telegram command
+1. MinIO object storage integration (Phase 5)
+2. Wire Agentin Docs to Telegram capture (`/note`, `capture:` prefixes in message-router)
+3. Wire docs to Meilisearch for search indexing
+4. UI overhaul pages (Phases 6-14) — many already polished from prior sessions
+5. Aliya sim v6 upgrade with docs test patterns
+6. Landing page redesign with bento grid layout
+
+## Compaction Recovery
+```
+Resume Agentin v2. Read ops/runtime/v2-state.json then continue from Phase 5.
+```
 
 ## Start Commands
 ```bash
