@@ -1999,3 +1999,49 @@ try { db.exec(`ALTER TABLE habits ADD COLUMN skip_until INTEGER DEFAULT 0`); } c
 try {
   db.prepare("ALTER TABLE agent_configs ADD COLUMN proactive_preferences TEXT DEFAULT '{}'").run();
 } catch { /* column exists */ }
+
+// Page monitor system: watch URLs for changes
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS page_monitors (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    url TEXT NOT NULL,
+    check_for TEXT,
+    last_content_hash TEXT,
+    last_checked_at INTEGER,
+    frequency_hours INTEGER DEFAULT 24,
+    alert_count INTEGER DEFAULT 0,
+    enabled INTEGER DEFAULT 1,
+    created_at INTEGER NOT NULL
+  )
+`).run();
+try { db.prepare('CREATE INDEX IF NOT EXISTS idx_pagemon_user ON page_monitors(user_id)').run(); } catch { /* exists */ }
+
+// Graph memory: entity relationship tracking
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS memory_entities (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    properties TEXT DEFAULT '{}',
+    first_seen_at INTEGER NOT NULL,
+    last_seen_at INTEGER NOT NULL,
+    mention_count INTEGER DEFAULT 1,
+    importance_score REAL DEFAULT 0.5
+  )
+`).run();
+try { db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_entity_user_name ON memory_entities(user_id, lower(name))').run(); } catch { /* exists */ }
+
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS memory_relations (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    from_entity_id TEXT NOT NULL,
+    to_entity_id TEXT NOT NULL,
+    relation_type TEXT NOT NULL,
+    strength REAL DEFAULT 0.5,
+    last_reinforced_at INTEGER NOT NULL
+  )
+`).run();
+try { db.prepare('CREATE INDEX IF NOT EXISTS idx_relation_from ON memory_relations(from_entity_id)').run(); } catch { /* exists */ }

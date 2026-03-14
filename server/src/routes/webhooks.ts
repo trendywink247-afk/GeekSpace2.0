@@ -481,6 +481,22 @@ webhooksRouter.post('/telegram', async (req, res) => {
             return;
           }
 
+          case 'brief_show_reminders': {
+            const reminders = db.prepare(
+              "SELECT text, datetime FROM reminders WHERE user_id = ? AND completed = 0 ORDER BY datetime ASC LIMIT 10"
+            ).all(userId) as Array<{ text: string; datetime: string }>;
+            const list = reminders.map((r, i) => `${i + 1}. ${r.text}`).join('\n') || 'No pending reminders';
+            await sendTelegramMessage(callbackChatId, `\u{1F4CB} Your reminders:\n\n${list}`);
+            return;
+          }
+
+          case 'brief_start_focus': {
+            const { executeAction } = await import('../services/action-executor.js');
+            await executeAction(userId, { tool: 'start_focus', params: { goal: 'Morning deep work', duration_min: 25 } });
+            await sendTelegramMessage(callbackChatId, '\u{1F3AF} Focus session started! 25 min of deep work.');
+            return;
+          }
+
           default:
             break;
         }

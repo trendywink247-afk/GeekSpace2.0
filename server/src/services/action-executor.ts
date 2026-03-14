@@ -1566,6 +1566,68 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         }
       }
 
+      // ── monitor_page_change ────────────────────────────────────
+      case 'monitor_page_change': {
+        const monUrl = params.url as string;
+        const checkFor = (params.check_for as string) || '';
+        const freqHours = (params.frequency_hours as number) || 24;
+        if (!monUrl) return { tool, success: false, message: 'Please provide a URL to monitor.' };
+
+        const { v4: monUuid } = await import('uuid');
+        const monId = monUuid();
+        db.prepare(`
+          INSERT INTO page_monitors (id, user_id, url, check_for, frequency_hours, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(monId, userId, monUrl, checkFor, freqHours, Date.now());
+
+        return {
+          tool, success: true,
+          message: `\u{1F441}\uFE0F Now monitoring: ${monUrl}\nChecking every ${freqHours}h${checkFor ? ` for: "${checkFor}"` : ''}\nI'll alert you when something changes.`,
+          data: { monitorId: monId },
+        };
+      }
+
+      // ── stop_monitoring ──────────────────────────────────────────
+      case 'stop_monitoring': {
+        const monUrl = params.url as string;
+        if (monUrl) {
+          db.prepare("UPDATE page_monitors SET enabled = 0 WHERE user_id = ? AND url LIKE ?").run(userId, `%${monUrl}%`);
+        } else {
+          db.prepare("UPDATE page_monitors SET enabled = 0 WHERE user_id = ?").run(userId);
+        }
+        return { tool, success: true, message: '\u2705 Page monitoring stopped.' };
+      }
+
+      // ── recall_entity ────────────────────────────────────────────
+      case 'recall_entity': {
+        const entityName = (params.name as string)?.trim();
+        if (!entityName) return { tool, success: false, message: 'Please provide a name to recall.' };
+
+        const { recallEntity } = await import('./graph-memory.js');
+        const result = recallEntity(userId, entityName);
+        if (!result) return { tool, success: true, message: `I don't have any information about "${entityName}" yet.` };
+
+        const parts = [`**${result.entity.name}** (${result.entity.type})`];
+        parts.push(`Mentioned ${result.mentions} times`);
+
+        const props = result.entity.properties;
+        if (Object.keys(props).length > 0) {
+          parts.push('\nDetails:');
+          for (const [k, v] of Object.entries(props)) {
+            parts.push(`  \u2022 ${k}: ${v}`);
+          }
+        }
+
+        if (result.relations.length > 0) {
+          parts.push('\nConnected to:');
+          for (const r of result.relations) {
+            parts.push(`  \u2022 ${r.related_name} (${r.related_type}) \u2014 ${r.relation_type}`);
+          }
+        }
+
+        return { tool, success: true, message: parts.join('\n') };
+      }
+
       // ── search_memory ─────────────────────────────────────────
       case 'search_memory': {
         const query = (params.query as string)?.trim();

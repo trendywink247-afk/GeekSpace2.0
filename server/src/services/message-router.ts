@@ -674,6 +674,11 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   extractMemories(userId, msg.text);
   logger.debug({ requestId, userId }, 'Activity logged and memories extracted');
 
+  // Extract entities from user message (async, non-blocking)
+  import('./graph-memory.js').then(({ processMessageEntities }) => {
+    processMessageEntities(userId, msg.text);
+  }).catch(() => {});
+
   // 4b. Inbox side-effect: store incoming channel message (non-blocking)
   try {
     addInboxMessage(userId, msg.channel, msg.senderName || msg.externalId, msg.text);

@@ -88,6 +88,27 @@ function isThrottled(userId: string): boolean {
 
 export async function dailyBriefing(userId: string): Promise<string | null> {
   if (!isTypeEnabled(userId, 'daily_briefing')) return null;
+
+  // Try Smart Morning Brief v2 first — rich briefing with inline buttons
+  try {
+    const { assembleMorningBrief } = await import('./morning-brief.js');
+    const brief = await assembleMorningBrief(userId);
+    if (brief.text) {
+      const { sendTelegramButtons } = await import('./telegram.js');
+      const link = db.prepare(
+        "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 LIMIT 1"
+      ).get(userId) as { external_id: string } | undefined;
+      if (link) {
+        await sendTelegramButtons(link.external_id, brief.text, brief.buttons);
+        recordProactiveMessage(userId, 'daily_briefing', brief.text);
+        return brief.text;
+      }
+    }
+  } catch (err) {
+    logger.debug({ err }, 'Smart Morning Brief failed, falling back to template');
+  }
+  // ... existing template-based briefing continues as fallback
+
   const user = db.prepare('SELECT name FROM users WHERE id = ?').get(userId) as { name: string } | undefined;
   if (!user) return null;
   const firstName = (user.name || 'there').split(' ')[0];
@@ -572,6 +593,39 @@ export async function initProactiveEngine(): Promise<void> {
       const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
       const nextSunday = Date.now() + 7 * 86_400_000;
       scheduleJob(job.userId, 'weekly_report', nextSunday, {}, { dedupeKey: `weekly_report:${job.userId}:${new Date(nextSunday).toISOString().slice(0, 10)}` });
+    });
+
+    registerHandler('page_monitor', async (job) => {
+      const monId = job.payload.monitorId as string;
+      if (!monId) return;
+
+      const monitor = db.prepare('SELECT * FROM page_monitors WHERE id = ? AND enabled = 1').get(monId) as any;
+      if (!monitor) return;
+
+      try {
+        const { createHash } = await import('crypto');
+        const { navigatePage } = await import('./browser-agent.js');
+        const result = await navigatePage(monitor.url);
+        if (result.error) return;
+
+        const contentHash = createHash('md5').update(result.text?.slice(0, 5000) || '').digest('hex');
+
+        if (monitor.last_content_hash && contentHash !== monitor.last_content_hash) {
+          // Content changed! Alert the user
+          const msg = `\u{1F441}\uFE0F Page changed: ${monitor.url}\n${monitor.check_for ? `Watching for: "${monitor.check_for}"` : 'Content has been updated.'}`;
+          await sendViaTelegram(monitor.user_id, msg);
+          db.prepare('UPDATE page_monitors SET last_content_hash = ?, last_checked_at = ?, alert_count = alert_count + 1 WHERE id = ?')
+            .run(contentHash, Date.now(), monId);
+        } else {
+          db.prepare('UPDATE page_monitors SET last_content_hash = ?, last_checked_at = ? WHERE id = ?')
+            .run(contentHash, Date.now(), monId);
+        }
+
+        // Reschedule next check
+        scheduleJob(monitor.user_id, 'page_monitor', Date.now() + monitor.frequency_hours * 3600000, { monitorId: monId }, { dedupeKey: `pagemon:${monId}` });
+      } catch (err) {
+        logger.warn({ err, monitorId: monId }, 'Page monitor check failed');
+      }
     });
 
     // Start the runner (polls every 30s for due jobs)

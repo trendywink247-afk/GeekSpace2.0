@@ -1,6 +1,9 @@
 // ============================================================
 // Global Search Route — queries notes, reminders, habits, memories
 // GET /api/search?q=<term>
+//
+// Pipeline: Meilisearch (typo-tolerant, instant) first,
+//           SQLite LIKE fallback, merged + deduplicated.
 // ============================================================
 
 import { Router } from 'express';
@@ -8,10 +11,20 @@ import type { Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
+import { searchContent } from '../services/search-index.js';
 
 const searchRouter = Router();
 
-searchRouter.get('/', requireAuth, (req: AuthRequest, res: Response) => {
+interface SearchResult {
+  id: string;
+  type: string;
+  title: string;
+  snippet: string;
+  created_at?: string;
+  source?: string;
+}
+
+searchRouter.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const { q } = req.query as { q?: string };
   if (!q || q.trim().length < 2) {
     res.json({ results: [] });
@@ -19,10 +32,26 @@ searchRouter.get('/', requireAuth, (req: AuthRequest, res: Response) => {
   }
 
   const userId = req.userId!;
-  const term = `%${q.trim()}%`;
+  const query = q.trim();
+  const term = `%${query}%`;
 
   try {
-    // notes: title TEXT, content TEXT, created_at INTEGER (ms epoch)
+    // ── Meilisearch (typo-tolerant, instant) ───────────────────
+    let meiliResults: SearchResult[] = [];
+    try {
+      const meili = await searchContent(userId, query, { limit: 15 });
+      meiliResults = (meili.hits || []).map(h => ({
+        id: h.id,
+        type: h.type,
+        title: h.title,
+        snippet: (h.content || '').slice(0, 200),
+        source: 'meilisearch',
+      }));
+    } catch {
+      // Meilisearch unavailable -- fall through to SQLite
+    }
+
+    // ── SQLite LIKE fallback ───────────────────────────────────
     const notes = db.prepare(`
       SELECT id, 'note' AS type, title, substr(content, 1, 120) AS snippet,
              datetime(created_at / 1000, 'unixepoch') AS created_at
@@ -35,7 +64,6 @@ searchRouter.get('/', requireAuth, (req: AuthRequest, res: Response) => {
       id: number; type: string; title: string; snippet: string; created_at: string;
     }>;
 
-    // reminders: text TEXT, datetime TEXT, completed INTEGER
     const reminders = db.prepare(`
       SELECT id, 'reminder' AS type, text AS title, text AS snippet, created_at
       FROM reminders
@@ -46,7 +74,6 @@ searchRouter.get('/', requireAuth, (req: AuthRequest, res: Response) => {
       id: string; type: string; title: string; snippet: string; created_at: string;
     }>;
 
-    // habits: name TEXT, description TEXT, created_at INTEGER (ms epoch)
     const habits = db.prepare(`
       SELECT id, 'habit' AS type, name AS title,
              coalesce(description, name) AS snippet,
@@ -59,7 +86,6 @@ searchRouter.get('/', requireAuth, (req: AuthRequest, res: Response) => {
       id: number; type: string; title: string; snippet: string; created_at: string;
     }>;
 
-    // user_memories: key TEXT, value TEXT, created_at INTEGER (ms epoch)
     const memories = db.prepare(`
       SELECT id, 'memory' AS type, key AS title, substr(value, 1, 120) AS snippet,
              datetime(created_at / 1000, 'unixepoch') AS created_at
@@ -71,14 +97,19 @@ searchRouter.get('/', requireAuth, (req: AuthRequest, res: Response) => {
       id: number; type: string; title: string; snippet: string; created_at: string;
     }>;
 
-    const results = [
-      ...notes.map(r => ({ ...r, id: String(r.id) })),
-      ...reminders,
-      ...habits.map(r => ({ ...r, id: String(r.id) })),
-      ...memories.map(r => ({ ...r, id: String(r.id) })),
+    const sqliteResults: SearchResult[] = [
+      ...notes.map(r => ({ ...r, id: String(r.id), source: 'sqlite' })),
+      ...reminders.map(r => ({ ...r, source: 'sqlite' })),
+      ...habits.map(r => ({ ...r, id: String(r.id), source: 'sqlite' })),
+      ...memories.map(r => ({ ...r, id: String(r.id), source: 'sqlite' })),
     ];
 
-    res.json({ results });
+    // ── Merge: Meilisearch first, deduplicate by id ────────────
+    const seenIds = new Set(meiliResults.map(r => r.id));
+    const sqliteFiltered = sqliteResults.filter(r => !seenIds.has(r.id));
+    const merged = [...meiliResults, ...sqliteFiltered].slice(0, 20);
+
+    res.json({ results: merged });
   } catch (err) {
     logger.error({ err, userId }, 'Global search query failed');
     res.status(500).json({ error: 'Search failed' });
