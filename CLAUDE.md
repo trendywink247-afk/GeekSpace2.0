@@ -201,6 +201,101 @@ npm run build && rm -rf /var/www/geekspace/assets && cp -r dist/. /var/www/geeks
 
 ---
 
+## 🔁 To-and-Fro Functionality Rule (VERY IMPORTANT)
+For every feature touched, verify the full round-trip loop:
+- **Reminders:** create → list → edit → snooze → complete → delete → refresh persistence
+- **Connections:** connect → active state → reconnect → disconnect → reconnect → status sync
+- **Automations:** create → trigger/test → run log → edit → disable/enable → delete
+- **Auth:** login → protected route → refresh/reload → logout → re-login
+- **Portfolio:** create/update → view public page → analytics increment → export/share
+- **Docs:** create → edit → auto-save → search → publish → share → delete
+
+---
+
+## 🔍 Required Verification by Change Type
+
+### Frontend/UI
+- `npm run lint && npx tsc --noEmit && npm run build`
+- mobile viewport check for touched screens
+
+### Backend/API
+- `cd server && npm test && npx tsc --noEmit && npm run build`
+
+### Auth / routing / critical flows
+- targeted Playwright specs
+
+### Infra/runtime
+- `docker compose ps` + health endpoint
+
+---
+
+## 🧱 Coding Standards
+- TypeScript-first, strict-safe changes
+- Follow existing file conventions
+- Maintain mobile responsiveness
+- Add/update tests for new behavior
+- Avoid unnecessary dependencies
+- Add structured logs for non-trivial backend behavior
+- shadcn/ui: New York style. Add via `npx shadcn@latest add <component>`
+
+---
+
+## 📁 Mandatory AI Working Files (ops/)
+```
+ops/AI_BACKLOG.md           — prioritized tasks
+ops/AI_PHASE_PLAN.md        — current phase (10 planned improvements)
+ops/AI_HANDOFF.md           — exact resume state
+ops/AI_LESSONS.md           — recurring bug patterns / gotchas
+ops/AI_RELEASE_NOTES.md     — user-facing phase notes
+ops/AI_FEATURE_MATRIX.md    — feature integrity + to-and-fro verification
+ops/AI_RELEASE_TRAIN.md     — main→prod release train summary
+ops/AI_RISK_REGISTER.md     — medium/high risks and mitigation status
+ops/runtime/v2-state.json   — v2/v3 overhaul phase tracking
+```
+
+---
+
+## ⏱ Session Budget Rules
+- ~65% context: compact and summarize
+- ~80%: stop adding scope; finish current items only
+- ~90%: write handoff immediately
+
+---
+
+## 📌 End-of-Session Handoff (MANDATORY)
+Update `ops/AI_HANDOFF.md` with:
+- current branch + phase number/status
+- completed items
+- files changed
+- failing tests / open risks
+- exact next command to run
+- merge status
+
+---
+
+## Security State (Phase 110+)
+
+### Domain
+- Production: ai.agentin.chat (frontend), api.agentin.chat (API)
+- Old domain (ai.geekspace.space): permanent 301 redirect — keep in CORS during transition
+
+### Secrets
+- Live API keys: /root/.agentin-secrets (chmod 600, outside repo)
+- In-repo .env: non-sensitive config only (URLs, timeouts, flags)
+
+### Claude Code Boundaries
+- .claude/settings.json: deny .env reads, pipe-to-shell, destructive rm
+- .claude/hooks/security-precheck.sh: PreToolUse gate
+- .claudeignore: .env, secrets, .pem, .key files blocked
+
+### LLM Providers
+- Groq: GROQ_API_KEY — free Llama 3.3 70B (OpenAI tool format)
+- Together AI: TOGETHER_API_KEY — paid Llama 3.1 70B (OpenAI tool format)
+- Gemini Flash: GEMINI_API_KEY — free+paid fallback (functionDeclarations format)
+- Normalizer: server/src/services/llm-tool-normalizer.ts
+
+---
+
 ## Architecture
 
 ### Message Router Pipeline (architectural heart)
@@ -220,32 +315,66 @@ npm run build && rm -rf /var/www/geekspace/assets && cp -r dist/. /var/www/geeks
 11. **Keyword triggers** — fire-and-forget automation triggers on message content
 
 ### Key server files:
-- `server/src/services/message-router.ts` — multi-channel handler + 12 fast-paths
-- `server/src/services/llm.ts` — LLM router (6-tier waterfall)
-- `server/src/services/action-executor.ts` — 42+ tool actions
+- `server/src/index.ts` — Express app, middleware, routes, subsystem init
+- `server/src/app.ts` — Express app factory (tests)
+- `server/src/config.ts` — env vars
+- `server/src/db/index.ts` — SQLite schema, migrations, seed
+- `server/src/services/llm.ts` — LLM router (6-tier waterfall: Ollama → Groq → Gemini Flash → OpenRouter → Together AI → Kimi K2)
+- `server/src/services/react-loop.ts` — ReAct reasoning loop (max 5 iterations)
+- `server/src/services/action-parser.ts` — tool schema definitions + ACTION_REGEX parsing
+- `server/src/services/action-executor.ts` — executes all tool actions (42+ tools)
+- `server/src/services/message-router.ts` — multi-channel message handler + 12 fast-paths
 - `server/src/services/automations-engine.ts` — automation execution, scheduling, keyword triggers
-- `server/src/services/persona-engine.ts` — 5 personas × 14 actions
-- `server/src/services/telegram-cards.ts` — inline keyboard card builders
-- `server/src/services/durable-scheduler.ts` — SQLite-backed restart-safe job queue
-- `server/src/services/proactive-engine.ts` — morning brief, overdue alerts, habit nudges
-- `server/src/services/search-index.ts` — Meilisearch (typo-tolerant search)
-- `server/src/services/search-vector.ts` — Qdrant + nomic-embed-text (semantic search)
-- `server/src/services/graph-memory.ts` — entity extraction + relationship graph
-- `server/src/services/browser-agent.ts` — Playwright headless Chromium
-- `server/src/routes/docs.ts` — Agentin Docs API (18 endpoints, 30 tests)
+- `server/src/services/searxng.ts` — SearXNG metasearch (primary, free)
+- `server/src/services/tavily.ts` — Tavily web search (paid fallback)
 - `server/src/routes/oauth.ts` — Google + GitHub OAuth 2.0
+- `server/src/routes/docs.ts` — Agentin Docs API (18 endpoints, 30 tests)
+
+### Proactive & scheduling:
+- `server/src/services/proactive-engine.ts` — proactive message dispatcher (morning brief, overdue alerts, habit nudges, streak celebrations, expense spike alerts)
+- `server/src/services/durable-scheduler.ts` — SQLite-backed restart-safe job queue (replaces fragile setInterval)
+- `server/src/services/morning-brief.ts` — rich personalized daily briefing with inline action buttons
+- `server/src/services/event-bus.ts` — typed EventBus (AgentinEvents: reminder.created, habit.logged, streak.milestone, expense.spike)
+
+### Search & memory:
+- `server/src/services/search-index.ts` — Meilisearch client (typo-tolerant instant search)
+- `server/src/services/search-vector.ts` — Qdrant + Ollama nomic-embed-text (768-dim semantic search)
+- `server/src/services/graph-memory.ts` — entity extraction + relationship graph (people, companies, places)
+- `server/src/services/memory.ts` — user memory CRUD + conversation logging
+
+### Persona & Telegram:
+- `server/src/services/persona-engine.ts` — 5 personas × 14 actions (template + LLM fallback for button responses)
+- `server/src/services/telegram-cards.ts` — unified card builders (reminder/habit/expense/note/focus) with inline keyboards
+- `server/src/services/message-dispatcher.ts` — multi-channel abstraction (Telegram → WhatsApp → Email fallback)
+
+### Browser & integrations:
+- `server/src/services/browser-agent.ts` — Playwright headless Chromium client (navigate, extract, fill forms, screenshot)
+- `server/src/services/gmail-sync.ts` — Gmail OAuth + IMAP sync (15min scheduler)
+- `server/src/services/calendar-sync.ts` — Google Calendar OAuth + event sync (30min scheduler)
+- `browser-agent/server.js` — standalone Playwright REST API (Docker service)
 
 ### Key frontend files:
-- `src/dashboard/DashboardApp.tsx` — dashboard shell, sidebar, page routing
+- `src/App.tsx`, `src/stores/authStore.ts`, `src/stores/dashboardStore.ts`
+- `src/services/api.ts` — Typed Axios wrapper
+- `src/dashboard/DashboardApp.tsx` — dashboard shell, sidebar, page routing (validPages array must include ALL page IDs)
 - `src/dashboard/pages/DocsWorkspacePage.tsx` — BlockNote editor + AI actions
 - `src/dashboard/pages/AutomationsPage.tsx` — full automation builder with templates
 - `src/components/AgentChatPanel.tsx` — streaming chat with RAF buffer + AbortController
-- `src/services/api.ts` — typed Axios wrapper
+- `src/types/index.ts`
 
-### Infrastructure:
-- `docker-compose.yml` — 9 containers + external Ollama/OpenClaw
-- `caddy/Caddyfile` — reverse proxy, SPA routing, gate page
+### Key infra files:
+- `docker-compose.yml` — 9 containers: geekspace, redis, caddy, picoclaw, browser, searxng, meilisearch, qdrant, uptime-kuma
+- `browser-agent/` — Playwright Docker service (Dockerfile + server.js)
+- `caddy/Caddyfile` — Caddy reverse proxy routes, SPA routing, gate page
+- `ops/aliya-sim-v5.mjs` — v5 full-stack audit harness (32 sub-agents, 158+ tests, must stay 100%)
 - Deploy: always `rm -rf /var/www/geekspace/assets` before `cp -r dist/.` (prevents stale chunks)
+
+### Reference docs (in `docs/`):
+- `docs/DEPLOYMENT.md` — full deployment guide
+- `docs/RUNBOOK.md` — operational runbook
+- `docs/API.md` — API endpoint reference
+- `docs/ARCHITECTURE.md` — system design
+- `docs/ENV_VARS.md` — all environment variables
 
 ---
 
@@ -255,6 +384,13 @@ npm run build && rm -rf /var/www/geekspace/assets && cp -r dist/. /var/www/geeks
 2. **unit-tests** — Vitest (2253+ tests)
 3. **e2e-tests** — Playwright (60s timeout)
 4. **smoke-tests** — build + health endpoint check
+
+---
+
+### Test config
+- Vitest: `pool: 'forks'` with `singleFork: true` — sequential execution for SQLite DB isolation
+- Coverage thresholds: conservative (15% lines, 10% functions)
+- `TEST_MODE=true` enables seed data
 
 ---
 
@@ -279,6 +415,17 @@ npm run build && rm -rf /var/www/geekspace/assets && cp -r dist/. /var/www/geeks
 - Telegram chatId: `5337185054`
 - Email: trendywink24.7@gmail.com
 - Username: aliyabhatt
+
+---
+
+## Environment
+- `.env` is gitignored. `.env.example` tracked.
+- `.env.staging` is gitignored. `.env.staging.example` tracked.
+- Production: ai.agentin.chat (frontend), api.agentin.chat (API)
+- Staging: staging.agentin.chat (full reverse proxy, isolated DB/Redis)
+- Demo users: alex/sarah/marcus (password: demo123)
+- Production branch: live-production
+- App version: 3.0.0
 
 ---
 
