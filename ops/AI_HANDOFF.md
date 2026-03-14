@@ -1,115 +1,55 @@
-# AI Handoff — v2 Overhaul: Phases 1-4 + 15-16 (Bug Fixes + Agentin Docs)
+# AI Handoff — v3 Telegram Testing + Docs-to-Telegram Wiring
 **Date:** 2026-03-15
-**Branch:** ai/v2-overhaul-phase1-6
-**Status:** BUILD GREEN | Tests: 2253 pass | Health: 12/12 OK | v3.1.0
+**Branch:** main @ a2c29f0
+**Status:** BUILD GREEN | Tests: 2253 pass | Audit: 98/98 (100%) | Health: 12/12 OK
 **Model:** claude-opus-4-6
 
 ---
 
 ## What Was Done This Session
 
-### Audit Reality Check
-Ran comprehensive investigation of the 47 bugs claimed in v2 audit prompt. Found that **most bugs were already fixed** in prior sessions:
-- 9 of 20 Phase 1-3 "bugs" were already resolved (streaming, OAuth, gallery, toggles, PWA, etc.)
-- Only 4 confirmed real bugs: video credits, BLOCKER-006, brand leaks, streaming perf
+### Session 1: v2 Overhaul (Phases 1-4 + 15-16)
+- Agentin Docs: full-stack block editor (18 endpoints, 30 tests, BlockNote UI)
+- Video credits bug fix (no longer deducted on failure)
+- BLOCKER-006 fix ("remember X" persists to memory)
+- Brand leaks cleaned (picoclaw/geekspace → agentin in 10 files)
+- Chat streaming perf (useRef+RAF, AbortController, stop button)
+- CSS utilities (aurora-bg, no-overscroll, streaming-cursor)
 
-### Bug Fixes (Phases 1-4)
+### Session 2: Telegram Testing + Docs Wiring
+- 19 live Telegram messages tested (all 200 OK)
+- 4 button callbacks tested (rem_snooze, hab_logged, rem_done, brief)
+- Doc capture fast-path: /note, note:, capture:, doc: → documents table
+- Automations action config improved
+- Telegram live test script created (ops/telegram-live-test.sh)
 
-**1. Video Credits Deducted on Failure** (server/src/routes/videos.ts)
-- Moved credit deduction to AFTER successful generation for OpenRouter and Premium video
-- Added clear error response with `code: 'VIDEO_GENERATION_UNAVAILABLE'`
-- Director Mode was already correct (deducts after async completion)
+### Telegram Patterns Verified
+- English reminders, Hinglish reminders
+- English/Hinglish expenses (Swiggy, Uber, auto, petrol)
+- Habit logging, focus sessions
+- Memory save + recall (BLOCKER-006 fix confirmed)
+- Persona routing (@Jarvis)
+- Slash commands (/help, /status, /habits)
+- Doc capture from Telegram (3 docs created)
+- Search queries, daily brief
+- All inline keyboard buttons
 
-**2. BLOCKER-006: "Remember X" Not Persisting** (server/src/services/message-router.ts)
-- Added anchored regex in `hasToolTrigger()` to catch "remember that...", "remember my...", "don't forget...", "keep in mind...", "always remember..."
-- Anchored to start of message to avoid false positives on "do you remember..."
-
-**3. Brand Leaks Cleaned** (10 files)
-- HealthDashboardPage, UsageAnalyticsPage, WorkflowsPage, StatusPage: picoclaw→branded names
-- RemindersPage, MediaGalleryPage: localStorage keys geekspace→agentin
-- dashboardStore: model name geekspace-default→agentin-default
-
-**4. Chat Streaming Performance** (AgentChatPanel.tsx, ChatPage.tsx, api.ts)
-- Added `useRef` buffer + `requestAnimationFrame` flush loop (1 setState/frame vs 50-100/sec)
-- Added `AbortController` for stream cancellation
-- Added "Stop generating" button during active streaming
-- Deferred markdown rendering until stream completes
-- Added `signal` parameter to `chatStream()` API
-
-**5. CSS Utilities** (src/index.css)
-- Added `.aurora-bg`, `.no-overscroll`, `.will-animate`, `.streaming-cursor`
-- Updated reduced-motion media query
-
-### New Feature: Agentin Docs (Phases 15-16)
-
-**Backend** (server/src/routes/docs.ts — NEW)
-- 3 new DB tables: documents, doc_folders, document_versions
-- 18 REST endpoints: CRUD, folders, versions, search, publish, quick-capture, AI actions
-- content_text extraction + word count auto-calculation
-- 30 new tests (all passing)
-
-**Frontend** (src/dashboard/pages/DocsWorkspacePage.tsx — NEW)
-- Three-panel workspace: sidebar (folders/smart views) + document grid + AI actions panel
-- BlockNote block editor with dark theme, auto-save, lazy loading
-- Quick capture bar with Enter-to-save
-- AI Actions panel: Clean Up, Expand, Summarize, Extract Tasks, Make Formal, Make Casual, Brainstorm
-- Wired into dashboard sidebar under Productivity → Docs
-
-### Parallel Agent Execution
-Spawned 7 parallel agents for independent work streams:
-- BugFixer-Beta, BugFixer-Alpha, BrandGuard, StreamingOptimizer, FeatureBuilder-Docs, CSSBuilder, Research
-
-## Files Changed (22 modified, 3 new)
-- `server/src/routes/videos.ts` — credit deduction fix
-- `server/src/services/message-router.ts` — BLOCKER-006 fix
-- `server/src/db/index.ts` — 3 new tables
-- `server/src/app.ts` — docs route registration
-- `server/src/routes/docs.ts` — NEW: 18 endpoints
-- `server/src/test/api/docs.test.ts` — NEW: 30 tests
-- `server/src/test/setup.ts` — test table creation
-- `src/components/AgentChatPanel.tsx` — streaming perf
-- `src/dashboard/pages/ChatPage.tsx` — streaming perf
-- `src/services/api.ts` — AbortSignal support
-- `src/dashboard/DashboardApp.tsx` — docs page wiring
-- `src/dashboard/pages/DocsWorkspacePage.tsx` — NEW: full editor
-- `src/dashboard/pages/HealthDashboardPage.tsx` — brand fix
-- `src/dashboard/pages/UsageAnalyticsPage.tsx` — brand fix
-- `src/dashboard/pages/WorkflowsPage.tsx` — brand fix
-- `src/dashboard/pages/RemindersPage.tsx` — brand fix
-- `src/dashboard/pages/MediaGalleryPage.tsx` — brand fix
-- `src/pages/StatusPage.tsx` — brand fix
-- `src/stores/dashboardStore.ts` — brand fix
-- `src/index.css` — CSS utilities
-- `package.json` — BlockNote deps
-- `ops/runtime/` — phase checkpoints + state tracking
+## Files Changed (cumulative)
+33+ files modified across both sessions, 3 new files created
 
 ## Test Results
-- Server tests: **2253/2253 PASS** (up from 2223, +30 docs tests)
-- Frontend TypeScript: **0 errors**
-- Server TypeScript: **0 errors**
-- Frontend build: **SUCCESS** (20.93s)
-- Server build: **SUCCESS**
-- Docker health: **12/12 services OK**
-- Production deployed and verified
+- Server: 2253/2253 PASS | Audit: 98/98 (100%) | TS: 0 errors | Health: 12/12
 
-## Next Session Priorities
-1. MinIO object storage integration (Phase 5)
-2. Wire Agentin Docs to Telegram capture (`/note`, `capture:` prefixes in message-router)
-3. Wire docs to Meilisearch for search indexing
-4. UI overhaul pages (Phases 6-14) — many already polished from prior sessions
-5. Aliya sim v6 upgrade with docs test patterns
-6. Landing page redesign with bento grid layout
-
-## Compaction Recovery
-```
-Resume Agentin v2. Read ops/runtime/v2-state.json then continue from Phase 5.
-```
+## Next Priorities
+1. MinIO object storage
+2. Aliya sim v6 (300+ tests)
+3. PWA push notifications
+4. Indian merchant expense intelligence
+5. AI personality customization
 
 ## Start Commands
 ```bash
-cd ~/GeekSpace2.0
-git log --oneline -5
-cat ops/AI_HANDOFF.md
+cd ~/GeekSpace2.0 && git log --oneline -5 && cat ops/AI_HANDOFF.md
 curl -s localhost:3001/api/health | python3 -m json.tool
 cd server && npm test
 ```
