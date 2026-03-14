@@ -102,8 +102,20 @@ export function CalendarPage() {
     void fetchData();
   }, [fetchData]);
 
-  const handleConnect = useCallback(() => {
-    window.location.href = "/api/calendar/auth";
+  const handleConnect = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('gs_token');
+      const res = await fetch('/api/calendar/auth', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      const data = await res.json();
+      if (data?.url) window.location.href = data.url;
+    } catch (err) {
+      console.error('Calendar connect failed:', err);
+    }
   }, []);
 
   const handleSync = useCallback(async () => {

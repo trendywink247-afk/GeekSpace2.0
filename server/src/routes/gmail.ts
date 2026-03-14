@@ -82,7 +82,12 @@ gmailRouter.get('/auth', requireAuth, (req, res) => {
       state: userId,
     });
 
-    res.redirect(url);
+    // If called via fetch (Accept: json), return URL; otherwise redirect
+    if (req.headers.accept?.includes('application/json')) {
+      res.json({ url });
+    } else {
+      res.redirect(url);
+    }
   } catch (err) {
     logger.error({ err }, 'Gmail auth redirect failed');
     res.status(500).json({ error: 'Failed to generate auth URL' });

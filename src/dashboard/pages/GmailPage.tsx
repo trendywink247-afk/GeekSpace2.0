@@ -83,8 +83,20 @@ export function GmailPage() {
     load();
   }, [fetchStatus, fetchMessages]);
 
-  const handleConnect = () => {
-    window.location.href = '/api/gmail/auth';
+  const handleConnect = async () => {
+    try {
+      const token = localStorage.getItem('gs_token');
+      const res = await fetch('/api/gmail/auth', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      const data = await res.json();
+      if (data?.url) window.location.href = data.url;
+    } catch (err) {
+      console.error('Gmail connect failed:', err);
+    }
   };
 
   const handleDisconnect = async () => {

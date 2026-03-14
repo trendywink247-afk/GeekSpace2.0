@@ -61,7 +61,11 @@ router.get("/auth", requireAuth, (req, res) => {
   });
 
   logger.info({ userId }, "Calendar OAuth redirect initiated");
-  res.redirect(authUrl);
+  if (req.headers.accept?.includes('application/json')) {
+    res.json({ url: authUrl });
+  } else {
+    res.redirect(authUrl);
+  }
 });
 
 // GET /api/calendar/callback -- handle OAuth callback
