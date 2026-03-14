@@ -184,5 +184,5 @@ function escapeMarkdown(text: string): string {
   // In Telegram's Markdown mode (not MarkdownV2), only * _ ` [ need escaping
   // But we USE * for bold, so don't escape it here — caller wraps in * already
   // Just escape the content that goes inside formatting
-  return text.replace(/[_`\[]/g, '\\$&');
+  return text.replace(/[_`\[]/g, '\\$&'); // eslint-disable-line no-useless-escape
 }
