@@ -32,7 +32,7 @@ export function getOAuth2Client(tokenJson?: string | null) {
   const oauth2Client = new google.auth.OAuth2(
     config.googleClientId,
     config.googleClientSecret,
-    config.apiUrl + "/calendar/callback"
+    config.apiUrl + "/api/calendar/callback"
   );
   if (tokenJson) {
     try {
