@@ -1040,6 +1040,36 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     return;
   }
 
+  // 5ah. Document capture fast-path — save directly to Agentin Docs (0 credits, <50ms)
+  {
+    const docCapturePattern = /^(?:\/note|note:|doc:|capture:|save to docs?:)\s+(.+)/is;
+    const docMatch = msg.text.match(docCapturePattern);
+    if (docMatch) {
+      const text = docMatch[1].trim();
+      const title = text.split(/[.!?\n]/)[0].slice(0, 60) || 'Quick Note';
+
+      // Insert into documents table
+      db.prepare(`
+        INSERT INTO documents (user_id, title, content, content_text, word_count, source)
+        VALUES (?, ?, ?, ?, ?, 'telegram')
+      `).run(
+        userId,
+        title,
+        JSON.stringify([{ type: 'paragraph', content: [{ type: 'text', text }] }]),
+        text,
+        text.split(/\s+/).filter(Boolean).length,
+      );
+
+      const savedTitle = title.length > 50 ? title.slice(0, 50) + '...' : title;
+      const reply = `\u{1F4DD} Saved to Docs: "${savedTitle}"\n\n${text.length > 200 ? text.slice(0, 200) + '...' : text}`;
+      logConversation(userId, 'user', msg.text, requestId);
+      logConversation(userId, 'assistant', reply, requestId, 'builtin', 'doc-capture');
+      await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
+      logger.info({ channel: msg.channel, userId, titleLen: title.length, wordCount: text.split(/\s+/).filter(Boolean).length, latencyMs: Date.now() - startTime }, 'Doc capture fast-path executed');
+      return;
+    }
+  }
+
   // 5b. Auto-detect task intents (remind, telegram, deploy) — route to Pico Fleet
   // For mixed-intent messages (e.g. "Give me a workout plan and remind me"),
   // queue the tasks but continue to LLM for the content response.

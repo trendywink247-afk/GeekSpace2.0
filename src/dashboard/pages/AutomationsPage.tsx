@@ -132,6 +132,10 @@ export function AutomationsPage() {
   const [triggerErrors, setTriggerErrors] = useState<Record<string, string>>({});
   // 61.8: Dry-run result popover
   const [dryRunResult, setDryRunResult] = useState<{ id: string; simulatedOutput: string } | null>(null);
+  // Per-automation run history (expanded inline)
+  const [expandedRunsId, setExpandedRunsId] = useState<string | null>(null);
+  const [perAutoLogs, setPerAutoLogs] = useState<AutomationLog[]>([]);
+  const [perAutoLogsLoading, setPerAutoLogsLoading] = useState(false);
 
   const resetForm = () => {
     setForm({ name: '', description: '', triggerType: 'time', actionType: 'telegram-message', enabled: true, intervalMinutes: 60, webhookUrl: '', actionConfig: {} });
@@ -191,8 +195,30 @@ export function AutomationsPage() {
     setIsAddDialogOpen(true);
   };
 
+  // Validate action-specific required fields
+  const getActionValidationError = (): string => {
+    if (!form.name.trim()) return 'Name is required';
+    const at = form.actionType;
+    if ((at === 'telegram-message' || at === 'whatsapp-message' || at === 'manychat-broadcast') && !form.actionConfig.message?.trim()) {
+      return 'Message text is required for this action';
+    }
+    if ((at === 'n8n-webhook' || at === 'call_api') && !form.webhookUrl.trim()) {
+      return 'Webhook URL is required for this action';
+    }
+    if (at === 'create_reminder' && !form.actionConfig.reminder_text?.trim()) {
+      return 'Reminder text is required';
+    }
+    return '';
+  };
+
+  const actionValidationError = getActionValidationError();
+
   const handleSave = async () => {
-    if (!form.name) return;
+    const validationErr = getActionValidationError();
+    if (validationErr) {
+      setSaveError(validationErr);
+      return;
+    }
     setSaveError('');
     try {
       // 62.6: build triggerConfig for time-based automations
@@ -254,6 +280,25 @@ export function AutomationsPage() {
     }
   };
 
+  // Toggle per-automation run history
+  const handleToggleRunHistory = async (id: string) => {
+    if (expandedRunsId === id) {
+      setExpandedRunsId(null);
+      setPerAutoLogs([]);
+      return;
+    }
+    setExpandedRunsId(id);
+    setPerAutoLogsLoading(true);
+    try {
+      const r = await automationLogService.forAutomation(id, 10, 0);
+      setPerAutoLogs(r.data.logs);
+    } catch {
+      setPerAutoLogs([]);
+    } finally {
+      setPerAutoLogsLoading(false);
+    }
+  };
+
   // 59.4: Duplicate automation — call API directly, refresh list from server
   const handleDuplicate = async (id: string) => {
     try {
@@ -293,9 +338,18 @@ export function AutomationsPage() {
   const handleTestFire = async (id: string) => {
     setTestingId(id);
     setTestResult(null);
+    const auto = automations.find((a) => a.id === id);
+    const isUrlAction = auto && (auto.actionType === 'n8n-webhook' || auto.actionType === 'call_api');
     try {
-      const res = await automationService.testFire(id);
-      setTestResult({ id, success: res.data.success, message: res.data.message, statusCode: res.data.statusCode, latencyMs: res.data.latencyMs, responseBody: res.data.responseBody });
+      if (isUrlAction) {
+        // URL-based actions: use the /test endpoint (sends real HTTP request)
+        const res = await automationService.testFire(id);
+        setTestResult({ id, success: res.data.success, message: res.data.message, statusCode: res.data.statusCode, latencyMs: res.data.latencyMs, responseBody: res.data.responseBody });
+      } else {
+        // Non-URL actions: use dry-run to simulate
+        const res = await automationService.dryRun(id);
+        setTestResult({ id, success: true, message: res.data.simulatedOutput });
+      }
     } catch {
       setTestResult({ id, success: false, message: 'Test request failed' });
     } finally {
@@ -612,22 +666,21 @@ export function AutomationsPage() {
                         </div>
                       )}
                       <div className="flex items-center gap-1">
-                      {auto.triggerType === 'webhook' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleTestFire(auto.id)}
-                          disabled={testingId === auto.id}
-                          aria-label={`Test ${auto.name}`}
-                          className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
-                        >
-                          {testingId === auto.id ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Send className="w-4 h-4" />
-                          )}
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleTestFire(auto.id)}
+                        disabled={testingId === auto.id}
+                        aria-label={`Test ${auto.name}`}
+                        title="Test Now"
+                        className="text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                      >
+                        {testingId === auto.id ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -649,6 +702,16 @@ export function AutomationsPage() {
                         className="text-[#9CA3AF] hover:text-[#F59E0B] hover:bg-[#F59E0B]/10 min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                       >
                         <FlaskConical className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void handleToggleRunHistory(auto.id)}
+                        aria-label={`Run history for ${auto.name}`}
+                        title="Run history"
+                        className={`min-h-[44px] min-w-[44px] p-0 press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${expandedRunsId === auto.id ? 'text-[#FFB800] bg-[#FFB800]/10' : 'text-[#9CA3AF] hover:text-[#FFB800] hover:bg-[#FFB800]/10'}`}
+                      >
+                        <Clock className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -685,6 +748,41 @@ export function AutomationsPage() {
                       <p className="text-xs text-[#FF6161] mt-2 pl-1">{triggerErrors[auto.id]}</p>
                     )}
                   </div>
+                  {/* Inline per-automation run history */}
+                  {expandedRunsId === auto.id && (
+                    <div className="mt-3 pt-3 border-t border-[#00F0FF]/10">
+                      <p className="text-xs text-[#9CA3AF] font-medium mb-2">Recent Runs</p>
+                      {perAutoLogsLoading ? (
+                        <div className="flex items-center gap-2 py-2">
+                          <RefreshCw className="w-3 h-3 animate-spin text-[#00F0FF]" />
+                          <span className="text-xs text-[#9CA3AF]">Loading...</span>
+                        </div>
+                      ) : perAutoLogs.length === 0 ? (
+                        <p className="text-xs text-[#9CA3AF] py-2">No runs recorded yet</p>
+                      ) : (
+                        <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+                          {perAutoLogs.map((log) => {
+                            const rawLog = log as unknown as Record<string, unknown>;
+                            const logStatus = (rawLog.status as string) ?? log.status ?? 'unknown';
+                            const logOutput = (rawLog.output as string) ?? log.output ?? '';
+                            const logDuration = (rawLog.duration_ms as number) ?? log.durationMs ?? 0;
+                            const logCreated = (rawLog.created_at as string) ?? log.createdAt ?? '';
+                            return (
+                              <div key={log.id} className="flex items-center gap-2 text-xs px-2 py-1.5 rounded bg-[#06060B] border border-[#00F0FF]/10">
+                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${logStatus === 'success' ? 'bg-[#00FF88]' : 'bg-[#FF6161]'}`} />
+                                <span className={logStatus === 'success' ? 'text-[#00FF88]' : 'text-[#FF6161]'}>{logStatus}</span>
+                                <span className="text-[#9CA3AF] truncate flex-1">{logOutput || 'No output'}</span>
+                                {logDuration > 0 && <span className="text-[#9CA3AF] font-mono flex-shrink-0">{logDuration}ms</span>}
+                                <span className="text-[#9CA3AF] flex-shrink-0 whitespace-nowrap">
+                                  {logCreated ? fmtRelativeTime(logCreated) : ''}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -810,6 +908,18 @@ export function AutomationsPage() {
                 />
               </div>
             )}
+            {form.actionType === 'log' && (
+              <div className="space-y-1">
+                <label className="text-xs text-[#9CA3AF]">Log Message</label>
+                <input
+                  type="text"
+                  placeholder="Message to log..."
+                  value={form.actionConfig.message ?? ''}
+                  onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, message: e.target.value } })}
+                  className="w-full p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] text-sm"
+                />
+              </div>
+            )}
             {/* 62.6: Schedule builder — shown when trigger is time-based */}
             {form.triggerType === 'time' && (
               <div className="rounded-lg border border-[#00F0FF]/20 bg-[#06060B] p-3 space-y-3">
@@ -880,7 +990,7 @@ export function AutomationsPage() {
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={!form.name}
+                disabled={!!actionValidationError}
                 className="flex-1 bg-[#00F0FF] hover:bg-[#00D4B0] min-h-[44px] press-scale"
               >
                 {editingId ? 'Save Changes' : 'Create'}
