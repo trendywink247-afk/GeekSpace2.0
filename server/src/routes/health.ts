@@ -43,7 +43,7 @@ async function runProbes(): Promise<ComponentStatus> {
   } catch { /* db not ready */ }
 
   // Ollama, Edith, PicoClaw, SearXNG, Meilisearch, Qdrant — run in PARALLEL
-  const [ollamaOk, edithOk, picoOk, searxngOk, meiliOk, qdrantOk] = await Promise.all([
+  const [ollamaOk, edithOk, picoOk, searxngOk, meiliOk, qdrantOk, browserOk] = await Promise.all([
     // Ollama
     (async () => {
       if (!config.ollamaBaseUrl) return false;
@@ -80,6 +80,16 @@ async function runProbes(): Promise<ComponentStatus> {
         return r.ok || r.status === 200;
       } catch { return false; }
     })(),
+    // Browser Agent
+    (async () => {
+      try {
+        const r = await fetch('http://geekspace-browser:3010/health', {
+          headers: { 'X-Browser-Secret': process.env.BROWSER_SECRET || 'agentin-browser-2026' },
+          signal: AbortSignal.timeout(3000),
+        });
+        return r.ok;
+      } catch { return false; }
+    })(),
   ]);
 
   const bridgeOk = config.bridgeEnabled && (ollamaOk || edithOk || !!config.openrouterApiKey);
@@ -96,6 +106,7 @@ async function runProbes(): Promise<ComponentStatus> {
     searxng: searxngOk ? 'reachable' : 'unreachable',
     meilisearch: meiliOk ? 'reachable' : 'unreachable',
     qdrant: qdrantOk ? 'reachable' : 'unreachable',
+    browser: browserOk ? 'reachable' : 'not_running',
   };
 }
 

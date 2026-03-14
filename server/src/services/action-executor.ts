@@ -1534,6 +1534,38 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         };
       }
 
+      // ── browse_and_extract ─────────────────────────────────────
+      case 'browse_and_extract': {
+        const browseUrl = params.url as string;
+        if (!browseUrl) return { tool, success: false, message: 'Please provide a URL to browse.' };
+        try {
+          const { navigatePage } = await import('./browser-agent.js');
+          const result = await navigatePage(browseUrl);
+          if (result.error) return { tool, success: false, message: `Browser error: ${result.error}` };
+          return {
+            tool, success: true,
+            message: `**${result.title || browseUrl}**\n\n${(result.text || '').slice(0, 3000)}`,
+            data: { url: result.url, linksCount: result.links?.length || 0 },
+          };
+        } catch {
+          return { tool, success: false, message: 'Browser agent is not available.' };
+        }
+      }
+
+      // ── check_page_status ──────────────────────────────────────
+      case 'check_page_status': {
+        const checkUrl = params.url as string;
+        if (!checkUrl) return { tool, success: false, message: 'Please provide a URL to check.' };
+        try {
+          const { extractPageContent } = await import('./browser-agent.js');
+          const result = await extractPageContent(checkUrl);
+          if (result.error) return { tool, success: true, message: `${checkUrl} — Error: ${result.error}` };
+          return { tool, success: true, message: `✅ ${checkUrl} is live\nTitle: ${result.title}` };
+        } catch {
+          return { tool, success: true, message: `❓ Could not reach ${checkUrl} — browser agent unavailable.` };
+        }
+      }
+
       // ── search_memory ─────────────────────────────────────────
       case 'search_memory': {
         const query = (params.query as string)?.trim();

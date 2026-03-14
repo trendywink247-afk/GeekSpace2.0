@@ -127,6 +127,8 @@ services:
     container_name: geekspace-redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-geekspace-redis-2026}
+    ports:
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
     networks:
@@ -277,6 +279,29 @@ services:
       resources:
         limits:
           memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+#-----browser-agent-----
+  browser:
+    build: ./browser-agent
+    container_name: geekspace-browser
+    restart: unless-stopped
+    environment:
+      - BROWSER_SECRET=${BROWSER_SECRET:-agentin-browser-2026}
+      - MAX_CONCURRENT=2
+      - PORT=3010
+    expose:
+      - "3010"
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+    networks:
+      - geekspace-net
     logging:
       driver: "json-file"
       options:
