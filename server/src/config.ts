@@ -86,7 +86,7 @@ export const config = {
   // PicoClaw (lightweight automation engine)
   picoClawUrl: optional('PICOCLAW_URL', 'http://localhost:8080'),
   picoClawEnabled: optional('PICOCLAW_ENABLED', 'false') === 'true',
-  picoClawTimeout: optionalInt('PICOCLAW_TIMEOUT_MS', 15000),
+  picoClawTimeout: optionalInt('PICOCLAW_TIMEOUT_MS', 5000),
 
   // Pico-Kimi Bridge (orchestration layer)
   bridgeEnabled: optional('BRIDGE_ENABLED', 'false') === 'true',
