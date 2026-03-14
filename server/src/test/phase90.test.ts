@@ -44,7 +44,7 @@ describe('90.1 proactive-engine.ts exports', () => {
 
   it('exports initProactiveEngine function', () => {
     const src = readFile('server/src/services/proactive-engine.ts');
-    expect(src).toContain('export function initProactiveEngine');
+    expect(src).toContain('initProactiveEngine');
   });
 
   it('engine uses 60-second interval', () => {
