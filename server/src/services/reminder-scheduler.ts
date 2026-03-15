@@ -18,6 +18,7 @@ import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { sendTelegramMessage } from './telegram.js';
 import { sendReminderEmail, resolveEmailAddress } from './email.js';
+import { computeNextOccurrence } from '../routes/reminders.js';
 
 // ---- Types ----
 
@@ -332,28 +333,7 @@ export function scheduleNextRecurrence(reminder: DueReminder): void {
   const current = new Date(reminder.datetime);
 
   // Use the smart recurrence engine from Phase 107
-  let next: Date | null = null;
-  try {
-    const { computeNextOccurrence } = require('../routes/reminders.js');
-    next = computeNextOccurrence(current, recurField);
-  } catch {
-    // Fallback for legacy patterns if import fails
-    switch (recurField) {
-      case 'daily':
-        next = new Date(current.getTime() + 24 * 3600_000);
-        break;
-      case 'weekly':
-        next = new Date(current.getTime() + 7 * 24 * 3600_000);
-        break;
-      case 'monthly':
-        next = new Date(current);
-        next.setMonth(next.getMonth() + 1);
-        break;
-      default:
-        return;
-    }
-  }
-
+  const next = computeNextOccurrence(current, recurField);
   if (!next) return;
 
   if (next.getTime() > Date.now()) {

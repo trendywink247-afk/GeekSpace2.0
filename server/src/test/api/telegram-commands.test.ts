@@ -16,6 +16,8 @@
 
 import { describe, it, expect, beforeAll, beforeEach, vi, afterEach } from 'vitest';
 import { v4 as uuid } from 'uuid';
+import fs from 'fs';
+import path from 'path';
 
 // Track sent messages
 const sentMessages: Array<{ chatId: number | string; text: string }> = [];
@@ -486,9 +488,8 @@ describe('Telegram Command Center', () => {
   describe('setMyCommands', () => {
     it('telegram.ts contains registerBotCommands function', () => {
       // Verify the init function registers commands
-      const fs = require('fs');
       const telegramTs = fs.readFileSync(
-        require('path').resolve(__dirname, '../../services/telegram.ts'),
+        path.resolve(__dirname, '../../services/telegram.ts'),
         'utf-8'
       );
       expect(telegramTs).toContain('setMyCommands');
