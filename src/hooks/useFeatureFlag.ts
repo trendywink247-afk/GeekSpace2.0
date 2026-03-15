@@ -30,7 +30,7 @@ export function useFeatureFlag(flagName: string): boolean {
   const loaded = useFeatureFlagStore((s) => s.loaded);
   const fetchFlags = useFeatureFlagStore((s) => s.fetchFlags);
   if (!loaded) fetchFlags();
-  return (flags as Record<string, boolean>)[flagName] ?? false;
+  return (flags as unknown as Record<string, boolean>)[flagName] ?? false;
 }
 
 export function useFeatureFlags(): FeatureToggles {
