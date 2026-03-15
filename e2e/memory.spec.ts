@@ -44,15 +44,16 @@ test.describe('Memory Manager Page', () => {
   });
 
   test('delete button is present on memory entries if any exist', async ({ page }) => {
-    // Only check if there are memory cards rendered
-    const cards = page.locator('[class*="space-y-3"] > *');
-    const count = await cards.count();
+    // Memory cards have aria-label="Delete memory" buttons
+    const deleteButtons = page.getByRole('button', { name: /delete memory/i });
+    const count = await deleteButtons.count();
     if (count > 0) {
-      // Each card has a Trash2 delete button
-      const deleteBtn = cards.first().locator('button').last();
-      await expect(deleteBtn).toBeVisible();
+      // Buttons are hidden until hover — hover the card to reveal them
+      const card = deleteButtons.first().locator('xpath=ancestor::div[contains(@class,"group")]').first();
+      await card.hover();
+      await expect(deleteButtons.first()).toBeVisible();
     } else {
-      // No entries — test passes trivially
+      // No entries — test passes trivially (no memories in CI)
       test.info().annotations.push({ type: 'info', description: 'No memory entries found — skipping delete button check' });
     }
   });

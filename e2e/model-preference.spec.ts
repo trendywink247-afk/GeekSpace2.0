@@ -16,20 +16,20 @@ test.describe('Agent Settings', () => {
   });
 
   test('should display Agent Settings page with tabs', async ({ page }) => {
-    // The page should have the 4 tab buttons
-    await expect(page.getByText('Personality')).toBeVisible({ timeout: 10000 });
+    // The page should have the 4 tab buttons (use role=tab to avoid duplicates from responsive spans)
+    await expect(page.getByRole('tab', { name: /Personality/i })).toBeVisible({ timeout: 10000 });
   });
 
   test('should show all settings tabs', async ({ page }) => {
-    await expect(page.getByText('Personality')).toBeVisible();
-    await expect(page.getByText('Memory')).toBeVisible();
-    await expect(page.getByText('Tools')).toBeVisible();
-    await expect(page.getByText('Channels')).toBeVisible();
+    await expect(page.getByRole('tab', { name: /Personality/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /Memory/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /Tools/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /Channels/i })).toBeVisible();
   });
 
   test('should allow switching between tabs', async ({ page }) => {
     // Click the Memory tab
-    const memoryTab = page.getByText('Memory').first();
+    const memoryTab = page.getByRole('tab', { name: /Memory/i });
     await memoryTab.click();
     await page.waitForTimeout(500);
     // Should still be on the agent settings page
