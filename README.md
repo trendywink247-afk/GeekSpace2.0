@@ -21,7 +21,7 @@
 
 **A self-hosted AI OS — your agent, your dashboard, your portfolio.**
 
-> v3.2.0 · Phase 7 complete · 2223 tests passing · 10 fast-paths · SearXNG + Meilisearch + Qdrant · main = live-production
+> v3.2.0 · Beast Mode complete · 2258 tests passing · 38 pages polished · Indian-first features · SearXNG + Meilisearch + Qdrant · main = live-production
 
 [Live Demo](https://ai.agentin.chat) · [Documentation](docs/) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 

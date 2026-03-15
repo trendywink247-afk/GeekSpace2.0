@@ -77,7 +77,13 @@ Internet → Caddy (:443, auto-HTTPS)
 |---------|----------|------|---------|
 | `geekspace` | Yes | 3001 (exposed) | Express API + built frontend |
 | `redis` | Yes | 6379 (internal) | Job queue + cache |
+| `caddy` | Yes | 80, 443 (exposed) | Reverse proxy, auto-HTTPS |
 | `picoclaw` | Optional | 8080 (internal) | Automation sidecar (fast small model) |
+| `browser` | Optional | 3100 (internal) | Playwright headless Chromium |
+| `searxng` | Optional | 8888 (internal) | Self-hosted metasearch |
+| `meilisearch` | Optional | 7700 (internal) | Typo-tolerant instant search |
+| `qdrant` | Optional | 6333 (internal) | Vector DB for semantic search |
+| `uptime-kuma` | Optional | 3200 (internal) | Monitoring dashboard |
 
 ## Caddy Configuration
 
@@ -117,7 +123,7 @@ systemctl restart caddy
 ```bash
 # Install Ollama
 curl -fsSL https://ollama.ai/install.sh | sh
-ollama pull llama3.1:8b
+ollama pull qwen3:8b
 
 # Verify
 curl http://localhost:11434/api/tags

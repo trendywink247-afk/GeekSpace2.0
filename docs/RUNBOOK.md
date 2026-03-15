@@ -9,7 +9,7 @@
 | Docker | 24.0+ with Compose v2 | Latest |
 | Caddy | 2.6+ (installed on host) | Latest |
 | Domain | A-record pointing to VPS IP | — |
-| Ollama | Running on host or Docker | With llama3.1:8b |
+| Ollama | Running on host or Docker | With qwen3:8b |
 
 ---
 
@@ -29,7 +29,7 @@ apt update && apt install caddy
 
 # Ollama
 curl -fsSL https://ollama.ai/install.sh | sh
-ollama pull llama3.1:8b
+ollama pull qwen3:8b
 ```
 
 ### 2. Configure Caddy
@@ -116,6 +116,13 @@ curl https://yourdomain.com/api/health
 |-----------|-------|---------|------|
 | `geekspace-app` | `geekspace20-geekspace` | Express API + built frontend | 3001 |
 | `geekspace-redis` | `redis:7-alpine` | Job queue + cache | 6379 (internal) |
+| `geekspace-caddy` | `caddy:2-alpine` | Reverse proxy, auto-HTTPS | 80, 443 |
+| `geekspace-picoclaw` | Custom (Node 20) | Automation sidecar | 8080 (internal) |
+| `geekspace-browser` | Custom (Playwright) | Headless Chromium | 3100 (internal) |
+| `geekspace-searxng` | `searxng/searxng` | Self-hosted metasearch | 8888 (internal) |
+| `geekspace-meilisearch` | `getmeili/meilisearch` | Instant search | 7700 (internal) |
+| `geekspace-qdrant` | `qdrant/qdrant` | Vector DB | 6333 (internal) |
+| `geekspace-uptime-kuma` | `louislam/uptime-kuma` | Monitoring | 3200 (internal) |
 
 ### Common Commands
 
