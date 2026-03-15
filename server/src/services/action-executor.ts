@@ -1796,6 +1796,51 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         };
       }
 
+      // ── check_calendar ─────────────────────────────────────────
+      case 'check_calendar': {
+        const days = Math.min(Math.max(Number(params.days) || 1, 1), 14);
+        const events = db.prepare(`
+          SELECT title, start_time, end_time, category FROM calendar_events
+          WHERE user_id = ? AND start_time >= ? AND start_time <= ?
+          ORDER BY start_time ASC LIMIT 20
+        `).all(
+          userId,
+          new Date().toISOString(),
+          new Date(Date.now() + days * 86400000).toISOString()
+        ) as Array<{ title: string; start_time: string; end_time: string | null; category: string }>;
+
+        if (events.length === 0) {
+          return { tool, success: true, message: `No calendar events in the next ${days} day(s). Your schedule is clear!` };
+        }
+
+        const lines = events.map((e, i) => {
+          const start = new Date(e.start_time).toLocaleString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+          return `${i + 1}. ${e.title} — ${start}`;
+        });
+        return { tool, success: true, message: `📅 Upcoming events (${events.length}):\n${lines.join('\n')}` };
+      }
+
+      // ── list_inbox ──────────────────────────────────────────────
+      case 'list_inbox': {
+        const limit = Math.min(Math.max(Number(params.limit) || 5, 1), 20);
+        const messages = db.prepare(`
+          SELECT source, sender, content, priority, received_at FROM inbox_messages
+          WHERE user_id = ? AND archived = 0
+          ORDER BY received_at DESC LIMIT ?
+        `).all(userId, limit) as Array<{ source: string; sender: string | null; content: string; priority: string; received_at: number }>;
+
+        if (messages.length === 0) {
+          return { tool, success: true, message: 'Your inbox is empty! No unread messages.' };
+        }
+
+        const lines = messages.map((m, i) => {
+          const sender = m.sender?.split('<')[0]?.trim() || m.source;
+          const preview = m.content.slice(0, 60).replace(/\n/g, ' ');
+          return `${i + 1}. [${m.source}] ${sender}: ${preview}...`;
+        });
+        return { tool, success: true, message: `📬 Inbox (${messages.length} messages):\n${lines.join('\n')}` };
+      }
+
       // ── Unknown tool (should not happen after parser validation)
       default:
         return {

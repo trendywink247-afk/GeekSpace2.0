@@ -215,6 +215,8 @@ Available tools:
 - list_expenses: List expenses. Params: {"period": "today|week|month|all", "category": "<optional filter>"}. Use when user says "show my expenses", "how much did I spend", "spending report", "what have I bought".
 - set_budget: Set a spending budget. Params: {"category": "food|total|...", "amount": <number>, "period": "daily|weekly|monthly"}. Use when user says "set budget", "spending limit", "my food budget is X".
 - portfolio_update_skills: Update portfolio skills list. Params: {"skills": ["Skill1", "Skill2"]}. Use when user says "update my skills", "my skills are X, Y, Z", "add skills to my portfolio".
+- check_calendar: Check upcoming calendar events. Params: {"days": 1}. Use when user says "what's on my calendar", "any meetings today", "my schedule", "what do I have tomorrow", "upcoming events".
+- list_inbox: List recent email inbox messages. Params: {"limit": 5}. Use when user says "check my emails", "any new emails", "show inbox", "what emails do I have", "unread messages".
 
 Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
 
@@ -313,7 +315,14 @@ function hasToolTrigger(message: string): boolean {
     /\breminder\s+(set|lagao|chahiye)\b/i.test(lower) ||
     // Hinglish notes
     /\bnote\s+banana|save\s+kar(o|na)\b/i.test(lower) ||
-    /\byan?\s+(note|likh)\b/i.test(lower)
+    /\byan?\s+(note|likh)\b/i.test(lower) ||
+    // Calendar queries
+    /\b(my\s+)?(calendar|schedule|meetings?|events?)\s*(today|tomorrow|this\s+week)?\b/i.test(lower) ||
+    /\bwhat.{0,15}(calendar|schedule|meetings?)\b/i.test(lower) ||
+    /\bany\s+(meetings?|events?)\s*(today|tomorrow)?\b/i.test(lower) ||
+    // Email/inbox queries
+    /\b(check|show|read|list|any)\s+(my\s+)?(emails?|inbox|mail)\b/i.test(lower) ||
+    /\b(new|unread)\s+(emails?|messages?)\b/i.test(lower)
   );
 }
 

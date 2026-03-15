@@ -302,6 +302,8 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   // Context threading
   search_memory: searchMemorySchema,
   create_memory: createMemorySchema,
+  check_calendar: z.object({ days: z.coerce.number().min(1).max(14).default(1) }),
+  list_inbox: z.object({ limit: z.coerce.number().min(1).max(20).default(5) }),
 };
 
 // ── Types ───────────────────────────────────────────────────
