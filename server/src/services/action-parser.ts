@@ -60,6 +60,7 @@ const portfolioUpdateThemeSchema = z.object({
 });
 
 const sendEmailSchema = z.object({
+  to: z.string().email().optional(),
   subject: z.string().min(1).max(200),
   body: z.string().min(1).max(5000),
 });

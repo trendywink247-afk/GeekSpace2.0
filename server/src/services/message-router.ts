@@ -190,7 +190,7 @@ Available tools:
 - telegram_notify: Send a Telegram message to the user. Params: {"message": "<message text>"}
 - generate_image: Generate an image. Params: {"prompt": "<image description>"}
 - generate_code: Build or update a website. Params: {"template": "portfolio|landing|blog|business", "title": "...", "name": "...", "theme": "dark|light|purple|blue|gradient", "profession": "...", "location": "...", "bio": "...", "skills": ["skill1","skill2"], "email": "...", "tagline": "..."}. Use this for both creating AND editing websites (just output updated params — the server handles the rest). Never write raw HTML.
-- send_email: Send an email to the user. Params: {"subject": "<subject>", "body": "<body>"}
+- send_email: Send an email. Params: {"to": "<recipient email>", "subject": "<subject>", "body": "<body>"}. Use when user says "send email to X", "email X about Y", "write an email", "compose email". Sends via user's connected Gmail account.
 - delete_reminder: Delete reminders. To delete ALL pending reminders: {"deleteAll": true}. To delete one: {"reminderId": "<id>"}. Use this whenever the user says "delete my reminders", "cancel all reminders", "remove reminders", etc.
 - list_reminders: Show pending reminders. Params: {}. ALWAYS use this when user says "what reminders do I have", "show my reminders", "list reminders", "any reminders?", "what have I got scheduled". NEVER guess or invent reminders — always call this tool.
 - create_note: Save a note. Params: {"title": "<title>", "content": "<note content>", "tags": ["<tag1>"]}. Use when user says "save this", "take note", "note this down", "remember this".
@@ -322,7 +322,10 @@ function hasToolTrigger(message: string): boolean {
     /\bany\s+(meetings?|events?)\s*(today|tomorrow)?\b/i.test(lower) ||
     // Email/inbox queries
     /\b(check|show|read|list|any)\s+(my\s+)?(emails?|inbox|mail)\b/i.test(lower) ||
-    /\b(new|unread)\s+(emails?|messages?)\b/i.test(lower)
+    /\b(new|unread)\s+(emails?|messages?)\b/i.test(lower) ||
+    // Send email
+    /\b(send|write|compose|draft)\s+(an?\s+)?(email|mail)\b/i.test(lower) ||
+    /\bemail\s+\S+@\S+/i.test(lower)
   );
 }
 
@@ -1640,13 +1643,16 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       creditCost = reactResult.creditCost;
     }
   } else {
-    // Bridge not enabled — use ReAct loop (routeChat + multi-turn tool use)
+    // Bridge not enabled or tool trigger detected — use ReAct loop
+    // Force Groq for tool-triggered messages (free models don't emit <<<ACTION>>> reliably)
+    const forceGroqForTools = hasToolTrigger(msg.text) ? 'groq' as const : undefined;
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
     const reactResult = await runReactLoop(messages, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
       userCredits,
       userId,
+      forceProvider: forceGroqForTools,
     });
     replyText = reactResult.text;
     provider = reactResult.provider;

@@ -380,35 +380,41 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
 
       // ── send_email ──────────────────────────────────────
       case 'send_email': {
-        const to = resolveEmailAddress(userId);
-        if (!to) {
-          return {
-            tool,
-            success: false,
-            message: 'No email address configured. Add one in Settings → Connections.',
-          };
+        const emailTo = (params.to as string)?.trim() || resolveEmailAddress(userId);
+        const emailSubject = (params.subject as string)?.trim();
+        const emailBody = (params.body as string)?.trim();
+
+        if (!emailTo) {
+          return { tool, success: false, message: 'No recipient email address. Specify who to send to.' };
+        }
+        if (!emailSubject || !emailBody) {
+          return { tool, success: false, message: 'Subject and body are required.' };
         }
 
-        const sent = await sendAgentEmail(
-          userId,
-          params.subject as string,
-          params.body as string,
-        );
+        // Try Gmail first (user's own account), fall back to Resend
+        let sent = false;
+        const gmailToken = db.prepare('SELECT google_gmail_token FROM users WHERE id = ?').get(userId) as { google_gmail_token: string | null } | undefined;
+        if (gmailToken?.google_gmail_token) {
+          try {
+            const { sendGmailCompose } = await import('./gmail-sync.js');
+            sent = await sendGmailCompose(userId, emailTo, emailSubject, emailBody);
+          } catch { /* fall through to Resend */ }
+        }
 
         if (!sent) {
-          return {
-            tool,
-            success: false,
-            message: 'Email could not be sent — check server configuration.',
-          };
+          sent = await sendAgentEmail(userId, emailSubject, emailBody);
+        }
+
+        if (!sent) {
+          return { tool, success: false, message: 'Email could not be sent. Connect Gmail in Settings for better delivery.' };
         }
 
         return {
           tool,
           success: true,
-          message: `Email sent to ${to}`,
-          data: { to, subject: params.subject as string },
-          receipt: RECEIPT_TEMPLATES.email(to),
+          message: `Email sent to ${emailTo}`,
+          data: { to: emailTo, subject: emailSubject },
+          receipt: RECEIPT_TEMPLATES.email(emailTo),
         };
       }
 
