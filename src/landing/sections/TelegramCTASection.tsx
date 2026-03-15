@@ -108,7 +108,7 @@ export function TelegramCTASection() {
             </p>
 
             <a
-              href="https://t.me/AgentinBot"
+              href="https://t.me/Weebo_gs_bot"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#0088cc] hover:bg-[#0088cc]/90 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#0088cc]/20 group"
