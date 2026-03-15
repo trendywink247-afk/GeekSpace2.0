@@ -301,7 +301,10 @@ export function HealthDashboardPage() {
 
       {/* Component Status Grid */}
       <div>
-        <h2 className="text-lg font-semibold text-[#E8E8F0] mb-3">Components</h2>
+        <h2 className="text-lg font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
+          <Server className="w-5 h-5 text-[#00F0FF]" />
+          Components
+        </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Object.entries(snapshot.components).map(([key, status]) => {
             const Icon = componentIcons[key] || Wifi;
@@ -314,7 +317,13 @@ export function HealthDashboardPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-[#E8E8F0] truncate">{componentLabels[key] || key}</p>
-                    <p className="text-xs" style={{ color }}>{statusLabel(status)}</p>
+                    <p className="text-xs flex items-center gap-1.5" style={{ color }}>
+                      <span
+                        className={`w-2 h-2 rounded-full inline-block shrink-0${color === '#00FF88' ? ' animate-pulse' : ''}`}
+                        style={{ backgroundColor: color }}
+                      />
+                      {statusLabel(status)}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -327,7 +336,10 @@ export function HealthDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-[#00F0FF]/20">
           <CardContent className="p-5">
-            <h3 className="text-sm text-[#9CA3AF] mb-2">Error Rate (5-min window)</h3>
+            <h3 className="text-sm text-[#9CA3AF] mb-2 flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4" />
+              Error Rate (5-min window)
+            </h3>
             <div className="flex items-end gap-3">
               <span className="text-3xl font-bold" style={{ color: errorRate > 5 ? '#FF6161' : errorRate > 0 ? '#FFB800' : '#00FF88' }}>
                 {errorRate}%
@@ -340,7 +352,10 @@ export function HealthDashboardPage() {
         </Card>
         <Card className="border-[#00F0FF]/20">
           <CardContent className="p-5">
-            <h3 className="text-sm text-[#9CA3AF] mb-2">Memory Usage</h3>
+            <h3 className="text-sm text-[#9CA3AF] mb-2 flex items-center gap-1.5">
+              <Cpu className="w-4 h-4" />
+              Memory Usage
+            </h3>
             <div className="flex items-end gap-3">
               <span className="text-3xl font-bold text-[#00F0FF]">{snapshot.system.memoryMb} MB</span>
               <span className="text-sm text-[#9CA3AF] mb-1">heap used</span>
@@ -352,7 +367,10 @@ export function HealthDashboardPage() {
       {/* Top Endpoints */}
       {(snapshot.topEndpoints ?? []).length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-[#E8E8F0] mb-3">Hot Endpoints (5-min window)</h2>
+          <h2 className="text-lg font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-[#FFB800]" />
+            Hot Endpoints (5-min window)
+          </h2>
           <Card className="border-[#00F0FF]/20 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

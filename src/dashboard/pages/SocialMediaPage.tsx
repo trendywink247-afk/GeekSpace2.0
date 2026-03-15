@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Share2, Plus, Trash2, CheckCircle, XCircle, Clock, Loader2,
   Instagram, Facebook, Webhook, Key, Send, Calendar,
   ToggleLeft, ToggleRight, Edit3, Eye, AlertCircle, Image, Film,
+  Sparkles, Hash, Twitter, Linkedin, TrendingUp, Users,
+  Heart, MessageCircle, ChevronLeft, ChevronRight, CalendarDays,
+  Target, Wand2, Globe, Copy, Megaphone,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,6 +57,319 @@ function StatusIcon({ status }: { status: string }) {
     default:
       return <AlertCircle className="w-4 h-4" style={{ color }} />;
   }
+}
+
+// ---- Tone & Platform types ----
+
+type Tone = 'professional' | 'casual' | 'inspirational' | 'educational';
+type Platform = 'twitter' | 'linkedin' | 'instagram';
+
+const TONES: { value: Tone; label: string }[] = [
+  { value: 'professional', label: 'Professional' },
+  { value: 'casual', label: 'Casual' },
+  { value: 'inspirational', label: 'Inspirational' },
+  { value: 'educational', label: 'Educational' },
+];
+
+const PLATFORMS: { value: Platform; label: string; limit: number; color: string }[] = [
+  { value: 'twitter', label: 'Twitter / X', limit: 280, color: '#1DA1F2' },
+  { value: 'linkedin', label: 'LinkedIn', limit: 3000, color: '#0A66C2' },
+  { value: 'instagram', label: 'Instagram', limit: 2200, color: '#E1306C' },
+];
+
+function PlatformIcon({ platform, className, style }: { platform: Platform; className?: string; style?: React.CSSProperties }) {
+  switch (platform) {
+    case 'twitter': return <Twitter className={className} style={style} />;
+    case 'linkedin': return <Linkedin className={className} style={style} />;
+    case 'instagram': return <Instagram className={className} style={style} />;
+  }
+}
+
+// ---- Tone Selector Pills ----
+
+function TonePills({ selected, onChange }: { selected: Tone; onChange: (t: Tone) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {TONES.map((t) => (
+        <button
+          key={t.value}
+          onClick={() => onChange(t.value)}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+            selected === t.value
+              ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 shadow-[0_0_8px_rgba(0,240,255,0.15)]'
+              : 'bg-[#06060B] text-[#9CA3AF] border border-[#1a1a2e] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+          }`}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ---- Platform Badge Selector ----
+
+function PlatformBadges({ selected, onChange }: { selected: Platform; onChange: (p: Platform) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {PLATFORMS.map((p) => (
+        <button
+          key={p.value}
+          onClick={() => onChange(p.value)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+            selected === p.value
+              ? 'border shadow-[0_0_8px_rgba(0,0,0,0.2)]'
+              : 'bg-[#06060B] text-[#9CA3AF] border border-[#1a1a2e] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+          }`}
+          style={selected === p.value ? { background: `${p.color}20`, color: p.color, borderColor: `${p.color}60` } : undefined}
+        >
+          <PlatformIcon platform={p.value} className="w-3.5 h-3.5" />
+          {p.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ---- Character Counter ----
+
+function CharacterCounter({ count, platform }: { count: number; platform: Platform }) {
+  const info = PLATFORMS.find((p) => p.value === platform)!;
+  const pct = Math.min((count / info.limit) * 100, 100);
+  const isOver = count > info.limit;
+  const barColor = isOver ? '#FF6161' : pct > 90 ? '#FFB800' : '#00F0FF';
+
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <div className="flex-1 h-1 rounded-full bg-[#1a1a2e] overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-300"
+          style={{ width: `${Math.min(pct, 100)}%`, background: barColor }}
+        />
+      </div>
+      <span className="text-xs font-mono tabular-nums" style={{ color: barColor }}>
+        {count}/{info.limit}
+      </span>
+    </div>
+  );
+}
+
+// ---- Hashtag Suggestions ----
+
+function HashtagSuggestions({ text }: { text: string }) {
+  const hashtags = useMemo(() => {
+    if (!text || text.length < 10) return [];
+    const words = text.toLowerCase().split(/\s+/).filter((w) => w.length > 4);
+    const unique = [...new Set(words)].slice(0, 8);
+    return unique.map((w) => `#${w.replace(/[^a-z0-9]/g, '')}`).filter((h) => h.length > 2);
+  }, [text]);
+
+  if (hashtags.length === 0) return null;
+
+  return (
+    <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[#1a1a2e]">
+      <div className="flex items-center gap-1.5 mb-2">
+        <Hash className="w-3.5 h-3.5 text-[#00F0FF]" />
+        <span className="text-xs font-medium text-[#9CA3AF]">Suggested Hashtags</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {hashtags.map((tag) => (
+          <span key={tag} className="px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF] text-xs">
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---- Post Preview Card ----
+
+function PostPreviewCard({ text, platform }: { text: string; platform: Platform }) {
+  if (!text) return null;
+
+  const info = PLATFORMS.find((p) => p.value === platform)!;
+  const truncated = text.length > info.limit ? text.slice(0, info.limit) + '...' : text;
+
+  return (
+    <div className="mt-3">
+      <div className="flex items-center gap-1.5 mb-2">
+        <Eye className="w-3.5 h-3.5 text-[#9CA3AF]" />
+        <span className="text-xs font-medium text-[#9CA3AF]">Preview on {info.label}</span>
+      </div>
+      <div
+        className="rounded-xl border p-4 space-y-2"
+        style={{ borderColor: `${info.color}30`, background: '#08080F' }}
+      >
+        {/* Mock platform header */}
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ background: `${info.color}20` }}
+          >
+            <PlatformIcon platform={platform} className="w-4 h-4" style={{ color: info.color } as React.CSSProperties} />
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-[#E8E8F0]">Your Brand</span>
+            <span className="text-[10px] text-[#9CA3AF] block">
+              {platform === 'twitter' ? '@yourbrand' : platform === 'linkedin' ? 'Your Brand Inc.' : '@yourbrand'}
+            </span>
+          </div>
+        </div>
+        {/* Body text */}
+        <p className="text-sm text-[#E8E8F0] whitespace-pre-wrap leading-relaxed">{truncated}</p>
+        {/* Mock engagement bar */}
+        <div className="flex items-center gap-4 pt-2 border-t border-[#1a1a2e]">
+          <span className="flex items-center gap-1 text-[10px] text-[#9CA3AF]">
+            <Heart className="w-3 h-3" /> 0
+          </span>
+          <span className="flex items-center gap-1 text-[10px] text-[#9CA3AF]">
+            <MessageCircle className="w-3 h-3" /> 0
+          </span>
+          <span className="flex items-center gap-1 text-[10px] text-[#9CA3AF]">
+            <Share2 className="w-3 h-3" /> 0
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- Mini Calendar ----
+
+function MiniCalendar({ items }: { items: ContentPlanItem[] }) {
+  const [monthOffset, setMonthOffset] = useState(0);
+
+  const today = new Date();
+  const viewDate = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+
+  // Build map: day-of-month -> count of scheduled posts
+  const dayCountMap = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const item of items) {
+      if (!item.scheduled_at) continue;
+      const d = new Date(item.scheduled_at);
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        map.set(d.getDate(), (map.get(d.getDate()) || 0) + 1);
+      }
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, monthOffset]);
+
+  const monthLabel = viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  return (
+    <Card className="bg-[#0C0C18] border-[#1a1a2e]">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm text-[#E8E8F0] flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-[#00F0FF]" />
+            Content Calendar
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMonthOffset((o) => o - 1)}>
+              <ChevronLeft className="w-4 h-4 text-[#9CA3AF]" />
+            </Button>
+            <span className="text-xs text-[#9CA3AF] min-w-[120px] text-center">{monthLabel}</span>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMonthOffset((o) => o + 1)}>
+              <ChevronRight className="w-4 h-4 text-[#9CA3AF]" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pb-3">
+        {/* Weekday headers */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {weekdays.map((d) => (
+            <div key={d} className="text-center text-[10px] text-[#9CA3AF] font-medium py-1">{d}</div>
+          ))}
+        </div>
+        {/* Day cells */}
+        <div className="grid grid-cols-7 gap-1">
+          {/* Empty leading cells */}
+          {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+            <div key={`empty-${i}`} className="aspect-square" />
+          ))}
+          {Array.from({ length: daysInMonth }).map((_, i) => {
+            const day = i + 1;
+            const count = dayCountMap.get(day) || 0;
+            const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+            return (
+              <div
+                key={day}
+                className={`aspect-square rounded-md flex flex-col items-center justify-center text-[11px] relative transition-colors ${
+                  isToday
+                    ? 'bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] font-bold'
+                    : count > 0
+                      ? 'bg-[#00FF88]/5 text-[#E8E8F0]'
+                      : 'text-[#9CA3AF]'
+                }`}
+              >
+                {day}
+                {count > 0 && (
+                  <span className="absolute bottom-0.5 text-[8px] font-bold text-[#00FF88]">{count}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {/* Legend */}
+        <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[#1a1a2e]">
+          <span className="flex items-center gap-1 text-[10px] text-[#9CA3AF]">
+            <span className="w-2 h-2 rounded-sm bg-[#00F0FF]/40" /> Today
+          </span>
+          <span className="flex items-center gap-1 text-[10px] text-[#9CA3AF]">
+            <span className="w-2 h-2 rounded-sm bg-[#00FF88]/40" /> Scheduled
+          </span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---- Stats Summary Bar ----
+
+function StatsSummary({ accounts, items }: { accounts: SocialAccount[]; items: ContentPlanItem[] }) {
+  const totalPosts = accounts.reduce((sum, a) => sum + a.posts_count, 0);
+  const activeAccounts = accounts.filter((a) => a.status === 'active').length;
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const postsThisWeek = items.filter((i) => i.posted_at && new Date(i.posted_at) >= weekAgo).length;
+  const scheduledCount = items.filter((i) => i.status === 'scheduled').length;
+
+  const stats = [
+    { label: 'Active Accounts', value: activeAccounts, icon: Users, color: '#00FF88' },
+    { label: 'Total Posts', value: totalPosts, icon: Megaphone, color: '#00F0FF' },
+    { label: 'This Week', value: postsThisWeek, icon: TrendingUp, color: '#FFB800' },
+    { label: 'Scheduled', value: scheduledCount, icon: Clock, color: '#8B5CF6' },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {stats.map((s) => (
+        <Card key={s.label} className="bg-[#0C0C18] border-[#1a1a2e]">
+          <CardContent className="p-3 flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: `${s.color}15` }}
+            >
+              <s.icon className="w-4 h-4" style={{ color: s.color }} />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-[#E8E8F0] leading-none">{s.value}</p>
+              <p className="text-[10px] text-[#9CA3AF] mt-0.5">{s.label}</p>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
 }
 
 // ---- Accounts Tab ----
@@ -231,9 +547,21 @@ function AccountsTab() {
 
       {/* Account Cards */}
       {accounts.length === 0 && !showForm && (
-        <div className="text-center py-12 text-[#9CA3AF]">
-          <Share2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No social accounts connected yet.</p>
+        <div className="text-center py-12 px-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF2D78]/10 to-[#00F0FF]/10 border border-[#1a1a2e] flex items-center justify-center mx-auto mb-4">
+            <Globe className="w-8 h-8 text-[#FF2D78] opacity-40" />
+          </div>
+          <p className="text-sm font-medium text-[#E8E8F0] mb-1">No social accounts connected</p>
+          <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto mb-4">
+            Connect your Instagram or Facebook to start auto-posting AI-generated content on schedule.
+          </p>
+          <Button
+            size="sm"
+            onClick={() => setShowForm(true)}
+            className="bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20"
+          >
+            <Plus className="w-4 h-4 mr-1" /> Connect Account
+          </Button>
         </div>
       )}
 
@@ -329,6 +657,12 @@ function ContentPlanTab() {
 
   // Posting
   const [postingItem, setPostingItem] = useState<string | null>(null);
+
+  // Post composer state
+  const [composerText, setComposerText] = useState('');
+  const [composerTone, setComposerTone] = useState<Tone>('professional');
+  const [composerPlatform, setComposerPlatform] = useState<Platform>('twitter');
+  const [showComposer, setShowComposer] = useState(false);
 
   const loadData = async () => {
     try {
@@ -460,13 +794,106 @@ function ContentPlanTab() {
     );
   }
 
-  // No plan view — show generator
+  // No plan view — show generator + post composer
   if (!activePlan) {
     return (
       <div className="space-y-4">
+        {/* Enhanced empty state when no plans and composer hidden */}
+        {plans.length === 0 && !showComposer && (
+          <div className="text-center py-10 px-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#00F0FF]/10 to-[#FF2D78]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8 text-[#00F0FF]" />
+            </div>
+            <h3 className="text-base font-semibold text-[#E8E8F0] mb-1">Create your first social media post</h3>
+            <p className="text-sm text-[#9CA3AF] max-w-md mx-auto mb-4">
+              Describe your topic and I'll write 3 variations for different platforms, or generate a full 10-day content plan.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <Button
+                size="sm"
+                onClick={() => setShowComposer(true)}
+                className="bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20"
+              >
+                <Wand2 className="w-4 h-4 mr-1" /> Quick Post
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {}}
+                className="text-[#9CA3AF] hover:text-[#E8E8F0]"
+              >
+                <CalendarDays className="w-4 h-4 mr-1" /> Generate Plan
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Post Composer */}
+        {(showComposer || plans.length > 0) && (
+          <Card className="bg-[#0C0C18] border-[#00F0FF]/20 overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-[#E8E8F0] flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-[#00F0FF]" />
+                Quick Post Composer
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Tone selector */}
+              <div>
+                <label className="text-xs text-[#9CA3AF] mb-1.5 block">Tone</label>
+                <TonePills selected={composerTone} onChange={setComposerTone} />
+              </div>
+
+              {/* Platform selector */}
+              <div>
+                <label className="text-xs text-[#9CA3AF] mb-1.5 block">Platform</label>
+                <PlatformBadges selected={composerPlatform} onChange={setComposerPlatform} />
+              </div>
+
+              {/* Textarea */}
+              <div>
+                <Textarea
+                  value={composerText}
+                  onChange={(e) => setComposerText(e.target.value)}
+                  placeholder={`Write your ${composerTone} post for ${PLATFORMS.find((p) => p.value === composerPlatform)?.label}...`}
+                  className="bg-[#06060B] border-[#1a1a2e] text-sm min-h-[100px] focus:border-[#00F0FF]/30"
+                />
+                <CharacterCounter count={composerText.length} platform={composerPlatform} />
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  disabled={!composerText.trim()}
+                  className="bg-gradient-to-r from-[#00F0FF]/20 to-[#FF2D78]/20 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40"
+                  onClick={() => navigator.clipboard.writeText(composerText)}
+                >
+                  <Copy className="w-4 h-4 mr-1" /> Copy
+                </Button>
+                {showComposer && plans.length === 0 && (
+                  <Button size="sm" variant="ghost" onClick={() => { setShowComposer(false); setComposerText(''); }}>
+                    Cancel
+                  </Button>
+                )}
+              </div>
+
+              {/* Post preview */}
+              <PostPreviewCard text={composerText} platform={composerPlatform} />
+
+              {/* Hashtag suggestions */}
+              <HashtagSuggestions text={composerText} />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Content plan generator */}
         <Card className="bg-[#0C0C18] border-[#00F0FF]/20">
           <CardHeader>
-            <CardTitle className="text-sm text-[#E8E8F0]">Generate 10-Day Content Plan</CardTitle>
+            <CardTitle className="text-sm text-[#E8E8F0] flex items-center gap-2">
+              <Target className="w-4 h-4 text-[#FF2D78]" />
+              Generate 10-Day Content Plan
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
@@ -481,7 +908,7 @@ function ContentPlanTab() {
               {generating ? (
                 <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating...</>
               ) : (
-                <><Share2 className="w-4 h-4 mr-2" /> Generate Plan</>
+                <><Sparkles className="w-4 h-4 mr-2" /> Generate Plan</>
               )}
             </Button>
           </CardContent>
@@ -576,6 +1003,9 @@ function ContentPlanTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Mini Calendar — shows scheduled posts by day */}
+      {items.some((i) => i.scheduled_at) && <MiniCalendar items={items} />}
 
       {/* Day cards */}
       {Array.from(dayGroups.entries()).sort(([a], [b]) => a - b).map(([dayNum, dayItems]) => (
@@ -713,9 +1143,16 @@ function PostsTab() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-12 text-[#9CA3AF]">
-          <Clock className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No posts to show.</p>
+        <div className="text-center py-12 px-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00F0FF]/10 to-[#8B5CF6]/10 border border-[#1a1a2e] flex items-center justify-center mx-auto mb-4">
+            <Megaphone className="w-7 h-7 text-[#00F0FF] opacity-40" />
+          </div>
+          <p className="text-sm font-medium text-[#E8E8F0] mb-1">No posts to show</p>
+          <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto">
+            {filter === 'all'
+              ? 'Generate a content plan and activate it to start scheduling posts.'
+              : `No ${filter} posts yet. Switch to "All" to see everything.`}
+          </p>
         </div>
       )}
 
@@ -757,6 +1194,35 @@ function PostsTab() {
 // ---- Main Page ----
 
 export function SocialMediaPage() {
+  const [statsAccounts, setStatsAccounts] = useState<SocialAccount[]>([]);
+  const [statsItems, setStatsItems] = useState<ContentPlanItem[]>([]);
+  const [statsLoaded, setStatsLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [accountsRes, plansRes] = await Promise.all([
+          socialMediaService.getAccounts(),
+          socialMediaService.getPlans(),
+        ]);
+        setStatsAccounts(accountsRes.data);
+
+        if (plansRes.data.length > 0) {
+          const planResponses = await Promise.all(
+            plansRes.data.map((plan) => socialMediaService.getPlan(plan.id))
+          );
+          const allItems = planResponses.flatMap((r) => r.data.items ?? []);
+          setStatsItems(allItems);
+        }
+      } catch {
+        // Stats are best-effort, don't block the page
+      } finally {
+        setStatsLoaded(true);
+      }
+    };
+    loadStats();
+  }, []);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
@@ -768,6 +1234,11 @@ export function SocialMediaPage() {
           <p className="text-sm text-[#9CA3AF]">Connect accounts, generate content plans, and auto-post on schedule.</p>
         </div>
       </div>
+
+      {/* Stats summary bar */}
+      {statsLoaded && (statsAccounts.length > 0 || statsItems.length > 0) && (
+        <StatsSummary accounts={statsAccounts} items={statsItems} />
+      )}
 
       <Tabs defaultValue="accounts" className="w-full">
         <TabsList className="bg-[#0C0C18] border border-[#1a1a2e]">

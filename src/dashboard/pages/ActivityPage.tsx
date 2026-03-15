@@ -36,14 +36,15 @@ const FILTER_COLORS: Record<FilterType, string> = {
 };
 
 function ActivityIcon({ icon }: { icon: string }) {
-  const category = getCategory(icon);
-  const color = FILTER_COLORS[category as FilterType] ?? '#6B7280';
+  const category = getCategory(icon) as FilterType;
+  const color = FILTER_COLORS[category] ?? '#6B7280';
+  const Icon = FILTER_ICONS[category] ?? Activity;
   return (
     <div
       className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
       style={{ backgroundColor: `${color}15` }}
     >
-      <Activity className="w-4 h-4" style={{ color }} />
+      <Icon className="w-4 h-4" style={{ color }} />
     </div>
   );
 }
@@ -307,16 +308,23 @@ export function ActivityPage() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-16">
-              <Activity className="w-12 h-12 text-[#00F0FF]/20 mx-auto mb-4" />
-              <p className="text-[#9CA3AF] mb-1">
+              <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto mb-4">
+                <Activity className="w-8 h-8 text-[#00F0FF]/40" />
+              </div>
+              <p className="text-[#E8E8F0] font-medium mb-1">
                 {serverQ || activeFilter !== 'All'
                   ? 'No events match your filters'
-                  : 'No activity recorded yet'}
+                  : 'No activity yet'}
+              </p>
+              <p className="text-sm text-[#9CA3AF]">
+                {serverQ || activeFilter !== 'All'
+                  ? 'Try adjusting your search or filters'
+                  : 'Your actions across Agentin will appear here'}
               </p>
               {(serverQ || activeFilter !== 'All') && (
                 <button
                   onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}
-                  className="text-xs text-[#00F0FF] hover:underline mt-2"
+                  className="text-xs text-[#00F0FF] hover:underline mt-3"
                 >
                   Clear filters
                 </button>

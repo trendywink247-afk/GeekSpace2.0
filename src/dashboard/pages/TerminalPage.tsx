@@ -369,7 +369,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
                 </div>
               ) : cmd.output ? (
                 <div className="mt-1 relative group">
-                  <pre className={`whitespace-pre-wrap ${cmd.isError ? 'text-[#FF6161]' : 'text-[#E8E8F0]'}`}>
+                  <pre className={`whitespace-pre-wrap ${cmd.isError ? 'text-[#FF6161]' : 'text-[#00FF88]/90'}`}>
                     {cmd.output}
                   </pre>
                   <button
@@ -399,10 +399,14 @@ Deploy ID: dep_${Date.now().toString(36)}`,
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               className="flex-1 bg-transparent border-none outline-none text-[#E8E8F0] font-mono"
-              placeholder="Type a command..."
+              placeholder="Type a command or ask Jarvis for help..."
               autoComplete="off"
               spellCheck={false}
             />
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[10px] text-[#00F0FF] font-mono whitespace-nowrap select-none">
+              <Bot className="w-3 h-3" />
+              AI Help
+            </span>
           </form>
         </div>
       </div>

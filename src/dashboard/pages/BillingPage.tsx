@@ -11,12 +11,21 @@ import { billingService } from '@/services/api';
 import type { Subscription, PlanDefinition, DailyUsage, UsageEvent } from '@/types';
 
 // Plan display metadata for sale styling
-const PLAN_DISPLAY: Record<string, { oldPrice: number; badge: string; badgeColor?: string; agentSlots: number; tokenBudget: string; hasKimi: boolean }> = {
+const PLAN_DISPLAY: Record<string, { oldPrice: number; badge: string; badgeColor?: string; agentSlots: number; tokenBudget: string; hasKimi: boolean; highlighted?: boolean }> = {
   free: { oldPrice: 99, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false },
-  intro: { oldPrice: 1499, badge: 'Most Popular', badgeColor: '#00F0FF', agentSlots: 2, tokenBudget: '300K', hasKimi: true },
+  intro: { oldPrice: 1499, badge: 'Most Popular', badgeColor: '#00F0FF', agentSlots: 2, tokenBudget: '300K', hasKimi: true, highlighted: true },
   monthly: { oldPrice: 1499, badge: 'Popular', badgeColor: '#FFB800', agentSlots: 2, tokenBudget: '300K', hasKimi: true },
   halfyear: { oldPrice: 5999, badge: '', agentSlots: 3, tokenBudget: '750K', hasKimi: true },
   yearly: { oldPrice: 9999, badge: 'Best Value', badgeColor: '#00FF88', agentSlots: 3, tokenBudget: '1M', hasKimi: true },
+};
+
+// Colored pill for current plan badge
+const PLAN_PILL: Record<string, { bg: string; text: string; border: string }> = {
+  free: { bg: 'rgba(156,163,175,0.15)', text: '#9CA3AF', border: 'rgba(156,163,175,0.3)' },
+  intro: { bg: 'rgba(0,240,255,0.15)', text: '#00F0FF', border: 'rgba(0,240,255,0.3)' },
+  monthly: { bg: 'rgba(0,240,255,0.15)', text: '#00F0FF', border: 'rgba(0,240,255,0.3)' },
+  halfyear: { bg: 'rgba(191,95,255,0.15)', text: '#BF5FFF', border: 'rgba(191,95,255,0.3)' },
+  yearly: { bg: 'rgba(191,95,255,0.15)', text: '#BF5FFF', border: 'rgba(191,95,255,0.3)' },
 };
 
 function formatCredits(n: number): string {
@@ -221,7 +230,7 @@ export function BillingPage() {
               {stripeStatus?.plan === 'basic' && stripeStatus.isPaid ? (
                 <p className="text-xs text-[#9CA3AF]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
               ) : (
-                <Button onClick={() => handleCheckout('basic')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px]" data-testid="upgrade-basic-btn">
+                <Button onClick={() => handleCheckout('basic')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-basic-btn">
                   {checkingOut === 'basic' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Basic
                 </Button>
               )}
@@ -237,7 +246,7 @@ export function BillingPage() {
               {stripeStatus?.plan === 'pro' && stripeStatus.isPaid ? (
                 <p className="text-xs text-[#9CA3AF]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
               ) : (
-                <Button onClick={() => handleCheckout('pro')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px]" data-testid="upgrade-pro-btn">
+                <Button onClick={() => handleCheckout('pro')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-pro-btn">
                   {checkingOut === 'pro' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Pro
                 </Button>
               )}
@@ -270,9 +279,17 @@ export function BillingPage() {
                   </p>
                 </div>
               </div>
-              <Badge className={subscription.status === 'active' ? 'bg-[#00FF88]/20 text-[#00FF88] border-[#00FF88]/30' : 'bg-[#FFB800]/20 text-[#FFB800] border-[#FFB800]/30'}>
-                {subscription.status}
-              </Badge>
+              {(() => {
+                const pill = PLAN_PILL[subscription.plan] || PLAN_PILL.free;
+                return (
+                  <Badge
+                    style={{ backgroundColor: pill.bg, color: pill.text, borderColor: pill.border }}
+                    className="border capitalize"
+                  >
+                    {subscription.plan === 'intro' ? 'Pro' : subscription.plan}
+                  </Badge>
+                );
+              })()}
             </div>
 
             {/* Stats row */}
@@ -339,13 +356,16 @@ export function BillingPage() {
               const isCurrent = subscription?.plan?.toLowerCase() === plan.id?.toLowerCase();
               const isFree = plan.priceUsd === 0;
               const display = PLAN_DISPLAY[plan.id] || { oldPrice: 0, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false };
+              const isHighlighted = display.highlighted && !isCurrent;
               return (
                 <div key={plan.id} className="min-w-[280px] snap-center flex-shrink-0">
                   <Card
                     className={`bg-[#0C0C18] transition-all h-full relative overflow-hidden ${
                       isCurrent
                         ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/30'
-                        : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
+                        : isHighlighted
+                          ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/20 shadow-[0_0_20px_rgba(0,240,255,0.15)]'
+                          : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
                     } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
                   >
                     {/* Badge */}
@@ -430,7 +450,7 @@ export function BillingPage() {
                         <Button
                           onClick={() => handleUpgrade(plan.id)}
                           disabled={upgrading === plan.id || isFree}
-                          className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-h-[44px]"
+                          className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(0,240,255,0.4)]"
                         >
                           {upgrading === plan.id ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
@@ -460,13 +480,16 @@ export function BillingPage() {
               const isCurrent = subscription?.plan?.toLowerCase() === plan.id?.toLowerCase();
               const isFree = plan.priceUsd === 0;
               const display = PLAN_DISPLAY[plan.id] || { oldPrice: 0, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false };
+              const isHighlighted = display.highlighted && !isCurrent;
               return (
                 <Card
                   key={plan.id}
                   className={`bg-[#0C0C18] transition-all relative overflow-hidden ${
                     isCurrent
                       ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/30'
-                      : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
+                      : isHighlighted
+                        ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/20 shadow-[0_0_20px_rgba(0,240,255,0.15)] hover:shadow-[0_0_30px_rgba(0,240,255,0.25)]'
+                        : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
                   } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
                 >
                   {/* Badge */}
@@ -551,7 +574,7 @@ export function BillingPage() {
                       <Button
                         onClick={() => handleUpgrade(plan.id)}
                         disabled={upgrading === plan.id || isFree}
-                        className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50"
+                        className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 transition-shadow hover:shadow-[0_0_16px_rgba(0,240,255,0.4)]"
                       >
                         {upgrading === plan.id ? (
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
@@ -616,7 +639,7 @@ export function BillingPage() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-[#00F0FF]/10">
+                <tr className="border-b border-[#00F0FF]/10 bg-[#0C0C18]/40">
                   <td className="py-3 px-2 text-sm text-[#9CA3AF]">Agent Slots</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
@@ -638,7 +661,7 @@ export function BillingPage() {
                     );
                   })}
                 </tr>
-                <tr className="border-b border-[#00F0FF]/10">
+                <tr className="border-b border-[#00F0FF]/10 bg-[#0C0C18]/40">
                   <td className="py-3 px-2 text-sm text-[#9CA3AF]">Kimi Access</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
@@ -707,6 +730,7 @@ export function BillingPage() {
               data={usage}
               keyExtractor={(row) => row.day}
               emptyMessage="No usage data yet"
+              striped
             />
           )}
         </CardContent>
@@ -773,6 +797,7 @@ export function BillingPage() {
               data={events}
               keyExtractor={(row) => row.id}
               emptyMessage="No credit events yet"
+              striped
             />
           )}
         </CardContent>

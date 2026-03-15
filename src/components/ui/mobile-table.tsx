@@ -14,9 +14,10 @@ interface MobileTableProps<T> {
   data: T[];
   keyExtractor: (row: T) => string;
   emptyMessage?: string;
+  striped?: boolean;
 }
 
-export function MobileTable<T>({ columns, data, keyExtractor, emptyMessage = 'No data' }: MobileTableProps<T>) {
+export function MobileTable<T>({ columns, data, keyExtractor, emptyMessage = 'No data', striped = false }: MobileTableProps<T>) {
   const isMobile = useMobileDetect();
 
   if (data.length === 0) {
@@ -60,8 +61,13 @@ export function MobileTable<T>({ columns, data, keyExtractor, emptyMessage = 'No
           </tr>
         </thead>
         <tbody>
-          {data.map(row => (
-            <tr key={keyExtractor(row)} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+          {data.map((row, idx) => (
+            <tr
+              key={keyExtractor(row)}
+              className={`border-b border-border/50 hover:bg-muted/20 transition-colors ${
+                striped && idx % 2 === 1 ? 'bg-[#0C0C18]/60' : ''
+              }`}
+            >
               {columns.map(col => (
                 <td key={col.key} className="px-4 py-3">{col.render(row)}</td>
               ))}

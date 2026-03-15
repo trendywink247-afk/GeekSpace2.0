@@ -37,6 +37,18 @@ interface PicoTask {
   completed_at: string | null;
 }
 
+// ---- Agent Colors (Design System) ----
+
+const AGENT_COLORS: Record<string, string> = {
+  weebo: '#00F0FF',
+  edith: '#8B5CF6',
+  jarvis: '#ADFF2F',
+};
+
+function getAgentColor(personality: string): string {
+  return AGENT_COLORS[personality] || '#00F0FF';
+}
+
 // ---- Constants ----
 
 const TASK_TYPES = [
@@ -498,7 +510,7 @@ export function PicoFleetPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
-            Weebo's
+            Weebo Fleet
           </h1>
           <p className="text-[#9CA3AF]">
             <span className="text-[#00FF88] font-medium">{agents.length}</span> agent{agents.length !== 1 ? 's' : ''} deployed
@@ -548,7 +560,16 @@ export function PicoFleetPage() {
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg text-[#E8E8F0] flex items-center gap-2">
-                          <span>{agent.personality === 'edith' ? '⚡' : agent.personality === 'jarvis' ? '🎩' : '🤖'}</span>
+                          <span
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                            style={{
+                              backgroundColor: `${getAgentColor(agent.personality)}20`,
+                              border: `2px solid ${getAgentColor(agent.personality)}`,
+                              color: getAgentColor(agent.personality),
+                            }}
+                          >
+                            {agent.personality === 'edith' ? 'E' : agent.personality === 'jarvis' ? 'J' : 'W'}
+                          </span>
                           {agent.name}
                         </CardTitle>
                         <div className="flex items-center gap-2">
@@ -633,9 +654,9 @@ export function PicoFleetPage() {
               // Empty slot — show create button or inline form
               if (creatingSlot === slotNum) {
                 const personalities = [
-                  { id: 'weebo' as const, emoji: '🤖', label: 'Weebo', color: '#00FF88' },
-                  { id: 'jarvis' as const, emoji: '🎩', label: 'Jarvis', color: '#00F0FF' },
-                  { id: 'edith' as const, emoji: '⚡', label: 'Edith', color: '#FFB800' },
+                  { id: 'weebo' as const, letter: 'W', label: 'Weebo', color: '#00F0FF' },
+                  { id: 'jarvis' as const, letter: 'J', label: 'Jarvis', color: '#ADFF2F' },
+                  { id: 'edith' as const, letter: 'E', label: 'Edith', color: '#8B5CF6' },
                 ];
                 return (
                   <Card key={slotNum} className="border-[#00F0FF]/30 border-dashed">
@@ -652,7 +673,16 @@ export function PicoFleetPage() {
                               backgroundColor: newAgentPersonality === p.id ? `${p.color}10` : 'transparent',
                             }}
                           >
-                            <span className="text-lg">{p.emoji}</span>
+                            <span
+                              className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
+                              style={{
+                                backgroundColor: `${p.color}20`,
+                                border: `2px solid ${newAgentPersonality === p.id ? p.color : 'transparent'}`,
+                                color: p.color,
+                              }}
+                            >
+                              {p.letter}
+                            </span>
                             <span className="text-xs font-medium" style={{ color: newAgentPersonality === p.id ? p.color : '#6B7280' }}>{p.label}</span>
                           </button>
                         ))}
@@ -796,7 +826,7 @@ export function PicoFleetPage() {
             <CardContent className="pt-0">
               {recentTasks.length === 0 ? (
                 <div className="text-center py-6">
-                  <p className="text-[#9CA3AF] text-sm">No recent activity.</p>
+                  <p className="text-[#9CA3AF] text-sm">No recent activity. Assign tasks to your fleet to see progress here.</p>
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -843,7 +873,7 @@ export function PicoFleetPage() {
               {tasks.length === 0 ? (
                 <div className="text-center py-10">
                   <AlertCircle className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-                  <p className="text-[#9CA3AF] text-sm">No tasks yet. Use Quick Task above to get started.</p>
+                  <p className="text-[#9CA3AF] text-sm">No fleet agents yet. Create your first agent to get started.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -867,8 +897,20 @@ export function PicoFleetPage() {
                             <span className="flex-1 text-sm text-[#E8E8F0] truncate">
                               {task.description}
                             </span>
-                            <span className="text-xs text-[#9CA3AF] hidden sm:block shrink-0">
-                              {task.agent_name}
+                            <span className="hidden sm:flex items-center gap-1.5 shrink-0">
+                              {(() => {
+                                const taskAgent = agents.find(a => a.name === task.agent_name);
+                                const agentColor = taskAgent ? getAgentColor(taskAgent.personality) : '#9CA3AF';
+                                return (
+                                  <span
+                                    className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                                    style={{ backgroundColor: `${agentColor}20`, border: `1.5px solid ${agentColor}`, color: agentColor }}
+                                  >
+                                    {taskAgent ? (taskAgent.personality === 'edith' ? 'E' : taskAgent.personality === 'jarvis' ? 'J' : 'W') : '?'}
+                                  </span>
+                                );
+                              })()}
+                              <span className="text-xs text-[#9CA3AF]">{task.agent_name}</span>
                             </span>
                             <span className="text-xs text-[#9CA3AF] hidden md:block shrink-0 min-w-[70px] text-right">
                               {formatTime(task.completed_at || task.started_at || task.created_at)}
@@ -903,7 +945,21 @@ export function PicoFleetPage() {
                               </div>
                               <div>
                                 <div className="text-xs text-[#9CA3AF]">Agent</div>
-                                <div className="text-sm text-[#E8E8F0]">{task.agent_name}</div>
+                                <div className="text-sm text-[#E8E8F0] flex items-center gap-1.5">
+                                  {(() => {
+                                    const detailAgent = agents.find(a => a.name === task.agent_name);
+                                    const detailColor = detailAgent ? getAgentColor(detailAgent.personality) : '#9CA3AF';
+                                    return (
+                                      <span
+                                        className="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] font-bold"
+                                        style={{ backgroundColor: `${detailColor}20`, border: `1.5px solid ${detailColor}`, color: detailColor }}
+                                      >
+                                        {detailAgent ? (detailAgent.personality === 'edith' ? 'E' : detailAgent.personality === 'jarvis' ? 'J' : 'W') : '?'}
+                                      </span>
+                                    );
+                                  })()}
+                                  {task.agent_name}
+                                </div>
                               </div>
                               <div>
                                 <div className="text-xs text-[#9CA3AF]">Started</div>
@@ -948,7 +1004,15 @@ export function PicoFleetPage() {
               <SelectContent className="bg-[#0C0C18] border-[#00F0FF]/20">
                 {agents.map(a => (
                   <SelectItem key={a.id} value={a.id} className="text-[#E8E8F0]">
-                    {a.personality === 'edith' ? '⚡' : a.personality === 'jarvis' ? '🎩' : '🤖'} {a.name} (Slot {a.slot})
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="inline-flex w-5 h-5 rounded-full items-center justify-center text-[10px] font-bold"
+                        style={{ backgroundColor: `${getAgentColor(a.personality)}20`, color: getAgentColor(a.personality) }}
+                      >
+                        {a.personality === 'edith' ? 'E' : a.personality === 'jarvis' ? 'J' : 'W'}
+                      </span>
+                      {a.name} (Slot {a.slot})
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -970,23 +1034,29 @@ export function PicoFleetPage() {
                 </h2>
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
-                    { id: 'weebo', name: 'Weebo', desc: 'Enthusiastic helper, excited to assist', emoji: '🤖', color: '#00FF88' },
-                    { id: 'jarvis', name: 'Jarvis', desc: 'Professional butler, polished and reliable', emoji: '🎩', color: '#00F0FF' },
-                    { id: 'edith', name: 'Edith', desc: 'Sharp CTO, direct and efficient', emoji: '⚡', color: '#FFB800' },
+                    { id: 'weebo', name: 'Weebo', desc: 'Enthusiastic helper, excited to assist', letter: 'W', color: '#00F0FF' },
+                    { id: 'jarvis', name: 'Jarvis', desc: 'Professional butler, polished and reliable', letter: 'J', color: '#ADFF2F' },
+                    { id: 'edith', name: 'Edith', desc: 'Sharp CTO, direct and efficient', letter: 'E', color: '#8B5CF6' },
                   ].map(p => (
                     <button
                       key={p.id}
                       onClick={() => { setCfgPersonality(p.id); setConfigDirty(true); }}
                       className={`p-4 rounded-xl border-2 transition-all text-left ${
                         cfgPersonality === p.id
-                          ? 'border-[#00F0FF] bg-[#00F0FF]/10'
+                          ? `bg-[${p.color}]/10`
                           : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
                       }`}
+                      style={cfgPersonality === p.id ? { borderColor: p.color, backgroundColor: `${p.color}15` } : undefined}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-2xl">{p.emoji}</span>
+                        <span
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
+                          style={{ backgroundColor: `${p.color}20`, border: `2px solid ${p.color}`, color: p.color }}
+                        >
+                          {p.letter}
+                        </span>
                         {cfgPersonality === p.id && (
-                          <div className="w-6 h-6 rounded-full bg-[#00F0FF] flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: p.color }}>
                             <Check className="w-4 h-4 text-white" />
                           </div>
                         )}
