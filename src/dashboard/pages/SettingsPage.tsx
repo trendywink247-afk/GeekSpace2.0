@@ -221,6 +221,7 @@ export function SettingsPage() {
 
   // 82.8: Delete account state
   const [deletePassword, setDeletePassword] = useState('');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -593,7 +594,38 @@ export function SettingsPage() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      {/* Section quick-nav — smooth-scrolls to each settings section */}
+      <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide pb-1 -mb-2">
+        {[
+          { id: 'profile', label: 'Profile', icon: User },
+          { id: 'notifications', label: 'Notifications', icon: Bell },
+          { id: 'security', label: 'Security', icon: Shield },
+          { id: 'apikeys', label: 'API Keys', icon: Key },
+          { id: 'memory', label: 'Memory', icon: Brain },
+          { id: 'privacy', label: 'Privacy', icon: Eye },
+          { id: 'theme', label: 'Theme', icon: Palette },
+          { id: 'voice', label: 'Voice', icon: Mic },
+        ].map(({ id, label, icon: NavIcon }) => (
+          <button
+            key={id}
+            onClick={() => {
+              setActiveTab(id);
+              // Scroll to the tabs area smoothly
+              document.getElementById('settings-tabs-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+              activeTab === id
+                ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/40'
+                : 'text-[#9CA3AF] hover:text-[#E8E8F0] border border-transparent hover:border-[#00F0FF]/20'
+            }`}
+          >
+            <NavIcon className="w-3 h-3" />
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      <Tabs id="settings-tabs-anchor" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className={`bg-[#0C0C18] border border-[#00F0FF]/20 p-1 ${isMobile ? 'overflow-x-auto flex-nowrap w-full justify-start scrollbar-hide' : 'flex-wrap'}`}>
           <TabsTrigger value="profile" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
             <User className="w-4 h-4 mr-2" />Profile
@@ -916,29 +948,46 @@ export function SettingsPage() {
                   <p className="text-sm text-[#9CA3AF]">No active sessions found</p>
                 </div>
               ) : (
-                sessions.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/20">
-                    <div className="flex items-center gap-3">
-                      <Monitor className="w-5 h-5 text-[#00F0FF] flex-shrink-0" />
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-[#E8E8F0] truncate max-w-[200px]">
-                          {s.user_agent.slice(0, 40) || 'Unknown browser'}
-                        </div>
-                        <div className="text-xs text-[#9CA3AF]">
-                          {s.ip || 'Unknown IP'} · Last seen {new Date(s.last_seen).toLocaleDateString()}
+                sessions.map((s) => {
+                  // Identify the current session as the one with the most recent last_seen
+                  const isCurrent = sessions.length > 0 &&
+                    s.id === [...sessions].sort((a, b) => new Date(b.last_seen).getTime() - new Date(a.last_seen).getTime())[0].id;
+                  return (
+                    <div key={s.id} className={`flex items-center justify-between p-3 rounded-xl bg-[#06060B] border transition-all ${
+                      isCurrent ? 'border-[#00F0FF]/50 ring-1 ring-[#00F0FF]/20' : 'border-[#00F0FF]/20'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <Monitor className={`w-5 h-5 flex-shrink-0 ${isCurrent ? 'text-[#00F0FF]' : 'text-[#9CA3AF]'}`} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-[#E8E8F0] truncate max-w-[200px]">
+                              {s.user_agent.slice(0, 40) || 'Unknown browser'}
+                            </span>
+                            {isCurrent && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00F0FF]/15 text-[#00F0FF] text-[10px] font-semibold uppercase tracking-wider flex-shrink-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse" />
+                                Current
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-[#9CA3AF]">
+                            {s.ip || 'Unknown IP'} · Last seen {new Date(s.last_seen).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
+                      {!isCurrent && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-[#FF6161] hover:text-[#FF6161] hover:bg-[#FF6161]/10 flex-shrink-0"
+                          onClick={() => handleRevokeSession(s.id)}
+                        >
+                          <LogOut className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-[#FF6161] hover:text-[#FF6161] hover:bg-[#FF6161]/10 flex-shrink-0"
-                      onClick={() => handleRevokeSession(s.id)}
-                    >
-                      <LogOut className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))
+                  );
+                })
               )}
               <p className="text-xs text-[#9CA3AF] pt-1">
                 Note: Revoking a session marks it inactive in the database but existing tokens remain valid until they expire.
@@ -1141,53 +1190,79 @@ export function SettingsPage() {
           </Card>
 
           {/* 82.8: Danger Zone — Delete Account */}
-          <Card className="border-red-500/30 bg-red-500/5">
+          <Card className="border border-[#FF2D78]/30 bg-[#FF2D78]/[0.03]">
             <CardHeader>
-              <CardTitle className="text-red-400 flex items-center gap-2">
+              <CardTitle className="text-[#FF2D78] flex items-center gap-2">
                 <Trash2 className="w-4 h-4" /> Danger Zone
               </CardTitle>
               <CardDescription className="text-[#9CA3AF]">
-                Permanently delete your account and all associated data. This cannot be undone.
+                Actions here are irreversible. Proceed with caution.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-[#FF2D78]/5 border border-[#FF2D78]/20">
+                <Shield className="w-4 h-4 text-[#FF2D78] flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-[#9CA3AF]">
+                  Deleting your account will permanently erase all conversations, reminders, automations,
+                  memories, documents, and settings. This action cannot be reversed.
+                </p>
+              </div>
               {!showDeleteConfirm ? (
                 <Button
                   variant="outline"
-                  className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500/60"
-                  onClick={() => { setShowDeleteConfirm(true); setDeleteError(''); setDeletePassword(''); }}
+                  className="border-[#FF2D78]/40 text-[#FF2D78] hover:bg-[#FF2D78]/10 hover:border-[#FF2D78]/60"
+                  onClick={() => { setShowDeleteConfirm(true); setDeleteError(''); setDeletePassword(''); setDeleteConfirmText(''); }}
                   data-testid="delete-account-open-btn"
                 >
                   <Trash2 className="w-4 h-4 mr-2" /> Delete My Account
                 </Button>
               ) : (
-                <div className="space-y-3 p-4 rounded-xl bg-red-500/5 border border-red-500/20">
-                  <p className="text-sm text-[#E8E8F0]">
-                    Enter your password to confirm permanent account deletion. All your data — conversations, reminders, automations, and settings — will be erased immediately.
+                <div className="space-y-3 p-4 rounded-xl bg-[#FF2D78]/[0.03] border border-[#FF2D78]/20">
+                  <p className="text-sm text-[#E8E8F0] font-medium">
+                    To confirm, type <span className="text-[#FF2D78] font-bold font-mono">DELETE</span> below, then enter your password.
                   </p>
-                  <Input
-                    type="password"
-                    placeholder="Your current password"
-                    value={deletePassword}
-                    onChange={(e) => setDeletePassword(e.target.value)}
-                    className="bg-[#0C0C18] border-red-500/30 text-[#E8E8F0]"
-                    data-testid="delete-account-password-input"
-                  />
+                  <div>
+                    <label className="text-xs text-[#9CA3AF] mb-1.5 block">Type DELETE to confirm</label>
+                    <Input
+                      type="text"
+                      placeholder="DELETE"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      className={`bg-[#0C0C18] text-[#E8E8F0] font-mono tracking-wider ${
+                        deleteConfirmText === 'DELETE'
+                          ? 'border-[#FF2D78]/60'
+                          : 'border-[#FF2D78]/20'
+                      }`}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#9CA3AF] mb-1.5 block">Your current password</label>
+                    <Input
+                      type="password"
+                      placeholder="Enter password"
+                      value={deletePassword}
+                      onChange={(e) => setDeletePassword(e.target.value)}
+                      className="bg-[#0C0C18] border-[#FF2D78]/20 text-[#E8E8F0]"
+                      data-testid="delete-account-password-input"
+                    />
+                  </div>
                   {deleteError && (
-                    <p className="text-xs text-red-400">{deleteError}</p>
+                    <p className="text-xs text-[#FF2D78]">{deleteError}</p>
                   )}
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); setDeleteError(''); }}
+                      onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); setDeleteConfirmText(''); setDeleteError(''); }}
                       className="border-[#00F0FF]/20 text-[#9CA3AF]"
                     >
                       Cancel
                     </Button>
                     <Button
                       size="sm"
-                      disabled={isDeleting || deletePassword.length < 6}
+                      disabled={isDeleting || deletePassword.length < 6 || deleteConfirmText !== 'DELETE'}
                       onClick={async () => {
                         setDeleteError('');
                         setIsDeleting(true);
@@ -1201,7 +1276,7 @@ export function SettingsPage() {
                           setIsDeleting(false);
                         }
                       }}
-                      className="bg-red-500 hover:bg-red-600 text-white"
+                      className="bg-[#FF2D78] hover:bg-[#E0266A] text-white disabled:opacity-40"
                       data-testid="delete-account-confirm-btn"
                     >
                       {isDeleting ? (
@@ -1652,6 +1727,48 @@ export function SettingsPage() {
                 <p className="mt-2 text-xs text-[#9CA3AF]">
                   {themeMode === 'system' ? 'Follows your OS preference' : themeMode === 'dark' ? 'Dark mode active' : 'Light mode active'}
                 </p>
+                {/* Live mini theme preview card */}
+                <div
+                  className="mt-3 rounded-xl border overflow-hidden transition-all duration-500"
+                  style={{
+                    borderColor: themeMode === 'light' ? '#e5e7eb' : 'rgba(0,240,255,0.15)',
+                    background: themeMode === 'light' ? '#ffffff' : '#0C0C18',
+                  }}
+                >
+                  <div className="p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-6 h-6 rounded-full transition-colors duration-500"
+                        style={{ background: themeMode === 'light' ? '#e5e7eb' : '#1A1A2E' }}
+                      />
+                      <div className="flex-1 space-y-1">
+                        <div
+                          className="h-2 rounded-full w-3/4 transition-colors duration-500"
+                          style={{ background: themeMode === 'light' ? '#d1d5db' : '#1A1A2E' }}
+                        />
+                        <div
+                          className="h-2 rounded-full w-1/2 transition-colors duration-500"
+                          style={{ background: themeMode === 'light' ? '#e5e7eb' : '#12121F' }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <div className="h-5 flex-1 rounded transition-colors duration-500" style={{ background: accentColor + '25' }} />
+                      <div
+                        className="h-5 px-3 rounded text-[9px] font-medium flex items-center transition-colors duration-500"
+                        style={{ background: accentColor, color: themeMode === 'light' ? '#fff' : '#0C0C18' }}
+                      >
+                        Button
+                      </div>
+                    </div>
+                    <div
+                      className="text-[9px] text-center transition-colors duration-500"
+                      style={{ color: themeMode === 'light' ? '#6b7280' : '#9CA3AF' }}
+                    >
+                      Preview — {themeMode === 'light' ? 'Light' : themeMode === 'dark' ? 'Dark' : 'System'} Mode
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>

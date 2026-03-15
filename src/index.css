@@ -469,6 +469,45 @@
   50% { opacity: 0; }
 }
 
+/* ─── Neon Glow Hover Effect ─── */
+.glow-hover:hover {
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.25), 0 0 40px rgba(0, 240, 255, 0.1);
+}
+
+/* ─── Corner Brackets Decoration ─── */
+.corner-brackets {
+  position: relative;
+}
+.corner-brackets::before,
+.corner-brackets::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: rgba(0, 240, 255, 0.3);
+  transition: border-color 0.3s, opacity 0.3s;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.corner-brackets:hover::before,
+.corner-brackets:hover::after {
+  opacity: 1;
+  border-color: rgba(0, 240, 255, 0.6);
+}
+.corner-brackets::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+}
+.corner-brackets::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid;
+  border-right: 2px solid;
+}
+
 /* ─── Reduced Motion ─── */
 @media (prefers-reduced-motion: reduce) {
   .animate-shimmer {

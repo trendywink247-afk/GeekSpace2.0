@@ -237,6 +237,8 @@ export function RemindersPage() {
     setTimeout(() => setSnoozeToast(null), 3000);
   };
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
+  // Track IDs that just finished completing — for the green flash afterglow
+  const [justCompletedIds, setJustCompletedIds] = useState<Set<string>>(new Set());
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   // 51.2: Recurring reminder edit — choice dialog state
   const [recurringEditChoice, setRecurringEditChoice] = useState<Reminder | null>(null);
@@ -311,9 +313,12 @@ export function RemindersPage() {
 
   const handleComplete = async (id: string) => {
     setCompletingIds((prev) => new Set(prev).add(id));
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     await toggleReminder(id);
     setCompletingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    // Brief green flash afterglow on the row
+    setJustCompletedIds((prev) => new Set(prev).add(id));
+    setTimeout(() => setJustCompletedIds((prev) => { const next = new Set(prev); next.delete(id); return next; }), 600);
   };
 
   const handleDelete = async (id: string) => {
@@ -620,6 +625,12 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
     return true;
   }).filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
+      // Overdue active items always sort to top
+      const now = Date.now();
+      const aOverdue = !a.completed && new Date(a.datetime).getTime() < now;
+      const bOverdue = !b.completed && new Date(b.datetime).getTime() < now;
+      if (aOverdue && !bOverdue) return -1;
+      if (!aOverdue && bOverdue) return 1;
       // 66.8: Sort by due-date or priority
       if (sortMode === 'due') {
         return new Date(a.datetime).getTime() - new Date(b.datetime).getTime();
@@ -810,27 +821,48 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             </Button>
           </div>
           
-          {/* Parsed preview */}
+          {/* Parsed preview card — live preview of what will be created */}
           {parsedReminder && (
-            <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[#00FF88]/20">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-[#00FF88]">✓</span>
-                <span className="text-[#E8E8F0]">{parsedReminder.text}</span>
-                <span className="text-[#9CA3AF]">at</span>
-                <span className="text-[#FFB800]">
-                  {parsedReminder.datetime.toLocaleString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+            <div className="mt-3 p-3.5 rounded-xl bg-[#06060B]/80 border border-[#00FF88]/20 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#9CA3AF]">Preview</span>
+                {/* Confidence indicator */}
+                <span
+                  className="text-xs font-medium px-2 py-0.5 rounded-full"
+                  style={{
+                    color: parsedReminder.confidence > 0.8 ? '#00FF88' : parsedReminder.confidence > 0.5 ? '#FFB800' : '#FF2D78',
+                    backgroundColor: parsedReminder.confidence > 0.8 ? '#00FF8815' : parsedReminder.confidence > 0.5 ? '#FFB80015' : '#FF2D7815',
+                  }}
+                >
+                  {parsedReminder.confidence > 0.8 ? 'High confidence' : parsedReminder.confidence > 0.5 ? 'Medium confidence' : 'Low confidence'}
                 </span>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#9CA3AF] w-12 flex-shrink-0">Task</span>
+                  <span className="text-sm font-medium text-[#E8E8F0]">{parsedReminder.text}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#9CA3AF] w-12 flex-shrink-0">When</span>
+                  <span className="text-sm text-[#FFB800] flex items-center gap-1.5">
+                    <Calendar className="w-3 h-3" />
+                    {parsedReminder.datetime.toLocaleString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
                 {parsedReminder.recurring && (
-                  <Badge className="bg-[#00F0FF]/20 text-[#00F0FF]">
-                    <Repeat className="w-3 h-3 mr-1" />
-                    {parsedReminder.recurring}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#9CA3AF] w-12 flex-shrink-0">Repeat</span>
+                    <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] text-xs">
+                      <Repeat className="w-3 h-3 mr-1" />
+                      {parsedReminder.recurring}
+                    </Badge>
+                  </div>
                 )}
               </div>
             </div>
@@ -1209,35 +1241,55 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
       {viewMode === 'list' ? (
         <div className="space-y-3">
           {filteredReminders.length === 0 ? (
-            <div className="text-center py-12">
-              <Bell className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
-              <p className="text-[#9CA3AF]">No reminders yet</p>
-              <p className="text-sm text-[#9CA3AF]/70 mt-1">Use the quick add above to create your first reminder</p>
+            <div className="text-center py-16 flex flex-col items-center">
+              <div className="relative mb-6">
+                <Bell className="w-14 h-14 text-[#00F0FF]/30 animate-bounce" style={{ animationDuration: '2s' }} />
+                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#00F0FF]/20 animate-ping" />
+              </div>
+              <p className="text-lg font-medium text-[#E8E8F0] mb-1">No reminders yet</p>
+              <p className="text-sm text-[#9CA3AF]/70 mt-1 max-w-xs">
+                Try typing: <span className="text-[#00F0FF]/80 font-mono text-xs">&ldquo;Remind me tomorrow at 3pm to call mom&rdquo;</span>
+              </p>
+              <Button
+                onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }}
+                className="mt-5 bg-[#00F0FF] hover:bg-[#00D4B0] text-black font-semibold px-6 py-2.5 min-h-[44px]"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create your first reminder
+              </Button>
             </div>
           ) : filter === 'active' ? (
             // Grouped view for active reminders (date or category)
-            (groupMode === 'category' ? groupRemindersByCategory(filteredReminders) : groupRemindersByDate(filteredReminders)).map(({ label, items }) => (
+            (groupMode === 'category' ? groupRemindersByCategory(filteredReminders) : groupRemindersByDate(filteredReminders)).map(({ label, items }) => {
+              // Smart grouping: color-coded headers by time context
+              const groupHeaderColor = label === 'Overdue' ? '#FF2D78' : label === 'Today' ? '#00F0FF' : label === 'Tomorrow' || label === 'This Week' ? '#E8E8F0' : '#8892A4';
+              const groupBadgeBg = label === 'Overdue' ? '#FF2D78' : label === 'Today' ? '#00F0FF' : '#BF5FFF';
+              return (
               <div key={label} className="mb-4">
                 <div className="flex items-center gap-2 mb-2 px-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#8888AA]">{label}</span>
-                  <span className="text-xs font-medium text-[#BF5FFF] bg-[#BF5FFF]/10 px-1.5 py-0.5 rounded-full">{items.length}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: groupHeaderColor }}>{label}</span>
+                  <span className="text-xs font-medium px-1.5 py-0.5 rounded-full" style={{ color: groupBadgeBg, backgroundColor: `${groupBadgeBg}15` }}>{items.length}</span>
                 </div>
                 <div className="space-y-2">
                   {items.map((reminder) => {
                     const formatted = formatDateTime(reminder.datetime);
                     const overdue = isOverdue(reminder.datetime, reminder.completed);
                     const dueSoon = isDueSoon(reminder.datetime, reminder.completed);
+                    const isCompleting = completingIds.has(reminder.id);
+                    const isJustCompleted = justCompletedIds.has(reminder.id);
                     return (
                       <Card
                         key={reminder.id}
                         data-testid={`reminder-card-${reminder.id}`}
                         className={`bg-[#0C0C18] border transition-all duration-300 ${
-                          completingIds.has(reminder.id)
-                            ? 'border-[#00FF88] bg-[#00FF88]/10'
+                          isCompleting
+                            ? 'border-[#00FF88] bg-[#00FF88]/10 scale-[0.99]'
+                            : isJustCompleted
+                            ? 'bg-[#00FF88]/5'
                             : reminder.completed
                             ? 'border-[#00F0FF]/10 opacity-60'
                             : overdue
-                            ? 'border-[#FF6161]/30'
+                            ? 'border-[#FF6161]/30 border-l-2 border-l-[#FF2D78]'
                             : 'border-[#00F0FF]/20'
                         }`}
                       >
@@ -1297,7 +1349,10 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                     />
                                   ) : (
                                     <p
-                                      className={`font-medium cursor-text hover:bg-[#00F0FF]/5 rounded px-1 -mx-1 transition-colors ${reminder.completed ? 'line-through text-[#9CA3AF]' : 'text-[#E8E8F0]'}`}
+                                      className={`font-medium cursor-text hover:bg-[#00F0FF]/5 rounded px-1 -mx-1 transition-all duration-300 ${
+                                        isCompleting ? 'line-through text-[#9CA3AF] opacity-60' : reminder.completed ? 'line-through text-[#9CA3AF]' : 'text-[#E8E8F0]'
+                                      }`}
+                                      style={{ textDecorationColor: isCompleting ? '#00FF88' : undefined }}
                                       title="Click to edit"
                                       onClick={() => { if (!reminder.completed) { setInlineEditId(reminder.id); setInlineEditValue(reminder.text); } }}
                                     >
@@ -1309,9 +1364,15 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                       <Clock className="w-3 h-3" />
                                       {formatted.time}
                                     </span>
+                                    {/* Overdue badge */}
+                                    {overdue && !reminder.completed && (
+                                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-[#FF2D78]/15 text-[#FF2D78]">
+                                        Overdue
+                                      </span>
+                                    )}
                                     {/* 68.2: human-readable due label */}
-                                    {!reminder.completed && (
-                                      <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${overdue ? 'bg-[#FF6161]/15 text-[#FF6161]' : 'bg-[#00F0FF]/10 text-[#00F0FF]'}`}>
+                                    {!reminder.completed && !overdue && (
+                                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
                                         {humanDue(reminder.datetime)}
                                       </span>
                                     )}
@@ -1412,10 +1473,12 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                   <button
                                     onClick={() => handleComplete(reminder.id)}
                                     aria-label={reminder.completed ? 'Mark as incomplete' : 'Mark as complete'}
-                                    className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                                      reminder.completed
-                                        ? 'bg-[#00FF88]/20 text-[#00FF88]'
-                                        : 'bg-[#06060B] text-[#9CA3AF] hover:text-[#00FF88]'
+                                    className={`p-2.5 rounded-lg transition-all duration-300 min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                                      isCompleting
+                                        ? 'bg-[#00FF88]/30 text-[#00FF88] scale-125'
+                                        : reminder.completed
+                                        ? 'bg-[#00FF88]/20 text-[#00FF88] scale-100'
+                                        : 'bg-[#06060B] text-[#9CA3AF] hover:text-[#00FF88] scale-100'
                                     }`}
                                   >
                                     <Check className="w-4 h-4" />
@@ -1486,23 +1549,28 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                   })}
                 </div>
               </div>
-            ))
+              );
+            })
           ) : (
             filteredReminders.map((reminder) => {
               const formatted = formatDateTime(reminder.datetime);
               const overdue = isOverdue(reminder.datetime, reminder.completed);
               const dueSoon = isDueSoon(reminder.datetime, reminder.completed);
+              const isCompleting = completingIds.has(reminder.id);
+              const isJustCompleted = justCompletedIds.has(reminder.id);
 
               return (
                 <Card
                   key={reminder.id}
                   className={`bg-[#0C0C18] border transition-all duration-300 ${
-                    completingIds.has(reminder.id)
-                      ? 'border-[#00FF88] bg-[#00FF88]/10'
+                    isCompleting
+                      ? 'border-[#00FF88] bg-[#00FF88]/10 scale-[0.99]'
+                      : isJustCompleted
+                      ? 'bg-[#00FF88]/5'
                       : reminder.completed
                       ? 'border-[#00F0FF]/10 opacity-60'
                       : overdue
-                      ? 'border-[#FF6161]/30'
+                      ? 'border-[#FF6161]/30 border-l-2 border-l-[#FF2D78]'
                       : 'border-[#00F0FF]/20'
                   }`}
                 >
@@ -1561,7 +1629,10 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                               />
                             ) : (
                               <p
-                                className={`font-medium cursor-text hover:bg-[#00F0FF]/5 rounded px-1 -mx-1 transition-colors ${reminder.completed ? 'line-through text-[#9CA3AF]' : 'text-[#E8E8F0]'}`}
+                                className={`font-medium cursor-text hover:bg-[#00F0FF]/5 rounded px-1 -mx-1 transition-all duration-300 ${
+                                  isCompleting ? 'line-through text-[#9CA3AF] opacity-60' : reminder.completed ? 'line-through text-[#9CA3AF]' : 'text-[#E8E8F0]'
+                                }`}
+                                style={{ textDecorationColor: isCompleting ? '#00FF88' : undefined }}
                                 title="Click to edit"
                                 onClick={() => { if (!reminder.completed) { setInlineEditId(reminder.id); setInlineEditValue(reminder.text); } }}
                               >
@@ -1572,8 +1643,13 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                               <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-[#FF6161]' : 'text-[#9CA3AF]'}`}>
                                 <Clock className="w-3 h-3" />
                                 {formatted.time}
-                                {overdue && ' (overdue)'}
                               </span>
+                              {/* Overdue badge */}
+                              {overdue && !reminder.completed && (
+                                <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-[#FF2D78]/15 text-[#FF2D78]">
+                                  Overdue
+                                </span>
+                              )}
                               {dueSoon && (
                                 <Badge className="text-xs px-1.5 py-0 bg-[#00FF88]/15 text-[#00FF88] border-[#00FF88]/30">
                                   due in {Math.ceil((new Date(reminder.datetime).getTime() - Date.now()) / 3600000)}h
@@ -1667,10 +1743,12 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                             <button
                               onClick={() => handleComplete(reminder.id)}
                               aria-label={reminder.completed ? 'Mark as incomplete' : 'Mark as complete'}
-                              className={`p-2.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                                reminder.completed
-                                  ? 'bg-[#00FF88]/20 text-[#00FF88]'
-                                  : 'bg-[#06060B] text-[#9CA3AF] hover:text-[#00FF88]'
+                              className={`p-2.5 rounded-lg transition-all duration-300 min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                                isCompleting
+                                  ? 'bg-[#00FF88]/30 text-[#00FF88] scale-125'
+                                  : reminder.completed
+                                  ? 'bg-[#00FF88]/20 text-[#00FF88] scale-100'
+                                  : 'bg-[#06060B] text-[#9CA3AF] hover:text-[#00FF88] scale-100'
                               }`}
                             >
                               <Check className="w-4 h-4" />
@@ -1811,11 +1889,32 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                   </div>
 
                   {parsedReminder && (
-                    <div className="mt-2 p-3 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20">
-                      <p className="text-sm text-[#E8E8F0]">{parsedReminder.text}</p>
-                      <p className="text-xs text-[#00FF88] mt-1">
-                        {parsedReminder.datetime.toLocaleString()}
-                        {parsedReminder.recurring && ` • ${parsedReminder.recurring}`}
+                    <div className="mt-2 p-3.5 rounded-xl bg-[#06060B]/80 border border-[#00FF88]/20 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-[#9CA3AF]">Will create</span>
+                        <span
+                          className="text-xs font-medium px-2 py-0.5 rounded-full"
+                          style={{
+                            color: parsedReminder.confidence > 0.8 ? '#00FF88' : parsedReminder.confidence > 0.5 ? '#FFB800' : '#FF2D78',
+                            backgroundColor: parsedReminder.confidence > 0.8 ? '#00FF8815' : parsedReminder.confidence > 0.5 ? '#FFB80015' : '#FF2D7815',
+                          }}
+                        >
+                          {Math.round(parsedReminder.confidence * 100)}%
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-[#E8E8F0]">{parsedReminder.text}</p>
+                      <p className="text-xs text-[#FFB800] mt-1 flex items-center gap-1.5">
+                        <Calendar className="w-3 h-3" />
+                        {parsedReminder.datetime.toLocaleString('en-US', {
+                          weekday: 'short', month: 'short', day: 'numeric',
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                        {parsedReminder.recurring && (
+                          <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] text-xs ml-1">
+                            <Repeat className="w-3 h-3 mr-1" />
+                            {parsedReminder.recurring}
+                          </Badge>
+                        )}
                       </p>
                     </div>
                   )}

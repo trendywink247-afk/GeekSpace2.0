@@ -1,7 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, Volume2, VolumeX, RotateCcw, Sparkles, Copy, Check, Square } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { Send, Volume2, VolumeX, RotateCcw, Sparkles, Copy, Check, Square, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { agentService, memoryService } from '@/services/api';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useVoice } from '@/hooks/useVoice';
@@ -16,6 +15,65 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+// ── Feedback type for thumbs up/down ──
+type FeedbackValue = 'up' | 'down' | null;
+
+// ── Language display names + badge colors for code blocks ──
+const LANG_COLORS: Record<string, { label: string; bg: string; text: string }> = {
+  javascript: { label: 'JavaScript', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
+  js: { label: 'JavaScript', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
+  typescript: { label: 'TypeScript', bg: 'bg-blue-500/15', text: 'text-blue-400' },
+  ts: { label: 'TypeScript', bg: 'bg-blue-500/15', text: 'text-blue-400' },
+  tsx: { label: 'TSX', bg: 'bg-blue-500/15', text: 'text-blue-400' },
+  jsx: { label: 'JSX', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
+  python: { label: 'Python', bg: 'bg-yellow-500/15', text: 'text-yellow-400' },
+  py: { label: 'Python', bg: 'bg-yellow-500/15', text: 'text-yellow-400' },
+  html: { label: 'HTML', bg: 'bg-orange-500/15', text: 'text-orange-400' },
+  css: { label: 'CSS', bg: 'bg-pink-500/15', text: 'text-pink-400' },
+  json: { label: 'JSON', bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
+  bash: { label: 'Bash', bg: 'bg-green-500/15', text: 'text-green-400' },
+  sh: { label: 'Shell', bg: 'bg-green-500/15', text: 'text-green-400' },
+  sql: { label: 'SQL', bg: 'bg-violet-500/15', text: 'text-violet-400' },
+  rust: { label: 'Rust', bg: 'bg-orange-600/15', text: 'text-orange-300' },
+  go: { label: 'Go', bg: 'bg-sky-500/15', text: 'text-sky-400' },
+  java: { label: 'Java', bg: 'bg-red-500/15', text: 'text-red-400' },
+  c: { label: 'C', bg: 'bg-gray-500/15', text: 'text-gray-400' },
+  cpp: { label: 'C++', bg: 'bg-gray-500/15', text: 'text-gray-400' },
+  yaml: { label: 'YAML', bg: 'bg-rose-500/15', text: 'text-rose-400' },
+  yml: { label: 'YAML', bg: 'bg-rose-500/15', text: 'text-rose-400' },
+  markdown: { label: 'Markdown', bg: 'bg-slate-500/15', text: 'text-slate-400' },
+  md: { label: 'Markdown', bg: 'bg-slate-500/15', text: 'text-slate-400' },
+  dockerfile: { label: 'Dockerfile', bg: 'bg-blue-600/15', text: 'text-blue-300' },
+};
+
+/** Check if two dates are within `ms` milliseconds of each other */
+function withinMs(a: Date, b: Date, ms: number): boolean {
+  return Math.abs(a.getTime() - b.getTime()) < ms;
+}
+
+/** Determine which messages in a list should show their timestamp.
+ *  Cluster rule: if consecutive messages are within 2 min, only the last one in the cluster shows it. */
+function buildTimestampVisibility(msgs: ChatMessage[]): Set<string> {
+  const visible = new Set<string>();
+  if (msgs.length === 0) return visible;
+  const TWO_MIN = 2 * 60 * 1000;
+  let clusterEnd = 0;
+  for (let i = 0; i < msgs.length; i++) {
+    // Find end of cluster starting at i
+    clusterEnd = i;
+    while (
+      clusterEnd + 1 < msgs.length &&
+      withinMs(msgs[clusterEnd].timestamp, msgs[clusterEnd + 1].timestamp, TWO_MIN)
+    ) {
+      clusterEnd++;
+    }
+    // Only the last message in the cluster shows the timestamp
+    visible.add(msgs[clusterEnd].id);
+    i = clusterEnd;
+  }
+  return visible;
+}
+
 const VOICE_SETTINGS_KEY = 'agentin_voice_settings';
 
 function CodeBlock({ code, lang }: { code: string; lang?: string }) {
@@ -25,12 +83,30 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  const langKey = (lang || '').toLowerCase();
+  const langMeta = LANG_COLORS[langKey];
   return (
     <div className="relative my-2 rounded-lg overflow-hidden border border-[#00F0FF]/20">
-      <div className="flex items-center justify-between px-3 py-1 bg-[#0A0A1A]">
-        <span className="text-xs text-[#9CA3AF]">{lang || 'code'}</span>
-        <button onClick={handleCopy} className="flex items-center gap-1 text-xs text-[#9CA3AF] hover:text-[#00F0FF] transition-colors min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" title="Copy code" aria-label="Copy code">
-          {copied ? <Check className="w-3 h-3 text-[#00FF88]" /> : <Copy className="w-3 h-3" />}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#0A0A1A]">
+        {langMeta ? (
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase ${langMeta.bg} ${langMeta.text}`}>
+            {langMeta.label}
+          </span>
+        ) : (
+          <span className="text-xs text-[#9CA3AF]">{lang || 'code'}</span>
+        )}
+        <button
+          onClick={handleCopy}
+          className={[
+            'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50',
+            copied
+              ? 'text-[#00FF88] bg-[#00FF88]/10'
+              : 'text-[#9CA3AF] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10',
+          ].join(' ')}
+          title="Copy code"
+          aria-label="Copy code"
+        >
+          {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
           {copied ? 'Copied!' : 'Copy'}
         </button>
       </div>
@@ -77,13 +153,18 @@ export function ChatPage() {
   const [voiceMode, setVoiceMode] = useState<boolean>(getVoiceMode);
   const [interimText, setInterimText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Keep a hidden input ref for voice auto-submit via form
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Streaming perf: buffer tokens in a ref, flush to state via RAF
   const streamBufferRef = useRef('');
   const rafRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isStreamActive, setIsStreamActive] = useState(false);
+
+  // Feedback state: track thumbs up/down per message
+  const [feedback, setFeedback] = useState<Record<string, FeedbackValue>>({});
 
   const personality: AgentPersonality = agent?.personality ?? 'weebo';
   const agentName = personality === 'edith' ? 'Edith' : personality === 'jarvis' ? 'Jarvis' : 'Weebo';
@@ -95,7 +176,7 @@ export function ChatPage() {
     setInput(text);
     // Auto-submit after transcript
     setTimeout(() => {
-      inputRef.current?.form?.requestSubmit();
+      formRef.current?.requestSubmit();
     }, 100);
   }, []);
 
@@ -327,6 +408,24 @@ export function ChatPage() {
     setTimeout(() => setCopiedMsgId(null), 2000);
   }, []);
 
+  // Feedback handler: thumbs up/down on agent messages
+  const handleFeedback = useCallback((msgId: string, value: FeedbackValue) => {
+    setFeedback((prev) => {
+      const current = prev[msgId];
+      // Toggle off if same button pressed again
+      const next = current === value ? null : value;
+      // Fire-and-forget API call
+      if (next) {
+        const reaction = next === 'up' ? 'like' : 'dislike';
+        memoryService.addReaction(msgId, reaction).catch(() => {});
+      }
+      return { ...prev, [msgId]: next };
+    });
+  }, []);
+
+  // Timestamp clustering: recompute when messages change
+  const timestampVisible = useMemo(() => buildTimestampVisibility(messages), [messages]);
+
   const starterPrompts = [
     { text: 'Remind me to drink water every 2 hours', icon: '💧' },
     { text: 'What can you help me with?', icon: '🤔' },
@@ -336,13 +435,25 @@ export function ChatPage() {
 
   const handleStarterPrompt = useCallback((prompt: string) => {
     setInput(prompt);
-    setTimeout(() => inputRef.current?.form?.requestSubmit(), 100);
+    setTimeout(() => formRef.current?.requestSubmit(), 100);
   }, []);
 
-  const personalityMeta: Record<AgentPersonality, { emoji: string; color: string }> = {
-    edith: { emoji: 'E', color: '#3B82F6' },
-    jarvis: { emoji: 'J', color: '#BF5FFF' },
-    weebo: { emoji: 'W', color: '#00FF88' },
+  // Auto-resize textarea
+  const autoResize = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, []);
+
+  useEffect(() => {
+    autoResize();
+  }, [input, autoResize]);
+
+  const personalityMeta: Record<AgentPersonality, { emoji: string; color: string; glow: string; initial: string }> = {
+    edith: { emoji: 'E', color: '#8B5CF6', glow: '0 0 12px rgba(139,92,246,0.4)', initial: 'E' },
+    jarvis: { emoji: 'J', color: '#ADFF2F', glow: '0 0 12px rgba(173,255,47,0.4)', initial: 'J' },
+    weebo: { emoji: 'W', color: '#00F0FF', glow: '0 0 12px rgba(0,240,255,0.4)', initial: 'W' },
   };
   const meta = personalityMeta[personality];
 
@@ -351,15 +462,27 @@ export function ChatPage() {
       {/* Header */}
       <div className='flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10 flex-shrink-0'>
         <div className='flex items-center gap-3'>
-          <div
-            className='w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-black'
-            style={{ background: meta.color }}
-          >
-            {meta.emoji}
+          {/* Agent avatar with glow ring + thinking pulse */}
+          <div className='relative'>
+            <div
+              className='w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-black relative z-10'
+              style={{ background: meta.color, boxShadow: meta.glow }}
+            >
+              {meta.initial}
+            </div>
+            {/* Pulsing ring when thinking */}
+            {isTyping && (
+              <span
+                className='absolute inset-0 rounded-full animate-ping'
+                style={{ border: `2px solid ${meta.color}`, opacity: 0.4 }}
+              />
+            )}
           </div>
           <div>
             <h2 className='text-sm font-semibold text-[#E8E8F0]'>{agentName}</h2>
-            <p className='text-xs text-[#9CA3AF]'>AI Assistant</p>
+            <p className='text-xs text-[#9CA3AF]'>
+              {isTyping ? <span className='text-shimmer'>Thinking...</span> : 'AI Assistant'}
+            </p>
           </div>
         </div>
         <div className='flex items-center gap-2'>
@@ -401,11 +524,19 @@ export function ChatPage() {
       <div className='flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide'>
         {messages.length === 0 && (
           <div className='flex flex-col items-center justify-center h-full gap-4 text-center py-12'>
-            <div
-              className='w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-black'
-              style={{ background: meta.color }}
-            >
-              {meta.emoji}
+            {/* Hero avatar with glow */}
+            <div className='relative'>
+              <div
+                className='w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-black relative z-10'
+                style={{ background: meta.color, boxShadow: meta.glow }}
+              >
+                {meta.initial}
+              </div>
+              {/* Subtle outer glow ring */}
+              <span
+                className='absolute inset-[-4px] rounded-full'
+                style={{ border: `1.5px solid ${meta.color}`, opacity: 0.25 }}
+              />
             </div>
             <div>
               <p className='text-lg font-semibold text-[#E8E8F0]'>Hey! I&apos;m {agentName}</p>
@@ -419,12 +550,16 @@ export function ChatPage() {
                 Voice mode active — responses will be read aloud
               </div>
             )}
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 w-full max-w-md'>
+            {/* Greeting + starter prompts */}
+            <p className='text-xs text-[#8892A4] max-w-sm'>
+              I&apos;m {agentName}, your AI assistant. Here are some things I can help with:
+            </p>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md'>
               {starterPrompts.map((prompt) => (
                 <button
                   key={prompt.text}
                   onClick={() => handleStarterPrompt(prompt.text)}
-                  className='flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/10 text-left text-sm text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/30 hover:bg-[#0C0C18]/80 transition-all duration-200 min-h-[44px]'
+                  className='flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/10 text-left text-sm text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/30 hover:bg-[#0C0C18]/80 hover:shadow-[0_0_16px_rgba(0,240,255,0.08)] transition-all duration-200 min-h-[44px]'
                 >
                   <span className='text-base shrink-0'>{prompt.icon}</span>
                   <span className='line-clamp-2'>{prompt.text}</span>
@@ -433,46 +568,112 @@ export function ChatPage() {
             </div>
           </div>
         )}
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={['flex', msg.role === 'user' ? 'justify-end' : 'justify-start'].join(' ')}
-          >
+        {messages.map((msg) => {
+          const showTimestamp = timestampVisible.has(msg.id);
+          const isStreaming = isStreamActive && msg.role === 'agent' && msg.id === messages[messages.length - 1]?.id;
+          const msgFeedback = feedback[msg.id] ?? null;
+
+          return (
             <div
-              className={[
-                'max-w-[80%] px-3 py-2 rounded-xl text-sm leading-relaxed group/msg relative',
-                msg.role === 'user'
-                  ? 'bg-[#00F0FF]/15 text-[#E8E8F0] rounded-tr-sm'
-                  : 'bg-[#0C0C18] text-[#E8E8F0] border border-[#00F0FF]/10 rounded-tl-sm',
-              ].join(' ')}
+              key={msg.id}
+              className={['flex gap-2', msg.role === 'user' ? 'justify-end' : 'justify-start'].join(' ')}
             >
-              {msg.role === 'agent' ? renderMessageContent(msg.content) : <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>}
-              <div className='flex items-center justify-between mt-1'>
-                <p className='text-xs text-[#9CA3AF]'>
-                  {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
-                {msg.role === 'agent' && msg.content && (
-                  <button
-                    onClick={() => handleCopyMessage(msg.id, msg.content)}
-                    className='opacity-0 group-hover/msg:opacity-100 transition-opacity text-[#9CA3AF] hover:text-[#00F0FF] p-0.5'
-                    title='Copy message'
-                    aria-label='Copy message'
+              {/* Agent avatar beside message */}
+              {msg.role === 'agent' && (
+                <div className='relative shrink-0 self-start mt-0.5'>
+                  <div
+                    className='w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-black relative z-10'
+                    style={{ background: meta.color, boxShadow: isStreaming ? meta.glow : 'none' }}
                   >
-                    {copiedMsgId === msg.id ? <Check className='w-3 h-3 text-[#ADFF2F]' /> : <Copy className='w-3 h-3' />}
-                  </button>
-                )}
+                    {meta.initial}
+                  </div>
+                  {isStreaming && (
+                    <span
+                      className='absolute inset-0 rounded-full animate-ping'
+                      style={{ border: `1.5px solid ${meta.color}`, opacity: 0.35 }}
+                    />
+                  )}
+                </div>
+              )}
+              <div
+                className={[
+                  'max-w-[80%] px-3 py-2 rounded-xl text-sm leading-relaxed group/msg relative',
+                  msg.role === 'user'
+                    ? 'bg-[#00F0FF]/15 text-[#E8E8F0] rounded-tr-sm'
+                    : 'bg-[#0C0C18] text-[#E8E8F0] border border-[#00F0FF]/10 rounded-tl-sm',
+                ].join(' ')}
+              >
+                {msg.role === 'agent' ? renderMessageContent(msg.content) : <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>}
+                {/* Footer: timestamp + action buttons */}
+                <div className='flex items-center justify-between mt-1 gap-2'>
+                  {/* Timestamp — only shown for the last message in a 2-min cluster */}
+                  {showTimestamp ? (
+                    <p className='text-[10px] text-[#9CA3AF]/70'>
+                      {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  ) : (
+                    <span />
+                  )}
+                  {/* Action buttons on agent messages (copy + thumbs) */}
+                  {msg.role === 'agent' && msg.content && (
+                    <div className='flex items-center gap-0.5 opacity-0 group-hover/msg:opacity-100 focus-within:opacity-100 transition-opacity'>
+                      {/* Thumbs up */}
+                      <button
+                        onClick={() => handleFeedback(msg.id, 'up')}
+                        className={[
+                          'p-1 rounded transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center',
+                          msgFeedback === 'up' ? 'text-[#ADFF2F]' : 'text-[#8892A4] hover:text-[#ADFF2F]',
+                        ].join(' ')}
+                        title='Helpful'
+                        aria-label='Mark as helpful'
+                      >
+                        <ThumbsUp className='w-3 h-3' />
+                      </button>
+                      {/* Thumbs down */}
+                      <button
+                        onClick={() => handleFeedback(msg.id, 'down')}
+                        className={[
+                          'p-1 rounded transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center',
+                          msgFeedback === 'down' ? 'text-[#FF2D78]' : 'text-[#8892A4] hover:text-[#FF2D78]',
+                        ].join(' ')}
+                        title='Not helpful'
+                        aria-label='Mark as not helpful'
+                      >
+                        <ThumbsDown className='w-3 h-3' />
+                      </button>
+                      {/* Copy */}
+                      <button
+                        onClick={() => handleCopyMessage(msg.id, msg.content)}
+                        className='p-1 rounded transition-colors text-[#8892A4] hover:text-[#00F0FF] min-w-[28px] min-h-[28px] flex items-center justify-center'
+                        title='Copy message'
+                        aria-label='Copy message'
+                      >
+                        {copiedMsgId === msg.id ? <Check className='w-3 h-3 text-[#ADFF2F]' /> : <Copy className='w-3 h-3' />}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-        {isTyping && (
-          <div className='flex justify-start'>
-            <div className='bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl rounded-tl-sm px-3 py-2'>
-              <div className='flex gap-1 items-center h-4'>
-                <span className='w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-bounce' style={{ animationDelay: '0ms' }} />
-                <span className='w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-bounce' style={{ animationDelay: '150ms' }} />
-                <span className='w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-bounce' style={{ animationDelay: '300ms' }} />
+          );
+        })}
+        {isTyping && !isStreamActive && (
+          <div className='flex gap-2 justify-start'>
+            {/* Avatar with pulse */}
+            <div className='relative shrink-0 self-start mt-0.5'>
+              <div
+                className='w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-black relative z-10'
+                style={{ background: meta.color, boxShadow: meta.glow }}
+              >
+                {meta.initial}
               </div>
+              <span
+                className='absolute inset-0 rounded-full animate-ping'
+                style={{ border: `1.5px solid ${meta.color}`, opacity: 0.35 }}
+              />
+            </div>
+            <div className='bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl rounded-tl-sm px-3 py-2'>
+              <span className='text-shimmer text-xs font-medium'>{agentName} is thinking...</span>
             </div>
           </div>
         )}
@@ -511,15 +712,34 @@ export function ChatPage() {
         {voice.error && (
           <p className='text-xs text-red-400 mb-2'>{voice.error}</p>
         )}
-        <form onSubmit={handleSubmit} className='flex items-center gap-2'>
-          <Input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={voice.isListening ? 'Listening...' : 'Message ' + agentName + '...'}
-            disabled={isTyping}
-            className='flex-1 bg-[#0C0C18] border-[#00F0FF]/20 text-[#E8E8F0] placeholder:text-[#4B5563] focus:border-[#00F0FF]/40 h-10'
-          />
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          className='flex items-end gap-2'
+        >
+          <div className='flex-1 relative'>
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  formRef.current?.requestSubmit();
+                }
+              }}
+              placeholder={voice.isListening ? 'Listening...' : 'Message ' + agentName + '...'}
+              disabled={isTyping}
+              rows={1}
+              className='w-full resize-none bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] placeholder:text-[#4B5563] focus:border-[#00F0FF]/40 focus:outline-none focus:ring-2 focus:ring-[#00F0FF]/20 rounded-lg px-3 py-2.5 text-sm leading-relaxed min-h-[40px] max-h-[120px] scrollbar-hide'
+            />
+            {/* Character count — appears when > 200 chars */}
+            {input.length > 200 && (
+              <span className='absolute right-2 bottom-1.5 text-[10px] text-[#4B5563] tabular-nums pointer-events-none'>
+                {input.length}
+              </span>
+            )}
+          </div>
           <VoiceButton
             onTranscript={handleTranscript}
             isListening={voice.isListening}
@@ -530,15 +750,20 @@ export function ChatPage() {
           <Button
             type='submit'
             disabled={!input.trim() || isTyping}
-            className='bg-[#00F0FF] hover:bg-[#00D4B0] text-black h-10 px-3 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50'
+            className='bg-[#00F0FF] hover:bg-[#00D4B0] text-black h-10 px-3 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 shrink-0'
             aria-label='Send message'
           >
             <Send className='w-4 h-4' />
           </Button>
         </form>
-        <p className='text-xs text-[#4B5563] mt-1.5 text-center'>
-          Press Alt+V from anywhere to open voice chat instantly
-        </p>
+        <div className='flex items-center justify-between mt-1.5 px-0.5'>
+          <p className='text-[10px] text-[#4B5563]'>
+            Shift+Enter for new line
+          </p>
+          <p className='text-[10px] text-[#4B5563]'>
+            Alt+V for voice
+          </p>
+        </div>
       </div>
     </div>
   );

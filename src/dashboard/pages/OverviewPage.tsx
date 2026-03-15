@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   MessageSquare,
   Bell,
@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   X,
+  Send,
+  Link2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -57,6 +59,28 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
+/** Detect Indian festivals and notable holidays (approximate fixed dates) */
+function getFestivalGreeting(): string | null {
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1-12
+  const day = now.getDate();
+
+  if (month === 1 && day === 1) return 'Happy New Year!';
+  if (month === 1 && day === 26) return 'Happy Republic Day!';
+  if (month === 3 && day >= 24 && day <= 26) return 'Happy Holi!';
+  if (month === 8 && day === 15) return 'Happy Independence Day!';
+  if (month === 10 && day >= 20 && day <= 25) return 'Happy Diwali!';
+  if (month === 11 && day >= 1 && day <= 3) return 'Happy Diwali!';
+  if (month === 11 && day >= 12 && day <= 15) return 'Happy Diwali!';
+  if (month === 12 && day === 25) return 'Merry Christmas!';
+  if (month === 4 && day === 14) return 'Happy Baisakhi!';
+  if (month === 8 && day >= 26 && day <= 30) return 'Happy Ganesh Chaturthi!';
+  if (month === 1 && day === 14) return 'Happy Makar Sankranti!';
+  if (month === 9 && day >= 15 && day <= 24) return 'Happy Navratri!';
+  if (month === 10 && day >= 10 && day <= 15) return 'Happy Dussehra!';
+  return null;
+}
+
 function relativeTime(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (diff < 60) return 'just now';
@@ -65,11 +89,22 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-/** Pure SVG sparkline -- no charting library needed */
-function ActivitySparkline({ data, color = '#00F0FF' }: { data: number[]; color?: string }) {
+/** Pure SVG sparkline with hover tooltips */
+function ActivitySparkline({
+  data,
+  labels,
+  color = '#00F0FF',
+}: {
+  data: number[];
+  labels?: string[];
+  color?: string;
+}) {
   const w = 200;
   const h = 48;
   const pad = 4;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
   if (data.length < 2) {
     return (
       <div className="flex items-center justify-center h-12 text-xs text-[#8892A4]">
@@ -87,30 +122,96 @@ function ActivitySparkline({ data, color = '#00F0FF' }: { data: number[]; color?
   });
   const polyline = points.map((p) => `${p.x},${p.y}`).join(' ');
   // Fill area path
-  const areaPath = `M${points[0].x},${h} ` + points.map((p) => `L${p.x},${p.y}`).join(' ') + ` L${points[points.length - 1].x},${h} Z`;
+  const areaPath =
+    `M${points[0].x},${h} ` +
+    points.map((p) => `L${p.x},${p.y}`).join(' ') +
+    ` L${points[points.length - 1].x},${h} Z`;
+
+  // Compute hit zone width per point for hover detection
+  const hitZoneWidth = (w - pad * 2) / Math.max(data.length - 1, 1);
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-12" preserveAspectRatio="none" aria-label="Activity sparkline over the last 7 days">
-      <defs>
-        <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={0.25} />
-          <stop offset="100%" stopColor={color} stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      <path d={areaPath} fill="url(#spark-fill)" />
-      <polyline
-        points={polyline}
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Dots */}
-      {points.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="3" fill={color} stroke="#0C0C18" strokeWidth="1.5" />
-      ))}
-    </svg>
+    <div ref={containerRef} className="relative">
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        className="w-full h-12"
+        preserveAspectRatio="none"
+        aria-label="Activity sparkline over the last 7 days"
+        onMouseLeave={() => setHoveredIdx(null)}
+      >
+        <defs>
+          <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.25} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill="url(#spark-fill)" />
+        <polyline
+          points={polyline}
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {/* Vertical hover guide line */}
+        {hoveredIdx !== null && points[hoveredIdx] && (
+          <line
+            x1={points[hoveredIdx].x}
+            y1={0}
+            x2={points[hoveredIdx].x}
+            y2={h}
+            stroke={color}
+            strokeWidth="0.8"
+            strokeDasharray="3 2"
+            opacity={0.4}
+          />
+        )}
+        {/* Dots */}
+        {points.map((p, i) => (
+          <circle
+            key={i}
+            cx={p.x}
+            cy={p.y}
+            r={hoveredIdx === i ? 4 : 3}
+            fill={hoveredIdx === i ? '#F4F6FF' : color}
+            stroke={hoveredIdx === i ? color : '#0C0C18'}
+            strokeWidth={hoveredIdx === i ? 2 : 1.5}
+            className="transition-all duration-150"
+          />
+        ))}
+        {/* Invisible hit zones for hover */}
+        {points.map((p, i) => (
+          <rect
+            key={`hit-${i}`}
+            x={p.x - hitZoneWidth / 2}
+            y={0}
+            width={hitZoneWidth}
+            height={h}
+            fill="transparent"
+            onMouseEnter={() => setHoveredIdx(i)}
+            onTouchStart={() => setHoveredIdx(i)}
+            style={{ cursor: 'crosshair' }}
+          />
+        ))}
+      </svg>
+      {/* Tooltip */}
+      {hoveredIdx !== null && points[hoveredIdx] && (
+        <div
+          className="absolute -top-9 pointer-events-none z-10 rounded-md px-2 py-1 text-xs font-mono whitespace-nowrap border border-[#00F0FF]/20"
+          style={{
+            left: `${(points[hoveredIdx].x / w) * 100}%`,
+            transform: 'translateX(-50%)',
+            background: '#12121F',
+            color: '#F4F6FF',
+          }}
+        >
+          {labels?.[hoveredIdx] ? `${labels[hoveredIdx]}: ` : ''}
+          <span style={{ color }}>{data[hoveredIdx]}</span>
+          {' msg'}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -265,11 +366,11 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   // ---------------------------------------------------------------------------
 
   const quickActions = [
-    { label: 'New Reminder', icon: Bell, color: '#00F0FF', page: 'reminders?openAdd=true' },
-    { label: 'Chat with Weebo', icon: MessageSquare, color: '#ADFF2F', action: () => onOpenChat?.() },
-    { label: 'Start Focus', icon: Timer, color: '#FF2D78', page: 'focus' },
-    { label: 'Log Habit', icon: Target, color: '#8B5CF6', page: 'reminders' },
-    { label: 'New Note', icon: FileText, color: '#FFD700', page: 'docs' },
+    { label: 'New Reminder', icon: Bell, color: '#00F0FF', bgColor: 'rgba(0,240,255,0.1)', page: 'reminders?openAdd=true' },
+    { label: 'Chat with Weebo', icon: MessageSquare, color: '#ADFF2F', bgColor: 'rgba(173,255,47,0.1)', action: () => onOpenChat?.() },
+    { label: 'Start Focus', icon: Timer, color: '#8B5CF6', bgColor: 'rgba(139,92,246,0.1)', page: 'focus' },
+    { label: 'Log Habit', icon: Target, color: '#FF2D78', bgColor: 'rgba(255,45,120,0.1)', page: 'reminders' },
+    { label: 'New Note', icon: FileText, color: '#FFB800', bgColor: 'rgba(255,184,0,0.1)', page: 'docs' },
   ];
 
   // ---------------------------------------------------------------------------
@@ -278,6 +379,15 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
 
   const greeting = getGreeting();
   const firstName = user?.name?.split(' ')[0] || 'there';
+  const festivalGreeting = getFestivalGreeting();
+
+  // Determine if user is in an empty/new state (no data at all)
+  const isEmptyState =
+    !loading &&
+    conversations.length === 0 &&
+    reminders.length === 0 &&
+    messagesToday === 0 &&
+    activityData.every((v) => v === 0);
 
   return (
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
@@ -304,6 +414,16 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   {firstName}
                 </span>
               </h1>
+              {/* Festival / holiday greeting pill */}
+              {festivalGreeting && (
+                <span
+                  className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-medium border border-[#FFB800]/20 animate-pulse"
+                  style={{ background: 'rgba(255,184,0,0.1)', color: '#FFB800' }}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  {festivalGreeting}
+                </span>
+              )}
               <p className="text-[#8892A4] mt-1.5 text-sm sm:text-base">
                 {pendingReminders.length > 0 && (
                   <>
@@ -456,9 +576,18 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   if (action.action) action.action();
                   else if (action.page) onNavigate?.(action.page);
                 }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#00F0FF]/10 bg-[#0C0C18] text-sm font-medium text-[#F4F6FF] whitespace-nowrap snap-start transition-all hover:border-[#00F0FF]/30 hover:bg-[#0C0C18]/80 active:scale-95 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium text-[#F4F6FF] whitespace-nowrap snap-start transition-all hover:scale-[1.03] active:scale-95 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                style={{
+                  background: action.bgColor,
+                  borderColor: `${action.color}20`,
+                }}
               >
-                <action.icon className="w-4 h-4 flex-shrink-0" style={{ color: action.color }} />
+                <div
+                  className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                  style={{ background: action.bgColor }}
+                >
+                  <action.icon className="w-3.5 h-3.5" style={{ color: action.color }} />
+                </div>
                 {action.label}
               </button>
             ))}
@@ -503,34 +632,48 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   </div>
                 ) : conversations.length > 0 ? (
                   <div className="divide-y divide-[#00F0FF]/5">
-                    {conversations.map((convo) => (
-                      <button
-                        key={convo.id}
-                        onClick={() => onOpenChat?.()}
-                        className="w-full p-4 flex items-start gap-3 text-left hover:bg-[#00F0FF]/[0.03] transition-colors group"
-                      >
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#8B5CF6]/10 mt-0.5">
-                          <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-[#F4F6FF] truncate group-hover:text-[#00F0FF] transition-colors">
-                            {convo.content.length > 80
-                              ? convo.content.slice(0, 80) + '...'
-                              : convo.content}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-[#8892A4]">
-                              Weebo
-                            </span>
-                            <span className="text-[#8892A4]/40">|</span>
-                            <span className="text-xs text-[#8892A4]">
-                              {relativeTime(convo.createdAt)}
-                            </span>
+                    {conversations.map((convo) => {
+                      // Pick agent color by content hash for visual variety
+                      const agentColors = ['#00F0FF', '#ADFF2F', '#8B5CF6', '#FF2D78', '#FFB800'];
+                      const colorIdx = convo.id.charCodeAt(0) % agentColors.length;
+                      const agentColor = agentColors[colorIdx];
+                      return (
+                        <button
+                          key={convo.id}
+                          onClick={() => onOpenChat?.()}
+                          className="w-full p-4 flex items-start gap-3 text-left hover:bg-[#00F0FF]/[0.03] transition-colors group"
+                        >
+                          {/* Agent avatar — colored circle with initial */}
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold"
+                            style={{
+                              background: `${agentColor}15`,
+                              color: agentColor,
+                              border: `1.5px solid ${agentColor}30`,
+                            }}
+                          >
+                            W
                           </div>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-[#8892A4]/40 group-hover:text-[#00F0FF] transition-colors flex-shrink-0 mt-1" />
-                      </button>
-                    ))}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-[#F4F6FF] truncate group-hover:text-[#00F0FF] transition-colors leading-snug">
+                              {convo.content.length > 80
+                                ? convo.content.slice(0, 77) + '...'
+                                : convo.content}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs font-medium" style={{ color: agentColor }}>
+                                Weebo
+                              </span>
+                              <span className="text-[#8892A4]/40">|</span>
+                              <span className="text-xs text-[#8892A4]">
+                                {relativeTime(convo.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-[#8892A4]/40 group-hover:text-[#00F0FF] transition-colors flex-shrink-0 mt-1" />
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="p-8 text-center">
@@ -584,7 +727,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   </div>
                 ) : (
                   <>
-                    <ActivitySparkline data={activityData} color="#00F0FF" />
+                    <ActivitySparkline data={activityData} labels={dayLabels} color="#00F0FF" />
                     {/* Day labels */}
                     {dayLabels.length > 0 && (
                       <div className="flex justify-between mt-2 px-1">
@@ -637,6 +780,82 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
             )}
           </section>
         </div>
+
+        {/* ─── Onboarding Card (empty state) ─── */}
+        {isEmptyState && (
+          <section
+            className={`transition-all duration-700 delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          >
+            <Card
+              className="border-[#00F0FF]/15 bg-[#0C0C18] rounded-2xl overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, #0C0C18 0%, #12121F 100%)' }}
+            >
+              <CardContent className="p-6 sm:p-8">
+                <div className="flex items-start gap-4 mb-5">
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(173,255,47,0.1))' }}
+                  >
+                    <Sparkles className="w-6 h-6 text-[#00F0FF]" />
+                  </div>
+                  <div>
+                    <h3
+                      className="text-lg font-bold text-[#F4F6FF]"
+                      style={{ fontFamily: 'Syne, sans-serif' }}
+                    >
+                      Welcome to Agentin!
+                    </h3>
+                    <p className="text-sm text-[#8892A4] mt-1 leading-relaxed">
+                      Start by chatting with Weebo, setting a reminder, or connecting Telegram.
+                      Your dashboard will light up as you go.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <button
+                    onClick={() => onOpenChat?.()}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[#ADFF2F]/15 transition-all hover:border-[#ADFF2F]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
+                    style={{ background: 'rgba(173,255,47,0.06)' }}
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#ADFF2F]/10 flex-shrink-0">
+                      <Send className="w-4 h-4 text-[#ADFF2F]" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-medium text-[#F4F6FF]">Chat with Weebo</div>
+                      <div className="text-xs text-[#8892A4]">Ask anything</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => onNavigate?.('reminders?openAdd=true')}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[#00F0FF]/15 transition-all hover:border-[#00F0FF]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
+                    style={{ background: 'rgba(0,240,255,0.06)' }}
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#00F0FF]/10 flex-shrink-0">
+                      <Bell className="w-4 h-4 text-[#00F0FF]" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-medium text-[#F4F6FF]">Set a Reminder</div>
+                      <div className="text-xs text-[#8892A4]">Stay on track</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => onNavigate?.('connections')}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[#8B5CF6]/15 transition-all hover:border-[#8B5CF6]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
+                    style={{ background: 'rgba(139,92,246,0.06)' }}
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#8B5CF6]/10 flex-shrink-0">
+                      <Link2 className="w-4 h-4 text-[#8B5CF6]" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-medium text-[#F4F6FF]">Connect Telegram</div>
+                      <div className="text-xs text-[#8892A4]">Chat on the go</div>
+                    </div>
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        )}
       </div>
     </PullToRefreshWrapper>
   );

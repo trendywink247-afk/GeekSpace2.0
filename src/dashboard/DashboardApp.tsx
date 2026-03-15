@@ -79,10 +79,17 @@ const DocsWorkspacePage = lazyRetry(() => import('./pages/DocsWorkspacePage').th
 type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs';
 
 
+interface MenuItem {
+  id: PageType;
+  label: string;
+  icon: typeof LayoutDashboard;
+  shortcut?: string;
+}
+
 interface MenuGroup {
   label: string | null;
   icon: typeof LayoutDashboard | null;
-  items: { id: PageType; label: string; icon: typeof LayoutDashboard }[];
+  items: MenuItem[];
 }
 
 const menuGroups: MenuGroup[] = [
@@ -129,12 +136,12 @@ const menuGroups: MenuGroup[] = [
     label: 'Productivity',
     icon: Zap,
     items: [
-      { id: 'reminders', label: 'Reminders', icon: Bell },
+      { id: 'reminders', label: 'Reminders', icon: Bell, shortcut: 'R' },
       { id: 'automations', label: 'Automations', icon: Zap },
       { id: 'calendar', label: 'Calendar', icon: CalendarCheck },
       { id: 'social-media', label: 'Social Media', icon: Share2 },
       { id: 'proactive', label: 'Proactive AI', icon: Sparkles },
-      { id: 'focus', label: 'Focus & Habits', icon: Target },
+      { id: 'focus', label: 'Focus & Habits', icon: Target, shortcut: 'F' },
       { id: 'workflows', label: 'Workflows', icon: GitBranch },
       { id: 'docs', label: 'Docs', icon: FileText },
     ],
@@ -145,7 +152,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: 'inbox', label: 'AI Inbox', icon: Inbox },
       { id: 'gmail', label: 'Gmail', icon: Mail },
-      { id: 'chat', label: 'Voice Chat', icon: Mic },
+      { id: 'chat', label: 'Voice Chat', icon: Mic, shortcut: 'C' },
     ],
   },
   {
@@ -552,10 +559,10 @@ export function DashboardApp() {
                 {/* Collapsible group header */}
                 <button
                   onClick={() => toggleGroup(group.label!)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] mt-1 relative ${
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 min-h-[40px] mt-2 relative ${
                     groupHasActivePage(group)
                       ? 'text-[#00F0FF]'
-                      : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
+                      : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#8892A4] active:bg-[#00F0FF]/10'
                   }`}
                 >
                   {groupHasActivePage(group) && (
@@ -572,7 +579,7 @@ export function DashboardApp() {
                   </div>
                   {!sidebarCollapsed && (
                     <>
-                      <span className="text-sm font-medium flex-1 text-left">{group.label}</span>
+                      <span className="text-[11px] font-semibold flex-1 text-left uppercase tracking-[0.08em]">{group.label}</span>
                       {isGroupExpanded(group.label) ? (
                         <ChevronDown className="w-4 h-4 flex-shrink-0 opacity-50" />
                       ) : (
@@ -589,14 +596,17 @@ export function DashboardApp() {
                         key={item.id}
                         onClick={() => navigate(`/dashboard/${item.id}`)}
                         aria-current={isPageActive(item.id) ? 'page' : undefined}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 min-h-[38px] ${
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 min-h-[38px] relative ${
                           isPageActive(item.id)
-                            ? 'text-[#00F0FF] bg-[#00F0FF]/15'
-                            : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0]'
+                            ? 'text-[#00F0FF] bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
+                            : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] border-l-2 border-transparent'
                         }`}
                       >
-                        <item.icon className="w-4 h-4 flex-shrink-0" />
+                        <item.icon className={`w-4 h-4 flex-shrink-0 ${isPageActive(item.id) ? 'text-[#00F0FF]' : ''}`} />
                         <span className="text-sm flex-1 text-left">{item.label}</span>
+                        {item.shortcut && !isPageActive(item.id) && (
+                          <span className="text-[10px] font-mono text-[#4B5563] bg-[#1a1a2e] px-1.5 py-0.5 rounded border border-[#2a2a3e]">{item.shortcut}</span>
+                        )}
                         {item.id === 'reminders' && dueReminderCount > 0 && (
                           <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none px-1">
                             {dueReminderCount > 9 ? '9+' : dueReminderCount}
@@ -628,14 +638,11 @@ export function DashboardApp() {
                     aria-current={isPageActive(item.id) ? 'page' : undefined}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
                       isPageActive(item.id)
-                        ? 'text-[#00F0FF] bg-[#00F0FF]/15'
-                        : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
+                        ? 'text-[#00F0FF] bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
+                        : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10 border-l-2 border-transparent'
                     }`}
                   >
-                    {isPageActive(item.id) && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
-                    )}
-                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isPageActive(item.id) ? 'text-[#00F0FF]' : ''}`} />
                     {!sidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
                   </button>
                 ))}
@@ -663,14 +670,11 @@ export function DashboardApp() {
             aria-current={isPageActive('roadmap') ? 'page' : undefined}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
               isPageActive('roadmap')
-                ? 'text-[#00F0FF] bg-[#00F0FF]/15'
-                : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10'
+                ? 'text-[#00F0FF] bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
+                : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10 border-l-2 border-transparent'
             }`}
           >
-            {isPageActive('roadmap') && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
-            )}
-            <Rocket className="w-5 h-5 flex-shrink-0" />
+            <Rocket className={`w-5 h-5 flex-shrink-0 ${isPageActive('roadmap') ? 'text-[#00F0FF]' : ''}`} />
             {!sidebarCollapsed && <span className="text-sm font-medium">Agentin Roadmap</span>}
           </button>
         </div>
@@ -714,14 +718,43 @@ export function DashboardApp() {
         </div>
       )}
 
-      {/* Logout */}
-      <div className="p-3 border-t border-[#00F0FF]/10">
+      {/* User avatar area */}
+      <div className="p-3 border-t border-[#00F0FF]/10 space-y-1">
+        {!sidebarCollapsed ? (
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#8B5CF6] flex items-center justify-center flex-shrink-0 text-white text-sm font-bold">
+              {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-[#E8E8F0] truncate">{user?.name?.split(' ')[0] || 'User'}</span>
+                <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/20 flex-shrink-0">
+                  {user?.plan === 'pro' ? 'Pro' : 'Free'}
+                </span>
+              </div>
+              <span className="text-[11px] text-[#4B5563] truncate block">{user?.email || ''}</span>
+            </div>
+            <button
+              onClick={() => navigate('/dashboard/settings')}
+              className="p-1.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors flex-shrink-0"
+              aria-label="Settings"
+            >
+              <Settings className="w-4 h-4 text-[#6B7280]" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-1">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#8B5CF6] flex items-center justify-center text-white text-sm font-bold">
+              {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+            </div>
+          </div>
+        )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] transition-all min-h-[44px]"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[#6B7280] hover:bg-red-500/10 hover:text-red-400 transition-all min-h-[40px]"
           data-testid="dashboard-logout-button"
         >
-          <LogOut className="w-5 h-5 flex-shrink-0" />
+          <LogOut className="w-4 h-4 flex-shrink-0" />
           {!sidebarCollapsed && <span className="text-sm font-medium">Sign Out</span>}
         </button>
       </div>
@@ -790,7 +823,7 @@ export function DashboardApp() {
 
       {/* ---- Desktop Sidebar — floating glass panel ---- */}
       <aside
-        className={`hidden md:flex fixed top-3 left-3 bottom-3 rounded-2xl transition-all duration-300 z-50 flex-col ${
+        className={`hidden md:flex fixed top-3 left-3 bottom-3 rounded-2xl transition-all duration-300 ease-out z-50 flex-col ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         }`}
         style={{
@@ -808,7 +841,7 @@ export function DashboardApp() {
 
       {/* ---- Mobile Sidebar Drawer ---- */}
       <aside
-        className={`md:hidden fixed left-0 top-0 h-full w-64 z-50 flex flex-col transition-transform duration-300 ${
+        className={`md:hidden fixed left-0 top-0 h-full w-64 z-50 flex flex-col transition-transform duration-300 ease-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
@@ -825,7 +858,7 @@ export function DashboardApp() {
 
       {/* ---- Main Content ---- */}
       <main
-        className={`flex-1 min-w-0 overflow-x-hidden transition-all duration-300 pb-24 md:pb-0 ${
+        className={`flex-1 min-w-0 overflow-x-hidden transition-all duration-300 ease-out pb-24 md:pb-0 ${
           sidebarCollapsed ? 'md:ml-[82px]' : 'md:ml-[272px]'
         }`}
         id="main-content"

@@ -16,8 +16,6 @@ import {
   Shield,
   Plug,
   Activity,
-  Wifi,
-  WifiOff,
   AlertTriangle,
   Plus,
   Zap,
@@ -336,21 +334,32 @@ export function ConnectionsPage() {
     loadIntegrations();
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusDot = (status: string) => {
     switch (status) {
-      case 'connected': return <Wifi className="w-4 h-4 text-[#00FF88]" />;
-      case 'error': return <AlertTriangle className="w-4 h-4 text-[#FF6161]" />;
-      case 'paused': return <WifiOff className="w-4 h-4 text-[#FFB800]" />;
-      default: return <WifiOff className="w-4 h-4 text-[#9CA3AF]" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'connected': return 'text-[#00FF88]';
-      case 'error': return 'text-[#FF6161]';
-      case 'paused': return 'text-[#FFB800]';
-      default: return 'text-[#9CA3AF]';
+      case 'connected':
+        return (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00FF88] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00FF88]" />
+            </span>
+            <span className="text-xs text-[#00FF88] font-medium">Connected</span>
+          </span>
+        );
+      case 'error':
+        return (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-[#FF6161]" />
+            <span className="text-xs text-[#FF6161] font-medium">Error — reconnect</span>
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-[#9CA3AF]" />
+            <span className="text-xs text-[#9CA3AF]">Not connected</span>
+          </span>
+        );
     }
   };
 
@@ -638,14 +647,28 @@ export function ConnectionsPage() {
         {filteredIntegrations.map((connection) => {
           const Icon = getIcon(connection.type);
           const color = getColor(connection.type);
+          const isTelegram = connection.type === 'telegram';
           // 55.9: On mobile, cards are collapsed by default; tap the header to expand
           const isExpanded = !isMobile || expandedId === connection.id;
           return (
             <Card
               key={connection.id}
-              className="bg-[#0C0C18] border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 group"
+              className={`bg-[#0C0C18] transition-all duration-300 group ${
+                isTelegram
+                  ? 'border-[#00F0FF]/40 ring-1 ring-[#00F0FF]/10'
+                  : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
+              }`}
             >
-              <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
+              {/* Telegram: Recommended badge */}
+              {isTelegram && (
+                <div className="px-4 pt-3 sm:px-6 sm:pt-4 pb-0 flex items-center gap-2">
+                  <Badge className="bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30 text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5">
+                    Recommended
+                  </Badge>
+                  <span className="text-[10px] text-[#9CA3AF]">Primary notification channel</span>
+                </div>
+              )}
+              <CardContent className={`${isMobile ? 'p-4' : 'p-6'} ${isTelegram && !isMobile ? 'pt-3' : isTelegram ? 'pt-2' : ''}`}>
                 <div
                   className={`flex items-start justify-between ${isExpanded ? 'mb-4' : ''} ${isMobile ? 'cursor-pointer' : ''}`}
                   onClick={isMobile ? () => setExpandedId(expandedId === connection.id ? null : connection.id) : undefined}
@@ -661,13 +684,11 @@ export function ConnectionsPage() {
                       <h3 className="font-semibold text-[#E8E8F0]">{connection.name}</h3>
                       {/* 42.5: Last sync timestamp */}
                       {connection.status === 'connected' && connection.lastSync && (
-                        <p className="text-xs text-[#9CA3AF] mb-0.5">Last sync: {timeAgo(connection.lastSync)}</p>
+                        <p className="text-[11px] text-[#9CA3AF] mb-0.5">Last synced: {timeAgo(connection.lastSync)}</p>
                       )}
+                      {/* Status dot indicator */}
                       <div className="flex items-center gap-2 mt-1">
-                        {getStatusIcon(connection.status)}
-                        <span className={`text-xs ${getStatusColor(connection.status)} capitalize`}>
-                          {connection.status}
-                        </span>
+                        {getStatusDot(connection.status)}
                         {connection.status === 'connected' && healthStatus[connection.type] && (
                           <span
                             className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${
@@ -695,10 +716,14 @@ export function ConnectionsPage() {
                   </div>
 
                   {connection.status === 'connected' ? (
-                    <Switch
-                      checked={true}
-                      onCheckedChange={() => handleDisconnect(connection.id)}
-                    />
+                    <Button
+                      variant="outline"
+                      size={isMobile ? 'default' : 'sm'}
+                      onClick={(e) => { e.stopPropagation(); /* managed via switch still, but show subtle button */ }}
+                      className="border-[#00F0FF]/30 text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/50 min-h-[36px]"
+                    >
+                      Manage
+                    </Button>
                   ) : connection.type === 'whatsapp' ? (
                     <Badge variant="outline" className="border-[#25d366]/30 text-[#25d366]/60 text-xs px-2 py-1">
                       Coming Soon
@@ -708,11 +733,13 @@ export function ConnectionsPage() {
                       size={isMobile ? 'default' : 'sm'}
                       onClick={() => handleConnect(connection.type)}
                       disabled={connectingId === connection.type}
-                      className="bg-[#00F0FF] hover:bg-[#00D4B0] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                      className="bg-[#00F0FF] hover:bg-[#00D4B0] text-[#0C0C18] font-semibold min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 shadow-lg shadow-[#00F0FF]/10"
                     >
                       {connectingId === connection.type ? (
                         <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Connecting…</>
-                      ) : 'Connect'}
+                      ) : (
+                        <><Plug className="w-3.5 h-3.5 mr-1.5" />Connect</>
+                      )}
                     </Button>
                   )}
                 </div>
@@ -779,9 +806,17 @@ export function ConnectionsPage() {
                           <span className="text-[#00F0FF]">Last message: {timeAgo(telegramLastPing)}</span>
                         )}
                       </div>
-                      {connection.status === 'connected' && (
-                        <span>{connection.requestsToday} req today</span>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {connection.status === 'connected' && (
+                          <span>{connection.requestsToday} req today</span>
+                        )}
+                        {connection.status === 'connected' && (
+                          <Switch
+                            checked={true}
+                            onCheckedChange={() => handleDisconnect(connection.id)}
+                          />
+                        )}
+                      </div>
                     </div>
                   </>
                 )}

@@ -64,6 +64,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
   const [isLoaded, setIsLoaded] = useState(false);
   const [typedText, setTypedText] = useState('');
   const [orbHover, setOrbHover] = useState(false);
+  const [hoveredIntegration, setHoveredIntegration] = useState<string | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [stats, setStats] = useState<PublicStats>(FALLBACK_STATS);
   const [statsReady, setStatsReady] = useState(false);
@@ -172,6 +173,13 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
     >
       {/* Gradient Mesh Background */}
       <div className="absolute inset-0 gradient-mesh pointer-events-none" />
+
+      {/* Atmospheric Depth Blob — behind the orb */}
+      <div
+        className={`absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[600px] md:h-[600px] bg-[#00F0FF]/5 blur-[120px] rounded-full pointer-events-none transition-opacity duration-1000 delay-200 ${
+          isLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
 
       {/* Central Orb — Plasma Core */}
       <div
@@ -331,25 +339,30 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
         >
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#6B7280]/60 mb-4">Works with</p>
           <div className="flex items-center justify-center gap-6 sm:gap-10">
-            {integrations.map((item) => (
-              <div
-                key={item.label}
-                className="flex flex-col items-center gap-1.5 group cursor-default"
-              >
-                <div className="p-2.5 rounded-lg border border-white/5 bg-white/[0.02] transition-all duration-300 group-hover:border-white/15 group-hover:bg-white/[0.05]">
-                  <item.icon
-                    className="w-5 h-5 text-[#6B7280]/50 transition-colors duration-300 group-hover:text-[#E8E8F0]"
-                    style={{
-                      // Show branded color on hover via CSS variable
-                      ['--hover-color' as string]: item.color,
-                    }}
-                  />
+            {integrations.map((item) => {
+              const isHovered = hoveredIntegration === item.label;
+              return (
+                <div
+                  key={item.label}
+                  className="flex flex-col items-center gap-1.5 group cursor-default"
+                  onMouseEnter={() => setHoveredIntegration(item.label)}
+                  onMouseLeave={() => setHoveredIntegration(null)}
+                >
+                  <div
+                    className="p-2.5 rounded-lg border border-white/5 bg-white/[0.02] transition-all duration-300 group-hover:border-white/15 group-hover:bg-white/[0.05]"
+                    style={isHovered ? { borderColor: `${item.color}30`, boxShadow: `0 0 12px ${item.color}20` } : undefined}
+                  >
+                    <item.icon
+                      className="w-5 h-5 transition-colors duration-300"
+                      style={{ color: isHovered ? item.color : 'rgba(107, 114, 128, 0.5)' }}
+                    />
+                  </div>
+                  <span className="font-mono text-[9px] sm:text-[10px] text-[#6B7280]/40 transition-colors duration-300 group-hover:text-[#6B7280]">
+                    {item.label}
+                  </span>
                 </div>
-                <span className="font-mono text-[9px] sm:text-[10px] text-[#6B7280]/40 transition-colors duration-300 group-hover:text-[#6B7280]">
-                  {item.label}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

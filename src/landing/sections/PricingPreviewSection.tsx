@@ -142,12 +142,18 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
 
           {/* Pro Card */}
           <div
-            className={`relative rounded-2xl p-6 sm:p-8 bg-[#0C0C18]/80 backdrop-blur border border-[#00F0FF]/40 flex flex-col ${fadeIn}`}
+            className={`group/pro relative rounded-2xl p-6 sm:p-8 bg-[#0C0C18]/80 backdrop-blur border border-[#00F0FF]/40 flex flex-col ${fadeIn}`}
             style={{
               ...fadeInStyle(200),
               boxShadow: '0 0 40px rgba(0, 240, 255, 0.08), inset 0 1px 0 rgba(0, 240, 255, 0.15)',
             }}
           >
+            {/* Corner bracket decorations — appear on hover */}
+            <div className="absolute top-[-1px] left-[-1px] w-3 h-3 border-t-2 border-l-2 border-[#00F0FF]/30 opacity-0 transition-all duration-300 group-hover/pro:opacity-100 group-hover/pro:border-[#00F0FF]/60 pointer-events-none rounded-tl-sm" />
+            <div className="absolute top-[-1px] right-[-1px] w-3 h-3 border-t-2 border-r-2 border-[#00F0FF]/30 opacity-0 transition-all duration-300 group-hover/pro:opacity-100 group-hover/pro:border-[#00F0FF]/60 pointer-events-none rounded-tr-sm" />
+            <div className="absolute bottom-[-1px] left-[-1px] w-3 h-3 border-b-2 border-l-2 border-[#00F0FF]/30 opacity-0 transition-all duration-300 group-hover/pro:opacity-100 group-hover/pro:border-[#00F0FF]/60 pointer-events-none rounded-bl-sm" />
+            <div className="absolute bottom-[-1px] right-[-1px] w-3 h-3 border-b-2 border-r-2 border-[#00F0FF]/30 opacity-0 transition-all duration-300 group-hover/pro:opacity-100 group-hover/pro:border-[#00F0FF]/60 pointer-events-none rounded-br-sm" />
+
             {/* Most Popular Badge */}
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] text-sm font-bold shadow-lg shadow-[#00F0FF]/20">
@@ -190,7 +196,7 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
             <Button
               asChild
               size="lg"
-              className="w-full min-h-[48px] bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] py-6 rounded-xl font-bold text-lg transition-all duration-300 motion-safe:hover:scale-[1.02] hover:shadow-lg hover:shadow-[#00F0FF]/25 group"
+              className="w-full min-h-[48px] bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] py-6 rounded-xl font-bold text-lg transition-all duration-300 motion-safe:hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(0,240,255,0.3),0_0_50px_rgba(0,240,255,0.1)] group glow-hover"
             >
               <Link to="/login?plan=pro">
                 Start Free Trial
