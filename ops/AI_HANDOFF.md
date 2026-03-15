@@ -1,51 +1,64 @@
-# AI Handoff — v3 Telegram Testing + Docs-to-Telegram Wiring
+# AI Handoff — Beast Mode Sprint 1+2 Complete
 **Date:** 2026-03-15
-**Branch:** main @ a2c29f0
-**Status:** BUILD GREEN | Tests: 2253 pass | Audit: 98/98 (100%) | Health: 12/12 OK
+**Branch:** main @ 488dbd0
+**Status:** BUILD GREEN | Tests: 2258 pass | TS: 0 errors | Health: 12/12 OK
 **Model:** claude-opus-4-6
 
 ---
 
 ## What Was Done This Session
 
-### Session 1: v2 Overhaul (Phases 1-4 + 15-16)
-- Agentin Docs: full-stack block editor (18 endpoints, 30 tests, BlockNote UI)
-- Video credits bug fix (no longer deducted on failure)
-- BLOCKER-006 fix ("remember X" persists to memory)
-- Brand leaks cleaned (picoclaw/geekspace → agentin in 10 files)
-- Chat streaming perf (useRef+RAF, AbortController, stop button)
-- CSS utilities (aurora-bg, no-overscroll, streaming-cursor)
+### Beast Mode Sprint 1: Public Pages (Complete)
+- Hero: "Your AI Operating System" + CountUp social proof bar + integration logos
+- Navigation: scroll progress bar, gradient CTA, updated links
+- PricingPreviewSection (NEW): Free vs Pro tier comparison cards
+- FooterSection (NEW): 4-column footer, social links, valid routes
+- PromptTemplates/Persona/Activity: rebranded to Agentin design system
+- Login: auto-focus, inline email validation, password strength, OAuth loading
+- ForgotPassword: 60s cooldown timer, auto-redirect, password strength meter
+- ContactSection: removed duplicate footer
 
-### Session 2: Telegram Testing + Docs Wiring
-- 19 live Telegram messages tested (all 200 OK)
-- 4 button callbacks tested (rem_snooze, hab_logged, rem_done, brief)
-- Doc capture fast-path: /note, note:, capture:, doc: → documents table
-- Automations action config improved
-- Telegram live test script created (ops/telegram-live-test.sh)
+### Beast Mode Sprint 2: Core Dashboard (Complete)
+- OverviewPage: complete rewrite — personalized greeting, at-a-glance cards, quick actions, sparkline, recent conversations (1763→643 lines)
+- MemoryManagerPage: complete rewrite — stats header, category breakdown, search/filter, inline editing, quick-add bar, danger zone reset
+- AgentSettingsPage: complete rewrite — agent selector (Weebo/Edith/Jarvis), 4-tab layout (Personality/Memory/Tools/Channels), sliders, toggles
+- ChatPage: starter prompt cards, copy message button on agent responses
 
-### Telegram Patterns Verified
-- English reminders, Hinglish reminders
-- English/Hinglish expenses (Swiggy, Uber, auto, petrol)
-- Habit logging, focus sessions
-- Memory save + recall (BLOCKER-006 fix confirmed)
-- Persona routing (@Jarvis)
-- Slash commands (/help, /status, /habits)
-- Doc capture from Telegram (3 docs created)
-- Search queries, daily brief
-- All inline keyboard buttons
+### Backend
+- GET /api/stats/public (NEW, 5min cache, 5 tests)
+- DELETE /agent/memory/bulk-all (NEW, safety guard)
+- Updated 3 source-scanning test files for rewritten pages
 
-## Files Changed (cumulative)
-33+ files modified across both sessions, 3 new files created
+### Prior Sessions (cumulative)
+- Agentin Docs (BlockNote, 18 endpoints, 30 tests)
+- Video credits bug fix, BLOCKER-006 fix
+- Chat streaming perf (RAF buffer, AbortController)
+- 19 Telegram live tests + 4 button callbacks
+- Automations page rebuild + keyword triggers
+
+## Files Changed (this session)
+22 files changed (19 modified + 3 new), +3009 / -2632
 
 ## Test Results
-- Server: 2253/2253 PASS | Audit: 98/98 (100%) | TS: 0 errors | Health: 12/12
+- Server: 2258/2258 PASS | TS: 0 errors | Lint: clean | Health: 12/12
 
-## Next Priorities
-1. MinIO object storage
-2. Aliya sim v6 (300+ tests)
-3. PWA push notifications
-4. Indian merchant expense intelligence
-5. AI personality customization
+## Research Completed
+- Landing page competitors (Linear, Perplexity, Superhuman, Raycast, Cursor)
+- Dashboard overview competitors (Raycast, Linear, Notion, Todoist)
+- Chat UI competitors (ChatGPT, Claude, Perplexity, Pi, Character.AI)
+- Memory/knowledge competitors (Mem.ai, ChatGPT Memory, Obsidian)
+- Reminders competitors (Apple Reminders, Todoist, Things 3, TickTick)
+- Habits/Focus competitors (Apple Fitness, Streaks, Forest, Habitica)
+- Design resources: designprompts.dev, 21st.dev, superdesign.dev
+- Indian user attraction strategy research
+- Deep competitor second-pass (ChatGPT Canvas, Claude Artifacts, Linear UX)
+
+## Next Priorities (Sprint 3+)
+1. Sprint 3: Reminders, Focus/Habits, Calendar, Automations, Workflows, Docs
+2. Sprint 4: AI Specialist, Website Builder, Image/Video Gen, Tools, Recipes
+3. Sprint 5: Inbox, Gmail, Social Media, Proactive AI, Fleet
+4. Apply design research findings across all pages
+5. Indian-specific features (₹ expenses, festival reminders, Hinglish)
 
 ## Start Commands
 ```bash

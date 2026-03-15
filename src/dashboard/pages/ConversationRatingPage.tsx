@@ -40,7 +40,7 @@ function StarRating({ score, onRate }: { score: number | null; onRate: (s: numbe
           >
             <Star
               size={20}
-              className={active ? 'fill-yellow-400 text-yellow-400' : 'text-white/30 hover:text-yellow-300'}
+              className={active ? 'fill-yellow-400 text-yellow-400' : 'text-[#F4F6FF]/30 hover:text-yellow-300'}
             />
           </button>
         );
@@ -100,17 +100,17 @@ export function ConversationRatingPage() {
   return (
     <div className="min-w-0 overflow-x-hidden p-4 md:p-6 space-y-4">
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-          <MessageSquare size={20} className="text-purple-400" />
+        <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/20 flex items-center justify-center">
+          <MessageSquare size={20} className="text-[#8B5CF6]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">Conversation Ratings</h1>
-          <p className="text-sm text-white/50">{total} conversations — rate quality to improve your AI</p>
+          <h1 className="text-xl font-bold text-[#F4F6FF]">Conversation Ratings</h1>
+          <p className="text-sm text-[#F4F6FF]/50">{total} conversations — rate quality to improve your AI</p>
         </div>
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center py-12 text-white/40">Loading conversations…</div>
+        <div className="flex items-center justify-center py-12 text-[#F4F6FF]/40">Loading conversations…</div>
       )}
 
       {error && (
@@ -118,40 +118,40 @@ export function ConversationRatingPage() {
       )}
 
       {!loading && !error && conversations.length === 0 && (
-        <div className="text-center py-12 text-white/40">
+        <div className="text-center py-12 text-[#F4F6FF]/40">
           <MessageSquare size={40} className="mx-auto mb-3 opacity-30" />
           <p>No conversations yet. Chat with your agent to get started.</p>
         </div>
       )}
 
       {!loading && conversations.map(conv => (
-        <Card key={conv.id} className="bg-white/5 border-white/10">
+        <Card key={conv.id} className="bg-[#0C0C18] border-[#00F0FF]/10">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-white/40 mb-1">{formatDate(conv.createdAt)}</p>
+                <p className="text-xs text-[#F4F6FF]/40 mb-1">{formatDate(conv.createdAt)}</p>
                 {conv.userMessage && (
                   <div className="mb-2">
-                    <span className="text-xs font-medium text-blue-400 uppercase tracking-wide">You</span>
-                    <p className="text-sm text-white/70 mt-0.5">{truncate(conv.userMessage, 200)}</p>
+                    <span className="text-xs font-medium text-[#00F0FF] uppercase tracking-wide">You</span>
+                    <p className="text-sm text-[#F4F6FF]/70 mt-0.5">{truncate(conv.userMessage, 200)}</p>
                   </div>
                 )}
                 <div>
-                  <span className="text-xs font-medium text-purple-400 uppercase tracking-wide">Agent</span>
-                  <p className="text-sm text-white/90 mt-0.5">{truncate(conv.assistantMessage, 300)}</p>
+                  <span className="text-xs font-medium text-[#8B5CF6] uppercase tracking-wide">Agent</span>
+                  <p className="text-sm text-[#F4F6FF]/90 mt-0.5">{truncate(conv.assistantMessage, 300)}</p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-between pt-1 border-t border-white/5">
+            <div className="flex items-center justify-between pt-1 border-t border-[#00F0FF]/5">
               <div className="flex items-center gap-2">
                 {conv.model && (
-                  <Badge variant="outline" className="text-xs text-white/40 border-white/10">
+                  <Badge variant="outline" className="text-xs text-[#F4F6FF]/40 border-[#00F0FF]/10">
                     {conv.model}
                   </Badge>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-white/30">Rate:</span>
+                <span className="text-xs text-[#F4F6FF]/30">Rate:</span>
                 <StarRating
                   score={conv.qualityScore}
                   onRate={(s) => !busy[conv.id] && void handleRate(conv.id, s)}
@@ -169,17 +169,17 @@ export function ConversationRatingPage() {
             size="sm"
             disabled={page <= 1 || loading}
             onClick={() => void load(page - 1)}
-            className="border-white/10 text-white/70"
+            className="border-[#00F0FF]/10 text-[#F4F6FF]/70"
           >
             Previous
           </Button>
-          <span className="text-sm text-white/40">Page {page} of {totalPages}</span>
+          <span className="text-sm text-[#F4F6FF]/40">Page {page} of {totalPages}</span>
           <Button
             variant="outline"
             size="sm"
             disabled={page >= totalPages || loading}
             onClick={() => void load(page + 1)}
-            className="border-white/10 text-white/70"
+            className="border-[#00F0FF]/10 text-[#F4F6FF]/70"
           >
             Next
           </Button>

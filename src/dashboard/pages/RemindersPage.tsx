@@ -190,7 +190,6 @@ export function RemindersPage() {
       // Voice not supported — show inline feedback instead of alert()
       setNaturalInput('(Voice input not supported in this browser)');
       return;
-      return;
     }
     
     const SR = (window as unknown as { SpeechRecognition: new () => SpeechRecognition; webkitSpeechRecognition: new () => SpeechRecognition }).SpeechRecognition || (window as unknown as { webkitSpeechRecognition: new () => SpeechRecognition }).webkitSpeechRecognition;
