@@ -157,7 +157,7 @@ Credits deducted via `deductSubscriptionCredits()` after each call.
 
 **Source:** `server/src/prompts/personalities.ts`
 
-Three built-in personalities that change the agent's tone, greeting, and behavior:
+Nine built-in personalities that change the agent's tone, greeting, and behavior (Weebo, Edith, Jarvis, Aria, Forge, Pulse, Echo, Cal, Nova):
 
 | Personality | Codename | Tone | Greeting Style |
 |-------------|----------|------|----------------|
@@ -278,8 +278,13 @@ Zod schemas for all input:
 |-----------|-------|------|---------|--------------|
 | `geekspace-app` | Custom (multi-stage Node 20) | 3001 (exposed) | geekspace-net, geekspace-shared | 512MB |
 | `geekspace-redis` | redis:7-alpine | 6379 (internal) | geekspace-net | 256MB |
+| `geekspace-caddy` | caddy:2-alpine | 80, 443 (exposed) | geekspace-net | 128MB |
 | `geekspace-picoclaw` | Custom (Node 20) | 8080 (localhost only) | geekspace-net, geekspace-shared | 64MB |
-| `geekspace-edith-bridge` | Custom (Node 20) | 8787 (internal) | geekspace-shared | 128MB |
+| `geekspace-browser` | Custom (Playwright) | 3100 (internal) | geekspace-net | 512MB |
+| `geekspace-searxng` | searxng/searxng | 8888 (internal) | geekspace-net | 256MB |
+| `geekspace-meilisearch` | getmeili/meilisearch | 7700 (internal) | geekspace-net | 256MB |
+| `geekspace-qdrant` | qdrant/qdrant | 6333 (internal) | geekspace-net | 512MB |
+| `geekspace-uptime-kuma` | louislam/uptime-kuma | 3200 (internal) | geekspace-net | 128MB |
 | `ollama-qtzz-ollama-1` | ollama/ollama | 32778→11434 | geekspace-shared | — (external) |
 | `openclaw-e3n5-openclaw-1` | hostinger/hvps-openclaw | 52325 | geekspace-shared | — (external) |
 

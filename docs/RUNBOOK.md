@@ -75,7 +75,7 @@ ENCRYPTION_KEY=$(openssl rand -hex 32)
 CORS_ORIGINS=https://yourdomain.com
 PUBLIC_URL=https://yourdomain.com
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.1:8b
+OLLAMA_MODEL=qwen3:8b
 REDIS_URL=redis://redis:6379
 SEED_DEMO_DATA=false
 ```

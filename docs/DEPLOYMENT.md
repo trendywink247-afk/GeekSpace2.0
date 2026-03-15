@@ -7,11 +7,11 @@
 | VPS | 2 vCPU, 4 GB RAM | 4 vCPU, 12-16 GB RAM |
 | OS | Ubuntu 22.04+ / Debian 12+ | Ubuntu 24.04 |
 | Docker | 24.0+ with Compose v2 | Latest |
-| Caddy | 2.6+ (on host, not Docker) | Latest |
+| Caddy | 2.6+ (in Docker or on host) | Latest |
 | Domain | A-record pointing to VPS IP | — |
 | Ollama | Running on host or Docker | With 7B+ model |
 
-> **RAM note**: Ollama's `llama3.1:8b` model needs ~5-6 GB RAM on CPU. Budget 12-16 GB total for the full stack.
+> **RAM note**: Ollama's `qwen3:8b` model needs ~5-6 GB RAM on CPU. Budget 12-16 GB total for the full stack.
 
 ## Secrets Management
 
