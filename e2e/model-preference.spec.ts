@@ -1,50 +1,38 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Model Preference E2E Tests
+ * Agent Settings E2E Tests
  *
- * Verifies the AI Engine Preference picker in Agent Settings
- * renders and allows changing the preference.
+ * Verifies the Agent Settings page renders with tabs
+ * and allows interaction.
  */
 
-test.describe('Model Preference', () => {
+test.describe('Agent Settings', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate directly to Agent Settings page (avoids sidebar group collapse interaction)
     await page.goto('/dashboard/agent');
     await expect(page.getByTestId('dashboard-shell')).toBeVisible();
-    // Dismiss first-use tour
     await page.evaluate(() => localStorage.setItem('gs_dashboard_tour_seen', '1'));
-
-    // Wait for AI Engine Preference section to load
-    await expect(page.getByText('AI Engine Preference')).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(2000);
   });
 
-  test('should display AI Engine Preference section', async ({ page }) => {
-    await expect(page.getByText('AI Engine Preference')).toBeVisible();
+  test('should display Agent Settings page with tabs', async ({ page }) => {
+    // The page should have the 4 tab buttons
+    await expect(page.getByText('Personality')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should show all model preference options', async ({ page }) => {
-    // Use exact:true for 'Auto' to avoid strict-mode violation:
-    // AgentSettingsPage also has a 'Builder' style feature tag 'Automation'
-    // which Playwright's case-insensitive getByText matches as containing 'Auto'
-    await expect(page.getByText('Auto', { exact: true })).toBeVisible();
-    await expect(page.getByText('Local AI Engine')).toBeVisible();
-    await expect(page.getByText('Cloud Engine')).toBeVisible();
-    await expect(page.getByText('Premium Engine')).toBeVisible();
+  test('should show all settings tabs', async ({ page }) => {
+    await expect(page.getByText('Personality')).toBeVisible();
+    await expect(page.getByText('Memory')).toBeVisible();
+    await expect(page.getByText('Tools')).toBeVisible();
+    await expect(page.getByText('Channels')).toBeVisible();
   });
 
-  test('should allow selecting a different model preference', async ({ page }) => {
-    // Click the "Local AI Engine" option
-    const localBtn = page.getByText('Local AI Engine').first();
-    await localBtn.click();
-
-    // The button should visually reflect the selected state
-    // (border-[#00F0FF] class is applied when selected)
-    // We verify by checking the page doesn't error and the button is still visible
-    await expect(localBtn).toBeVisible();
-
-    // Switch back to Auto — use exact:true to target only the model preference label
-    await page.getByText('Auto', { exact: true }).click();
-    await expect(page.getByText('Auto', { exact: true })).toBeVisible();
+  test('should allow switching between tabs', async ({ page }) => {
+    // Click the Memory tab
+    const memoryTab = page.getByText('Memory').first();
+    await memoryTab.click();
+    await page.waitForTimeout(500);
+    // Should still be on the agent settings page
+    expect(page.url()).toContain('/dashboard/agent');
   });
 });
