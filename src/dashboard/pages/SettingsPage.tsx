@@ -35,7 +35,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
@@ -682,35 +682,6 @@ export function SettingsPage() {
       </nav>
 
       <Tabs id="settings-tabs-anchor" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className={`bg-[#0C0C18] border border-[#00F0FF]/20 p-1 ${isMobile ? 'overflow-x-auto flex-nowrap w-full justify-start scrollbar-hide' : 'flex-wrap'}`}>
-          <TabsTrigger value="profile" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
-            <User className="w-4 h-4 mr-2" />Profile
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
-            <Bell className="w-4 h-4 mr-2" />Notifications
-          </TabsTrigger>
-          <TabsTrigger value="security" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
-            <Shield className="w-4 h-4 mr-2" />Security
-          </TabsTrigger>
-          <TabsTrigger value="sessions" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
-            <Laptop className="w-4 h-4 mr-2" />Sessions
-          </TabsTrigger>
-          <TabsTrigger value="apikeys" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
-            <Key className="w-4 h-4 mr-2" />API Keys
-          </TabsTrigger>
-          <TabsTrigger value="memory" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
-            <Brain className="w-4 h-4 mr-2" />Memory
-          </TabsTrigger>
-          <TabsTrigger value="privacy" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
-            <Eye className="w-4 h-4 mr-2" />Privacy
-          </TabsTrigger>
-          <TabsTrigger value="theme" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
-            <Palette className="w-4 h-4 mr-2" />Theme
-          </TabsTrigger>
-          <TabsTrigger value="voice" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
-            <Mic className="w-4 h-4 mr-2" />Voice
-          </TabsTrigger>
-        </TabsList>
 
         {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6">
