@@ -39,7 +39,6 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
-import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { userService, apiKeyService, memoryService, agentService, versionService, modelService, authService, portfolioService, type UserSession } from '@/services/api';
 import type { ApiProvider, MemoryEntry, FreeModel } from '@/types';
 
@@ -119,7 +118,7 @@ export function SettingsPage() {
   const compactMode = useAuthStore((s) => s.compactMode);
   const setCompactMode = useAuthStore((s) => s.setCompactMode);
   const { mode: themeMode, accentColor, accentPresets, setMode: setThemeMode, setAccentColor, setBackground } = useThemeStore();
-  const isMobile = useMobileDetect();
+
 
   const [profile, setProfile] = useState({
     name: user?.name || '',
