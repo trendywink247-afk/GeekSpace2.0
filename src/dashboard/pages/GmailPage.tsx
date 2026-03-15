@@ -240,7 +240,7 @@ export function GmailPage() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await api.post('/gmail/sync', null);
+      await api.post('/gmail/sync', {});
       await fetchMessages();
       await fetchStatus();
     } catch {

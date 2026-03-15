@@ -42,9 +42,12 @@ ai.agentin.chat {
 		reverse_proxy geekspace:3001
 	}
 
-	# Gate page is always accessible
-	handle /gate.html {
+	# Public pages — accessible without auth (for Google verification + SEO)
+	@public_pages path / /privacy /terms /login /explore /gate.html
+	handle @public_pages {
 		root * /srv
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
 		file_server
 	}
 
