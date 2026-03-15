@@ -112,6 +112,17 @@ export function UsageAnalyticsPage() {
   const [events, setEvents] = useState<UsageEvent[]>([]);
   const [eventsTotal, setEventsTotal] = useState(0);
 
+  // Today's real-time usage from GET /api/usage/today
+  const [todayUsage, setTodayUsage] = useState<{
+    plan: string;
+    tokenBudget: number;
+    tokenUsed: number;
+    tokenPercentage: number;
+    messages: { used: number; limit: number; percentage: number };
+    voice: { used: number; limit: number; percentage: number };
+    images: { used: number; limit: number; percentage: number };
+  } | null>(null);
+
   // UI state
   const [summaryRange, setSummaryRange] = useState<SummaryRange>('month');
   const [chartRange, setChartRange] = useState<ChartRange>('7d');
@@ -122,7 +133,7 @@ export function UsageAnalyticsPage() {
   // Recharts SSR guard
   useEffect(() => { setMounted(true); }, []);
 
-  // Initial load — fetch all 6 endpoints
+  // Initial load — fetch all 7 endpoints (added today usage)
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -135,6 +146,7 @@ export function UsageAnalyticsPage() {
       usageService.latency(),
       usageService.billing(),
       usageService.events(1, 50),
+      usageService.today(),
     ]).then((results) => {
       if (cancelled) return;
       let failures = 0;
@@ -159,7 +171,10 @@ export function UsageAnalyticsPage() {
         setEventsTotal(results[5].value.data.total);
       } else failures++;
 
-      if (failures === 6) setError('Failed to load usage data. Please try again later.');
+      if (results[6].status === 'fulfilled') setTodayUsage(results[6].value.data);
+      else failures++;
+
+      if (failures === 7) setError('Failed to load usage data. Please try again later.');
       setLoading(false);
     });
 
@@ -196,6 +211,7 @@ export function UsageAnalyticsPage() {
       usageService.latency().then(r => setHourly(r.data)),
       usageService.billing().then(r => setBilling(r.data)),
       usageService.events(eventsPage, 50).then(r => { setEvents(r.data.events); setEventsTotal(r.data.total); }),
+      usageService.today().then(r => setTodayUsage(r.data)),
     ]);
   };
 
@@ -347,6 +363,79 @@ export function UsageAnalyticsPage() {
           </>
         )}
       </div>
+
+      {/* Today's Real-Time Usage */}
+      {!loading && todayUsage && (
+        <Card className="border-[#00F0FF]/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Activity className="w-5 h-5 text-[#00F0FF]" />
+              Today's Usage
+              <Badge variant="outline" className="border-[#ADFF2F]/30 text-[#ADFF2F] text-xs ml-2">
+                Live
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {/* Token usage with circle */}
+              <div className="flex flex-col items-center gap-2 col-span-2 sm:col-span-1">
+                <CreditCircle used={todayUsage.tokenUsed} total={todayUsage.tokenBudget} />
+                <div className="text-center">
+                  <div className="text-xs text-[#9CA3AF]">Token Budget</div>
+                  <div className="text-xs font-mono text-[#E8E8F0]">
+                    {fmt(todayUsage.tokenUsed)} / {fmt(todayUsage.tokenBudget)}
+                  </div>
+                </div>
+              </div>
+              {/* Messages */}
+              <div className="flex flex-col items-center gap-2">
+                <CreditCircle used={todayUsage.messages.used} total={todayUsage.messages.limit} />
+                <div className="text-center">
+                  <div className="text-xs text-[#9CA3AF]">Messages</div>
+                  <div className="text-xs font-mono text-[#E8E8F0]">
+                    {todayUsage.messages.used} / {todayUsage.messages.limit}
+                  </div>
+                </div>
+              </div>
+              {/* Voice */}
+              <div className="flex flex-col items-center gap-2">
+                <CreditCircle used={todayUsage.voice.used} total={todayUsage.voice.limit} />
+                <div className="text-center">
+                  <div className="text-xs text-[#9CA3AF]">Voice</div>
+                  <div className="text-xs font-mono text-[#E8E8F0]">
+                    {todayUsage.voice.used} / {todayUsage.voice.limit}
+                  </div>
+                </div>
+              </div>
+              {/* Images */}
+              <div className="flex flex-col items-center gap-2">
+                <CreditCircle used={todayUsage.images.used} total={todayUsage.images.limit} />
+                <div className="text-center">
+                  <div className="text-xs text-[#9CA3AF]">Images</div>
+                  <div className="text-xs font-mono text-[#E8E8F0]">
+                    {todayUsage.images.used} / {todayUsage.images.limit}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Get more credits CTA when any usage > 80% */}
+            {(todayUsage.tokenPercentage > 80 ||
+              todayUsage.messages.percentage > 80 ||
+              todayUsage.voice.percentage > 80 ||
+              todayUsage.images.percentage > 80) && (
+              <button
+                onClick={() => nav('/dashboard/billing')}
+                className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[#FFB800]/30 bg-[#FFB800]/10 text-[#FFB800] text-sm font-medium hover:bg-[#FFB800]/20 transition-colors min-h-[44px]"
+              >
+                <Zap className="w-4 h-4" />
+                Running low on credits — upgrade your plan
+              </button>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Cost Over Time Chart */}
       <Card className="border-[#00F0FF]/20">

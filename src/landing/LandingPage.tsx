@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { NeuralBackground } from '@/components/NeuralBackground';
 import { Navigation } from '@/components/Navigation';
 import { HeroSection } from './sections/HeroSection';
+import { ProblemSolutionSection } from './sections/ProblemSolutionSection';
 import { ConstellationSection } from './sections/ConstellationSection';
 import { PersonaSection } from './sections/PersonaSection';
+import { TelegramCTASection } from './sections/TelegramCTASection';
 import { ActivitySection } from './sections/ActivitySection';
 import { EngineSection } from './sections/EngineSection';
+import { TestimonialsSection } from './sections/TestimonialsSection';
 import { SecuritySection } from './sections/SecuritySection';
 import { ContactSection } from './sections/ContactSection';
 import { PromptTemplatesSection } from './sections/PromptTemplatesSection';
@@ -41,11 +44,14 @@ export function LandingPage() {
 
       <main className="relative z-10">
         <HeroSection onEnterDashboard={onEnterDashboard} onWatchDemo={onWatchDemo} />
+        <ProblemSolutionSection />
         <PromptTemplatesSection />
-        <ConstellationSection onViewPortfolio={onViewPortfolio} onBrowseDirectory={onBrowseDirectory} />
         <PersonaSection onDesignAssistant={onDesignAssistant} />
+        <TelegramCTASection />
         <ActivitySection />
         <EngineSection onBuildWorkflow={onBuildWorkflow} />
+        <ConstellationSection onViewPortfolio={onViewPortfolio} onBrowseDirectory={onBrowseDirectory} />
+        <TestimonialsSection />
         <PricingPreviewSection onGetStarted={onGetStarted} />
         <SecuritySection onReviewSecurity={onReviewSecurity} />
         <ContactSection onEnterDashboard={onEnterDashboard} />

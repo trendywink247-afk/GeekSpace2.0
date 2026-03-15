@@ -45,7 +45,7 @@ import { db } from '../db/index.js';
 import { cacheGet, cacheSet } from '../services/cache.js';
 import { handleEscalationReply } from '../services/escalation.js';
 import { getPersonaResponse } from '../services/persona-engine.js';
-import { buildSnoozeMenuCard, buildCompletedText } from '../services/telegram-cards.js';
+import { buildSnoozeMenuCard, buildCompletedText, buildReminderCard, buildFocusCard, buildNoteCard } from '../services/telegram-cards.js';
 
 // Extend Express Request to include requestId for pipeline tracing
 interface RequestWithId {
@@ -1024,29 +1024,34 @@ async function handleTelegramCommand(
     case '/help': {
       await sendTelegramMessage(chatId,
         `Agentin Bot Commands:\n\n` +
+        `QUICK ACTIONS\n` +
+        `/remind <text> — Set a reminder\n` +
+        `  e.g. /remind call dentist Friday 3pm\n` +
+        `/note <text> — Save a note\n` +
+        `  e.g. /note idea: new product feature\n` +
+        `/focus <minutes> — Start focus session\n` +
+        `  e.g. /focus 45\n` +
+        `/habit <name> — Log a habit\n` +
+        `  e.g. /habit morning-workout\n` +
+        `/brief — Get your daily briefing\n` +
+        `/search <query> — Search everything\n` +
+        `/memory <fact> — Save a fact about you\n` +
+        `  e.g. /memory I prefer dark mode\n\n` +
+        `DASHBOARD\n` +
+        `/habits — View all habits with streaks\n` +
+        `/notes — View recent notes\n` +
+        `/expenses — Monthly expense report\n` +
+        `/study — Study dashboard\n` +
+        `/tasks — View recent tasks\n\n` +
         `ACCOUNT\n` +
         `/start — Get started\n` +
         `/link — Link your Agentin account\n` +
-        `/unlink — Unlink your account\n` +
+        `/unlink — Unlink account\n` +
         `/credits — Check credit balance\n` +
         `/status — Connection status\n` +
-        `/model — View and switch AI models\n\n` +
-        `PRODUCTIVITY\n` +
-        `/habits — View and track daily habits\n` +
-        `/study — Study dashboard (flashcards + focus)\n` +
-        `/notes — View recent notes\n` +
-        `/remind <text> — Set a quick reminder\n` +
-        `/expenses — Monthly expense report\n` +
-        `/search <keyword> — Search notes, reminders & habits\n\n` +
-        `SETTINGS\n` +
-        `/proactive — Toggle proactive AI messages\n` +
-        `/agents — List your agents\n` +
-        `/tasks — View recent tasks\n` +
-        `/cancel — Cancel a queued task\n` +
-        `/deploy — Deploy your portfolio\n` +
-        `/help — Show this message\n\n` +
-        `Or just type anything to chat with your AI agent!\n` +
-        `Try: "morning briefing", "take note: ...", "make flashcards for Python"`
+        `/model — View/switch AI models\n` +
+        `/proactive — Toggle proactive messages\n\n` +
+        `Or just type anything to chat with your AI agent!`
       );
       break;
     }
@@ -1150,6 +1155,168 @@ async function handleTelegramCommand(
           normalized.text = cmd.args;
         }
         await handleIncomingMessage({ ...normalized, requestId });
+      }
+      break;
+    }
+
+    case '/note': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      if (!cmd.args.trim()) {
+        await sendTelegramMessage(chatId, 'Usage: /note <text>\nExample: /note idea: new product feature');
+        return;
+      }
+
+      const { executeAction } = await import('../services/action-executor.js');
+      const noteText = cmd.args.trim();
+      // Extract title (first line or first 60 chars) and use full text as content
+      const titleEnd = noteText.indexOf('\n');
+      const noteTitle = titleEnd > 0 ? noteText.slice(0, titleEnd).trim() : noteText.slice(0, 60);
+      const noteContent = noteText;
+
+      const result = await executeAction(link.user_id, {
+        tool: 'create_note',
+        params: { title: noteTitle, content: noteContent, tags: ['telegram'] },
+      });
+
+      if (result.success) {
+        // Get the note ID for inline buttons
+        const lastNote = db.prepare(
+          "SELECT id FROM notes WHERE user_id = ? ORDER BY created_at DESC LIMIT 1"
+        ).get(link.user_id) as { id: number } | undefined;
+
+        if (lastNote) {
+          const card = buildNoteCard({ id: lastNote.id, title: noteTitle });
+          await sendTelegramButtons(chatId, card.text, card.reply_markup.inline_keyboard);
+        } else {
+          await sendTelegramMessage(chatId, `📝 Note saved: "${noteTitle}"`);
+        }
+      } else {
+        await sendTelegramMessage(chatId, result.message || 'Failed to save note. Please try again.');
+      }
+      break;
+    }
+
+    case '/focus': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      const durationArg = cmd.args.trim();
+      const durationMin = durationArg ? parseInt(durationArg, 10) : 25;
+
+      if (isNaN(durationMin) || durationMin < 1 || durationMin > 480) {
+        await sendTelegramMessage(chatId, 'Usage: /focus <minutes>\nExample: /focus 45\nDuration must be 1-480 minutes.');
+        return;
+      }
+
+      const { executeAction } = await import('../services/action-executor.js');
+      const focusGoal = durationArg.replace(/^\d+\s*/, '').trim() || `${durationMin}-min focus session`;
+
+      const result = await executeAction(link.user_id, {
+        tool: 'start_focus',
+        params: { goal: focusGoal, duration_min: durationMin },
+      });
+
+      if (result.success) {
+        // The action-executor already sends a Telegram card with buttons
+        // Only send a fallback if the card wasn't sent
+        if (!result.cardSent) {
+          const sessionId = result.data?.sessionId as number | undefined;
+          if (sessionId) {
+            const card = buildFocusCard({ id: sessionId, goal: focusGoal, durationMin });
+            await sendTelegramButtons(chatId, card.text, card.reply_markup.inline_keyboard);
+          } else {
+            await sendTelegramMessage(chatId, result.message);
+          }
+        }
+      } else {
+        await sendTelegramMessage(chatId, result.message || 'Failed to start focus session.');
+      }
+      break;
+    }
+
+    case '/habit': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      if (!cmd.args.trim()) {
+        await sendTelegramMessage(chatId, 'Usage: /habit <name>\nExample: /habit morning-workout\n\nUse /habits to see all your habits.');
+        return;
+      }
+
+      const { executeAction } = await import('../services/action-executor.js');
+      const habitName = cmd.args.trim();
+      const result = await executeAction(link.user_id, {
+        tool: 'track_habit',
+        params: { habitName },
+      });
+
+      if (result.success) {
+        const streak = (result.data?.streak as number) || 0;
+        const habitId = result.data?.habitId as number | undefined;
+        if (habitId) {
+          const { buildHabitCard } = await import('../services/telegram-cards.js');
+          const card = buildHabitCard({ id: habitId, name: habitName, streak });
+          await sendTelegramButtons(chatId, card.text, card.reply_markup.inline_keyboard);
+        } else {
+          await sendTelegramMessage(chatId, result.message);
+        }
+      } else {
+        await sendTelegramMessage(chatId, result.message || 'Failed to log habit.');
+      }
+      break;
+    }
+
+    case '/brief': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      const { executeAction } = await import('../services/action-executor.js');
+      const briefType = cmd.args.trim().toLowerCase() === 'weekly' ? 'weekly' : 'daily';
+      const result = await executeAction(link.user_id, {
+        tool: 'get_briefing',
+        params: { type: briefType },
+      });
+
+      await sendTelegramMessage(chatId, result.message || 'No briefing data available.');
+      break;
+    }
+
+    case '/memory': {
+      const link = db.prepare(
+        "SELECT user_id FROM channel_links WHERE channel = 'telegram' AND external_id = ?"
+      ).get(String(chatId)) as { user_id: string } | undefined;
+      if (!link) { await sendTelegramMessage(chatId, 'Link your account first. Use /link for instructions.'); return; }
+
+      if (!cmd.args.trim()) {
+        await sendTelegramMessage(chatId, 'Usage: /memory <fact>\nExample: /memory I prefer dark mode\n/memory My birthday is March 15');
+        return;
+      }
+
+      const { executeAction } = await import('../services/action-executor.js');
+      const memoryText = cmd.args.trim();
+      // Extract a key from the fact — use the first few words as key
+      const words = memoryText.split(/\s+/);
+      const memoryKey = words.slice(0, Math.min(4, words.length)).join(' ').toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim();
+
+      const result = await executeAction(link.user_id, {
+        tool: 'create_memory',
+        params: { key: memoryKey || 'user_fact', value: memoryText, category: 'preference' },
+      });
+
+      if (result.success) {
+        await sendTelegramMessage(chatId, `🧠 Saved to memory!\n"${memoryText}"`);
+      } else {
+        await sendTelegramMessage(chatId, result.message || 'Failed to save memory.');
       }
       break;
     }

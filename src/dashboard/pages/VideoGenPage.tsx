@@ -633,16 +633,35 @@ export function VideoGenPage() {
         </div>
       </div>
 
-      {/* Provider unavailability warning */}
-      <div className="flex items-start gap-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
-        <AlertTriangle className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-yellow-300 font-medium text-sm">Video generation temporarily unavailable</p>
-          <p className="text-yellow-400/70 text-xs mt-1">
-            Free video providers are currently unreachable from this server. Video generation will be restored when a compatible provider becomes available. No credits will be deducted.
-          </p>
+      {/* Premium Coming Soon card — shown when providers are unavailable */}
+      {isProviderBroken && (
+        <div className="relative overflow-hidden rounded-2xl border border-[#A78BFA]/30 bg-gradient-to-br from-[#A78BFA]/8 via-[#0C0C18] to-[#BF5FFF]/5 p-6">
+          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[#A78BFA]/8 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 w-36 h-36 rounded-full bg-[#BF5FFF]/6 blur-3xl pointer-events-none" />
+          <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-[#A78BFA]/15 flex items-center justify-center flex-shrink-0">
+              <Film className="w-8 h-8 text-[#A78BFA]" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-lg font-semibold text-[#E8E8F0]">AI Video Generation</h3>
+                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#A78BFA]/20 text-[#A78BFA] border border-[#A78BFA]/30 font-semibold">Coming Soon</span>
+              </div>
+              <p className="text-sm text-[#9CA3AF]">
+                Create cinematic AI videos from text prompts. Multi-clip Director Mode with auto-stitch.
+              </p>
+              <div className="flex items-center gap-4 mt-3 text-xs text-[#9CA3AF]">
+                <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-[#A78BFA]" /> Text-to-video</span>
+                <span className="flex items-center gap-1.5"><Wand2 className="w-3 h-3 text-[#BF5FFF]" /> Director Mode</span>
+                <span className="flex items-center gap-1.5"><Film className="w-3 h-3 text-[#00F0FF]" /> Auto-stitch</span>
+              </div>
+              <p className="text-xs text-[#A78BFA]/60 mt-3">
+                Video providers are being upgraded. Image generation is fully available.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Generation Panel */}
       <div

@@ -1,11 +1,10 @@
 // ============================================================
-// Image Gallery Page — Phase 81
-// Displays last 30 user-generated images in a responsive grid
-// with prompt text, timestamp, and download button.
+// Image Gallery Page — Phase 81 + CreativeCore polish
+// Masonry grid, hover overlays, date range filter
 // ============================================================
 
-import { useState, useEffect } from 'react';
-import { Download, ImageIcon, RefreshCw, Loader2, Trash2, ZoomIn, X } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Download, ImageIcon, RefreshCw, Loader2, Trash2, ZoomIn, X, Calendar } from 'lucide-react';
 import { imageService, type UserImage } from '@/services/api';
 
 export function ImageGalleryPage() {
@@ -14,6 +13,9 @@ export function ImageGalleryPage() {
   const [error, setError] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<UserImage | null>(null);
   const [filter, setFilter] = useState<'all' | 'generated' | 'edited'>('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [showDateFilter, setShowDateFilter] = useState(false);
 
   const loadGallery = async () => {
     setLoading(true);
@@ -40,11 +42,24 @@ export function ImageGalleryPage() {
 
   useEffect(() => { loadGallery(); }, []);
 
-  const filteredImages = images.filter(img => {
-    if (filter === 'generated') return img.source !== 'edited';
-    if (filter === 'edited') return img.source === 'edited';
-    return true;
-  });
+  const filteredImages = useMemo(() => {
+    return images.filter(img => {
+      // Source filter
+      if (filter === 'generated' && img.source === 'edited') return false;
+      if (filter === 'edited' && img.source !== 'edited') return false;
+      // Date range filter
+      if (dateFrom) {
+        const fromDate = new Date(dateFrom);
+        if (new Date(img.created_at) < fromDate) return false;
+      }
+      if (dateTo) {
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        if (new Date(img.created_at) > toDate) return false;
+      }
+      return true;
+    });
+  }, [images, filter, dateFrom, dateTo]);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -58,7 +73,7 @@ export function ImageGalleryPage() {
             <p className="text-xs text-[#9CA3AF]">Your last 30 generated images</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Filter pills */}
           <div className="flex items-center gap-1 bg-[#0C0C18] border border-[#00F0FF]/15 rounded-lg p-0.5">
             {(['all', 'generated', 'edited'] as const).map(f => (
@@ -75,6 +90,18 @@ export function ImageGalleryPage() {
               </button>
             ))}
           </div>
+          {/* Date filter toggle */}
+          <button
+            onClick={() => setShowDateFilter(!showDateFilter)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-colors ${
+              showDateFilter || dateFrom || dateTo
+                ? 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[#00F0FF]'
+                : 'bg-[#0C0C18] border-[#00F0FF]/15 text-[#9CA3AF] hover:text-[#E8E8F0]'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            {dateFrom || dateTo ? 'Filtered' : 'Date'}
+          </button>
           <button
             onClick={loadGallery}
             disabled={loading}
@@ -85,6 +112,38 @@ export function ImageGalleryPage() {
           </button>
         </div>
       </div>
+
+      {/* Date range filter panel */}
+      {showDateFilter && (
+        <div className="flex items-center gap-3 flex-wrap px-1 mb-4">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-[#9CA3AF]">From:</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="bg-[#0C0C18] border border-[#00F0FF]/15 rounded-lg px-3 py-1.5 text-xs text-[#E8E8F0] outline-none focus:border-[#00F0FF]/40"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-[#9CA3AF]">To:</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="bg-[#0C0C18] border border-[#00F0FF]/15 rounded-lg px-3 py-1.5 text-xs text-[#E8E8F0] outline-none focus:border-[#00F0FF]/40"
+            />
+          </div>
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => { setDateFrom(''); setDateTo(''); }}
+              className="text-xs text-[#FF6161] hover:text-[#FF6161]/80 transition-colors"
+            >
+              Clear dates
+            </button>
+          )}
+        </div>
+      )}
 
       {loading && (
         <div className="flex items-center justify-center py-16">
@@ -111,23 +170,24 @@ export function ImageGalleryPage() {
       )}
 
       {!loading && filteredImages.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="columns-2 sm:columns-3 lg:columns-4 gap-4">
           {filteredImages.map((img) => (
             <div
               key={img.id}
-              className="group relative rounded-xl overflow-hidden border border-[#00F0FF]/10 bg-[#06060B] hover:border-[#00F0FF]/40 hover:shadow-[0_0_12px_rgba(0,240,255,0.1)] transition-all cursor-pointer"
+              className="group relative rounded-xl overflow-hidden border border-[#00F0FF]/10 bg-[#06060B] hover:border-[#00F0FF]/40 hover:shadow-[0_0_12px_rgba(0,240,255,0.1)] transition-all cursor-pointer mb-4"
+              style={{ breakInside: 'avoid' }}
               onClick={() => setLightboxImage(img)}
             >
-              <div className="aspect-square bg-[#0A0A1A]">
+              <div className="bg-[#0A0A1A]">
                 <img
                   src={img.image_url}
                   alt={img.prompt || 'Generated image'}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  className="w-full h-auto object-cover transition-transform group-hover:scale-[1.03]"
                   loading="lazy"
                 />
               </div>
-              {/* Hover overlay with action buttons */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex flex-col justify-between p-3">
+              {/* Hover overlay with download + delete actions */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
                 {/* Top action buttons */}
                 <div className="flex items-center justify-end gap-1.5">
                   <a
@@ -135,34 +195,41 @@ export function ImageGalleryPage() {
                     download
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-[#00F0FF]/90 text-[#06060B] hover:bg-[#00F0FF] transition-colors"
+                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#00F0FF]/90 text-[#06060B] hover:bg-[#00F0FF] transition-colors shadow-lg"
                     onClick={(e) => e.stopPropagation()}
                     aria-label="Download image"
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    <Download className="w-4 h-4" />
                   </a>
                   <button
                     onClick={(e) => { e.stopPropagation(); void handleDelete(img.id); }}
-                    className="p-2 rounded-lg bg-[#FF6161]/80 text-white hover:bg-[#FF6161] transition-colors"
+                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#FF6161]/80 text-white hover:bg-[#FF6161] transition-colors shadow-lg"
                     aria-label="Delete image"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
+                </div>
+                {/* Center zoom icon */}
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center">
+                    <ZoomIn className="w-5 h-5 text-white" />
+                  </div>
                 </div>
                 {/* Bottom info */}
                 <div>
                   <p className="text-xs text-[#E8E8F0] line-clamp-2 mb-1">{img.prompt ?? ''}</p>
-                  <span className="text-xs text-[#9CA3AF]">
-                    {new Date(img.created_at).toLocaleDateString()}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[#9CA3AF]">
+                      {new Date(img.created_at).toLocaleDateString()}
+                    </span>
+                    {img.width && img.height && (
+                      <span className="text-[10px] text-[#9CA3AF]/60">{img.width}x{img.height}</span>
+                    )}
+                  </div>
                 </div>
               </div>
-              {/* Center zoom icon on hover */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none sm:hidden">
-                <ZoomIn className="w-6 h-6 text-white drop-shadow-lg" />
-              </div>
-              {/* Bottom bar: always visible with prompt + download (touch-friendly) */}
-              <div className="px-2 py-1.5 border-t border-[#00F0FF]/10 flex items-center justify-between gap-1">
+              {/* Bottom bar: always visible with prompt + download (touch-friendly on mobile) */}
+              <div className="px-2.5 py-2 border-t border-[#00F0FF]/10 flex items-center justify-between gap-1 sm:group-hover:opacity-0 transition-opacity">
                 <p className="text-xs text-[#9CA3AF] truncate flex-1">{img.prompt ?? ''}</p>
                 <a
                   href={img.image_url}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   MessageSquare,
   Bell,
@@ -14,6 +14,10 @@ import {
   X,
   Send,
   Link2,
+  Clock,
+  Mic,
+  Brain,
+  CheckSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -59,26 +63,54 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
-/** Detect Indian festivals and notable holidays (approximate fixed dates) */
+/** Detect Indian festivals and notable holidays (approximate fixed dates, 2026 calendar) */
 function getFestivalGreeting(): string | null {
   const now = new Date();
   const month = now.getMonth() + 1; // 1-12
   const day = now.getDate();
 
+  // Fixed-date festivals
   if (month === 1 && day === 1) return 'Happy New Year!';
+  if (month === 1 && day === 14) return 'Happy Makar Sankranti / Pongal!';
   if (month === 1 && day === 26) return 'Happy Republic Day!';
-  if (month === 3 && day >= 24 && day <= 26) return 'Happy Holi!';
-  if (month === 8 && day === 15) return 'Happy Independence Day!';
-  if (month === 10 && day >= 20 && day <= 25) return 'Happy Diwali!';
-  if (month === 11 && day >= 1 && day <= 3) return 'Happy Diwali!';
-  if (month === 11 && day >= 12 && day <= 15) return 'Happy Diwali!';
-  if (month === 12 && day === 25) return 'Merry Christmas!';
+  if (month === 3 && day >= 9 && day <= 11) return 'Happy Maha Shivaratri!';
+  if (month === 3 && day >= 14 && day <= 16) return 'Happy Holi!';
+  if (month === 4 && day === 2) return 'Happy Ugadi / Gudi Padwa!';
+  if (month === 4 && day === 6) return 'Happy Ram Navami!';
   if (month === 4 && day === 14) return 'Happy Baisakhi!';
-  if (month === 8 && day >= 26 && day <= 30) return 'Happy Ganesh Chaturthi!';
-  if (month === 1 && day === 14) return 'Happy Makar Sankranti!';
-  if (month === 9 && day >= 15 && day <= 24) return 'Happy Navratri!';
-  if (month === 10 && day >= 10 && day <= 15) return 'Happy Dussehra!';
+  if (month === 5 && day === 1) return 'Happy May Day!';
+  if (month === 5 && day === 12) return 'Happy Buddha Purnima!';
+  if (month === 6 && day >= 26 && day <= 28) return 'Happy Eid al-Adha!';
+  if (month === 7 && day >= 17 && day <= 19) return 'Happy Muharram!';
+  if (month === 8 && day === 12) return 'Happy Raksha Bandhan!';
+  if (month === 8 && day === 14) return 'Happy Janmashtami!';
+  if (month === 8 && day === 15) return 'Happy Independence Day!';
+  if (month === 8 && day >= 22 && day <= 31) return 'Happy Ganesh Chaturthi!';
+  if (month === 9 && day >= 17 && day <= 26) return 'Happy Navratri!';
+  if (month === 10 && day >= 2 && day <= 3) return 'Happy Dussehra!';
+  if (month === 10 && day >= 20 && day <= 22) return 'Happy Diwali!';
+  if (month === 10 && day === 23) return 'Happy Bhai Dooj!';
+  if (month === 11 && day >= 1 && day <= 3) return 'Happy Diwali!';
+  if (month === 11 && day >= 12 && day <= 15) return 'Happy Chhath Puja!';
+  if (month === 11 && day === 24) return 'Happy Guru Nanak Jayanti!';
+  if (month === 12 && day === 25) return 'Merry Christmas!';
+  if (month === 12 && day === 31) return 'Happy New Year Eve!';
   return null;
+}
+
+/** Calculate estimated hours saved by AI: each message interaction saves ~2 minutes on avg */
+function computeTimeSaved(totalMessages: number): { hours: number; minutes: number } {
+  const totalMinutes = totalMessages * 2; // 2 min saved per message
+  return { hours: Math.floor(totalMinutes / 60), minutes: totalMinutes % 60 };
+}
+
+/** Check if user account is less than 7 days old */
+function isNewUser(createdAt?: string): boolean {
+  if (!createdAt) return false;
+  const created = new Date(createdAt);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays <= 7;
 }
 
 function relativeTime(iso: string): string {
@@ -267,6 +299,17 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   // Messages today count from stats
   const messagesToday = stats.messagesSent || 0;
 
+  // "AI saved you X hours" — calculate from total weekly activity
+  const weeklyMessages = activityData.reduce((a, b) => a + b, 0);
+  const timeSaved = useMemo(() => computeTimeSaved(weeklyMessages), [weeklyMessages]);
+
+  // Quick chat input state
+  const [quickChatInput, setQuickChatInput] = useState('');
+  const quickChatRef = useRef<HTMLInputElement>(null);
+
+  // Onboarding: detect new user (first 7 days)
+  const showOnboarding = isNewUser(user?.createdAt);
+
   // Load data
   const fetchOverviewData = useCallback(async () => {
     setLoading(true);
@@ -322,6 +365,15 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
 
   const glanceCards: GlanceCard[] = [
     {
+      key: 'time-saved',
+      label: 'AI Time Saved',
+      value: timeSaved.hours > 0 ? `${timeSaved.hours}h ${timeSaved.minutes}m` : `${timeSaved.minutes}m`,
+      sub: weeklyMessages > 0 ? `from ${weeklyMessages} messages` : 'Start chatting!',
+      icon: Clock,
+      color: '#FFB800',
+      bgColor: 'rgba(255,184,0,0.08)',
+    },
+    {
       key: 'reminders',
       label: 'Reminders',
       value: String(pendingReminders.length),
@@ -331,15 +383,6 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
       icon: Bell,
       color: '#00F0FF',
       bgColor: 'rgba(0,240,255,0.08)',
-    },
-    {
-      key: 'habits',
-      label: 'Habits',
-      value: `${reminders.filter((r) => r.completed).length}/${reminders.length || 0}`,
-      sub: reminders.length > 0 ? 'logged today' : 'Start tracking',
-      icon: Target,
-      color: '#ADFF2F',
-      bgColor: 'rgba(173,255,47,0.08)',
     },
     {
       key: 'messages',
@@ -527,7 +570,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                       if (card.key === 'reminders') onNavigate?.('reminders');
                       else if (card.key === 'messages') onOpenChat?.();
                       else if (card.key === 'focus') onNavigate?.('focus');
-                      else if (card.key === 'habits') onNavigate?.('reminders');
+                      else if (card.key === 'time-saved') onNavigate?.('activity');
                     }}
                     role="button"
                     tabIndex={0}
@@ -537,7 +580,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                         if (card.key === 'reminders') onNavigate?.('reminders');
                         else if (card.key === 'messages') onOpenChat?.();
                         else if (card.key === 'focus') onNavigate?.('focus');
-                        else if (card.key === 'habits') onNavigate?.('reminders');
+                        else if (card.key === 'time-saved') onNavigate?.('activity');
                       }
                     }}
                   >
@@ -781,8 +824,114 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           </section>
         </div>
 
-        {/* ─── Onboarding Card (empty state) ─── */}
-        {isEmptyState && (
+        {/* ─── Onboarding Checklist (new users, first 7 days) ─── */}
+        {showOnboarding && (
+          <section
+            className={`transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          >
+            <h2
+              className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider mb-3"
+              style={{ fontFamily: 'Syne, sans-serif' }}
+            >
+              Get started
+            </h2>
+            <Card
+              className="border-[#00F0FF]/15 bg-[#0C0C18] rounded-2xl overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, #0C0C18 0%, #12121F 100%)' }}
+            >
+              <CardContent className="p-5">
+                <div className="flex items-start gap-3 mb-4">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(173,255,47,0.1))' }}
+                  >
+                    <Sparkles className="w-5 h-5 text-[#00F0FF]" />
+                  </div>
+                  <div>
+                    <h3
+                      className="text-base font-bold text-[#F4F6FF]"
+                      style={{ fontFamily: 'Syne, sans-serif' }}
+                    >
+                      Welcome to Agentin!
+                    </h3>
+                    <p className="text-xs text-[#8892A4] mt-0.5">
+                      Complete these steps to unlock your full AI experience.
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    {
+                      label: 'Connect Telegram',
+                      desc: 'Chat with your AI on the go',
+                      icon: Link2,
+                      color: '#8B5CF6',
+                      done: false,
+                      action: () => onNavigate?.('connections'),
+                    },
+                    {
+                      label: 'Set up habits',
+                      desc: 'Track your daily goals',
+                      icon: Target,
+                      color: '#ADFF2F',
+                      done: reminders.length > 0,
+                      action: () => onNavigate?.('reminders'),
+                    },
+                    {
+                      label: 'Try voice input',
+                      desc: 'Talk to Weebo hands-free',
+                      icon: Mic,
+                      color: '#FF2D78',
+                      done: false,
+                      action: () => onOpenChat?.(),
+                    },
+                    {
+                      label: 'Add a memory',
+                      desc: 'Teach your AI about you',
+                      icon: Brain,
+                      color: '#00F0FF',
+                      done: false,
+                      action: () => onNavigate?.('memory'),
+                    },
+                  ].map((step) => (
+                    <button
+                      key={step.label}
+                      onClick={step.action}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:scale-[1.01] active:scale-[0.99] min-h-[44px] ${
+                        step.done
+                          ? 'border-[#ADFF2F]/20 bg-[#ADFF2F]/5'
+                          : 'border-[#00F0FF]/10 hover:border-[#00F0FF]/25'
+                      }`}
+                    >
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: `${step.color}15` }}
+                      >
+                        {step.done ? (
+                          <CheckSquare className="w-4 h-4 text-[#ADFF2F]" />
+                        ) : (
+                          <step.icon className="w-4 h-4" style={{ color: step.color }} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-medium ${step.done ? 'text-[#ADFF2F] line-through' : 'text-[#F4F6FF]'}`}>
+                          {step.label}
+                        </div>
+                        <div className="text-xs text-[#8892A4]">{step.desc}</div>
+                      </div>
+                      {!step.done && (
+                        <ArrowRight className="w-4 h-4 text-[#8892A4]/40 flex-shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        {/* ─── Onboarding Card (empty state, no-data fallback) ─── */}
+        {isEmptyState && !showOnboarding && (
           <section
             className={`transition-all duration-700 delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           >
@@ -856,6 +1005,44 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
             </Card>
           </section>
         )}
+
+        {/* ─── Quick Chat Input ─── */}
+        <section
+          className={`transition-all duration-700 delay-400 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        >
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (quickChatInput.trim()) {
+                onOpenChat?.();
+                setQuickChatInput('');
+              }
+            }}
+            className="relative"
+          >
+            <div className="flex items-center gap-2 rounded-2xl border border-[#00F0FF]/15 bg-[#0C0C18] p-2 transition-all focus-within:border-[#00F0FF]/40 focus-within:shadow-[0_0_20px_rgba(0,240,255,0.05)]">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#ADFF2F]/10 flex-shrink-0 ml-1">
+                <MessageSquare className="w-4 h-4 text-[#ADFF2F]" />
+              </div>
+              <input
+                ref={quickChatRef}
+                type="text"
+                value={quickChatInput}
+                onChange={(e) => setQuickChatInput(e.target.value)}
+                placeholder="Ask Weebo anything..."
+                className="flex-1 bg-transparent text-sm text-[#F4F6FF] placeholder:text-[#8892A4]/60 outline-none min-h-[36px] px-1"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!quickChatInput.trim()}
+                className="rounded-xl bg-[#00F0FF]/15 text-[#00F0FF] hover:bg-[#00F0FF]/25 border-0 disabled:opacity-30 min-h-[36px] px-3"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </form>
+        </section>
       </div>
     </PullToRefreshWrapper>
   );

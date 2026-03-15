@@ -29,6 +29,8 @@ import {
   Link,
   Copy,
   Check as CheckIcon,
+  WifiOff,
+  Wifi,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -131,6 +133,10 @@ export function ConnectionsPage() {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
+  // Test connection result state — keyed by integration type
+  const [testResult, setTestResult] = useState<Record<string, { status: 'pass' | 'fail'; message: string; at: string } | null>>({});
+  const [testing, setTesting] = useState<Record<string, boolean>>({});
+
   // 55.9: Mobile tap-to-expand connection cards
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -310,6 +316,36 @@ export function ConnectionsPage() {
     }
   };
 
+  // Test connection — calls test endpoint, shows pass/fail result on card
+  const handleTestConnection = async (type: string) => {
+    setTesting((prev) => ({ ...prev, [type]: true }));
+    setTestResult((prev) => ({ ...prev, [type]: null }));
+    try {
+      const res = await integrationService.testIntegration(type);
+      const healthy = res.data.healthy;
+      setTestResult((prev) => ({
+        ...prev,
+        [type]: {
+          status: healthy ? 'pass' : 'fail',
+          message: healthy ? 'Connection is healthy' : 'Connection has issues',
+          at: new Date().toLocaleTimeString(),
+        },
+      }));
+      setHealthStatus((prev) => ({ ...prev, [type]: healthy ? 'healthy' : 'unhealthy' }));
+    } catch {
+      setTestResult((prev) => ({
+        ...prev,
+        [type]: {
+          status: 'fail',
+          message: 'Test failed - service unreachable',
+          at: new Date().toLocaleTimeString(),
+        },
+      }));
+    } finally {
+      setTesting((prev) => ({ ...prev, [type]: false }));
+    }
+  };
+
   const handleDisconnect = async (id: string) => {
     const integration = integrations.find((i) => i.id === id);
     if (integration?.type === 'email') {
@@ -334,29 +370,41 @@ export function ConnectionsPage() {
     loadIntegrations();
   };
 
-  const getStatusDot = (status: string) => {
+  const getStatusDot = (status: string, type?: string) => {
+    const health = type ? healthStatus[type] : undefined;
     switch (status) {
       case 'connected':
         return (
           <span className="inline-flex items-center gap-1.5">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00FF88] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00FF88]" />
+            <span className="relative flex h-2.5 w-2.5">
+              <span
+                className="absolute inline-flex h-full w-full rounded-full opacity-75"
+                style={{
+                  backgroundColor: health === 'unhealthy' ? '#FF6161' : '#00FF88',
+                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                }}
+              />
+              <span
+                className="relative inline-flex rounded-full h-2.5 w-2.5"
+                style={{ backgroundColor: health === 'unhealthy' ? '#FF6161' : '#00FF88' }}
+              />
             </span>
-            <span className="text-xs text-[#00FF88] font-medium">Connected</span>
+            <span className={`text-xs font-medium ${health === 'unhealthy' ? 'text-[#FF6161]' : 'text-[#00FF88]'}`}>
+              {health === 'unhealthy' ? 'Degraded' : 'Connected'}
+            </span>
           </span>
         );
       case 'error':
         return (
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#FF6161]" />
-            <span className="text-xs text-[#FF6161] font-medium">Error — reconnect</span>
+            <span className="h-2.5 w-2.5 rounded-full bg-[#FF6161]" />
+            <span className="text-xs text-[#FF6161] font-medium">Error -- reconnect</span>
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#9CA3AF]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#9CA3AF]" />
             <span className="text-xs text-[#9CA3AF]">Not connected</span>
           </span>
         );
@@ -686,25 +734,13 @@ export function ConnectionsPage() {
                       {connection.status === 'connected' && connection.lastSync && (
                         <p className="text-[11px] text-[#9CA3AF] mb-0.5">Last synced: {timeAgo(connection.lastSync)}</p>
                       )}
-                      {/* Status dot indicator */}
+                      {/* Status dot indicator with health-aware pulse */}
                       <div className="flex items-center gap-2 mt-1">
-                        {getStatusDot(connection.status)}
-                        {connection.status === 'connected' && healthStatus[connection.type] && (
+                        {getStatusDot(connection.status, connection.type)}
+                        {connection.status === 'connected' && healthStatus[connection.type] === 'checking' && (
                           <span
-                            className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${
-                              healthStatus[connection.type] === 'healthy'
-                                ? 'bg-[#00FF88]'
-                                : healthStatus[connection.type] === 'checking'
-                                ? 'bg-[#F59E0B] animate-pulse'
-                                : 'bg-[#FF6161]'
-                            }`}
-                            title={
-                              healthStatus[connection.type] === 'healthy'
-                                ? 'Integration is healthy'
-                                : healthStatus[connection.type] === 'checking'
-                                ? 'Checking health...'
-                                : 'Integration may have issues'
-                            }
+                            className="inline-block w-2 h-2 rounded-full flex-shrink-0 bg-[#F59E0B] animate-pulse"
+                            title="Checking health..."
                           />
                         )}
                         {/* 62.7: Ping latency badge */}
@@ -790,6 +826,65 @@ export function ConnectionsPage() {
                         </Badge>
                       ))}
                     </div>
+
+                    {/* Test Connection Button + Result */}
+                    {connection.status === 'connected' && (
+                      <div className="mb-4">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleTestConnection(connection.type)}
+                            disabled={testing[connection.type]}
+                            className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 text-xs"
+                            data-testid={`test-connection-${connection.type}`}
+                          >
+                            {testing[connection.type] ? (
+                              <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" />Testing...</>
+                            ) : (
+                              <><Wifi className="w-3 h-3 mr-1.5" />Test Connection</>
+                            )}
+                          </Button>
+                          {testResult[connection.type] && (
+                            <span className={`inline-flex items-center gap-1 text-xs font-medium ${
+                              testResult[connection.type]!.status === 'pass' ? 'text-[#00FF88]' : 'text-[#FF6161]'
+                            }`}>
+                              {testResult[connection.type]!.status === 'pass' ? (
+                                <CheckCircle2 className="w-3 h-3" />
+                              ) : (
+                                <WifiOff className="w-3 h-3" />
+                              )}
+                              {testResult[connection.type]!.message}
+                              <span className="text-[#9CA3AF] font-normal ml-1">at {testResult[connection.type]!.at}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Telegram QR deep link */}
+                    {connection.type === 'telegram' && connection.status === 'connected' && telegramUsername && (
+                      <div className="mb-4 p-3 rounded-xl bg-[#0088cc]/5 border border-[#0088cc]/20">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-[#0088cc]/20 flex items-center justify-center">
+                            <Send className="w-5 h-5 text-[#0088cc]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#E8E8F0]">@{telegramUsername}</p>
+                            <p className="text-xs text-[#9CA3AF]">Open in Telegram to chat with your agent</p>
+                          </div>
+                          <a
+                            href={`https://t.me/${telegramUsername}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0088cc] hover:bg-[#0077b5] text-white text-xs font-medium transition-colors min-h-[36px]"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Open
+                          </a>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-between pt-4 border-t border-[#00F0FF]/10 text-xs text-[#9CA3AF]">
                       <div className="flex flex-col gap-0.5">

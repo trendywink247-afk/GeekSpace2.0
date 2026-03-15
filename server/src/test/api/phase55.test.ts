@@ -35,20 +35,23 @@ describe('Phase 55', () => {
     token = `Bearer ${generateTestToken(user.id)}`;
   });
 
-  // ── 55.4: Rate limit on /api/auth/refresh ─────────────────
+  // ── 55.4: Rate limit on /api/auth/refresh (now uses refresh token rotation) ──
 
   describe('55.4 — /api/auth/refresh rate limit middleware', () => {
-    it('endpoint is reachable and returns 200 or 429', async () => {
+    it('endpoint is reachable and returns 200 with valid refreshToken', async () => {
+      const { issueRefreshToken } = await import('../../services/refresh-token.js');
+      const { refreshToken } = issueRefreshToken(userId);
       const res = await request(app)
         .post('/api/auth/refresh')
-        .set('Authorization', token);
-      // Either fresh token (200), too-early replay guard (429), or rate-limited (429)
-      expect([200, 429]).toContain(res.status);
+        .send({ refreshToken });
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('token');
+      expect(res.body).toHaveProperty('refreshToken');
     });
 
-    it('returns 401 without auth token', async () => {
-      const res = await request(app).post('/api/auth/refresh');
-      expect(res.status).toBe(401);
+    it('returns 400 without refreshToken body', async () => {
+      const res = await request(app).post('/api/auth/refresh').send({});
+      expect(res.status).toBe(400);
     });
   });
 

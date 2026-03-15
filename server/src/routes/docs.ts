@@ -7,6 +7,7 @@
 import { Router } from 'express';
 import { randomBytes } from 'crypto';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { validateBody, docFolderCreateSchema, docFolderUpdateSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 
@@ -83,7 +84,7 @@ docsRouter.get('/folders', requireAuth, (req: AuthRequest, res) => {
   res.json({ folders });
 });
 
-docsRouter.post('/folders', requireAuth, (req: AuthRequest, res) => {
+docsRouter.post('/folders', requireAuth, validateBody(docFolderCreateSchema), (req: AuthRequest, res) => {
   const userId = req.userId!;
   const { name, icon, parent_id } = req.body as { name?: string; icon?: string; parent_id?: string };
 
@@ -102,7 +103,7 @@ docsRouter.post('/folders', requireAuth, (req: AuthRequest, res) => {
   res.status(201).json(folder);
 });
 
-docsRouter.put('/folders/:id', requireAuth, (req: AuthRequest, res) => {
+docsRouter.put('/folders/:id', requireAuth, validateBody(docFolderUpdateSchema), (req: AuthRequest, res) => {
   const userId = req.userId!;
   const { id } = req.params;
   const { name, icon, parent_id, sort_order } = req.body as {

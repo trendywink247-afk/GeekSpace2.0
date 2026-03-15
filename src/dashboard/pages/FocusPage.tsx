@@ -115,17 +115,82 @@ function getRandomBreakTip(): string {
   return BREAK_TIPS[Math.floor(Math.random() * BREAK_TIPS.length)];
 }
 
+// ---------- Web Worker timer (runs in background tabs) ----------
+
+const TIMER_WORKER_CODE = `
+  let intervalId = null;
+  let startMs = 0;
+
+  self.onmessage = function(e) {
+    if (e.data.type === 'start') {
+      startMs = e.data.startMs;
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(function() {
+        self.postMessage({ type: 'tick', elapsed: Math.floor((Date.now() - startMs) / 1000) });
+      }, 1000);
+      // Send first tick immediately
+      self.postMessage({ type: 'tick', elapsed: Math.floor((Date.now() - startMs) / 1000) });
+    } else if (e.data.type === 'stop') {
+      if (intervalId) clearInterval(intervalId);
+      intervalId = null;
+    }
+  };
+`;
+
+function createTimerWorker(): Worker | null {
+  try {
+    const blob = new Blob([TIMER_WORKER_CODE], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    const worker = new Worker(url);
+    URL.revokeObjectURL(url);
+    return worker;
+  } catch {
+    return null;
+  }
+}
+
 // ---------- Hooks ----------
 
 function useTimer(startMs: number | null, durationMin: number | null) {
   const [elapsed, setElapsed] = useState(0);
+  const workerRef = useRef<Worker | null>(null);
+
   useEffect(() => {
-    if (!startMs) { setElapsed(0); return; }
+    if (!startMs) {
+      setElapsed(0);
+      // Stop existing worker
+      if (workerRef.current) {
+        workerRef.current.postMessage({ type: 'stop' });
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+      return;
+    }
+
+    // Try Web Worker first (works in background tabs)
+    const worker = createTimerWorker();
+    if (worker) {
+      workerRef.current = worker;
+      worker.onmessage = (e: MessageEvent<{ type: string; elapsed: number }>) => {
+        if (e.data.type === 'tick') {
+          setElapsed(e.data.elapsed);
+        }
+      };
+      worker.postMessage({ type: 'start', startMs });
+      return () => {
+        worker.postMessage({ type: 'stop' });
+        worker.terminate();
+        workerRef.current = null;
+      };
+    }
+
+    // Fallback: main-thread interval (throttled in background tabs)
     const tick = () => setElapsed(Math.floor((Date.now() - startMs) / 1000));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [startMs]);
+
   const total = durationMin ? durationMin * 60 : null;
   const remaining = total ? Math.max(0, total - elapsed) : null;
   return { elapsed, remaining, progress: total ? Math.min(100, (elapsed / total) * 100) : 0 };
@@ -415,6 +480,54 @@ export function FocusPage() {
     session?.duration_min ?? null,
   );
 
+  // --- Wake Lock (keep screen on during focus sessions) ---
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  useEffect(() => {
+    if (!session) {
+      // Release wake lock when session ends
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release().catch(() => {/* ignore */});
+        wakeLockRef.current = null;
+      }
+      return;
+    }
+
+    // Acquire wake lock when session is active
+    async function acquireWakeLock() {
+      if (!('wakeLock' in navigator)) return;
+      try {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+      } catch {
+        // Device doesn't support wake lock or permission denied
+      }
+    }
+    void acquireWakeLock();
+
+    // Re-acquire on visibility change (wake lock is released when tab is hidden)
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible' && !wakeLockRef.current) {
+        void acquireWakeLock();
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release().catch(() => {/* ignore */});
+        wakeLockRef.current = null;
+      }
+    };
+  }, [session]);
+
+  // --- Request notification permission on mount ---
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {/* ignore */});
+    }
+  }, []);
+
   // --- Data loading ---
 
   const load = useCallback(async () => {
@@ -446,7 +559,14 @@ export function FocusPage() {
   const prevRemaining = useRef<number | null>(null);
   useEffect(() => {
     if (prevRemaining.current !== null && prevRemaining.current > 0 && remaining === 0 && session) {
-      // Timer just hit zero
+      // Timer just hit zero — notify user (works even in background tab)
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const dur = session.duration_min ?? Math.floor(elapsed / 60);
+        new Notification('Focus Session Complete!', {
+          body: `Great work! You focused for ${dur} minutes.`,
+          icon: '/favicon.ico',
+        });
+      }
       void handleEndFocus();
       setShowBreakSuggestion(true);
     }

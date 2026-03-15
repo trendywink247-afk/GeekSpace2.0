@@ -248,6 +248,13 @@ const searchMemorySchema = z.object({
   query: z.string().min(1).max(500),
 });
 
+// Explicit memory storage — save user facts/preferences
+const createMemorySchema = z.object({
+  key: z.string().min(1).max(200),
+  value: z.string().min(1).max(1000),
+  category: z.enum(['preference', 'personal', 'work', 'health', 'other']).default('preference'),
+});
+
 export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   generate_code: generateCodeSchema,
   portfolio_add_project: portfolioAddProjectSchema,
@@ -294,6 +301,7 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   set_budget: setBudgetSchema,
   // Context threading
   search_memory: searchMemorySchema,
+  create_memory: createMemorySchema,
 };
 
 // ── Types ───────────────────────────────────────────────────

@@ -167,18 +167,15 @@ remindersRouter.post('/:id/complete', requireAuth, (req: AuthRequest, res) => {
   // 48.9: Structured lifecycle log
   logger.info({ event: 'reminder.completed', userId: req.userId, reminderId: req.params.id });
 
-  // If it has a recurrence, create the next occurrence
+  // If it has a recurrence, create the next occurrence using smart engine
   const recurrence = existing.recurrence as string | null | undefined;
-  if (recurrence && ['daily', 'weekly', 'monthly'].includes(recurrence)) {
+  if (recurrence) {
     const currentDatetime = new Date((existing.datetime as string) || new Date().toISOString());
-    let nextDatetime: Date;
-    if (recurrence === 'daily') {
-      nextDatetime = new Date(currentDatetime.getTime() + 1 * 24 * 60 * 60 * 1000);
-    } else if (recurrence === 'weekly') {
-      nextDatetime = new Date(currentDatetime.getTime() + 7 * 24 * 60 * 60 * 1000);
-    } else {
-      // monthly: +30 days
-      nextDatetime = new Date(currentDatetime.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const nextDatetime = computeNextOccurrence(currentDatetime, recurrence);
+    if (!nextDatetime) {
+      // Unknown recurrence pattern — complete without creating next
+      res.json({ completed: true, nextReminder: null });
+      return;
     }
 
     const newId = uuid();
@@ -582,4 +579,229 @@ remindersRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
 
   res.json({ total, active, completed, overdue, byPriority });
 });
+
+// ── Phase 107: Smart Recurrence Engine ───────────────────────────────────────
+
+/**
+ * Compute next occurrence for complex recurrence rules.
+ * Supported patterns: daily, weekly, monthly, weekdays, biweekly,
+ * "every N days", "every Nth weekday" (e.g. "2nd Tuesday")
+ */
+function computeNextOccurrence(
+  currentDatetime: Date,
+  recurrenceRule: string
+): Date | null {
+  const rule = recurrenceRule.toLowerCase().trim();
+  const now = new Date();
+  const base = currentDatetime > now ? currentDatetime : now;
+
+  // Simple patterns
+  if (rule === 'daily') {
+    return new Date(base.getTime() + 86400000);
+  }
+  if (rule === 'weekly') {
+    return new Date(base.getTime() + 7 * 86400000);
+  }
+  if (rule === 'biweekly' || rule === 'every 2 weeks') {
+    return new Date(base.getTime() + 14 * 86400000);
+  }
+  if (rule === 'monthly') {
+    const next = new Date(base);
+    next.setMonth(next.getMonth() + 1);
+    return next;
+  }
+
+  // "weekdays" or "every weekday"
+  if (rule === 'weekdays' || rule === 'every weekday') {
+    const next = new Date(base.getTime() + 86400000);
+    while (next.getDay() === 0 || next.getDay() === 6) {
+      next.setDate(next.getDate() + 1);
+    }
+    return next;
+  }
+
+  // "every N days"
+  const everyNDays = rule.match(/^every\s+(\d+)\s+days?$/);
+  if (everyNDays) {
+    return new Date(base.getTime() + parseInt(everyNDays[1], 10) * 86400000);
+  }
+
+  // "every N weeks"
+  const everyNWeeks = rule.match(/^every\s+(\d+)\s+weeks?$/);
+  if (everyNWeeks) {
+    return new Date(base.getTime() + parseInt(everyNWeeks[1], 10) * 7 * 86400000);
+  }
+
+  // "every N months"
+  const everyNMonths = rule.match(/^every\s+(\d+)\s+months?$/);
+  if (everyNMonths) {
+    const next = new Date(base);
+    next.setMonth(next.getMonth() + parseInt(everyNMonths[1], 10));
+    return next;
+  }
+
+  // "last day of month" or "last friday of month"
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const lastOfMonth = rule.match(/^last\s+(day|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+of\s+month$/);
+  if (lastOfMonth) {
+    const next = new Date(base);
+    next.setMonth(next.getMonth() + 1, 0); // last day of current month
+
+    if (lastOfMonth[1] === 'day') return next;
+
+    const targetDay = dayNames.indexOf(lastOfMonth[1]);
+    // find last occurrence of targetDay in the month
+    const nextMonth = new Date(base);
+    nextMonth.setMonth(nextMonth.getMonth() + 2, 0); // last day of next month
+    while (nextMonth.getDay() !== targetDay) {
+      nextMonth.setDate(nextMonth.getDate() - 1);
+    }
+    nextMonth.setHours(base.getHours(), base.getMinutes(), 0, 0);
+    return nextMonth;
+  }
+
+  // "Nth weekday" e.g. "2nd tuesday", "1st monday", "3rd friday"
+  const nthWeekday = rule.match(/^(\d)(?:st|nd|rd|th)\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)$/);
+  if (nthWeekday) {
+    const nth = parseInt(nthWeekday[1], 10);
+    const targetDay = dayNames.indexOf(nthWeekday[2]);
+
+    // Find in next month
+    const next = new Date(base);
+    next.setMonth(next.getMonth() + 1, 1); // 1st of next month
+    let count = 0;
+    while (count < nth) {
+      if (next.getDay() === targetDay) count++;
+      if (count < nth) next.setDate(next.getDate() + 1);
+    }
+    next.setHours(base.getHours(), base.getMinutes(), 0, 0);
+    return next;
+  }
+
+  return null;
+}
+
+// ── Batch Create (Phase 107) ─────────────────────────────────────────────────
+remindersRouter.post('/batch', requireAuth, (req: AuthRequest, res) => {
+  const { items } = req.body as {
+    items: Array<{ text: string; datetime?: string; category?: string; priority?: string; recurrence?: string }>;
+  };
+
+  if (!Array.isArray(items) || items.length === 0 || items.length > 50) {
+    res.status(400).json({ error: 'items must be an array of 1-50 reminders' });
+    return;
+  }
+
+  const insertStmt = db.prepare(
+    'INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurring, recurrence, created_by, scheduled_for, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  );
+
+  const created: string[] = [];
+  const insertAll = db.transaction(() => {
+    for (const item of items) {
+      if (!item.text || typeof item.text !== 'string') continue;
+      const id = uuid();
+      const dt = item.datetime ? new Date(item.datetime).toISOString() : '';
+      const scheduledFor = item.datetime ? new Date(item.datetime).getTime() : Date.now();
+      insertStmt.run(
+        id, req.userId!, item.text.trim(), dt, 'push',
+        item.category || 'general', '', item.recurrence || null,
+        'user', scheduledFor, item.priority || 'normal'
+      );
+      created.push(id);
+    }
+  });
+  insertAll();
+
+  logger.info({ event: 'reminder.batch_created', userId: req.userId, count: created.length });
+  res.status(201).json({ created: created.length, ids: created });
+});
+
+// ── Snooze Pattern Detection (Phase 107) ──────────────────────────────────────
+remindersRouter.get('/:id/snooze-pattern', requireAuth, (req: AuthRequest, res) => {
+  const existing = db.prepare(
+    'SELECT id, text, snooze_count FROM reminders WHERE id = ? AND user_id = ?'
+  ).get(req.params.id, req.userId!) as { id: string; text: string; snooze_count: number } | undefined;
+
+  if (!existing) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+
+  const snoozeCount = existing.snooze_count || 0;
+  if (snoozeCount < 3) {
+    res.json({ pattern_detected: false, snooze_count: snoozeCount });
+    return;
+  }
+
+  // Analyze snooze times to find pattern
+  const snoozeLogs = db.prepare(
+    'SELECT new_datetime FROM snooze_log WHERE reminder_id = ? ORDER BY snoozed_at DESC LIMIT 10'
+  ).all(req.params.id) as Array<{ new_datetime: string }>;
+
+  // Find most common hour across snoozes
+  const hourCounts: Record<number, number> = {};
+  for (const log of snoozeLogs) {
+    const hour = new Date(log.new_datetime).getHours();
+    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+  }
+
+  const suggestedHour = Object.entries(hourCounts)
+    .sort(([, a], [, b]) => b - a)[0]?.[0];
+
+  res.json({
+    pattern_detected: true,
+    snooze_count: snoozeCount,
+    suggestion: suggestedHour
+      ? `This reminder has been snoozed ${snoozeCount} times. Maybe ${parseInt(suggestedHour, 10) > 12 ? `${parseInt(suggestedHour, 10) - 12}pm` : `${suggestedHour}am`} works better?`
+      : `This reminder has been snoozed ${snoozeCount} times. Consider a different time.`,
+    suggested_hour: suggestedHour ? parseInt(suggestedHour, 10) : null,
+  });
+});
+
+// ── Reminder Templates (Phase 107) ────────────────────────────────────────────
+remindersRouter.get('/templates', requireAuth, (_req: AuthRequest, res) => {
+  const templates = [
+    {
+      id: 'morning-routine',
+      name: 'Morning Routine',
+      items: [
+        { text: 'Wake up and hydrate', time: '06:00', recurrence: 'daily' },
+        { text: 'Morning exercise', time: '06:30', recurrence: 'weekdays' },
+        { text: 'Review today\'s agenda', time: '08:00', recurrence: 'weekdays' },
+      ],
+    },
+    {
+      id: 'weekly-review',
+      name: 'Weekly Review',
+      items: [
+        { text: 'Review weekly goals', time: '17:00', recurrence: 'weekly' },
+        { text: 'Plan next week', time: '17:30', recurrence: 'weekly' },
+      ],
+    },
+    {
+      id: 'health-pack',
+      name: 'Health Pack',
+      items: [
+        { text: 'Take vitamins', time: '09:00', recurrence: 'daily' },
+        { text: 'Drink 8 glasses of water', time: '10:00', recurrence: 'daily' },
+        { text: 'Stretch break', time: '14:00', recurrence: 'weekdays' },
+      ],
+    },
+    {
+      id: 'bill-payments',
+      name: 'Bill Payments',
+      items: [
+        { text: 'Pay rent', time: '10:00', recurrence: 'monthly' },
+        { text: 'Pay electricity bill', time: '10:00', recurrence: 'monthly' },
+        { text: 'Review subscriptions', time: '10:00', recurrence: 'last day of month' },
+      ],
+    },
+  ];
+
+  res.json(templates);
+});
+
+// Export computeNextOccurrence for use in the reminder scheduler
+export { computeNextOccurrence };
 

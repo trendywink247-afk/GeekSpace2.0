@@ -473,6 +473,47 @@ export async function initTelegramBot(): Promise<void> {
   // Register webhook
   const webhookUrl = `${config.apiUrl}/api/webhooks/telegram`;
   await registerTelegramWebhook(webhookUrl);
+
+  // Register bot commands with Telegram (shown in command menu)
+  await registerBotCommands();
+}
+
+// ---- Register Bot Commands ----
+
+async function registerBotCommands(): Promise<void> {
+  const commands = [
+    { command: 'remind', description: 'Set a reminder — /remind call dentist Friday 3pm' },
+    { command: 'note', description: 'Save a note — /note idea: new product feature' },
+    { command: 'focus', description: 'Start focus session — /focus 45' },
+    { command: 'habit', description: 'Log a habit — /habit morning-workout' },
+    { command: 'brief', description: 'Get your daily briefing' },
+    { command: 'search', description: 'Search everything — /search python' },
+    { command: 'memory', description: 'Save a fact — /memory I prefer dark mode' },
+    { command: 'help', description: 'Show all commands' },
+    { command: 'credits', description: 'Check credit balance' },
+    { command: 'status', description: 'Connection status' },
+    { command: 'model', description: 'View or switch AI models' },
+    { command: 'habits', description: 'View all habits with streaks' },
+    { command: 'notes', description: 'View recent notes' },
+    { command: 'expenses', description: 'Monthly expense report' },
+  ];
+
+  try {
+    const res = await fetch(`${TELEGRAM_API}/setMyCommands`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commands }),
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json() as { ok: boolean; description?: string };
+    if (data.ok) {
+      logger.info({ count: commands.length }, 'Telegram bot commands registered');
+    } else {
+      logger.warn({ error: data.description }, 'Failed to register Telegram bot commands');
+    }
+  } catch (err) {
+    logger.warn({ err }, 'Failed to register Telegram bot commands');
+  }
 }
 
 // ---- HTML Notification (for system-generated messages, NOT LLM output) ----

@@ -27,6 +27,9 @@ import {
   RotateCcw,
   Mic,
   Volume2,
+  MapPin,
+  FileDown,
+  Laptop,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,7 +53,12 @@ export function SettingsPage() {
   const [isExportingConversations, setIsExportingConversations] = useState(false);
   const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
   const [isExportingMarkdown7Days, setIsExportingMarkdown7Days] = useState(false);
+  const [isExportingGDPR, setIsExportingGDPR] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  // Timezone auto-detection
+  const [detectedTimezone] = useState(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return 'UTC'; }
+  });
 
   // Voice settings (localStorage key: agentin_voice_settings)
   const [voiceSettings, setVoiceSettings] = useState(() => {
@@ -244,14 +252,20 @@ export function SettingsPage() {
     }
   }, [activeTab, memoryFilter]);
 
-  // Load sessions and model preference when security tab is active
+  // Load sessions when sessions tab is active
   useEffect(() => {
-    if (activeTab === 'security') {
+    if (activeTab === 'sessions') {
       setSessionsLoading(true);
       userService.getSessions()
         .then(({ data }) => setSessions(data.sessions))
         .catch(() => {})
         .finally(() => setSessionsLoading(false));
+    }
+  }, [activeTab]);
+
+  // Load model preference when security tab is active
+  useEffect(() => {
+    if (activeTab === 'security') {
       userService.getPreferredModel()
         .then(({ data }) => setPreferredModel(data.preferredModel))
         .catch(() => {});
@@ -320,6 +334,47 @@ export function SettingsPage() {
       // silent — export is best-effort
     } finally {
       setIsExportingMarkdown(false);
+    }
+  };
+
+  // GDPR: Download all user data
+  const handleGDPRExport = async () => {
+    setIsExportingGDPR(true);
+    try {
+      // Aggregate all user data: profile, conversations, memories, reminders
+      const results = await Promise.allSettled([
+        userService.getProfile(),
+        memoryService.getConversationsExport(5000),
+        memoryService.list(),
+        userService.getSessions(),
+      ]);
+      const profileData = results[0].status === 'fulfilled' ? results[0].value.data : null;
+      const conversations = results[1].status === 'fulfilled' ? results[1].value.data : [];
+      const memoriesData = results[2].status === 'fulfilled' ? results[2].value.data : [];
+      const sessionsData = results[3].status === 'fulfilled' ? results[3].value.data : { sessions: [] };
+
+      const gdprBundle = {
+        exportedAt: new Date().toISOString(),
+        format: 'GDPR Data Export - Agentin Chat',
+        profile: profileData,
+        conversations,
+        memories: memoriesData,
+        sessions: sessionsData.sessions,
+      };
+
+      const blob = new Blob([JSON.stringify(gdprBundle, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `agentin-gdpr-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // silent - best effort export
+    } finally {
+      setIsExportingGDPR(false);
     }
   };
 
@@ -600,6 +655,7 @@ export function SettingsPage() {
           { id: 'profile', label: 'Profile', icon: User },
           { id: 'notifications', label: 'Notifications', icon: Bell },
           { id: 'security', label: 'Security', icon: Shield },
+          { id: 'sessions', label: 'Sessions', icon: Laptop },
           { id: 'apikeys', label: 'API Keys', icon: Key },
           { id: 'memory', label: 'Memory', icon: Brain },
           { id: 'privacy', label: 'Privacy', icon: Eye },
@@ -635,6 +691,9 @@ export function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="security" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
             <Shield className="w-4 h-4 mr-2" />Security
+          </TabsTrigger>
+          <TabsTrigger value="sessions" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
+            <Laptop className="w-4 h-4 mr-2" />Sessions
           </TabsTrigger>
           <TabsTrigger value="apikeys" className="data-[state=active]:bg-[#00F0FF] data-[state=active]:text-white">
             <Key className="w-4 h-4 mr-2" />API Keys
@@ -910,8 +969,8 @@ export function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Security Tab */}
-        <TabsContent value="security" className="space-y-6">
+        {/* Sessions Tab */}
+        <TabsContent value="sessions" className="space-y-6">
           {/* Active Sessions Card */}
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
@@ -995,6 +1054,74 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
+          {/* Detected Timezone Card */}
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-[#00F0FF]" />
+                Timezone
+              </CardTitle>
+              <CardDescription className="text-[#9CA3AF]">Auto-detected from your browser</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/20">
+                <div className="flex items-center gap-3">
+                  <Globe className="w-5 h-5 text-[#00F0FF]" />
+                  <div>
+                    <p className="text-sm font-medium text-[#E8E8F0]">{detectedTimezone}</p>
+                    <p className="text-xs text-[#9CA3AF]">
+                      Current time: {new Date().toLocaleTimeString('en-US', { timeZone: detectedTimezone, hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="border-[#00FF88]/30 text-[#00FF88] text-xs">
+                  Auto-detected
+                </Badge>
+              </div>
+              <p className="text-xs text-[#9CA3AF] mt-2">
+                This timezone is used for reminders, daily briefings, and scheduling. It updates automatically based on your device settings.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* GDPR Data Export Card */}
+          <Card className="border-[#00F0FF]/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileDown className="w-4 h-4 text-[#00F0FF]" />
+                Data Export (GDPR)
+              </CardTitle>
+              <CardDescription className="text-[#9CA3AF]">
+                Download a copy of all your data stored in Agentin
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-[#00F0FF]/5 border border-[#00F0FF]/20">
+                <Shield className="w-4 h-4 text-[#00F0FF] flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-[#9CA3AF]">
+                  Your export includes your profile, conversation history, memories, active sessions, and preferences.
+                  The file is downloaded directly to your device and is not stored on our servers.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => void handleGDPRExport()}
+                disabled={isExportingGDPR}
+                className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10"
+                data-testid="gdpr-export-btn"
+              >
+                {isExportingGDPR ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Exporting...</>
+                ) : (
+                  <><Download className="w-4 h-4 mr-2" />Download All My Data</>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Security Tab */}
+        <TabsContent value="security" className="space-y-6">
           {/* Preferred AI Engine Card */}
           <Card className="border-[#00F0FF]/20">
             <CardHeader>

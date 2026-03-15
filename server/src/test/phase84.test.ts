@@ -94,7 +94,8 @@ describe('84.8 ImageGallery: download button touch-accessible', () => {
 
   it('gallery grid is 2 cols on mobile', () => {
     const content = readSrc('dashboard/pages/ImageGalleryPage.tsx');
-    expect(content).toContain('grid-cols-2');
+    // Supports both CSS grid (grid-cols-2) and CSS columns (columns-2) for masonry layout
+    expect(content).toMatch(/grid-cols-2|columns-2/);
   });
 
   it('images use lazy loading', () => {

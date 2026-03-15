@@ -203,12 +203,14 @@ const CATEGORY_COLORS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 function FeaturedBanner({ specialist, onTry }: { specialist: Specialist; onTry: () => void }) {
+  const catColor = CATEGORY_COLORS[specialist.category] ?? '#00F0FF';
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#ADFF2F]/30 bg-gradient-to-br from-[#ADFF2F]/5 to-transparent p-5 sm:p-6">
+    <div className="relative overflow-hidden rounded-2xl border border-[#ADFF2F]/30 bg-gradient-to-br from-[#ADFF2F]/5 via-transparent to-[#00F0FF]/3 p-5 sm:p-6">
       <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[#ADFF2F]/5 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full blur-3xl pointer-events-none" style={{ backgroundColor: `${catColor}08` }} />
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="w-14 h-14 rounded-2xl bg-[#ADFF2F]/10 flex items-center justify-center flex-shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-[#ADFF2F]/10 flex items-center justify-center flex-shrink-0 ring-2 ring-[#ADFF2F]/20">
             <span className="text-3xl" role="img" aria-label={specialist.name}>{specialist.emoji}</span>
           </div>
           <div className="min-w-0">
@@ -216,6 +218,12 @@ function FeaturedBanner({ specialist, onTry }: { specialist: Specialist; onTry: 
               <Badge className="bg-[#ADFF2F]/20 text-[#ADFF2F] border-[#ADFF2F]/30 text-[10px] uppercase tracking-wider">
                 <Sparkles className="w-3 h-3 mr-1" />
                 Featured This Week
+              </Badge>
+              <Badge
+                className="text-[10px] uppercase tracking-wider border-0"
+                style={{ backgroundColor: `${catColor}15`, color: catColor }}
+              >
+                {specialist.category}
               </Badge>
             </div>
             <h3 className="text-lg font-semibold text-[#F4F6FF] mt-1 truncate">
@@ -225,6 +233,16 @@ function FeaturedBanner({ specialist, onTry }: { specialist: Specialist; onTry: 
               )}
             </h3>
             <p className="text-sm text-[#8892A4] mt-0.5">{specialist.description}</p>
+            <div className="flex items-center gap-3 mt-2 text-[11px] text-[#8892A4]">
+              <span className="flex items-center gap-1">
+                <MessageCircle className="w-3 h-3" />
+                {specialist.conversations} conversations
+              </span>
+              <span className="flex items-center gap-1">
+                <Star className="w-3 h-3 text-[#FFB800] fill-[#FFB800]" />
+                {specialist.rating}
+              </span>
+            </div>
           </div>
         </div>
         <Button
@@ -324,10 +342,14 @@ export function AISpecialistPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<Category>('all');
 
-  const featuredSpecialist = useMemo(
-    () => SPECIALISTS.find((s) => s.featured) ?? SPECIALISTS[0],
-    [],
-  );
+  // Weekly rotation: pick featured specialist based on week number
+  const featuredSpecialist = useMemo(() => {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const weekNumber = Math.floor(((now.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7);
+    const rotationIndex = weekNumber % SPECIALISTS.length;
+    return SPECIALISTS[rotationIndex];
+  }, []);
 
   const filteredSpecialists = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();

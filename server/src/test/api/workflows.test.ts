@@ -117,7 +117,7 @@ describe('Workflows Routes', () => {
       .set('Authorization', authHeader)
       .send({ steps: VALID_STEPS })
       .expect(400);
-    expect(res.body.error).toMatch(/name/i);
+    expect(res.body.error).toMatch(/validation/i);
   });
 
   it('POST /api/workflows rejects empty name', async () => {
@@ -126,7 +126,7 @@ describe('Workflows Routes', () => {
       .set('Authorization', authHeader)
       .send({ name: '   ', steps: VALID_STEPS })
       .expect(400);
-    expect(res.body.error).toMatch(/name/i);
+    expect(res.body.error).toMatch(/validation/i);
   });
 
   it('POST /api/workflows rejects missing steps', async () => {
@@ -135,7 +135,7 @@ describe('Workflows Routes', () => {
       .set('Authorization', authHeader)
       .send({ name: 'No Steps' })
       .expect(400);
-    expect(res.body.error).toMatch(/steps/i);
+    expect(res.body.error).toMatch(/validation/i);
   });
 
   it('POST /api/workflows rejects invalid agent in step', async () => {
@@ -147,16 +147,16 @@ describe('Workflows Routes', () => {
         steps: [{ agent: 'gpt4', prompt_template: 'Hello', output_key: 'out' }],
       })
       .expect(400);
-    expect(res.body.error).toMatch(/invalid agent/i);
+    expect(res.body.error).toMatch(/validation/i);
   });
 
-  it('POST /api/workflows defaults trigger to manual for invalid trigger', async () => {
+  it('POST /api/workflows rejects invalid trigger via Zod schema', async () => {
     const res = await request(app)
       .post('/api/workflows')
       .set('Authorization', authHeader)
       .send({ name: 'Workflow', steps: VALID_STEPS, trigger: 'bogus_trigger' })
-      .expect(201);
-    expect(res.body.trigger).toBe('manual');
+      .expect(400);
+    expect(res.body.error).toMatch(/validation/i);
   });
 
   // ── Get single ───────────────────────────────────────────────

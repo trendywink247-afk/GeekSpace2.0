@@ -30,6 +30,26 @@ const helpText = `Available commands:
   help                     - Show this help message
 `;
 
+// Valid commands for Tab autocomplete
+const VALID_COMMANDS = [
+  'gs me',
+  'gs reminders list',
+  'gs reminders add',
+  'gs schedule today',
+  'gs schedule tomorrow',
+  'gs portfolio',
+  'gs status',
+  'gs credits',
+  'gs usage today',
+  'gs usage month',
+  'gs integrations',
+  'gs automations',
+  'gs deploy',
+  'ai ',
+  'clear',
+  'help',
+];
+
 interface Command {
   id: string;
   input: string;
@@ -48,6 +68,8 @@ export function TerminalPage() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [welcomeShown, setWelcomeShown] = useState(false);
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([]);
+  const [autocompleteIndex, setAutocompleteIndex] = useState(0);
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -281,6 +303,42 @@ Deploy ID: dep_${Date.now().toString(36)}`,
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Tab autocomplete
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const trimmed = input.toLowerCase();
+      if (trimmed.length === 0) return;
+
+      // If suggestions are visible, cycle through them
+      if (autocompleteSuggestions.length > 0) {
+        const nextIdx = (autocompleteIndex + 1) % autocompleteSuggestions.length;
+        setAutocompleteIndex(nextIdx);
+        setInput(autocompleteSuggestions[nextIdx]);
+        return;
+      }
+
+      // Find matching commands
+      const matches = VALID_COMMANDS.filter((cmd) => cmd.startsWith(trimmed) && cmd !== trimmed);
+      if (matches.length === 1) {
+        // Single match: complete it
+        setInput(matches[0]);
+        setAutocompleteSuggestions([]);
+      } else if (matches.length > 1) {
+        // Multiple matches: show suggestions
+        setAutocompleteSuggestions(matches);
+        setAutocompleteIndex(0);
+        setInput(matches[0]);
+      }
+      return;
+    }
+
+    // Clear suggestions on any other key
+    if (autocompleteSuggestions.length > 0 && e.key !== 'Shift') {
+      setAutocompleteSuggestions([]);
+      setAutocompleteIndex(0);
+    }
+
+    // ArrowUp: navigate history backwards
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (historyIndex < history.length - 1) {
@@ -288,6 +346,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
         setHistoryIndex(newIndex);
         setInput(history[history.length - 1 - newIndex]);
       }
+    // ArrowDown: navigate history forwards
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (historyIndex > 0) {
@@ -396,7 +455,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
               ref={inputRef}
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => { setInput(e.target.value); setAutocompleteSuggestions([]); }}
               onKeyDown={handleKeyDown}
               className="flex-1 bg-transparent border-none outline-none text-[#E8E8F0] font-mono"
               placeholder="Type a command or ask Jarvis for help..."
@@ -408,11 +467,31 @@ Deploy ID: dep_${Date.now().toString(36)}`,
               AI Help
             </span>
           </form>
+
+          {/* Tab autocomplete suggestions */}
+          {autocompleteSuggestions.length > 1 && (
+            <div className="mt-1 ml-6 flex flex-wrap gap-1.5">
+              {autocompleteSuggestions.map((s, i) => (
+                <button
+                  key={s}
+                  onClick={() => { setInput(s); setAutocompleteSuggestions([]); inputRef.current?.focus(); }}
+                  className={`px-2 py-0.5 rounded text-xs font-mono transition-colors ${
+                    i === autocompleteIndex
+                      ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40'
+                      : 'text-[#9CA3AF] hover:text-[#E8E8F0] border border-transparent'
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+              <span className="text-[10px] text-[#9CA3AF]/50 self-center ml-1">Tab to cycle</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Quick Commands */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         {[
           'gs me', 'gs reminders list', 'gs schedule today', 'gs credits',
           'gs usage month', 'gs status', 'ai "What should I build next?"', 'help'
@@ -429,6 +508,11 @@ Deploy ID: dep_${Date.now().toString(36)}`,
             {cmd}
           </button>
         ))}
+        <span className="text-[10px] text-[#9CA3AF]/50 ml-auto hidden sm:inline">
+          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/15 text-[#00F0FF] font-mono">Tab</kbd> autocomplete
+          <span className="mx-1.5">|</span>
+          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/15 text-[#00F0FF] font-mono">&uarr;&darr;</kbd> history
+        </span>
       </div>
     </div>
   );

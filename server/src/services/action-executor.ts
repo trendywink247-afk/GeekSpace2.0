@@ -1753,6 +1753,49 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         };
       }
 
+      // ── create_memory ────────────────────────────────────────
+      case 'create_memory': {
+        const key = (params.key as string)?.trim();
+        const value = (params.value as string)?.trim();
+        const category = (params.category as string) || 'preference';
+
+        if (!key || !value) {
+          return { tool, success: false, message: 'Please provide both a key and value to remember.' };
+        }
+
+        // Upsert: update if same key exists, insert if new
+        const existing = db.prepare(
+          'SELECT id FROM user_memories WHERE user_id = ? AND key = ?'
+        ).get(userId, key) as { id: number } | undefined;
+
+        if (existing) {
+          db.prepare(
+            'UPDATE user_memories SET value = ?, source = ?, updated_at = ? WHERE id = ?'
+          ).run(value, 'explicit', Date.now(), existing.id);
+        } else {
+          db.prepare(
+            'INSERT INTO user_memories (user_id, key, value, source, confidence, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          ).run(userId, key, value, 'explicit', 1.0, Date.now(), Date.now());
+        }
+
+        // Also index in Qdrant for semantic search
+        try {
+          await upsertMemoryVector(userId, key, value);
+        } catch { /* vector index unavailable — memory still saved in SQLite */ }
+
+        // Index in Meilisearch
+        try {
+          await indexMemory(userId, key, value);
+        } catch { /* search index unavailable */ }
+
+        return {
+          tool,
+          success: true,
+          message: `Saved to memory: "${key}" → "${value}" (${category})`,
+          data: { key, value, category },
+        };
+      }
+
       // ── Unknown tool (should not happen after parser validation)
       default:
         return {

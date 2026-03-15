@@ -12,11 +12,43 @@ import { encrypt } from '../utils/encryption.js';
 import { requestPasswordReset, verifyResetOTP, resetPassword } from '../services/passwordReset.js';
 import { logger } from '../logger.js';
 import { isLoginBlocked, recordFailedLogin, clearLoginAttempts } from '../services/login-guard.js';
+import { issueRefreshToken, rotateRefreshToken, revokeAllRefreshTokens } from '../services/refresh-token.js';
 
 export const authRouter = Router();
 
 function safeJsonArray(val: unknown): unknown[] {
   try { return JSON.parse(val as string || '[]') as unknown[]; } catch { return []; }
+}
+
+/** Parse user-agent into a human-readable device description */
+function parseDevice(ua: string): string {
+  if (!ua) return 'Unknown device';
+  // Mobile detection
+  if (/iPhone/i.test(ua)) return 'iPhone';
+  if (/iPad/i.test(ua)) return 'iPad';
+  if (/Android/i.test(ua) && /Mobile/i.test(ua)) return 'Android Phone';
+  if (/Android/i.test(ua)) return 'Android Tablet';
+  // Desktop browsers
+  if (/Chrome/i.test(ua) && !/Edg/i.test(ua)) return 'Chrome Desktop';
+  if (/Firefox/i.test(ua)) return 'Firefox Desktop';
+  if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return 'Safari Desktop';
+  if (/Edg/i.test(ua)) return 'Edge Desktop';
+  return 'Unknown device';
+}
+
+/** Mask an IP address for privacy (last octet hidden for IPv4, last 80 bits for IPv6) */
+function maskIp(ip: string): string {
+  if (!ip) return '*.*.*.***';
+  if (ip.includes('.')) {
+    // IPv4: show first 3 octets
+    const parts = ip.split('.');
+    if (parts.length >= 4) return `${parts[0]}.${parts[1]}.${parts[2]}.***`;
+    return ip;
+  }
+  // IPv6: show first 4 groups
+  const parts = ip.split(':');
+  if (parts.length > 4) return parts.slice(0, 4).join(':') + ':***';
+  return ip;
 }
 
 authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
@@ -144,14 +176,18 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
 authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
   const { email, password } = req.body;
 
-  // 92.2: Brute-force protection
+  // 92.2: Brute-force protection — per-IP rate limit (5 attempts / 15min)
   const ip = req.ip || '0.0.0.0';
   const blockStatus = isLoginBlocked(ip);
   if (blockStatus.blocked) {
     logSecurityEvent('login_blocked', ip, { email });
+    const retryAfterSec = Math.ceil(blockStatus.retryAfterMs / 1000);
+    const minutes = Math.floor(retryAfterSec / 60);
+    const seconds = retryAfterSec % 60;
+    const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
     res.status(429)
-      .set('Retry-After', String(Math.ceil(blockStatus.retryAfterMs / 1000)))
-      .json({ error: 'Too many failed login attempts. Try again in 15 minutes.' });
+      .set('Retry-After', String(retryAfterSec))
+      .json({ error: `Too many attempts. Try again in ${timeStr}.` });
     return;
   }
 
@@ -166,6 +202,7 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
   }
 
   const token = signToken(user.id as string);
+  const { refreshToken } = issueRefreshToken(user.id as string);
   clearLoginAttempts(ip); // 92.2: clear on success
 
   // Log activity
@@ -194,6 +231,7 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
       createdAt: user.created_at,
     },
     token,
+    refreshToken,
   });
 });
 
@@ -445,42 +483,32 @@ authRouter.post('/reset-password', async (req, res) => {
   res.json({ success: true, message: 'Password reset successfully' });
 });
 
-// ── Token Refresh (54.3) ─────────────────────────────────────
-// Short-circuit replay guard: only allow refresh when ≥50% of token lifetime has elapsed.
-// This prevents token farming (immediate re-issue abuse) while still letting genuine
-// clients renew before expiry.
-authRouter.post('/refresh', requireAuth, (req: AuthRequest, res) => {
-  const header = req.headers.authorization || '';
-  const rawToken = header.startsWith('Bearer ') ? header.slice(7) : '';
-  if (!rawToken) {
-    res.status(401).json({ error: 'Missing token' });
-    return;
-  }
-  let iat = 0;
-  let exp = 0;
-  try {
-    // decode does not verify signature — we already verified in requireAuth
-    const decoded = jwtPkg.decode(rawToken) as { iat?: number; exp?: number } | null;
-    iat = decoded?.iat ?? 0;
-    exp = decoded?.exp ?? 0;
-  } catch { /* ignore */ }
+// ── Token Refresh — single-use rotation ─────────────────────────────────────
+// Accepts a refresh token, verifies it, revokes it, and issues a new pair
+// (access token + refresh token). Reuse detection: if a revoked refresh token
+// is presented, the entire token family is revoked (potential theft).
+authRouter.post('/refresh', (req, res) => {
+  const { refreshToken: incomingRefreshToken } = req.body as { refreshToken?: string };
 
-  const now = Math.floor(Date.now() / 1000);
-  const lifetime = exp - iat;
-  const elapsed = now - iat;
-
-  // Short-circuit: refuse if < 50% of lifetime has passed (prevents replay abuse)
-  if (lifetime > 0 && elapsed < lifetime * 0.5) {
-    res.status(429).json({
-      error: 'Token refresh too early — please wait until the token is at least 50% through its lifetime',
-      retryAfter: Math.ceil(iat + lifetime * 0.5 - now),
-    });
+  if (!incomingRefreshToken || typeof incomingRefreshToken !== 'string') {
+    res.status(400).json({ error: 'refreshToken is required' });
     return;
   }
 
-  const newToken = signToken(req.userId!);
-  logger.info({ event: 'auth_token_refresh', userId: req.userId, ip: req.ip }, 'Token refreshed');
-  res.json({ token: newToken });
+  const rotationResult = rotateRefreshToken(incomingRefreshToken);
+
+  if (!rotationResult) {
+    res.status(401).json({ error: 'Invalid or expired refresh token' });
+    return;
+  }
+
+  const newAccessToken = signToken(rotationResult.userId);
+  logger.info({ event: 'auth_token_refresh', userId: rotationResult.userId, ip: req.ip }, 'Token rotated');
+
+  res.json({
+    token: newAccessToken,
+    refreshToken: rotationResult.refreshToken,
+  });
 });
 
 // ── Session Management ──────────────────────────────────────
@@ -490,13 +518,27 @@ authRouter.post('/refresh', requireAuth, (req: AuthRequest, res) => {
 
 authRouter.get('/sessions', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
-  const sessions = db.prepare(`
+  const rawSessions = db.prepare(`
     SELECT id, created_at, last_seen, user_agent, ip, is_active
     FROM user_sessions
     WHERE user_id = ? AND is_active = 1
     ORDER BY last_seen DESC
     LIMIT 20
-  `).all(userId);
+  `).all(userId) as Array<{
+    id: string; created_at: string; last_seen: string;
+    user_agent: string; ip: string; is_active: number;
+  }>;
+
+  const sessions = rawSessions.map((s) => ({
+    id: s.id,
+    created_at: s.created_at,
+    last_seen: s.last_seen,
+    user_agent: s.user_agent,
+    device: parseDevice(s.user_agent),
+    ip_masked: maskIp(s.ip),
+    is_active: s.is_active,
+  }));
+
   res.json({ sessions });
 });
 
@@ -579,6 +621,7 @@ authRouter.post('/delete-account', requireAuth, async (req: AuthRequest, res) =>
       'reports', 'moderation_log', 'blocked_users', 'suggestion_votes', 'suggestions',
       'portfolios', 'portfolio_visits', 'security_events', 'user_sessions', 'channel_links',
       'link_codes', 'password_reset_tokens', 'password_reset_rate_limits', 'password_reset_audit',
+      'refresh_tokens', 'token_blocklist',
     ];
 
     for (const table of tables) {

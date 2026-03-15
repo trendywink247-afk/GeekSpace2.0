@@ -11,6 +11,7 @@ import { Router } from 'express';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { validateBody, artifactCreateSchema, artifactUpdateSchema } from '../middleware/validate.js';
 import { v4 as uuid } from 'uuid';
 
 export const artifactsRouter = Router();
@@ -161,13 +162,8 @@ artifactsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
 
 // ---- Create Artifact (auth required) ----
 // Allows the Dev Mode builder to create a new artifact directly without going through the AI agent.
-artifactsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
+artifactsRouter.post('/', requireAuth, validateBody(artifactCreateSchema), (req: AuthRequest, res) => {
   const { title, html, css, js } = req.body as Record<string, string>;
-
-  if (!title || title.trim().length === 0) {
-    res.status(400).json({ error: 'title is required' });
-    return;
-  }
 
   const id = uuid();
   const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
@@ -216,7 +212,7 @@ artifactsRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
 });
 
 // ---- Update Artifact (auth required) ----
-artifactsRouter.patch('/:id', requireAuth, (req: AuthRequest, res) => {
+artifactsRouter.patch('/:id', requireAuth, validateBody(artifactUpdateSchema), (req: AuthRequest, res) => {
   const { title, html, css, js } = req.body as Record<string, string>;
 
   const artifact = db.prepare(

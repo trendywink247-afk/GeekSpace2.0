@@ -2,10 +2,29 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ImageIcon, Sparkles, Send, Loader2, Trash2, Copy, Check,
   Clock, Bot, Wifi, WifiOff, Upload, Wand2, ChevronDown,
-  Download, X, ZoomIn, AlertCircle
+  Download, X, ZoomIn, AlertCircle, Zap, Palette
 } from 'lucide-react';
 import { imageService, picoService, agentService } from '@/services/api';
 import type { UserImage, ImageModel } from '@/services/api';
+
+// ---- Structured prompt builder options ----
+const STYLE_OPTIONS = [
+  'Photorealistic', 'Anime', 'Oil Painting', 'Watercolor',
+  'Cyberpunk', 'Minimalist', 'Pixel Art', 'Digital Art',
+  '3D Render', 'Sketch', 'Pop Art', 'Art Nouveau',
+] as const;
+
+const LIGHTING_OPTIONS = [
+  'Natural', 'Studio', 'Dramatic', 'Neon', 'Golden Hour',
+  'Cinematic', 'Soft Ambient', 'Backlit', 'Moonlight',
+] as const;
+
+const MOOD_OPTIONS = [
+  'Happy', 'Dark', 'Serene', 'Epic', 'Mysterious',
+  'Whimsical', 'Nostalgic', 'Futuristic', 'Romantic',
+] as const;
+
+type GenerationPhase = 'idle' | 'submitting' | 'generating' | 'done' | 'error';
 
 // ---- Fleet agent type ----
 interface FleetAgent {
@@ -42,6 +61,13 @@ export function ImageGenPage() {
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [width, setWidth] = useState(1024);
   const [height, setHeight] = useState(1024);
+
+  // Structured prompt builder state
+  const [promptStyle, setPromptStyle] = useState('');
+  const [promptLighting, setPromptLighting] = useState('');
+  const [promptMood, setPromptMood] = useState('');
+  const [showPromptBuilder, setShowPromptBuilder] = useState(false);
+  const [genPhase, setGenPhase] = useState<GenerationPhase>('idle');
 
   // Edit mode state
   const [referenceUrl, setReferenceUrl] = useState('');
@@ -138,24 +164,64 @@ export function ImageGenPage() {
     }
   }, [assignedAgent]);
 
+  // Build the enhanced prompt from structured inputs
+  const buildEnhancedPrompt = (): string => {
+    const parts: string[] = [];
+    if (prompt.trim()) parts.push(prompt.trim());
+    if (promptStyle) parts.push(`${promptStyle} style`);
+    if (promptLighting) parts.push(`${promptLighting} lighting`);
+    if (promptMood) parts.push(`${promptMood} mood`);
+    return parts.join(', ');
+  };
+
+  // "Enhance prompt" — frontend-only enrichment
+  const handleEnhancePrompt = () => {
+    if (!prompt.trim()) return;
+    const enhanced = buildEnhancedPrompt();
+    // Add quality keywords if not already present
+    const qualityKeywords = ['highly detailed', '8k resolution', 'masterpiece'];
+    const lower = enhanced.toLowerCase();
+    const extras = qualityKeywords.filter(kw => !lower.includes(kw));
+    const finalPrompt = extras.length > 0 ? `${enhanced}, ${extras.join(', ')}` : enhanced;
+    setPrompt(finalPrompt);
+    // Reset dropdowns so they do not double-apply
+    setPromptStyle('');
+    setPromptLighting('');
+    setPromptMood('');
+    showToast('Prompt enhanced with style keywords!');
+  };
+
   // Handle image generation
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setGenerating(true);
+    setGenPhase('submitting');
     try {
+      const finalPrompt = promptStyle || promptLighting || promptMood
+        ? buildEnhancedPrompt()
+        : prompt.trim();
+      setGenPhase('generating');
       if (mode === 'edit') {
-        await imageService.edit(prompt, referenceUrl || undefined, selectedModel);
+        await imageService.edit(finalPrompt, referenceUrl || undefined, selectedModel);
       } else {
-        await imageService.generate(prompt, selectedModel, width, height);
+        await imageService.generate(finalPrompt, selectedModel, width, height);
       }
+      setGenPhase('done');
       showToast('Image generated! Check your gallery below.');
       setPrompt('');
+      setPromptStyle('');
+      setPromptLighting('');
+      setPromptMood('');
       setReferenceUrl('');
       setReferencePreview('');
       await loadGallery();
+      // Reset phase after brief success display
+      setTimeout(() => setGenPhase('idle'), 2000);
     } catch (err: unknown) {
+      setGenPhase('error');
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Generation failed';
       showToast(msg, 'error');
+      setTimeout(() => setGenPhase('idle'), 3000);
     } finally {
       setGenerating(false);
     }
@@ -294,6 +360,16 @@ export function ImageGenPage() {
           </p>
         </div>
 
+        {/* Credit counter badge */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0C0C18] border border-[#ADFF2F]/20">
+            <Zap className="w-4 h-4 text-[#ADFF2F]" />
+            <div className="text-right">
+              <div className="text-sm font-semibold text-[#E8E8F0]">{maxImages - imageCount}</div>
+              <div className="text-[10px] text-[#9CA3AF] leading-none">remaining</div>
+            </div>
+          </div>
+
         {/* Assigned Agent Badge */}
         <div className="relative">
           {assignedAgent ? (
@@ -383,6 +459,7 @@ export function ImageGenPage() {
             </div>
           )}
         </div>
+        </div>{/* close flex items-center gap-3 */}
       </div>
 
       {/* Mode Selection */}
@@ -562,6 +639,63 @@ export function ImageGenPage() {
             )}
           </div>
 
+          {/* Structured Prompt Builder */}
+          {mode === 'imagine' && (
+            <div className="mb-4">
+              <button
+                onClick={() => setShowPromptBuilder(!showPromptBuilder)}
+                className="flex items-center gap-2 text-xs text-[#ADFF2F]/80 hover:text-[#ADFF2F] transition-colors mb-3"
+              >
+                <Palette className="w-3.5 h-3.5" />
+                {showPromptBuilder ? 'Hide' : 'Show'} Prompt Builder
+                <ChevronDown className={`w-3 h-3 transition-transform ${showPromptBuilder ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showPromptBuilder && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-[#06060B] border border-[#ADFF2F]/15">
+                  {/* Style dropdown */}
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mb-1.5 block font-medium">Style</label>
+                    <select
+                      value={promptStyle}
+                      onChange={(e) => setPromptStyle(e.target.value)}
+                      className="w-full bg-[#0C0C18] border border-[#ADFF2F]/20 rounded-lg px-3 py-2 text-sm text-[#E8E8F0] outline-none focus:border-[#ADFF2F]/50 appearance-none cursor-pointer"
+                    >
+                      <option value="">Select style...</option>
+                      {STYLE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Lighting dropdown */}
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mb-1.5 block font-medium">Lighting</label>
+                    <select
+                      value={promptLighting}
+                      onChange={(e) => setPromptLighting(e.target.value)}
+                      className="w-full bg-[#0C0C18] border border-[#ADFF2F]/20 rounded-lg px-3 py-2 text-sm text-[#E8E8F0] outline-none focus:border-[#ADFF2F]/50 appearance-none cursor-pointer"
+                    >
+                      <option value="">Select lighting...</option>
+                      {LIGHTING_OPTIONS.map(l => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Mood dropdown */}
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mb-1.5 block font-medium">Mood</label>
+                    <select
+                      value={promptMood}
+                      onChange={(e) => setPromptMood(e.target.value)}
+                      className="w-full bg-[#0C0C18] border border-[#ADFF2F]/20 rounded-lg px-3 py-2 text-sm text-[#E8E8F0] outline-none focus:border-[#ADFF2F]/50 appearance-none cursor-pointer"
+                    >
+                      <option value="">Select mood...</option>
+                      {MOOD_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Prompt input */}
           <div className="flex gap-3">
             <textarea
@@ -578,7 +712,60 @@ export function ImageGenPage() {
             />
           </div>
 
-          {/* Generate button */}
+          {/* Enhance prompt button (imagine mode only) */}
+          {mode === 'imagine' && prompt.trim() && (
+            <div className="flex items-center gap-3 mt-2">
+              <button
+                onClick={handleEnhancePrompt}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ADFF2F]/10 border border-[#ADFF2F]/20 text-xs text-[#ADFF2F] hover:bg-[#ADFF2F]/20 transition-colors"
+              >
+                <Sparkles className="w-3 h-3" />
+                Enhance Prompt
+              </button>
+              {(promptStyle || promptLighting || promptMood) && (
+                <span className="text-[10px] text-[#9CA3AF]">
+                  Will add: {[promptStyle, promptLighting, promptMood].filter(Boolean).join(', ')}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Generation progress indicator */}
+          {genPhase !== 'idle' && (
+            <div className="mt-3">
+              <div className="flex items-center gap-2 mb-2">
+                {(['submitting', 'generating', 'done'] as const).map((step, i) => {
+                  const isActive = step === genPhase;
+                  const isPast = (genPhase === 'generating' && i === 0)
+                    || (genPhase === 'done' && i <= 1);
+                  const isFailed = genPhase === 'error' && step === 'generating';
+                  return (
+                    <div key={step} className="flex items-center gap-2">
+                      {i > 0 && <div className={`w-8 h-0.5 rounded-full ${isPast ? 'bg-[#ADFF2F]' : 'bg-[#1A1A2E]'}`} />}
+                      <div className={`flex items-center gap-1 text-xs font-medium transition-all ${
+                        isFailed ? 'text-[#FF6161]'
+                          : isActive ? 'text-[#ADFF2F]'
+                          : isPast ? 'text-[#ADFF2F]/60'
+                          : 'text-[#9CA3AF]/40'
+                      }`}>
+                        {isActive && genPhase !== 'done' && <Loader2 className="w-3 h-3 animate-spin" />}
+                        {isPast && <Check className="w-3 h-3" />}
+                        {isFailed && <AlertCircle className="w-3 h-3" />}
+                        <span className="capitalize">{step === 'submitting' ? 'Sending' : step === 'generating' ? 'Creating' : 'Complete'}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {genPhase === 'generating' && (
+                <div className="w-full h-1 rounded-full bg-[#0C0C18] overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-[#ADFF2F] to-[#00F0FF] rounded-full animate-pulse" style={{ width: '60%' }} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Generate button + credits */}
           <div className="flex items-center justify-between mt-4">
             <div className="text-xs">
               {imageCount >= maxImages ? (

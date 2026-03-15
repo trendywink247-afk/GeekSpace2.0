@@ -142,6 +142,7 @@ Available tools:
 - list_reminders: Show pending reminders. Params: {}. ALWAYS use this when user says "what reminders do I have", "show my reminders", "list reminders", "any reminders?", "what have I got scheduled". NEVER guess or invent reminders — always call this tool.
 - create_note: Save a note. Params: {"title": "<title>", "content": "<note content>", "tags": ["<tag1>"]}. Use when user says "save this", "take note", "note this down", "remember this".
 - search_notes: Search saved notes. Params: {"query": "<search term>", "limit": 5}. Use when user says "find my note", "search notes", "what did I save about".
+- create_memory: Save a personal fact or preference to long-term memory. Params: {"key": "<short label>", "value": "<the fact>", "category": "preference|personal|work|health|other"}. Use when user says "remember that I...", "I prefer X", "my X is Y", "I am a X", "I work at X", "I live in X", "don't forget that...", "always remember...", "keep in mind that...".
 - track_habit: Log a habit completion for today. Params: {"habitName": "<habit name>", "note": "<optional note>"}. Use when user says "I did X", "track my X", "log X habit", "mark X as done".
 - start_focus: Start a focus/Pomodoro session. Params: {"goal": "<what to focus on>", "duration_min": 25}. Use when user says "start focus", "pomodoro", "focus mode", "I need to focus on".
 - create_flashcards: Create study flashcards. Params: {"topic": "<topic>", "cards": [{"q": "<question>", "a": "<answer>"}]}. Use when user says "make flashcards", "create quiz", "study cards for".
@@ -174,6 +175,12 @@ function hasToolTrigger(message: string): boolean {
     /\b(save\s+(a\s+)?note|take\s+note|note\s+(this|it)|write\s+(this|it)\s+down|remember\s+this|jot\s+(this|it)|save\s+this)\b/i.test(lower) ||
     // Memory / "remember X" commands (anchored to start to avoid "do you remember" false positives)
     /^(?:(?:please\s+)?(?:remember|save|note\s+down|keep\s+in\s+mind)\s+(?:that\s+)?|(?:don'?t|never)\s+forget\s+(?:that\s+)?|always\s+remember\s+)/i.test(lower.trim()) ||
+    // Personal facts that should be saved as memories
+    /\bI\s+prefer\b/i.test(lower) ||
+    /\bmy\s+(?:name|age|location|preference|fav(?:ou?rite)?|wife|husband|partner|dog|cat|pet|birthday|anniversary|address|phone|number|job|role|title)\s+is\b/i.test(lower) ||
+    /\bI\s+(?:am|'m)\s+(?:a|an)\s+/i.test(lower) ||
+    /\bI\s+(?:work|live|study|teach|learn)\s+(?:at|in|as|from)\b/i.test(lower) ||
+    /\bI\s+(?:like|love|hate|dislike|enjoy|avoid)\s+/i.test(lower) ||
     /\bsearch\s+(my\s+)?notes?\b/i.test(lower) ||
     /\bfind\s+(my\s+)?note\b/i.test(lower) ||
     /\b(show|send|give|get|display)\s+(me\s+)?(my\s+)?(the\s+)?notes?\b/i.test(lower) ||

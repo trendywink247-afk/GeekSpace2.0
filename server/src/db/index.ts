@@ -2092,3 +2092,27 @@ try { db.prepare('CREATE INDEX IF NOT EXISTS idx_documents_folder ON documents(f
 try { db.prepare('CREATE INDEX IF NOT EXISTS idx_documents_slug ON documents(public_slug)').run(); } catch { /* exists */ }
 try { db.prepare('CREATE INDEX IF NOT EXISTS idx_doc_folders_user ON doc_folders(user_id)').run(); } catch { /* exists */ }
 try { db.prepare('CREATE INDEX IF NOT EXISTS idx_document_versions_doc ON document_versions(document_id)').run(); } catch { /* exists */ }
+
+// ── Auth Hardening: Refresh tokens table for JWT rotation ─────────────────────
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS refresh_tokens (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,
+      family TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      revoked_at TEXT DEFAULT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
+    CREATE INDEX IF NOT EXISTS idx_refresh_tokens_family ON refresh_tokens(family);
+    CREATE INDEX IF NOT EXISTS idx_refresh_tokens_hash ON refresh_tokens(token_hash);
+  `);
+} catch { /* table/indexes already exist */ }
+
+// Auth Hardening: Cleanup expired refresh tokens on startup
+try {
+  const nowSec = Math.floor(Date.now() / 1000);
+  db.prepare('DELETE FROM refresh_tokens WHERE expires_at < ?').run(nowSec);
+} catch { /* non-fatal */ }

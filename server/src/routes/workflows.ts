@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { validateBody, workflowCreateSchema, workflowUpdateSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import {
   runUserWorkflow,
@@ -23,33 +24,11 @@ workflowsRouter.get('/', requireAuth, (req: AuthRequest, res) => {
 });
 
 // ---- POST /api/workflows ---- create workflow
-workflowsRouter.post('/', requireAuth, (req: AuthRequest, res) => {
+workflowsRouter.post('/', requireAuth, validateBody(workflowCreateSchema), (req: AuthRequest, res) => {
   const userId = req.userId!;
   const { name, description, steps, trigger } = req.body;
 
-  if (!name || typeof name !== 'string' || name.trim().length === 0) {
-    res.status(400).json({ error: 'name is required' });
-    return;
-  }
-  if (!Array.isArray(steps) || steps.length === 0) {
-    res.status(400).json({ error: 'steps must be a non-empty array' });
-    return;
-  }
-
-  const validAgents = ['weebo', 'jarvis', 'edith', 'picoclaw'];
-  for (const step of steps as WorkflowStepDef[]) {
-    if (!validAgents.includes(step.agent)) {
-      res.status(400).json({ error: `Invalid agent: ${step.agent}` });
-      return;
-    }
-    if (!step.prompt_template || !step.output_key) {
-      res.status(400).json({ error: 'Each step requires prompt_template and output_key' });
-      return;
-    }
-  }
-
-  const validTriggers = ['manual', 'schedule', 'event'];
-  const triggerValue = validTriggers.includes(trigger) ? trigger : 'manual';
+  const triggerValue = trigger || 'manual';
 
   const result = db.prepare(`
     INSERT INTO user_workflows (user_id, name, description, steps, trigger, enabled, created_at)
@@ -83,7 +62,7 @@ workflowsRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
 });
 
 // ---- PATCH /api/workflows/:id ---- update workflow
-workflowsRouter.patch('/:id', requireAuth, (req: AuthRequest, res) => {
+workflowsRouter.patch('/:id', requireAuth, validateBody(workflowUpdateSchema), (req: AuthRequest, res) => {
   const userId = req.userId!;
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: 'Invalid workflow ID' }); return; }
@@ -95,23 +74,10 @@ workflowsRouter.patch('/:id', requireAuth, (req: AuthRequest, res) => {
   const fields: string[] = [];
   const values: unknown[] = [];
 
-  if (name !== undefined) {
-    if (typeof name !== 'string' || name.trim().length === 0) {
-      res.status(400).json({ error: 'name must be a non-empty string' });
-      return;
-    }
-    fields.push('name = ?'); values.push(name.trim());
-  }
+  if (name !== undefined) { fields.push('name = ?'); values.push(name.trim()); }
   if (description !== undefined) { fields.push('description = ?'); values.push(description); }
-  if (steps !== undefined) {
-    if (!Array.isArray(steps)) { res.status(400).json({ error: 'steps must be an array' }); return; }
-    fields.push('steps = ?'); values.push(JSON.stringify(steps));
-  }
-  if (trigger !== undefined) {
-    const validTriggers = ['manual', 'schedule', 'event'];
-    if (!validTriggers.includes(trigger)) { res.status(400).json({ error: `Invalid trigger: ${trigger}` }); return; }
-    fields.push('trigger = ?'); values.push(trigger);
-  }
+  if (steps !== undefined) { fields.push('steps = ?'); values.push(JSON.stringify(steps)); }
+  if (trigger !== undefined) { fields.push('trigger = ?'); values.push(trigger); }
   if (enabled !== undefined) { fields.push('enabled = ?'); values.push(enabled ? 1 : 0); }
 
   if (fields.length === 0) { res.status(400).json({ error: 'No fields to update' }); return; }

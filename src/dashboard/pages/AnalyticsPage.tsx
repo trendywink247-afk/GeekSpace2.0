@@ -15,8 +15,10 @@ import {
   Calendar,
   Target,
   ArrowUpRight,
+  Download,
 } from 'lucide-react';
 import api from '@/services/api';
+import { activityService } from '@/services/api';
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -635,13 +637,62 @@ export function AnalyticsPage() {
   const insights = useMemo(() => {
     const result: string[] = [];
 
-    // Most productive day
+    // 1. "You're most productive on [day]"
     if (data.weekly?.mostActiveDay) {
-      result.push(`Your most productive day: ${data.weekly.mostActiveDay}`);
+      result.push(`You're most productive on ${data.weekly.mostActiveDay}`);
+    } else if (filteredSnapshots.length > 0) {
+      // Compute most productive day from snapshots
+      const dayTotals = new Map<string, number>();
+      for (const snap of filteredSnapshots) {
+        const d = new Date(snap.date + 'T00:00:00Z');
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+        dayTotals.set(dayName, (dayTotals.get(dayName) ?? 0) + snap.tasksCompleted + snap.messagesReceived);
+      }
+      let bestDay = '';
+      let bestCount = 0;
+      dayTotals.forEach((count, day) => {
+        if (count > bestCount) { bestDay = day; bestCount = count; }
+      });
+      if (bestDay) {
+        result.push(`You're most productive on ${bestDay}s`);
+      }
+    }
+
+    // 2. "Your focus sessions average [X] minutes"
+    const focusSnapshots = filteredSnapshots.filter((d) => d.focusMinutes > 0);
+    if (focusSnapshots.length > 0) {
+      const avgFocusMinutes = Math.round(
+        focusSnapshots.reduce((s, d) => s + d.focusMinutes, 0) / focusSnapshots.length,
+      );
+      result.push(`Your focus sessions average ${avgFocusMinutes} minutes`);
+    }
+
+    // 3. "You've completed [X]% more tasks than last week"
+    if (filteredSnapshots.length >= 7 && period === 'week') {
+      const thisWeekTasks = filteredSnapshots.reduce((s, d) => s + d.tasksCompleted, 0);
+      // Compare with previous period from full snapshot set
+      const allSnaps = data.snapshots;
+      const prevWeekSnaps = allSnaps.slice(
+        Math.max(0, allSnaps.length - 14),
+        Math.max(0, allSnaps.length - 7),
+      );
+      const prevWeekTasks = prevWeekSnaps.reduce((s, d) => s + d.tasksCompleted, 0);
+      if (prevWeekTasks > 0) {
+        const pctChange = Math.round(((thisWeekTasks - prevWeekTasks) / prevWeekTasks) * 100);
+        if (pctChange > 0) {
+          result.push(`You've completed ${pctChange}% more tasks than last week`);
+        } else if (pctChange < 0) {
+          result.push(`Task volume is down ${Math.abs(pctChange)}% from last week — time to ramp up!`);
+        } else {
+          result.push('Your task output is holding steady from last week');
+        }
+      } else if (thisWeekTasks > 0) {
+        result.push(`You've completed ${thisWeekTasks} tasks this week — great start!`);
+      }
     }
 
     // Peak hours (estimate from activity entries)
-    if (data.activityEntries.length > 0) {
+    if (data.activityEntries.length > 0 && result.length < 4) {
       const hourCounts = new Map<number, number>();
       for (const entry of data.activityEntries) {
         const hour = new Date(entry.created_at).getHours();
@@ -657,46 +708,23 @@ export function AnalyticsPage() {
       });
       const startHour = peakHour;
       const endHour = (peakHour + 2) % 24;
-      const fmt = (h: number) => {
+      const fmtHour = (h: number) => {
         if (h === 0) return '12am';
         if (h === 12) return '12pm';
         return h < 12 ? `${h}am` : `${h - 12}pm`;
       };
-      result.push(`Peak hours: ${fmt(startHour)}-${fmt(endHour)}`);
+      result.push(`Peak hours: ${fmtHour(startHour)}-${fmtHour(endHour)}`);
     }
 
-    // Most used feature
-    const featureTotals = {
-      Chat: filteredSnapshots.reduce(
-        (s, d) => s + d.messagesReceived + d.agentCalls,
-        0,
-      ),
-      Reminders: filteredSnapshots.reduce(
-        (s, d) => s + d.remindersCreated,
-        0,
-      ),
-      Habits: filteredSnapshots.reduce((s, d) => s + d.habitsLogged, 0),
-      Focus: filteredSnapshots.reduce((s, d) => s + d.focusMinutes, 0),
-    };
-    const topFeature = Object.entries(featureTotals).sort(
-      ([, a], [, b]) => b - a,
-    )[0];
-    if (topFeature && topFeature[1] > 0) {
-      result.push(`Most used feature: ${topFeature[0]}`);
-    }
-
-    // Habit completion rate / streak
-    if (data.weekly?.taskCompletionRate != null) {
+    // Task completion rate
+    if (data.weekly?.taskCompletionRate != null && result.length < 5) {
       result.push(
         `Task completion rate: ${data.weekly.taskCompletionRate}%`,
       );
     }
 
     // AI insight from backend
-    if (
-      data.weekly?.aiInsight &&
-      result.length < 4
-    ) {
+    if (data.weekly?.aiInsight && result.length < 5) {
       result.push(data.weekly.aiInsight);
     }
 
@@ -705,8 +733,47 @@ export function AnalyticsPage() {
       result.push('Start using Agentin more to unlock personalized insights.');
     }
 
-    return result.slice(0, 4);
-  }, [data, filteredSnapshots]);
+    return result.slice(0, 5);
+  }, [data, filteredSnapshots, period]);
+
+  // ── CSV Export ──────────────────────────────────────────────────
+
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportCSV = useCallback(async () => {
+    setExporting(true);
+    try {
+      const res = await activityService.export();
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data as BlobPart], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `agentin-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch {
+      // Fallback: generate CSV from local snapshot data
+      const rows = [
+        ['Date', 'Messages', 'Tasks Completed', 'Focus Minutes', 'Habits Logged', 'Agent Calls', 'Notes Created'].join(','),
+        ...filteredSnapshots.map((s) =>
+          [s.date, s.messagesReceived + s.agentCalls, s.tasksCompleted, s.focusMinutes, s.habitsLogged, s.agentCalls, s.notesCreated].join(','),
+        ),
+      ].join('\n');
+      const blob = new Blob([rows], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `agentin-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } finally {
+      setExporting(false);
+    }
+  }, [filteredSnapshots]);
 
   // ── Usage by Feature (horizontal bar chart data) ──────────────
 
@@ -752,6 +819,16 @@ export function AnalyticsPage() {
         </div>
         <div className="flex items-center gap-3">
           <PeriodTabs value={period} onChange={setPeriod} />
+          <button
+            onClick={handleExportCSV}
+            disabled={exporting || loading}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0C0C18] border border-[#ADFF2F]/10 text-[#8892A4] hover:text-[#ADFF2F] hover:border-[#ADFF2F]/30 transition-all text-sm min-h-[44px] disabled:opacity-40"
+            aria-label="Export analytics as CSV"
+            title="Export as CSV"
+          >
+            <Download className={`w-4 h-4 ${exporting ? 'animate-bounce' : ''}`} />
+            <span className="hidden sm:inline">Export</span>
+          </button>
           <button
             onClick={load}
             disabled={loading}

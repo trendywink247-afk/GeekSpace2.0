@@ -186,8 +186,8 @@ async function checkAndDeliverReminders(): Promise<void> {
           WHERE id = ?
         `).run(fireTime, driftMs, reminder.id);
 
-        // Handle recurring reminders
-        if (reminder.recurring) {
+        // Handle recurring reminders (check both legacy and new fields)
+        if (reminder.recurring || reminder.recurrence) {
           scheduleNextRecurrence(reminder);
         }
       } catch (err) {
@@ -330,22 +330,31 @@ export function scheduleNextRecurrence(reminder: DueReminder): void {
   if (!recurField || !reminder.datetime) return;
 
   const current = new Date(reminder.datetime);
-  let next: Date;
 
-  switch (recurField) {
-    case 'daily':
-      next = new Date(current.getTime() + 24 * 3600_000);
-      break;
-    case 'weekly':
-      next = new Date(current.getTime() + 7 * 24 * 3600_000);
-      break;
-    case 'monthly':
-      next = new Date(current);
-      next.setMonth(next.getMonth() + 1);
-      break;
-    default:
-      return;
+  // Use the smart recurrence engine from Phase 107
+  let next: Date | null = null;
+  try {
+    const { computeNextOccurrence } = require('../routes/reminders.js');
+    next = computeNextOccurrence(current, recurField);
+  } catch {
+    // Fallback for legacy patterns if import fails
+    switch (recurField) {
+      case 'daily':
+        next = new Date(current.getTime() + 24 * 3600_000);
+        break;
+      case 'weekly':
+        next = new Date(current.getTime() + 7 * 24 * 3600_000);
+        break;
+      case 'monthly':
+        next = new Date(current);
+        next.setMonth(next.getMonth() + 1);
+        break;
+      default:
+        return;
+    }
   }
+
+  if (!next) return;
 
   if (next.getTime() > Date.now()) {
     const nextStr = next.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');

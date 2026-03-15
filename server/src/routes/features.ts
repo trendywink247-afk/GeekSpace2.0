@@ -12,6 +12,18 @@ featuresRouter.get('/', requireAuth, (req: AuthRequest, res) => {
     features = db.prepare('SELECT * FROM features WHERE user_id = ?').get(req.userId!) as Record<string, unknown>;
   }
 
+  // System-wide feature flags (not per-user, always on for now)
+  const systemFlags = {
+    globalSearch: true,         // Phase 103: Ctrl+K command palette
+    telegramCommands: true,     // Phase 104: /remind, /note, /focus, etc.
+    smartReminders: true,       // Phase 107: RRULE recurrence, snooze detection
+    createMemory: true,         // BLOCKER-006 fix: explicit memory storage
+    fileAttachments: false,     // Phase 106: not yet implemented
+    videoGeneration: false,     // Requires FAL_KEY
+    graphMemory: false,         // V6: D3 knowledge graph
+    langfuseTracing: false,     // V6: LLM observability
+  };
+
   res.json({
     socialDiscovery: !!features!.social_discovery,
     portfolioChat: !!features!.portfolio_chat,
@@ -19,6 +31,7 @@ featuresRouter.get('/', requireAuth, (req: AuthRequest, res) => {
     websiteBuilder: !!features!.website_builder,
     n8nIntegration: !!features!.n8n_integration,
     manyChatIntegration: !!features!.manychat_integration,
+    ...systemFlags,
   });
 });
 

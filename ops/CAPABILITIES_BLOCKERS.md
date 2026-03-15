@@ -20,11 +20,11 @@
 - Evidence: Every bridge call hits PICOCLAW_TIMEOUT_MS=10000 then falls back to Groq
 - Fix: GPU passthrough if VPS supports it, or accept bridge-miss pattern with fast-paths
 
-## BLOCKER-006: Explicit memory storage ("remember X") not working
+## BLOCKER-006: Explicit memory storage ("remember X") not working [FIXED 2026-03-15]
 - Impact: Users who say "remember I prefer TypeScript" get a confirmation but no persistent memory
-- Severity: Low (auto-extracted memories still work for names/roles)
-- Root cause: "remember X" doesn't match hasToolTrigger patterns -> goes through pico-kimi bridge -> no tool execution
-- Fix: Add remember pattern to hasToolTrigger or detectTaskIntent
+- Status: FIXED — Added create_memory tool to TOOL_INSTRUCTIONS, action-parser, and action-executor.
+  Extended hasToolTrigger with 5 new patterns: "I prefer X", "my X is Y", "I am X", "I work at X", "I like X".
+  Memory saved to user_memories with Qdrant vector + Meilisearch indexing. 3 tests added.
 
 ## BLOCKER-008: Video generation blocked
 - Impact: Video generation completely unavailable
@@ -32,10 +32,9 @@
 - Details: image.pollinations.ai returns 530 from VPS; video.pollinations.ai times out; FAL_KEY missing
 - Fix: Get FAL_KEY (fal.ai) or find alternative VPS-friendly video generation API
 
-## BLOCKER-009: /api/usage/stats and /api/usage/history return 404
+## BLOCKER-009: /api/usage/stats and /api/usage/history return 404 [FIXED 2026-03-15]
 - Impact: Frontend usage stats API misrouted
-- Severity: Low (correct endpoint /api/usage works)
-- Fix: Add route aliases in billing router or update frontend to use /api/usage
+- Status: FIXED — Added /stats → /summary and /history → /events route aliases in usage.ts. 2 tests added.
 
 ## BLOCKER-012: WINDMILL_TOKEN missing, containers stopped
 - Impact: Workflow trigger tool returns error; Windmill UI inaccessible

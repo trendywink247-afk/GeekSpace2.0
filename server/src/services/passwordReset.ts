@@ -8,6 +8,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
+import { revokeAllRefreshTokens } from './refresh-token.js';
 
 const OTP_LENGTH = 6;
 const OTP_EXPIRY_MINUTES = 10;
@@ -349,14 +350,21 @@ export async function resetPassword(
     // Hash new password
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
-    // Update password
-    db.prepare('UPDATE users SET password_hash = ?, updated_at = datetime("now") WHERE id = ?').run(
+    // Update password and set password_changed_at for JWT invalidation
+    const nowSec = Math.floor(Date.now() / 1000);
+    db.prepare('UPDATE users SET password_hash = ?, password_changed_at = ?, updated_at = datetime("now") WHERE id = ?').run(
       passwordHash,
+      nowSec,
       token.user_id
     );
 
-    // Invalidate all sessions (optional but recommended)
-    // db.prepare("DELETE FROM user_sessions WHERE user_id = ?").run(token.user_id);
+    // Revoke all refresh tokens on password change
+    revokeAllRefreshTokens(token.user_id);
+
+    // Invalidate all sessions
+    try {
+      db.prepare("UPDATE user_sessions SET is_active = 0 WHERE user_id = ?").run(token.user_id);
+    } catch { /* non-fatal */ }
 
     logResetAudit(token.user_id, 'reset_success', null, ipAddress, true);
 

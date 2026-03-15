@@ -27,42 +27,32 @@ describe('Phase 54', () => {
     token = `Bearer ${generateTestToken(user.id)}`;
   });
 
-  // ── 54.3: JWT refresh endpoint ────────────────────────────
+  // ── 54.3: JWT refresh endpoint (now uses refresh token rotation) ─────
 
   describe('54.3 — POST /api/auth/refresh', () => {
-    it('returns 401 when no token provided', async () => {
-      const res = await request(app).post('/api/auth/refresh');
+    it('returns 400 when no refreshToken in body', async () => {
+      const res = await request(app).post('/api/auth/refresh').send({});
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 401 with invalid refreshToken', async () => {
+      const res = await request(app)
+        .post('/api/auth/refresh')
+        .send({ refreshToken: 'invalid-token-here' });
       expect(res.status).toBe(401);
     });
 
-    it('returns 401 with invalid token', async () => {
+    it('returns new access + refresh token with valid refreshToken', async () => {
+      const { issueRefreshToken } = await import('../../services/refresh-token.js');
+      const { refreshToken } = issueRefreshToken(userId);
       const res = await request(app)
         .post('/api/auth/refresh')
-        .set('Authorization', 'Bearer invalid.token.here');
-      expect(res.status).toBe(401);
-    });
-
-    it('returns 429 (too early) when token is fresh (< 50% elapsed)', async () => {
-      // A freshly-issued test token will always be < 50% through its 7d lifetime
-      const res = await request(app)
-        .post('/api/auth/refresh')
-        .set('Authorization', token);
-      // Either 429 (too early) or 200 (if lifetime detection fails gracefully)
-      expect([200, 429]).toContain(res.status);
-      if (res.status === 429) {
-        expect(res.body.error).toMatch(/too early/i);
-        expect(typeof res.body.retryAfter).toBe('number');
-      }
-    });
-
-    it('returns new token when called with near-expired token', async () => {
-      // Generate a token with a short expiry so it's well past the 50% threshold
-      // Use 1s expiry — at test execution time it will be at 100% elapsed
-      const { signToken } = await import('../../middleware/auth.js');
-      // Can't directly test with expired token (requireAuth rejects it), so test
-      // that a valid token goes through the short-circuit guard logic.
-      // This is a structural test — the guard is verified via the 429 above.
-      expect(true).toBe(true); // placeholder — real token lifecycle tested above
+        .send({ refreshToken });
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('token');
+      expect(res.body).toHaveProperty('refreshToken');
+      // New refresh token should differ from old
+      expect(res.body.refreshToken).not.toBe(refreshToken);
     });
   });
 

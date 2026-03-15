@@ -6,7 +6,7 @@ import {
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
   Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff, GitBranch,
-  Inbox, MessageSquare, Mail, TrendingUp, Target, Mic, FileText
+  Inbox, MessageSquare, Mail, TrendingUp, Target, Mic, FileText, Search
 } from 'lucide-react';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -900,6 +900,18 @@ export function DashboardApp() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
+            {/* Search trigger (mouse users) */}
+            <button
+              onClick={() => setCommandPaletteOpen(true)}
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#00F0FF]/10 hover:border-[#00F0FF]/30 bg-[#06060B]/50 hover:bg-[#00F0FF]/5 transition-all text-[#6B7280] hover:text-[#8892A4] group"
+              aria-label="Open search (Ctrl+K)"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span className="text-xs">Search</span>
+              <kbd className="text-[10px] px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded font-mono group-hover:border-[#00F0FF]/20">
+                {navigator.platform?.includes('Mac') ? '\u2318' : 'Ctrl'}K
+              </kbd>
+            </button>
             {/* Credits badge with shimmer */}
             <div
               className="px-2 md:px-3 py-1.5 rounded-full border border-[#00F0FF]/20"

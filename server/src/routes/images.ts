@@ -7,6 +7,7 @@
 
 import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { validateBody, imageGenerateSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { v4 as uuid } from 'uuid';
 import { logger } from '../logger.js';
@@ -137,7 +138,7 @@ imagesRouter.get('/:id', requireAuth, (req: AuthRequest, res) => {
 
 // ---- Generate image (text-to-image) --------------------------
 
-imagesRouter.post('/generate', requireAuth, async (req: AuthRequest, res) => {
+imagesRouter.post('/generate', requireAuth, validateBody(imageGenerateSchema), async (req: AuthRequest, res) => {
   const userId = req.userId!;
   const { prompt, model, width, height } = req.body as {
     prompt: string;
@@ -145,14 +146,6 @@ imagesRouter.post('/generate', requireAuth, async (req: AuthRequest, res) => {
     width?: number;
     height?: number;
   };
-
-  if (!prompt?.trim()) {
-    return res.status(400).json({ error: 'Prompt is required' });
-  }
-
-  if (prompt.length > 2000) {
-    return res.status(400).json({ error: 'Prompt too long (max 2000 chars)' });
-  }
 
   // Plan-based daily image generation cap
   const imgUser = db.prepare('SELECT plan FROM users WHERE id = ?').get(userId) as { plan: string } | undefined;

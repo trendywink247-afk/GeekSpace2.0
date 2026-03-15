@@ -78,7 +78,7 @@ export const reminderCreateSchema = z.object({
   ),
   channel: z.enum(['telegram', 'email', 'push']).optional().default('push'),
   recurring: z.enum(['', 'daily', 'weekly', 'monthly']).optional(),
-  recurrence: z.enum(['daily', 'weekly', 'monthly']).nullable().optional(),
+  recurrence: z.string().max(100).nullable().optional(),
   category: z.enum(['personal', 'work', 'health', 'other', 'general']).optional().default('personal'),
   completed: z.boolean().optional().default(false),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional().default('normal'),
@@ -235,7 +235,7 @@ export const reminderUpdateSchema = z.object({
   channel: z.enum(['telegram', 'email', 'push']).optional(),
   category: z.enum(['personal', 'work', 'health', 'other', 'general']).optional(),
   recurring: z.enum(['', 'daily', 'weekly', 'monthly']).optional(),
-  recurrence: z.enum(['daily', 'weekly', 'monthly']).nullable().optional(),
+  recurrence: z.string().max(100).nullable().optional(),
   completed: z.boolean().optional(),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
 });
@@ -415,4 +415,63 @@ export const bulkReminderDeleteSchema = z.object({
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1).max(128),
   newPassword: z.string().min(8).max(128),
+});
+
+// ---- Security Audit: Schemas for previously unvalidated routes ----
+
+export const workflowCreateSchema = z.object({
+  name: z.string().trim().min(1, 'name is required').max(200),
+  description: z.string().max(1000).optional().default(''),
+  steps: z.array(z.object({
+    agent: z.enum(['weebo', 'jarvis', 'edith', 'picoclaw']),
+    prompt_template: z.string().min(1).max(2000),
+    output_key: z.string().min(1).max(100),
+  }).passthrough()).min(1).max(20),
+  trigger: z.enum(['manual', 'schedule', 'event']).optional().default('manual'),
+});
+
+export const workflowUpdateSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(1000).optional(),
+  steps: z.array(z.object({
+    agent: z.enum(['weebo', 'jarvis', 'edith', 'picoclaw']),
+    prompt_template: z.string().min(1).max(2000),
+    output_key: z.string().min(1).max(100),
+  }).passthrough()).min(1).max(20).optional(),
+  trigger: z.enum(['manual', 'schedule', 'event']).optional(),
+  enabled: z.boolean().optional(),
+});
+
+export const docFolderCreateSchema = z.object({
+  name: z.string().min(1).max(200),
+  icon: z.string().max(10).optional(),
+  parent_id: z.string().max(100).nullable().optional(),
+});
+
+export const docFolderUpdateSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  icon: z.string().max(10).optional(),
+  parent_id: z.string().max(100).nullable().optional(),
+  sort_order: z.number().int().min(0).max(1000).optional(),
+});
+
+export const artifactCreateSchema = z.object({
+  title: z.string().min(1).max(500),
+  html: z.string().max(500000).optional().default(''),
+  css: z.string().max(100000).optional().default(''),
+  js: z.string().max(200000).optional().default(''),
+});
+
+export const artifactUpdateSchema = z.object({
+  title: z.string().min(1).max(500).optional(),
+  html: z.string().max(500000).optional(),
+  css: z.string().max(100000).optional(),
+  js: z.string().max(200000).optional(),
+});
+
+export const imageGenerateSchema = z.object({
+  prompt: z.string().min(1).max(2000),
+  model: z.string().max(100).optional(),
+  width: z.number().int().min(256).max(2048).optional(),
+  height: z.number().int().min(256).max(2048).optional(),
 });

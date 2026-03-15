@@ -295,3 +295,42 @@ usageRouter.get('/daily', requireAuth, (req: AuthRequest, res) => {
 
   res.json(Array.from(dayMap.values()));
 });
+
+// ---- Route aliases (BLOCKER-009 fix) ----
+// Frontend may call /stats or /history — redirect to canonical routes
+usageRouter.get('/stats', requireAuth, (req: AuthRequest, res) => {
+  // Alias for /summary
+  const userId = req.userId!;
+  const range = (req.query.range as string) || 'month';
+  const dateFilter = range === 'day'
+    ? "AND created_at >= datetime('now', '-1 day')"
+    : range === 'week'
+    ? "AND created_at >= datetime('now', '-7 days')"
+    : "AND created_at >= datetime('now', '-30 days')";
+
+  const totals = db.prepare(`
+    SELECT COALESCE(SUM(cost_usd), 0) as totalCost, COALESCE(SUM(tokens_in), 0) as totalIn,
+           COALESCE(SUM(tokens_out), 0) as totalOut, COUNT(*) as totalMessages
+    FROM usage_events WHERE user_id = ? ${dateFilter}
+  `).get(userId) as Record<string, unknown>;
+
+  res.json({
+    totalCostUSD: +((totals.totalCost as number) || 0).toFixed(2),
+    totalTokensIn: (totals.totalIn as number) || 0,
+    totalTokensOut: (totals.totalOut as number) || 0,
+    totalMessages: (totals.totalMessages as number) || 0,
+  });
+});
+
+usageRouter.get('/history', requireAuth, (req: AuthRequest, res) => {
+  // Alias for /events
+  const userId = req.userId!;
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
+  const offset = Math.max(0, parseInt(req.query.offset as string, 10) || 0);
+
+  const rows = db.prepare(
+    'SELECT * FROM usage_events WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+  ).all(userId, limit, offset) as Record<string, unknown>[];
+
+  res.json({ events: rows, total: rows.length });
+});
