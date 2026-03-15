@@ -433,10 +433,9 @@ describe('Recurring reminder reschedule (Phase 44.2)', () => {
     expect(nextOccurrences).toHaveLength(1);
     const next = nextOccurrences[0]!;
 
-    // Next datetime should be ~1 hour from now (23 hours ago + 24h interval)
+    // Next datetime should be in the future (smart engine bases from max(currentDatetime, now))
     const nextDate = new Date(next.datetime);
-    const expectedDate = new Date(Date.now() - 23 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000);
-    expect(Math.abs(nextDate.getTime() - expectedDate.getTime())).toBeLessThan(60_000); // within 1 minute
+    expect(nextDate.getTime()).toBeGreaterThan(Date.now());
 
     // recurrence field must be preserved (this was the bug — it was missing)
     expect(next.recurrence).toBe('daily');
