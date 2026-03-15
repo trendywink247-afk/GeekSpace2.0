@@ -87,7 +87,7 @@ export function getGmailStatus(userId: string): {
   };
 }
 
-export function getGmailMessages(userId: string, limit = 20): GmailMessageRow[] {
+export function getGmailMessages(userId: string, limit = 50): GmailMessageRow[] {
   return db.prepare(
     'SELECT * FROM gmail_messages WHERE user_id = ? ORDER BY synced_at DESC LIMIT ?'
   ).all(userId, limit) as GmailMessageRow[];
@@ -138,12 +138,12 @@ export async function syncUserGmail(userId: string): Promise<number> {
 
     const gmail = google.gmail({ version: 'v1', auth });
 
-    // Only fetch messages from last 48 hours to avoid noise on first connect
-    const cutoff = Math.floor((Date.now() - 48 * 60 * 60 * 1000) / 1000);
+    // Fetch recent inbox messages (last 7 days)
+    const cutoff = Math.floor((Date.now() - 7 * 24 * 60 * 60 * 1000) / 1000);
     const listRes = await gmail.users.messages.list({
       userId: 'me',
-      q: `is:unread in:inbox after:${cutoff}`,
-      maxResults: 20,
+      q: `in:inbox after:${cutoff}`,
+      maxResults: 50,
     });
 
     const messages: Array<{ id?: string | null }> = listRes.data.messages ?? [];

@@ -228,7 +228,7 @@ export function GmailPage() {
 
   const handleDisconnect = async () => {
     try {
-      await api.post('/gmail/disconnect', null);
+      await api.post('/gmail/disconnect', {});
       setMessages([]);
       setSelected(null);
       await fetchStatus();
