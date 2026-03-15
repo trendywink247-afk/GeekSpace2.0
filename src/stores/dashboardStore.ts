@@ -40,7 +40,7 @@ const fallbackAgent: AgentConfig = {
   mode: 'builder', voice: 'friendly',
   systemPrompt: 'You are a helpful personal AI assistant.',
   primaryModel: 'agentin-default', fallbackModel: 'ollama-qwen2.5',
-  creativity: 70, formality: 50, monthlyBudgetUSD: 5, status: 'offline',
+  creativity: 70, formality: 50, verbosity: 50, humor: 50, empathy: 50, monthlyBudgetUSD: 5, status: 'offline',
 };
 
 const fallbackFeatures: FeatureToggles = {

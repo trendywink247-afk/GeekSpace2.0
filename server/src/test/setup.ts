@@ -74,6 +74,7 @@ export function resetDatabase(): void {
       'suggestion_scores',
       'suggestion_clusters',
       'suggestions',
+      'uploaded_files',
       'training_examples',
       'refresh_tokens',
       'token_blocklist',

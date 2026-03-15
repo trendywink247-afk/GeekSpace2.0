@@ -82,6 +82,59 @@ function getHinglishGreeting(): string {
   }
 }
 
+// ---- Personality Instructions Builder ----
+// Converts slider values (0-100) into natural-language system prompt instructions.
+// Exported so agent.ts (web chat) and message-router.ts (Telegram/WhatsApp) both use it.
+
+interface PersonalitySliders {
+  creativity?: number;
+  formality?: number;
+  verbosity?: number;
+  humor?: number;
+  empathy?: number;
+  system_prompt?: string;
+}
+
+export function buildPersonalityInstructions(p: PersonalitySliders | undefined | null): string {
+  if (!p) return '';
+  const parts: string[] = [];
+
+  const creativity = p.creativity ?? 50;
+  const formality = p.formality ?? 50;
+  const verbosity = p.verbosity ?? 50;
+  const humor = p.humor ?? 50;
+  const empathy = p.empathy ?? 50;
+
+  if (creativity > 70) parts.push('Be creative, exploratory, and use unexpected analogies.');
+  else if (creativity < 30) parts.push('Be precise and straightforward. Stick to facts.');
+
+  if (formality > 70) parts.push('Use formal, professional language. No contractions or slang.');
+  else if (formality < 30) parts.push('Be very casual and conversational. Use contractions freely.');
+
+  if (verbosity > 70) parts.push('Be thorough and comprehensive. Include examples and details.');
+  else if (verbosity < 30) parts.push('Be concise. Respond in 1-3 sentences maximum.');
+
+  if (humor > 70) parts.push('Feel free to use wit, wordplay, and light humor.');
+  else if (humor < 30) parts.push('Keep responses serious and professional.');
+
+  if (empathy > 70) parts.push('Acknowledge feelings first. Validate before advising.');
+  else if (empathy < 30) parts.push('Be direct and factual. Skip emotional preambles.');
+
+  return parts.join(' ');
+}
+
+/**
+ * Map creativity slider (0-100) to LLM temperature (0.3-1.0).
+ * Low creativity = precise (0.3), default = balanced (0.7), high = exploratory (1.0).
+ */
+export function mapCreativityToTemperature(creativity: number | undefined): number {
+  const c = creativity ?? 50;
+  if (c < 30) return 0.3;
+  if (c > 70) return 1.0;
+  // Linear interpolation between 0.3 and 1.0 for the 30-70 range
+  return 0.3 + ((c - 30) / 40) * 0.7;
+}
+
 // ---- Resolve agent name from config + personality (never returns 'Geek') ----
 function resolveAgentName(
   agentConfig: Record<string, unknown> | null | undefined,
@@ -619,6 +672,10 @@ export function buildChannelSystemPrompt(
   const nowLocal = DateTime.now().setZone(userTimezone);
   const localTimeString = nowLocal.toFormat("cccc, LLLL d, yyyy 'at' h:mm a z");
 
+  // Build personality instructions from slider values (creativity, formality, verbosity, humor, empathy)
+  const personalityInstructions = buildPersonalityInstructions(agentConfig as PersonalitySliders | undefined);
+  const customPrompt = (agentConfig?.system_prompt as string) || '';
+
   return `LANGUAGE RULE: Detect the language the user writes or speaks in. ALWAYS reply in that exact language — no exceptions. Hindi message → reply in Hindi. Telugu message → reply in Telugu. English message → reply in English. Never switch to a different language unless the user does first.
 
 YOUR IDENTITY: Your name is ${agentName}. If anyone asks who you are, what your name is, or what to call you, answer with your name: ${agentName}.
@@ -627,6 +684,8 @@ ${OPENCLAW_IDENTITY_COMPACT}
 
 --- PERSONALITY ---
 ${personalityPrompt}
+${personalityInstructions ? `\n--- PERSONALITY TUNING ---\n${personalityInstructions}` : ''}
+${customPrompt ? `\n--- CUSTOM INSTRUCTIONS ---\n${customPrompt}` : ''}
 
 --- USER SESSION ---
 User: ${userName}. Voice: ${voice}. Mode: ${mode}.

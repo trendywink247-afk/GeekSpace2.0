@@ -4,6 +4,7 @@
 // ============================================================
 
 import { config } from '../config.js';
+import { db } from '../db/index.js';
 import pino from 'pino';
 
 const log = pino({ name: 'search-index' });
@@ -188,6 +189,70 @@ export async function bulkIndex(docs: MeiliDocument[]): Promise<void> {
     log.info({ count: docs.length }, 'Bulk indexed documents');
   } catch (e) {
     log.warn({ err: e }, 'Bulk index failed');
+  }
+}
+
+// ── Bulk Index Existing Data (startup population) ────────────
+
+export async function bulkIndexExistingData(): Promise<void> {
+  try {
+    await initMeilisearch();
+
+    // Check if index already has data — skip if so
+    const stats = await meili('GET', '/indexes/content/stats') as { numberOfDocuments: number };
+    if (stats.numberOfDocuments > 0) {
+      log.info({ docs: stats.numberOfDocuments }, 'Meilisearch already indexed, skipping bulk');
+      return;
+    }
+
+    const docs: MeiliDocument[] = [];
+
+    // Index reminders
+    const reminders = db.prepare('SELECT id, user_id, text, category FROM reminders LIMIT 10000').all() as Array<{ id: string; user_id: string; text: string; category: string }>;
+    for (const r of reminders) {
+      docs.push({
+        id: `rem-${r.id}`,
+        user_id: r.user_id,
+        type: 'reminder',
+        title: r.text,
+        content: r.text,
+        created_at: Date.now(),
+      });
+    }
+
+    // Index notes
+    const notes = db.prepare('SELECT id, user_id, title, content FROM notes LIMIT 10000').all() as Array<{ id: number; user_id: string; title: string; content: string }>;
+    for (const n of notes) {
+      docs.push({
+        id: `note-${n.id}`,
+        user_id: n.user_id,
+        type: 'note',
+        title: n.title || '',
+        content: n.content || '',
+        created_at: Date.now(),
+      });
+    }
+
+    // Index memories
+    const memories = db.prepare('SELECT id, user_id, key, value FROM user_memories LIMIT 10000').all() as Array<{ id: number; user_id: string; key: string; value: string }>;
+    for (const m of memories) {
+      docs.push({
+        id: `mem-${m.user_id.replace(/[^a-zA-Z0-9_-]/g, '_')}-${m.key.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+        user_id: m.user_id,
+        type: 'memory',
+        title: m.key,
+        content: m.value,
+        created_at: Date.now(),
+      });
+    }
+
+    if (docs.length > 0) {
+      await bulkIndex(docs);
+    }
+
+    log.info({ reminders: reminders.length, notes: notes.length, memories: memories.length }, 'Meilisearch bulk index complete');
+  } catch (err) {
+    log.warn({ err: (err as Error).message }, 'Meilisearch bulk index failed (non-fatal)');
   }
 }
 

@@ -26,6 +26,7 @@ import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from '../services/telegram.js';
 import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../services/agent-chat.js';
 import { fetchAndExtract } from '../services/web-research.js';
+import { buildPersonalityInstructions, mapCreativityToTemperature } from '../services/message-router.js';
 
 export const agentRouter = Router();
 
@@ -137,6 +138,9 @@ skills: ["Skill 1", "Skill 2", "Skill 3"]
 <<<END>>>
 Use portfolio_update_skills when the user says "update my skills", "add skills to my portfolio", "my skills are X, Y, Z", or similar. Pass skills as a JSON array of strings.`;
 
+  // Build personality instructions from slider values (uses shared function from message-router)
+  const personalityInstructions = buildPersonalityInstructions(agentConfig as { creativity?: number; formality?: number; verbosity?: number; humor?: number; empathy?: number } | undefined);
+
   return `LANGUAGE RULE: Detect the language the user writes in. ALWAYS reply in that exact language — no exceptions. Hindi → Hindi. Telugu → Telugu. Tamil → Tamil. English → English. Never switch languages unless the user does first.
 
 YOUR IDENTITY: Your name is ${agentName}. If asked who you are or what your name is, say your name is ${agentName}.
@@ -145,6 +149,7 @@ ${OPENCLAW_IDENTITY}
 
 --- PERSONALITY ---
 ${personalityPrompt}
+${personalityInstructions ? `\n--- PERSONALITY TUNING ---\n${personalityInstructions}` : ''}
 
 ${formatContextBlock(picoCtx)}
 
@@ -175,7 +180,8 @@ agentRouter.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema),
   const allowedFields: Record<string, string> = {
     name: 'name', displayName: 'display_name', mode: 'mode', voice: 'voice',
     systemPrompt: 'system_prompt', primaryModel: 'primary_model', fallbackModel: 'fallback_model',
-    creativity: 'creativity', formality: 'formality', responseSpeed: 'response_speed',
+    creativity: 'creativity', formality: 'formality', verbosity: 'verbosity',
+    humor: 'humor', empathy: 'empathy', responseSpeed: 'response_speed',
     monthlyBudgetUSD: 'monthly_budget_usd', avatarEmoji: 'avatar_emoji',
     accentColor: 'accent_color', bubbleStyle: 'bubble_style', status: 'status',
     personality: 'personality', model_preference: 'model_preference',

@@ -128,8 +128,9 @@ const httpServer = app.listen(config.port, () => {
 
     // Initialize Meilisearch + Qdrant (non-blocking, graceful if unavailable)
     safeStart('meilisearch-init', async () => {
-      const { initMeilisearch } = await import('./services/search-index.js');
+      const { initMeilisearch, bulkIndexExistingData } = await import('./services/search-index.js');
       await initMeilisearch();
+      await bulkIndexExistingData();
     });
     safeStart('qdrant-init', async () => {
       const { initQdrant } = await import('./services/search-vector.js');

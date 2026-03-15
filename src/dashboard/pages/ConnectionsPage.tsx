@@ -31,6 +31,7 @@ import {
   Check as CheckIcon,
   WifiOff,
   Wifi,
+  Bell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -736,7 +737,12 @@ export function ConnectionsPage() {
                       )}
                       {/* Status dot indicator with health-aware pulse */}
                       <div className="flex items-center gap-2 mt-1">
-                        {getStatusDot(connection.status, connection.type)}
+                        {connection.type === 'whatsapp' && connection.status !== 'connected' ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="h-2.5 w-2.5 rounded-full bg-[#F59E0B]" />
+                            <span className="text-xs text-[#F59E0B] font-medium">Not yet available</span>
+                          </span>
+                        ) : getStatusDot(connection.status, connection.type)}
                         {connection.status === 'connected' && healthStatus[connection.type] === 'checking' && (
                           <span
                             className="inline-block w-2 h-2 rounded-full flex-shrink-0 bg-[#F59E0B] animate-pulse"
@@ -761,9 +767,19 @@ export function ConnectionsPage() {
                       Manage
                     </Button>
                   ) : connection.type === 'whatsapp' ? (
-                    <Badge variant="outline" className="border-[#25d366]/30 text-[#25d366]/60 text-xs px-2 py-1">
-                      Coming Soon
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <Badge className="bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30 text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5">
+                        Coming Soon
+                      </Badge>
+                      <Button
+                        size="sm"
+                        disabled
+                        className="bg-[#9CA3AF]/20 text-[#9CA3AF] cursor-not-allowed opacity-60 min-h-[36px]"
+                      >
+                        <Plug className="w-3.5 h-3.5 mr-1.5" />
+                        Connect
+                      </Button>
+                    </div>
                   ) : (
                     <Button
                       size={isMobile ? 'default' : 'sm'}
@@ -826,6 +842,24 @@ export function ConnectionsPage() {
                         </Badge>
                       ))}
                     </div>
+
+                    {/* WhatsApp: Notify me interest capture */}
+                    {connection.type === 'whatsapp' && connection.status !== 'connected' && (
+                      <div className="mb-4 p-3 rounded-xl bg-[#F59E0B]/5 border border-[#F59E0B]/20">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-[#9CA3AF]">
+                            WhatsApp integration is under development. We'll let you know when it's ready.
+                          </p>
+                          <button
+                            onClick={() => notify('We\'ll notify you when WhatsApp is available!', 'success')}
+                            className="flex items-center gap-1.5 text-xs text-[#F59E0B] hover:text-[#FBBF24] font-medium whitespace-nowrap ml-3 transition-colors"
+                          >
+                            <Bell className="w-3.5 h-3.5" />
+                            Notify me
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Test Connection Button + Result */}
                     {connection.status === 'connected' && (

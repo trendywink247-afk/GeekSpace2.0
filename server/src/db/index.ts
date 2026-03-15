@@ -444,6 +444,14 @@ try {
   db.exec("ALTER TABLE agent_configs ADD COLUMN preferred_free_model TEXT DEFAULT 'auto'");
 } catch { /* already exists */ }
 
+// Personality slider columns for agent customization (Phase 105)
+try { db.exec("ALTER TABLE agent_configs ADD COLUMN creativity INTEGER DEFAULT 50"); } catch { /* exists */ }
+try { db.exec("ALTER TABLE agent_configs ADD COLUMN formality INTEGER DEFAULT 50"); } catch { /* exists */ }
+try { db.exec("ALTER TABLE agent_configs ADD COLUMN verbosity INTEGER DEFAULT 50"); } catch { /* exists */ }
+try { db.exec("ALTER TABLE agent_configs ADD COLUMN humor INTEGER DEFAULT 50"); } catch { /* exists */ }
+try { db.exec("ALTER TABLE agent_configs ADD COLUMN empathy INTEGER DEFAULT 50"); } catch { /* exists */ }
+try { db.exec("ALTER TABLE agent_configs ADD COLUMN custom_prompt TEXT DEFAULT ''"); } catch { /* exists */ }
+
 // Agent status tracking - for active/inactive status on portfolio
 try {
   db.exec(`ALTER TABLE agent_configs ADD COLUMN last_active INTEGER`);
@@ -2116,3 +2124,29 @@ try {
   const nowSec = Math.floor(Date.now() / 1000);
   db.prepare('DELETE FROM refresh_tokens WHERE expires_at < ?').run(nowSec);
 } catch { /* non-fatal */ }
+
+// Phase 106b: Uploaded files for chat file attachments
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS uploaded_files (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      filename TEXT NOT NULL,
+      original_name TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size_bytes INTEGER NOT NULL,
+      file_path TEXT NOT NULL,
+      extracted_text TEXT,
+      conversation_id TEXT,
+      expires_at INTEGER,
+      created_at INTEGER DEFAULT (unixepoch('now') * 1000)
+    );
+    CREATE INDEX IF NOT EXISTS idx_uploaded_files_user ON uploaded_files(user_id, created_at DESC);
+  `);
+} catch { /* table already exists */ }
+
+// Personality sliders: add verbosity, humor, empathy to agent_configs
+// (creativity and formality already exist in the base schema)
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN verbosity INTEGER DEFAULT 50`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN humor INTEGER DEFAULT 50`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN empathy INTEGER DEFAULT 50`); } catch { /* column already exists */ }

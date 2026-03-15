@@ -291,7 +291,7 @@ export async function streamOllama(
       model: config.ollamaModel,
       messages,
       stream: true,
-      keep_alive: '-1',
+      keep_alive: '5m',
       options: { temperature: 0.7, num_predict: config.ollamaMaxTokens },
     }),
     signal: AbortSignal.timeout(config.ollamaTimeout),
@@ -345,7 +345,7 @@ async function callOllama(messages: ChatMessage[]): Promise<{ content: string; t
       model: config.ollamaModel,
       messages,
       stream: false,
-      keep_alive: '-1',
+      keep_alive: '5m',
       options: {
         temperature: 0.7,
         num_predict: config.ollamaMaxTokens,
@@ -1176,7 +1176,7 @@ async function pingOllama(): Promise<void> {
     const res = await fetch(`${config.ollamaBaseUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: config.ollamaModel, prompt: 'hi', stream: false, keep_alive: -1, options: { num_predict: 1 } }),
+      body: JSON.stringify({ model: config.ollamaModel, prompt: 'hi', stream: false, keep_alive: '5m', options: { num_predict: 1 } }),
       signal: AbortSignal.timeout(60000),
     });
     if (res.ok) logger.debug({ model: config.ollamaModel }, 'Ollama keepalive ping OK — model warm');

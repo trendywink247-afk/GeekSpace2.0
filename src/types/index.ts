@@ -89,6 +89,9 @@ export interface AgentConfig {
   fallbackModel?: string;
   creativity: number;   // 0–100
   formality: number;    // 0–100
+  verbosity: number;    // 0–100
+  humor: number;        // 0–100
+  empathy: number;      // 0–100
   monthlyBudgetUSD: number;
   status: 'online' | 'offline' | 'error';
   accentColor?: string;   // camelCase for PATCH requests

@@ -74,6 +74,8 @@ const TOOLS: ToolDef[] = [
 
 const TONE_LABELS = ['Very Formal', 'Formal', 'Balanced', 'Casual', 'Very Casual'];
 const VERBOSITY_LABELS = ['Terse', 'Brief', 'Balanced', 'Detailed', 'Very Detailed'];
+const HUMOR_LABELS = ['Serious', 'Neutral', 'Balanced', 'Witty', 'Very Humorous'];
+const EMPATHY_LABELS = ['Direct', 'Factual', 'Balanced', 'Warm', 'Very Empathetic'];
 
 // ---- Component ----
 
@@ -87,7 +89,10 @@ export function AgentSettingsPage() {
   const [personalities, setPersonalities] = useState<Record<string, Personality>>({});
   const [agentName, setAgentName] = useState(agent.name || 'Weebo');
   const [tone, setTone] = useState([agent.formality ?? 50]); // 0=casual, 100=formal
-  const [verbosity, setVerbosity] = useState([agent.creativity ?? 50]); // repurpose creativity as verbosity
+  const [verbosity, setVerbosity] = useState([agent.verbosity ?? 50]);
+  const [creativity, setCreativity] = useState([agent.creativity ?? 50]);
+  const [humor, setHumor] = useState([agent.humor ?? 50]);
+  const [empathy, setEmpathy] = useState([agent.empathy ?? 50]);
   const [language, setLanguage] = useState('english');
   const [customInstructions, setCustomInstructions] = useState(agent.systemPrompt || '');
 
@@ -144,10 +149,13 @@ export function AgentSettingsPage() {
       setSelectedPersonality(agent.personality || 'weebo');
       setAgentName(agent.name || 'Weebo');
       setTone([agent.formality ?? 50]);
-      setVerbosity([agent.creativity ?? 50]);
+      setVerbosity([agent.verbosity ?? 50]);
+      setCreativity([agent.creativity ?? 50]);
+      setHumor([agent.humor ?? 50]);
+      setEmpathy([agent.empathy ?? 50]);
       setCustomInstructions(agent.systemPrompt || '');
     }
-  }, [agent.id, agent.personality, agent.name, agent.formality, agent.creativity, agent.systemPrompt]);
+  }, [agent.id, agent.personality, agent.name, agent.formality, agent.verbosity, agent.creativity, agent.humor, agent.empathy, agent.systemPrompt]);
 
   // ---- Handlers ----
 
@@ -176,7 +184,10 @@ export function AgentSettingsPage() {
       await updateAgent({
         name: agentName,
         formality: tone[0],
-        creativity: verbosity[0],
+        creativity: creativity[0],
+        verbosity: verbosity[0],
+        humor: humor[0],
+        empathy: empathy[0],
         systemPrompt: customInstructions,
       });
       isDirty.current = false;
@@ -188,7 +199,7 @@ export function AgentSettingsPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [agentName, tone, verbosity, customInstructions, updateAgent]);
+  }, [agentName, tone, verbosity, creativity, humor, empathy, customInstructions, updateAgent]);
 
   const handleClearAllMemories = useCallback(async () => {
     setIsClearing(true);
@@ -216,6 +227,9 @@ export function AgentSettingsPage() {
   const currentAgent = AGENTS.find(a => a.id === selectedPersonality) || AGENTS[0];
   const toneStep = Math.round(tone[0] / 25);
   const verbosityStep = Math.round(verbosity[0] / 25);
+  const creativityStep = Math.round(creativity[0] / 25);
+  const humorStep = Math.round(humor[0] / 25);
+  const empathyStep = Math.round(empathy[0] / 25);
   const instructionsLength = customInstructions.length;
 
   // Find telegram integration
@@ -347,47 +361,119 @@ export function AgentSettingsPage() {
             </p>
           </div>
 
-          {/* Tone & Verbosity Sliders */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Tone Slider */}
-            <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-[#F4F6FF]">Tone</h2>
-                <span className="text-sm font-medium px-3 py-1 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
-                  {TONE_LABELS[toneStep]}
-                </span>
+          {/* Personality Sliders */}
+          <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+            <h2 className="text-lg font-semibold mb-5 flex items-center gap-2 text-[#F4F6FF]">
+              <Sparkles className="w-5 h-5 text-[#00F0FF]" />
+              Personality Tuning
+            </h2>
+            <p className="text-xs text-[#8892A4] mb-6">
+              Adjust how your agent communicates. These settings shape every response.
+            </p>
+            <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+              {/* Creativity */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-[#F4F6FF]">Creativity</span>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                    {['Precise', 'Focused', 'Balanced', 'Creative', 'Exploratory'][creativityStep]}
+                  </span>
+                </div>
+                <Slider
+                  value={creativity}
+                  onValueChange={(v) => { isDirty.current = true; setCreativity(v); }}
+                  max={100}
+                  step={25}
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                />
+                <div className="flex justify-between text-xs text-[#8892A4] mt-1">
+                  <span>Factual</span>
+                  <span>Exploratory</span>
+                </div>
               </div>
-              <Slider
-                value={tone}
-                onValueChange={(v) => { isDirty.current = true; setTone(v); }}
-                max={100}
-                step={25}
-                className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
-              />
-              <div className="flex justify-between text-xs text-[#8892A4] mt-2">
-                <span>Casual</span>
-                <span>Formal</span>
-              </div>
-            </div>
 
-            {/* Verbosity Slider */}
-            <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-[#F4F6FF]">Verbosity</h2>
-                <span className="text-sm font-medium px-3 py-1 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
-                  {VERBOSITY_LABELS[verbosityStep]}
-                </span>
+              {/* Tone */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-[#F4F6FF]">Tone</span>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                    {TONE_LABELS[toneStep]}
+                  </span>
+                </div>
+                <Slider
+                  value={tone}
+                  onValueChange={(v) => { isDirty.current = true; setTone(v); }}
+                  max={100}
+                  step={25}
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                />
+                <div className="flex justify-between text-xs text-[#8892A4] mt-1">
+                  <span>Casual</span>
+                  <span>Formal</span>
+                </div>
               </div>
-              <Slider
-                value={verbosity}
-                onValueChange={(v) => { isDirty.current = true; setVerbosity(v); }}
-                max={100}
-                step={25}
-                className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
-              />
-              <div className="flex justify-between text-xs text-[#8892A4] mt-2">
-                <span>Terse</span>
-                <span>Detailed</span>
+
+              {/* Verbosity */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-[#F4F6FF]">Verbosity</span>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                    {VERBOSITY_LABELS[verbosityStep]}
+                  </span>
+                </div>
+                <Slider
+                  value={verbosity}
+                  onValueChange={(v) => { isDirty.current = true; setVerbosity(v); }}
+                  max={100}
+                  step={25}
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                />
+                <div className="flex justify-between text-xs text-[#8892A4] mt-1">
+                  <span>Terse</span>
+                  <span>Detailed</span>
+                </div>
+              </div>
+
+              {/* Humor */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-[#F4F6FF]">Humor</span>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                    {HUMOR_LABELS[humorStep]}
+                  </span>
+                </div>
+                <Slider
+                  value={humor}
+                  onValueChange={(v) => { isDirty.current = true; setHumor(v); }}
+                  max={100}
+                  step={25}
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                />
+                <div className="flex justify-between text-xs text-[#8892A4] mt-1">
+                  <span>Serious</span>
+                  <span>Humorous</span>
+                </div>
+              </div>
+
+              {/* Empathy */}
+              <div className="md:col-span-2 md:max-w-[calc(50%-1rem)]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-[#F4F6FF]">Empathy</span>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                    {EMPATHY_LABELS[empathyStep]}
+                  </span>
+                </div>
+                <Slider
+                  value={empathy}
+                  onValueChange={(v) => { isDirty.current = true; setEmpathy(v); }}
+                  max={100}
+                  step={25}
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                />
+                <div className="flex justify-between text-xs text-[#8892A4] mt-1">
+                  <span>Direct</span>
+                  <span>Empathetic</span>
+                </div>
               </div>
             </div>
           </div>
