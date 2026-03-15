@@ -296,6 +296,54 @@ export async function sendGmailReply(
   }
 }
 
+export async function sendGmailCompose(
+  userId: string,
+  to: string,
+  subject: string,
+  body: string,
+): Promise<boolean> {
+  if (config.isTestMode) return true;
+  if (!config.googleClientId || !config.googleClientSecret) return false;
+
+  const userRow = db.prepare('SELECT google_gmail_token, email FROM users WHERE id = ?')
+    .get(userId) as { google_gmail_token: string | null; email: string } | undefined;
+  if (!userRow?.google_gmail_token) return false;
+
+  let tokenData: GmailTokenData;
+  try { tokenData = JSON.parse(userRow.google_gmail_token); } catch { return false; }
+
+  try {
+    const auth = getOAuth2Client();
+    auth.setCredentials({
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      expiry_date: tokenData.expiry_date,
+    });
+
+    const gmail = google.gmail({ version: 'v1', auth });
+
+    const rawEmail = [
+      `From: ${userRow.email}`,
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      'Content-Type: text/plain; charset=utf-8',
+      '',
+      body,
+    ].join('\r\n');
+
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: { raw: Buffer.from(rawEmail).toString('base64url') },
+    });
+
+    logger.info({ userId, to, subject }, 'Gmail compose sent');
+    return true;
+  } catch (err) {
+    logger.error({ err, userId, to }, 'Gmail compose send failed');
+    return false;
+  }
+}
+
 let _syncTimer: ReturnType<typeof setInterval> | null = null;
 
 export function startGmailSyncScheduler(): void {

@@ -215,6 +215,30 @@ gmailRouter.post('/reply/:id', requireAuth, async (req, res) => {
   }
 });
 
+// ---- Compose new email ----
+gmailRouter.post('/send', requireAuth, async (req, res) => {
+  const userId = (req as AuthRequest).userId!;
+  const { to, subject, body } = req.body as { to?: string; subject?: string; body?: string };
+
+  if (!to?.trim() || !subject?.trim() || !body?.trim()) {
+    res.status(400).json({ error: 'to, subject, and body are required' });
+    return;
+  }
+
+  try {
+    const { sendGmailCompose } = await import('../services/gmail-sync.js');
+    const sent = await sendGmailCompose(userId, to.trim(), subject.trim(), body.trim());
+    if (sent) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Failed to send email. Gmail may not be connected.' });
+    }
+  } catch (err) {
+    logger.error({ err, userId }, 'Gmail compose failed');
+    res.status(500).json({ error: 'Send failed' });
+  }
+});
+
 // ---- Disconnect ----
 gmailRouter.post('/disconnect', requireAuth, (req, res) => {
   const userId = (req as AuthRequest).userId!;
