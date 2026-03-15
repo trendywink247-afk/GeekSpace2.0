@@ -402,11 +402,11 @@ export function PortfolioPage() {
             <>
               <button
                 onClick={handleCopyLink}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-colors min-h-[36px]"
-                style={linkCopied ? { color: '#00FF88', borderColor: 'rgba(0,255,136,0.4)', background: 'rgba(0,255,136,0.1)' } : { color: '#BF5FFF', borderColor: 'rgba(191,95,255,0.3)' }}
+                className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-all duration-300 min-h-[36px] ${linkCopied ? 'scale-105' : ''}`}
+                style={linkCopied ? { color: '#00FF88', borderColor: 'rgba(0,255,136,0.4)', background: 'rgba(0,255,136,0.1)', boxShadow: '0 0 12px rgba(0,255,136,0.15)' } : { color: '#BF5FFF', borderColor: 'rgba(191,95,255,0.3)' }}
                 title="Copy portfolio link"
               >
-                <Share2 className="w-4 h-4" />
+                {linkCopied ? <CheckCircle2 className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
                 {linkCopied ? 'Copied!' : 'Copy Link'}
               </button>
               <a
@@ -502,13 +502,13 @@ export function PortfolioPage() {
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={handleCopyLink}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-colors"
+              className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-all duration-300 ${linkCopied ? 'scale-105' : ''}`}
               style={linkCopied
-                ? { color: '#00FF88', borderColor: 'rgba(0,255,136,0.4)', background: 'rgba(0,255,136,0.1)' }
+                ? { color: '#00FF88', borderColor: 'rgba(0,255,136,0.4)', background: 'rgba(0,255,136,0.1)', boxShadow: '0 0 12px rgba(0,255,136,0.15)' }
                 : { color: '#00F0FF', borderColor: 'rgba(0,240,255,0.3)', background: 'transparent' }
               }
             >
-              <Copy className="w-4 h-4" />
+              {linkCopied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               {linkCopied ? 'Copied!' : 'Copy Link'}
             </button>
             <a
@@ -989,7 +989,7 @@ export function PortfolioPage() {
                     setDraggedIndex(null);
                   }}
                   onDragEnd={() => setDraggedIndex(null)}
-                  className={`p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 group hover:border-[#00F0FF]/40 transition-all press-scale w-full cursor-grab active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${draggedIndex === idx ? 'opacity-50' : ''}`}
+                  className={`p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 group hover:border-[#00F0FF]/40 hover:-translate-y-1 transition-all duration-200 press-scale w-full cursor-grab active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${draggedIndex === idx ? 'opacity-50' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-2 flex-1 min-w-0">
@@ -1472,7 +1472,7 @@ export function PortfolioPage() {
             </CardHeader>
             <CardContent className="p-0">
               {user?.username ? (
-                <div className="relative w-full rounded-b-xl overflow-hidden border-t border-[#00F0FF]/10">
+                <div className="relative w-full rounded-b-xl overflow-hidden border-t border-[#00F0FF]/10 shadow-[0_0_20px_rgba(0,240,255,0.06)]">
                   <div className="flex items-center gap-2 px-4 py-2 bg-[#06060B] border-b border-[#00F0FF]/10">
                     <div className="flex gap-1.5">
                       <div className="w-3 h-3 rounded-full bg-[#FF6161]/40" />

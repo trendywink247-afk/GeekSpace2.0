@@ -247,10 +247,11 @@ export function ImageGenPage() {
                   href={previewImage.image_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="px-3 py-2 min-w-[44px] min-h-[44px] flex items-center justify-center gap-2 rounded-lg bg-[#00F0FF] text-[#06060B] font-medium text-sm hover:bg-[#00F0FF]/90 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                   aria-label="Download image"
                 >
                   <Download className="w-4 h-4" />
+                  Download
                 </a>
                 <button
                   onClick={() => setPreviewImage(null)}
@@ -548,9 +549,9 @@ export function ImageGenPage() {
                   <button
                     key={preset.label}
                     onClick={() => { setWidth(preset.w); setHeight(preset.h); }}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs transition-all ${
                       width === preset.w && height === preset.h
-                        ? 'bg-[#ADFF2F]/15 text-[#ADFF2F] border border-[#ADFF2F]/30'
+                        ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/40 shadow-[0_0_8px_rgba(0,240,255,0.2)]'
                         : 'bg-[#06060B] text-[#9CA3AF] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
                     }`}
                   >
@@ -579,20 +580,22 @@ export function ImageGenPage() {
 
           {/* Generate button */}
           <div className="flex items-center justify-between mt-4">
-            <div className="text-xs text-[#9CA3AF]">
+            <div className="text-xs">
               {imageCount >= maxImages ? (
-                <span className="text-[#FF6161]">Image limit reached ({maxImages}/{maxImages})</span>
+                <span className="px-2.5 py-1 rounded-lg bg-[#FF6161]/10 border border-[#FF6161]/20 text-[#FF6161] font-medium">Image limit reached ({maxImages}/{maxImages})</span>
               ) : (
-                <span>{imageCount}/{maxImages} images saved &middot; {width}x{height}</span>
+                <span className="px-2.5 py-1 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/15 text-[#00F0FF]">
+                  <strong>{maxImages - imageCount}</strong> credits remaining &middot; {width}x{height}
+                </span>
               )}
             </div>
             <button
               onClick={handleGenerate}
               disabled={generating || !prompt.trim() || imageCount >= maxImages}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`glow-hover flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 mode === 'imagine'
-                  ? 'bg-[#ADFF2F] text-[#06060B] hover:bg-[#ADFF2F]/80'
-                  : 'bg-[#00F0FF] text-[#06060B] hover:bg-[#00F0FF]/80'
+                  ? 'bg-[#ADFF2F] text-[#06060B] hover:bg-[#ADFF2F]/90'
+                  : 'bg-[#00F0FF] text-[#06060B] hover:bg-[#00F0FF]/90'
               }`}
             >
               {generating ? (
@@ -629,7 +632,7 @@ export function ImageGenPage() {
 
         {galleryLoading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-2 border-[#ADFF2F] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : images.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#00F0FF]/20 p-12 text-center">
@@ -642,7 +645,7 @@ export function ImageGenPage() {
             {images.map(img => (
               <div
                 key={img.id}
-                className="group relative rounded-2xl border border-[#00F0FF]/10 overflow-hidden hover:border-[#ADFF2F]/30 transition-all bg-[#0C0C18]"
+                className="group relative rounded-2xl border border-[#00F0FF]/10 overflow-hidden hover:border-[#00F0FF]/40 hover:shadow-[0_0_12px_rgba(0,240,255,0.1)] transition-all bg-[#0C0C18]"
               >
                 {/* Image */}
                 <div
@@ -656,9 +659,20 @@ export function ImageGenPage() {
                     loading="lazy"
                   />
                   {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <ZoomIn className="w-6 h-6 text-white" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <ZoomIn className="w-5 h-5 text-white" />
                   </div>
+                  {/* Download button overlay */}
+                  <a
+                    href={img.image_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute top-2 right-2 p-2 rounded-lg bg-[#00F0FF]/90 text-[#06060B] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#00F0FF] z-10"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Download image"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </a>
                 </div>
 
                 {/* Info */}

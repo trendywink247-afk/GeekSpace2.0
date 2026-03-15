@@ -42,10 +42,17 @@ interface WorkflowRun {
 // ---- Constants ----
 
 const AGENT_COLORS: Record<string, string> = {
-  weebo: "text-green-400",
-  jarvis: "text-purple-400",
-  edith: "text-cyan-400",
+  weebo: "text-[#00F0FF]",
+  jarvis: "text-[#ADFF2F]",
+  edith: "text-[#8B5CF6]",
   weebofleet: "text-amber-400",
+};
+
+const AGENT_HEX: Record<string, string> = {
+  weebo: "#00F0FF",
+  jarvis: "#ADFF2F",
+  edith: "#8B5CF6",
+  weebofleet: "#F59E0B",
 };
 
 const AGENT_LABELS: Record<string, string> = {
@@ -69,9 +76,9 @@ function formatRelativeTime(ms: number | null): string {
 }
 
 function RunStatusBadge({ status }: { status: WorkflowRun["status"] }) {
-  if (status === "completed") return <Badge className="bg-green-500/20 text-green-400 border-green-500/30"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
-  if (status === "failed") return <Badge className="bg-red-500/20 text-red-400 border-red-500/30"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>;
-  return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Running</Badge>;
+  if (status === "completed") return <Badge className="bg-[#00FF88]/15 text-[#00FF88] border-[#00FF88]/30"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
+  if (status === "failed") return <Badge className="bg-[#FF6161]/15 text-[#FF6161] border-[#FF6161]/30"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>;
+  return <Badge className="bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30 animate-pulse"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Running</Badge>;
 }
 
 // ---- New Workflow Form ----
@@ -286,16 +293,24 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
         {expanded && (
           <div className="mt-4 space-y-3 border-t pt-3">
             {/* Step list */}
-            <div className="space-y-1">
-              {workflow.steps.map((step, idx) => (
-                <div key={idx} className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground w-4">{idx + 1}.</span>
-                  <Bot className={"h-3 w-3 " + (AGENT_COLORS[step.agent] ?? "text-muted-foreground")} />
-                  <span className={AGENT_COLORS[step.agent] ?? ""}>{AGENT_LABELS[step.agent] ?? step.agent}</span>
-                  <span className="text-muted-foreground">&rarr;</span>
-                  <code className="text-xs bg-muted px-1 rounded">{step.output_key}</code>
-                </div>
-              ))}
+            <div className="space-y-1.5">
+              {workflow.steps.map((step, idx) => {
+                const agentHex = AGENT_HEX[step.agent] ?? "#6B7280";
+                return (
+                  <div key={idx} className="flex items-center gap-2.5 text-xs">
+                    <span
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                      style={{ background: `${agentHex}20`, color: agentHex, border: `1px solid ${agentHex}40` }}
+                    >
+                      {idx + 1}
+                    </span>
+                    <Bot className={"h-3 w-3 " + (AGENT_COLORS[step.agent] ?? "text-muted-foreground")} />
+                    <span className={AGENT_COLORS[step.agent] ?? ""}>{AGENT_LABELS[step.agent] ?? step.agent}</span>
+                    <span className="text-muted-foreground">&rarr;</span>
+                    <code className="text-xs bg-muted px-1 rounded">{step.output_key}</code>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Run input */}
@@ -388,7 +403,8 @@ export function WorkflowsPage() {
       {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">{error}</div>}
 
       {/* How it works */}
-      <Card>
+      <div className="rounded-xl p-[1px] bg-gradient-to-r from-cyan-500/30 via-purple-500/20 to-green-500/30">
+      <Card className="rounded-[11px]">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <GitBranch className="h-4 w-4 text-cyan-400" />
@@ -410,6 +426,7 @@ export function WorkflowsPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
 
       {/* New Workflow Form */}
       {showForm && (
@@ -426,9 +443,11 @@ export function WorkflowsPage() {
         </div>
       ) : workflows.length === 0 ? (
         <div className="py-12 text-center text-muted-foreground">
-          <Zap className="mx-auto h-10 w-10 mb-3 opacity-20" />
-          <p className="font-medium">No workflows yet</p>
-          <p className="text-sm mt-1">Create your first workflow to chain agents together.</p>
+          <div className="w-16 h-16 rounded-2xl bg-cyan-500/5 flex items-center justify-center mx-auto mb-4">
+            <GitBranch className="h-8 w-8 text-cyan-400/30" />
+          </div>
+          <p className="font-medium text-foreground">No workflows yet</p>
+          <p className="text-sm mt-1 max-w-xs mx-auto">Create your first multi-agent workflow to chain Weebo, Jarvis, and Edith together.</p>
           <Button onClick={() => setShowForm(true)} size="sm" className="mt-4 bg-cyan-500 hover:bg-cyan-600 text-black">
             <Plus className="h-4 w-4 mr-1" />Create Workflow
           </Button>
@@ -450,9 +469,9 @@ export function WorkflowsPage() {
         <CardContent className="pt-4">
           <p className="text-xs font-medium text-muted-foreground mb-2">Agent Guide</p>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-1.5"><Bot className="h-3 w-3 text-green-400" /><span className="text-green-400 font-medium">Weebo</span><span className="text-muted-foreground">&mdash; tasks &amp; productivity</span></div>
-            <div className="flex items-center gap-1.5"><Settings className="h-3 w-3 text-purple-400" /><span className="text-purple-400 font-medium">Jarvis</span><span className="text-muted-foreground">&mdash; planning &amp; research</span></div>
-            <div className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-cyan-400" /><span className="text-cyan-400 font-medium">Edith</span><span className="text-muted-foreground">&mdash; deep analysis</span></div>
+            <div className="flex items-center gap-1.5"><Bot className="h-3 w-3 text-[#00F0FF]" /><span className="text-[#00F0FF] font-medium">Weebo</span><span className="text-muted-foreground">&mdash; tasks &amp; productivity</span></div>
+            <div className="flex items-center gap-1.5"><Settings className="h-3 w-3 text-[#ADFF2F]" /><span className="text-[#ADFF2F] font-medium">Jarvis</span><span className="text-muted-foreground">&mdash; planning &amp; research</span></div>
+            <div className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-[#8B5CF6]" /><span className="text-[#8B5CF6] font-medium">Edith</span><span className="text-muted-foreground">&mdash; deep analysis</span></div>
             <div className="flex items-center gap-1.5"><Zap className="h-3 w-3 text-amber-400" /><span className="text-amber-400 font-medium">WeeboFleet</span><span className="text-muted-foreground">&mdash; automation</span></div>
           </div>
         </CardContent>

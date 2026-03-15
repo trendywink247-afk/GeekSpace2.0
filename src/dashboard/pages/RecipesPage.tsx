@@ -177,8 +177,11 @@ export function RecipesPage() {
       {/* Recipe Grid */}
       {recipes.length === 0 ? (
         <div className="text-center py-12">
-          <BookOpen className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-4" />
-          <p className="text-[#9CA3AF]">No recipes available yet</p>
+          <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/10 flex items-center justify-center mx-auto mb-4">
+            <BookOpen className="w-8 h-8 text-[#00F0FF]/30" />
+          </div>
+          <p className="text-[#E8E8F0] font-medium mb-1">No recipes available yet</p>
+          <p className="text-sm text-[#9CA3AF]">Discover pre-built automation recipes to supercharge your workflow</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -207,8 +210,9 @@ export function RecipesPage() {
                       {recipe.installed && (
                         <Badge
                           variant="outline"
-                          className="border-[#00FF88]/40 text-[#00FF88] text-xs"
+                          className="border-[#00FF88]/40 text-[#00FF88] text-xs gap-1"
                         >
+                          <CheckCircle2 className="w-3 h-3" />
                           Active
                         </Badge>
                       )}
@@ -231,16 +235,20 @@ export function RecipesPage() {
 
                   {/* Required Integrations */}
                   {recipe.requiredIntegrations.length > 0 && (
-                    <div className="mb-4">
-                      <span className="text-xs text-[#9CA3AF]">Requires: </span>
+                    <div className="mb-4 flex flex-wrap items-center gap-1.5">
+                      <span className="text-xs text-[#9CA3AF]">Requires:</span>
                       {recipe.requiredIntegrations.map((int) => (
-                        <Badge
+                        <span
                           key={int}
-                          variant="outline"
-                          className="text-xs border-[#00F0FF]/20 text-[#9CA3AF] mr-1"
+                          className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border"
+                          style={{
+                            color: catColor,
+                            borderColor: `${catColor}30`,
+                            backgroundColor: `${catColor}10`,
+                          }}
                         >
                           {int}
-                        </Badge>
+                        </span>
                       ))}
                     </div>
                   )}
@@ -260,7 +268,7 @@ export function RecipesPage() {
                     </Button>
                   ) : (
                     <Button
-                      className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-white transition-colors"
+                      className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-white transition-all hover:shadow-[0_0_16px_rgba(0,240,255,0.3)]"
                       onClick={() => handleInstall(recipe.id)}
                       disabled={isActionInProgress}
                     >

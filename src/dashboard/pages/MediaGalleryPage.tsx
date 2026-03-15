@@ -3,7 +3,7 @@
 // ============================================================
 
 import { useState, useEffect } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Film } from 'lucide-react';
 import { MediaGallery, type MediaItem } from '@/components/MediaGallery';
 
 export function MediaGalleryPage() {
@@ -70,17 +70,22 @@ export function MediaGalleryPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
-            Media Gallery
-          </h1>
-          <p className="text-[#6B7280]">
-            All your generated images and videos
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center">
+            <Film className="w-5 h-5 text-[#00F0FF]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-[#E8E8F0]">
+              Media Gallery
+            </h1>
+            <p className="text-sm text-[#9CA3AF]">
+              All your generated images and videos
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30">
-            <span className="text-sm text-[#00F0FF]">
+          <div className="px-3 py-1.5 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/20">
+            <span className="text-sm text-[#00F0FF] font-medium">
               {items.length} items
             </span>
           </div>
@@ -97,17 +102,17 @@ export function MediaGalleryPage() {
 
       {/* Empty State */}
       {items.length === 0 && !isLoading && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mb-4">
-            <Sparkles className="w-10 h-10 text-[#00F0FF]" />
+        <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-dashed border-[#00F0FF]/15">
+          <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mb-4">
+            <Sparkles className="w-8 h-8 text-[#00F0FF]/40" />
           </div>
-          <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No media yet</h3>
-          <p className="text-[#6B7280] max-w-sm mb-6">
-            Generate your first image or video using the agent chat. They'll appear here automatically.
+          <h3 className="text-base font-medium text-[#E8E8F0] mb-2">No media yet</h3>
+          <p className="text-[#9CA3AF] text-sm max-w-xs mb-6">
+            Generate your first image or video using the agent chat. They will appear here automatically.
           </p>
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-agent-chat'))}
-            className="px-6 py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-white font-medium transition-colors"
+            className="glow-hover px-5 py-2.5 rounded-xl bg-[#00F0FF] text-[#06060B] font-medium text-sm transition-all hover:bg-[#00F0FF]/90"
           >
             Open Agent Chat
           </button>

@@ -498,16 +498,17 @@ export function VideoGenPage() {
                 src={previewVideo.video_url}
                 controls
                 autoPlay
-                className="w-full rounded-2xl border border-[#00F0FF]/20 bg-black"
+                className="w-full rounded-2xl border border-[#00F0FF]/20 bg-[#06060B] shadow-[0_0_30px_rgba(0,240,255,0.08)]"
+                style={{ colorScheme: 'dark' }}
               />
             ) : (
               <div className="w-full aspect-video rounded-2xl border border-[#00F0FF]/20 bg-[#06060B] flex flex-col items-center justify-center gap-4 p-6">
-                <Loader2 className="w-8 h-8 text-[#A78BFA] animate-spin" />
+                <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin" />
                 {/* 62.8: step indicator for processing state */}
                 <div className="flex items-center gap-1.5 text-xs">
                   {(['Queued', 'Generating', 'Rendering', 'Ready'] as const).map((step, i) => (
                     <React.Fragment key={step}>
-                      <span className={i === 1 ? 'text-[#A78BFA] font-semibold' : i < 1 ? 'text-[#00FF88]' : 'text-[#9CA3AF]'}>{step}</span>
+                      <span className={i === 1 ? 'text-[#00F0FF] font-semibold' : i < 1 ? 'text-[#00FF88]' : 'text-[#9CA3AF]'}>{step}</span>
                       {i < 3 && <span className="text-[#9CA3AF]">→</span>}
                     </React.Fragment>
                   ))}
@@ -708,9 +709,9 @@ export function VideoGenPage() {
               <button
                 key={preset.label}
                 onClick={() => setDuration(preset.val)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
+                className={`px-2.5 py-1.5 rounded-lg text-xs transition-all ${
                   duration === preset.val
-                    ? 'bg-[#A78BFA]/15 text-[#A78BFA] border border-[#A78BFA]/30'
+                    ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/40 shadow-[0_0_8px_rgba(0,240,255,0.2)]'
                     : 'bg-[#06060B] text-[#9CA3AF] border border-[#A78BFA]/10 hover:border-[#A78BFA]/30'
                 }`}
               >
@@ -731,17 +732,19 @@ export function VideoGenPage() {
 
         {/* Generate button */}
         <div className="flex items-center justify-between mt-4">
-          <div className="text-xs text-[#9CA3AF]">
+          <div className="text-xs">
             {videoCount >= maxVideos ? (
-              <span className="text-[#FF6161]">Video limit reached ({maxVideos}/{maxVideos})</span>
+              <span className="px-2.5 py-1 rounded-lg bg-[#FF6161]/10 border border-[#FF6161]/20 text-[#FF6161] font-medium">Video limit reached ({maxVideos}/{maxVideos})</span>
             ) : (
-              <span>{videoCount}/{maxVideos} videos saved &middot; {duration}s duration &middot; 1280x720</span>
+              <span className="px-2.5 py-1 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/15 text-[#00F0FF]">
+                <strong>{maxVideos - videoCount}</strong> credits remaining &middot; {duration}s &middot; 1280x720
+              </span>
             )}
           </div>
           <button
             onClick={handleGenerate}
             disabled={generating || !prompt.trim() || videoCount >= maxVideos || isProviderBroken}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#A78BFA] text-[#06060B] font-semibold text-sm hover:bg-[#A78BFA]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="glow-hover flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#A78BFA] text-[#06060B] font-semibold text-sm hover:bg-[#A78BFA]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             title={isProviderBroken ? "Video generation is temporarily unavailable from this server region" : ""}
           >
             {isProviderBroken ? (
@@ -792,14 +795,14 @@ export function VideoGenPage() {
           </h2>
           <div className="flex items-center gap-2">
             {/* 58.9: Sort toggle */}
-            <div className="flex items-center rounded-lg border border-[#A78BFA]/20 bg-[#0C0C18] p-0.5 gap-0.5">
+            <div className="flex items-center rounded-lg border border-[#00F0FF]/15 bg-[#0C0C18] p-0.5 gap-0.5">
               <button
                 onClick={() => setGallerySort('newest')}
-                className={`text-xs px-2 py-1 rounded transition-colors ${gallerySort === 'newest' ? 'bg-[#A78BFA]/20 text-[#A78BFA]' : 'text-[#9CA3AF] hover:text-[#E8E8F0]'}`}
+                className={`text-xs px-2.5 py-1 rounded transition-all ${gallerySort === 'newest' ? 'bg-[#00F0FF]/15 text-[#00F0FF] border-b-2 border-[#00F0FF]' : 'text-[#9CA3AF] hover:text-[#E8E8F0]'}`}
               >Newest</button>
               <button
                 onClick={() => setGallerySort('status')}
-                className={`text-xs px-2 py-1 rounded transition-colors ${gallerySort === 'status' ? 'bg-[#A78BFA]/20 text-[#A78BFA]' : 'text-[#9CA3AF] hover:text-[#E8E8F0]'}`}
+                className={`text-xs px-2.5 py-1 rounded transition-all ${gallerySort === 'status' ? 'bg-[#00F0FF]/15 text-[#00F0FF] border-b-2 border-[#00F0FF]' : 'text-[#9CA3AF] hover:text-[#E8E8F0]'}`}
               >Status</button>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-[#9CA3AF]">
@@ -852,7 +855,7 @@ export function VideoGenPage() {
                     </>
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                      <Loader2 className="w-6 h-6 text-[#A78BFA] animate-spin" />
+                      <Loader2 className="w-6 h-6 text-[#00F0FF] animate-spin" />
                       <span className="text-xs text-[#9CA3AF]">Processing...</span>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleRefreshStatus(vid.id); }}

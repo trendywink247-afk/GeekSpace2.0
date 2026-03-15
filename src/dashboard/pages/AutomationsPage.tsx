@@ -627,7 +627,8 @@ export function AutomationsPage() {
         ].map(s => (
           <div
             key={s.label}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0C0C18]/80 border border-white/5 shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/5 shrink-0"
+            style={{ background: `${s.color}08` }}
           >
             <s.icon className="w-4 h-4" style={{ color: s.color }} />
             <span className="text-lg font-bold tabular-nums" style={{ color: s.color, fontFamily: 'Space Grotesk, sans-serif' }}>{s.value}</span>
@@ -650,7 +651,7 @@ export function AutomationsPage() {
                 key={t.name}
                 type="button"
                 onClick={() => handleUseTemplate(t)}
-                className="snap-start flex-shrink-0 w-[180px] md:w-auto p-4 rounded-2xl bg-[#0C0C18]/80 border border-white/5 hover:border-[#00F0FF]/30 transition-all duration-200 text-left group"
+                className="snap-start flex-shrink-0 w-[180px] md:w-auto p-4 rounded-2xl bg-[#0C0C18]/80 border border-white/5 hover:border-[#00F0FF]/30 transition-all duration-200 text-left group glow-hover"
               >
                 <div className="text-2xl mb-2">{t.icon}</div>
                 <h3 className="text-sm font-semibold text-[#E8E8F0] mb-1 group-hover:text-[#00F0FF] transition-colors" style={{ fontFamily: 'Syne, sans-serif' }}>{t.name}</h3>
@@ -697,10 +698,21 @@ export function AutomationsPage() {
             const lastRun = auto.last_run ?? auto.lastRun ?? null;
             const isExpanded = expandedRunHistory === auto.id;
 
+            const triggerBorderColor: Record<string, string> = {
+              time: '#00F0FF',
+              keyword: '#00FF88',
+              webhook: '#8B5CF6',
+              manual: '#6B7280',
+              event: '#00FF88',
+              health_down: '#FF6161',
+            };
+            const leftBorder = triggerBorderColor[auto.triggerType] ?? '#6B7280';
+
             return (
               <Card
                 key={auto.id}
                 className={`bg-[#0C0C18]/80 border border-white/5 rounded-2xl transition-all duration-300 hover:border-[#00F0FF]/20 ${!auto.enabled ? 'opacity-60' : ''}`}
+                style={{ borderLeftWidth: '3px', borderLeftColor: leftBorder }}
               >
                 <CardContent className="p-4 md:p-5">
                   {/* Main card row */}
@@ -879,9 +891,17 @@ export function AutomationsPage() {
                             const output = (rawLog.output as string) ?? log.output ?? '';
                             const durationMs = (rawLog.duration_ms as number) ?? log.durationMs ?? 0;
                             const createdAt = (rawLog.created_at as string) ?? log.createdAt ?? '';
+                            const isRunning = status === 'running' || status === 'pending';
+                            const isSuccess = status === 'success';
                             return (
                               <div key={log.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#06060B]/60 border border-white/[0.03]">
-                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${status === 'success' ? 'bg-[#00FF88]' : 'bg-[#FF6161]'}`} />
+                                {isRunning ? (
+                                  <Loader2 className="w-3 h-3 flex-shrink-0 text-[#F59E0B] animate-spin" />
+                                ) : isSuccess ? (
+                                  <CheckCircle2 className="w-3 h-3 flex-shrink-0 text-[#00FF88]" />
+                                ) : (
+                                  <XCircle className="w-3 h-3 flex-shrink-0 text-[#FF6161]" />
+                                )}
                                 <span className="text-xs text-[#9CA3AF] flex-shrink-0 w-20">
                                   {createdAt ? fmtRelativeTime(createdAt) : '--'}
                                 </span>
@@ -905,10 +925,14 @@ export function AutomationsPage() {
             <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/5 flex items-center justify-center mx-auto mb-4">
               <Zap className="w-8 h-8 text-[#00F0FF]/30" />
             </div>
-            <p className="text-[#9CA3AF] mb-1">
+            <p className="text-[#9CA3AF] font-medium mb-1">
               {searchQuery || filter !== 'all' ? 'No automations match your filters' : 'No automations yet'}
             </p>
-            <p className="text-sm text-[#8892B0] mb-4">Create your first automation to get started</p>
+            <p className="text-sm text-[#8892B0] mb-4 max-w-xs mx-auto">
+              {searchQuery || filter !== 'all'
+                ? 'Try adjusting your search or filter criteria.'
+                : 'Create one from a template or build your own.'}
+            </p>
             {!searchQuery && filter === 'all' && (
               <Button onClick={handleOpenAdd} variant="outline" className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 min-h-[44px]">
                 <Plus className="w-4 h-4 mr-2" /> Create Automation

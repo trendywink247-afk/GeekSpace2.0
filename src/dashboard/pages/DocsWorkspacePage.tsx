@@ -233,7 +233,9 @@ export function DocsWorkspacePage() {
                   : 'text-[#8892B0] hover:text-[#CCD6F6] hover:bg-white/5'
                 }`}
             >
-              <Folder className="w-4 h-4 shrink-0" />
+              <span className="w-6 h-6 rounded-md flex items-center justify-center bg-[#8B5CF6]/10 shrink-0">
+                <Folder className="w-3.5 h-3.5 shrink-0" />
+              </span>
               <span className="truncate flex-1 text-left">{f.icon || ''} {f.name}</span>
               <span className="text-xs text-[#8892B0]/60">{f.doc_count}</span>
             </button>
@@ -294,10 +296,11 @@ export function DocsWorkspacePage() {
               value={quickCapture}
               onChange={e => setQuickCapture(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleQuickCapture(); } }}
-              placeholder="Quick capture — type a thought and press Enter..."
+              placeholder="Quick capture — jot a note, paste a link, save an idea..."
               className="flex-1 bg-transparent border border-white/10 rounded-lg px-3 py-2
                          text-sm text-[#F4F6FF] placeholder-[#8892B0]/50 resize-none h-10
-                         focus:border-[#00F0FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/20"
+                         focus:border-[#00F0FF]/30 focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/20
+                         placeholder:transition-opacity placeholder:duration-700"
               rows={1}
             />
             {quickCapture && (
@@ -319,12 +322,14 @@ export function DocsWorkspacePage() {
             </div>
           ) : filteredDocs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <FileText className="w-12 h-12 text-[#8892B0]/20 mb-4" />
+              <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/10 flex items-center justify-center mb-4">
+                <FileText className="w-8 h-8 text-[#00F0FF]/30" />
+              </div>
               <h3 className="text-[#F4F6FF] font-medium mb-1">
                 {search ? 'No documents match your search' : 'No documents yet'}
               </h3>
               <p className="text-[#8892B0] text-sm mb-4">
-                {search ? 'Try a different search term' : 'Create your first document or use quick capture'}
+                {search ? 'Try a different search term' : 'Start writing. Your AI-powered workspace awaits.'}
               </p>
               {!search && (
                 <Button onClick={handleCreate} className="gap-2 bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/30">
@@ -341,7 +346,7 @@ export function DocsWorkspacePage() {
                   onClick={() => { setSelectedDoc(doc); setEditorOpen(true); }}
                   className="group text-left p-4 rounded-2xl
                              bg-[#0C0C18]/80 border border-white/5
-                             hover:border-[#00F0FF]/20 hover:bg-[#10101E]/80
+                             hover:border-[#00F0FF]/30 hover:bg-[#10101E]/80
                              transition-all duration-200
                              backdrop-blur-sm"
                 >
@@ -568,6 +573,7 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
               disabled={aiLoading}
               className="p-3 rounded-xl border border-white/8 text-left
                          hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/8
+                         hover:shadow-[0_0_12px_rgba(139,92,246,0.15)]
                          transition-all duration-150 disabled:opacity-50"
             >
               <div className="text-sm font-medium text-[#F4F6FF]">{icon} {label}</div>

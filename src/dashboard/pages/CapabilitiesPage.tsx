@@ -520,11 +520,13 @@ function CapabilityCard({
 
   return (
     <div
-      className="relative rounded-2xl border border-white/8 bg-[#0A0A14] transition-all duration-300 hover:border-opacity-40 hover:-translate-y-0.5 group overflow-hidden flex flex-col"
+      className="relative rounded-2xl border border-white/8 bg-[#0A0A14] transition-all duration-300 hover:border-opacity-40 hover:-translate-y-1 hover:shadow-lg group overflow-hidden flex flex-col"
       style={{
         animationDelay: `${idx * 60}ms`,
         '--cap-color': cap.color,
       } as React.CSSProperties}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 24px ${cap.glow}`; (e.currentTarget as HTMLDivElement).style.borderColor = `${cap.color}30`; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; (e.currentTarget as HTMLDivElement).style.borderColor = ''; }}
     >
       {/* Top glow bar */}
       <div
@@ -597,8 +599,10 @@ function CapabilityCard({
         <div className="flex gap-2 mt-auto">
           <button
             onClick={() => { handleCopy(cap.examples[0]); onTry(cap.examples[0]); }}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-[#05050A] transition-all hover:opacity-90 active:scale-95"
-            style={{ background: cap.color }}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-[#05050A] transition-all duration-200 hover:opacity-90 active:scale-95"
+            style={{ background: cap.color, boxShadow: `0 0 0 0 ${cap.color}00` }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 16px ${cap.color}40`; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 0 0 ${cap.color}00`; }}
           >
             <Play className="w-3 h-3" />
             Try it
@@ -897,10 +901,12 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className="flex-none flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap"
+              className={`flex-none flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                isActive ? 'shadow-lg' : 'hover:bg-white/8'
+              }`}
               style={
                 isActive
-                  ? { backgroundColor: cfg.color, color: '#05050A' }
+                  ? { backgroundColor: cfg.color, color: '#05050A', boxShadow: `0 0 16px ${cfg.color}40` }
                   : { backgroundColor: 'rgba(255,255,255,0.05)', color: '#9BA3C9' }
               }
             >
@@ -955,7 +961,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               onClick={() => onOpenChat?.()}
-              className="bg-[#00F0FF] text-[#05050A] hover:bg-[#00F0FF]/90 font-semibold px-6"
+              className="bg-[#00F0FF] text-[#05050A] hover:bg-[#00F0FF]/90 hover:shadow-[0_0_24px_rgba(0,240,255,0.35)] font-semibold px-6 transition-all duration-200"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
               Open Agent Chat

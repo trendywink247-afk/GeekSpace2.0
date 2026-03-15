@@ -465,11 +465,11 @@ export function RoadmapPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-[#00FF88]/20 text-[#00FF88] border-[#00FF88]/30">Completed</Badge>;
+        return <Badge className="bg-[#00FF88]/15 text-[#00FF88] border-[#00FF88]/30 shadow-[0_0_8px_rgba(0,255,136,0.1)]">Shipped</Badge>;
       case 'in-progress':
-        return <Badge className="bg-[#FFB800]/20 text-[#FFB800] border-[#FFB800]/30">In Progress</Badge>;
+        return <Badge className="bg-[#00F0FF]/15 text-[#00F0FF] border-[#00F0FF]/30 shadow-[0_0_8px_rgba(0,240,255,0.1)]">In Progress</Badge>;
       default:
-        return <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] border-[#00F0FF]/30">Planned</Badge>;
+        return <Badge className="bg-[#6B7280]/15 text-[#9CA3AF] border-[#6B7280]/30">Planned</Badge>;
     }
   };
 
@@ -502,7 +502,7 @@ export function RoadmapPage() {
         </div>
         <div className="space-y-3">
           {releaseNotes.map((note) => (
-            <Card key={note.phase} className="border-[#00F0FF]/10">
+            <Card key={note.phase} className="border-[#00F0FF]/10 hover:border-[#00F0FF]/25 transition-all duration-200">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div
@@ -582,7 +582,8 @@ export function RoadmapPage() {
 
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter === 'Q1 2026').map(item => (
-              <Card key={item.id} className="border-[#00FF88]/30">
+              <Card key={item.id} className="border-[#00FF88]/30 overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,255,136,0.08)] transition-all duration-300">
+                <div className="h-[3px] bg-gradient-to-r from-[#00FF88] to-[#00FF88]/40" />
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center text-[#00FF88]">
@@ -619,7 +620,8 @@ export function RoadmapPage() {
 
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter === 'Q2 2026').map(item => (
-              <Card key={item.id} className="border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all">
+              <Card key={item.id} className="border-[#00F0FF]/20 hover:border-[#00F0FF]/40 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,240,255,0.08)] overflow-hidden transition-all duration-300">
+                <div className="h-[3px] bg-gradient-to-r from-[#00F0FF] to-[#00F0FF]/40" />
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center text-[#00F0FF]">
@@ -656,7 +658,8 @@ export function RoadmapPage() {
 
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter.startsWith('Q3') || i.quarter.startsWith('Q4')).map(item => (
-              <Card key={item.id} className="border-[#00F0FF]/10 hover:border-[#00F0FF]/30 transition-all opacity-80">
+              <Card key={item.id} className="border-[#00F0FF]/10 hover:border-[#00F0FF]/30 hover:-translate-y-0.5 overflow-hidden transition-all duration-300 opacity-80 hover:opacity-100">
+                <div className="h-[3px] bg-gradient-to-r from-[#6B7280] to-[#6B7280]/30" />
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#6B7280]/10 flex items-center justify-center text-[#9CA3AF]">
@@ -700,7 +703,7 @@ export function RoadmapPage() {
             </div>
             <Dialog open={suggestionOpen} onOpenChange={setSuggestionOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold gap-2 shrink-0">
+                <Button className="bg-[#00F0FF] hover:bg-[#00F0FF]/90 hover:shadow-[0_0_24px_rgba(0,240,255,0.35)] text-[#05050A] font-semibold gap-2 shrink-0 transition-all duration-200">
                   <Lightbulb className="w-4 h-4" />
                   Suggest a Feature
                 </Button>
@@ -962,7 +965,7 @@ export function RoadmapPage() {
           </p>
           <button
             onClick={() => setSuggestionOpen(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-white font-medium transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00F0FF]/90 hover:shadow-[0_0_24px_rgba(0,240,255,0.35)] text-white font-medium transition-all duration-200"
           >
             Share Feedback
             <ArrowRight className="w-4 h-4" />
