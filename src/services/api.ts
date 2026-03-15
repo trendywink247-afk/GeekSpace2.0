@@ -277,6 +277,22 @@ export const versionService = {
     api.get<{ version: string; buildTime: string; nodeVersion: string }>('/version'),
 };
 
+// ----- Public Stats (landing page social proof) ----------------
+
+export interface PlatformStats {
+  users: number;
+  conversations: number;
+  messages_today: number;
+  reminders_created: number;
+  automations_active: number;
+  countries: number;
+  uptime_pct: number;
+}
+
+export const statsService = {
+  getPublic: () => api.get<PlatformStats>('/stats/public'),
+};
+
 // ----- API Keys ----------------------------------------------
 
 export const apiKeyService = {
@@ -684,6 +700,10 @@ export const memoryService = {
   // 65.7: Bulk-clear all memories in a category
   bulkClear: (category: string) =>
     api.delete<{ deleted: number }>(`/agent/memory/bulk?category=${encodeURIComponent(category)}`),
+
+  // Clear ALL memories for the user (requires confirm=yes)
+  clearAll: () =>
+    api.delete<{ deleted: number }>('/agent/memory/bulk-all?confirm=yes'),
 
   conversations: (limit = 20) =>
     api.get<ConversationEntry[]>(`/agent/conversations?limit=${limit}`),

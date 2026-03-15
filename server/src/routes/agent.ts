@@ -1534,6 +1534,18 @@ agentRouter.put('/memory/:id', requireAuth, validateBody(memoryUpdateSchema), (r
   res.json(mapMemory(updated));
 });
 
+// ── Clear ALL memories for a user (dangerous — requires ?confirm=yes) ──────
+agentRouter.delete('/memory/bulk-all', requireAuth, (req: AuthRequest, res) => {
+  if (req.query.confirm !== 'yes') {
+    res.status(400).json({ error: 'Must pass ?confirm=yes to clear all memories' });
+    return;
+  }
+  const userId = req.userId!;
+  const result = db.prepare('DELETE FROM agent_memory WHERE user_id = ?').run(userId);
+  db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Cleared all memories', ?, 'trash')`).run(uuid(), userId, `Deleted ${result.changes} memories`);
+  res.json({ deleted: result.changes });
+});
+
 // ── 65.7: Bulk-clear memories by category (must be before /:id) ────────────
 agentRouter.delete('/memory/bulk', requireAuth, (req: AuthRequest, res) => {
   const category = typeof req.query.category === 'string' && req.query.category.trim() ? req.query.category.trim() : null;

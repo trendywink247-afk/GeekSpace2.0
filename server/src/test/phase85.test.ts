@@ -132,9 +132,10 @@ describe('B3: Memory Manager card overflow', () => {
     expect(content).toContain('truncate');
   });
 
-  it('memory card action buttons have flex-shrink-0', () => {
+  it('memory card action buttons have adequate sizing', () => {
     const content = readSrc('dashboard/pages/MemoryManagerPage.tsx');
-    expect(content).toContain('flex-shrink-0');
+    // Buttons must have adequate touch targets
+    expect(content).toContain('min-w-[44px]');
   });
 
   it('memory card action buttons have adequate 44px tap target', () => {

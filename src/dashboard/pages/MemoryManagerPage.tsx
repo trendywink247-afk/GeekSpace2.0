@@ -1,8 +1,9 @@
 // ============================================================
-// Memory Manager - Search, browse, and manage agent memories
+// Memory Manager - "Your AI's memory is like a personal Wikipedia about you."
+// Search, browse, categorize, and manage agent memories
 // ============================================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Brain,
   Search,
@@ -10,18 +11,28 @@ import {
   Clock,
   Tag,
   BarChart3,
-  ChevronDown,
-  ChevronUp,
   RefreshCw,
   Download,
   Plus,
   Pencil,
+  Check,
+  X,
+  MessageSquare,
+  User,
+  Briefcase,
+  Heart,
+  Target,
+  BookOpen,
+  AlertTriangle,
+  Send,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -39,45 +50,212 @@ import {
 } from '@/components/ui/select';
 import { memoryService } from '@/services/api';
 import { notify } from '@/services/notifications';
+import type { MemoryEntry } from '@/types';
 
-interface MemoryEntry {
-  id: string;
-  category: string;
-  key: string;
-  value: string;
-  confidence: number;
-  source: string;
-  accessCount: number;
-  createdAt: string;
-  updatedAt: string;
+// ── Constants ──────────────────────────────────────────────────
+
+const CATEGORY_TABS = [
+  { id: 'all', label: 'All', icon: Brain },
+  { id: 'personal', label: 'Personal', icon: User },
+  { id: 'work', label: 'Work', icon: Briefcase },
+  { id: 'preference', label: 'Preferences', icon: Heart },
+  { id: 'goal', label: 'Goals', icon: Target },
+  { id: 'fact', label: 'Facts', icon: BookOpen },
+] as const;
+
+const CATEGORY_OPTIONS = [
+  { value: 'personal', label: 'Personal' },
+  { value: 'work', label: 'Work' },
+  { value: 'preference', label: 'Preference' },
+  { value: 'goal', label: 'Goal' },
+  { value: 'fact', label: 'Fact' },
+  { value: 'general', label: 'General' },
+  { value: 'context', label: 'Context' },
+  { value: 'task', label: 'Task' },
+] as const;
+
+const SOURCE_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  manual: { bg: 'bg-[#00F0FF]/10', text: 'text-[#00F0FF]', label: 'Manual' },
+  chat: { bg: 'bg-[#ADFF2F]/10', text: 'text-[#ADFF2F]', label: 'Chat' },
+  extracted: { bg: 'bg-[#ADFF2F]/10', text: 'text-[#ADFF2F]', label: 'Chat' },
+  inferred: { bg: 'bg-[#8B5CF6]/10', text: 'text-[#8B5CF6]', label: 'Inferred' },
+  telegram: { bg: 'bg-[#FFB800]/10', text: 'text-[#FFB800]', label: 'Telegram' },
+  'portfolio-chat': { bg: 'bg-[#FF2D78]/10', text: 'text-[#FF2D78]', label: 'Portfolio' },
+};
+
+// ── Helpers ────────────────────────────────────────────────────
+
+function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHr / 24);
+  const diffWeek = Math.floor(diffDay / 7);
+  const diffMonth = Math.floor(diffDay / 30);
+
+  if (diffSec < 60) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffDay === 1) return 'yesterday';
+  if (diffDay < 7) return `${diffDay} days ago`;
+  if (diffWeek === 1) return '1 week ago';
+  if (diffWeek < 5) return `${diffWeek} weeks ago`;
+  if (diffMonth === 1) return '1 month ago';
+  if (diffMonth < 12) return `${diffMonth} months ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
+
+function getSourceStyle(source: string) {
+  return SOURCE_STYLES[source] ?? { bg: 'bg-[#8892A4]/10', text: 'text-[#8892A4]', label: source };
+}
+
+function getCategoryIcon(category: string) {
+  const found = CATEGORY_TABS.find(t => t.id === category);
+  return found?.icon ?? Tag;
+}
+
+// ── Loading Skeletons ──────────────────────────────────────────
+
+function StatCardSkeleton() {
+  return (
+    <Card className="border-[#00F0FF]/10">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-10 h-10 rounded-lg" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-12" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MemoryCardSkeleton() {
+  return (
+    <Card className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl">
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-20 rounded-full" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+          <div className="flex items-center gap-3 pt-1">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Category Breakdown Bar ─────────────────────────────────────
+
+function CategoryBreakdownBar({ memories }: { memories: MemoryEntry[] }) {
+  const breakdown = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const m of memories) {
+      counts[m.category] = (counts[m.category] || 0) + 1;
+    }
+    const total = memories.length || 1;
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([cat, count]) => ({
+        category: cat,
+        count,
+        pct: Math.round((count / total) * 100),
+      }));
+  }, [memories]);
+
+  if (breakdown.length === 0) return null;
+
+  const colors: Record<string, string> = {
+    personal: '#00F0FF',
+    work: '#FFB800',
+    preference: '#FF2D78',
+    goal: '#ADFF2F',
+    fact: '#8B5CF6',
+    general: '#8892A4',
+    context: '#00D4B0',
+    task: '#FF6161',
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex h-2 rounded-full overflow-hidden bg-[#06060B]">
+        {breakdown.map(({ category, pct }) => (
+          <div
+            key={category}
+            className="h-full transition-all duration-500"
+            style={{
+              width: `${Math.max(pct, 2)}%`,
+              backgroundColor: colors[category] ?? '#8892A4',
+            }}
+          />
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1">
+        {breakdown.map(({ category, count, pct }) => (
+          <div key={category} className="flex items-center gap-1.5 text-xs text-[#8892A4]">
+            <div
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: colors[category] ?? '#8892A4' }}
+            />
+            <span className="capitalize">{category}</span>
+            <span className="text-[#F4F6FF] font-medium">{count}</span>
+            <span>({pct}%)</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ─────────────────────────────────────────────
 
 export function MemoryManagerPage() {
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'recent' | 'confidence' | 'accessed'>('recent');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  // 65.2: Confidence threshold filter (0-100)
-  const [minConfidence, setMinConfidence] = useState(0);
-  const [bulkClearing, setBulkClearing] = useState<string | null>(null);
-  // 66.13: Confirmation state for bulk-clear modal
-  const [bulkClearConfirm, setBulkClearConfirm] = useState<string | null>(null);
-  // Confirmation state for single-entry delete modal
+
+  // Quick-add bar state
+  const [quickAddText, setQuickAddText] = useState('');
+  const [quickAddCategory, setQuickAddCategory] = useState('general');
+  const [isAdding, setIsAdding] = useState(false);
+
+  // Inline editing state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Delete confirmation
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  // Add/Edit dialog state
-  const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
+
+  // Reset all confirmation
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+
+  // Edit dialog state (for full edit with key change)
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<MemoryEntry | null>(null);
-  const [memoryForm, setMemoryForm] = useState({ key: '', value: '', category: 'general' });
+  const [editForm, setEditForm] = useState({ key: '', value: '', category: 'general' });
 
-  // Load memories from API
-  useEffect(() => {
-    loadMemories();
-  }, []);
+  const quickAddInputRef = useRef<HTMLInputElement>(null);
 
-  const loadMemories = async () => {
+  // ── Load memories ────────────────────────────────────────────
+
+  const loadMemories = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
     try {
@@ -91,20 +269,126 @@ export function MemoryManagerPage() {
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 401) {
-        setLoadError('Session expired — please log in again');
+        setLoadError('Session expired -- please log in again');
       } else {
-        setLoadError('Failed to load memories — try refreshing');
+        setLoadError('Failed to load memories -- try refreshing');
       }
       setMemories([]);
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    void loadMemories();
+  }, [loadMemories]);
+
+  // ── Quick-add handler ────────────────────────────────────────
+
+  const handleQuickAdd = async () => {
+    const text = quickAddText.trim();
+    if (!text) return;
+
+    // Parse key from text: if it contains ":", split on first colon
+    let key: string;
+    let value: string;
+    const colonIdx = text.indexOf(':');
+    if (colonIdx > 0 && colonIdx < 60) {
+      key = text.slice(0, colonIdx).trim().toLowerCase().replace(/\s+/g, '_');
+      value = text.slice(colonIdx + 1).trim();
+    } else {
+      // Auto-generate key from first few words
+      key = text.slice(0, 50).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      value = text;
+    }
+
+    if (!key || !value) return;
+
+    setIsAdding(true);
+    try {
+      const { data } = await memoryService.create({
+        key,
+        value,
+        category: quickAddCategory,
+        source: 'manual',
+      });
+      setMemories(prev => [data, ...prev]);
+      setQuickAddText('');
+      notify('Memory added', 'success');
+      quickAddInputRef.current?.focus();
+    } catch {
+      notify('Failed to add memory', 'error');
+    } finally {
+      setIsAdding(false);
+    }
   };
+
+  // ── Inline edit handlers ─────────────────────────────────────
+
+  const startInlineEdit = (memory: MemoryEntry) => {
+    setEditingId(memory.id);
+    setEditValue(memory.value);
+    setEditCategory(memory.category);
+  };
+
+  const cancelInlineEdit = () => {
+    setEditingId(null);
+    setEditValue('');
+    setEditCategory('');
+  };
+
+  const saveInlineEdit = async (memory: MemoryEntry) => {
+    const trimmed = editValue.trim();
+    if (!trimmed) return;
+
+    setIsSaving(true);
+    try {
+      const { data } = await memoryService.update(memory.id, {
+        key: memory.key,
+        value: trimmed,
+        category: editCategory || memory.category,
+      });
+      setMemories(prev => prev.map(m => m.id === memory.id ? data : m));
+      setEditingId(null);
+      notify('Memory updated', 'success');
+    } catch {
+      notify('Failed to update memory', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ── Full edit dialog handlers ────────────────────────────────
+
+  const openEditDialog = (memory: MemoryEntry) => {
+    setEditTarget(memory);
+    setEditForm({ key: memory.key, value: memory.value, category: memory.category ?? 'general' });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEditDialog = async () => {
+    if (!editTarget || !editForm.key.trim() || !editForm.value.trim()) return;
+    try {
+      const { data } = await memoryService.update(editTarget.id, {
+        key: editForm.key,
+        value: editForm.value,
+        category: editForm.category,
+      });
+      setMemories(prev => prev.map(m => m.id === editTarget.id ? data : m));
+      setEditDialogOpen(false);
+      setEditTarget(null);
+      notify('Memory updated', 'success');
+    } catch {
+      notify('Failed to update memory', 'error');
+    }
+  };
+
+  // ── Delete handlers ──────────────────────────────────────────
 
   const handleDelete = async (id: string) => {
     try {
       await memoryService.delete(id);
-      setMemories(prev => prev.filter((m) => m.id !== id));
+      setMemories(prev => prev.filter(m => m.id !== id));
       notify('Memory deleted', 'success');
     } catch {
       notify('Failed to delete memory', 'error');
@@ -118,57 +402,28 @@ export function MemoryManagerPage() {
     await handleDelete(id);
   };
 
-  const handleDeleteByCategory = (category: string) => {
-    setBulkClearConfirm(category);
-  };
+  // ── Reset all handler ────────────────────────────────────────
 
-  // 65.7: Bulk-clear by category via server endpoint
-  // 66.13: Uses modal confirmation instead of window.confirm()
-  const handleBulkClear = async (category: string) => {
-    setBulkClearConfirm(category);
-  };
-
-  const confirmBulkClear = async () => {
-    const category = bulkClearConfirm;
-    if (!category) return;
-    setBulkClearConfirm(null);
-    setBulkClearing(category);
+  const handleResetAll = async () => {
+    setIsResetting(true);
     try {
-      await memoryService.bulkClear(category);
-      setMemories(prev => prev.filter(m => m.category !== category));
-    } catch { /* ignore */ } finally {
-      setBulkClearing(null);
-    }
-  };
-
-  const handleSaveMemory = async () => {
-    if (!memoryForm.key.trim() || !memoryForm.value.trim()) return;
-    try {
-      if (editTarget) {
-        const { data } = await memoryService.update(editTarget.id, {
-          key: memoryForm.key,
-          value: memoryForm.value,
-          category: memoryForm.category,
-        });
-        setMemories(prev => prev.map(m => m.id === editTarget.id ? data : m));
-        notify('Memory updated', 'success');
-      } else {
-        const { data } = await memoryService.create({
-          key: memoryForm.key,
-          value: memoryForm.value,
-          category: memoryForm.category,
-          source: 'manual',
-        });
-        setMemories(prev => [data, ...prev]);
-        notify('Memory added', 'success');
+      // Get all unique categories and bulk-clear each
+      const categories = [...new Set(memories.map(m => m.category))];
+      for (const cat of categories) {
+        await memoryService.bulkClear(cat);
       }
-      setMemoryDialogOpen(false);
-      setEditTarget(null);
-      setMemoryForm({ key: '', value: '', category: 'general' });
+      setMemories([]);
+      setShowResetDialog(false);
+      setResetConfirmText('');
+      notify('All memories cleared', 'success');
     } catch {
-      notify(editTarget ? 'Failed to update memory' : 'Failed to add memory', 'error');
+      notify('Failed to reset memories', 'error');
+    } finally {
+      setIsResetting(false);
     }
   };
+
+  // ── Export handler ───────────────────────────────────────────
 
   const handleExport = () => {
     const data = JSON.stringify(memories, null, 2);
@@ -181,479 +436,584 @@ export function MemoryManagerPage() {
     URL.revokeObjectURL(url);
   };
 
-  // Filter and sort memories
-  const filteredMemories = memories
-    .filter((m) => {
-      const matchesSearch =
-        m.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.category.toLowerCase().includes(searchQuery.toLowerCase());
+  // ── Filtering ────────────────────────────────────────────────
 
-      const matchesCategory = selectedCategory === 'all' || m.category === selectedCategory;
-      // 65.2: Confidence threshold filter
-      const matchesConfidence = (m.confidence * 100) >= minConfidence;
+  const filteredMemories = useMemo(() => {
+    return memories
+      .filter(m => {
+        const matchesSearch =
+          !searchQuery ||
+          m.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          m.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          m.category.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedCategory === 'all' || m.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+      })
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }, [memories, searchQuery, selectedCategory]);
 
-      return matchesSearch && matchesCategory && matchesConfidence;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'recent':
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-        case 'confidence':
-          return b.confidence - a.confidence;
-        case 'accessed':
-          return b.accessCount - a.accessCount;
-        default:
-          return 0;
+  // ── Stats ────────────────────────────────────────────────────
+
+  const stats = useMemo(() => {
+    const total = memories.length;
+    const categoryCounts = new Map<string, number>();
+    let mostAccessed: MemoryEntry | null = null;
+
+    for (const m of memories) {
+      categoryCounts.set(m.category, (categoryCounts.get(m.category) || 0) + 1);
+      if (!mostAccessed || m.accessCount > mostAccessed.accessCount) {
+        mostAccessed = m;
       }
-    });
+    }
 
-  // Get unique categories
-  const categories = ['all', ...new Set(memories.map((m) => m.category))];
-
-  // Stats
-  const stats = {
-    total: memories.length,
-    categories: new Set(memories.map((m) => m.category)).size,
-    avgConfidence: memories.length > 0 
-      ? (memories.reduce((a, m) => a + m.confidence, 0) / memories.length * 100).toFixed(0)
-      : 0,
-    thisWeek: memories.filter((m) => {
+    const thisWeek = memories.filter(m => {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       return new Date(m.createdAt) > weekAgo;
-    }).length,
-  };
+    }).length;
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
+    return { total, categoryCount: categoryCounts.size, thisWeek, mostAccessed };
+  }, [memories]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // ── Category tab counts ──────────────────────────────────────
+
+  const tabCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: memories.length };
+    for (const m of memories) {
+      counts[m.category] = (counts[m.category] || 0) + 1;
+    }
+    return counts;
+  }, [memories]);
+
+  // ── Render ───────────────────────────────────────────────────
 
   return (
     <div className="space-y-6 w-full max-w-full overflow-x-hidden">
-      {/* Header */}
+      {/* ── Header ──────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
+          <h1
+            className="text-3xl md:text-4xl font-bold mb-1"
+            style={{ fontFamily: 'Syne, sans-serif' }}
+          >
             Memory Manager
           </h1>
-          <p className="text-[#9CA3AF]">
-            {stats.total} memories across {stats.categories} categories
+          <p className="text-[#8892A4] text-sm">
+            Your AI&apos;s memory is like a personal Wikipedia about you.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Button
+            variant="outline"
             size="sm"
-            onClick={() => {
-              setEditTarget(null);
-              setMemoryForm({ key: '', value: '', category: 'general' });
-              setMemoryDialogOpen(true);
-            }}
-            className="bg-[#00F0FF] hover:bg-[#00D4B0] text-black"
+            onClick={handleExport}
+            disabled={memories.length === 0}
+            className="border-[#00F0FF]/20 text-[#8892A4] hover:text-[#F4F6FF]"
           >
-            <Plus className="h-4 w-4 mr-1" /> Add Memory
-          </Button>
-          <Button variant="outline" onClick={handleExport} className="border-[#00F0FF]/30">
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="w-4 h-4 mr-1" />
             Export
           </Button>
-          <Button onClick={loadMemories} variant="outline" className="border-[#00F0FF]/30 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Refresh memories">
-            <RefreshCw className="w-4 h-4" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void loadMemories()}
+            className="border-[#00F0FF]/20 min-w-[36px] min-h-[36px]"
+            aria-label="Refresh memories"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-[#00F0FF]/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
-                <Brain className="w-5 h-5 text-[#00F0FF]" />
+      {/* ── Stats Header ────────────────────────────────────── */}
+      {isLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="border-[#00F0FF]/10">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center shrink-0">
+                  <Brain className="w-5 h-5 text-[#00F0FF]" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-[#F4F6FF]">{stats.total}</div>
+                  <div className="text-xs text-[#8892A4]">Total Memories</div>
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-[#E8E8F0]">{stats.total}</div>
-                <div className="text-xs text-[#9CA3AF]">Total Memories</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#00F0FF]/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center">
-                <Tag className="w-5 h-5 text-[#00FF88]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#E8E8F0]">{stats.categories}</div>
-                <div className="text-xs text-[#9CA3AF]">Categories</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#00F0FF]/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FFB800]/10 flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-[#FFB800]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#E8E8F0]">{stats.avgConfidence}%</div>
-                <div className="text-xs text-[#9CA3AF]">Avg Confidence</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#00F0FF]/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FF2D78]/10 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-[#FF2D78]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#E8E8F0]">{stats.thisWeek}</div>
-                <div className="text-xs text-[#9CA3AF]">This Week</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
 
-      {/* Search and Filters */}
-      <Card className="border-[#00F0FF]/20">
-        <CardContent className="p-4 space-y-4">
-          <div className="flex flex-col md:flex-row gap-3">
+          <Card className="border-[#00F0FF]/10">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#ADFF2F]/10 flex items-center justify-center shrink-0">
+                  <Tag className="w-5 h-5 text-[#ADFF2F]" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-[#F4F6FF]">{stats.categoryCount}</div>
+                  <div className="text-xs text-[#8892A4]">Categories</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-[#00F0FF]/10">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#FFB800]/10 flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5 text-[#FFB800]" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-[#F4F6FF]">{stats.thisWeek}</div>
+                  <div className="text-xs text-[#8892A4]">This Week</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-[#00F0FF]/10">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center shrink-0">
+                  <BarChart3 className="w-5 h-5 text-[#8B5CF6]" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-[#F4F6FF] truncate max-w-[120px]" title={stats.mostAccessed?.key}>
+                    {stats.mostAccessed ? stats.mostAccessed.accessCount : 0}
+                  </div>
+                  <div className="text-xs text-[#8892A4]">Most Referenced</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ── Categories Breakdown ────────────────────────────── */}
+      {!isLoading && memories.length > 0 && (
+        <Card className="border-[#00F0FF]/10">
+          <CardContent className="p-4">
+            <CategoryBreakdownBar memories={memories} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Quick-Add Bar ───────────────────────────────────── */}
+      <Card className="border-[#00F0FF]/10">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+              <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8892A4]" />
               <Input
-                placeholder="Search memories..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                ref={quickAddInputRef}
+                placeholder="Add a memory... (e.g. 'favorite color: blue' or 'I work at Google')"
+                value={quickAddText}
+                onChange={e => setQuickAddText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    void handleQuickAdd();
+                  }
+                }}
                 className="pl-10 bg-[#06060B] border-[#00F0FF]/20"
               />
             </div>
-            <div className="flex gap-2">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm"
-              >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat === 'all' ? 'All Categories' : cat}
-                  </option>
+            <Select value={quickAddCategory} onValueChange={setQuickAddCategory}>
+              <SelectTrigger className="w-full sm:w-[140px] bg-[#06060B] border-[#00F0FF]/20">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORY_OPTIONS.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
                 ))}
-              </select>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="px-3 py-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm"
-              >
-                <option value="recent">Most Recent</option>
-                <option value="confidence">Highest Confidence</option>
-                <option value="accessed">Most Accessed</option>
-              </select>
-            </div>
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={() => void handleQuickAdd()}
+              disabled={isAdding || !quickAddText.trim()}
+              className="bg-[#00F0FF] hover:bg-[#00D4B0] text-black min-w-[44px] min-h-[44px]"
+            >
+              {isAdding ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
           </div>
-
-          {/* 65.2: Confidence threshold slider */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-[#9CA3AF] whitespace-nowrap">Min confidence: <span className="text-[#00FF88] font-mono">{minConfidence}%</span></span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={5}
-              value={minConfidence}
-              onChange={(e) => setMinConfidence(Number(e.target.value))}
-              className="flex-1 h-1.5 accent-[#00FF88] cursor-pointer"
-              aria-label="Minimum confidence threshold"
-            />
-          </div>
-
-          {/* Category quick filters */}
-          {categories.length > 1 && (
-            <div className="flex flex-wrap gap-2 items-center">
-              {categories.filter(c => c !== 'all').map((cat) => (
-                <div key={cat} className="flex items-center gap-1">
-                  <button
-                    onClick={() => setSelectedCategory(selectedCategory === cat ? 'all' : cat)}
-                    className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                      selectedCategory === cat
-                        ? 'bg-[#00F0FF] text-white'
-                        : 'bg-[#06060B] text-[#9CA3AF] hover:text-white'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                  {/* 65.7: Bulk-clear button per category */}
-                  <button
-                    onClick={() => void handleBulkClear(cat)}
-                    disabled={bulkClearing === cat}
-                    title={`Clear all ${cat} memories`}
-                    className="text-xs px-1.5 py-0.5 rounded bg-[#FF6161]/10 text-[#FF6161]/60 hover:text-[#FF6161] hover:bg-[#FF6161]/20 transition-colors disabled:opacity-40"
-                  >
-                    {bulkClearing === cat ? '…' : '✕ all'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Memories List */}
-      {filteredMemories.length === 0 ? (
+      {/* ── Search + Category Tabs ──────────────────────────── */}
+      <div className="space-y-3">
+        {/* Search bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8892A4]" />
+          <Input
+            placeholder="Search memories..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pl-10 bg-[#06060B] border-[#00F0FF]/20"
+          />
+        </div>
+
+        {/* Category filter tabs */}
+        <div className="flex flex-wrap gap-2">
+          {CATEGORY_TABS.map(tab => {
+            const Icon = tab.icon;
+            const count = tabCounts[tab.id] ?? 0;
+            const isActive = selectedCategory === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedCategory(tab.id)}
+                className={`
+                  inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all
+                  min-h-[36px]
+                  ${isActive
+                    ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/30'
+                    : 'bg-[#06060B] text-[#8892A4] border border-transparent hover:text-[#F4F6FF] hover:border-[#00F0FF]/10'
+                  }
+                `}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+                {count > 0 && (
+                  <span className={`text-xs font-mono ${isActive ? 'text-[#00F0FF]' : 'text-[#8892A4]'}`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Memory List ─────────────────────────────────────── */}
+      {isLoading ? (
+        <div className="space-y-3">
+          <MemoryCardSkeleton />
+          <MemoryCardSkeleton />
+          <MemoryCardSkeleton />
+          <MemoryCardSkeleton />
+        </div>
+      ) : loadError ? (
         <div className="text-center py-16">
-          <Brain className="w-16 h-16 text-[#00F0FF]/30 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">
-            {loadError ? 'Could not load memories' : 'No memories found'}
+          <AlertTriangle className="w-16 h-16 text-[#FF2D78]/40 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-[#F4F6FF] mb-2">Could not load memories</h3>
+          <p className="text-[#8892A4] max-w-sm mx-auto mb-4">{loadError}</p>
+          <Button
+            onClick={() => void loadMemories()}
+            className="bg-[#00F0FF] hover:bg-[#00D4B0] text-black"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" /> Retry
+          </Button>
+        </div>
+      ) : filteredMemories.length === 0 ? (
+        <div className="text-center py-16">
+          <Brain className="w-16 h-16 text-[#00F0FF]/20 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-[#F4F6FF] mb-2">
+            {memories.length === 0 ? 'No memories yet' : 'No matching memories'}
           </h3>
-          <p className="text-[#9CA3AF] max-w-sm mx-auto">
-            {loadError || 'Your agent will build memories as you chat. They\'ll appear here for you to review and manage.'}
+          <p className="text-[#8892A4] max-w-sm mx-auto">
+            {memories.length === 0
+              ? "Chat with Weebo and say 'remember that...' to get started."
+              : 'Try adjusting your search or category filter.'}
           </p>
-          {loadError && (
-            <Button onClick={loadMemories} className="mt-4 bg-[#00F0FF] hover:bg-[#00D4B0]">
-              <RefreshCw className="w-4 h-4 mr-2" /> Retry
-            </Button>
-          )}
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredMemories.map((memory) => (
-            <Card
-              key={memory.id}
-              className="bg-[#0C0C18] border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all"
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  {/* Confidence indicator */}
-                  <div className="flex-shrink-0">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold"
-                      style={{
-                        backgroundColor: `${memory.confidence > 0.8 ? '#00FF88' : memory.confidence > 0.5 ? '#FFB800' : '#FF6161'}20`,
-                        color: memory.confidence > 0.8 ? '#00FF88' : memory.confidence > 0.5 ? '#FFB800' : '#FF6161',
-                      }}
-                    >
-                      {(memory.confidence * 100).toFixed(0)}
-                    </div>
-                  </div>
+          {filteredMemories.map(memory => {
+            const sourceStyle = getSourceStyle(memory.source);
+            const CategoryIcon = getCategoryIcon(memory.category);
+            const isEditing = editingId === memory.id;
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge className="bg-[#00F0FF]/20 text-[#00F0FF]">
+            return (
+              <Card
+                key={memory.id}
+                className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl hover:border-[#00F0FF]/25 transition-all group"
+              >
+                <CardContent className="p-4">
+                  {isEditing ? (
+                    /* ── Inline Edit Mode ── */
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-xs text-[#8892A4]">
+                        <CategoryIcon className="w-3.5 h-3.5" />
+                        <span className="font-mono text-[#00F0FF]">{memory.key}</span>
+                      </div>
+                      <Textarea
+                        value={editValue}
+                        onChange={e => setEditValue(e.target.value)}
+                        className="bg-[#06060B] border-[#00F0FF]/20 text-sm resize-none"
+                        rows={3}
+                        autoFocus
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                            void saveInlineEdit(memory);
+                          }
+                          if (e.key === 'Escape') cancelInlineEdit();
+                        }}
+                      />
+                      <div className="flex items-center justify-between">
+                        <Select value={editCategory} onValueChange={setEditCategory}>
+                          <SelectTrigger className="w-[130px] bg-[#06060B] border-[#00F0FF]/20 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CATEGORY_OPTIONS.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={cancelInlineEdit}
+                            className="h-8 px-3 text-[#8892A4]"
+                          >
+                            <X className="w-3.5 h-3.5 mr-1" /> Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => void saveInlineEdit(memory)}
+                            disabled={isSaving || !editValue.trim()}
+                            className="h-8 px-3 bg-[#ADFF2F]/20 text-[#ADFF2F] hover:bg-[#ADFF2F]/30 border-0"
+                          >
+                            {isSaving ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                            ) : (
+                              <Check className="w-3.5 h-3.5 mr-1" />
+                            )}
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ── Display Mode ── */
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        {/* Badges row */}
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <Badge className="bg-[#00F0FF]/10 text-[#00F0FF] text-xs px-2 py-0.5 rounded-full border-0">
+                            <CategoryIcon className="w-3 h-3 mr-1" />
                             {memory.category}
                           </Badge>
-                          <span className="text-xs text-[#9CA3AF]">
-                            {memory.accessCount} accesses
-                          </span>
+                          <Badge className={`${sourceStyle.bg} ${sourceStyle.text} text-xs px-2 py-0.5 rounded-full border-0`}>
+                            {memory.source === 'telegram' ? (
+                              <MessageSquare className="w-3 h-3 mr-1" />
+                            ) : null}
+                            {sourceStyle.label}
+                          </Badge>
                         </div>
-                        
-                        <h4 className="font-medium text-[#E8E8F0] mb-1 truncate">{memory.key}</h4>
-                        
-                        {expandedId === memory.id ? (
-                          <p className="text-sm text-[#9CA3AF] whitespace-pre-wrap">{memory.value}</p>
-                        ) : (
-                          <p className="text-sm text-[#9CA3AF] line-clamp-2">{memory.value}</p>
-                        )}
-                        
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-[#9CA3AF]">
-                          <span className="whitespace-nowrap">Created: {formatDate(memory.createdAt)}</span>
-                          <span className="whitespace-nowrap">Updated: {formatDate(memory.updatedAt)}</span>
-                          <span className="whitespace-nowrap">Source: {memory.source}</span>
+
+                        {/* Memory content -- click to inline-edit */}
+                        <p
+                          className="text-sm text-[#F4F6FF] leading-relaxed mb-2 cursor-pointer hover:text-[#00F0FF]/80 transition-colors"
+                          onClick={() => startInlineEdit(memory)}
+                          title="Click to quick edit"
+                        >
+                          {memory.value}
+                        </p>
+
+                        {/* Meta row */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#8892A4]">
+                          <span className="font-mono text-[#00F0FF]/60">{memory.key}</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {formatRelativeDate(memory.createdAt)}
+                          </span>
+                          {memory.accessCount > 0 && (
+                            <span>{memory.accessCount} accesses</span>
+                          )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={() => setExpandedId(expandedId === memory.id ? null : memory.id)}
-                          className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
-                          aria-label={expandedId === memory.id ? 'Collapse memory' : 'Expand memory'}
-                        >
-                          {expandedId === memory.id ? (
-                            <ChevronUp className="w-4 h-4" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditTarget(memory);
-                            setMemoryForm({ key: memory.key, value: memory.value, category: memory.category ?? 'general' });
-                            setMemoryDialogOpen(true);
-                          }}
-                          className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#00F0FF] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                          onClick={() => openEditDialog(memory)}
+                          className="p-2 rounded-lg text-[#8892A4] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                           aria-label="Edit memory"
+                          title="Edit"
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(memory.id)}
-                          className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#FF6161] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                          className="p-2 rounded-lg text-[#8892A4] hover:text-[#FF2D78] hover:bg-[#FF2D78]/10 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                           aria-label="Delete memory"
+                          title="Delete"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {/* Results count */}
+          <p className="text-center text-xs text-[#8892A4] pt-2">
+            Showing {filteredMemories.length} of {memories.length} memories
+          </p>
         </div>
       )}
 
-      {/* Bulk Actions */}
-      {selectedCategory !== 'all' && memories.some(m => m.category === selectedCategory) && (
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            onClick={() => handleDeleteByCategory(selectedCategory)}
-            className="border-[#FF6161]/30 text-[#FF6161] hover:bg-[#FF6161]/10"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete all in {selectedCategory}
-          </Button>
-        </div>
-      )}
-
-      {/* 66.13: Bulk-clear confirmation modal */}
-      {bulkClearConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0D0D1A] border border-[#FF6161]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-[#FF6161]/10 flex items-center justify-center shrink-0">
-                <Trash2 className="w-5 h-5 text-[#FF6161]" />
-              </div>
+      {/* ── Danger Zone: Reset All ──────────────────────────── */}
+      {!isLoading && memories.length > 0 && (
+        <Card className="border-[#FF2D78]/20 mt-8">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-base font-semibold text-[#F4F6FF]">Clear all memories?</h3>
-                <p className="text-xs text-[#9CA3AF]">Category: <span className="text-[#E8E8F0] font-medium">{bulkClearConfirm}</span></p>
+                <h3 className="text-sm font-semibold text-[#FF2D78] flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Danger Zone
+                </h3>
+                <p className="text-xs text-[#8892A4] mt-1">
+                  Permanently delete all memories. This action cannot be undone.
+                </p>
               </div>
-            </div>
-            <p className="text-sm text-[#9CA3AF] mb-5">
-              All memories in the <strong className="text-[#E8E8F0]">{bulkClearConfirm}</strong> category will be permanently deleted from the server.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setBulkClearConfirm(null)}
-                className="flex-1 py-2 px-4 rounded-xl border border-[#2A2A3A] text-sm text-[#9CA3AF] hover:bg-[#1A1A2E] transition-colors"
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowResetDialog(true)}
+                className="border-[#FF2D78]/30 text-[#FF2D78] hover:bg-[#FF2D78]/10 shrink-0"
               >
-                Cancel
-              </button>
-              <button
-                onClick={() => void confirmBulkClear()}
-                className="flex-1 py-2 px-4 rounded-xl bg-[#FF6161]/15 border border-[#FF6161]/30 text-sm text-[#FF6161] hover:bg-[#FF6161]/25 transition-colors font-medium"
-              >
-                Clear all
-              </button>
+                <Trash2 className="w-4 h-4 mr-1" />
+                Reset All Memories
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Single-entry delete confirmation modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0D0D1A] border border-[#FF6161]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-[#FF6161]/10 flex items-center justify-center shrink-0">
-                <Trash2 className="w-5 h-5 text-[#FF6161]" />
-              </div>
-              <h3 className="text-base font-semibold text-[#F4F6FF]">Delete this memory entry?</h3>
-            </div>
-            <p className="text-sm text-[#9CA3AF] mb-5">This memory will be permanently removed from the server.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirmId(null)}
-                className="flex-1 py-2 px-4 rounded-xl border border-[#2A2A3A] text-sm text-[#9CA3AF] hover:bg-[#1A1A2E] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => void confirmDelete()}
-                className="flex-1 py-2 px-4 rounded-xl bg-[#FF6161]/15 border border-[#FF6161]/30 text-sm text-[#FF6161] hover:bg-[#FF6161]/25 transition-colors font-medium"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── Delete Confirmation Dialog ──────────────────────── */}
+      <Dialog open={!!deleteConfirmId} onOpenChange={open => { if (!open) setDeleteConfirmId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-[#FF2D78]" />
+              Delete this memory?
+            </DialogTitle>
+            <DialogDescription>
+              This memory will be permanently removed and cannot be recovered.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void confirmDelete()}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Add / Edit Memory Dialog */}
+      {/* ── Reset All Confirmation Dialog ───────────────────── */}
+      <Dialog open={showResetDialog} onOpenChange={open => { if (!open) { setShowResetDialog(false); setResetConfirmText(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-[#FF2D78]" />
+              Reset all memories?
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete all {memories.length} memories. Your AI will lose all context about you. Type <span className="font-mono text-[#FF2D78]">RESET</span> to confirm.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder='Type "RESET" to confirm'
+            value={resetConfirmText}
+            onChange={e => setResetConfirmText(e.target.value)}
+            className="bg-[#06060B] border-[#FF2D78]/20"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setShowResetDialog(false); setResetConfirmText(''); }}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={resetConfirmText !== 'RESET' || isResetting}
+              onClick={() => void handleResetAll()}
+            >
+              {isResetting ? (
+                <><Loader2 className="w-4 h-4 animate-spin mr-1" /> Resetting...</>
+              ) : (
+                'Reset All Memories'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Full Edit Dialog ────────────────────────────────── */}
       <Dialog
-        open={memoryDialogOpen}
-        onOpenChange={(open) => {
+        open={editDialogOpen}
+        onOpenChange={open => {
           if (!open) {
-            setMemoryDialogOpen(false);
+            setEditDialogOpen(false);
             setEditTarget(null);
           }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editTarget ? 'Edit Memory' : 'Add Memory'}</DialogTitle>
+            <DialogTitle>Edit Memory</DialogTitle>
             <DialogDescription>
-              {editTarget
-                ? 'Update this memory entry for your agent.'
-                : 'Add something for your agent to remember.'}
+              Update this memory entry for your agent.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <Input
               placeholder="Memory key (e.g. preferred_language)"
-              value={memoryForm.key}
-              onChange={(e) => setMemoryForm((p) => ({ ...p, key: e.target.value }))}
+              value={editForm.key}
+              onChange={e => setEditForm(p => ({ ...p, key: e.target.value }))}
             />
             <Textarea
-              placeholder="Memory value — what should your agent remember?"
-              value={memoryForm.value}
-              onChange={(e) => setMemoryForm((p) => ({ ...p, value: e.target.value }))}
+              placeholder="Memory value -- what should your agent remember?"
+              value={editForm.value}
+              onChange={e => setEditForm(p => ({ ...p, value: e.target.value }))}
               rows={4}
               className="resize-none"
             />
             <Select
-              value={memoryForm.category}
-              onValueChange={(val) => setMemoryForm((p) => ({ ...p, category: val }))}
+              value={editForm.category}
+              onValueChange={val => setEditForm(p => ({ ...p, category: val }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="general">General</SelectItem>
-                <SelectItem value="preference">Preference</SelectItem>
-                <SelectItem value="fact">Fact</SelectItem>
-                <SelectItem value="task">Task</SelectItem>
-                <SelectItem value="context">Context</SelectItem>
+                {CATEGORY_OPTIONS.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setMemoryDialogOpen(false)}>
+            <Button variant="ghost" onClick={() => setEditDialogOpen(false)}>
               Cancel
             </Button>
             <Button
-              onClick={() => void handleSaveMemory()}
-              disabled={!memoryForm.key.trim() || !memoryForm.value.trim()}
+              onClick={() => void handleSaveEditDialog()}
+              disabled={!editForm.key.trim() || !editForm.value.trim()}
             >
-              {editTarget ? 'Save Changes' : 'Add Memory'}
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>

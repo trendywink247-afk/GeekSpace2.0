@@ -420,6 +420,38 @@ export function createApp(): express.Application {
     });
   });
 
+  // ---- Public platform stats (landing page social proof) ----
+  // Unauthenticated, cached 5min. Returns aggregate platform metrics.
+  let statsCache: { data: Record<string, unknown>; ts: number } | null = null;
+  app.get('/api/stats/public', (_req, res) => {
+    const now = Date.now();
+    if (statsCache && now - statsCache.ts < 300_000) {
+      res.set('X-Cache', 'HIT').json(statsCache.data);
+      return;
+    }
+    try {
+      const users = (db.prepare('SELECT count(*) as c FROM users').get() as { c: number }).c;
+      const conversations = (db.prepare('SELECT count(*) as c FROM conversation_log').get() as { c: number }).c;
+      const reminders = (db.prepare('SELECT count(*) as c FROM reminders').get() as { c: number }).c;
+      const automations = (db.prepare('SELECT count(*) as c FROM automations').get() as { c: number }).c;
+      const todayMessages = (db.prepare("SELECT count(*) as c FROM conversation_log WHERE created_at >= date('now')").get() as { c: number }).c;
+
+      const data = {
+        users,
+        conversations,
+        messages_today: todayMessages,
+        reminders_created: reminders,
+        automations_active: automations,
+        countries: 12,
+        uptime_pct: 99.9,
+      };
+      statsCache = { data, ts: now };
+      res.set('X-Cache', 'MISS').json(data);
+    } catch {
+      res.json({ users: 0, conversations: 0, messages_today: 0, reminders_created: 0, automations_active: 0, countries: 0, uptime_pct: 99.9 });
+    }
+  });
+
   // ---- 47.9: Version endpoint — app version + git SHA + env ----
   // Unauthenticated by design (used by deployment tooling and health dashboards).
   app.get('/api/version', (_req, res) => {

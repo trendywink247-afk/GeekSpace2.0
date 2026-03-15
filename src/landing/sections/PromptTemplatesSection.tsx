@@ -135,10 +135,10 @@ export function PromptTemplatesSection() {
             initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
             whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/5 border border-[#00F0FF]/20 mb-6"
           >
-            <Sparkles className="w-4 h-4 text-violet-400" />
-            <span className="text-sm text-violet-200">Start with a template</span>
+            <Sparkles className="w-4 h-4 text-[#00F0FF]" />
+            <span className="text-sm text-[#00F0FF]/80">Start with a template</span>
           </motion.div>
 
           <motion.h2
@@ -149,8 +149,8 @@ export function PromptTemplatesSection() {
             className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
             style={{ fontFamily: 'Syne, sans-serif' }}
           >
-            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text' }}>
-              8 Ways to Start
+            <span className="text-gradient">
+              What Will You Build?
             </span>
           </motion.h2>
 
@@ -159,9 +159,9 @@ export function PromptTemplatesSection() {
             whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={prefersReducedMotion ? undefined : { delay: 0.2 }}
-            className="text-lg text-slate-400 max-w-2xl mx-auto"
+            className="text-lg text-[#8892A4] max-w-2xl mx-auto"
           >
-            Don\'t stare at a blank screen. Pick a template, fill in the blanks, watch the magic happen.
+            Pick a template and start creating. Agentin handles the rest.
           </motion.p>
         </div>
 
@@ -180,8 +180,8 @@ export function PromptTemplatesSection() {
               aria-current={activeCategory === category ? 'page' : undefined}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                 activeCategory === category
-                  ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/25'
-                  : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                  ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 shadow-lg shadow-[#00F0FF]/10'
+                  : 'bg-white/5 text-[#8892A4] hover:bg-white/10 hover:text-[#E8E8F0] border border-transparent'
               }`}
             >
               {category}
@@ -231,7 +231,7 @@ export function PromptTemplatesSection() {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleTryTemplate(template)}
-                  className="flex-1 py-2 px-4 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="flex-1 py-2 px-4 bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                 >
                   Try It
                 </button>
@@ -265,12 +265,12 @@ export function PromptTemplatesSection() {
           transition={prefersReducedMotion ? undefined : { delay: 0.5 }}
           className="text-center mt-16"
         >
-          <p className="text-slate-400 mb-4">
+          <p className="text-[#8892A4] mb-4">
             Or just start typing. Agentin figures out what you need.
           </p>
           <button
             onClick={() => navigate('/login')}
-            className="px-8 py-3 bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white rounded-full font-medium transition-all duration-200 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
+            className="px-8 py-3 bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] hover:from-[#00F0FF]/90 hover:to-[#00D4B0]/90 text-[#06060B] rounded-full font-semibold transition-all duration-200 shadow-lg shadow-[#00F0FF]/20 hover:shadow-[#00F0FF]/30 hover:scale-105"
           >
             Start Creating
           </button>

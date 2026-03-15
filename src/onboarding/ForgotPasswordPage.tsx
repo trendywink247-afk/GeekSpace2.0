@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Hexagon, Mail, Lock, ArrowLeft, ArrowRight, KeyRound, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
+import { Hexagon, Mail, Lock, ArrowLeft, ArrowRight, KeyRound, ShieldCheck, CheckCircle2, Loader2, Check, X, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authService } from '@/services/api';
@@ -19,6 +19,8 @@ export function ForgotPasswordPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [redirectCountdown, setRedirectCountdown] = useState(0);
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -26,6 +28,38 @@ export function ForgotPasswordPage() {
     const timer = setTimeout(() => setIsLoaded(true), 50);
     return () => clearTimeout(timer);
   }, []);
+
+  // OTP resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(id);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [resendCooldown]);
+
+  // Success auto-redirect countdown
+  useEffect(() => {
+    if (step !== 'success') return;
+    setRedirectCountdown(5);
+    const id = setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(id);
+          navigate('/login');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [step, navigate]);
 
   // Auto-focus first OTP input when entering OTP step
   useEffect(() => {
@@ -46,6 +80,7 @@ export function ForgotPasswordPage() {
         return;
       }
       setChannel(res.data.channel || 'email');
+      setResendCooldown(60);
       setStep('otp');
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { error?: string } } };
@@ -135,6 +170,37 @@ export function ForgotPasswordPage() {
     }
   };
 
+  const handleResendOtp = async () => {
+    setError('');
+    setIsLoading(true);
+    try {
+      await authService.requestPasswordReset(email.trim(), 'auto');
+      setResendCooldown(60);
+      setOtp(['', '', '', '', '', '']);
+      setTimeout(() => otpRefs.current[0]?.focus(), 100);
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { error?: string } } };
+      setError(axiosError?.response?.data?.error || 'Failed to resend code. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Password strength calculation
+  const getPasswordStrength = (pw: string): { level: 'weak' | 'medium' | 'strong'; percent: number; color: string } => {
+    if (pw.length === 0) return { level: 'weak', percent: 0, color: '#FF3366' };
+    if (pw.length < 6) return { level: 'weak', percent: 33, color: '#FF3366' };
+    const hasMixed = /[a-z]/.test(pw) && /[A-Z]/.test(pw);
+    const hasNumbers = /\d/.test(pw);
+    if (pw.length > 8 && (hasMixed || hasNumbers)) return { level: 'strong', percent: 100, color: '#00FF88' };
+    if (pw.length >= 6) return { level: 'medium', percent: 66, color: '#F59E0B' };
+    return { level: 'weak', percent: 33, color: '#FF3366' };
+  };
+
+  const passwordStrength = getPasswordStrength(newPassword);
+
+  const stepLabels = ['Email', 'Verify', 'Reset', 'Done'] as const;
+
   const stepConfig = {
     email: { title: 'Reset your password', subtitle: 'Enter your email and we\'ll send you a reset code' },
     otp: { title: 'Check your ' + (channel === 'telegram' ? 'Telegram' : 'email'), subtitle: `We sent a 6-digit code to ${channel === 'telegram' ? 'your Telegram' : email}` },
@@ -175,34 +241,45 @@ export function ForgotPasswordPage() {
           </button>
 
           {/* Step indicator */}
-          {step !== 'success' && (
-            <div className="flex items-center justify-center gap-2 mb-6">
-              {(['email', 'otp', 'password'] as const).map((s, i) => (
-                <div key={s} className="flex items-center gap-2">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                      step === s
-                        ? 'bg-[#00F0FF] text-white scale-110'
-                        : (['email', 'otp', 'password'].indexOf(step) > i)
-                        ? 'bg-[#00FF88]/20 text-[#00FF88]'
-                        : 'bg-[#1A1A2E] text-[#6B7280]'
-                    }`}
-                  >
-                    {(['email', 'otp', 'password'].indexOf(step) > i) ? (
-                      <CheckCircle2 className="w-4 h-4" />
-                    ) : (
-                      i + 1
-                    )}
+          <div className="flex items-center justify-center gap-1 sm:gap-2 mb-6">
+            {(['email', 'otp', 'password', 'success'] as const).map((s, i) => {
+              const allSteps: Step[] = ['email', 'otp', 'password', 'success'];
+              const currentIndex = allSteps.indexOf(step);
+              const isPast = currentIndex > i;
+              const isCurrent = step === s;
+              return (
+                <div key={s} className="flex items-center gap-1 sm:gap-2">
+                  <div className="flex flex-col items-center gap-1">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                        isCurrent
+                          ? 'bg-[#00F0FF] text-white scale-110'
+                          : isPast
+                          ? 'bg-[#00FF88]/20 text-[#00FF88]'
+                          : 'bg-[#1A1A2E] text-[#6B7280]'
+                      }`}
+                    >
+                      {isPast ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        i + 1
+                      )}
+                    </div>
+                    <span className={`text-[10px] transition-colors duration-300 ${
+                      isCurrent ? 'text-[#00F0FF]' : isPast ? 'text-[#00FF88]' : 'text-[#6B7280]'
+                    }`}>
+                      {stepLabels[i]}
+                    </span>
                   </div>
-                  {i < 2 && (
-                    <div className={`w-8 h-0.5 transition-colors duration-300 ${
-                      (['email', 'otp', 'password'].indexOf(step) > i) ? 'bg-[#00FF88]/40' : 'bg-[#1A1A2E]'
+                  {i < 3 && (
+                    <div className={`w-5 sm:w-8 h-0.5 mb-5 transition-colors duration-300 ${
+                      isPast ? 'bg-[#00FF88]/40' : 'bg-[#1A1A2E]'
                     }`} />
                   )}
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
 
           <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
             {stepConfig[step].title}
@@ -296,17 +373,21 @@ export function ForgotPasswordPage() {
                 )}
               </Button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setOtp(['', '', '', '', '', '']);
-                  setError('');
-                  setStep('email');
-                }}
-                className="w-full text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors py-2"
-              >
-                Didn't receive a code? Try again
-              </button>
+              {resendCooldown > 0 ? (
+                <div className="flex items-center justify-center gap-1.5 text-sm text-[#6B7280] py-2">
+                  <Timer className="w-3.5 h-3.5" />
+                  Resend code in {resendCooldown}s
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={isLoading}
+                  className="w-full text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors py-2 min-h-[44px]"
+                >
+                  Didn't receive the code? <span className="text-[#00F0FF] font-medium">Resend</span>
+                </button>
+              )}
             </form>
           )}
 
@@ -328,6 +409,35 @@ export function ForgotPasswordPage() {
                     autoFocus
                   />
                 </div>
+                {/* Password strength meter */}
+                {newPassword.length > 0 && (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="h-1.5 w-full bg-[#1A1A2E] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{
+                          width: `${passwordStrength.percent}%`,
+                          backgroundColor: passwordStrength.color,
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] capitalize" style={{ color: passwordStrength.color }}>
+                        {passwordStrength.level}
+                      </span>
+                      <div className="flex items-center gap-1 text-[10px]">
+                        {newPassword.length >= 8 ? (
+                          <Check className="w-3 h-3 text-[#00FF88]" />
+                        ) : (
+                          <X className="w-3 h-3 text-[#FF3366]" />
+                        )}
+                        <span className={newPassword.length >= 8 ? 'text-[#00FF88]' : 'text-[#6B7280]'}>
+                          8+ characters
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-sm text-[#9CA3AF] mb-2 block">Confirm password</label>
@@ -384,12 +494,15 @@ export function ForgotPasswordPage() {
               <p className="text-[#6B7280]">
                 Your password has been reset successfully. You can now sign in with your new credentials.
               </p>
+              <p className="text-xs text-[#6B7280]">
+                Redirecting to login in {redirectCountdown}s...
+              </p>
               <Button
                 onClick={() => navigate('/login')}
                 className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base"
               >
                 <ArrowRight className="w-4 h-4 mr-2" />
-                Go to Sign In
+                Go to Login Now
               </Button>
             </div>
           )}

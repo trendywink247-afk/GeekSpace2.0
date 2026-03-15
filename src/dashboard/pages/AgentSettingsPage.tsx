@@ -1,511 +1,704 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bot,
-  MessageSquare,
-  Code,
-  Briefcase,
   Check,
   Sparkles,
-  Volume2,
   Brain,
   Save,
-  Users,
-  ChevronRight
+  Search,
+  Calculator,
+  CalendarDays,
+  Bell,
+  ImageIcon,
+  Code,
+  Globe,
+  MessageCircle,
+  Trash2,
+  ExternalLink,
+  Send,
+  Wrench,
+  Link2,
 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import { agentService, memoryService } from '@/services/api';
-import { useTilt } from '@/hooks/useTilt';
-import type { Personality, AgentPersonality, ModelPreference } from '@/types';
+import { agentService, memoryService, integrationService } from '@/services/api';
+import type { Personality, AgentPersonality } from '@/types';
 
-type AgentStyle = 'minimal' | 'builder' | 'operator';
+// ---- Agent definitions ----
 
-interface StyleOption {
-  id: AgentStyle;
+interface AgentDef {
+  id: AgentPersonality;
   name: string;
-  description: string;
-  icon: typeof Bot;
-  features: string[];
   color: string;
+  description: string;
 }
 
-const styleOptions: StyleOption[] = [
-  {
-    id: 'minimal',
-    name: 'Minimal',
-    description: 'Clean, simple responses focused on reminders and Q&A',
-    icon: MessageSquare,
-    features: ['Reminders', 'Q&A', 'Quick facts'],
-    color: '#00F0FF',
-  },
-  {
-    id: 'builder',
-    name: 'Builder',
-    description: 'Coding-focused with automation and API integration',
-    icon: Code,
-    features: ['Code help', 'API calls', 'Automation', 'Terminal access'],
-    color: '#00FF88',
-  },
-  {
-    id: 'operator',
-    name: 'Operator',
-    description: 'Daily planning, routines, and life management',
-    icon: Briefcase,
-    features: ['Daily planning', 'Routines', 'Schedule management', 'Goal tracking'],
-    color: '#FFB800',
-  },
+const AGENTS: AgentDef[] = [
+  { id: 'weebo', name: 'Weebo', color: '#00F0FF', description: 'Balanced all-rounder' },
+  { id: 'edith', name: 'Edith', color: '#8B5CF6', description: 'Strategic & focused' },
+  { id: 'jarvis', name: 'Jarvis', color: '#ADFF2F', description: 'Professional & efficient' },
 ];
 
-const voiceOptions = [
-  { id: 'professional', name: 'Professional', description: 'Formal and concise' },
-  { id: 'friendly', name: 'Friendly', description: 'Warm and conversational' },
-  { id: 'witty', name: 'Witty', description: 'Casual with humor' },
-];
+// ---- Tool definitions ----
 
-function TiltCard({ children }: { children: React.ReactNode }) {
-  const ref = useTilt();
-  return <div ref={ref} className="transition-transform duration-200">{children}</div>;
+interface ToolDef {
+  id: string;
+  label: string;
+  description: string;
+  icon: typeof Search;
 }
+
+const TOOLS: ToolDef[] = [
+  { id: 'web_search', label: 'Web Search', description: 'Search the internet for information', icon: Search },
+  { id: 'calculator', label: 'Calculator', description: 'Perform math calculations', icon: Calculator },
+  { id: 'calendar', label: 'Calendar Access', description: 'Read and manage your calendar', icon: CalendarDays },
+  { id: 'reminders', label: 'Reminder Creation', description: 'Set and manage reminders', icon: Bell },
+  { id: 'image_gen', label: 'Image Generation', description: 'Generate images from prompts', icon: ImageIcon },
+  { id: 'code_exec', label: 'Code Execution', description: 'Run code snippets', icon: Code },
+];
+
+// ---- Tone / Verbosity labels ----
+
+const TONE_LABELS = ['Very Formal', 'Formal', 'Balanced', 'Casual', 'Very Casual'];
+const VERBOSITY_LABELS = ['Terse', 'Brief', 'Balanced', 'Detailed', 'Very Detailed'];
+
+// ---- Component ----
 
 export function AgentSettingsPage() {
   const navigate = useNavigate();
-  const { agent, updateAgent } = useDashboardStore();
+  const { agent, updateAgent, integrations, loadIntegrations } = useDashboardStore();
   const isDirty = useRef(false);
 
-  // Initialize from store
-  const [selectedStyle, setSelectedStyle] = useState<AgentStyle>(agent.mode || 'builder');
-  const [selectedVoice, setSelectedVoice] = useState(agent.voice || 'friendly');
-  const [creativity, setCreativity] = useState([agent.creativity ?? 70]);
-  const [formality, setFormality] = useState([agent.formality ?? 50]);
-  const [systemPrompt, setSystemPrompt] = useState(
-    agent.systemPrompt || `You are a helpful personal AI assistant. Be helpful, concise, and proactive. When uncertain, ask for clarification.`
-  );
-  const [agentName, setAgentName] = useState(agent.name || 'Geek');
-  const [displayName, setDisplayName] = useState(agent.displayName || '');
-  const [greeting, setGreeting] = useState(agent.greeting || '');
-  const [selectedPersonality, setSelectedPersonality] = useState<AgentPersonality>(agent.personality || 'jarvis');
-  const [selectedModelPref, setSelectedModelPref] = useState<ModelPreference>(agent.model_preference || 'auto');
+  // Personality state
+  const [selectedPersonality, setSelectedPersonality] = useState<AgentPersonality>(agent.personality || 'weebo');
   const [personalities, setPersonalities] = useState<Record<string, Personality>>({});
-  const [personalityToast, setPersonalityToast] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [agentName, setAgentName] = useState(agent.name || 'Weebo');
+  const [tone, setTone] = useState([agent.formality ?? 50]); // 0=casual, 100=formal
+  const [verbosity, setVerbosity] = useState([agent.creativity ?? 50]); // repurpose creativity as verbosity
+  const [language, setLanguage] = useState('english');
+  const [customInstructions, setCustomInstructions] = useState(agent.systemPrompt || '');
 
-  // Memory summary state
-  const [topMemories, setTopMemories] = useState<Array<{ id: string; category: string; key: string; value: string }>>([]);
+  // Memory state
+  const [memoryEnabled, setMemoryEnabled] = useState(true);
+  const [memoryCount, setMemoryCount] = useState(0);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+
+  // Tools state
+  const [toolStates, setToolStates] = useState<Record<string, boolean>>({
+    web_search: true,
+    calculator: true,
+    calendar: false,
+    reminders: true,
+    image_gen: true,
+    code_exec: true,
+  });
+
+  // Channels state
+  const [telegramStatus, setTelegramStatus] = useState<'connected' | 'not_connected' | 'checking'>('checking');
+
+  // Save state
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveToast, setSaveToast] = useState('');
+
+  // Active tab
+  const [activeTab, setActiveTab] = useState('personality');
 
   // Fetch personalities on mount
   useEffect(() => {
     agentService.getPersonalities().then(({ data }) => setPersonalities(data)).catch(() => {});
   }, []);
 
-  // Fetch top memory entries for summary card
+  // Fetch memory count
   useEffect(() => {
     memoryService.list().then(({ data }) => {
-      if (Array.isArray(data)) setTopMemories(data.slice(0, 5));
+      if (Array.isArray(data)) setMemoryCount(data.length);
     }).catch(() => {});
   }, []);
 
-  // Sync from store when agent data loads/changes — skip if user has unsaved edits
+  // Check Telegram status
+  useEffect(() => {
+    loadIntegrations().catch(() => {});
+    integrationService.checkTelegramLink().then(({ data }) => {
+      setTelegramStatus(data.linked ? 'connected' : 'not_connected');
+    }).catch(() => setTelegramStatus('not_connected'));
+  }, [loadIntegrations]);
+
+  // Sync from store when agent data loads
   useEffect(() => {
     if (isDirty.current) return;
     if (agent.id) {
-      setSelectedStyle(agent.mode || 'builder');
-      setSelectedVoice(agent.voice || 'friendly');
-      setCreativity([agent.creativity ?? 70]);
-      setFormality([agent.formality ?? 50]);
-      setSystemPrompt(agent.systemPrompt || '');
-      setAgentName(agent.name || 'Geek');
-      setDisplayName(agent.displayName || '');
-      setGreeting(agent.greeting || '');
-      setSelectedPersonality(agent.personality || 'jarvis');
-      setSelectedModelPref(agent.model_preference || 'auto');
+      setSelectedPersonality(agent.personality || 'weebo');
+      setAgentName(agent.name || 'Weebo');
+      setTone([agent.formality ?? 50]);
+      setVerbosity([agent.creativity ?? 50]);
+      setCustomInstructions(agent.systemPrompt || '');
     }
-  }, [agent.id, agent.mode, agent.voice, agent.creativity, agent.formality, agent.systemPrompt, agent.name, agent.personality, agent.model_preference, agent.displayName, agent.greeting]);
+  }, [agent.id, agent.personality, agent.name, agent.formality, agent.creativity, agent.systemPrompt]);
 
-  const handlePersonalitySwitch = async (id: AgentPersonality) => {
+  // ---- Handlers ----
+
+  const handleAgentSwitch = useCallback(async (id: AgentPersonality) => {
     const prev = selectedPersonality;
     setSelectedPersonality(id);
-    const p = personalities[id];
+    const agentDef = AGENTS.find(a => a.id === id);
     try {
       await updateAgent({ personality: id });
-      if (p) {
-        setPersonalityToast(`Switched to ${p.name}! ${p.greeting}`);
-        setTimeout(() => setPersonalityToast(''), 3000);
+      const p = personalities[id];
+      if (p || agentDef) {
+        setSaveToast(`Switched to ${p?.name || agentDef?.name}!`);
+        setTimeout(() => setSaveToast(''), 2500);
       }
     } catch {
       setSelectedPersonality(prev);
-      setPersonalityToast('Failed to switch personality. Try again.');
-      setTimeout(() => setPersonalityToast(''), 3000);
+      setSaveToast('Failed to switch. Try again.');
+      setTimeout(() => setSaveToast(''), 2500);
     }
-  };
+  }, [selectedPersonality, personalities, updateAgent]);
 
-
-  const handleSavePref = async (field: string, value: string) => {
-    if (field === 'model_preference') {
-      const prev = selectedModelPref;
-      setSelectedModelPref(value as ModelPreference);
-      try {
-        await updateAgent({ model_preference: value as ModelPreference });
-      } catch {
-        setSelectedModelPref(prev);
-      }
-    }
-  };
-
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setIsSaving(true);
-    setSaveSuccess(false);
+    setSaveToast('');
     try {
       await updateAgent({
         name: agentName,
-        displayName: displayName || undefined,
-        greeting: greeting || undefined,
-        mode: selectedStyle,
-        voice: selectedVoice as 'professional' | 'friendly' | 'witty',
-        creativity: creativity[0],
-        formality: formality[0],
-        systemPrompt,
+        formality: tone[0],
+        creativity: verbosity[0],
+        systemPrompt: customInstructions,
       });
       isDirty.current = false;
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2000);
+      setSaveToast('Saved!');
+      setTimeout(() => setSaveToast(''), 2500);
     } catch {
-      // keep local state on error
+      setSaveToast('Save failed. Try again.');
+      setTimeout(() => setSaveToast(''), 2500);
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [agentName, tone, verbosity, customInstructions, updateAgent]);
+
+  const handleClearAllMemories = useCallback(async () => {
+    setIsClearing(true);
+    try {
+      const { data } = await memoryService.clearAll();
+      setMemoryCount(0);
+      setClearConfirmOpen(false);
+      setSaveToast(`Cleared ${data.deleted} memories`);
+      setTimeout(() => setSaveToast(''), 2500);
+    } catch {
+      setSaveToast('Failed to clear memories');
+      setTimeout(() => setSaveToast(''), 2500);
+    } finally {
+      setIsClearing(false);
+    }
+  }, []);
+
+  const toggleTool = useCallback((toolId: string) => {
+    setToolStates(prev => ({ ...prev, [toolId]: !prev[toolId] }));
+    isDirty.current = true;
+  }, []);
+
+  // ---- Derived values ----
+
+  const currentAgent = AGENTS.find(a => a.id === selectedPersonality) || AGENTS[0];
+  const toneStep = Math.round(tone[0] / 25);
+  const verbosityStep = Math.round(verbosity[0] / 25);
+  const instructionsLength = customInstructions.length;
+
+  // Find telegram integration
+  const telegramInt = integrations.find(i => i.type === 'telegram');
+  const isTelegramConnected = telegramStatus === 'connected' || telegramInt?.status === 'connected';
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Agent Settings
-        </h1>
-        <p className="text-[#9CA3AF]">
-          Customize how your AI assistant behaves and responds
-        </p>
+    <div className="space-y-6 max-w-4xl mx-auto">
+      {/* Toast notification */}
+      {saveToast && (
+        <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
+          <div className="px-4 py-2.5 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/40 shadow-lg shadow-[#00F0FF]/10 text-sm text-[#E8E8F0] flex items-center gap-2">
+            {saveToast.includes('Saved') || saveToast.includes('Switched') || saveToast.includes('Cleared') ? (
+              <Check className="w-4 h-4 text-[#ADFF2F]" />
+            ) : (
+              <Sparkles className="w-4 h-4 text-[#00F0FF]" />
+            )}
+            {saveToast}
+          </div>
+        </div>
+      )}
+
+      {/* Agent Selector Header */}
+      <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {/* Active agent avatar */}
+            <div className="relative">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold transition-all duration-300"
+                style={{
+                  backgroundColor: `${currentAgent.color}20`,
+                  border: `2px solid ${currentAgent.color}`,
+                  color: currentAgent.color,
+                  boxShadow: `0 0 20px ${currentAgent.color}30`,
+                }}
+              >
+                {currentAgent.name[0]}
+              </div>
+              {/* Online indicator */}
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#ADFF2F] border-2 border-[#0C0C18]" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-[#F4F6FF]" style={{ fontFamily: 'Syne, sans-serif' }}>
+                {currentAgent.name}
+              </h1>
+              <p className="text-sm text-[#8892A4]">{currentAgent.description}</p>
+            </div>
+          </div>
+
+          {/* Agent switcher pills */}
+          <div className="flex gap-2">
+            {AGENTS.map((a) => {
+              const isActive = a.id === selectedPersonality;
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => handleAgentSwitch(a.id)}
+                  className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-[#8892A4] hover:text-[#F4F6FF] bg-[#06060B] hover:bg-[#12121F]'
+                  }`}
+                  style={isActive ? {
+                    backgroundColor: `${a.color}20`,
+                    border: `1px solid ${a.color}`,
+                    color: a.color,
+                  } : { border: '1px solid rgba(0,240,255,0.1)' }}
+                >
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                    style={{ backgroundColor: a.color, color: '#05050A' }}
+                  >
+                    {a.name[0]}
+                  </div>
+                  {a.name}
+                  {isActive && (
+                    <Check className="w-3.5 h-3.5" style={{ color: a.color }} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Agent Identity */}
-      <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Bot className="w-5 h-5 text-[#00F0FF]" />
-          Agent Identity
-        </h2>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm text-[#9CA3AF] mb-2 block">Agent Name</label>
+      {/* Tab Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full bg-transparent border-b border-[#00F0FF]/10 rounded-none p-0 h-auto gap-0">
+          {[
+            { value: 'personality', label: 'Personality', icon: Bot },
+            { value: 'memory', label: 'Memory', icon: Brain },
+            { value: 'tools', label: 'Tools', icon: Wrench },
+            { value: 'channels', label: 'Channels', icon: Link2 },
+          ].map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className={`flex-1 sm:flex-none rounded-none border-b-2 border-transparent px-4 sm:px-6 py-3 text-sm font-medium transition-all duration-200 bg-transparent shadow-none data-[state=active]:shadow-none data-[state=active]:bg-transparent ${
+                activeTab === tab.value
+                  ? '!border-b-[#00F0FF] !text-[#00F0FF]'
+                  : '!text-[#8892A4] hover:!text-[#F4F6FF]'
+              }`}
+            >
+              <tab.icon className="w-4 h-4 mr-1.5 inline" />
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {/* ========== PERSONALITY TAB ========== */}
+        <TabsContent value="personality" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {/* Agent Name */}
+          <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#F4F6FF]">
+              <Bot className="w-5 h-5 text-[#00F0FF]" />
+              Agent Name
+            </h2>
             <Input
               value={agentName}
               onChange={(e) => { isDirty.current = true; setAgentName(e.target.value); }}
-              className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
-              placeholder="What should I call your agent?"
+              className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] max-w-md"
+              placeholder="What should your agent be called?"
+              maxLength={30}
             />
+            <p className="text-xs text-[#8892A4] mt-2">
+              This name is used in conversations and greetings.
+            </p>
           </div>
-          <div>
-            <label className="text-sm text-[#9CA3AF] mb-2 block">Display Name</label>
-            <Input
-              value={displayName}
-              onChange={(e) => { isDirty.current = true; setDisplayName(e.target.value); }}
-              maxLength={50}
-              className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
-              placeholder="e.g. GS Assistant (max 50 chars)"
-            />
-          </div>
-        </div>
-        <div className="mt-4">
-          <label className="text-sm text-[#9CA3AF] mb-2 block">Custom Greeting</label>
-          <Input
-            value={greeting}
-            onChange={(e) => { isDirty.current = true; setGreeting(e.target.value); }}
-            maxLength={200}
-            className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
-            placeholder="e.g. Hey! Ready to help you today. (max 200 chars)"
-          />
-          <p className="text-xs text-[#9CA3AF] mt-1">
-            Shown at the start of every new chat session.
-          </p>
-        </div>
-      </div>
 
-      {/* AI Personality */}
-      {Object.keys(personalities).length > 0 && (
-        <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5 text-[#00F0FF]" />
-            Choose Your AI Personality
-          </h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {Object.values(personalities).map((p) => (
-              <TiltCard key={p.id}>
-                <button
-                  onClick={() => handlePersonalitySwitch(p.id as AgentPersonality)}
-                  className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
-                    selectedPersonality === p.id
-                      ? 'border-[#00F0FF] bg-[#00F0FF]/10 shadow-[0_0_20px_rgba(123,97,255,0.15)]'
-                      : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
-                  }`}
-                >
-                  <div className="text-4xl mb-3">{p.emoji}</div>
-                  <h3 className="font-semibold text-[#E8E8F0] mb-1">{p.name}</h3>
-                  <p className="text-sm text-[#9CA3AF]">{p.description}</p>
-                  {selectedPersonality === p.id && (
-                    <div className="mt-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00F0FF]/20 text-[#00F0FF] text-xs">
-                      <Check className="w-3 h-3" /> Active
-                    </div>
-                  )}
-                </button>
-              </TiltCard>
-            ))}
-          </div>
-          {personalityToast && (
-            <div className="mt-4 px-4 py-2.5 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-sm text-[#E8E8F0] flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#00F0FF]" />
-              {personalityToast}
+          {/* Tone & Verbosity Sliders */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Tone Slider */}
+            <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-[#F4F6FF]">Tone</h2>
+                <span className="text-sm font-medium px-3 py-1 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  {TONE_LABELS[toneStep]}
+                </span>
+              </div>
+              <Slider
+                value={tone}
+                onValueChange={(v) => { isDirty.current = true; setTone(v); }}
+                max={100}
+                step={25}
+                className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+              />
+              <div className="flex justify-between text-xs text-[#8892A4] mt-2">
+                <span>Casual</span>
+                <span>Formal</span>
+              </div>
             </div>
-          )}
-        </div>
-      )}
 
-      {/* Model Preference */}
-      <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Brain className="w-5 h-5 text-[#00F0FF]" />
-          AI Engine Preference
-        </h2>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { value: 'auto', label: 'Auto', desc: 'Weebo picks the best engine for your request' },
-            { value: 'local', label: 'Local AI Engine', desc: 'Always runs locally — fastest, most private' },
-            { value: 'cloud', label: 'Cloud Engine', desc: 'OpenRouter free tier — stronger reasoning' },
-            { value: 'premium', label: 'Premium Engine', desc: 'Kimi K2 — best results, uses more credits' },
-          ].map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => handleSavePref('model_preference', opt.value)}
-              className={`p-3 rounded-xl border text-left transition-all focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
-                selectedModelPref === opt.value
-                  ? 'border-[#00F0FF] bg-[#00F0FF]/10'
-                  : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
-              }`}
-            >
-              <div className="text-sm font-medium text-[#E8E8F0]">{opt.label}</div>
-              <div className="text-xs text-[#9CA3AF]">{opt.desc}</div>
-            </button>
-          ))}
-        </div>
-      </div>
+            {/* Verbosity Slider */}
+            <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-[#F4F6FF]">Verbosity</h2>
+                <span className="text-sm font-medium px-3 py-1 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  {VERBOSITY_LABELS[verbosityStep]}
+                </span>
+              </div>
+              <Slider
+                value={verbosity}
+                onValueChange={(v) => { isDirty.current = true; setVerbosity(v); }}
+                max={100}
+                step={25}
+                className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+              />
+              <div className="flex justify-between text-xs text-[#8892A4] mt-2">
+                <span>Terse</span>
+                <span>Detailed</span>
+              </div>
+            </div>
+          </div>
 
-      {/* Agent Style Selection */}
-      <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-[#00F0FF]" />
-          Agent Style
-        </h2>
-        <div className="grid md:grid-cols-3 gap-4">
-          {styleOptions.map((style) => (
-            <button
-              key={style.id}
-              onClick={() => { isDirty.current = true; setSelectedStyle(style.id); }}
-              className={`p-5 rounded-xl border-2 transition-all duration-300 text-left focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
-                selectedStyle === style.id
-                  ? 'border-[#00F0FF] bg-[#00F0FF]/10'
-                  : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
-              }`}
+          {/* Language Preference */}
+          <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#F4F6FF]">
+              <Globe className="w-5 h-5 text-[#00F0FF]" />
+              Language Preference
+            </h2>
+            <Select value={language} onValueChange={setLanguage}>
+              <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] max-w-xs">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#0C0C18] border-[#00F0FF]/30">
+                <SelectItem value="english" className="text-[#E8E8F0] focus:bg-[#00F0FF]/10 focus:text-[#00F0FF]">English</SelectItem>
+                <SelectItem value="hinglish" className="text-[#E8E8F0] focus:bg-[#00F0FF]/10 focus:text-[#00F0FF]">Hinglish</SelectItem>
+                <SelectItem value="hindi" className="text-[#E8E8F0] focus:bg-[#00F0FF]/10 focus:text-[#00F0FF]">Hindi</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-[#8892A4] mt-2">
+              Your agent will respond primarily in this language.
+            </p>
+          </div>
+
+          {/* Custom Instructions */}
+          <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#F4F6FF]">
+              <Brain className="w-5 h-5 text-[#00F0FF]" />
+              Custom Instructions
+            </h2>
+            <div className="relative">
+              <Textarea
+                value={customInstructions}
+                onChange={(e) => {
+                  if (e.target.value.length <= 500) {
+                    isDirty.current = true;
+                    setCustomInstructions(e.target.value);
+                  }
+                }}
+                className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[120px] resize-none pr-16"
+                placeholder="Tell your agent how to behave. E.g. 'Always respond with bullet points' or 'Be encouraging and use emojis'..."
+                maxLength={500}
+              />
+              <span className={`absolute bottom-3 right-3 text-xs font-mono ${
+                instructionsLength > 450 ? 'text-[#FF2D78]' : 'text-[#8892A4]'
+              }`}>
+                {instructionsLength}/500
+              </span>
+            </div>
+            <p className="text-xs text-[#8892A4] mt-2">
+              These instructions guide your agent's behavior across all conversations.
+            </p>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <Button
+              size="lg"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-[#00F0FF] hover:bg-[#00D4E0] text-[#05050A] font-semibold px-8 transition-all duration-200"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: `${style.color}20` }}
-                >
-                  <style.icon className="w-5 h-5" style={{ color: style.color }} />
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-[#05050A]/30 border-t-[#05050A] rounded-full animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* ========== MEMORY TAB ========== */}
+        <TabsContent value="memory" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {/* Memory Toggle */}
+          <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Brain className="w-5 h-5 text-[#00F0FF]" />
+                <div>
+                  <h2 className="text-lg font-semibold text-[#F4F6FF]">Agent can remember things</h2>
+                  <p className="text-sm text-[#8892A4] mt-0.5">
+                    When enabled, your agent remembers your preferences, facts, and context across conversations.
+                  </p>
                 </div>
-                {selectedStyle === style.id && (
-                  <div className="w-6 h-6 rounded-full bg-[#00F0FF] flex items-center justify-center">
-                    <Check className="w-4 h-4 text-white" />
-                  </div>
-                )}
               </div>
-              <h3 className="font-semibold text-[#E8E8F0] mb-1">{style.name}</h3>
-              <p className="text-sm text-[#9CA3AF] mb-3">{style.description}</p>
-              <div className="flex flex-wrap gap-1">
-                {style.features.map((feature, i) => (
-                  <span
-                    key={i}
-                    className="px-2 py-0.5 text-xs rounded-full bg-[#06060B] text-[#9CA3AF]"
-                  >
-                    {feature}
-                  </span>
-                ))}
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+              <Switch
+                checked={memoryEnabled}
+                onCheckedChange={setMemoryEnabled}
+                className={`${memoryEnabled ? '!bg-[#00F0FF]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#00F0FF] data-[state=unchecked]:!bg-[#1A1A2E]`}
+              />
+            </div>
 
-      {/* Personality Settings */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Voice/Tone */}
-        <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Volume2 className="w-5 h-5 text-[#00F0FF]" />
-            Voice & Tone
-          </h2>
-          <div className="space-y-2">
-            {voiceOptions.map((voice) => (
-              <button
-                key={voice.id}
-                onClick={() => { isDirty.current = true; setSelectedVoice(voice.id as 'professional' | 'friendly' | 'witty'); }}
-                className={`w-full p-4 rounded-xl border transition-all duration-300 flex items-center justify-between focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
-                  selectedVoice === voice.id
-                    ? 'border-[#00F0FF] bg-[#00F0FF]/10'
-                    : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
-                }`}
+            {memoryEnabled && memoryCount > 0 && (
+              <div className="mt-4 pt-4 border-t border-[#00F0FF]/10">
+                <p className="text-sm text-[#8892A4]">
+                  Your agent currently has <span className="text-[#00F0FF] font-semibold">{memoryCount}</span> {memoryCount === 1 ? 'memory' : 'memories'} stored.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Memory Manager Link */}
+          <button
+            onClick={() => navigate('/dashboard/memory')}
+            className="w-full p-5 rounded-2xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-200 flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-[#8B5CF6]" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-[#F4F6FF]">Memory Manager</h3>
+                <p className="text-sm text-[#8892A4]">View, edit, and manage individual memories</p>
+              </div>
+            </div>
+            <ExternalLink className="w-5 h-5 text-[#8892A4] group-hover:text-[#00F0FF] transition-colors" />
+          </button>
+
+          {/* Clear All Memories */}
+          <div className="p-6 rounded-2xl glass-card-v2 border border-[#FF2D78]/20">
+            <h2 className="text-lg font-semibold mb-2 flex items-center gap-2 text-[#FF2D78]">
+              <Trash2 className="w-5 h-5" />
+              Danger Zone
+            </h2>
+            <p className="text-sm text-[#8892A4] mb-4">
+              Permanently delete all memories your agent has stored. This cannot be undone.
+            </p>
+            {!clearConfirmOpen ? (
+              <Button
+                variant="outline"
+                onClick={() => setClearConfirmOpen(true)}
+                className="border-[#FF2D78]/30 text-[#FF2D78] hover:bg-[#FF2D78]/10 hover:text-[#FF2D78]"
+                disabled={memoryCount === 0}
               >
-                <div className="text-left">
-                  <div className="font-medium text-[#E8E8F0]">{voice.name}</div>
-                  <div className="text-sm text-[#9CA3AF]">{voice.description}</div>
-                </div>
-                {selectedVoice === voice.id && (
-                  <div className="w-5 h-5 rounded-full bg-[#00F0FF] flex items-center justify-center">
-                    <Check className="w-3 h-3 text-white" />
-                  </div>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear All Memories
+                {memoryCount > 0 && (
+                  <span className="ml-2 text-xs opacity-70">({memoryCount})</span>
                 )}
-              </button>
-            ))}
+              </Button>
+            ) : (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-[#FF2D78]/5 border border-[#FF2D78]/20">
+                <p className="text-sm text-[#F4F6FF] flex-1">
+                  Are you sure? This will delete <strong>{memoryCount}</strong> {memoryCount === 1 ? 'memory' : 'memories'} permanently.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setClearConfirmOpen(false)}
+                  className="border-[#8892A4]/30 text-[#8892A4] hover:bg-[#8892A4]/10"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleClearAllMemories}
+                  disabled={isClearing}
+                  className="bg-[#FF2D78] hover:bg-[#FF2D78]/80 text-white"
+                >
+                  {isClearing ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    'Yes, Clear All'
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
-        </div>
+        </TabsContent>
 
-        {/* Sliders */}
-        <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20 space-y-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Brain className="w-5 h-5 text-[#00F0FF]" />
-            Behavior
-          </h2>
+        {/* ========== TOOLS TAB ========== */}
+        <TabsContent value="tools" className="mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+            <h2 className="text-lg font-semibold mb-1 flex items-center gap-2 text-[#F4F6FF]">
+              <Wrench className="w-5 h-5 text-[#00F0FF]" />
+              Available Tools
+            </h2>
+            <p className="text-sm text-[#8892A4] mb-6">
+              Enable or disable tools your agent can use during conversations.
+            </p>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm text-[#9CA3AF]">Creativity</label>
-              <span className="text-sm text-[#E8E8F0] font-mono">{creativity[0]}%</span>
-            </div>
-            <Slider
-              value={creativity}
-              onValueChange={(v) => { isDirty.current = true; setCreativity(v); }}
-              max={100}
-              step={10}
-              className="w-full"
-            />
-            <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
-              <span>Conservative</span>
-              <span>Creative</span>
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm text-[#9CA3AF]">Formality</label>
-              <span className="text-sm text-[#E8E8F0] font-mono">{formality[0]}%</span>
-            </div>
-            <Slider
-              value={formality}
-              onValueChange={(v) => { isDirty.current = true; setFormality(v); }}
-              max={100}
-              step={10}
-              className="w-full"
-            />
-            <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
-              <span>Casual</span>
-              <span>Formal</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* System Prompt */}
-      <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Brain className="w-5 h-5 text-[#00F0FF]" />
-          System Instructions
-        </h2>
-        <Textarea
-          value={systemPrompt}
-          onChange={(e) => { isDirty.current = true; setSystemPrompt(e.target.value); }}
-          className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[120px] resize-none"
-          placeholder="Instructions for how your agent should behave..."
-        />
-        <p className="text-xs text-[#9CA3AF] mt-2">
-          These instructions guide your agent's behavior. Be specific about what you want.
-        </p>
-      </div>
-
-      {/* Memory Summary Card */}
-      {topMemories.length > 0 && (
-        <div className="p-6 rounded-2xl glass-card-v2 border border-[#BF5FFF]/20">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Brain className="w-5 h-5 text-[#BF5FFF]" />
-            What Your Agent Remembers
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {topMemories.map((mem) => (
-              <Popover key={mem.id}>
-                <PopoverTrigger asChild>
-                  <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-[#BF5FFF]/10 border border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/20 transition-colors">
-                    {mem.key.length > 24 ? mem.key.slice(0, 24) + '…' : mem.key}
-                    <ChevronRight className="w-3 h-3 opacity-60" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 bg-[#0C0C18] border border-[#BF5FFF]/30 text-[#E8E8F0] p-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#BF5FFF]/20 text-[#BF5FFF]">{mem.category}</span>
-                      <span className="text-sm font-medium">{mem.key}</span>
+            <div className="space-y-3">
+              {TOOLS.map((tool) => {
+                const enabled = toolStates[tool.id] ?? false;
+                return (
+                  <div
+                    key={tool.id}
+                    className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-200 ${
+                      enabled
+                        ? 'border-[#00F0FF]/20 bg-[#00F0FF]/5'
+                        : 'border-[#1A1A2E] bg-[#06060B]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-200"
+                        style={{
+                          backgroundColor: enabled ? 'rgba(0,240,255,0.1)' : 'rgba(26,26,46,0.5)',
+                        }}
+                      >
+                        <tool.icon
+                          className="w-4.5 h-4.5 transition-colors duration-200"
+                          style={{ color: enabled ? '#00F0FF' : '#8892A4' }}
+                        />
+                      </div>
+                      <div>
+                        <h3 className={`text-sm font-medium transition-colors duration-200 ${enabled ? 'text-[#F4F6FF]' : 'text-[#8892A4]'}`}>
+                          {tool.label}
+                        </h3>
+                        <p className="text-xs text-[#8892A4]">{tool.description}</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-[#9CA3AF] leading-relaxed">{mem.value}</p>
+                    <Switch
+                      checked={enabled}
+                      onCheckedChange={() => toggleTool(tool.id)}
+                      className={`${enabled ? '!bg-[#00F0FF]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#00F0FF] data-[state=unchecked]:!bg-[#1A1A2E]`}
+                    />
                   </div>
-                </PopoverContent>
-              </Popover>
-            ))}
+                );
+              })}
+            </div>
           </div>
-          <p className="text-xs text-[#9CA3AF] mt-3">
-            Click any tag to see the full memory. Manage all memories in{' '}
-            <button onClick={() => navigate('/dashboard/memory')} className="text-[#BF5FFF] hover:underline">Memory Manager</button>.
-          </p>
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Save Button */}
-      <div className="flex justify-end items-center gap-3">
-        {saveSuccess && (
-          <span className="text-sm text-[#00FF88] flex items-center gap-1">
-            <Check className="w-4 h-4" /> Saved
-          </span>
-        )}
-        <Button
-          size="lg"
-          onClick={handleSave}
-          disabled={isSaving}
-          className="bg-[#00F0FF] hover:bg-[#00D4B0] px-8"
-        >
-          {isSaving ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
-            </>
-          )}
-        </Button>
-      </div>
+        {/* ========== CHANNELS TAB ========== */}
+        <TabsContent value="channels" className="mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+            <h2 className="text-lg font-semibold mb-1 flex items-center gap-2 text-[#F4F6FF]">
+              <Link2 className="w-5 h-5 text-[#00F0FF]" />
+              Connected Channels
+            </h2>
+            <p className="text-sm text-[#8892A4] mb-6">
+              Manage where your agent is available.
+            </p>
+
+            <div className="space-y-3">
+              {/* Telegram */}
+              <div className="flex items-center justify-between p-4 rounded-xl border border-[#00F0FF]/20 bg-[#06060B]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#0088CC]/10 flex items-center justify-center">
+                    <Send className="w-5 h-5 text-[#0088CC]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-[#F4F6FF]">Telegram</h3>
+                    <p className="text-xs text-[#8892A4]">Chat with your agent via Telegram</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {telegramStatus === 'checking' ? (
+                    <span className="text-xs text-[#8892A4]">Checking...</span>
+                  ) : isTelegramConnected ? (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-[#ADFF2F]">
+                      <div className="w-2 h-2 rounded-full bg-[#ADFF2F] animate-pulse" />
+                      Connected
+                    </span>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate('/dashboard/connections')}
+                      className="border-[#0088CC]/30 text-[#0088CC] hover:bg-[#0088CC]/10 hover:text-[#0088CC] text-xs"
+                    >
+                      Setup
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Web Chat */}
+              <div className="flex items-center justify-between p-4 rounded-xl border border-[#00F0FF]/20 bg-[#06060B]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-[#00F0FF]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-[#F4F6FF]">Web Chat</h3>
+                    <p className="text-xs text-[#8892A4]">Chat via the web dashboard</p>
+                  </div>
+                </div>
+                <span className="flex items-center gap-1.5 text-xs font-medium text-[#ADFF2F]">
+                  <div className="w-2 h-2 rounded-full bg-[#ADFF2F]" />
+                  Always on
+                </span>
+              </div>
+
+              {/* WhatsApp */}
+              <div className="flex items-center justify-between p-4 rounded-xl border border-[#1A1A2E] bg-[#06060B] opacity-60">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#25D366]/10 flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-[#25D366]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-[#F4F6FF]">WhatsApp</h3>
+                    <p className="text-xs text-[#8892A4]">Chat with your agent on WhatsApp</p>
+                  </div>
+                </div>
+                <span className="text-xs font-medium px-3 py-1 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20">
+                  Coming soon
+                </span>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -10,6 +10,8 @@ import { EngineSection } from './sections/EngineSection';
 import { SecuritySection } from './sections/SecuritySection';
 import { ContactSection } from './sections/ContactSection';
 import { PromptTemplatesSection } from './sections/PromptTemplatesSection';
+import { PricingPreviewSection } from './sections/PricingPreviewSection';
+import { FooterSection } from './sections/FooterSection';
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -30,6 +32,7 @@ export function LandingPage() {
   const onDesignAssistant = () => navigate('/login?redirect=design');
   const onBuildWorkflow = () => navigate('/login?redirect=automations');
   const onReviewSecurity = () => navigate('/docs');
+  const onGetStarted = () => navigate('/login');
 
   return (
     <div className="relative min-h-screen">
@@ -43,8 +46,10 @@ export function LandingPage() {
         <PersonaSection onDesignAssistant={onDesignAssistant} />
         <ActivitySection />
         <EngineSection onBuildWorkflow={onBuildWorkflow} />
+        <PricingPreviewSection onGetStarted={onGetStarted} />
         <SecuritySection onReviewSecurity={onReviewSecurity} />
         <ContactSection onEnterDashboard={onEnterDashboard} />
+        <FooterSection />
       </main>
     </div>
   );

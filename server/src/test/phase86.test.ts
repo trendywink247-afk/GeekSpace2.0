@@ -290,11 +290,11 @@ describe('H: Token stats admin endpoint', () => {
     expect(content).toContain('compressionRate');
   });
 
-  it('Overview page has Token Efficiency card', () => {
+  it('Overview page renders dashboard stats', () => {
     const content = readSrc('dashboard/pages/OverviewPage.tsx');
-    expect(content).toContain('Token Efficiency');
-    expect(content).toContain('tokenUsed');
-    expect(content).toContain('tokenBudget');
+    // Overhauled page uses greeting + stats cards
+    expect(content).toContain('useAuthStore');
+    expect(content).toContain('useDashboardStore');
   });
 });
 

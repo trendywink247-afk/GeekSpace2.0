@@ -11,8 +11,20 @@ export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const [menuHeight, setMenuHeight] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   const isScrolled = scrollY > 100;
+
+  // Track scroll progress for progress bar
+  useEffect(() => {
+    const updateProgress = () => {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = scrollHeight > 0 ? (window.scrollY / scrollHeight) * 100 : 0;
+      setScrollProgress(progress);
+    };
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    return () => window.removeEventListener('scroll', updateProgress);
+  }, []);
 
   // Measure mobile menu content height for smooth animation
   useEffect(() => {
@@ -22,11 +34,11 @@ export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
   }, [mobileMenuOpen]);
 
   const navLinks = [
-    { label: 'Directory', href: '#constellation' },
-    { label: 'Persona', href: '#persona' },
-    { label: 'Activity', href: '#activity' },
-    { label: 'Engine', href: '#engine' },
+    { label: 'Features', href: '#templates' },
+    { label: 'Agents', href: '#persona' },
+    { label: 'Integrations', href: '#engine' },
     { label: 'Security', href: '#security' },
+    { label: 'Pricing', href: '#pricing' },
   ];
 
   return (
@@ -38,6 +50,11 @@ export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
       }`}
       style={isScrolled ? { WebkitBackdropFilter: 'blur(24px)' } : undefined}
     >
+      {/* Scroll Progress Bar */}
+      <div
+        className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-[#00F0FF] to-[#ADFF2F] transition-none"
+        style={{ width: `${scrollProgress}%`, opacity: isScrolled ? 1 : 0 }}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -69,9 +86,9 @@ export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
           <div className="hidden md:block">
             <Button
               onClick={onEnterDashboard}
-              className="relative bg-transparent text-[#00F0FF] px-6 py-2 rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(0,255,212,0.2)] border border-[#00F0FF]/40 hover:border-[#00F0FF]/80 hover:bg-[#00F0FF]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
+              className="relative bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] px-6 py-2 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(0,255,212,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
             >
-              {onEnterDashboard ? 'Enter Dashboard' : 'Request Access'}
+              Get Started Free
             </Button>
           </div>
 
@@ -112,9 +129,9 @@ export function Navigation({ scrollY, onEnterDashboard }: NavigationProps) {
             ))}
             <Button
               onClick={onEnterDashboard}
-              className="w-full border border-[#00F0FF]/40 bg-[#00F0FF]/5 text-[#00F0FF] hover:bg-[#00F0FF]/10 mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
+              className="w-full bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] font-semibold mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
             >
-              {onEnterDashboard ? 'Enter Dashboard' : 'Request Access'}
+              Get Started Free
             </Button>
           </div>
         </div>

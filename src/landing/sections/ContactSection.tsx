@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Mail, Send, CheckCircle, Sparkles, Hexagon, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Send, CheckCircle, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -253,28 +252,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="mt-24 pt-8 border-t border-[#00F0FF]/10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Hexagon className="w-6 h-6 text-[#00F0FF]" />
-              <span className="font-bold text-lg" style={{ fontFamily: 'Syne, sans-serif' }}>
-                Agentin
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-6 text-sm text-[#6B7280]">
-              <Link to="/privacy" className="hover:text-[#E8E8F0] hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded-sm">Privacy</Link>
-              <Link to="/terms" className="hover:text-[#E8E8F0] hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded-sm">Terms</Link>
-              <Link to="/docs" className="hover:text-[#E8E8F0] hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded-sm">Docs</Link>
-              <Link to="/status" className="hover:text-[#E8E8F0] hover:underline transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded-sm">Status</Link>
-            </div>
-            
-            <div className="text-sm text-[#6B7280]/60">
-              © 2026 Agentin. All rights reserved.
-            </div>
-          </div>
-        </footer>
+        {/* Footer is now in FooterSection */}
       </div>
     </section>
   );

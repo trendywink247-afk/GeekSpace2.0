@@ -1,10 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Hexagon, Mail, Lock, ArrowRight, Github, User, Chrome, Zap, Eye, EyeOff } from 'lucide-react';
+import { Hexagon, Mail, Lock, ArrowRight, Github, User, Chrome, Zap, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/authStore';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function getPasswordStrength(pw: string): { level: 'weak' | 'medium' | 'strong'; hints: string[] } {
+  const hints: string[] = [];
+  if (pw.length < 6) return { level: 'weak', hints: ['Use at least 6 characters'] };
+  if (!/[A-Z]/.test(pw)) hints.push('Add uppercase letter');
+  if (!/[0-9]/.test(pw)) hints.push('Add a number');
+  if (pw.length <= 8 || hints.length === 2) return { level: 'weak', hints };
+  if (hints.length === 0) return { level: 'strong', hints: [] };
+  return { level: 'medium', hints };
+}
+
+const strengthConfig = {
+  weak:   { width: '33%', color: '#FF3366', label: 'Weak' },
+  medium: { width: '66%', color: '#F59E0B', label: 'Medium' },
+  strong: { width: '100%', color: '#ADFF2F', label: 'Strong' },
+} as const;
 
 function OrbitalRings() {
   return (
@@ -68,6 +86,9 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [emailBlurred, setEmailBlurred] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<'github' | 'google' | null>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (searchParams.get('demo') === 'true') {
@@ -87,6 +108,26 @@ export function LoginPage() {
     const timer = setTimeout(() => setIsLoaded(true), 50);
     return () => clearTimeout(timer);
   }, [searchParams]);
+
+  // Auto-focus email field on mount (skip when demo pre-fills)
+  useEffect(() => {
+    if (searchParams.get('demo') !== 'true') {
+      emailRef.current?.focus();
+    }
+  }, [searchParams]);
+
+  // Email validation (only after first blur)
+  const emailValid = EMAIL_REGEX.test(email);
+  const showEmailError = emailBlurred && email.length >= 3 && !emailValid;
+  const showEmailSuccess = emailBlurred && emailValid;
+
+  // Password strength (signup only)
+  const pwStrength = getPasswordStrength(password);
+
+  const handleOAuth = useCallback((provider: 'github' | 'google') => {
+    setOauthLoading(provider);
+    window.location.href = `/api/oauth/${provider}`;
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -278,17 +319,29 @@ export function LoginPage() {
               <div>
                 <label className="text-sm text-[#9CA3AF] mb-2 block">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+                  <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${showEmailError ? 'text-[#FF3366]' : showEmailSuccess ? 'text-[#ADFF2F]' : 'text-[#6B7280]'}`} />
                   <Input
+                    ref={emailRef}
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => setEmailBlurred(true)}
                     placeholder="you@example.com"
-                    className="pl-10 bg-[#06060B]/60 border-[#00F0FF]/20 text-[#E8E8F0] focus:border-[#00F0FF]/50 focus:ring-[#00F0FF]/10"
+                    autoFocus
+                    className={`pl-10 bg-[#06060B]/60 text-[#E8E8F0] transition-colors ${
+                      showEmailError
+                        ? 'border-[#FF3366]/60 focus:border-[#FF3366]/80 focus:ring-[#FF3366]/10'
+                        : showEmailSuccess
+                          ? 'border-[#ADFF2F]/40 focus:border-[#ADFF2F]/60 focus:ring-[#ADFF2F]/10'
+                          : 'border-[#00F0FF]/20 focus:border-[#00F0FF]/50 focus:ring-[#00F0FF]/10'
+                    }`}
                     required
                     data-testid="login-email"
                   />
                 </div>
+                {showEmailError && (
+                  <p className="text-xs text-[#FF3366]/80 mt-1">Please enter a valid email</p>
+                )}
               </div>
               <div>
                 <label className="text-sm text-[#9CA3AF] mb-2 block">Password</label>
@@ -312,6 +365,30 @@ export function LoginPage() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {/* Password strength indicator (signup only) */}
+                {isSignup && password.length > 0 && (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300 ease-out"
+                          style={{
+                            width: strengthConfig[pwStrength.level].width,
+                            backgroundColor: strengthConfig[pwStrength.level].color,
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium shrink-0" style={{ color: strengthConfig[pwStrength.level].color }}>
+                        {strengthConfig[pwStrength.level].label}
+                      </span>
+                    </div>
+                    {pwStrength.hints.length > 0 && (
+                      <p className="text-xs text-[#6B7280]">
+                        {pwStrength.hints.join(' · ')}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {!isSignup && (
@@ -326,7 +403,18 @@ export function LoginPage() {
               )}
 
               {error && (
-                <p className="text-sm text-[#FF3366]" role="alert" aria-live="polite" data-testid="login-error">{error}</p>
+                <div className="text-sm text-[#FF3366]" role="alert" aria-live="polite" data-testid="login-error">
+                  <p>{error}</p>
+                  {error.toLowerCase().includes('already taken') && (
+                    <button
+                      type="button"
+                      onClick={() => { setIsSignup(false); setError(''); }}
+                      className="text-[#00F0FF] hover:underline font-medium mt-1 inline-block min-h-[44px] py-2"
+                    >
+                      Try logging in instead?
+                    </button>
+                  )}
+                </div>
               )}
 
               <Button
@@ -341,7 +429,7 @@ export function LoginPage() {
                 data-testid="login-submit"
               >
                 {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-[#06060B]/30 border-t-[#06060B] rounded-full animate-spin" />
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Signing {isSignup ? 'up' : 'in'}…</>
                 ) : (
                   <>
                     {isSignup ? 'Create Account' : 'Sign In'}
@@ -378,19 +466,29 @@ export function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => { window.location.href = '/api/oauth/github'; }}
+                  disabled={oauthLoading !== null}
+                  onClick={() => handleOAuth('github')}
                   className="border-[#00F0FF]/15 h-12 text-[#E8E8F0] hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5"
                 >
-                  <Github className="w-4 h-4 mr-2" />
+                  {oauthLoading === 'github' ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Github className="w-4 h-4 mr-2" />
+                  )}
                   GitHub
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => { window.location.href = '/api/oauth/google'; }}
+                  disabled={oauthLoading !== null}
+                  onClick={() => handleOAuth('google')}
                   className="border-[#00F0FF]/15 h-12 text-[#E8E8F0] hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5"
                 >
-                  <Chrome className="w-4 h-4 mr-2" />
+                  {oauthLoading === 'google' ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Chrome className="w-4 h-4 mr-2" />
+                  )}
                   Google
                 </Button>
               </div>

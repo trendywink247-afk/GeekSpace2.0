@@ -138,15 +138,18 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
               isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'
             }`}
           >
-            <h2 
+            <h2
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
               style={{ fontFamily: 'Syne, sans-serif' }}
             >
-              YOUR AI <span className="text-gradient">PERSONA</span>
+              Meet Your <span className="text-gradient">AI Agents</span>
             </h2>
-            
-            <p className="text-lg text-[#6B7280] mb-8 leading-relaxed">
-              Voice. Tone. Avatar. Knowledge. Each subdomain defines its own identity—while sharing the same secure core.
+
+            <p className="text-lg text-[#6B7280] mb-4 leading-relaxed">
+              <span className="text-[#00F0FF] font-medium">Weebo</span> for daily tasks. <span className="text-[#8B5CF6] font-medium">Edith</span> for deep research. <span className="text-[#ADFF2F] font-medium">Jarvis</span> for code.
+            </p>
+            <p className="text-base text-[#6B7280] mb-8">
+              Each agent has its own voice, personality, and expertise — all working together as your personal AI team.
             </p>
 
             {/* Feature Grid */}

@@ -11,14 +11,14 @@ interface Activity {
 }
 
 const activities: Activity[] = [
-  { id: 1, company: 'TechCorp', action: 'scheduled 12 meetings', icon: Calendar, time: '2s ago', color: '#00F0FF' },
-  { id: 2, company: 'DesignStudio', action: 'sent 3 Telegram reminders', icon: Send, time: '5s ago', color: '#FF2D78' },
-  { id: 3, company: 'ConsultX', action: 'updated portfolio pricing', icon: TrendingUp, time: '12s ago', color: '#00FF88' },
-  { id: 4, company: 'SupportAI', action: 'resolved a ticket in 18s', icon: CheckCircle, time: '18s ago', color: '#FFB800' },
-  { id: 5, company: 'TechCorp', action: 'generated quarterly report', icon: MessageSquare, time: '34s ago', color: '#00F0FF' },
-  { id: 6, company: 'SecureNet', action: 'blocked 247 threats', icon: CheckCircle, time: '45s ago', color: '#FF6161' },
-  { id: 7, company: 'BuildCo', action: 'processed 89 invoices', icon: Clock, time: '1m ago', color: '#FFB800' },
-  { id: 8, company: 'DesignStudio', action: 'delivered 5 design drafts', icon: MessageSquare, time: '2m ago', color: '#FF2D78' },
+  { id: 1, company: '@priya', action: 'created 3 smart reminders', icon: Calendar, time: '2s ago', color: '#00F0FF' },
+  { id: 2, company: '@raj', action: 'logged morning gym habit', icon: CheckCircle, time: '5s ago', color: '#ADFF2F' },
+  { id: 3, company: '@neha', action: 'got a daily brief via Telegram', icon: Send, time: '12s ago', color: '#FF2D78' },
+  { id: 4, company: '@arjun', action: 'asked Jarvis to debug React code', icon: MessageSquare, time: '18s ago', color: '#00F0FF' },
+  { id: 5, company: '@sara', action: 'saved meeting notes to Docs', icon: Clock, time: '34s ago', color: '#FFB800' },
+  { id: 6, company: '@dev', action: 'tracked ₹850 Swiggy expense', icon: TrendingUp, time: '45s ago', color: '#00FF88' },
+  { id: 7, company: '@anita', action: 'started a 25-min focus session', icon: Clock, time: '1m ago', color: '#8B5CF6' },
+  { id: 8, company: '@karan', action: 'published portfolio page', icon: CheckCircle, time: '2m ago', color: '#FF2D78' },
 ];
 
 const stats = [

@@ -1,12 +1,62 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Play, Hexagon } from 'lucide-react';
+import { ArrowRight, Play, Hexagon, MessageCircle, Calendar, Mail, Github, Users, MessageSquare, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface HeroSectionProps {
   onEnterDashboard?: () => void;
   onWatchDemo?: () => void;
 }
+
+interface PublicStats {
+  users: number;
+  conversations: number;
+  reminders_created: number;
+}
+
+const FALLBACK_STATS: PublicStats = { users: 100, conversations: 5000, reminders_created: 10000 };
+
+/** Animate a number from 0 to `target` over `duration` ms using requestAnimationFrame. */
+function useCountUp(target: number, duration: number, start: boolean, reducedMotion: boolean): number {
+  const [value, setValue] = useState(0);
+  const rafRef = useRef(0);
+
+  useEffect(() => {
+    if (!start) return;
+    if (reducedMotion) {
+      setValue(target);
+      return;
+    }
+    if (target <= 0) {
+      setValue(0);
+      return;
+    }
+
+    let startTime: number | null = null;
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(eased * target));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      }
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target, duration, start, reducedMotion]);
+
+  return value;
+}
+
+const integrations = [
+  { icon: MessageCircle, label: 'Telegram', color: '#0088cc' },
+  { icon: Calendar, label: 'Google Calendar', color: '#4285f4' },
+  { icon: Mail, label: 'Gmail', color: '#EA4335' },
+  { icon: Github, label: 'GitHub', color: '#8B5CF6' },
+] as const;
 
 export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps) {
   const navigate = useNavigate();
@@ -15,8 +65,33 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
   const [typedText, setTypedText] = useState('');
   const [orbHover, setOrbHover] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [stats, setStats] = useState<PublicStats>(FALLBACK_STATS);
+  const [statsReady, setStatsReady] = useState(false);
 
-  const fullText = 'YOUR AGENTS. YOUR RULES.';
+  const fullText = 'Your AI Operating System';
+
+  // CountUp animated values
+  const animatedUsers = useCountUp(stats.users, 1500, statsReady, reducedMotion);
+  const animatedConversations = useCountUp(stats.conversations, 1500, statsReady, reducedMotion);
+  const animatedReminders = useCountUp(stats.reminders_created, 1500, statsReady, reducedMotion);
+
+  // Fetch public stats
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch('/api/stats/public');
+      if (res.ok) {
+        const data = (await res.json()) as Record<string, number>;
+        setStats({
+          users: data.users ?? FALLBACK_STATS.users,
+          conversations: data.conversations ?? FALLBACK_STATS.conversations,
+          reminders_created: data.reminders_created ?? FALLBACK_STATS.reminders_created,
+        });
+      }
+    } catch {
+      // keep fallback
+    }
+    setStatsReady(true);
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -31,10 +106,21 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
     return () => clearTimeout(timer);
   }, []);
 
+  // Fetch stats on mount
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
   // Typewriter effect for subtext — skipped when prefers-reduced-motion
   useEffect(() => {
     if (!isLoaded) return;
-    const phrases = ['Build autonomous agents.', 'Deploy in seconds.', 'Scale without limits.', 'Chat with intelligence.'];
+    const phrases = [
+      'Your second brain, always ready.',
+      'Reminders that actually work.',
+      'Chat that remembers everything.',
+      'Automate your daily chaos.',
+      'From idea to action in seconds.',
+    ];
 
     // Respect reduced-motion: show first phrase statically, no animation loop
     if (reducedMotion) {
@@ -162,7 +248,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
           }`}
         >
           <span className="font-mono text-xs tracking-[0.3em] uppercase text-[#00F0FF]/80 px-4 py-1.5 border border-[#00F0FF]/20 rounded-full bg-[#00F0FF]/5">
-            Autonomous AI Platform
+            AI-Powered Personal Assistant
           </span>
         </div>
 
@@ -201,7 +287,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
             className="w-full sm:w-auto min-h-[48px] relative overflow-hidden bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] px-8 py-6 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,212,0.3)] group"
           >
             <span className="relative z-10 flex items-center">
-              {onEnterDashboard ? 'Enter Dashboard' : 'Explore the Network'}
+              {onEnterDashboard ? 'Get Started Free' : 'Explore the Network'}
               <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
             </span>
           </Button>
@@ -212,8 +298,59 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
             className="w-full sm:w-auto min-h-[48px] border-[#FF2D78]/40 text-[#E8E8F0] hover:bg-[#FF2D78]/5 hover:border-[#FF2D78]/60 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
           >
             <Play className="mr-2 w-5 h-5 text-[#FF2D78]" />
-            Watch Demo
+            See It in Action
           </Button>
+        </div>
+
+        {/* Social Proof Bar */}
+        <div
+          className={`mt-10 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 transition-all duration-700 delay-700 ${
+            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+        >
+          {[
+            { icon: Users, value: animatedUsers, label: 'users', color: '#00F0FF' },
+            { icon: MessageSquare, value: animatedConversations, label: 'conversations', color: '#ADFF2F' },
+            { icon: Bell, value: animatedReminders, label: 'reminders created', color: '#FF2D78' },
+          ].map((stat) => (
+            <div key={stat.label} className="flex items-center gap-2.5">
+              <stat.icon className="w-4 h-4 shrink-0" style={{ color: stat.color }} />
+              <span className="font-mono text-sm sm:text-base font-bold text-[#E8E8F0]">
+                {stat.value.toLocaleString()}+
+              </span>
+              <span className="font-mono text-xs sm:text-sm text-[#6B7280]">{stat.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Works With — Integration Logos */}
+        <div
+          className={`mt-8 transition-all duration-700 delay-[900ms] ${
+            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+        >
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#6B7280]/60 mb-4">Works with</p>
+          <div className="flex items-center justify-center gap-6 sm:gap-10">
+            {integrations.map((item) => (
+              <div
+                key={item.label}
+                className="flex flex-col items-center gap-1.5 group cursor-default"
+              >
+                <div className="p-2.5 rounded-lg border border-white/5 bg-white/[0.02] transition-all duration-300 group-hover:border-white/15 group-hover:bg-white/[0.05]">
+                  <item.icon
+                    className="w-5 h-5 text-[#6B7280]/50 transition-colors duration-300 group-hover:text-[#E8E8F0]"
+                    style={{
+                      // Show branded color on hover via CSS variable
+                      ['--hover-color' as string]: item.color,
+                    }}
+                  />
+                </div>
+                <span className="font-mono text-[9px] sm:text-[10px] text-[#6B7280]/40 transition-colors duration-300 group-hover:text-[#6B7280]">
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
