@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DollarSign,
   MessageSquare,
@@ -8,6 +9,9 @@ import {
   ChevronRight,
   TrendingUp,
   AlertTriangle,
+  Zap,
+  BarChart3,
+  Activity,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,7 +69,38 @@ function friendlyModel(m: string) { return MODEL_LABELS[m] || m; }
 type SummaryRange = 'day' | 'week' | 'month';
 type ChartRange = '7d' | '14d' | '30d';
 
+/** Circular progress ring for credit usage */
+function CreditCircle({ used, total }: { used: number; total: number }) {
+  const pct = total > 0 ? Math.min((used / total) * 100, 100) : 0;
+  const remaining = total - used;
+  const r = 40;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (pct / 100) * circ;
+  const color = pct > 90 ? '#FF6161' : pct > 70 ? '#FFB800' : '#00F0FF';
+  const fmt = (n: number) =>
+    n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
+
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: 96, height: 96 }}>
+      <svg width="96" height="96" viewBox="0 0 96 96" className="transform -rotate-90">
+        <circle cx="48" cy="48" r={r} fill="none" stroke="#06060B" strokeWidth="7" />
+        <circle
+          cx="48" cy="48" r={r} fill="none"
+          stroke={color} strokeWidth="7" strokeLinecap="round"
+          strokeDasharray={circ} strokeDashoffset={offset}
+          className="transition-all duration-700"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-lg font-bold text-[#E8E8F0] font-mono">{fmt(remaining)}</span>
+        <span className="text-[10px] text-[#9CA3AF]">left</span>
+      </div>
+    </div>
+  );
+}
+
 export function UsageAnalyticsPage() {
+  const nav = useNavigate();
   const [mounted, setMounted] = useState(false);
 
   // Data state
@@ -383,7 +418,11 @@ export function UsageAnalyticsPage() {
             {loading ? (
               <Skeleton className="w-full h-[220px] rounded-lg" />
             ) : pieData.length === 0 ? (
-              <div className="flex items-center justify-center h-[220px] text-sm text-[#9CA3AF]">No provider data</div>
+              <div className="flex flex-col items-center justify-center h-[220px] gap-2">
+                <BarChart3 className="w-8 h-8 text-[#00F0FF]/20" />
+                <p className="text-sm text-[#9CA3AF]">No provider data yet</p>
+                <p className="text-xs text-[#9CA3AF]/60">Start chatting to see provider breakdown</p>
+              </div>
             ) : (
               <>
                 <div className="min-h-[180px] h-[220px]">
@@ -434,7 +473,11 @@ export function UsageAnalyticsPage() {
             {loading ? (
               <Skeleton className="w-full h-[250px] rounded-lg" />
             ) : hourlyData.length === 0 ? (
-              <div className="flex items-center justify-center h-[250px] text-sm text-[#9CA3AF]">No activity data</div>
+              <div className="flex flex-col items-center justify-center h-[250px] gap-2">
+                <Activity className="w-8 h-8 text-[#00F0FF]/20" />
+                <p className="text-sm text-[#9CA3AF]">No activity data yet</p>
+                <p className="text-xs text-[#9CA3AF]/60">Your hourly usage patterns will appear here</p>
+              </div>
             ) : (
               <div className="min-h-[180px] h-[250px]">
                 {mounted && (
@@ -468,12 +511,23 @@ export function UsageAnalyticsPage() {
             {loading ? (
               <Skeleton className="w-full h-[200px] rounded-lg" />
             ) : toolData.length === 0 ? (
-              <div className="flex items-center justify-center h-[200px] text-sm text-[#9CA3AF]">No tool usage data</div>
+              <div className="flex flex-col items-center justify-center h-[200px] gap-2">
+                <Wrench className="w-8 h-8 text-[#FF2D78]/20" />
+                <p className="text-sm text-[#9CA3AF]">No tool usage yet</p>
+                <p className="text-xs text-[#9CA3AF]/60">Tool call costs will appear after your first agent run</p>
+              </div>
             ) : (
               <div className="min-h-[180px] h-[200px]">
                 {mounted && (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={toolData} layout="vertical" margin={{ left: 80 }}>
+                      <defs>
+                        <linearGradient id="toolBarGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#00F0FF" />
+                          <stop offset="50%" stopColor="#00FF88" />
+                          <stop offset="100%" stopColor="#FF2D78" />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#00F0FF10" horizontal={false} />
                       <XAxis
                         type="number"
@@ -488,7 +542,7 @@ export function UsageAnalyticsPage() {
                         {...TOOLTIP_STYLE}
                         formatter={safeDollar4}
                       />
-                      <Bar dataKey="cost" fill="#FF2D78" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="cost" fill="url(#toolBarGradient)" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -510,14 +564,26 @@ export function UsageAnalyticsPage() {
                 ))}
               </div>
             ) : !billing ? (
-              <div className="text-sm text-[#9CA3AF]">No billing data</div>
+              <div className="flex flex-col items-center justify-center py-6 gap-2">
+                <DollarSign className="w-8 h-8 text-[#00FF88]/20" />
+                <p className="text-sm text-[#9CA3AF]">No billing data</p>
+                <p className="text-xs text-[#9CA3AF]/60">Billing info will appear after your first cycle</p>
+              </div>
             ) : (
               <div className="space-y-4">
+                {/* Circular credit progress */}
+                <div className="relative flex justify-center py-2">
+                  <CreditCircle
+                    used={billing.usageThisMonth?.totalCostUSD ?? 0}
+                    total={billing.monthlyAllowance > 0 ? billing.monthlyAllowance : 1}
+                  />
+                </div>
+
                 {[
                   { label: 'Plan', value: billing.plan.charAt(0).toUpperCase() + billing.plan.slice(1) },
                   { label: 'Credits', value: billing.credits.toLocaleString() },
-                  { label: 'Monthly Allowance', value: `$${(billing.monthlyAllowance ?? 0).toFixed(2)}` },
-                  { label: 'Used This Month', value: `$${(billing.usageThisMonth?.totalCostUSD ?? 0).toFixed(2)}` },
+                  { label: 'Allowance', value: `$${(billing.monthlyAllowance ?? 0).toFixed(2)}` },
+                  { label: 'Used', value: `$${(billing.usageThisMonth?.totalCostUSD ?? 0).toFixed(2)}` },
                   { label: 'Resets', value: new Date(billing.resetDate).toLocaleDateString() },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between text-sm">
@@ -541,6 +607,18 @@ export function UsageAnalyticsPage() {
                     />
                   </div>
                 </div>
+
+                {/* Get more credits CTA when usage > 80% */}
+                {billing.monthlyAllowance > 0 &&
+                  ((billing.usageThisMonth?.totalCostUSD ?? 0) / billing.monthlyAllowance) > 0.8 && (
+                  <button
+                    onClick={() => nav('/dashboard/billing')}
+                    className="w-full mt-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-[#FFB800]/30 bg-[#FFB800]/10 text-[#FFB800] text-xs font-medium hover:bg-[#FFB800]/20 transition-colors min-h-[44px]"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    Running low — get more credits
+                  </button>
+                )}
               </div>
             )}
           </CardContent>
@@ -567,7 +645,11 @@ export function UsageAnalyticsPage() {
               ))}
             </div>
           ) : events.length === 0 ? (
-            <div className="text-center py-8 text-sm text-[#9CA3AF]">No usage events yet</div>
+            <div className="flex flex-col items-center justify-center py-10 gap-2">
+              <MessageSquare className="w-8 h-8 text-[#00F0FF]/20" />
+              <p className="text-sm text-[#9CA3AF]">No usage events yet</p>
+              <p className="text-xs text-[#9CA3AF]/60">Each AI request will be logged here with cost details</p>
+            </div>
           ) : (
             <>
               <MobileTable<UsageEvent>
@@ -598,6 +680,7 @@ export function UsageAnalyticsPage() {
                 data={events}
                 keyExtractor={(event) => String(event.id)}
                 emptyMessage="No usage events yet"
+                striped
               />
 
               {/* Pagination */}
