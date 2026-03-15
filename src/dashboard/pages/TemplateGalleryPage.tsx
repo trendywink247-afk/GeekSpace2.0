@@ -108,17 +108,17 @@ export function TemplateGalleryPage({ embedded }: { embedded?: boolean }) {
             placeholder="Search templates..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-[#0C0C18] border border-[#00F0FF]/30 rounded-lg text-[#E8E8F0] placeholder-[#6B7280] focus:border-[#00F0FF] outline-none"
+            className="w-full pl-10 pr-4 py-2 bg-[#0C0C18] border border-[#00F0FF]/30 rounded-lg text-[#E8E8F0] placeholder-[#6B7280] focus:border-[#00F0FF] focus:shadow-[0_0_12px_rgba(0,240,255,0.15)] outline-none transition-all duration-200"
           />
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 min-w-0">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition-all duration-200 ${
               selectedCategory === 'all'
-                ? 'bg-[#00F0FF] text-white'
-                : 'bg-[#0C0C18] text-[#6B7280] hover:text-[#E8E8F0] border border-[#00F0FF]/30'
+                ? 'bg-[#00F0FF] text-white shadow-[0_0_12px_rgba(0,240,255,0.3)]'
+                : 'bg-[#0C0C18] text-[#6B7280] hover:text-[#E8E8F0] border border-[#00F0FF]/30 hover:border-[#00F0FF]/50'
             }`}
           >
             <LayoutTemplate className="w-4 h-4" />
@@ -131,10 +131,10 @@ export function TemplateGalleryPage({ embedded }: { embedded?: boolean }) {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition-colors ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition-all duration-200 ${
                   selectedCategory === cat.id
-                    ? 'bg-[#00F0FF] text-white'
-                    : 'bg-[#0C0C18] text-[#6B7280] hover:text-[#E8E8F0] border border-[#00F0FF]/30'
+                    ? 'bg-[#00F0FF] text-white shadow-[0_0_12px_rgba(0,240,255,0.3)]'
+                    : 'bg-[#0C0C18] text-[#6B7280] hover:text-[#E8E8F0] border border-[#00F0FF]/30 hover:border-[#00F0FF]/50'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -151,17 +151,19 @@ export function TemplateGalleryPage({ embedded }: { embedded?: boolean }) {
           <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : templates.length === 0 ? (
-        <div className="text-center py-16 glass-card-v2 rounded-xl border border-[#00F0FF]/20">
-          <LayoutTemplate className="w-16 h-16 text-[#00F0FF]/40 mx-auto mb-4" />
+        <div className="text-center py-20 glass-card-v2 rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/[0.02]">
+          <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mx-auto mb-4">
+            <LayoutTemplate className="w-8 h-8 text-[#00F0FF]/50" />
+          </div>
           <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No templates found</h3>
-          <p className="text-[#6B7280]">Try adjusting your search or filters</p>
+          <p className="text-[#6B7280] text-sm max-w-xs mx-auto">Try adjusting your search or filters to discover templates</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {templates.map((template) => (
             <div
               key={template.id}
-              className="glass-card-v2 rounded-xl border border-[#00F0FF]/20 overflow-hidden hover:border-[#00F0FF]/40 transition-all group"
+              className="glass-card-v2 rounded-xl border border-[#00F0FF]/20 overflow-hidden hover:border-[#00F0FF]/40 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,240,255,0.08)] transition-all duration-300 group"
             >
               {/* Thumbnail */}
               <div className="aspect-video bg-gradient-to-br from-[#1a1a2e] to-[#16213e] relative overflow-hidden">
@@ -218,7 +220,7 @@ export function TemplateGalleryPage({ embedded }: { embedded?: boolean }) {
                   <button
                     onClick={() => handleClone(template)}
                     disabled={cloningId === template.id}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/80 transition-colors disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none"
                   >
                     {cloningId === template.id ? (
                       <>

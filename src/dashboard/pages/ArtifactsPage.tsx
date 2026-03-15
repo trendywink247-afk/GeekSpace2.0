@@ -176,7 +176,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         </div>
         <button
           onClick={() => onNavigate?.('templates')}
-          className="flex items-center gap-2 px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/80 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200"
         >
           <Plus className="w-4 h-4" />
           <span>New Project</span>
@@ -185,13 +185,15 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
       {/* Projects Grid */}
       {artifacts.length === 0 ? (
-        <div className="text-center py-16 glass-card-v2 rounded-xl border border-[#00F0FF]/20">
-          <Folder className="w-16 h-16 text-[#00F0FF]/40 mx-auto mb-4" />
+        <div className="text-center py-20 glass-card-v2 rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/[0.02]">
+          <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mx-auto mb-4">
+            <Folder className="w-8 h-8 text-[#00F0FF]/50" />
+          </div>
           <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No projects yet</h3>
-          <p className="text-[#6B7280] mb-6">Create your first website from a template or ask your AI agent</p>
+          <p className="text-[#6B7280] text-sm mb-6 max-w-xs mx-auto">Create your first website from a template or ask your AI agent to build one for you</p>
           <button
             onClick={() => onNavigate?.('templates')}
-            className="px-4 py-2 bg-[#00F0FF]/20 text-[#00F0FF] rounded-lg hover:bg-[#00F0FF]/30 transition-colors"
+            className="px-5 py-2.5 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all duration-200 font-medium text-sm"
           >
             Browse Templates
           </button>
@@ -201,7 +203,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
           {artifacts.map(artifact => (
             <div
               key={artifact.id}
-              className="glass-card-v2 rounded-xl border border-[#00F0FF]/20 overflow-hidden hover:border-[#00F0FF]/40 transition-all group"
+              className="glass-card-v2 rounded-xl border border-[#00F0FF]/20 overflow-hidden hover:border-[#00F0FF]/40 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,240,255,0.08)] transition-all duration-300 group"
             >
               {/* Preview thumbnail */}
               <div className="aspect-video bg-gradient-to-br from-[#1a1a2e] to-[#16213e] relative">
@@ -339,7 +341,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/80 transition-colors"
+                className="px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200"
               >
                 Save Changes
               </button>
@@ -388,7 +390,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   <button
                     onClick={handleSaveDomain}
                     disabled={!domainInput || domainInput.length < 2}
-                    className="mt-3 w-full px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/80 transition-colors disabled:opacity-50"
+                    className="mt-3 w-full px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none"
                   >
                     Set Domain
                   </button>

@@ -34,6 +34,54 @@ import { checkContentSafety } from './content-filter.js';
 import { isLaunchModeRequest, runMultiAgentOrchestration } from './multi-agent-orchestrator.js';
 import { isResearchRequest, runResearchJob } from './research-job.js';
 
+// ---- Indian Festival Calendar ----
+// Returns a festival greeting if today falls on/near a major Indian festival (approximate fixed dates).
+function getIndianFestival(): string | null {
+  const now = new Date();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+
+  // [month, startDay, endDay, greeting]
+  const festivals: [number, number, number, string][] = [
+    [1, 1, 1, 'Happy New Year!'],
+    [1, 14, 14, 'Happy Makar Sankranti!'],
+    [1, 26, 26, 'Happy Republic Day!'],
+    [3, 24, 26, 'Happy Holi!'],
+    [4, 13, 14, 'Happy Baisakhi!'],
+    [8, 15, 15, 'Happy Independence Day!'],
+    [8, 26, 26, 'Happy Janmashtami!'],
+    [9, 15, 24, 'Happy Navratri!'],
+    [10, 2, 2, 'Happy Gandhi Jayanti!'],
+    [10, 12, 12, 'Happy Dussehra!'],
+    [10, 20, 22, 'Happy Diwali!'],
+    [10, 31, 31, 'Happy Halloween!'],
+    [11, 1, 1, 'Happy Diwali!'],
+    [11, 14, 14, "Happy Children's Day!"],
+    [11, 27, 27, 'Happy Guru Nanak Jayanti!'],
+    [12, 25, 25, 'Merry Christmas!'],
+  ];
+
+  for (const [fm, fd1, fd2, msg] of festivals) {
+    if (m === fm && d >= fd1 && d <= fd2) return msg;
+  }
+  return null;
+}
+
+// ---- Hinglish Greeting ----
+// Returns a time-appropriate Hinglish or English greeting, alternating randomly.
+function getHinglishGreeting(): string {
+  const hour = new Date().getHours();
+  const useHinglish = Math.random() < 0.5;
+
+  if (hour < 12) {
+    return useHinglish ? 'Suprabhat!' : 'Good morning!';
+  } else if (hour < 17) {
+    return useHinglish ? 'Namaste!' : 'Good afternoon!';
+  } else {
+    return useHinglish ? 'Namaste!' : 'Good evening!';
+  }
+}
+
 // ---- Resolve agent name from config + personality (never returns 'Geek') ----
 function resolveAgentName(
   agentConfig: Record<string, unknown> | null | undefined,
@@ -192,7 +240,7 @@ function hasToolTrigger(message: string): boolean {
     // Hinglish expense
     /[₹$]\d|\d+\s*(rupay?|rs\.?|bucks?)\b/i.test(lower) ||
     /kharch|kharcha|paisa\s+(gaya|diya|lagay)|bill\s+(pay|diya)/i.test(lower) ||
-    /(swiggy|zomato|ola|uber|amazon|flipkart|netflix|hotstar)\s+pe\b/i.test(lower) ||
+    /(swiggy|zomato|ola|uber|amazon|flipkart|netflix|hotstar|bigbasket|blinkit|zepto|rapido|myntra|meesho|phonepe|paytm|gpay|jio|airtel|vi|irctc|makemytrip|goibibo|bookmyshow)\s+pe\b/i.test(lower) ||
     /\b(pe|par|mein)\s+\d+\s*(rupay?|rs)/i.test(lower) ||
     // Hinglish habits
     /\b(gym|yoga|meditation|exercise|workout|padhai|study)\s+(kiya|ki|kar[ae]?)\b/i.test(lower) ||
@@ -234,7 +282,7 @@ function parseExpenseIntent(message: string): { amount: number; description: str
   }
 
   // Pattern: "MERCHANT pe NUMBER rupay" (Hinglish)
-  match = lower.match(/(swiggy|zomato|ola|uber|amazon|flipkart|netflix|hotstar|jio|airtel|bigbasket|blinkit|dunzo|myntra|meesho|rapido|paytm)\s+(?:pe|par|se|mein)\s*[$₹]?\s*(\d+)/i);
+  match = lower.match(/(swiggy|zomato|ola|uber|amazon|flipkart|netflix|hotstar|jio|airtel|vi|bigbasket|blinkit|zepto|dunzo|myntra|meesho|rapido|paytm|phonepe|gpay|irctc|makemytrip|goibibo|bookmyshow)\s+(?:pe|par|se|mein)\s*[$₹]?\s*(\d+)/i);
   if (match) {
     return { amount: parseFloat(match[2]), description: match[1], category: guessCategory(match[1]) };
   }
@@ -282,14 +330,16 @@ function parseMultiExpenseIntent(message: string): Array<{ amount: number; descr
 function guessCategory(text: string): string {
   const t = text.toLowerCase();
   if (/swiggy|zomato|food|khana|restaurant|cafe|pizza|burger|biryani|chai/i.test(t)) return 'food';
-  if (/uber|ola|rapido|cab|taxi|auto|bus|train|metro|petrol|diesel|fuel/i.test(t)) return 'transport';
+  if (/uber|ola|rapido|cab|taxi|auto|bus|train|metro|petrol|diesel|fuel|irctc/i.test(t)) return 'transport';
   if (/amazon|flipkart|myntra|meesho|shopping|clothes|shoes|dress|saree/i.test(t)) return 'shopping';
-  if (/netflix|hotstar|prime|spotify|movie|cinema|theatre|entertainment/i.test(t)) return 'entertainment';
-  if (/jio|airtel|vodafone|phone|mobile|recharge|internet|wifi/i.test(t)) return 'utilities';
+  if (/netflix|hotstar|prime|spotify|movie|cinema|theatre|entertainment|bookmyshow/i.test(t)) return 'entertainment';
+  if (/jio|airtel|vodafone|vi\b|phone|mobile|recharge|internet|wifi/i.test(t)) return 'utilities';
   if (/rent|electricity|water|gas|bill|maintenance/i.test(t)) return 'bills';
   if (/doctor|hospital|medicine|pharmacy|medical|health/i.test(t)) return 'health';
   if (/gym|yoga|fitness|sports|swimming/i.test(t)) return 'fitness';
-  if (/grocery|groceries|vegetables|fruits|milk|bigbasket|blinkit|dunzo/i.test(t)) return 'groceries';
+  if (/grocery|groceries|vegetables|fruits|milk|bigbasket|blinkit|zepto|dunzo/i.test(t)) return 'groceries';
+  if (/makemytrip|goibibo|travel|flight|hotel|booking/i.test(t)) return 'travel';
+  if (/phonepe|paytm|gpay/i.test(t)) return 'other'; // payment apps — category depends on what was paid for
   return 'other';
 }
 
@@ -975,13 +1025,18 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       const focusSessions = (db.prepare(`SELECT COUNT(*) as n, SUM(duration_min) as total FROM focus_sessions WHERE user_id = ? AND started_at > ?`).get(userId, since) as { n: number; total: number | null });
       const upcomingReminders = db.prepare(`SELECT text, datetime FROM reminders WHERE user_id = ? AND completed = 0 ORDER BY datetime ASC LIMIT 3`).all(userId) as Array<{ text: string; datetime: string }>;
       const recentNotes = db.prepare(`SELECT title FROM notes WHERE user_id = ? AND archived = 0 ORDER BY updated_at DESC LIMIT 3`).all(userId) as Array<{ title: string }>;
-      const lines: string[] = [
-        `Your ${type} briefing:`,
+      // Inject festival greeting + Hinglish greeting at top of briefing
+      const festivalMsg = getIndianFestival();
+      const greeting = getHinglishGreeting();
+      const lines: string[] = [];
+      if (festivalMsg) lines.push(festivalMsg);
+      lines.push(
+        `${greeting} Your ${type} briefing:`,
         `• Pending reminders: ${pendingReminders}`,
         `• Habits logged (${isWeekly ? '7 days' : 'today'}): ${habitsDone}`,
         `• Notes saved: ${notesSaved}`,
         `• Focus sessions: ${focusSessions.n}${focusSessions.total ? ` (${focusSessions.total} min)` : ''}`,
-      ];
+      );
       if (upcomingReminders.length) {
         lines.push('', 'Upcoming:');
         upcomingReminders.forEach(r => {

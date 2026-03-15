@@ -81,9 +81,40 @@ export async function assembleMorningBrief(userId: string): Promise<{
     'SELECT key, value FROM user_memories WHERE user_id = ? ORDER BY updated_at DESC LIMIT 1'
   ).get(userId) as { key: string; value: string } | undefined;
 
+  // ── Indian festival detection ──────────────────────────────
+  const festivalGreeting = (() => {
+    const m = now.getMonth() + 1;
+    const d = now.getDate();
+    const festivals: [number, number, number, string][] = [
+      [1, 1, 1, 'Happy New Year!'],
+      [1, 14, 14, 'Happy Makar Sankranti!'],
+      [1, 26, 26, 'Happy Republic Day!'],
+      [3, 24, 26, 'Happy Holi!'],
+      [4, 13, 14, 'Happy Baisakhi!'],
+      [8, 15, 15, 'Happy Independence Day!'],
+      [8, 26, 26, 'Happy Janmashtami!'],
+      [9, 15, 24, 'Happy Navratri!'],
+      [10, 2, 2, 'Happy Gandhi Jayanti!'],
+      [10, 12, 12, 'Happy Dussehra!'],
+      [10, 20, 22, 'Happy Diwali!'],
+      [11, 1, 1, 'Happy Diwali!'],
+      [11, 14, 14, "Happy Children's Day!"],
+      [11, 27, 27, 'Happy Guru Nanak Jayanti!'],
+      [12, 25, 25, 'Merry Christmas!'],
+    ];
+    for (const [fm, fd1, fd2, msg] of festivals) {
+      if (m === fm && d >= fd1 && d <= fd2) return msg;
+    }
+    return null;
+  })();
+
+  // Hinglish morning greeting (alternates randomly)
+  const morningGreeting = Math.random() < 0.5 ? `Suprabhat ${firstName}!` : `Good morning ${firstName}!`;
+
   // ── Build the message ──────────────────────────────────────
   const sections: string[] = [];
-  sections.push(`Good morning ${firstName}! \u2600\uFE0F\n`);
+  if (festivalGreeting) sections.push(festivalGreeting + '\n');
+  sections.push(`${morningGreeting} \u2600\uFE0F\n`);
   sections.push(`\u{1F4C5} *TODAY* \u2014 ${dateStr}, ${dayOfWeek}`);
 
   if (todayReminders.length > 0) {
