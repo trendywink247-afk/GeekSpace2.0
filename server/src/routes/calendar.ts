@@ -26,16 +26,22 @@ router.get("/status", requireAuth, (req, res) => {
     | { google_calendar_token: string | null }
     | undefined;
 
+  logger.info({ userId, hasRow: !!row, hasToken: !!row?.google_calendar_token, tokenLen: row?.google_calendar_token?.length ?? 0 }, "Calendar status check");
+
   if (!row?.google_calendar_token) {
     return res.json({ available: true, connected: false, email: null, lastSync: null });
   }
 
   try {
     const token = JSON.parse(row.google_calendar_token) as { email?: string };
-    const lastSyncRow = db.prepare("SELECT value FROM user_settings WHERE user_id = ? AND key = 'calendar_last_sync'").get(userId) as { value: string } | undefined;
-    const lastSync = lastSyncRow ? parseInt(lastSyncRow.value, 10) : null;
+    let lastSync: number | null = null;
+    try {
+      const lastSyncRow = db.prepare("SELECT value FROM user_settings WHERE user_id = ? AND key = 'calendar_last_sync'").get(userId) as { value: string } | undefined;
+      lastSync = lastSyncRow ? parseInt(lastSyncRow.value, 10) : null;
+    } catch { /* user_settings table may not exist yet — non-fatal */ }
     return res.json({ available: true, connected: true, email: token.email ?? null, lastSync });
-  } catch {
+  } catch (err) {
+    logger.error({ userId, err: (err as Error).message }, "Calendar status: token parse failed");
     return res.json({ available: true, connected: false, email: null, lastSync: null });
   }
 });
@@ -86,17 +92,14 @@ router.get("/callback", async (req, res) => {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
-    // Fetch user email from Google
-    const { google } = await import("googleapis");
-    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
-    const userInfo = await oauth2.userinfo.get();
-    const email = userInfo.data.email ?? "";
+    // Get email from existing user record (no need to call userinfo API)
+    const user = db.prepare("SELECT email FROM users WHERE id = ?").get(userId) as { email: string } | undefined;
 
     const tokenData = {
       access_token: tokens.access_token ?? "",
       refresh_token: tokens.refresh_token ?? "",
       expiry_date: tokens.expiry_date ?? 0,
-      email,
+      email: user?.email ?? "",
     };
 
     db.prepare("UPDATE users SET google_calendar_token = ? WHERE id = ?").run(
@@ -104,7 +107,7 @@ router.get("/callback", async (req, res) => {
       userId
     );
 
-    logger.info({ userId, email }, "Calendar OAuth token stored");
+    logger.info({ userId, email: tokenData.email }, "Calendar OAuth token stored");
 
     // Trigger initial sync in background
     syncUserCalendar(userId).catch((err) => logger.warn({ err, userId }, "Initial calendar sync failed"));
