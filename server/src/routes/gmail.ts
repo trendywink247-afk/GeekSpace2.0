@@ -114,22 +114,20 @@ gmailRouter.get('/callback', async (req, res) => {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
-    // Get user email
-    const oauth2Api = google.oauth2({ version: 'v2', auth: oauth2Client });
-    const userInfo = await oauth2Api.userinfo.get();
-    const email = userInfo.data.email || '';
+    // Get email from existing user record (no need to call userinfo API)
+    const user = db.prepare('SELECT email FROM users WHERE id = ?').get(userId) as { email: string } | undefined;
 
     const tokenData: GmailTokenData = {
       access_token: tokens.access_token || '',
       refresh_token: tokens.refresh_token || '',
       expiry_date: tokens.expiry_date || 0,
-      email,
+      email: user?.email || '',
     };
 
     db.prepare('UPDATE users SET google_gmail_token = ? WHERE id = ?')
       .run(JSON.stringify(tokenData), userId);
 
-    logger.info({ userId, email }, 'Gmail OAuth connected');
+    logger.info({ userId, email: tokenData.email }, 'Gmail OAuth connected');
     res.redirect(`${config.publicUrl}/dashboard?tab=gmail&connected=true`);
   } catch (err) {
     logger.error({ err, userId }, 'Gmail callback failed');
