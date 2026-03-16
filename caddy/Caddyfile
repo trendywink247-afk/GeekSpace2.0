@@ -36,7 +36,9 @@ ai.agentin.chat {
 
 	# API + preview calls always pass through to Express
 	handle /api/* {
-		reverse_proxy geekspace:3001
+		reverse_proxy geekspace:3001 {
+			flush_interval -1
+		}
 	}
 	handle /preview/* {
 		reverse_proxy geekspace:3001
@@ -76,7 +78,9 @@ ai.agentin.chat {
 api.agentin.chat {
 	import common_headers
 
-	reverse_proxy geekspace:3001
+	reverse_proxy geekspace:3001 {
+		flush_interval -1
+	}
 }
 
 # ---- Uptime Kuma (Status Monitoring) ----
@@ -90,7 +94,9 @@ staging.agentin.chat {
 
 	# API calls always pass through
 	handle /api/* {
-		reverse_proxy staging-app:3001
+		reverse_proxy staging-app:3001 {
+			flush_interval -1
+		}
 	}
 
 	# Gate page is always accessible

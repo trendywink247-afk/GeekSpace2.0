@@ -124,6 +124,8 @@ interface ChatMessage {
   receipts?: Array<{ icon: string; text: string; details?: string; link?: string }>;
   /** 81.7: URL of generated image to render as inline image bubble */
   imageUrl?: string;
+  /** Visible thinking steps from ReAct loop */
+  thinkingSteps?: Array<{ type: string; content: string; tool?: string; iteration: number }>;
 }
 
 interface AgentChatPanelProps {
@@ -607,6 +609,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         const decoder = new TextDecoder();
         let buffer = '';
         let gotError = false;
+        const thinkingSteps: Array<{ type: string; content: string; tool?: string; iteration: number }> = [];
 
         while (true) {
           const { done, value } = await reader.read();
@@ -628,6 +631,19 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 gotError = true;
               }
 
+              // Visible thinking step from ReAct loop
+              if (chunk.step) {
+                thinkingSteps.push(chunk.step);
+                // Show thinking step as streaming preview
+                const stepIcon = chunk.step.type === 'thinking' ? '🧠' : chunk.step.type === 'tool_call' ? '🔧' : chunk.step.type === 'tool_result' ? '📊' : '✍️';
+                const stepPreview = thinkingSteps.map((s: { type: string; content: string }) => {
+                  const icon = s.type === 'thinking' ? '🧠' : s.type === 'tool_call' ? '🔧' : s.type === 'tool_result' ? '📊' : '✍️';
+                  return `${icon} ${s.content}`;
+                }).join('\n');
+                setAgentMsg({ content: stepPreview, isStreaming: true, thinkingSteps: [...thinkingSteps] });
+                void stepIcon; // used above in template
+              }
+
               if (chunk.text) {
                 // Accumulate into mutable ref — zero renders per token
                 streamBufferRef.current += chunk.text;
@@ -637,7 +653,13 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 // Final flush: cancel RAF, push final content + clear streaming flag
                 cancelAnimationFrame(rafRef.current);
                 rafRef.current = 0;
-                setAgentMsg({ content: streamBufferRef.current, isStreaming: false, provider: chunk.provider, model: chunk.model });
+                setAgentMsg({
+                  content: streamBufferRef.current,
+                  isStreaming: false,
+                  provider: chunk.provider,
+                  model: chunk.model,
+                  thinkingSteps: thinkingSteps.length > 0 ? thinkingSteps : undefined,
+                });
               }
             } catch {
               // skip malformed chunks
@@ -1215,6 +1237,25 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         : 'bg-[#06060B] text-[#E8E8F0] border border-[#00F0FF]/20 rounded-bl-md'
                     }`}
                   >
+                    {/* Thinking steps (collapsible when not streaming) */}
+                    {msg.thinkingSteps && msg.thinkingSteps.length > 0 && !msg.isStreaming && (
+                      <details className="mb-2 rounded-md" style={{ background: '#0C0C18', border: '1px solid rgba(0,240,255,0.1)' }}>
+                        <summary className="cursor-pointer px-2 py-1 text-[11px] text-[#8892A4] select-none flex items-center gap-1">
+                          <span>🧠</span> <span>{msg.thinkingSteps.length} thinking steps</span>
+                        </summary>
+                        <div className="px-2 pb-2 space-y-1">
+                          {msg.thinkingSteps.map((s, i) => (
+                            <div key={i} className="flex items-start gap-1.5 text-[11px]">
+                              <span className="shrink-0">{s.type === 'thinking' ? '🧠' : s.type === 'tool_call' ? '🔧' : s.type === 'tool_result' ? '📊' : '✍️'}</span>
+                              <span className="text-[#8892A4]">
+                                {s.tool && <span className="text-[#00F0FF] mr-1">[{s.tool}]</span>}
+                                {s.content}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
                     {searchOpen && searchTerm && msg.content.toLowerCase().includes(searchTerm.toLowerCase())
                       ? (() => {
                           const parts = msg.content.split(new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));

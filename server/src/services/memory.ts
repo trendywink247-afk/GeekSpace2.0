@@ -185,6 +185,11 @@ export function logConversation(
   db.prepare(
     'INSERT INTO conversation_log (id, user_id, role, content, provider, model, request_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
   ).run(uuid(), userId, role, content, provider, model, requestId);
+
+  // Forward to GeekOS for semantic embedding (fire-and-forget)
+  import('../routes/geekos-bridge.js')
+    .then(({ ingestToGeekOS }) => ingestToGeekOS(userId, role, content))
+    .catch(() => { /* GeekOS not available — non-fatal */ });
 }
 
 export function getRecentConversations(userId: string, limit = 10, search?: string): ConversationEntry[] {

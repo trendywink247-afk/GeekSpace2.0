@@ -1321,6 +1321,15 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     logger.info({ userId, namedAgent, resolvedAgentName }, 'Named agent routing: overriding personality');
   }
 
+  // 6a. GeekOS semantic recall (non-blocking — skip if offline)
+  try {
+    const { queryGeekOSMemory } = await import('../routes/geekos-bridge.js');
+    const semanticContext = await queryGeekOSMemory(userId, msg.text);
+    if (semanticContext) {
+      systemPrompt += `\n--- Semantic recall ---\n${semanticContext}`;
+    }
+  } catch { /* GeekOS not available */ }
+
   // 6a. Token compression — compress system prompt + user message for LLM
   //     (msg.text kept original for logging/memory/channel delivery)
   systemPrompt = compressPrompt(systemPrompt);

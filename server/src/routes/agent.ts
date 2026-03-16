@@ -30,19 +30,28 @@ import { buildPersonalityInstructions } from '../services/message-router.js';
 
 export const agentRouter = Router();
 
-// ---- Rate Limit Status tracker (33.4) ----
-// In-memory tracker mirroring the chat rate limiter (60 req / 15 min)
-const _rateLimitTracker = new Map<number, { count: number; windowStart: number }>();
-const RL_WINDOW_MS = 15 * 60 * 1000;
+// ---- Rate Limit Status tracker (GeekOS upgrade) ----
+// Redis-backed — survives Docker restarts
+const RL_WINDOW_S = 15 * 60;
 const RL_LIMIT = 60;
 
-function incrementRateLimitTracker(userId: number): void {
-  const now = Date.now();
-  const entry = _rateLimitTracker.get(userId);
-  if (!entry || now - entry.windowStart > RL_WINDOW_MS) {
-    _rateLimitTracker.set(userId, { count: 1, windowStart: now });
-  } else {
-    _rateLimitTracker.set(userId, { count: entry.count + 1, windowStart: entry.windowStart });
+async function incrementRateLimitTracker(userId: number): Promise<void> {
+  const key = `chat:rl:${userId}`;
+  try {
+    const raw = await cacheGet(key);
+    const count = raw ? parseInt(raw, 10) + 1 : 1;
+    await cacheSet(key, String(count), RL_WINDOW_S);
+  } catch { /* Redis fail = degrade to unlimited */ }
+}
+
+async function getRateLimitStatus(userId: number): Promise<{ remaining: number; limit: number; windowMinutes: number }> {
+  const key = `chat:rl:${userId}`;
+  try {
+    const raw = await cacheGet(key);
+    const count = raw ? parseInt(raw, 10) : 0;
+    return { remaining: Math.max(0, RL_LIMIT - count), limit: RL_LIMIT, windowMinutes: 15 };
+  } catch {
+    return { remaining: RL_LIMIT, limit: RL_LIMIT, windowMinutes: 15 };
   }
 }
 
@@ -992,7 +1001,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     extractMemoriesFromConversation(userId, [{ role: 'user', content: message }]);
 
     // Increment rate limit tracker for UI display
-    incrementRateLimitTracker(userId as unknown as number);
+    incrementRateLimitTracker(userId as unknown as number).catch(() => {});
 
     res.json(response);
   } catch (err) {
@@ -1379,13 +1388,18 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     const userCredits = (user?.credits as number) || 0;
     const agentName = (agentConfig?.name as string) || 'Geek';
 
-    // For complex/coding/planning intents, skip slow Ollama stream and use routeChat
+    // For complex/coding/planning intents, use ReAct loop with visible thinking steps
     if (intent === 'coding' || intent === 'planning' || intent === 'complex') {
-      const result = await routeChat(
+      const result = await runReactLoop(
         [...history, { role: 'user', content: message }],
-        { systemPrompt, agentName, userCredits, userId },
+        {
+          systemPrompt, agentName, userCredits, userId,
+          onStep: (step) => {
+            try { res.write(`data: ${JSON.stringify({ step, done: false })}\n\n`); } catch { /* client disconnected */ }
+          },
+        },
       );
-      res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
+      res.write(`data: ${JSON.stringify({ text: result.text, done: false })}\n\n`);
       const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';
       if (result.creditCost > 0) {
         db.prepare('UPDATE users SET credits = MAX(0, credits - ?) WHERE id = ?').run(result.creditCost, userId);
@@ -1394,10 +1408,10 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
         VALUES (?, ?, ?, ?, ?, ?, ?, 'web', 'ai.chat.stream')`).run(
         uuid(), userId, result.provider, result.model, result.tokensIn, result.tokensOut, result.creditCost,
       );
-      logConversation(userId, 'assistant', result.reply, result.provider, result.model);
+      logConversation(userId, 'assistant', result.text, result.provider, result.model);
       res.write(`data: ${JSON.stringify({
         text: '', done: true, provider: result.provider, model: result.model,
-        latencyMs: result.latencyMs, tier, creditsUsed: result.creditCost,
+        tier, creditsUsed: result.creditCost,
       })}\n\n`);
     } else {
       // Simple/automation intents → stream via Ollama (fast, free)
@@ -2260,24 +2274,12 @@ agentRouter.post('/deactivate', requireAuth, (req: AuthRequest, res) => {
   res.json({ success: true, status: 'inactive' });
 });
 
-agentRouter.get('/rate-limit-status', requireAuth, (req: AuthRequest, res) => {
+agentRouter.get('/rate-limit-status', requireAuth, async (req: AuthRequest, res) => {
   const userId = req.userId! as unknown as number;
-  const now = Date.now();
-  const entry = _rateLimitTracker.get(userId);
-  if (!entry || now - entry.windowStart > RL_WINDOW_MS) {
-    res.json({
-      remaining: RL_LIMIT,
-      limit: RL_LIMIT,
-      resetAt: new Date(now + RL_WINDOW_MS).toISOString(),
-      windowMinutes: 15,
-    });
-    return;
-  }
+  const status = await getRateLimitStatus(userId);
   res.json({
-    remaining: Math.max(0, RL_LIMIT - entry.count),
-    limit: RL_LIMIT,
-    resetAt: new Date(entry.windowStart + RL_WINDOW_MS).toISOString(),
-    windowMinutes: 15,
+    ...status,
+    resetAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
   });
 });
 

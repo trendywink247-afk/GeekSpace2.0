@@ -1037,6 +1037,24 @@ try { db.prepare('CREATE INDEX IF NOT EXISTS idx_tgmsg_entity ON telegram_messag
 try { db.prepare('CREATE INDEX IF NOT EXISTS idx_tgmsg_user ON telegram_messages(user_id, chat_id)').run(); } catch { /* exists */ }
 
 
+// ── GeekOS user agents ──────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_agents (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    eliza_agent_id TEXT,
+    name TEXT NOT NULL,
+    personality_base TEXT DEFAULT 'weebo',
+    character_json TEXT NOT NULL,
+    plugins TEXT DEFAULT '[]',
+    is_default INTEGER DEFAULT 0,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+try { db.prepare('CREATE INDEX IF NOT EXISTS idx_user_agents_user ON user_agents(user_id)').run(); } catch { /* exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {

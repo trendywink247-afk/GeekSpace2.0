@@ -4,6 +4,7 @@
 // Runs up to MAX_REACT_ITERATIONS of: LLM → parse actions →
 // execute actions → inject observations → repeat.
 // Returns when no actions in response or max iterations hit.
+// Supports onStep callback for visible thinking (SSE streaming).
 // ============================================================
 
 import { routeChat, type ChatMessage, type Provider } from './llm.js';
@@ -13,12 +14,20 @@ import { logger } from '../logger.js';
 
 const MAX_REACT_ITERATIONS = 5;
 
+export interface ThinkingStep {
+  type: 'thinking' | 'tool_call' | 'tool_result' | 'drafting';
+  content: string;
+  tool?: string;
+  iteration: number;
+}
+
 export interface ReactLoopOptions {
   systemPrompt: string;
   agentName?: string;
   userCredits?: number;
   userId: string;
   forceProvider?: Provider;
+  onStep?: (step: ThinkingStep) => void;
 }
 
 export interface ReactLoopResult {
@@ -55,6 +64,9 @@ export async function runReactLoop(
   let lastModel = '';
 
   for (let i = 0; i < MAX_REACT_ITERATIONS; i++) {
+    // Emit thinking step
+    opts.onStep?.({ type: 'thinking', content: i === 0 ? 'Analyzing your request...' : 'Reasoning about results...', iteration: i });
+
     const result = await routeChat(workingMessages, {
       systemPrompt: opts.systemPrompt,
       agentName: opts.agentName,
@@ -74,6 +86,7 @@ export async function runReactLoop(
     // No actions → LLM is done reasoning
     if (actions.length === 0) {
       finalText = cleanText || result.reply;
+      opts.onStep?.({ type: 'drafting', content: 'Writing response...', iteration: i });
       break;
     }
 
@@ -88,10 +101,26 @@ export async function runReactLoop(
       if (action.tool === 'generate_code') {
         // generate_code needs baseUrl injected by the HTTP/channel layer — defer it
         allDeferredActions.push(action);
+        opts.onStep?.({ type: 'tool_call', content: 'Generating code...', tool: action.tool, iteration: i });
         continue;
       }
+
+      // Emit tool call step
+      const toolDesc = action.tool === 'web_search' ? `Searching: "${action.params?.query || ''}"` :
+        action.tool === 'crawl_url' ? `Reading: ${action.params?.url || ''}` :
+        action.tool === 'take_screenshot' ? `Screenshotting: ${action.params?.url || ''}` :
+        action.tool === 'generate_image' ? `Generating image: "${action.params?.prompt || ''}"` :
+        `Running ${action.tool}...`;
+      opts.onStep?.({ type: 'tool_call', content: toolDesc, tool: action.tool, iteration: i });
+
       const actionResult = await executeAction(opts.userId, action);
       allActionResults.push(actionResult);
+
+      // Emit tool result step
+      const resultSummary = actionResult.success
+        ? actionResult.data?.summary ? String(actionResult.data.summary).slice(0, 200) : actionResult.message.slice(0, 200)
+        : `Error: ${actionResult.message.slice(0, 200)}`;
+      opts.onStep?.({ type: 'tool_result', content: resultSummary, tool: action.tool, iteration: i });
 
       // Format observation for LLM context
       const obs = actionResult.success
@@ -122,6 +151,7 @@ export async function runReactLoop(
 
     // On final iteration, capture whatever the LLM says
     if (i === MAX_REACT_ITERATIONS - 1) {
+      opts.onStep?.({ type: 'drafting', content: 'Writing final response...', iteration: i });
       finalText = cleanText || result.reply;
     }
   }

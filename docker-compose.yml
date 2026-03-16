@@ -308,6 +308,42 @@ services:
         max-size: "10m"
         max-file: "3"
 
+#-----geekos-agents-----
+  geekos:
+    build: ./geekos
+    container_name: geekspace-geekos
+    restart: unless-stopped
+    profiles:
+      - geekos
+    depends_on:
+      geekspace:
+        condition: service_healthy
+    environment:
+      - OPENAI_API_KEY=agentin-internal-proxy
+      - OPENAI_BASE_URL=http://geekspace:3001/api/geekos-llm/v1
+      - SMALL_MODEL=agentin-default
+      - MEDIUM_MODEL=agentin-default
+      - LARGE_MODEL=agentin-default
+    expose:
+      - "3000"
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+    networks:
+      - geekspace-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3000/api/agents", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   geekspace-data:
     driver: local

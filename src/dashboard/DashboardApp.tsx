@@ -6,7 +6,7 @@ import {
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
   Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff, GitBranch,
-  Inbox, MessageSquare, Mail, TrendingUp, Target, Mic, FileText, Search
+  Inbox, MessageSquare, Mail, TrendingUp, Target, Mic, FileText, Search, Monitor
 } from 'lucide-react';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -75,8 +75,9 @@ const WorkflowsPage = lazyRetry(() => import('./pages/WorkflowsPage').then(m => 
 const CalendarPage = lazyRetry(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage })));
 const ConversationRatingPage = lazyRetry(() => import('./pages/ConversationRatingPage').then(m => ({ default: m.ConversationRatingPage })));
 const DocsWorkspacePage = lazyRetry(() => import('./pages/DocsWorkspacePage').then(m => ({ default: m.DocsWorkspacePage })));
+const OfficePage = lazyRetry(() => import('./pages/OfficePage').then(m => ({ default: m.OfficePage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office';
 
 
 interface MenuItem {
@@ -122,6 +123,7 @@ const menuGroups: MenuGroup[] = [
       { id: 'recipes', label: 'Recipes', icon: BookOpen },
       { id: 'capabilities', label: 'What Can I Do?', icon: Sparkles },
       { id: 'training', label: 'Conversation Ratings', icon: MessageSquare },
+      { id: 'office', label: 'Agent Office', icon: Monitor },
     ],
   },
   {
@@ -356,7 +358,7 @@ export function DashboardApp() {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -502,6 +504,8 @@ export function DashboardApp() {
         return <DocsWorkspacePage />;
       case 'training':
         return <ConversationRatingPage />;
+      case 'office':
+        return <OfficePage />;
       case 'tools':
         return <AISpecialistPage />;
       default:

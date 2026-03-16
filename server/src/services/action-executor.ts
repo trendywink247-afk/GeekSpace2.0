@@ -1823,13 +1823,23 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         return { tool, success: true, message: `📬 Inbox (${messages.length} messages):\n${lines.join('\n')}` };
       }
 
-      // ── Unknown tool (should not happen after parser validation)
-      default:
+      // ── Unknown tool — try GeekOS plugin bridge as fallback
+      default: {
+        try {
+          const { forwardToGeekOS } = await import('../routes/geekos-bridge.js');
+          const bridgeResult = await forwardToGeekOS(userId, tool, params);
+          if (bridgeResult) {
+            return { tool, success: true, message: bridgeResult };
+          }
+        } catch (err) {
+          logger.debug({ err, tool }, 'GeekOS plugin fallback unavailable');
+        }
         return {
           tool,
           success: false,
           message: `Unknown tool "${tool}"`,
         };
+      }
     }
 }
 

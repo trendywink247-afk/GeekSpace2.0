@@ -38,6 +38,8 @@ import { webhooksRouter } from './routes/webhooks.js';
 import { picoRouter } from './routes/pico.js';
 import { briefingsRouter } from './routes/briefings.js';
 import { recipesRouter } from './routes/recipes.js';
+import { geekosBridgeRouter } from './routes/geekos-bridge.js';
+import { geekosLlmProxyRouter } from './routes/geekos-llm-proxy.js';
 import { artifactsRouter } from './routes/artifacts.js';
 import { templatesRouter } from './routes/templates.js';
 import { imagesRouter } from './routes/images.js';
@@ -511,6 +513,8 @@ export function createApp(): express.Application {
   app.use('/api/pico', picoRouter);
   app.use('/api/briefings', briefingsRouter);
   app.use('/api/recipes', recipesRouter);
+  app.use('/api/geekos', geekosBridgeRouter);
+  app.use('/api/geekos-llm', geekosLlmProxyRouter);
   app.use('/api/health', healthRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/dev', devRouter);
