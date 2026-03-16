@@ -30,7 +30,7 @@ test.describe('Accessibility: Skip Link', () => {
 test.describe('Dashboard Compact Mode', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/dashboard/settings');
-    await page.waitForSelector('nav', { timeout: 10000 });
+    await page.waitForSelector('h1', { timeout: 10000 });
   });
 
   test('compact mode toggle exists in appearance section', async ({ page }) => {
