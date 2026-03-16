@@ -26,7 +26,7 @@ import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from '../services/telegram.js';
 import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../services/agent-chat.js';
 import { fetchAndExtract } from '../services/web-research.js';
-import { buildPersonalityInstructions, mapCreativityToTemperature } from '../services/message-router.js';
+import { buildPersonalityInstructions } from '../services/message-router.js';
 
 export const agentRouter = Router();
 
