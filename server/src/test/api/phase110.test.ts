@@ -519,9 +519,11 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
     expect(src).toContain("forceProvider: 'groq'");
   });
 
-  it('message-router.ts imports routeChat directly for multilingual path', () => {
+  it('message-router.ts uses runReactLoop for multilingual path (actions execute correctly)', () => {
     const src = readSrc('services', 'message-router.ts');
-    expect(src).toMatch(/import.*routeChat.*from.*llm/);
+    expect(src).toMatch(/import.*runReactLoop.*from.*react-loop/);
+    // Groq multilingual path should use ReAct loop (not raw routeChat) so actions are executed
+    expect(src).toMatch(/needsGroq[\s\S]*?runReactLoop/);
   });
 
   // ---- TTS voice auto-selection ----

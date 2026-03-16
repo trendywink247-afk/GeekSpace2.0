@@ -224,8 +224,8 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
 
         const id = uuid();
 
-        // Calculate expiration (48 hours for self-destruct, null for saved)
-        const expiresAt = selfDestruct !== false
+        // Calculate expiration (48 hours only if explicitly self-destruct, otherwise permanent)
+        const expiresAt = selfDestruct === true
           ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
           : null;
 

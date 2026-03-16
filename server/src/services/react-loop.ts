@@ -7,7 +7,7 @@
 // ============================================================
 
 import { routeChat, type ChatMessage, type Provider } from './llm.js';
-import { parseActions } from './action-parser.js';
+import { parseActions, type ParsedAction } from './action-parser.js';
 import { executeAction, type ActionResult } from './action-executor.js';
 import { logger } from '../logger.js';
 
@@ -24,6 +24,8 @@ export interface ReactLoopOptions {
 export interface ReactLoopResult {
   text: string;
   actions: ActionResult[];
+  /** Actions that need baseUrl injection — deferred to the HTTP/channel layer */
+  deferredActions: ParsedAction[];
   provider: string;
   model: string;
   tokensIn: number;
@@ -43,6 +45,7 @@ export async function runReactLoop(
 ): Promise<ReactLoopResult> {
   const workingMessages = [...messages];
   const allActionResults: ActionResult[] = [];
+  const allDeferredActions: ParsedAction[] = [];
 
   let finalText = '';
   let totalTokensIn = 0;
@@ -83,7 +86,8 @@ export async function runReactLoop(
     const observations: string[] = [];
     for (const action of actions) {
       if (action.tool === 'generate_code') {
-        // generate_code needs baseUrl injected by the HTTP layer — skip in loop
+        // generate_code needs baseUrl injected by the HTTP/channel layer — defer it
+        allDeferredActions.push(action);
         continue;
       }
       const actionResult = await executeAction(opts.userId, action);
@@ -103,7 +107,7 @@ export async function runReactLoop(
       observations.push(obs);
     }
 
-    // If all actions were skipped (e.g. only generate_code), stop looping
+    // If all actions were skipped/deferred (e.g. only generate_code), stop looping
     if (observations.length === 0) {
       finalText = cleanText || result.reply;
       break;
@@ -125,6 +129,7 @@ export async function runReactLoop(
   return {
     text: finalText,
     actions: allActionResults,
+    deferredActions: allDeferredActions,
     provider: lastProvider,
     model: lastModel,
     tokensIn: totalTokensIn,

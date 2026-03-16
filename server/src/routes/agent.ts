@@ -927,7 +927,16 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     let cleanReply = result.text;
     const actionResults: ActionResult[] = [...result.actions];
 
-    // generate_code was skipped inside the loop (needs baseUrl from HTTP layer) — handle now
+    // generate_code was deferred inside the loop (needs baseUrl from HTTP layer) — execute now
+    for (const action of result.deferredActions) {
+      action.params.baseUrl = `${req.protocol}://${req.get('host')}`;
+      if (reqExistingArtifactId) {
+        action.params.existingArtifactId = reqExistingArtifactId;
+      }
+      const actionResult = await executeAction(userId, action);
+      actionResults.push(actionResult);
+    }
+    // Also check reply text for any actions the parser might find (bridge responses)
     const { actions: topLevelActions } = parseActions(result.text);
     for (const action of topLevelActions) {
       if (action.tool === 'generate_code') {

@@ -1337,7 +1337,7 @@ ACTION>>>`;
         const codeAction = parsedActions.find(a => a.tool === 'generate_code');
         if (!codeAction) throw new Error('LLM did not generate a website');
 
-        codeAction.params.baseUrl = config.apiUrl;
+        codeAction.params.baseUrl = config.publicUrl || config.apiUrl;
         if (existingId) codeAction.params.existingArtifactId = existingId;
 
         const result = await executeAction(task.user_id, codeAction);

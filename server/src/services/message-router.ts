@@ -13,7 +13,7 @@ import { DateTime } from 'luxon';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
-import { deductSubscriptionCredits, routeChat, type ChatMessage } from './llm.js';
+import { deductSubscriptionCredits, type ChatMessage } from './llm.js';
 import { runReactLoop } from './react-loop.js';
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
@@ -21,7 +21,7 @@ import { checkKeywordTriggers } from './automations-engine.js';
 import { sendTelegramMessage, sendTelegramPhoto, sendTelegramVideo, sendTelegramTyping, sendTelegramButtons } from './telegram.js';
 import { getPersonalityPrompt, getPersonality } from '../prompts/personalities.js';
 import { OPENCLAW_IDENTITY_COMPACT } from '../prompts/openclaw-system.js';
-import { parseActions } from './action-parser.js';
+import { parseActions, type ParsedAction } from './action-parser.js';
 import { executeAction, type ActionResult } from './action-executor.js';
 import { compressPrompt, trimConversationHistory } from '../utils/token-format.js';
 import { isSearchIntent, tavilySearch } from './tavily.js';
@@ -189,7 +189,7 @@ Available tools:
 - set_reminder: Create a reminder for the user. Params: {"text": "<reminder text>", "datetime": "<EXACT time the user said, e.g. '3:30am', 'tomorrow at 9pm', 'in 2 hours' — do NOT convert to ISO or UTC>", "channel": "telegram|push"}
 - telegram_notify: Send a Telegram message to the user. Params: {"message": "<message text>"}
 - generate_image: Generate an image. Params: {"prompt": "<image description>"}
-- generate_code: Build or update a website. Params: {"template": "portfolio|landing|blog|business", "title": "...", "name": "...", "theme": "dark|light|purple|blue|gradient", "profession": "...", "location": "...", "bio": "...", "skills": ["skill1","skill2"], "email": "...", "tagline": "..."}. Use this for both creating AND editing websites (just output updated params — the server handles the rest). Never write raw HTML.
+- generate_code: Build or update a website. Two modes: (A) For personal pages (portfolio, landing page, blog): use template params {"template": "portfolio|landing|blog|business", "title": "...", "name": "...", "theme": "dark|light|purple|blue|gradient", "profession": "...", "location": "...", "bio": "...", "skills": ["skill1","skill2"], "email": "...", "tagline": "..."}. (B) For custom/creative apps (games, tools, generators, calculators, visualizers, anything interactive or non-standard): use {"prompt": "<detailed description of what to build>"}. Choose mode B whenever the request is NOT a standard personal/business page.
 - send_email: Send an email. Params: {"to": "<recipient email>", "subject": "<subject>", "body": "<body>"}. Use when user says "send email to X", "email X about Y", "write an email", "compose email". Sends via user's connected Gmail account.
 - delete_reminder: Delete reminders. To delete ALL pending reminders: {"deleteAll": true}. To delete one: {"reminderId": "<id>"}. Use this whenever the user says "delete my reminders", "cancel all reminders", "remove reminders", etc.
 - list_reminders: Show pending reminders. Params: {}. ALWAYS use this when user says "what reminders do I have", "show my reminders", "list reminders", "any reminders?", "what have I got scheduled". NEVER guess or invent reminders — always call this tool.
@@ -325,7 +325,25 @@ function hasToolTrigger(message: string): boolean {
     /\b(new|unread)\s+(emails?|messages?)\b/i.test(lower) ||
     // Send email
     /\b(send|write|compose|draft)\s+(an?\s+)?(email|mail)\b/i.test(lower) ||
-    /\bemail\s+\S+@\S+/i.test(lower)
+    /\bemail\s+\S+@\S+/i.test(lower) ||
+    // Website / code generation
+    /\b(build|create|make|generate)\b.{0,80}\b(website|site|portfolio|landing|blog|page|app|calculator|game|tool|generator|timer|clock|converter|tracker|editor|player|simulator|counter)\b/i.test(lower) ||
+    /\bbuild\s+me\b/i.test(lower) ||
+    // Image generation
+    /\b(generate|create|make|draw|paint|sketch|render|imagine|visualize)\b.{0,40}\b(image|picture|photo|illustration|artwork|art|painting|portrait|wallpaper|logo|icon)\b/i.test(lower) ||
+    /\b(draw|paint|sketch)\s+\S/i.test(lower) ||
+    // Screenshot
+    /\bscreenshot\b/i.test(lower) ||
+    /\b(capture|grab)\s+(a\s+)?screen/i.test(lower) ||
+    // Web search (explicit search intent — not "search notes")
+    /\b(search|look\s+up|find|google)\s+(for\s+|about\s+|the\s+)?(?!my\s+note|note)/i.test(lower) ||
+    /\bwhat.{0,10}(latest|current|recent|news|today)\b/i.test(lower) ||
+    // URL crawl / link extraction
+    /\b(read|fetch|crawl|open|visit)\s+(this\s+)?(url|link|page|article|site)\b/i.test(lower) ||
+    /\b(get|extract|list|show)\s+(all\s+)?links?\s+(from|on)\b/i.test(lower) ||
+    // Reminders (delete / list — not just create)
+    /\b(delete|cancel|remove|clear)\s+(my\s+|all\s+)?(reminder|alarm)/i.test(lower) ||
+    /\b(what|show|list|any)\s+(my\s+)?(reminder|alarm)s?\b/i.test(lower)
   );
 }
 
@@ -427,6 +445,7 @@ function parseFocusIntent(message: string): { goal: string; duration_min: number
 
   // Extract goal — everything after "on", "to", "for" following focus keyword
   const goalMatch = lower.match(/(?:focus|pomodoro|concentrate)\s+(?:on|to|for)\s+(.+)/i) ||
+                    lower.match(/\b(?:need|want|gotta|have)\s+(?:to\s+)?(?:focus|concentrate)\s+(?:on|for)\s+(.+)/i) ||
                     lower.match(/\d+\s*min(?:ute)?s?\s+(?:to|on|for)\s+(.+)/i) ||
                     lower.match(/(?:focus\s+session\s+(?:to|on|for)\s+)(.+)/i);
   const goal = goalMatch ? goalMatch[1].trim().slice(0, 100) : 'Deep work';
@@ -441,10 +460,18 @@ function parseReminderIntent(message: string): { text: string; datetime: string 
   const lower = message.toLowerCase();
 
   // Must contain a reminder keyword
-  if (!/\b(remind|reminder|yaad\s+dila|alert\s+me)\b/i.test(lower)) return null;
+  if (!/\b(remind|reminder|alarm|wake|yaad\s+dila|alert\s+me)\b/i.test(lower)) return null;
+
+  // Pattern: "set an alarm for 6am [tomorrow]" or "alarm at 7am"
+  let match = lower.match(/(?:set\s+)?(?:an?\s+)?alarm\s+(?:for\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(.*)/i);
+  if (match) return { text: 'alarm', datetime: `${match[1].trim()} ${match[2] || ''}`.trim() };
+
+  // Pattern: "wake me [up] at TIME [tomorrow]"
+  match = lower.match(/wake\s+(?:me\s+)?(?:up\s+)?(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(.*)/i);
+  if (match) return { text: 'wake up', datetime: `${match[1].trim()} ${match[2] || ''}`.trim() };
 
   // Pattern: "remind me to TASK at/in/on TIME"
-  let match = lower.match(/remind\s+me\s+(?:to\s+)?(.+?)\s+(?:at|by|on|around)\s+(.+)/i);
+  match = lower.match(/remind\s+me\s+(?:to\s+)?(.+?)\s+(?:at|by|on|around)\s+(.+)/i);
   if (match) return { text: match[1].trim(), datetime: match[2].trim() };
 
   // Pattern: "remind me in DURATION to TASK"
@@ -520,8 +547,8 @@ function parseHabitIntent(message: string): { habitName: string; note: string } 
     if (habit.length >= 2) return { habitName: habit, note: '' };
   }
 
-  // "gym done", "meditation completed", "workout finished"
-  match = lower.match(/^(.+?)\s+(?:done|completed?|finished?|logged?|tracked?)$/i);
+  // "gym done", "gym done today", "meditation completed", "workout finished"
+  match = lower.match(/^(.+?)\s+(?:done|completed?|finished?|logged?|tracked?)(?:\s+(?:today|aaj))?$/i);
   if (match && match[1].length >= 2 && match[1].length <= 40 && !/\b(remind|expense|focus|note|search)\b/i.test(match[1])) {
     return { habitName: match[1].trim(), note: '' };
   }
@@ -530,6 +557,12 @@ function parseHabitIntent(message: string): { habitName: string; note: string } 
   match = lower.match(/\b(?:i\s+)?(?:did|completed?|finished?)\s+(?:my\s+)?(.+?)(?:\s+today|\s+aaj)?$/i);
   if (match && match[1].length >= 2 && match[1].length <= 40 && !/\b(remind|task|work|homework|assignment)\b/i.test(match[1])) {
     return { habitName: match[1].trim(), note: '' };
+  }
+
+  // "I meditated for 20 minutes", "studied for 2 hours today", "worked out for 45 min"
+  match = lower.match(/\b(?:i\s+)?(meditated|studied|exercised|worked\s*out|trained|practiced|jogged|ran|walked|swam|cycled|read)\s+(?:for\s+)?(.+?)(?:\s+today|\s+aaj)?$/i);
+  if (match) {
+    return { habitName: match[1].replace(/\s+/g, ' ').trim(), note: match[2].trim() };
   }
 
   // Hinglish: "gym kiya", "yoga ki", "meditation kara", "exercise kiya aaj"
@@ -545,7 +578,7 @@ function parseHabitIntent(message: string): { habitName: string; note: string } 
   }
 
   // "walked 5km", "ran 3 miles", "read 30 pages"
-  match = lower.match(/^(walked|ran|read|studied|meditated|exercised|jogged|swam|cycled)\s+(.+)/i);
+  match = lower.match(/^(walked|ran|read|studied|meditated|exercised|jogged|swam|cycled|worked\s*out|trained|practiced)\s+(?:for\s+)?(.+)/i);
   if (match) {
     return { habitName: match[1], note: match[2].trim() };
   }
@@ -832,12 +865,14 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // 5a. Website builder fast-path — detect website creation/edit intent directly
   //     and execute generate_code without LLM to bypass model format unreliability
   {
-    const createWebsitePattern = /\b(?:build|create|make|generate)\b.{0,80}\b(?:website|site|portfolio|landing|blog|page)\b/i;
-    const editWebsitePattern = /\b(?:change|update|edit|modify|redesign|redo|refresh|revamp|adjust|tweak|rebuild)\b.{0,80}\b(?:website|site|portfolio|landing|blog|page|theme|background|color)\b/i;
+    const createWebsitePattern = /\b(?:build|create|make|generate)\b.{0,80}\b(?:website|site|portfolio|landing|blog|page|app|calculator|game|tool|generator|visualizer|dashboard|quiz|timer|clock|converter|tracker|editor|player|simulator|counter)\b/i;
+    const editWebsitePattern = /\b(?:change|update|edit|modify|redesign|redo|refresh|revamp|adjust|tweak|rebuild|switch|add|remove|make|give|turn)\b.{0,80}\b(?:website|site|portfolio|landing|blog|page|theme|background|color|font|section|layout|style|heading|title|bio|skills?|contact|footer|header|nav|dark|light|purple|blue|gradient|professional|modern|minimal|dashboard|search|bar|button|image|gallery|form|menu|vibe|aesthetic|look|design|feel|text|spacing|padding|margin|border|shadow|animation|responsive|mobile|card|grid|flex|icon|logo|hero|banner|sidebar|testimonial|pricing|feature|table|list|link|hover|rounded|bold|italic|bigger|smaller|larger|wider|taller|centered|glassmorphism|neumorphism|brutalism|cyberpunk|retro|vintage|neon|zen|futuristic|elegant|playful|clean|sleek|fancy|cool|beautiful|stunning|gorgeous)\b/i;
+    // Hinglish edit: noun before verb (SOV order) — "website mein dark mode lagao", "theme badlo"
+    const hinglishEditPattern = /\b(?:website|site|portfolio|theme|dark|light|color|background)\b.{0,60}\b(?:lagao|karo|badlo|hatao|banao|dikhao|change\s+karo|kar\s*do)\b/i;
 
     // Guard: skip website builder if this is a launch mode / multi-agent request
     const isLaunchMsg = /\blaunch\s+mode\b/i.test(msg.text);
-    if (!isLaunchMsg && (createWebsitePattern.test(msg.text) || editWebsitePattern.test(msg.text))) {
+    if (!isLaunchMsg && (createWebsitePattern.test(msg.text) || editWebsitePattern.test(msg.text) || hinglishEditPattern.test(msg.text))) {
       try {
         const text = msg.text.toLowerCase();
         // Extract params from message
@@ -849,14 +884,17 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         const locationMatch = msg.text.match(/\bfrom\s+([A-Z][a-zA-Z\s]{2,20})\b/)
           ?? msg.text.match(/\bin\s+([A-Z][a-zA-Z\s]{2,20})(?:[,.]|$)/); // "in Mumbai"
         const professionMatch = msg.text.match(/\b(developer|designer|engineer|writer|photographer|artist|consultant|manager|teacher|doctor|lawyer|freelancer)\b/i);
-        // Extract comma-separated skills: "Skills: Figma, Adobe CC, React" or "skills are Figma and React"
-        const skillsRaw = msg.text.match(/\bskills?[:\s]+([A-Za-z0-9 ,&/]+?)(?:\.|theme|dark|light|\n|$)/i)?.[1];
+        // Extract comma-separated skills: "Skills: Figma, Adobe CC, React" or "skills are Figma and React" or "update skills to X, Y"
+        const skillsRaw = (msg.text.match(/\bskills?\s+(?:to|with|as)\s+([A-Za-z0-9 ,&/]+?)$/i)
+          ?? msg.text.match(/\bskills?\s*(?:are|:)\s*([A-Za-z0-9 ,&/]+?)(?:\.|theme|dark|light|\n|$)/i))?.[1];
         const skillsMatch = skillsRaw ? skillsRaw.split(/[,&]/).map(s => s.trim()).filter(s => s.length > 1) : null;
+        // Extract bio/tagline from edit messages: "change bio to X" or "bio: X"
+        const bioMatch = msg.text.match(/\b(?:bio|tagline|about|description|headline)\s*(?:to|as|:)\s+(.+)/i)?.[1]?.trim();
 
-        const isEdit = editWebsitePattern.test(msg.text) && !createWebsitePattern.test(msg.text);
+        const isEdit = (editWebsitePattern.test(msg.text) || hinglishEditPattern.test(msg.text)) && !createWebsitePattern.test(msg.text);
 
         const { executeAction } = await import('./action-executor.js');
-        const baseUrl = config.apiUrl || `https://api.agentin.chat`;
+        const baseUrl = config.publicUrl || config.apiUrl;
 
         // For edits, check the existing artifact's metadata to determine if it's template-based
         // or custom (LLM-generated). Template artifacts have a 'template' key; custom do not.
@@ -874,9 +912,18 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
         // Use template system for: personal-page signals on new creations, or edits to template artifacts.
         // Use LLM+existing-code path for: custom/freeform edits (e.g. editing a calculator, game, etc.)
+        // If user mentions a product/startup/brand name, prefer LLM path for richer custom output.
+        const hasProductContext = /\b(startup|company|brand|product|store|shop|agency|studio)\b/i.test(msg.text)
+          || /\b(?:called|named)\s+[A-Z][a-zA-Z]+/.test(msg.text);
+        // Structural/style edits need LLM even on template artifacts
+        const isStructuralEdit = isEdit && /\b(add|remove|insert|delete|include|create)\s+(?:a\s+)?(?:new\s+)?\w+\s*(section|form|button|link|image|gallery|map|video|testimonial|project)/i.test(msg.text);
+        const isStyleEdit = isEdit && /\b(glassmorphism|neumorphism|brutalism|cyberpunk|retro|vintage|neon|zen|futuristic|elegant|sunset|warm|cool|serif|sans-serif|monospace|golden|silver|rounded|shadow|gradient|animation|animate|transition|hover|parallax|3d|bento|grid|masonry|bold|italic|bigger|smaller|wider|taller)\b/i.test(msg.text);
+        // Template edits only for simple param changes (theme, skills, bio); everything else → LLM
+        const isSimpleTemplateEdit = isEdit && !isStructuralEdit && !isStyleEdit
+          && (!!themeMatch || !!skillsMatch?.length || !!bioMatch || !!nameMatch || !!professionMatch || !!locationMatch);
         const isPersonalTemplate =
-          (isEdit && editTargetIsTemplate) ||
-          (!isEdit && (
+          (isEdit && editTargetIsTemplate && isSimpleTemplateEdit) ||
+          (!isEdit && !hasProductContext && (
             !!templateMatch ||
             !!nameMatch ||
             !!professionMatch ||
@@ -896,6 +943,37 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
           if (locationMatch?.[1]) artifactParams.location = locationMatch[1].trim();
           if (professionMatch?.[1]) artifactParams.profession = professionMatch[1];
           if (skillsMatch?.length) artifactParams.skills = skillsMatch;
+          if (bioMatch) artifactParams.bio = bioMatch;
+          logger.debug({ skillsMatch, bioMatch, nameMatch: nameMatch?.[1], isEdit }, 'Website fast-path: extracted params');
+
+          // Enrich from user profile when creating NEW site with no personal details (skip for edits — stored params suffice)
+          if (!isEdit && !nameMatch && !professionMatch && !locationMatch && !skillsMatch?.length) {
+            try {
+              const profile = db.prepare('SELECT headline, about, skills FROM portfolios WHERE user_id = ?').get(userId) as { headline?: string; about?: string; skills?: string } | undefined;
+              const userRow = db.prepare('SELECT username FROM users WHERE id = ?').get(userId) as { username?: string } | undefined;
+              const memories = db.prepare("SELECT key, value FROM user_memories WHERE user_id = ? AND key IN ('preferred_name','role','location','company') LIMIT 4").all(userId) as { key: string; value: string }[];
+              const memMap = Object.fromEntries(memories.map(m => [m.key, m.value]));
+
+              if (!artifactParams.name) {
+                artifactParams.name = memMap.preferred_name || userRow?.username || undefined;
+              }
+              if (!artifactParams.profession && (profile?.headline || memMap.role)) {
+                artifactParams.profession = profile?.headline || memMap.role;
+              }
+              if (!artifactParams.location && memMap.location) {
+                artifactParams.location = memMap.location;
+              }
+              if (profile?.skills) {
+                try {
+                  const parsed = JSON.parse(profile.skills);
+                  if (Array.isArray(parsed) && parsed.length > 0) artifactParams.skills = parsed.slice(0, 8);
+                } catch { /* ignore */ }
+              }
+              if (profile?.about) {
+                artifactParams.bio = String(profile.about).slice(0, 200);
+              }
+            } catch { /* non-fatal — just use defaults */ }
+          }
         } else {
           // Custom/freeform — LLM generates or edits HTML. For edits, action-executor
           // loads the existing HTML and passes it to the LLM as context.
@@ -916,7 +994,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
           if (result.previewUrl) {
             reply += `\n🔗 Preview: ${result.previewUrl}\nAlso saved to your Projects.`;
           }
-          logConversation(userId, 'user', msg.text, requestId);
           logConversation(userId, 'assistant', reply, requestId, 'builtin', 'website-builder');
           await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
           logger.info({ channel: msg.channel, userId, artifactId: result.artifactId, isEdit }, 'Website builder fast-path executed');
@@ -937,7 +1014,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       db.prepare('UPDATE inbox_messages SET related_reminder_id = NULL WHERE user_id = ? AND related_reminder_id IN (SELECT id FROM reminders WHERE user_id = ? AND completed = 0)').run(userId, userId);
       const { changes } = db.prepare('DELETE FROM reminders WHERE user_id = ? AND completed = 0').run(userId);
       const reply = changes > 0 ? `Done! Deleted ${changes} pending reminder${changes !== 1 ? 's' : ''}.` : `You don't have any pending reminders to delete.`;
-      logConversation(userId, 'user', msg.text, requestId);
       logConversation(userId, 'assistant', reply, requestId, 'builtin', 'delete-reminder');
       await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
       logger.info({ channel: msg.channel, userId, changes }, 'Reminder delete-all fast-path executed');
@@ -951,7 +1027,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         db.prepare('UPDATE inbox_messages SET related_reminder_id = NULL WHERE related_reminder_id = ?').run(last.id);
         db.prepare('DELETE FROM reminders WHERE id = ?').run(last.id);
         const reply = `Cancelled: "${last.text}"`;
-        logConversation(userId, 'user', msg.text, requestId);
         logConversation(userId, 'assistant', reply, requestId, 'builtin', 'delete-reminder');
         await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
         return;
@@ -983,7 +1058,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         }).join('\n');
         reply = `Your ${rows.length} pending reminder${rows.length !== 1 ? 's' : ''}:\n${list}`;
       }
-      logConversation(userId, 'user', msg.text, requestId);
       logConversation(userId, 'assistant', reply, requestId, 'builtin', 'list-reminders');
       await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
       logger.info({ channel: msg.channel, userId, count: rows.length }, 'Reminder list fast-path executed');
@@ -1016,7 +1090,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
             : `${config.apiUrl}${imgResult.imageUrl}`;
 
           const reply = `Here's your image!`;
-          logConversation(userId, 'user', msg.text, requestId);
           logConversation(userId, 'assistant', reply, requestId, 'builtin', 'image-generator');
 
           await sendTelegramMessage(msg.externalId, reply).catch(() => {});
@@ -1036,7 +1109,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   {
     const screenshotIntent = /\b(?:take|capture|get|show|grab)\s+(?:a\s+)?screenshot\s+(?:of|from)\b|\bscreenshot\s+of\b/i;
     if (screenshotIntent.test(msg.text)) {
-      const urlMatch = msg.text.match(/https?:\/\/\S+/) ?? msg.text.match(/\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+\.[a-zA-Z]{2,})\b/);
+      const urlMatch = msg.text.match(/https?:\/\/\S+/) ?? msg.text.match(/\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,})\b/);
       let targetUrl = urlMatch?.[0] ?? '';
       if (targetUrl && !targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`;
       if (targetUrl) {
@@ -1046,7 +1119,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
           // Compress PNG → JPEG to stay within Telegram's 10MB photo limit
           const photoData = await compressScreenshot(base64Png).catch(() => `data:image/png;base64,${base64Png}`);
           const reply = `Here's the screenshot of ${targetUrl}!`;
-          logConversation(userId, 'user', msg.text, requestId);
           logConversation(userId, 'assistant', reply, requestId, 'builtin', 'screenshot');
           await sendTelegramMessage(msg.externalId, reply).catch(() => {});
           await sendTelegramPhoto(msg.externalId, photoData).catch((e: unknown) =>
@@ -1065,7 +1137,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   {
     const linksIntent = /\b(?:get|extract|list|show|find|give me)\s+(?:all\s+)?(?:the\s+)?links\s+(?:from|on|in|of)\b|\ball links\s+(?:from|on|in|of)\b/i;
     if (linksIntent.test(msg.text)) {
-      const urlMatch = msg.text.match(/https?:\/\/\S+/) ?? msg.text.match(/\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+\.[a-zA-Z]{2,})\b/);
+      const urlMatch = msg.text.match(/https?:\/\/\S+/) ?? msg.text.match(/\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,})\b/);
       let targetUrl = urlMatch?.[0] ?? '';
       if (targetUrl && !targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`;
       if (targetUrl) {
@@ -1074,7 +1146,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
           const links = await extractLinks(targetUrl);
           const linkList = links.slice(0, 20).map(l => `• ${l.text}: ${l.href}`).join('\n');
           const reply = `Found ${links.length} links on ${targetUrl}:\n\n${linkList}`;
-          logConversation(userId, 'user', msg.text, requestId);
           logConversation(userId, 'assistant', reply, requestId, 'builtin', 'links');
           await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
           logger.info({ channel: msg.channel, userId, url: targetUrl, count: links.length }, 'Links fast-path executed');
@@ -1125,7 +1196,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       }
       if (recentNotes.length) lines.push('', `Recent notes: ${recentNotes.map(n => n.title).join(', ')}`);
       const reply = lines.join('\n');
-      logConversation(userId, 'user', msg.text, requestId);
       logConversation(userId, 'assistant', reply, requestId, 'builtin', 'briefing');
       await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
       logger.info({ channel: msg.channel, userId }, 'Briefing fast-path executed');
@@ -1145,7 +1215,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         const list = rows.map((w, i) => `${i + 1}. ${w.enabled ? '✓' : '⏸'} ${w.name} (id:${w.id}, trigger:${w.trigger})`).join('\n');
         reply = `Your automations (${rows.length}):\n${list}`;
       }
-      logConversation(userId, 'user', msg.text, requestId);
       logConversation(userId, 'assistant', reply, requestId, 'builtin', 'list-workflows');
       await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
       logger.info({ channel: msg.channel, userId, count: rows.length }, 'List workflows fast-path executed');
@@ -1163,7 +1232,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       text: "On it! Researching now — I'll send results in a few minutes 🔍",
       replyToMessageId: msg.messageId,
     });
-    logConversation(userId, 'user', msg.text, requestId);
     logConversation(userId, 'assistant', "Researching...", requestId, 'builtin', 'research-job');
     runResearchJob({ query: msg.text, chatId: msg.externalId }).catch(() => {});
     logger.info({ channel: msg.channel, userId, query: msg.text.slice(0, 60) }, 'Research fast-path fired');
@@ -1172,7 +1240,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 5ah. Document capture fast-path — save directly to Agentin Docs (0 credits, <50ms)
   {
-    const docCapturePattern = /^(?:\/note|note:|doc:|capture:|save to docs?:)\s+(.+)/is;
+    const docCapturePattern = /^(?:\/note|note:|doc:|capture:|save (?:a )?(?:note|doc)s?:?|save to docs?:)\s+(.+)/is;
     const docMatch = msg.text.match(docCapturePattern);
     if (docMatch) {
       const text = docMatch[1].trim();
@@ -1192,7 +1260,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
       const savedTitle = title.length > 50 ? title.slice(0, 50) + '...' : title;
       const reply = `\u{1F4DD} Saved to Docs: "${savedTitle}"\n\n${text.length > 200 ? text.slice(0, 200) + '...' : text}`;
-      logConversation(userId, 'user', msg.text, requestId);
       logConversation(userId, 'assistant', reply, requestId, 'builtin', 'doc-capture');
       await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: reply });
       logger.info({ channel: msg.channel, userId, titleLen: title.length, wordCount: text.split(/\s+/).filter(Boolean).length, latencyMs: Date.now() - startTime }, 'Doc capture fast-path executed');
@@ -1316,7 +1383,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 6c. URL scraping enrichment via crawl4ai — runs when URL (explicit or bare domain) found in message
   //     Also handles /research <url> command
-  const BARE_DOMAIN_RE_MSG = /\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+\.[a-zA-Z]{2,})\b/;
+  const BARE_DOMAIN_RE_MSG = /\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,})\b/;
   const explicitResearchUrl = msg.text.startsWith('/research ')
     ? msg.text.replace('/research ', '').trim()
     : extractUrl(msg.text);
@@ -1351,6 +1418,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   let tokensIn = 0;
   let tokensOut = 0;
   let creditCost = 0;
+  let reactDeferredActions: ParsedAction[] = [];
 
   // ── Launch Mode: Multi-Agent Parallel Orchestration ─────────────────────
   if (isLaunchModeRequest(msg.text)) {
@@ -1395,7 +1463,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     provider = 'fast-path';
     model = 'multi-expense-parser';
     tokensIn = 0; tokensOut = 0; creditCost = 0;
-    logConversation(userId, 'user', msg.text, requestId);
     logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'multi-expense-fast-path');
     if (msg.channel === 'telegram' && msg.externalId && loggedExpenses.length > 0) {
       const card = buildMultiExpenseCard(loggedExpenses);
@@ -1420,6 +1487,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     tokensIn = 0;
     tokensOut = 0;
     creditCost = 0;
+    logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'expense-fast-path');
     // Send button card on Telegram, plain text elsewhere
     const expId = (result.data as Record<string, unknown>)?.expenseId;
     if (msg.channel === 'telegram' && msg.externalId && expId) {
@@ -1445,6 +1513,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     tokensIn = 0;
     tokensOut = 0;
     creditCost = 0;
+    logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'focus-fast-path');
     // Send button card on Telegram, plain text elsewhere
     const focData = result.data as Record<string, unknown> | undefined;
     if (msg.channel === 'telegram' && msg.externalId && focData?.sessionId) {
@@ -1470,7 +1539,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     tokensIn = 0;
     tokensOut = 0;
     creditCost = 0;
-    logConversation(userId, 'user', msg.text, requestId);
     logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'reminder-fast-path');
     // Skip duplicate text if an inline card was already sent via Telegram
     if (!(result.cardSent && msg.channel === 'telegram')) {
@@ -1492,7 +1560,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     tokensIn = 0;
     tokensOut = 0;
     creditCost = 0;
-    logConversation(userId, 'user', msg.text, requestId);
     logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'habit-fast-path');
     // Send button card on Telegram, plain text elsewhere
     const habData = result.data as Record<string, unknown> | undefined;
@@ -1539,7 +1606,6 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
         tokensIn = 0;
         tokensOut = 0;
         creditCost = 0;
-        logConversation(userId, 'user', msg.text, requestId);
         logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'notif-pref-fast-path');
         await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
         logger.info({ channel: msg.channel, userId, proactiveType, isEnable, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (notif-pref fast-path)');
@@ -1573,30 +1639,16 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   if (needsGroq) {
     const reason = hasNonLatinScript ? 'non-latin-script' : 'hinglish';
-    logger.info({ userId, reason }, 'Multilingual input detected — routing to Groq');
+    logger.info({ userId, reason }, 'Multilingual input detected — routing to Groq via ReAct loop');
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-    try {
-      const result = await routeChat(messages, {
-        systemPrompt,
-        userId,
-        forceProvider: 'groq',
-      });
-      replyText = result.reply;
-      provider = result.provider;
-      model = result.model;
-      tokensIn = result.tokensIn;
-      tokensOut = result.tokensOut;
-      creditCost = result.creditCost;
-    } catch (err) {
-      logger.warn({ err: (err as Error).message }, 'Groq failed for non-Latin message, falling back to ReAct loop');
-      const reactResult = await runReactLoop(messages, { systemPrompt, agentName: resolvedAgentName, userCredits, userId });
-      replyText = reactResult.text;
-      provider = reactResult.provider;
-      model = reactResult.model;
-      tokensIn = reactResult.tokensIn;
-      tokensOut = reactResult.tokensOut;
-      creditCost = reactResult.creditCost;
-    }
+    const reactResult = await runReactLoop(messages, { systemPrompt, agentName: resolvedAgentName, userCredits, userId, forceProvider: 'groq' });
+    replyText = reactResult.text;
+    provider = reactResult.provider;
+    model = reactResult.model;
+    tokensIn = reactResult.tokensIn;
+    tokensOut = reactResult.tokensOut;
+    creditCost = reactResult.creditCost;
+    reactDeferredActions = reactResult.deferredActions;
   } else if (config.bridgeEnabled && !researchUrl && !webSearchUsed && !hasToolTrigger(msg.text)) {
     // Use the bridge — routes trivial/simple → PicoClaw (2-5s), complex → Kimi
     // Skip bridge when URL content, web search results, or Phase 2 tool keywords are present —
@@ -1641,6 +1693,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       tokensIn = reactResult.tokensIn;
       tokensOut = reactResult.tokensOut;
       creditCost = reactResult.creditCost;
+      reactDeferredActions = reactResult.deferredActions;
     }
   } else {
     // Bridge not enabled or tool trigger detected — use ReAct loop
@@ -1660,20 +1713,23 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     tokensIn = reactResult.tokensIn;
     tokensOut = reactResult.tokensOut;
     creditCost = reactResult.creditCost;
+    reactDeferredActions = reactResult.deferredActions;
   }
 
-  // 7b. Parse and execute actions
+  // 7b. Parse and execute actions (from LLM reply text + deferred actions from ReAct loop)
   const { text: cleanReply, actions: parsedActions } = parseActions(replyText);
+  // Merge: actions parsed from reply text + deferred generate_code actions from ReAct loop
+  const allActions = [...parsedActions, ...reactDeferredActions];
   const actionResults: ActionResult[] = [];
 
   // Detect edit intent for generate_code: if user says update/change/edit/fix/modify their website,
   // look up their most recent artifact and inject existingArtifactId so the action updates it in-place.
   const editWebsiteIntent = /\b(?:update|change|edit|modify|fix|improve|redesign|redo|refresh|revamp|add to|remove from|make it|adjust|tweak)\b/i;
 
-  for (const action of parsedActions) {
+  for (const action of allActions) {
     // Inject baseUrl for generate_code actions to create preview links
     if (action.tool === 'generate_code') {
-      action.params.baseUrl = config.apiUrl;
+      action.params.baseUrl = config.publicUrl || config.apiUrl;
       // If user is editing (no explicit new site request), inject their latest artifact ID
       if (!action.params.existingArtifactId && editWebsiteIntent.test(msg.text)) {
         const latest = db.prepare(
