@@ -1,7 +1,5 @@
 {
   "name": "GeekOS",
-  "description": "AI development companion that knows the Agentin codebase deeply",
-  "modelProvider": "openai",
   "settings": {
     "model": "agentin-default",
     "temperature": 0.3,

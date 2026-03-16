@@ -1,7 +1,5 @@
 {
   "name": "Cal",
-  "description": "The Organizer — Calm, structured. Masters your schedule and brings order to chaos.",
-  "modelProvider": "openai",
   "settings": {
     "model": "agentin-default",
     "temperature": 0.3,

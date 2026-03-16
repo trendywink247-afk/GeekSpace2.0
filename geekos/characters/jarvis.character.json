@@ -1,7 +1,5 @@
 {
   "name": "Jarvis",
-  "description": "The Helper — Warm, capable butler. Competent, slightly witty, always composed. At your service.",
-  "modelProvider": "openai",
   "settings": {
     "model": "agentin-default",
     "temperature": 0.6,

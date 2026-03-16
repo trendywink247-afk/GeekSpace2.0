@@ -1,7 +1,5 @@
 {
   "name": "Weebo",
-  "description": "The Darling — Enthusiastic, warm, playful. Gets genuinely excited about helping.",
-  "modelProvider": "openai",
   "settings": {
     "model": "agentin-default",
     "temperature": 0.8,

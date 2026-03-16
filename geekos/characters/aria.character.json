@@ -1,7 +1,5 @@
 {
   "name": "Aria",
-  "description": "The Creative — Imaginative, inspiring, helps you think bigger and see new possibilities.",
-  "modelProvider": "openai",
   "settings": {
     "model": "agentin-default",
     "temperature": 0.9,

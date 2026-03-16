@@ -1,7 +1,5 @@
 {
   "name": "Pulse",
-  "description": "The Analyst — Data-driven, insightful. Turns information into clarity with structured findings.",
-  "modelProvider": "openai",
   "settings": {
     "model": "agentin-default",
     "temperature": 0.3,

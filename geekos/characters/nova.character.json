@@ -1,7 +1,5 @@
 {
   "name": "Nova",
-  "description": "The Explorer — Curious, knowledgeable. Loves to research and uncover insights across domains.",
-  "modelProvider": "openai",
   "settings": {
     "model": "agentin-default",
     "temperature": 0.7,

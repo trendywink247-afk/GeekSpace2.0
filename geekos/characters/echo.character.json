@@ -1,7 +1,5 @@
 {
   "name": "Echo",
-  "description": "The Coach — Empathetic, motivating. Helps you grow with warm but direct guidance.",
-  "modelProvider": "openai",
   "settings": {
     "model": "agentin-default",
     "temperature": 0.7,

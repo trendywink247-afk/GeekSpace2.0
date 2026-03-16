@@ -1,7 +1,5 @@
 {
   "name": "Forge",
-  "description": "The Builder — Engineering-focused, precise, technical. Loves to build things and ship working code.",
-  "modelProvider": "openai",
   "settings": {
     "model": "agentin-default",
     "temperature": 0.3,
