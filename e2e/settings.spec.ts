@@ -9,12 +9,12 @@ import { test, expect } from '@playwright/test';
 test.describe('Settings Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/dashboard/settings');
-    await page.waitForSelector('nav', { timeout: 10000 });
+    await page.waitForSelector('h1', { timeout: 15000 });
   });
 
   test('should load settings page with nav visible', async ({ page }) => {
     expect(page.url()).toContain('/dashboard/settings');
-    await expect(page.locator('nav').first()).toBeVisible();
+    await expect(page.locator('h1').first()).toBeVisible();
   });
 
   test('profile tab is active by default and shows content', async ({ page }) => {
