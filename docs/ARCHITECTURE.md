@@ -26,6 +26,7 @@ User (Browser)
 │  ├── Multi-Engine LLM Router
 │  │   ├── Free:    Ollama → Groq → Gemini Flash → OpenRouter Free → builtin
 │  │   ├── Paid:    Ollama → Together AI → Gemini Flash → Edith/Kimi K2 → builtin
+│  │   ├── Tools:   Groq forced (tool-triggered messages bypass free models)
 │  │   └── Auto:    sidecar → Ollama → builtin
 │  │
 │  ├── Personality System (Edith / Jarvis / Weebo)

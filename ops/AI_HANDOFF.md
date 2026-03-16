@@ -1,111 +1,112 @@
-# AI Handoff — Beast Mode Complete (Sprint 1-7 + QA + Indian Features)
-**Date:** 2026-03-15
-**Branch:** main @ 25557d6
-**Status:** CI GREEN | Tests: 2258 pass | TS: 0 errors | Health: 12/12 OK
+# AI Handoff — Beast Mode Sessions 1-3
+**Date:** 2026-03-16
+**Branch:** main @ a0da6c3
+**Status:** CI GREEN | Tests: 2429 pass | TS: 0 errors | Health: 12/12 OK
 **Model:** claude-opus-4-6
-**Scope:** 65 files changed, +11,150 / -4,201 lines
+**Scope:** 100+ files changed across 3 sessions
 
 ---
 
-## What Was Done This Session
+## Session 3 (2026-03-15/16) — Google OAuth + Tool Fixes + Gmail/Calendar
 
-### Beast Mode Sprint 1: Public Pages (Complete)
-- Hero: "Your AI Operating System" + CountUp social proof bar + integration logos
-- Navigation: scroll progress bar, gradient CTA, updated links
-- PricingPreviewSection (NEW): Free vs Pro tier comparison cards
-- FooterSection (NEW): 4-column footer, social links, valid routes
-- PromptTemplates/Persona/Activity: rebranded to Agentin design system
-- Login: auto-focus, inline email validation, password strength, OAuth loading
-- ForgotPassword: 60s cooldown timer, auto-redirect, password strength meter
-- ContactSection: removed duplicate footer
+### Google OAuth Integration (LIVE)
+- New Google Cloud project with OAuth 2.0 client
+- Client ID: 166042058106-*.apps.googleusercontent.com
+- Scopes: openid, email, profile, calendar.events, gmail.readonly, gmail.send
+- Authorized redirect URIs: /api/oauth/google/callback, /api/calendar/callback, /api/gmail/callback
+- Google sign-in working for all users (published, not in testing mode)
+- Branding verification submitted (pending Google review)
 
-### Beast Mode Sprint 2: Core Dashboard (Complete)
-- OverviewPage: complete rewrite — personalized greeting, at-a-glance cards, quick actions, sparkline, recent conversations (1763 to 643 lines)
-- MemoryManagerPage: complete rewrite — stats header, category breakdown, search/filter, inline editing, quick-add bar, danger zone reset
-- AgentSettingsPage: complete rewrite — agent selector (Weebo/Edith/Jarvis), 4-tab layout (Personality/Memory/Tools/Channels), sliders, toggles
-- ChatPage: starter prompt cards, copy message button on agent responses
+### Calendar Integration (LIVE)
+- OAuth connect flow working (token stored in users.google_calendar_token)
+- Fixed: userinfo API call removed from callback (calendar scope doesn't include userinfo)
+- Fixed: user_settings table crash in status endpoint (graceful fallback)
+- Sync: every 30 minutes via calendar-sync scheduler
+- check_calendar tool added — AI can query upcoming events via Telegram
+- CalendarPage shows Connected status + events
 
-### Beast Mode Sprint 3: Productivity Pages (Complete)
-- RemindersPage: full overhaul with category filters, status badges, quick actions
-- FocusTimerPage: Pomodoro timer rewrite with session history, ambient sounds
-- CalendarPage: month/week/day views, event creation, Google Calendar sync
-- HabitsPage: streak visualization, category grouping, motivational nudges
+### Gmail Integration (LIVE)
+- OAuth connect flow working (token stored in users.google_gmail_token)
+- Sync: 50 emails from last 7 days (was 20/48h)
+- Fixed: null body in POST /gmail/sync and /gmail/disconnect
+- Fixed: userinfo API call removed from callback
+- NEW: POST /api/gmail/send { to, subject, body } — compose emails via Gmail API
+- send_email tool updated to use Gmail when connected (falls back to Resend)
+- list_inbox tool added — AI can query inbox messages
 
-### Beast Mode Sprint 4: AI & Creative Pages (Complete)
-- AISpecialistPage: specialist deployment UI, session management, model selector
-- WebsiteBuilderPage: template gallery, drag-and-drop, live preview
-- ImageGenPage: prompt builder, style selector, gallery grid
-- VideoGenPage: prompt-to-video UI, credit cost display
-- UsageAnalyticsPage: credit circle chart, gradient usage bars, empty states
+### Tool Calling Fix (CRITICAL)
+- Tool-triggered messages now force Groq (Llama 3.3 70B) instead of free models
+- Free models (stepfun/step-3.5-flash) don't reliably emit <<<ACTION>>> blocks
+- hasToolTrigger patterns added for: send/compose email, check calendar, check inbox
+- All tool calls now complete in < 5s via Groq
 
-### Beast Mode Sprint 5-7: Communication, Social, System Pages (Complete)
-- InboxPage, GmailPage, SocialMediaPage: unified messaging UI
-- ProactiveAIPage: briefing configuration, nudge settings
-- FleetPage: multi-agent orchestration dashboard
-- TerminalPage, HealthDashboardPage, ActivityLogPage: system monitoring
-- RoadmapPage, ExplorePage: discovery and planning views
-- PortfolioPage, SettingsPage, ConnectionsPage, BillingPage: account management
-- All 38 dashboard pages polished to Beast Mode standard
+### Caddy Config Fix
+- Public pages (/, /privacy, /terms, /login, /explore) now bypass gate cookie
+- Fixes Google verification: "home page behind login", "privacy same as home"
 
-### Research-Driven Polish Pass
-- 9 files enhanced with premium UX patterns from competitor research
-- Micro-interactions, loading skeletons, empty state illustrations
-- Consistent hover effects, transitions, and spacing
+### Landing Page
+- Telegram CTA link fixed: @AgentinBot → @Weebo_gs_bot
+- Settings page: removed duplicate TabsList (keep pill nav only)
+- Frontend deployed to /var/www/geekspace/ with correct assets
 
-### Indian-Specific Features (Complete)
-- 20+ Indian merchants for expense auto-categorization (Swiggy, Zomato, Flipkart, BigBasket, etc.)
-- 16 Indian festivals for proactive reminders (Diwali, Holi, Eid, Christmas, Pongal, etc.)
-- Hinglish greeting patterns (time-of-day aware: "Good morning, kya plan hai aaj?")
-- INR currency formatting throughout expense tracking
-- UPI payment references in expense parsing
+---
 
-### Backend
-- GET /api/stats/public (NEW, 5min cache, 5 tests)
-- DELETE /agent/memory/bulk-all (NEW, safety guard)
-- Updated E2E tests for rewritten AgentSettingsPage and MemoryManagerPage
-- CI fixes for new tab layouts and button selectors
+## Session 2 (2026-03-15) — Beast Mode P0/P1 Fixes
 
-### Prior Sessions (cumulative)
-- Agentin Docs (BlockNote, 18 endpoints, 30 tests)
-- Video credits bug fix, BLOCKER-006 fix
-- Chat streaming perf (RAF buffer, AbortController)
-- 19 Telegram live tests + 4 button callbacks
-- Automations page rebuild + keyword triggers
-- Brand leaks cleaned (picoclaw/geekspace references removed)
+### P0 Fixes
+- Ollama keep_alive '-1' → '5m' (fixes "missing unit in duration" error)
+- Personality sliders inject into system prompt (creativity→temperature, formality→tone, etc.)
+- useFeatureFlag hook (Zustand store, fetches from /api/features)
+- Health dashboard 30s auto-refresh
 
-## Files Changed (full Beast Mode session)
-65 files changed (9 commits), +11,150 / -4,201
+### P1 Features
+- Phase 105: agent_configs personality columns + buildPersonalityInstructions()
+- Phase 106: File attachments backend (POST /api/files/upload, multer, 10MB, PDF extraction)
+- PlannerPage: full daily planner (replaced "Coming Soon" stub)
+- MemoryPage: stats, search, categories, graph view, bulk ops, export
+- WhatsApp "Coming Soon" badge on ConnectionsPage
+- Meilisearch bulk index on startup
 
-## Test Results
-- Server: 2258/2258 PASS | TS: 0 errors | Lint: clean | Health: 12/12
-- 14/14 Telegram tests passed
-- QA Sprint 8 completed (all pass, non-critical recommendations only)
+---
 
-## Research Completed
-- Landing page competitors (Linear, Perplexity, Superhuman, Raycast, Cursor)
-- Dashboard overview competitors (Raycast, Linear, Notion, Todoist)
-- Chat UI competitors (ChatGPT, Claude, Perplexity, Pi, Character.AI)
-- Memory/knowledge competitors (Mem.ai, ChatGPT Memory, Obsidian)
-- Reminders competitors (Apple Reminders, Todoist, Things 3, TickTick)
-- Habits/Focus competitors (Apple Fitness, Streaks, Forest, Habitica)
-- Design resources: designprompts.dev, 21st.dev, superdesign.dev
-- Indian user attraction strategy research
-- Deep competitor second-pass (ChatGPT Canvas, Claude Artifacts, Linear UX)
-- 15+ competitor analyses total across all categories
+## Session 1 (2026-03-15) — Beast Mode Phases 103-107
 
-## Next Priorities (Future Sessions)
-1. Langfuse observability integration (V6 roadmap item)
-2. Kokoro TTS integration (V6 roadmap item)
-3. MinIO storage integration (Phase 5 from v2 overhaul)
-4. Mobile-first responsive QA pass (375px audit)
-5. Accessibility audit (keyboard navigation, screen reader)
-6. Performance optimization (bundle splitting, lazy loading)
-7. Google OAuth test user whitelist (Gmail/Calendar for Aliya)
+### New Features
+- Phase 103: Global Ctrl+K command palette + search API
+- Phase 104: Telegram /remind /note /focus /habit /brief /search /memory /help
+- Phase 107: RRULE recurrence engine, batch create, snooze detection, templates
+- Auth hardening: JWT refresh rotation, rate limiting, session management
+- Security audit: Zod on 5 routes, SQL injection scan, 44 security tests
+- Chat UX: streaming reconnect, message actions, conversation sidebar, tool transparency
+- 3 new landing sections (ProblemSolution, Testimonials, TelegramCTA)
+- 12 dashboard pages polished
 
-## Start Commands
+### Blockers Fixed
+- BLOCKER-006: create_memory tool (explicit memory storage)
+- BLOCKER-009: /api/usage/stats and /history route aliases
+
+---
+
+## Cumulative Test Count
+- Session start: 2258
+- After session 1: 2382 (+124)
+- After session 2: 2429 (+47)
+- Current: 2429
+
+## Active Blockers
+- BLOCKER-001: MOONSHOT_API_KEY missing (T3 Kimi K2 unavailable)
+- BLOCKER-002: FAL_KEY missing (video generation disabled)
+- BLOCKER-004: Ollama CPU-only (mitigated by Groq fallback)
+- BLOCKER-008: Video generation blocked (depends on BLOCKER-002)
+- BLOCKER-012: WINDMILL_TOKEN missing
+
+## Deploy Workflow
 ```bash
-cd ~/GeekSpace2.0 && git log --oneline -5 && cat ops/AI_HANDOFF.md
-curl -s localhost:3001/api/health | python3 -m json.tool
-cd server && npm test -- --reporter=dot 2>&1 | tail -5
-npx tsc --noEmit && cd server && npx tsc --noEmit
+cd ~/GeekSpace2.0
+npm run build && cd server && npm run build && cd ..
+find /var/www/geekspace/assets/ -name "index-*" -not -name "*.css" -delete
+cp -r dist/assets/* /var/www/geekspace/assets/
+cp dist/index.html /var/www/geekspace/index.html
+docker compose up -d --build geekspace
+curl localhost:3001/api/health
 ```

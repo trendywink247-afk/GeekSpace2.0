@@ -47,7 +47,7 @@ Backend:  Express + TypeScript + better-sqlite3 + JWT + Pino
 AI Stack: Ollama → Groq/Gemini Flash → OpenRouter → Together AI → Kimi K2
 Auth:     JWT + Passport (Google/GitHub OAuth)
 Infra:    Docker Compose + Caddy + PM2
-Tests:    2258 passing (NEVER DROP) | Audit: 158/158 full (MAINTAIN)
+Tests:    2429 passing (NEVER DROP) | Audit: 158/158 full (MAINTAIN)
 Telegram: Primary test ground for ALL features
 ```
 

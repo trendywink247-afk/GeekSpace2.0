@@ -28,7 +28,8 @@ source ~/.bashrc
 
 ### What goes in /root/.agentin-secrets
 `JWT_SECRET`, `ENCRYPTION_KEY`, all `*_API_KEY`, `TELEGRAM_BOT_TOKEN`,
-`TELEGRAM_WEBHOOK_SECRET`, `STRIPE_*`, `ADMIN_*`, `RESEND_API_KEY`, `GITHUB_DEV_TOKEN`
+`TELEGRAM_WEBHOOK_SECRET`, `STRIPE_*`, `ADMIN_*`, `RESEND_API_KEY`, `GITHUB_DEV_TOKEN`,
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 
 ### What stays in .env (safe, non-sensitive)
 `NODE_ENV`, `PORT`, `DB_PATH`, `*_BASE_URL`, `*_TIMEOUT_MS`, `CORS_ORIGINS`,
