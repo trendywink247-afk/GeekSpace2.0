@@ -30,12 +30,12 @@ test.describe('Accessibility: Skip Link', () => {
 test.describe('Dashboard Compact Mode', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/dashboard/settings');
-    await page.waitForSelector('[role="tablist"]', { timeout: 10000 });
+    await page.waitForSelector('nav', { timeout: 10000 });
   });
 
   test('compact mode toggle exists in appearance section', async ({ page }) => {
     // Navigate to theme tab
-    const themeTab = page.getByRole('tab', { name: /theme/i });
+    const themeTab = page.getByRole('button', { name: /theme/i });
     await themeTab.click();
     // Look for compact mode switch
     const compactSwitch = page.getByRole('switch', { name: /compact/i });
@@ -43,7 +43,7 @@ test.describe('Dashboard Compact Mode', () => {
   });
 
   test('compact mode can be toggled on and off', async ({ page }) => {
-    const themeTab = page.getByRole('tab', { name: /theme/i });
+    const themeTab = page.getByRole('button', { name: /theme/i });
     await themeTab.click();
 
     const compactSwitch = page.getByRole('switch', { name: /compact/i });
@@ -63,7 +63,7 @@ test.describe('Dashboard Compact Mode', () => {
   });
 
   test('compact mode persists class on root when enabled', async ({ page }) => {
-    const themeTab = page.getByRole('tab', { name: /theme/i });
+    const themeTab = page.getByRole('button', { name: /theme/i });
     await themeTab.click();
 
     const compactSwitch = page.getByRole('switch', { name: /compact/i });
