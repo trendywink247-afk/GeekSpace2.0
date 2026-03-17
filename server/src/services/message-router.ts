@@ -17,6 +17,7 @@ import { deductSubscriptionCredits, type ChatMessage } from './llm.js';
 import { runReactLoop } from './react-loop.js';
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
+import { logActivity } from './activity-log.js';
 import { checkKeywordTriggers } from './automations-engine.js';
 import { sendTelegramMessage, sendTelegramPhoto, sendTelegramVideo, sendTelegramTyping, sendTelegramButtons } from './telegram.js';
 import { getPersonalityPrompt, getPersonality } from '../prompts/personalities.js';
@@ -1796,6 +1797,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 10. Log assistant response (clean text without action blocks)
   logConversation(userId, 'assistant', finalReply, requestId, provider, model);
+  logActivity(userId, 'Agent replied', `${resolvedAgentName} via ${provider}`, 'bot');
 
   // Log for fine-tuning dataset (non-blocking)
   logTrainingExample({
