@@ -1476,7 +1476,10 @@ export function ChatPage() {
                 placeholder={voice.isListening ? 'Listening...' : 'Message ' + agentName + '...'}
                 disabled={isTyping}
                 rows={1}
-                className='w-full resize-none bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] placeholder:text-[#4B5563] focus:border-[#00F0FF]/40 focus:outline-none focus:ring-2 focus:ring-[#00F0FF]/20 rounded-lg px-3 py-2.5 text-sm leading-relaxed min-h-[40px] max-h-[120px] scrollbar-hide'
+                enterKeyHint='send'
+                inputMode='text'
+                autoCapitalize='sentences'
+                className='w-full resize-none bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] placeholder:text-[#4B5563] focus:border-[#00F0FF]/40 focus:outline-none focus:ring-2 focus:ring-[#00F0FF]/20 rounded-lg px-3 py-2.5 text-sm leading-relaxed min-h-[40px] max-h-[120px] scrollbar-hide touch-manipulation'
               />
               {input.length > 200 && (
                 <span className='absolute right-2 bottom-1.5 text-[10px] text-[#4B5563] tabular-nums pointer-events-none'>

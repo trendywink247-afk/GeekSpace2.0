@@ -4,9 +4,10 @@
 // ============================================================
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Brain, Trash2, RefreshCw, Plus, Pencil, Check, X, Search,
-  Download, Filter, Sparkles, Network, List,
+  Download, Filter, Sparkles, Network, List, MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,6 +106,7 @@ function MemoryGraph({ memories }: { memories: UserMemory[] }) {
 }
 
 export function MemoryPage() {
+  const navigate = useNavigate();
   const [memories, setMemories] = useState<UserMemory[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiErr, setApiErr] = useState<string | null>(null);
@@ -231,7 +233,34 @@ export function MemoryPage() {
 
       {/* Content */}
       {loading ? <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" /></div>
-      : memories.length === 0 ? <div className="text-center py-16"><Brain className="w-16 h-16 text-[#00F0FF]/30 mx-auto mb-4" /><h3 className="text-lg font-medium mb-2 text-[#F4F6FF]">No memories yet</h3><p className="text-[#8892A4] max-w-sm mx-auto">Chat with Weebo and say &ldquo;remember that...&rdquo; or add manually above.</p></div>
+      : memories.length === 0 ? (
+        <div className="text-center py-16 space-y-5">
+          <div className="relative mx-auto w-20 h-20">
+            <div className="w-20 h-20 rounded-2xl bg-[#00F0FF]/8 border border-[#00F0FF]/15 flex items-center justify-center animate-pulse">
+              <Brain className="w-10 h-10 text-[#00F0FF]/50" />
+            </div>
+            <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#ADFF2F]/15 border border-[#ADFF2F]/30 flex items-center justify-center">
+              <Sparkles className="w-3 h-3 text-[#ADFF2F]" />
+            </span>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-[#F4F6FF]">No memories yet</h3>
+            <p className="text-[#8892A4] text-sm max-w-xs mx-auto leading-relaxed">
+              Your AI remembers everything you teach it. Start a conversation to build your memory.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button
+              onClick={() => navigate("/dashboard/chat")}
+              className="bg-[#00F0FF]/15 hover:bg-[#00F0FF]/25 text-[#00F0FF] border border-[#00F0FF]/25 min-h-[44px] px-6"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Start Chat
+            </Button>
+            <p className="text-xs text-[#8892A4]">or add a memory manually above</p>
+          </div>
+        </div>
+      )
       : viewMode === "graph" ? <Card className="border-[#00F0FF]/10"><CardContent className="p-6"><MemoryGraph memories={memories} /></CardContent></Card>
       : <>
         <p className="text-xs text-[#8892A4]">{filtered.length} of {memories.length} memories{searchQ && ` matching "${searchQ}"`}</p>

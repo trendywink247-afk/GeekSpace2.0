@@ -1739,6 +1739,10 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               placeholder={premiumSession ? `Ask ${premiumSession.codename}...` : 'Ask anything...'}
               className="flex-1 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] rounded-xl"
               data-testid="agent-chat-input"
+              enterKeyHint="send"
+              autoComplete="off"
+              autoCorrect="on"
+              autoCapitalize="sentences"
             />
             {/* 80.5/80.7: MediaRecorder voice input with state indicator */}
             {mediaRecorderSupported ? (

@@ -319,7 +319,7 @@ export function ActivityPage() {
               <p className="text-sm text-[#9CA3AF]">
                 {serverQ || activeFilter !== 'All'
                   ? 'Try adjusting your search or filters'
-                  : 'Your actions across Agentin will appear here'}
+                  : 'Every action you take — chats, reminders, habits, integrations — is tracked here so you can review what your AI has been doing for you'}
               </p>
               {(serverQ || activeFilter !== 'All') && (
                 <button

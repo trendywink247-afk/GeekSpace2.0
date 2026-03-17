@@ -372,14 +372,16 @@ function MessageCard({
 
 function EmptyInbox() {
   return (
-    <div className="text-center py-16 space-y-3">
+    <div className="text-center py-16 space-y-4">
       <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/10 flex items-center justify-center mx-auto">
         <Inbox className="w-8 h-8 text-[#00F0FF]/40" />
       </div>
-      <p className="text-[#F4F6FF] font-medium text-lg">All caught up!</p>
-      <p className="text-[#8892A4] text-sm max-w-xs mx-auto">
-        No new messages. Your AI is watching your channels.
-      </p>
+      <div className="space-y-2">
+        <p className="text-[#F4F6FF] font-semibold text-lg">Your inbox is empty</p>
+        <p className="text-[#8892A4] text-sm max-w-xs mx-auto leading-relaxed">
+          Messages from your AI agents and integrations will appear here
+        </p>
+      </div>
     </div>
   );
 }
