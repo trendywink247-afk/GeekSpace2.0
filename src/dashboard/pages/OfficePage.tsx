@@ -19,6 +19,12 @@ const C = {
   border: 'rgba(0,240,255,0.1)',
 } as const;
 
+// ---- Canvas Constants ----
+
+const CELL = 18;
+const COLS = 32;
+const ROWS = 14;
+
 // ---- Types ----
 
 type AgentState = 'idle' | 'thinking' | 'typing' | 'tool_call' | 'tool_result' | 'responding' | 'done';
@@ -33,6 +39,13 @@ interface Agent {
   lastAction: string;
   actionCount: number;
   tool?: string;
+  // Canvas position (grid cells)
+  x: number;
+  y: number;
+  targetX: number;
+  targetY: number;
+  path: { x: number; y: number }[];
+  pathIdx: number;
 }
 
 interface FeedItem {
@@ -57,12 +70,23 @@ interface SystemHealth {
   uptimeSeconds: number;
 }
 
-// ---- Constants ----
+// ---- Desk Positions (grid coords, top-left of 3x2 desk block) ----
+
+const DESK_POSITIONS: Record<string, { x: number; y: number }> = {
+  weebo: { x: 4, y: 4 },
+  edith: { x: 14, y: 4 },
+  jarvis: { x: 24, y: 4 },
+  aria: { x: 4, y: 9 },
+  forge: { x: 14, y: 9 },
+  pulse: { x: 24, y: 9 },
+};
+
+// ---- Default Agent List ----
 
 const DEFAULT_AGENTS: Agent[] = [
-  { id: 'weebo', name: 'Weebo', role: 'Creative & Research', color: '#00F0FF', emoji: '\u2728', state: 'idle', lastAction: 'Standing by', actionCount: 0 },
-  { id: 'edith', name: 'Edith', role: 'Strategy & Analysis', color: '#8B5CF6', emoji: '\uD83D\uDD37', state: 'idle', lastAction: 'Standing by', actionCount: 0 },
-  { id: 'jarvis', name: 'Jarvis', role: 'Operations & Tasks', color: '#ADFF2F', emoji: '\uD83E\uDD16', state: 'idle', lastAction: 'Standing by', actionCount: 0 },
+  { id: 'weebo', name: 'Weebo', role: 'Creative & Research', color: '#00F0FF', emoji: '\u2728', state: 'idle', lastAction: 'Standing by', actionCount: 0, x: 3, y: 3, targetX: 3, targetY: 3, path: [], pathIdx: 0 },
+  { id: 'edith', name: 'Edith', role: 'Strategy & Analysis', color: '#8B5CF6', emoji: '\uD83D\uDD37', state: 'idle', lastAction: 'Standing by', actionCount: 0, x: 13, y: 3, targetX: 13, targetY: 3, path: [], pathIdx: 0 },
+  { id: 'jarvis', name: 'Jarvis', role: 'Operations & Tasks', color: '#ADFF2F', emoji: '\uD83E\uDD16', state: 'idle', lastAction: 'Standing by', actionCount: 0, x: 23, y: 3, targetX: 23, targetY: 3, path: [], pathIdx: 0 },
 ];
 
 const AGENT_COLORS: Record<string, string> = {
@@ -71,9 +95,73 @@ const AGENT_COLORS: Record<string, string> = {
   echo: '#8B5CF6', cal: '#ADFF2F', nova: '#F59E0B',
 };
 
+// ---- Constants ----
+
 const STATE_IDLE_TIMEOUT_MS = 30_000;
 const SSE_RECONNECT_DELAY_MS = 5_000;
 const MAX_FEED_ITEMS = 100;
+
+// ---- Collision Grid ----
+
+function buildGrid(): boolean[][] {
+  const grid: boolean[][] = Array.from({ length: ROWS }, () => Array(COLS).fill(false) as boolean[]);
+  // Top wall row
+  for (let c = 0; c < COLS; c++) grid[0][c] = true;
+  // Desk blocks (3 wide x 2 tall) at each desk position
+  for (const pos of Object.values(DESK_POSITIONS)) {
+    for (let dy = 0; dy < 2; dy++) {
+      for (let dx = 0; dx < 3; dx++) {
+        const gy = pos.y + dy;
+        const gx = pos.x + dx;
+        if (gy >= 0 && gy < ROWS && gx >= 0 && gx < COLS) {
+          grid[gy][gx] = true;
+        }
+      }
+    }
+  }
+  // Server rack (bottom center, 2x2)
+  const rackX = 15;
+  const rackY = ROWS - 3;
+  for (let dy = 0; dy < 2; dy++) {
+    for (let dx = 0; dx < 2; dx++) {
+      if (rackY + dy >= 0 && rackY + dy < ROWS) grid[rackY + dy][rackX + dx] = true;
+    }
+  }
+  return grid;
+}
+
+const OFFICE_GRID = buildGrid();
+
+// ---- BFS Pathfinding ----
+
+function bfs(
+  grid: boolean[][],
+  sx: number, sy: number,
+  ex: number, ey: number,
+): { x: number; y: number }[] {
+  if (sx === ex && sy === ey) return [];
+  if (ex < 0 || ey < 0 || ex >= COLS || ey >= ROWS || grid[ey][ex]) return [];
+  const visited = new Set<string>();
+  const queue: { x: number; y: number; path: { x: number; y: number }[] }[] = [
+    { x: sx, y: sy, path: [] },
+  ];
+  visited.add(`${sx},${sy}`);
+  const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+  while (queue.length) {
+    const cur = queue.shift()!;
+    for (const [ddx, ddy] of dirs) {
+      const nx = cur.x + ddx;
+      const ny = cur.y + ddy;
+      if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+      if (visited.has(`${nx},${ny}`) || grid[ny][nx]) continue;
+      visited.add(`${nx},${ny}`);
+      const np = [...cur.path, { x: nx, y: ny }];
+      if (nx === ex && ny === ey) return np;
+      queue.push({ x: nx, y: ny, path: np });
+    }
+  }
+  return [];
+}
 
 // ---- Helpers ----
 
@@ -136,6 +224,226 @@ function agentColorFor(id?: string, name?: string): string {
   return C.cyan;
 }
 
+// ---- Canvas Pixel Renderer ----
+
+function renderPixelOffice(
+  ctx: CanvasRenderingContext2D,
+  dpr: number,
+  agents: Agent[],
+  tick: number,
+  selectedId: string | null,
+  serverOnline: boolean,
+): void {
+  const W = COLS * CELL;
+  const H = ROWS * CELL;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // 1. Background
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // 2. Floor grid
+  ctx.strokeStyle = 'rgba(0,240,255,0.04)';
+  ctx.lineWidth = 0.5;
+  for (let r = 0; r <= ROWS; r++) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * CELL);
+    ctx.lineTo(W, r * CELL);
+    ctx.stroke();
+  }
+  for (let c = 0; c <= COLS; c++) {
+    ctx.beginPath();
+    ctx.moveTo(c * CELL, 0);
+    ctx.lineTo(c * CELL, H);
+    ctx.stroke();
+  }
+
+  // 3. Wall (top row)
+  ctx.fillStyle = C.elevated;
+  ctx.fillRect(0, 0, W, CELL);
+  // Wall detail lines
+  ctx.strokeStyle = 'rgba(0,240,255,0.06)';
+  ctx.lineWidth = 0.5;
+  for (let c = 0; c < COLS; c += 4) {
+    ctx.beginPath();
+    ctx.moveTo(c * CELL, 0);
+    ctx.lineTo(c * CELL, CELL);
+    ctx.stroke();
+  }
+
+  // 4. Desks (3x2 blocks at agent positions) with monitors
+  for (const [agentId, pos] of Object.entries(DESK_POSITIONS)) {
+    const agentColor = AGENT_COLORS[agentId] || C.cyan;
+    // Only draw desks for agents that exist or as default furniture
+    for (let dy = 0; dy < 2; dy++) {
+      for (let dx = 0; dx < 3; dx++) {
+        const gx = pos.x + dx;
+        const gy = pos.y + dy;
+        if (gx >= COLS || gy >= ROWS) continue;
+        const px = gx * CELL;
+        const py = gy * CELL;
+        // Desk surface
+        ctx.fillStyle = '#161628';
+        ctx.fillRect(px + 1, py + 1, CELL - 2, CELL - 2);
+        ctx.strokeStyle = 'rgba(0,240,255,0.06)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(px + 1, py + 1, CELL - 2, CELL - 2);
+      }
+    }
+    // Monitor on center of desk (second cell, top row)
+    const monX = (pos.x + 1) * CELL;
+    const monY = pos.y * CELL;
+    // Monitor frame
+    ctx.fillStyle = '#2A2A44';
+    ctx.fillRect(monX + 2, monY + 2, CELL - 4, CELL - 6);
+    // Screen glow
+    ctx.fillStyle = agentColor + '30';
+    ctx.fillRect(monX + 3, monY + 3, CELL - 6, CELL - 8);
+    // Monitor stand
+    ctx.fillStyle = '#3A3A5E';
+    ctx.fillRect(monX + 7, monY + CELL - 4, 4, 3);
+  }
+
+  // 5. Server rack (bottom center 2x2 block)
+  const rackX = 15 * CELL;
+  const rackY = (ROWS - 3) * CELL;
+  ctx.fillStyle = '#101020';
+  ctx.fillRect(rackX, rackY, CELL * 2, CELL * 2);
+  ctx.strokeStyle = serverOnline ? C.green : '#555';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rackX + 1, rackY + 1, CELL * 2 - 2, CELL * 2 - 2);
+  // Server LEDs with blink
+  const blinkOn = tick % 10 < 6;
+  ctx.fillStyle = serverOnline ? (blinkOn ? C.green : '#226622') : '#444';
+  ctx.fillRect(rackX + 4, rackY + 4, 4, 3);
+  ctx.fillRect(rackX + 4, rackY + 12, 4, 3);
+  ctx.fillRect(rackX + CELL + 4, rackY + 4, 4, 3);
+  ctx.fillRect(rackX + CELL + 4, rackY + 12, 4, 3);
+  // Server pulse ring when online
+  if (serverOnline) {
+    const pulseR = 4 + (tick % 20) * 0.5;
+    const pulseAlpha = Math.max(0, 0.3 - (tick % 20) * 0.015);
+    ctx.strokeStyle = `rgba(173,255,47,${pulseAlpha})`;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.arc(rackX + CELL, rackY + CELL, pulseR, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  // Server label
+  ctx.fillStyle = C.muted;
+  ctx.font = '7px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('SRV', rackX + CELL, rackY + CELL * 2 + 9);
+
+  // 6. Agent characters with state indicators
+  for (const agent of agents) {
+    const desk = DESK_POSITIONS[agent.id];
+    // Agent pixel position (center of cell)
+    const ax = agent.x * CELL + CELL / 2;
+    const ay = agent.y * CELL + CELL / 2;
+    const isSelected = agent.id === selectedId;
+    const agentIdx = agents.indexOf(agent);
+
+    // Idle bobble animation
+    const bobble = agent.state === 'idle'
+      ? Math.sin(tick * 0.15 + agentIdx * 2.1) * 1.5
+      : 0;
+
+    // 7. Selection highlight ring
+    if (isSelected) {
+      const ringR = 10 + Math.sin(tick * 0.2) * 1.5;
+      ctx.strokeStyle = agent.color + '80';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(ax, ay + bobble, ringR, 0, Math.PI * 2);
+      ctx.stroke();
+      // Glow beneath
+      ctx.shadowColor = agent.color;
+      ctx.shadowBlur = 8;
+    }
+
+    // Pixel body: head (6x6), body (8x5), legs (2x3 each)
+    ctx.fillStyle = agent.color;
+    // Head
+    ctx.fillRect(ax - 3, ay - 6 + bobble, 6, 6);
+    // Body
+    ctx.fillRect(ax - 4, ay + bobble, 8, 5);
+    // Legs
+    ctx.fillRect(ax - 3, ay + 5 + bobble, 2, 3);
+    ctx.fillRect(ax + 1, ay + 5 + bobble, 2, 3);
+
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    // Eyes (dark pixels on head)
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(ax - 2, ay - 4 + bobble, 2, 2);
+    ctx.fillRect(ax + 1, ay - 4 + bobble, 2, 2);
+
+    // State indicator above head
+    ctx.fillStyle = agent.color;
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+
+    const indicatorY = ay - 12 + bobble;
+
+    if (agent.state === 'thinking') {
+      // Thought bubble: "?"
+      ctx.fillStyle = agent.color + 'CC';
+      ctx.fillText('?', ax, indicatorY);
+    } else if (agent.state === 'typing' || agent.state === 'responding') {
+      // Animated dots
+      const dotCount = (tick % 12) < 4 ? 1 : (tick % 12) < 8 ? 2 : 3;
+      ctx.fillStyle = agent.color + 'CC';
+      ctx.fillText('.'.repeat(dotCount), ax, indicatorY);
+    } else if (agent.state === 'tool_call') {
+      // Wrench icon (simplified pixel)
+      ctx.fillStyle = '#F59E0B';
+      ctx.fillRect(ax - 3, indicatorY - 5, 2, 6);
+      ctx.fillRect(ax - 4, indicatorY - 5, 4, 2);
+      ctx.fillRect(ax + 1, indicatorY - 5, 2, 6);
+      ctx.fillRect(ax, indicatorY - 5, 4, 2);
+    } else if (agent.state === 'tool_result') {
+      // Small gear shape
+      ctx.fillStyle = C.purple;
+      ctx.fillRect(ax - 2, indicatorY - 5, 4, 1);
+      ctx.fillRect(ax - 2, indicatorY - 1, 4, 1);
+      ctx.fillRect(ax - 3, indicatorY - 4, 1, 3);
+      ctx.fillRect(ax + 2, indicatorY - 4, 1, 3);
+    } else if (agent.state === 'done') {
+      // Checkmark
+      ctx.strokeStyle = C.green;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(ax - 3, indicatorY - 2);
+      ctx.lineTo(ax - 1, indicatorY);
+      ctx.lineTo(ax + 3, indicatorY - 4);
+      ctx.stroke();
+    }
+
+    // Desk highlight line (from agent to their desk)
+    if (desk && (agent.state !== 'idle' || isSelected)) {
+      const deskCx = (desk.x + 1) * CELL + CELL / 2;
+      const deskCy = desk.y * CELL + CELL / 2;
+      ctx.strokeStyle = agent.color + '15';
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([2, 4]);
+      ctx.beginPath();
+      ctx.moveTo(ax, ay + 8 + bobble);
+      ctx.lineTo(deskCx, deskCy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // 8. Name label below character
+    ctx.fillStyle = agent.color;
+    ctx.font = '7px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(agent.name, ax, ay + 14 + bobble);
+  }
+}
+
 // ---- Main Component ----
 
 export function OfficePage() {
@@ -147,14 +455,26 @@ export function OfficePage() {
   });
   const [connectionMode, setConnectionMode] = useState<'live' | 'polling'>('polling');
   const [isHoveringFeed, setIsHoveringFeed] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const feedEndRef = useRef<HTMLDivElement>(null);
   const lastUpdateRef = useRef(new Map<string, number>());
   const activityAbortRef = useRef<AbortController | null>(null);
   const agentStateAbortRef = useRef<AbortController | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const idleCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const doneTimeoutRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const tickRef = useRef(0);
+  const agentsRef = useRef(agents);
+  const selectedRef = useRef(selectedAgentId);
+  const healthRef = useRef(health);
+
+  // Keep refs synced inside effects only
+  useEffect(() => { agentsRef.current = agents; }, [agents]);
+  useEffect(() => { selectedRef.current = selectedAgentId; }, [selectedAgentId]);
+  useEffect(() => { healthRef.current = health; }, [health]);
 
   // ---- Auto-scroll feed ----
 
@@ -163,6 +483,107 @@ export function OfficePage() {
       feedEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [feed.length, isHoveringFeed]);
+
+  // ---- Canvas resize handler ----
+
+  useEffect(() => {
+    const resize = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const container = canvas.parentElement;
+      if (!container) return;
+      const dpr = window.devicePixelRatio || 1;
+      const containerWidth = container.clientWidth;
+      const logicalW = COLS * CELL;
+      const logicalH = ROWS * CELL;
+      const scale = containerWidth / logicalW;
+      canvas.width = logicalW * dpr;
+      canvas.height = logicalH * dpr;
+      canvas.style.width = `${logicalW * scale}px`;
+      canvas.style.height = `${logicalH * scale}px`;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
+
+  // ---- Canvas click -> select agent ----
+
+  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = (COLS * CELL) / rect.width;
+    const scaleY = (ROWS * CELL) / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+    const cellX = Math.floor(mx / CELL);
+    const cellY = Math.floor(my / CELL);
+
+    const clicked = agentsRef.current.find(a =>
+      Math.abs(a.x - cellX) <= 1 && Math.abs(a.y - cellY) <= 1
+    );
+    setSelectedAgentId(prev => clicked ? (prev === clicked.id ? null : clicked.id) : null);
+  }, []);
+
+  // ---- Agent movement via BFS ----
+
+  const moveAgents = useCallback(() => {
+    setAgents(prev => prev.map((agent, idx) => {
+      // Follow path if one exists
+      if (agent.path.length > 0 && agent.pathIdx < agent.path.length) {
+        const next = agent.path[agent.pathIdx];
+        return { ...agent, x: next.x, y: next.y, pathIdx: agent.pathIdx + 1 };
+      }
+      // When agent becomes active, move towards their desk
+      if (agent.state !== 'idle' && agent.state !== 'done') {
+        const desk = DESK_POSITIONS[agent.id];
+        if (desk) {
+          // Target cell is one row above desk (sitting position)
+          const seatX = desk.x + 1;
+          const seatY = desk.y - 1;
+          if (seatY > 0 && !OFFICE_GRID[seatY][seatX] && (agent.x !== seatX || agent.y !== seatY)) {
+            const newPath = bfs(OFFICE_GRID, agent.x, agent.y, seatX, seatY);
+            if (newPath.length > 0) {
+              return { ...agent, targetX: seatX, targetY: seatY, path: newPath, pathIdx: 0 };
+            }
+          }
+        }
+        return agent;
+      }
+      // Idle: random wander every ~40 ticks
+      const wanderPhase = (idx * 13 + 7) % 40;
+      if (tickRef.current % 40 === wanderPhase) {
+        const tx = 1 + Math.floor(Math.random() * (COLS - 2));
+        const ty = 1 + Math.floor(Math.random() * (ROWS - 2));
+        if (!OFFICE_GRID[ty][tx]) {
+          const newPath = bfs(OFFICE_GRID, agent.x, agent.y, tx, ty);
+          if (newPath.length > 0 && newPath.length < 20) {
+            return { ...agent, targetX: tx, targetY: ty, path: newPath, pathIdx: 0 };
+          }
+        }
+      }
+      return agent;
+    }));
+  }, []);
+
+  // ---- Animation loop: single setInterval(200ms) ----
+
+  useEffect(() => {
+    animIntervalRef.current = setInterval(() => {
+      tickRef.current++;
+      moveAgents();
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const dpr = window.devicePixelRatio || 1;
+      renderPixelOffice(ctx, dpr, agentsRef.current, tickRef.current, selectedRef.current, healthRef.current.geekosOnline);
+    }, 200);
+    return () => {
+      if (animIntervalRef.current) clearInterval(animIntervalRef.current);
+    };
+  }, [moveAgents]);
 
   // ---- Fetch initial data ----
 
@@ -174,6 +595,11 @@ export function OfficePage() {
         if (Array.isArray(data) && data.length > 0) {
           setAgents(data.map((a: Record<string, unknown>, i: number) => {
             const fallback = DEFAULT_AGENTS[i % DEFAULT_AGENTS.length];
+            const deskPos = DESK_POSITIONS[(a.id as string) || fallback.id];
+            const startX = deskPos ? deskPos.x + 1 : (3 + i * 10);
+            const startY = deskPos ? deskPos.y - 1 : 2;
+            const safeY = Math.max(1, Math.min(startY, ROWS - 2));
+            const safeX = Math.max(1, Math.min(startX, COLS - 2));
             return {
               id: (a.id as string) || fallback.id,
               name: (a.name as string) || fallback.name,
@@ -183,6 +609,12 @@ export function OfficePage() {
               state: 'idle' as AgentState,
               lastAction: 'Standing by',
               actionCount: 0,
+              x: safeX,
+              y: safeY,
+              targetX: safeX,
+              targetY: safeY,
+              path: [] as { x: number; y: number }[],
+              pathIdx: 0,
             };
           }));
           return;
@@ -539,12 +971,69 @@ export function OfficePage() {
         </div>
       </div>
 
-      {/* Main 3-column layout */}
-      <div className="flex flex-col lg:flex-row gap-4" style={{ minHeight: 'calc(100vh - 180px)' }}>
+      {/* PIXEL ART CANVAS (Hero) */}
+      <div
+        className="rounded-lg overflow-hidden"
+        style={{
+          backgroundColor: C.card,
+          border: `1px solid ${C.border}`,
+          boxShadow: `0 0 30px ${C.cyan}08, inset 0 0 30px ${C.cyan}03`,
+        }}
+      >
+        <canvas
+          ref={canvasRef}
+          onClick={handleCanvasClick}
+          className="w-full cursor-pointer"
+          style={{ imageRendering: 'pixelated', display: 'block' }}
+        />
+        {/* Canvas legend bar */}
+        <div
+          className="flex items-center justify-between px-4 py-2 border-t"
+          style={{ borderColor: C.border, backgroundColor: `${C.bg}80` }}
+        >
+          <div className="flex items-center gap-3 flex-wrap">
+            {agents.map(agent => (
+              <button
+                key={agent.id}
+                onClick={() => setSelectedAgentId(prev => prev === agent.id ? null : agent.id)}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-md transition-all text-xs"
+                style={{
+                  backgroundColor: selectedAgentId === agent.id ? `${agent.color}20` : 'transparent',
+                  border: `1px solid ${selectedAgentId === agent.id ? agent.color + '40' : 'transparent'}`,
+                  color: agent.color,
+                }}
+              >
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{
+                    backgroundColor: agent.color,
+                    boxShadow: agent.state !== 'idle' ? `0 0 4px ${agent.color}` : 'none',
+                  }}
+                />
+                <span className="font-medium">{agent.name}</span>
+                {agent.state !== 'idle' && (
+                  <span className="text-xs opacity-70">{stateLabel(agent.state)}</span>
+                )}
+              </button>
+            ))}
+          </div>
+          <span className="text-xs font-mono hidden sm:inline" style={{ color: C.muted }}>
+            Click agents to select
+          </span>
+        </div>
+      </div>
+
+      {/* MISSION CONTROL PANELS (Bottom 3-column) */}
+      <div className="flex flex-col lg:flex-row gap-4" style={{ minHeight: 360 }}>
         {/* LEFT: Agent Cards */}
         <div className="w-full lg:w-[280px] flex-shrink-0 flex flex-row lg:flex-col gap-3 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
           {agents.map(agent => (
-            <AgentCard key={agent.id} agent={agent} />
+            <AgentCard
+              key={agent.id}
+              agent={agent}
+              isSelected={agent.id === selectedAgentId}
+              onSelect={() => setSelectedAgentId(prev => prev === agent.id ? null : agent.id)}
+            />
           ))}
         </div>
 
@@ -568,8 +1057,8 @@ export function OfficePage() {
               backgroundColor: C.card,
               border: `1px solid ${C.border}`,
               borderTop: 'none',
-              maxHeight: 'calc(100vh - 240px)',
-              minHeight: 300,
+              maxHeight: 'calc(100vh - 560px)',
+              minHeight: 240,
             }}
             onMouseEnter={() => setIsHoveringFeed(true)}
             onMouseLeave={() => setIsHoveringFeed(false)}
@@ -643,16 +1132,17 @@ export function OfficePage() {
 
 // ---- Agent Card ----
 
-function AgentCard({ agent }: { agent: Agent }) {
+function AgentCard({ agent, isSelected, onSelect }: { agent: Agent; isSelected: boolean; onSelect: () => void }) {
   const isActive = agent.state !== 'idle';
   const color = AGENT_COLORS[agent.id] || agent.color;
 
   return (
-    <div
-      className="rounded-lg p-3.5 flex-shrink-0 lg:flex-shrink transition-all duration-300"
+    <button
+      onClick={onSelect}
+      className="rounded-lg p-3.5 flex-shrink-0 lg:flex-shrink transition-all duration-300 text-left w-full"
       style={{
-        backgroundColor: C.card,
-        border: `1px solid ${C.border}`,
+        backgroundColor: isSelected ? `${color}10` : C.card,
+        border: `1px solid ${isSelected ? color + '40' : C.border}`,
         borderLeft: `3px solid ${color}`,
         boxShadow: isActive ? `0 0 20px ${color}15, inset 0 0 20px ${color}05` : 'none',
         minWidth: 220,
@@ -707,7 +1197,7 @@ function AgentCard({ agent }: { agent: Agent }) {
       >
         {agent.lastAction.length > 60 ? agent.lastAction.slice(0, 57) + '...' : agent.lastAction}
       </p>
-    </div>
+    </button>
   );
 }
 
