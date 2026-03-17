@@ -154,7 +154,39 @@ export async function runMultiAgentOrchestration(
     }
   });
 
-  const results = await Promise.all(agentPromises);
+  const round1Results = await Promise.all(agentPromises);
+
+  // ── Round 2: Cross-pollination — each agent sees others' responses ──
+  const successfulRound1 = round1Results.filter(r => r.success);
+  let results = round1Results;
+
+  if (successfulRound1.length >= 2) {
+    const otherResponses = (agentId: string) =>
+      successfulRound1
+        .filter(r => r.agent !== agentId)
+        .map(r => `[${r.role}]: ${r.text.slice(0, 300)}`)
+        .join('\n\n');
+
+    const round2Promises = tasks.map(async (task) => {
+      const round1 = round1Results.find(r => r.agent === task.agent);
+      if (!round1?.success) return round1!;
+      try {
+        emitThinking(userId, task.agent, `${task.role} reviewing team input...`);
+        const personalityPrompt = getPersonalityPrompt(task.agent);
+        const refinementPrompt = `You are ${task.role}. User asked: "${userMessage}"\n\nYour initial take:\n${round1.text.slice(0, 400)}\n\nTeammates' perspectives:\n${otherResponses(task.agent)}\n\nWrite your FINAL refined response. Build on teammates' insights. Disagree where needed. Under 150 words.`;
+        const result = await routeChat(
+          [{ role: 'user', content: refinementPrompt }],
+          { systemPrompt: personalityPrompt, userId, userCredits, forceProvider: 'openrouter-free' },
+        );
+        emitResponding(userId, task.agent, `${task.role} finalized`);
+        return { agent: task.agent, role: task.role, text: result.reply, success: true };
+      } catch {
+        return round1;
+      }
+    });
+    results = await Promise.all(round2Promises);
+  }
+
   const duration = Date.now() - startTime;
 
   for (const task of tasks) {
@@ -162,7 +194,7 @@ export async function runMultiAgentOrchestration(
   }
 
   const successfulResults = results.filter(r => r.success);
-  logger.info({ userId, duration, successCount: successfulResults.length, totalCount: tasks.length }, 'multi-agent:complete');
+  logger.info({ userId, duration, successCount: successfulResults.length, totalCount: tasks.length, rounds: successfulRound1.length >= 2 ? 2 : 1 }, 'multi-agent:complete');
 
   if (successfulResults.length === 0) {
     return {
