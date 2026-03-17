@@ -1,5 +1,5 @@
 // ProactivePage.tsx -- Overhauled Proactive AI dashboard
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Bell,
   BellOff,
@@ -50,7 +50,7 @@ interface FeedbackRecord {
 
 type MessageCategory = "urgent" | "upcoming" | "insights" | "suggestions" | "celebrations";
 
-type FrequencyLevel = "conservative" | "balanced" | "proactive";
+type AutonomyLevel = "manual" | "assisted" | "proactive" | "autonomous";
 
 interface QuietHours {
   start: string; // "22:00"
@@ -269,12 +269,12 @@ function FrequencyCard({
   selected,
   onSelect,
 }: {
-  level: FrequencyLevel;
+  level: AutonomyLevel;
   label: string;
   description: string;
   icon: typeof Shield;
   selected: boolean;
-  onSelect: (level: FrequencyLevel) => void;
+  onSelect: (level: AutonomyLevel) => void;
 }) {
   return (
     <button
@@ -397,13 +397,9 @@ export function ProactivePage() {
   const [error, setError] = useState<string | null>(null);
   const [showConfig, setShowConfig] = useState(false);
 
-  // Client-side settings (persisted in localStorage)
-  const [quietHours, setQuietHours] = useState<QuietHours>(() =>
-    loadLocal("quiet_hours", { start: "22:00", end: "07:00" })
-  );
-  const [frequency, setFrequency] = useState<FrequencyLevel>(() =>
-    loadLocal("frequency", "balanced" as FrequencyLevel)
-  );
+  // Settings: server-persisted (quiet hours, autonomy) + client-side (type toggles, feedback)
+  const [quietHours, setQuietHours] = useState<QuietHours>({ start: "22:00", end: "07:00" });
+  const [autonomyLevel, setAutonomyLevel] = useState<AutonomyLevel>("proactive");
   const [typeToggles, setTypeToggles] = useState<TypeToggles>(() =>
     loadLocal("type_toggles", { reminders: true, insights: true, suggestions: true, celebrations: true })
   );
@@ -411,6 +407,9 @@ export function ProactivePage() {
     const stored = loadLocal<FeedbackRecord[]>("feedback", []);
     return new Map(stored.map(r => [r.messageId, r.helpful]));
   });
+
+  // Debounce timer ref for saving settings to server
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ---- Data fetching ---
 
@@ -422,9 +421,20 @@ export function ProactivePage() {
         api.get("/proactive/settings"),
       ]);
       const logData = logRes.data as { log: ProactiveMessage[] };
-      const settingsData = settingsRes.data as ProactiveSettings;
+      const settingsData = settingsRes.data as ProactiveSettings & {
+        autonomy_level?: AutonomyLevel;
+        quiet_start?: string;
+        quiet_end?: string;
+      };
       setMessages(logData.log ?? []);
       setEnabled(settingsData.enabled ?? true);
+      if (settingsData.autonomy_level) setAutonomyLevel(settingsData.autonomy_level);
+      if (settingsData.quiet_start || settingsData.quiet_end) {
+        setQuietHours({
+          start: settingsData.quiet_start ?? "22:00",
+          end: settingsData.quiet_end ?? "07:00",
+        });
+      }
       setError(null);
     } catch {
       setError("Failed to load proactive data. Please try again.");
@@ -472,18 +482,28 @@ export function ProactivePage() {
     });
   }, []);
 
+  // Debounced save to server for proactive settings
+  const debouncedSaveSettings = useCallback((payload: Record<string, string>) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      api.patch("/proactive/settings", payload).catch(() => {
+        // Non-fatal: settings will be re-sent on next change
+      });
+    }, 1000);
+  }, []);
+
   const handleQuietHoursChange = useCallback((field: "start" | "end", value: string) => {
     setQuietHours(prev => {
       const next = { ...prev, [field]: value };
-      saveLocal("quiet_hours", next);
+      debouncedSaveSettings(field === "start" ? { quiet_start: value } : { quiet_end: value });
       return next;
     });
-  }, []);
+  }, [debouncedSaveSettings]);
 
-  const handleFrequencyChange = useCallback((level: FrequencyLevel) => {
-    setFrequency(level);
-    saveLocal("frequency", level);
-  }, []);
+  const handleAutonomyChange = useCallback((level: AutonomyLevel) => {
+    setAutonomyLevel(level);
+    debouncedSaveSettings({ autonomy_level: level });
+  }, [debouncedSaveSettings]);
 
   const handleTypeToggle = useCallback((key: keyof TypeToggles) => {
     setTypeToggles(prev => {
@@ -503,12 +523,12 @@ export function ProactivePage() {
   const plannedMessages = useMemo((): PlannedMessage[] => {
     // Build a realistic "today's plan" based on current settings
     const plans: PlannedMessage[] = [];
-    if (!enabled) return plans;
+    if (!enabled || autonomyLevel === "manual") return plans;
     if (typeToggles.reminders) {
       plans.push({ time: "8:00 AM", label: "Morning briefing -- tasks, habits, calendar", type: "upcoming" });
       plans.push({ time: "10:00 AM", label: "Overdue reminder check", type: "urgent" });
     }
-    if (typeToggles.suggestions) {
+    if (typeToggles.suggestions && autonomyLevel !== "assisted") {
       plans.push({ time: "11:00 AM", label: "Habit nudge (if needed)", type: "suggestions" });
     }
     if (typeToggles.insights) {
@@ -517,11 +537,11 @@ export function ProactivePage() {
         plans.push({ time: "7:00 PM", label: "Weekly report and expense digest", type: "insights" });
       }
     }
-    if (typeToggles.celebrations) {
+    if (typeToggles.celebrations && autonomyLevel !== "assisted") {
       plans.push({ time: "Anytime", label: "Streak milestones (event-driven)", type: "celebrations" });
     }
     return plans;
-  }, [enabled, typeToggles]);
+  }, [enabled, typeToggles, autonomyLevel]);
 
   const categoryStats = useMemo(() => {
     const counts: Record<MessageCategory, number> = {
@@ -724,10 +744,10 @@ export function ProactivePage() {
           onClose={() => setShowConfig(false)}
           enabled={enabled}
           quietHours={quietHours}
-          frequency={frequency}
+          autonomyLevel={autonomyLevel}
           typeToggles={typeToggles}
           onQuietHoursChange={handleQuietHoursChange}
-          onFrequencyChange={handleFrequencyChange}
+          onAutonomyChange={handleAutonomyChange}
           onTypeToggle={handleTypeToggle}
         />
       </div>
@@ -766,20 +786,20 @@ function ConfigPanel({
   onClose,
   enabled,
   quietHours,
-  frequency,
+  autonomyLevel,
   typeToggles,
   onQuietHoursChange,
-  onFrequencyChange,
+  onAutonomyChange,
   onTypeToggle,
 }: {
   show: boolean;
   onClose: () => void;
   enabled: boolean;
   quietHours: QuietHours;
-  frequency: FrequencyLevel;
+  autonomyLevel: AutonomyLevel;
   typeToggles: TypeToggles;
   onQuietHoursChange: (field: "start" | "end", value: string) => void;
-  onFrequencyChange: (level: FrequencyLevel) => void;
+  onAutonomyChange: (level: AutonomyLevel) => void;
   onTypeToggle: (key: keyof TypeToggles) => void;
 }) {
   return (
@@ -870,37 +890,45 @@ function ConfigPanel({
             </CardContent>
           </Card>
 
-          {/* Frequency */}
+          {/* Autonomy Level */}
           <Card>
             <CardContent className="pt-5 pb-5 space-y-3">
               <div className="flex items-center gap-2 mb-1">
                 <Gauge className="h-4 w-4 text-[#00F0FF]" />
-                <p className="text-sm font-medium">Frequency</p>
+                <p className="text-sm font-medium">Autonomy Level</p>
               </div>
               <div className="space-y-2">
                 <FrequencyCard
-                  level="conservative"
-                  label="Conservative"
-                  description="Only critical alerts and morning briefing"
+                  level="manual"
+                  label="Manual"
+                  description="No proactive messages, you control everything"
                   icon={Shield}
-                  selected={frequency === "conservative"}
-                  onSelect={onFrequencyChange}
+                  selected={autonomyLevel === "manual"}
+                  onSelect={onAutonomyChange}
                 />
                 <FrequencyCard
-                  level="balanced"
-                  label="Balanced"
-                  description="Briefings, alerts, and weekly insights"
-                  icon={Zap}
-                  selected={frequency === "balanced"}
-                  onSelect={onFrequencyChange}
+                  level="assisted"
+                  label="Assisted"
+                  description="Only critical alerts and morning briefing"
+                  icon={Shield}
+                  selected={autonomyLevel === "assisted"}
+                  onSelect={onAutonomyChange}
                 />
                 <FrequencyCard
                   level="proactive"
                   label="Proactive"
-                  description="All messages including nudges and celebrations"
+                  description="Briefings, alerts, nudges, and celebrations"
+                  icon={Zap}
+                  selected={autonomyLevel === "proactive"}
+                  onSelect={onAutonomyChange}
+                />
+                <FrequencyCard
+                  level="autonomous"
+                  label="Autonomous"
+                  description="Full AI autonomy with all message types"
                   icon={Sparkles}
-                  selected={frequency === "proactive"}
-                  onSelect={onFrequencyChange}
+                  selected={autonomyLevel === "autonomous"}
+                  onSelect={onAutonomyChange}
                 />
               </div>
             </CardContent>

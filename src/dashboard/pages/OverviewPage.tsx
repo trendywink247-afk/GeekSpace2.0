@@ -18,6 +18,8 @@ import {
   Mic,
   Brain,
   CheckSquare,
+  CalendarDays,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,8 +30,60 @@ import { useDashboardStore } from '@/stores/dashboardStore';
 import {
   activityService,
   memoryService,
+  reminderService,
+  dashboardService,
 } from '@/services/api';
 import type { ConversationEntry } from '@/types';
+
+// ---------------------------------------------------------------------------
+// Overview API types (matches GET /api/dashboard/overview response)
+// ---------------------------------------------------------------------------
+
+interface OverviewReminder {
+  id: string;
+  text: string;
+  datetime: string;
+  category: string;
+  recurring: string;
+  priority: string;
+  overdue: boolean;
+}
+
+interface OverviewHabit {
+  id: number;
+  name: string;
+  icon: string;
+  streak: number;
+  loggedToday: boolean;
+}
+
+interface OverviewCalendarEvent {
+  id: number;
+  title: string;
+  start_time: number;
+  end_time: number | null;
+}
+
+interface OverviewWeeklyStats {
+  messagesThisWeek: number;
+  remindersCompleted: number;
+  habitsLogged: number;
+}
+
+interface OverviewRecentConversation {
+  id: string;
+  content: string;
+  created_at: string;
+}
+
+interface OverviewData {
+  greeting: string;
+  remindersDueToday: OverviewReminder[];
+  habitsToday: OverviewHabit[];
+  calendarEventsToday: OverviewCalendarEvent[];
+  weeklyStats: OverviewWeeklyStats;
+  recentConversations: OverviewRecentConversation[];
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -335,6 +389,11 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   // Day labels for sparkline
   const [dayLabels, setDayLabels] = useState<string[]>([]);
 
+  // GAP-1: Overview endpoint data
+  const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+  const [completingReminder, setCompletingReminder] = useState<string | null>(null);
+
   // Derived: today's reminders
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -364,6 +423,43 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
 
   // Onboarding: detect new user (first 7 days)
   const showOnboarding = isNewUser(user?.createdAt);
+
+  // GAP-1: Fetch unified overview endpoint
+  const fetchOverview = useCallback(async () => {
+    setOverviewLoading(true);
+    try {
+      const res = await dashboardService.overview();
+      setOverviewData(res.data as OverviewData);
+    } catch {
+      // Non-fatal: overview sections show empty state
+    } finally {
+      setOverviewLoading(false);
+    }
+  }, []);
+
+  // GAP-1: Complete a reminder via the overview card
+  const handleCompleteReminder = useCallback(async (id: string) => {
+    setCompletingReminder(id);
+    try {
+      await reminderService.update(id, { completed: true });
+      // Optimistically remove from overview
+      setOverviewData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          remindersDueToday: prev.remindersDueToday.filter((r) => r.id !== id),
+          weeklyStats: {
+            ...prev.weeklyStats,
+            remindersCompleted: prev.weeklyStats.remindersCompleted + 1,
+          },
+        };
+      });
+    } catch {
+      // Silently fail — user can retry
+    } finally {
+      setCompletingReminder(null);
+    }
+  }, []);
 
   // Load data
   const fetchOverviewData = useCallback(async () => {
@@ -401,7 +497,8 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   useEffect(() => {
     setMounted(true);
     fetchOverviewData();
-  }, [fetchOverviewData]);
+    fetchOverview();
+  }, [fetchOverviewData, fetchOverview]);
 
   // Show iOS install banner after 3s if applicable
   useEffect(() => {
@@ -413,8 +510,8 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
     onRefresh?.();
-    fetchOverviewData().finally(() => setIsRefreshing(false));
-  }, [onRefresh, fetchOverviewData]);
+    Promise.all([fetchOverviewData(), fetchOverview()]).finally(() => setIsRefreshing(false));
+  }, [onRefresh, fetchOverviewData, fetchOverview]);
 
   const handleIOSDismiss = useCallback(() => {
     localStorage.setItem(IOS_DISMISS_KEY, String(Date.now()));
@@ -895,6 +992,307 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
             )}
           </section>
         </div>
+
+        {/* ─── GAP-1: Today's Reminders Card ─── */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2
+              className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider"
+              style={{ fontFamily: 'Syne, sans-serif' }}
+            >
+              Today&apos;s Reminders
+            </h2>
+            <button
+              onClick={() => onNavigate?.('reminders')}
+              className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+            >
+              All reminders
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+          <Card
+            className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl overflow-hidden"
+            style={{ background: '#0C0C18' }}
+          >
+            <CardContent className="p-0">
+              {overviewLoading ? (
+                <div className="divide-y divide-[#00F0FF]/5">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="p-4 flex items-center gap-3">
+                      <Skeleton className="w-8 h-8 rounded-lg flex-shrink-0" />
+                      <div className="flex-1 space-y-1.5">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/3" />
+                      </div>
+                      <Skeleton className="w-14 h-7 rounded-md" />
+                    </div>
+                  ))}
+                </div>
+              ) : overviewData && overviewData.remindersDueToday.length > 0 ? (
+                <div className="divide-y divide-[#00F0FF]/5">
+                  {overviewData.remindersDueToday.map((rem) => (
+                    <div
+                      key={rem.id}
+                      className={`p-4 flex items-center gap-3 ${rem.overdue ? 'bg-[#FF2D78]/[0.04]' : ''}`}
+                    >
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background: rem.overdue ? 'rgba(255,45,120,0.12)' : 'rgba(0,240,255,0.08)',
+                        }}
+                      >
+                        <Bell className="w-4 h-4" style={{ color: rem.overdue ? '#FF2D78' : '#00F0FF' }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#F4F6FF] truncate">{rem.text}</p>
+                        <span className={`text-xs ${rem.overdue ? 'text-[#FF2D78]' : 'text-[#8892A4]'}`}>
+                          {rem.overdue ? 'Overdue - ' : ''}
+                          {new Date(rem.datetime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={completingReminder === rem.id}
+                        onClick={() => handleCompleteReminder(rem.id)}
+                        className="text-[#ADFF2F] hover:bg-[#ADFF2F]/10 text-xs px-2 h-7 rounded-md"
+                      >
+                        {completingReminder === rem.id ? (
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <>
+                            <Check className="w-3 h-3 mr-1" />
+                            Done
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 text-center">
+                  <CheckCircle2 className="w-6 h-6 text-[#ADFF2F]/40 mx-auto mb-1.5" />
+                  <p className="text-sm text-[#ADFF2F]">No reminders for today</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ─── GAP-1: Habits Today Card ─── */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2
+              className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider"
+              style={{ fontFamily: 'Syne, sans-serif' }}
+            >
+              Habits Today
+            </h2>
+            <button
+              onClick={() => onNavigate?.('reminders')}
+              className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+            >
+              Manage
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+          <Card
+            className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl overflow-hidden"
+            style={{ background: '#0C0C18' }}
+          >
+            <CardContent className="p-0">
+              {overviewLoading ? (
+                <div className="p-4 space-y-3">
+                  <Skeleton className="h-3 w-24 mb-2" />
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="w-8 h-8 rounded-lg" />
+                      <div className="flex-1 space-y-1">
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-3 w-1/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : overviewData && overviewData.habitsToday.length > 0 ? (
+                <>
+                  {/* Progress bar */}
+                  <div className="px-4 pt-4 pb-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-[#8892A4]">
+                        {overviewData.habitsToday.filter((h) => h.loggedToday).length}/{overviewData.habitsToday.length} habits done
+                      </span>
+                      <span className="text-xs font-mono text-[#ADFF2F]">
+                        {Math.round((overviewData.habitsToday.filter((h) => h.loggedToday).length / overviewData.habitsToday.length) * 100)}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-[#1A1A2E] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#ADFF2F] to-[#00F0FF] transition-all duration-500"
+                        style={{
+                          width: `${(overviewData.habitsToday.filter((h) => h.loggedToday).length / overviewData.habitsToday.length) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="divide-y divide-[#00F0FF]/5">
+                    {overviewData.habitsToday.map((habit) => (
+                      <div
+                        key={habit.id}
+                        className="px-4 py-3 flex items-center gap-3"
+                      >
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-base"
+                          style={{ background: habit.loggedToday ? 'rgba(173,255,47,0.1)' : 'rgba(139,92,246,0.08)' }}
+                        >
+                          {habit.icon === 'star' ? <Target className="w-4 h-4 text-[#8B5CF6]" /> : habit.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm ${habit.loggedToday ? 'text-[#ADFF2F]' : 'text-[#F4F6FF]'}`}>
+                            {habit.name}
+                          </p>
+                          <span className="text-xs text-[#8892A4]">
+                            {habit.streak > 0 ? `${habit.streak} day streak` : 'No streak yet'}
+                          </span>
+                        </div>
+                        {habit.loggedToday ? (
+                          <div className="w-7 h-7 rounded-full bg-[#ADFF2F]/15 flex items-center justify-center flex-shrink-0">
+                            <Check className="w-4 h-4 text-[#ADFF2F]" />
+                          </div>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onNavigate?.('reminders')}
+                            className="text-[#8B5CF6] hover:bg-[#8B5CF6]/10 text-xs px-2 h-7 rounded-md"
+                          >
+                            Log
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="p-6 text-center">
+                  <Target className="w-6 h-6 text-[#8892A4]/30 mx-auto mb-1.5" />
+                  <p className="text-sm text-[#8892A4]">No habits set up yet</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-1.5 text-[#00F0FF]"
+                    onClick={() => onNavigate?.('reminders')}
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    Create a habit
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ─── GAP-1: Calendar Today Card ─── */}
+        {overviewData && overviewData.calendarEventsToday.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2
+                className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider"
+                style={{ fontFamily: 'Syne, sans-serif' }}
+              >
+                Calendar Today
+              </h2>
+              <button
+                onClick={() => onNavigate?.('calendar')}
+                className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+              >
+                Full calendar
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+            <Card
+              className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl overflow-hidden"
+              style={{ background: '#0C0C18' }}
+            >
+              <CardContent className="p-0">
+                <div className="divide-y divide-[#00F0FF]/5">
+                  {overviewData.calendarEventsToday.slice(0, 4).map((evt) => {
+                    const startDate = new Date(evt.start_time);
+                    const endDate = evt.end_time ? new Date(evt.end_time) : null;
+                    const now = Date.now();
+                    const isCurrent = evt.start_time <= now && (evt.end_time ? evt.end_time >= now : true);
+                    return (
+                      <div
+                        key={evt.id}
+                        className={`p-4 flex items-center gap-3 ${isCurrent ? 'bg-[#00F0FF]/[0.04] border-l-2 border-l-[#00F0FF]' : ''}`}
+                      >
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: isCurrent ? 'rgba(0,240,255,0.12)' : 'rgba(139,92,246,0.08)' }}
+                        >
+                          <CalendarDays className="w-4 h-4" style={{ color: isCurrent ? '#00F0FF' : '#8B5CF6' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-[#F4F6FF] truncate">{evt.title}</p>
+                          <span className="text-xs text-[#8892A4]">
+                            {startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                            {endDate ? ` - ${endDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}
+                          </span>
+                        </div>
+                        {isCurrent && (
+                          <span className="text-[10px] font-medium text-[#00F0FF] bg-[#00F0FF]/10 px-2 py-0.5 rounded-full">
+                            NOW
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        {/* ─── GAP-1: Weekly Stats Card ─── */}
+        {overviewData && (
+          <section>
+            <h2
+              className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider mb-3"
+              style={{ fontFamily: 'Syne, sans-serif' }}
+            >
+              This Week
+            </h2>
+            <div className="grid grid-cols-3 gap-3">
+              <Card className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl" style={{ background: '#0C0C18' }}>
+                <CardContent className="p-4 text-center">
+                  <MessageSquare className="w-5 h-5 text-[#00F0FF] mx-auto mb-1.5" />
+                  <div className="text-xl font-bold text-[#00F0FF] font-mono">
+                    {overviewData.weeklyStats.messagesThisWeek}
+                  </div>
+                  <div className="text-[10px] text-[#8892A4] mt-0.5">Messages</div>
+                </CardContent>
+              </Card>
+              <Card className="border-[#ADFF2F]/10 bg-[#0C0C18] rounded-2xl" style={{ background: '#0C0C18' }}>
+                <CardContent className="p-4 text-center">
+                  <CheckCircle2 className="w-5 h-5 text-[#ADFF2F] mx-auto mb-1.5" />
+                  <div className="text-xl font-bold text-[#ADFF2F] font-mono">
+                    {overviewData.weeklyStats.remindersCompleted}
+                  </div>
+                  <div className="text-[10px] text-[#8892A4] mt-0.5">Reminders Done</div>
+                </CardContent>
+              </Card>
+              <Card className="border-[#8B5CF6]/10 bg-[#0C0C18] rounded-2xl" style={{ background: '#0C0C18' }}>
+                <CardContent className="p-4 text-center">
+                  <Target className="w-5 h-5 text-[#8B5CF6] mx-auto mb-1.5" />
+                  <div className="text-xl font-bold text-[#8B5CF6] font-mono">
+                    {overviewData.weeklyStats.habitsLogged}
+                  </div>
+                  <div className="text-[10px] text-[#8892A4] mt-0.5">Habits Logged</div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
 
         {/* ─── Onboarding Checklist (new users, first 7 days) ─── */}
         {showOnboarding && (

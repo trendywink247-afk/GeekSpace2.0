@@ -130,6 +130,158 @@ dashboardRouter.get('/quick-stats', requireAuth, async (req: AuthRequest, res) =
   res.json(payload);
 });
 
+// ── GAP-1: Unified dashboard overview — single fetch for OverviewPage ────────
+dashboardRouter.get('/overview', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  // Fetch user info (name + timezone) for personalized greeting
+  const user = db.prepare('SELECT name, timezone FROM users WHERE id = ?').get(userId) as
+    { name: string; timezone: string } | undefined;
+  const firstName = user?.name?.split(' ')[0] || 'there';
+  const tz = user?.timezone || 'Asia/Kolkata';
+
+  // Determine current hour in user's timezone for greeting
+  let userHour: number;
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false });
+    userHour = parseInt(formatter.format(new Date()), 10);
+  } catch {
+    userHour = new Date().getHours();
+  }
+
+  let timeOfDay: string;
+  if (userHour < 12) timeOfDay = 'Good morning';
+  else if (userHour < 18) timeOfDay = 'Good afternoon';
+  else timeOfDay = 'Good evening';
+  const greeting = `${timeOfDay}, ${firstName}`;
+
+  // Today boundaries in ISO (UTC) for queries
+  const todayISO = new Date().toISOString().split('T')[0];
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowISO = tomorrowDate.toISOString().split('T')[0];
+
+  // Today boundaries as epoch ms (for tables using INTEGER timestamps)
+  const nowMs = Date.now();
+  const todayStartMs = new Date(todayISO + 'T00:00:00Z').getTime();
+  const tomorrowStartMs = new Date(tomorrowISO + 'T00:00:00Z').getTime();
+
+  // Week boundary for stats
+  const weekAgoDate = new Date();
+  weekAgoDate.setDate(weekAgoDate.getDate() - 7);
+  const weekAgoISO = weekAgoDate.toISOString().split('T')[0];
+  const weekAgoMs = weekAgoDate.getTime();
+
+  // ---- Fresh queries (reminders + habits — no cache) ----
+  const fetchFresh = () => {
+    // Incomplete reminders due in next 24h (datetime is ISO string)
+    const remindersDueToday = db.prepare(`
+      SELECT id, text, datetime, category, recurring, priority
+      FROM reminders
+      WHERE user_id = ? AND completed = 0
+        AND datetime IS NOT NULL AND datetime != ''
+        AND datetime >= ? AND datetime < ?
+      ORDER BY datetime ASC
+      LIMIT 10
+    `).all(userId, todayISO, tomorrowISO) as {
+      id: string; text: string; datetime: string;
+      category: string; recurring: string; priority: string;
+    }[];
+
+    // All habits with loggedToday flag via LEFT JOIN
+    const habitsToday = db.prepare(`
+      SELECT h.id, h.name, h.icon, h.current_streak AS streak,
+        CASE WHEN hl.id IS NOT NULL THEN 1 ELSE 0 END AS loggedToday
+      FROM habits h
+      LEFT JOIN habit_logs hl
+        ON hl.habit_id = h.id
+        AND hl.logged_at >= ? AND hl.logged_at < ?
+      WHERE h.user_id = ?
+      ORDER BY h.name ASC
+    `).all(todayStartMs, tomorrowStartMs, userId) as {
+      id: number; name: string; icon: string; streak: number; loggedToday: number;
+    }[];
+
+    return { remindersDueToday, habitsToday };
+  };
+
+  // ---- Cacheable queries (weekly stats + recent conversations) ----
+  const cacheKey = `dashboard:overview:${userId}`;
+  let weeklyStats: { messagesThisWeek: number; remindersCompleted: number; habitsLogged: number };
+  let recentConversations: { id: string; content: string; created_at: string }[];
+  let calendarEventsToday: { id: number; title: string; start_time: number; end_time: number | null }[];
+
+  try {
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      weeklyStats = parsed.weeklyStats;
+      recentConversations = parsed.recentConversations;
+      calendarEventsToday = parsed.calendarEventsToday;
+    } else {
+      throw new Error('cache miss');
+    }
+  } catch {
+    // Cache miss or unavailable — query DB
+    const messagesThisWeek = (db.prepare(
+      "SELECT COUNT(*) as n FROM conversation_log WHERE user_id = ? AND created_at >= ?"
+    ).get(userId, weekAgoISO) as { n: number }).n;
+
+    const remindersCompleted = (db.prepare(
+      "SELECT COUNT(*) as n FROM reminders WHERE user_id = ? AND completed = 1 AND datetime >= ? AND datetime < ?"
+    ).get(userId, weekAgoISO, tomorrowISO) as { n: number }).n;
+
+    const habitsLogged = (db.prepare(
+      "SELECT COUNT(*) as n FROM habit_logs WHERE user_id = ? AND logged_at >= ?"
+    ).get(userId, weekAgoMs) as { n: number }).n;
+
+    weeklyStats = { messagesThisWeek, remindersCompleted, habitsLogged };
+
+    recentConversations = db.prepare(`
+      SELECT id, content, created_at
+      FROM conversation_log
+      WHERE user_id = ? AND role = 'assistant'
+      ORDER BY created_at DESC
+      LIMIT 5
+    `).all(userId) as { id: string; content: string; created_at: string }[];
+
+    calendarEventsToday = db.prepare(`
+      SELECT id, title, start_time, end_time
+      FROM calendar_events
+      WHERE user_id = ? AND start_time >= ? AND start_time < ?
+      ORDER BY start_time ASC
+      LIMIT 8
+    `).all(userId, todayStartMs, tomorrowStartMs) as { id: number; title: string; start_time: number; end_time: number | null }[];
+
+    // Write to cache (60s TTL) — fire and forget
+    try {
+      await cacheSet(cacheKey, JSON.stringify({ weeklyStats, recentConversations, calendarEventsToday }), 60);
+    } catch { /* non-fatal */ }
+  }
+
+  // Fetch fresh data (always from DB, never cached)
+  const { remindersDueToday, habitsToday } = fetchFresh();
+
+  // Mark overdue reminders
+  const nowISO = new Date().toISOString();
+  const remindersWithOverdue = remindersDueToday.map(r => ({
+    ...r,
+    overdue: r.datetime < nowISO,
+  }));
+
+  res.json({
+    greeting,
+    remindersDueToday: remindersWithOverdue,
+    habitsToday: habitsToday.map(h => ({
+      ...h,
+      loggedToday: h.loggedToday === 1,
+    })),
+    calendarEventsToday,
+    weeklyStats,
+    recentConversations,
+  });
+});
+
 dashboardRouter.post('/contact', validateBody(contactSchema), (req, res) => {
   const { name, email, company, message } = req.body;
 

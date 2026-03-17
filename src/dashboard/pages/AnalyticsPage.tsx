@@ -160,14 +160,6 @@ function SkeletonBar() {
   );
 }
 
-function SkeletonInsight() {
-  return (
-    <div className="border-l-2 border-[#1a1a2e] pl-4 py-2 animate-pulse">
-      <div className="h-4 w-64 bg-[#1a1a2e] rounded" />
-    </div>
-  );
-}
-
 // ── Trend Arrow Component ───────────────────────────────────────
 
 function TrendArrow({ trend }: { trend: 'up' | 'down' | 'flat' }) {
@@ -431,6 +423,21 @@ function ActivityHeatmap({
   );
 }
 
+// ── AI Insight Types ────────────────────────────────────────────
+
+interface AIInsight {
+  icon: string;
+  text: string;
+  type: 'positive' | 'warning' | 'tip' | 'achievement';
+}
+
+const INSIGHT_BORDER_COLORS: Record<string, string> = {
+  achievement: '#ADFF2F',
+  warning: '#F59E0B',
+  tip: '#00F0FF',
+  positive: '#8B5CF6',
+};
+
 // ── AI Insight Card ─────────────────────────────────────────────
 
 function InsightCard({ text }: { text: string }) {
@@ -438,6 +445,32 @@ function InsightCard({ text }: { text: string }) {
     <div className="border-l-2 border-[#ADFF2F] pl-4 py-2 flex items-start gap-2.5">
       <Lightbulb className="w-4 h-4 text-[#ADFF2F] mt-0.5 flex-shrink-0" />
       <span className="text-sm text-[#F4F6FF]">{text}</span>
+    </div>
+  );
+}
+
+function AIInsightCard({ insight }: { insight: AIInsight }) {
+  const borderColor = INSIGHT_BORDER_COLORS[insight.type] ?? '#8B5CF6';
+  return (
+    <div
+      className="border-l-2 pl-4 py-2 flex items-start gap-2.5"
+      style={{ borderColor }}
+    >
+      <span className="text-base mt-0.5 flex-shrink-0 leading-none">{insight.icon}</span>
+      <span className="text-sm text-[#F4F6FF]">{insight.text}</span>
+    </div>
+  );
+}
+
+function SkeletonInsightCard() {
+  return (
+    <div className="border-l-2 border-[#1a1a2e] pl-4 py-3 animate-pulse">
+      <div className="flex items-start gap-2.5">
+        <div className="w-5 h-5 rounded bg-[#1a1a2e] flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-48 bg-[#1a1a2e] rounded" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -530,6 +563,27 @@ export function AnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<TimePeriod>('week');
 
+  // GAP-7: AI-generated insights
+  const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
+  const [aiInsightsLoading, setAiInsightsLoading] = useState(false);
+  const [aiInsightsError, setAiInsightsError] = useState(false);
+
+  const loadAiInsights = useCallback(async (refresh = false) => {
+    setAiInsightsLoading(true);
+    setAiInsightsError(false);
+    try {
+      const res = await api.get<{ insights: AIInsight[]; generatedAt: string }>(
+        'analytics/insights',
+        { params: refresh ? { refresh: 'true' } : {} }
+      );
+      setAiInsights(res.data.insights ?? []);
+    } catch {
+      setAiInsightsError(true);
+    } finally {
+      setAiInsightsLoading(false);
+    }
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -583,7 +637,8 @@ export function AnalyticsPage() {
 
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadAiInsights();
+  }, [load, loadAiInsights]);
 
   // ── Compute period-filtered data ──────────────────────────────
 
@@ -936,14 +991,37 @@ export function AnalyticsPage() {
 
       {/* 3. AI-Generated Insights Panel */}
       <section className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5">
-        <h2 className="text-sm font-semibold text-[#F4F6FF] mb-4 flex items-center gap-2">
-          <Zap className="w-4 h-4 text-[#ADFF2F]" />
-          AI Insights
-        </h2>
-        {loading ? (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-[#F4F6FF] flex items-center gap-2">
+            <Zap className="w-4 h-4 text-[#ADFF2F]" />
+            AI Insights
+          </h2>
+          <button
+            onClick={() => void loadAiInsights(true)}
+            disabled={aiInsightsLoading}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#12121F] border border-[#00F0FF]/10 text-[#8892A4] hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all text-xs min-h-[36px]"
+            title="Regenerate insights"
+          >
+            <RefreshCw className={`w-3 h-3 ${aiInsightsLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+        </div>
+        {aiInsightsLoading ? (
           <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <SkeletonInsight key={i} />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonInsightCard key={i} />
+            ))}
+          </div>
+        ) : aiInsights.length > 0 ? (
+          <div className="space-y-3">
+            {aiInsights.map((insight, i) => (
+              <AIInsightCard key={i} insight={insight} />
+            ))}
+          </div>
+        ) : aiInsightsError ? (
+          <div className="space-y-3">
+            {insights.map((text, i) => (
+              <InsightCard key={i} text={text} />
             ))}
           </div>
         ) : (

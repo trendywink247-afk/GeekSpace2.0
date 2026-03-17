@@ -2170,6 +2170,11 @@ try { db.exec(`ALTER TABLE agent_configs ADD COLUMN verbosity INTEGER DEFAULT 50
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN humor INTEGER DEFAULT 50`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN empathy INTEGER DEFAULT 50`); } catch { /* column already exists */ }
 
+// GAP-10: Proactive settings persistence columns
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN autonomy_level TEXT DEFAULT 'proactive'`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN quiet_start TEXT DEFAULT '22:00'`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN quiet_end TEXT DEFAULT '07:00'`); } catch { /* column already exists */ }
+
 // Performance indexes for hot-path queries (additive — IF NOT EXISTS is safe)
 // reminders: user + scheduled_for for durable-scheduler lookups
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reminders_user_scheduled ON reminders(user_id, scheduled_for)`); } catch { /* already exists */ }

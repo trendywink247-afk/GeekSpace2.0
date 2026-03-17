@@ -650,6 +650,8 @@ export const dashboardService = {
   stats: () => api.get<DashboardStats>('/dashboard/stats'),
   // 65.5: Lightweight quick-stats (Redis-cached 60s)
   quickStats: () => api.get<{ remindersActive: number; messagesToday: number; automationsActive: number }>('/dashboard/quick-stats'),
+  // GAP-1: Unified overview endpoint for OverviewPage
+  overview: () => api.get('/dashboard/overview'),
 };
 
 // ----- Explore / Directory -----------------------------------

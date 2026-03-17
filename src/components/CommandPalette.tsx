@@ -216,7 +216,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       title: 'Voice Chat',
       subtitle: 'Talk with your agent',
       icon: <Mic className="w-4 h-4" />,
-      action: () => { navigate('/dashboard/chat?voice=1'); onClose(); },
+      action: () => { navigate('/dashboard/voice'); onClose(); },
       category: 'Actions',
     },
 

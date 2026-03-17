@@ -43,9 +43,37 @@ async function sendViaTelegram(userId: string, message: string): Promise<boolean
 function isProactiveEnabled(userId: string): boolean {
   try {
     const user = db.prepare('SELECT proactive_enabled FROM users WHERE id = ?').get(userId) as { proactive_enabled: number } | undefined;
-    return user?.proactive_enabled !== 0;
+    if (user?.proactive_enabled === 0) return false;
+    // GAP-10: respect autonomy_level -- manual means no proactive messages at all
+    const config = db.prepare('SELECT autonomy_level FROM agent_configs WHERE user_id = ?').get(userId) as { autonomy_level: string | null } | undefined;
+    if (config?.autonomy_level === 'manual') return false;
+    return true;
   } catch {
     return true;
+  }
+}
+
+// GAP-10: Check if current time is within user's quiet hours
+function isQuietHours(userId: string, tz: string): boolean {
+  try {
+    const config = db.prepare('SELECT quiet_start, quiet_end FROM agent_configs WHERE user_id = ?').get(userId) as { quiet_start: string | null; quiet_end: string | null } | undefined;
+    if (!config?.quiet_start || !config?.quiet_end) return false;
+    const [startH, startM] = config.quiet_start.split(':').map(Number);
+    const [endH, endM] = config.quiet_end.split(':').map(Number);
+    const nowStr = new Date().toLocaleString('en-US', { timeZone: tz, hour: 'numeric', minute: 'numeric', hour12: false });
+    const parts = nowStr.split(':');
+    const nowH = parseInt(parts[0], 10);
+    const nowM = parseInt(parts[1], 10);
+    const nowMinutes = nowH * 60 + nowM;
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    // Handle overnight range (e.g., 22:00 to 07:00)
+    if (startMinutes <= endMinutes) {
+      return nowMinutes >= startMinutes && nowMinutes < endMinutes;
+    }
+    return nowMinutes >= startMinutes || nowMinutes < endMinutes;
+  } catch {
+    return false;
   }
 }
 
@@ -298,6 +326,10 @@ async function runProactiveChecks(): Promise<void> {
       if (isThrottled(user.id)) continue;
 
       const tz = user.timezone || 'Asia/Kolkata';
+
+      // GAP-10: skip proactive messages during quiet hours
+      if (isQuietHours(user.id, tz)) continue;
+
       const hour = getUserHour(tz);
       const todayStr = getUserDateStr(tz);
       const dayStart = new Date(todayStr + 'T00:00:00Z').getTime();
