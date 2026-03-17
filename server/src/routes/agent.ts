@@ -27,6 +27,7 @@ import { sendTelegramNotification, escapeTelegramHtml } from '../services/telegr
 import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../services/agent-chat.js';
 import { fetchAndExtract } from '../services/web-research.js';
 import { buildPersonalityInstructions } from '../services/message-router.js';
+import { logActivity } from '../services/activity-log.js';
 
 export const agentRouter = Router();
 
@@ -1003,6 +1004,9 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     // Increment rate limit tracker for UI display
     incrementRateLimitTracker(userId as unknown as number).catch(() => {});
 
+    // Push activity for office page live sync
+    logActivity(String(userId), 'Agent replied', `Responded via ${result.provider}`, 'bot');
+
     res.json(response);
   } catch (err) {
     logger.error({ err, userId }, 'Chat handler error');
@@ -1387,6 +1391,31 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     const intent = classifyIntent(message);
     const userCredits = (user?.credits as number) || 0;
     const agentName = (agentConfig?.name as string) || 'Geek';
+
+    // Push activity for office page live sync
+    logActivity(String(userId), 'Thinking...', `${agentName} is processing`, 'brain');
+
+    // Check for launch mode (multi-agent council) FIRST
+    const { isLaunchModeRequest, runMultiAgentOrchestration } = await import('../services/multi-agent-orchestrator.js');
+    if (isLaunchModeRequest(message)) {
+      const write = (data: unknown) => { try { res.write(`data: ${JSON.stringify(data)}\n\n`); } catch { /* disconnected */ } };
+      write({ step: { type: 'thinking', content: 'Assembling your agent council...', iteration: 0 }, done: false });
+      logActivity(String(userId), 'Agent council', 'Launch mode activated', 'sparkles');
+
+      const orchResult = await runMultiAgentOrchestration(message, String(userId), userCredits);
+      if (orchResult.success) {
+        for (const ar of orchResult.agentResults) {
+          write({ text: `**${ar.role}** (${ar.agent.charAt(0).toUpperCase() + ar.agent.slice(1)}):\n${ar.text}\n\n---\n\n`, done: false });
+          logActivity(String(userId), `${ar.agent} responded`, ar.text.slice(0, 60), 'bot');
+        }
+      } else {
+        write({ text: orchResult.text, done: false });
+      }
+      write({ text: '', done: true, provider: 'multi-agent', model: 'council' });
+      logActivity(String(userId), 'Council complete', `${orchResult.totalAgents} agents responded`, 'sparkles');
+      res.end();
+      return;
+    }
 
     // For complex/coding/planning intents, use ReAct loop with visible thinking steps
     if (intent === 'coding' || intent === 'planning' || intent === 'complex') {
@@ -2281,6 +2310,13 @@ agentRouter.get('/rate-limit-status', requireAuth, async (req: AuthRequest, res)
     ...status,
     resetAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
   });
+});
+
+// ── Morning Briefing: manual trigger ─────────────────────────────────
+agentRouter.post('/morning-briefing', requireAuth, async (req: AuthRequest, res) => {
+  const { deliverMorningBriefing } = await import('../services/morning-operator.js');
+  await deliverMorningBriefing(String(req.userId));
+  res.json({ ok: true, message: 'Morning briefing triggered' });
 });
 
 // ── Phase 109: Conversation Quality Rating ─────────────────────────────────

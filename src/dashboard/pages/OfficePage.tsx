@@ -426,60 +426,82 @@ export function OfficePage() {
     }, 10000);
   }, [fetchActivity, fetchStatus]);
 
+  // Map activity events to agent state changes
+  const applyActivityToAgent = useCallback((item: ActivityItem) => {
+    const icon = item.agent;
+    const action = item.action.toLowerCase();
+
+    const agentId =
+      action.includes('weebo') ? 'weebo' :
+      action.includes('edith') ? 'edith' :
+      action.includes('jarvis') ? 'jarvis' :
+      action.includes('aria') ? 'aria' :
+      action.includes('forge') ? 'forge' :
+      ['bot', 'brain', 'sparkles', 'cpu'].includes(icon) ? 'weebo' :
+      ['briefcase', 'zap', 'link', 'code'].includes(icon) ? 'edith' :
+      ['bell', 'clock', 'calendar'].includes(icon) ? 'jarvis' : null;
+
+    if (!agentId) return;
+
+    const state: OfficeAgent['state'] =
+      ['bot', 'brain', 'sparkles', 'cpu', 'zap'].includes(icon) ? 'typing' :
+      ['file', 'briefcase', 'code', 'image'].includes(icon) ? 'reading' :
+      ['bell', 'message', 'clock'].includes(icon) ? 'thinking' : 'idle';
+
+    setAgents(prev => prev.map(a =>
+      a.id === agentId
+        ? { ...a, state, lastAction: item.action, actionCount: a.actionCount + 1 }
+        : a
+    ));
+  }, []);
+
   const connectSSE = useCallback(() => {
-    if (sseRef.current) sseRef.current.close();
-    try {
-      const token = localStorage.getItem('gs_token') || '';
-      const url = `${apiBase()}/api/activity/stream${token ? `?token=${encodeURIComponent(token)}` : ''}`;
-      const es = new EventSource(url);
-      sseRef.current = es;
+    if (sseRef.current) (sseRef.current as { close: () => void }).close();
+    const token = localStorage.getItem('gs_token');
+    if (!token) { startPolling(); return; }
 
-      es.onopen = () => {
-        setConnectionMode('sse');
-        if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-      };
+    const ctrl = new AbortController();
+    sseRef.current = { close: () => ctrl.abort() } as unknown as EventSource;
 
-      es.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.activity) {
+    fetch(`${apiBase()}/api/activity/stream`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: ctrl.signal,
+    }).then(async (res) => {
+      if (!res.ok || !res.body) { startPolling(); return; }
+      setConnectionMode('sse');
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (line.startsWith(':')) continue;
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.slice(6)) as Record<string, unknown>;
             const item: ActivityItem = {
-              id: data.id || String(Date.now()),
-              agent: data.agent || data.icon || 'system',
-              action: data.action || data.details || 'Activity',
-              time: data.created_at || new Date().toISOString(),
+              id: (data.id as string) || String(Date.now()),
+              agent: (data.icon as string) || 'system',
+              action: (data.action as string) || (data.details as string) || 'Activity',
+              time: (data.created_at as string) || new Date().toISOString(),
             };
             setFeed(prev => [item, ...prev].slice(0, 50));
-          }
-          // Update agent states if broadcast
-          if (data.agentStates && Array.isArray(data.agentStates)) {
-            setAgents(prev => prev.map(a => {
-              const update = (data.agentStates as Record<string, unknown>[]).find((s: Record<string, unknown>) => s.id === a.id);
-              if (update) {
-                return {
-                  ...a,
-                  state: (['idle', 'typing', 'reading', 'thinking'].includes(update.state as string) ? update.state : a.state) as OfficeAgent['state'],
-                  actionCount: (update.actionCount as number) ?? a.actionCount,
-                  lastAction: (update.lastAction as string) ?? a.lastAction,
-                };
-              }
-              return a;
-            }));
-          }
-        } catch { /* ignore malformed */ }
-      };
-
-      es.onerror = () => {
-        es.close();
-        sseRef.current = null;
-        setConnectionMode('polling');
-        startPolling();
-      };
-    } catch {
-      setConnectionMode('polling');
-      startPolling();
-    }
-  }, [startPolling]);
+            applyActivityToAgent(item);
+          } catch { /* skip malformed */ }
+        }
+      }
+    }).catch(() => {
+      if (!ctrl.signal.aborted) startPolling();
+    });
+  }, [startPolling, applyActivityToAgent]);
 
   // ---- Agent wandering logic ----
 
@@ -505,19 +527,6 @@ export function OfficePage() {
     }));
   }, []);
 
-  // ---- Random state changes ----
-
-  const randomStateChange = useCallback(() => {
-    if (tickRef.current % 25 !== 0) return;
-    setAgents(prev => prev.map(agent => {
-      if (Math.random() < 0.3) {
-        const states: OfficeAgent['state'][] = ['idle', 'typing', 'reading', 'thinking'];
-        return { ...agent, state: states[Math.floor(Math.random() * states.length)] };
-      }
-      return agent;
-    }));
-  }, []);
-
   // ---- Animation loop ----
 
   useEffect(() => {
@@ -526,7 +535,6 @@ export function OfficePage() {
       if (!running) return;
       tickRef.current++;
       moveAgents();
-      randomStateChange();
       const canvas = canvasRef.current;
       if (canvas) {
         const ctx = canvas.getContext('2d');
@@ -539,7 +547,7 @@ export function OfficePage() {
     };
     animate();
     return () => { running = false; clearTimeout(animFrameRef.current); };
-  }, [agents, serverStatus.online, selected, moveAgents, randomStateChange]);
+  }, [agents, serverStatus.online, selected, moveAgents]);
 
   // ---- Init ----
 

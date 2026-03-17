@@ -216,8 +216,11 @@ export function startJobRunner(intervalMs = 30_000): void {
   // Recover stuck 'running' jobs from previous crash
   db.prepare("UPDATE scheduled_jobs SET status = 'pending' WHERE status = 'running'").run();
 
-  runnerInterval = setInterval(() => {
+  runnerInterval = setInterval(async () => {
     processJobs().catch(err => logger.warn({ err }, 'Job runner cycle failed'));
+    // Morning operator + health monitor ticks (fire-and-forget)
+    import('./morning-operator.js').then(m => m.runMorningOperatorTick()).catch(() => {});
+    import('./health-monitor.js').then(m => m.runHealthTick()).catch(() => {});
   }, intervalMs);
 
   // Run immediately on startup

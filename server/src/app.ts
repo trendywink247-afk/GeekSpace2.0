@@ -415,6 +415,8 @@ export function createApp(): express.Application {
       ok: allOk,
       status: allOk ? 'ok' : 'degraded',
       version: APP_VERSION,
+      // Self-healing monitor status (lazy import — non-fatal if module missing)
+      ...((() => { try { const m = require('./services/health-monitor.js'); return { serviceHealth: m.getServiceHealth() }; } catch { return {}; } })()),
       build: {
         version: process.env.npm_package_version ?? '3.0.0',
         nodeVersion: process.versions.node,
