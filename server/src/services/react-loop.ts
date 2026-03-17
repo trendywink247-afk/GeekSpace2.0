@@ -11,6 +11,7 @@ import { routeChat, type ChatMessage, type Provider } from './llm.js';
 import { parseActions, type ParsedAction } from './action-parser.js';
 import { executeAction, type ActionResult } from './action-executor.js';
 import { logger } from '../logger.js';
+import { emitThinking, emitToolCall, emitToolResult, emitResponding, emitDone } from './agent-state-bus.js';
 
 const MAX_REACT_ITERATIONS = 5;
 
@@ -24,6 +25,7 @@ export interface ThinkingStep {
 export interface ReactLoopOptions {
   systemPrompt: string;
   agentName?: string;
+  agentId?: string;
   userCredits?: number;
   userId: string;
   forceProvider?: Provider;
@@ -66,6 +68,7 @@ export async function runReactLoop(
   for (let i = 0; i < MAX_REACT_ITERATIONS; i++) {
     // Emit thinking step
     opts.onStep?.({ type: 'thinking', content: i === 0 ? 'Analyzing your request...' : 'Reasoning about results...', iteration: i });
+    if (opts.agentId) emitThinking(opts.userId, opts.agentId, i === 0 ? 'Analyzing request...' : 'Reasoning about results...');
 
     const result = await routeChat(workingMessages, {
       systemPrompt: opts.systemPrompt,
@@ -87,6 +90,7 @@ export async function runReactLoop(
     if (actions.length === 0) {
       finalText = cleanText || result.reply;
       opts.onStep?.({ type: 'drafting', content: 'Writing response...', iteration: i });
+      if (opts.agentId) emitResponding(opts.userId, opts.agentId, 'Writing response...');
       break;
     }
 
@@ -112,6 +116,7 @@ export async function runReactLoop(
         action.tool === 'generate_image' ? `Generating image: "${action.params?.prompt || ''}"` :
         `Running ${action.tool}...`;
       opts.onStep?.({ type: 'tool_call', content: toolDesc, tool: action.tool, iteration: i });
+      if (opts.agentId) emitToolCall(opts.userId, opts.agentId, action.tool, toolDesc);
 
       const actionResult = await executeAction(opts.userId, action);
       allActionResults.push(actionResult);
@@ -121,6 +126,7 @@ export async function runReactLoop(
         ? actionResult.data?.summary ? String(actionResult.data.summary).slice(0, 200) : actionResult.message.slice(0, 200)
         : `Error: ${actionResult.message.slice(0, 200)}`;
       opts.onStep?.({ type: 'tool_result', content: resultSummary, tool: action.tool, iteration: i });
+      if (opts.agentId) emitToolResult(opts.userId, opts.agentId, action.tool, resultSummary);
 
       // Format observation for LLM context
       const obs = actionResult.success
@@ -152,9 +158,12 @@ export async function runReactLoop(
     // On final iteration, capture whatever the LLM says
     if (i === MAX_REACT_ITERATIONS - 1) {
       opts.onStep?.({ type: 'drafting', content: 'Writing final response...', iteration: i });
+      if (opts.agentId) emitResponding(opts.userId, opts.agentId, 'Writing response...');
       finalText = cleanText || result.reply;
     }
   }
+
+  if (opts.agentId) emitDone(opts.userId, opts.agentId);
 
   return {
     text: finalText,

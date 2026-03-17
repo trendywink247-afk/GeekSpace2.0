@@ -126,6 +126,9 @@ interface ChatMessage {
   imageUrl?: string;
   /** Visible thinking steps from ReAct loop */
   thinkingSteps?: Array<{ type: string; content: string; tool?: string; iteration: number }>;
+  /** Multi-agent council responses */
+  agentResponses?: Array<{ agent: string; role: string; text: string }>;
+  isMultiAgent?: boolean;
 }
 
 interface AgentChatPanelProps {
@@ -610,6 +613,8 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         let buffer = '';
         let gotError = false;
         const thinkingSteps: Array<{ type: string; content: string; tool?: string; iteration: number }> = [];
+        const agentResponses: Array<{ agent: string; role: string; text: string }> = [];
+        let isMultiAgent = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -647,6 +652,14 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               if (chunk.text) {
                 // Accumulate into mutable ref — zero renders per token
                 streamBufferRef.current += chunk.text;
+
+                // Detect multi-agent response pattern: "**Role** (Agent):\n..."
+                const agentMatch = chunk.text.match(/^\*\*(.+?)\*\*\s*\((\w+)\):\n([\s\S]*?)(?:\n---\n|$)/);
+                if (agentMatch) {
+                  isMultiAgent = true;
+                  agentResponses.push({ role: agentMatch[1], agent: agentMatch[2], text: agentMatch[3].trim() });
+                  setAgentMsg({ content: streamBufferRef.current, isStreaming: true, isMultiAgent: true, agentResponses: [...agentResponses] });
+                }
               }
 
               if (chunk.done) {
@@ -659,6 +672,8 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                   provider: chunk.provider,
                   model: chunk.model,
                   thinkingSteps: thinkingSteps.length > 0 ? thinkingSteps : undefined,
+                  agentResponses: isMultiAgent ? agentResponses : undefined,
+                  isMultiAgent,
                 });
               }
             } catch {
@@ -1255,6 +1270,30 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                           ))}
                         </div>
                       </details>
+                    )}
+                    {/* Multi-agent council transcript */}
+                    {msg.agentResponses && msg.agentResponses.length > 0 && !msg.isStreaming && (
+                      <div className="space-y-2 mb-2">
+                        {msg.agentResponses.map((ar, i) => {
+                          const agentColors: Record<string, string> = {
+                            Weebo: '#00F0FF', Edith: '#8B5CF6', Jarvis: '#ADFF2F', Aria: '#F59E0B',
+                            Forge: '#FF2D78', Pulse: '#00F0FF', Echo: '#8B5CF6', Cal: '#ADFF2F', Nova: '#F59E0B',
+                          };
+                          const color = agentColors[ar.agent] || '#8892A4';
+                          return (
+                            <div key={i} className="rounded-lg p-2.5" style={{ background: color + '08', border: `1px solid ${color}25` }}>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className="w-2 h-2 rounded-full" style={{ background: color }} />
+                                <span className="text-[11px] font-bold" style={{ color }}>{ar.agent}</span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: color + '15', color: color + 'CC' }}>{ar.role}</span>
+                              </div>
+                              <div className="text-[11px] leading-relaxed" style={{ color: '#E8E8F0' }}>
+                                {ar.text}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                     {searchOpen && searchTerm && msg.content.toLowerCase().includes(searchTerm.toLowerCase())
                       ? (() => {

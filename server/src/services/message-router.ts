@@ -34,6 +34,7 @@ import { addInboxMessage } from './inbox.js';
 import { checkContentSafety } from './content-filter.js';
 import { isLaunchModeRequest, runMultiAgentOrchestration } from './multi-agent-orchestrator.js';
 import { isResearchRequest, runResearchJob } from './research-job.js';
+import { emitThinking, emitDone } from './agent-state-bus.js';
 
 // ---- Indian Festival Calendar ----
 // Returns a festival greeting if today falls on/near a major Indian festival (approximate fixed dates).
@@ -1314,6 +1315,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   const resolvedAgentName = namedAgent
     ? getPersonality(namedAgent).name
     : resolveAgentName(agentConfig, effectivePersonalityId);
+  emitThinking(userId, effectivePersonalityId, `${resolvedAgentName} is processing...`);
   // If user addressed a specific named agent, rebuild system prompt with that personality
   if (namedAgent) {
     const overriddenConfig = { ...(agentConfig || {}), personality: namedAgent, name: getPersonality(namedAgent).name };
@@ -1322,14 +1324,15 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     logger.info({ userId, namedAgent, resolvedAgentName }, 'Named agent routing: overriding personality');
   }
 
-  // 6a. GeekOS semantic recall (non-blocking — skip if offline)
+  // 6a. Semantic memory recall (Qdrant vector search)
   try {
-    const { queryGeekOSMemory } = await import('../routes/geekos-bridge.js');
-    const semanticContext = await queryGeekOSMemory(userId, msg.text);
-    if (semanticContext) {
-      systemPrompt += `\n--- Semantic recall ---\n${semanticContext}`;
+    const { semanticSearch } = await import('./search-vector.js');
+    const semanticResults = await semanticSearch(userId, msg.text, 5);
+    if (semanticResults.length > 0) {
+      const memoryLines = semanticResults.map(r => `- ${r.key}`).join('\n');
+      systemPrompt += `\n\n--- What I remember about you ---\n${memoryLines}\n`;
     }
-  } catch { /* GeekOS not available */ }
+  } catch { /* Qdrant may be unavailable — non-fatal */ }
 
   // 6a. Token compression — compress system prompt + user message for LLM
   //     (msg.text kept original for logging/memory/channel delivery)
@@ -1694,6 +1697,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       const reactResult = await runReactLoop(messages, {
         systemPrompt,
         agentName: (agentConfig?.name as string) || 'Geek',
+        agentId: effectivePersonalityId,
         userCredits,
         userId,
       });
@@ -1713,6 +1717,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     const reactResult = await runReactLoop(messages, {
       systemPrompt,
       agentName: (agentConfig?.name as string) || 'Geek',
+      agentId: effectivePersonalityId,
       userCredits,
       userId,
       forceProvider: forceGroqForTools,
@@ -1798,6 +1803,14 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // 10. Log assistant response (clean text without action blocks)
   logConversation(userId, 'assistant', finalReply, requestId, provider, model);
   logActivity(userId, 'Agent replied', `${resolvedAgentName} via ${provider}`, 'bot');
+  emitDone(userId, effectivePersonalityId, `${resolvedAgentName} finished`);
+
+  // Embed conversation for semantic memory (fire-and-forget)
+  import('./search-vector.js').then(({ upsertMemoryVector }) => {
+    const memKey = msg.text.slice(0, 100);
+    const memVal = `User asked: ${msg.text.slice(0, 200)}\nAgent replied: ${finalReply.slice(0, 300)}`;
+    upsertMemoryVector(userId, memKey, memVal, 'conversation').catch(() => {});
+  }).catch(() => {});
 
   // Log for fine-tuning dataset (non-blocking)
   logTrainingExample({

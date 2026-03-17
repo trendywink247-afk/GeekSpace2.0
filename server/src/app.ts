@@ -40,6 +40,7 @@ import { briefingsRouter } from './routes/briefings.js';
 import { recipesRouter } from './routes/recipes.js';
 import { geekosBridgeRouter } from './routes/geekos-bridge.js';
 import { geekosLlmProxyRouter } from './routes/geekos-llm-proxy.js';
+import { agentStateRouter } from './routes/agent-state.js';
 import { artifactsRouter } from './routes/artifacts.js';
 import { templatesRouter } from './routes/templates.js';
 import { imagesRouter } from './routes/images.js';
@@ -517,6 +518,7 @@ export function createApp(): express.Application {
   app.use('/api/recipes', recipesRouter);
   app.use('/api/geekos', geekosBridgeRouter);
   app.use('/api/geekos-llm', geekosLlmProxyRouter);
+  app.use('/api/agent-state', agentStateRouter);
   app.use('/api/health', healthRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/dev', devRouter);

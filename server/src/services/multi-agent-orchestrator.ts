@@ -9,6 +9,7 @@
 import { logger } from '../logger.js';
 import { routeChat, type ChatMessage } from './llm.js';
 import { getPersonalityPrompt } from '../prompts/personalities.js';
+import { emitThinking, emitResponding, emitDone } from './agent-state-bus.js';
 
 export interface AgentTask {
   agent: string;        // personality ID
@@ -33,13 +34,21 @@ export interface OrchestratorResult {
 export function isLaunchModeRequest(message: string): boolean {
   const lower = message.toLowerCase();
   return (
+    // Explicit triggers
     /\b(launch\s+mode|all\s+agents|multi.agent|parallel\s+agents?)\b/i.test(lower) ||
     /\b(get\s+(all|multiple|different)\s+perspectives?)\b/i.test(lower) ||
     /\b(team\s+response|agent\s+team|run\s+all\s+agents)\b/i.test(lower) ||
     /\b(brainstorm\s+with\s+(all|multiple)\s+agents?)\b/i.test(lower) ||
     /\b(what\s+do\s+(all|your)\s+agents?\s+think)\b/i.test(lower) ||
-    /\b(sab\s+(agents?|log)\s+(kya|kya\s+sochte))\b/i.test(lower) ||
-    /\b(agent\s+council|council\s+mode|war\s+room)\b/i.test(lower)
+    /\b(agent\s+council|council\s+mode|war\s+room)\b/i.test(lower) ||
+    // Hinglish
+    /\b(sab\s+(agents?|log)\s+(kya|kya\s+sochte|batao|bolo))\b/i.test(lower) ||
+    // Smart detection: complex multi-domain queries
+    /\b(research\s+.{5,}\s+and\s+(create|write|draft|post|tweet|build))\b/i.test(lower) ||
+    /\b(compare|pros\s+and\s+cons|advantages?\s+and\s+disadvantages?)\b/i.test(lower) ||
+    /\b(should\s+I\s+.{10,}\s+or\s+)/i.test(lower) ||
+    /\b(analyze\s+.{5,}\s+and\s+(recommend|suggest|advise))\b/i.test(lower) ||
+    /\b(plan\s+(my|a|the)\s+.{5,}\s+(strategy|approach|roadmap))\b/i.test(lower)
   );
 }
 
@@ -127,6 +136,7 @@ export async function runMultiAgentOrchestration(
   // Fan out all agents in parallel
   const agentPromises = tasks.map(async (task) => {
     try {
+      emitThinking(userId, task.agent, `${task.role} analyzing...`);
       const personalityPrompt = getPersonalityPrompt(task.agent);
       const messages: ChatMessage[] = [{ role: 'user', content: task.prompt }];
       const result = await routeChat(messages, {
@@ -136,6 +146,7 @@ export async function runMultiAgentOrchestration(
         // Use fast models for parallel agents to reduce latency
         forceProvider: 'openrouter-free',
       });
+      emitResponding(userId, task.agent, `${task.role} writing response...`);
       return { agent: task.agent, role: task.role, text: result.reply, success: true };
     } catch (err) {
       logger.warn({ err, agent: task.agent, userId }, 'multi-agent:agent-failed');
@@ -145,6 +156,10 @@ export async function runMultiAgentOrchestration(
 
   const results = await Promise.all(agentPromises);
   const duration = Date.now() - startTime;
+
+  for (const task of tasks) {
+    emitDone(userId, task.agent);
+  }
 
   const successfulResults = results.filter(r => r.success);
   logger.info({ userId, duration, successCount: successfulResults.length, totalCount: tasks.length }, 'multi-agent:complete');

@@ -307,7 +307,17 @@ function renderCanvas(
     ctx.fillStyle = agent.color;
     ctx.font = '7px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(agent.name, ax, ay + 14 + bobble);
+    const nameY = ay + 14 + bobble;
+    ctx.fillText(agent.name, ax, nameY);
+
+    // Floating action label when agent is active
+    if (agent.state !== 'idle' && agent.lastAction && agent.lastAction !== 'Ready') {
+      ctx.fillStyle = agent.color + '80';
+      ctx.font = '7px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      const actionText = agent.lastAction.length > 20 ? agent.lastAction.slice(0, 20) + '...' : agent.lastAction;
+      ctx.fillText(actionText, ax, nameY + 10);
+    }
   }
 
   ctx.restore();
@@ -326,6 +336,8 @@ export function OfficePage() {
   const animFrameRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sseRef = useRef<EventSource | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const agentStateRef = useRef<AbortController | null>(null);
+  const lastStateChangeRef = useRef(new Map<string, number>());
   // Mirror agents state in a ref so the animation loop can read it without re-triggering
   const agentsRef = useRef(agents);
   agentsRef.current = agents;
@@ -506,10 +518,80 @@ export function OfficePage() {
     });
   }, [startPolling, applyActivityToAgent]);
 
+  // ---- Agent State SSE (direct state mapping) ----
+
+  const connectAgentState = useCallback(() => {
+    const token = localStorage.getItem('gs_token');
+    if (!token) return;
+
+    const ctrl = new AbortController();
+    agentStateRef.current = ctrl;
+
+    fetch(`${apiBase()}/api/agent-state/stream`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: ctrl.signal,
+    }).then(async (res) => {
+      if (!res.ok || !res.body) return;
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const event = JSON.parse(line.slice(6)) as {
+              agentId: string;
+              agentName: string;
+              state: string;
+              tool?: string;
+              content?: string;
+            };
+
+            lastStateChangeRef.current.set(event.agentId, Date.now());
+
+            // Direct mapping — no guessing
+            setAgents(prev => prev.map(a => {
+              if (a.id !== event.agentId) return a;
+
+              const newState: OfficeAgent['state'] =
+                event.state === 'thinking' ? 'thinking' :
+                event.state === 'tool_call' || event.state === 'typing' ? 'typing' :
+                event.state === 'tool_result' || event.state === 'reading' ? 'reading' :
+                event.state === 'responding' ? 'typing' :
+                event.state === 'done' || event.state === 'idle' ? 'idle' : a.state;
+
+              return {
+                ...a,
+                state: newState,
+                lastAction: event.content || event.tool || a.lastAction,
+                actionCount: event.state === 'done' ? a.actionCount + 1 : a.actionCount,
+              };
+            }));
+          } catch { /* skip */ }
+        }
+      }
+    }).catch(() => { /* reconnect handled by init */ });
+  }, []);
+
   // ---- Agent wandering logic ----
 
   const moveAgents = useCallback(() => {
+    const now = Date.now();
     setAgents(prev => prev.map(agent => {
+      // Auto-reset stale states (30s timeout prevents stuck agents)
+      if (agent.state !== 'idle') {
+        const lastChange = lastStateChangeRef.current.get(agent.id) || 0;
+        if (lastChange > 0 && now - lastChange > 30000) {
+          return { ...agent, state: 'idle' as const };
+        }
+      }
       // If agent has a path, follow it
       if (agent.path.length > 0 && agent.pathIdx < agent.path.length) {
         const next = agent.path[agent.pathIdx];
@@ -557,11 +639,13 @@ export function OfficePage() {
     fetchActivity();
     fetchStatus();
     connectSSE();
+    connectAgentState();
     return () => {
       if (sseRef.current) sseRef.current.close();
       if (pollRef.current) clearInterval(pollRef.current);
+      agentStateRef.current?.abort();
     };
-  }, [fetchAgents, fetchActivity, fetchStatus, connectSSE]);
+  }, [fetchAgents, fetchActivity, fetchStatus, connectSSE, connectAgentState]);
 
   // ---- Canvas resize ----
 

@@ -28,6 +28,7 @@ import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../service
 import { fetchAndExtract } from '../services/web-research.js';
 import { buildPersonalityInstructions } from '../services/message-router.js';
 import { logActivity } from '../services/activity-log.js';
+import { emitThinking, emitDone } from '../services/agent-state-bus.js';
 
 export const agentRouter = Router();
 
@@ -1006,6 +1007,8 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 
     // Push activity for office page live sync
     logActivity(String(userId), 'Agent replied', `Responded via ${result.provider}`, 'bot');
+    const chatPersonalityId = (agentConfig?.personality as string) || 'jarvis';
+    emitDone(String(userId), chatPersonalityId);
 
     res.json(response);
   } catch (err) {
@@ -1379,6 +1382,8 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
+  let personalityId = 'jarvis';
+
   try {
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
@@ -1394,6 +1399,8 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
 
     // Push activity for office page live sync
     logActivity(String(userId), 'Thinking...', `${agentName} is processing`, 'brain');
+    personalityId = (agentConfig?.personality as string) || 'jarvis';
+    emitThinking(String(userId), personalityId, `${agentName} is thinking...`);
 
     // Check for launch mode (multi-agent council) FIRST
     const { isLaunchModeRequest, runMultiAgentOrchestration } = await import('../services/multi-agent-orchestrator.js');
@@ -1507,6 +1514,7 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     }
   }
 
+  emitDone(String(userId), personalityId);
   res.end();
 });
 
