@@ -1450,7 +1450,24 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
         tier, creditsUsed: result.creditCost,
       })}\n\n`);
     } else {
-      // Simple/automation intents → stream via Ollama (fast, free)
+      // Simple/automation intents → stream via Ollama if online, else cloud fallback
+      const { getServiceHealth } = await import('../services/health-monitor.js');
+      const ollamaDown = getServiceHealth().ollama?.status !== 'up';
+
+      if (ollamaDown) {
+        // Skip Ollama entirely — go straight to cloud
+        const result = await routeChat(
+          [...history, { role: 'user', content: message }],
+          { systemPrompt, agentName, userCredits, userId, forceProvider: 'openrouter-free' as Provider },
+        );
+        res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
+        logConversation(userId, 'assistant', result.reply, result.provider, result.model);
+        res.write(`data: ${JSON.stringify({
+          text: '', done: true, provider: result.provider, model: result.model,
+          tier: 'local', creditsUsed: result.creditCost,
+        })}\n\n`);
+      } else {
+      // Ollama is up — stream directly
       const fullMessages: ChatMessage[] = [
         { role: 'system', content: systemPrompt },
         ...history,
@@ -1493,6 +1510,7 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
           latencyMs, tier: 'local', creditsUsed: 0,
         })}\n\n`);
       }
+      } // end: Ollama is up
     }
   } catch (err) {
     logger.error({ err, userId }, 'Stream chat error');
