@@ -1,12 +1,12 @@
 {
-  "name": "Agentin - Autonomous AI Platform",
+  "name": "Agentin - Your AI Personal OS",
   "short_name": "Agentin",
-  "description": "Deploy autonomous agents, automate workflows, and scale without limits",
-  "start_url": "/",
+  "description": "The AI agent that manages your tasks, habits, memories, and creativity. Works via chat, Telegram, and web.",
+  "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#030304",
-  "theme_color": "#00FFD4",
-  "orientation": "portrait-primary",
+  "background_color": "#05050A",
+  "theme_color": "#00F0FF",
+  "orientation": "any",
   "scope": "/",
   "lang": "en",
   "icons": [
@@ -23,13 +23,13 @@
       "purpose": "maskable any"
     }
   ],
-  "categories": ["productivity", "utilities", "developer"],
+  "categories": ["productivity", "utilities"],
   "shortcuts": [
     {
       "name": "Chat with Agent",
       "short_name": "Chat",
       "description": "Start a conversation with your AI agent",
-      "url": "/dashboard/agent"
+      "url": "/dashboard/chat"
     },
     {
       "name": "Add Reminder",
@@ -38,10 +38,10 @@
       "url": "/dashboard/reminders?action=create"
     },
     {
-      "name": "View Portfolio",
-      "short_name": "Portfolio",
-      "description": "View and edit your portfolio",
-      "url": "/dashboard/portfolio"
+      "name": "View Overview",
+      "short_name": "Home",
+      "description": "See your daily overview",
+      "url": "/dashboard/overview"
     }
   ],
   "related_applications": [],

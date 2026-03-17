@@ -190,9 +190,9 @@ const menuGroups: MenuGroup[] = [
 type MobileTabId = PageType | 'more';
 const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Home', icon: LayoutDashboard },
-  { id: 'portfolio', label: 'Portfolio', icon: Palette },
-  { id: 'website-builder', label: 'AI', icon: Code },
-  { id: 'agent', label: 'Agent', icon: Bot },
+  { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'reminders', label: 'Reminders', icon: Bell },
+  { id: 'focus', label: 'Habits', icon: Target },
   { id: 'more', label: 'More', icon: MoreHorizontal },
 ];
 
@@ -766,7 +766,7 @@ export function DashboardApp() {
   );
 
   return (
-    <div className={`min-h-screen bg-[#06060B] flex flex-col md:flex-row${compactMode ? ' gs-compact' : ''}`} style={{ background: background || undefined }}>
+    <div className={`min-h-dvh bg-[#06060B] flex flex-col md:flex-row${compactMode ? ' gs-compact' : ''}`} style={{ background: background || undefined }}>
       {/* ---- Session idle warning ---- */}
       {showIdleWarning && (
         <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-3 bg-[#FFD700]/10 border-b border-[#FFD700]/30 backdrop-blur-sm">
