@@ -312,7 +312,8 @@ remindersRouter.post('/bulk-snooze', requireAuth, (req: AuthRequest, res) => {
 
   const ownedIds = owned.map((r) => r.id);
   const updPlaceholders = ownedIds.map(() => '?').join(', ');
-  db.prepare(`UPDATE reminders SET datetime = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id IN (${updPlaceholders})`).run(newDatetime, ...ownedIds);
+  const bulkSnoozeUntilMs = new Date(newDatetime).getTime();
+  db.prepare(`UPDATE reminders SET datetime = ?, snooze_until = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id IN (${updPlaceholders})`).run(newDatetime, bulkSnoozeUntilMs, ...ownedIds);
 
   // 36.1: Log each snooze event
   const logStmt = db.prepare('INSERT INTO snooze_log (id, reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?, ?)');
@@ -407,7 +408,8 @@ remindersRouter.post('/:id/snooze', requireAuth, (req: AuthRequest, res) => {
     }
   }
 
-  db.prepare(`UPDATE reminders SET datetime = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id = ? AND user_id = ?`).run(newDatetime, req.params.id, req.userId!);
+  const snoozeUntilMs = new Date(newDatetime).getTime();
+  db.prepare(`UPDATE reminders SET datetime = ?, snooze_until = ?, snooze_count = COALESCE(snooze_count, 0) + 1 WHERE id = ? AND user_id = ?`).run(newDatetime, snoozeUntilMs, req.params.id, req.userId!);
   db.prepare('INSERT INTO snooze_log (id, reminder_id, user_id, snoozed_at, preset, new_datetime) VALUES (?, ?, ?, ?, ?, ?)').run(uuid(), req.params.id, req.userId!, Date.now(), preset || 'custom', newDatetime);
   // 48.9: Structured lifecycle log
   logger.info({ event: 'reminder.snoozed', userId: req.userId, reminderId: req.params.id, preset: preset || 'custom', newDatetime });

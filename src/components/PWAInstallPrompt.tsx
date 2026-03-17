@@ -13,7 +13,7 @@ export function PWAInstallPrompt() {
   if (!showPrompt || !canInstall) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+    <div className="fixed bottom-24 left-4 right-4 md:left-auto md:bottom-6 md:right-4 md:w-96 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
       <div className="glass-card-v2 border border-[#00F0FF]/30 rounded-2xl p-4 shadow-2xl shadow-[#00F0FF]/10">
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center flex-shrink-0">

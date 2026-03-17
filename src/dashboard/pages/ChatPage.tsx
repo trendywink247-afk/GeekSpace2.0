@@ -93,6 +93,21 @@ function withinMs(a: Date, b: Date, ms: number): boolean {
   return Math.abs(a.getTime() - b.getTime()) < ms;
 }
 
+/** Format a date as a human-readable relative time string */
+function formatRelativeTime(date: Date): string {
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+
+  if (diffSec < 10) return 'just now';
+  if (diffSec < 60) return `${diffSec}s ago`;
+  if (diffMin < 60) return `${diffMin} min ago`;
+  if (diffHr < 24) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 function buildTimestampVisibility(msgs: ChatMessage[]): Set<string> {
   const visible = new Set<string>();
   if (msgs.length === 0) return visible;
@@ -398,8 +413,12 @@ export function ChatPage() {
   const [voiceMode, setVoiceMode] = useState<boolean>(getVoiceMode);
   const [interimText, setInterimText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const userScrolledUpRef = useRef(false);
 
   // Streaming
   const streamBufferRef = useRef('');
@@ -447,11 +466,44 @@ export function ChatPage() {
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setShowScrollToBottom(false);
+    setUnreadCount(0);
+    userScrolledUpRef.current = false;
   }, []);
 
+  // Track scroll position to show/hide scroll-to-bottom button
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      const isScrolledUp = distanceFromBottom > 120;
+      setShowScrollToBottom(isScrolledUp);
+      userScrolledUpRef.current = isScrolledUp;
+      if (!isScrolledUp) {
+        setUnreadCount(0);
+      }
+    };
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Track unread count when scrolled up and new messages arrive
+  const prevMsgCountRef = useRef(0);
+  useEffect(() => {
+    if (userScrolledUpRef.current && messages.length > prevMsgCountRef.current) {
+      const newCount = messages.length - prevMsgCountRef.current;
+      setUnreadCount((c) => c + newCount);
+    }
+    prevMsgCountRef.current = messages.length;
+  }, [messages.length]);
+
+  // Auto-scroll to bottom on new messages — only when user hasn't scrolled up
+  useEffect(() => {
+    if (!userScrolledUpRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -914,7 +966,7 @@ export function ChatPage() {
   const meta = personalityMeta[personality];
 
   return (
-    <div className='flex h-[calc(100dvh-180px)] md:h-[calc(100vh-130px)]'>
+    <div className='flex h-[calc(100dvh-184px)] md:h-[calc(100vh-130px)]'>
       {/* ── Conversation Sidebar ── */}
       {sidebarOpen && (
         <div className='w-64 md:w-72 flex-shrink-0 bg-[#06060B] border-r border-[#00F0FF]/10 flex flex-col rounded-l-xl overflow-hidden'>
@@ -983,7 +1035,7 @@ export function ChatPage() {
       )}
 
       {/* ── Main Chat Area ── */}
-      <div className='flex-1 flex flex-col bg-[#06060B] rounded-xl border border-[#00F0FF]/10 min-w-0'>
+      <div className='flex-1 flex flex-col bg-[#06060B] rounded-xl border border-[#00F0FF]/10 min-w-0 relative'>
         {/* Header */}
         <div className='flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10 flex-shrink-0'>
           <div className='flex items-center gap-3'>
@@ -1060,7 +1112,7 @@ export function ChatPage() {
         </div>
 
         {/* Messages */}
-        <div className='flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide'>
+        <div ref={messagesContainerRef} className='flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide relative'>
           {messages.length === 0 && (
             <div className='flex flex-col items-center justify-center h-full gap-4 text-center py-12'>
               {/* Hero avatar */}
@@ -1189,8 +1241,8 @@ export function ChatPage() {
                   {!isEditing && (
                     <div className='flex items-center justify-between mt-1 gap-2'>
                       {showTimestamp ? (
-                        <p className='text-[10px] text-[#9CA3AF]/70'>
-                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <p className='text-[10px] text-[#9CA3AF]/70' title={msg.timestamp.toLocaleString()}>
+                          {formatRelativeTime(msg.timestamp)}
                         </p>
                       ) : (
                         <span />
@@ -1298,8 +1350,20 @@ export function ChatPage() {
                   style={{ border: `1.5px solid ${meta.color}`, opacity: 0.35 }}
                 />
               </div>
-              <div className='bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl rounded-tl-sm px-3 py-2'>
-                <span className='text-shimmer text-xs font-medium'>{agentName} is thinking...</span>
+              <div className='bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl rounded-tl-sm px-3 py-2.5 flex items-center gap-1.5'>
+                <span className='text-xs text-[#8892A4] mr-1'>{agentName} is typing</span>
+                <span
+                  className='w-1.5 h-1.5 rounded-full bg-[#00F0FF]/60'
+                  style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '0ms' }}
+                />
+                <span
+                  className='w-1.5 h-1.5 rounded-full bg-[#00F0FF]/60'
+                  style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '200ms' }}
+                />
+                <span
+                  className='w-1.5 h-1.5 rounded-full bg-[#00F0FF]/60'
+                  style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '400ms' }}
+                />
               </div>
             </div>
           )}
@@ -1341,6 +1405,22 @@ export function ChatPage() {
           )}
           <div ref={messagesEndRef} />
         </div>
+        {/* Scroll to bottom button */}
+        {showScrollToBottom && (
+          <div className='absolute bottom-20 right-4 z-10'>
+            <button
+              onClick={scrollToBottom}
+              className='flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#0C0C18] border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 transition-all shadow-lg shadow-[#00F0FF]/10 min-h-[44px] min-w-[44px] justify-center'
+              aria-label='Scroll to bottom'
+              title='Scroll to bottom'
+            >
+              <ChevronDown className='w-4 h-4' />
+              {unreadCount > 0 && (
+                <span className='text-xs font-semibold tabular-nums'>{unreadCount}</span>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Input */}
         <div className='px-4 py-3 border-t border-[#00F0FF]/10 flex-shrink-0'>

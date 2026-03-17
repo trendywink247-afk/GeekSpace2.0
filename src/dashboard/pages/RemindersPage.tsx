@@ -686,14 +686,14 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
     <div className="space-y-6" data-testid="reminders-page">
       {/* 61.5: Snooze feedback toast */}
       {snoozeToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFB800]/15 border border-[#FFB800]/40 text-[#FFB800] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="snooze-toast">
+        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFB800]/15 border border-[#FFB800]/40 text-[#FFB800] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="snooze-toast">
           <AlarmClock className="w-4 h-4" />
           {snoozeToast}
         </div>
       )}
       {/* 66.1: Undo toast after bulk-complete */}
       {undoToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#00FF88]/15 border border-[#00FF88]/40 text-[#00FF88] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 md:bottom-6 z-50 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#00FF88]/15 border border-[#00FF88]/40 text-[#00FF88] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300">
           <CheckCheck className="w-4 h-4 flex-shrink-0" />
           <span>{undoToast.count} reminder{undoToast.count > 1 ? 's' : ''} marked done</span>
           <button
@@ -2093,7 +2093,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
       {/* 45.4: Mobile Quick-Add FAB — visible only on mobile, clears above bottom nav */}
       <button
         onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }}
-        className="md:hidden fixed bottom-20 right-4 w-12 h-12 rounded-full bg-[#00F0FF] text-black flex items-center justify-center shadow-lg z-40 text-xl font-bold"
+        className="md:hidden fixed bottom-[88px] right-4 w-12 h-12 rounded-full bg-[#00F0FF] text-black flex items-center justify-center shadow-lg z-40 text-xl font-bold"
         aria-label="Add reminder"
       >
         +

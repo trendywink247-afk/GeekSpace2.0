@@ -875,7 +875,7 @@ export function GmailPage() {
       {/* Floating Compose button */}
       <button
         onClick={() => setComposeOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-[#00F0FF] hover:bg-[#00D4E0] text-[#05050A] rounded-full shadow-lg shadow-[#00F0FF]/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-40 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05050A]"
+        className="fixed bottom-24 right-4 md:bottom-6 md:right-6 w-14 h-14 bg-[#00F0FF] hover:bg-[#00D4E0] text-[#05050A] rounded-full shadow-lg shadow-[#00F0FF]/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-40 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05050A]"
         aria-label="Compose new email"
       >
         <Plus className="w-6 h-6" />
