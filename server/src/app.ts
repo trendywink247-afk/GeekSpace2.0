@@ -41,6 +41,7 @@ import { recipesRouter } from './routes/recipes.js';
 import { geekosBridgeRouter } from './routes/geekos-bridge.js';
 import { geekosLlmProxyRouter } from './routes/geekos-llm-proxy.js';
 import { agentStateRouter } from './routes/agent-state.js';
+import { getServiceHealth } from './services/health-monitor.js';
 import { artifactsRouter } from './routes/artifacts.js';
 import { templatesRouter } from './routes/templates.js';
 import { imagesRouter } from './routes/images.js';
@@ -415,9 +416,8 @@ export function createApp(): express.Application {
       topEndpoints,
       ok: allOk,
       status: allOk ? 'ok' : 'degraded',
+      serviceHealth: getServiceHealth(),
       version: APP_VERSION,
-      // Self-healing monitor status (lazy import — non-fatal if module missing)
-      ...((() => { try { const m = require('./services/health-monitor.js'); return { serviceHealth: m.getServiceHealth() }; } catch { return {}; } })()),
       build: {
         version: process.env.npm_package_version ?? '3.0.0',
         nodeVersion: process.versions.node,

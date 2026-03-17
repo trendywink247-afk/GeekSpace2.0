@@ -340,7 +340,7 @@ export function OfficePage() {
   const lastStateChangeRef = useRef(new Map<string, number>());
   // Mirror agents state in a ref so the animation loop can read it without re-triggering
   const agentsRef = useRef(agents);
-  agentsRef.current = agents;
+  useEffect(() => { agentsRef.current = agents; }, [agents]);
 
   // ---- Fetch agents ----
 
