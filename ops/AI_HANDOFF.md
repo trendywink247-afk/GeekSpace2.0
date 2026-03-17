@@ -1,9 +1,82 @@
-# AI Handoff — Beast Mode Sessions 1-4
-**Date:** 2026-03-17
-**Branch:** main
-**Status:** CI GREEN | Tests: 2429 pass | TS: 0 errors | Health: OK
+# AI Handoff — Beast Mode Sessions 1-5
+**Date:** 2026-03-18
+**Branch:** main (246080e)
+**Status:** CI GREEN | Tests: 2429 pass | TS: 0 errors | Health: 12/12
 **Model:** claude-sonnet-4-6 (high effort)
-**Scope:** 100+ files changed across 4 sessions
+**Scope:** 100+ files changed across 5 sessions
+
+---
+
+## Session 5 (2026-03-18) — Mobile/Web Full Consistency Overhaul
+
+### iPhone Bottom Nav (FIXED)
+- Removed `safe-area-pb` class from bottom nav — it was adding internal padding that squished icons
+- Now uses inline `style={{ bottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px))' }}`
+- Nav sits ABOVE the 34px iPhone home indicator safe zone
+- Mobile tabs: overview, chat, reminders, focus, more
+
+### pb-24 Bottom Padding (22+ pages fixed)
+All dashboard pages now have `pb-24 md:pb-X` so content clears the 64px mobile bottom nav:
+- InboxPage, OverviewPage, RemindersPage, AISpecialistPage, AnalyticsPage
+- MemoryPage, AgentSettingsPage, TemplateGalleryPage, MediaGalleryPage, RoadmapPage
+- RecipesPage, SocialMediaPage, ImageGalleryPage, ImageGenPage, VideoGenPage
+- UsageAnalyticsPage, CapabilitiesPage, ActivityPage, ArtifactsPage, ConnectionsPage
+- BillingPage, PortfolioPage, HealthDashboardPage, OfficePage, tools/JsonFormatterPage
+
+### iOS Install Guide (NEW)
+- OverviewPage: shows after 3s on iOS Safari
+- "Add to Home Screen" tip with step-by-step instructions
+- Dismissible — 7-day cooldown via localStorage
+- Non-intrusive slide-up banner
+
+### HeroSection Mobile Fix
+- Plasma orb was overlapping hero text on iPhone (375-414px screens)
+- `mt-[28vh]` → `mt-[48vh]` — content now sits below orb on mobile
+- `sm:mt-[38vh] md:mt-[35vh]` maintained for larger screens
+
+### Timezone Auto-Sync (authStore)
+- Fire-and-forget `PATCH /api/users/me/timezone` added to both `login` and `fetchUser`
+- Server already had the endpoint + DB column — this closes the gap
+- User's detected timezone always stays in sync with server
+
+### Chat Mobile Keyboard
+- ChatPage textarea: `enterKeyHint="send"`, `inputMode="text"`, `autoCapitalize="sentences"`, `touch-manipulation`
+- AgentChatPanel Input: `enterKeyHint="send"`, `autoCorrect="on"`, `autoCapitalize="sentences"`
+- iPhone keyboard now shows "Send" button instead of return
+
+### MemoryPage Empty State
+- Replaced minimal empty state with animated brain icon + "Start Chat" CTA
+- Navigates to `/dashboard/chat`
+
+### Server Performance Recon (no-change audit)
+- Proactive engine global tick fixed: was using hardcoded IST, now uses `new Date().getUTCMinutes()`
+- test timeout: phase107 increased to 30s, vitest config global testTimeout: 30000
+
+### Files Changed (Session 5 — key files)
+- `src/dashboard/DashboardApp.tsx` — bottom nav safe area inline style
+- `src/dashboard/pages/OverviewPage.tsx` — iOS install guide (+72 lines), pb-24
+- `src/dashboard/pages/InboxPage.tsx` — pb-24, better empty state
+- `src/dashboard/pages/RemindersPage.tsx` — pb-24
+- `src/dashboard/pages/ChatPage.tsx` — mobile keyboard attrs
+- `src/dashboard/pages/MemoryPage.tsx` — animated empty state
+- `src/components/AgentChatPanel.tsx` — mobile keyboard attrs
+- `src/stores/authStore.ts` — timezone auto-sync
+- `src/landing/sections/HeroSection.tsx` — orb mobile margin fix
+- 20+ other dashboard pages — pb-24 padding
+- `server/src/services/proactive-engine.ts` — UTC minutes fix
+- `server/src/test/phase85.test.ts` + `phase88.test.ts` — flexible safe-area check
+
+### Commits (Session 5)
+- `54cd7b8` — beast mode session 5 mobile/web consistency overhaul
+- `af088e2` — mobile UX polish (keyboard hints, empty states)
+- `90a2782` — GmailPage + AnalyticsPage mobile fixes
+- `246080e` — iOS install guide + hero fix + timezone sync (LATEST)
+
+### Next Steps
+1. Investigate `logConversation` in `server/src/services/memory.ts` — may not slice content before storing (unlike `logTrainingExample` which slices to 8000 chars) — risk of unbounded context accumulation
+2. Continue remaining beast mode phases from `AGENTIN_BEAST_MODE_PROMPT.md`
+3. Performance: consider lazy loading for heavy chunks (blocknote 1.2MB, recharts 420KB)
+4. E2E test pass: run `npx playwright test` against live dev server
 
 ---
 
