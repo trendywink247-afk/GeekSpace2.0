@@ -4,6 +4,37 @@
 
 ---
 
+## Session 5 (2026-03-18) — Mobile/Web Full Consistency Overhaul
+
+*Status: Deployed to ai.agentin.chat | Commits: 54cd7b8 → 554ed59*
+
+### What's New
+- **iOS Install Guide**: First-time Safari visitors see a slide-up "Add to Home Screen" banner after 3 seconds. Dismissible — won't show again for 7 days. Guides users to install Agentin as a native-feeling PWA.
+- **Chat — scroll-to-bottom button**: Floating button with unread count badge appears when you scroll up in chat history. Tap to jump to latest message.
+- **Chat — relative timestamps**: Message times now show as "just now", "3 min ago", "2:45 PM" instead of raw ISO dates.
+- **Chat — animated typing indicator**: Three bouncing dots while the AI is thinking, replacing the old static text.
+- **Memory — polished empty state**: Animated brain icon, clear description, and "Start Chat" CTA button when no memories exist yet.
+
+### What's Fixed
+- **iPhone home indicator overlap**: Bottom nav was too close to the home swipe area on iPhone X+. Now positioned using `env(safe-area-inset-bottom)` — sits cleanly above the 34px safe zone.
+- **Content hidden behind nav (30+ pages)**: All dashboard pages now have proper bottom padding so the last content item is never obscured by the floating nav on iPhone/Android.
+- **Hero section overlap on iPhone**: Decorative plasma orb was overlapping the hero text on small screens. Fixed margin so text sits clearly below the orb.
+- **Toasts behind mobile nav**: Snooze, undo, save-confirmation, and compose toasts were anchored at `bottom-6` (under the nav). Now use `bottom-24 md:bottom-6`.
+- **Gmail star button too small**: Upgraded from 28×28px to 44×44px minimum touch target.
+- **Analytics period tabs too small**: Upgraded from 36px to 44px minimum touch target.
+
+### Under the Hood
+- Timezone auto-syncs to server on every login and app reload (was detected locally but never sent)
+- `logConversation` now slices content to 8000 chars before DB insert (prevents unbounded growth)
+- Image generation rate limited: 20 images/user/hour; video generation: 5 videos/user/hour
+- Redis memory: 128MB → 256MB to handle additional caching load
+- Health monitor Telegram alerts: admin-only target + 5-minute Redis dedup (no spam)
+- Proactive engine global tick fixed to use UTC minutes (was hardcoded IST)
+- WAL mode mmap: 128MB → 256MB; `busy_timeout = 5000` for write contention resilience
+- DB indexes added: `reminders(user_id, scheduled_for)`, `user_memories(user_id, created_at DESC)`
+
+---
+
 ## Phase 7 (2026-03-13) — Infrastructure + Fast-Paths + 9 Bug Fixes
 
 *Status: Deployed to live-production (a792abe)*

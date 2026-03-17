@@ -1,7 +1,7 @@
 # AI Feature Matrix — GeekSpace 2.0
 
 > Living document. Updated each phase. Tracks to-and-fro verification status.
-> Last updated: 2026-03-12 (Phase 4 Completion + Bug Fix Run)
+> Last updated: 2026-03-18 (Session 5 — Mobile/Web Consistency Overhaul)
 
 ## Legend
 - ✅ Verified this phase
@@ -48,8 +48,12 @@
 | Gap | Fix Phase | Priority |
 |-----|-----------|----------|
 | Billing history UI is placeholder only | Future | Low |
-| Telegram file handling E2E needs real Telegram | Phase 5 | Medium |
-| Health monitor Telegram alerts missing | Phase 5 | High |
-| Voice Intelligence V2 (multi-lang TTS responses) | Phase 5 | High |
-| Smart Scheduling (calendar conflict detection) | Phase 5 | High |
-| Seedance Director Mode (FAL_KEY needed) | Phase 5 | Low |
+| Telegram file handling E2E needs real Telegram | Future | Medium |
+| Health monitor Telegram alerts | ✅ Done Session 5 | — |
+| Image/video gen rate limits | ✅ Done Session 5 | — |
+| Mobile bottom nav safe area (iPhone X+) | ✅ Done Session 5 | — |
+| pb-24 padding on all 30+ dashboard pages | ✅ Done Session 5 | — |
+| iOS PWA install guide | ✅ Done Session 5 | — |
+| Voice Intelligence V2 (multi-lang TTS responses) | Future | High |
+| Smart Scheduling (calendar conflict detection) | Future | High |
+| Seedance Director Mode (FAL_KEY needed) | Future | Low |

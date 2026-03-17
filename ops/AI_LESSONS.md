@@ -171,3 +171,43 @@ curl localhost:3001/api/health
 Setting `touch-action: pan-y` globally on html/body suppresses horizontal swipe recognition in Chrome Android's compositor.
 This conflicts with `useSwipeNavigation` (react-swipeable, in DashboardApp.tsx) which relies on horizontal swipe-left/right for page nav.
 If horizontal swipe-navigation breaks on mobile, remove global touch-action or apply it only to non-navigation containers.
+
+## Mobile / iOS (Session 5 Lessons — 2026-03-18)
+
+### safe-area-pb class vs inline env() style for bottom nav
+- Using a CSS utility class `.safe-area-pb` to handle iPhone home indicator inside the nav bar was wrong — it pushed icons into the top portion of the nav, making them unreachable
+- **Correct pattern:** Position the nav ABOVE the safe area entirely using inline style:
+  ```jsx
+  style={{ bottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px))' }}
+  ```
+- This lifts the entire nav above the iPhone 34px home indicator zone
+- **Rule:** For fixed-position bottom elements on iPhone, position the element above safe area rather than padding inside it
+
+### pb-24 — single source vs double source
+- DashboardApp `<main>` already has `pb-24 md:pb-0` — all pages get 96px bottom clearance automatically
+- Adding `pb-24` to individual pages creates 192px double-padding on mobile (harmless but excessive)
+- **Current state:** Both `<main>` and individual pages have pb-24 — this is fine but redundant
+- **Rule for future:** Don't add pb-24 to page root divs — the `<main>` wrapper handles it globally
+
+### Fixed-position toasts must use bottom-24 on mobile
+- Toasts anchored at `bottom-6` sit BEHIND the 64px mobile bottom nav
+- Pattern: `className="fixed bottom-24 md:bottom-6 ..."` — stays above nav on mobile, normal on desktop
+- FABs use `bottom-[88px]` (88px = 64px nav + 24px gap) for more clearance
+
+### min-h-dvh vs min-h-screen for iOS Safari
+- `min-h-screen` = `100vh` which includes Safari's browser chrome (address bar height)
+- `min-h-dvh` = `100dvh` (dynamic viewport height) which EXCLUDES the browser chrome
+- Dashboard root MUST use `min-h-dvh` or content overflows below the visible area on iOS
+- Same pattern applies to full-height pages: always use `dvh` units, never `vh`, in iOS-targeted layouts
+
+### logConversation content should be sliced
+- `logTrainingExample` slices content to 8000 chars; `logConversation` was not slicing
+- Large tool outputs or long LLM responses could grow `conversation_log` unboundedly
+- **Fix applied:** `content.slice(0, 8000)` in `logConversation` INSERT
+- `getConversationContext` already trims on read (maxChars=4096), but defense-in-depth at write time too
+
+### Phase107 tests are sensitive to full-suite parallelism
+- `runReactLoop` and `/api/agent/chat` LLM tests pass in isolation (~10s) but can time out in the full suite
+- Root cause: shared SQLite + multiple LLM calls competing for network bandwidth under test load
+- **Fix:** `vitest.config.ts` global `testTimeout: 30000` + per-test explicit timeouts on LLM tests
+- **Rule:** Any test that calls a real LLM must have an explicit `{ timeout: 30000 }` option

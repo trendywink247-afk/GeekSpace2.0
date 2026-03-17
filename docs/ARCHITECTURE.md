@@ -29,9 +29,9 @@ User (Browser)
 │  │   ├── Tools:   Groq forced (tool-triggered messages bypass free models)
 │  │   └── Auto:    sidecar → Ollama → builtin
 │  │
-│  ├── Personality System (Edith / Jarvis / Weebo)
+│  ├── Personality System (9 agents: Weebo/Edith/Jarvis/Aria/Forge/Pulse/Echo/Cal/Nova)
 │  ├── Credit & Billing System
-│  └── Redis (cache, job queue)
+│  └── Redis (cache, job queue, rate limiting)
 └─────────────────────┘
 ```
 
@@ -366,7 +366,7 @@ A canvas-rendered pixel-art office where each of the 9 agent personalities has a
 
 - **Helmet** security headers (CSP in production)
 - **CORS** restricted to configured origins
-- **Rate limiting:** 200 req/15min global, 10 req/15min on auth, 30 req/15min on chat
+- **Rate limiting:** 200 req/15min global, 10 req/15min on auth, 30 req/15min on chat, 20/hr image gen, 5/hr video gen
 - **JWT** with HS256 algorithm pinning (prevents algorithm-none attacks)
 - **bcryptjs** password hashing (10 rounds)
 - **AES-256-GCM + scrypt** encryption for stored API keys
@@ -375,3 +375,69 @@ A canvas-rendered pixel-art office where each of the 9 agent personalities has a
 - **Non-root Docker user** (node)
 - **WAL mode** SQLite for safe concurrent reads
 - **Secrets never committed** — `.env` is gitignored
+
+## 14. Mobile & PWA Architecture
+
+**Updated:** 2026-03-18 (Session 5)
+
+### Frontend Shell (DashboardApp.tsx)
+
+```
+Root: min-h-dvh flex flex-col md:flex-row (dvh = iOS Safari viewport fix)
+  ├── Desktop sidebar (fixed, left-3 to bottom-3, hidden md:flex)
+  ├── Mobile drawer sidebar (fixed, slide-in on hamburger tap)
+  ├── Main content area (flex-1, pb-24 md:pb-0)
+  │     ├── Header (sticky top-0, h-14, backdrop-blur)
+  │     └── Page content (routed, each page has pb-24 md:pb-X)
+  └── Mobile bottom nav (fixed, floating pill, md:hidden)
+        └── style={{ bottom: max(12px, env(safe-area-inset-bottom) + 8px) }}
+```
+
+### Bottom Navigation
+
+- 5 tabs: Overview, Chat, Reminders, Focus, More
+- Floating pill shape: `left-3 right-3 h-16 rounded-2xl backdrop-blur-xl`
+- Safe-area positioning: `max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px))`
+  — sits ABOVE iPhone X+ home indicator (34px), not inside it
+- Active tab indicator: animated cyan underline + glow
+- Minimum tab width: `min-w-[56px]` for comfortable thumb reach
+
+### Touch & Gestures
+
+- **Swipe navigation**: `useSwipeNavigation` (react-swipeable) — horizontal swipes switch pages
+- **Edge swipe**: Touch starting in left 20px opens mobile sidebar (via `swipeTouchStartX` tracking)
+- **Pull-to-refresh**: `PullToRefreshWrapper` + `usePullToRefresh` on key pages (OverviewPage, RemindersPage, ActivityPage, etc.) — mobile-only via `useMobileDetect`
+- **Touch targets**: All interactive elements minimum 44×44px (WCAG AA)
+- **touch-action: manipulation** on form inputs — prevents 300ms iOS tap delay
+
+### Viewport & Safe Areas
+
+```css
+/* index.css */
+html { overflow-x: hidden; max-width: 100vw; box-sizing: border-box; }
+img  { max-width: 100%; }
+.safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0px); }
+```
+
+```html
+<!-- index.html -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+```
+
+### PWA Manifest
+
+`/public/manifest.json` — `display: standalone`, icons at 192×192 and 512×512, `start_url: /`.
+
+### iOS Install Guide
+
+`OverviewPage` shows a slide-up banner after 3s on iOS Safari (not in standalone mode). Guides user through Add to Home Screen. Dismisses for 7 days via `localStorage`.
+
+### Mobile-Specific Hooks
+
+| Hook | Purpose |
+|------|---------|
+| `useMobileDetect` | Returns `isMobile: boolean` (screen < 768px) |
+| `usePullToRefresh` | Touch gesture → calls `onRefresh` callback |
+| `useSwipeNavigation` | Left/right swipe → navigate between pages |
