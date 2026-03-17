@@ -503,7 +503,7 @@ function PeriodTabs({
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
-          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all min-h-[36px] ${
+          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
             value === tab.key
               ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30'
               : 'text-[#8892A4] hover:text-[#F4F6FF] border border-transparent'
@@ -817,7 +817,7 @@ export function AnalyticsPage() {
             Your personal AI usage and productivity insights
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <PeriodTabs value={period} onChange={setPeriod} />
           <button
             onClick={handleExportCSV}

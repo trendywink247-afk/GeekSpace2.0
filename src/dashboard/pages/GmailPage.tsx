@@ -656,7 +656,7 @@ export function GmailPage() {
                           {/* Star toggle */}
                           <button
                             onClick={(e) => handleToggleStar(msg.id, e)}
-                            className="min-w-[28px] min-h-[28px] flex items-center justify-center rounded-md hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100 data-[starred=true]:opacity-100 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100 data-[starred=true]:opacity-100 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                             data-starred={isStarred}
                             aria-label={isStarred ? 'Unstar' : 'Star'}
                           >
