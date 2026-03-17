@@ -323,9 +323,12 @@ export function OfficePage() {
   const [serverStatus, setServerStatus] = useState<GeekOSStatus>({ online: false, uptime: 0, agents: 0 });
   const [connectionMode, setConnectionMode] = useState<'sse' | 'polling'>('polling');
   const tickRef = useRef(0);
-  const animFrameRef = useRef(0);
+  const animFrameRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sseRef = useRef<EventSource | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Mirror agents state in a ref so the animation loop can read it without re-triggering
+  const agentsRef = useRef(agents);
+  agentsRef.current = agents;
 
   // ---- Fetch agents ----
 
@@ -527,12 +530,10 @@ export function OfficePage() {
     }));
   }, []);
 
-  // ---- Animation loop ----
+  // ---- Animation loop (single interval — reads from refs, not state deps) ----
 
   useEffect(() => {
-    let running = true;
-    const animate = () => {
-      if (!running) return;
+    const interval = setInterval(() => {
       tickRef.current++;
       moveAgents();
       const canvas = canvasRef.current;
@@ -540,14 +541,14 @@ export function OfficePage() {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           const dpr = window.devicePixelRatio || 1;
-          renderCanvas(ctx, dpr, agents, serverStatus.online, tickRef.current, selected);
+          // Read from ref so this effect doesn't depend on agents state
+          renderCanvas(ctx, dpr, agentsRef.current, serverStatus.online, tickRef.current, selected);
         }
       }
-      animFrameRef.current = window.setTimeout(() => requestAnimationFrame(animate), 200);
-    };
-    animate();
-    return () => { running = false; clearTimeout(animFrameRef.current); };
-  }, [agents, serverStatus.online, selected, moveAgents]);
+    }, 200);
+    animFrameRef.current = interval;
+    return () => clearInterval(interval);
+  }, [serverStatus.online, selected, moveAgents]);
 
   // ---- Init ----
 
