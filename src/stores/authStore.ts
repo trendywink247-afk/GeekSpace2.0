@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User, OnboardingState, AgentMode } from '@/types';
 import { authService } from '@/services/api';
+import api from '@/services/api';
 
 // Extend Window interface for test helpers
 declare global {
@@ -81,6 +82,11 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
             onboarding: { ...defaultOnboarding, completed: !!u.onboardingCompleted, step: u.onboardingStep ?? 0 },
           });
+          // Sync timezone on login
+          try {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (tz) void api.patch('/users/me/timezone', { timezone: tz });
+          } catch { /* ignore */ }
         } catch (err: unknown) {
           set({ isLoading: false });
           const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Invalid credentials';
@@ -120,6 +126,11 @@ export const useAuthStore = create<AuthStore>()(
               step: (data as unknown as { onboardingStep?: number }).onboardingStep ?? 0,
             },
           }));
+          // Fire-and-forget: sync detected browser timezone to server (for reminders/briefings)
+          try {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (tz) void api.patch('/users/me/timezone', { timezone: tz });
+          } catch { /* ignore timezone sync errors */ }
         } catch {
           set({ user: null, isAuthenticated: false, isLoading: false });
         }

@@ -260,6 +260,59 @@ function GlanceCardSkeleton() {
 }
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// iOS Install Banner
+// ---------------------------------------------------------------------------
+
+const IOS_DISMISS_KEY = 'ios-install-dismissed-at';
+const IOS_DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function shouldShowIOSBanner(): boolean {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isSafari =
+    /Safari/i.test(navigator.userAgent) &&
+    !/Chrome|CriOS|FxiOS|EdgiOS/i.test(navigator.userAgent);
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  if (!isIOS || !isSafari || isStandalone) return false;
+
+  const dismissedAt = localStorage.getItem(IOS_DISMISS_KEY);
+  if (dismissedAt) {
+    const elapsed = Date.now() - parseInt(dismissedAt, 10);
+    if (elapsed < IOS_DISMISS_TTL_MS) return false;
+  }
+  return true;
+}
+
+function IOSInstallBanner({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div
+      role="banner"
+      aria-label="iOS install guide"
+      className="flex items-center gap-3 rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/5 px-4 py-3 text-sm"
+    >
+      <span className="text-base leading-none select-none" aria-hidden>📱</span>
+      <span className="flex-1 text-[#8892A4]">
+        <span className="font-medium text-[#F4F6FF]">Install Agentin:</span>{' '}
+        Tap the{' '}
+        <span className="inline-flex items-center gap-0.5 font-medium text-[#00F0FF]">
+          Share <span aria-label="share icon">⬆</span>
+        </span>{' '}
+        button → <span className="font-medium text-[#F4F6FF]">"Add to Home Screen"</span>
+      </span>
+      <button
+        onClick={onDismiss}
+        aria-label="Dismiss iOS install guide"
+        className="p-1 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center text-[#8892A4] hover:text-[#F4F6FF]"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -277,6 +330,8 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [loadErrDismissed, setLoadErrDismissed] = useState(false);
+  // iOS install banner — shown after 3s delay
+  const [showIOSBanner, setShowIOSBanner] = useState(false);
   // Day labels for sparkline
   const [dayLabels, setDayLabels] = useState<string[]>([]);
 
@@ -348,11 +403,23 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
     fetchOverviewData();
   }, [fetchOverviewData]);
 
+  // Show iOS install banner after 3s if applicable
+  useEffect(() => {
+    if (!shouldShowIOSBanner()) return;
+    const timer = setTimeout(() => setShowIOSBanner(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
     onRefresh?.();
     fetchOverviewData().finally(() => setIsRefreshing(false));
   }, [onRefresh, fetchOverviewData]);
+
+  const handleIOSDismiss = useCallback(() => {
+    localStorage.setItem(IOS_DISMISS_KEY, String(Date.now()));
+    setShowIOSBanner(false);
+  }, []);
 
   const handlePullRefresh = async () => {
     handleRefresh();
@@ -439,6 +506,11 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         className="space-y-6 pb-24 md:pb-8"
         style={{ background: '#05050A' }}
       >
+        {/* ─── iOS Install Banner ─── */}
+        {showIOSBanner && (
+          <IOSInstallBanner onDismiss={handleIOSDismiss} />
+        )}
+
         {/* ─── Personalized Greeting Header ─── */}
         <div
           className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}

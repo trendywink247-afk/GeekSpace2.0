@@ -248,7 +248,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center px-4 sm:px-6 md:px-8 max-w-5xl mx-auto mt-[28vh] sm:mt-[30vh] md:mt-[35vh] animate-page-enter">
+      <div className="relative z-10 text-center px-4 sm:px-6 md:px-8 max-w-5xl mx-auto mt-[48vh] sm:mt-[38vh] md:mt-[35vh] animate-page-enter">
         {/* Micro Label */}
         <div
           className={`mb-6 relative z-10 transition-all duration-700 delay-100 ${
