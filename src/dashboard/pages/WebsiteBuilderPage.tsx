@@ -317,7 +317,7 @@ export function WebsiteBuilderPage() {
   const emptySlots = [1, 2, 3, 4, 5, 6].filter(s => !fleetAgents.some(a => a.slot === s));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       <div>
         <h1 className="text-2xl font-bold text-[#E8E8F0]">Website Builder</h1>
         <p className="text-sm text-[#9CA3AF] mt-1">Build, manage, and deploy your web projects</p>

@@ -441,7 +441,7 @@ export function GmailPage() {
   /* ---------- Connected state ---------- */
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 p-4 sm:p-0">
+    <div className="max-w-6xl mx-auto space-y-4 p-4 pb-24 sm:p-0 sm:pb-6">
       {/* Stats header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">

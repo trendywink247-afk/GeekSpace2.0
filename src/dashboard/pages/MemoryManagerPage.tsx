@@ -488,7 +488,7 @@ export function MemoryManagerPage() {
   // ── Render ───────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden pb-24 md:pb-6">
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

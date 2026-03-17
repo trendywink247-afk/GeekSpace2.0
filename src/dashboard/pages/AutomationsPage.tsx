@@ -578,7 +578,7 @@ export function AutomationsPage() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div data-testid="automations-page" className="space-y-5 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
+    <div data-testid="automations-page" className="space-y-5 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0 pb-24 md:pb-6">
       {/* Dry-run result toast */}
       {dryRunResult && (
         <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 max-w-sm px-4 py-3 rounded-xl bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-[#F59E0B] text-sm shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="dry-run-result">

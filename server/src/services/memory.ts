@@ -184,7 +184,7 @@ export function logConversation(
 
   db.prepare(
     'INSERT INTO conversation_log (id, user_id, role, content, provider, model, request_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(uuid(), userId, role, content, provider, model, requestId);
+  ).run(uuid(), userId, role, content.slice(0, 8000), provider, model, requestId);
 
   // Forward to GeekOS for semantic embedding (fire-and-forget)
   import('../routes/geekos-bridge.js')
