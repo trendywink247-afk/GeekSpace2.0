@@ -19,6 +19,26 @@ const C = {
   border: 'rgba(0,240,255,0.1)',
 } as const;
 
+// ---- Personality Metadata ----
+
+const PERSONALITY_META: Record<string, { color: string; emoji: string; role: string }> = {
+  weebo:  { color: '#00F0FF', emoji: '\u2728', role: 'General Assistant' },
+  edith:  { color: '#8B5CF6', emoji: '\u26A1', role: 'Strategic Engine' },
+  jarvis: { color: '#ADFF2F', emoji: '\uD83C\uDFA9', role: 'Operations' },
+  aria:   { color: '#FF6B9D', emoji: '\uD83C\uDFA8', role: 'Creative Director' },
+  forge:  { color: '#F59E0B', emoji: '\uD83D\uDD27', role: 'Tech Lead' },
+  pulse:  { color: '#10B981', emoji: '\uD83D\uDCCA', role: 'Data Analyst' },
+  echo:   { color: '#6366F1', emoji: '\uD83D\uDC99', role: 'Coach' },
+  cal:    { color: '#84CC16', emoji: '\uD83D\uDCC5', role: 'Scheduler' },
+  nova:   { color: '#EC4899', emoji: '\uD83D\uDD2D', role: 'Researcher' },
+};
+
+const ICON_TO_AGENT: Record<string, string> = {
+  'bot': 'weebo', 'brain': 'weebo', 'sparkles': 'aria',
+  'code': 'forge', 'bar-chart': 'pulse', 'heart': 'echo',
+  'calendar': 'cal', 'search': 'nova', 'zap': 'edith', 'clock': 'jarvis',
+};
+
 // ---- Canvas Constants ----
 
 const CELL = 18;
@@ -72,28 +92,48 @@ interface SystemHealth {
 
 // ---- Desk Positions (grid coords, top-left of 3x2 desk block) ----
 
-const DESK_POSITIONS: Record<string, { x: number; y: number }> = {
-  weebo: { x: 4, y: 4 },
-  edith: { x: 14, y: 4 },
-  jarvis: { x: 24, y: 4 },
-  aria: { x: 4, y: 9 },
-  forge: { x: 14, y: 9 },
-  pulse: { x: 24, y: 9 },
-};
-
-// ---- Default Agent List ----
-
-const DEFAULT_AGENTS: Agent[] = [
-  { id: 'weebo', name: 'Weebo', role: 'Creative & Research', color: '#00F0FF', emoji: '\u2728', state: 'idle', lastAction: 'Standing by', actionCount: 0, x: 3, y: 3, targetX: 3, targetY: 3, path: [], pathIdx: 0 },
-  { id: 'edith', name: 'Edith', role: 'Strategy & Analysis', color: '#8B5CF6', emoji: '\uD83D\uDD37', state: 'idle', lastAction: 'Standing by', actionCount: 0, x: 13, y: 3, targetX: 13, targetY: 3, path: [], pathIdx: 0 },
-  { id: 'jarvis', name: 'Jarvis', role: 'Operations & Tasks', color: '#ADFF2F', emoji: '\uD83E\uDD16', state: 'idle', lastAction: 'Standing by', actionCount: 0, x: 23, y: 3, targetX: 23, targetY: 3, path: [], pathIdx: 0 },
+const DESK_POS_LIST: { x: number; y: number }[] = [
+  { x: 4, y: 3 },  { x: 14, y: 3 },  { x: 24, y: 3 },
+  { x: 4, y: 9 },  { x: 14, y: 9 },  { x: 24, y: 9 },
+  { x: 9, y: 6 },  { x: 19, y: 6 },  { x: 9, y: 11 },
 ];
 
-const AGENT_COLORS: Record<string, string> = {
-  weebo: '#00F0FF', edith: '#8B5CF6', jarvis: '#ADFF2F',
-  aria: '#F59E0B', forge: '#FF2D78', pulse: '#00F0FF',
-  echo: '#8B5CF6', cal: '#ADFF2F', nova: '#F59E0B',
+// Mutable: rebuilt when agents are fetched
+let DESK_POSITIONS: Record<string, { x: number; y: number }> = {
+  weebo: DESK_POS_LIST[0],
+  edith: DESK_POS_LIST[1],
+  jarvis: DESK_POS_LIST[2],
 };
+
+// ---- Default Agent List (core 3) ----
+
+const CORE_AGENT_IDS = ['weebo', 'edith', 'jarvis'] as const;
+
+function buildAgentFromMeta(id: string, posIndex: number): Agent {
+  const meta = PERSONALITY_META[id] || { color: C.cyan, emoji: '\u2728', role: 'Agent' };
+  const pos = DESK_POS_LIST[posIndex % DESK_POS_LIST.length];
+  const startX = Math.max(1, Math.min(pos.x + 1, COLS - 2));
+  const startY = Math.max(1, Math.min(pos.y - 1, ROWS - 2));
+  return {
+    id,
+    name: id.charAt(0).toUpperCase() + id.slice(1),
+    role: meta.role,
+    color: meta.color,
+    emoji: meta.emoji,
+    state: 'idle',
+    lastAction: 'Standing by',
+    actionCount: 0,
+    x: startX, y: startY,
+    targetX: startX, targetY: startY,
+    path: [], pathIdx: 0,
+  };
+}
+
+const DEFAULT_AGENTS: Agent[] = CORE_AGENT_IDS.map((id, i) => buildAgentFromMeta(id, i));
+
+const AGENT_COLORS: Record<string, string> = Object.fromEntries(
+  Object.entries(PERSONALITY_META).map(([id, m]) => [id, m.color]),
+);
 
 // ---- Constants ----
 
@@ -130,7 +170,7 @@ function buildGrid(): boolean[][] {
   return grid;
 }
 
-const OFFICE_GRID = buildGrid();
+let OFFICE_GRID = buildGrid();
 
 // ---- BFS Pathfinding ----
 
@@ -593,30 +633,29 @@ export function OfficePage() {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          setAgents(data.map((a: Record<string, unknown>, i: number) => {
-            const fallback = DEFAULT_AGENTS[i % DEFAULT_AGENTS.length];
-            const deskPos = DESK_POSITIONS[(a.id as string) || fallback.id];
-            const startX = deskPos ? deskPos.x + 1 : (3 + i * 10);
-            const startY = deskPos ? deskPos.y - 1 : 2;
-            const safeY = Math.max(1, Math.min(startY, ROWS - 2));
-            const safeX = Math.max(1, Math.min(startX, COLS - 2));
-            return {
-              id: (a.id as string) || fallback.id,
-              name: (a.name as string) || fallback.name,
-              role: (a.role as string) || fallback.role,
-              color: (a.color as string) || fallback.color,
-              emoji: (a.emoji as string) || fallback.emoji,
-              state: 'idle' as AgentState,
-              lastAction: 'Standing by',
-              actionCount: 0,
-              x: safeX,
-              y: safeY,
-              targetX: safeX,
-              targetY: safeY,
-              path: [] as { x: number; y: number }[],
-              pathIdx: 0,
-            };
-          }));
+          // Collect deployed personality IDs
+          const deployedIds = new Set<string>();
+          for (const a of data) {
+            const pb = ((a.personality_base as string) || (a.id as string) || '').toLowerCase();
+            if (pb && PERSONALITY_META[pb]) deployedIds.add(pb);
+          }
+          // Always include core agents
+          for (const coreId of CORE_AGENT_IDS) deployedIds.add(coreId);
+
+          // Build ordered list: core first, then extras (max 9)
+          const ordered: string[] = [...CORE_AGENT_IDS];
+          for (const id of deployedIds) {
+            if (!ordered.includes(id)) ordered.push(id);
+          }
+          const finalIds = ordered.slice(0, DESK_POS_LIST.length);
+
+          // Rebuild desk positions for current agents
+          const newDesks: Record<string, { x: number; y: number }> = {};
+          finalIds.forEach((id, i) => { newDesks[id] = DESK_POS_LIST[i]; });
+          DESK_POSITIONS = newDesks;
+          OFFICE_GRID = buildGrid();
+
+          setAgents(finalIds.map((id, i) => buildAgentFromMeta(id, i)));
           return;
         }
       }
@@ -736,16 +775,30 @@ export function OfficePage() {
               doneTimeoutRef.current.set(agentId, timeout);
             }
 
-            setAgents(prev => prev.map(a => {
-              if (a.id !== agentId) return a;
-              return {
-                ...a,
-                state: newState,
-                tool: event.tool,
-                lastAction: event.content || event.tool || a.lastAction,
-                actionCount: newState === 'done' ? a.actionCount + 1 : a.actionCount,
-              };
-            }));
+            setAgents(prev => {
+              const exists = prev.some(a => a.id === agentId);
+              if (!exists && PERSONALITY_META[agentId] && prev.length < DESK_POS_LIST.length) {
+                // Dynamically add agent to grid
+                const newIdx = prev.length;
+                DESK_POSITIONS[agentId] = DESK_POS_LIST[newIdx];
+                OFFICE_GRID = buildGrid();
+                const added = buildAgentFromMeta(agentId, newIdx);
+                added.state = newState;
+                added.tool = event.tool;
+                added.lastAction = event.content || event.tool || added.lastAction;
+                return [...prev, added];
+              }
+              return prev.map(a => {
+                if (a.id !== agentId) return a;
+                return {
+                  ...a,
+                  state: newState,
+                  tool: event.tool,
+                  lastAction: event.content || event.tool || a.lastAction,
+                  actionCount: newState === 'done' ? a.actionCount + 1 : a.actionCount,
+                };
+              });
+            });
 
             // Also push to the feed
             const feedItem: FeedItem = {
@@ -823,6 +876,35 @@ export function OfficePage() {
             };
             setFeed(prev => [...prev, feedItem].slice(-MAX_FEED_ITEMS));
             setHealth(prev => ({ ...prev, eventsToday: prev.eventsToday + 1 }));
+
+            // Map activity to correct agent
+            const incomingAction = ((data.action as string) || '').toLowerCase();
+            let targetAgentId: string | null = null;
+
+            // 1. Check action text for personality name
+            for (const pid of Object.keys(PERSONALITY_META)) {
+              if (incomingAction.includes(pid)) { targetAgentId = pid; break; }
+            }
+
+            // 2. Fall back to icon mapping
+            if (!targetAgentId) {
+              const iconStr = (data.icon as string) || '';
+              targetAgentId = ICON_TO_AGENT[iconStr] || null;
+            }
+
+            if (targetAgentId) {
+              const tid = targetAgentId;
+              const newState: Agent['state'] =
+                incomingAction.includes('thinking') ? 'thinking' :
+                incomingAction.includes('replied') || incomingAction.includes('done') ? 'idle' :
+                'typing';
+
+              setAgents(prev => prev.map(a =>
+                a.id === tid
+                  ? { ...a, state: newState, lastAction: (data.action as string) || a.lastAction, actionCount: a.actionCount + 1 }
+                  : a
+              ));
+            }
           } catch { /* skip */ }
         }
       }

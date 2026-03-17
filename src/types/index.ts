@@ -71,7 +71,7 @@ export interface Membership {
 export type AgentMode = 'minimal' | 'builder' | 'operator';
 export type AgentVoice = 'professional' | 'friendly' | 'witty';
 
-export type AgentPersonality = 'edith' | 'jarvis' | 'weebo';
+export type AgentPersonality = 'edith' | 'jarvis' | 'weebo' | 'aria' | 'forge' | 'pulse' | 'echo' | 'cal' | 'nova';
 
 export type ModelPreference = 'auto' | 'local' | 'cloud' | 'premium';
 

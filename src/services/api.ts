@@ -216,7 +216,7 @@ export const agentService = {
     }>('/agent/chat', { message, channel, ...(existingArtifactId ? { existingArtifactId } : {}) }),
 
   /** SSE streaming chat — returns a ReadableStream */
-  chatStream: async (message: string, channel: string = 'web', signal?: AbortSignal) => {
+  chatStream: async (message: string, channel: string = 'web', signal?: AbortSignal, personality?: string) => {
     const token = localStorage.getItem('gs_token');
     const res = await fetch(`${API_URL}/agent/chat/stream`, {
       method: 'POST',
@@ -224,7 +224,7 @@ export const agentService = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ message, channel }),
+      body: JSON.stringify({ message, channel, ...(personality ? { personality } : {}) }),
       signal,
     });
     return res;

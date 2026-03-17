@@ -31,9 +31,9 @@ import { useLogoutBlocker } from '@/hooks/useLogoutBlocker';
 import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog';
 
 const personalityEmojis: Record<AgentPersonality, string> = {
-  edith: '🔷',
-  jarvis: '🟣',
-  weebo: '💚',
+  edith: '🔷', jarvis: '🟣', weebo: '💚',
+  aria: '🎨', forge: '🔧', pulse: '📊',
+  echo: '💙', cal: '📅', nova: '🔭',
 };
 
 // ---- Lazy loaded pages for code splitting (with chunk-load retry) ----

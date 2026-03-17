@@ -564,6 +564,18 @@ webhooksRouter.post('/telegram', async (req, res) => {
       const escalationHandled = await handleEscalationReply(normalized.externalId, normalized.text, replyToMessageId);
       if (escalationHandled) return;
 
+      // @agent prefix routing for Telegram
+      const rawText = normalized.text || '';
+      const agentPrefixMatch = rawText.match(/^@([a-zA-Z]+)\s+([\s\S]+)$/);
+      const VALID_AGENTS = ['weebo', 'edith', 'jarvis', 'aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
+      const prefixAgent = agentPrefixMatch?.[1]?.toLowerCase();
+      const routedAgent = prefixAgent && VALID_AGENTS.includes(prefixAgent) ? prefixAgent : null;
+
+      if (routedAgent) {
+        normalized.text = agentPrefixMatch![2]; // Strip @prefix
+        (normalized as unknown as Record<string, unknown>)._overridePersonality = routedAgent;
+      }
+
       await handleIncomingMessage({ ...normalized, requestId });
 
       // After handling, send action chips for agentic feel

@@ -87,6 +87,12 @@ const personalityMeta: Record<AgentPersonality, { emoji: string; name: string; g
   edith: { emoji: '🔷', name: 'Edith', greeting: "What do you need? I'm ready." },
   jarvis: { emoji: '🟣', name: 'Jarvis', greeting: "Good day. How may I assist you?" },
   weebo: { emoji: '💚', name: 'Weebo', greeting: "Hiii! What are we working on today?!" },
+  aria: { emoji: '🎨', name: 'Aria', greeting: "Hey! Let's create something amazing." },
+  forge: { emoji: '🔧', name: 'Forge', greeting: "Forge here. What are we building?" },
+  pulse: { emoji: '📊', name: 'Pulse', greeting: "Pulse online. What data do you need?" },
+  echo: { emoji: '💙', name: 'Echo', greeting: "Hey, Echo here. What are we working on?" },
+  cal: { emoji: '📅', name: 'Cal', greeting: "Cal here. Let's get organized." },
+  nova: { emoji: '🔭', name: 'Nova', greeting: "Nova here! Ready to explore." },
 };
 
 const providerLabels: Record<string, string> = {

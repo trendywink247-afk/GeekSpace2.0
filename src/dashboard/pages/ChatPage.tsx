@@ -393,6 +393,7 @@ export function ChatPage() {
   const user = useAuthStore((s) => s.user);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
+  const [selectedAgent, setSelectedAgent] = useState<string>('');
   const [isTyping, setIsTyping] = useState(false);
   const [voiceMode, setVoiceMode] = useState<boolean>(getVoiceMode);
   const [interimText, setInterimText] = useState('');
@@ -573,7 +574,7 @@ export function ChatPage() {
     lastChunkTimeRef.current = Date.now();
 
     try {
-      const response = await agentService.chatStream(text, 'web', ac.signal);
+      const response = await agentService.chatStream(text, 'web', ac.signal, selectedAgent || undefined);
 
       if (!response.ok || !response.body) {
         throw new Error(`Stream request failed: ${response.status}`);
@@ -724,7 +725,7 @@ export function ChatPage() {
         abortControllerRef.current = null;
       }
     }
-  }, [messages, personality, voiceMode, tts]);
+  }, [messages, personality, voiceMode, tts, selectedAgent]);
 
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -903,6 +904,12 @@ export function ChatPage() {
     edith: { emoji: 'E', color: '#8B5CF6', glow: '0 0 12px rgba(139,92,246,0.4)', initial: 'E' },
     jarvis: { emoji: 'J', color: '#ADFF2F', glow: '0 0 12px rgba(173,255,47,0.4)', initial: 'J' },
     weebo: { emoji: 'W', color: '#00F0FF', glow: '0 0 12px rgba(0,240,255,0.4)', initial: 'W' },
+    aria: { emoji: 'A', color: '#FF6B9D', glow: '0 0 12px rgba(255,107,157,0.4)', initial: 'A' },
+    forge: { emoji: 'F', color: '#F59E0B', glow: '0 0 12px rgba(245,158,11,0.4)', initial: 'F' },
+    pulse: { emoji: 'P', color: '#10B981', glow: '0 0 12px rgba(16,185,129,0.4)', initial: 'P' },
+    echo: { emoji: 'E', color: '#6366F1', glow: '0 0 12px rgba(99,102,241,0.4)', initial: 'E' },
+    cal: { emoji: 'C', color: '#84CC16', glow: '0 0 12px rgba(132,204,22,0.4)', initial: 'C' },
+    nova: { emoji: 'N', color: '#EC4899', glow: '0 0 12px rgba(236,72,153,0.4)', initial: 'N' },
   };
   const meta = personalityMeta[personality];
 
@@ -1337,6 +1344,36 @@ export function ChatPage() {
 
         {/* Input */}
         <div className='px-4 py-3 border-t border-[#00F0FF]/10 flex-shrink-0'>
+          {/* Agent Picker */}
+          <div className='flex gap-1.5 pb-2 overflow-x-auto' style={{ scrollbarWidth: 'none' }}>
+            {[
+              { id: '', name: 'Auto', emoji: '🤖', color: '#8892A4' },
+              { id: 'weebo', name: 'Weebo', emoji: '✨', color: '#00F0FF' },
+              { id: 'edith', name: 'Edith', emoji: '⚡', color: '#8B5CF6' },
+              { id: 'jarvis', name: 'Jarvis', emoji: '🎩', color: '#ADFF2F' },
+              { id: 'aria', name: 'Aria', emoji: '🎨', color: '#FF6B9D' },
+              { id: 'forge', name: 'Forge', emoji: '🔧', color: '#F59E0B' },
+              { id: 'pulse', name: 'Pulse', emoji: '📊', color: '#10B981' },
+              { id: 'echo', name: 'Echo', emoji: '💙', color: '#6366F1' },
+              { id: 'cal', name: 'Cal', emoji: '📅', color: '#84CC16' },
+              { id: 'nova', name: 'Nova', emoji: '🔭', color: '#EC4899' },
+            ].map(p => (
+              <button
+                key={p.id}
+                type='button'
+                onClick={() => setSelectedAgent(p.id)}
+                className='flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium shrink-0 transition-all'
+                style={{
+                  border: `1px solid ${selectedAgent === p.id ? p.color + '60' : 'rgba(255,255,255,0.06)'}`,
+                  background: selectedAgent === p.id ? p.color + '15' : 'transparent',
+                  color: selectedAgent === p.id ? p.color : '#8892A4',
+                }}
+              >
+                <span>{p.emoji}</span>
+                <span>{p.name}</span>
+              </button>
+            ))}
+          </div>
           {voice.error && (
             <p className='text-xs text-red-400 mb-2'>{voice.error}</p>
           )}

@@ -597,7 +597,7 @@ function parseHabitIntent(message: string): { habitName: string; note: string } 
 // ---- Named Agent Detection ----
 // Detects when the user addresses a specific named agent by name.
 // Returns the personality ID to use, or null if no named agent detected.
-function detectNamedAgent(message: string): string | null {
+export function detectNamedAgent(message: string): string | null {
   const lower = message.toLowerCase().trim();
   // Check for "hey <name>", "<name>,", "<name>:", "@<name>" patterns
   const AGENT_NAMES: Record<string, string> = {
@@ -1310,11 +1310,18 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   let systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);
   const userCredits = (user?.credits as number) || 0;
   // Check if user is addressing a named agent (e.g. "hey Aria,", "Forge:", "@nova")
-  const namedAgent = detectNamedAgent(msg.text);
+  const namedAgent = (msg as unknown as Record<string, unknown>)._overridePersonality as string
+    || detectNamedAgent(msg.text);
   const effectivePersonalityId = namedAgent || (agentConfig?.personality as string) || 'jarvis';
   const resolvedAgentName = namedAgent
     ? getPersonality(namedAgent).name
     : resolveAgentName(agentConfig, effectivePersonalityId);
+  const agentIconMap: Record<string, string> = {
+    edith: 'zap', jarvis: 'clock', weebo: 'bot',
+    aria: 'sparkles', forge: 'code', pulse: 'bar-chart',
+    echo: 'heart', cal: 'calendar', nova: 'search',
+  };
+  const agentIcon = agentIconMap[effectivePersonalityId] ?? 'bot';
   emitThinking(userId, effectivePersonalityId, `${resolvedAgentName} is processing...`);
   // If user addressed a specific named agent, rebuild system prompt with that personality
   if (namedAgent) {
@@ -1802,7 +1809,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
 
   // 10. Log assistant response (clean text without action blocks)
   logConversation(userId, 'assistant', finalReply, requestId, provider, model);
-  logActivity(userId, 'Agent replied', `${resolvedAgentName} via ${provider}`, 'bot');
+  logActivity(userId, `${resolvedAgentName} replied`, finalReply.slice(0, 80), agentIcon);
   emitDone(userId, effectivePersonalityId, `${resolvedAgentName} finished`);
 
   // Embed conversation for semantic memory (fire-and-forget)

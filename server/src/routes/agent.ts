@@ -26,7 +26,7 @@ import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from '../services/telegram.js';
 import { sendAgentMessage, getAgentMessages, canChatWithAgent } from '../services/agent-chat.js';
 import { fetchAndExtract } from '../services/web-research.js';
-import { buildPersonalityInstructions } from '../services/message-router.js';
+import { buildPersonalityInstructions, detectNamedAgent } from '../services/message-router.js';
 import { logActivity } from '../services/activity-log.js';
 import { emitThinking, emitDone } from '../services/agent-state-bus.js';
 
@@ -1006,7 +1006,8 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     incrementRateLimitTracker(userId as unknown as number).catch(() => {});
 
     // Push activity for office page live sync
-    logActivity(String(userId), 'Agent replied', `Responded via ${result.provider}`, 'bot');
+    const chatAgentName = (agentConfig?.name as string) || 'Geek';
+    logActivity(String(userId), `${chatAgentName} replied`, (cleanReply || '').slice(0, 80), 'bot');
     const chatPersonalityId = (agentConfig?.personality as string) || 'jarvis';
     emitDone(String(userId), chatPersonalityId);
 
@@ -1387,7 +1388,7 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
   try {
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
-    const systemPrompt = buildSystemPrompt(agentConfig, user, userId);
+    let systemPrompt = buildSystemPrompt(agentConfig, user, userId);
 
     // 82.6: Content filter — tag flagged messages (non-blocking)
     checkContent(message, userId);
@@ -1397,8 +1398,26 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
     const userCredits = (user?.credits as number) || 0;
     const agentName = (agentConfig?.name as string) || 'Geek';
 
+    // Named agent detection
+    const namedAgent = detectNamedAgent(message);
+    const bodyPersonality = (req.body as Record<string, unknown>).personality as string | undefined;
+    const effectivePersonality = namedAgent || bodyPersonality || (agentConfig?.personality as string) || 'jarvis';
+
+    // Per-agent icon for activity
+    const agentIconMap: Record<string, string> = {
+      edith: 'zap', jarvis: 'clock', weebo: 'bot',
+      aria: 'sparkles', forge: 'code', pulse: 'bar-chart',
+      echo: 'heart', cal: 'calendar', nova: 'search',
+    };
+    const streamIcon = agentIconMap[effectivePersonality] ?? 'bot';
+
+    if (namedAgent || bodyPersonality) {
+      const overrideConfig = { ...(agentConfig || {}), personality: effectivePersonality, name: getPersonality(effectivePersonality).name };
+      systemPrompt = buildSystemPrompt(overrideConfig, user, userId);
+    }
+
     // Push activity for office page live sync
-    logActivity(String(userId), 'Thinking...', `${agentName} is processing`, 'brain');
+    logActivity(String(userId), `${agentName} is thinking`, message.slice(0, 50), streamIcon);
     personalityId = (agentConfig?.personality as string) || 'jarvis';
     emitThinking(String(userId), personalityId, `${agentName} is thinking...`);
 

@@ -154,7 +154,7 @@ export const agentConfigUpdateSchema = z.object({
   accentColor: z.string().max(20).optional(),
   bubbleStyle: z.string().max(20).optional(),
   status: z.enum(['online', 'offline', 'busy']).optional(),
-  personality: z.enum(['edith', 'jarvis', 'weebo']).optional(),
+  personality: z.enum(['edith', 'jarvis', 'weebo', 'aria', 'forge', 'pulse', 'echo', 'cal', 'nova']).optional(),
   model_preference: z.enum(['auto', 'local', 'cloud', 'premium']).optional(),
   preferred_free_model: z.string().max(200).optional(),
   preferred_image_model: z.string().min(1).max(200).optional(),
@@ -317,7 +317,7 @@ export const workflowQuerySchema = z.object({
 
 export const picoAgentCreateSchema = z.object({
   name: z.string().min(1).max(30),
-  personality: z.enum(['edith', 'jarvis', 'weebo']).default('weebo'),
+  personality: z.enum(['edith', 'jarvis', 'weebo', 'aria', 'forge', 'pulse', 'echo', 'cal', 'nova']).default('weebo'),
 });
 
 export const picoAgentUpdateSchema = z.object({
