@@ -24,18 +24,22 @@ docker compose logs --tail=50 geekspace
 
 **Cause**: Ollama container not running, wrong port mapping, or network issue.
 
+> **Note**: Agentin has a health monitor that probes Ollama every 30s. When Ollama is **down**, the LLM router automatically skips it and falls through to Groq/OpenRouter — no 120s hangs. Messages continue to work, just via cloud providers. The health monitor restores Ollama routing automatically when it comes back up.
+
 ```bash
 # Check if Ollama is running
-curl http://localhost:11434/api/tags
+curl http://localhost:32778/api/tags  # VPS port (Hostinger maps 32778→11434)
+curl http://localhost:11434/api/tags  # standard port
+
 # If no response, check the process/container
-systemctl status ollama        # if installed on host
-docker ps | grep ollama        # if running in Docker
+docker ps | grep ollama               # if running in Docker
+/root/geekspace-network-fix.sh        # reconnect Ollama to geekspace-shared network
 
 # Check port mapping — if Docker maps 32778→11434:
 # Set OLLAMA_BASE_URL=http://localhost:32778 in .env
 
 # Verify from inside the GeekSpace container
-docker exec geekspace-app curl -s http://host.docker.internal:11434/api/tags
+docker exec geekspace-app curl -s http://ollama-qtzz-ollama-1:11434/api/tags
 
 # If "host.docker.internal" doesn't resolve, check docker-compose.yml has:
 #   extra_hosts:
@@ -164,7 +168,21 @@ docker compose restart geekspace
 # Users must re-login after JWT_SECRET changes
 ```
 
-### 12. Personality not changing
+### 12. Agent Mission Control feed frozen / not updating
+
+**Cause**: Browser session token expired (401). The Office page silently stops polling when it gets 401 responses.
+
+**Fix**: A red banner will appear at the top of the page reading "Session expired — live feed paused." Click **Re-login** to clear the token and return to the login page.
+
+If the banner doesn't appear (older session), just hard-refresh the page (`Ctrl+Shift+R`) or navigate to `/login` manually.
+
+```bash
+# Verify token is valid by checking logs
+docker compose logs geekspace --tail=20 | grep "401"
+# If you see 401s for /api/geekos/agents or /api/activity, the token expired
+```
+
+### 13. Personality not changing
 
 **Cause**: Agent config not updating, or frontend cache.
 

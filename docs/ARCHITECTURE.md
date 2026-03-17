@@ -162,9 +162,25 @@ Nine built-in personalities that change the agent's tone, greeting, and behavior
 
 | Personality | Codename | Tone | Greeting Style |
 |-------------|----------|------|----------------|
+| **Weebo** | The Darling | Enthusiastic, cute, excited to help. | "Hi hi! What are we doing today?" |
 | **Edith** | The Boss | Professional CTO. Direct, efficient. | "What do you need?" |
 | **Jarvis** | The Helper | Warm, capable butler. Default. | "Good day. How may I assist you?" |
-| **Weebo** | The Darling | Enthusiastic, cute, excited to help. | "Hi hi! What are we doing today?" |
+| **Aria** | The Creative | Imaginative, expressive, artistic. | "Let's make something wonderful!" |
+| **Forge** | The Builder | Technical, precise, code-focused. | "Ready to build. What's the spec?" |
+| **Pulse** | The Analyst | Data-driven, concise, metrics-oriented. | "Numbers first. What are we measuring?" |
+| **Echo** | The Coach | Empathetic, motivational, supportive. | "I'm here for you. What's on your mind?" |
+| **Cal** | The Planner | Organized, time-focused, scheduling expert. | "Let's get you organised. What's on the agenda?" |
+| **Nova** | The Researcher | Curious, thorough, citation-aware. | "Let me dig into that for you." |
+
+### Agent Routing (Named Agents)
+
+Users can route to a specific personality mid-message using prefix syntax:
+
+- **Natural language:** `"hey Aria, write me a poem"`
+- **@-prefix:** `"@Nova what are the latest AI papers"`
+- **Colon prefix:** `"Forge: refactor this function"`
+
+Routing is detected in `message-router.ts` → `detectNamedAgent()`. The resolved personality overrides the user's default setting for that message only.
 
 ### How Personalities Work
 
@@ -177,7 +193,7 @@ Nine built-in personalities that change the agent's tone, greeting, and behavior
 
 ```
 1. OPENCLAW_IDENTITY (base system prompt — ~800 tokens)
-2. Personality prompt (Edith/Jarvis/Weebo — ~100 tokens)
+2. Personality prompt (~100 tokens per personality)
 3. USER SESSION block (name, mode, voice, reminders, integrations)
 4. Conversation history
 ```
@@ -304,7 +320,49 @@ Zod schemas for all input:
 
 The `edith-bridge` service (`bridge/edith-bridge/`) is a WebSocket-to-HTTP bridge for the OpenClaw inference gateway. While the primary premium path now uses direct Edith/Kimi K2 API calls, the bridge remains **deployed and running** for fallback/compatibility.
 
-## 12. Security
+## 12. Agent State Bus & Real-Time Feeds
+
+**Source:** `server/src/services/agent-state-bus.ts`, `server/src/routes/agent-state.ts`, `server/src/routes/activity.ts`
+
+The Agent State Bus is the real-time nervous system powering the Agent Mission Control dashboard. Every agent action (thinking, tool call, response) emits a typed SSE event to subscribed browser clients.
+
+### SSE Endpoints
+
+| Endpoint | Purpose | Auth |
+|----------|---------|------|
+| `GET /api/agent-state/stream` | Agent state events (thinking/tool_call/responding/done) | Bearer |
+| `GET /api/activity/stream` | Activity feed events (replies, reminders, automations) | Bearer |
+
+Both endpoints use `fetch()`-based SSE (not `EventSource`) with `Authorization: Bearer` headers. Heartbeat pings every 25-30s. Auto-reconnect after 5s on disconnect.
+
+### Agent State Event Format
+
+```json
+{
+  "agentId": "weebo",
+  "agentName": "Weebo",
+  "state": "tool_call",
+  "tool": "web_search",
+  "content": "Searching the web...",
+  "timestamp": "2026-03-17T20:00:00.000Z"
+}
+```
+
+States: `idle → thinking → tool_call → tool_result → responding → done → idle`
+
+### Health Monitor
+
+**Source:** `server/src/services/health-monitor.ts`
+
+A background probe runs every 30s checking Ollama reachability. When Ollama is marked **down**, the LLM router skips it entirely (no timeout wait) and falls straight to Groq. This prevents 120s hangs on every Telegram message when Ollama is unavailable. The status is restored automatically when Ollama comes back online.
+
+### Agent Mission Control (OfficePage)
+
+**Source:** `src/dashboard/pages/OfficePage.tsx`
+
+A canvas-rendered pixel-art office where each of the 9 agent personalities has a desk. Real-time state changes animate the agent (idle bobble → thinking pulse → tool activity → responding glow). Fallback polling (`/api/geekos/agents` every 15s, `/api/activity` every 10s) activates when SSE is unavailable. If the browser session token expires (401), a banner appears with a one-click re-login button.
+
+## 13. Security
 
 - **Helmet** security headers (CSP in production)
 - **CORS** restricted to configured origins

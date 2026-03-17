@@ -1,9 +1,46 @@
-# AI Handoff — Beast Mode Sessions 1-3
-**Date:** 2026-03-16
-**Branch:** main @ a0da6c3
-**Status:** CI GREEN | Tests: 2429 pass | TS: 0 errors | Health: 12/12 OK
-**Model:** claude-opus-4-6
-**Scope:** 100+ files changed across 3 sessions
+# AI Handoff — Beast Mode Sessions 1-4
+**Date:** 2026-03-17
+**Branch:** main
+**Status:** CI GREEN | Tests: 2429 pass | TS: 0 errors | Health: OK
+**Model:** claude-sonnet-4-6 (high effort)
+**Scope:** 100+ files changed across 4 sessions
+
+---
+
+## Session 4 (2026-03-17) — Agentic Experience + Office Page Fixes
+
+### 9-Personality Agent Routing (LIVE)
+- 9 personalities: Weebo, Edith, Jarvis, Aria, Forge, Pulse, Echo, Cal, Nova
+- Named agent routing: natural language ("hey Aria"), @-prefix ("@Nova"), colon ("Forge:") — all mid-message
+- `detectNamedAgent()` in message-router resolves personality and logs routing decision
+- Web chat personality picker — click avatar to switch mid-session
+
+### Agent Mission Control (OfficePage)
+- Full rewrite from pixel art office to Mission Control dashboard with canvas pixel art inside
+- 9 agent desks with real-time animation (idle → thinking → tool_call → responding → done)
+- Two SSE streams: `/api/agent-state/stream` + `/api/activity/stream`
+- Polling fallback (10s) if SSE unavailable
+- **FIX**: 401 session expiry now shows re-login banner instead of silent freeze (`OfficePage.tsx`)
+
+### Multi-Agent Cross-Pollination
+- Agents in multi-agent orchestrator read each other's intermediate responses
+- Provides coherent, non-duplicative answers across parallel specialist agents
+
+### Health Monitor Auto-Skip
+- Ollama health monitor probes every 30s
+- When Ollama is DOWN, LLM router skips it entirely (no 120s timeout wait)
+- Falls straight to Groq/OpenRouter — Telegram messages continue uninterrupted
+
+### Files Changed (Session 4)
+- `src/dashboard/pages/OfficePage.tsx` — 401 banner, useNavigate, handleAuth401
+- `docs/ARCHITECTURE.md` — all 9 personalities, agent routing section, Agent State Bus section
+- `docs/API.md` — SSE endpoints, activity endpoints, geekos endpoints
+- `docs/TROUBLESHOOTING.md` — Ollama health monitor note, Office page 401 entry
+- `docs/README.md` — test count 2258→2429
+- `ops/AI_HANDOFF.md` — this file
+- `memory/MEMORY.md` — recent work updated
+
+---
 
 ---
 

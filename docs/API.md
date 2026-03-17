@@ -527,6 +527,81 @@ Toggle feature flags (social_discovery, portfolio_chat, automation_builder, etc.
 
 ---
 
+## Agent State Stream
+
+### `GET /api/agent-state/stream`
+
+SSE stream. Emits real-time agent state events as agents process messages. Used by the Agent Mission Control dashboard.
+
+**Headers:** `Authorization: Bearer <token>`, `Accept: text/event-stream`
+
+**Event format:**
+```
+data: {"agentId":"weebo","agentName":"Weebo","state":"thinking","content":"Processing...","timestamp":"..."}
+```
+
+States: `idle`, `thinking`, `typing`, `tool_call`, `tool_result`, `responding`, `done`
+
+Heartbeat: `:ping` comment every 30s. Reconnect on disconnect (5s delay).
+
+---
+
+## Activity Stream
+
+### `GET /api/activity/stream`
+
+SSE stream. Emits activity feed events in real time (agent replies, reminders created, automations run, etc.).
+
+**Event format:**
+```
+data: {"action":"Weebo replied","details":"Sure! Here's what I found...","icon":"bot","created_at":"..."}
+```
+
+### `GET /api/activity`
+
+Returns paginated activity log for the authenticated user.
+
+**Query params:** `limit` (default 25, max 100), `offset`, `q` (search), `type` (filter by action), `from`/`to` (YYYY-MM-DD)
+
+**Response:**
+```json
+{
+  "activity": [
+    { "id": "uuid", "action": "Weebo replied", "details": "...", "icon": "bot", "created_at": "..." }
+  ],
+  "total": 142
+}
+```
+
+### `GET /api/activity/stats`
+
+Returns 7-day daily counts of messages and reminders.
+
+```json
+{ "days": [{ "date": "2026-03-17", "messages": 12, "reminders": 3 }] }
+```
+
+---
+
+## GeekOS (Agent Status)
+
+### `GET /api/geekos/agents`
+
+Returns list of deployed agent personalities for the user.
+
+**Response:** Array of agent config objects with `id`, `personality_base`, `name`, `role`, `color`, `status`.
+
+### `GET /api/geekos/status`
+
+Returns GeekOS health summary.
+
+**Response:**
+```json
+{ "online": true, "agents": 9, "bridge": "active" }
+```
+
+---
+
 ## Error Format
 
 ```json

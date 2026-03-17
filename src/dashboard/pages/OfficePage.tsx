@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Monitor, Wifi, WifiOff, Zap, Activity, Brain,
-  Cpu, Database, Server, Shield, ChevronRight, RefreshCw,
+  Cpu, Database, Server, Shield, ChevronRight, RefreshCw, LogIn,
 } from 'lucide-react';
 
 // ---- Design Tokens ----
@@ -487,6 +488,7 @@ function renderPixelOffice(
 // ---- Main Component ----
 
 export function OfficePage() {
+  const navigate = useNavigate();
   const [agents, setAgents] = useState<Agent[]>(DEFAULT_AGENTS);
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [health, setHealth] = useState<SystemHealth>({
@@ -496,6 +498,7 @@ export function OfficePage() {
   const [connectionMode, setConnectionMode] = useState<'live' | 'polling'>('polling');
   const [isHoveringFeed, setIsHoveringFeed] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const feedEndRef = useRef<HTMLDivElement>(null);
@@ -510,6 +513,15 @@ export function OfficePage() {
   const agentsRef = useRef(agents);
   const selectedRef = useRef(selectedAgentId);
   const healthRef = useRef(health);
+
+  // ---- 401 handler ----
+
+  const handleAuth401 = useCallback(() => {
+    setSessionExpired(true);
+    activityAbortRef.current?.abort();
+    agentStateAbortRef.current?.abort();
+    if (pollIntervalRef.current) { clearInterval(pollIntervalRef.current); pollIntervalRef.current = null; }
+  }, []);
 
   // Keep refs synced inside effects only
   useEffect(() => { agentsRef.current = agents; }, [agents]);
@@ -630,6 +642,7 @@ export function OfficePage() {
   const fetchAgents = useCallback(async () => {
     try {
       const res = await fetch(`${apiBase()}/api/geekos/agents`, { headers: authHeaders() });
+      if (res.status === 401) { handleAuth401(); return; }
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -660,7 +673,7 @@ export function OfficePage() {
         }
       }
     } catch { /* use defaults */ }
-  }, []);
+  }, [handleAuth401]);
 
   const fetchHealth = useCallback(async () => {
     let geekosOnline = false;
@@ -696,6 +709,7 @@ export function OfficePage() {
   const fetchActivity = useCallback(async () => {
     try {
       const res = await fetch(`${apiBase()}/api/activity?limit=30`, { headers: authHeaders() });
+      if (res.status === 401) { handleAuth401(); return; }
       if (res.ok) {
         const data = await res.json();
         const items: FeedItem[] = (data.activity || []).map((e: Record<string, unknown>) => ({
@@ -709,7 +723,7 @@ export function OfficePage() {
         setFeed(items);
       }
     } catch { /* ignore */ }
-  }, []);
+  }, [handleAuth401]);
 
   // ---- SSE: Agent State Stream ----
 
@@ -725,6 +739,7 @@ export function OfficePage() {
       headers: { Authorization: `Bearer ${token}` },
       signal: ctrl.signal,
     }).then(async (res) => {
+      if (res.status === 401) { handleAuth401(); return; }
       if (!res.ok || !res.body) return;
       setConnectionMode('live');
       const reader = res.body.getReader();
@@ -826,7 +841,7 @@ export function OfficePage() {
         setTimeout(connectAgentStateSSE, SSE_RECONNECT_DELAY_MS);
       }
     });
-  }, []);
+  }, [handleAuth401]);
 
   // ---- SSE: Activity Stream ----
 
@@ -842,6 +857,7 @@ export function OfficePage() {
       headers: { Authorization: `Bearer ${token}` },
       signal: ctrl.signal,
     }).then(async (res) => {
+      if (res.status === 401) { handleAuth401(); return; }
       if (!res.ok || !res.body) return;
       setConnectionMode('live');
       if (pollIntervalRef.current) {
@@ -976,6 +992,31 @@ export function OfficePage() {
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-[1600px] mx-auto px-3 md:px-6 py-4">
+      {/* Session expired banner */}
+      {sessionExpired && (
+        <div
+          className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg"
+          style={{ backgroundColor: '#FF2D7820', border: '1px solid #FF2D7860' }}
+        >
+          <div className="flex items-center gap-2 text-sm" style={{ color: '#FF2D78' }}>
+            <WifiOff className="w-4 h-4 shrink-0" />
+            <span>Session expired — live feed paused. Re-login to resume.</span>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('gs_token');
+              localStorage.removeItem('token');
+              sessionStorage.removeItem('token');
+              navigate('/login');
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold shrink-0 transition-opacity hover:opacity-80"
+            style={{ backgroundColor: '#FF2D78', color: '#fff' }}
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            Re-login
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
