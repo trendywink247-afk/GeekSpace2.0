@@ -116,7 +116,7 @@ export function JsonFormatterPage() {
   const displayContent = output || input;
 
   return (
-    <div className="space-y-4 p-4 max-w-4xl mx-auto">
+    <div className="space-y-4 p-4 pb-24 md:pb-4 max-w-4xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-semibold text-[#E8E8F0]">JSON Formatter</h2>

@@ -683,7 +683,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
 
   return (
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
-    <div className="space-y-6" data-testid="reminders-page">
+    <div className="space-y-6 pb-24 md:pb-6" data-testid="reminders-page">
       {/* 61.5: Snooze feedback toast */}
       {snoozeToast && (
         <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFB800]/15 border border-[#FFB800]/40 text-[#FFB800] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="snooze-toast">

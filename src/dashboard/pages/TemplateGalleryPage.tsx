@@ -88,7 +88,7 @@ export function TemplateGalleryPage({ embedded }: { embedded?: boolean }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       {/* Header — hidden when embedded inside another page's tab */}
       {!embedded && (
         <div>

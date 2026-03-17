@@ -416,7 +416,7 @@ export function AISpecialistPage() {
   // Specialists tab (main view)
   // -----------------------------------------------------------------------
   return (
-    <div className="space-y-6 w-full max-w-full overflow-x-hidden pb-8">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden pb-24 md:pb-8">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4">
         <div className="w-9 h-9 rounded-xl bg-[#00F0FF]/20 flex items-center justify-center flex-shrink-0">

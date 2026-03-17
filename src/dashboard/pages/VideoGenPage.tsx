@@ -453,7 +453,7 @@ export function VideoGenPage() {
   const isProviderBroken = !selectedModel || BROKEN_VIDEO_PROVIDERS.some(p => selectedModel === p || selectedModel.includes(p));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium animate-page-enter ${

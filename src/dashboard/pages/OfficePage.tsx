@@ -991,7 +991,7 @@ export function OfficePage() {
   // ---- Render ----
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-[1600px] mx-auto px-3 md:px-6 py-4">
+    <div className="flex flex-col gap-4 w-full max-w-[1600px] mx-auto px-3 md:px-6 pt-4 pb-24 md:pb-4">
       {/* Session expired banner */}
       {sessionExpired && (
         <div

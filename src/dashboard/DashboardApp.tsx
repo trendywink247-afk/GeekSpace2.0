@@ -1033,8 +1033,9 @@ export function DashboardApp() {
 
       {/* ---- Mobile Bottom Tab Bar — pill-shaped floating ---- */}
       <nav
-        className="md:hidden fixed bottom-3 left-3 right-3 h-16 backdrop-blur-xl rounded-2xl z-30 flex items-center justify-around px-2 safe-area-pb"
+        className="md:hidden fixed left-3 right-3 h-16 backdrop-blur-xl rounded-2xl z-30 flex items-center justify-around px-2"
         style={{
+          bottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px))',
           background: 'linear-gradient(180deg, rgba(12, 12, 24, 0.85), rgba(16, 16, 30, 0.8))',
           border: '1px solid rgba(0, 240, 255, 0.1)',
           boxShadow: '0 -4px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 240, 255, 0.03)',

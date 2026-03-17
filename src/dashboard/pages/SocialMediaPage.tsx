@@ -1224,7 +1224,7 @@ export function SocialMediaPage() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 pb-24 md:pb-6">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF2D78]/20 to-[#00F0FF]/20 border border-[#FF2D78]/20 flex items-center justify-center">
           <Share2 className="w-5 h-5 text-[#FF2D78]" />

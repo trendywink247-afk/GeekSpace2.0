@@ -278,8 +278,8 @@ function getUserDateStr(timezone: string): string {
 
 async function runProactiveChecks(): Promise<void> {
   // Reminder previews run every 30 min — timezone-independent
-  // Use a reasonable default timezone just for the minute check
-  const globalMinute = getUserMinute('Asia/Kolkata');
+  // Use UTC minute for the global tick check (not tied to any single timezone)
+  const globalMinute = new Date().getUTCMinutes();
   if (globalMinute === 0 || globalMinute === 30) {
     await sendReminderPreviews().catch(err => logger.warn({ err }, 'Reminder preview failed'));
   }

@@ -62,7 +62,7 @@ export function ImageGalleryPage() {
   }, [images, filter, dateFrom, dateTo]);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 pb-24 md:pb-6 max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center">

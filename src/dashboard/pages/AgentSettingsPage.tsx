@@ -237,7 +237,7 @@ export function AgentSettingsPage() {
   const isTelegramConnected = telegramStatus === 'connected' || telegramInt?.status === 'connected';
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto pb-24 md:pb-6">
       {/* Toast notification */}
       {saveToast && (
         <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 fade-in duration-300">

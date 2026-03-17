@@ -144,9 +144,11 @@ describe('Mobile infrastructure completeness', () => {
     expect(fs.existsSync(path.join(root, 'src', 'hooks', 'usePullToRefresh.ts'))).toBe(true);
   });
 
-  it('DashboardApp has safe-area-pb for notch devices', () => {
+  it('DashboardApp has safe area handling for notch devices', () => {
     const content = readSrc('dashboard/DashboardApp.tsx');
-    expect(content).toContain('safe-area-pb');
+    // Either classic safe-area-pb class OR env(safe-area-inset-bottom) inline approach
+    const hasSafeArea = content.includes('safe-area-pb') || content.includes('safe-area-inset-bottom');
+    expect(hasSafeArea).toBe(true);
   });
 
   it('DashboardApp has swipe navigation for mobile', () => {

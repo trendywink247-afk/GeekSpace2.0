@@ -809,7 +809,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
   );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-8">
+    <div className="max-w-6xl mx-auto space-y-6 pb-24 md:pb-8">
 
       {/* ── Hero ──────────────────────────────────────────── */}
       <div className="relative rounded-2xl overflow-hidden border border-white/8 p-8 md:p-10">

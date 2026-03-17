@@ -163,7 +163,7 @@ describe('Phase 107 — agent.ts: chat endpoint with react-loop', () => {
     expect(res.body).toHaveProperty('text');
     expect(typeof res.body.text).toBe('string');
     expect(res.body.text.length).toBeGreaterThan(0);
-  }, 15000);
+  }, 30000);
 
   it('POST /api/agent/chat response actions field is array when present', async () => {
     const token = await getDemoToken();

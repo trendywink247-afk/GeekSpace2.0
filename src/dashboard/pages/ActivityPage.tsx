@@ -167,7 +167,7 @@ export function ActivityPage() {
 
   return (
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
-    <div data-testid="activity-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0">
+    <div data-testid="activity-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0 pb-24 md:pb-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>

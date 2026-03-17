@@ -177,7 +177,7 @@ export function MemoryPage() {
   };
 
   return (
-    <div className="space-y-6 w-full max-w-full">
+    <div className="space-y-6 w-full max-w-full pb-24 md:pb-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-1 flex items-center gap-2" style={{ fontFamily: "Syne,sans-serif" }}><Brain className="w-7 h-7 text-[#00F0FF]" />Agent Memory</h1>
