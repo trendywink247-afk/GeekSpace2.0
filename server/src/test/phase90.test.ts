@@ -132,9 +132,11 @@ describe('90.4 Route GET /api/proactive/log', () => {
     expect(src).toContain('res.json({ log }');
   });
 
-  it('GET /settings returns { enabled } key', () => {
+  it('GET /settings returns enabled key', () => {
     const src = readFile('server/src/routes/proactive.ts');
-    expect(src).toContain("res.json({ enabled:");
+    // Settings endpoint returns enabled along with autonomy/quiet hours
+    expect(src).toContain("enabled:");
+    expect(src).toContain("autonomy_level");
   });
 
   it('PATCH /toggle returns { enabled } key', () => {

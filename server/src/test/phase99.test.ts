@@ -278,9 +278,10 @@ describe("99.7 DashboardApp: voice shortcut + ChatPage integration", () => {
     expect(src).toContain("altKey");
     expect(src).toContain("key === 'v'");
   });
-  it("navigates to /dashboard/chat on Alt+V", () => {
+  it("navigates to /dashboard/voice on Alt+V", () => {
     const src = readFrontend("dashboard", "DashboardApp.tsx");
-    expect(src).toContain("/dashboard/chat");
+    // Alt+V now goes to dedicated voice page
+    expect(src).toContain("/dashboard/voice");
   });
   it("Voice Chat nav item exists", () => {
     const src = readFrontend("dashboard", "DashboardApp.tsx");
