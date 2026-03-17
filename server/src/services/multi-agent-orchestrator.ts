@@ -41,7 +41,16 @@ export function isLaunchModeRequest(message: string): boolean {
     /\b(brainstorm\s+with\s+(all|multiple)\s+agents?)\b/i.test(lower) ||
     /\b(what\s+do\s+(all|your)\s+agents?\s+think)\b/i.test(lower) ||
     /\b(agent\s+council|council\s+mode|war\s+room)\b/i.test(lower) ||
-    // Hinglish
+    // Hinglish launch mode patterns
+    /sab\s+kuch\s+plan\s+karo/i.test(lower) ||
+    /poora\s+week\s+ka\s+plan/i.test(lower) ||
+    /launch\s+mode/i.test(lower) ||
+    /sab\s+agents\s+bulao/i.test(lower) ||
+    /mera\s+plan\s+bana\s+do/i.test(lower) ||
+    /full\s+analysis\s+karo/i.test(lower) ||
+    /deep\s+dive\s+karo/i.test(lower) ||
+    /aaj\s+ka\s+schedule/i.test(lower) ||
+    /startup\s+mode/i.test(lower) ||
     /\b(sab\s+(agents?|log)\s+(kya|kya\s+sochte|batao|bolo))\b/i.test(lower) ||
     // Smart detection: complex multi-domain queries
     /\b(research\s+.{5,}\s+and\s+(create|write|draft|post|tweet|build))\b/i.test(lower) ||

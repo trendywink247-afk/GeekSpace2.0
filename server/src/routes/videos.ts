@@ -16,6 +16,7 @@ import { runDirectorMode } from '../services/director-mode.js';
 import { generateFalClip } from '../services/fal-video.js';
 import type { DirectorPacket } from '../services/director-mode.js';
 import { routeChat } from '../services/llm.js';
+import { cacheGet, cacheSet } from '../services/cache.js';
 
 export const videosRouter = Router();
 
@@ -139,6 +140,16 @@ videosRouter.post('/generate', requireAuth, async (req: AuthRequest, res) => {
     return res.status(400).json({ error: 'Prompt too long (max 2000 chars)' });
   }
 
+  // Hourly Redis rate limit: 5 video generations per user per hour
+  const videoHourKey = `ratelimit:videogen:${userId}:${Math.floor(Date.now() / 3_600_000)}`;
+  const videoHourlyCount = parseInt((await cacheGet(videoHourKey)) ?? '0', 10);
+  const HOURLY_VIDEO_LIMIT = 5;
+  if (videoHourlyCount >= HOURLY_VIDEO_LIMIT) {
+    return res.status(429).json({
+      error: `Rate limit exceeded. 0 generations remaining this hour.`,
+    });
+  }
+
   // Check video limit
   const count = getUserVideoCount(userId);
   if (count >= MAX_VIDEOS_PER_USER) {
@@ -253,6 +264,9 @@ videosRouter.post('/generate', requireAuth, async (req: AuthRequest, res) => {
     `).run(uuid(), userId, `"${prompt.slice(0, 60)}..." via ${selectedModel}`);
 
     logger.info({ userId, videoId: id, model: selectedModel, duration: dur }, 'Video generation started');
+
+    // Increment hourly rate limit counter (TTL: 1 hour)
+    await cacheSet(videoHourKey, String(videoHourlyCount + 1), 3600);
 
     res.json({
       id,

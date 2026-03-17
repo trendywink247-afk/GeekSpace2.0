@@ -21,9 +21,10 @@ const db = new Database(DB_PATH);
 // Performance pragmas
 db.pragma('journal_mode = WAL');       // WAL: concurrent reads + single writer
 db.pragma('synchronous = NORMAL');     // Safe with WAL; skips fsync on every write
-db.pragma('cache_size = -32000');      // 32MB page cache (was 8MB default)
+db.pragma('cache_size = -32000');      // 32MB page cache
 db.pragma('temp_store = MEMORY');      // Temp tables in RAM not disk
-db.pragma('mmap_size = 134217728');    // 128MB memory-mapped I/O
+db.pragma('mmap_size = 268435456');    // 256MB memory-mapped I/O
+db.pragma('busy_timeout = 5000');      // 5s wait instead of instant SQLITE_BUSY fail
 db.pragma('foreign_keys = ON');
 
 // 49.8: Run ANALYZE on startup to keep query plans fresh.
@@ -2168,3 +2169,9 @@ try {
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN verbosity INTEGER DEFAULT 50`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN humor INTEGER DEFAULT 50`); } catch { /* column already exists */ }
 try { db.exec(`ALTER TABLE agent_configs ADD COLUMN empathy INTEGER DEFAULT 50`); } catch { /* column already exists */ }
+
+// Performance indexes for hot-path queries (additive — IF NOT EXISTS is safe)
+// reminders: user + scheduled_for for durable-scheduler lookups
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reminders_user_scheduled ON reminders(user_id, scheduled_for)`); } catch { /* already exists */ }
+// user_memories: user + created_at DESC for memory feed (idx_user_memories_user covers last_used; this covers created_at)
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_memories_user ON user_memories(user_id, created_at DESC)`); } catch { /* already exists */ }

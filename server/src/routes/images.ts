@@ -17,6 +17,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fsPromises from 'fs/promises';
 import { existsSync } from 'fs';
+import { cacheGet, cacheSet } from '../services/cache.js';
 
 export const imagesRouter = Router();
 
@@ -147,6 +148,16 @@ imagesRouter.post('/generate', requireAuth, validateBody(imageGenerateSchema), a
     height?: number;
   };
 
+  // Hourly Redis rate limit: 20 image generations per user per hour
+  const hourKey = `ratelimit:imagegen:${userId}:${Math.floor(Date.now() / 3_600_000)}`;
+  const hourlyCount = parseInt((await cacheGet(hourKey)) ?? '0', 10);
+  const HOURLY_IMAGE_LIMIT = 20;
+  if (hourlyCount >= HOURLY_IMAGE_LIMIT) {
+    return res.status(429).json({
+      error: `Rate limit exceeded. 0 generations remaining this hour.`,
+    });
+  }
+
   // Plan-based daily image generation cap
   const imgUser = db.prepare('SELECT plan FROM users WHERE id = ?').get(userId) as { plan: string } | undefined;
   const imgPlan = imgUser?.plan || 'free';
@@ -274,6 +285,9 @@ imagesRouter.post('/generate', requireAuth, validateBody(imageGenerateSchema), a
     `).run(uuid(), userId, `"${prompt.slice(0, 60)}..." via ${selectedModel}`);
 
     logger.info({ userId, imageId: id, model: selectedModel }, 'Image generated');
+
+    // Increment hourly rate limit counter (TTL: 1 hour)
+    await cacheSet(hourKey, String(hourlyCount + 1), 3600);
 
     res.json({
       id,

@@ -234,7 +234,7 @@ function MessageCard({
               <p className="text-sm text-[#F4F6FF]/70">{msg.suggested_reply}</p>
               <button
                 onClick={onUseSuggestion}
-                className="mt-2 text-xs text-[#8B5CF6] hover:text-[#a78bfa] transition-colors font-medium"
+                className="mt-2 text-xs text-[#8B5CF6] hover:text-[#a78bfa] transition-colors font-medium min-h-[44px] flex items-center"
               >
                 Use this reply
               </button>
@@ -280,7 +280,7 @@ function MessageCard({
         {/* Expand/collapse */}
         <button
           onClick={onToggleExpand}
-          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-[#8892A4] hover:text-[#F4F6FF] transition-colors rounded-md hover:bg-white/5"
+          className="inline-flex items-center gap-1 px-2 min-h-[44px] text-xs text-[#8892A4] hover:text-[#F4F6FF] transition-colors rounded-md hover:bg-white/5"
         >
           {isExpanded ? (
             <><ChevronUp className="w-3 h-3" /> Less</>

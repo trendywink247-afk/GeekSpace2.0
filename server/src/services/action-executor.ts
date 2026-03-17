@@ -462,16 +462,20 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const category = (params.category as string) || 'general';
 
         // ── Smart Reminders V2: detect recurrence patterns ─────────────────
-        // Detect "every day", "daily", "weekly", "every Monday", "every week"
+        // Detect "every day", "everyday", "daily", "each day", "weekly", "every Monday", "every week"
         let recurrence: string | null = null;
         const lowerText = text.toLowerCase();
-        if (/\b(every\s+day|daily|cada\s+dia|roz|har\s+roz)\b/i.test(lowerText)) {
+        if (/\b(every\s+day|everyday|daily|each\s+day|cada\s+dia|roz|har\s+roz)\b/i.test(lowerText)) {
+          recurrence = 'daily';
+        } else if (/\bevery\s+(morning|evening|night|noon)\b/i.test(lowerText)) {
           recurrence = 'daily';
         } else if (/\b(every\s+week|weekly|once\s+a\s+week)\b/i.test(lowerText) ||
                    /\bevery\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(lowerText)) {
           recurrence = 'weekly';
         } else if (/\b(every\s+month|monthly|once\s+a\s+month)\b/i.test(lowerText)) {
           recurrence = 'monthly';
+        } else if (/\b(every\s+year|yearly|annually|once\s+a\s+year)\b/i.test(lowerText)) {
+          recurrence = 'yearly';
         }
 
         db.prepare(

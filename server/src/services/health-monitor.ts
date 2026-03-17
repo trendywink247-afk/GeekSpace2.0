@@ -10,7 +10,7 @@ import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { sendTelegramNotification } from './telegram.js';
 import { logActivity } from './activity-log.js';
-import { cacheGet } from './cache.js';
+import { cacheGet, cacheSet } from './cache.js';
 
 // ---- Types ----
 
@@ -73,6 +73,11 @@ async function checkRedis(): Promise<{ ok: boolean; error: string | null }> {
 // ---- Telegram Notification Helpers ----
 
 function getTelegramRecipients(): Array<{ user_id: string; external_id: string }> {
+  // If ADMIN_TELEGRAM_CHAT_ID is set, alert only that chat ID
+  const adminChatId = process.env.ADMIN_TELEGRAM_CHAT_ID;
+  if (adminChatId) {
+    return [{ user_id: 'admin', external_id: adminChatId }];
+  }
   try {
     return db.prepare(
       "SELECT user_id, external_id FROM channel_links WHERE channel = 'telegram' AND is_verified = 1 LIMIT 10"
@@ -80,6 +85,24 @@ function getTelegramRecipients(): Array<{ user_id: string; external_id: string }
   } catch (err) {
     logger.error({ err }, 'health-monitor: failed to query Telegram recipients');
     return [];
+  }
+}
+
+/**
+ * Returns true if an alert for the given service+status was already sent
+ * within the last 5 minutes (Redis-backed rate limit).
+ * Sets the key if not rate-limited, so the caller just fires without extra logic.
+ */
+async function isAlertRateLimited(service: string, status: string): Promise<boolean> {
+  const key = `alert:${service}:${status}`;
+  try {
+    const existing = await cacheGet(key);
+    if (existing) return true;
+    await cacheSet(key, '1', 300); // 5-minute TTL
+    return false;
+  } catch {
+    // Redis unavailable — fall through (don't suppress alerts)
+    return false;
   }
 }
 
@@ -109,14 +132,18 @@ async function handleOllamaDown(error: string): Promise<void> {
   if (!state.ollama.alertSent) {
     state.ollama.alertSent = true;
 
-    await broadcastTelegram(
-      '[Agentin Auto-Switch] Ollama is temporarily unavailable. Switched to cloud AI. Everything works normally.'
-    );
+    if (!await isAlertRateLimited('ollama', 'down')) {
+      await broadcastTelegram(
+        '⚠️ [Ollama] is [DOWN]: ' + error + '. Auto-switching to cloud AI.'
+      );
+    }
 
     // Log activity for any connected users
     const recipients = getTelegramRecipients();
     for (const r of recipients) {
-      logActivity(r.user_id, 'service_down', 'Ollama went offline, switched to cloud AI', 'warning');
+      if (r.user_id !== 'admin') {
+        logActivity(r.user_id, 'service_down', 'Ollama went offline, switched to cloud AI', 'warning');
+      }
     }
   }
 }
@@ -131,13 +158,17 @@ async function handleOllamaRecovery(): Promise<void> {
   if (state.ollama.alertSent) {
     state.ollama.alertSent = false;
 
-    await broadcastTelegram(
-      '[Agentin Update] Ollama is back online. Switching back to local AI.'
-    );
+    if (!await isAlertRateLimited('ollama', 'up')) {
+      await broadcastTelegram(
+        '✅ [Ollama] recovered. Back to normal.'
+      );
+    }
 
     const recipients = getTelegramRecipients();
     for (const r of recipients) {
-      logActivity(r.user_id, 'service_up', 'Ollama recovered, switching back to local AI', 'info');
+      if (r.user_id !== 'admin') {
+        logActivity(r.user_id, 'service_up', 'Ollama recovered, switching back to local AI', 'info');
+      }
     }
   }
 }
@@ -151,6 +182,7 @@ async function handleRedisDown(error: string): Promise<void> {
   if (!state.redis.alertSent) {
     state.redis.alertSent = true;
     logger.warn({ error }, 'health-monitor: Redis is DOWN');
+    // Note: cannot use Redis rate limit when Redis itself is down — just log
   }
 }
 

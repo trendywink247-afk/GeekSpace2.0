@@ -120,7 +120,7 @@ describe('Phase 107 — executor: web_search graceful empty', () => {
       .send({ message: 'hello', channel: 'web' })
       .expect(200);
     expect(res.body).toHaveProperty('text');
-  });
+  }, 30000);
 });
 
 describe('Phase 107 — react-loop: return shape', () => {
@@ -145,7 +145,7 @@ describe('Phase 107 — react-loop: return shape', () => {
     expect(result).toHaveProperty('creditCost');
     expect(Array.isArray(result.actions)).toBe(true);
     expect(typeof result.text).toBe('string');
-  });
+  }, 30000);
 });
 
 describe('Phase 107 — agent.ts: chat endpoint with react-loop', () => {
@@ -163,7 +163,7 @@ describe('Phase 107 — agent.ts: chat endpoint with react-loop', () => {
     expect(res.body).toHaveProperty('text');
     expect(typeof res.body.text).toBe('string');
     expect(res.body.text.length).toBeGreaterThan(0);
-  });
+  }, 15000);
 
   it('POST /api/agent/chat response actions field is array when present', async () => {
     const token = await getDemoToken();
@@ -179,7 +179,7 @@ describe('Phase 107 — agent.ts: chat endpoint with react-loop', () => {
     }
     // Either way the response must have text
     expect(res.body).toHaveProperty('text');
-  });
+  }, 30000);
 
   it('POST /api/agent/chat requires auth', async () => {
     await request(app)

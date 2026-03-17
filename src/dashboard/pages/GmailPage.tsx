@@ -581,7 +581,7 @@ export function GmailPage() {
               )}
             </div>
           ) : (
-            <div className="space-y-1 max-h-[calc(100vh-320px)] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
+            <div className="space-y-1 max-h-[calc(100dvh-320px)] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
               {filteredMessages.map(msg => {
                 const isSelected = selected?.id === msg.id;
                 const isUnread = !msg.read;
@@ -861,7 +861,7 @@ export function GmailPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="flex flex-col items-center justify-center h-64 lg:h-[calc(100vh-320px)] text-center border border-white/5 rounded-xl bg-[#0D0D1A]">
+            <div className="flex flex-col items-center justify-center h-64 lg:h-[calc(100dvh-320px)] text-center border border-white/5 rounded-xl bg-[#0D0D1A]">
               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
                 <MailOpen className="w-6 h-6 text-[#E8E8F0]/15" />
               </div>

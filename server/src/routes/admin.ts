@@ -836,18 +836,9 @@ adminRouter.get('/training', requireAdminToken, (req: Request, res: Response): v
   res.end();
 });
 
-// ---- serveAdminDashboard — GET /admin (HTML page) ----
-export function serveAdminDashboard(_req: Request, res: Response): void {
-  // Admin dashboard is a standalone HTML file with inline scripts.
-  // Override Helmet's strict CSP for this route only — the page is already
-  // protected by admin password/token auth so unsafe-inline is acceptable here.
-  res.setHeader('Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
-  );
-
-  // ── Phase 67: Admin Suggestions Queue ─────────────────────────────────────
-  // GET /api/admin/suggestions/queue — list all suggestions with user email
-  adminRouter.get('/suggestions/queue', requireAdminToken, (req: Request, res: Response): void => {
+// ── Phase 67: Admin Suggestions Queue ─────────────────────────────────────
+// GET /api/admin/suggestions/queue — list all suggestions with user email
+adminRouter.get('/suggestions/queue', requireAdminToken, (req: Request, res: Response): void => {
     const status = typeof req.query.status === 'string' ? req.query.status : null;
     let rows: unknown[];
     if (status) {
@@ -1186,6 +1177,15 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
 
     res.json({ today, week, compressionRate });
   });
+
+// ---- serveAdminDashboard — GET /admin (HTML page) ----
+export function serveAdminDashboard(_req: Request, res: Response): void {
+  // Admin dashboard is a standalone HTML file with inline scripts.
+  // Override Helmet's strict CSP for this route only — the page is already
+  // protected by admin password/token auth so unsafe-inline is acceptable here.
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+  );
 
   // Serve the comprehensive standalone admin dashboard HTML file
   const html = getAdminDashboardHtml();

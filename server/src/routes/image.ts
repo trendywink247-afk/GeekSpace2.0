@@ -21,6 +21,7 @@ import { logger } from '../logger.js';
 import { enqueueJob, registerJobHandler } from '../services/job-queue.js';
 import { generateImage } from '../services/media-generation.js';
 import { v4 as uuid } from 'uuid';
+import { cacheGet, cacheSet } from '../services/cache.js';
 
 export const imageAsyncRouter = Router();
 
@@ -73,6 +74,16 @@ imageAsyncRouter.post('/generate', requireAuth, async (req: AuthRequest, res) =>
     res.status(400).json({ error: 'Prompt too long (max 2000 chars)' });
     return;
   }
+
+  // Hourly Redis rate limit: 20 image generations per user per hour
+  const hourKey = `ratelimit:imagegen:${userId}:${Math.floor(Date.now() / 3_600_000)}`;
+  const hourlyCount = parseInt((await cacheGet(hourKey)) ?? '0', 10);
+  const HOURLY_IMAGE_LIMIT = 20;
+  if (hourlyCount >= HOURLY_IMAGE_LIMIT) {
+    res.status(429).json({ error: 'Rate limit exceeded. 0 generations remaining this hour.' });
+    return;
+  }
+  await cacheSet(hourKey, String(hourlyCount + 1), 3600);
 
   // Check daily cap
   const cap = getImageCap(userId);
