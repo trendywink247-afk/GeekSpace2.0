@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { FileText, Plus, Search, Pin, Clock, Archive, Folder,
-  Trash2, Star, Globe, ChevronRight, Sparkles, FolderPlus, X,
+  Trash2, Star, Globe, ChevronRight, Sparkles, FolderPlus,
   Maximize2, Minimize2, RefreshCw, Check, Loader2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import api from '@/services/api';
-import { agentService } from '@/services/api';
+import { agentService, memoryService } from '@/services/api';
 import type { ConversationEntry } from '@/types';
 
 interface Doc {
@@ -582,7 +582,7 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
     setConvModalOpen(true);
     setConvLoading(true);
     try {
-      const res = await agentService.conversations(30);
+      const res = await memoryService.conversations(30);
       // Group into conversation threads (consecutive user+assistant pairs)
       const entries: ConversationEntry[] = Array.isArray(res.data) ? res.data : [];
       setConversations(entries);

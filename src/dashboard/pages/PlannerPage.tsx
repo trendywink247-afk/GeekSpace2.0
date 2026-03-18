@@ -384,10 +384,6 @@ export function PlannerPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchBlocksForDate(dk);
-  }, [dk, fetchBlocksForDate]);
-
   // --- Data loading ---
   useEffect(() => {
     loadReminders();
@@ -407,6 +403,11 @@ export function PlannerPage() {
 
   // --- Derived data ---
   const dk = dateKey(currentDate);
+
+  useEffect(() => {
+    fetchBlocksForDate(dk);
+  }, [dk, fetchBlocksForDate]);
+
   const todayBlocks = useMemo(() => blocks[dk] || [], [blocks, dk]);
 
   const backlogItems = useMemo<BacklogItem[]>(() => {

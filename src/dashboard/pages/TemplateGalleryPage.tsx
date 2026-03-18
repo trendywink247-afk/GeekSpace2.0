@@ -64,7 +64,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
       setClonedId(template.id);
       setCloneResult({
         name: `${template.name} (My Copy)`,
-        artifactId: res.data?.artifact?.id || res.data?.id,
+        artifactId: res.data?.artifactId,
       });
       setTimeout(() => setClonedId(null), 2000);
     } catch (err) {
