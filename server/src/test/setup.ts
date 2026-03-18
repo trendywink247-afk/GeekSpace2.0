@@ -105,10 +105,11 @@ export function createTestUser(emailOrOpts: string | { prefix?: string } = {}): 
   username: string;
   password: string;
 } {
-  const prefix = typeof emailOrOpts === 'string' ? emailOrOpts : (emailOrOpts.prefix ?? `test-${Date.now()}`);
-  const email = typeof emailOrOpts === 'string' ? emailOrOpts : `${prefix}-${Date.now()}@example.com`;
+  const uniq = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const prefix = typeof emailOrOpts === 'string' ? emailOrOpts : (emailOrOpts.prefix ?? `test-${uniq}`);
+  const email = typeof emailOrOpts === 'string' ? emailOrOpts : `${prefix}@example.com`;
   const id = uuid();
-  const username = `test_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const username = `test_${uniq}`;
   const password = 'test-password-123';
   const passwordHash = bcrypt.hashSync(password, 10);
 
