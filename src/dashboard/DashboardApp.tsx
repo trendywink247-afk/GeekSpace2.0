@@ -77,8 +77,9 @@ const ConversationRatingPage = lazyRetry(() => import('./pages/ConversationRatin
 const DocsWorkspacePage = lazyRetry(() => import('./pages/DocsWorkspacePage').then(m => ({ default: m.DocsWorkspacePage })));
 const OfficePage = lazyRetry(() => import('./pages/OfficePage').then(m => ({ default: m.OfficePage })));
 const VoiceChatPage = lazyRetry(() => import('./pages/VoiceChatPage').then(m => ({ default: m.VoiceChatPage })));
+const DesignAssistantPage = lazyRetry(() => import('./pages/DesignAssistantPage').then(m => ({ default: m.DesignAssistantPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office' | 'voice';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office' | 'voice' | 'design';
 
 
 interface MenuItem {
@@ -112,6 +113,7 @@ const menuGroups: MenuGroup[] = [
       { id: 'gallery', label: 'Image Gallery', icon: ImageIcon },
       { id: 'video-gen', label: 'Video Generator', icon: Film },
       { id: 'tools', label: 'AI Tools', icon: Cpu },
+      { id: 'design', label: 'Design Assistant', icon: Palette },
     ],
   },
   {
@@ -359,7 +361,7 @@ export function DashboardApp() {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -509,6 +511,8 @@ export function DashboardApp() {
         return <OfficePage />;
       case 'voice':
         return <VoiceChatPage />;
+      case 'design':
+        return <DesignAssistantPage />;
       case 'tools':
         return <AISpecialistPage />;
       default:

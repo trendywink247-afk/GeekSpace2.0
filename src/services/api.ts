@@ -268,6 +268,10 @@ export const agentService = {
 
   setVideoModel: (modelId: string) =>
     api.patch<Record<string, unknown>>('/agent/config', { preferred_video_model: modelId }),
+
+  // Rate a conversation (1-5 stars)
+  rateConversation: (messageId: string, score: number) =>
+    api.post<{ ok: boolean }>(`/agent/conversations/${messageId}/rating`, { score }),
 };
 
 // ----- Version -----------------------------------------------
@@ -601,6 +605,8 @@ export const activityService = {
   getStats: () => api.get<{ days: { date: string; messages: number; reminders: number }[] }>('/activity/stats'),
   // 64.8: CSV export of last 500 activity entries
   export: () => api.get<Blob>('/activity/export', { responseType: 'blob' }),
+  // GAP-8: 90-day activity heatmap
+  getHeatmap: () => api.get<{ heatmap: Array<{ date: string; count: number }> }>('/activity/heatmap'),
 };
 
 // ----- Automations -------------------------------------------
@@ -1318,6 +1324,41 @@ export const imageAsyncService = {
   /** Get last 30 user-generated images. */
   gallery: () =>
     api.get<{ images: ImageGalleryItem[]; count: number }>('/image/gallery').then(r => r.data),
+};
+
+// ----- Planner (GAP-1) -----------------------------------------------
+
+export interface PlannerBlock {
+  id: string;
+  user_id: string;
+  date: string;
+  title: string;
+  duration: number;
+  color: string;
+  category: string;
+  completed: number;
+  sort_order: number;
+  source: string;
+  source_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const plannerService = {
+  getByDate: (date: string) =>
+    api.get<{ blocks: PlannerBlock[] }>(`/planner/${date}`),
+
+  getWeek: (startDate: string) =>
+    api.get<{ blocks: Record<string, PlannerBlock[]> }>(`/planner/week/${startDate}`),
+
+  create: (data: { title: string; date: string; duration?: number; color?: string; category?: string; sort_order?: number; source?: string; source_id?: string }) =>
+    api.post<{ block: PlannerBlock }>('/planner', data),
+
+  update: (id: string, data: Partial<Pick<PlannerBlock, 'title' | 'date' | 'duration' | 'color' | 'category' | 'completed' | 'sort_order' | 'source' | 'source_id'>>) =>
+    api.patch<{ block: PlannerBlock }>(`/planner/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete<{ success: boolean }>(`/planner/${id}`),
 };
 
 export default api;

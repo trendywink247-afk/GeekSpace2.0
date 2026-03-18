@@ -1,6 +1,7 @@
 // ============================================================
 // Activity Log Route — Redis-cached + SSE streaming
 // GET  /api/activity          — cached activity feed
+// GET  /api/activity/heatmap  — 90-day activity heatmap counts
 // GET  /api/activity/stats    — 7-day daily counts
 // GET  /api/activity/stream   — SSE real-time push
 // GET  /api/activity/export   — CSV download (last 500)
@@ -31,6 +32,7 @@ export function pushActivityEvent(userId: string, event: { action: string; detai
 export function invalidateActivityCache(userId: string) {
   cacheDel(`activity:${userId}`).catch(() => {});
   cacheDel(`activity:stats:${userId}`).catch(() => {});
+  cacheDel(`activity:heatmap:${userId}`).catch(() => {});
 }
 
 // ── Per-user rate limit (4s cooldown on polling) ─────────────
@@ -94,6 +96,31 @@ activityRouter.delete('/', requireAuth, (req: AuthRequest, res) => {
   const result = db.prepare('DELETE FROM activity_log WHERE user_id = ?').run(userId);
   invalidateActivityCache(userId);
   res.json({ deleted: result.changes });
+});
+
+// ── GET /api/activity/heatmap — 90 days of activity counts ──
+activityRouter.get('/heatmap', requireAuth, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+
+  const cacheKey = `activity:heatmap:${userId}`;
+  const cached = await cacheGet(cacheKey);
+  if (cached) { res.json(JSON.parse(cached)); return; }
+
+  try {
+    const rows = db.prepare(`
+      SELECT date(created_at) as date, COUNT(*) as count
+      FROM activity_log
+      WHERE user_id = ? AND created_at >= datetime('now', '-90 days')
+      GROUP BY date(created_at)
+      ORDER BY date ASC
+    `).all(userId) as Array<{ date: string; count: number }>;
+    const payload = { heatmap: rows };
+    cacheSet(cacheKey, JSON.stringify(payload), 30).catch(() => {});
+    res.json(payload);
+  } catch (err) {
+    logger.error({ err, userId }, 'Activity heatmap error');
+    res.status(500).json({ error: 'Failed to fetch heatmap' });
+  }
 });
 
 // ── GET /api/activity/stats — 7-day daily counts ────────────
@@ -163,12 +190,17 @@ activityRouter.get('/export', requireAuth, (req: AuthRequest, res) => {
   `).all(userId) as Array<{ id: string; action: string; details: string; icon: string; created_at: string }>;
 
   const escape = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  let csv = 'date,action,details\n';
+  let csv = 'date,time,type,description\n';
   for (const r of rows) {
-    csv += `${escape(r.created_at)},${escape(r.action)},${escape(r.details)}\n`;
+    const ts = r.created_at.includes('T') ? r.created_at : r.created_at.replace(' ', 'T') + 'Z';
+    const d = new Date(ts);
+    const dateStr = d.toISOString().slice(0, 10);
+    const timeStr = d.toISOString().slice(11, 19);
+    csv += `${escape(dateStr)},${escape(timeStr)},${escape(r.action)},${escape(r.details)}\n`;
   }
+  const today = new Date().toISOString().slice(0, 10);
   res.set('Content-Type', 'text/csv');
-  res.set('Content-Disposition', 'attachment; filename="activity-log.csv"');
+  res.set('Content-Disposition', `attachment; filename="agentin-activity-${today}.csv"`);
   res.send(csv);
 });
 

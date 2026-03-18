@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Share2, Plus, Trash2, CheckCircle, XCircle, Clock, Loader2,
   Instagram, Facebook, Webhook, Key, Send, Calendar,
   ToggleLeft, ToggleRight, Edit3, Eye, AlertCircle, Image, Film,
   Sparkles, Hash, Twitter, Linkedin, TrendingUp, Users,
   Heart, MessageCircle, ChevronLeft, ChevronRight, CalendarDays,
-  Target, Wand2, Globe, Copy, Megaphone,
+  Target, Wand2, Globe, Copy, Megaphone, Scissors, Check,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { socialMediaService } from '@/services/api';
+import { socialMediaService, agentService } from '@/services/api';
 import type { SocialAccount, ContentPlan, ContentPlanItem } from '@/services/api';
 
 // ---- Status helpers ----
@@ -61,14 +61,16 @@ function StatusIcon({ status }: { status: string }) {
 
 // ---- Tone & Platform types ----
 
-type Tone = 'professional' | 'casual' | 'inspirational' | 'educational';
+type Tone = 'informative' | 'inspirational' | 'behind-the-scenes' | 'educational' | 'promotional' | 'casual';
 type Platform = 'twitter' | 'linkedin' | 'instagram';
 
 const TONES: { value: Tone; label: string }[] = [
-  { value: 'professional', label: 'Professional' },
-  { value: 'casual', label: 'Casual' },
+  { value: 'informative', label: 'Informative' },
   { value: 'inspirational', label: 'Inspirational' },
+  { value: 'behind-the-scenes', label: 'Behind-the-scenes' },
   { value: 'educational', label: 'Educational' },
+  { value: 'promotional', label: 'Promotional' },
+  { value: 'casual', label: 'Casual' },
 ];
 
 const PLATFORMS: { value: Platform; label: string; limit: number; color: string }[] = [
@@ -232,6 +234,154 @@ function PostPreviewCard({ text, platform }: { text: string; platform: Platform 
         </div>
       </div>
     </div>
+  );
+}
+
+// ---- Thread Composer (Twitter) ----
+
+function splitIntoThread(text: string): string[] {
+  if (text.length <= 280) return [text];
+
+  const sentences = text.match(/[^.!?]+[.!?]+\s*/g) || [text];
+  const tweets: string[] = [];
+  let current = '';
+
+  for (const sentence of sentences) {
+    const trimmed = sentence.trim();
+    // Reserve space for "N/ " prefix (up to "99/ " = 4 chars)
+    const maxLen = 280 - 4;
+    if ((current + ' ' + trimmed).trim().length <= maxLen) {
+      current = (current + ' ' + trimmed).trim();
+    } else {
+      if (current) tweets.push(current);
+      // If a single sentence exceeds maxLen, hard-split on word boundary
+      if (trimmed.length > maxLen) {
+        const words = trimmed.split(/\s+/);
+        let chunk = '';
+        for (const word of words) {
+          if ((chunk + ' ' + word).trim().length <= maxLen) {
+            chunk = (chunk + ' ' + word).trim();
+          } else {
+            if (chunk) tweets.push(chunk);
+            chunk = word;
+          }
+        }
+        if (chunk) current = chunk;
+      } else {
+        current = trimmed;
+      }
+    }
+  }
+  if (current) tweets.push(current);
+
+  return tweets;
+}
+
+function ThreadComposer({ text, onCopy }: { text: string; onCopy: (content: string) => void }) {
+  const tweets = useMemo(() => splitIntoThread(text), [text]);
+
+  if (tweets.length <= 1) return null;
+
+  const numbered = tweets.map((t, i) => `${i + 1}/ ${t}`);
+  const fullThread = numbered.join('\n\n');
+
+  return (
+    <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[#1a1a2e]">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5">
+          <Scissors className="w-3.5 h-3.5 text-[#00F0FF]" />
+          <span className="text-xs font-medium text-[#9CA3AF]">Thread Preview ({tweets.length} tweets)</span>
+        </div>
+        <CopyButton
+          text={fullThread}
+          label="Copy Thread"
+          onCopy={onCopy}
+        />
+      </div>
+      <div className="space-y-2">
+        {numbered.map((tweet, i) => {
+          const bodyLen = tweets[i].length + `${i + 1}/ `.length;
+          const isOver = bodyLen > 280;
+          return (
+            <div
+              key={i}
+              className="p-2.5 rounded-lg border text-sm text-[#E8E8F0] whitespace-pre-wrap"
+              style={{
+                borderColor: isOver ? '#FF616140' : '#1a1a2e',
+                background: isOver ? '#FF616108' : '#0C0C18',
+              }}
+            >
+              {tweet}
+              <div className="flex justify-end mt-1">
+                <span
+                  className="text-[10px] font-mono tabular-nums"
+                  style={{ color: isOver ? '#FF6161' : bodyLen > 250 ? '#FFB800' : '#9CA3AF' }}
+                >
+                  {bodyLen}/280
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---- Copy Button with visual feedback ----
+
+function CopyButton({
+  text,
+  label = 'Copy',
+  className = '',
+  onCopy,
+}: {
+  text: string;
+  label?: string;
+  className?: string;
+  onCopy?: (content: string) => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      onCopy?.(text);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      onCopy?.(text);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [text, onCopy]);
+
+  return (
+    <Button
+      size="sm"
+      disabled={!text.trim()}
+      className={`transition-all duration-200 ${
+        copied
+          ? 'bg-[#00FF88]/20 text-[#00FF88] border border-[#00FF88]/40'
+          : 'bg-gradient-to-r from-[#00F0FF]/20 to-[#FF2D78]/20 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
+      } ${className}`}
+      onClick={handleCopy}
+    >
+      {copied ? (
+        <><Check className="w-4 h-4 mr-1" /> Copied!</>
+      ) : (
+        <><Copy className="w-4 h-4 mr-1" /> {label}</>
+      )}
+    </Button>
   );
 }
 
@@ -660,9 +810,12 @@ function ContentPlanTab() {
 
   // Post composer state
   const [composerText, setComposerText] = useState('');
-  const [composerTone, setComposerTone] = useState<Tone>('professional');
+  const [composerTone, setComposerTone] = useState<Tone>('informative');
   const [composerPlatform, setComposerPlatform] = useState<Platform>('twitter');
   const [showComposer, setShowComposer] = useState(false);
+  const [composerTopic, setComposerTopic] = useState('');
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   const loadData = async () => {
     try {
@@ -786,6 +939,56 @@ function ContentPlanTab() {
     }
   };
 
+  const handleAiGenerate = async () => {
+    if (!composerTopic.trim()) return;
+    setAiGenerating(true);
+    setAiError('');
+    try {
+      const platformLabel = PLATFORMS.find((p) => p.value === composerPlatform)?.label ?? composerPlatform;
+      const formatGuide =
+        composerPlatform === 'twitter'
+          ? 'under 280 characters, 3-5 hashtags'
+          : composerPlatform === 'linkedin'
+            ? 'professional, 150-300 words, line breaks for readability'
+            : 'engaging caption, 20-30 hashtags';
+
+      const prompt = [
+        `Generate a ${platformLabel} post about: ${composerTopic}`,
+        `Tone: ${composerTone}`,
+        `Include: relevant hashtags, emoji where appropriate`,
+        `Format: ${formatGuide}`,
+        `IMPORTANT: Return ONLY the post text. No preamble, no explanation, no quotes around it.`,
+      ].join('\n');
+
+      const res = await agentService.chat(prompt, 'social');
+      const generated = res.data.text?.trim();
+      if (generated) {
+        setComposerText(generated);
+        setComposerTopic('');
+      } else {
+        setAiError('AI returned empty content. Try a different topic.');
+      }
+    } catch {
+      setAiError('Failed to generate content. Please try again.');
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  /** Format post text for platform-specific clipboard copy */
+  const formatForPlatform = useCallback((text: string, platform: Platform): string => {
+    if (platform === 'twitter') {
+      // Twitter: keep compact, ensure hashtags are at the end
+      return text.trim();
+    }
+    if (platform === 'linkedin') {
+      // LinkedIn: ensure line breaks are preserved as double newlines for readability
+      return text.trim().replace(/\n{3,}/g, '\n\n');
+    }
+    // Instagram: just trim
+    return text.trim();
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -850,33 +1053,75 @@ function ContentPlanTab() {
                 <PlatformBadges selected={composerPlatform} onChange={setComposerPlatform} />
               </div>
 
+              {/* AI Generate section */}
+              <div className="p-3 rounded-lg bg-[#06060B] border border-[#1a1a2e] space-y-2">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Sparkles className="w-3.5 h-3.5 text-[#00F0FF]" />
+                  <span className="text-xs font-medium text-[#9CA3AF]">AI Generate</span>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={composerTopic}
+                    onChange={(e) => setComposerTopic(e.target.value)}
+                    placeholder="Describe your topic (e.g., AI productivity tips for developers)"
+                    className="bg-[#0C0C18] border-[#1a1a2e] text-sm flex-1"
+                    onKeyDown={(e) => { if (e.key === 'Enter' && composerTopic.trim() && !aiGenerating) handleAiGenerate(); }}
+                    disabled={aiGenerating}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleAiGenerate}
+                    disabled={aiGenerating || !composerTopic.trim()}
+                    className="bg-gradient-to-r from-[#00F0FF]/20 to-[#8B5CF6]/20 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 whitespace-nowrap min-h-[44px]"
+                  >
+                    {aiGenerating ? (
+                      <><Loader2 className="w-4 h-4 animate-spin mr-1" /> Generating...</>
+                    ) : (
+                      <><Sparkles className="w-4 h-4 mr-1" /> Generate Post</>
+                    )}
+                  </Button>
+                </div>
+                {aiError && (
+                  <p className="text-xs text-[#FF6161] flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{aiError}
+                  </p>
+                )}
+              </div>
+
               {/* Textarea */}
               <div>
                 <Textarea
                   value={composerText}
                   onChange={(e) => setComposerText(e.target.value)}
-                  placeholder={`Write your ${composerTone} post for ${PLATFORMS.find((p) => p.value === composerPlatform)?.label}...`}
+                  placeholder={`Write your ${composerTone} post for ${PLATFORMS.find((p) => p.value === composerPlatform)?.label}, or use AI Generate above...`}
                   className="bg-[#06060B] border-[#1a1a2e] text-sm min-h-[100px] focus:border-[#00F0FF]/30"
+                  disabled={aiGenerating}
                 />
                 <CharacterCounter count={composerText.length} platform={composerPlatform} />
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  disabled={!composerText.trim()}
-                  className="bg-gradient-to-r from-[#00F0FF]/20 to-[#FF2D78]/20 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40"
-                  onClick={() => navigator.clipboard.writeText(composerText)}
-                >
-                  <Copy className="w-4 h-4 mr-1" /> Copy
-                </Button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <CopyButton
+                  text={formatForPlatform(composerText, composerPlatform)}
+                  label={`Copy for ${PLATFORMS.find((p) => p.value === composerPlatform)?.label}`}
+                />
+                {composerPlatform === 'twitter' && composerText.length > 280 && (
+                  <Badge variant="outline" className="text-xs text-[#FFB800] border-[#FFB800]/30 py-1">
+                    <Scissors className="w-3 h-3 mr-1" /> Thread mode active
+                  </Badge>
+                )}
                 {showComposer && plans.length === 0 && (
-                  <Button size="sm" variant="ghost" onClick={() => { setShowComposer(false); setComposerText(''); }}>
+                  <Button size="sm" variant="ghost" onClick={() => { setShowComposer(false); setComposerText(''); setComposerTopic(''); setAiError(''); }}>
                     Cancel
                   </Button>
                 )}
               </div>
+
+              {/* Thread composer for Twitter when over 280 chars */}
+              {composerPlatform === 'twitter' && composerText.length > 280 && (
+                <ThreadComposer text={composerText} onCopy={() => {}} />
+              )}
 
               {/* Post preview */}
               <PostPreviewCard text={composerText} platform={composerPlatform} />

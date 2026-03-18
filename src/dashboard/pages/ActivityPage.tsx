@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter, Trash2, Download } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter, Trash2, Download, Flame, Calendar, BarChart3 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,6 +73,267 @@ function timeAgo(ts: string | number): string {
 // 46.8: Reduced from 50 to 25 to match server default and lower initial payload
 const PAGE_SIZE = 25;
 
+// ── Heatmap helpers ──────────────────────────────────────────────
+
+interface HeatmapDay {
+  date: string;
+  count: number;
+  weekday: number; // 0=Mon .. 6=Sun
+}
+
+const HEATMAP_WEEKS = 13;
+const DAY_LABELS_MAP: Record<number, string> = { 0: 'Mon', 2: 'Wed', 4: 'Fri' };
+
+function getHeatmapColor(count: number): string {
+  if (count === 0) return '#0C0C18';
+  if (count <= 2) return 'rgba(0,240,255,0.2)';
+  if (count <= 5) return 'rgba(0,240,255,0.4)';
+  if (count <= 10) return 'rgba(0,240,255,0.6)';
+  return '#00F0FF';
+}
+
+function buildHeatmapGrid(raw: Array<{ date: string; count: number }>): { grid: HeatmapDay[][]; monthLabels: Array<{ label: string; col: number }> } {
+  const countMap = new Map<string, number>();
+  for (const r of raw) countMap.set(r.date, r.count);
+
+  const today = new Date();
+  // Find the end of the current week (Sunday) so columns are full weeks
+  const todayDay = today.getUTCDay(); // 0=Sun
+  const endDate = new Date(today);
+  // Move to end of current week (Sunday)
+  endDate.setDate(endDate.getDate() + (todayDay === 0 ? 0 : 7 - todayDay));
+
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - HEATMAP_WEEKS * 7 + 1);
+
+  const grid: HeatmapDay[][] = [];
+  const monthLabels: Array<{ label: string; col: number }> = [];
+  let lastMonth = -1;
+
+  const cursor = new Date(startDate);
+  let col = 0;
+  let currentWeek: HeatmapDay[] = [];
+
+  while (cursor <= endDate) {
+    const dateStr = cursor.toISOString().slice(0, 10);
+    const dow = cursor.getUTCDay();
+    const weekday = dow === 0 ? 6 : dow - 1; // Mon=0..Sun=6
+
+    // Track month transitions for labels
+    const month = cursor.getUTCMonth();
+    if (month !== lastMonth) {
+      const monthName = cursor.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+      monthLabels.push({ label: monthName, col });
+      lastMonth = month;
+    }
+
+    const isFuture = cursor > today;
+    currentWeek.push({
+      date: dateStr,
+      count: isFuture ? 0 : (countMap.get(dateStr) ?? 0),
+      weekday,
+    });
+
+    // If this is Sunday (weekday 6) or last day, push the week
+    if (weekday === 6) {
+      grid.push(currentWeek);
+      currentWeek = [];
+      col++;
+    }
+
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  if (currentWeek.length > 0) {
+    grid.push(currentWeek);
+  }
+
+  return { grid, monthLabels };
+}
+
+function ActivityHeatmap({ data }: { data: Array<{ date: string; count: number }> }) {
+  const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const { grid, monthLabels } = useMemo(() => buildHeatmapGrid(data), [data]);
+
+  const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>, day: HeatmapDay) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top - 30;
+    const label = day.count === 1 ? '1 event' : `${day.count} events`;
+    setTooltip({ text: `${label} on ${day.date}`, x, y });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => setTooltip(null), []);
+
+  const totalEvents = useMemo(() => data.reduce((sum, d) => sum + d.count, 0), [data]);
+
+  return (
+    <Card className="border-[#00F0FF]/20">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Flame className="w-4 h-4 text-[#00F0FF]" />
+            <span className="text-sm font-medium text-[#E8E8F0]">Activity Heatmap</span>
+            <span className="text-xs text-[#9CA3AF]">last 90 days</span>
+          </div>
+          <span className="text-xs text-[#9CA3AF]">{totalEvents} total events</span>
+        </div>
+
+        {/* Scrollable container for mobile */}
+        <div className="overflow-x-auto -mx-1 px-1" ref={containerRef}>
+          <div className="min-w-[420px] relative">
+            {/* Month labels */}
+            <div className="flex ml-8 mb-1 h-4">
+              {monthLabels.map((m, i) => (
+                <span
+                  key={`${m.label}-${i}`}
+                  className="text-[10px] text-[#9CA3AF] absolute"
+                  style={{ left: `${32 + m.col * 15}px` }}
+                >
+                  {m.label}
+                </span>
+              ))}
+            </div>
+
+            {/* Grid: rows = days (Mon-Sun), cols = weeks */}
+            <div className="flex gap-[1px]">
+              {/* Day labels */}
+              <div className="flex flex-col gap-[1px] mr-1 flex-shrink-0" style={{ width: '24px' }}>
+                {Array.from({ length: 7 }).map((_, dayIdx) => (
+                  <div
+                    key={dayIdx}
+                    className="h-[13px] flex items-center justify-end pr-1"
+                  >
+                    {DAY_LABELS_MAP[dayIdx] != null && (
+                      <span className="text-[9px] text-[#9CA3AF] leading-none">{DAY_LABELS_MAP[dayIdx]}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Week columns */}
+              {grid.map((week, colIdx) => (
+                <div key={colIdx} className="flex flex-col gap-[1px]">
+                  {/* Pad the start of the first column if it doesn't start on Monday */}
+                  {colIdx === 0 && week[0] && week[0].weekday > 0 &&
+                    Array.from({ length: week[0].weekday }).map((_, i) => (
+                      <div key={`pad-${i}`} className="w-[13px] h-[13px]" />
+                    ))
+                  }
+                  {week.map((day) => (
+                    <div
+                      key={day.date}
+                      className="w-[13px] h-[13px] rounded-[2px] cursor-pointer transition-all hover:ring-1 hover:ring-[#00F0FF]/50"
+                      style={{ backgroundColor: getHeatmapColor(day.count) }}
+                      onMouseEnter={(e) => handleMouseEnter(e, day)}
+                      onMouseLeave={handleMouseLeave}
+                      title={`${day.count} events on ${day.date}`}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Color legend */}
+            <div className="flex items-center gap-1.5 mt-2 justify-end">
+              <span className="text-[9px] text-[#9CA3AF]">Less</span>
+              {[0, 1, 3, 6, 11].map((threshold) => (
+                <div
+                  key={threshold}
+                  className="w-[10px] h-[10px] rounded-[2px]"
+                  style={{ backgroundColor: getHeatmapColor(threshold) }}
+                />
+              ))}
+              <span className="text-[9px] text-[#9CA3AF]">More</span>
+            </div>
+
+            {/* Tooltip */}
+            {tooltip && (
+              <div
+                className="absolute pointer-events-none z-50 px-2 py-1 rounded-md text-xs text-[#E8E8F0] bg-[#12121F] border border-[#00F0FF]/20 shadow-lg whitespace-nowrap"
+                style={{ left: tooltip.x, top: tooltip.y, transform: 'translateX(-50%)' }}
+              >
+                {tooltip.text}
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Stats Bar ────────────────────────────────────────────────────
+
+interface ActivityStats {
+  today: number;
+  thisWeek: number;
+  thisMonth: number;
+  total: number;
+}
+
+function computeActivityStats(entries: ActivityEntry[], serverTotal: number): ActivityStats {
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+
+  // Get start of this week (Monday)
+  const dayOfWeek = now.getDay(); // 0=Sun
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const weekStart = new Date(now);
+  weekStart.setDate(weekStart.getDate() - mondayOffset);
+  const weekStartStr = weekStart.toISOString().slice(0, 10);
+
+  // Get start of this month
+  const monthStartStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+
+  let today = 0;
+  let thisWeek = 0;
+  let thisMonth = 0;
+
+  for (const entry of entries) {
+    const ts = typeof entry.created_at === 'string'
+      ? (entry.created_at.includes('T') ? entry.created_at : entry.created_at.replace(' ', 'T') + 'Z')
+      : new Date(entry.created_at).toISOString();
+    const dateStr = ts.slice(0, 10);
+
+    if (dateStr === todayStr) today++;
+    if (dateStr >= weekStartStr) thisWeek++;
+    if (dateStr >= monthStartStr) thisMonth++;
+  }
+
+  return { today, thisWeek, thisMonth, total: serverTotal };
+}
+
+function StatsBar({ stats }: { stats: ActivityStats }) {
+  const items = [
+    { label: 'Today', value: stats.today, icon: Flame },
+    { label: 'This week', value: stats.thisWeek, icon: Calendar },
+    { label: 'This month', value: stats.thisMonth, icon: BarChart3 },
+    { label: 'Total', value: stats.total, icon: Activity },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      {items.map(({ label, value, icon: Icon }) => (
+        <div
+          key={label}
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/10"
+        >
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#00F0FF]/10 flex-shrink-0">
+            <Icon className="w-3.5 h-3.5 text-[#00F0FF]" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-[#E8E8F0] tabular-nums">{value.toLocaleString()}</div>
+            <div className="text-[10px] text-[#9CA3AF] leading-none">{label}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ActivityPage() {
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [total, setTotal] = useState(0);
@@ -91,6 +352,18 @@ export function ActivityPage() {
   // 65.9: Date-range filter
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  // GAP-8: Heatmap data
+  const [heatmapData, setHeatmapData] = useState<Array<{ date: string; count: number }>>([]);
+  const [heatmapLoading, setHeatmapLoading] = useState(false);
+
+  // GAP-8: Fetch heatmap data once on mount
+  useEffect(() => {
+    setHeatmapLoading(true);
+    activityService.getHeatmap()
+      .then(({ data }) => setHeatmapData(data.heatmap ?? []))
+      .catch(() => setHeatmapData([]))
+      .finally(() => setHeatmapLoading(false));
+  }, []);
 
   // Debounce search query → serverQ
   useEffect(() => {
@@ -122,9 +395,10 @@ export function ActivityPage() {
     try {
       const res = await activityService.export();
       const url = URL.createObjectURL(res.data as unknown as Blob);
+      const today = new Date().toISOString().slice(0, 10);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'activity-log.csv';
+      a.download = `agentin-activity-${today}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch { /* non-fatal */ } finally {
@@ -158,6 +432,9 @@ export function ActivityPage() {
     Integrations: entries.filter((e) => getCategory(e.icon) === 'Integrations').length,
     Agent: entries.filter((e) => getCategory(e.icon) === 'Agent').length,
   };
+
+  // GAP-8: Compute stats from loaded entries
+  const stats = useMemo(() => computeActivityStats(entries, total), [entries, total]);
 
   const handlePullRefresh = async () => {
     const res = await userService.getActivity(50);
@@ -218,6 +495,32 @@ export function ActivityPage() {
           </div>
         )}
       </div>
+
+      {/* GAP-8: Stats Bar */}
+      <StatsBar stats={stats} />
+
+      {/* GAP-8: Activity Heatmap */}
+      {heatmapLoading ? (
+        <Card className="border-[#00F0FF]/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-4 h-4 rounded bg-[#1a1a2e] animate-pulse" />
+              <div className="h-4 w-32 rounded bg-[#1a1a2e] animate-pulse" />
+            </div>
+            <div className="flex gap-[1px] ml-8">
+              {Array.from({ length: 13 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-[1px]">
+                  {Array.from({ length: 7 }).map((_, j) => (
+                    <div key={j} className="w-[13px] h-[13px] rounded-[2px] bg-[#1a1a2e] animate-pulse" />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <ActivityHeatmap data={heatmapData} />
+      )}
 
       {/* Search */}
       <div className="relative">

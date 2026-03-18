@@ -1678,6 +1678,65 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         }
       }
 
+      // ── find_free_slot ──────────────────────────────────────────
+      case 'find_free_slot': {
+        const durationMin = (params.duration_minutes as number) || 60;
+        const daysAhead = (params.days_ahead as number) || 7;
+        const preference = (params.preference as string) || 'morning';
+        const slots: Array<{ start: string; end: string; label: string }> = [];
+
+        try {
+          const { getUpcomingEvents } = await import('./calendar-sync.js');
+          const events = getUpcomingEvents(userId, daysAhead);
+
+          // Work hours based on preference
+          let workStart = 9;
+          let workEnd = 18;
+          if (preference === 'afternoon') { workStart = 12; workEnd = 18; }
+          else if (preference === 'evening') { workStart = 16; workEnd = 21; }
+          else { workStart = 9; workEnd = 14; } // morning
+
+          for (let day = 1; day <= daysAhead && slots.length < 5; day++) {
+            const date = new Date(Date.now() + day * 86400000);
+            if ([0, 6].includes(date.getDay())) continue; // skip weekends
+            const dayStr = date.toISOString().slice(0, 10);
+
+            for (let hour = workStart; hour < workEnd - Math.floor(durationMin / 60); hour++) {
+              const slotStart = new Date(`${dayStr}T${String(hour).padStart(2, '0')}:00:00`);
+              const slotEnd = new Date(slotStart.getTime() + durationMin * 60000);
+
+              const conflict = events.some(e => {
+                const eStart = new Date(e.start_time);
+                const eEnd = e.end_time ? new Date(e.end_time) : new Date(e.start_time + 3600000);
+                return slotStart.getTime() < eEnd.getTime() && slotEnd.getTime() > eStart.getTime();
+              });
+
+              if (!conflict) {
+                const dayLabel = slotStart.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+                slots.push({
+                  start: slotStart.toISOString(),
+                  end: slotEnd.toISOString(),
+                  label: `${dayLabel} ${String(hour).padStart(2, '0')}:00`,
+                });
+                break; // one slot per day
+              }
+            }
+          }
+
+          const list = slots.map((s, i) => `${i + 1}. ${s.label}`).join('\n');
+          return {
+            tool,
+            success: true,
+            message: slots.length
+              ? `Free ${durationMin}-min slots (${preference}):\n${list}`
+              : `No free ${durationMin}-minute slots in the next ${daysAhead} days.`,
+            data: { slots },
+          };
+        } catch {
+          return { tool, success: true, message: 'Calendar not connected. Connect via /dashboard/calendar to find free slots.' };
+        }
+      }
+
       // ── read_inbox ─────────────────────────────────────────────
       case 'read_inbox': {
         const limit = (params.limit as number) || 5;

@@ -34,6 +34,15 @@ export interface UserWorkflow {
   created_at: number;
 }
 
+export interface WorkflowRunStep {
+  step: number;
+  agent: string;
+  output_key: string;
+  status: 'pending' | 'running' | 'done' | 'error';
+  output: string;
+  error?: string;
+}
+
 export interface UserWorkflowRun {
   id: number;
   workflow_id: number;
@@ -41,6 +50,7 @@ export interface UserWorkflowRun {
   finished_at: number | null;
   status: 'running' | 'completed' | 'failed';
   context: Record<string, string>;
+  steps: WorkflowRunStep[];
   error: string | null;
 }
 
@@ -78,6 +88,10 @@ function parseRun(row: Record<string, unknown>): UserWorkflowRun {
   try {
     context = JSON.parse(row.context as string || '{}');
   } catch { /* malformed */ }
+  let steps: WorkflowRunStep[] = [];
+  try {
+    steps = JSON.parse(row.steps_json as string || '[]');
+  } catch { /* malformed */ }
   return {
     id: row.id as number,
     workflow_id: row.workflow_id as number,
@@ -85,6 +99,7 @@ function parseRun(row: Record<string, unknown>): UserWorkflowRun {
     finished_at: (row.finished_at as number) || null,
     status: (row.status as UserWorkflowRun['status']) || 'running',
     context,
+    steps,
     error: (row.error as string) || null,
   };
 }
@@ -155,6 +170,13 @@ async function callAgent(
 
 // ---- Main execution ----
 
+/** Helper: persist step statuses to DB */
+function persistSteps(runId: number, steps: WorkflowRunStep[], context: Record<string, string>): void {
+  db.prepare(
+    'UPDATE user_workflow_runs SET steps_json = ?, context = ? WHERE id = ?'
+  ).run(JSON.stringify(steps), JSON.stringify(context), runId);
+}
+
 export async function runUserWorkflow(
   workflowId: number,
   userId: string,
@@ -175,31 +197,48 @@ export async function runUserWorkflow(
   }
 
   const startedAt = Date.now();
+
+  // Build initial step tracker
+  const stepTracker: WorkflowRunStep[] = workflow.steps.map((s, i) => ({
+    step: i + 1,
+    agent: s.agent,
+    output_key: s.output_key,
+    status: 'pending' as const,
+    output: '',
+  }));
+
   const runResult = db.prepare(`
-    INSERT INTO user_workflow_runs (workflow_id, started_at, status, context)
-    VALUES (?, ?, 'running', '{}')
-  `).run(workflowId, startedAt);
+    INSERT INTO user_workflow_runs (workflow_id, started_at, status, context, steps_json)
+    VALUES (?, ?, 'running', '{}', ?)
+  `).run(workflowId, startedAt, JSON.stringify(stepTracker));
   const runId = runResult.lastInsertRowid as number;
 
   const context: Record<string, string> = {};
 
   try {
-    for (const step of workflow.steps) {
+    for (let i = 0; i < workflow.steps.length; i++) {
+      const step = workflow.steps[i];
+
+      // Mark step as running
+      stepTracker[i].status = 'running';
+      persistSteps(runId, stepTracker, context);
+
       const prompt = substituteTemplate(step.prompt_template, context, userInput);
       logger.info({ runId, workflowId, agent: step.agent, outputKey: step.output_key }, 'Executing workflow step');
 
       const output = await callAgent(step.agent, prompt);
       context[step.output_key] = output;
 
-      db.prepare(
-        'UPDATE user_workflow_runs SET context = ? WHERE id = ?'
-      ).run(JSON.stringify(context), runId);
+      // Mark step as done
+      stepTracker[i].status = 'done';
+      stepTracker[i].output = output;
+      persistSteps(runId, stepTracker, context);
     }
 
     const finishedAt = Date.now();
     db.prepare(
-      'UPDATE user_workflow_runs SET status = ?, finished_at = ?, context = ? WHERE id = ?'
-    ).run('completed', finishedAt, JSON.stringify(context), runId);
+      'UPDATE user_workflow_runs SET status = ?, finished_at = ?, context = ?, steps_json = ? WHERE id = ?'
+    ).run('completed', finishedAt, JSON.stringify(context), JSON.stringify(stepTracker), runId);
 
     db.prepare('UPDATE user_workflows SET last_run = ? WHERE id = ?').run(startedAt, workflowId);
 
@@ -212,15 +251,23 @@ export async function runUserWorkflow(
       finished_at: finishedAt,
       status: 'completed',
       context,
+      steps: stepTracker,
       error: null,
     };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     const finishedAt = Date.now();
 
+    // Mark the currently-running step as error
+    const runningIdx = stepTracker.findIndex(s => s.status === 'running');
+    if (runningIdx >= 0) {
+      stepTracker[runningIdx].status = 'error';
+      stepTracker[runningIdx].error = errorMsg;
+    }
+
     db.prepare(
-      'UPDATE user_workflow_runs SET status = ?, finished_at = ?, error = ? WHERE id = ?'
-    ).run('failed', finishedAt, errorMsg, runId);
+      'UPDATE user_workflow_runs SET status = ?, finished_at = ?, error = ?, steps_json = ? WHERE id = ?'
+    ).run('failed', finishedAt, errorMsg, JSON.stringify(stepTracker), runId);
 
     logger.error({ runId, workflowId, err }, 'Workflow execution failed');
 
@@ -231,9 +278,100 @@ export async function runUserWorkflow(
       finished_at: finishedAt,
       status: 'failed',
       context,
+      steps: stepTracker,
       error: errorMsg,
     };
   }
+}
+
+/**
+ * Start a workflow run in the background (non-blocking).
+ * Returns the runId immediately so the frontend can poll for progress.
+ */
+export function startUserWorkflowAsync(
+  workflowId: number,
+  userId: string,
+  userInput: string,
+): { runId: number } {
+  const workflowRow = db.prepare(
+    'SELECT * FROM user_workflows WHERE id = ? AND user_id = ?'
+  ).get(workflowId, userId) as Record<string, unknown> | undefined;
+
+  if (!workflowRow) {
+    throw new Error(`Workflow ${workflowId} not found for user ${userId}`);
+  }
+
+  const workflow = parseWorkflow(workflowRow);
+
+  if (!workflow.enabled) {
+    throw new Error(`Workflow "${workflow.name}" is disabled`);
+  }
+
+  const startedAt = Date.now();
+
+  // Build initial step tracker
+  const stepTracker: WorkflowRunStep[] = workflow.steps.map((s, i) => ({
+    step: i + 1,
+    agent: s.agent,
+    output_key: s.output_key,
+    status: 'pending' as const,
+    output: '',
+  }));
+
+  const runResult = db.prepare(`
+    INSERT INTO user_workflow_runs (workflow_id, started_at, status, context, steps_json)
+    VALUES (?, ?, 'running', '{}', ?)
+  `).run(workflowId, startedAt, JSON.stringify(stepTracker));
+  const runId = runResult.lastInsertRowid as number;
+
+  // Fire and forget -- execute steps in background
+  const context: Record<string, string> = {};
+
+  void (async () => {
+    try {
+      for (let i = 0; i < workflow.steps.length; i++) {
+        const step = workflow.steps[i];
+
+        stepTracker[i].status = 'running';
+        persistSteps(runId, stepTracker, context);
+
+        const prompt = substituteTemplate(step.prompt_template, context, userInput);
+        logger.info({ runId, workflowId, agent: step.agent, outputKey: step.output_key }, 'Executing workflow step (async)');
+
+        const output = await callAgent(step.agent, prompt);
+        context[step.output_key] = output;
+
+        stepTracker[i].status = 'done';
+        stepTracker[i].output = output;
+        persistSteps(runId, stepTracker, context);
+      }
+
+      const finishedAt = Date.now();
+      db.prepare(
+        'UPDATE user_workflow_runs SET status = ?, finished_at = ?, context = ?, steps_json = ? WHERE id = ?'
+      ).run('completed', finishedAt, JSON.stringify(context), JSON.stringify(stepTracker), runId);
+
+      db.prepare('UPDATE user_workflows SET last_run = ? WHERE id = ?').run(startedAt, workflowId);
+      logger.info({ runId, workflowId, steps: workflow.steps.length }, 'Workflow completed (async)');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      const finishedAt = Date.now();
+
+      const runningIdx = stepTracker.findIndex(s => s.status === 'running');
+      if (runningIdx >= 0) {
+        stepTracker[runningIdx].status = 'error';
+        stepTracker[runningIdx].error = errorMsg;
+      }
+
+      db.prepare(
+        'UPDATE user_workflow_runs SET status = ?, finished_at = ?, error = ?, steps_json = ? WHERE id = ?'
+      ).run('failed', finishedAt, errorMsg, JSON.stringify(stepTracker), runId);
+
+      logger.error({ runId, workflowId, err }, 'Workflow execution failed (async)');
+    }
+  })();
+
+  return { runId };
 }
 
 // ---- Query helpers ----

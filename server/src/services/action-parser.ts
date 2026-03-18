@@ -304,6 +304,18 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
   search_memory: searchMemorySchema,
   create_memory: createMemorySchema,
   check_calendar: z.object({ days: z.coerce.number().min(1).max(14).default(1) }),
+  create_calendar_event: z.object({
+    title: z.string().min(1).max(200),
+    start_time: z.string().min(1),
+    duration_minutes: z.coerce.number().int().min(5).max(480).default(60),
+    attendees: z.array(z.string()).max(20).optional(),
+    location: z.string().max(500).optional(),
+  }),
+  find_free_slot: z.object({
+    duration_minutes: z.coerce.number().int().min(15).max(480).default(60),
+    days_ahead: z.coerce.number().int().min(1).max(14).default(7),
+    preference: z.enum(['morning', 'afternoon', 'evening']).default('morning'),
+  }),
   list_inbox: z.object({ limit: z.coerce.number().min(1).max(20).default(5) }),
 };
 

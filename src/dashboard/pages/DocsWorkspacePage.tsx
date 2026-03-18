@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { FileText, Plus, Search, Pin, Clock, Archive, Folder,
-  Trash2, Star, Globe, ChevronRight, Sparkles, FolderPlus, X } from 'lucide-react';
+  Trash2, Star, Globe, ChevronRight, Sparkles, FolderPlus, X,
+  Maximize2, Minimize2, RefreshCw, Check, Loader2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import api from '@/services/api';
+import { agentService } from '@/services/api';
+import type { ConversationEntry } from '@/types';
 
 interface Doc {
   id: string;
@@ -428,15 +431,22 @@ export function DocsWorkspacePage() {
 
 /* ─── Inline Editor (full-screen when doc is open) ─── */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type BlockNoteEditorInstance = any;
+type AIAction = 'improve' | 'expand' | 'summarize' | 'translate' | 'rephrase' | 'fix';
+
 function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
   const [title, setTitle] = useState(doc.title);
   const [content, setContent] = useState<unknown[]>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [aiPanelOpen, setAIPanelOpen] = useState(false);
-  const [aiResult, setAIResult] = useState<string | null>(null);
-  const [aiLoading, setAILoading] = useState(false);
+  const [aiProcessing, setAiProcessing] = useState<AIAction | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [convModalOpen, setConvModalOpen] = useState(false);
+  const [conversations, setConversations] = useState<ConversationEntry[]>([]);
+  const [convLoading, setConvLoading] = useState(false);
+  const [convProcessing, setConvProcessing] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<BlockNoteEditorInstance>(null);
 
   // Load document content
   useEffect(() => {
@@ -478,129 +488,290 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
     debouncedSave(content, newTitle);
   };
 
-  const runAIAction = async (action: string) => {
-    setAILoading(true);
-    setAIResult(null);
+  /** Get text to process: selected text first, or full document markdown */
+  const getTextForAI = (): { text: string; hasSelection: boolean } => {
+    const editor = editorRef.current;
+    if (!editor) return { text: '', hasSelection: false };
+
+    // Try selected text first
+    const selectedText = editor.getSelectedText?.();
+    if (selectedText && selectedText.trim().length > 0) {
+      return { text: selectedText.trim(), hasSelection: true };
+    }
+
+    // Fall back to full document as markdown
+    const markdown = editor.blocksToMarkdownLossy?.(editor.document);
+    return { text: markdown || '', hasSelection: false };
+  };
+
+  /** Replace selected blocks or full document with AI result */
+  const applyAIResult = (resultText: string, hadSelection: boolean) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
     try {
-      const res = await api.post<{ result: string }>(`/docs/${doc.id}/ai`, { action });
-      setAIResult(res.data.result);
-    } catch {
-      setAIResult('AI action failed. Please try again.');
-    } finally {
-      setAILoading(false);
+      const newBlocks = editor.tryParseMarkdownToBlocks(resultText);
+      if (!newBlocks || newBlocks.length === 0) return;
+
+      if (hadSelection) {
+        // Replace selected blocks
+        const selection = editor.getSelection?.();
+        if (selection && selection.blocks?.length > 0) {
+          const blockIds = selection.blocks.map((b: { id: string }) => b.id);
+          editor.replaceBlocks(blockIds, newBlocks);
+        } else {
+          // If selection collapsed, insert at cursor position
+          const cursor = editor.getTextCursorPosition?.();
+          if (cursor?.block) {
+            editor.replaceBlocks([cursor.block.id], newBlocks);
+          }
+        }
+      } else {
+        // Replace entire document
+        const allBlockIds = editor.document.map((b: { id: string }) => b.id);
+        if (allBlockIds.length > 0) {
+          editor.replaceBlocks(allBlockIds, newBlocks);
+        }
+      }
+
+      // Trigger save after AI modification
+      const updatedContent = editor.document as unknown[];
+      setContent(updatedContent);
+      debouncedSave(updatedContent);
+    } catch (err) {
+      console.error('Failed to apply AI result:', err);
     }
   };
 
-  const aiActions = [
-    { action: 'clean-up', label: 'Clean Up', desc: 'Fix grammar & clarity', icon: '✨' },
-    { action: 'expand', label: 'Expand', desc: 'Add more detail', icon: '📝' },
-    { action: 'summarize', label: 'Summarize', desc: 'Key points only', icon: '📋' },
-    { action: 'extract-tasks', label: 'Extract Tasks', desc: 'Find action items', icon: '✅' },
-    { action: 'make-formal', label: 'Make Formal', desc: 'Professional tone', icon: '👔' },
-    { action: 'make-casual', label: 'Make Casual', desc: 'Conversational tone', icon: '💬' },
-    { action: 'brainstorm', label: 'Brainstorm', desc: 'Generate ideas', icon: '💡' },
+  const handleAIAction = async (action: AIAction) => {
+    const { text, hasSelection } = getTextForAI();
+    if (!text) {
+      setAiError('No text to process. Write something first.');
+      setTimeout(() => setAiError(null), 3000);
+      return;
+    }
+
+    setAiProcessing(action);
+    setAiError(null);
+
+    const prompts: Record<AIAction, string> = {
+      improve: `Improve this text while preserving its meaning. Return ONLY the improved text with no commentary:\n\n${text}`,
+      expand: `Expand this text with more detail and depth. Return ONLY the expanded text with no commentary:\n\n${text}`,
+      summarize: `Summarize this in 1-3 concise sentences. Return ONLY the summary with no commentary:\n\n${text}`,
+      translate: `If this text is in English, translate it to Hindi. If it's in Hindi or Hinglish, translate to English. Return ONLY the translation with no commentary:\n\n${text}`,
+      rephrase: `Rephrase this in a more engaging and compelling way. Return ONLY the rephrased text with no commentary:\n\n${text}`,
+      fix: `Fix all grammar, spelling, and punctuation errors. Return ONLY the corrected text with no commentary:\n\n${text}`,
+    };
+
+    try {
+      const res = await agentService.chat(prompts[action], 'web');
+      const reply = res.data.text;
+      if (reply) {
+        applyAIResult(reply, hasSelection);
+      }
+    } catch {
+      setAiError('AI action failed. Please try again.');
+      setTimeout(() => setAiError(null), 4000);
+    } finally {
+      setAiProcessing(null);
+    }
+  };
+
+  /** Load conversations for the "Create from Conversation" modal */
+  const openConversationModal = async () => {
+    setConvModalOpen(true);
+    setConvLoading(true);
+    try {
+      const res = await agentService.conversations(30);
+      // Group into conversation threads (consecutive user+assistant pairs)
+      const entries: ConversationEntry[] = Array.isArray(res.data) ? res.data : [];
+      setConversations(entries);
+    } catch {
+      setConversations([]);
+    } finally {
+      setConvLoading(false);
+    }
+  };
+
+  /** Create doc content from a conversation message */
+  const createFromConversation = async (conv: ConversationEntry) => {
+    setConvProcessing(conv.id);
+    try {
+      const prompt = `Create a well-structured document from this conversation content. Use proper headings, bullet points, and formatting. Return ONLY the document content in markdown:\n\n${conv.content}`;
+      const res = await agentService.chat(prompt, 'web');
+      const reply = res.data.text;
+      if (reply && editorRef.current) {
+        const newBlocks = editorRef.current.tryParseMarkdownToBlocks(reply);
+        if (newBlocks && newBlocks.length > 0) {
+          const allBlockIds = editorRef.current.document.map((b: { id: string }) => b.id);
+          if (allBlockIds.length > 0) {
+            editorRef.current.replaceBlocks(allBlockIds, newBlocks);
+          }
+          const updatedContent = editorRef.current.document as unknown[];
+          setContent(updatedContent);
+          debouncedSave(updatedContent);
+        }
+      }
+      setConvModalOpen(false);
+    } catch {
+      setAiError('Failed to create document from conversation.');
+      setTimeout(() => setAiError(null), 4000);
+    } finally {
+      setConvProcessing(null);
+    }
+  };
+
+  const aiActions: { id: AIAction; icon: typeof Sparkles; label: string }[] = [
+    { id: 'improve', icon: Sparkles, label: 'Improve' },
+    { id: 'expand', icon: Maximize2, label: 'Expand' },
+    { id: 'summarize', icon: Minimize2, label: 'Summarize' },
+    { id: 'translate', icon: Globe, label: 'Translate' },
+    { id: 'rephrase', icon: RefreshCw, label: 'Rephrase' },
+    { id: 'fix', icon: Check, label: 'Fix Grammar' },
   ];
 
   return (
-    <div className="flex h-full min-h-[calc(100vh-64px)]">
-      {/* Editor */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="sticky top-0 z-10 flex items-center gap-3 px-4 md:px-6 py-3
-                           bg-[#06060B]/95 backdrop-blur-xl border-b border-white/5">
-          <button onClick={onBack} className="p-2 rounded-lg hover:bg-white/5 min-w-[44px] min-h-[44px]
-                                              flex items-center justify-center"
-                  aria-label="Back to documents">
-            <ChevronRight className="w-4 h-4 rotate-180 text-[#8892B0]" />
-          </button>
+    <div className="flex flex-col h-full min-h-[calc(100vh-64px)]">
+      {/* Header */}
+      <header className="sticky top-0 z-10 flex items-center gap-3 px-4 md:px-6 py-3
+                         bg-[#06060B]/95 backdrop-blur-xl border-b border-white/5">
+        <button onClick={onBack} className="p-2 rounded-lg hover:bg-white/5 min-w-[44px] min-h-[44px]
+                                            flex items-center justify-center"
+                aria-label="Back to documents">
+          <ChevronRight className="w-4 h-4 rotate-180 text-[#8892B0]" />
+        </button>
 
-          <input
-            value={title}
-            onChange={e => handleTitleChange(e.target.value)}
-            className="flex-1 bg-transparent font-semibold text-lg text-[#F4F6FF]
-                       outline-none placeholder-white/20"
-            placeholder="Untitled"
-          />
+        <input
+          value={title}
+          onChange={e => handleTitleChange(e.target.value)}
+          className="flex-1 bg-transparent font-semibold text-lg text-[#F4F6FF]
+                     outline-none placeholder-white/20"
+          placeholder="Untitled"
+        />
 
-          <span className="text-xs text-[#8892B0]">
-            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? '✓ Saved' : ''}
-          </span>
+        <span className="text-xs text-[#8892B0]">
+          {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : ''}
+        </span>
 
-          <Button
-            size="sm"
-            onClick={() => setAIPanelOpen(!aiPanelOpen)}
-            className="gap-1.5 bg-[#8B5CF6]/20 border border-[#8B5CF6]/30 text-[#8B5CF6]
-                       hover:bg-[#8B5CF6]/30 min-h-[40px]"
+        <Button
+          size="sm"
+          onClick={openConversationModal}
+          className="gap-1.5 bg-[#8B5CF6]/20 border border-[#8B5CF6]/30 text-[#8B5CF6]
+                     hover:bg-[#8B5CF6]/30 min-h-[40px]"
+          title="Create from Conversation"
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span className="hidden sm:inline">From Chat</span>
+        </Button>
+      </header>
+
+      {/* AI Writing Toolbar */}
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#00F0FF]/10 bg-[#0C0C18] overflow-x-auto scrollbar-hide">
+        <span className="text-[10px] text-[#8892B0]/60 uppercase tracking-wider mr-1 shrink-0">AI</span>
+        {aiActions.map(({ id, icon: Icon, label }) => (
+          <button
+            key={id}
+            onClick={() => handleAIAction(id)}
+            disabled={!!aiProcessing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
+                       text-[#9CA3AF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10
+                       transition-colors whitespace-nowrap disabled:opacity-50
+                       min-h-[36px]"
           >
-            <Sparkles className="w-4 h-4" />
-            <span className="hidden sm:inline">AI</span>
-          </Button>
-        </header>
+            {aiProcessing === id ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00F0FF]" />
+            ) : (
+              <Icon className="w-3.5 h-3.5" />
+            )}
+            {label}
+          </button>
+        ))}
 
-        {/* BlockNote Editor Container */}
-        <div ref={editorContainerRef} className="flex-1 overflow-y-auto px-4 md:px-8 py-6">
-          <BlockNoteEditorWrapper
-            initialContent={content}
-            onChange={(blocks) => {
-              setContent(blocks);
-              debouncedSave(blocks);
-            }}
-          />
-        </div>
+        {/* Processing indicator */}
+        {aiProcessing && (
+          <span className="text-[10px] text-[#00F0FF] animate-pulse ml-auto shrink-0">
+            Processing...
+          </span>
+        )}
+
+        {/* Error message */}
+        {aiError && (
+          <span className="text-[10px] text-red-400 ml-auto shrink-0">
+            {aiError}
+          </span>
+        )}
       </div>
 
-      {/* AI Actions Panel — desktop sidebar / mobile hidden */}
-      {aiPanelOpen && (
-        <aside className="w-72 border-l border-white/5 flex flex-col p-4 gap-3
-                          bg-[#06060B]/95 backdrop-blur-xl
-                          hidden md:flex">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm flex items-center gap-2 text-[#F4F6FF]">
-              <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
-              AI Actions
-            </h3>
-            <button onClick={() => setAIPanelOpen(false)}
-              className="p-1 rounded hover:bg-white/5 text-[#8892B0]"
-              aria-label="Close AI panel">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+      {/* BlockNote Editor Container */}
+      <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 pb-24 md:pb-6">
+        <BlockNoteEditorWrapper
+          initialContent={content}
+          onChange={(blocks) => {
+            setContent(blocks);
+            debouncedSave(blocks);
+          }}
+          onEditorReady={(editor) => {
+            editorRef.current = editor;
+          }}
+        />
+      </div>
 
-          {aiActions.map(({ action, label, desc, icon }) => (
-            <button
-              key={action}
-              onClick={() => runAIAction(action)}
-              disabled={aiLoading}
-              className="p-3 rounded-xl border border-white/8 text-left
-                         hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/8
-                         hover:shadow-[0_0_12px_rgba(139,92,246,0.15)]
-                         transition-all duration-150 disabled:opacity-50"
-            >
-              <div className="text-sm font-medium text-[#F4F6FF]">{icon} {label}</div>
-              <div className="text-xs text-[#8892B0] mt-0.5">{desc}</div>
-            </button>
-          ))}
-
-          {aiLoading && (
-            <div className="p-3 rounded-xl bg-[#8B5CF6]/5 border border-[#8B5CF6]/20 animate-pulse">
-              <p className="text-xs text-[#8B5CF6]">Processing...</p>
-            </div>
-          )}
-
-          {aiResult && !aiLoading && (
-            <div className="p-3 rounded-xl bg-[#8B5CF6]/8 border border-[#8B5CF6]/20">
-              <p className="text-xs text-[#8892B0] mb-2">AI Suggestion:</p>
-              <p className="text-sm text-[#F4F6FF] whitespace-pre-wrap">{aiResult}</p>
-              <div className="flex gap-2 mt-3">
-                <Button size="sm" className="flex-1 bg-[#8B5CF6]/20 text-[#8B5CF6]"
-                  onClick={() => setAIResult(null)}>
-                  Done
-                </Button>
+      {/* Create from Conversation Modal */}
+      <Dialog open={convModalOpen} onOpenChange={setConvModalOpen}>
+        <DialogContent className="bg-[#0C0C18] border-white/10 max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-[#F4F6FF] flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-[#8B5CF6]" />
+              Create from Conversation
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-[#8892B0] -mt-1">
+            Select a conversation to generate a structured document from it.
+          </p>
+          <div className="flex-1 overflow-y-auto space-y-2 mt-2 min-h-0">
+            {convLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-5 h-5 animate-spin text-[#8B5CF6]" />
               </div>
-            </div>
-          )}
-        </aside>
-      )}
+            ) : conversations.length === 0 ? (
+              <p className="text-sm text-[#8892B0]/60 text-center py-8">No conversations found</p>
+            ) : (
+              conversations
+                .filter(c => c.content && c.content.trim().length > 20)
+                .slice(0, 20)
+                .map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => createFromConversation(conv)}
+                    disabled={!!convProcessing}
+                    className="w-full text-left p-3 rounded-xl border border-white/8
+                               hover:border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/5
+                               transition-all disabled:opacity-50"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <Badge className="text-[10px] px-1.5 py-0 bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20">
+                        {conv.role}
+                      </Badge>
+                      {convProcessing === conv.id && (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8B5CF6]" />
+                      )}
+                      <span className="text-[10px] text-[#8892B0]/50">
+                        {new Date(conv.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-[#F4F6FF] line-clamp-2">{conv.content}</p>
+                    {conv.summary && (
+                      <p className="text-xs text-[#8892B0] mt-1 line-clamp-1">{conv.summary}</p>
+                    )}
+                  </button>
+                ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConvModalOpen(false)}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -610,13 +781,16 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
 function BlockNoteEditorWrapper({
   initialContent,
   onChange,
+  onEditorReady,
 }: {
   initialContent: unknown[];
   onChange: (blocks: unknown[]) => void;
+  onEditorReady?: (editor: BlockNoteEditorInstance) => void;
 }) {
   const [Editor, setEditor] = useState<React.ComponentType<{
     initialContent: unknown[];
     onChange: (blocks: unknown[]) => void;
+    onEditorReady?: (editor: BlockNoteEditorInstance) => void;
   }> | null>(null);
 
   // Lazy load BlockNote to avoid SSR issues and reduce initial bundle
@@ -633,13 +807,19 @@ function BlockNoteEditorWrapper({
         await import('@blocknote/mantine/style.css');
 
         // Create a component that uses BlockNote
-        const BNEditor = ({ initialContent: init, onChange: onCh }: {
+        const BNEditor = ({ initialContent: init, onChange: onCh, onEditorReady: onReady }: {
           initialContent: unknown[];
           onChange: (blocks: unknown[]) => void;
+          onEditorReady?: (editor: BlockNoteEditorInstance) => void;
         }) => {
           const editor = useCreateBlockNote({
             initialContent: init?.length > 0 ? init as never[] : undefined,
           });
+
+          // Expose editor instance to parent
+          useEffect(() => {
+            if (onReady) onReady(editor);
+          }, [editor, onReady]);
 
           return (
             <div className="bn-dark-theme">
@@ -671,5 +851,5 @@ function BlockNoteEditorWrapper({
     );
   }
 
-  return <Editor initialContent={initialContent} onChange={onChange} />;
+  return <Editor initialContent={initialContent} onChange={onChange} onEditorReady={onEditorReady} />;
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Plus, ExternalLink, Trash2, Edit3, Download, Globe, Code,
-  Copy, Check, X, Folder, AlertTriangle, Clock
+  Copy, Check, X, Folder, AlertTriangle, Clock, Monitor, Smartphone
 } from 'lucide-react';
 import { artifactService } from '@/services/api';
 import type { Artifact, ArtifactDomain } from '@/types';
@@ -20,6 +20,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [domainInput, setDomainInput] = useState('');
   const [domainInfo, setDomainInfo] = useState<ArtifactDomain | null>(null);
+  const [previewArtifact, setPreviewArtifact] = useState<Artifact | null>(null);
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -165,7 +167,9 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
   }
 
   return (
-    <div className="space-y-6 pb-24 md:pb-6">
+    <div className={`pb-24 md:pb-6 ${previewArtifact ? 'flex gap-4 h-[calc(100vh-6rem)]' : 'space-y-6'}`}>
+      {/* Main content */}
+      <div className={`space-y-6 ${previewArtifact ? 'w-1/2 overflow-y-auto' : ''}`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -222,15 +226,17 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
               {/* Actions */}
               <div className="p-3 flex flex-wrap gap-2">
-                <a
-                  href={artifact.previewUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[#00F0FF]/20 text-[#00F0FF] rounded-lg hover:bg-[#00F0FF]/30 transition-colors text-sm"
+                <button
+                  onClick={() => setPreviewArtifact(previewArtifact?.id === artifact.id ? null : artifact)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg transition-colors text-sm ${
+                    previewArtifact?.id === artifact.id
+                      ? 'bg-[#00F0FF] text-white'
+                      : 'bg-[#00F0FF]/20 text-[#00F0FF] hover:bg-[#00F0FF]/30'
+                  }`}
                 >
-                  <ExternalLink className="w-4 h-4" />
+                  <Monitor className="w-4 h-4" />
                   <span>Preview</span>
-                </a>
+                </button>
 
                 <button
                   onClick={() => handleCopyUrl(artifact.previewUrl, artifact.id)}
@@ -277,6 +283,55 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      </div>{/* end main content */}
+
+      {/* Inline Preview Panel */}
+      {previewArtifact && (
+        <div className="hidden md:flex w-1/2 flex-col border border-[#00F0FF]/10 rounded-xl overflow-hidden bg-[#0C0C18]">
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-[#00F0FF]/10 shrink-0">
+            <span className="text-sm text-[#9CA3AF] truncate flex-1">{previewArtifact.title}</span>
+            <button
+              onClick={() => setPreviewDevice('desktop')}
+              className={`p-1.5 rounded ${previewDevice === 'desktop' ? 'text-[#00F0FF] bg-[#00F0FF]/10' : 'text-[#6B7280] hover:text-[#E8E8F0]'}`}
+            >
+              <Monitor className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setPreviewDevice('mobile')}
+              className={`p-1.5 rounded ${previewDevice === 'mobile' ? 'text-[#00F0FF] bg-[#00F0FF]/10' : 'text-[#6B7280] hover:text-[#E8E8F0]'}`}
+            >
+              <Smartphone className="w-4 h-4" />
+            </button>
+            <a
+              href={previewArtifact.previewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 text-[#6B7280] hover:text-[#00F0FF] rounded"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+            <button
+              onClick={() => setPreviewArtifact(null)}
+              className="p-1.5 text-[#6B7280] hover:text-[#E8E8F0] rounded"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className={`flex-1 flex items-center justify-center ${
+            previewDevice === 'mobile' ? 'p-8 bg-[#12121F]' : 'p-0'
+          }`}>
+            <iframe
+              src={previewArtifact.previewUrl}
+              className={previewDevice === 'mobile'
+                ? 'w-[375px] h-[667px] border border-[#00F0FF]/10 rounded-xl shadow-2xl bg-white'
+                : 'w-full h-full bg-white'}
+              title={`Preview: ${previewArtifact.title}`}
+              sandbox="allow-scripts allow-same-origin"
+            />
+          </div>
         </div>
       )}
 

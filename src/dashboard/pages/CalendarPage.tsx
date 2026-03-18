@@ -1,5 +1,5 @@
-// CalendarPage.tsx -- Phase 95 + Enhanced Calendar Grid
-import { useState, useEffect, useCallback, useMemo } from "react";
+// CalendarPage.tsx -- Phase 95 + Enhanced Calendar Grid + AI Assistant Panel
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Calendar,
   Link2,
@@ -13,6 +13,9 @@ import {
   Plus,
   Bell,
   X,
+  Sparkles,
+  Send,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import api from "@/services/api";
+import api, { agentService } from "@/services/api";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -267,6 +270,13 @@ export function CalendarPage() {
   // Expanded event
   const [expandedEventId, setExpandedEventId] = useState<string | number | null>(null);
 
+  // AI Assistant panel state
+  const [showAI, setShowAI] = useState(false);
+  const [aiInput, setAiInput] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiResponseRef = useRef<HTMLDivElement>(null);
+
   // Persist local events
   useEffect(() => {
     localStorage.setItem("agentin_local_events", JSON.stringify(localEvents));
@@ -311,6 +321,32 @@ export function CalendarPage() {
   useEffect(() => {
     void fetchData();
   }, [fetchData]);
+
+  const askCalendarAI = useCallback(
+    async (prompt: string) => {
+      setAiLoading(true);
+      setAiResponse("");
+      try {
+        const res = await agentService.chat(prompt, "web");
+        const data = res.data;
+        setAiResponse(data.text || JSON.stringify(data));
+        // Refresh calendar after AI may have created/modified events
+        void fetchData();
+      } catch {
+        setAiResponse("Could not reach AI assistant. Please try again.");
+      } finally {
+        setAiLoading(false);
+      }
+    },
+    [fetchData]
+  );
+
+  // Scroll AI response into view when it changes
+  useEffect(() => {
+    if (aiResponse && aiResponseRef.current) {
+      aiResponseRef.current.scrollTop = aiResponseRef.current.scrollHeight;
+    }
+  }, [aiResponse]);
 
   const handleConnect = useCallback(async () => {
     try {
@@ -1295,6 +1331,142 @@ export function CalendarPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── AI Assistant FAB ─────────────────────────────────── */}
+      <button
+        onClick={() => setShowAI((v) => !v)}
+        className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
+        style={{
+          background: showAI
+            ? "linear-gradient(135deg, #8B5CF6, #00F0FF)"
+            : "linear-gradient(135deg, #00F0FF, #8B5CF6)",
+          boxShadow: "0 4px 20px rgba(0,240,255,0.3)",
+        }}
+        aria-label={showAI ? "Close AI assistant" : "Open AI assistant"}
+      >
+        {showAI ? (
+          <X className="h-6 w-6 text-white" />
+        ) : (
+          <Sparkles className="h-6 w-6 text-white" />
+        )}
+      </button>
+
+      {/* ── AI Assistant Panel ────────────────────────────────── */}
+      {showAI && (
+        <div
+          className="fixed z-40 bg-[#0C0C18] border border-[rgba(0,240,255,0.15)] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300
+            bottom-0 left-0 right-0 h-[80vh]
+            md:bottom-6 md:left-auto md:right-24 md:top-auto md:w-[400px] md:h-[560px]"
+          style={{
+            boxShadow: "0 -8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(0,240,255,0.08)",
+          }}
+        >
+          {/* Panel header */}
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[rgba(0,240,255,0.1)] bg-[#0C0C18] shrink-0">
+            <div
+              className="flex items-center justify-center w-8 h-8 rounded-lg"
+              style={{ background: "linear-gradient(135deg, #00F0FF20, #8B5CF620)" }}
+            >
+              <Sparkles className="h-4 w-4 text-[#00F0FF]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold text-[#F4F6FF]">Calendar AI</h3>
+              <p className="text-xs text-[#8892A4] truncate">Ask about your schedule</p>
+            </div>
+            <button
+              onClick={() => setShowAI(false)}
+              className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/5 transition-colors"
+              aria-label="Close AI panel"
+            >
+              <X className="h-4 w-4 text-[#8892A4]" />
+            </button>
+          </div>
+
+          {/* Quick actions */}
+          <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[rgba(0,240,255,0.06)] shrink-0">
+            {[
+              { label: "Find free time", prompt: "Find me some free time slots this week for a 1-hour meeting" },
+              { label: "Block focus time", prompt: "Block 2 hours of focus time tomorrow morning on my calendar" },
+              { label: "What's next?", prompt: "What's my next upcoming event on my calendar?" },
+            ].map((action) => (
+              <button
+                key={action.label}
+                onClick={() => void askCalendarAI(action.prompt)}
+                disabled={aiLoading}
+                className="px-3 py-1.5 min-h-[36px] rounded-full text-xs font-medium border transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                style={{
+                  background: "rgba(0,240,255,0.06)",
+                  borderColor: "rgba(0,240,255,0.15)",
+                  color: "#00F0FF",
+                }}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Response area */}
+          <div
+            ref={aiResponseRef}
+            className="flex-1 overflow-y-auto px-4 py-3 text-sm leading-relaxed"
+          >
+            {aiLoading ? (
+              <div className="flex items-center gap-2 text-[#8892A4] py-8 justify-center">
+                <Loader2 className="h-4 w-4 animate-spin text-[#00F0FF]" />
+                <span>Thinking...</span>
+              </div>
+            ) : aiResponse ? (
+              <div className="text-[#F4F6FF] whitespace-pre-wrap">{aiResponse}</div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center py-8 gap-3">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{ background: "rgba(0,240,255,0.08)" }}
+                >
+                  <Calendar className="h-6 w-6 text-[#00F0FF]/60" />
+                </div>
+                <p className="text-[#8892A4] text-xs max-w-[240px]">
+                  Ask me to find free slots, schedule meetings, or check what is coming up.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Input area */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const trimmed = aiInput.trim();
+              if (!trimmed || aiLoading) return;
+              setAiInput("");
+              void askCalendarAI(trimmed);
+            }}
+            className="flex items-center gap-2 px-3 py-3 border-t border-[rgba(0,240,255,0.1)] bg-[#0C0C18] shrink-0"
+          >
+            <input
+              type="text"
+              value={aiInput}
+              onChange={(e) => setAiInput(e.target.value)}
+              placeholder="Ask about your calendar..."
+              disabled={aiLoading}
+              className="flex-1 bg-[#12121F] border border-[rgba(0,240,255,0.1)] rounded-lg px-3 py-2.5 min-h-[44px] text-sm text-[#F4F6FF] placeholder:text-[#8892A4]/60 outline-none focus:border-[#00F0FF]/40 transition-colors disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={!aiInput.trim() || aiLoading}
+              className="flex items-center justify-center w-11 h-11 rounded-lg transition-all duration-150 disabled:opacity-30 hover:scale-105 active:scale-95"
+              style={{
+                background: aiInput.trim()
+                  ? "linear-gradient(135deg, #00F0FF, #8B5CF6)"
+                  : "rgba(0,240,255,0.08)",
+              }}
+              aria-label="Send message"
+            >
+              <Send className="h-4 w-4 text-white" />
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

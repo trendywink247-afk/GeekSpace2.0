@@ -1,5 +1,5 @@
 // WorkflowsPage.tsx -- Phase 96: Multi-agent workflow builder
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Play, Plus, Trash2, ChevronDown, ChevronRight, RefreshCw,
   Zap, Bot, Clock, CheckCircle, XCircle, Loader2, Settings, GitBranch
@@ -29,6 +29,15 @@ interface Workflow {
   created_at: number;
 }
 
+interface RunStepOutput {
+  step: number;
+  agent: string;
+  output_key: string;
+  status: "pending" | "running" | "done" | "error";
+  output: string;
+  error?: string;
+}
+
 interface WorkflowRun {
   id: number;
   workflow_id: number;
@@ -36,6 +45,7 @@ interface WorkflowRun {
   finished_at: number | null;
   status: "running" | "completed" | "failed";
   context: Record<string, string>;
+  steps?: RunStepOutput[];
   error: string | null;
 }
 
@@ -224,21 +234,75 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [input, setInput] = useState("");
   const [lastRun, setLastRun] = useState<WorkflowRun | null>(null);
+  const [runSteps, setRunSteps] = useState<RunStepOutput[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentRunIdRef = useRef<number | null>(null);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    currentRunIdRef.current = null;
+  }, []);
+
+  const startPolling = useCallback((runId: number) => {
+    currentRunIdRef.current = runId;
+
+    // Initialize steps from workflow definition as pending
+    setRunSteps(workflow.steps.map((s, i) => ({
+      step: i + 1,
+      agent: s.agent,
+      output_key: s.output_key,
+      status: "pending" as const,
+      output: "",
+    })));
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await api.get<WorkflowRun>("/workflows/runs/" + runId);
+        const run = res.data;
+
+        // Update steps from server
+        if (run.steps && run.steps.length > 0) {
+          setRunSteps(run.steps);
+        }
+
+        // Check if workflow finished
+        if (run.status === "completed" || run.status === "failed") {
+          setLastRun(run);
+          setRunning(false);
+          stopPolling();
+        }
+      } catch {
+        // Ignore poll errors -- will retry
+      }
+    }, 2000);
+  }, [workflow.steps, stopPolling]);
 
   const handleRun = async () => {
     setRunning(true);
     setError(null);
     setLastRun(null);
+    setRunSteps([]);
+    stopPolling();
     try {
-      const res = await api.post<WorkflowRun>("/workflows/" + workflow.id + "/run", { input });
-      setLastRun(res.data);
+      const res = await api.post<{ runId: number; status: string }>("/workflows/" + workflow.id + "/run", { input });
+      const { runId } = res.data;
+      startPolling(runId);
     } catch (err: unknown) {
       const msg = err && typeof err === "object" && "response" in err
         ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
         : undefined;
       setError(msg ?? "Workflow failed");
-    } finally {
       setRunning(false);
     }
   };
@@ -329,7 +393,45 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
 
             {error && <div className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-400">{error}</div>}
 
-            {/* Run result */}
+            {/* Live output panel -- visible while running */}
+            {running && runSteps.length > 0 && (
+              <div className="mt-4 space-y-3 border border-[#00F0FF]/10 rounded-xl p-4 bg-[#0C0C18]">
+                <h3 className="text-sm font-medium text-[#E8E8F0]">Live Output</h3>
+                {runSteps.map((step, i) => (
+                  <div key={i} className="flex gap-3 items-start">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 ${
+                      step.status === "done" ? "bg-[#00FF88]/20 text-[#00FF88]" :
+                      step.status === "error" ? "bg-red-500/20 text-red-400" :
+                      step.status === "running" ? "bg-[#00F0FF]/20 text-[#00F0FF] animate-pulse" :
+                      "bg-[#8892A4]/10 text-[#8892A4]"
+                    }`}>
+                      {step.status === "done" ? "\u2713" : step.status === "error" ? "\u2717" : i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-[#9CA3AF]">
+                        Step {i + 1}: <span className={AGENT_COLORS[step.agent] ?? ""}>{AGENT_LABELS[step.agent] ?? step.agent}</span>
+                        {" "}<span className="text-[#8892A4]">&rarr; {step.output_key}</span>
+                      </p>
+                      {step.output && (
+                        <p className="text-sm text-[#E8E8F0] mt-1 whitespace-pre-wrap line-clamp-6 bg-[#12121F] rounded-lg p-2">{step.output}</p>
+                      )}
+                      {step.error && (
+                        <p className="text-xs text-red-400 mt-1">{step.error}</p>
+                      )}
+                      {step.status === "running" && (
+                        <div className="flex gap-1 mt-2">
+                          <div className="w-1.5 h-1.5 bg-[#00F0FF] rounded-full animate-bounce" style={{animationDelay:"0ms"}} />
+                          <div className="w-1.5 h-1.5 bg-[#00F0FF] rounded-full animate-bounce" style={{animationDelay:"150ms"}} />
+                          <div className="w-1.5 h-1.5 bg-[#00F0FF] rounded-full animate-bounce" style={{animationDelay:"300ms"}} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Run result -- visible after completion */}
             {lastRun && (
               <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
                 <div className="flex items-center justify-between">
@@ -337,12 +439,34 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
                   <RunStatusBadge status={lastRun.status} />
                 </div>
                 {lastRun.error && <p className="text-xs text-red-400">{lastRun.error}</p>}
-                {Object.entries(lastRun.context).map(([key, value]) => (
-                  <div key={key} className="space-y-1">
-                    <span className="text-xs text-muted-foreground font-mono">{key}</span>
-                    <p className="text-xs bg-muted rounded p-2 whitespace-pre-wrap line-clamp-4">{value}</p>
-                  </div>
-                ))}
+
+                {/* Show step-by-step results */}
+                {lastRun.steps && lastRun.steps.length > 0 ? (
+                  lastRun.steps.map((step, i) => (
+                    <div key={i} className="flex gap-2 items-start">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 mt-0.5 ${
+                        step.status === "done" ? "bg-[#00FF88]/20 text-[#00FF88]" :
+                        step.status === "error" ? "bg-red-500/20 text-red-400" :
+                        "bg-[#8892A4]/10 text-[#8892A4]"
+                      }`}>
+                        {step.status === "done" ? "\u2713" : step.status === "error" ? "\u2717" : i + 1}
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <span className="text-xs text-muted-foreground font-mono">{step.output_key}</span>
+                        {step.output && <p className="text-xs bg-muted rounded p-2 whitespace-pre-wrap line-clamp-4">{step.output}</p>}
+                        {step.error && <p className="text-xs text-red-400">{step.error}</p>}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  /* Fallback: show context for older runs without step data */
+                  Object.entries(lastRun.context).map(([key, value]) => (
+                    <div key={key} className="space-y-1">
+                      <span className="text-xs text-muted-foreground font-mono">{key}</span>
+                      <p className="text-xs bg-muted rounded p-2 whitespace-pre-wrap line-clamp-4">{value}</p>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>

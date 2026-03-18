@@ -1,6 +1,6 @@
 // ============================================================
 // PlannerPage — Sunsama-inspired daily time-block planner
-// HTML5 drag-and-drop, localStorage persistence, no backend
+// HTML5 drag-and-drop, API persistence with localStorage cache
 // ============================================================
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import api from '@/services/api';
+import { plannerService, type PlannerBlock } from '@/services/api';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { toast } from 'sonner';
 import type { Reminder } from '@/types';
@@ -96,6 +97,41 @@ function dateKey(d: Date): string {
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return dateKey(d1) === dateKey(d2);
+}
+
+// ── API ↔ Local conversion helpers ──────────────────────────────────────
+
+function apiBlockToLocal(b: PlannerBlock): TimeBlock {
+  // sort_order encodes startHour * 100 (e.g. 950 = 9.5 = 9:30 AM)
+  const startHour = b.sort_order > 0 ? b.sort_order / 100 : 9;
+  const category = b.category as TimeBlock['type'];
+  const type = (['reminder', 'habit', 'custom'].includes(category)) ? category : 'custom';
+  return {
+    id: b.id,
+    title: b.title,
+    startHour,
+    duration: b.duration / 60, // minutes → hours
+    type,
+    color: b.color,
+    reminderId: b.source === 'reminder' ? (b.source_id ?? undefined) : undefined,
+    habitId: b.source === 'habit' && b.source_id ? Number(b.source_id) : undefined,
+  };
+}
+
+function localBlockToApi(b: TimeBlock, date: string): {
+  title: string; date: string; duration: number; color: string;
+  category: string; sort_order: number; source: string; source_id?: string;
+} {
+  return {
+    title: b.title,
+    date,
+    duration: Math.round(b.duration * 60), // hours → minutes
+    color: b.color,
+    category: b.type,
+    sort_order: Math.round(b.startHour * 100),
+    source: b.reminderId ? 'reminder' : b.habitId ? 'habit' : 'manual',
+    source_id: b.reminderId ?? (b.habitId ? String(b.habitId) : undefined),
+  };
 }
 
 function generateId(): string {
@@ -322,7 +358,7 @@ export function PlannerPage() {
 
   const { reminders, loadReminders } = useDashboardStore();
 
-  // --- Persistence ---
+  // --- Load blocks from localStorage cache first, then API ---
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LS_KEY);
@@ -330,11 +366,27 @@ export function PlannerPage() {
     } catch { /* ignore corrupt data */ }
   }, []);
 
+  // Persist to localStorage as optimistic cache
   useEffect(() => {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(blocks));
     } catch { /* storage full */ }
   }, [blocks]);
+
+  // Fetch from API whenever date changes
+  const fetchBlocksForDate = useCallback(async (date: string) => {
+    try {
+      const res = await plannerService.getByDate(date);
+      const apiBlocks = (res.data.blocks || []).map(apiBlockToLocal);
+      setBlocks(prev => ({ ...prev, [date]: apiBlocks }));
+    } catch {
+      // API unavailable — rely on localStorage cache
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBlocksForDate(dk);
+  }, [dk, fetchBlocksForDate]);
 
   // --- Data loading ---
   useEffect(() => {
@@ -409,18 +461,38 @@ export function PlannerPage() {
     return { planned, hoursBlocked, pct };
   }, [todayBlocks]);
 
-  // --- Block operations ---
+  // --- Block operations (optimistic UI + API sync) ---
   const addBlock = useCallback((block: TimeBlock) => {
+    // Optimistic: update state immediately
     setBlocks(prev => {
       const existing = prev[dk] || [];
       return { ...prev, [dk]: [...existing, block] };
     });
+
+    // Persist to API in background
+    const payload = localBlockToApi(block, dk);
+    plannerService.create(payload).then(res => {
+      // Replace optimistic block with server-assigned one
+      const serverBlock = apiBlockToLocal(res.data.block);
+      setBlocks(prev => {
+        const existing = prev[dk] || [];
+        return { ...prev, [dk]: existing.map(b => b.id === block.id ? serverBlock : b) };
+      });
+    }).catch(() => {
+      // API failed — local block stays via localStorage cache
+    });
   }, [dk]);
 
   const removeBlock = useCallback((blockId: string) => {
+    // Optimistic: remove from state immediately
     setBlocks(prev => {
       const existing = prev[dk] || [];
       return { ...prev, [dk]: existing.filter(b => b.id !== blockId) };
+    });
+
+    // Delete from API in background
+    plannerService.delete(blockId).catch(() => {
+      // API failed — block is already removed from UI
     });
   }, [dk]);
 

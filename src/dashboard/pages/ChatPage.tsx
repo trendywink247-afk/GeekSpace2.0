@@ -3,7 +3,7 @@ import {
   Send, Volume2, VolumeX, RotateCcw, Sparkles, Copy, Check, Square,
   ThumbsUp, ThumbsDown, RefreshCw, Pencil, Pin, Search, Plus, Trash2,
   MessageSquare, ChevronDown, ChevronRight, X, PanelLeftClose, PanelLeft,
-  Wifi, WifiOff, Clock,
+  Wifi, WifiOff, Clock, Star,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -431,6 +431,9 @@ export function ChatPage() {
 
   // Feedback state
   const [feedback, setFeedback] = useState<Record<string, FeedbackValue>>({});
+  const [ratingNudgeDismissed, setRatingNudgeDismissed] = useState(false);
+  const [sessionRating, setSessionRating] = useState<number | null>(null);
+  const [ratingHover, setRatingHover] = useState(0);
 
   // Message editing state
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
@@ -1336,6 +1339,52 @@ export function ChatPage() {
               </div>
             );
           })}
+
+          {/* Rating Nudge — show after 5+ agent messages, not dismissed, no rating yet */}
+          {(() => {
+            const agentMsgCount = messages.filter(m => m.role === 'agent').length;
+            if (agentMsgCount >= 5 && !ratingNudgeDismissed && sessionRating === null && !isTyping) {
+              return (
+                <div className="mx-2 mb-2 p-3 rounded-xl bg-[#12121F] border border-[#00F0FF]/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <span className="text-xs text-[#9CA3AF] whitespace-nowrap">Rate this session:</span>
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onMouseEnter={() => setRatingHover(star)}
+                        onMouseLeave={() => setRatingHover(0)}
+                        onClick={() => {
+                          setSessionRating(star);
+                          const lastAgentMsg = [...messages].reverse().find(m => m.role === 'agent');
+                          if (lastAgentMsg) {
+                            agentService.rateConversation(lastAgentMsg.id, star).catch(() => {});
+                          }
+                          toast.success(`Rated ${star} star${star > 1 ? 's' : ''}`, { duration: 1500 });
+                        }}
+                        className="p-0.5 min-w-[28px] min-h-[28px] flex items-center justify-center transition-transform hover:scale-110"
+                      >
+                        <Star
+                          className={`w-4 h-4 transition-colors ${
+                            star <= (ratingHover || sessionRating || 0)
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-[#F4F6FF]/20'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setRatingNudgeDismissed(true)}
+                    className="ml-auto p-1 text-[#4B5563] hover:text-[#9CA3AF] transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           {isTyping && !isStreamActive && (
             <div className='flex gap-2 justify-start'>
               <div className='relative shrink-0 self-start mt-0.5'>

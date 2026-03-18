@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Mail, RefreshCw, Link, Unlink, Send, X, ChevronDown, ChevronUp,
   Star, Paperclip, Search, Plus, Sparkles, Reply, Forward,
-  Filter, MailOpen, Inbox,
+  Filter, MailOpen, Inbox, FileText, Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -13,7 +13,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '../../components/ui/dialog';
 
-import api from '@/services/api';
+import api, { agentService } from '@/services/api';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -122,6 +122,11 @@ export function GmailPage() {
   const [showReply, setShowReply] = useState(false);
   const [showForward, setShowForward] = useState(false);
   const [forwardTo, setForwardTo] = useState('');
+  const [smartReplies, setSmartReplies] = useState<Array<{text: string; tone: 'positive'|'neutral'|'action'}>>([]);
+  const [loadingReplies, setLoadingReplies] = useState(false);
+  const [threadSummary, setThreadSummary] = useState('');
+  const [summarizing, setSummarizing] = useState(false);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   const detailRef = useRef<HTMLDivElement>(null);
 
@@ -255,6 +260,14 @@ export function GmailPage() {
     setReplyText(msg.suggested_reply || '');
     setShowReply(false);
     setShowForward(false);
+    setSmartReplies([]);
+    setThreadSummary('');
+    setSummaryExpanded(false);
+    // Generate smart replies from snippet
+    const snippet = msg.snippet || msg.subject || '';
+    if (snippet.length > 10) {
+      void generateSmartReplies(snippet);
+    }
     // Scroll detail into view on mobile
     setTimeout(() => {
       detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -306,19 +319,73 @@ export function GmailPage() {
     });
   };
 
+  const generateSmartReplies = useCallback(async (emailSnippet: string) => {
+    setLoadingReplies(true);
+    setSmartReplies([]);
+    try {
+      const res = await agentService.chat(
+        `Generate exactly 3 short email reply options for the following email. Return ONLY a JSON array, no other text: [{"text":"...","tone":"positive|neutral|action"}]. Each reply must be 5-15 words. Email: ${emailSnippet.slice(0, 500)}`,
+        'web'
+      );
+      const reply = res.data?.text || '';
+      const jsonMatch = reply.match(/\[[\s\S]*?\]/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]) as Array<{text: string; tone: string}>;
+        setSmartReplies(parsed.slice(0, 3).map(r => ({
+          text: r.text,
+          tone: (r.tone === 'positive' || r.tone === 'action') ? r.tone : 'neutral' as const,
+        })));
+      }
+    } catch {
+      // Silently fail — smart replies are optional
+    } finally {
+      setLoadingReplies(false);
+    }
+  }, []);
+
+  const handleSummarize = useCallback(async (emailSubject: string, emailBody: string) => {
+    setSummarizing(true);
+    setThreadSummary('');
+    setSummaryExpanded(true);
+    try {
+      const res = await agentService.chat(
+        `Summarize this email in 3 concise bullet points (use - prefix). Be direct and factual.\nSubject: ${emailSubject}\nContent: ${emailBody.slice(0, 2000)}`,
+        'web'
+      );
+      setThreadSummary(res.data?.text || 'Could not generate summary.');
+    } catch {
+      setThreadSummary('Could not summarize this email.');
+    } finally {
+      setSummarizing(false);
+    }
+  }, []);
+
   const handleAiDraftReply = async () => {
     if (!selected) return;
     setAiDrafting(true);
+    setShowReply(true);
     try {
-      // Use the suggested_reply if available, otherwise generate a contextual draft
+      // Use the suggested_reply if available
       if (selected.suggested_reply) {
         setReplyText(selected.suggested_reply);
-      } else {
-        // Fallback: create a polite, contextual reply draft
-        const draft = `Hi ${senderName(selected.sender)},\n\nThank you for your email regarding "${selected.subject}". I've reviewed it and will get back to you shortly with a detailed response.\n\nBest regards`;
-        setReplyText(draft);
+        return;
       }
-      setShowReply(true);
+      // Generate AI draft via agentService
+      const snippet = selected.snippet || selected.subject || '';
+      const res = await agentService.chat(
+        `Draft a concise, professional email reply to this message. Write ONLY the reply body (no subject line). From: ${senderName(selected.sender)}\nSubject: ${selected.subject}\nContent: ${snippet.slice(0, 1000)}`,
+        'web'
+      );
+      const draft = res.data?.text || '';
+      if (draft) {
+        setReplyText(draft);
+      } else {
+        // Fallback if AI returns empty
+        setReplyText(`Hi ${senderName(selected.sender)},\n\nThank you for your email regarding "${selected.subject}". I've reviewed it and will get back to you shortly.\n\nBest regards`);
+      }
+    } catch {
+      // Fallback on error
+      setReplyText(`Hi ${senderName(selected.sender)},\n\nThank you for your email regarding "${selected.subject}". I've reviewed it and will get back to you shortly.\n\nBest regards`);
     } finally {
       setAiDrafting(false);
     }
@@ -329,8 +396,19 @@ export function GmailPage() {
     setAiWriting(true);
     try {
       const description = composeBody.trim() || composeSubject.trim();
-      const draft = `Hi,\n\nI'm writing to you regarding: ${description}\n\nPlease let me know if you have any questions.\n\nBest regards`;
-      setComposeBody(draft);
+      const res = await agentService.chat(
+        `Write a professional email body based on this description. Write ONLY the email body text (no subject line, no "Subject:" prefix). Description: ${description}${composeSubject.trim() ? `\nSubject: ${composeSubject.trim()}` : ''}${composeTo.trim() ? `\nRecipient: ${composeTo.trim()}` : ''}`,
+        'web'
+      );
+      const draft = res.data?.text || '';
+      if (draft) {
+        setComposeBody(draft);
+      } else {
+        setComposeBody(`Hi,\n\nI'm writing to you regarding: ${description}\n\nPlease let me know if you have any questions.\n\nBest regards`);
+      }
+    } catch {
+      const description = composeBody.trim() || composeSubject.trim();
+      setComposeBody(`Hi,\n\nI'm writing to you regarding: ${description}\n\nPlease let me know if you have any questions.\n\nBest regards`);
     } finally {
       setAiWriting(false);
     }
@@ -704,7 +782,7 @@ export function GmailPage() {
                       )}
                     </div>
                   </div>
-                  <button onClick={() => { setSelected(null); setShowReply(false); setShowForward(false); }}
+                  <button onClick={() => { setSelected(null); setShowReply(false); setShowForward(false); setSmartReplies([]); setThreadSummary(''); setSummaryExpanded(false); }}
                     className="text-[#E8E8F0]/30 hover:text-[#E8E8F0]/60 shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                     aria-label="Close detail view">
                     <X className="w-4 h-4" />
@@ -713,7 +791,7 @@ export function GmailPage() {
               </CardHeader>
 
               <CardContent className="space-y-4 pt-4">
-                {/* AI Summary */}
+                {/* AI Summary (from sync) */}
                 {selected.summary && (
                   <div className="bg-[#BF5FFF]/8 border border-[#BF5FFF]/15 rounded-xl p-3">
                     <div className="flex items-center gap-1.5 mb-1.5">
@@ -721,6 +799,33 @@ export function GmailPage() {
                       <span className="text-[#BF5FFF] text-xs font-medium">AI Summary</span>
                     </div>
                     <p className="text-[#E8E8F0]/70 text-sm leading-relaxed">{selected.summary}</p>
+                  </div>
+                )}
+
+                {/* On-demand Thread Summary */}
+                {(threadSummary || summarizing) && (
+                  <div className="bg-[#8B5CF6]/8 border border-[#8B5CF6]/15 rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => setSummaryExpanded(!summaryExpanded)}
+                      className="flex items-center gap-2 w-full px-3 py-2.5 text-left min-h-[44px]"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-[#8B5CF6] shrink-0" />
+                      <span className="text-[#8B5CF6] text-xs font-medium flex-1">Thread Summary</span>
+                      {summarizing ? (
+                        <Loader2 className="w-3.5 h-3.5 text-[#8B5CF6] animate-spin shrink-0" />
+                      ) : (
+                        <ChevronDown className={`w-3.5 h-3.5 text-[#8B5CF6]/50 transition-transform ${summaryExpanded ? 'rotate-180' : ''}`} />
+                      )}
+                    </button>
+                    {summaryExpanded && (
+                      <div className="px-3 pb-3">
+                        {summarizing ? (
+                          <p className="text-[#E8E8F0]/40 text-xs italic">Summarizing email...</p>
+                        ) : (
+                          <p className="text-[#E8E8F0]/70 text-sm leading-relaxed whitespace-pre-wrap">{threadSummary}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -765,6 +870,35 @@ export function GmailPage() {
                   </p>
                 </div>
 
+                {/* Smart Reply Chips */}
+                {(smartReplies.length > 0 || loadingReplies) && (
+                  <div className="space-y-2">
+                    <span className="text-[#E8E8F0]/30 text-[11px] font-medium uppercase tracking-wider">Smart Replies</span>
+                    {loadingReplies ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-3.5 h-3.5 text-[#00F0FF]/50 animate-spin" />
+                        <span className="text-[#E8E8F0]/30 text-xs">Generating suggestions...</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {smartReplies.map((reply, i) => (
+                          <button
+                            key={i}
+                            onClick={() => { setReplyText(reply.text); setShowReply(true); setShowForward(false); }}
+                            className={`px-3 py-1.5 rounded-full text-xs border transition-all hover:bg-white/5 min-h-[36px] ${
+                              reply.tone === 'positive' ? 'border-[#00FF88]/30 text-[#00FF88] hover:border-[#00FF88]/50' :
+                              reply.tone === 'action' ? 'border-[#00F0FF]/30 text-[#00F0FF] hover:border-[#00F0FF]/50' :
+                              'border-[#9CA3AF]/30 text-[#9CA3AF] hover:border-[#9CA3AF]/50'
+                            }`}
+                          >
+                            {reply.text}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Action buttons */}
                 <div className="flex items-center gap-2 pt-1">
                   <Button
@@ -782,6 +916,19 @@ export function GmailPage() {
                   >
                     <Forward className="w-3.5 h-3.5 mr-1.5" />
                     Forward
+                  </Button>
+                  <Button
+                    variant="outline" size="sm"
+                    onClick={() => handleSummarize(selected.subject, selected.snippet || selected.summary || '')}
+                    disabled={summarizing || !!threadSummary}
+                    className="border-[#8B5CF6]/30 text-[#8B5CF6] hover:bg-[#8B5CF6]/10 text-xs h-9 min-h-[44px]"
+                  >
+                    {summarizing ? (
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <FileText className="w-3.5 h-3.5 mr-1.5" />
+                    )}
+                    {summarizing ? 'Summarizing...' : threadSummary ? 'Summarized' : 'Summarize'}
                   </Button>
                   <Button
                     variant="outline" size="sm"

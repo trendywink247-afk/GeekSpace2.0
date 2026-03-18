@@ -3,7 +3,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody, workflowCreateSchema, workflowUpdateSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import {
-  runUserWorkflow,
+  startUserWorkflowAsync,
   getUserWorkflowList,
   getUserWorkflowById,
   getWorkflowRuns,
@@ -102,8 +102,8 @@ workflowsRouter.delete('/:id', requireAuth, (req: AuthRequest, res) => {
   res.json({ success: true });
 });
 
-// ---- POST /api/workflows/:id/run ---- trigger a workflow run
-workflowsRouter.post('/:id/run', requireAuth, async (req: AuthRequest, res) => {
+// ---- POST /api/workflows/:id/run ---- trigger a workflow run (non-blocking)
+workflowsRouter.post('/:id/run', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: 'Invalid workflow ID' }); return; }
@@ -111,8 +111,8 @@ workflowsRouter.post('/:id/run', requireAuth, async (req: AuthRequest, res) => {
   const userInput = (req.body?.input as string) || '';
 
   try {
-    const run = await runUserWorkflow(id, userId, userInput);
-    res.json(run);
+    const { runId } = startUserWorkflowAsync(id, userId, userInput);
+    res.json({ runId, status: 'running' });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Workflow execution failed';
     logger.error({ err, workflowId: id, userId }, 'Workflow run error');

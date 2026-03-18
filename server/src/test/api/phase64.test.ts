@@ -178,7 +178,7 @@ describe('Phase 64', () => {
         .set('Authorization', `Bearer ${token}`);
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toMatch(/text\/csv/);
-      expect(res.text).toContain('date,action,details');
+      expect(res.text).toContain('date,time,type,description');
     });
 
     it('includes activity entries in CSV', async () => {

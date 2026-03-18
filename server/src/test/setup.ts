@@ -43,6 +43,7 @@ export function resetDatabase(): void {
   try {
     // Clean up test data in reverse dependency order
     const tables = [
+      'planner_blocks',
       'document_versions',
       'documents',
       'doc_folders',
@@ -163,6 +164,7 @@ export function cleanupTestUser(userId: string): void {
 
   try {
     const tables = [
+      'planner_blocks',
       'activity_log',
       'security_events',
       'usage_events',

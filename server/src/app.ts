@@ -62,6 +62,7 @@ import { focusRouter, habitsRouter } from './routes/focus.js';
 import { memoryRouter } from './routes/memory.js';
 import { calendarRouter } from './routes/calendar.js';
 import { workflowsRouter } from './routes/workflows.js';
+import { plannerRouter } from './routes/planner.js';
 import searchRouter from './routes/search.js';
 import { docsRouter } from './routes/docs.js';
 import { filesRouter } from './routes/files.js';
@@ -548,6 +549,7 @@ export function createApp(): express.Application {
   app.use('/api/memory', memoryRouter);
   app.use('/api/calendar', calendarRouter);
   app.use('/api/workflows', workflowsRouter);
+  app.use('/api/planner', plannerRouter);
   app.use('/api/search', searchRouter);
   app.use('/api/docs', docsRouter);
   app.use('/api/files', filesRouter);

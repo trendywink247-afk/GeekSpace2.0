@@ -444,38 +444,86 @@ describe('96.5 API: workflow run', () => {
     expect(res.status).toBe(400);
   });
 
-  it('POST /api/workflows/:id/run executes and returns completed run in TEST_MODE', async () => {
+  it('POST /api/workflows/:id/run returns runId and running status', async () => {
     const res = await request(app2)
       .post('/api/workflows/' + workflowId + '/run')
       .set('Authorization', 'Bearer ' + token2)
       .send({ input: 'phase 96 test input' });
     expect(res.status).toBe(200);
+    expect(res.body.runId).toBeTypeOf('number');
+    expect(res.body.status).toBe('running');
+  });
+
+  it('async run completes in TEST_MODE and has context with both steps', async () => {
+    const triggerRes = await request(app2)
+      .post('/api/workflows/' + workflowId + '/run')
+      .set('Authorization', 'Bearer ' + token2)
+      .send({ input: 'phase 96 test input' });
+    const runId = triggerRes.body.runId;
+
+    // In TEST_MODE stubs are synchronous, so give the event loop a tick to finish
+    await new Promise(r => setTimeout(r, 100));
+
+    const res = await request(app2)
+      .get('/api/workflows/runs/' + runId)
+      .set('Authorization', 'Bearer ' + token2);
+    expect(res.status).toBe(200);
     expect(res.body.status).toBe('completed');
-    expect(res.body.workflow_id).toBe(workflowId);
-    expect(res.body.started_at).toBeTypeOf('number');
-    expect(res.body.finished_at).toBeTypeOf('number');
     expect(res.body.context).toBeDefined();
     expect(Object.keys(res.body.context)).toContain('summary');
     expect(Object.keys(res.body.context)).toContain('detail');
   });
 
-  it('run context contains stub output for weebo step', async () => {
+  it('completed run has per-step output in steps array', async () => {
+    const triggerRes = await request(app2)
+      .post('/api/workflows/' + workflowId + '/run')
+      .set('Authorization', 'Bearer ' + token2)
+      .send({ input: 'step tracking test' });
+    const runId = triggerRes.body.runId;
+    await new Promise(r => setTimeout(r, 100));
+
     const res = await request(app2)
+      .get('/api/workflows/runs/' + runId)
+      .set('Authorization', 'Bearer ' + token2);
+    expect(res.body.steps).toBeDefined();
+    expect(res.body.steps).toHaveLength(2);
+    expect(res.body.steps[0].status).toBe('done');
+    expect(res.body.steps[0].agent).toBe('weebo');
+    expect(res.body.steps[1].status).toBe('done');
+    expect(res.body.steps[1].agent).toBe('jarvis');
+  });
+
+  it('run context contains stub output for weebo step', async () => {
+    const triggerRes = await request(app2)
       .post('/api/workflows/' + workflowId + '/run')
       .set('Authorization', 'Bearer ' + token2)
       .send({ input: 'my test topic' });
+    const runId = triggerRes.body.runId;
+    await new Promise(r => setTimeout(r, 100));
+
+    const res = await request(app2)
+      .get('/api/workflows/runs/' + runId)
+      .set('Authorization', 'Bearer ' + token2);
     expect(res.body.context.summary).toContain('WEEBO TEST RESPONSE');
   });
 
   it('run context contains stub output for jarvis step', async () => {
-    const res = await request(app2)
+    const triggerRes = await request(app2)
       .post('/api/workflows/' + workflowId + '/run')
       .set('Authorization', 'Bearer ' + token2)
       .send({ input: 'my test topic' });
+    const runId = triggerRes.body.runId;
+    await new Promise(r => setTimeout(r, 100));
+
+    const res = await request(app2)
+      .get('/api/workflows/runs/' + runId)
+      .set('Authorization', 'Bearer ' + token2);
     expect(res.body.context.detail).toContain('JARVIS TEST RESPONSE');
   });
 
   it('GET /api/workflows/:id/runs returns run history', async () => {
+    // Give any in-flight runs a tick to finish
+    await new Promise(r => setTimeout(r, 100));
     const res = await request(app2)
       .get('/api/workflows/' + workflowId + '/runs')
       .set('Authorization', 'Bearer ' + token2);
@@ -490,7 +538,8 @@ describe('96.5 API: workflow run', () => {
       .post('/api/workflows/' + workflowId + '/run')
       .set('Authorization', 'Bearer ' + token2)
       .send({ input: 'single run test' });
-    const runId = runRes.body.id;
+    const runId = runRes.body.runId;
+    await new Promise(r => setTimeout(r, 100));
 
     const res = await request(app2)
       .get('/api/workflows/runs/' + runId)

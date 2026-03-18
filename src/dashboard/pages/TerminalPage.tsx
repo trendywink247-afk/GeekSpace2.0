@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Terminal as TerminalIcon, Copy, Check, Trash2, Bot, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useTerminalStore } from '@/stores/terminalStore';
-import { agentService } from '@/services/api';
+import { agentService, reminderService, dashboardService, usageService, memoryService } from '@/services/api';
+
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 
 const welcomeMessage = `Agentin Terminal v2.0.0
 Powered by Agentin AI Engine
@@ -25,7 +27,15 @@ const helpText = `Available commands:
   gs integrations          - List connected services
   gs automations           - List automations
   gs deploy                - Deploy portfolio changes
-  ai "prompt"              - Ask the AI agent anything
+  ai "prompt"              - Ask the AI agent (streaming)
+  /habits                  - Show habits & streaks
+  /reminders               - Show upcoming reminders
+  /briefing                - Daily briefing & stats
+  /memory <query>          - Search your memories
+  /note <text>             - Save a quick note via AI
+  /stats                   - Show usage stats
+  /clear                   - Clear terminal output
+  /help                    - Show this help message
   clear                    - Clear terminal
   help                     - Show this help message
 `;
@@ -46,6 +56,14 @@ const VALID_COMMANDS = [
   'gs automations',
   'gs deploy',
   'ai ',
+  '/habits',
+  '/reminders',
+  '/briefing',
+  '/memory ',
+  '/note ',
+  '/stats',
+  '/clear',
+  '/help',
   'clear',
   'help',
 ];
@@ -62,7 +80,7 @@ interface Command {
 export function TerminalPage() {
   const user = useAuthStore((s) => s.user);
   const { usage, reminders, agent, addReminder } = useDashboardStore();
-  const { history: terminalHistory, addCommand, clearHistory } = useTerminalStore();
+  const { history: terminalHistory, addCommand, updateLastOutput, clearHistory } = useTerminalStore();
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -210,13 +228,225 @@ Deploy ID: dep_${Date.now().toString(36)}`,
     'help': helpText,
   });
 
+  // Stream AI response using SSE
+  const streamAiResponse = useCallback(async (cmd: string, prompt: string) => {
+    addCommand({ command: cmd, output: '[Weebo]: ...', type: 'output' });
+
+    try {
+      const response = await agentService.chatStream(prompt, 'terminal');
+      if (!response.ok || !response.body) {
+        throw new Error(`Stream error: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+      let buf = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.text) {
+              accumulated += parsed.text;
+              updateLastOutput(`[Weebo]: ${accumulated}\u258B`);
+            }
+          } catch {
+            /* ignore parse errors for non-JSON SSE lines */
+          }
+        }
+      }
+
+      // Final update — remove cursor block
+      if (accumulated) {
+        updateLastOutput(`[Weebo]: ${accumulated}`);
+      } else {
+        updateLastOutput('[Weebo]: (no response)');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to reach AI agent';
+      addCommand({ command: cmd, output: `Error: ${msg}`, type: 'error' });
+    }
+  }, [addCommand, updateLastOutput]);
+
+  // Execute slash commands that call real API endpoints
+  const executeSlashCommand = useCallback(async (cmd: string, trimmedCmd: string): Promise<boolean> => {
+    // /clear
+    if (trimmedCmd === '/clear') {
+      clearHistory();
+      setWelcomeShown(false);
+      return true;
+    }
+
+    // /help
+    if (trimmedCmd === '/help') {
+      addCommand({ command: cmd, output: helpText, type: 'output' });
+      return true;
+    }
+
+    // /habits — GET /api/habits
+    if (trimmedCmd === '/habits') {
+      addCommand({ command: cmd, output: 'Fetching habits...', type: 'output' });
+      try {
+        const token = localStorage.getItem('gs_token');
+        const res = await fetch(`${API_URL}/habits`, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        });
+        const data = await res.json();
+        const habits = data.habits as Array<{ name: string; icon?: string; frequency?: string; current_streak?: number }>;
+        if (!habits || habits.length === 0) {
+          updateLastOutput('No habits found. Create one from the Habits page.');
+        } else {
+          const header = 'Habit                | Freq     | Streak\n' +
+                         '-------------------- | -------- | ------';
+          const rows = habits.map(h =>
+            `${h.icon || '-'} ${(h.name || '').padEnd(18)}| ${(h.frequency || 'daily').padEnd(9)}| ${h.current_streak ?? 0}`
+          );
+          updateLastOutput(header + '\n' + rows.join('\n'));
+        }
+      } catch {
+        updateLastOutput('Error: Failed to fetch habits');
+      }
+      return true;
+    }
+
+    // /reminders — GET /api/reminders
+    if (trimmedCmd === '/reminders') {
+      addCommand({ command: cmd, output: 'Fetching reminders...', type: 'output' });
+      try {
+        const { data } = await reminderService.list({ status: 'active' });
+        const remList = Array.isArray(data) ? data : [];
+        if (remList.length === 0) {
+          updateLastOutput('No upcoming reminders.');
+        } else {
+          const header = 'Reminder                     | Due                 | Priority\n' +
+                         '---------------------------- | ------------------- | --------';
+          const rows = remList.slice(0, 15).map(r => {
+            const due = r.datetime ? new Date(r.datetime).toLocaleString() : '—';
+            return `${(r.text || '').slice(0, 28).padEnd(29)}| ${due.padEnd(20)}| ${r.priority || 'normal'}`;
+          });
+          updateLastOutput(header + '\n' + rows.join('\n') + (remList.length > 15 ? `\n... and ${remList.length - 15} more` : ''));
+        }
+      } catch {
+        updateLastOutput('Error: Failed to fetch reminders');
+      }
+      return true;
+    }
+
+    // /briefing — GET /api/dashboard/overview
+    if (trimmedCmd === '/briefing') {
+      addCommand({ command: cmd, output: 'Loading briefing...', type: 'output' });
+      try {
+        const { data } = await dashboardService.overview();
+        const d = data as { greeting?: string; stats?: Record<string, number>; upcomingReminders?: Array<{ text: string }>; recentActivity?: Array<{ description: string }> };
+        let out = d.greeting ? `${d.greeting}\n\n` : 'Good day!\n\n';
+        if (d.stats) {
+          out += 'Stats:\n';
+          for (const [k, v] of Object.entries(d.stats)) {
+            out += `  ${k}: ${v}\n`;
+          }
+        }
+        if (d.upcomingReminders && d.upcomingReminders.length > 0) {
+          out += '\nUpcoming:\n';
+          d.upcomingReminders.slice(0, 5).forEach(r => { out += `  - ${r.text}\n`; });
+        }
+        if (d.recentActivity && d.recentActivity.length > 0) {
+          out += '\nRecent Activity:\n';
+          d.recentActivity.slice(0, 5).forEach(a => { out += `  - ${a.description}\n`; });
+        }
+        updateLastOutput(out.trimEnd());
+      } catch {
+        updateLastOutput('Error: Failed to load briefing');
+      }
+      return true;
+    }
+
+    // /memory <query> — GET /api/agent/memory?search=<query>
+    if (trimmedCmd.startsWith('/memory')) {
+      const query = cmd.trim().slice(7).trim();
+      if (!query) {
+        addCommand({ command: cmd, output: 'Usage: /memory <search query>', type: 'error' });
+        return true;
+      }
+      addCommand({ command: cmd, output: `Searching memories for "${query}"...`, type: 'output' });
+      try {
+        const { data } = await memoryService.list(undefined, query);
+        const memories = Array.isArray(data) ? data : [];
+        if (memories.length === 0) {
+          updateLastOutput(`No memories found for "${query}".`);
+        } else {
+          const rows = memories.slice(0, 10).map((m, i) =>
+            `  ${i + 1}. [${m.category || 'general'}] ${m.key}: ${m.value}`
+          );
+          updateLastOutput(`Found ${memories.length} memor${memories.length === 1 ? 'y' : 'ies'}:\n${rows.join('\n')}`);
+        }
+      } catch {
+        updateLastOutput('Error: Failed to search memories');
+      }
+      return true;
+    }
+
+    // /note <text> — POST /api/agent/chat with "save this note: <text>"
+    if (trimmedCmd.startsWith('/note')) {
+      const noteText = cmd.trim().slice(5).trim();
+      if (!noteText) {
+        addCommand({ command: cmd, output: 'Usage: /note <text to save>', type: 'error' });
+        return true;
+      }
+      addCommand({ command: cmd, output: 'Saving note...', type: 'output' });
+      try {
+        await agentService.chat(`save this note: ${noteText}`, 'terminal');
+        updateLastOutput(`Note saved: "${noteText}"`);
+      } catch {
+        updateLastOutput('Error: Failed to save note');
+      }
+      return true;
+    }
+
+    // /stats — GET /api/usage/summary
+    if (trimmedCmd === '/stats') {
+      addCommand({ command: cmd, output: 'Fetching stats...', type: 'output' });
+      try {
+        const { data } = await usageService.summary('month');
+        const s = data;
+        let out = 'Usage Stats (this month):\n';
+        out += `  Messages: ${s.totalMessages?.toLocaleString() ?? 0}\n`;
+        out += `  Tokens In: ${s.totalTokensIn?.toLocaleString() ?? 0}\n`;
+        out += `  Tokens Out: ${s.totalTokensOut?.toLocaleString() ?? 0}\n`;
+        out += `  Tool Calls: ${s.totalToolCalls ?? 0}\n`;
+        out += `  Cost: $${s.totalCostUSD?.toFixed(2) ?? '0.00'}\n`;
+        out += `  Forecast: $${s.forecastUSD?.toFixed(2) ?? '0.00'}`;
+        if (s.byProvider && Object.keys(s.byProvider).length > 0) {
+          out += '\n\nBy Provider:\n';
+          for (const [k, v] of Object.entries(s.byProvider)) {
+            out += `  ${k}: $${(v as number).toFixed(2)}\n`;
+          }
+        }
+        updateLastOutput(out.trimEnd());
+      } catch {
+        updateLastOutput('Error: Failed to fetch stats');
+      }
+      return true;
+    }
+
+    return false;
+  }, [addCommand, updateLastOutput, clearHistory]);
+
   const executeCommand = (cmd: string) => {
     const trimmedCmd = cmd.trim().toLowerCase();
 
-    if (trimmedCmd === 'clear') {
+    if (trimmedCmd === 'clear' || trimmedCmd === '/clear') {
       clearHistory();
       setWelcomeShown(false);
-      setHistory([...history, cmd]);
+      setHistory((prev) => [...prev, cmd]);
       setHistoryIndex(-1);
       setInput('');
       return;
@@ -227,41 +457,34 @@ Deploy ID: dep_${Date.now().toString(36)}`,
       return;
     }
 
-    const responses = getResponses();
-
-    // Handle AI prompts — call real agent API
-    if (trimmedCmd.startsWith('ai ')) {
-      const prompt = cmd.trim().slice(3).replace(/^["']|["']$/g, '');
-      addCommand({ command: cmd, output: 'Thinking...', type: 'input' });
-      setHistory([...history, cmd]);
+    // Slash commands -- async API calls
+    if (trimmedCmd.startsWith('/')) {
+      setHistory((prev) => [...prev, cmd]);
       setHistoryIndex(-1);
       setInput('');
-
-      agentService.chat(prompt, 'terminal')
-        .then(({ data }) => {
-          const prefix = data.provider === 'jarvis-terminal' ? 'Jarvis: ' : '';
-          addCommand({
-            command: cmd,
-            output: `${prefix}${data.text}\n\n[${data.provider} · ${data.latencyMs}ms]`,
-            type: 'output'
-          });
-        })
-        .catch((err) => {
-          addCommand({
-            command: cmd,
-            output: `Error: ${err.response?.data?.error || err.message || 'Failed to reach AI agent'}`,
-            type: 'error'
-          });
-        });
+      executeSlashCommand(cmd, trimmedCmd);
       return;
     }
 
-    // Handle gs reminders add — call real store
+    const responses = getResponses();
+
+    // Handle AI prompts -- streaming via SSE
+    if (trimmedCmd.startsWith('ai ')) {
+      const prompt = cmd.trim().slice(3).replace(/^["']|["']$/g, '');
+      addCommand({ command: cmd, output: '', type: 'input' });
+      setHistory((prev) => [...prev, cmd]);
+      setHistoryIndex(-1);
+      setInput('');
+      streamAiResponse(cmd, prompt);
+      return;
+    }
+
+    // Handle gs reminders add -- call real store
     if (trimmedCmd.startsWith('gs reminders add')) {
       const text = cmd.match(/"([^"]+)"/)?.[1] || 'New reminder';
       const datetime = new Date(Date.now() + 3600000).toISOString();
       addCommand({ command: cmd, output: 'Adding reminder...', type: 'input' });
-      setHistory([...history, cmd]);
+      setHistory((prev) => [...prev, cmd]);
       setHistoryIndex(-1);
       setInput('');
 
@@ -287,12 +510,12 @@ Deploy ID: dep_${Date.now().toString(36)}`,
       const resp = responses[trimmedCmd];
       output = typeof resp === 'function' ? resp() : resp;
     } else {
-      output = `Command not found: ${cmd}\nType 'help' to see available commands.`;
+      output = `Command not found: ${cmd}\nType 'help' or '/help' to see available commands.`;
       isError = true;
     }
 
     addCommand({ command: cmd, output, type: isError ? 'error' : 'output' });
-    setHistory([...history, cmd]);
+    setHistory((prev) => [...prev, cmd]);
     setHistoryIndex(-1);
     setInput('');
   };
@@ -493,14 +716,14 @@ Deploy ID: dep_${Date.now().toString(36)}`,
       {/* Quick Commands */}
       <div className="flex flex-wrap gap-2 items-center">
         {[
-          'gs me', 'gs reminders list', 'gs schedule today', 'gs credits',
-          'gs usage month', 'gs status', 'ai "What should I build next?"', 'help'
+          'gs me', '/briefing', '/habits', '/reminders', '/stats',
+          'ai "What should I build next?"', '/help'
         ].map((cmd) => (
           <button
             key={cmd}
             onClick={() => executeCommand(cmd)}
             className={`px-3 py-2.5 min-h-[44px] rounded-lg border text-xs transition-colors ${
-              cmd.startsWith('ai ')
+              cmd.startsWith('ai ') || cmd.startsWith('/')
                 ? 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/20'
                 : 'bg-[#0C0C18] border-[#00F0FF]/20 text-[#9CA3AF] hover:border-[#00F0FF]/50 hover:text-[#E8E8F0]'
             }`}

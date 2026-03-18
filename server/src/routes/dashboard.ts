@@ -162,7 +162,6 @@ dashboardRouter.get('/overview', requireAuth, async (req: AuthRequest, res) => {
   const tomorrowISO = tomorrowDate.toISOString().split('T')[0];
 
   // Today boundaries as epoch ms (for tables using INTEGER timestamps)
-  const nowMs = Date.now();
   const todayStartMs = new Date(todayISO + 'T00:00:00Z').getTime();
   const tomorrowStartMs = new Date(tomorrowISO + 'T00:00:00Z').getTime();
 

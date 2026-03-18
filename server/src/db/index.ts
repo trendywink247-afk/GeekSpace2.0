@@ -1056,6 +1056,28 @@ db.exec(`
 `);
 try { db.prepare('CREATE INDEX IF NOT EXISTS idx_user_agents_user ON user_agents(user_id)').run(); } catch { /* exists */ }
 
+// ── Planner blocks (GAP-1) ──────────────────────────────────
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS planner_blocks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      date TEXT NOT NULL,
+      title TEXT NOT NULL,
+      duration INTEGER DEFAULT 30,
+      color TEXT DEFAULT '#00F0FF',
+      category TEXT DEFAULT 'work',
+      completed INTEGER DEFAULT 0,
+      sort_order INTEGER DEFAULT 0,
+      source TEXT DEFAULT 'manual',
+      source_id TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_planner_user_date ON planner_blocks(user_id, date);
+  `);
+} catch { /* table already exists */ }
+
 // ── Plan definitions ────────────────────────────────────────
 
 export interface PlanDefinition {
@@ -2180,3 +2202,6 @@ try { db.exec(`ALTER TABLE agent_configs ADD COLUMN quiet_end TEXT DEFAULT '07:0
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reminders_user_scheduled ON reminders(user_id, scheduled_for)`); } catch { /* already exists */ }
 // user_memories: user + created_at DESC for memory feed (idx_user_memories_user covers last_used; this covers created_at)
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_memories_user ON user_memories(user_id, created_at DESC)`); } catch { /* already exists */ }
+
+// GAP-7: Per-step progress tracking for workflow live output
+try { db.exec(`ALTER TABLE user_workflow_runs ADD COLUMN steps_json TEXT DEFAULT '[]'`); } catch { /* column already exists */ }

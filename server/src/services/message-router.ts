@@ -218,6 +218,8 @@ Available tools:
 - set_budget: Set a spending budget. Params: {"category": "food|total|...", "amount": <number>, "period": "daily|weekly|monthly"}. Use when user says "set budget", "spending limit", "my food budget is X".
 - portfolio_update_skills: Update portfolio skills list. Params: {"skills": ["Skill1", "Skill2"]}. Use when user says "update my skills", "my skills are X, Y, Z", "add skills to my portfolio".
 - check_calendar: Check upcoming calendar events. Params: {"days": 1}. Use when user says "what's on my calendar", "any meetings today", "my schedule", "what do I have tomorrow", "upcoming events".
+- create_calendar_event: Create a calendar event. Params: {"title": "<event title>", "start_time": "<ISO datetime or natural language>", "duration_minutes": 60, "attendees": ["email@example.com"], "location": "<location>"}. Use when user says "schedule a meeting", "create an event", "block time for", "add to calendar".
+- find_free_slot: Find available time slots in the calendar. Params: {"duration_minutes": 60, "days_ahead": 7, "preference": "morning|afternoon|evening"}. Use when user says "find free time", "when am I free", "find a slot", "available time", "free slots".
 - list_inbox: List recent email inbox messages. Params: {"limit": 5}. Use when user says "check my emails", "any new emails", "show inbox", "what emails do I have", "unread messages".
 
 Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
@@ -322,6 +324,13 @@ function hasToolTrigger(message: string): boolean {
     /\b(my\s+)?(calendar|schedule|meetings?|events?)\s*(today|tomorrow|this\s+week)?\b/i.test(lower) ||
     /\bwhat.{0,15}(calendar|schedule|meetings?)\b/i.test(lower) ||
     /\bany\s+(meetings?|events?)\s*(today|tomorrow)?\b/i.test(lower) ||
+    // Calendar create + free slot
+    /\b(schedule|create|add|book|block)\s+(a\s+)?(meeting|event|appointment|call|session)\b/i.test(lower) ||
+    /\b(add|put)\s+(it\s+)?(on|to|in)\s+(my\s+)?calendar\b/i.test(lower) ||
+    /\b(find|when|show)\s+(me\s+)?(free|available|open)\s+(time|slot|hour)/i.test(lower) ||
+    /\bfree\s+slot/i.test(lower) ||
+    /\bwhen\s+am\s+i\s+free/i.test(lower) ||
+    /\bblock\s+(focus|deep\s+work|time)/i.test(lower) ||
     // Email/inbox queries
     /\b(check|show|read|list|any)\s+(my\s+)?(emails?|inbox|mail)\b/i.test(lower) ||
     /\b(new|unread)\s+(emails?|messages?)\b/i.test(lower) ||

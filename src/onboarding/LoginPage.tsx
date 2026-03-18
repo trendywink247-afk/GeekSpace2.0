@@ -138,7 +138,8 @@ export function LoginPage() {
         navigate('/onboarding', { replace: true });
       } else {
         await login(email, password);
-        navigate('/dashboard');
+        const redirectPage = searchParams.get('redirect');
+        navigate(redirectPage ? `/dashboard/${redirectPage}` : '/dashboard');
       }
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { error?: string } } };
@@ -152,7 +153,8 @@ export function LoginPage() {
 
   const handleDemo = async () => {
     await loginDemo();
-    navigate('/dashboard');
+    const redirectPage = searchParams.get('redirect');
+    navigate(redirectPage ? `/dashboard/${redirectPage}` : '/dashboard');
   };
 
   if (isAuthenticated) {

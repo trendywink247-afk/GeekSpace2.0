@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Search, Copy, Check, Code, LayoutTemplate,
   Rocket, ShoppingCart, FileText, User, Building, Folder,
-  Briefcase, BarChart3, Globe
+  Briefcase, BarChart3, Globe, ExternalLink, X
 } from 'lucide-react';
 import { templateService } from '@/services/api';
 import type { Template, TemplateCategory } from '@/types';
@@ -18,7 +18,12 @@ const categoryIcons: Record<string, typeof LayoutTemplate> = {
   other: Folder,
 };
 
-export function TemplateGalleryPage({ embedded }: { embedded?: boolean }) {
+interface TemplateGalleryPageProps {
+  embedded?: boolean;
+  onNavigate?: (page: string, state?: Record<string, unknown>) => void;
+}
+
+export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPageProps) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [categories, setCategories] = useState<TemplateCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +31,7 @@ export function TemplateGalleryPage({ embedded }: { embedded?: boolean }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [cloningId, setCloningId] = useState<string | null>(null);
   const [clonedId, setClonedId] = useState<string | null>(null);
+  const [cloneResult, setCloneResult] = useState<{ name: string; artifactId?: string } | null>(null);
 
   const loadTemplates = useCallback(async () => {
     try {
@@ -54,8 +60,12 @@ export function TemplateGalleryPage({ embedded }: { embedded?: boolean }) {
   const handleClone = async (template: Template) => {
     setCloningId(template.id);
     try {
-      await templateService.clone(template.id, `${template.name} (My Copy)`);
+      const res = await templateService.clone(template.id, `${template.name} (My Copy)`);
       setClonedId(template.id);
+      setCloneResult({
+        name: `${template.name} (My Copy)`,
+        artifactId: res.data?.artifact?.id || res.data?.id,
+      });
       setTimeout(() => setClonedId(null), 2000);
     } catch (err) {
       console.error('Failed to clone:', err);
@@ -243,6 +253,49 @@ export function TemplateGalleryPage({ embedded }: { embedded?: boolean }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {/* Clone Success Modal */}
+      {cloneResult && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0C0C18] rounded-xl border border-[#00F0FF]/30 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-[#00F0FF]/20">
+              <h2 className="text-lg font-medium text-[#E8E8F0]">Template Cloned!</h2>
+              <button
+                onClick={() => setCloneResult(null)}
+                className="p-1 hover:bg-[#00F0FF]/10 rounded"
+              >
+                <X className="w-5 h-5 text-[#6B7280]" />
+              </button>
+            </div>
+            <div className="p-4">
+              <p className="text-[#9CA3AF] text-sm mb-4">
+                &ldquo;{cloneResult.name}&rdquo; has been added to your workspace.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => {
+                    setCloneResult(null);
+                    onNavigate?.('website-builder');
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200 font-medium text-sm"
+                >
+                  <Code className="w-4 h-4" />
+                  Open in Website Builder
+                </button>
+                <button
+                  onClick={() => {
+                    setCloneResult(null);
+                    onNavigate?.('artifacts');
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#00F0FF]/20 text-[#00F0FF] rounded-lg hover:bg-[#00F0FF]/30 transition-colors font-medium text-sm"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  View All Projects
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
