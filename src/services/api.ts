@@ -1361,4 +1361,121 @@ export const plannerService = {
     api.delete<{ success: boolean }>(`/planner/${id}`),
 };
 
+// ---- Agent Tasks ----
+
+export interface AgentTask {
+  id: string;
+  user_id: string;
+  agent_id: 'weebo' | 'edith' | 'jarvis';
+  title: string;
+  description: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  priority: number;
+  created_by: string;
+  assigned_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  result: string | null;
+  error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const agentTasksService = {
+  list: (params?: { agent_id?: string; status?: string; limit?: number }) =>
+    api.get<AgentTask[]>('/agent-tasks', { params }),
+
+  board: () =>
+    api.get<Record<string, AgentTask[]>>('/agent-tasks/board'),
+
+  stats: (agentId?: string) =>
+    api.get<{ total: number; pending: number; running: number; completed: number; failed: number; completedToday: number }>('/agent-tasks/stats', { params: agentId ? { agent_id: agentId } : {} }),
+
+  create: (data: { agent_id: string; title: string; description?: string; priority?: number }) =>
+    api.post<AgentTask>('/agent-tasks', data),
+
+  update: (id: string, action: string, data?: { result?: string; error?: string; new_agent_id?: string }) =>
+    api.patch<{ success: boolean }>(`/agent-tasks/${id}`, { action, ...data }),
+};
+
+// ---- Agent Communications ----
+
+export interface AgentComm {
+  id: string;
+  user_id: string;
+  from_agent: string;
+  to_agent: string;
+  message: string;
+  message_type: 'info' | 'request' | 'delegation' | 'response' | 'alert';
+  related_task_id: string | null;
+  acknowledged: number;
+  created_at: string;
+}
+
+export const agentCommsService = {
+  list: (params?: { agent_id?: string; type?: string; unacknowledged?: string; limit?: number }) =>
+    api.get<AgentComm[]>('/agent-comms', { params }),
+
+  recent: (limit = 20) =>
+    api.get<AgentComm[]>('/agent-comms/recent', { params: { limit } }),
+
+  stats: () =>
+    api.get<{ total: number; unacknowledged: number; byAgent: Record<string, number>; byType: Record<string, number> }>('/agent-comms/stats'),
+
+  send: (data: { from_agent: string; to_agent: string; message: string; type?: string }) =>
+    api.post<AgentComm>('/agent-comms', data),
+
+  delegate: (data: { from_agent: string; to_agent: string; task_description: string; task_id?: string }) =>
+    api.post<AgentComm>('/agent-comms/delegate', data),
+
+  acknowledge: (id: string) =>
+    api.patch<{ success: boolean }>(`/agent-comms/${id}/acknowledge`),
+
+  acknowledgeAll: (agentId: string) =>
+    api.post<{ acknowledged: number }>('/agent-comms/acknowledge-all', { agent_id: agentId }),
+};
+
+// ---- Smart Recommendations ----
+
+export interface Recommendation {
+  feature: string;
+  reason: string;
+  cta: string;
+  ctaPath: string;
+  score: number;
+  icon: string;
+}
+
+export const recommendationsService = {
+  get: (limit = 5) =>
+    api.get<Recommendation[]>('/recommendations', { params: { limit } }),
+
+  dismiss: (feature: string) =>
+    api.post<{ success: boolean }>('/recommendations/dismiss', { feature }),
+};
+
+// ---- Agent State (Phase 3) ----
+
+export interface AgentAutocompleteItem {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  isCore: boolean;
+}
+
+export const agentStateService = {
+  getAgents: () =>
+    api.get<{ agents: AgentAutocompleteItem[]; defaultAgent: string }>('/agent-state/agents'),
+
+  getStates: () =>
+    api.get<Array<{ agentId: string; agentName: string; state: string; content?: string; timestamp: string }>>('/agent-state/states'),
+
+  parseMentions: (message: string) =>
+    api.post<{ mentionedAgents: string[]; cleanMessage: string }>('/agent-state/parse-mentions', { message }),
+
+  getInfo: () =>
+    api.get<{ connectedClients: number; redisPubSub: boolean }>('/agent-state/info'),
+};
+
 export default api;

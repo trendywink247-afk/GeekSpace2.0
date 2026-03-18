@@ -13,7 +13,10 @@ import { useAuthStore } from '@/stores/authStore';
 import { useVoice } from '@/hooks/useVoice';
 import { useTTS } from '@/hooks/useTTS';
 import { VoiceButton } from '@/components/VoiceButton';
+import { ToolStepIndicator, type ToolStep as SSEToolStep } from '@/components/ToolStepIndicator';
 import type { AgentPersonality } from '@/types';
+import { AgentMentionPopup, MENTION_AGENTS } from '@/components/AgentMentionPopup';
+import type { MentionAgent } from '@/components/AgentMentionPopup';
 
 // ── Types ──
 
@@ -24,6 +27,8 @@ interface ChatMessage {
   timestamp: Date;
   /** Tool execution steps parsed from the AI response */
   toolSteps?: ToolStep[];
+  /** Agent mentioned via @mention autocomplete */
+  mentionedAgent?: MentionAgent;
 }
 
 interface ToolStep {
@@ -429,6 +434,12 @@ export function ChatPage() {
   const lastChunkTimeRef = useRef<number>(Date.now());
   const reconnectCountRef = useRef(0);
 
+  // SSE tool step tracking (agent-state-bus)
+  const [sseToolSteps, setSSEToolSteps] = useState<SSEToolStep[]>([]);
+  const [sseActive, setSSEActive] = useState(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const sseStepTimersRef = useRef<Map<string, number>>(new Map());
+
   // Feedback state
   const [feedback, setFeedback] = useState<Record<string, FeedbackValue>>({});
   const [ratingNudgeDismissed, setRatingNudgeDismissed] = useState(false);
@@ -438,6 +449,12 @@ export function ChatPage() {
   // Message editing state
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+
+  // @mention autocomplete state
+  const [showMentionPopup, setShowMentionPopup] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionedAgent, setMentionedAgent] = useState<MentionAgent | null>(null);
+  const mentionStartRef = useRef<number>(-1);
 
   // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -513,6 +530,7 @@ export function ChatPage() {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       abortControllerRef.current?.abort();
+      eventSourceRef.current?.close();
     };
   }, []);
 
@@ -602,9 +620,11 @@ export function ChatPage() {
         role: 'user',
         content: text,
         timestamp: new Date(),
+        mentionedAgent: mentionedAgent ?? undefined,
       };
       setMessages((prev) => [...prev, userMsg]);
       setInput('');
+      setMentionedAgent(null);
       setIsTyping(true);
 
       setMessages((prev) => [
@@ -780,7 +800,7 @@ export function ChatPage() {
         abortControllerRef.current = null;
       }
     }
-  }, [messages, personality, voiceMode, tts, selectedAgent]);
+  }, [messages, personality, voiceMode, tts, selectedAgent, mentionedAgent]);
 
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -891,6 +911,69 @@ export function ChatPage() {
     tts.stop();
     setMessages([]);
   }, [tts]);
+
+  // ── @mention handlers ──
+
+  /** Detect "@" in input and manage the mention popup */
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setInput(val);
+
+    const cursorPos = e.target.selectionStart ?? val.length;
+    // Find the last "@" before the cursor
+    const textBeforeCursor = val.slice(0, cursorPos);
+    const atIdx = textBeforeCursor.lastIndexOf('@');
+
+    if (atIdx >= 0) {
+      // Only trigger if "@" is at the start or preceded by whitespace
+      const charBefore = atIdx > 0 ? val[atIdx - 1] : ' ';
+      if (charBefore === ' ' || charBefore === '\n' || atIdx === 0) {
+        const query = textBeforeCursor.slice(atIdx + 1);
+        // No spaces in the query — once a space is typed, close the popup
+        if (!query.includes(' ')) {
+          mentionStartRef.current = atIdx;
+          setMentionQuery(query);
+          setShowMentionPopup(true);
+          return;
+        }
+      }
+    }
+
+    setShowMentionPopup(false);
+    setMentionQuery('');
+  }, []);
+
+  /** Insert agent mention into input and select the agent */
+  const handleMentionSelect = useCallback((agent: MentionAgent) => {
+    const atIdx = mentionStartRef.current;
+    if (atIdx < 0) return;
+
+    const before = input.slice(0, atIdx);
+    const cursorPos = textareaRef.current?.selectionStart ?? input.length;
+    const after = input.slice(cursorPos);
+    const newInput = `${before}@${agent.name} ${after}`;
+    setInput(newInput);
+    setMentionedAgent(agent);
+    setSelectedAgent(agent.id);
+    setShowMentionPopup(false);
+    setMentionQuery('');
+    mentionStartRef.current = -1;
+
+    // Refocus the textarea and place cursor after the mention
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (el) {
+        el.focus();
+        const pos = before.length + agent.name.length + 2; // +2 for "@" and " "
+        el.setSelectionRange(pos, pos);
+      }
+    });
+  }, [input]);
+
+  /** Clear mention badge */
+  const clearMention = useCallback(() => {
+    setMentionedAgent(null);
+  }, []);
 
   // ── Sidebar ──
 
