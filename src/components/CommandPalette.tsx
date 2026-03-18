@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   Home,
@@ -481,19 +482,31 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     return () => clearTimeout(timer);
   }, [search, tab]);
 
-  if (!isOpen) return null;
-
   // Build a global index counter for search results so keyboard nav works across groups
   let searchItemIdx = 0;
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-[12vh] sm:pt-[15vh]"
+    <AnimatePresence>
+      {isOpen && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      className="fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-start justify-center pt-[12vh] sm:pt-[15vh]"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-2xl mx-4 bg-[#0A0A14] border border-[#00F0FF]/20 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-2xl mx-4 bg-[#0A0A14] border border-[#00F0FF]/20 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden relative"
+      >
+        {/* Top gradient border accent */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#00F0FF]/60 to-transparent" />
         {/* Tab strip */}
         <div className="flex border-b border-[#00F0FF]/10">
           <button
@@ -521,24 +534,24 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         </div>
 
         {/* Header input */}
-        <div className="flex items-center gap-3 p-4 border-b border-[#00F0FF]/10">
-          <Search className="w-5 h-5 text-[#6B7280]" />
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-[#00F0FF]/10">
+          <Sparkles className="w-5 h-5 text-[#00F0FF]/50 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
-            placeholder={tab === 'commands' ? 'Search commands...' : 'Search notes, reminders, habits, memories, conversations...'}
+            placeholder={tab === 'commands' ? 'Type a command or search...' : 'Search notes, reminders, habits, memories...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-[#F4F6FF] placeholder-[#6B7280] outline-none text-base"
+            className="flex-1 bg-transparent text-[#F4F6FF] placeholder-[#4B5563] outline-none text-lg"
           />
           <div className="hidden sm:flex items-center gap-1.5">
-            <kbd className="px-1.5 py-0.5 text-[10px] bg-[#06060B] border border-[#1A1A2E] rounded text-[#6B7280]">
+            <kbd className="px-1.5 py-0.5 text-[10px] bg-[#06060B] border border-[#1A1A2E] rounded text-[#6B7280] font-mono">
               TAB
             </kbd>
             <span className="text-[10px] text-[#4B5563]">switch</span>
           </div>
-          <kbd className="hidden sm:inline-block px-2 py-1 text-xs bg-[#06060B] border border-[#1A1A2E] rounded text-[#6B7280]">
+          <kbd className="hidden sm:inline-block px-2 py-1 text-xs bg-[#06060B] border border-[#1A1A2E] rounded text-[#6B7280] font-mono">
             ESC
           </kbd>
         </div>
@@ -553,53 +566,62 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 <p className="text-sm mt-1">Try a different search</p>
               </div>
             ) : (
-              Object.entries(groupedCommands).map(([category, items]) => (
-                <div key={category} className="mb-2">
-                  <div className="px-3 py-2 text-xs font-medium text-[#8892A4] uppercase tracking-wider">
+              Object.entries(groupedCommands).map(([category, items], catIdx) => (
+                <motion.div
+                  key={category}
+                  className="mb-2"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: catIdx * 0.04 }}
+                >
+                  <div className="px-3 py-2 text-[10px] font-semibold text-[#8892A4]/70 uppercase tracking-[0.12em]">
                     {category}
                   </div>
-                  {items.map((cmd) => {
+                  {items.map((cmd, cmdIdx) => {
                     const globalIdx = flatCommands.findIndex((c) => c.id === cmd.id);
                     const isSelected = globalIdx === selectedIndex;
 
                     return (
-                      <button
+                      <motion.button
                         key={cmd.id}
                         ref={(el) => { itemRefs.current[globalIdx] = el; }}
                         onClick={cmd.action}
                         onMouseEnter={() => setSelectedIndex(globalIdx)}
-                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+                        initial={{ opacity: 0, x: -4 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.15, delay: catIdx * 0.04 + cmdIdx * 0.02 }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 ${
                           isSelected
                             ? 'bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
                             : 'hover:bg-[#00F0FF]/5 border-l-2 border-transparent'
                         }`}
                       >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150 ${
                           isSelected ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'bg-[#06060B] text-[#6B7280]'
                         }`}>
                           {cmd.icon}
                         </div>
-                        <div className="flex-1 text-left">
-                          <div className={`font-medium ${isSelected ? 'text-[#F4F6FF]' : 'text-[#8892A4]'}`}>
+                        <div className="flex-1 text-left min-w-0">
+                          <div className={`font-medium text-sm ${isSelected ? 'text-[#F4F6FF]' : 'text-[#8892A4]'}`}>
                             {cmd.title}
                           </div>
                           {cmd.subtitle && (
-                            <div className="text-xs text-[#6B7280]/70">{cmd.subtitle}</div>
+                            <div className="text-xs text-[#6B7280]/70 truncate">{cmd.subtitle}</div>
                           )}
                         </div>
                         {cmd.shortcut && (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 flex-shrink-0">
                             {cmd.shortcut.split(' ').map((key, i) => (
-                              <kbd key={i} className="px-1.5 py-0.5 text-xs bg-[#06060B] border border-[#1A1A2E] rounded text-[#6B7280]">
+                              <kbd key={i} className="min-w-[22px] text-center px-1.5 py-0.5 text-[10px] font-mono bg-[#06060B] border border-[#1A1A2E] rounded text-[#6B7280]">
                                 {key}
                               </kbd>
                             ))}
                           </div>
                         )}
-                      </button>
+                      </motion.button>
                     );
                   })}
-                </div>
+                </motion.div>
               ))
             )}
           </div>
@@ -629,31 +651,40 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               <div className="p-2">
                 {dataTypeOrder
                   .filter(type => groupedData[type]?.length)
-                  .map(type => (
-                    <div key={type} className="mb-2">
-                      <div className="px-3 py-2 text-xs font-medium text-[#8892A4] uppercase tracking-wider flex items-center gap-2">
+                  .map((type, groupIdx) => (
+                    <motion.div
+                      key={type}
+                      className="mb-2"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: groupIdx * 0.05 }}
+                    >
+                      <div className="px-3 py-2 text-[10px] font-semibold text-[#8892A4]/70 uppercase tracking-[0.12em] flex items-center gap-2">
                         {DATA_TYPE_ICONS[type]}
                         {DATA_TYPE_LABELS[type] ? `${DATA_TYPE_LABELS[type]}s` : type}
                         <span className="text-[#4B5563]">({groupedData[type].length})</span>
                       </div>
-                      {groupedData[type].map(r => {
+                      {groupedData[type].map((r, rIdx) => {
                         const thisIdx = searchItemIdx++;
                         const isSelected = thisIdx === selectedIndex;
                         return (
-                          <div
+                          <motion.div
                             key={`${r.type}-${r.id}`}
                             ref={(el) => { itemRefs.current[thisIdx] = el; }}
                             onClick={() => navigateToResult(r)}
                             onMouseEnter={() => setSelectedIndex(thisIdx)}
                             role="option"
                             aria-selected={isSelected}
-                            className={`flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all ${
+                            initial={{ opacity: 0, x: -4 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.15, delay: groupIdx * 0.05 + rIdx * 0.02 }}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150 ${
                               isSelected
                                 ? 'bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
                                 : 'hover:bg-[#00F0FF]/5 border-l-2 border-transparent'
                             }`}
                           >
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-150 ${
                               isSelected ? 'bg-[#00F0FF]/20' : 'bg-[#06060B]'
                             }`}>
                               {DATA_TYPE_ICONS[r.type] ?? <Search className="w-4 h-4 text-[#6B7280]" />}
@@ -673,10 +704,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                                 {new Date(r.created_at).toLocaleDateString()}
                               </span>
                             )}
-                          </div>
+                          </motion.div>
                         );
                       })}
-                    </div>
+                    </motion.div>
                   ))}
                 {/* Reset counter so it doesn't leak between renders */}
                 {(() => { searchItemIdx = 0; return null; })()}
@@ -729,48 +760,27 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           </div>
         )}
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-[#00F0FF]/10 text-xs text-[#6B7280]">
-          {tab === 'commands' ? (
-            <>
-              <div className="flex items-center gap-4">
-                <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px]">&uarr;&darr;</kbd>
-                  navigate
-                </span>
-                <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px]">&crarr;</kbd>
-                  select
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px]">
-                  {navigator.platform?.includes('Mac') ? 'Cmd' : 'Ctrl'}+K
-                </kbd>
-                <span>toggle</span>
-              </div>
-            </>
-          ) : (
-            <div className="flex w-full justify-between">
-              <div className="flex items-center gap-3">
-                <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px]">&uarr;&darr;</kbd>
-                  navigate
-                </span>
-                <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px]">&crarr;</kbd>
-                  open
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px]">ESC</kbd>
-                close
-              </div>
-            </div>
-          )}
+        {/* Footer — unified keyboard hints */}
+        <div className="flex items-center justify-center gap-3 sm:gap-5 px-4 py-2.5 border-t border-[#00F0FF]/10 text-[11px] text-[#4B5563]">
+          <span className="flex items-center gap-1.5">
+            <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px] font-mono text-[#6B7280]">&uarr;&darr;</kbd>
+            Navigate
+          </span>
+          <span className="text-[#1A1A2E]" aria-hidden="true">&middot;</span>
+          <span className="flex items-center gap-1.5">
+            <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px] font-mono text-[#6B7280]">&crarr;</kbd>
+            {tab === 'commands' ? 'Select' : 'Open'}
+          </span>
+          <span className="text-[#1A1A2E]" aria-hidden="true">&middot;</span>
+          <span className="flex items-center gap-1.5">
+            <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px] font-mono text-[#6B7280]">Esc</kbd>
+            Close
+          </span>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
