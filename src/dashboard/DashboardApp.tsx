@@ -46,7 +46,7 @@ const SettingsPage = lazyRetry(() => import('./pages/SettingsPage').then(m => ({
 const AutomationsPage = lazyRetry(() => import('./pages/AutomationsPage').then(m => ({ default: m.AutomationsPage })));
 const PortfolioPage = lazyRetry(() => import('./pages/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
 const UsageAnalyticsPage = lazyRetry(() => import('./pages/UsageAnalyticsPage').then(m => ({ default: m.UsageAnalyticsPage })));
-const MemoryManagerPage = lazyRetry(() => import('./pages/MemoryManagerPage').then(m => ({ default: m.MemoryManagerPage })));
+const MemoryHubPage = lazyRetry(() => import('./pages/MemoryHubPage').then(m => ({ default: m.MemoryHubPage })));
 const BillingPage = lazyRetry(() => import('./pages/BillingPage').then(m => ({ default: m.BillingPage })));
 const RecipesPage = lazyRetry(() => import('./pages/RecipesPage').then(m => ({ default: m.RecipesPage })));
 const PicoFleetPage = lazyRetry(() =>
@@ -69,7 +69,7 @@ const GmailPage = lazyRetry(() => import('./pages/GmailPage').then(m => ({ defau
 const AnalyticsPage = lazyRetry(() => import('./pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 const FocusPage = lazyRetry(() => import('./pages/FocusPage').then(m => ({ default: m.FocusPage })));
 const ChatPage = lazyRetry(() => import('./pages/ChatPage').then(m => ({ default: m.ChatPage })));
-const MemoryPage = lazyRetry(() => import('./pages/MemoryPage').then(m => ({ default: m.MemoryPage })));
+// MemoryPage removed — merged into MemoryHubPage
 const WorkflowsPage = lazyRetry(() => import('./pages/WorkflowsPage').then(m => ({ default: m.WorkflowsPage })));
 
 const CalendarPage = lazyRetry(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage })));
@@ -78,8 +78,9 @@ const DocsWorkspacePage = lazyRetry(() => import('./pages/DocsWorkspacePage').th
 const OfficePage = lazyRetry(() => import('./pages/OfficePage').then(m => ({ default: m.OfficePage })));
 const VoiceChatPage = lazyRetry(() => import('./pages/VoiceChatPage').then(m => ({ default: m.VoiceChatPage })));
 const DesignAssistantPage = lazyRetry(() => import('./pages/DesignAssistantPage').then(m => ({ default: m.DesignAssistantPage })));
+const CreativeStudioPage = lazyRetry(() => import('./pages/CreativeStudioPage').then(m => ({ default: m.CreativeStudioPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office' | 'voice' | 'design';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office' | 'voice' | 'design' | 'creative-studio';
 
 
 interface MenuItem {
@@ -361,7 +362,7 @@ export function DashboardApp() {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design', 'creative-studio'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -445,9 +446,8 @@ export function DashboardApp() {
       case 'billing':
         return <BillingPage />;
       case 'memory':
-        return <MemoryManagerPage />;
       case 'personal-memory':
-        return <MemoryPage />;
+        return <MemoryHubPage />;
       case 'connections':
         return <ConnectionsPage />;
       case 'agent':
@@ -515,6 +515,8 @@ export function DashboardApp() {
         return <DesignAssistantPage />;
       case 'tools':
         return <AISpecialistPage />;
+      case 'creative-studio':
+        return <CreativeStudioPage />;
       default:
         return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
     }
