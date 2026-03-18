@@ -4,9 +4,44 @@
 // ============================================================
 
 import { Router } from 'express';
+import type { Response, NextFunction } from 'express';
+import jwtPkg from 'jsonwebtoken';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { config } from '../config.js';
 import { addStateClient, removeStateClient, getAllAgentStates, isRedisPubSubEnabled, getConnectedClientCount } from '../services/agent-state-bus.js';
 import { getAgentAutocompleteList, getRouterInfo, getUserDefaultAgent, parseMentions } from '../services/unified-agent-router.js';
+
+const { verify } = jwtPkg;
+
+/**
+ * SSE auth middleware — accepts token from Authorization header OR query param.
+ * EventSource API doesn't support custom headers, so the SSE stream endpoint
+ * needs to accept ?token=<jwt> as a fallback.
+ */
+function requireAuthSSE(req: AuthRequest, res: Response, next: NextFunction): void {
+  // Try standard Authorization header first
+  const header = req.headers.authorization;
+  if (header?.startsWith('Bearer ')) {
+    return requireAuth(req, res, next);
+  }
+
+  // Fallback: read token from query parameter (for EventSource)
+  const queryToken = req.query.token as string | undefined;
+  if (!queryToken) {
+    res.status(401).json({ error: 'Missing auth token' });
+    return;
+  }
+
+  try {
+    const payload = verify(queryToken, config.jwtSecret, {
+      algorithms: ['HS256'],
+    }) as { sub: string };
+    req.userId = payload.sub;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+}
 
 export const agentStateRouter = Router();
 
@@ -44,7 +79,7 @@ agentStateRouter.get('/info', requireAuth, (_req, res) => {
   });
 });
 
-agentStateRouter.get('/stream', requireAuth, (req: AuthRequest, res) => {
+agentStateRouter.get('/stream', requireAuthSSE, (req: AuthRequest, res) => {
   const userId = req.userId!;
 
   res.writeHead(200, {
