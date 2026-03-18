@@ -277,8 +277,14 @@ export function LoginPage() {
             </button>
           </div>
 
-          {/* Heading */}
-          <div className="text-center mb-6 md:text-left">
+          {/* Agent greeting */}
+          <div className="text-center mb-3 md:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0C0C18] border border-[#00F0FF]/10 mb-4">
+              <span className="text-sm">{['✨', '🔷', '🤖'][Math.floor(Date.now() / 60000) % 3]}</span>
+              <span className="text-xs text-[#8892A4]">
+                {['Weebo is excited to meet you!', 'Edith has everything ready.', 'Jarvis at your service.'][Math.floor(Date.now() / 60000) % 3]}
+              </span>
+            </div>
             <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
               {isSignup ? 'Create your agent' : 'Welcome back'}
             </h1>
@@ -289,7 +295,47 @@ export function LoginPage() {
             </p>
           </div>
 
-          {/* Glass form card with plasma border */}
+          {/* OAuth-first: Google & GitHub prominent */}
+          <div className="space-y-2.5 mb-4">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={oauthLoading !== null}
+              onClick={() => handleOAuth('google')}
+              className="w-full border-[#00F0FF]/15 h-12 text-[#E8E8F0] hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5 text-base"
+            >
+              {oauthLoading === 'google' ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Chrome className="w-4 h-4 mr-2" />
+              )}
+              Continue with Google
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={oauthLoading !== null}
+              onClick={() => handleOAuth('github')}
+              className="w-full border-[#00F0FF]/15 h-11 text-[#9CA3AF] hover:border-[#00F0FF]/30 hover:bg-[#00F0FF]/5"
+            >
+              {oauthLoading === 'github' ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Github className="w-4 h-4 mr-2" />
+              )}
+              Continue with GitHub
+            </Button>
+            <div className="relative my-3">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-[#00F0FF]/10" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-[#06060B] px-3 text-xs text-[#4B5563]">or use email</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Email form card */}
           <form data-testid="login-form" onSubmit={handleSubmit} className="space-y-4">
             <div
               className="p-6 rounded-2xl space-y-4 plasma-border"
@@ -441,60 +487,18 @@ export function LoginPage() {
               </Button>
             </div>
 
-            {/* OAuth & Demo */}
-            <div className="space-y-3">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#00F0FF]/10" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-[#06060B] px-3 text-sm text-[#6B7280]">or</span>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleDemo}
-                className="w-full border-[#FF2D78]/30 hover:bg-[#FF2D78]/5 hover:border-[#FF2D78]/50 h-12 group text-[#E8E8F0]"
-                data-testid="demo-login-button"
-              >
-                <Zap className="w-4 h-4 mr-2 text-[#FF2D78] group-hover:animate-pulse" />
-                Login with Demo
-                <span className="ml-2 text-xs text-[#6B7280] hidden sm:inline">(alex / pass)</span>
-              </Button>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={oauthLoading !== null}
-                  onClick={() => handleOAuth('github')}
-                  className="border-[#00F0FF]/15 h-12 text-[#E8E8F0] hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5"
-                >
-                  {oauthLoading === 'github' ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Github className="w-4 h-4 mr-2" />
-                  )}
-                  GitHub
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={oauthLoading !== null}
-                  onClick={() => handleOAuth('google')}
-                  className="border-[#00F0FF]/15 h-12 text-[#E8E8F0] hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5"
-                >
-                  {oauthLoading === 'google' ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Chrome className="w-4 h-4 mr-2" />
-                  )}
-                  Google
-                </Button>
-              </div>
-            </div>
+            {/* Demo login */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDemo}
+              className="w-full border-[#FF2D78]/30 hover:bg-[#FF2D78]/5 hover:border-[#FF2D78]/50 h-11 group text-[#9CA3AF]"
+              data-testid="demo-login-button"
+            >
+              <Zap className="w-4 h-4 mr-2 text-[#FF2D78] group-hover:animate-pulse" />
+              Try Demo
+              <span className="ml-2 text-xs text-[#4B5563] hidden sm:inline">(no signup needed)</span>
+            </Button>
           </form>
 
           {/* Toggle & Demo hint */}
