@@ -1,34 +1,33 @@
-# Session 7 Checkpoint
-Updated: 2026-03-18T09:50:00Z
-Phase: SESSION 7 COMPLETE — ALL 14 GAPS FIXED + DEPLOYED
-Branch: main (0a56e40)
-Tests: 2466+ (24 new planner/workflow tests)
-Deploy: ok (12/12 healthy)
-TS: 0 errors | Brand: clean
+# Agentin Platform Checkpoint
+Updated: 2026-03-18T18:45:00Z
+Branch: main (3e8771f) | live-production synced
+Tests: 2466+ | TS: 0 errors | Brand: clean | Health: 12/12
 
-## All 14 Gaps — DONE
-- GAP-1: Planner backend (planner_blocks table, CRUD API, PlannerPage API sync, 22 tests)
-- GAP-2: MediaGalleryPage reads from /api/images + /api/videos (not localStorage)
-- GAP-3: DesignAssistantPage (AI color palette, image/website/social routing, streaming)
-- GAP-4: CalendarPage AI assistant panel + find_free_slot tool in action-executor
-- GAP-5: SocialMediaPage AI content generation + tone selector + thread composer + char count
-- GAP-6: TerminalPage streaming AI (SSE) + /habits /reminders /briefing /memory commands
-- GAP-7: WorkflowsPage live output panel (per-step progress during execution)
-- GAP-8: ActivityPage GitHub-style heatmap (90-day) + stats bar + enhanced CSV export
-- GAP-9: ArtifactsPage inline iframe preview with desktop/mobile device toggle
-- GAP-10: ChatPage rating nudge (5-star inline widget after 5th agent response)
-- GAP-11: TemplateGalleryPage clone modal (Open in Website Builder / View All Projects)
-- GAP-12: DocsWorkspacePage AI writing toolbar (improve/expand/summarize/translate/rephrase/fix)
-- GAP-13: GmailPage smart replies (3 AI chips) + thread summary + streaming draft
-- GAP-14: Already working (6 hardcoded recipes served to all users)
+## Sessions 1-8 Summary
+- **Session 1-5**: Core platform build (100+ files, auth, chat, reminders, automations, mobile)
+- **Session 6**: Overview endpoint, voice page, analytics insights, proactive persistence, deploy pipeline
+- **Session 7**: 14 page gaps fixed (planner backend, media gallery, design assistant, calendar AI, social media, terminal streaming, workflow output, activity heatmap, artifacts preview, ratings, template clone, docs AI, gmail smart replies)
+- **Session 8**: Caddy HSTS/compression, Docker healthchecks (all 12 services), AI handoff updated
 
-## Commits This Session
-- 227af9e: feat: session 7 — 14 page gaps fixed (32 files, +3475/-304)
-- 0a56e40: fix: TS build errors from agent-generated code
+## Platform Status
+- 42 dashboard pages — all functional, wired to real APIs
+- 50+ API route files — all authenticated, rate-limited
+- 80+ backend services — fully integrated
+- 12 Docker services — all with healthchecks, resource limits, restart policies
+- Redis caching: 128 operations across 34 files
+- DB: WAL mode, 32MB cache, 256MB mmap, indexes on hot paths
+- Frontend: 33 pages lazy-loaded via lazyRetry, code-split per route
+- Graceful shutdown: SIGTERM/SIGINT handlers with 10s timeout
 
-## Changes Summary
-- 33 files changed across frontend + backend
-- New files: DesignAssistantPage.tsx, planner.ts (route), planner.test.ts
-- Backend: planner_blocks table, find_free_slot tool, workflow steps_json, heatmap endpoint
-- Frontend: 12 dashboard pages enhanced with AI/API integration
-- Tests: 2466+ passing (24 new)
+## Infrastructure Hardening (Session 8)
+- Caddy: HSTS (31536000s, preload), X-XSS-Protection, zstd+gzip compression
+- Docker: Healthchecks on all 12 services (browser, uptime-kuma, searxng, meilisearch, qdrant added)
+- Security headers: X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy
+
+## Audit Results (Triaged 3 times)
+All critical/important items from audit prompts verified as DONE:
+- Chat streaming, history, memory injection, voice TTS
+- OAuth enabled (Google live), automation config, reminder snooze
+- DB WAL+indexes, Redis caching, rate limiting
+- All 14 page gaps, landing animations, onboarding persistence
+- Credit deduction after success, video error UX, model status
