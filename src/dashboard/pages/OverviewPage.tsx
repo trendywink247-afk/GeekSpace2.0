@@ -600,7 +600,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
       <div
         data-testid="dashboard-overview"
-        className="space-y-6 pb-24 md:pb-8"
+        className="space-y-6 pb-24 md:pb-6"
         style={{ background: '#05050A' }}
       >
         {/* ─── iOS Install Banner ─── */}

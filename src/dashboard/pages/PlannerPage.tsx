@@ -582,7 +582,7 @@ export function PlannerPage() {
   const currentHourFraction = now.getHours() + now.getMinutes() / 60;
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-24 sm:pb-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
