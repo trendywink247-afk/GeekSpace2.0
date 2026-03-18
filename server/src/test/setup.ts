@@ -108,7 +108,7 @@ export function createTestUser(emailOrOpts: string | { prefix?: string } = {}): 
   const prefix = typeof emailOrOpts === 'string' ? emailOrOpts : (emailOrOpts.prefix ?? `test-${Date.now()}`);
   const email = typeof emailOrOpts === 'string' ? emailOrOpts : `${prefix}-${Date.now()}@example.com`;
   const id = uuid();
-  const username = `test_${Date.now()}`;
+  const username = `test_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const password = 'test-password-123';
   const passwordHash = bcrypt.hashSync(password, 10);
 
