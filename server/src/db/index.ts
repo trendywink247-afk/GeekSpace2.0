@@ -2205,3 +2205,78 @@ try { db.exec(`CREATE INDEX IF NOT EXISTS idx_memories_user ON user_memories(use
 
 // GAP-7: Per-step progress tracking for workflow live output
 try { db.exec(`ALTER TABLE user_workflow_runs ADD COLUMN steps_json TEXT DEFAULT '[]'`); } catch { /* column already exists */ }
+
+// ── Phase 2a-2d: Autonomous Agent Architecture ─────────────────────────────
+
+// 1. Per-agent memory namespace (add column to existing tables)
+try { db.exec(`ALTER TABLE agent_memory ADD COLUMN agent_namespace TEXT DEFAULT 'shared'`); } catch { /* column already exists */ }
+try { db.exec(`ALTER TABLE user_memories ADD COLUMN agent_namespace TEXT DEFAULT 'shared'`); } catch { /* column already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_memory_namespace ON agent_memory(user_id, agent_namespace)`); } catch { /* index already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_user_memories_namespace ON user_memories(user_id, agent_namespace)`); } catch { /* index already exists */ }
+
+// 2. Per-agent config (add agent_id to agent_configs for multi-agent rows)
+try { db.exec(`ALTER TABLE agent_configs ADD COLUMN agent_id TEXT DEFAULT 'default'`); } catch { /* column already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_configs_agent ON agent_configs(user_id, agent_id)`); } catch { /* index already exists */ }
+
+// 3. Agent task queue
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_tasks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      agent_id TEXT NOT NULL DEFAULT 'weebo',
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
+      priority INTEGER DEFAULT 5,
+      created_by TEXT DEFAULT 'user',
+      assigned_at TEXT,
+      started_at TEXT,
+      completed_at TEXT,
+      result TEXT,
+      error TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_agent_tasks_user ON agent_tasks(user_id, agent_id, status);
+    CREATE INDEX IF NOT EXISTS idx_agent_tasks_status ON agent_tasks(status, priority DESC);
+  `);
+} catch { /* table/indexes already exist */ }
+
+// 4. Inter-agent communication
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_comms (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      from_agent TEXT NOT NULL,
+      to_agent TEXT NOT NULL,
+      message TEXT NOT NULL,
+      message_type TEXT DEFAULT 'info',
+      related_task_id TEXT,
+      acknowledged INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_agent_comms_user ON agent_comms(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_agent_comms_to ON agent_comms(user_id, to_agent, acknowledged);
+  `);
+} catch { /* table/indexes already exist */ }
+
+// 5. Smart recommendations cache
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS smart_recommendations (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      feature TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      cta TEXT NOT NULL,
+      score REAL DEFAULT 0.5,
+      dismissed INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      expires_at TEXT,
+      UNIQUE(user_id, feature)
+    );
+    CREATE INDEX IF NOT EXISTS idx_smart_recs_user ON smart_recommendations(user_id, dismissed, score DESC);
+  `);
+} catch { /* table/indexes already exist */ }

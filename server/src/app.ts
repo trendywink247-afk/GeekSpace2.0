@@ -70,6 +70,9 @@ import { gateRouter } from './routes/gate.js';
 import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
+import { agentTasksRouter } from './routes/agent-tasks.js';
+import { agentCommsRouter } from './routes/agent-comms.js';
+import { recommendationsRouter } from './routes/recommendations.js';
 import { metricsMiddleware, getMetricsSnapshot } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
 import {
@@ -554,6 +557,9 @@ export function createApp(): express.Application {
   app.use('/api/docs', docsRouter);
   app.use('/api/files', filesRouter);
   app.use('/api/gate/v1', gateRouter);
+  app.use('/api/agent-tasks', agentTasksRouter);
+  app.use('/api/agent-comms', agentCommsRouter);
+  app.use('/api/recommendations', recommendationsRouter);
 
   // ---- Test routes (only in test mode) ----
   if (config.isTestMode) {

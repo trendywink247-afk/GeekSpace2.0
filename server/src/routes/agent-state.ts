@@ -6,8 +6,29 @@
 import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { addStateClient, removeStateClient } from '../services/agent-state-bus.js';
+import { getAgentAutocompleteList, getRouterInfo, getUserDefaultAgent, parseMentions } from '../services/unified-agent-router.js';
 
 export const agentStateRouter = Router();
+
+// GET /api/agent-state/agents — autocomplete list for @mention UI
+agentStateRouter.get('/agents', requireAuth, (req: AuthRequest, res) => {
+  const agents = getAgentAutocompleteList();
+  const defaultAgent = getUserDefaultAgent(req.userId!);
+  res.json({ agents, defaultAgent });
+});
+
+// GET /api/agent-state/router-info — router configuration for UI
+agentStateRouter.get('/router-info', requireAuth, (_req, res) => {
+  res.json(getRouterInfo());
+});
+
+// POST /api/agent-state/parse-mentions — parse @mentions from a message
+agentStateRouter.post('/parse-mentions', requireAuth, (req, res) => {
+  const { message } = req.body as { message: string };
+  if (!message) { res.status(400).json({ error: 'message required' }); return; }
+  const result = parseMentions(message);
+  res.json(result);
+});
 
 agentStateRouter.get('/stream', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
