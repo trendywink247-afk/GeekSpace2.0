@@ -593,15 +593,18 @@ Deploy ID: dep_${Date.now().toString(36)}`,
   };
 
   return (
-    <div className="space-y-6 h-[calc(100dvh-220px)] md:h-[calc(100vh-140px)] flex flex-col">
+    <div className="space-y-6 h-[calc(100dvh-220px)] md:h-[calc(100vh-140px)] flex flex-col pb-24 md:pb-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>Terminal</h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl md:text-3xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Terminal</h1>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#8B5CF6]">Powered by Edith</span>
+          </div>
           <p className="text-[#9CA3AF] flex items-center gap-2 text-sm">
             <Bot className="w-4 h-4 text-[#00F0FF]" />
-            <span className="hidden sm:inline">Direct CLI access to Agentin API + AI Agent</span>
-            <span className="sm:hidden">CLI + AI Agent</span>
+            <span className="hidden md:inline">Direct CLI access to Agentin API + AI Agent</span>
+            <span className="md:hidden">CLI + AI Agent</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -610,7 +613,7 @@ Deploy ID: dep_${Date.now().toString(36)}`,
             <span className="text-xs text-[#00FF88] font-mono">AI Ready</span>
           </div>
           <Button variant="outline" size="sm" onClick={clearTerminal} className="border-[#00F0FF]/30 text-[#9CA3AF] min-h-[44px]" aria-label="Clear terminal">
-            <Trash2 className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Clear</span>
+            <Trash2 className="w-4 h-4 md:mr-2" /><span className="hidden md:inline">Clear</span>
           </Button>
         </div>
       </div>

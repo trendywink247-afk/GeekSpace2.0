@@ -519,15 +519,15 @@ export function GmailPage() {
   /* ---------- Connected state ---------- */
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 p-4 pb-24 sm:p-0 sm:pb-6">
+    <div className="max-w-6xl mx-auto space-y-6 p-4 pb-24 md:p-0 md:pb-6">
       {/* Stats header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center shrink-0">
             <Mail className="w-5 h-5 text-[#00F0FF]" />
           </div>
           <div>
-            <h1 className="text-[#F4F6FF] text-lg font-semibold">Gmail</h1>
+            <h1 className="text-[#F4F6FF] text-lg font-semibold">Gmail <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📧 Managed by Jarvis</span></h1>
             <div className="flex items-center gap-1.5 text-xs text-[#E8E8F0]/40">
               <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
               <span className="truncate max-w-[180px]">{status.email}</span>

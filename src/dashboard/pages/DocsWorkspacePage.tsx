@@ -253,6 +253,7 @@ export function DocsWorkspacePage() {
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-4 md:px-6 py-4 border-b border-white/5 flex items-center gap-3">
+          <span className="text-[10px] text-[#4B5563] font-medium shrink-0 hidden md:inline">📝 Powered by Weebo</span>
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8892B0]" />
             <Input

@@ -194,7 +194,7 @@ export function VoiceChatPage() {
       {/* -- Header -- */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10 flex-shrink-0">
         <h1 className="text-lg font-bold text-[#E8E8F0]" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Voice Chat
+          Voice Chat <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">🎙️ Voice with Weebo</span>
         </h1>
         <button
           onClick={() => setSettingsOpen(!settingsOpen)}

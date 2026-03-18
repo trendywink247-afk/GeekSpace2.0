@@ -586,14 +586,14 @@ export function InboxPage() {
   // ---- Render ----
 
   return (
-    <div className="max-w-3xl mx-auto p-4 pb-24 md:pb-4 space-y-4">
+    <div className="max-w-3xl mx-auto p-4 pb-24 md:pb-6 space-y-6">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
             <Inbox className="w-4 h-4 text-[#00F0FF]" />
           </div>
-          <h1 className="text-xl font-semibold text-[#F4F6FF]">AI Inbox</h1>
+          <h1 className="text-xl font-semibold text-[#F4F6FF]">AI Inbox <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📥 Triaged by Edith</span></h1>
           {unreadCount > 0 && (
             <Badge className="bg-[#00F0FF]/15 text-[#00F0FF] border-[#00F0FF]/25 text-xs font-bold">
               {unreadCount}

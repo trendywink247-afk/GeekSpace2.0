@@ -584,12 +584,13 @@ export function PlannerPage() {
   return (
     <div className="space-y-6 pb-24 md:pb-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[#E8E8F0] flex items-center gap-2">
             <CalendarCheck className="w-6 h-6 text-[#00F0FF]" />
             Daily Planner
           </h1>
+          <span className="text-[10px] text-[#4B5563] font-medium">📅 Organized by Jarvis</span>
           <p className="text-sm text-[#8892A4] mt-1">
             Drag tasks from backlog into your timeline
           </p>

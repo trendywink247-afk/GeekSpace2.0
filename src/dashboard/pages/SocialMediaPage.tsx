@@ -1498,7 +1498,7 @@ export function SocialMediaPage() {
           <Share2 className="w-5 h-5 text-[#FF2D78]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-[#E8E8F0]">Social Media Handler</h1>
+          <h1 className="text-xl font-bold text-[#E8E8F0]">Social Media Handler <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📱 Powered by Weebo</span></h1>
           <p className="text-sm text-[#9CA3AF]">Connect accounts, generate content plans, and auto-post on schedule.</p>
         </div>
       </div>

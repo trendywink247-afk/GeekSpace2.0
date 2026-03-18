@@ -257,11 +257,12 @@ export function UsageAnalyticsPage() {
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
     <div className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
-            Usage Analytics
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Usage Analytics</h1>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF]">Analyzed by Pulse</span>
+          </div>
           <p className="text-sm text-[#9CA3AF] mt-1">Deep-dive into your AI costs and activity</p>
         </div>
         <div className="flex gap-1 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">

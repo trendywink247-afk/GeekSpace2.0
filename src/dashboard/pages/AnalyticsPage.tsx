@@ -862,11 +862,11 @@ export function AnalyticsPage() {
   return (
     <div className="p-4 md:p-6 pb-24 md:pb-6 space-y-6 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#F4F6FF] flex items-center gap-2.5">
             <BarChart3 className="w-6 h-6 text-[#00F0FF]" />
-            Agentin Wrapped
+            Agentin Wrapped <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📊 Analyzed by Pulse</span>
           </h1>
           <p className="text-sm text-[#8892A4] mt-1">
             Your personal AI usage and productivity insights

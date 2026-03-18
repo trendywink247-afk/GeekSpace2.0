@@ -570,7 +570,7 @@ export function ProactivePage() {
                 className="text-2xl md:text-3xl font-bold"
                 style={{ fontFamily: "Syne, sans-serif" }}
               >
-                Proactive AI
+                Proactive AI <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">🤖 Your agents at work</span>
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Weebo reaches out with briefings, alerts, insights, and celebrations.

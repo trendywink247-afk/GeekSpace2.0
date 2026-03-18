@@ -474,16 +474,17 @@ export function RoadmapPage() {
   };
 
   return (
-    <div className="space-y-8 pb-24 md:pb-8">
+    <div className="space-y-6 pb-24 md:pb-6">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 mb-4">
           <Rocket className="w-4 h-4 text-[#00F0FF]" />
           <span className="text-sm text-[#00F0FF] font-medium">Our Vision</span>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
           Agentin Roadmap
         </h1>
+        <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#FF2D78]/10 border border-[#FF2D78]/30 text-[#FF2D78] mb-2">Explored by Nova</span>
         <p className="text-[#9CA3AF]">
           Building the future of AI-powered personal workspaces. Here's what we're working on.
         </p>

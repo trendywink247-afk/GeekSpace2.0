@@ -240,12 +240,10 @@ export function HealthDashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1
-            className="text-3xl md:text-4xl font-bold mb-1"
-            style={{ fontFamily: 'Syne, sans-serif' }}
-          >
-            API Health
-          </h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>API Health</h1>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#8B5CF6]">Monitored by Edith</span>
+          </div>
           <p className="text-[#9CA3AF] flex items-center gap-2 text-sm md:text-base">
             {connected ? (
               <>

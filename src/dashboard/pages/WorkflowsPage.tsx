@@ -509,6 +509,7 @@ export function WorkflowsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Workflows</h1>
+          <span className="text-[10px] text-[#4B5563] font-medium">⚡ Orchestrated by Edith</span>
           <p className="text-sm text-muted-foreground mt-1">
             Chain Weebo, Jarvis, and Edith together for complex multi-step tasks.
           </p>

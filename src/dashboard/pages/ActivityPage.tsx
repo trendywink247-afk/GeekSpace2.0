@@ -448,9 +448,10 @@ export function ActivityPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
-            Activity Log
-          </h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl md:text-4xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Activity Log</h1>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF]">Tracked by Pulse</span>
+          </div>
           <p className="text-sm md:text-base text-[#9CA3AF]">
             <span className="text-[#00F0FF] font-medium">{total || entries.length}</span> total events recorded
           </p>

@@ -420,9 +420,10 @@ export function ConnectionsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
-            Connections
-          </h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Connections</h1>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#ADFF2F]/10 border border-[#ADFF2F]/30 text-[#ADFF2F]">Managed by Jarvis</span>
+          </div>
           <p className="text-[#9CA3AF]">
             <span className="text-[#00F0FF] font-medium">{connectedCount}</span> of {integrations.length} services connected
           </p>

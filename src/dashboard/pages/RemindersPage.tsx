@@ -749,6 +749,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Reminders
           </h1>
+          <span className="text-[10px] text-[#4B5563] font-medium">📅 Managed by Jarvis</span>
           <p className="text-[#9CA3AF]">
             {activeReminders.length} active, {completedReminders.length} completed
           </p>

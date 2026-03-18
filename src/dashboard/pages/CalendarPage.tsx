@@ -581,6 +581,7 @@ export function CalendarPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Calendar</h1>
+          <span className="text-[10px] text-[#4B5563] font-medium">📅 Managed by Cal</span>
           <p className="text-sm text-muted-foreground mt-1">
             View upcoming events and keep Weebo in sync with your schedule.
           </p>

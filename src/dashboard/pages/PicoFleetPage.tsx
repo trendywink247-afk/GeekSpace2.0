@@ -509,9 +509,10 @@ export function PicoFleetPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
-            Weebo Fleet
-          </h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Weebo Fleet</h1>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF]">Weebo Fleet</span>
+          </div>
           <p className="text-[#9CA3AF]">
             <span className="text-[#00FF88] font-medium">{agents.length}</span> agent{agents.length !== 1 ? 's' : ''} deployed
             {' '}&middot;{' '}
