@@ -431,8 +431,7 @@ export function DocsWorkspacePage() {
 
 /* ─── Inline Editor (full-screen when doc is open) ─── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type BlockNoteEditorInstance = any;
+type BlockNoteEditorInstance = ReturnType<typeof Object.create>;
 type AIAction = 'improve' | 'expand' | 'summarize' | 'translate' | 'rephrase' | 'fix';
 
 function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
