@@ -217,12 +217,10 @@ ${Object.entries(usage.byTool).map(([k, v]) => `  ${k}: $${(v as number).toFixed
       return `Automations:\n${lines.join('\n')}`;
     },
 
-    'gs deploy': `Deploying portfolio changes...
-Building... done (2.1s)
-Optimizing assets... done
-Publishing to CDN... done
+    'gs deploy': `Portfolio auto-deploys on save. No manual deploy needed.
+View your portfolio: https://${user?.username || 'user'}.agentin.chat
 
-Portfolio live at: https://${user?.username || 'user'}.agentin.chat
+Tip: Edit your portfolio at /dashboard/portfolio
 Deploy ID: dep_${Date.now().toString(36)}`,
 
     'help': helpText,

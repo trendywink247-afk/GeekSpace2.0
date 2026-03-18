@@ -838,7 +838,30 @@ function ContentPlanTab() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [plansRes, accountsRes] = await Promise.all([
+          socialMediaService.getPlans(),
+          socialMediaService.getAccounts(),
+        ]);
+        if (cancelled) return;
+        setPlans(plansRes.data);
+        setAccounts(accountsRes.data);
+        if (plansRes.data.length > 0) {
+          const planRes = await socialMediaService.getPlan(plansRes.data[0].id);
+          if (!cancelled) setActivePlan(planRes.data);
+        }
+      } catch {
+        // handled
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleGenerate = async () => {
     setGenerating(true);
