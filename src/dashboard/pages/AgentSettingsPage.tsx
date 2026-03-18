@@ -19,6 +19,8 @@ import {
   Send,
   Wrench,
   Link2,
+  Shield,
+  Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -77,6 +79,22 @@ const VERBOSITY_LABELS = ['Terse', 'Brief', 'Balanced', 'Detailed', 'Very Detail
 const HUMOR_LABELS = ['Serious', 'Neutral', 'Balanced', 'Witty', 'Very Humorous'];
 const EMPATHY_LABELS = ['Direct', 'Factual', 'Balanced', 'Warm', 'Very Empathetic'];
 
+// ---- Autonomy levels ----
+
+const AUTONOMY_LEVELS = [
+  { id: 'ask', label: 'Ask me first', icon: Shield, description: 'Agent proposes actions and waits for your approval before executing.' },
+  { id: 'assisted', label: 'Assisted', icon: Bot, description: 'Agent acts on routine tasks, asks for important ones.' },
+  { id: 'auto', label: 'Just do it', icon: Sparkles, description: 'Agent executes without asking. You can always undo.' },
+] as const;
+
+// ---- Agent feature assignments ----
+
+const AGENT_ASSIGNMENTS: Record<string, string[]> = {
+  weebo: ['Creative', 'Social', 'Chat'],
+  edith: ['Code', 'Systems', 'Terminal'],
+  jarvis: ['Calendar', 'Reminders', 'Email'],
+};
+
 // ---- Component ----
 
 export function AgentSettingsPage() {
@@ -94,6 +112,7 @@ export function AgentSettingsPage() {
   const [humor, setHumor] = useState([agent.humor ?? 50]);
   const [empathy, setEmpathy] = useState([agent.empathy ?? 50]);
   const [language, setLanguage] = useState('english');
+  const [autonomyLevel, setAutonomyLevel] = useState<string>('assisted');
   const [customInstructions, setCustomInstructions] = useState(agent.systemPrompt || '');
 
   // Memory state
@@ -527,6 +546,84 @@ export function AgentSettingsPage() {
             <p className="text-xs text-[#8892A4] mt-2">
               These instructions guide your agent's behavior across all conversations.
             </p>
+          </div>
+
+          {/* Autonomy Level */}
+          <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#F4F6FF]">
+              <Shield className="w-5 h-5 text-[#00F0FF]" />
+              Autonomy Level
+            </h2>
+            <p className="text-xs text-[#8892A4] mb-4">
+              How much freedom does {currentAgent.name} have to act on your behalf?
+            </p>
+            <div className="space-y-2">
+              {AUTONOMY_LEVELS.map((level) => {
+                const isActive = autonomyLevel === level.id;
+                return (
+                  <button
+                    key={level.id}
+                    onClick={() => { isDirty.current = true; setAutonomyLevel(level.id); }}
+                    className={`w-full flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 ${
+                      isActive
+                        ? 'border-[#00F0FF]/40 bg-[#00F0FF]/5'
+                        : 'border-[#1A1A2E] bg-[#06060B] hover:border-[#00F0FF]/20'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                      isActive ? 'border-[#00F0FF]' : 'border-[#8892A4]/50'
+                    }`}>
+                      {isActive && <div className="w-2 h-2 rounded-full bg-[#00F0FF]" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <level.icon className="w-4 h-4" style={{ color: isActive ? '#00F0FF' : '#8892A4' }} />
+                        <span className={`text-sm font-medium ${isActive ? 'text-[#F4F6FF]' : 'text-[#8892A4]'}`}>
+                          {level.label}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#8892A4] mt-1">{level.description}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Agent Assignment */}
+          <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#F4F6FF]">
+              <Users className="w-5 h-5 text-[#00F0FF]" />
+              Agent Assignments
+            </h2>
+            <p className="text-xs text-[#8892A4] mb-4">
+              Each agent specializes in different areas. Assignment editing coming soon.
+            </p>
+            <div className="space-y-3">
+              {AGENTS.map((a) => {
+                const features = AGENT_ASSIGNMENTS[a.id] || [];
+                return (
+                  <div key={a.id} className="flex items-center justify-between p-3 rounded-xl border border-[#1A1A2E] bg-[#06060B]">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{ backgroundColor: a.color, color: '#05050A' }}
+                      >
+                        {a.name[0]}
+                      </div>
+                      <span className="text-sm font-medium text-[#F4F6FF]">{a.name}</span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {features.map((f) => (
+                        <span key={f} className="text-xs px-2.5 py-1 rounded-full border border-[#00F0FF]/20 text-[#8892A4] bg-[#00F0FF]/5">
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Save Button */}

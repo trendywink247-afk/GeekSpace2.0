@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import {
   Monitor, Wifi, WifiOff, Zap, Activity, Brain,
   Cpu, Database, Server, Shield, ChevronRight, RefreshCw, LogIn,
+  Plus, Send, MessageSquare, BarChart3,
 } from 'lucide-react';
+import { agentTasksService, agentCommsService } from '../../services/api';
+import type { AgentTask, AgentComm } from '../../services/api';
 
 // ---- Design Tokens ----
 
@@ -513,6 +516,55 @@ export function OfficePage() {
   const agentsRef = useRef(agents);
   const selectedRef = useRef(selectedAgentId);
   const healthRef = useRef(health);
+
+  // ---- Mission Control: Task Board + Comms + Stats ----
+
+  const [taskBoard, setTaskBoard] = useState<Record<string, AgentTask[]>>({});
+  const [taskStats, setTaskStats] = useState<{ total: number; pending: number; running: number; completed: number; completedToday: number } | null>(null);
+  const [recentComms, setRecentComms] = useState<AgentComm[]>([]);
+  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [newTaskAgent, setNewTaskAgent] = useState('weebo');
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [creatingTask, setCreatingTask] = useState(false);
+
+  // Fetch task board, stats, and comms on mount
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchMissionData() {
+      try {
+        const [boardRes, statsRes, commsRes] = await Promise.allSettled([
+          agentTasksService.board(),
+          agentTasksService.stats(),
+          agentCommsService.recent(10),
+        ]);
+        if (cancelled) return;
+        if (boardRes.status === 'fulfilled') setTaskBoard(boardRes.value.data);
+        if (statsRes.status === 'fulfilled') setTaskStats(statsRes.value.data);
+        if (commsRes.status === 'fulfilled') setRecentComms(commsRes.value.data);
+      } catch { /* silently degrade */ }
+    }
+    fetchMissionData();
+    const interval = setInterval(fetchMissionData, 30_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
+  const handleCreateTask = useCallback(async () => {
+    if (!newTaskTitle.trim() || creatingTask) return;
+    setCreatingTask(true);
+    try {
+      await agentTasksService.create({ agent_id: newTaskAgent, title: newTaskTitle.trim() });
+      setNewTaskTitle('');
+      setShowCreateTask(false);
+      // Refresh board + stats
+      const [boardRes, statsRes] = await Promise.allSettled([
+        agentTasksService.board(),
+        agentTasksService.stats(),
+      ]);
+      if (boardRes.status === 'fulfilled') setTaskBoard(boardRes.value.data);
+      if (statsRes.status === 'fulfilled') setTaskStats(statsRes.value.data);
+    } catch { /* silently degrade */ }
+    setCreatingTask(false);
+  }, [newTaskAgent, newTaskTitle, creatingTask]);
 
   // ---- 401 handler ----
 
@@ -1247,6 +1299,174 @@ export function OfficePage() {
             sub={connectionMode === 'live' ? 'Real-time stream active' : 'Fallback every 10s'}
             status={connectionMode === 'live' ? 'healthy' : 'degraded'}
           />
+        </div>
+      </div>
+
+      {/* QUICK STATS BAR */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Tasks Today', value: taskStats?.completedToday ?? '—', icon: BarChart3, color: C.cyan },
+          { label: 'Pending', value: taskStats?.pending ?? '—', icon: Activity, color: '#F59E0B' },
+          { label: 'Running', value: taskStats?.running ?? '—', icon: Zap, color: C.purple },
+          { label: 'Completed', value: taskStats?.completed ?? '—', icon: Shield, color: C.green },
+        ].map(s => (
+          <div
+            key={s.label}
+            className="rounded-lg p-3 flex items-center gap-3"
+            style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}
+          >
+            <div className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${s.color}15` }}>
+              <s.icon className="w-4 h-4" style={{ color: s.color }} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: C.text }}>{s.value}</p>
+              <p className="text-xs" style={{ color: C.muted }}>{s.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* TASK BOARD + INTER-AGENT COMMS (side by side on desktop) */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* TASK BOARD */}
+        <div className="flex-1 min-w-0">
+          <div
+            className="rounded-lg overflow-hidden"
+            style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}
+          >
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" style={{ color: C.cyan }} />
+                <h2 className="text-sm font-semibold" style={{ color: C.text }}>Task Board</h2>
+              </div>
+              <button
+                onClick={() => setShowCreateTask(v => !v)}
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors hover:opacity-80"
+                style={{ backgroundColor: `${C.cyan}15`, color: C.cyan }}
+              >
+                <Plus className="w-3 h-3" />
+                New Task
+              </button>
+            </div>
+
+            {/* Inline create form */}
+            {showCreateTask && (
+              <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: `${C.bg}60` }}>
+                <select
+                  value={newTaskAgent}
+                  onChange={e => setNewTaskAgent(e.target.value)}
+                  className="rounded-md px-2 py-1.5 text-xs outline-none"
+                  style={{ backgroundColor: C.elevated, color: C.text, border: `1px solid ${C.border}` }}
+                >
+                  {Object.entries(PERSONALITY_META).map(([id, m]) => (
+                    <option key={id} value={id}>{m.emoji} {id.charAt(0).toUpperCase() + id.slice(1)}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Task title..."
+                  value={newTaskTitle}
+                  onChange={e => setNewTaskTitle(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleCreateTask()}
+                  className="flex-1 rounded-md px-2.5 py-1.5 text-xs outline-none min-w-0"
+                  style={{ backgroundColor: C.elevated, color: C.text, border: `1px solid ${C.border}` }}
+                />
+                <button
+                  onClick={handleCreateTask}
+                  disabled={creatingTask || !newTaskTitle.trim()}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-opacity disabled:opacity-40"
+                  style={{ backgroundColor: C.cyan, color: C.bg }}
+                >
+                  <Send className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
+            {/* 3-column kanban */}
+            <div className="grid grid-cols-3 divide-x" style={{ borderColor: C.border }}>
+              {(['pending', 'running', 'completed'] as const).map(status => {
+                const tasks = (taskBoard[status] || []).slice(0, 5);
+                const statusColors: Record<string, string> = { pending: '#F59E0B', running: C.purple, completed: C.green };
+                const col = statusColors[status] || C.muted;
+                return (
+                  <div key={status} className="p-3 min-w-0" style={{ borderColor: C.border }}>
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: col }} />
+                      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: col }}>
+                        {status}
+                      </span>
+                      <span className="text-xs font-mono ml-auto" style={{ color: C.muted }}>
+                        {tasks.length}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {tasks.length === 0 ? (
+                        <p className="text-xs py-4 text-center" style={{ color: `${C.muted}60` }}>No tasks</p>
+                      ) : tasks.map(t => {
+                        const meta = PERSONALITY_META[t.agent_id] || { emoji: '\u2728', color: C.cyan };
+                        return (
+                          <div
+                            key={t.id}
+                            className="rounded-md p-2 text-xs"
+                            style={{ backgroundColor: `${meta.color}08`, border: `1px solid ${meta.color}15` }}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>{meta.emoji}</span>
+                              <span className="truncate font-medium" style={{ color: C.text }}>{t.title}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* INTER-AGENT COMMS */}
+        <div className="w-full lg:w-[360px] flex-shrink-0">
+          <div
+            className="rounded-lg overflow-hidden"
+            style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}
+          >
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" style={{ color: C.purple }} />
+                <h2 className="text-sm font-semibold" style={{ color: C.text }}>Inter-Agent Comms</h2>
+              </div>
+              <span className="text-xs font-mono" style={{ color: C.muted }}>{recentComms.length} msgs</span>
+            </div>
+            <div className="px-3 py-2 space-y-1" style={{ maxHeight: 280, overflowY: 'auto' }}>
+              {recentComms.length === 0 ? (
+                <p className="text-xs py-8 text-center" style={{ color: `${C.muted}60` }}>No recent communications</p>
+              ) : recentComms.map(comm => {
+                const fromMeta = PERSONALITY_META[comm.from_agent] || { color: C.cyan, emoji: '\u2728' };
+                const toMeta = PERSONALITY_META[comm.to_agent] || { color: C.cyan, emoji: '\u2728' };
+                const ts = formatTime(comm.created_at);
+                return (
+                  <div key={comm.id} className="flex items-start gap-2 py-1.5 text-xs">
+                    <span className="font-mono flex-shrink-0 w-14 text-right" style={{ color: C.muted }}>
+                      {ts.slice(0, 5)}
+                    </span>
+                    <span className="flex-shrink-0">
+                      <span style={{ color: fromMeta.color, fontWeight: 600 }}>
+                        {comm.from_agent.charAt(0).toUpperCase() + comm.from_agent.slice(1)}
+                      </span>
+                      <span style={{ color: C.muted }}>{' \u2192 '}</span>
+                      <span style={{ color: toMeta.color, fontWeight: 600 }}>
+                        {comm.to_agent.charAt(0).toUpperCase() + comm.to_agent.slice(1)}
+                      </span>
+                    </span>
+                    <span className="truncate" style={{ color: C.text }} title={comm.message}>
+                      {comm.message}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </div>

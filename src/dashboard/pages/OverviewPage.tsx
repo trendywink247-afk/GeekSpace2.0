@@ -25,6 +25,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
+import { AgentStatusStrip } from '@/components/AgentStatusStrip';
+import { DiscoverCard } from '@/components/DiscoverCard';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import {
@@ -680,6 +682,11 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           </div>
         </div>
 
+        {/* ─── Agent Status Strip ─── */}
+        <AgentStatusStrip
+          onAgentClick={(agentId) => onNavigate?.(`chat?agent=${agentId}`)}
+        />
+
         {/* ─── Load error banner ─── */}
         {loadErrors > 0 && !loadErrDismissed && (
           <div className="flex items-center gap-3 rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-3 text-sm text-[#F59E0B]">
@@ -990,6 +997,14 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 </div>
               </div>
             )}
+
+            {/* ─── Discover Card ─── */}
+            <div className="mt-3">
+              <DiscoverCard
+                onNavigate={(path) => onNavigate?.(path)}
+                onOpenChat={() => onOpenChat?.()}
+              />
+            </div>
           </section>
         </div>
 
