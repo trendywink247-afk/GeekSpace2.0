@@ -220,6 +220,12 @@ services:
     mem_limit: 128m
     networks:
       - geekspace-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3001 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
 
   # ---- SearXNG (Free Metasearch — replaces Tavily) ----
   searxng:
@@ -231,6 +237,12 @@ services:
       - searxng-data:/etc/searxng
     networks:
       - geekspace-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -254,6 +266,12 @@ services:
       - meilisearch-data:/meili_data
     networks:
       - geekspace-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:7700/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -275,6 +293,12 @@ services:
       - qdrant-data:/qdrant/storage
     networks:
       - geekspace-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:6333/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -296,6 +320,12 @@ services:
       - PORT=3010
     expose:
       - "3010"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3010/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
     deploy:
       resources:
         limits:
