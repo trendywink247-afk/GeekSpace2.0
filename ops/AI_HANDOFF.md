@@ -1,9 +1,61 @@
-# AI Handoff — Beast Mode Sessions 1-7
-**Date:** 2026-03-18
-**Branch:** main (4d19d08)
-**Status:** CI GREEN | Tests: 2466 pass | TS: 0 errors | Health: 12/12
-**Model:** Claude Opus 4.6 (Sessions 6-7) | Sonnet 4.6 (Sessions 1-5)
-**Scope:** 130+ files changed across 7 sessions
+# AI Handoff — Beast Mode Sessions 1-9
+**Date:** 2026-03-19
+**Branch:** ai/agentin-overhaul-v2 (from main @ 6e138b2)
+**Status:** Tests: 2466 pass | TS: 0 errors | Health: 12/12 | Brand: clean
+**Model:** Claude Opus 4.6 (1M context)
+**Scope:** 150+ files changed across 9 sessions
+
+---
+
+## Session 9 (2026-03-19) — Total Platform Overhaul v2.0 (Autonomous Agent Architecture)
+
+### Phase 1: Deep Audit — DONE
+- ops/MASTER_AUDIT_2026.md: P0-P3 severity ratings across all 41 pages, 53 routes, 87 services
+- Key finding: Agent architecture is cosmetic (personality skins), not autonomous
+- Missing: per-agent memory, task queue, inter-agent comms, unified router
+
+### Phase 2: Backend Foundation — DONE (+1292 lines, 10 files)
+- **unified-agent-router.ts**: @mention parsing, agent selection, per-agent memory context, specialist→core resolution
+- **agent-task-queue.ts**: Per-agent CRUD with priority queue (create/start/complete/fail/reassign/cancel)
+- **agent-comms.ts**: Inter-agent communication (info/request/delegation/response/alert) with SSE broadcast
+- **smart-recommendations.ts**: 10-feature analysis engine with Redis caching
+- **DB migrations**: agent_namespace on memories, agent_tasks table, agent_comms table, smart_recommendations table
+- **New routes**: /api/agent-tasks, /api/agent-comms, /api/recommendations, /api/agent-state/agents
+
+### Phase 3: Agent State Bus Upgrade — DONE (+253 lines)
+- 6 new event types: delegating, comm_sent, comm_received, task_started, task_completed, task_failed
+- Redis pub/sub backend for horizontal scaling (initRedisPubSub)
+- Per-agent last state tracking (getAllAgentStates)
+- New endpoints: /api/agent-state/states, /api/agent-state/info
+
+### Phase 4: Chat Page Upgrades — DONE (+501 lines)
+- **AgentMentionPopup.tsx**: @mention autocomplete with 9 agents, keyboard nav, core badges
+- **ToolStepIndicator.tsx**: Real-time tool execution cards with animations
+- **ChatPage.tsx**: @mention integration, mentionedAgent tracking
+- **api.ts**: agentTasksService, agentCommsService, recommendationsService, agentStateService
+
+### Phase 5: Page Merges — IN PROGRESS
+- **DiscoverCard.tsx**: Smart recommendations widget for OverviewPage
+- **AgentStatusStrip.tsx**: Real-time Weebo/Edith/Jarvis status with SSE
+- MemoryHubPage + CreativeStudioPage merges in progress
+
+### Commits (Session 9)
+- 2f11e8d — Phase 1: Deep audit
+- e4c7dea — Phase 2: Backend foundation
+- 381ed93 — Phase 3: Agent state bus upgrade
+- 759098e — Phase 4: Chat page upgrades
+- f1dfcfc — Phase 5 (partial): DiscoverCard + AgentStatusStrip
+
+### Next Steps
+1. Complete Phase 5: MemoryHubPage, CreativeStudioPage merges
+2. Phase 6: Apply AgentStatusStrip + DiscoverCard to OverviewPage
+3. Phase 7+: Remaining page polish, infrastructure scaling
+
+---
+
+## Session 8 (2026-03-18) — Infrastructure Hardening
+
+Caddy HSTS/compression, Docker healthchecks (all 12 services), AI handoff updated.
 
 ---
 
