@@ -15,7 +15,7 @@ import { useTTS } from '@/hooks/useTTS';
 import { VoiceButton } from '@/components/VoiceButton';
 import { ToolStepIndicator, type ToolStep as SSEToolStep } from '@/components/ToolStepIndicator';
 import type { AgentPersonality } from '@/types';
-import { AgentMentionPopup, MENTION_AGENTS } from '@/components/AgentMentionPopup';
+import { AgentMentionPopup } from '@/components/AgentMentionPopup';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
 
 // ── Types ──
@@ -93,6 +93,23 @@ const VOICE_SETTINGS_KEY = 'agentin_voice_settings';
 const RECONNECT_DELAYS = [1000, 3000, 9000]; // exponential backoff
 
 // ── Helpers ──
+
+/** Generate default content for SSE tool step events */
+function getDefaultContent(type: string, tool?: string, agentName?: string, targetAgent?: string): string {
+  switch (type) {
+    case 'thinking': return 'Analyzing your request...';
+    case 'tool_call': return TOOL_LABELS[tool || '']?.running || `Running ${tool || 'tool'}...`;
+    case 'tool_result': return TOOL_LABELS[tool || '']?.done || `${tool || 'Tool'} complete`;
+    case 'delegating': return `Delegating to ${targetAgent || 'another agent'}`;
+    case 'comm_sent': return `${agentName || 'Agent'} sent a message`;
+    case 'task_started': return 'Working on task...';
+    case 'task_completed': return 'Task completed';
+    case 'task_failed': return 'Task failed';
+    case 'responding': return 'Composing response...';
+    case 'done': return 'Finished';
+    default: return 'Processing...';
+  }
+}
 
 function withinMs(a: Date, b: Date, ms: number): boolean {
   return Math.abs(a.getTime() - b.getTime()) < ms;
@@ -555,6 +572,98 @@ export function ChatPage() {
     return () => clearInterval(interval);
   }, [isStreamActive]);
 
+  // ── SSE Agent State Subscription ──
+
+  const connectAgentStateSSE = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+    const token = localStorage.getItem('gs_token');
+    if (!token) return;
+    const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
+    const sseUrl = `${apiBase}/agent-state/stream?token=${encodeURIComponent(token)}`;
+    const es = new EventSource(sseUrl);
+    eventSourceRef.current = es;
+    es.onopen = () => { setSSEActive(true); };
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data as string) as {
+          agentId: string; agentName: string; state: string;
+          tool?: string; content?: string; targetAgent?: string;
+          taskId?: string; timestamp: string;
+        };
+        const stepId = `sse-${data.state}-${data.tool || ''}-${Date.now()}`;
+        const typeMap: Record<string, SSEToolStep['type']> = {
+          thinking: 'thinking', tool_call: 'tool_call', tool_result: 'tool_result',
+          responding: 'responding', done: 'done', delegating: 'delegating',
+          comm_sent: 'comm_sent', task_started: 'task_started',
+          task_completed: 'task_completed', task_failed: 'task_failed',
+        };
+        const stepType = typeMap[data.state];
+        if (!stepType) return;
+        if (stepType === 'tool_result' || stepType === 'task_completed') {
+          setSSEToolSteps((prev) => {
+            const mt = stepType === 'tool_result' ? 'tool_call' : 'task_started';
+            const idx = prev.findIndex((s) => s.status === 'active' && s.type === mt && s.tool === data.tool);
+            if (idx >= 0) {
+              const u = [...prev];
+              const st = sseStepTimersRef.current.get(u[idx].id) || Date.now();
+              u[idx] = { ...u[idx], status: 'done', content: data.content || u[idx].content, durationMs: Date.now() - st };
+              return u;
+            }
+            return [...prev, { id: stepId, type: stepType, tool: data.tool, content: data.content || `${data.tool || 'Task'} complete`, status: 'done' as const, timestamp: data.timestamp }];
+          });
+          return;
+        }
+        if (stepType === 'task_failed') {
+          setSSEToolSteps((prev) => {
+            const idx = prev.findIndex((s) => s.status === 'active' && s.type === 'task_started');
+            if (idx >= 0) {
+              const u = [...prev];
+              const st = sseStepTimersRef.current.get(u[idx].id) || Date.now();
+              u[idx] = { ...u[idx], status: 'error', content: data.content || 'Task failed', durationMs: Date.now() - st };
+              return u;
+            }
+            return [...prev, { id: stepId, type: stepType, content: data.content || 'Task failed', status: 'error' as const, timestamp: data.timestamp }];
+          });
+          return;
+        }
+        if (stepType === 'done') {
+          setSSEToolSteps((prev) => prev.map((s) => s.status === 'active' ? { ...s, status: 'done' as const } : s));
+          return;
+        }
+        if (stepType === 'responding') {
+          setSSEToolSteps((prev) => prev.map((s) => s.status === 'active' && s.type === 'thinking' ? { ...s, status: 'done' as const } : s));
+          return;
+        }
+        const defaultContent = data.content || getDefaultContent(stepType, data.tool, data.agentName, data.targetAgent);
+        const newStep: SSEToolStep = { id: stepId, type: stepType, tool: data.tool, content: defaultContent, status: 'active', timestamp: data.timestamp };
+        sseStepTimersRef.current.set(stepId, Date.now());
+        if (stepType === 'thinking') {
+          setSSEToolSteps((prev) => {
+            const has = prev.some((s) => s.type === 'thinking' && s.status === 'active');
+            if (has) return prev.map((s) => s.type === 'thinking' && s.status === 'active' ? { ...s, content: newStep.content } : s);
+            return [...prev, newStep];
+          });
+          return;
+        }
+        if (stepType === 'tool_call') {
+          setSSEToolSteps((prev) => [...prev.map((s) => s.type === 'thinking' && s.status === 'active' ? { ...s, status: 'done' as const } : s), newStep]);
+          return;
+        }
+        setSSEToolSteps((prev) => [...prev, newStep]);
+      } catch { /* ignore malformed SSE data */ }
+    };
+    es.onerror = () => { setSSEActive(false); };
+  }, []);
+
+  const disconnectAgentStateSSE = useCallback(() => {
+    if (eventSourceRef.current) { eventSourceRef.current.close(); eventSourceRef.current = null; }
+    setSSEActive(false);
+    sseStepTimersRef.current.clear();
+  }, []);
+
   /** Build conversation list from entries for sidebar */
   const buildConversationList = useCallback((entries: Array<{ id: string; content: string; role: string; createdAt: string }>) => {
     // Group user messages as conversation starters
@@ -645,6 +754,9 @@ export function ChatPage() {
 
     if (retryCount === 0) {
       streamBufferRef.current = '';
+      // Start SSE agent-state subscription for real-time tool steps
+      setSSEToolSteps([]);
+      connectAgentStateSSE();
     }
     lastChunkTimeRef.current = Date.now();
 
@@ -721,6 +833,7 @@ export function ChatPage() {
 
       setIsStreamActive(false);
       setStreamHealth('connected');
+      disconnectAgentStateSSE();
 
       if (voiceMode && tts.isSupported && finalContent) {
         const { cleanContent } = parseToolSteps(finalContent);
@@ -732,6 +845,7 @@ export function ChatPage() {
         rafRef.current = 0;
       }
       setIsStreamActive(false);
+      disconnectAgentStateSSE();
 
       // User abort — keep partial content
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -800,7 +914,7 @@ export function ChatPage() {
         abortControllerRef.current = null;
       }
     }
-  }, [messages, personality, voiceMode, tts, selectedAgent, mentionedAgent]);
+  }, [messages, personality, voiceMode, tts, selectedAgent, mentionedAgent, connectAgentStateSSE, disconnectAgentStateSSE]);
 
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -910,7 +1024,9 @@ export function ChatPage() {
   const clearChat = useCallback(() => {
     tts.stop();
     setMessages([]);
-  }, [tts]);
+    setSSEToolSteps([]);
+    disconnectAgentStateSSE();
+  }, [tts, disconnectAgentStateSSE]);
 
   // ── @mention handlers ──
 
@@ -1319,7 +1435,17 @@ export function ChatPage() {
                           ))}
                         </div>
                       )}
-                      {msg.role === 'agent' ? renderMessageContent(msg.content) : <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>}
+                      {msg.role === 'agent' ? renderMessageContent(msg.content) : (
+                        <>
+                          {msg.mentionedAgent && (
+                            <span className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#00F0FF]/10 text-[#00F0FF] mb-1'>
+                              <span>{msg.mentionedAgent.emoji}</span>
+                              <span>{msg.mentionedAgent.name}</span>
+                            </span>
+                          )}
+                          <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+                        </>
+                      )}
                     </>
                   )}
 
@@ -1468,6 +1594,29 @@ export function ChatPage() {
             return null;
           })()}
 
+          {/* SSE Tool Step Indicator */}
+          {sseToolSteps.length > 0 && (
+            <div className='flex gap-2 justify-start'>
+              <div className='relative shrink-0 self-start mt-0.5'>
+                <div
+                  className='w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-black relative z-10'
+                  style={{ background: meta.color, boxShadow: sseActive ? meta.glow : 'none' }}
+                >
+                  {meta.initial}
+                </div>
+                {sseActive && (
+                  <span
+                    className='absolute inset-0 rounded-full animate-ping'
+                    style={{ border: `1.5px solid ${meta.color}`, opacity: 0.35 }}
+                  />
+                )}
+              </div>
+              <div className='max-w-[80%] min-w-[240px]'>
+                <ToolStepIndicator steps={sseToolSteps} isActive={isTyping || isStreamActive} />
+              </div>
+            </div>
+          )}
+
           {isTyping && !isStreamActive && (
             <div className='flex gap-2 justify-start'>
               <div className='relative shrink-0 self-start mt-0.5'>
@@ -1589,23 +1738,51 @@ export function ChatPage() {
           {voice.error && (
             <p className='text-xs text-red-400 mb-2'>{voice.error}</p>
           )}
+          {/* Mentioned agent badge */}
+          {mentionedAgent && (
+            <div className='flex items-center gap-1 pb-1.5'>
+              <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#00F0FF]/10 border border-[#00F0FF]/15 text-[#00F0FF]'>
+                <span>{mentionedAgent.emoji}</span>
+                <span>@{mentionedAgent.name}</span>
+                <button
+                  type='button'
+                  onClick={clearMention}
+                  className='ml-0.5 hover:text-[#FF2D78] transition-colors'
+                  aria-label={`Remove @${mentionedAgent.name} mention`}
+                >
+                  <X className='w-3 h-3' />
+                </button>
+              </span>
+            </div>
+          )}
           <form
             ref={formRef}
             onSubmit={handleSubmit}
             className='flex items-end gap-2'
           >
             <div className='flex-1 relative'>
+              {/* @mention autocomplete popup */}
+              <AgentMentionPopup
+                query={mentionQuery}
+                onSelect={handleMentionSelect}
+                onClose={() => { setShowMentionPopup(false); setMentionQuery(''); }}
+                visible={showMentionPopup}
+              />
               <textarea
                 ref={textareaRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={(e) => {
+                  // Don't submit when mention popup is open — let popup handle Enter/Escape
+                  if (showMentionPopup && (e.key === 'Enter' || e.key === 'Escape' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Tab')) {
+                    return;
+                  }
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     formRef.current?.requestSubmit();
                   }
                 }}
-                placeholder={voice.isListening ? 'Listening...' : 'Message ' + agentName + '...'}
+                placeholder={voice.isListening ? 'Listening...' : 'Type @ to mention an agent...'}
                 disabled={isTyping}
                 rows={1}
                 enterKeyHint='send'
@@ -1637,7 +1814,7 @@ export function ChatPage() {
           </form>
           <div className='flex items-center justify-between mt-1.5 px-0.5'>
             <p className='text-[10px] text-[#4B5563]'>
-              Shift+Enter for new line
+              Shift+Enter for new line &middot; @ to mention
             </p>
             <p className='text-[10px] text-[#4B5563]'>
               Alt+V for voice

@@ -6,8 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ImageIcon, Film, Sparkles, Send, Loader2, Trash2,
-  Download, X, Play, RefreshCw, Wand2, Palette,
-  Clock, ChevronDown, ZoomIn
+  Download, X, Play, RefreshCw, Wand2, Palette, Clock
 } from 'lucide-react';
 import { imageService, videoService } from '@/services/api';
 import type { UserImage, UserVideo } from '@/services/api';
