@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { addStateClient, removeStateClient } from '../services/agent-state-bus.js';
+import { addStateClient, removeStateClient, getAllAgentStates, isRedisPubSubEnabled, getConnectedClientCount } from '../services/agent-state-bus.js';
 import { getAgentAutocompleteList, getRouterInfo, getUserDefaultAgent, parseMentions } from '../services/unified-agent-router.js';
 
 export const agentStateRouter = Router();
@@ -28,6 +28,20 @@ agentStateRouter.post('/parse-mentions', requireAuth, (req, res) => {
   if (!message) { res.status(400).json({ error: 'message required' }); return; }
   const result = parseMentions(message);
   res.json(result);
+});
+
+// GET /api/agent-state/states — current state of all 3 core agents
+agentStateRouter.get('/states', requireAuth, (req: AuthRequest, res) => {
+  const states = getAllAgentStates(req.userId!);
+  res.json(states);
+});
+
+// GET /api/agent-state/info — bus health info
+agentStateRouter.get('/info', requireAuth, (_req, res) => {
+  res.json({
+    connectedClients: getConnectedClientCount(),
+    redisPubSub: isRedisPubSubEnabled(),
+  });
 });
 
 agentStateRouter.get('/stream', requireAuth, (req: AuthRequest, res) => {
