@@ -15,7 +15,7 @@ interface DiscoverCardProps {
   onOpenChat?: (prefill?: string) => void;
 }
 
-export function DiscoverCard({ onNavigate, onOpenChat }: DiscoverCardProps) {
+export function DiscoverCard({ onNavigate, onOpenChat: _onOpenChat }: DiscoverCardProps) {
   const [recs, setRecs] = useState<Recommendation[]>([]);
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(true);
