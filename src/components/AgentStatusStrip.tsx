@@ -59,11 +59,11 @@ export function AgentStatusStrip({ onAgentClick }: AgentStatusStripProps) {
 
   // SSE subscription for real-time updates
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('gs_token') || localStorage.getItem('token');
     if (!token) return;
 
     const url = `${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api')}/agent-state/stream`;
-    const es = new EventSource(`${url}?token=${token}`);
+    const es = new EventSource(`${url}?token=${encodeURIComponent(token)}`);
 
     es.onmessage = (event) => {
       try {
