@@ -31,7 +31,7 @@ function priorityLabel(p: number): { text: string; color: string } {
   return { text: 'Low', color: C.dim };
 }
 
-export default function TasksTab({ onCreateTask, taskBoard: externalBoard }: Props) {
+export default function TasksTab({ onCreateTask, taskBoard: _externalBoard }: Props) {
   const [board, setBoard] = useState<Record<string, AgentTask[]>>({ pending: [], running: [], completed: [] });
   const [loading, setLoading] = useState(true);
   const [dragId, setDragId] = useState<string | null>(null);
