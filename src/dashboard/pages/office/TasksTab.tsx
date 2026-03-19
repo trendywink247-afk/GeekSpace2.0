@@ -41,7 +41,7 @@ export default function TasksTab({ onCreateTask }: Props) {
   const [formTitle, setFormTitle] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const fetchBoard = useCallback(async () => {
     try {

@@ -33,7 +33,7 @@ export default function CommsTab({ sseEvents }: Props) {
   const [loading, setLoading] = useState(true);
   const [agentFilter, setAgentFilter] = useState<string>('All');
   const [typeFilter, setTypeFilter] = useState<string>('All');
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const fetchRecent = useCallback(async () => {
     try {

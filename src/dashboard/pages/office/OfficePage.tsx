@@ -1,26 +1,95 @@
 // src/dashboard/pages/office/OfficePage.tsx
-import { useState } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Monitor } from 'lucide-react';
 import { DraggableDivider } from './DraggableDivider';
+import OfficeStage from './OfficeStage';
+import { SpotlightHUD } from './SpotlightHUD';
+import { AgentProfileFlyout } from './AgentProfileFlyout';
+import ControlRoom from './ControlRoom';
 import { useOfficeSSE } from './useOfficeSSE';
-import type { ControlTab } from './types';
+import { agentTasksService } from '@/services/api';
+import {
+  AGENT_META, AGENT_COLORS,
+  CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
+  CORE_AGENTS,
+} from './constants';
+import type { ControlTab, CanvasAgent, AgentId, CoreAgentId, SpecialistId } from './types';
+
+// ---------------------------------------------------------------------------
+// Helper: build a CanvasAgent for SpotlightHUD from an agentId
+// ---------------------------------------------------------------------------
+
+function getAgentForHUD(id: string): CanvasAgent | null {
+  const meta = AGENT_META[id as AgentId];
+  if (!meta) return null;
+  const pos =
+    CORE_DESK_POSITIONS[id as CoreAgentId] ??
+    SPECIALIST_POSITIONS[id as SpecialistId] ??
+    { x: 0, y: 0 };
+  return {
+    id: id as AgentId,
+    name: meta.emoji + ' ' + id.charAt(0).toUpperCase() + id.slice(1),
+    color: AGENT_COLORS[id as AgentId],
+    emoji: meta.emoji,
+    role: meta.role,
+    x: pos.x,
+    y: pos.y,
+    targetX: pos.x,
+    targetY: pos.y,
+    state: 'idle',
+    isSpecialist: !CORE_AGENTS.includes(id as CoreAgentId),
+    isDormant: false,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// OfficePage
+// ---------------------------------------------------------------------------
 
 export function OfficePage() {
-  const { connectionMode } = useOfficeSSE();
+  const navigate = useNavigate();
+  const { events, connectionMode } = useOfficeSSE();
 
+  // Layout split
   const [splitPercent, setSplitPercent] = useState(() => {
     const saved = localStorage.getItem('office-split');
     return saved ? Number(saved) : 50;
   });
 
-  const [_activeTab, setActiveTab] = useState<ControlTab>('tasks');
-  const [_selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
-  const [_flyoutAgentId, setFlyoutAgentId] = useState<string | null>(null);
+  // State
+  const [activeTab, setActiveTab] = useState<ControlTab>('tasks');
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [flyoutAgentId, setFlyoutAgentId] = useState<string | null>(null);
+  const [taskCount, setTaskCount] = useState(0);
 
-  // Expose setters for future child components
-  void setActiveTab;
-  void setSelectedAgentId;
-  void setFlyoutAgentId;
+  // Fetch task count when an agent is selected for spotlight
+  useEffect(() => {
+    if (!selectedAgentId) {
+      setTaskCount(0);
+      return;
+    }
+    let cancelled = false;
+    agentTasksService.stats(selectedAgentId)
+      .then((res) => {
+        if (!cancelled) setTaskCount(res.data.completedToday ?? 0);
+      })
+      .catch(() => {
+        if (!cancelled) setTaskCount(0);
+      });
+    return () => { cancelled = true; };
+  }, [selectedAgentId]);
+
+  // Build CanvasAgent for SpotlightHUD
+  const spotlightAgent = useMemo(
+    () => (selectedAgentId ? getAgentForHUD(selectedAgentId) : null),
+    [selectedAgentId],
+  );
+
+  // Create task handler
+  const handleCreateTask = useCallback(async (agentId: string, title: string) => {
+    await agentTasksService.create({ agent_id: agentId, title });
+  }, []);
 
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] md:h-[calc(100dvh-0px)] pb-24 md:pb-0 overflow-hidden">
@@ -57,10 +126,25 @@ export function OfficePage() {
 
       {/* Stage (top section) */}
       <div style={{ height: `${splitPercent}%` }} className="relative overflow-hidden">
-        {/* Placeholder for OfficeStage - will be replaced in Task 6 */}
-        <div className="flex items-center justify-center h-full bg-[#05050A] text-[#4B5563] text-sm">
-          Stage loading...
-        </div>
+        <OfficeStage
+          events={events}
+          selectedAgentId={selectedAgentId}
+          onAgentSelect={setSelectedAgentId}
+          onAgentDoubleClick={(id) => setFlyoutAgentId(id)}
+        />
+        {/* Spotlight HUD -- shown when an agent is selected */}
+        {spotlightAgent && (
+          <SpotlightHUD
+            agent={spotlightAgent}
+            taskCount={taskCount}
+            onChat={() => navigate(`/dashboard/chat?agent=${selectedAgentId}`)}
+            onAssignTask={() => {
+              setActiveTab('tasks');
+              setSelectedAgentId(null);
+            }}
+            onDismiss={() => setSelectedAgentId(null)}
+          />
+        )}
       </div>
 
       {/* Draggable divider */}
@@ -73,11 +157,23 @@ export function OfficePage() {
 
       {/* Control Room (bottom section) */}
       <div style={{ height: `${100 - splitPercent}%` }} className="overflow-hidden">
-        {/* Placeholder for ControlRoom - will be replaced in Task 12 */}
-        <div className="flex items-center justify-center h-full bg-[#0C0C18] text-[#4B5563] text-sm">
-          Control Room loading...
-        </div>
+        <ControlRoom
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          sseEvents={events}
+          onCreateTask={handleCreateTask}
+        />
       </div>
+
+      {/* Agent Profile Flyout (double-click) */}
+      <AgentProfileFlyout
+        agentId={flyoutAgentId}
+        onClose={() => setFlyoutAgentId(null)}
+        onNavigateToChat={(id) => {
+          setFlyoutAgentId(null);
+          navigate(`/dashboard/chat?agent=${id}`);
+        }}
+      />
     </div>
   );
 }
