@@ -49,7 +49,7 @@ function getAgentForHUD(id: string): CanvasAgent | null {
 
 export function OfficePage() {
   const navigate = useNavigate();
-  const { events, connectionMode } = useOfficeSSE();
+  const { events, connectionMode, debugUrl } = useOfficeSSE();
 
   // Layout split
   const [splitPercent, setSplitPercent] = useState(() => {
@@ -126,6 +126,8 @@ export function OfficePage() {
           >
             9 AGENTS
           </span>
+          {/* DEBUG — remove after fixing */}
+          <span className="text-[8px] text-[#FF2D78] max-w-[200px] truncate">{debugUrl || 'no-url'}</span>
         </div>
         <div className="flex items-center gap-3">
           {/* Agent status indicators */}

@@ -18,22 +18,40 @@ export function useOfficeSSE() {
   const [connectionMode, setConnectionMode] = useState<ConnectionMode>('reconnecting');
   const esRef = useRef<EventSource | null>(null);
 
+  const [debugUrl, setDebugUrl] = useState('');
+
   useEffect(() => {
     const token = getToken();
     if (!token) {
+      console.warn('[OfficeSSE] No token found in localStorage');
       setConnectionMode('polling');
+      setDebugUrl('NO TOKEN');
       return;
     }
 
-    const url = `${API_BASE}/agent-state/stream?token=${encodeURIComponent(token)}`;
-    const es = new EventSource(url);
+    const url = `${API_BASE}/agent-state/stream?token=${token.slice(0, 20)}...`;
+    setDebugUrl(url);
+    console.log('[OfficeSSE] Connecting to:', `${API_BASE}/agent-state/stream?token=<${token.length}chars>`);
+
+    const fullUrl = `${API_BASE}/agent-state/stream?token=${encodeURIComponent(token)}`;
+    let es: EventSource;
+    try {
+      es = new EventSource(fullUrl);
+    } catch (err) {
+      console.error('[OfficeSSE] EventSource constructor threw:', err);
+      setConnectionMode('polling');
+      setDebugUrl('CONSTRUCTOR ERROR');
+      return;
+    }
     esRef.current = es;
 
     es.onopen = () => {
+      console.log('[OfficeSSE] Connected! readyState:', es.readyState);
       setConnectionMode('live');
     };
 
     es.onmessage = (e) => {
+      console.log('[OfficeSSE] Event:', e.data.slice(0, 80));
       try {
         const evt = JSON.parse(e.data) as SSEEvent;
         if (evt.agentId && evt.state) {
@@ -45,7 +63,8 @@ export function useOfficeSSE() {
       } catch { /* malformed */ }
     };
 
-    es.onerror = () => {
+    es.onerror = (err) => {
+      console.error('[OfficeSSE] Error, readyState:', es.readyState, err);
       if (es.readyState === EventSource.CLOSED) {
         setConnectionMode('polling');
       } else {
@@ -54,10 +73,11 @@ export function useOfficeSSE() {
     };
 
     return () => {
+      console.log('[OfficeSSE] Closing');
       es.close();
       esRef.current = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { events, connectionMode, clearEvents: () => setEvents([]) };
+  return { events, connectionMode, clearEvents: () => setEvents([]), debugUrl };
 }
