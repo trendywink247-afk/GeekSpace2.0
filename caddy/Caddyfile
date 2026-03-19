@@ -11,6 +11,9 @@
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-XSS-Protection "1; mode=block"
 	}
+}
+
+(static_encode) {
 	encode zstd gzip
 }
 
@@ -37,7 +40,24 @@ ai.agentin.chat {
 		respond 404
 	}
 
-	# API + preview calls always pass through to Express
+	# SSE streams — no compression (breaks EventSource)
+	handle /api/agent-state/stream* {
+		reverse_proxy geekspace:3001 {
+			flush_interval -1
+		}
+	}
+	handle /api/activity/stream* {
+		reverse_proxy geekspace:3001 {
+			flush_interval -1
+		}
+	}
+	handle /api/health/stream* {
+		reverse_proxy geekspace:3001 {
+			flush_interval -1
+		}
+	}
+
+	# API calls — pass through to Express
 	handle /api/* {
 		reverse_proxy geekspace:3001 {
 			flush_interval -1
@@ -56,10 +76,11 @@ ai.agentin.chat {
 		file_server
 	}
 
-	# Assets: long-lived cache
+	# Assets: long-lived cache + compression
 	handle /assets/* {
 		root * /srv
 		header Cache-Control "public, max-age=31536000, immutable"
+		encode zstd gzip
 		file_server
 	}
 
