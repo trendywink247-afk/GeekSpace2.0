@@ -97,7 +97,7 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
     const sseItems = events.map(ev => ({
       type: 'sse' as const,
       timestamp: ev.timestamp,
-      agentId: ev.agentId,
+      agentId: ev.agentId, agentName: ev.agentName,
       state: ev.state,
       content: ev.content || '',
       tool: ev.tool,
@@ -106,7 +106,7 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
     const actItems = (activityTimeline || []).map(a => ({
       type: 'activity' as const,
       timestamp: a.created_at,
-      agentId: inferAgentFromAction(a.action, a.icon),
+      agentId: inferAgentFromAction(a.action, a.icon), agentName: inferAgentFromAction(a.action, a.icon),
       state: 'done' as AgentStateType,
       content: `${a.action}: ${a.details}`.slice(0, 120),
       tool: undefined,
