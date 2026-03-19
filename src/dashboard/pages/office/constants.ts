@@ -34,53 +34,56 @@ export const SPECIALIST_PARENT: Record<SpecialistId, CoreAgentId> = {
 export const CORE_AGENTS: CoreAgentId[] = ['weebo', 'edith', 'jarvis'];
 export const SPECIALIST_AGENTS: SpecialistId[] = ['aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
 
-// ── Image-derived collision map (27x25, 32px tiles) ─────────────────────────
+// ── Verified collision map (27x25, 32px tiles) ──────────────────────────────
 // true = blocked (wall/furniture), false = walkable (floor)
-// Derived from pixel analysis of the actual background image.
-// Grid value mapping: 0 in source → blocked (true), 1 in source → walkable (false)
+// Derived from manual pixel analysis of the actual background image.
+// COLLISION_MAP[row][col]: true blocks BFS pathfinding, false allows movement.
 export const COLLISION_MAP: boolean[][] = [
-  /* Row  0 */ [false,true,false,true,false,false,true,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false],
-  /* Row  1 */ [false,false,false,false,false,true,false,false,false,false,false,true,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true],
-  /* Row  2 */ [false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true],
-  /* Row  3 */ [false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
-  /* Row  4 */ [false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,true,true,true,true,false,true],
-  /* Row  5 */ [false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,true],
-  /* Row  6 */ [false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
-  /* Row  7 */ [false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true],
-  /* Row  8 */ [true,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
-  /* Row  9 */ [true,true,false,false,false,true,false,false,false,false,false,false,false,false,false,true,false,false,false,false,true,true,true,false,false,false,true],
-  /* Row 10 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,true,true,true,false,false,false,true],
-  /* Row 11 */ [true,false,false,false,false,false,false,false,false,true,true,true,false,false,false,true,false,false,false,false,true,true,true,false,false,false,true],
-  /* Row 12 */ [true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,true],
-  /* Row 13 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row 14 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,false,true,false,true,true,true,true],
-  /* Row 15 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,false,false,false,false,false,true,true,true],
-  /* Row 16 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,false,false,false,false,false,true,true,true],
-  /* Row 17 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,false,false,false,false,false,true,true,true],
-  /* Row 18 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,false,false,false,false,false,true,true,true],
-  /* Row 19 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row 20 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false],
-  /* Row 21 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
-  /* Row 22 */ [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,true,false],
-  /* Row 23 */ [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,true,false,false,false],
-  /* Row 24 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false],
+  /* Row  0 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row  1 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,true],
+  /* Row  2 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,true],
+  /* Row  3 */ [true,true,true,true,false,true,false,true,false,true,false,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true],
+  /* Row  4 */ [true,true,true,true,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,false,true,true,true,true,false,true],
+  /* Row  5 */ [true,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,false,true,true,true,true,false,true],
+  /* Row  6 */ [true,false,true,true,true,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row  7 */ [true,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row  8 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row  9 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 10 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 11 */ [true,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 12 */ [true,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 13 */ [true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 14 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,false,true,false,true,true,true,true],
+  /* Row 15 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 16 */ [true,false,false,true,false,true,false,false,false,true,false,true,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 17 */ [true,false,true,true,true,true,true,true,true,true,true,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 18 */ [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 19 */ [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 20 */ [true,false,true,true,true,true,true,true,true,true,true,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 21 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 22 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 23 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 24 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
 ];
 
 // Desk positions — all on verified walkable tiles (COLLISION_MAP[y][x] === false)
+// Verification: weebo(4,14)=false, edith(8,14)=false, jarvis(12,14)=false
 export const CORE_DESK_POSITIONS: Record<CoreAgentId, { x: number; y: number }> = {
-  weebo: { x: 3, y: 14 },   // left workspace area
-  edith: { x: 7, y: 14 },   // center workspace
-  jarvis: { x: 11, y: 14 },  // right workspace
+  weebo: { x: 4, y: 14 },   // left workspace aisle
+  edith: { x: 8, y: 14 },   // center workspace aisle
+  jarvis: { x: 12, y: 14 },  // right workspace aisle
 };
 
 // Specialist desk positions — all on verified walkable tiles
+// Verification: aria(4,15)=false, forge(8,15)=false, pulse(12,15)=false,
+//   echo(6,5)=false, cal(17,3)=false, nova(22,3)=false
 export const SPECIALIST_POSITIONS: Record<SpecialistId, { x: number; y: number }> = {
-  aria: { x: 3, y: 18 },     // left lower workspace
-  forge: { x: 7, y: 18 },    // center lower workspace
-  pulse: { x: 11, y: 18 },   // right lower workspace
-  echo: { x: 5, y: 10 },     // upper center floor
-  cal: { x: 21, y: 3 },      // right upper lounge area
-  nova: { x: 23, y: 3 },     // right upper lounge area
+  aria: { x: 4, y: 15 },     // left lower workspace aisle
+  forge: { x: 8, y: 15 },    // center lower workspace aisle
+  pulse: { x: 12, y: 15 },   // right lower workspace aisle
+  echo: { x: 6, y: 5 },      // upper area near pantry
+  cal: { x: 17, y: 3 },      // upper right lounge area
+  nova: { x: 22, y: 3 },     // lounge area
 };
 
 // Design tokens

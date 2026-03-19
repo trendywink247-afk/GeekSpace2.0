@@ -11,7 +11,7 @@
 
 import type { CanvasAgent, ParticleBeam } from './types';
 import {
-  CELL, CANVAS_W, CANVAS_H,
+  CELL, COLS, ROWS, CANVAS_W, CANVAS_H,
   C,
 } from './constants';
 import { getAgentSprites } from './sprites';
@@ -435,10 +435,57 @@ export function drawAmbientEffects(ctx: CanvasRenderingContext2D, tick: number):
 }
 
 // ---------------------------------------------------------------------------
-// renderFrame — main entry, called every render tick
+// drawDebugOverlay — semi-transparent collision grid visualization
+// Red = blocked, green = walkable, with grid lines for tile boundaries.
 // ---------------------------------------------------------------------------
 
-export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState): void {
+export function drawDebugOverlay(ctx: CanvasRenderingContext2D, collisionMap: boolean[][]): void {
+  for (let r = 0; r < collisionMap.length; r++) {
+    for (let c = 0; c < collisionMap[r].length; c++) {
+      if (collisionMap[r][c]) {
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.15)'; // red = blocked
+      } else {
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.1)'; // green = walkable
+      }
+      ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+    }
+  }
+
+  // Draw grid lines
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.lineWidth = 0.5;
+  for (let c = 0; c <= COLS; c++) {
+    ctx.beginPath();
+    ctx.moveTo(c * CELL, 0);
+    ctx.lineTo(c * CELL, CANVAS_H);
+    ctx.stroke();
+  }
+  for (let r = 0; r <= ROWS; r++) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * CELL);
+    ctx.lineTo(CANVAS_W, r * CELL);
+    ctx.stroke();
+  }
+
+  // Draw coordinate labels for walkable tiles
+  ctx.font = '7px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  for (let r = 0; r < collisionMap.length; r++) {
+    for (let c = 0; c < collisionMap[r].length; c++) {
+      if (!collisionMap[r][c]) {
+        ctx.fillText(`${c},${r}`, c * CELL + CELL / 2, r * CELL + CELL / 2 + 3);
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// renderFrame — main entry, called every render tick
+// Optional showDebug parameter draws the collision grid overlay.
+// ---------------------------------------------------------------------------
+
+export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, showDebug?: boolean, collisionMap?: boolean[][]): void {
   const { agents, beams, tick, selectedAgentId } = state;
 
   // 1. Background (pixel art image or solid fallback)
@@ -468,4 +515,9 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState): 
 
   // 6. Time-of-day lighting overlay — LAST layer on top of everything
   drawTimeOfDayOverlay(ctx);
+
+  // 7. Debug overlay — collision grid visualization (only when enabled)
+  if (showDebug && collisionMap) {
+    drawDebugOverlay(ctx, collisionMap);
+  }
 }

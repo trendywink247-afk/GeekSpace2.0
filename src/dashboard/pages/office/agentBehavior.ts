@@ -6,7 +6,7 @@
 import type { CanvasAgent, AgentId, SpeechBubble } from './types';
 import {
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
-  AGENT_COLORS,
+  AGENT_COLORS, COLLISION_MAP,
 } from './constants';
 import type { CoreAgentId, SpecialistId } from './types';
 
@@ -24,42 +24,38 @@ interface Landmark {
 }
 
 // All landmark positions verified against COLLISION_MAP — every (x,y) is walkable (false)
+// isWalkable(x,y) check: COLLISION_MAP[y][x] === false
 const LANDMARKS: Landmark[] = [
-  // Patio/breakout — left upper area (rows 3-4, cols 2-4 walkable)
-  { name: 'patio-bench', x: 2, y: 3, radius: 1, type: 'patio', maxAgents: 3, pauseMin: 30, pauseMax: 80 },
-  { name: 'patio-table', x: 4, y: 4, radius: 1, type: 'patio', maxAgents: 2, pauseMin: 20, pauseMax: 60 },
+  // Upper right lounge area (rows 1-3, cols 15-25 walkable)
+  { name: 'lounge-floor', x: 16, y: 2, radius: 1, type: 'lounge', maxAgents: 3, pauseMin: 30, pauseMax: 80 },
+  { name: 'lounge-corner', x: 23, y: 3, radius: 1, type: 'lounge', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
 
-  // Pantry/coffee — center upper area
-  { name: 'coffee-machine', x: 9, y: 3, radius: 1, type: 'coffee', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
-  { name: 'pantry-shelf', x: 12, y: 4, radius: 1, type: 'coffee', maxAgents: 1, pauseMin: 10, pauseMax: 25 },
+  // Pantry/upper area (rows 5-6, cols 5-10 walkable)
+  { name: 'pantry', x: 8, y: 5, radius: 1, type: 'coffee', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
+  { name: 'upper-floor', x: 5, y: 6, radius: 1, type: 'coffee', maxAgents: 2, pauseMin: 10, pauseMax: 30 },
 
-  // Lounge — right upper walkable zone (row 3 cols 20-25 walkable)
-  { name: 'couch', x: 16, y: 3, radius: 2, type: 'lounge', maxAgents: 3, pauseMin: 40, pauseMax: 100 },
-  { name: 'lounge-table', x: 18, y: 5, radius: 1, type: 'lounge', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
+  // Left corridor (col 1 walkable at rows 5-7, 11, 14)
+  { name: 'corridor-upper', x: 1, y: 6, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 8, pauseMax: 20 },
+  { name: 'corridor-mid', x: 1, y: 14, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 8, pauseMax: 20 },
 
-  // Staircase/bookshelf — center floor
-  { name: 'bookshelf', x: 13, y: 10, radius: 1, type: 'bookshelf', maxAgents: 1, pauseMin: 15, pauseMax: 40 },
+  // Main workspace aisles (rows 13-15, cols 2-14 walkable)
+  { name: 'aisle-top', x: 7, y: 13, radius: 1, type: 'desk', maxAgents: 2, pauseMin: 10, pauseMax: 25 },
+  { name: 'aisle-bottom', x: 7, y: 21, radius: 1, type: 'desk', maxAgents: 2, pauseMin: 10, pauseMax: 25 },
 
-  // Meeting room — right side (rows 15-18, cols 19-23 walkable)
-  { name: 'whiteboard', x: 20, y: 16, radius: 1, type: 'meeting', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
-  { name: 'meeting-table', x: 20, y: 18, radius: 2, type: 'meeting', maxAgents: 4, pauseMin: 30, pauseMax: 80 },
-  { name: 'display', x: 22, y: 15, radius: 1, type: 'meeting', maxAgents: 2, pauseMin: 15, pauseMax: 35 },
+  // Desk between-rows aisles (row 18 col 7 walkable, row 18 cols 13-14 walkable)
+  { name: 'desk-aisle-left', x: 7, y: 18, radius: 0, type: 'desk', maxAgents: 1, pauseMin: 5, pauseMax: 15 },
+  { name: 'desk-aisle-right', x: 13, y: 18, radius: 0, type: 'desk', maxAgents: 1, pauseMin: 5, pauseMax: 15 },
 
-  // Decor spots — edges with walkable tiles
-  { name: 'window-left', x: 1, y: 8, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 10, pauseMax: 25 },
-  { name: 'plant-corner', x: 25, y: 3, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 8, pauseMax: 20 },
+  // Meeting area entry (row 14, col 14 walkable)
+  { name: 'meeting-entry', x: 14, y: 14, radius: 0, type: 'meeting', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
 
-  // Additional landmarks for better coverage
-  { name: 'corridor', x: 1, y: 13, radius: 1, type: 'decor', maxAgents: 2, pauseMin: 10, pauseMax: 30 },
-  { name: 'upper-hall', x: 6, y: 6, radius: 1, type: 'decor', maxAgents: 2, pauseMin: 15, pauseMax: 35 },
-  { name: 'center-floor', x: 12, y: 3, radius: 1, type: 'decor', maxAgents: 2, pauseMin: 10, pauseMax: 25 },
-  { name: 'bottom-hall', x: 5, y: 21, radius: 1, type: 'patio', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
-  { name: 'bottom-right', x: 20, y: 21, radius: 1, type: 'patio', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
+  // Staircase area (row 12, cols 3-4 walkable)
+  { name: 'stairs', x: 3, y: 12, radius: 0, type: 'bookshelf', maxAgents: 1, pauseMin: 10, pauseMax: 25 },
 ];
 
-// Landmarks suitable for group meetings
+// Landmarks suitable for group meetings (lounge + meeting areas)
 const GROUP_MEETING_LANDMARKS = LANDMARKS.filter(
-  l => l.name === 'meeting-table' || l.name === 'couch' || l.name === 'whiteboard',
+  l => l.name === 'lounge-floor' || l.name === 'lounge-corner' || l.name === 'meeting-entry' || l.name === 'aisle-bottom',
 );
 
 // ── Context-aware social chat phrases ───────────────────────────────────────
@@ -180,15 +176,35 @@ function vacateLandmark(agentId: AgentId): void {
   }
 }
 
-/** Pick a point within a landmark's radius */
+/** Check if a tile is walkable on the collision grid */
+function isWalkable(x: number, y: number): boolean {
+  if (y < 0 || y >= COLLISION_MAP.length || x < 0 || x >= COLLISION_MAP[0].length) return false;
+  return !COLLISION_MAP[y][x];
+}
+
+/** Pick a point within a landmark's radius, ensuring it lands on a walkable tile */
 function pointInRadius(landmark: Landmark): { x: number; y: number } {
   if (landmark.radius === 0) return { x: landmark.x, y: landmark.y };
-  const angle = Math.random() * Math.PI * 2;
-  const r = Math.random() * landmark.radius;
-  return {
-    x: Math.round(landmark.x + Math.cos(angle) * r),
-    y: Math.round(landmark.y + Math.sin(angle) * r),
-  };
+
+  // Try random points in radius up to 8 times
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const angle = Math.random() * Math.PI * 2;
+    const r = Math.random() * landmark.radius;
+    const px = Math.round(landmark.x + Math.cos(angle) * r);
+    const py = Math.round(landmark.y + Math.sin(angle) * r);
+    if (isWalkable(px, py)) return { x: px, y: py };
+  }
+
+  // Fallback: scan adjacent tiles for a walkable one
+  const dirs = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
+  for (const [dx, dy] of dirs) {
+    const px = landmark.x + dx;
+    const py = landmark.y + dy;
+    if (isWalkable(px, py)) return { x: px, y: py };
+  }
+
+  // Last resort: return landmark center (should always be walkable)
+  return { x: landmark.x, y: landmark.y };
 }
 
 // ── Intent-based landmark selection ─────────────────────────────────────────
@@ -205,6 +221,8 @@ function chooseLandmark(agentId: AgentId, idleAgents: CanvasAgent[]): Landmark |
 
   for (const lm of LANDMARKS) {
     if (getOccupancy(lm) >= lm.maxAgents) continue;
+    // Skip landmarks whose center tile is not walkable (safety check)
+    if (!isWalkable(lm.x, lm.y)) continue;
 
     let weight = 1;
     switch (lm.type) {
