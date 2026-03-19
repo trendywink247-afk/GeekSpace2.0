@@ -3,8 +3,26 @@ import { useRef, useEffect, useState, useMemo } from 'react';
 import { AGENT_COLORS, AGENT_META, C, MAX_TIMELINE_EVENTS } from './constants';
 import type { AgentId, AgentStateType, SSEEvent } from './types';
 
+interface ActivityItem {
+  action: string;
+  details: string;
+  icon: string;
+  created_at: string;
+}
+
 interface Props {
   events: SSEEvent[];
+  activityTimeline?: ActivityItem[];
+}
+
+function inferAgentFromAction(action: string, icon: string): string {
+  const lower = (action + ' ' + icon).toLowerCase();
+  if (lower.includes('weebo') || lower.includes('creative') || lower.includes('social')) return 'weebo';
+  if (lower.includes('edith') || lower.includes('code') || lower.includes('review') || lower.includes('zap')) return 'edith';
+  if (lower.includes('jarvis') || lower.includes('remind') || lower.includes('schedule') || lower.includes('clock')) return 'jarvis';
+  if (lower.includes('aria') || lower.includes('design')) return 'aria';
+  if (lower.includes('forge') || lower.includes('build')) return 'forge';
+  return 'jarvis'; // default
 }
 
 function formatTime(iso: string): string {
@@ -70,18 +88,34 @@ function stateLabel(state: AgentStateType): string {
   }
 }
 
-export default function TimelineTab({ events }: Props) {
+export default function TimelineTab({ events, activityTimeline }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
 
-  console.log('[TimelineTab] Events:', events.length);
-
-  // Reverse chronological, capped
+  // Merge SSE events with activity timeline data
   const sorted = useMemo(() => {
-    return [...events]
+    const sseItems = events.map(ev => ({
+      type: 'sse' as const,
+      timestamp: ev.timestamp,
+      agentId: ev.agentId,
+      state: ev.state,
+      content: ev.content || '',
+      tool: ev.tool,
+    }));
+
+    const actItems = (activityTimeline || []).map(a => ({
+      type: 'activity' as const,
+      timestamp: a.created_at,
+      agentId: inferAgentFromAction(a.action, a.icon),
+      state: 'done' as AgentStateType,
+      content: `${a.action}: ${a.details}`.slice(0, 120),
+      tool: undefined,
+    }));
+
+    return [...sseItems, ...actItems]
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, MAX_TIMELINE_EVENTS);
-  }, [events]);
+  }, [events, activityTimeline]);
 
   // Auto-scroll to top (newest) unless hovered
   useEffect(() => {
@@ -93,7 +127,7 @@ export default function TimelineTab({ events }: Props) {
   if (sorted.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-xs" style={{ color: C.dim }}>No events yet. Waiting for agent activity...</p>
+        <p className="text-xs" style={{ color: C.dim }}>No events yet. Send a message to see agent activity.</p>
       </div>
     );
   }

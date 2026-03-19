@@ -67,6 +67,7 @@ import searchRouter from './routes/search.js';
 import { docsRouter } from './routes/docs.js';
 import { filesRouter } from './routes/files.js';
 import { gateRouter } from './routes/gate.js';
+import { officeRouter } from './routes/office.js';
 import { healthRouter, getCachedComponents } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
@@ -557,6 +558,7 @@ export function createApp(): express.Application {
   app.use('/api/docs', docsRouter);
   app.use('/api/files', filesRouter);
   app.use('/api/gate/v1', gateRouter);
+  app.use('/api/office', officeRouter);
   app.use('/api/agent-tasks', agentTasksRouter);
   app.use('/api/agent-comms', agentCommsRouter);
   app.use('/api/recommendations', recommendationsRouter);

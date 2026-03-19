@@ -11,6 +11,7 @@ interface Props {
   onTabChange: (tab: ControlTab) => void;
   sseEvents: SSEEvent[];
   onCreateTask: (agentId: string, title: string) => void;
+  activityTimeline?: Array<{ action: string; details: string; icon: string; created_at: string }>;
 }
 
 const TABS: { key: ControlTab; icon: string; label: string }[] = [
@@ -27,7 +28,7 @@ const TAB_ACCENT_COLORS: Record<ControlTab, string> = {
   timeline: '#F59E0B',
 };
 
-export default function ControlRoom({ activeTab, onTabChange, sseEvents, onCreateTask }: Props) {
+export default function ControlRoom({ activeTab, onTabChange, sseEvents, onCreateTask, activityTimeline }: Props) {
   return (
     <div className="flex flex-col h-full">
       {/* Tab Bar */}
@@ -85,7 +86,7 @@ export default function ControlRoom({ activeTab, onTabChange, sseEvents, onCreat
         {activeTab === 'tasks' && <TasksTab onCreateTask={onCreateTask} />}
         {activeTab === 'comms' && <CommsTab sseEvents={sseEvents} />}
         {activeTab === 'metrics' && <MetricsTab />}
-        {activeTab === 'timeline' && <TimelineTab events={sseEvents} />}
+        {activeTab === 'timeline' && <TimelineTab events={sseEvents} activityTimeline={activityTimeline} />}
       </div>
     </div>
   );

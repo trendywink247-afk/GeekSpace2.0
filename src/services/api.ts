@@ -1479,3 +1479,15 @@ export const agentStateService = {
 };
 
 export default api;
+
+// ---- Office (combined endpoint) ----
+export const officeService = {
+  getState: () => api.get<{
+    agentStates: Array<{ agentId: string; agentName: string; state: string; content?: string; timestamp: string }>;
+    taskBoard: Record<string, Array<{ id: string; agent_id: string; title: string; status: string; priority: number; started_at: string | null; created_at: string }>>;
+    taskStats: { total: number; pending: number; running: number; completed: number; failed: number; completedToday: number };
+    comms: Array<{ id: string; from_agent: string; to_agent: string; message: string; message_type: string; created_at: string }>;
+    commStats: { total: number; unacknowledged: number; byAgent: Record<string, number>; byType: Record<string, number> };
+    timeline: Array<{ action: string; details: string; icon: string; created_at: string }>;
+  }>('/office/state'),
+};

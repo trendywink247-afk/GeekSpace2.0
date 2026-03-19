@@ -49,7 +49,7 @@ function getAgentForHUD(id: string): CanvasAgent | null {
 
 export function OfficePage() {
   const navigate = useNavigate();
-  const { events, connectionMode, debugUrl } = useOfficeSSE();
+  const { events, connectionMode, officeData, debugUrl } = useOfficeSSE();
 
   // Layout split
   const [splitPercent, setSplitPercent] = useState(() => {
@@ -215,6 +215,7 @@ export function OfficePage() {
           onTabChange={setActiveTab}
           sseEvents={events}
           onCreateTask={handleCreateTask}
+          activityTimeline={officeData?.timeline}
         />
       </div>
 
