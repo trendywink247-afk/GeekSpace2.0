@@ -189,7 +189,7 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
               {/* Content */}
               {ev.content && (
                 <span className="text-[10px] truncate flex-1 min-w-0" style={{ color: C.muted }}>
-                  {ev.content.length > 80 ? `${ev.content.slice(0, 80)}...` : ev.content}
+                  {(ev.content || "").replace(/→ undefined:? /g, "").slice(0, 80) || ev.content}
                 </span>
               )}
               {ev.tool && !ev.content && (

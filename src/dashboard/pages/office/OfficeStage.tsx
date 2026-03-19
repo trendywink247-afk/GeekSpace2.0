@@ -249,6 +249,10 @@ export default function OfficeStage({
             agent.state = evt.state;
             if (evt.content) agent.lastContent = evt.content;
             if (evt.tool) agent.lastTool = evt.tool;
+            // Wake up specialists when they receive any active state
+            if (agent.isSpecialist && agent.isDormant) {
+              agent.isDormant = false;
+            }
             break;
 
           case 'delegating': {
