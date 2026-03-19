@@ -255,17 +255,23 @@ export default function OfficeStage({
             agent.state = evt.state;
             if (evt.content) agent.lastContent = evt.content;
             if (evt.tool) agent.lastTool = evt.tool;
-            // Wake up specialists and walk them to their parent core agent's desk
+            // Wake up specialists — TELEPORT to core agent's desk instantly
+            // (walking takes too long relative to event speed)
             if (agent.isSpecialist && agent.isDormant) {
               agent.isDormant = false;
               const parentId = SPECIALIST_PARENT[agent.id as SpecialistId];
               if (parentId) {
                 const parentDesk = CORE_DESK_POSITIONS[parentId];
                 if (parentDesk) {
-                  agent.targetX = parentDesk.x + 1;
-                  agent.targetY = parentDesk.y > 2 ? parentDesk.y - 1 : parentDesk.y + 2;
+                  // Teleport to desk (instant)
+                  agent.x = parentDesk.x + 1;
+                  agent.y = parentDesk.y > 2 ? parentDesk.y - 1 : parentDesk.y + 2;
+                  agent.targetX = agent.x;
+                  agent.targetY = agent.y;
                 }
               }
+              // Open the door for visual effect
+              openDoor(agent.id);
             }
             break;
 
@@ -312,21 +318,22 @@ export default function OfficeStage({
 
           case 'done': {
             agent.state = 'done';
-            // After 3s, reset to idle
+            // After 8s (long enough to be visible), reset to idle
             const doneId = agentId;
             setTimeout(() => {
               setAgents(p =>
                 p.map(a => {
                   if (a.id !== doneId) return a;
                   const reset = { ...a, state: 'idle' as AgentStateType };
-                  // If specialist, send them back home and re-dormant
+                  // If specialist, WALK them back home (visible return journey)
                   if (a.isSpecialist) {
                     const homePos = SPECIALIST_POSITIONS[a.id as SpecialistId];
                     if (homePos) {
                       reset.targetX = homePos.x;
                       reset.targetY = homePos.y - 1 > 0 ? homePos.y - 1 : homePos.y + 2;
                     }
-                    reset.isDormant = true;
+                    // Don't set dormant yet — let them walk back first
+                    // They'll go dormant when they reach home (checked in tick)
                   }
                   return reset;
                 }),
@@ -444,6 +451,18 @@ export default function OfficeStage({
       setAgents(prev => {
         let changed = false;
         const next = prev.map(agent => {
+          // Check if specialist arrived back home — go dormant
+          if (agent.isSpecialist && !agent.isDormant && agent.state === 'idle'
+              && agent.x === agent.targetX && agent.y === agent.targetY) {
+            const homePos = SPECIALIST_POSITIONS[agent.id as SpecialistId];
+            if (homePos) {
+              const homeY = homePos.y - 1 > 0 ? homePos.y - 1 : homePos.y + 2;
+              if (agent.x === homePos.x && agent.y === homeY) {
+                changed = true;
+                return { ...agent, isDormant: true };
+              }
+            }
+          }
           if (agent.x === agent.targetX && agent.y === agent.targetY) return agent;
           const step = bfsNextStep(COLLISION_GRID, agent.x, agent.y, agent.targetX, agent.targetY);
           if (!step) return agent;
