@@ -41,6 +41,7 @@ export interface CanvasAgent {
   parentAgent?: CoreAgentId; // specialists only: which core agent owns them
   lastContent?: string;
   lastTool?: string;
+  facing?: 'down' | 'up' | 'left' | 'right';
 }
 
 export interface ParticleBeam {

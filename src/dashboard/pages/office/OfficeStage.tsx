@@ -29,12 +29,12 @@ import { SpeechBubbleLayer } from './SpeechBubbleLayer';
 import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors } from './agentBehavior';
 
 // ---------------------------------------------------------------------------
-// Tick timing — render at 50ms (20fps) for smooth interpolation,
-// behavior/BFS logic runs every 4th render tick (200ms effective)
+// Tick timing — render at 33ms (30fps) for smooth interpolation,
+// behavior/BFS logic runs every 6th render tick (~200ms effective = ~5fps)
 // ---------------------------------------------------------------------------
 
-const RENDER_TICK_MS = 50;
-const BEHAVIOR_TICK_DIVISOR = 4; // behavior runs every 4 render ticks = 200ms
+const RENDER_TICK_MS = 33;  // 30fps
+const BEHAVIOR_TICK_DIVISOR = 6;  // behavior at 5fps
 
 // ---------------------------------------------------------------------------
 // Props

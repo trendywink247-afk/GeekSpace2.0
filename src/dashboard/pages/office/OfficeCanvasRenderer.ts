@@ -1,6 +1,6 @@
 // src/dashboard/pages/office/OfficeCanvasRenderer.ts
 // Pure canvas pixel-art renderer for the Agent Office Mission Control.
-// Called every 50ms by the Stage component. Uses 16x24 pre-rendered sprite
+// Called every 33ms (~30fps) by the Stage component. Uses 16x24 pre-rendered sprite
 // canvases for characters and fillRect() for UI overlays.
 //
 // Agents are positioned using smooth renderX/renderY pixel coordinates
@@ -166,6 +166,15 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
     }
   } else if (agent.state === 'typing' || agent.state === 'responding') {
     sprite = sprites.typing[tick % 2];
+  } else if (agent.facing) {
+    // Standing still but facing a direction
+    switch (agent.facing) {
+      case 'down': sprite = sprites.walkDown[0]; break;
+      case 'up': sprite = sprites.walkUp[0]; break;
+      case 'right': sprite = sprites.walkRight[0]; break;
+      case 'left': sprite = sprites.walkLeft[0]; break;
+      default: sprite = sprites.idle;
+    }
   } else {
     sprite = sprites.idle;
   }
@@ -363,6 +372,69 @@ export function drawParticleBeam(ctx: CanvasRenderingContext2D, beam: ParticleBe
 }
 
 // ---------------------------------------------------------------------------
+// drawTimeOfDayOverlay — tints the canvas based on time of day
+// ---------------------------------------------------------------------------
+
+export function drawTimeOfDayOverlay(ctx: CanvasRenderingContext2D): void {
+  const hour = new Date().getHours();
+
+  // 6-8am: warm sunrise tint
+  // 8am-5pm: no tint (bright day)
+  // 5-7pm: warm golden hour
+  // 7-9pm: blue dusk
+  // 9pm-6am: dark night with warm indoor lights
+
+  let overlayColor = '';
+  let alpha = 0;
+
+  if (hour >= 6 && hour < 8) {
+    overlayColor = '255, 200, 100'; // warm sunrise
+    alpha = 0.05;
+  } else if (hour >= 17 && hour < 19) {
+    overlayColor = '255, 180, 80'; // golden hour
+    alpha = 0.08;
+  } else if (hour >= 19 && hour < 21) {
+    overlayColor = '60, 80, 140'; // blue dusk
+    alpha = 0.1;
+  } else if (hour >= 21 || hour < 6) {
+    overlayColor = '10, 10, 30'; // night
+    alpha = 0.15;
+  }
+
+  if (alpha > 0) {
+    ctx.fillStyle = `rgba(${overlayColor}, ${alpha})`;
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// drawAmbientEffects — subtle desk screen flickers + coffee steam
+// ---------------------------------------------------------------------------
+
+export function drawAmbientEffects(ctx: CanvasRenderingContext2D, tick: number): void {
+  // Screen flickers on desks — every ~120 ticks, a random desk glows briefly (2 frames)
+  if (tick % 120 < 2) {
+    const deskIdx = Math.floor((tick / 120) % 4); // cycle through 4 desks
+    const deskPositions: [number, number][] = [[3, 16], [5, 16], [9, 16], [11, 16]];
+    const [dx, dy] = deskPositions[deskIdx];
+    ctx.fillStyle = 'rgba(150, 200, 255, 0.15)';
+    ctx.fillRect(dx * CELL + 4, dy * CELL - CELL + 4, CELL - 8, CELL * 0.6);
+  }
+
+  // Coffee steam — tiny particles near the coffee machine area
+  if (tick % 3 === 0) {
+    const steamX = 9 * CELL + CELL / 2;
+    const steamY = 3 * CELL - (tick % 20);
+    const steamAlpha = Math.max(0, 0.15 - (tick % 20) * 0.008);
+    if (steamAlpha > 0) {
+      ctx.fillStyle = `rgba(200, 200, 200, ${steamAlpha})`;
+      ctx.fillRect(steamX - 1, steamY, 3, 2);
+      ctx.fillRect(steamX + 2, steamY - 3, 2, 2);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // renderFrame — main entry, called every render tick
 // ---------------------------------------------------------------------------
 
@@ -377,7 +449,10 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState): 
     drawParticleBeam(ctx, beams[i], agents);
   }
 
-  // 3. Agents sorted by renderY for depth — agents lower on screen draw on top
+  // 3. Ambient effects (desk screen flickers, coffee steam)
+  drawAmbientEffects(ctx, tick);
+
+  // 4. Agents sorted by renderY for depth — agents lower on screen draw on top
   const sortedAgents = [...agents].sort((a, b) => a.renderY - b.renderY);
   for (let i = 0; i < sortedAgents.length; i++) {
     const agent = sortedAgents[i];
@@ -386,8 +461,11 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState): 
     drawStateIndicator(ctx, agent, tick);
   }
 
-  // 4. Foreground layer — drawn ON TOP of agents for depth (furniture tops, etc.)
+  // 5. Foreground layer — drawn ON TOP of agents for depth (furniture tops, etc.)
   if (isBgLoaded()) {
     drawForeground(ctx);
   }
+
+  // 6. Time-of-day lighting overlay — LAST layer on top of everything
+  drawTimeOfDayOverlay(ctx);
 }
