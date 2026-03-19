@@ -492,6 +492,8 @@ export function tickBehaviors(
     if (groupTarget && bState.mode === 'group-meeting') {
       updated.targetX = groupTarget.x;
       updated.targetY = groupTarget.y;
+      updated.path = [];
+      updated.pathIndex = 0;
       changed = true;
     }
 
@@ -520,6 +522,8 @@ export function tickBehaviors(
               bState.timer = randomInt(landmark.pauseMin, landmark.pauseMax);
               updated.targetX = validPt.x;
               updated.targetY = validPt.y;
+              updated.path = [];
+              updated.pathIndex = 0;
               occupyLandmark(landmark, agent.id);
               changed = true;
             } else {
@@ -546,6 +550,8 @@ export function tickBehaviors(
               bState.timer = 15;
               updated.targetX = validSocial.x;
               updated.targetY = validSocial.y;
+              updated.path = [];
+              updated.pathIndex = 0;
               changed = true;
             } else {
               bState.timer = randomInt(40, 75);
@@ -579,6 +585,8 @@ export function tickBehaviors(
             const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
             updated.targetX = validHome.x;
             updated.targetY = validHome.y;
+            updated.path = [];
+            updated.pathIndex = 0;
             bState.speed = 1.5 + Math.random();
             changed = true;
           }
@@ -597,6 +605,8 @@ export function tickBehaviors(
           const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
           updated.targetX = validHome.x;
           updated.targetY = validHome.y;
+          updated.path = [];
+          updated.pathIndex = 0;
           bState.facing = computeFacing(agent.x, agent.y, validHome.x, validHome.y);
           changed = true;
           break;
@@ -632,6 +642,8 @@ export function tickBehaviors(
             const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
             updated.targetX = validHome.x;
             updated.targetY = validHome.y;
+            updated.path = [];
+            updated.pathIndex = 0;
             bState.speed = 2;
             bState.socialTarget = null;
             bState.socialStep = 0;
@@ -660,6 +672,8 @@ export function tickBehaviors(
             const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
             updated.targetX = validHome.x;
             updated.targetY = validHome.y;
+            updated.path = [];
+            updated.pathIndex = 0;
             bState.speed = 1.5 + Math.random();
             bState.facing = computeFacing(agent.x, agent.y, validHome.x, validHome.y);
             changed = true;

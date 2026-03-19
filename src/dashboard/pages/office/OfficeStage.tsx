@@ -381,7 +381,7 @@ export default function OfficeStage({
     setBubbles(prev => [...prev.slice(-(MAX_SPEECH_BUBBLES - 1)), bubble]);
   }, []);
 
-  // ---- Canvas render loop + agent movement ----
+  // ---- rAF game loop: smooth movement every frame, behavior at ~5fps ----
   const agentsRef = useRef(agents);
   agentsRef.current = agents;
   const beamsRef = useRef(beams);
@@ -390,71 +390,76 @@ export default function OfficeStage({
   selectedRef.current = selectedAgentId;
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      tickRef.current++;
-      const now = Date.now();
-      const isBehaviorTick = tickRef.current % BEHAVIOR_TICK_DIVISOR === 0;
+    let lastTime = 0;
+    let rafId = 0;
+    let behaviorAccum = 0;
+    let expireAccum = 0;
 
-      // Expire beams
-      setBeams(prev => {
-        const filtered = prev.filter(b => now - b.createdAt < b.duration);
-        return filtered.length === prev.length ? prev : filtered;
-      });
+    const frame = (time: number) => {
+      const dt = lastTime === 0 ? 0 : Math.min((time - lastTime) / 1000, 0.1); // cap at 100ms
+      lastTime = time;
 
-      // Expire bubbles
-      setBubbles(prev => {
-        const filtered = prev.filter(b => now < b.expiresAt);
-        return filtered.length === prev.length ? prev : filtered;
-      });
+      // ---- Behavior / BFS path computation at ~5fps ----
+      behaviorAccum += dt;
+      if (behaviorAccum >= BEHAVIOR_INTERVAL) {
+        behaviorAccum -= BEHAVIOR_INTERVAL;
+        tickRef.current++;
 
-      // Smooth movement: interpolate renderX/renderY + advance BFS on behavior ticks
-      setAgents(prev => {
-        let changed = false;
-        const next = prev.map(agent => {
-          const targetRenderX = agent.x * CELL + CELL / 2;
-          const targetRenderY = agent.y * CELL + CELL / 2;
-          const dx = targetRenderX - agent.renderX;
-          const dy = targetRenderY - agent.renderY;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+        // Compute full BFS paths for agents that need them
+        setAgents(prev => {
+          let changed = false;
+          const next = prev.map(agent => {
+            // If agent has a target but no path, compute the full path
+            if (
+              agent.path.length === 0 &&
+              (agent.x !== agent.targetX || agent.y !== agent.targetY)
+            ) {
+              const fullPath = findFullPath(agent.x, agent.y, agent.targetX, agent.targetY);
+              if (fullPath.length > 0) {
+                changed = true;
+                return { ...agent, path: fullPath, pathIndex: 0 };
+              }
+            }
 
-          // Smoothly interpolate renderX/renderY toward current grid cell
-          if (dist > 1) {
-            changed = true;
-            const speed = agent.speed;
-            const frac = Math.min(speed / dist, 1);
-            return {
-              ...agent,
-              renderX: agent.renderX + dx * frac,
-              renderY: agent.renderY + dy * frac,
-            };
-          }
+            // Advance along the path: if renderX/renderY reached current path step, move to next
+            if (agent.path.length > 0 && agent.pathIndex < agent.path.length) {
+              const nextStep = agent.path[agent.pathIndex];
+              const targetPx = nextStep.x * CELL + CELL / 2;
+              const targetPy = nextStep.y * CELL + CELL / 2;
+              const distToStep = Math.sqrt(
+                (targetPx - agent.renderX) ** 2 + (targetPy - agent.renderY) ** 2,
+              );
 
-          // renderX/renderY caught up to grid position — snap precisely
-          if (agent.renderX !== targetRenderX || agent.renderY !== targetRenderY) {
-            changed = true;
-            return { ...agent, renderX: targetRenderX, renderY: targetRenderY };
-          }
+              if (distToStep < 2) {
+                // Arrived at this path step — advance grid position
+                changed = true;
+                const updated = { ...agent };
+                updated.x = nextStep.x;
+                updated.y = nextStep.y;
+                updated.pathIndex = agent.pathIndex + 1;
 
-          // Already at final target — nothing to do
-          if (agent.x === agent.targetX && agent.y === agent.targetY) {
+                if (updated.pathIndex >= updated.path.length) {
+                  // Path complete — snap to final position
+                  updated.path = [];
+                  updated.pathIndex = 0;
+                  updated.renderX = updated.x * CELL + CELL / 2;
+                  updated.renderY = updated.y * CELL + CELL / 2;
+                } else {
+                  // Update targetX/Y for smooth interpolation toward next step
+                  updated.targetX = updated.path[updated.pathIndex].x;
+                  updated.targetY = updated.path[updated.pathIndex].y;
+                }
+
+                return updated;
+              }
+            }
+
             return agent;
-          }
-
-          // Advance to next BFS cell (only on behavior ticks to control pacing)
-          if (isBehaviorTick) {
-            const step = bfsNextStep(agent.x, agent.y, agent.targetX, agent.targetY);
-            if (!step) return agent;
-            changed = true;
-            return { ...agent, x: step.x, y: step.y };
-          }
-
-          return agent;
+          });
+          return changed ? next : prev;
         });
-        return changed ? next : prev;
-      });
 
-      // Idle behavior — wandering, socializing, fidgeting (only on behavior ticks)
-      if (isBehaviorTick) {
+        // Idle behavior — wandering, socializing, fidgeting
         setAgents(prev => {
           const { updatedAgents, newBubbles } = tickBehaviors(prev, tickRef.current);
           if (newBubbles.length > 0) {
@@ -464,21 +469,81 @@ export default function OfficeStage({
         });
       }
 
-      // RENDER
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      // ---- Expire beams/bubbles every ~200ms ----
+      expireAccum += dt;
+      if (expireAccum >= BEHAVIOR_INTERVAL) {
+        expireAccum -= BEHAVIOR_INTERVAL;
+        const now = Date.now();
 
+        setBeams(prev => {
+          const filtered = prev.filter(b => now - b.createdAt < b.duration);
+          return filtered.length === prev.length ? prev : filtered;
+        });
+
+        setBubbles(prev => {
+          const filtered = prev.filter(b => now < b.expiresAt);
+          return filtered.length === prev.length ? prev : filtered;
+        });
+      }
+
+      // ---- Smooth movement interpolation EVERY frame (60fps) ----
+      setAgents(prev => {
+        let changed = false;
+        const next = prev.map(agent => {
+          // Determine the pixel target: current path step or grid cell center
+          let targetPxX: number;
+          let targetPxY: number;
+
+          if (agent.path.length > 0 && agent.pathIndex < agent.path.length) {
+            // Interpolate toward the current path step
+            const step = agent.path[agent.pathIndex];
+            targetPxX = step.x * CELL + CELL / 2;
+            targetPxY = step.y * CELL + CELL / 2;
+          } else {
+            // No path — interpolate toward current grid cell
+            targetPxX = agent.x * CELL + CELL / 2;
+            targetPxY = agent.y * CELL + CELL / 2;
+          }
+
+          const dx = targetPxX - agent.renderX;
+          const dy = targetPxY - agent.renderY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 0.5) return agent; // close enough — skip update
+
+          // Speed: pixels per second, scaled by dt for frame-rate independence
+          const speed = agent.speed * 32 * dt; // agent.speed * CELL * dt
+          const step = Math.min(speed, dist);
+
+          changed = true;
+          return {
+            ...agent,
+            renderX: agent.renderX + (dx / dist) * step,
+            renderY: agent.renderY + (dy / dist) * step,
+          };
+        });
+        return changed ? next : prev;
+      });
+
+      // ---- RENDER every frame ----
+      const canvas = canvasRef.current;
+      if (!canvas) { rafId = requestAnimationFrame(frame); return; }
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { rafId = requestAnimationFrame(frame); return; }
+
+      ctx.imageSmoothingEnabled = false;
       renderFrame(ctx, {
         agents: agentsRef.current,
         beams: beamsRef.current,
-        tick: tickRef.current,
+        tick: Math.floor(time / 200), // tick counter for sprite animations
         selectedAgentId: selectedRef.current,
       }, true, COLLISION_MAP);
-    }, RENDER_TICK_MS);
 
-    return () => clearInterval(interval);
+      rafId = requestAnimationFrame(frame);
+    };
+
+    rafId = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(rafId);
   }, []);
 
   // ---- Track container CSS size for overlay positioning ----

@@ -43,6 +43,8 @@ function getAgentForHUD(id: string): CanvasAgent | null {
     state: 'idle',
     isSpecialist: !CORE_AGENTS.includes(id as CoreAgentId),
     isDormant: false,
+    path: [],
+    pathIndex: 0,
   };
 }
 
