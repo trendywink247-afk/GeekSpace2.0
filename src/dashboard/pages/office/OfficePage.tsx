@@ -213,6 +213,7 @@ export function OfficePage() {
           onTabChange={setActiveTab}
           sseEvents={events}
           onCreateTask={handleCreateTask}
+          officeData={officeData}
           activityTimeline={officeData?.timeline}
         />
       </div>

@@ -27,9 +27,15 @@ interface CounterCard {
   accent: string;
 }
 
-export default function MetricsTab() {
+export default function MetricsTab({ taskStats: extTaskStats, commStats: extCommStats }: { taskStats?: TaskStats | null; commStats?: CommStats | null }) {
   const [taskStats, setTaskStats] = useState<TaskStats | null>(null);
   const [commStats, setCommStats] = useState<CommStats | null>(null);
+
+  // Use external data when available (from unified 5s poll)
+  useEffect(() => {
+    if (extTaskStats) setTaskStats(extTaskStats as TaskStats);
+    if (extCommStats) setCommStats(extCommStats as CommStats);
+  }, [extTaskStats, extCommStats]);
   const [agentBreakdown, setAgentBreakdown] = useState<Record<CoreAgentId, number>>({ weebo: 0, edith: 0, jarvis: 0 });
   const [loading, setLoading] = useState(true);
 

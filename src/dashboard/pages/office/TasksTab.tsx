@@ -5,6 +5,7 @@ import { AGENT_COLORS, AGENT_META, C, CORE_AGENTS } from './constants';
 import type { AgentId, CoreAgentId } from './types';
 
 interface Props {
+  taskBoard?: Record<string, unknown[]>;
   onCreateTask: (agentId: string, title: string) => void;
 }
 
@@ -30,7 +31,7 @@ function priorityLabel(p: number): { text: string; color: string } {
   return { text: 'Low', color: C.dim };
 }
 
-export default function TasksTab({ onCreateTask }: Props) {
+export default function TasksTab({ onCreateTask, taskBoard: externalBoard }: Props) {
   const [board, setBoard] = useState<Record<string, AgentTask[]>>({ pending: [], running: [], completed: [] });
   const [loading, setLoading] = useState(true);
   const [dragId, setDragId] = useState<string | null>(null);

@@ -6,11 +6,20 @@ import CommsTab from './CommsTab';
 import MetricsTab from './MetricsTab';
 import TimelineTab from './TimelineTab';
 
+interface OfficeData {
+  taskBoard?: Record<string, unknown[]>;
+  taskStats?: { total: number; pending: number; running: number; completed: number; failed: number; completedToday: number };
+  comms?: Array<{ id: string; from_agent: string; to_agent: string; message: string; message_type: string; created_at: string }>;
+  commStats?: { total: number; unacknowledged: number; byAgent: Record<string, number>; byType: Record<string, number> };
+  timeline?: Array<{ action: string; details: string; icon: string; created_at: string }>;
+}
+
 interface Props {
   activeTab: ControlTab;
   onTabChange: (tab: ControlTab) => void;
   sseEvents: SSEEvent[];
   onCreateTask: (agentId: string, title: string) => void;
+  officeData?: OfficeData | null;
   activityTimeline?: Array<{ action: string; details: string; icon: string; created_at: string }>;
 }
 
@@ -28,7 +37,7 @@ const TAB_ACCENT_COLORS: Record<ControlTab, string> = {
   timeline: '#F59E0B',
 };
 
-export default function ControlRoom({ activeTab, onTabChange, sseEvents, onCreateTask, activityTimeline }: Props) {
+export default function ControlRoom({ activeTab, onTabChange, sseEvents, onCreateTask, officeData, activityTimeline }: Props) {
   return (
     <div className="flex flex-col h-full">
       {/* Tab Bar */}
@@ -83,9 +92,9 @@ export default function ControlRoom({ activeTab, onTabChange, sseEvents, onCreat
 
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === 'tasks' && <TasksTab onCreateTask={onCreateTask} />}
-        {activeTab === 'comms' && <CommsTab sseEvents={sseEvents} />}
-        {activeTab === 'metrics' && <MetricsTab />}
+        {activeTab === 'tasks' && <TasksTab onCreateTask={onCreateTask} taskBoard={officeData?.taskBoard} />}
+        {activeTab === 'comms' && <CommsTab sseEvents={sseEvents} commsData={officeData?.comms} />}
+        {activeTab === 'metrics' && <MetricsTab taskStats={officeData?.taskStats} commStats={officeData?.commStats} />}
         {activeTab === 'timeline' && <TimelineTab events={sseEvents} activityTimeline={activityTimeline} />}
       </div>
     </div>

@@ -6,6 +6,7 @@ import type { AgentId, SSEEvent } from './types';
 
 interface Props {
   sseEvents: SSEEvent[];
+  commsData?: Array<{ id: string; from_agent: string; to_agent: string; message: string; message_type: string; created_at: string }>;
 }
 
 const TYPE_FILTERS = ['All', 'info', 'delegation', 'alert'] as const;
@@ -28,7 +29,7 @@ function typeBadge(type: string): { bg: string; text: string } {
   }
 }
 
-export default function CommsTab({ sseEvents }: Props) {
+export default function CommsTab({ sseEvents, commsData }: Props) {
   const [polled, setPolled] = useState<AgentComm[]>([]);
   const [loading, setLoading] = useState(true);
   const [agentFilter, setAgentFilter] = useState<string>('All');
@@ -59,9 +60,17 @@ export default function CommsTab({ sseEvents }: Props) {
     return () => clearInterval(t);
   }, []);
 
-  // Merge polled data with SSE comm events
+  // Use external data if available (refreshes every 5s), fall back to own polling (60s)
+  const baseComms = useMemo(() => {
+    if (commsData && commsData.length > 0) {
+      return commsData.map(c => ({ ...c, user_id: '', related_task_id: null, acknowledged: 0 })) as AgentComm[];
+    }
+    return polled;
+  }, [commsData, polled]);
+
+  // Merge with SSE comm events
   const merged = useMemo<AgentComm[]>(() => {
-    const polledIds = new Set(polled.map((c) => c.id));
+    const polledIds = new Set(baseComms.map((c) => c.id));
     const sseComms: AgentComm[] = sseEvents
       .filter((e) => (e.state === 'comm_sent' || e.state === 'comm_received') && e.commId && !polledIds.has(e.commId))
       .map((e) => ({
@@ -75,7 +84,7 @@ export default function CommsTab({ sseEvents }: Props) {
         acknowledged: 0,
         created_at: e.timestamp,
       }));
-    return [...sseComms, ...polled].sort(
+    return [...sseComms, ...baseComms].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
   }, [polled, sseEvents]);
@@ -89,7 +98,7 @@ export default function CommsTab({ sseEvents }: Props) {
     });
   }, [merged, agentFilter, typeFilter]);
 
-  if (loading) {
+  if (loading && !commsData) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="w-5 h-5 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
