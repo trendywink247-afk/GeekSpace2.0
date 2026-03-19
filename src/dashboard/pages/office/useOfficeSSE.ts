@@ -49,7 +49,7 @@ export function useOfficeSSE() {
 
     // Poll immediately, then every 3 seconds
     poll();
-    const interval = setInterval(poll, 3000);
+    const interval = setInterval(poll, 10000);
 
     return () => {
       mountedRef.current = false;

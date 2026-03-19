@@ -1,7 +1,7 @@
 // src/dashboard/pages/office/TasksTab.tsx
 import { useState, useEffect, useRef } from 'react';
 import { agentTasksService, type AgentTask } from '@/services/api';
-import { AGENT_COLORS, AGENT_META, MISSION_POLL_INTERVAL_MS, C, CORE_AGENTS } from './constants';
+import { AGENT_COLORS, AGENT_META, 60000, C, CORE_AGENTS } from './constants';
 import type { AgentId, CoreAgentId } from './types';
 
 interface Props {
@@ -57,7 +57,7 @@ export default function TasksTab({ onCreateTask }: Props) {
 
   useEffect(() => {
     fetchBoard();
-    timerRef.current = setInterval(fetchBoard, MISSION_POLL_INTERVAL_MS);
+    timerRef.current = setInterval(fetchBoard, 60000);
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

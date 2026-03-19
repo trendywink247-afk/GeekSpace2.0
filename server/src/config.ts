@@ -119,7 +119,7 @@ export const config = {
 
   // Rate limiting
   rateLimitWindowMs: optionalInt('RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000),
-  rateLimitMax: optionalInt('RATE_LIMIT_MAX', 200),
+  rateLimitMax: optionalInt('RATE_LIMIT_MAX', 500),
   rateLimitAuthMax: optionalInt('RATE_LIMIT_AUTH_MAX', 10), // login/signup
 
   // Credits / billing

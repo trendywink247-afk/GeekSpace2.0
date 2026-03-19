@@ -242,7 +242,7 @@ export function createApp(): express.Application {
     // Global rate limiting
     const globalLimiter = rateLimit({
       windowMs: config.rateLimitWindowMs,
-      max: config.rateLimitMax,
+      max: 500,
       standardHeaders: true,
       legacyHeaders: false,
       message: { error: 'Too many requests. Please slow down.' },

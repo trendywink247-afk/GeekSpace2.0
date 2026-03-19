@@ -1,7 +1,7 @@
 // src/dashboard/pages/office/CommsTab.tsx
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { agentCommsService, type AgentComm } from '@/services/api';
-import { AGENT_COLORS, AGENT_META, MISSION_POLL_INTERVAL_MS, C, CORE_AGENTS } from './constants';
+import { AGENT_COLORS, AGENT_META, 60000, C, CORE_AGENTS } from './constants';
 import type { AgentId, SSEEvent } from './types';
 
 interface Props {
@@ -49,7 +49,7 @@ export default function CommsTab({ sseEvents }: Props) {
 
   useEffect(() => {
     fetchRecent();
-    timerRef.current = setInterval(fetchRecent, MISSION_POLL_INTERVAL_MS);
+    timerRef.current = setInterval(fetchRecent, 60000);
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
