@@ -1,83 +1,61 @@
 // src/dashboard/pages/office/useOfficeSSE.ts
-// SSE hook using native EventSource — most reliable for browser SSE.
-// Auth via ?token= query param (EventSource doesn't support custom headers).
+// Poll-based agent state hook. SSE via EventSource/fetch was unreliable
+// through Caddy HTTP/2 — switching to simple polling that WORKS.
 
 import { useState, useEffect, useRef } from 'react';
+import { agentStateService } from '@/services/api';
 import type { SSEEvent, ConnectionMode } from './types';
-
-const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
-
-function getToken(): string | null {
-  return localStorage.getItem('gs_token')
-    || localStorage.getItem('token')
-    || sessionStorage.getItem('token');
-}
 
 export function useOfficeSSE() {
   const [events, setEvents] = useState<SSEEvent[]>([]);
-  const [connectionMode, setConnectionMode] = useState<ConnectionMode>('reconnecting');
-  const esRef = useRef<EventSource | null>(null);
-
-  const [debugUrl, setDebugUrl] = useState('');
+  const [connectionMode, setConnectionMode] = useState<ConnectionMode>('live');
+  const mountedRef = useRef(true);
+  const prevStatesRef = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      console.warn('[OfficeSSE] No token found in localStorage');
-      setConnectionMode('polling');
-      setDebugUrl('NO TOKEN');
-      return;
-    }
+    mountedRef.current = true;
 
-    const url = `${API_BASE}/agent-state/stream?token=${token.slice(0, 20)}...`;
-    setDebugUrl(url);
-    console.log('[OfficeSSE] Connecting to:', `${API_BASE}/agent-state/stream?token=<${token.length}chars>`);
-
-    const fullUrl = `${API_BASE}/agent-state/stream?token=${encodeURIComponent(token)}`;
-    let es: EventSource;
-    try {
-      es = new EventSource(fullUrl);
-    } catch (err) {
-      console.error('[OfficeSSE] EventSource constructor threw:', err);
-      setConnectionMode('polling');
-      setDebugUrl('CONSTRUCTOR ERROR');
-      return;
-    }
-    esRef.current = es;
-
-    es.onopen = () => {
-      console.log('[OfficeSSE] Connected! readyState:', es.readyState);
-      setConnectionMode('live');
-    };
-
-    es.onmessage = (e) => {
-      console.log('[OfficeSSE] Event:', e.data.slice(0, 80));
+    async function poll() {
       try {
-        const evt = JSON.parse(e.data) as SSEEvent;
-        if (evt.agentId && evt.state) {
-          setEvents(prev => {
-            const next = [...prev, evt];
-            return next.length > 200 ? next.slice(-200) : next;
-          });
-        }
-      } catch { /* malformed */ }
-    };
+        const res = await agentStateService.getStates();
+        if (!mountedRef.current) return;
 
-    es.onerror = (err) => {
-      console.error('[OfficeSSE] Error, readyState:', es.readyState, err);
-      if (es.readyState === EventSource.CLOSED) {
-        setConnectionMode('polling');
-      } else {
-        setConnectionMode('reconnecting');
+        const states = res.data;
+        for (const s of states) {
+          const prevState = prevStatesRef.current.get(s.agentId);
+          // Only push event if state changed
+          if (prevState !== s.state) {
+            prevStatesRef.current.set(s.agentId, s.state);
+            if (s.state !== 'idle' || prevState) {
+              setEvents(prev => {
+                const evt: SSEEvent = {
+                  agentId: s.agentId,
+                  agentName: s.agentName,
+                  state: s.state as SSEEvent['state'],
+                  content: s.content,
+                  timestamp: s.timestamp,
+                };
+                const next = [...prev, evt];
+                return next.length > 200 ? next.slice(-200) : next;
+              });
+            }
+          }
+        }
+        setConnectionMode('live');
+      } catch {
+        if (mountedRef.current) setConnectionMode('polling');
       }
-    };
+    }
+
+    // Poll immediately, then every 3 seconds
+    poll();
+    const interval = setInterval(poll, 3000);
 
     return () => {
-      console.log('[OfficeSSE] Closing');
-      es.close();
-      esRef.current = null;
+      mountedRef.current = false;
+      clearInterval(interval);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
-  return { events, connectionMode, clearEvents: () => setEvents([]), debugUrl };
+  return { events, connectionMode, clearEvents: () => setEvents([]), debugUrl: 'polling:3s' };
 }
