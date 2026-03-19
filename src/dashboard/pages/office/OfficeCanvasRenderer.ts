@@ -14,6 +14,32 @@ import {
 import { getAgentSprites } from './sprites';
 
 // ---------------------------------------------------------------------------
+// Background / Foreground image loading (pixel art office)
+// ---------------------------------------------------------------------------
+
+let bgImage: HTMLImageElement | null = null;
+let fgImage: HTMLImageElement | null = null;
+let bgLoaded = false;
+
+/** Load office background + foreground images. Non-fatal on error. */
+export function loadOfficeAssets(): Promise<void> {
+  return new Promise((resolve) => {
+    let loaded = 0;
+    const checkDone = () => { if (++loaded >= 2) { bgLoaded = true; resolve(); } };
+
+    bgImage = new Image();
+    bgImage.onload = checkDone;
+    bgImage.onerror = checkDone; // fallback to code-drawn bg
+    bgImage.src = '/office/office_bg.webp';
+
+    fgImage = new Image();
+    fgImage.onload = checkDone;
+    fgImage.onerror = checkDone;
+    fgImage.src = '/office/office_fg.webp';
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -65,23 +91,28 @@ const SPEC_ENTRIES: [string, { x: number; y: number }][] = [
 ];
 
 // ---------------------------------------------------------------------------
-// drawBackground — floor, grid, walls, room labels
+// drawBackground — pixel art image (or fallback code-drawn floor/walls)
 // ---------------------------------------------------------------------------
 
 export function drawBackground(ctx: CanvasRenderingContext2D): void {
-  // Floor
+  if (bgImage && bgLoaded && bgImage.complete && bgImage.naturalWidth > 0) {
+    // Draw the pixel art background, scaled to canvas size (crisp nearest-neighbor)
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(bgImage, 0, 0, CANVAS_W, CANVAS_H);
+    return;
+  }
+
+  // Fallback: code-drawn background while image is loading or on error
   ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
   // --- Ambient room glows (radial approximation via concentric rects) ---
-  // Main office center glow (very subtle cyan)
   for (let r = 0; r < 8; r++) {
     const alpha = 0.015 - r * 0.002;
     if (alpha <= 0) break;
     ctx.fillStyle = hexToRgba(C.cyan, alpha);
     ctx.fillRect(gx(4) + r * CELL, gy(4) + r * CELL, gx(20) - 2 * r * CELL, gy(12) - 2 * r * CELL);
   }
-  // Lab center glow (subtle purple)
   for (let r = 0; r < 6; r++) {
     const alpha = 0.012 - r * 0.002;
     if (alpha <= 0) break;
@@ -89,7 +120,7 @@ export function drawBackground(ctx: CanvasRenderingContext2D): void {
     ctx.fillRect(gx(31) + r * CELL, gy(4) + r * CELL, gx(14) - 2 * r * CELL, gy(12) - 2 * r * CELL);
   }
 
-  // --- Alternating floor tiles (very subtle checkerboard) ---
+  // --- Alternating floor tiles ---
   for (let r = WALL_ROWS + 1; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       if ((r + c) % 2 === 0) {
@@ -99,89 +130,71 @@ export function drawBackground(ctx: CanvasRenderingContext2D): void {
     }
   }
 
-  // Cyan grid lines (4% opacity)
+  // Grid lines
   ctx.fillStyle = hexToRgba(C.cyan, 0.04);
-  for (let c = 0; c <= COLS; c++) {
-    ctx.fillRect(gx(c), 0, 1, CANVAS_H);
-  }
-  for (let r = 0; r <= ROWS; r++) {
-    ctx.fillRect(0, gy(r), CANVAS_W, 1);
-  }
+  for (let c = 0; c <= COLS; c++) ctx.fillRect(gx(c), 0, 1, CANVAS_H);
+  for (let r = 0; r <= ROWS; r++) ctx.fillRect(0, gy(r), CANVAS_W, 1);
 
-  // Main office wall (left room, top 3 rows)
+  // Walls
   ctx.fillStyle = C.elevated;
   ctx.fillRect(0, 0, gx(DOOR_COL), gy(WALL_ROWS));
-
-  // Wall panel detail lines (horizontal bands)
   ctx.fillStyle = hexToRgba(C.cyan, 0.06);
   ctx.fillRect(0, gy(1) - 1, gx(DOOR_COL), 1);
   ctx.fillRect(0, gy(2) - 1, gx(DOOR_COL), 1);
-
-  // Specialist lab wall (right room, top 3 rows)
   ctx.fillStyle = C.elevated;
   ctx.fillRect(gx(DOOR_COL + 2), 0, gx(COLS) - gx(DOOR_COL + 2), gy(WALL_ROWS));
-
-  // Lab wall panel detail
   ctx.fillStyle = hexToRgba(C.purple, 0.06);
   ctx.fillRect(gx(DOOR_COL + 2), gy(1) - 1, gx(COLS) - gx(DOOR_COL + 2), 1);
   ctx.fillRect(gx(DOOR_COL + 2), gy(2) - 1, gx(COLS) - gx(DOOR_COL + 2), 1);
-
-  // Divider wall between rooms (columns 28-29, rows 0-3 and rows 9-ROWS)
   ctx.fillStyle = C.elevated;
   ctx.fillRect(gx(DOOR_COL), 0, gx(2), gy(DOOR_ROW_START));
   ctx.fillRect(gx(DOOR_COL), gy(DOOR_ROW_END + 1), gx(2), CANVAS_H - gy(DOOR_ROW_END + 1));
-
-  // Wall edge highlights
   ctx.fillStyle = hexToRgba(C.cyan, 0.08);
-  // Left room bottom edge
   ctx.fillRect(0, gy(WALL_ROWS), gx(DOOR_COL), 1);
-  // Right room bottom edge
   ctx.fillRect(gx(DOOR_COL + 2), gy(WALL_ROWS), gx(COLS) - gx(DOOR_COL + 2), 1);
-
-  // --- Neon accent strip at bottom of walls ---
   ctx.fillStyle = hexToRgba(C.cyan, 0.15);
   ctx.fillRect(0, gy(WALL_ROWS) - 2, gx(DOOR_COL), 2);
   ctx.fillStyle = hexToRgba(C.purple, 0.15);
   ctx.fillRect(gx(DOOR_COL + 2), gy(WALL_ROWS) - 2, gx(COLS) - gx(DOOR_COL + 2), 2);
-
-  // Floor accent strip under walls
   ctx.fillStyle = hexToRgba(C.cyan, 0.03);
   ctx.fillRect(0, gy(WALL_ROWS) + 1, CANVAS_W, CELL);
 
-  // --- Room label indicator bars (vertical on inner wall) ---
-  // "OFFICE" indicator bar on left wall
+  // Room labels
   ctx.fillStyle = hexToRgba(C.cyan, 0.3);
   ctx.fillRect(gx(1), gy(0) + 4, 2, gy(WALL_ROWS) - 8);
-  // "LAB" indicator bar on right wall
   ctx.fillStyle = hexToRgba(C.purple, 0.3);
   ctx.fillRect(gx(31), gy(0) + 4, 2, gy(WALL_ROWS) - 8);
-
-  // Room label indicators (small colored dots in wall)
-  // Main Office — cyan dot
   ctx.fillStyle = hexToRgba(C.cyan, 0.25);
   ctx.fillRect(gx(2), gy(1) + 4, 4, 4);
   ctx.fillStyle = hexToRgba(C.cyan, 0.12);
-  ctx.fillRect(gx(2) - 1, gy(1) + 3, 6, 6); // glow ring
-  // Specialist Lab — purple dot
+  ctx.fillRect(gx(2) - 1, gy(1) + 3, 6, 6);
   ctx.fillStyle = hexToRgba(C.purple, 0.25);
   ctx.fillRect(gx(32), gy(1) + 4, 4, 4);
   ctx.fillStyle = hexToRgba(C.purple, 0.12);
-  ctx.fillRect(gx(32) - 1, gy(1) + 3, 6, 6); // glow ring
+  ctx.fillRect(gx(32) - 1, gy(1) + 3, 6, 6);
 
-  // --- Wall corner accents (subtle geometric trim) ---
-  // Top-left corner
+  // Corner accents
   ctx.fillStyle = hexToRgba(C.cyan, 0.18);
-  ctx.fillRect(0, 0, 6, 1);
-  ctx.fillRect(0, 0, 1, 6);
-  // Top-right corner
-  ctx.fillRect(CANVAS_W - 6, 0, 6, 1);
-  ctx.fillRect(CANVAS_W - 1, 0, 1, 6);
-  // Bottom-left corner
-  ctx.fillRect(0, CANVAS_H - 1, 6, 1);
-  ctx.fillRect(0, CANVAS_H - 6, 1, 6);
-  // Bottom-right corner
-  ctx.fillRect(CANVAS_W - 6, CANVAS_H - 1, 6, 1);
-  ctx.fillRect(CANVAS_W - 1, CANVAS_H - 6, 1, 6);
+  ctx.fillRect(0, 0, 6, 1); ctx.fillRect(0, 0, 1, 6);
+  ctx.fillRect(CANVAS_W - 6, 0, 6, 1); ctx.fillRect(CANVAS_W - 1, 0, 1, 6);
+  ctx.fillRect(0, CANVAS_H - 1, 6, 1); ctx.fillRect(0, CANVAS_H - 6, 1, 6);
+  ctx.fillRect(CANVAS_W - 6, CANVAS_H - 1, 6, 1); ctx.fillRect(CANVAS_W - 1, CANVAS_H - 6, 1, 6);
+}
+
+// ---------------------------------------------------------------------------
+// drawForeground — pixel art layer drawn ON TOP of characters for depth
+// ---------------------------------------------------------------------------
+
+export function drawForeground(ctx: CanvasRenderingContext2D): void {
+  if (fgImage && bgLoaded && fgImage.complete && fgImage.naturalWidth > 0) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(fgImage, 0, 0, CANVAS_W, CANVAS_H);
+  }
+}
+
+/** Whether the pixel art background loaded successfully */
+export function isBgLoaded(): boolean {
+  return bgLoaded && !!bgImage && bgImage.complete && bgImage.naturalWidth > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -703,26 +716,29 @@ export function drawParticleBeam(ctx: CanvasRenderingContext2D, beam: ParticleBe
 
 export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState): void {
   const { agents, door, beams, tick, selectedAgentId } = state;
+  const useBgImage = isBgLoaded();
 
-  // 1. Clear + background
+  // 1. Clear + background (image or code-drawn fallback)
   drawBackground(ctx);
 
-  // 2. Furniture: desks, stations, server rack
-  for (let i = 0; i < CORE_DESK_ENTRIES.length; i++) {
-    const [id, pos] = CORE_DESK_ENTRIES[i];
-    drawDesk(ctx, pos.x, pos.y, AGENT_COLORS[id as keyof typeof AGENT_COLORS]);
+  // 2. Furniture: only draw code-based furniture when bg image is NOT loaded
+  if (!useBgImage) {
+    for (let i = 0; i < CORE_DESK_ENTRIES.length; i++) {
+      const [id, pos] = CORE_DESK_ENTRIES[i];
+      drawDesk(ctx, pos.x, pos.y, AGENT_COLORS[id as keyof typeof AGENT_COLORS]);
+    }
+
+    for (let i = 0; i < SPEC_ENTRIES.length; i++) {
+      const [id, pos] = SPEC_ENTRIES[i];
+      const agent = agents.find(a => a.id === id);
+      const isDormant = agent?.isDormant ?? true;
+      drawStation(ctx, pos.x, pos.y, AGENT_COLORS[id as keyof typeof AGENT_COLORS], isDormant);
+    }
+
+    drawServerRack(ctx, tick);
   }
 
-  for (let i = 0; i < SPEC_ENTRIES.length; i++) {
-    const [id, pos] = SPEC_ENTRIES[i];
-    const agent = agents.find(a => a.id === id);
-    const isDormant = agent?.isDormant ?? true;
-    drawStation(ctx, pos.x, pos.y, AGENT_COLORS[id as keyof typeof AGENT_COLORS], isDormant);
-  }
-
-  drawServerRack(ctx, tick);
-
-  // 3. Door
+  // 3. Door animation (always on top of background)
   drawDoor(ctx, door);
 
   // 4. Particle beams (behind agents)
@@ -736,5 +752,10 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState): 
     const isSelected = agent.id === selectedAgentId;
     drawAgent(ctx, agent, tick, isSelected);
     drawStateIndicator(ctx, agent, tick);
+  }
+
+  // 6. Foreground layer — drawn ON TOP of agents for depth (furniture tops, etc.)
+  if (useBgImage) {
+    drawForeground(ctx);
   }
 }

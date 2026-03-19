@@ -20,7 +20,7 @@ import {
   PARTICLE_BEAM_TTL, SPEECH_BUBBLE_TTL,
   DOOR_FRAME_MS, CLICK_DOUBLE_THRESHOLD_MS,
 } from './constants';
-import { renderFrame } from './OfficeCanvasRenderer';
+import { renderFrame, loadOfficeAssets } from './OfficeCanvasRenderer';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
 
 // ---------------------------------------------------------------------------
@@ -219,6 +219,12 @@ export default function OfficeStage({
   const doorTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ---- Load pixel art office assets on mount ----
+
+  useEffect(() => {
+    loadOfficeAssets().catch(() => {}); // non-fatal
+  }, []);
+
   // ---- Process new SSE events ----
 
   useEffect(() => {
@@ -249,9 +255,17 @@ export default function OfficeStage({
             agent.state = evt.state;
             if (evt.content) agent.lastContent = evt.content;
             if (evt.tool) agent.lastTool = evt.tool;
-            // Wake up specialists when they receive any active state
+            // Wake up specialists and walk them to their parent core agent's desk
             if (agent.isSpecialist && agent.isDormant) {
               agent.isDormant = false;
+              const parentId = SPECIALIST_PARENT[agent.id as SpecialistId];
+              if (parentId) {
+                const parentDesk = CORE_DESK_POSITIONS[parentId];
+                if (parentDesk) {
+                  agent.targetX = parentDesk.x + 1;
+                  agent.targetY = parentDesk.y > 2 ? parentDesk.y - 1 : parentDesk.y + 2;
+                }
+              }
             }
             break;
 
