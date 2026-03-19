@@ -395,6 +395,15 @@ export default function OfficeStage({
   }, []);
 
   // ---- Canvas render loop + agent movement ----
+  // Keep refs in sync so the render loop can read latest state without re-creating the interval
+  const agentsRef = useRef(agents);
+  agentsRef.current = agents;
+  const beamsRef = useRef(beams);
+  beamsRef.current = beams;
+  const doorRef = useRef(door);
+  doorRef.current = door;
+  const selectedRef = useRef(selectedAgentId);
+  selectedRef.current = selectedAgentId;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -426,36 +435,23 @@ export default function OfficeStage({
         return changed ? next : prev;
       });
 
-      // Render
+      // RENDER every tick — this is the heartbeat of the canvas
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // We need the latest state values; read from the set-state functional form
-      // But since renderFrame needs the actual values, we read from refs updated
-      // by the state setters above. For simplicity, we schedule a microtask render
-      // that captures the state after the batched updates.
+      renderFrame(ctx, {
+        agents: agentsRef.current,
+        door: doorRef.current,
+        beams: beamsRef.current,
+        tick: tickRef.current,
+        selectedAgentId: selectedRef.current,
+      });
     }, CANVAS_TICK_MS);
 
     return () => clearInterval(interval);
-  }, []);
-
-  // Separate render effect that fires on every state change
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    renderFrame(ctx, {
-      agents,
-      door,
-      beams,
-      tick: tickRef.current,
-      selectedAgentId,
-    });
-  }, [agents, door, beams, selectedAgentId]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- Track container CSS size for overlay positioning ----
 
