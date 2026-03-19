@@ -342,3 +342,108 @@ office/
 - [ ] Total added memory < 15MB
 - [ ] Mobile responsive with fixed split
 - [ ] Existing SSE connections preserved
+
+## 12. Review Fixes (Post-Review Amendments)
+
+### C1: SSE Transport
+Use `fetch()` + `ReadableStream` (not native `EventSource`) for SSE connections. This matches the current implementation, allows `Authorization: Bearer` header auth, and supports `AbortController` cleanup. Shared via a `useOfficeSSE` custom hook that provides parsed events to both Stage and ControlRoom.
+
+### C2: All 13 State Types Handled
+Canvas sprite indicators for ALL states:
+
+| State | Sprite Indicator |
+|-------|-----------------|
+| `idle` | Small bob animation |
+| `thinking` | Animated `?` bubble (3 frames) |
+| `typing` | Animated dots `...` |
+| `tool_call` | Pixel wrench icon |
+| `tool_result` | Pixel gear/checkmark |
+| `responding` | Animated dots (faster) |
+| `done` | Green checkmark (3s then → idle) |
+| `delegating` | Pixel arrow pointing right + flash |
+| `comm_sent` | Small envelope icon flying toward target |
+| `comm_received` | Small envelope icon arriving |
+| `task_started` | Rocket icon (2 frames) |
+| `task_completed` | Star burst (3 frames) |
+| `task_failed` | Red X icon |
+
+Timeline tab event type badges updated to include all 13 types.
+
+### C3: Particle Beam Trigger Correction
+Particle beams ONLY fire for events with a `targetAgent` field:
+- `delegating` (source → target agent)
+- `comm_sent` (from_agent → to_agent)
+- `comm_received` (from_agent → to_agent)
+
+`tool_call` events do NOT trigger particle beams (no target agent). Tool calls show only the wrench sprite indicator above the agent's head.
+
+### C4: Grid Math Fix
+Corrected grid: **46 columns x 20 rows** (not 48):
+- Main Office: columns 0-27 (28 cols)
+- Door: columns 28-29 (2 cols)
+- Specialist Lab: columns 30-45 (16 cols)
+- Total: 28 + 2 + 16 = 46 columns
+- Canvas size: 46 * 18 = 828px wide, 20 * 18 = 360px tall
+
+### I1: Frontend API Method
+Add `usageService.summary()` call to `src/services/api.ts` (already exists as `usageService` — just reference it in Metrics tab). No new method needed.
+
+### I2: Kanban Drag Action Mapping
+| Drag Direction | API Action |
+|---------------|------------|
+| Pending → Running | `action: 'start'` |
+| Running → Completed | `action: 'complete'` |
+| Running → Pending | `action: 'cancel'` then recreate |
+| Completed → * | **Not allowed** (completed tasks are final) |
+| Pending → Completed | **Not allowed** (must go through Running) |
+
+Invalid drags show a brief shake animation and snap back.
+
+### I3: Spotlight Frame Rate
+During Spotlight mode, the CSS `transform: scale(1.5)` on the canvas CONTAINER (not the canvas itself) handles the zoom. The canvas continues at 5fps inside. The pulsing glow ring is rendered as a CSS `box-shadow` animation on a DOM overlay (not on canvas), so it runs at 60fps via GPU. No frame rate bump needed.
+
+### I4: Pointer Capture for Divider
+`onPointerDown` calls `element.setPointerCapture(e.pointerId)`. `onPointerUp` calls `element.releasePointerCapture(e.pointerId)`.
+
+### I5: SSE Reconnection Behavior
+- On disconnect: show amber "Reconnecting..." badge in header (replace green "LIVE")
+- Retry delay: 5 seconds (first attempt), then exponential backoff (5s, 10s, 20s, max 60s)
+- Max retries: 10, then switch to polling fallback (10s interval)
+- During disconnection: agents freeze in last known state (no reset to idle)
+- On reconnect: fetch `/api/agent-state/states` to resync all agent states
+- `connectionMode` state: `'live'` | `'reconnecting'` | `'polling'`
+
+### I6: Click vs Double-Click Handling
+Use a 250ms timer on single click:
+- `onClick` → set 250ms timeout for spotlight
+- `onDoubleClick` → clear the timeout, open flyout directly
+- This prevents spotlight from firing on double-click
+
+### I7: Comm Stats Fetch Timing
+`/api/agent-comms/stats` fetched on Comms tab activation (not on mount), then refreshed every 30s while tab is active. Inactive tabs do not poll.
+
+### S1: Shared useOfficeSSE Hook
+Added `useOfficeSSE.ts` to the file list — a custom hook providing parsed SSE events via React context to both Stage and ControlRoom children.
+
+### S3: Mini Chat Log Real-Time
+Mini chat log is populated from BOTH:
+1. `comm_sent`/`comm_received` SSE events (real-time, immediate)
+2. `GET /api/agent-comms/recent` poll (history backfill on mount)
+
+### S4: Constants File
+`constants.ts` includes: agent colors, grid positions, specialist-to-core mapping, state-to-sprite mapping, all 9 personality metadata objects.
+
+### S5: Canvas DPR Memory
+Revised estimate: canvas at DPR=2 uses ~5MB framebuffer. Total memory budget revised to <20MB (still well within 1GB container).
+
+### S6: DashboardApp Import
+Migration requires updating `DashboardApp.tsx`:
+```typescript
+// Old:
+const OfficePage = lazyRetry(() => import('./pages/OfficePage').then(...))
+// New:
+const OfficePage = lazyRetry(() => import('./pages/office/OfficePage').then(...))
+```
+
+### S7: pb-24 in Shell
+`OfficePage.tsx` shell includes `pb-24 md:pb-0` at root level for mobile bottom nav clearance.
