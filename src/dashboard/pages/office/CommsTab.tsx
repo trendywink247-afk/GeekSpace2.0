@@ -1,5 +1,5 @@
 // src/dashboard/pages/office/CommsTab.tsx
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { agentCommsService, type AgentComm } from '@/services/api';
 import { AGENT_COLORS, AGENT_META, MISSION_POLL_INTERVAL_MS, C, CORE_AGENTS } from './constants';
 import type { AgentId, SSEEvent } from './types';
@@ -35,22 +35,24 @@ export default function CommsTab({ sseEvents }: Props) {
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
-  const fetchRecent = useCallback(async () => {
+  const fetchRecent = async () => {
     try {
       const res = await agentCommsService.recent(30);
+      console.log('[CommsTab] Fetched:', res.data.length, 'comms');
       setPolled(res.data);
-    } catch {
-      // silent
+    } catch (err) {
+      console.warn('[CommsTab] Fetch error:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchRecent();
     timerRef.current = setInterval(fetchRecent, MISSION_POLL_INTERVAL_MS);
     return () => clearInterval(timerRef.current);
-  }, [fetchRecent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Ticker for relative timestamps
   const [, setTick] = useState(0);

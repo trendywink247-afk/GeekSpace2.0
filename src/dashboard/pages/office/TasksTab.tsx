@@ -1,5 +1,5 @@
 // src/dashboard/pages/office/TasksTab.tsx
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { agentTasksService, type AgentTask } from '@/services/api';
 import { AGENT_COLORS, AGENT_META, MISSION_POLL_INTERVAL_MS, C, CORE_AGENTS } from './constants';
 import type { AgentId, CoreAgentId } from './types';
@@ -43,22 +43,24 @@ export default function TasksTab({ onCreateTask }: Props) {
 
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
-  const fetchBoard = useCallback(async () => {
+  const fetchBoard = async () => {
     try {
       const res = await agentTasksService.board();
+      console.log('[TasksTab] Fetched board:', Object.keys(res.data).map(k => k + ':' + (res.data[k]?.length ?? 0)));
       setBoard(res.data);
-    } catch {
-      // silent
+    } catch (err) {
+      console.warn('[TasksTab] Fetch error:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchBoard();
     timerRef.current = setInterval(fetchBoard, MISSION_POLL_INTERVAL_MS);
     return () => clearInterval(timerRef.current);
-  }, [fetchBoard]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Elapsed-time ticker for running tasks
   const [, setTick] = useState(0);

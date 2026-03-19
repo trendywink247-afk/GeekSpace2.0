@@ -1,5 +1,5 @@
 // src/dashboard/pages/office/MetricsTab.tsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { agentTasksService, agentCommsService } from '@/services/api';
 import { AGENT_COLORS, AGENT_META, C, CORE_AGENTS } from './constants';
 import type { AgentId, CoreAgentId } from './types';
@@ -33,12 +33,13 @@ export default function MetricsTab() {
   const [agentBreakdown, setAgentBreakdown] = useState<Record<CoreAgentId, number>>({ weebo: 0, edith: 0, jarvis: 0 });
   const [loading, setLoading] = useState(true);
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = async () => {
     try {
       const [tasksRes, commsRes] = await Promise.all([
         agentTasksService.stats(),
         agentCommsService.stats(),
       ]);
+      console.log('[MetricsTab] Fetched task stats:', tasksRes.data, 'comm stats:', commsRes.data);
       setTaskStats(tasksRes.data);
       setCommStats(commsRes.data);
 
@@ -51,18 +52,19 @@ export default function MetricsTab() {
         agentCounts[id] = agentResults[i].data.total;
       });
       setAgentBreakdown(agentCounts);
-    } catch {
-      // silent
+    } catch (err) {
+      console.warn('[MetricsTab] Fetch error:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  if (loading || !taskStats || !commStats) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="w-5 h-5 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
@@ -71,10 +73,10 @@ export default function MetricsTab() {
   }
 
   const counters: CounterCard[] = [
-    { label: 'Tasks Today', value: taskStats.completedToday, icon: '\u2705', accent: C.green },
-    { label: 'Total Tasks', value: taskStats.total, icon: '\uD83D\uDCCB', accent: C.cyan },
-    { label: 'Messages', value: commStats.total, icon: '\uD83D\uDCAC', accent: C.purple },
-    { label: 'Pending', value: taskStats.pending, icon: '\u23F3', accent: '#F59E0B' },
+    { label: 'Tasks Today', value: taskStats?.completedToday ?? 0, icon: '\u2705', accent: C.green },
+    { label: 'Total Tasks', value: taskStats?.total ?? 0, icon: '\uD83D\uDCCB', accent: C.cyan },
+    { label: 'Messages', value: commStats?.total ?? 0, icon: '\uD83D\uDCAC', accent: C.purple },
+    { label: 'Pending', value: taskStats?.pending ?? 0, icon: '\u23F3', accent: '#F59E0B' },
   ];
 
   const maxAgent = Math.max(...Object.values(agentBreakdown), 1);
@@ -139,7 +141,7 @@ export default function MetricsTab() {
       >
         <h3 className="text-xs font-medium mb-3" style={{ color: C.text }}>Communication Types</h3>
         <div className="flex flex-wrap gap-2">
-          {Object.entries(commStats.byType).map(([type, count]) => {
+          {Object.entries(commStats?.byType ?? {}).map(([type, count]) => {
             const typeColors: Record<string, string> = {
               info: C.cyan,
               delegation: '#FFB800',
@@ -160,7 +162,7 @@ export default function MetricsTab() {
               </div>
             );
           })}
-          {Object.keys(commStats.byType).length === 0 && (
+          {Object.keys(commStats?.byType ?? {}).length === 0 && (
             <p className="text-[10px]" style={{ color: C.dim }}>No data yet</p>
           )}
         </div>

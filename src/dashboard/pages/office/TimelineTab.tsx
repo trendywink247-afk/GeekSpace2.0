@@ -74,6 +74,8 @@ export default function TimelineTab({ events }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
 
+  console.log('[TimelineTab] Events:', events.length);
+
   // Reverse chronological, capped
   const sorted = useMemo(() => {
     return [...events]
