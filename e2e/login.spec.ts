@@ -14,8 +14,8 @@ test.describe('Login Flow', () => {
     // Verify login page loaded
     await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
 
-    // Click demo login button
-    const demoButton = page.getByRole('button', { name: /login with demo/i });
+    // Click demo login button (button text: "Try Demo")
+    const demoButton = page.getByRole('button', { name: /try demo|login with demo/i });
     await expect(demoButton).toBeVisible();
     await demoButton.click();
 

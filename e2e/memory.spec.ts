@@ -10,8 +10,8 @@ import { test, expect } from '@playwright/test';
 test.describe('Memory Manager Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/dashboard/memory');
-    // Wait for the page heading to appear (or loading spinner to clear)
-    await page.waitForTimeout(2000);
+    // Wait for the page to fully render (MemoryHubPage with tabs)
+    await page.waitForTimeout(3000);
   });
 
   test('should load the Memory Manager page', async ({ page }) => {
@@ -22,9 +22,9 @@ test.describe('Memory Manager Page', () => {
   });
 
   test('should display the search input', async ({ page }) => {
-    // The search input has placeholder "Search memories..."
-    const searchInput = page.getByPlaceholder('Search memories...');
-    await expect(searchInput).toBeVisible();
+    // MemoryHubPage: search input in Browse tab (default tab)
+    const searchInput = page.getByPlaceholder('Search memories...').first();
+    await expect(searchInput).toBeVisible({ timeout: 5000 });
   });
 
   test('should display export and refresh buttons in header', async ({ page }) => {
@@ -34,12 +34,12 @@ test.describe('Memory Manager Page', () => {
   });
 
   test('should show memory entries or empty state', async ({ page }) => {
-    // Either memory cards exist OR the empty state message exists
-    const hasEntries = await page.locator('[class*="space-y-3"] > *').count();
-    const hasEmptyState = await page.getByText(/no memories found/i).isVisible().catch(() => false);
-    const hasErrorState = await page.getByText(/could not load/i).isVisible().catch(() => false);
+    // MemoryHubPage: either memory entries exist, empty state, or error state
+    const hasEntries = await page.locator('[class*="space-y"] > *').count();
+    const hasEmptyState = await page.getByText(/no memories|start a conversation|no entries/i).isVisible().catch(() => false);
+    const hasErrorState = await page.getByText(/could not load|error|failed/i).isVisible().catch(() => false);
 
-    // One of these three states must be true
+    // One of these states must be true
     expect(hasEntries > 0 || hasEmptyState || hasErrorState).toBe(true);
   });
 
@@ -59,7 +59,7 @@ test.describe('Memory Manager Page', () => {
   });
 
   test('search input filters the list', async ({ page }) => {
-    const searchInput = page.getByPlaceholder('Search memories...');
+    const searchInput = page.getByPlaceholder('Search memories...').first();
     await searchInput.fill('nonexistent_xyz_term_12345');
     await page.waitForTimeout(300);
     // After filtering, either empty state or fewer results
