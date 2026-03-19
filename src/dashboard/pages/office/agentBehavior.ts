@@ -17,23 +17,19 @@ interface Hotspot {
   y: number;
 }
 
-// Main office (left side, cols 0-27)
-const OFFICE_HOTSPOTS: Hotspot[] = [
-  { name: 'coffee', x: 22, y: 14 },
-  { name: 'whiteboard', x: 2, y: 12 },
-  { name: 'couch', x: 20, y: 17 },
-  { name: 'plant', x: 1, y: 17 },
-  { name: 'water', x: 24, y: 8 },
-  { name: 'bookshelf', x: 8, y: 15 },
-  { name: 'window', x: 0, y: 8 },
-  { name: 'snacks', x: 18, y: 15 },
-];
-
-// Specialist lab (right side, cols 30-45)
-const LAB_HOTSPOTS: Hotspot[] = [
-  { name: 'lab_bench', x: 36, y: 14 },
-  { name: 'lab_screen', x: 42, y: 6 },
-  { name: 'lab_plant', x: 44, y: 16 },
+// Idle/wander spots matching the pixel art background (27x25 grid)
+// All agents share the same hotspot list (single open office)
+const HOTSPOTS: Hotspot[] = [
+  { name: 'top-left', x: 1, y: 3 },
+  { name: 'lounge-1', x: 2, y: 6 },
+  { name: 'top-center', x: 3, y: 3 },
+  { name: 'lounge-2', x: 4, y: 6 },
+  { name: 'meeting-area', x: 7, y: 2 },
+  { name: 'break-room', x: 9, y: 2 },
+  { name: 'center-1', x: 9, y: 10 },
+  { name: 'center-2', x: 9, y: 12 },
+  { name: 'center-3', x: 10, y: 10 },
+  { name: 'center-4', x: 10, y: 12 },
 ];
 
 // ── Social chat phrases (random, no AI cost) ───────────────────────────────
@@ -83,16 +79,12 @@ function makeBubble(agentId: AgentId, text: string): SpeechBubble {
 }
 
 function getHomePosition(agent: CanvasAgent): { x: number; y: number } {
-  if (agent.isSpecialist) {
-    const pos = SPECIALIST_POSITIONS[agent.id as SpecialistId];
-    if (pos) {
-      return { x: pos.x, y: pos.y > 2 ? pos.y - 1 : pos.y + 2 };
-    }
-  } else {
-    const pos = CORE_DESK_POSITIONS[agent.id as CoreAgentId];
-    if (pos) {
-      return { x: pos.x + 1, y: pos.y > 2 ? pos.y - 1 : pos.y + 2 };
-    }
+  const pos = agent.isSpecialist
+    ? SPECIALIST_POSITIONS[agent.id as SpecialistId]
+    : CORE_DESK_POSITIONS[agent.id as CoreAgentId];
+  if (pos) {
+    // Sit one row above the desk (or below if near top wall)
+    return { x: pos.x, y: pos.y > 2 ? pos.y - 1 : pos.y + 1 };
   }
   return { x: agent.x, y: agent.y };
 }
@@ -139,8 +131,6 @@ export function tickBehaviors(
   const updatedAgents = agents.map(agent => {
     // Skip agents actively working (not idle)
     if (agent.state !== 'idle' && agent.state !== 'done') return agent;
-    // Skip dormant specialists
-    if (agent.isDormant) return agent;
 
     let bState = behaviorStates.get(agent.id);
     if (!bState) {
@@ -168,8 +158,7 @@ export function tickBehaviors(
           const roll = Math.random();
           if (roll < 0.4) {
             // Wander to hotspot
-            const spots = agent.isSpecialist ? LAB_HOTSPOTS : OFFICE_HOTSPOTS;
-            const spot = spots[randomInt(0, spots.length - 1)];
+            const spot = HOTSPOTS[randomInt(0, HOTSPOTS.length - 1)];
             bState.mode = 'wandering';
             bState.targetHotspot = spot;
             bState.speed = 2.5 + Math.random() * 1.5;

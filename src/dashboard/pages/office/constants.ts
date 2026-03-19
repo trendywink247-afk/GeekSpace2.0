@@ -1,16 +1,11 @@
 // src/dashboard/pages/office/constants.ts
 import type { AgentId, CoreAgentId, SpecialistId } from './types';
 
-export const CELL = 18;
-export const COLS = 46;
-export const ROWS = 20;
-export const CANVAS_W = COLS * CELL; // 828
-export const CANVAS_H = ROWS * CELL; // 360
-
-// Door position (columns 28-29)
-export const DOOR_COL = 28;
-export const DOOR_ROW_START = 4;
-export const DOOR_ROW_END = 8;
+export const CELL = 32;
+export const COLS = 27;
+export const ROWS = 25;
+export const CANVAS_W = COLS * CELL; // 864
+export const CANVAS_H = ROWS * CELL; // 800
 
 export const AGENT_COLORS: Record<AgentId, string> = {
   weebo: '#00F0FF', edith: '#8B5CF6', jarvis: '#ADFF2F',
@@ -39,18 +34,22 @@ export const SPECIALIST_PARENT: Record<SpecialistId, CoreAgentId> = {
 export const CORE_AGENTS: CoreAgentId[] = ['weebo', 'edith', 'jarvis'];
 export const SPECIALIST_AGENTS: SpecialistId[] = ['aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
 
-// Desk positions in the main office (left side, cols 0-27)
+// Desk positions matching pixel art background (32px tiles, 27x25 grid)
+// 4 double-desks at fixed tile positions
 export const CORE_DESK_POSITIONS: Record<CoreAgentId, { x: number; y: number }> = {
-  weebo: { x: 4, y: 5 },
-  edith: { x: 14, y: 5 },
-  jarvis: { x: 9, y: 9 },
+  weebo: { x: 3, y: 16 },   // Desk 1 left
+  edith: { x: 9, y: 16 },   // Desk 3 center-right
+  jarvis: { x: 5, y: 20 },  // Desk 2 bottom
 };
 
-// Station positions in the specialist lab (right side, cols 30-45)
+// Specialist desk positions — all agents always visible
 export const SPECIALIST_POSITIONS: Record<SpecialistId, { x: number; y: number }> = {
-  aria: { x: 33, y: 4 }, forge: { x: 39, y: 4 },
-  pulse: { x: 33, y: 8 }, echo: { x: 39, y: 8 },
-  cal: { x: 33, y: 12 }, nova: { x: 39, y: 12 },
+  aria: { x: 5, y: 16 },    // Desk 2 top
+  forge: { x: 11, y: 16 },  // Desk 4 top
+  pulse: { x: 3, y: 20 },   // Desk 1 bottom
+  echo: { x: 9, y: 20 },    // Desk 3 bottom
+  cal: { x: 11, y: 20 },    // Desk 4 bottom
+  nova: { x: 7, y: 2 },     // Standing near idle spot (roamer)
 };
 
 // Design tokens
@@ -78,7 +77,6 @@ export const MAX_TIMELINE_EVENTS = 200;
 export const MAX_FEED_ITEMS = 100;
 export const SPEECH_BUBBLE_TTL = 4000;
 export const PARTICLE_BEAM_TTL = 2000;
-export const DOOR_FRAME_MS = 200;
 export const SPOTLIGHT_SCALE = 1.5;
 export const CLICK_DOUBLE_THRESHOLD_MS = 250;
 export const MISSION_POLL_INTERVAL_MS = 30_000;

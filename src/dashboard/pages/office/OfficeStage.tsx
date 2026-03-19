@@ -1,24 +1,26 @@
 // src/dashboard/pages/office/OfficeStage.tsx
 // Canvas container component: manages agent state, processes SSE events,
 // runs the render loop, handles click/double-click, BFS pathfinding,
-// door animation, particle beams, and speech bubbles.
+// particle beams, and speech bubbles.
+//
+// Redesigned for the 27x25 pixel art background (32px tiles, 864x800).
+// All 9 agents are always visible. No door, no dormant state.
 
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type {
   AgentId, CoreAgentId, SpecialistId,
   AgentStateType, CanvasAgent, SSEEvent,
-  ParticleBeam, SpeechBubble, DoorState,
+  ParticleBeam, SpeechBubble,
 } from './types';
 import {
   CELL, COLS, ROWS, CANVAS_W, CANVAS_H,
-  DOOR_COL, DOOR_ROW_START, DOOR_ROW_END,
   AGENT_COLORS, AGENT_META, SPECIALIST_PARENT,
   CORE_AGENTS, SPECIALIST_AGENTS,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
   CANVAS_TICK_MS,
   MAX_PARTICLE_BEAMS, MAX_SPEECH_BUBBLES,
   PARTICLE_BEAM_TTL, SPEECH_BUBBLE_TTL,
-  DOOR_FRAME_MS, CLICK_DOUBLE_THRESHOLD_MS,
+  CLICK_DOUBLE_THRESHOLD_MS,
 } from './constants';
 import { renderFrame, loadOfficeAssets } from './OfficeCanvasRenderer';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
@@ -36,7 +38,7 @@ interface Props {
 }
 
 // ---------------------------------------------------------------------------
-// Collision grid (desks 3x2, stations 2x2, server rack 2x2, walls)
+// Collision grid — matches pixel art background (27x25, 32px tiles)
 // ---------------------------------------------------------------------------
 
 function buildCollisionGrid(): boolean[][] {
@@ -44,47 +46,40 @@ function buildCollisionGrid(): boolean[][] {
     Array<boolean>(COLS).fill(false),
   );
 
-  // Top wall row
-  for (let c = 0; c < COLS; c++) grid[0][c] = true;
-
-  // Divider wall between rooms (cols 28-29, rows above door and below door)
-  for (let r = 0; r < DOOR_ROW_START; r++) {
-    grid[r][DOOR_COL] = true;
-    grid[r][DOOR_COL + 1] = true;
-  }
-  for (let r = DOOR_ROW_END + 1; r < ROWS; r++) {
-    grid[r][DOOR_COL] = true;
-    grid[r][DOOR_COL + 1] = true;
-  }
-
-  // Core desks: 3 wide x 2 tall
-  for (const pos of Object.values(CORE_DESK_POSITIONS)) {
-    for (let dy = 0; dy < 2; dy++) {
-      for (let dx = 0; dx < 3; dx++) {
-        const gy = pos.y + dy;
-        const gx = pos.x + dx;
-        if (gy >= 0 && gy < ROWS && gx >= 0 && gx < COLS) grid[gy][gx] = true;
-      }
+  // Top wall rows (rows 0-1 blocked)
+  for (let r = 0; r < 2; r++) {
+    for (let c = 0; c < COLS; c++) {
+      grid[r][c] = true;
     }
   }
 
-  // Specialist stations: 2 wide x 2 tall
-  for (const pos of Object.values(SPECIALIST_POSITIONS)) {
-    for (let dy = 0; dy < 2; dy++) {
-      for (let dx = 0; dx < 2; dx++) {
-        const gy = pos.y + dy;
-        const gx = pos.x + dx;
-        if (gy >= 0 && gy < ROWS && gx >= 0 && gx < COLS) grid[gy][gx] = true;
-      }
-    }
+  // Bottom row blocked (wall)
+  for (let c = 0; c < COLS; c++) {
+    grid[ROWS - 1][c] = true;
   }
 
-  // Server rack (2x2) at row 13, col 12 — matches OfficeCanvasRenderer
-  for (let dy = 0; dy < 2; dy++) {
-    for (let dx = 0; dx < 2; dx++) {
-      const gy = 13 + dy;
-      const gx = 12 + dx;
-      if (gy >= 0 && gy < ROWS && gx >= 0 && gx < COLS) grid[gy][gx] = true;
+  // Left and right edge walls
+  for (let r = 0; r < ROWS; r++) {
+    grid[r][0] = true;
+    grid[r][COLS - 1] = true;
+  }
+
+  // Desk tile positions (blocked — agents sit adjacent to desks, not on them)
+  // 4 double-desks: each desk is a single tile
+  const deskTiles = [
+    // Desk 1: (3,16) and (3,20)
+    { x: 3, y: 16 }, { x: 3, y: 20 },
+    // Desk 2: (5,16) and (5,20)
+    { x: 5, y: 16 }, { x: 5, y: 20 },
+    // Desk 3: (9,16) and (9,20)
+    { x: 9, y: 16 }, { x: 9, y: 20 },
+    // Desk 4: (11,16) and (11,20)
+    { x: 11, y: 16 }, { x: 11, y: 20 },
+  ];
+
+  for (const dt of deskTiles) {
+    if (dt.y >= 0 && dt.y < ROWS && dt.x >= 0 && dt.x < COLS) {
+      grid[dt.y][dt.x] = true;
     }
   }
 
@@ -142,7 +137,17 @@ function bfsNextStep(
 }
 
 // ---------------------------------------------------------------------------
-// Build initial agent array
+// Seat position helpers — agent sits adjacent to their desk tile
+// ---------------------------------------------------------------------------
+
+function getSeatPosition(deskPos: { x: number; y: number }): { x: number; y: number } {
+  // Sit one row above the desk if possible, otherwise one row below
+  const seatY = deskPos.y > 2 ? deskPos.y - 1 : deskPos.y + 1;
+  return { x: deskPos.x, y: seatY };
+}
+
+// ---------------------------------------------------------------------------
+// Build initial agent array — all 9 agents visible, seated at desks
 // ---------------------------------------------------------------------------
 
 function buildInitialAgents(): CanvasAgent[] {
@@ -151,19 +156,17 @@ function buildInitialAgents(): CanvasAgent[] {
   for (const id of CORE_AGENTS) {
     const pos = CORE_DESK_POSITIONS[id];
     const meta = AGENT_META[id];
-    // Seat the agent one row above the desk center
-    const seatX = pos.x + 1;
-    const seatY = pos.y - 1 > 0 ? pos.y - 1 : pos.y + 2;
+    const seat = getSeatPosition(pos);
     agents.push({
       id,
       name: id.charAt(0).toUpperCase() + id.slice(1),
       color: AGENT_COLORS[id],
       emoji: meta.emoji,
       role: meta.role,
-      x: seatX,
-      y: seatY,
-      targetX: seatX,
-      targetY: seatY,
+      x: seat.x,
+      y: seat.y,
+      targetX: seat.x,
+      targetY: seat.y,
       state: 'idle',
       isSpecialist: false,
       isDormant: false,
@@ -173,22 +176,20 @@ function buildInitialAgents(): CanvasAgent[] {
   for (const id of SPECIALIST_AGENTS) {
     const pos = SPECIALIST_POSITIONS[id];
     const meta = AGENT_META[id];
-    // Seat the specialist one row above their station
-    const seatX = pos.x;
-    const seatY = pos.y - 1 > 0 ? pos.y - 1 : pos.y + 2;
+    const seat = getSeatPosition(pos);
     agents.push({
       id,
       name: id.charAt(0).toUpperCase() + id.slice(1),
       color: AGENT_COLORS[id],
       emoji: meta.emoji,
       role: meta.role,
-      x: seatX,
-      y: seatY,
-      targetX: seatX,
-      targetY: seatY,
+      x: seat.x,
+      y: seat.y,
+      targetX: seat.x,
+      targetY: seat.y,
       state: 'idle',
       isSpecialist: true,
-      isDormant: true,
+      isDormant: false, // All agents always visible
       parentAgent: SPECIALIST_PARENT[id],
     });
   }
@@ -209,15 +210,13 @@ export default function OfficeStage({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tickRef = useRef(0);
-  const processedRef = useRef(0); // index into events[] already handled
+  const processedRef = useRef(0);
   const [containerSize, setContainerSize] = useState({ w: CANVAS_W, h: CANVAS_H });
 
   const [agents, setAgents] = useState<CanvasAgent[]>(buildInitialAgents);
   const [beams, setBeams] = useState<ParticleBeam[]>([]);
   const [bubbles, setBubbles] = useState<SpeechBubble[]>([]);
-  const [door, setDoor] = useState<DoorState>({ isOpen: false, frame: 0 });
 
-  const doorTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ---- Load pixel art office assets on mount ----
@@ -266,34 +265,30 @@ export default function OfficeStage({
             agent.state = evt.state;
             if (evt.content) agent.lastContent = evt.content;
             if (evt.tool) agent.lastTool = evt.tool;
-            // Cancel idle wandering — snap agent back to desk for real work
+            // Cancel idle wandering — move agent back to their desk
             cancelIdleBehavior(agentId);
             {
               const home = agent.isSpecialist
                 ? SPECIALIST_POSITIONS[agent.id as SpecialistId]
                 : CORE_DESK_POSITIONS[agent.id as CoreAgentId];
               if (home) {
-                agent.targetX = agent.isSpecialist ? home.x : home.x + 1;
-                agent.targetY = home.y > 2 ? home.y - 1 : home.y + 2;
+                const seat = getSeatPosition(home);
+                agent.targetX = seat.x;
+                agent.targetY = seat.y;
               }
             }
-            // Wake up specialists — TELEPORT to core agent's desk instantly
-            // (walking takes too long relative to event speed)
-            if (agent.isSpecialist && agent.isDormant) {
-              agent.isDormant = false;
+            // When a specialist gets work, walk them to their parent core agent's desk
+            if (agent.isSpecialist) {
               const parentId = SPECIALIST_PARENT[agent.id as SpecialistId];
               if (parentId) {
                 const parentDesk = CORE_DESK_POSITIONS[parentId];
                 if (parentDesk) {
-                  // Teleport to desk (instant)
-                  agent.x = parentDesk.x + 1;
-                  agent.y = parentDesk.y > 2 ? parentDesk.y - 1 : parentDesk.y + 2;
-                  agent.targetX = agent.x;
-                  agent.targetY = agent.y;
+                  const parentSeat = getSeatPosition(parentDesk);
+                  // Walk near the parent (offset by 1 to avoid overlap)
+                  agent.targetX = parentSeat.x + 1;
+                  agent.targetY = parentSeat.y;
                 }
               }
-              // Open the door for visual effect
-              openDoor(agent.id);
             }
             break;
 
@@ -301,22 +296,19 @@ export default function OfficeStage({
             agent.state = 'delegating';
             const targetId = evt.targetAgent as SpecialistId | undefined;
             if (targetId && SPECIALIST_AGENTS.includes(targetId as SpecialistId)) {
-              // Wake up specialist
+              // Route specialist toward the delegating core agent's desk
               const specIdx = next.findIndex(a => a.id === targetId);
               if (specIdx !== -1) {
                 const spec = { ...next[specIdx] };
-                spec.isDormant = false;
                 spec.state = 'task_started';
-                // Route specialist toward the delegating core agent's desk
                 const coreDesk = CORE_DESK_POSITIONS[agentId as CoreAgentId];
                 if (coreDesk) {
-                  spec.targetX = coreDesk.x + 1;
-                  spec.targetY = coreDesk.y - 1 > 0 ? coreDesk.y - 1 : coreDesk.y + 2;
+                  const coreSeat = getSeatPosition(coreDesk);
+                  spec.targetX = coreSeat.x + 1;
+                  spec.targetY = coreSeat.y;
                 }
                 next[specIdx] = spec;
               }
-              // Open door
-              openDoor(targetId);
             }
             // Create beam from core to specialist
             if (targetId) {
@@ -340,22 +332,21 @@ export default function OfficeStage({
 
           case 'done': {
             agent.state = 'done';
-            // After 8s (long enough to be visible), reset to idle
+            // After 3s, reset to idle and walk back to own desk
             const doneId = agentId;
             setTimeout(() => {
               setAgents(p =>
                 p.map(a => {
                   if (a.id !== doneId) return a;
                   const reset = { ...a, state: 'idle' as AgentStateType };
-                  // If specialist, WALK them back home (visible return journey)
+                  // Walk specialist back to their own desk
                   if (a.isSpecialist) {
                     const homePos = SPECIALIST_POSITIONS[a.id as SpecialistId];
                     if (homePos) {
-                      reset.targetX = homePos.x;
-                      reset.targetY = homePos.y - 1 > 0 ? homePos.y - 1 : homePos.y + 2;
+                      const seat = getSeatPosition(homePos);
+                      reset.targetX = seat.x;
+                      reset.targetY = seat.y;
                     }
-                    // Don't set dormant yet — let them walk back first
-                    // They'll go dormant when they reach home (checked in tick)
                   }
                   return reset;
                 }),
@@ -375,42 +366,6 @@ export default function OfficeStage({
       return next;
     });
   }, [events.length]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ---- Door animation ----
-
-  const openDoor = useCallback((agentPassing: AgentId) => {
-    setDoor(prev => ({ ...prev, isOpen: true, frame: 0, agentPassing }));
-
-    // Clear any existing door timer
-    if (doorTimerRef.current) clearInterval(doorTimerRef.current);
-
-    let frame = 0;
-    doorTimerRef.current = setInterval(() => {
-      frame++;
-      if (frame >= 5) {
-        // Fully open; hold for 1.5s then close
-        setDoor(prev => ({ ...prev, frame: 5 }));
-        if (doorTimerRef.current) clearInterval(doorTimerRef.current);
-
-        doorTimerRef.current = setTimeout(() => {
-          // Begin closing
-          let closeFrame = 5;
-          doorTimerRef.current = setInterval(() => {
-            closeFrame--;
-            if (closeFrame <= 0) {
-              setDoor({ isOpen: false, frame: 0 });
-              if (doorTimerRef.current) clearInterval(doorTimerRef.current);
-              doorTimerRef.current = null;
-            } else {
-              setDoor(prev => ({ ...prev, frame: closeFrame }));
-            }
-          }, DOOR_FRAME_MS) as unknown as ReturnType<typeof setInterval>;
-        }, 1500) as unknown as ReturnType<typeof setInterval>;
-      } else {
-        setDoor(prev => ({ ...prev, frame }));
-      }
-    }, DOOR_FRAME_MS);
-  }, []);
 
   // ---- Particle beams ----
 
@@ -433,7 +388,7 @@ export default function OfficeStage({
     const bubble: SpeechBubble = {
       id: `bub-${now}-${Math.random().toString(36).slice(2, 6)}`,
       agentId,
-      text: text.slice(0, 60), // truncate long content
+      text: text.slice(0, 60),
       color: AGENT_COLORS[agentId] || '#00F0FF',
       createdAt: now,
       expiresAt: now + SPEECH_BUBBLE_TTL,
@@ -442,13 +397,10 @@ export default function OfficeStage({
   }, []);
 
   // ---- Canvas render loop + agent movement ----
-  // Keep refs in sync so the render loop can read latest state without re-creating the interval
   const agentsRef = useRef(agents);
   agentsRef.current = agents;
   const beamsRef = useRef(beams);
   beamsRef.current = beams;
-  const doorRef = useRef(door);
-  doorRef.current = door;
   const selectedRef = useRef(selectedAgentId);
   selectedRef.current = selectedAgentId;
 
@@ -473,18 +425,6 @@ export default function OfficeStage({
       setAgents(prev => {
         let changed = false;
         const next = prev.map(agent => {
-          // Check if specialist arrived back home — go dormant
-          if (agent.isSpecialist && !agent.isDormant && agent.state === 'idle'
-              && agent.x === agent.targetX && agent.y === agent.targetY) {
-            const homePos = SPECIALIST_POSITIONS[agent.id as SpecialistId];
-            if (homePos) {
-              const homeY = homePos.y - 1 > 0 ? homePos.y - 1 : homePos.y + 2;
-              if (agent.x === homePos.x && agent.y === homeY) {
-                changed = true;
-                return { ...agent, isDormant: true };
-              }
-            }
-          }
           if (agent.x === agent.targetX && agent.y === agent.targetY) return agent;
           const step = bfsNextStep(COLLISION_GRID, agent.x, agent.y, agent.targetX, agent.targetY);
           if (!step) return agent;
@@ -494,7 +434,7 @@ export default function OfficeStage({
         return changed ? next : prev;
       });
 
-      // Idle behavior — wandering, socializing, fidgeting (zero AI cost)
+      // Idle behavior — wandering, socializing, fidgeting
       setAgents(prev => {
         const { updatedAgents, newBubbles } = tickBehaviors(prev, tickRef.current);
         if (newBubbles.length > 0) {
@@ -503,7 +443,7 @@ export default function OfficeStage({
         return updatedAgents;
       });
 
-      // RENDER every tick — this is the heartbeat of the canvas
+      // RENDER
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
@@ -511,7 +451,6 @@ export default function OfficeStage({
 
       renderFrame(ctx, {
         agents: agentsRef.current,
-        door: doorRef.current,
         beams: beamsRef.current,
         tick: tickRef.current,
         selectedAgentId: selectedRef.current,
@@ -535,11 +474,10 @@ export default function OfficeStage({
     return () => ro.disconnect();
   }, []);
 
-  // ---- Cleanup door timer on unmount ----
+  // ---- Cleanup on unmount ----
 
   useEffect(() => {
     return () => {
-      if (doorTimerRef.current) clearInterval(doorTimerRef.current);
       if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
     };
   }, []);
@@ -563,20 +501,17 @@ export default function OfficeStage({
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
-      // Scale from CSS size to canvas logical size
       const scaleX = CANVAS_W / rect.width;
       const scaleY = CANVAS_H / rect.height;
       const ox = (e.clientX - rect.left) * scaleX;
       const oy = (e.clientY - rect.top) * scaleY;
       const hit = hitTestAgent(ox, oy);
 
-      // Clear any pending single-click timer
       if (clickTimerRef.current) {
         clearTimeout(clickTimerRef.current);
         clickTimerRef.current = null;
       }
 
-      // Set a timer; if no double-click arrives, fire single-click (spotlight)
       clickTimerRef.current = setTimeout(() => {
         clickTimerRef.current = null;
         onAgentSelect(hit);
@@ -587,7 +522,6 @@ export default function OfficeStage({
 
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      // Cancel the pending single-click
       if (clickTimerRef.current) {
         clearTimeout(clickTimerRef.current);
         clickTimerRef.current = null;
@@ -625,7 +559,6 @@ export default function OfficeStage({
         canvasWidth={containerSize.w}
         canvasHeight={containerSize.h}
       />
-      {/* MiniChatLog will be added later by parent */}
     </div>
   );
 }
