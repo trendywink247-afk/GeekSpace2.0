@@ -167,7 +167,7 @@ export default function TasksTab({ onCreateTask, taskBoard }: Props) {
                       key={task.id}
                       draggable={key !== 'completed'}
                       onDragStart={() => handleDragStart(task.id, key)}
-                      className="rounded-lg p-2 cursor-grab active:cursor-grabbing transition-all hover:border-[#00F0FF]/20"
+                      className="rounded-lg p-2 cursor-grab active:cursor-grabbing transition-all hover:border-[#00F0FF]/20 min-h-[44px]"
                       style={{
                         background: C.card,
                         border: `1px solid rgba(0,240,255,0.05)`,
@@ -209,7 +209,7 @@ export default function TasksTab({ onCreateTask, taskBoard }: Props) {
       {/* Create Form */}
       <form
         onSubmit={handleCreate}
-        className="flex items-center gap-2 rounded-lg p-2"
+        className="flex flex-wrap md:flex-nowrap items-center gap-2 rounded-lg p-2"
         style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
       >
         <select

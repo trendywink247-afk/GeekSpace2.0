@@ -29,7 +29,7 @@ export function DraggableDivider({ onResize }: Props) {
 
   return (
     <div
-      className="h-3 cursor-row-resize flex items-center justify-center group transition-all duration-200"
+      className="h-4 md:h-3 cursor-row-resize flex items-center justify-center group transition-all duration-200 touch-none"
       style={{ background: 'linear-gradient(to right, transparent 5%, rgba(0,240,255,0.04) 50%, transparent 95%)' }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

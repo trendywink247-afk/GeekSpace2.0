@@ -99,7 +99,7 @@ export default function CommsTab({ sseEvents, commsData }: Props) {
             <button
               key={id}
               onClick={() => setAgentFilter(id)}
-              className="text-[10px] px-2 py-1 rounded-full transition-colors"
+              className="text-[10px] px-2.5 py-1.5 rounded-full transition-colors min-h-[32px] md:min-h-0"
               style={{
                 background: active ? `${color}20` : 'transparent',
                 color: active ? color : C.dim,
@@ -121,7 +121,7 @@ export default function CommsTab({ sseEvents, commsData }: Props) {
             <button
               key={t}
               onClick={() => setTypeFilter(t)}
-              className="text-[10px] px-2 py-1 rounded-full transition-colors capitalize"
+              className="text-[10px] px-2.5 py-1.5 rounded-full transition-colors capitalize min-h-[32px] md:min-h-0"
               style={{
                 background: active ? badge.bg : 'transparent',
                 color: active ? badge.text : C.dim,
@@ -135,7 +135,7 @@ export default function CommsTab({ sseEvents, commsData }: Props) {
       </div>
 
       {/* Message List */}
-      <div className="flex flex-col gap-1.5 max-h-[400px] overflow-y-auto">
+      <div className="flex flex-col gap-1.5 max-h-[300px] md:max-h-[400px] overflow-y-auto">
         {filtered.length === 0 && (
           <p className="text-[10px] text-center py-8" style={{ color: C.dim }}>No communications</p>
         )}
@@ -187,7 +187,7 @@ export default function CommsTab({ sseEvents, commsData }: Props) {
               </div>
 
               {/* Message text */}
-              <p className="text-[11px] pl-4" style={{ color: C.muted }}>
+              <p className="text-[11px] pl-4 break-words" style={{ color: C.muted }}>
                 {comm.message.length > 120 ? `${comm.message.slice(0, 120)}...` : comm.message}
               </p>
             </div>

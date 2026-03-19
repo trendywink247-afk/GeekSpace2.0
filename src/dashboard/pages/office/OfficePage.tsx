@@ -55,7 +55,10 @@ export function OfficePage() {
   const { events, connectionMode, officeData } = useOfficeSSE();
 
   // Layout split
+  // On mobile, favor the control room (40% canvas / 60% control); on desktop use saved pref
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const [splitPercent, setSplitPercent] = useState(() => {
+    if (isMobile) return 35;
     const saved = localStorage.getItem('office-split');
     return saved ? Number(saved) : 50;
   });

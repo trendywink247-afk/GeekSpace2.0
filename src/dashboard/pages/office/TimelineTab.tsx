@@ -143,7 +143,7 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
       ref={containerRef}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="flex flex-col gap-0.5 max-h-[420px] overflow-y-auto p-3"
+      className="flex flex-col gap-0.5 max-h-[320px] md:max-h-[420px] overflow-y-auto p-3"
     >
       {sorted.map((ev, i) => {
         const min = minuteKey(ev.timestamp);
@@ -166,7 +166,7 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
             )}
 
             <div
-              className="flex items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-white/[0.02]"
+              className="flex flex-wrap md:flex-nowrap items-center gap-1.5 md:gap-2 rounded px-2 py-1.5 md:py-1 transition-colors hover:bg-white/[0.02] min-h-[36px] md:min-h-0"
             >
               {/* Timestamp */}
               <span className="text-[9px] font-mono flex-shrink-0 w-14 text-right" style={{ color: C.dim }}>
@@ -193,12 +193,12 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
 
               {/* Content */}
               {ev.content && (
-                <span className="text-[10px] truncate flex-1 min-w-0" style={{ color: C.muted }}>
+                <span className="text-[10px] break-words md:truncate flex-1 min-w-0 w-full md:w-auto" style={{ color: C.muted }}>
                   {(ev.content || "").replace(/→ undefined:? /g, "").slice(0, 80) || ev.content}
                 </span>
               )}
               {ev.tool && !ev.content && (
-                <span className="text-[10px] font-mono truncate flex-1 min-w-0" style={{ color: C.dim }}>
+                <span className="text-[10px] font-mono break-words md:truncate flex-1 min-w-0 w-full md:w-auto" style={{ color: C.dim }}>
                   {ev.tool}
                 </span>
               )}

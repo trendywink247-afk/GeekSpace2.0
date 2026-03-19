@@ -42,10 +42,11 @@ export default function ControlRoom({ activeTab, onTabChange, sseEvents, onCreat
     <div className="flex flex-col h-full">
       {/* Tab Bar */}
       <div
-        className="flex border-b"
+        className="flex overflow-x-auto scrollbar-hide border-b"
         style={{
           background: 'linear-gradient(to right, #0C0C18, #0E0E1C, #0C0C18)',
           borderColor: 'rgba(0,240,255,0.12)',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {TABS.map(({ key, icon, label }) => {
@@ -55,7 +56,7 @@ export default function ControlRoom({ activeTab, onTabChange, sseEvents, onCreat
             <button
               key={key}
               onClick={() => onTabChange(key)}
-              className="relative flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all duration-200"
+              className="relative flex items-center gap-2 px-4 md:px-5 py-3 text-sm font-semibold transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px]"
               style={{
                 color: active ? accentColor : '#6B7280',
                 borderBottom: active ? `2px solid ${accentColor}` : '2px solid transparent',
