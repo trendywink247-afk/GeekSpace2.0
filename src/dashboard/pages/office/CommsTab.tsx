@@ -1,6 +1,6 @@
 // src/dashboard/pages/office/CommsTab.tsx
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { agentCommsService, type AgentComm } from '@/services/api';
+import { useState, useEffect, useMemo } from 'react';
+import type { AgentComm } from '@/services/api';
 import { AGENT_COLORS, AGENT_META, C, CORE_AGENTS } from './constants';
 import type { AgentId, SSEEvent } from './types';
 
@@ -30,28 +30,8 @@ function typeBadge(type: string): { bg: string; text: string } {
 }
 
 export default function CommsTab({ sseEvents, commsData }: Props) {
-  const [polled, setPolled] = useState<AgentComm[]>([]);
-  const [loading, setLoading] = useState(true);
   const [agentFilter, setAgentFilter] = useState<string>('All');
   const [typeFilter, setTypeFilter] = useState<string>('All');
-  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
-
-  const fetchRecent = async () => {
-    try {
-      const res = await agentCommsService.recent(30);
-      setPolled(res.data);
-    } catch (err) {
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRecent();
-    timerRef.current = setInterval(fetchRecent, 60000);
-    return () => clearInterval(timerRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Ticker for relative timestamps
   const [, setTick] = useState(0);
@@ -60,15 +40,15 @@ export default function CommsTab({ sseEvents, commsData }: Props) {
     return () => clearInterval(t);
   }, []);
 
-  // Use external data if available (refreshes every 5s), fall back to own polling (60s)
+  // Use commsData from unified 2s poll directly
   const baseComms = useMemo(() => {
     if (commsData && commsData.length > 0) {
       return commsData.map(c => ({ ...c, user_id: '', related_task_id: null, acknowledged: 0 })) as AgentComm[];
     }
-    return polled;
-  }, [commsData, polled]);
+    return [] as AgentComm[];
+  }, [commsData]);
 
-  // Merge with SSE comm events
+  // Merge with SSE comm events (for real-time items that haven't hit the poll yet)
   const merged = useMemo<AgentComm[]>(() => {
     const polledIds = new Set(baseComms.map((c) => c.id));
     const sseComms: AgentComm[] = sseEvents
@@ -87,7 +67,7 @@ export default function CommsTab({ sseEvents, commsData }: Props) {
     return [...sseComms, ...baseComms].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-  }, [polled, sseEvents]);
+  }, [baseComms, sseEvents]);
 
   // Apply filters
   const filtered = useMemo(() => {
@@ -98,7 +78,8 @@ export default function CommsTab({ sseEvents, commsData }: Props) {
     });
   }, [merged, agentFilter, typeFilter]);
 
-  if (loading && !commsData) {
+  // Show loading only if commsData hasn't arrived yet
+  if (!commsData) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="w-5 h-5 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />

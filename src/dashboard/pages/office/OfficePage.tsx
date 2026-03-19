@@ -10,7 +10,7 @@ import ControlRoom from './ControlRoom';
 import { useOfficeSSE } from './useOfficeSSE';
 import { agentTasksService } from '@/services/api';
 import {
-  AGENT_META, AGENT_COLORS,
+  CELL, AGENT_META, AGENT_COLORS,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
   CORE_AGENTS,
 } from './constants';
@@ -37,6 +37,9 @@ function getAgentForHUD(id: string): CanvasAgent | null {
     y: pos.y,
     targetX: pos.x,
     targetY: pos.y,
+    renderX: pos.x * CELL + CELL / 2,
+    renderY: pos.y * CELL + CELL / 2,
+    speed: 5,
     state: 'idle',
     isSpecialist: !CORE_AGENTS.includes(id as CoreAgentId),
     isDormant: false,

@@ -1,5 +1,5 @@
 // src/dashboard/pages/office/TasksTab.tsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { agentTasksService, type AgentTask } from '@/services/api';
 import { AGENT_COLORS, AGENT_META, C, CORE_AGENTS } from './constants';
 import type { AgentId, CoreAgentId } from './types';
@@ -31,9 +31,10 @@ function priorityLabel(p: number): { text: string; color: string } {
   return { text: 'Low', color: C.dim };
 }
 
-export default function TasksTab({ onCreateTask, taskBoard: _externalBoard }: Props) {
-  const [board, setBoard] = useState<Record<string, AgentTask[]>>({ pending: [], running: [], completed: [] });
-  const [loading, setLoading] = useState(true);
+export default function TasksTab({ onCreateTask, taskBoard }: Props) {
+  // Derive board from the unified polling prop
+  const board: Record<string, AgentTask[]> = (taskBoard as Record<string, AgentTask[]>) ?? { pending: [], running: [], completed: [] };
+
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<Column | null>(null);
 
@@ -41,25 +42,6 @@ export default function TasksTab({ onCreateTask, taskBoard: _externalBoard }: Pr
   const [formAgent, setFormAgent] = useState<CoreAgentId>('weebo');
   const [formTitle, setFormTitle] = useState('');
   const [creating, setCreating] = useState(false);
-
-  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
-
-  const fetchBoard = async () => {
-    try {
-      const res = await agentTasksService.board();
-      setBoard(res.data);
-    } catch (err) {
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBoard();
-    timerRef.current = setInterval(fetchBoard, 60000);
-    return () => clearInterval(timerRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Elapsed-time ticker for running tasks
   const [, setTick] = useState(0);
@@ -107,7 +89,7 @@ export default function TasksTab({ onCreateTask, taskBoard: _externalBoard }: Pr
     try {
       const action = targetCol === 'running' ? 'start' : 'complete';
       await agentTasksService.update(dragId, action);
-      await fetchBoard();
+      // The 2s unified poll will pick up the change
     } catch {
       // silent
     }
@@ -123,7 +105,7 @@ export default function TasksTab({ onCreateTask, taskBoard: _externalBoard }: Pr
       onCreateTask(formAgent, title);
       await agentTasksService.create({ agent_id: formAgent, title });
       setFormTitle('');
-      await fetchBoard();
+      // The 2s unified poll will pick up the new task
     } catch {
       // silent
     } finally {
@@ -131,7 +113,8 @@ export default function TasksTab({ onCreateTask, taskBoard: _externalBoard }: Pr
     }
   };
 
-  if (loading) {
+  // Show loading only if taskBoard prop hasn't arrived yet
+  if (!taskBoard) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="w-5 h-5 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />

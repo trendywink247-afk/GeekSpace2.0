@@ -1,8 +1,10 @@
 // src/dashboard/pages/office/OfficeCanvasRenderer.ts
 // Pure canvas pixel-art renderer for the Agent Office Mission Control.
-// Called every 200ms by the Stage component. Uses 16x24 pre-rendered sprite
-// canvases for characters and fillRect() for UI overlays. All coordinates
-// are in CELL-grid units converted to pixel coordinates at draw time.
+// Called every 50ms by the Stage component. Uses 16x24 pre-rendered sprite
+// canvases for characters and fillRect() for UI overlays.
+//
+// Agents are positioned using smooth renderX/renderY pixel coordinates
+// (interpolated in the Stage tick loop) rather than snapping to grid cells.
 //
 // The background is a single pixel-art image (864x800) that contains all
 // furniture, walls, and floor. No code-drawn furniture needed.
@@ -63,11 +65,6 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-/** Grid -> pixel X */
-function gx(col: number): number { return col * CELL; }
-/** Grid -> pixel Y */
-function gy(row: number): number { return row * CELL; }
-
 /** Whether the pixel art background loaded successfully */
 export function isBgLoaded(): boolean {
   return bgLoaded && !!bgImage && bgImage.complete && bgImage.naturalWidth > 0;
@@ -102,11 +99,13 @@ export function drawForeground(ctx: CanvasRenderingContext2D): void {
 
 // ---------------------------------------------------------------------------
 // drawAgent — 16x24 pixel-art sprites via cached canvas drawImage()
+// Uses smooth renderX/renderY for sub-pixel positioning
 // ---------------------------------------------------------------------------
 
 export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number, isSelected: boolean): void {
-  const cx = gx(agent.x) + CELL / 2;
-  const cy = gy(agent.y) + CELL / 2;
+  // Use smooth interpolated pixel position for rendering
+  const cx = agent.renderX;
+  const cy = agent.renderY;
   const color = agent.color;
   const isWalking = agent.x !== agent.targetX || agent.y !== agent.targetY;
 
@@ -125,9 +124,9 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   // Agent glow for active (non-idle) agents
   if (agent.state !== 'idle') {
     ctx.fillStyle = hexToRgba(agent.color, 0.08);
-    ctx.fillRect(gx(agent.x) - CELL, gy(agent.y) - CELL, CELL * 4, CELL * 4);
+    ctx.fillRect(cx - CELL / 2 - CELL, cy - CELL / 2 - CELL, CELL * 4, CELL * 4);
     ctx.fillStyle = hexToRgba(agent.color, 0.04);
-    ctx.fillRect(gx(agent.x) - CELL * 2, gy(agent.y) - CELL * 2, CELL * 6, CELL * 6);
+    ctx.fillRect(cx - CELL / 2 - CELL * 2, cy - CELL / 2 - CELL * 2, CELL * 6, CELL * 6);
   }
 
   // Selected agent — pulsing ring
@@ -191,11 +190,12 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
 
 // ---------------------------------------------------------------------------
 // drawStateIndicator — icon/animation above agent head per state
+// Uses smooth renderX/renderY for sub-pixel positioning
 // ---------------------------------------------------------------------------
 
 export function drawStateIndicator(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number): void {
-  const cx = gx(agent.x) + CELL / 2;
-  const cy = gy(agent.y) + CELL / 2;
+  const cx = agent.renderX;
+  const cy = agent.renderY;
   // Position above the scaled sprite
   const spriteScale = (CELL / 16) * 1.2;
   const drawH = 24 * spriteScale;
@@ -334,6 +334,7 @@ export function drawStateIndicator(ctx: CanvasRenderingContext2D, agent: CanvasA
 
 // ---------------------------------------------------------------------------
 // drawParticleBeam — colored 2x2 rectangles traveling between two agents
+// Uses smooth renderX/renderY for sub-pixel beam endpoints
 // ---------------------------------------------------------------------------
 
 export function drawParticleBeam(ctx: CanvasRenderingContext2D, beam: ParticleBeam, agents: CanvasAgent[]): void {
@@ -341,10 +342,10 @@ export function drawParticleBeam(ctx: CanvasRenderingContext2D, beam: ParticleBe
   const to = agents.find(a => a.id === beam.toAgentId);
   if (!from || !to) return;
 
-  const x1 = gx(from.x) + CELL / 2;
-  const y1 = gy(from.y) + CELL / 2;
-  const x2 = gx(to.x) + CELL / 2;
-  const y2 = gy(to.y) + CELL / 2;
+  const x1 = from.renderX;
+  const y1 = from.renderY;
+  const x2 = to.renderX;
+  const y2 = to.renderY;
 
   const elapsed = Date.now() - beam.createdAt;
   const progress = Math.min(elapsed / beam.duration, 1);
@@ -362,7 +363,7 @@ export function drawParticleBeam(ctx: CanvasRenderingContext2D, beam: ParticleBe
 }
 
 // ---------------------------------------------------------------------------
-// renderFrame — main entry, called every CANVAS_TICK_MS
+// renderFrame — main entry, called every render tick
 // ---------------------------------------------------------------------------
 
 export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState): void {
@@ -376,8 +377,8 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState): 
     drawParticleBeam(ctx, beams[i], agents);
   }
 
-  // 3. Agents sorted by Y for depth — agents lower on screen draw on top
-  const sortedAgents = [...agents].sort((a, b) => a.y - b.y);
+  // 3. Agents sorted by renderY for depth — agents lower on screen draw on top
+  const sortedAgents = [...agents].sort((a, b) => a.renderY - b.renderY);
   for (let i = 0; i < sortedAgents.length; i++) {
     const agent = sortedAgents[i];
     const isSelected = agent.id === selectedAgentId;

@@ -5,6 +5,9 @@
 //
 // Redesigned for the 27x25 pixel art background (32px tiles, 864x800).
 // All 9 agents are always visible. No door, no dormant state.
+//
+// Smooth movement: agents interpolate renderX/renderY toward their grid
+// position each tick, giving sub-pixel gliding instead of tile-snapping.
 
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type {
@@ -17,7 +20,6 @@ import {
   AGENT_COLORS, AGENT_META, SPECIALIST_PARENT,
   CORE_AGENTS, SPECIALIST_AGENTS,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
-  CANVAS_TICK_MS,
   MAX_PARTICLE_BEAMS, MAX_SPEECH_BUBBLES,
   PARTICLE_BEAM_TTL, SPEECH_BUBBLE_TTL,
   CLICK_DOUBLE_THRESHOLD_MS,
@@ -25,6 +27,14 @@ import {
 import { renderFrame, loadOfficeAssets } from './OfficeCanvasRenderer';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
 import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors } from './agentBehavior';
+
+// ---------------------------------------------------------------------------
+// Tick timing — render at 50ms (20fps) for smooth interpolation,
+// behavior/BFS logic runs every 4th render tick (200ms effective)
+// ---------------------------------------------------------------------------
+
+const RENDER_TICK_MS = 50;
+const BEHAVIOR_TICK_DIVISOR = 4; // behavior runs every 4 render ticks = 200ms
 
 // ---------------------------------------------------------------------------
 // Props
@@ -36,6 +46,22 @@ interface Props {
   onAgentSelect: (id: string | null) => void;
   onAgentDoubleClick: (id: string) => void;
 }
+
+// ---------------------------------------------------------------------------
+// Per-agent movement speed (pixels per tick) — personality-driven
+// ---------------------------------------------------------------------------
+
+const AGENT_SPEEDS: Record<AgentId, number> = {
+  weebo: 7,   // energetic, fast
+  edith: 5,   // purposeful, medium
+  jarvis: 4,  // dignified, measured
+  aria: 6,    // graceful, quick
+  forge: 4,   // steady, deliberate
+  pulse: 5,   // efficient
+  echo: 6,    // friendly, bouncy
+  cal: 4,     // organized, steady
+  nova: 7,    // curious, darting
+};
 
 // ---------------------------------------------------------------------------
 // Collision grid — matches pixel art background (27x25, 32px tiles)
@@ -167,6 +193,9 @@ function buildInitialAgents(): CanvasAgent[] {
       y: seat.y,
       targetX: seat.x,
       targetY: seat.y,
+      renderX: seat.x * CELL + CELL / 2,
+      renderY: seat.y * CELL + CELL / 2,
+      speed: AGENT_SPEEDS[id],
       state: 'idle',
       isSpecialist: false,
       isDormant: false,
@@ -187,6 +216,9 @@ function buildInitialAgents(): CanvasAgent[] {
       y: seat.y,
       targetX: seat.x,
       targetY: seat.y,
+      renderX: seat.x * CELL + CELL / 2,
+      renderY: seat.y * CELL + CELL / 2,
+      speed: AGENT_SPEEDS[id],
       state: 'idle',
       isSpecialist: true,
       isDormant: false, // All agents always visible
@@ -408,6 +440,7 @@ export default function OfficeStage({
     const interval = setInterval(() => {
       tickRef.current++;
       const now = Date.now();
+      const isBehaviorTick = tickRef.current % BEHAVIOR_TICK_DIVISOR === 0;
 
       // Expire beams
       setBeams(prev => {
@@ -421,27 +454,62 @@ export default function OfficeStage({
         return filtered.length === prev.length ? prev : filtered;
       });
 
-      // Move agents via BFS (one step per tick)
+      // Smooth movement: interpolate renderX/renderY + advance BFS on behavior ticks
       setAgents(prev => {
         let changed = false;
         const next = prev.map(agent => {
-          if (agent.x === agent.targetX && agent.y === agent.targetY) return agent;
-          const step = bfsNextStep(COLLISION_GRID, agent.x, agent.y, agent.targetX, agent.targetY);
-          if (!step) return agent;
-          changed = true;
-          return { ...agent, x: step.x, y: step.y };
+          const targetRenderX = agent.x * CELL + CELL / 2;
+          const targetRenderY = agent.y * CELL + CELL / 2;
+          const dx = targetRenderX - agent.renderX;
+          const dy = targetRenderY - agent.renderY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          // Smoothly interpolate renderX/renderY toward current grid cell
+          if (dist > 1) {
+            changed = true;
+            const speed = agent.speed;
+            const frac = Math.min(speed / dist, 1);
+            return {
+              ...agent,
+              renderX: agent.renderX + dx * frac,
+              renderY: agent.renderY + dy * frac,
+            };
+          }
+
+          // renderX/renderY caught up to grid position — snap precisely
+          if (agent.renderX !== targetRenderX || agent.renderY !== targetRenderY) {
+            changed = true;
+            return { ...agent, renderX: targetRenderX, renderY: targetRenderY };
+          }
+
+          // Already at final target — nothing to do
+          if (agent.x === agent.targetX && agent.y === agent.targetY) {
+            return agent;
+          }
+
+          // Advance to next BFS cell (only on behavior ticks to control pacing)
+          if (isBehaviorTick) {
+            const step = bfsNextStep(COLLISION_GRID, agent.x, agent.y, agent.targetX, agent.targetY);
+            if (!step) return agent;
+            changed = true;
+            return { ...agent, x: step.x, y: step.y };
+          }
+
+          return agent;
         });
         return changed ? next : prev;
       });
 
-      // Idle behavior — wandering, socializing, fidgeting
-      setAgents(prev => {
-        const { updatedAgents, newBubbles } = tickBehaviors(prev, tickRef.current);
-        if (newBubbles.length > 0) {
-          setBubbles(b => [...b.slice(-(MAX_SPEECH_BUBBLES - newBubbles.length)), ...newBubbles]);
-        }
-        return updatedAgents;
-      });
+      // Idle behavior — wandering, socializing, fidgeting (only on behavior ticks)
+      if (isBehaviorTick) {
+        setAgents(prev => {
+          const { updatedAgents, newBubbles } = tickBehaviors(prev, tickRef.current);
+          if (newBubbles.length > 0) {
+            setBubbles(b => [...b.slice(-(MAX_SPEECH_BUBBLES - newBubbles.length)), ...newBubbles]);
+          }
+          return updatedAgents;
+        });
+      }
 
       // RENDER
       const canvas = canvasRef.current;
@@ -455,7 +523,7 @@ export default function OfficeStage({
         tick: tickRef.current,
         selectedAgentId: selectedRef.current,
       });
-    }, CANVAS_TICK_MS);
+    }, RENDER_TICK_MS);
 
     return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

@@ -32,6 +32,9 @@ export interface CanvasAgent {
   y: number;           // grid row
   targetX: number;     // BFS target column
   targetY: number;     // BFS target row
+  renderX: number;     // smooth pixel X for rendering (interpolated)
+  renderY: number;     // smooth pixel Y for rendering (interpolated)
+  speed: number;       // pixels per tick (varies per agent personality)
   state: AgentStateType;
   isSpecialist: boolean;
   isDormant: boolean;   // specialists only: greyed out when inactive

@@ -1,6 +1,4 @@
 // src/dashboard/pages/office/MetricsTab.tsx
-import { useState, useEffect } from 'react';
-import { agentTasksService, agentCommsService } from '@/services/api';
 import { AGENT_COLORS, AGENT_META, C, CORE_AGENTS } from './constants';
 import type { AgentId, CoreAgentId } from './types';
 
@@ -27,48 +25,9 @@ interface CounterCard {
   accent: string;
 }
 
-export default function MetricsTab({ taskStats: extTaskStats, commStats: extCommStats }: { taskStats?: TaskStats | null; commStats?: CommStats | null }) {
-  const [taskStats, setTaskStats] = useState<TaskStats | null>(null);
-  const [commStats, setCommStats] = useState<CommStats | null>(null);
-
-  // Use external data when available (from unified 5s poll)
-  useEffect(() => {
-    if (extTaskStats) setTaskStats(extTaskStats as TaskStats);
-    if (extCommStats) setCommStats(extCommStats as CommStats);
-  }, [extTaskStats, extCommStats]);
-  const [agentBreakdown, setAgentBreakdown] = useState<Record<CoreAgentId, number>>({ weebo: 0, edith: 0, jarvis: 0 });
-  const [loading, setLoading] = useState(true);
-
-  const fetchStats = async () => {
-    try {
-      const [tasksRes, commsRes] = await Promise.all([
-        agentTasksService.stats(),
-        agentCommsService.stats(),
-      ]);
-      setTaskStats(tasksRes.data);
-      setCommStats(commsRes.data);
-
-      // Fetch per-agent task counts for bar chart
-      const agentCounts: Record<CoreAgentId, number> = { weebo: 0, edith: 0, jarvis: 0 };
-      const agentResults = await Promise.all(
-        CORE_AGENTS.map((id) => agentTasksService.stats(id))
-      );
-      CORE_AGENTS.forEach((id, i) => {
-        agentCounts[id] = agentResults[i].data.total;
-      });
-      setAgentBreakdown(agentCounts);
-    } catch (err) {
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  if (loading) {
+export default function MetricsTab({ taskStats, commStats }: { taskStats?: TaskStats | null; commStats?: CommStats | null }) {
+  // Show loading only if props haven't arrived yet
+  if (!taskStats && !commStats) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="w-5 h-5 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
@@ -83,6 +42,13 @@ export default function MetricsTab({ taskStats: extTaskStats, commStats: extComm
     { label: 'Pending', value: taskStats?.pending ?? 0, icon: '\u23F3', accent: '#F59E0B' },
   ];
 
+  // Derive per-agent breakdown from commStats.byAgent (available from unified poll)
+  const agentBreakdown: Record<CoreAgentId, number> = { weebo: 0, edith: 0, jarvis: 0 };
+  if (commStats?.byAgent) {
+    for (const id of CORE_AGENTS) {
+      agentBreakdown[id] = commStats.byAgent[id] ?? 0;
+    }
+  }
   const maxAgent = Math.max(...Object.values(agentBreakdown), 1);
 
   return (
@@ -104,12 +70,12 @@ export default function MetricsTab({ taskStats: extTaskStats, commStats: extComm
         ))}
       </div>
 
-      {/* Tasks by Agent — Bar Chart */}
+      {/* Activity by Agent -- Bar Chart */}
       <div
         className="rounded-lg p-3"
         style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
       >
-        <h3 className="text-xs font-medium mb-3" style={{ color: C.text }}>Tasks by Agent</h3>
+        <h3 className="text-xs font-medium mb-3" style={{ color: C.text }}>Activity by Agent</h3>
         <div className="flex flex-col gap-2.5">
           {CORE_AGENTS.map((id) => {
             const count = agentBreakdown[id];
