@@ -1,8 +1,8 @@
 // src/dashboard/pages/office/OfficeCanvasRenderer.ts
 // Pure canvas pixel-art renderer for the Agent Office Mission Control.
-// Called every 200ms by the Stage component. Uses ONLY ctx.fillRect() — no
-// images, paths, gradients, or text. All coordinates are in CELL-grid units
-// converted to pixel coordinates at draw time.
+// Called every 200ms by the Stage component. Uses 16x24 pre-rendered sprite
+// canvases for characters and fillRect() for environment/UI. All coordinates
+// are in CELL-grid units converted to pixel coordinates at draw time.
 
 import type { CanvasAgent, DoorState, ParticleBeam } from './types';
 import {
@@ -11,6 +11,7 @@ import {
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
   AGENT_COLORS, C,
 } from './constants';
+import { getAgentSprites } from './sprites';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -406,32 +407,11 @@ export function drawServerRack(ctx: CanvasRenderingContext2D, tick: number): voi
 }
 
 // ---------------------------------------------------------------------------
-// Sprite color helpers
+// Sprite color helpers (retained for environment drawing)
 // ---------------------------------------------------------------------------
 
-/** Darken a hex color by mixing toward black */
-function darken(hex: string, amount: number): string {
-  const r = Math.round(parseInt(hex.slice(1, 3), 16) * (1 - amount));
-  const g = Math.round(parseInt(hex.slice(3, 5), 16) * (1 - amount));
-  const b = Math.round(parseInt(hex.slice(5, 7), 16) * (1 - amount));
-  return `rgb(${r},${g},${b})`;
-}
-
-/** Lighten a hex color by mixing toward white */
-function lighten(hex: string, amount: number): string {
-  const r = Math.round(parseInt(hex.slice(1, 3), 16) + (255 - parseInt(hex.slice(1, 3), 16)) * amount);
-  const g = Math.round(parseInt(hex.slice(3, 5), 16) + (255 - parseInt(hex.slice(3, 5), 16)) * amount);
-  const b = Math.round(parseInt(hex.slice(5, 7), 16) + (255 - parseInt(hex.slice(5, 7), 16)) * amount);
-  return `rgb(${r},${g},${b})`;
-}
-
-// Skin tone for all agents (warm pixel-art tone)
-const SKIN = '#F5CFA0';
-const SKIN_SHADOW = '#D4A574';
-
 // ---------------------------------------------------------------------------
-// Per-agent sprite drawers — each is a unique pixel-art character
-// Sprite grid: 12 wide x 20 tall, drawn from (ox, oy) top-left
+// drawAgent — 16x24 pixel-art sprites via cached canvas drawImage()
 // ---------------------------------------------------------------------------
 
 /** Weebo — cyan hoodie, anime sparkle, big round head */

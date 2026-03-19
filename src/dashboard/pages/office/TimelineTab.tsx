@@ -103,14 +103,18 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
       tool: ev.tool, targetAgent: ev.targetAgent,
     }));
 
-    const actItems = (activityTimeline || []).map(a => ({
-      type: 'activity' as const,
-      timestamp: a.created_at,
-      agentId: inferAgentFromAction(a.action, a.icon), agentName: inferAgentFromAction(a.action, a.icon),
-      state: 'done' as AgentStateType,
-      content: `${a.action}: ${a.details}`.slice(0, 120),
-      tool: undefined, targetAgent: undefined,
-    }));
+    const actItems = (activityTimeline || []).map(a => {
+      const isUserMsg = a.icon === 'user' || a.action === 'User message';
+      return {
+        type: (isUserMsg ? 'user_message' : 'activity') as 'activity' | 'user_message',
+        timestamp: a.created_at,
+        agentId: isUserMsg ? 'user' : inferAgentFromAction(a.action, a.icon),
+        agentName: isUserMsg ? 'Aliya' : inferAgentFromAction(a.action, a.icon),
+        state: (isUserMsg ? 'idle' : 'done') as AgentStateType,
+        content: isUserMsg ? a.details : (a.details || a.action).replace(/→ undefined:? /g, '').slice(0, 120),
+        tool: undefined, targetAgent: undefined,
+      };
+    });
 
     return [...sseItems, ...actItems]
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -146,9 +150,10 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
         const showSeparator = min !== lastMinute && i > 0;
         lastMinute = min;
 
-        const color = AGENT_COLORS[ev.agentId as AgentId] ?? C.dim;
-        const meta = AGENT_META[ev.agentId as AgentId];
-        const badge = eventBadge(ev.state, ev.targetAgent);
+        const isUser = ev.agentId === 'user' || (ev as Record<string, unknown>).type === 'user_message';
+        const color = isUser ? '#FF9F43' : (AGENT_COLORS[ev.agentId as AgentId] ?? C.dim);
+        const meta = isUser ? { emoji: '\uD83D\uDC64' } : AGENT_META[ev.agentId as AgentId];
+        const badge = isUser ? { bg: '#FF9F4320', text: '#FF9F43', pulse: false, suffix: undefined } : eventBadge(ev.state, ev.targetAgent);
 
         return (
           <div key={`${ev.timestamp}-${ev.agentId}-${ev.state}-${i}`}>
@@ -181,7 +186,7 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
                 className={`text-[9px] px-1.5 py-0.5 rounded flex-shrink-0 ${badge.pulse ? 'animate-pulse' : ''}`}
                 style={{ background: badge.bg, color: badge.text }}
               >
-                {stateLabel(ev.state)}
+                {isUser ? 'Message' : stateLabel(ev.state)}
                 {badge.suffix ?? ''}
                 {ev.state === 'task_completed' ? ' \u2713' : ''}
               </span>

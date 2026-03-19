@@ -26,15 +26,40 @@ officeRouter.get('/state', requireAuth, (req: AuthRequest, res) => {
   }));
   const commStats = getCommStats(userId);
 
-  // Recent activity (for timeline) — fix UTC timestamps
-  const timeline = (db.prepare(`
+  // Timeline: merge activity log + recent conversation (user messages + agent replies)
+  const activityRows = (db.prepare(`
     SELECT action, details, icon, created_at
     FROM activity_log
     WHERE user_id = ?
     ORDER BY created_at DESC
-    LIMIT 50
+    LIMIT 30
   `).all(userId) as Array<{ action: string; details: string; icon: string; created_at: string }>)
-    .map(t => ({ ...t, created_at: t.created_at.endsWith('Z') ? t.created_at : t.created_at + 'Z' }));
+    .map(t => ({
+      ...t,
+      type: 'activity' as const,
+      created_at: t.created_at.endsWith('Z') ? t.created_at : t.created_at + 'Z',
+    }));
+
+  // User messages + agent replies for full conversation flow
+  const chatRows = (db.prepare(`
+    SELECT role, substr(content, 1, 120) as content, provider, created_at
+    FROM conversation_log
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 30
+  `).all(userId) as Array<{ role: string; content: string; provider: string; created_at: string }>)
+    .map(r => ({
+      action: r.role === 'user' ? 'User message' : 'Agent reply',
+      details: r.content,
+      icon: r.role === 'user' ? 'user' : 'bot',
+      type: 'chat' as const,
+      created_at: r.created_at.endsWith('Z') ? r.created_at : r.created_at + 'Z',
+    }));
+
+  // Merge and sort by time
+  const timeline = [...activityRows, ...chatRows]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 50);
 
   // Tasks — fix timestamps
   const fixTaskDates = (tasks: Record<string, unknown[]>) => {
