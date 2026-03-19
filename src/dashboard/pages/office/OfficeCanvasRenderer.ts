@@ -406,15 +406,695 @@ export function drawServerRack(ctx: CanvasRenderingContext2D, tick: number): voi
 }
 
 // ---------------------------------------------------------------------------
-// drawAgent — pixel sprite with head, body, legs, walking animation
+// Sprite color helpers
+// ---------------------------------------------------------------------------
+
+/** Darken a hex color by mixing toward black */
+function darken(hex: string, amount: number): string {
+  const r = Math.round(parseInt(hex.slice(1, 3), 16) * (1 - amount));
+  const g = Math.round(parseInt(hex.slice(3, 5), 16) * (1 - amount));
+  const b = Math.round(parseInt(hex.slice(5, 7), 16) * (1 - amount));
+  return `rgb(${r},${g},${b})`;
+}
+
+/** Lighten a hex color by mixing toward white */
+function lighten(hex: string, amount: number): string {
+  const r = Math.round(parseInt(hex.slice(1, 3), 16) + (255 - parseInt(hex.slice(1, 3), 16)) * amount);
+  const g = Math.round(parseInt(hex.slice(3, 5), 16) + (255 - parseInt(hex.slice(3, 5), 16)) * amount);
+  const b = Math.round(parseInt(hex.slice(5, 7), 16) + (255 - parseInt(hex.slice(5, 7), 16)) * amount);
+  return `rgb(${r},${g},${b})`;
+}
+
+// Skin tone for all agents (warm pixel-art tone)
+const SKIN = '#F5CFA0';
+const SKIN_SHADOW = '#D4A574';
+
+// ---------------------------------------------------------------------------
+// Per-agent sprite drawers — each is a unique pixel-art character
+// Sprite grid: 12 wide x 20 tall, drawn from (ox, oy) top-left
+// ---------------------------------------------------------------------------
+
+/** Weebo — cyan hoodie, anime sparkle, big round head */
+function drawWeeboSprite(ctx: CanvasRenderingContext2D, ox: number, oy: number, color: string, da: number, frame: number): void {
+  const bob = frame === 1 ? -1 : 0;
+  // Hair (rows 0-1) — spiky cyan hair
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 2, oy + bob, 8, 1);
+  ctx.fillRect(ox + 1, oy + 1 + bob, 10, 1);
+  // Sparkle accessory on top-right
+  ctx.fillStyle = hexToRgba('#FFFFFF', da * 0.9);
+  ctx.fillRect(ox + 9, oy + bob, 1, 1);
+  ctx.fillRect(ox + 10, oy + 1 + bob, 1, 1);
+  // Head (rows 2-7) — round, 10 wide
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 10, 6);
+  // Rounded head corners (knock off)
+  ctx.fillStyle = 'rgba(0,0,0,0)';
+  // -- use bg to cut corners
+  ctx.fillStyle = hexToRgba(C.bg, 1);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 1, 1);
+  ctx.fillRect(ox + 10, oy + 2 + bob, 1, 1);
+  ctx.fillRect(ox + 1, oy + 7 + bob, 1, 1);
+  ctx.fillRect(ox + 10, oy + 7 + bob, 1, 1);
+  // Big anime eyes (row 4) — 2x2 each, dark with highlight
+  ctx.fillStyle = hexToRgba('#0A0A20', da);
+  ctx.fillRect(ox + 3, oy + 4 + bob, 2, 2);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 2, 2);
+  // Eye highlights
+  ctx.fillStyle = hexToRgba('#FFFFFF', da * 0.9);
+  ctx.fillRect(ox + 3, oy + 4 + bob, 1, 1);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 1, 1);
+  // Small smile (row 6)
+  ctx.fillStyle = hexToRgba('#C08060', da);
+  ctx.fillRect(ox + 5, oy + 6 + bob, 2, 1);
+  // Shadow under chin
+  ctx.fillStyle = hexToRgba(SKIN_SHADOW, da);
+  ctx.fillRect(ox + 3, oy + 7 + bob, 6, 1);
+  // Neck (row 8)
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 5, oy + 8 + bob, 2, 1);
+  // Body — hoodie (rows 9-14)
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 1, oy + 9 + bob, 10, 6);
+  // Hoodie pocket (darker center)
+  ctx.fillStyle = hexToRgba(color, da * 0.6);
+  ctx.fillRect(ox + 4, oy + 12 + bob, 4, 2);
+  // Hoodie hood edge
+  ctx.fillStyle = lighten(color, 0.3);
+  ctx.fillRect(ox + 1, oy + 9 + bob, 10, 1);
+  // Arms (slightly darker)
+  ctx.fillStyle = darken(color, 0.2);
+  ctx.fillRect(ox + 1, oy + 10 + bob, 2, 4);
+  ctx.fillRect(ox + 9, oy + 10 + bob, 2, 4);
+  // Legs (rows 15-19)
+  const lf = frame;
+  ctx.fillStyle = hexToRgba('#2A2A4A', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 15, 3, 4);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 15, 3, 4);
+  // Shoes
+  ctx.fillStyle = hexToRgba(color, da * 0.8);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 19, 3, 1);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 19, 3, 1);
+}
+
+/** Edith — purple business jacket, glasses, angular head */
+function drawEdithSprite(ctx: CanvasRenderingContext2D, ox: number, oy: number, color: string, da: number, frame: number): void {
+  const bob = frame === 1 ? -1 : 0;
+  // Hair (rows 0-1) — neat dark purple
+  ctx.fillStyle = darken(color, 0.4);
+  ctx.fillRect(ox + 2, oy + bob, 8, 2);
+  ctx.fillRect(ox + 1, oy + 1 + bob, 10, 1);
+  // Head (rows 2-7) — angular/squared, full 10 wide
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 10, 6);
+  // Angular jaw — no rounded corners, sharp
+  // Glasses (row 3-4) — thin horizontal frames
+  ctx.fillStyle = hexToRgba('#3A3A6A', da);
+  ctx.fillRect(ox + 2, oy + 3 + bob, 8, 1); // frame top
+  // Left lens
+  ctx.fillRect(ox + 2, oy + 4 + bob, 3, 2);
+  // Right lens
+  ctx.fillRect(ox + 7, oy + 4 + bob, 3, 2);
+  // Bridge
+  ctx.fillRect(ox + 5, oy + 4 + bob, 2, 1);
+  // Eyes behind glasses
+  ctx.fillStyle = hexToRgba('#1A1A30', da);
+  ctx.fillRect(ox + 3, oy + 4 + bob, 1, 1);
+  ctx.fillRect(ox + 8, oy + 4 + bob, 1, 1);
+  // Lens shine
+  ctx.fillStyle = hexToRgba('#FFFFFF', da * 0.3);
+  ctx.fillRect(ox + 2, oy + 4 + bob, 1, 1);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 1, 1);
+  // Neutral mouth
+  ctx.fillStyle = hexToRgba('#C08060', da);
+  ctx.fillRect(ox + 4, oy + 6 + bob, 3, 1);
+  // Neck
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 5, oy + 8 + bob, 2, 1);
+  // Body — business jacket (rows 9-14) wider shoulders
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 0, oy + 9 + bob, 12, 6);
+  // Lapels (lighter V on chest)
+  ctx.fillStyle = lighten(color, 0.25);
+  ctx.fillRect(ox + 4, oy + 9 + bob, 1, 3);
+  ctx.fillRect(ox + 7, oy + 9 + bob, 1, 3);
+  ctx.fillRect(ox + 5, oy + 10 + bob, 1, 2);
+  ctx.fillRect(ox + 6, oy + 10 + bob, 1, 2);
+  // White shirt underneath
+  ctx.fillStyle = hexToRgba('#E0E0F0', da);
+  ctx.fillRect(ox + 5, oy + 12 + bob, 2, 2);
+  // Shoulder pads (darker)
+  ctx.fillStyle = darken(color, 0.2);
+  ctx.fillRect(ox + 0, oy + 9 + bob, 2, 2);
+  ctx.fillRect(ox + 10, oy + 9 + bob, 2, 2);
+  // Legs (rows 15-19) — dress pants
+  const lf = frame;
+  ctx.fillStyle = hexToRgba('#1A1A3A', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 15, 3, 4);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 15, 3, 4);
+  // Heels
+  ctx.fillStyle = hexToRgba('#2A2A40', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 19, 3, 1);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 19, 3, 1);
+}
+
+/** Jarvis — green bow tie, butler vest, upright posture */
+function drawJarvisSprite(ctx: CanvasRenderingContext2D, ox: number, oy: number, color: string, da: number, frame: number): void {
+  const bob = frame === 1 ? -1 : 0;
+  // Hair (rows 0-1) — slicked back, dark
+  ctx.fillStyle = hexToRgba('#2A3A1A', da);
+  ctx.fillRect(ox + 2, oy + bob, 8, 1);
+  ctx.fillRect(ox + 1, oy + 1 + bob, 10, 1);
+  // Side part accent
+  ctx.fillStyle = hexToRgba('#3A4A2A', da);
+  ctx.fillRect(ox + 2, oy + bob, 3, 1);
+  // Head (rows 2-7) — clean round
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 10, 6);
+  // Rounded corners
+  ctx.fillStyle = hexToRgba(C.bg, 1);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 1, 1);
+  ctx.fillRect(ox + 10, oy + 2 + bob, 1, 1);
+  // Distinguished eyes — smaller, composed
+  ctx.fillStyle = hexToRgba('#1A1A30', da);
+  ctx.fillRect(ox + 3, oy + 4 + bob, 2, 1);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 2, 1);
+  // Thin eyebrows
+  ctx.fillStyle = hexToRgba('#2A3A1A', da);
+  ctx.fillRect(ox + 3, oy + 3 + bob, 2, 1);
+  ctx.fillRect(ox + 7, oy + 3 + bob, 2, 1);
+  // Polite smile
+  ctx.fillStyle = hexToRgba('#C08060', da);
+  ctx.fillRect(ox + 4, oy + 6 + bob, 4, 1);
+  // Neck
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 5, oy + 8 + bob, 2, 1);
+  // Bow tie (row 8, below chin) — green
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 4, oy + 8 + bob, 1, 1);
+  ctx.fillRect(ox + 5, oy + 8 + bob, 2, 1);
+  ctx.fillRect(ox + 7, oy + 8 + bob, 1, 1);
+  // Center knot
+  ctx.fillStyle = darken(color, 0.3);
+  ctx.fillRect(ox + 5, oy + 8 + bob, 2, 1);
+  // Body — butler vest (rows 9-14)
+  // Dark outer vest
+  ctx.fillStyle = hexToRgba('#1A1A2A', da);
+  ctx.fillRect(ox + 1, oy + 9 + bob, 10, 6);
+  // White shirt center strip
+  ctx.fillStyle = hexToRgba('#E8E8F8', da);
+  ctx.fillRect(ox + 4, oy + 9 + bob, 4, 6);
+  // Vest overlay sides
+  ctx.fillStyle = hexToRgba('#2A2A3A', da);
+  ctx.fillRect(ox + 1, oy + 9 + bob, 3, 6);
+  ctx.fillRect(ox + 8, oy + 9 + bob, 3, 6);
+  // Vest buttons
+  ctx.fillStyle = hexToRgba(color, da * 0.7);
+  ctx.fillRect(ox + 5, oy + 10 + bob, 1, 1);
+  ctx.fillRect(ox + 5, oy + 12 + bob, 1, 1);
+  // Arms (dark sleeves)
+  ctx.fillStyle = hexToRgba('#1A1A2A', da);
+  ctx.fillRect(ox + 0, oy + 10 + bob, 1, 4);
+  ctx.fillRect(ox + 11, oy + 10 + bob, 1, 4);
+  // White gloves
+  ctx.fillStyle = hexToRgba('#E8E8F8', da);
+  ctx.fillRect(ox + 0, oy + 14 + bob, 1, 1);
+  ctx.fillRect(ox + 11, oy + 14 + bob, 1, 1);
+  // Legs (rows 15-19) — formal pants
+  const lf = frame;
+  ctx.fillStyle = hexToRgba('#1A1A30', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 15, 3, 4);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 15, 3, 4);
+  // Polished shoes
+  ctx.fillStyle = hexToRgba('#0A0A18', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 19, 3, 1);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 19, 3, 1);
+}
+
+/** Aria — pink beret, flowing hair, artist smock */
+function drawAriaSprite(ctx: CanvasRenderingContext2D, ox: number, oy: number, color: string, da: number, frame: number): void {
+  const bob = frame === 1 ? -1 : 0;
+  // Beret (rows 0-1) — pink beret tilted
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 1, oy + bob, 9, 1);
+  ctx.fillRect(ox + 2, oy + 1 + bob, 8, 1);
+  // Beret bobble
+  ctx.fillStyle = lighten(color, 0.3);
+  ctx.fillRect(ox + 5, oy - 1 + bob, 2, 1);
+  // Flowing hair — extra pixels on left side
+  ctx.fillStyle = hexToRgba('#8B4513', da);
+  ctx.fillRect(ox + 0, oy + 2 + bob, 2, 5);
+  ctx.fillRect(ox + 0, oy + 7 + bob, 1, 3);
+  ctx.fillRect(ox + 10, oy + 2 + bob, 2, 4);
+  ctx.fillRect(ox + 11, oy + 3 + bob, 1, 4);
+  // Head (rows 2-7) — soft round
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 2, oy + 2 + bob, 8, 6);
+  // Rounded corners
+  ctx.fillStyle = hexToRgba(C.bg, 1);
+  ctx.fillRect(ox + 2, oy + 2 + bob, 1, 1);
+  ctx.fillRect(ox + 9, oy + 2 + bob, 1, 1);
+  // Expressive eyes — with lashes
+  ctx.fillStyle = hexToRgba('#1A1A30', da);
+  ctx.fillRect(ox + 4, oy + 4 + bob, 2, 2);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 2, 2);
+  // Lashes (1px above each eye)
+  ctx.fillStyle = hexToRgba('#1A1A30', da);
+  ctx.fillRect(ox + 3, oy + 3 + bob, 1, 1);
+  ctx.fillRect(ox + 9, oy + 3 + bob, 1, 1);
+  // Eye color
+  ctx.fillStyle = hexToRgba(color, da * 0.6);
+  ctx.fillRect(ox + 4, oy + 4 + bob, 1, 1);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 1, 1);
+  // Rosie cheeks
+  ctx.fillStyle = hexToRgba(color, da * 0.25);
+  ctx.fillRect(ox + 3, oy + 5 + bob, 1, 1);
+  ctx.fillRect(ox + 9, oy + 5 + bob, 1, 1);
+  // Small smile
+  ctx.fillStyle = hexToRgba('#C08060', da);
+  ctx.fillRect(ox + 5, oy + 6 + bob, 3, 1);
+  // Neck
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 5, oy + 8 + bob, 2, 1);
+  // Body — artist smock (rows 9-14) loose, colorful
+  ctx.fillStyle = hexToRgba('#F0F0F0', da);
+  ctx.fillRect(ox + 1, oy + 9 + bob, 10, 6);
+  // Paint splashes on smock
+  ctx.fillStyle = hexToRgba(color, da * 0.7);
+  ctx.fillRect(ox + 3, oy + 11 + bob, 2, 1);
+  ctx.fillStyle = hexToRgba('#FFD700', da * 0.6);
+  ctx.fillRect(ox + 7, oy + 10 + bob, 2, 1);
+  ctx.fillStyle = hexToRgba('#6366F1', da * 0.5);
+  ctx.fillRect(ox + 2, oy + 13 + bob, 1, 1);
+  // Smock collar
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 3, oy + 9 + bob, 6, 1);
+  // Arms (smock sleeves, puffy)
+  ctx.fillStyle = hexToRgba('#E0E0E0', da);
+  ctx.fillRect(ox + 0, oy + 10 + bob, 2, 3);
+  ctx.fillRect(ox + 10, oy + 10 + bob, 2, 3);
+  // Paintbrush in right hand
+  ctx.fillStyle = hexToRgba('#8B4513', da);
+  ctx.fillRect(ox + 11, oy + 13 + bob, 1, 2);
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 11, oy + 12 + bob, 1, 1);
+  // Legs (rows 15-19)
+  const lf = frame;
+  ctx.fillStyle = hexToRgba('#4A3A6A', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 15, 3, 4);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 15, 3, 4);
+  // Cute shoes
+  ctx.fillStyle = hexToRgba(color, da * 0.7);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 19, 3, 1);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 19, 3, 1);
+}
+
+/** Forge — amber safety goggles, wide build, work apron */
+function drawForgeSprite(ctx: CanvasRenderingContext2D, ox: number, oy: number, color: string, da: number, frame: number): void {
+  const bob = frame === 1 ? -1 : 0;
+  // Safety goggles band (row 0-1) across forehead
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 1, oy + bob, 10, 1);
+  ctx.fillStyle = darken(color, 0.2);
+  ctx.fillRect(ox + 0, oy + 1 + bob, 12, 1);
+  // Hard hat brim accent
+  ctx.fillStyle = lighten(color, 0.3);
+  ctx.fillRect(ox + 3, oy + bob, 6, 1);
+  // Head (rows 2-7) — wider, sturdy face
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 10, 6);
+  // Goggles over eyes (row 3-5)
+  ctx.fillStyle = hexToRgba(color, da * 0.8);
+  ctx.fillRect(ox + 2, oy + 3 + bob, 8, 1); // strap
+  // Left goggle lens
+  ctx.fillStyle = hexToRgba('#202040', da);
+  ctx.fillRect(ox + 2, oy + 4 + bob, 3, 2);
+  ctx.fillStyle = hexToRgba(color, da * 0.4);
+  ctx.fillRect(ox + 2, oy + 4 + bob, 1, 1); // lens shine
+  // Right goggle lens
+  ctx.fillStyle = hexToRgba('#202040', da);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 3, 2);
+  ctx.fillStyle = hexToRgba(color, da * 0.4);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 1, 1); // lens shine
+  // Goggle bridge
+  ctx.fillStyle = hexToRgba('#404060', da);
+  ctx.fillRect(ox + 5, oy + 4 + bob, 2, 1);
+  // Stubble/chin
+  ctx.fillStyle = hexToRgba(SKIN_SHADOW, da);
+  ctx.fillRect(ox + 3, oy + 7 + bob, 6, 1);
+  // Determined mouth
+  ctx.fillStyle = hexToRgba('#A07050', da);
+  ctx.fillRect(ox + 4, oy + 6 + bob, 4, 1);
+  // Neck (thick)
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 4, oy + 8 + bob, 4, 1);
+  // Body — work apron over broad frame (rows 9-14)
+  // Base shirt (dark)
+  ctx.fillStyle = hexToRgba('#3A3A2A', da);
+  ctx.fillRect(ox + 0, oy + 9 + bob, 12, 6);
+  // Leather apron (front)
+  ctx.fillStyle = hexToRgba('#6B4A2A', da);
+  ctx.fillRect(ox + 2, oy + 9 + bob, 8, 6);
+  // Apron straps
+  ctx.fillStyle = hexToRgba('#5A3A1A', da);
+  ctx.fillRect(ox + 3, oy + 9 + bob, 1, 3);
+  ctx.fillRect(ox + 8, oy + 9 + bob, 1, 3);
+  // Tool pocket on apron
+  ctx.fillStyle = hexToRgba(color, da * 0.5);
+  ctx.fillRect(ox + 4, oy + 12 + bob, 4, 2);
+  ctx.fillStyle = hexToRgba(color, da * 0.8);
+  ctx.fillRect(ox + 5, oy + 12 + bob, 1, 2); // wrench in pocket
+  // Broad shoulders / arms
+  ctx.fillStyle = hexToRgba('#3A3A2A', da);
+  ctx.fillRect(ox + 0, oy + 9 + bob, 2, 5);
+  ctx.fillRect(ox + 10, oy + 9 + bob, 2, 5);
+  // Gloves
+  ctx.fillStyle = hexToRgba(color, da * 0.6);
+  ctx.fillRect(ox + 0, oy + 14 + bob, 2, 1);
+  ctx.fillRect(ox + 10, oy + 14 + bob, 2, 1);
+  // Legs (rows 15-19) — heavy work boots
+  const lf = frame;
+  ctx.fillStyle = hexToRgba('#2A2A1A', da);
+  ctx.fillRect(ox + 1 + (lf === 1 ? 1 : 0), oy + 15, 4, 3);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 15, 4, 3);
+  // Big boots
+  ctx.fillStyle = hexToRgba('#4A3A1A', da);
+  ctx.fillRect(ox + 1 + (lf === 1 ? 1 : 0), oy + 18, 4, 2);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 18, 4, 2);
+  // Boot soles
+  ctx.fillStyle = hexToRgba('#2A1A0A', da);
+  ctx.fillRect(ox + 1 + (lf === 1 ? 1 : 0), oy + 19, 4, 1);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 19, 4, 1);
+}
+
+/** Pulse — teal headset, lab coat */
+function drawPulseSprite(ctx: CanvasRenderingContext2D, ox: number, oy: number, color: string, da: number, frame: number): void {
+  const bob = frame === 1 ? -1 : 0;
+  // Neat hair (rows 0-1)
+  ctx.fillStyle = hexToRgba('#2A2A3A', da);
+  ctx.fillRect(ox + 2, oy + bob, 8, 1);
+  ctx.fillRect(ox + 1, oy + 1 + bob, 10, 1);
+  // Head (rows 2-7) — neat, professional
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 10, 6);
+  // Rounded corners
+  ctx.fillStyle = hexToRgba(C.bg, 1);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 1, 1);
+  ctx.fillRect(ox + 10, oy + 2 + bob, 1, 1);
+  // Headset earpiece on left side
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 0, oy + 3 + bob, 1, 3);
+  ctx.fillStyle = lighten(color, 0.3);
+  ctx.fillRect(ox + 0, oy + 4 + bob, 1, 1);
+  // Headset band across top
+  ctx.fillStyle = hexToRgba(color, da * 0.5);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 3, 1);
+  // Headset mic
+  ctx.fillStyle = hexToRgba(color, da * 0.7);
+  ctx.fillRect(ox + 1, oy + 6 + bob, 2, 1);
+  // Focused eyes
+  ctx.fillStyle = hexToRgba('#1A1A30', da);
+  ctx.fillRect(ox + 3, oy + 4 + bob, 2, 1);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 2, 1);
+  // Analytical expression — straight line mouth
+  ctx.fillStyle = hexToRgba('#C08060', da);
+  ctx.fillRect(ox + 5, oy + 6 + bob, 2, 1);
+  // Neck
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 5, oy + 8 + bob, 2, 1);
+  // Body — lab coat (rows 9-14)
+  // White lab coat
+  ctx.fillStyle = hexToRgba('#E8ECF0', da);
+  ctx.fillRect(ox + 1, oy + 9 + bob, 10, 6);
+  // Coat edges (slightly darker)
+  ctx.fillStyle = hexToRgba('#C8CCD0', da);
+  ctx.fillRect(ox + 1, oy + 9 + bob, 1, 6);
+  ctx.fillRect(ox + 10, oy + 9 + bob, 1, 6);
+  // Teal scrubs underneath (visible in center)
+  ctx.fillStyle = hexToRgba(color, da * 0.7);
+  ctx.fillRect(ox + 4, oy + 9 + bob, 4, 2);
+  // ID badge
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 2, oy + 10 + bob, 2, 3);
+  ctx.fillStyle = hexToRgba('#FFFFFF', da * 0.5);
+  ctx.fillRect(ox + 2, oy + 11 + bob, 2, 1);
+  // Coat buttons
+  ctx.fillStyle = hexToRgba('#808080', da);
+  ctx.fillRect(ox + 5, oy + 11 + bob, 1, 1);
+  ctx.fillRect(ox + 5, oy + 13 + bob, 1, 1);
+  // Arms (coat sleeves)
+  ctx.fillStyle = hexToRgba('#D8DDE0', da);
+  ctx.fillRect(ox + 0, oy + 10 + bob, 1, 4);
+  ctx.fillRect(ox + 11, oy + 10 + bob, 1, 4);
+  // Legs (rows 15-19) — neat slacks
+  const lf = frame;
+  ctx.fillStyle = hexToRgba('#2A3A3A', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 15, 3, 4);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 15, 3, 4);
+  // Clean shoes
+  ctx.fillStyle = hexToRgba('#1A2A2A', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 19, 3, 1);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 19, 3, 1);
+}
+
+/** Echo — indigo headband, casual shirt, warm open stance */
+function drawEchoSprite(ctx: CanvasRenderingContext2D, ox: number, oy: number, color: string, da: number, frame: number): void {
+  const bob = frame === 1 ? -1 : 0;
+  // Warm hair (rows 0-1) — curly/wavy
+  ctx.fillStyle = hexToRgba('#5A3A2A', da);
+  ctx.fillRect(ox + 1, oy + bob, 10, 1);
+  ctx.fillRect(ox + 0, oy + 1 + bob, 12, 1);
+  // Volume on sides
+  ctx.fillRect(ox + 0, oy + 2 + bob, 1, 2);
+  ctx.fillRect(ox + 11, oy + 2 + bob, 1, 2);
+  // Headband accessory
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 1, oy + 1 + bob, 10, 1);
+  // Head (rows 2-7) — warm, rounded
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 10, 6);
+  // Rounded corners
+  ctx.fillStyle = hexToRgba(C.bg, 1);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 1, 1);
+  ctx.fillRect(ox + 10, oy + 2 + bob, 1, 1);
+  ctx.fillRect(ox + 1, oy + 7 + bob, 1, 1);
+  ctx.fillRect(ox + 10, oy + 7 + bob, 1, 1);
+  // Kind eyes — open and warm
+  ctx.fillStyle = hexToRgba('#1A1A30', da);
+  ctx.fillRect(ox + 3, oy + 4 + bob, 2, 2);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 2, 2);
+  // Eye shine (big, friendly)
+  ctx.fillStyle = hexToRgba('#FFFFFF', da * 0.7);
+  ctx.fillRect(ox + 3, oy + 4 + bob, 1, 1);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 1, 1);
+  // Warm smile
+  ctx.fillStyle = hexToRgba('#C08060', da);
+  ctx.fillRect(ox + 4, oy + 6 + bob, 4, 1);
+  ctx.fillRect(ox + 3, oy + 6 + bob, 1, 1);
+  ctx.fillRect(ox + 8, oy + 6 + bob, 1, 1);
+  // Neck
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 5, oy + 8 + bob, 2, 1);
+  // Body — casual shirt (rows 9-14)
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 1, oy + 9 + bob, 10, 6);
+  // Shirt collar (V-neck)
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 5, oy + 9 + bob, 2, 1);
+  // Shirt stripes (horizontal, lighter)
+  ctx.fillStyle = lighten(color, 0.2);
+  ctx.fillRect(ox + 2, oy + 11 + bob, 8, 1);
+  ctx.fillRect(ox + 2, oy + 13 + bob, 8, 1);
+  // Open arms — wider stance
+  ctx.fillStyle = darken(color, 0.15);
+  ctx.fillRect(ox + 0, oy + 10 + bob, 2, 4);
+  ctx.fillRect(ox + 10, oy + 10 + bob, 2, 4);
+  // Hands (open, friendly)
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 0, oy + 14 + bob, 1, 1);
+  ctx.fillRect(ox + 11, oy + 14 + bob, 1, 1);
+  // Legs (rows 15-19)
+  const lf = frame;
+  ctx.fillStyle = hexToRgba('#3A3A5A', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 15, 3, 4);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 15, 3, 4);
+  // Casual sneakers
+  ctx.fillStyle = hexToRgba('#FFFFFF', da * 0.7);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 19, 3, 1);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 19, 3, 1);
+}
+
+/** Cal — lime clipboard, polo shirt, organized */
+function drawCalSprite(ctx: CanvasRenderingContext2D, ox: number, oy: number, color: string, da: number, frame: number): void {
+  const bob = frame === 1 ? -1 : 0;
+  // Clean short hair (rows 0-1)
+  ctx.fillStyle = hexToRgba('#2A3A2A', da);
+  ctx.fillRect(ox + 2, oy + bob, 8, 1);
+  ctx.fillRect(ox + 2, oy + 1 + bob, 8, 1);
+  // Head (rows 2-7) — tidy
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 10, 6);
+  // Rounded corners
+  ctx.fillStyle = hexToRgba(C.bg, 1);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 1, 1);
+  ctx.fillRect(ox + 10, oy + 2 + bob, 1, 1);
+  // Alert eyes
+  ctx.fillStyle = hexToRgba('#1A1A30', da);
+  ctx.fillRect(ox + 3, oy + 4 + bob, 2, 1);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 2, 1);
+  // Eyebrows (raised, attentive)
+  ctx.fillStyle = hexToRgba('#2A3A2A', da);
+  ctx.fillRect(ox + 3, oy + 3 + bob, 2, 1);
+  ctx.fillRect(ox + 7, oy + 3 + bob, 2, 1);
+  // Organized smile
+  ctx.fillStyle = hexToRgba('#C08060', da);
+  ctx.fillRect(ox + 5, oy + 6 + bob, 2, 1);
+  // Neck
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 5, oy + 8 + bob, 2, 1);
+  // Body — polo shirt (rows 9-14)
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 1, oy + 9 + bob, 10, 6);
+  // Polo collar
+  ctx.fillStyle = darken(color, 0.2);
+  ctx.fillRect(ox + 3, oy + 9 + bob, 6, 1);
+  ctx.fillStyle = lighten(color, 0.2);
+  ctx.fillRect(ox + 5, oy + 9 + bob, 2, 2);
+  // Polo buttons
+  ctx.fillStyle = hexToRgba('#E0E0E0', da);
+  ctx.fillRect(ox + 5, oy + 10 + bob, 1, 1);
+  ctx.fillRect(ox + 5, oy + 11 + bob, 1, 1);
+  // Arms
+  ctx.fillStyle = darken(color, 0.15);
+  ctx.fillRect(ox + 0, oy + 10 + bob, 2, 4);
+  ctx.fillRect(ox + 10, oy + 10 + bob, 2, 4);
+  // Clipboard in left hand (held out front)
+  ctx.fillStyle = hexToRgba('#D4C8A0', da);
+  ctx.fillRect(ox + 0, oy + 13 + bob, 3, 3);
+  // Clipboard paper
+  ctx.fillStyle = hexToRgba('#FFFFFF', da * 0.8);
+  ctx.fillRect(ox + 0, oy + 14 + bob, 3, 2);
+  // Clipboard clip
+  ctx.fillStyle = hexToRgba(color, da);
+  ctx.fillRect(ox + 1, oy + 13 + bob, 1, 1);
+  // Legs (rows 15-19)
+  const lf = frame;
+  ctx.fillStyle = hexToRgba('#2A3A2A', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 15, 3, 4);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 15, 3, 4);
+  // Clean shoes
+  ctx.fillStyle = hexToRgba('#4A4A3A', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 19, 3, 1);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 19, 3, 1);
+}
+
+/** Nova — magenta spiky hair, magnifying glass, explorer vest */
+function drawNovaSprite(ctx: CanvasRenderingContext2D, ox: number, oy: number, color: string, da: number, frame: number): void {
+  const bob = frame === 1 ? -1 : 0;
+  // Spiky hair (rows 0-1) — 2-3 pixels sticking up
+  ctx.fillStyle = hexToRgba(color, da * 0.8);
+  ctx.fillRect(ox + 3, oy - 1 + bob, 1, 1);
+  ctx.fillRect(ox + 6, oy - 1 + bob, 2, 1);
+  ctx.fillRect(ox + 9, oy - 1 + bob, 1, 1);
+  ctx.fillStyle = darken(color, 0.3);
+  ctx.fillRect(ox + 1, oy + bob, 10, 1);
+  ctx.fillRect(ox + 1, oy + 1 + bob, 10, 1);
+  // Head (rows 2-7)
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 10, 6);
+  // Rounded corners
+  ctx.fillStyle = hexToRgba(C.bg, 1);
+  ctx.fillRect(ox + 1, oy + 2 + bob, 1, 1);
+  ctx.fillRect(ox + 10, oy + 2 + bob, 1, 1);
+  // Bright curious eyes
+  ctx.fillStyle = hexToRgba('#1A1A30', da);
+  ctx.fillRect(ox + 3, oy + 4 + bob, 2, 2);
+  ctx.fillRect(ox + 7, oy + 4 + bob, 2, 2);
+  // Eye sparkle
+  ctx.fillStyle = hexToRgba('#FFFFFF', da * 0.9);
+  ctx.fillRect(ox + 4, oy + 4 + bob, 1, 1);
+  ctx.fillRect(ox + 8, oy + 4 + bob, 1, 1);
+  // Excited grin
+  ctx.fillStyle = hexToRgba('#C08060', da);
+  ctx.fillRect(ox + 4, oy + 6 + bob, 4, 1);
+  ctx.fillRect(ox + 5, oy + 7 + bob, 2, 1);
+  // Neck
+  ctx.fillStyle = hexToRgba(SKIN, da);
+  ctx.fillRect(ox + 5, oy + 8 + bob, 2, 1);
+  // Body — explorer vest (rows 9-14)
+  // Base T-shirt
+  ctx.fillStyle = hexToRgba('#3A3A4A', da);
+  ctx.fillRect(ox + 1, oy + 9 + bob, 10, 6);
+  // Vest overlay
+  ctx.fillStyle = hexToRgba(color, da * 0.7);
+  ctx.fillRect(ox + 1, oy + 9 + bob, 3, 6);
+  ctx.fillRect(ox + 8, oy + 9 + bob, 3, 6);
+  // Vest pockets (2 on front)
+  ctx.fillStyle = darken(color, 0.2);
+  ctx.fillRect(ox + 2, oy + 11 + bob, 2, 2);
+  ctx.fillRect(ox + 8, oy + 11 + bob, 2, 2);
+  // Pocket flaps
+  ctx.fillStyle = hexToRgba(color, da * 0.9);
+  ctx.fillRect(ox + 2, oy + 11 + bob, 2, 1);
+  ctx.fillRect(ox + 8, oy + 11 + bob, 2, 1);
+  // Vest zipper
+  ctx.fillStyle = hexToRgba('#C0C0C0', da * 0.5);
+  ctx.fillRect(ox + 5, oy + 9 + bob, 1, 5);
+  // Arms
+  ctx.fillStyle = hexToRgba('#3A3A4A', da);
+  ctx.fillRect(ox + 0, oy + 10 + bob, 1, 4);
+  ctx.fillRect(ox + 11, oy + 10 + bob, 1, 4);
+  // Magnifying glass in right hand
+  ctx.fillStyle = hexToRgba('#C0C0C0', da);
+  ctx.fillRect(ox + 11, oy + 13 + bob, 1, 2); // handle
+  ctx.fillStyle = hexToRgba(color, da * 0.8);
+  ctx.fillRect(ox + 10, oy + 11 + bob, 2, 2); // lens ring
+  ctx.fillStyle = hexToRgba('#A0D0FF', da * 0.5);
+  ctx.fillRect(ox + 10, oy + 12 + bob, 2, 1); // lens glass
+  // Legs (rows 15-19) — cargo pants
+  const lf = frame;
+  ctx.fillStyle = hexToRgba('#4A3A2A', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 15, 3, 4);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 15, 3, 4);
+  // Cargo pockets on legs
+  ctx.fillStyle = hexToRgba('#5A4A3A', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 17, 2, 1);
+  ctx.fillRect(ox + 8 + (lf === 1 ? -1 : 0), oy + 17, 2, 1);
+  // Adventure boots
+  ctx.fillStyle = hexToRgba('#6A4A2A', da);
+  ctx.fillRect(ox + 2 + (lf === 1 ? 1 : 0), oy + 19, 3, 1);
+  ctx.fillRect(ox + 7 + (lf === 1 ? -1 : 0), oy + 19, 3, 1);
+}
+
+// Sprite dispatch table — avoids repeated switch/if at draw time
+const SPRITE_DRAWERS: Record<string, (ctx: CanvasRenderingContext2D, ox: number, oy: number, color: string, da: number, frame: number) => void> = {
+  weebo: drawWeeboSprite,
+  edith: drawEdithSprite,
+  jarvis: drawJarvisSprite,
+  aria: drawAriaSprite,
+  forge: drawForgeSprite,
+  pulse: drawPulseSprite,
+  echo: drawEchoSprite,
+  cal: drawCalSprite,
+  nova: drawNovaSprite,
+};
+
+// ---------------------------------------------------------------------------
+// drawAgent — detailed pixel art sprite per agent, 12x20 with unique design
 // ---------------------------------------------------------------------------
 
 export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number, isSelected: boolean): void {
   const cx = gx(agent.x) + CELL / 2; // center of the cell
   const cy = gy(agent.y) + CELL / 2;
   const color = agent.color;
-  const dormantAlpha = agent.isDormant ? 0.3 : 1.0;
+  const da = agent.isDormant ? 0.3 : 1.0; // dormant alpha
   const isWalking = agent.x !== agent.targetX || agent.y !== agent.targetY;
+
+  // Sprite is 12 wide x 20 tall, anchored at center
+  const spriteW = 12;
+  const spriteH = 20;
+  const ox = cx - Math.floor(spriteW / 2);
+  const oy = cy - Math.floor(spriteH / 2) - 1; // shift up slightly
 
   // Agent glow for active (non-idle, non-dormant) agents
   if (agent.state !== 'idle' && !agent.isDormant) {
@@ -428,11 +1108,10 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   if (isSelected) {
     const pulseAlpha = tick % 2 === 0 ? 0.4 : 0.2;
     ctx.fillStyle = hexToRgba(color, pulseAlpha);
-    // Ring as 4 edges of a rectangle around the sprite
-    const ringX = cx - 8;
-    const ringY = cy - 10;
-    const ringW = 16;
-    const ringH = 20;
+    const ringX = ox - 3;
+    const ringY = oy - 3;
+    const ringW = spriteW + 6;
+    const ringH = spriteH + 6;
     ctx.fillRect(ringX, ringY, ringW, 1);            // top
     ctx.fillRect(ringX, ringY + ringH, ringW, 1);    // bottom
     ctx.fillRect(ringX, ringY, 1, ringH);             // left
@@ -448,40 +1127,30 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
     ctx.fillRect(ringX + ringW, ringY + ringH - 2, 1, 3);
   }
 
-  // Head: 6x6 block centered
-  const headX = cx - 3;
-  const headY = cy - 9;
-  ctx.fillStyle = dormantAlpha < 1 ? hexToRgba(color, dormantAlpha) : color;
-  ctx.fillRect(headX, headY, 6, 6);
+  // Walking animation frame (leg phase + body bob)
+  const walkFrame = isWalking ? (tick % 2) : 0;
 
-  // Eyes: 2 dark pixels on the head
-  ctx.fillStyle = dormantAlpha < 1 ? hexToRgba(C.bg, 0.6) : C.bg;
-  ctx.fillRect(headX + 1, headY + 2, 1, 1); // left eye
-  ctx.fillRect(headX + 4, headY + 2, 1, 1); // right eye
-
-  // Body: 8x5 centered below head
-  const bodyX = cx - 4;
-  const bodyY = headY + 6;
-  ctx.fillStyle = dormantAlpha < 1 ? hexToRgba(color, dormantAlpha * 0.8) : hexToRgba(color, 0.8);
-  ctx.fillRect(bodyX, bodyY, 8, 5);
-
-  // Legs: 2 legs, each 2x3, with walking animation
-  const legY = bodyY + 5;
-  const legPhase = isWalking ? (tick % 2) : 0;
-
-  ctx.fillStyle = dormantAlpha < 1 ? hexToRgba(color, dormantAlpha * 0.6) : hexToRgba(color, 0.6);
-
-  // Left leg
-  const leftLegX = bodyX + 1 + (legPhase === 0 ? 0 : 1);
-  ctx.fillRect(leftLegX, legY, 2, 3);
-
-  // Right leg
-  const rightLegX = bodyX + 5 + (legPhase === 0 ? 0 : -1);
-  ctx.fillRect(rightLegX, legY, 2, 3);
+  // Draw the agent-specific sprite
+  const drawer = SPRITE_DRAWERS[agent.id];
+  if (drawer) {
+    drawer(ctx, ox, oy, color, da, walkFrame);
+  } else {
+    // Fallback for unknown agents — simple colored rectangle
+    ctx.fillStyle = hexToRgba(color, da);
+    ctx.fillRect(ox, oy, spriteW, spriteH);
+  }
 
   // Shadow under feet
-  ctx.fillStyle = hexToRgba(color, dormantAlpha * 0.06);
-  ctx.fillRect(cx - 5, legY + 3, 10, 1);
+  ctx.fillStyle = hexToRgba(color, da * 0.08);
+  ctx.fillRect(cx - 6, oy + spriteH, 12, 2);
+  ctx.fillStyle = hexToRgba(color, da * 0.04);
+  ctx.fillRect(cx - 8, oy + spriteH + 1, 16, 1);
+
+  // Name label below sprite
+  ctx.font = '7px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = hexToRgba(color, da * 0.7);
+  ctx.fillText(agent.id.slice(0, 5).toUpperCase(), cx, oy + spriteH + 9);
 }
 
 // ---------------------------------------------------------------------------
@@ -490,7 +1159,7 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
 
 export function drawStateIndicator(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number): void {
   const cx = gx(agent.x) + CELL / 2;
-  const baseY = gy(agent.y) + CELL / 2 - 13; // above head
+  const baseY = gy(agent.y) + CELL / 2 - 17; // above head (taller 20px sprites)
   const bobOffset = tick % 4 < 2 ? 0 : -1;
 
   switch (agent.state) {
