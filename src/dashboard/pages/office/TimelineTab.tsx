@@ -100,7 +100,7 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
       agentId: ev.agentId, agentName: ev.agentName,
       state: ev.state,
       content: ev.content || '',
-      tool: ev.tool,
+      tool: ev.tool, targetAgent: ev.targetAgent,
     }));
 
     const actItems = (activityTimeline || []).map(a => ({
@@ -109,7 +109,7 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
       agentId: inferAgentFromAction(a.action, a.icon), agentName: inferAgentFromAction(a.action, a.icon),
       state: 'done' as AgentStateType,
       content: `${a.action}: ${a.details}`.slice(0, 120),
-      tool: undefined,
+      tool: undefined, targetAgent: undefined,
     }));
 
     return [...sseItems, ...actItems]
