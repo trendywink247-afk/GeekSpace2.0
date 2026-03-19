@@ -16,7 +16,7 @@ interface OfficeData {
 
 export function useOfficeSSE() {
   const [events, setEvents] = useState<SSEEvent[]>([]);
-  const [connectionMode, setConnectionMode] = useState<ConnectionMode>('reconnecting');
+  const [connectionMode, setConnectionMode] = useState<ConnectionMode>('live');
   const [officeData, setOfficeData] = useState<OfficeData | null>(null);
   const mountedRef = useRef(true);
   const prevStatesRef = useRef<Map<string, string>>(new Map());
