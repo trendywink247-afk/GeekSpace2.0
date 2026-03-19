@@ -325,7 +325,7 @@ function tryStartGroupMeeting(idleAgents: CanvasAgent[]): void {
     const bs = behaviorStates.get(agent.id);
     if (!bs) continue;
     vacateLandmark(agent.id);
-    const pt = pointInRadius(landmark);
+    const _pt = pointInRadius(landmark);
     bs.mode = 'group-meeting';
     bs.targetLandmark = landmark;
     bs.groupId = meetingId;
@@ -351,7 +351,7 @@ function tickGroupMeeting(agents: CanvasAgent[], newBubbles: SpeechBubble[]): { 
       for (const agent of memberAgents) {
         const bs = behaviorStates.get(agent.id);
         if (!bs || bs.mode !== 'group-meeting') continue;
-        const pt = pointInRadius(gm.landmark);
+        const _pt = pointInRadius(gm.landmark);
         targets.set(agent.id, pt);
         const dist = Math.abs(agent.x - gm.landmark.x) + Math.abs(agent.y - gm.landmark.y);
         if (dist > gm.landmark.radius + 1) {
@@ -489,7 +489,7 @@ export function tickBehaviors(
             // Wander to a landmark (intent-based)
             const landmark = chooseLandmark(agent.id, idleAgents);
             if (landmark) {
-              const pt = pointInRadius(landmark);
+              const _pt = pointInRadius(landmark);
               bState.mode = 'wandering';
               bState.targetLandmark = landmark;
               bState.speed = 2.5 + Math.random() * 1.5;
