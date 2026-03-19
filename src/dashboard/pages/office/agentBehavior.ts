@@ -1,7 +1,7 @@
 // src/dashboard/pages/office/agentBehavior.ts
-// Pure TypeScript module — manages idle agent behaviors (wandering, socializing,
+// Pure TypeScript module -- manages idle agent behaviors (wandering, socializing,
 // fidgeting, group meetings). Called every canvas tick (200ms) by OfficeStage.
-// Zero AI cost. Landmark-based intent system with facing direction.
+// Zero AI cost. Perception-driven rule-based intent system with facing direction.
 
 import type { CanvasAgent, AgentId, SpeechBubble } from './types';
 import {
@@ -10,55 +10,25 @@ import {
 } from './constants';
 import type { CoreAgentId, SpecialistId } from './types';
 import {
-  isWalkable, validateTarget, randomWalkableInRadius, logInvalidTarget,
+  isWalkable, validateTarget,
 } from './navigation';
+import { perceive } from './perception';
+import type { AgentPerception } from './perception';
+import type { InteractionPoint } from './smartObjects';
+import { SMART_OBJECTS } from './smartObjects';
+import { reservePoint, releasePoint, releaseAll } from './occupancy';
+import { getRoomAt } from './roomZones';
 
-// ── Landmarks — meaningful places agents walk to ────────────────────────────
-
-interface Landmark {
-  name: string;
-  x: number;
-  y: number;
-  radius: number;       // agents stop within this radius (in tiles)
-  type: 'coffee' | 'lounge' | 'meeting' | 'patio' | 'bookshelf' | 'desk' | 'decor';
-  maxAgents: number;    // max agents at this spot simultaneously
-  pauseMin: number;     // min ticks to pause here
-  pauseMax: number;     // max ticks to pause here
+// ── Startup validation: verify all interaction points are walkable ──────────
+for (const obj of SMART_OBJECTS) {
+  for (const ip of obj.interactionPoints) {
+    if (!isWalkable(ip.x, ip.y)) {
+      console.error(
+        `[SmartObjects] Interaction point (${ip.x},${ip.y}) for "${obj.id}" is BLOCKED!`,
+      );
+    }
+  }
 }
-
-// All landmark positions verified against hand-crafted COLLISION_MAP — every (x,y) is walkable
-const LANDMARKS: Landmark[] = [
-  // Upper right lounge area
-  { name: 'lounge', x: 16, y: 3, radius: 1, type: 'lounge', maxAgents: 3, pauseMin: 30, pauseMax: 80 },
-  { name: 'lounge-far', x: 24, y: 3, radius: 1, type: 'lounge', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
-
-  // Patio area (rows 3-7, cols 1-11)
-  { name: 'patio', x: 4, y: 4, radius: 1, type: 'patio', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
-  { name: 'patio-edge', x: 1, y: 5, radius: 0, type: 'patio', maxAgents: 1, pauseMin: 10, pauseMax: 30 },
-
-  // Pantry area
-  { name: 'pantry', x: 9, y: 5, radius: 1, type: 'coffee', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
-
-  // Left corridor
-  { name: 'corridor', x: 1, y: 7, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 8, pauseMax: 20 },
-
-  // Staircase area (row 12, cols 3-4 walkable)
-  { name: 'stairs', x: 3, y: 12, radius: 0, type: 'bookshelf', maxAgents: 1, pauseMin: 10, pauseMax: 25 },
-
-  // Main workspace aisles (rows 13-15)
-  { name: 'workspace-top', x: 7, y: 13, radius: 1, type: 'desk', maxAgents: 2, pauseMin: 10, pauseMax: 25 },
-  { name: 'workspace-bottom', x: 7, y: 21, radius: 1, type: 'desk', maxAgents: 2, pauseMin: 10, pauseMax: 25 },
-
-  // Meeting room (rows 13-19, cols 14-25)
-  { name: 'meeting-entry', x: 17, y: 14, radius: 1, type: 'meeting', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
-  { name: 'meeting-side', x: 24, y: 18, radius: 1, type: 'meeting', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
-  { name: 'whiteboard', x: 15, y: 16, radius: 0, type: 'meeting', maxAgents: 1, pauseMin: 15, pauseMax: 35 },
-];
-
-// Landmarks suitable for group meetings (lounge + meeting areas)
-const GROUP_MEETING_LANDMARKS = LANDMARKS.filter(
-  l => l.name === 'lounge' || l.name === 'lounge-far' || l.name === 'meeting-entry' || l.name === 'workspace-bottom',
-);
 
 // ── Context-aware social chat phrases ───────────────────────────────────────
 
@@ -69,13 +39,17 @@ const PATIO_PHRASES = ['Fresh air!', 'Nice day', 'Back to work soon', 'Peaceful 
 const BOOKSHELF_PHRASES = ['Good read', 'Found it!', 'Check this out', 'Interesting...'];
 const GENERAL_PHRASES = ['Hey!', 'Nice work!', "How's it going?", 'Almost done!', 'High five!'];
 
-function phrasesForType(type: Landmark['type']): string[] {
-  switch (type) {
+function phrasesForBehavior(
+  behavior: InteractionPoint['behavior'] | 'general',
+): string[] {
+  switch (behavior) {
     case 'coffee': return COFFEE_PHRASES;
-    case 'meeting': return MEETING_PHRASES;
-    case 'lounge': return LOUNGE_PHRASES;
-    case 'patio': return PATIO_PHRASES;
-    case 'bookshelf': return BOOKSHELF_PHRASES;
+    case 'collaborate':
+    case 'present':
+    case 'observe': return MEETING_PHRASES;
+    case 'relax': return LOUNGE_PHRASES;
+    case 'chat': return PATIO_PHRASES;
+    case 'browse': return BOOKSHELF_PHRASES;
     default: return GENERAL_PHRASES;
   }
 }
@@ -88,7 +62,7 @@ type BehaviorMode = 'sitting' | 'wandering' | 'socializing' | 'returning' | 'wor
 
 interface BehaviorState {
   mode: BehaviorMode;
-  targetLandmark: Landmark | null;
+  targetPoint: (InteractionPoint & { objectId: string }) | null;
   socialTarget: AgentId | null;
   timer: number;           // ticks until next action
   fidgetTimer: number;     // ticks until next fidget
@@ -101,16 +75,12 @@ interface BehaviorState {
 
 const behaviorStates = new Map<AgentId, BehaviorState>();
 
-// Track how many agents are currently at each landmark
-const landmarkOccupancy = new Map<string, Set<AgentId>>();
-
 // Track which agents had a recent tool_call (for lounge weighting)
 const recentWorkers = new Set<AgentId>();
 
 // Module-level timers
 let groupMeetingTimer = randomInt(300, 450); // 60-90 seconds at 200ms/tick
 let socialChatTimer = randomInt(100, 150);   // 20-30 seconds
-const pageLoadTime = Date.now();
 let activeGroupId: string | null = null;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -121,6 +91,23 @@ function randomInt(min: number, max: number): number {
 
 function pick<T>(arr: T[]): T {
   return arr[randomInt(0, arr.length - 1)];
+}
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function pickNearest(
+  points: Array<InteractionPoint & { objectId: string; distance: number }>,
+  agent: CanvasAgent,
+): InteractionPoint & { objectId: string; distance: number } {
+  let best = points[0];
+  let bestDist = Infinity;
+  for (const p of points) {
+    const d = Math.abs(p.x - agent.x) + Math.abs(p.y - agent.y);
+    if (d < bestDist) { bestDist = d; best = p; }
+  }
+  return best;
 }
 
 function makeBubble(agentId: AgentId, text: string): SpeechBubble {
@@ -140,7 +127,6 @@ function getHomePosition(agent: CanvasAgent): { x: number; y: number } {
     ? SPECIALIST_POSITIONS[agent.id as SpecialistId]
     : CORE_DESK_POSITIONS[agent.id as CoreAgentId];
   if (pos) {
-    // Desk positions are already on walkable tiles — return as-is
     return { x: pos.x, y: pos.y };
   }
   return { x: agent.x, y: agent.y };
@@ -156,103 +142,54 @@ function computeFacing(fromX: number, fromY: number, toX: number, toY: number): 
   return dy >= 0 ? 'down' : 'up';
 }
 
-/** Get current occupancy count at a landmark */
-function getOccupancy(landmark: Landmark): number {
-  return landmarkOccupancy.get(landmark.name)?.size ?? 0;
-}
+// ── Perception-driven destination selection ──────────────────────────────────
 
-/** Register an agent at a landmark */
-function occupyLandmark(landmark: Landmark, agentId: AgentId): void {
-  let set = landmarkOccupancy.get(landmark.name);
-  if (!set) {
-    set = new Set();
-    landmarkOccupancy.set(landmark.name, set);
-  }
-  set.add(agentId);
-}
+function chooseDestination(
+  p: AgentPerception,
+): (InteractionPoint & { objectId: string; distance: number }) | null {
+  const pts = p.availableInteractionPoints;
+  if (pts.length === 0) return null;
 
-/** Remove an agent from a landmark */
-function vacateLandmark(agentId: AgentId): void {
-  for (const set of landmarkOccupancy.values()) {
-    set.delete(agentId);
-  }
-}
-
-/** Pick a point within a landmark's radius, ensuring it lands on a walkable tile.
- *  Uses the centralized randomWalkableInRadius from navigation.ts. */
-function pointInRadius(landmark: Landmark): { x: number; y: number } {
-  if (landmark.radius === 0) {
-    // Zero-radius: validate the center directly
-    if (isWalkable(landmark.x, landmark.y)) return { x: landmark.x, y: landmark.y };
-    logInvalidTarget('pointInRadius/' + landmark.name, landmark.x, landmark.y);
-    const fallback = randomWalkableInRadius(landmark.x, landmark.y, 2);
-    return fallback ?? { x: landmark.x, y: landmark.y };
+  // Rule 1: If recently worked, 50% chance pantry/lounge/patio break
+  if (p.recentlyWorked && Math.random() < 0.5) {
+    const breakPoints = pts.filter(
+      (ip) => ip.behavior === 'coffee' || ip.behavior === 'relax' || ip.behavior === 'chat',
+    );
+    if (breakPoints.length > 0) return pickRandom(breakPoints);
   }
 
-  // Use navigation module for random walkable selection within radius
-  const result = randomWalkableInRadius(landmark.x, landmark.y, landmark.radius);
-  if (result) return result;
-
-  // If radius search failed, try the center
-  if (isWalkable(landmark.x, landmark.y)) return { x: landmark.x, y: landmark.y };
-
-  logInvalidTarget('pointInRadius/' + landmark.name, landmark.x, landmark.y);
-  return { x: landmark.x, y: landmark.y };
-}
-
-// ── Intent-based landmark selection ─────────────────────────────────────────
-// Weights feel intentional: coffee in morning, meeting when many idle, etc.
-
-function chooseLandmark(agentId: AgentId, idleAgents: CanvasAgent[]): Landmark | null {
-  const minutesSinceLoad = (Date.now() - pageLoadTime) / 60000;
-  const isMorning = minutesSinceLoad < 30;
-  const manyIdle = idleAgents.length >= 4;
-  const wasWorking = recentWorkers.has(agentId);
-
-  // Build weighted list of available landmarks
-  const candidates: { landmark: Landmark; weight: number }[] = [];
-
-  for (const lm of LANDMARKS) {
-    if (getOccupancy(lm) >= lm.maxAgents) continue;
-    // Skip landmarks whose center tile is not walkable (safety check)
-    if (!isWalkable(lm.x, lm.y)) continue;
-
-    let weight = 1;
-    switch (lm.type) {
-      case 'coffee':
-        weight = isMorning ? 4 : 1.5;
-        break;
-      case 'meeting':
-        weight = manyIdle ? 3 : 1;
-        break;
-      case 'lounge':
-        weight = wasWorking ? 3.5 : 1.2;
-        break;
-      case 'patio':
-        weight = 1.5 + Math.random(); // random variety
-        break;
-      case 'bookshelf':
-        weight = 1.2;
-        break;
-      case 'decor':
-        weight = 0.8;
-        break;
-      default:
-        weight = 1;
-    }
-    candidates.push({ landmark: lm, weight });
+  // Rule 2: If in workspace and idle, prefer work-related or nearby interaction
+  if (p.currentRoom?.id === 'workspace') {
+    const workPoints = pts.filter((ip) => ip.behavior === 'work');
+    if (workPoints.length > 0 && Math.random() < 0.4) return pickNearest(workPoints, p.agent);
   }
 
-  if (candidates.length === 0) return null;
-
-  // Weighted random selection
-  const totalWeight = candidates.reduce((sum, c) => sum + c.weight, 0);
-  let roll = Math.random() * totalWeight;
-  for (const c of candidates) {
-    roll -= c.weight;
-    if (roll <= 0) return c.landmark;
+  // Rule 3: If nearby idle agent in lounge/patio, chance to approach and chat
+  if (p.nearbyAgents.some((a) => a.agent.state === 'idle' && a.distance <= 3)) {
+    const chatPoints = pts.filter((ip) => ip.behavior === 'chat');
+    if (chatPoints.length > 0 && Math.random() < 0.3) return pickRandom(chatPoints);
   }
-  return candidates[candidates.length - 1].landmark;
+
+  // Rule 4: If in meeting room, prefer whiteboard/perimeter
+  if (p.currentRoom?.id === 'meeting_room') {
+    const meetPoints = pts.filter(
+      (ip) => ip.behavior === 'collaborate' || ip.behavior === 'present' || ip.behavior === 'observe',
+    );
+    if (meetPoints.length > 0) return pickRandom(meetPoints);
+  }
+
+  // Rule 5: If passing pantry area, small coffee stop chance
+  if (p.currentRoom?.id === 'pantry' && Math.random() < 0.2) {
+    const coffeePoints = pts.filter((ip) => ip.behavior === 'coffee');
+    if (coffeePoints.length > 0) return pickRandom(coffeePoints);
+  }
+
+  // Rule 6: Default -- pick any available interaction point weighted by distance
+  // Prefer closer points (70%) but allow distant (30%) for exploration
+  if (Math.random() < 0.7 && pts.length > 2) {
+    return pts[0]; // nearest
+  }
+  return pickRandom(pts);
 }
 
 // ── Initialize behavior for an agent ────────────────────────────────────────
@@ -266,7 +203,7 @@ export function initBehavior(agent: CanvasAgent): void {
 
   behaviorStates.set(agent.id, {
     mode: 'sitting',
-    targetLandmark: null,
+    targetPoint: null,
     socialTarget: null,
     timer: randomInt(40, 75),      // 8-15 seconds until first action
     fidgetTimer: randomInt(10, 30),
@@ -278,7 +215,7 @@ export function initBehavior(agent: CanvasAgent): void {
   });
 }
 
-// ── Cancel idle behavior — snap agent back to desk ──────────────────────────
+// ── Cancel idle behavior -- snap agent back to desk ──────────────────────────
 
 export function cancelIdleBehavior(agentId: AgentId): void {
   const bState = behaviorStates.get(agentId);
@@ -288,9 +225,9 @@ export function cancelIdleBehavior(agentId: AgentId): void {
   recentWorkers.add(agentId);
   setTimeout(() => recentWorkers.delete(agentId), 120_000);
 
-  vacateLandmark(agentId);
+  releasePoint(agentId);
   bState.mode = 'sitting';
-  bState.targetLandmark = null;
+  bState.targetPoint = null;
   bState.socialTarget = null;
   bState.socialStep = 0;
   bState.timer = randomInt(40, 75);
@@ -303,89 +240,105 @@ export function cancelIdleBehavior(agentId: AgentId): void {
 
 interface GroupMeeting {
   id: string;
-  landmark: Landmark;
+  targetPoint: { x: number; y: number };
   agents: AgentId[];
   phase: 'gathering' | 'chatting' | 'dispersing';
   chatTimer: number;      // ticks remaining in chat phase
   chatStep: number;       // which exchange we're on
+  behavior: InteractionPoint['behavior'] | 'general';
 }
 
 let activeGroupMeeting: GroupMeeting | null = null;
+
+// Group meeting target candidates: meeting room + lounge interaction points
+const GROUP_MEETING_BEHAVIORS: Array<InteractionPoint['behavior']> = [
+  'collaborate', 'chat', 'relax',
+];
 
 function tryStartGroupMeeting(idleAgents: CanvasAgent[]): void {
   if (activeGroupMeeting) return;
   if (idleAgents.length < 3) return;
 
   // Pick 2-3 idle agents that aren't currently wandering to a meeting
-  const eligible = idleAgents.filter(a => {
+  const eligible = idleAgents.filter((a) => {
     const bs = behaviorStates.get(a.id);
     return bs && (bs.mode === 'sitting' || bs.mode === 'returning');
   });
   if (eligible.length < 2) return;
 
   const count = Math.min(randomInt(2, 3), eligible.length);
-  // Shuffle and pick
   const shuffled = [...eligible].sort(() => Math.random() - 0.5);
   const chosen = shuffled.slice(0, count);
-  const landmark = pick(GROUP_MEETING_LANDMARKS);
   const meetingId = `meeting-${Date.now()}`;
+
+  // Find a meeting-worthy interaction point
+  const meetingPoints = SMART_OBJECTS
+    .flatMap((o) =>
+      o.interactionPoints
+        .filter((ip) => GROUP_MEETING_BEHAVIORS.includes(ip.behavior))
+        .map((ip) => ({ ...ip, objectId: o.id })),
+    )
+    .filter((ip) => isWalkable(ip.x, ip.y));
+
+  if (meetingPoints.length === 0) return;
+  const meetPoint = pickRandom(meetingPoints);
 
   activeGroupMeeting = {
     id: meetingId,
-    landmark,
-    agents: chosen.map(a => a.id),
+    targetPoint: { x: meetPoint.x, y: meetPoint.y },
+    agents: chosen.map((a) => a.id),
     phase: 'gathering',
     chatTimer: randomInt(75, 125), // 15-25 seconds
     chatStep: 0,
+    behavior: meetPoint.behavior,
   };
   activeGroupId = meetingId;
 
-  // Send each chosen agent to the landmark
+  // Send each chosen agent to the meeting point area
   for (const agent of chosen) {
     const bs = behaviorStates.get(agent.id);
     if (!bs) continue;
-    vacateLandmark(agent.id);
+    releasePoint(agent.id);
     bs.mode = 'group-meeting';
-    bs.targetLandmark = landmark;
+    bs.targetPoint = null;
     bs.groupId = meetingId;
     bs.speed = 2.5 + Math.random() * 1.5;
     bs.timer = 0;
     bs.socialStep = 0;
-    // targetX/targetY are set on the CanvasAgent in the main tick
-    occupyLandmark(landmark, agent.id);
   }
 }
 
-function tickGroupMeeting(agents: CanvasAgent[], newBubbles: SpeechBubble[]): { targets: Map<AgentId, { x: number; y: number }> } {
+function tickGroupMeeting(
+  agents: CanvasAgent[],
+  newBubbles: SpeechBubble[],
+): { targets: Map<AgentId, { x: number; y: number }> } {
   const targets = new Map<AgentId, { x: number; y: number }>();
   if (!activeGroupMeeting) return { targets };
 
   const gm = activeGroupMeeting;
-  const memberAgents = agents.filter(a => gm.agents.includes(a.id));
+  const memberAgents = agents.filter((a) => gm.agents.includes(a.id));
 
   switch (gm.phase) {
     case 'gathering': {
-      // Set movement targets for agents heading to the landmark
       let allArrived = true;
       for (const agent of memberAgents) {
         const bs = behaviorStates.get(agent.id);
         if (!bs || bs.mode !== 'group-meeting') continue;
-        const pt = pointInRadius(gm.landmark);
         const home = getHomePosition(agent);
-        const validPt = validateTarget(pt.x, pt.y, home.x, home.y);
+        const validPt = validateTarget(gm.targetPoint.x, gm.targetPoint.y, home.x, home.y);
         targets.set(agent.id, validPt);
-        const dist = Math.abs(agent.x - gm.landmark.x) + Math.abs(agent.y - gm.landmark.y);
-        if (dist > gm.landmark.radius + 1) {
+        const dist = Math.abs(agent.x - gm.targetPoint.x) + Math.abs(agent.y - gm.targetPoint.y);
+        if (dist > 2) {
           allArrived = false;
         }
       }
       if (allArrived && memberAgents.length >= 2) {
         gm.phase = 'chatting';
-        // Face each other (face toward landmark center)
+        // Face each other (face toward meeting center)
         for (const agent of memberAgents) {
           const bs = behaviorStates.get(agent.id);
           if (bs) {
-            bs.facing = computeFacing(agent.x, agent.y, gm.landmark.x, gm.landmark.y);
+            bs.facing = computeFacing(agent.x, agent.y, gm.targetPoint.x, gm.targetPoint.y);
           }
         }
       }
@@ -398,7 +351,7 @@ function tickGroupMeeting(agents: CanvasAgent[], newBubbles: SpeechBubble[]): { 
       if (gm.chatTimer % 20 === 0 && gm.chatStep < 5) {
         const speaker = memberAgents[gm.chatStep % memberAgents.length];
         if (speaker) {
-          const phrases = phrasesForType(gm.landmark.type);
+          const phrases = phrasesForBehavior(gm.behavior);
           newBubbles.push(makeBubble(speaker.id, pick(phrases)));
           gm.chatStep++;
         }
@@ -410,14 +363,13 @@ function tickGroupMeeting(agents: CanvasAgent[], newBubbles: SpeechBubble[]): { 
     }
 
     case 'dispersing': {
-      // Send everyone home — validate home positions
       for (const agent of memberAgents) {
         const bs = behaviorStates.get(agent.id);
         if (!bs) continue;
-        vacateLandmark(agent.id);
+        releasePoint(agent.id);
         bs.mode = 'returning';
         bs.groupId = null;
-        bs.targetLandmark = null;
+        bs.targetPoint = null;
         const home = getHomePosition(agent);
         const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
         targets.set(agent.id, validHome);
@@ -432,7 +384,7 @@ function tickGroupMeeting(agents: CanvasAgent[], newBubbles: SpeechBubble[]): { 
   return { targets };
 }
 
-// ── Main tick function — call every 200ms ───────────────────────────────────
+// ── Main tick function -- call every 200ms ───────────────────────────────────
 
 export function tickBehaviors(
   agents: CanvasAgent[],
@@ -442,7 +394,7 @@ export function tickBehaviors(
   let changed = false;
 
   const idleAgents = agents.filter(
-    a => !a.isDormant && (a.state === 'idle' || a.state === 'done'),
+    (a) => !a.isDormant && (a.state === 'idle' || a.state === 'done'),
   );
 
   // ── Global timers ──
@@ -458,7 +410,7 @@ export function tickBehaviors(
   // Ambient social chat: a random idle agent says something
   if (socialChatTimer <= 0) {
     socialChatTimer = randomInt(100, 150); // 20-30s
-    const sitters = idleAgents.filter(a => {
+    const sitters = idleAgents.filter((a) => {
       const bs = behaviorStates.get(a.id);
       return bs && bs.mode === 'sitting';
     });
@@ -471,7 +423,7 @@ export function tickBehaviors(
   // Tick group meeting and collect movement targets
   const { targets: groupTargets } = tickGroupMeeting(agents, newBubbles);
 
-  const updatedAgents = agents.map(agent => {
+  const updatedAgents = agents.map((agent) => {
     // Skip agents actively working (not idle)
     if (agent.state !== 'idle' && agent.state !== 'done') return agent;
 
@@ -510,28 +462,29 @@ export function tickBehaviors(
         if (bState.timer <= 0) {
           const roll = Math.random();
           if (roll < 0.45) {
-            // Wander to a landmark (intent-based)
-            const landmark = chooseLandmark(agent.id, idleAgents);
-            if (landmark) {
-              const pt = pointInRadius(landmark);
+            // Wander using perception-driven rules
+            const perception = perceive(agent, agents, recentWorkers);
+            const dest = chooseDestination(perception);
+            if (dest) {
               const home = getHomePosition(agent);
-              const validPt = validateTarget(pt.x, pt.y, home.x, home.y);
+              const validPt = validateTarget(dest.x, dest.y, home.x, home.y);
+              // Reserve the interaction point
+              reservePoint(validPt.x, validPt.y, agent.id);
               bState.mode = 'wandering';
-              bState.targetLandmark = landmark;
+              bState.targetPoint = dest;
               bState.speed = 2.5 + Math.random() * 1.5;
-              bState.timer = randomInt(landmark.pauseMin, landmark.pauseMax);
+              bState.timer = randomInt(30, 80); // pause time at destination
               updated.targetX = validPt.x;
               updated.targetY = validPt.y;
               updated.path = [];
               updated.pathIndex = 0;
-              occupyLandmark(landmark, agent.id);
               changed = true;
             } else {
               bState.timer = randomInt(40, 75);
             }
           } else if (roll < 0.75) {
-            // Social visit — find a nearby non-dormant idle agent
-            const nearby = agents.filter(a =>
+            // Social visit -- find a nearby non-dormant idle agent
+            const nearby = agents.filter((a) =>
               a.id !== agent.id && !a.isDormant
               && (a.state === 'idle' || a.state === 'done')
               && Math.abs(a.x - agent.x) < 15
@@ -565,22 +518,22 @@ export function tickBehaviors(
       }
 
       case 'wandering': {
-        // Arrived at landmark?
-        const arrived = bState.targetLandmark
-          ? (Math.abs(agent.x - (updated.targetX ?? agent.x)) + Math.abs(agent.y - (updated.targetY ?? agent.y))) <= (bState.targetLandmark.radius + 1)
-          : (agent.x === agent.targetX && agent.y === agent.targetY);
+        // Arrived at destination?
+        const arrived =
+          Math.abs(agent.x - (updated.targetX ?? agent.x)) +
+          Math.abs(agent.y - (updated.targetY ?? agent.y)) <= 1;
 
         if (arrived) {
-          // Face toward the landmark center
-          if (bState.targetLandmark) {
-            bState.facing = computeFacing(agent.x, agent.y, bState.targetLandmark.x, bState.targetLandmark.y);
+          // Set facing from interaction point if available
+          if (bState.targetPoint) {
+            bState.facing = bState.targetPoint.facing;
           }
 
-          // Linger at landmark then return home
+          // Linger at destination then return home
           if (bState.timer <= 0) {
-            vacateLandmark(agent.id);
+            releasePoint(agent.id);
             bState.mode = 'returning';
-            bState.targetLandmark = null;
+            bState.targetPoint = null;
             const home = getHomePosition(agent);
             const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
             updated.targetX = validHome.x;
@@ -592,13 +545,17 @@ export function tickBehaviors(
           }
         } else {
           // Update facing while walking toward target
-          bState.facing = computeFacing(agent.x, agent.y, updated.targetX ?? agent.targetX, updated.targetY ?? agent.targetY);
+          bState.facing = computeFacing(
+            agent.x, agent.y,
+            updated.targetX ?? agent.targetX,
+            updated.targetY ?? agent.targetY,
+          );
         }
         break;
       }
 
       case 'socializing': {
-        const target = agents.find(a => a.id === bState!.socialTarget);
+        const target = agents.find((a) => a.id === bState!.socialTarget);
         if (!target) {
           bState.mode = 'returning';
           const home = getHomePosition(agent);
@@ -617,12 +574,16 @@ export function tickBehaviors(
 
         const dist = Math.abs(agent.x - target.x) + Math.abs(agent.y - target.y);
         if (dist <= 2) {
-          // Determine phrase context — check if either agent is at a landmark
-          const nearbyLandmark = LANDMARKS.find(lm => {
-            const d = Math.abs(agent.x - lm.x) + Math.abs(agent.y - lm.y);
-            return d <= lm.radius + 2;
-          });
-          const contextPhrases = nearbyLandmark ? phrasesForType(nearbyLandmark.type) : GENERAL_PHRASES;
+          // Determine phrase context based on current room
+          const room = getRoomAt(agent.x, agent.y);
+          let contextPhrases: string[];
+          switch (room?.behaviorBias) {
+            case 'coffee': contextPhrases = COFFEE_PHRASES; break;
+            case 'collaborate': contextPhrases = MEETING_PHRASES; break;
+            case 'relax': contextPhrases = LOUNGE_PHRASES; break;
+            case 'break': contextPhrases = PATIO_PHRASES; break;
+            default: contextPhrases = GENERAL_PHRASES;
+          }
 
           if (bState.socialStep === 0 && bState.timer <= 0) {
             bState.socialStep = 1;
@@ -656,8 +617,11 @@ export function tickBehaviors(
 
       case 'group-meeting': {
         // Movement handled by tickGroupMeeting; just update facing
-        if (bState.targetLandmark) {
-          bState.facing = computeFacing(agent.x, agent.y, bState.targetLandmark.x, bState.targetLandmark.y);
+        if (activeGroupMeeting) {
+          bState.facing = computeFacing(
+            agent.x, agent.y,
+            activeGroupMeeting.targetPoint.x, activeGroupMeeting.targetPoint.y,
+          );
         }
         // If group was dispersed but we're still in this mode, return home
         if (!activeGroupId || bState.groupId !== activeGroupId) {
@@ -665,10 +629,10 @@ export function tickBehaviors(
           if (groupTargets.has(agent.id)) {
             // dispersing phase already set the target
           } else {
-            vacateLandmark(agent.id);
+            releasePoint(agent.id);
             bState.mode = 'returning';
             bState.groupId = null;
-            bState.targetLandmark = null;
+            bState.targetPoint = null;
             const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
             updated.targetX = validHome.x;
             updated.targetY = validHome.y;
@@ -690,14 +654,14 @@ export function tickBehaviors(
           bState.mode = 'sitting';
           bState.timer = randomInt(40, 75); // 8-15s before next action
           bState.fidgetTimer = randomInt(5, 15);
-          bState.targetLandmark = null;
+          bState.targetPoint = null;
           bState.facing = 'down'; // face desk
           changed = true;
         }
         break;
       }
 
-      // 'working' mode — no-op, handled by real task system
+      // 'working' mode -- no-op, handled by real task system
       default:
         break;
     }
@@ -726,7 +690,7 @@ export function getAgentFacing(agentId: AgentId): FacingDirection {
 
 export function resetAllBehaviors(): void {
   behaviorStates.clear();
-  landmarkOccupancy.clear();
+  releaseAll();
   recentWorkers.clear();
   activeGroupMeeting = null;
   activeGroupId = null;

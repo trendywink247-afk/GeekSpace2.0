@@ -4,6 +4,9 @@
 
 import { COLLISION_MAP, CELL, COLS, ROWS } from './constants';
 
+// Re-export room lookup for convenience
+export { getRoomAt } from './roomZones';
+
 // ── Core validation ──────────────────────────────────────────────────────────
 
 /** Returns true if the tile at (x, y) is walkable (not blocked, in bounds). */

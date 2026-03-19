@@ -14,6 +14,9 @@ import {
   CELL, COLS, ROWS, CANVAS_W, CANVAS_H,
   C,
 } from './constants';
+import { ROOMS } from './roomZones';
+import { SMART_OBJECTS } from './smartObjects';
+import { isPointOccupied } from './occupancy';
 import { getAgentSprites, drawSpriteFrame } from './sprites';
 
 // ---------------------------------------------------------------------------
@@ -520,6 +523,61 @@ export function drawDebugOverlay(ctx: CanvasRenderingContext2D, collisionMap: bo
       if (!collisionMap[r][c]) {
         ctx.fillText(`${c},${r}`, c * CELL + CELL / 2, r * CELL + CELL / 2 + 3);
       }
+    }
+  }
+
+  // Draw room zones
+  for (const room of ROOMS) {
+    ctx.fillStyle = room.color;
+    ctx.fillRect(
+      room.bounds.x * CELL,
+      room.bounds.y * CELL,
+      room.bounds.w * CELL,
+      room.bounds.h * CELL,
+    );
+    // Room label
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(room.label, room.bounds.x * CELL + 4, room.bounds.y * CELL + 12);
+  }
+
+  // Draw smart object footprints and interaction points
+  for (const obj of SMART_OBJECTS) {
+    // Object footprint (dark red)
+    for (const fp of obj.footprint) {
+      ctx.fillStyle = 'rgba(200, 0, 0, 0.2)';
+      ctx.fillRect(fp.x * CELL + 1, fp.y * CELL + 1, CELL - 2, CELL - 2);
+    }
+    // Interaction points (blue = available, yellow = occupied)
+    for (const ip of obj.interactionPoints) {
+      const occupied = isPointOccupied(ip.x, ip.y);
+      ctx.fillStyle = occupied
+        ? 'rgba(255, 200, 0, 0.5)'
+        : 'rgba(0, 150, 255, 0.4)';
+      ctx.beginPath();
+      ctx.arc(
+        ip.x * CELL + CELL / 2,
+        ip.y * CELL + CELL / 2,
+        4,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+      // Direction indicator
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 1;
+      const cx = ip.x * CELL + CELL / 2;
+      const cy = ip.y * CELL + CELL / 2;
+      const angle =
+        ip.facing === 'up' ? -Math.PI / 2
+        : ip.facing === 'down' ? Math.PI / 2
+        : ip.facing === 'left' ? Math.PI
+        : 0;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(angle) * 6, cy + Math.sin(angle) * 6);
+      ctx.stroke();
     }
   }
 }
