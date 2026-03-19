@@ -1,7 +1,7 @@
 // src/dashboard/pages/office/CommsTab.tsx
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { agentCommsService, type AgentComm } from '@/services/api';
-import { AGENT_COLORS, AGENT_META, 60000, C, CORE_AGENTS } from './constants';
+import { AGENT_COLORS, AGENT_META, C, CORE_AGENTS } from './constants';
 import type { AgentId, SSEEvent } from './types';
 
 interface Props {

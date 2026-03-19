@@ -1,7 +1,7 @@
 // src/dashboard/pages/office/TasksTab.tsx
 import { useState, useEffect, useRef } from 'react';
 import { agentTasksService, type AgentTask } from '@/services/api';
-import { AGENT_COLORS, AGENT_META, 60000, C, CORE_AGENTS } from './constants';
+import { AGENT_COLORS, AGENT_META, C, CORE_AGENTS } from './constants';
 import type { AgentId, CoreAgentId } from './types';
 
 interface Props {
