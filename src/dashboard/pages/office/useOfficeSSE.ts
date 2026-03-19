@@ -1,9 +1,18 @@
 // src/dashboard/pages/office/useOfficeSSE.ts
-import { useState, useEffect, useRef, useCallback } from 'react';
+// Shared SSE hook — connects to /api/agent-state/stream, parses events,
+// manages reconnection. Falls back to polling /api/agent-state/states.
+
+import { useState, useEffect, useRef } from 'react';
 import type { SSEEvent, ConnectionMode } from './types';
-import { SSE_RECONNECT_DELAY_MS, SSE_MAX_RETRIES } from './constants';
+import { SSE_RECONNECT_DELAY_MS, SSE_MAX_RETRIES, MISSION_POLL_INTERVAL_MS } from './constants';
 
 const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
+
+function getToken(): string | null {
+  return localStorage.getItem('gs_token')
+    || localStorage.getItem('token')
+    || sessionStorage.getItem('token');
+}
 
 export function useOfficeSSE() {
   const [events, setEvents] = useState<SSEEvent[]>([]);
@@ -11,18 +20,52 @@ export function useOfficeSSE() {
   const abortRef = useRef<AbortController | null>(null);
   const retriesRef = useRef(0);
   const mountedRef = useRef(true);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const pushEvent = useCallback((evt: SSEEvent) => {
+  // Stable push — no deps, uses functional setState
+  function pushEvent(evt: SSEEvent) {
     setEvents(prev => {
       const next = [...prev, evt];
       return next.length > 200 ? next.slice(-200) : next;
     });
-  }, []);
+  }
 
-  const connect = useCallback(async () => {
-    const token = localStorage.getItem('gs_token')
-      || localStorage.getItem('token')
-      || sessionStorage.getItem('token');
+  // Polling fallback — fetches current agent states
+  function startPolling() {
+    if (pollRef.current) return;
+    pollRef.current = setInterval(async () => {
+      const token = getToken();
+      if (!token) return;
+      try {
+        const res = await fetch(`${API_BASE}/agent-state/states`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const states = await res.json() as Array<{ agentId: string; agentName: string; state: string; content?: string; timestamp: string }>;
+        for (const s of states) {
+          if (s.state !== 'idle') {
+            pushEvent({
+              agentId: s.agentId,
+              agentName: s.agentName,
+              state: s.state as SSEEvent['state'],
+              content: s.content,
+              timestamp: s.timestamp,
+            });
+          }
+        }
+      } catch { /* polling failure non-fatal */ }
+    }, MISSION_POLL_INTERVAL_MS);
+  }
+
+  function stopPolling() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }
+
+  async function connect() {
+    const token = getToken();
     if (!token || !mountedRef.current) return;
 
     if (abortRef.current) abortRef.current.abort();
@@ -30,13 +73,18 @@ export function useOfficeSSE() {
     abortRef.current = ctrl;
 
     try {
-      const res = await fetch(`${API_BASE}/agent-state/stream`, {
-        headers: { Authorization: `Bearer ${token}` },
+      // Use query param auth (not header) — Caddy/proxies can strip Authorization on SSE
+      const res = await fetch(`${API_BASE}/agent-state/stream?token=${encodeURIComponent(token)}`, {
         signal: ctrl.signal,
       });
-      if (!res.ok || !res.body) throw new Error(`SSE ${res.status}`);
 
+      if (!res.ok || !res.body) {
+        throw new Error(`SSE response ${res.status}`);
+      }
+
+      // Connected!
       setConnectionMode('live');
+      stopPolling();
       retriesRef.current = 0;
 
       const reader = res.body.getReader();
@@ -54,8 +102,13 @@ export function useOfficeSSE() {
           try {
             const evt = JSON.parse(line.slice(6)) as SSEEvent;
             if (evt.agentId && evt.state) pushEvent(evt);
-          } catch { /* skip malformed */ }
+          } catch { /* malformed line */ }
         }
+      }
+
+      // Stream ended naturally — reconnect
+      if (mountedRef.current) {
+        setTimeout(() => { if (mountedRef.current) connect(); }, SSE_RECONNECT_DELAY_MS);
       }
     } catch (err) {
       if ((err as Error).name === 'AbortError') return;
@@ -64,6 +117,7 @@ export function useOfficeSSE() {
       retriesRef.current++;
       if (retriesRef.current >= SSE_MAX_RETRIES) {
         setConnectionMode('polling');
+        startPolling();
         return;
       }
 
@@ -71,7 +125,7 @@ export function useOfficeSSE() {
       const delay = Math.min(SSE_RECONNECT_DELAY_MS * Math.pow(2, retriesRef.current - 1), 60000);
       setTimeout(() => { if (mountedRef.current) connect(); }, delay);
     }
-  }, [pushEvent]);
+  }
 
   useEffect(() => {
     mountedRef.current = true;
@@ -79,10 +133,9 @@ export function useOfficeSSE() {
     return () => {
       mountedRef.current = false;
       abortRef.current?.abort();
+      stopPolling();
     };
-  }, [connect]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const clearEvents = useCallback(() => setEvents([]), []);
-
-  return { events, connectionMode, clearEvents };
+  return { events, connectionMode, clearEvents: () => setEvents([]) };
 }
