@@ -355,6 +355,8 @@ export default function OfficeStage({
 
   const addBubble = useCallback((agentId: AgentId, text: string) => {
     const now = Date.now();
+    // Snapshot the agent's current render position for the bubble
+    const agent = agentsRef.current.find(a => a.id === agentId);
     const bubble: SpeechBubble = {
       id: `bub-${now}-${Math.random().toString(36).slice(2, 6)}`,
       agentId,
@@ -362,6 +364,8 @@ export default function OfficeStage({
       color: AGENT_COLORS[agentId] || '#00F0FF',
       createdAt: now,
       expiresAt: now + SPEECH_BUBBLE_TTL,
+      pixelX: agent?.renderX,
+      pixelY: agent?.renderY,
     };
     setBubbles(prev => [...prev.slice(-(MAX_SPEECH_BUBBLES - 1)), bubble]);
   }, []);
@@ -562,6 +566,7 @@ export default function OfficeStage({
       />
       <SpeechBubbleLayer
         bubbles={bubbles}
+        agents={agents}
         canvasWidth={containerSize.w}
         canvasHeight={containerSize.h}
       />

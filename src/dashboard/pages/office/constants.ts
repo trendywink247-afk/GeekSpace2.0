@@ -34,36 +34,36 @@ export const SPECIALIST_PARENT: Record<SpecialistId, CoreAgentId> = {
 export const CORE_AGENTS: CoreAgentId[] = ['weebo', 'edith', 'jarvis'];
 export const SPECIALIST_AGENTS: SpecialistId[] = ['aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
 
-// ── Verified collision map (27x25, 32px tiles) ──────────────────────────────
+// ── Hand-crafted collision map (27x25, 32px tiles) ──────────────────────────
 // true = blocked (wall/furniture), false = walkable (floor)
-// Derived from multi-floor-color detection on the actual background image.
+// Object-level masking — each desk, chair, and wall individually mapped.
 // COLLISION_MAP[row][col]: true blocks BFS pathfinding, false allows movement.
 export const COLLISION_MAP: boolean[][] = [
-  /* Row  0 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row  1 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,true,true,false,true,true,true,true,true,true,true],
-  /* Row  2 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,true],
-  /* Row  3 */ [true,false,true,false,false,false,false,false,false,false,false,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true],
-  /* Row  4 */ [true,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,false,true,true,true,true,false,true],
-  /* Row  5 */ [true,false,false,false,false,true,false,false,false,false,false,false,true,true,false,true,true,true,true,true,false,true,true,true,true,false,true],
-  /* Row  6 */ [true,false,false,true,false,true,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row  7 */ [true,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row  8 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row  9 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row 10 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row 11 */ [true,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row 12 */ [true,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,false,false,false,true,true],
-  /* Row 13 */ [true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,true],
-  /* Row 14 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
-  /* Row 15 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,false,false,true],
-  /* Row 16 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,true,true,true,true,true,false,false,true],
-  /* Row 17 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,true,true,true,true,true,true,false,false,true],
-  /* Row 18 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,false,true,false,true,false,false,false,true],
-  /* Row 19 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true],
-  /* Row 20 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row 21 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row 22 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row 23 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  /* Row 24 */ [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,true,true,false,true,true,true,true,true,true,true],
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,true],
+  [true,false,true,true,false,true,false,true,false,true,false,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true],
+  [true,false,false,true,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,false,true,true,true,true,false,true],
+  [true,false,false,false,false,true,false,false,false,false,false,false,true,true,false,true,true,true,true,true,false,true,true,true,true,false,true],
+  [true,false,false,true,false,true,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,false,false,false,true,true],
+  [true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
+  [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
+  [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,false,false,true],
+  [true,false,false,true,true,true,true,false,false,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,false,false,true],
+  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,false,false,true],
+  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,false,false,false,false,true,true,true,true,false,false,false,true],
+  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
+  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
 ];
 
 // Desk positions — all on verified walkable tiles (COLLISION_MAP[y][x] === false)

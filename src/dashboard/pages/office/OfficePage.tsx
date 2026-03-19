@@ -8,7 +8,7 @@ import { SpotlightHUD } from './SpotlightHUD';
 import { AgentProfileFlyout } from './AgentProfileFlyout';
 import ControlRoom from './ControlRoom';
 import { useOfficeSSE } from './useOfficeSSE';
-import { agentTasksService } from '@/services/api';
+import { agentService, agentTasksService } from '@/services/api';
 import {
   CELL, AGENT_META, AGENT_COLORS,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
@@ -194,10 +194,20 @@ export function OfficePage() {
           <SpotlightHUD
             agent={spotlightAgent}
             taskCount={taskCount}
-            onChat={() => navigate(`/dashboard/chat?agent=${selectedAgentId}`)}
-            onAssignTask={() => {
-              setActiveTab('tasks');
-              setSelectedAgentId(null);
+            onChat={(message) => {
+              if (message) {
+                agentService.chat(message, 'web').catch(() => {});
+              } else {
+                navigate(`/dashboard/chat?agent=${selectedAgentId}`);
+              }
+            }}
+            onAssignTask={(title) => {
+              if (title && selectedAgentId) {
+                agentTasksService.create({ agent_id: selectedAgentId, title }).catch(() => {});
+              } else {
+                setActiveTab('tasks');
+                setSelectedAgentId(null);
+              }
             }}
             onDismiss={() => setSelectedAgentId(null)}
           />

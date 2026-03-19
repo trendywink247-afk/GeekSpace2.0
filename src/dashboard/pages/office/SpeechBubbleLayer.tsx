@@ -1,46 +1,34 @@
 // src/dashboard/pages/office/SpeechBubbleLayer.tsx
 import { useEffect, useState } from 'react';
 import {
-  CORE_DESK_POSITIONS,
-  SPECIALIST_POSITIONS,
-  CELL,
   AGENT_COLORS,
   CANVAS_W,
   CANVAS_H,
 } from './constants';
-import type { SpeechBubble, AgentId, CoreAgentId, SpecialistId } from './types';
+import type { SpeechBubble, CanvasAgent } from './types';
 
 interface Props {
   bubbles: SpeechBubble[];
+  agents: CanvasAgent[];
   canvasWidth: number;
   canvasHeight: number;
 }
 
-function getAgentGridPos(agentId: AgentId): { x: number; y: number } {
-  if (agentId in CORE_DESK_POSITIONS) {
-    return CORE_DESK_POSITIONS[agentId as CoreAgentId];
-  }
-  if (agentId in SPECIALIST_POSITIONS) {
-    return SPECIALIST_POSITIONS[agentId as SpecialistId];
-  }
-  return { x: 0, y: 0 };
-}
-
-function gridToScreen(
-  gridX: number,
-  gridY: number,
+function pixelToScreen(
+  pixelX: number,
+  pixelY: number,
   containerW: number,
   containerH: number,
 ): { left: number; top: number } {
   const scaleX = containerW / CANVAS_W;
   const scaleY = containerH / CANVAS_H;
   return {
-    left: gridX * CELL * scaleX + (CELL * scaleX) / 2,
-    top: gridY * CELL * scaleY - 8,
+    left: pixelX * scaleX,
+    top: pixelY * scaleY - 8,
   };
 }
 
-export function SpeechBubbleLayer({ bubbles, canvasWidth, canvasHeight }: Props) {
+export function SpeechBubbleLayer({ bubbles, agents, canvasWidth, canvasHeight }: Props) {
   // Track mounted IDs for fade-in
   const [mounted, setMounted] = useState<Set<string>>(new Set());
 
@@ -54,8 +42,11 @@ export function SpeechBubbleLayer({ bubbles, canvasWidth, canvasHeight }: Props)
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {bubbles.slice(0, 3).map((bubble) => {
-        const grid = getAgentGridPos(bubble.agentId);
-        const pos = gridToScreen(grid.x, grid.y, canvasWidth, canvasHeight);
+        // Use the agent's live renderX/renderY for smooth following
+        const agent = agents.find(a => a.id === bubble.agentId);
+        const px = agent?.renderX ?? (bubble.pixelX ?? 0);
+        const py = agent?.renderY ?? (bubble.pixelY ?? 0);
+        const pos = pixelToScreen(px, py, canvasWidth, canvasHeight);
         const color = AGENT_COLORS[bubble.agentId] ?? '#00F0FF';
         const truncated =
           bubble.text.length > 60 ? bubble.text.slice(0, 57) + '...' : bubble.text;
@@ -74,7 +65,7 @@ export function SpeechBubbleLayer({ bubbles, canvasWidth, canvasHeight }: Props)
               borderColor: `${color}30`,
               color: '#F4F6FF',
               opacity: isMounted ? 1 : 0,
-              transition: 'opacity 150ms ease-in',
+              transition: 'opacity 150ms ease-in, left 33ms linear, top 33ms linear',
             }}
           >
             <span

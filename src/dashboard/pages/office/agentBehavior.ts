@@ -26,15 +26,15 @@ interface Landmark {
   pauseMax: number;     // max ticks to pause here
 }
 
-// All landmark positions verified via navigation.isWalkable() — every (x,y) is walkable
+// All landmark positions verified against hand-crafted COLLISION_MAP — every (x,y) is walkable
 const LANDMARKS: Landmark[] = [
   // Upper right lounge area
-  { name: 'lounge', x: 16, y: 2, radius: 1, type: 'lounge', maxAgents: 3, pauseMin: 30, pauseMax: 80 },
+  { name: 'lounge', x: 16, y: 3, radius: 1, type: 'lounge', maxAgents: 3, pauseMin: 30, pauseMax: 80 },
   { name: 'lounge-far', x: 24, y: 3, radius: 1, type: 'lounge', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
 
   // Patio area (rows 3-7, cols 1-11)
-  { name: 'patio-open', x: 7, y: 4, radius: 1, type: 'patio', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
-  { name: 'patio-edge', x: 1, y: 4, radius: 0, type: 'patio', maxAgents: 1, pauseMin: 10, pauseMax: 30 },
+  { name: 'patio', x: 4, y: 4, radius: 1, type: 'patio', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
+  { name: 'patio-edge', x: 1, y: 5, radius: 0, type: 'patio', maxAgents: 1, pauseMin: 10, pauseMax: 30 },
 
   // Pantry area
   { name: 'pantry', x: 9, y: 5, radius: 1, type: 'coffee', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
@@ -50,7 +50,7 @@ const LANDMARKS: Landmark[] = [
   { name: 'workspace-bottom', x: 7, y: 21, radius: 1, type: 'desk', maxAgents: 2, pauseMin: 10, pauseMax: 25 },
 
   // Meeting room (rows 13-19, cols 14-25)
-  { name: 'meeting-entry', x: 16, y: 14, radius: 1, type: 'meeting', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
+  { name: 'meeting-entry', x: 17, y: 14, radius: 1, type: 'meeting', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
   { name: 'meeting-side', x: 24, y: 18, radius: 1, type: 'meeting', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
   { name: 'whiteboard', x: 15, y: 16, radius: 0, type: 'meeting', maxAgents: 1, pauseMin: 15, pauseMax: 35 },
 ];

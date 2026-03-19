@@ -60,6 +60,8 @@ export interface SpeechBubble {
   color: string;
   createdAt: number;
   expiresAt: number;    // createdAt + 4000
+  pixelX?: number;      // smooth pixel X (from agent.renderX) — follows agent movement
+  pixelY?: number;      // smooth pixel Y (from agent.renderY) — follows agent movement
 }
 
 export interface DoorState {
