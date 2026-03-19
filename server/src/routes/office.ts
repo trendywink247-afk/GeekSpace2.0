@@ -19,18 +19,35 @@ officeRouter.get('/state', requireAuth, (req: AuthRequest, res) => {
   const taskBoard = getTaskBoard(userId);
   const taskStats = getAgentTaskStats(userId);
 
-  // Comms
-  const comms = getRecentComms(userId, 30);
+  // Comms — append Z to timestamps so browser parses as UTC
+  const comms = getRecentComms(userId, 30).map(c => ({
+    ...c,
+    created_at: c.created_at.endsWith('Z') ? c.created_at : c.created_at + 'Z',
+  }));
   const commStats = getCommStats(userId);
 
-  // Recent activity (for timeline)
-  const timeline = db.prepare(`
+  // Recent activity (for timeline) — fix UTC timestamps
+  const timeline = (db.prepare(`
     SELECT action, details, icon, created_at
     FROM activity_log
     WHERE user_id = ?
     ORDER BY created_at DESC
     LIMIT 50
-  `).all(userId) as Array<{ action: string; details: string; icon: string; created_at: string }>;
+  `).all(userId) as Array<{ action: string; details: string; icon: string; created_at: string }>)
+    .map(t => ({ ...t, created_at: t.created_at.endsWith('Z') ? t.created_at : t.created_at + 'Z' }));
+
+  // Tasks — fix timestamps
+  const fixTaskDates = (tasks: Record<string, unknown[]>) => {
+    const fixed: Record<string, unknown[]> = {};
+    for (const [k, v] of Object.entries(tasks)) {
+      fixed[k] = (v as Array<Record<string, unknown>>).map(t => ({
+        ...t,
+        created_at: typeof t.created_at === 'string' && !t.created_at.endsWith('Z') ? t.created_at + 'Z' : t.created_at,
+        started_at: typeof t.started_at === 'string' && !t.started_at.endsWith('Z') ? t.started_at + 'Z' : t.started_at,
+      }));
+    }
+    return fixed;
+  };
 
   // Recent SSE events (last 30s) for canvas animations
   const sinceParam = req.query.since ? Number(req.query.since) : Date.now() - 30000;
@@ -39,7 +56,7 @@ officeRouter.get('/state', requireAuth, (req: AuthRequest, res) => {
   res.json({
     recentEvents,
     agentStates,
-    taskBoard,
+    taskBoard: fixTaskDates(taskBoard),
     taskStats,
     comms,
     commStats,
