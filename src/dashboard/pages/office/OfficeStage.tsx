@@ -22,6 +22,7 @@ import {
 } from './constants';
 import { renderFrame, loadOfficeAssets } from './OfficeCanvasRenderer';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
+import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors } from './agentBehavior';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -225,6 +226,16 @@ export default function OfficeStage({
     loadOfficeAssets().catch(() => {}); // non-fatal
   }, []);
 
+  // ---- Initialize idle behaviors for all agents on mount ----
+
+  useEffect(() => {
+    const initial = buildInitialAgents();
+    for (const agent of initial) {
+      initBehavior(agent);
+    }
+    return () => resetAllBehaviors();
+  }, []);
+
   // ---- Process new SSE events ----
 
   useEffect(() => {
@@ -255,6 +266,17 @@ export default function OfficeStage({
             agent.state = evt.state;
             if (evt.content) agent.lastContent = evt.content;
             if (evt.tool) agent.lastTool = evt.tool;
+            // Cancel idle wandering — snap agent back to desk for real work
+            cancelIdleBehavior(agentId);
+            {
+              const home = agent.isSpecialist
+                ? SPECIALIST_POSITIONS[agent.id as SpecialistId]
+                : CORE_DESK_POSITIONS[agent.id as CoreAgentId];
+              if (home) {
+                agent.targetX = agent.isSpecialist ? home.x : home.x + 1;
+                agent.targetY = home.y > 2 ? home.y - 1 : home.y + 2;
+              }
+            }
             // Wake up specialists — TELEPORT to core agent's desk instantly
             // (walking takes too long relative to event speed)
             if (agent.isSpecialist && agent.isDormant) {
@@ -470,6 +492,15 @@ export default function OfficeStage({
           return { ...agent, x: step.x, y: step.y };
         });
         return changed ? next : prev;
+      });
+
+      // Idle behavior — wandering, socializing, fidgeting (zero AI cost)
+      setAgents(prev => {
+        const { updatedAgents, newBubbles } = tickBehaviors(prev, tickRef.current);
+        if (newBubbles.length > 0) {
+          setBubbles(b => [...b.slice(-(MAX_SPEECH_BUBBLES - newBubbles.length)), ...newBubbles]);
+        }
+        return updatedAgents;
       });
 
       // RENDER every tick — this is the heartbeat of the canvas
