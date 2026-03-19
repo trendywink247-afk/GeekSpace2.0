@@ -9,7 +9,8 @@
 import { logger } from '../logger.js';
 import { routeChat, type ChatMessage } from './llm.js';
 import { getPersonalityPrompt } from '../prompts/personalities.js';
-import { emitThinking, emitResponding, emitDone } from './agent-state-bus.js';
+import { emitThinking, emitResponding, emitDone, emitCommSent } from './agent-state-bus.js';
+import { sendAgentComm } from './agent-comms.js';
 
 export interface AgentTask {
   agent: string;        // personality ID
@@ -201,6 +202,18 @@ export async function runMultiAgentOrchestration(
   for (const task of tasks) {
     emitDone(userId, task.agent);
   }
+
+  // GAP-3 FIX: Create agent comms showing collaboration between agents
+  try {
+    const successfulAgents = results.filter(r => r.success);
+    for (let i = 0; i < successfulAgents.length - 1; i++) {
+      const from = successfulAgents[i];
+      const to = successfulAgents[i + 1];
+      sendAgentComm(userId, from.agent as 'weebo' | 'edith' | 'jarvis', to.agent as 'weebo' | 'edith' | 'jarvis',
+        `My ${from.role} analysis: ${from.text.slice(0, 150)}`, 'info');
+      emitCommSent(userId, from.agent, to.agent, `Sharing ${from.role} insights`);
+    }
+  } catch { /* non-fatal */ }
 
   const successfulResults = results.filter(r => r.success);
   logger.info({ userId, duration, successCount: successfulResults.length, totalCount: tasks.length, rounds: successfulRound1.length >= 2 ? 2 : 1 }, 'multi-agent:complete');

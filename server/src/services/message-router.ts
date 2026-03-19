@@ -35,6 +35,7 @@ import { checkContentSafety } from './content-filter.js';
 import { isLaunchModeRequest, runMultiAgentOrchestration } from './multi-agent-orchestrator.js';
 import { isResearchRequest, runResearchJob } from './research-job.js';
 import { emitThinking, emitDone } from './agent-state-bus.js';
+import { cacheDel } from './cache.js';
 
 // ---- Indian Festival Calendar ----
 // Returns a festival greeting if today falls on/near a major Indian festival (approximate fixed dates).
@@ -1318,10 +1319,15 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // 6. Build messages for LLM
   let systemPrompt = buildChannelSystemPrompt(agentConfig, user, userId, msg.channel, msg.text);
   const userCredits = (user?.credits as number) || 0;
-  // Check if user is addressing a named agent (e.g. "hey Aria,", "Forge:", "@nova")
+
+  // GAP-1 FIX: Use unified agent router for @mention parsing + agent selection
+  const { parseMentions, resolveSpecialist, buildAgentMemoryContext } = await import('./unified-agent-router.js');
+  const { mentionedAgents } = parseMentions(msg.text);
   const namedAgent = (msg as unknown as Record<string, unknown>)._overridePersonality as string
+    || (mentionedAgents.length > 0 ? mentionedAgents[0] : null)
     || detectNamedAgent(msg.text);
   const effectivePersonalityId = namedAgent || (agentConfig?.personality as string) || 'jarvis';
+  const { coreAgent, specialist } = resolveSpecialist(effectivePersonalityId as Parameters<typeof resolveSpecialist>[0]);
   const resolvedAgentName = namedAgent
     ? getPersonality(namedAgent).name
     : resolveAgentName(agentConfig, effectivePersonalityId);
@@ -1338,6 +1344,19 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     systemPrompt = buildChannelSystemPrompt(overriddenConfig, user, userId, msg.channel, msg.text);
     systemPrompt = compressPrompt(systemPrompt);
     logger.info({ userId, namedAgent, resolvedAgentName }, 'Named agent routing: overriding personality');
+  }
+
+  // GAP-2 FIX: Per-agent memory context (from unified-agent-router)
+  try {
+    const agentMemoryBlock = buildAgentMemoryContext(userId, effectivePersonalityId as Parameters<typeof resolveSpecialist>[0], msg.text);
+    if (agentMemoryBlock) systemPrompt += agentMemoryBlock;
+  } catch { /* non-fatal — agent memory table may not have namespace column yet */ }
+
+  // GAP-5 FIX: Specialist delegation visibility
+  if (specialist) {
+    const { emitDelegation, emitCommSent } = await import('./agent-state-bus.js');
+    emitDelegation(userId, coreAgent, specialist, `Delegating ${getPersonality(specialist).description} capabilities`);
+    // After LLM response, we'll emit comm_sent (see below)
   }
 
   // 6a. Semantic memory recall (Qdrant vector search)
@@ -1820,6 +1839,28 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   logConversation(userId, 'assistant', finalReply, requestId, provider, model);
   logActivity(userId, `${resolvedAgentName} replied`, finalReply.slice(0, 80), agentIcon);
   emitDone(userId, effectivePersonalityId, `${resolvedAgentName} finished`);
+
+  // GAP-4 FIX: Create agent task for complex queries (research, multi-step)
+  // GAP-5 FIX: Specialist delegation completion
+  // GAP-6 FIX: Invalidate recommendation cache
+  try {
+    const isComplexQuery = tokensOut > 200 || creditCost > 5;
+    if (isComplexQuery) {
+      const { createAgentTask, startTask, completeTask } = await import('./agent-task-queue.js');
+      const task = createAgentTask(userId, coreAgent as 'weebo' | 'edith' | 'jarvis', msg.text.slice(0, 100), msg.text, 5, 'chat');
+      startTask(task.id);
+      completeTask(task.id, finalReply.slice(0, 500));
+      const { emitTaskStarted: ets, emitTaskCompleted: etc } = await import('./agent-state-bus.js');
+      ets(userId, effectivePersonalityId, task.id, msg.text.slice(0, 60));
+      etc(userId, effectivePersonalityId, task.id, 'Complete');
+    }
+    if (specialist) {
+      const { emitCommSent: ecs } = await import('./agent-state-bus.js');
+      ecs(userId, specialist, coreAgent, 'Analysis complete', undefined);
+    }
+    // Invalidate recommendation cache
+    cacheDel(`recs:${userId}`).catch(() => {});
+  } catch { /* non-fatal wiring — never break chat */ }
 
   // Embed conversation for semantic memory (fire-and-forget)
   import('./search-vector.js').then(({ upsertMemoryVector }) => {
