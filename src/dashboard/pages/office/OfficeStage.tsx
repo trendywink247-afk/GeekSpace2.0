@@ -276,7 +276,7 @@ export default function OfficeStage({
     processedRef.current = events.length;
 
     setAgents(prev => {
-      let next = [...prev];
+      const next = [...prev];
 
       for (const evt of newEvents) {
         const agentId = evt.agentId as AgentId;
@@ -526,7 +526,7 @@ export default function OfficeStage({
     }, RENDER_TICK_MS);
 
     return () => clearInterval(interval);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ---- Track container CSS size for overlay positioning ----
 
