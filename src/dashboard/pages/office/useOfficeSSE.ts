@@ -1,6 +1,6 @@
 // src/dashboard/pages/office/useOfficeSSE.ts
-// Unified office data hook — one API call gets everything.
-// Polls /api/office/state every 5s for agent states, tasks, comms, timeline.
+// Unified office data hook — polls /api/office/state every 2s.
+// Processes buffered SSE events from server for real-time canvas animations.
 
 import { useState, useEffect, useRef } from 'react';
 import { officeService } from '@/services/api';
@@ -19,7 +19,7 @@ export function useOfficeSSE() {
   const [connectionMode, setConnectionMode] = useState<ConnectionMode>('live');
   const [officeData, setOfficeData] = useState<OfficeData | null>(null);
   const mountedRef = useRef(true);
-  const prevStatesRef = useRef<Map<string, string>>(new Map());
+  const seenEventIds = useRef(new Set<string>());
 
   useEffect(() => {
     mountedRef.current = true;
@@ -30,7 +30,7 @@ export function useOfficeSSE() {
         if (!mountedRef.current) return;
         const data = res.data;
 
-        // Update office data for tabs
+        // Update office data for tabs (comms, tasks, metrics, timeline)
         setOfficeData({
           taskBoard: data.taskBoard,
           taskStats: data.taskStats,
@@ -39,24 +39,27 @@ export function useOfficeSSE() {
           timeline: data.timeline,
         });
 
-        // Track agent state changes for canvas animation
-        for (const s of data.agentStates) {
-          const prevState = prevStatesRef.current.get(s.agentId);
-          if (prevState !== s.state) {
-            prevStatesRef.current.set(s.agentId, s.state);
-            if (s.state !== 'idle' || prevState) {
-              setEvents(prev => {
-                const evt: SSEEvent = {
-                  agentId: s.agentId,
-                  agentName: s.agentName,
-                  state: s.state as SSEEvent['state'],
-                  content: s.content,
-                  timestamp: s.timestamp,
-                };
-                const next = [...prev, evt];
-                return next.length > 200 ? next.slice(-200) : next;
-              });
+        // Process buffered events from server for real-time canvas animations
+        const recentEvents = (data as Record<string, unknown>).recentEvents as SSEEvent[] | undefined;
+        if (recentEvents && recentEvents.length > 0) {
+          const newEvents: SSEEvent[] = [];
+          for (const evt of recentEvents) {
+            const key = `${evt.agentId}-${evt.state}-${evt.timestamp}`;
+            if (!seenEventIds.current.has(key)) {
+              seenEventIds.current.add(key);
+              newEvents.push(evt);
             }
+          }
+          if (newEvents.length > 0) {
+            setEvents(prev => {
+              const next = [...prev, ...newEvents];
+              return next.length > 200 ? next.slice(-200) : next;
+            });
+          }
+          // Trim seen set to prevent memory leak
+          if (seenEventIds.current.size > 500) {
+            const arr = [...seenEventIds.current];
+            seenEventIds.current = new Set(arr.slice(-200));
           }
         }
 
@@ -67,7 +70,7 @@ export function useOfficeSSE() {
     }
 
     poll();
-    const interval = setInterval(poll, 5000);
+    const interval = setInterval(poll, 2000); // 2s for real-time feel
 
     return () => {
       mountedRef.current = false;

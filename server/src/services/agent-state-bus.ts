@@ -53,11 +53,34 @@ export function removeStateClient(userId: string, res: Response): void {
 
 // ── Broadcast ────────────────────────────────────────────────
 
+// ── Event buffer for polling-based Office page ──────────────
+// Stores recent events per-user so Office can poll and trigger animations
+const eventBuffers = new Map<string, AgentStateEvent[]>();
+const MAX_BUFFER_PER_USER = 100;
+const BUFFER_TTL_MS = 120_000; // keep events for 2 minutes
+
+export function getRecentEvents(userId: string, sinceMs: number): AgentStateEvent[] {
+  const buffer = eventBuffers.get(userId);
+  if (!buffer) return [];
+  const cutoff = new Date(sinceMs).toISOString();
+  return buffer.filter(e => e.timestamp > cutoff);
+}
+
 export function broadcastAgentState(userId: string, event: Omit<AgentStateEvent, 'timestamp'>): void {
   const full: AgentStateEvent = { ...event, timestamp: new Date().toISOString() };
 
   // Track last state per agent (for getAllAgentStates)
   agentLastState.set(`${userId}:${event.agentId}`, full);
+
+  // Buffer event for polling-based Office page
+  if (!eventBuffers.has(userId)) eventBuffers.set(userId, []);
+  const buf = eventBuffers.get(userId)!;
+  buf.push(full);
+  // Trim old events
+  const cutoff = Date.now() - BUFFER_TTL_MS;
+  const cutoffStr = new Date(cutoff).toISOString();
+  while (buf.length > 0 && buf[0].timestamp < cutoffStr) buf.shift();
+  if (buf.length > MAX_BUFFER_PER_USER) buf.splice(0, buf.length - MAX_BUFFER_PER_USER);
 
   // Local SSE delivery
   const userClients = clients.get(userId);
@@ -354,3 +377,4 @@ export function getAllAgentStates(userId: string): AgentStateEvent[] {
   }
   return states;
 }
+

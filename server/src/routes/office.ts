@@ -4,7 +4,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { db } from '../db/index.js';
 import { getAgentTasks, getTaskBoard, getAgentTaskStats } from '../services/agent-task-queue.js';
 import { getRecentComms, getCommStats } from '../services/agent-comms.js';
-import { getAllAgentStates } from '../services/agent-state-bus.js';
+import { getAllAgentStates, getRecentEvents } from '../services/agent-state-bus.js';
 
 export const officeRouter = Router();
 
@@ -32,7 +32,12 @@ officeRouter.get('/state', requireAuth, (req: AuthRequest, res) => {
     LIMIT 50
   `).all(userId) as Array<{ action: string; details: string; icon: string; created_at: string }>;
 
+  // Recent SSE events (last 30s) for canvas animations
+  const sinceParam = req.query.since ? Number(req.query.since) : Date.now() - 30000;
+  const recentEvents = getRecentEvents(userId, sinceParam);
+
   res.json({
+    recentEvents,
     agentStates,
     taskBoard,
     taskStats,
