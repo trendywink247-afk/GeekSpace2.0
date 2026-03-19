@@ -51,6 +51,8 @@ interface RenderState {
   beams: ParticleBeam[];
   tick: number;
   selectedAgentId: string | null;
+  showDebug?: boolean;
+  collisionMap?: boolean[][];
 }
 
 // ---------------------------------------------------------------------------

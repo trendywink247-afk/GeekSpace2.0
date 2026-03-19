@@ -16,7 +16,7 @@ import type {
   ParticleBeam, SpeechBubble,
 } from './types';
 import {
-  CELL, COLS, ROWS, CANVAS_W, CANVAS_H,
+  CELL, CANVAS_W, CANVAS_H,
   AGENT_COLORS, AGENT_META, SPECIALIST_PARENT,
   CORE_AGENTS, SPECIALIST_AGENTS,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
@@ -28,6 +28,9 @@ import {
 import { renderFrame, loadOfficeAssets } from './OfficeCanvasRenderer';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
 import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors } from './agentBehavior';
+import {
+  isBlocked, nearestWalkable, validateTarget, validateSpawnPosition, bfsNextStep,
+} from './navigation';
 
 // ---------------------------------------------------------------------------
 // Tick timing — render at 33ms (30fps) for smooth interpolation,
@@ -65,64 +68,16 @@ const AGENT_SPEEDS: Record<AgentId, number> = {
 };
 
 // ---------------------------------------------------------------------------
-// Collision grid — image-derived, imported from constants.ts
-// COLLISION_MAP[row][col]: true = blocked, false = walkable
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// BFS pathfinding — returns next step (or null if no path / already there)
-// ---------------------------------------------------------------------------
-
-function bfsNextStep(
-  grid: boolean[][],
-  sx: number, sy: number,
-  ex: number, ey: number,
-): { x: number; y: number } | null {
-  if (sx === ex && sy === ey) return null;
-  if (ex < 0 || ey < 0 || ex >= COLS || ey >= ROWS || grid[ey][ex]) return null;
-
-  const visited = new Set<string>();
-  const queue: { x: number; y: number; firstX: number; firstY: number }[] = [];
-
-  visited.add(`${sx},${sy}`);
-  const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
-
-  for (const [ddx, ddy] of dirs) {
-    const nx = sx + ddx;
-    const ny = sy + ddy;
-    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
-    if (grid[ny][nx]) continue;
-    const key = `${nx},${ny}`;
-    if (visited.has(key)) continue;
-    visited.add(key);
-    if (nx === ex && ny === ey) return { x: nx, y: ny };
-    queue.push({ x: nx, y: ny, firstX: nx, firstY: ny });
-  }
-
-  while (queue.length > 0) {
-    const cur = queue.shift()!;
-    for (const [ddx, ddy] of dirs) {
-      const nx = cur.x + ddx;
-      const ny = cur.y + ddy;
-      if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
-      if (grid[ny][nx]) continue;
-      const key = `${nx},${ny}`;
-      if (visited.has(key)) continue;
-      visited.add(key);
-      if (nx === ex && ny === ey) return { x: cur.firstX, y: cur.firstY };
-      queue.push({ x: nx, y: ny, firstX: cur.firstX, firstY: cur.firstY });
-    }
-  }
-
-  return null; // no path
-}
-
-// ---------------------------------------------------------------------------
 // Seat position helpers — agent sits adjacent to their desk tile
+// Validates the position through navigation module.
 // ---------------------------------------------------------------------------
 
 function getSeatPosition(deskPos: { x: number; y: number }): { x: number; y: number } {
-  // Desk positions are already on walkable tiles — return as-is
+  // Validate the desk position — find nearest walkable if blocked
+  if (isBlocked(deskPos.x, deskPos.y)) {
+    const valid = nearestWalkable(deskPos.x, deskPos.y);
+    if (valid) return valid;
+  }
   return { x: deskPos.x, y: deskPos.y };
 }
 
@@ -137,18 +92,19 @@ function buildInitialAgents(): CanvasAgent[] {
     const pos = CORE_DESK_POSITIONS[id];
     const meta = AGENT_META[id];
     const seat = getSeatPosition(pos);
+    const spawn = validateSpawnPosition(id, seat.x, seat.y);
     agents.push({
       id,
       name: id.charAt(0).toUpperCase() + id.slice(1),
       color: AGENT_COLORS[id],
       emoji: meta.emoji,
       role: meta.role,
-      x: seat.x,
-      y: seat.y,
-      targetX: seat.x,
-      targetY: seat.y,
-      renderX: seat.x * CELL + CELL / 2,
-      renderY: seat.y * CELL + CELL / 2,
+      x: spawn.x,
+      y: spawn.y,
+      targetX: spawn.x,
+      targetY: spawn.y,
+      renderX: spawn.renderX,
+      renderY: spawn.renderY,
       speed: AGENT_SPEEDS[id],
       state: 'idle',
       isSpecialist: false,
@@ -160,18 +116,19 @@ function buildInitialAgents(): CanvasAgent[] {
     const pos = SPECIALIST_POSITIONS[id];
     const meta = AGENT_META[id];
     const seat = getSeatPosition(pos);
+    const spawn = validateSpawnPosition(id, seat.x, seat.y);
     agents.push({
       id,
       name: id.charAt(0).toUpperCase() + id.slice(1),
       color: AGENT_COLORS[id],
       emoji: meta.emoji,
       role: meta.role,
-      x: seat.x,
-      y: seat.y,
-      targetX: seat.x,
-      targetY: seat.y,
-      renderX: seat.x * CELL + CELL / 2,
-      renderY: seat.y * CELL + CELL / 2,
+      x: spawn.x,
+      y: spawn.y,
+      targetX: spawn.x,
+      targetY: spawn.y,
+      renderX: spawn.renderX,
+      renderY: spawn.renderY,
       speed: AGENT_SPEEDS[id],
       state: 'idle',
       isSpecialist: true,
@@ -221,6 +178,29 @@ export default function OfficeStage({
     return () => resetAllBehaviors();
   }, []);
 
+  // ---- Validate all agent positions on init ----
+
+  useEffect(() => {
+    setAgents(prev => prev.map(agent => {
+      if (isBlocked(agent.x, agent.y)) {
+        const valid = nearestWalkable(agent.x, agent.y);
+        if (valid) {
+          console.warn(`[Office] Agent ${agent.id} spawned on blocked tile (${agent.x},${agent.y}), moved to (${valid.x},${valid.y})`);
+          return {
+            ...agent,
+            x: valid.x,
+            y: valid.y,
+            targetX: valid.x,
+            targetY: valid.y,
+            renderX: valid.x * CELL + CELL / 2,
+            renderY: valid.y * CELL + CELL / 2,
+          };
+        }
+      }
+      return agent;
+    }));
+  }, []);
+
   // ---- Process new SSE events ----
 
   useEffect(() => {
@@ -259,8 +239,9 @@ export default function OfficeStage({
                 : CORE_DESK_POSITIONS[agent.id as CoreAgentId];
               if (home) {
                 const seat = getSeatPosition(home);
-                agent.targetX = seat.x;
-                agent.targetY = seat.y;
+                const validSeat = validateTarget(seat.x, seat.y, agent.x, agent.y);
+                agent.targetX = validSeat.x;
+                agent.targetY = validSeat.y;
               }
             }
             // When a specialist gets work, walk them to their parent core agent's desk
@@ -270,9 +251,10 @@ export default function OfficeStage({
                 const parentDesk = CORE_DESK_POSITIONS[parentId];
                 if (parentDesk) {
                   const parentSeat = getSeatPosition(parentDesk);
-                  // Walk near the parent (offset by 1 to avoid overlap)
-                  agent.targetX = parentSeat.x + 1;
-                  agent.targetY = parentSeat.y;
+                  // Walk near the parent (offset by 1 to avoid overlap) — validated
+                  const validParent = validateTarget(parentSeat.x + 1, parentSeat.y, parentSeat.x, parentSeat.y);
+                  agent.targetX = validParent.x;
+                  agent.targetY = validParent.y;
                 }
               }
             }
@@ -290,8 +272,9 @@ export default function OfficeStage({
                 const coreDesk = CORE_DESK_POSITIONS[agentId as CoreAgentId];
                 if (coreDesk) {
                   const coreSeat = getSeatPosition(coreDesk);
-                  spec.targetX = coreSeat.x + 1;
-                  spec.targetY = coreSeat.y;
+                  const validTarget = validateTarget(coreSeat.x + 1, coreSeat.y, coreSeat.x, coreSeat.y);
+                  spec.targetX = validTarget.x;
+                  spec.targetY = validTarget.y;
                 }
                 next[specIdx] = spec;
               }
@@ -325,13 +308,14 @@ export default function OfficeStage({
                 p.map(a => {
                   if (a.id !== doneId) return a;
                   const reset = { ...a, state: 'idle' as AgentStateType };
-                  // Walk specialist back to their own desk
+                  // Walk specialist back to their own desk — validated
                   if (a.isSpecialist) {
                     const homePos = SPECIALIST_POSITIONS[a.id as SpecialistId];
                     if (homePos) {
                       const seat = getSeatPosition(homePos);
-                      reset.targetX = seat.x;
-                      reset.targetY = seat.y;
+                      const validSeat = validateTarget(seat.x, seat.y, a.x, a.y);
+                      reset.targetX = validSeat.x;
+                      reset.targetY = validSeat.y;
                     }
                   }
                   return reset;
@@ -443,7 +427,7 @@ export default function OfficeStage({
 
           // Advance to next BFS cell (only on behavior ticks to control pacing)
           if (isBehaviorTick) {
-            const step = bfsNextStep(COLLISION_MAP, agent.x, agent.y, agent.targetX, agent.targetY);
+            const step = bfsNextStep(agent.x, agent.y, agent.targetX, agent.targetY);
             if (!step) return agent;
             changed = true;
             return { ...agent, x: step.x, y: step.y };
@@ -476,7 +460,7 @@ export default function OfficeStage({
         beams: beamsRef.current,
         tick: tickRef.current,
         selectedAgentId: selectedRef.current,
-      });
+      }, true, COLLISION_MAP);
     }, RENDER_TICK_MS);
 
     return () => clearInterval(interval);

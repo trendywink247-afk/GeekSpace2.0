@@ -6,9 +6,12 @@
 import type { CanvasAgent, AgentId, SpeechBubble } from './types';
 import {
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
-  AGENT_COLORS, COLLISION_MAP,
+  AGENT_COLORS,
 } from './constants';
 import type { CoreAgentId, SpecialistId } from './types';
+import {
+  isWalkable, validateTarget, randomWalkableInRadius, logInvalidTarget,
+} from './navigation';
 
 // ── Landmarks — meaningful places agents walk to ────────────────────────────
 
@@ -26,36 +29,36 @@ interface Landmark {
 // All landmark positions verified against COLLISION_MAP — every (x,y) is walkable (false)
 // isWalkable(x,y) check: COLLISION_MAP[y][x] === false
 const LANDMARKS: Landmark[] = [
-  // Upper right lounge area (rows 1-3, cols 15-25 walkable)
-  { name: 'lounge-floor', x: 16, y: 2, radius: 1, type: 'lounge', maxAgents: 3, pauseMin: 30, pauseMax: 80 },
-  { name: 'lounge-corner', x: 23, y: 3, radius: 1, type: 'lounge', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
+  // Upper right lounge area
+  { name: 'lounge', x: 16, y: 2, radius: 1, type: 'lounge', maxAgents: 3, pauseMin: 30, pauseMax: 80 },
+  { name: 'lounge-far', x: 24, y: 3, radius: 1, type: 'lounge', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
 
-  // Pantry/upper area (rows 5-6, cols 5-10 walkable)
-  { name: 'pantry', x: 8, y: 5, radius: 1, type: 'coffee', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
-  { name: 'upper-floor', x: 5, y: 6, radius: 1, type: 'coffee', maxAgents: 2, pauseMin: 10, pauseMax: 30 },
+  // Patio area (rows 3-7, cols 1-11)
+  { name: 'patio-open', x: 7, y: 4, radius: 1, type: 'patio', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
+  { name: 'patio-edge', x: 1, y: 4, radius: 0, type: 'patio', maxAgents: 1, pauseMin: 10, pauseMax: 30 },
 
-  // Left corridor (col 1 walkable at rows 5-7, 11, 14)
-  { name: 'corridor-upper', x: 1, y: 6, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 8, pauseMax: 20 },
-  { name: 'corridor-mid', x: 1, y: 14, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 8, pauseMax: 20 },
+  // Pantry area
+  { name: 'pantry', x: 9, y: 5, radius: 1, type: 'coffee', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
 
-  // Main workspace aisles (rows 13-15, cols 2-14 walkable)
-  { name: 'aisle-top', x: 7, y: 13, radius: 1, type: 'desk', maxAgents: 2, pauseMin: 10, pauseMax: 25 },
-  { name: 'aisle-bottom', x: 7, y: 21, radius: 1, type: 'desk', maxAgents: 2, pauseMin: 10, pauseMax: 25 },
-
-  // Desk between-rows aisles (row 18 col 7 walkable, row 18 cols 13-14 walkable)
-  { name: 'desk-aisle-left', x: 7, y: 18, radius: 0, type: 'desk', maxAgents: 1, pauseMin: 5, pauseMax: 15 },
-  { name: 'desk-aisle-right', x: 13, y: 18, radius: 0, type: 'desk', maxAgents: 1, pauseMin: 5, pauseMax: 15 },
-
-  // Meeting area entry (row 14, col 14 walkable)
-  { name: 'meeting-entry', x: 14, y: 14, radius: 0, type: 'meeting', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
+  // Left corridor
+  { name: 'corridor', x: 1, y: 7, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 8, pauseMax: 20 },
 
   // Staircase area (row 12, cols 3-4 walkable)
   { name: 'stairs', x: 3, y: 12, radius: 0, type: 'bookshelf', maxAgents: 1, pauseMin: 10, pauseMax: 25 },
+
+  // Main workspace aisles (rows 13-15)
+  { name: 'workspace-top', x: 7, y: 13, radius: 1, type: 'desk', maxAgents: 2, pauseMin: 10, pauseMax: 25 },
+  { name: 'workspace-bottom', x: 7, y: 21, radius: 1, type: 'desk', maxAgents: 2, pauseMin: 10, pauseMax: 25 },
+
+  // Meeting room (rows 13-19, cols 14-25)
+  { name: 'meeting-entry', x: 16, y: 14, radius: 1, type: 'meeting', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
+  { name: 'meeting-side', x: 24, y: 18, radius: 1, type: 'meeting', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
+  { name: 'whiteboard', x: 15, y: 16, radius: 0, type: 'meeting', maxAgents: 1, pauseMin: 15, pauseMax: 35 },
 ];
 
 // Landmarks suitable for group meetings (lounge + meeting areas)
 const GROUP_MEETING_LANDMARKS = LANDMARKS.filter(
-  l => l.name === 'lounge-floor' || l.name === 'lounge-corner' || l.name === 'meeting-entry' || l.name === 'aisle-bottom',
+  l => l.name === 'lounge' || l.name === 'lounge-far' || l.name === 'meeting-entry' || l.name === 'workspace-bottom',
 );
 
 // ── Context-aware social chat phrases ───────────────────────────────────────
@@ -176,34 +179,25 @@ function vacateLandmark(agentId: AgentId): void {
   }
 }
 
-/** Check if a tile is walkable on the collision grid */
-function isWalkable(x: number, y: number): boolean {
-  if (y < 0 || y >= COLLISION_MAP.length || x < 0 || x >= COLLISION_MAP[0].length) return false;
-  return !COLLISION_MAP[y][x];
-}
-
-/** Pick a point within a landmark's radius, ensuring it lands on a walkable tile */
+/** Pick a point within a landmark's radius, ensuring it lands on a walkable tile.
+ *  Uses the centralized randomWalkableInRadius from navigation.ts. */
 function pointInRadius(landmark: Landmark): { x: number; y: number } {
-  if (landmark.radius === 0) return { x: landmark.x, y: landmark.y };
-
-  // Try random points in radius up to 8 times
-  for (let attempt = 0; attempt < 8; attempt++) {
-    const angle = Math.random() * Math.PI * 2;
-    const r = Math.random() * landmark.radius;
-    const px = Math.round(landmark.x + Math.cos(angle) * r);
-    const py = Math.round(landmark.y + Math.sin(angle) * r);
-    if (isWalkable(px, py)) return { x: px, y: py };
+  if (landmark.radius === 0) {
+    // Zero-radius: validate the center directly
+    if (isWalkable(landmark.x, landmark.y)) return { x: landmark.x, y: landmark.y };
+    logInvalidTarget('pointInRadius/' + landmark.name, landmark.x, landmark.y);
+    const fallback = randomWalkableInRadius(landmark.x, landmark.y, 2);
+    return fallback ?? { x: landmark.x, y: landmark.y };
   }
 
-  // Fallback: scan adjacent tiles for a walkable one
-  const dirs = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
-  for (const [dx, dy] of dirs) {
-    const px = landmark.x + dx;
-    const py = landmark.y + dy;
-    if (isWalkable(px, py)) return { x: px, y: py };
-  }
+  // Use navigation module for random walkable selection within radius
+  const result = randomWalkableInRadius(landmark.x, landmark.y, landmark.radius);
+  if (result) return result;
 
-  // Last resort: return landmark center (should always be walkable)
+  // If radius search failed, try the center
+  if (isWalkable(landmark.x, landmark.y)) return { x: landmark.x, y: landmark.y };
+
+  logInvalidTarget('pointInRadius/' + landmark.name, landmark.x, landmark.y);
   return { x: landmark.x, y: landmark.y };
 }
 
@@ -352,7 +346,6 @@ function tryStartGroupMeeting(idleAgents: CanvasAgent[]): void {
     const bs = behaviorStates.get(agent.id);
     if (!bs) continue;
     vacateLandmark(agent.id);
-    const pt = pointInRadius(landmark); void pt; // used by tick via targetLandmark
     bs.mode = 'group-meeting';
     bs.targetLandmark = landmark;
     bs.groupId = meetingId;
@@ -379,7 +372,9 @@ function tickGroupMeeting(agents: CanvasAgent[], newBubbles: SpeechBubble[]): { 
         const bs = behaviorStates.get(agent.id);
         if (!bs || bs.mode !== 'group-meeting') continue;
         const pt = pointInRadius(gm.landmark);
-        targets.set(agent.id, pt);
+        const home = getHomePosition(agent);
+        const validPt = validateTarget(pt.x, pt.y, home.x, home.y);
+        targets.set(agent.id, validPt);
         const dist = Math.abs(agent.x - gm.landmark.x) + Math.abs(agent.y - gm.landmark.y);
         if (dist > gm.landmark.radius + 1) {
           allArrived = false;
@@ -416,7 +411,7 @@ function tickGroupMeeting(agents: CanvasAgent[], newBubbles: SpeechBubble[]): { 
     }
 
     case 'dispersing': {
-      // Send everyone home
+      // Send everyone home — validate home positions
       for (const agent of memberAgents) {
         const bs = behaviorStates.get(agent.id);
         if (!bs) continue;
@@ -425,7 +420,8 @@ function tickGroupMeeting(agents: CanvasAgent[], newBubbles: SpeechBubble[]): { 
         bs.groupId = null;
         bs.targetLandmark = null;
         const home = getHomePosition(agent);
-        targets.set(agent.id, home);
+        const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
+        targets.set(agent.id, validHome);
         bs.speed = 1.5 + Math.random();
       }
       activeGroupMeeting = null;
@@ -517,12 +513,14 @@ export function tickBehaviors(
             const landmark = chooseLandmark(agent.id, idleAgents);
             if (landmark) {
               const pt = pointInRadius(landmark);
+              const home = getHomePosition(agent);
+              const validPt = validateTarget(pt.x, pt.y, home.x, home.y);
               bState.mode = 'wandering';
               bState.targetLandmark = landmark;
               bState.speed = 2.5 + Math.random() * 1.5;
               bState.timer = randomInt(landmark.pauseMin, landmark.pauseMax);
-              updated.targetX = pt.x;
-              updated.targetY = pt.y;
+              updated.targetX = validPt.x;
+              updated.targetY = validPt.y;
               occupyLandmark(landmark, agent.id);
               changed = true;
             } else {
@@ -538,13 +536,17 @@ export function tickBehaviors(
             );
             if (nearby.length > 0) {
               const target = pick(nearby);
+              const socialX = target.x + (agent.x > target.x ? 1 : -1);
+              const socialY = target.y;
+              const home = getHomePosition(agent);
+              const validSocial = validateTarget(socialX, socialY, home.x, home.y);
               bState.mode = 'socializing';
               bState.socialTarget = target.id;
               bState.socialStep = 0;
               bState.speed = 3;
               bState.timer = 15;
-              updated.targetX = target.x + (agent.x > target.x ? 1 : -1);
-              updated.targetY = target.y;
+              updated.targetX = validSocial.x;
+              updated.targetY = validSocial.y;
               changed = true;
             } else {
               bState.timer = randomInt(40, 75);
@@ -575,8 +577,9 @@ export function tickBehaviors(
             bState.mode = 'returning';
             bState.targetLandmark = null;
             const home = getHomePosition(agent);
-            updated.targetX = home.x;
-            updated.targetY = home.y;
+            const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
+            updated.targetX = validHome.x;
+            updated.targetY = validHome.y;
             bState.speed = 1.5 + Math.random();
             changed = true;
           }
@@ -592,9 +595,10 @@ export function tickBehaviors(
         if (!target) {
           bState.mode = 'returning';
           const home = getHomePosition(agent);
-          updated.targetX = home.x;
-          updated.targetY = home.y;
-          bState.facing = computeFacing(agent.x, agent.y, home.x, home.y);
+          const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
+          updated.targetX = validHome.x;
+          updated.targetY = validHome.y;
+          bState.facing = computeFacing(agent.x, agent.y, validHome.x, validHome.y);
           changed = true;
           break;
         }
@@ -626,12 +630,13 @@ export function tickBehaviors(
           } else if (bState.socialStep >= 3 && bState.timer <= 0) {
             bState.mode = 'returning';
             const home = getHomePosition(agent);
-            updated.targetX = home.x;
-            updated.targetY = home.y;
+            const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
+            updated.targetX = validHome.x;
+            updated.targetY = validHome.y;
             bState.speed = 2;
             bState.socialTarget = null;
             bState.socialStep = 0;
-            bState.facing = computeFacing(agent.x, agent.y, home.x, home.y);
+            bState.facing = computeFacing(agent.x, agent.y, validHome.x, validHome.y);
             changed = true;
           }
         }
@@ -653,10 +658,11 @@ export function tickBehaviors(
             bState.mode = 'returning';
             bState.groupId = null;
             bState.targetLandmark = null;
-            updated.targetX = home.x;
-            updated.targetY = home.y;
+            const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
+            updated.targetX = validHome.x;
+            updated.targetY = validHome.y;
             bState.speed = 1.5 + Math.random();
-            bState.facing = computeFacing(agent.x, agent.y, home.x, home.y);
+            bState.facing = computeFacing(agent.x, agent.y, validHome.x, validHome.y);
             changed = true;
           }
         }
