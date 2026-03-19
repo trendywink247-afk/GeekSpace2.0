@@ -72,6 +72,32 @@ export function drawBackground(ctx: CanvasRenderingContext2D): void {
   ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
+  // --- Ambient room glows (radial approximation via concentric rects) ---
+  // Main office center glow (very subtle cyan)
+  for (let r = 0; r < 8; r++) {
+    const alpha = 0.015 - r * 0.002;
+    if (alpha <= 0) break;
+    ctx.fillStyle = hexToRgba(C.cyan, alpha);
+    ctx.fillRect(gx(4) + r * CELL, gy(4) + r * CELL, gx(20) - 2 * r * CELL, gy(12) - 2 * r * CELL);
+  }
+  // Lab center glow (subtle purple)
+  for (let r = 0; r < 6; r++) {
+    const alpha = 0.012 - r * 0.002;
+    if (alpha <= 0) break;
+    ctx.fillStyle = hexToRgba(C.purple, alpha);
+    ctx.fillRect(gx(31) + r * CELL, gy(4) + r * CELL, gx(14) - 2 * r * CELL, gy(12) - 2 * r * CELL);
+  }
+
+  // --- Alternating floor tiles (very subtle checkerboard) ---
+  for (let r = WALL_ROWS + 1; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if ((r + c) % 2 === 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.008)';
+        ctx.fillRect(gx(c), gy(r), CELL, CELL);
+      }
+    }
+  }
+
   // Cyan grid lines (4% opacity)
   ctx.fillStyle = hexToRgba(C.cyan, 0.04);
   for (let c = 0; c <= COLS; c++) {
@@ -95,7 +121,7 @@ export function drawBackground(ctx: CanvasRenderingContext2D): void {
   ctx.fillRect(gx(DOOR_COL + 2), 0, gx(COLS) - gx(DOOR_COL + 2), gy(WALL_ROWS));
 
   // Lab wall panel detail
-  ctx.fillStyle = hexToRgba(C.cyan, 0.06);
+  ctx.fillStyle = hexToRgba(C.purple, 0.06);
   ctx.fillRect(gx(DOOR_COL + 2), gy(1) - 1, gx(COLS) - gx(DOOR_COL + 2), 1);
   ctx.fillRect(gx(DOOR_COL + 2), gy(2) - 1, gx(COLS) - gx(DOOR_COL + 2), 1);
 
@@ -111,17 +137,50 @@ export function drawBackground(ctx: CanvasRenderingContext2D): void {
   // Right room bottom edge
   ctx.fillRect(gx(DOOR_COL + 2), gy(WALL_ROWS), gx(COLS) - gx(DOOR_COL + 2), 1);
 
+  // --- Neon accent strip at bottom of walls ---
+  ctx.fillStyle = hexToRgba(C.cyan, 0.15);
+  ctx.fillRect(0, gy(WALL_ROWS) - 2, gx(DOOR_COL), 2);
+  ctx.fillStyle = hexToRgba(C.purple, 0.15);
+  ctx.fillRect(gx(DOOR_COL + 2), gy(WALL_ROWS) - 2, gx(COLS) - gx(DOOR_COL + 2), 2);
+
   // Floor accent strip under walls
   ctx.fillStyle = hexToRgba(C.cyan, 0.03);
   ctx.fillRect(0, gy(WALL_ROWS) + 1, CANVAS_W, CELL);
 
+  // --- Room label indicator bars (vertical on inner wall) ---
+  // "OFFICE" indicator bar on left wall
+  ctx.fillStyle = hexToRgba(C.cyan, 0.3);
+  ctx.fillRect(gx(1), gy(0) + 4, 2, gy(WALL_ROWS) - 8);
+  // "LAB" indicator bar on right wall
+  ctx.fillStyle = hexToRgba(C.purple, 0.3);
+  ctx.fillRect(gx(31), gy(0) + 4, 2, gy(WALL_ROWS) - 8);
+
   // Room label indicators (small colored dots in wall)
   // Main Office — cyan dot
-  ctx.fillStyle = hexToRgba(C.cyan, 0.2);
+  ctx.fillStyle = hexToRgba(C.cyan, 0.25);
   ctx.fillRect(gx(2), gy(1) + 4, 4, 4);
+  ctx.fillStyle = hexToRgba(C.cyan, 0.12);
+  ctx.fillRect(gx(2) - 1, gy(1) + 3, 6, 6); // glow ring
   // Specialist Lab — purple dot
-  ctx.fillStyle = hexToRgba(C.purple, 0.2);
+  ctx.fillStyle = hexToRgba(C.purple, 0.25);
   ctx.fillRect(gx(32), gy(1) + 4, 4, 4);
+  ctx.fillStyle = hexToRgba(C.purple, 0.12);
+  ctx.fillRect(gx(32) - 1, gy(1) + 3, 6, 6); // glow ring
+
+  // --- Wall corner accents (subtle geometric trim) ---
+  // Top-left corner
+  ctx.fillStyle = hexToRgba(C.cyan, 0.18);
+  ctx.fillRect(0, 0, 6, 1);
+  ctx.fillRect(0, 0, 1, 6);
+  // Top-right corner
+  ctx.fillRect(CANVAS_W - 6, 0, 6, 1);
+  ctx.fillRect(CANVAS_W - 1, 0, 1, 6);
+  // Bottom-left corner
+  ctx.fillRect(0, CANVAS_H - 1, 6, 1);
+  ctx.fillRect(0, CANVAS_H - 6, 1, 6);
+  // Bottom-right corner
+  ctx.fillRect(CANVAS_W - 6, CANVAS_H - 1, 6, 1);
+  ctx.fillRect(CANVAS_W - 1, CANVAS_H - 6, 1, 6);
 }
 
 // ---------------------------------------------------------------------------
@@ -186,12 +245,14 @@ export function drawDesk(ctx: CanvasRenderingContext2D, x: number, y: number, co
   const px = gx(x);
   const py = gy(y);
 
-  // Desk surface (3x2 cells, dimmed agent color)
-  ctx.fillStyle = hexToRgba(color, 0.15);
-  ctx.fillRect(px, py, CELL * 3, CELL * 2);
+  // Desk surface — two-tone gradient (darker front edge, lighter back)
+  ctx.fillStyle = hexToRgba(color, 0.12);
+  ctx.fillRect(px, py, CELL * 3, CELL);
+  ctx.fillStyle = hexToRgba(color, 0.17);
+  ctx.fillRect(px, py + CELL, CELL * 3, CELL);
 
-  // Desk edge highlight
-  ctx.fillStyle = hexToRgba(color, 0.25);
+  // Desk edge highlight (top glow bar)
+  ctx.fillStyle = hexToRgba(color, 0.3);
   ctx.fillRect(px, py, CELL * 3, 2);
 
   // Desk border
@@ -206,17 +267,41 @@ export function drawDesk(ctx: CanvasRenderingContext2D, x: number, y: number, co
   const monX = px + CELL; // centered on 3-wide desk
   const monY = py + 3; // slight offset from top
 
+  // Screen glow behind monitor
+  ctx.fillStyle = hexToRgba(color, 0.06);
+  ctx.fillRect(monX - 3, monY - 2, monW + 6, monH + 4);
+  ctx.fillStyle = hexToRgba(color, 0.03);
+  ctx.fillRect(monX - 5, monY - 4, monW + 10, monH + 8);
+
   // Monitor body
-  ctx.fillStyle = hexToRgba(color, 0.3);
+  ctx.fillStyle = hexToRgba(color, 0.35);
   ctx.fillRect(monX, monY, monW, monH);
 
   // Screen (inner area, brighter)
-  ctx.fillStyle = hexToRgba(color, 0.12);
+  ctx.fillStyle = hexToRgba(color, 0.15);
   ctx.fillRect(monX + 2, monY + 2, monW - 4, monH - 4);
 
+  // Scanline effect on screen (1px lines across screen)
+  ctx.fillStyle = hexToRgba(color, 0.05);
+  for (let sl = monY + 3; sl < monY + monH - 2; sl += 2) {
+    ctx.fillRect(monX + 2, sl, monW - 4, 1);
+  }
+
   // Monitor stand
-  ctx.fillStyle = hexToRgba(color, 0.2);
+  ctx.fillStyle = hexToRgba(color, 0.22);
   ctx.fillRect(monX + monW / 2 - 2, monY + monH, 4, 3);
+
+  // Keyboard below monitor (wider, thin)
+  const kbW = Math.round(CELL * 1.2);
+  const kbX = monX + Math.round((monW - kbW) / 2);
+  const kbY = monY + monH + 5;
+  ctx.fillStyle = hexToRgba(color, 0.1);
+  ctx.fillRect(kbX, kbY, kbW, 3);
+  // Key dots on keyboard
+  ctx.fillStyle = hexToRgba(color, 0.18);
+  for (let k = 0; k < 4; k++) {
+    ctx.fillRect(kbX + 2 + k * Math.round(kbW / 5), kbY + 1, 2, 1);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -275,33 +360,47 @@ export function drawServerRack(ctx: CanvasRenderingContext2D, tick: number): voi
   const rackW = CELL * 2;
   const rackH = CELL * 2;
 
+  // Ambient glow behind rack
+  ctx.fillStyle = hexToRgba(C.cyan, 0.04);
+  ctx.fillRect(px - 4, py - 4, rackW + 8, rackH + 8);
+  ctx.fillStyle = hexToRgba(C.cyan, 0.02);
+  ctx.fillRect(px - 8, py - 8, rackW + 16, rackH + 16);
+
   // Rack body
   ctx.fillStyle = C.card;
   ctx.fillRect(px, py, rackW, rackH);
 
-  // Rack border
-  ctx.fillStyle = hexToRgba(C.cyan, 0.1);
+  // Rack border — brighter cyan
+  ctx.fillStyle = hexToRgba(C.cyan, 0.15);
   ctx.fillRect(px, py, rackW, 1);
   ctx.fillRect(px, py, 1, rackH);
   ctx.fillRect(px + rackW - 1, py, 1, rackH);
   ctx.fillRect(px, py + rackH - 1, rackW, 1);
 
-  // Horizontal shelf lines
+  // Horizontal shelf lines (more shelves)
   ctx.fillStyle = hexToRgba(C.dim, 0.15);
-  ctx.fillRect(px + 2, py + Math.round(rackH * 0.33), rackW - 4, 1);
-  ctx.fillRect(px + 2, py + Math.round(rackH * 0.66), rackW - 4, 1);
+  ctx.fillRect(px + 2, py + Math.round(rackH * 0.2), rackW - 4, 1);
+  ctx.fillRect(px + 2, py + Math.round(rackH * 0.4), rackW - 4, 1);
+  ctx.fillRect(px + 2, py + Math.round(rackH * 0.6), rackW - 4, 1);
+  ctx.fillRect(px + 2, py + Math.round(rackH * 0.8), rackW - 4, 1);
 
-  // Blinking LEDs — 3 rows of 4 LEDs each, alternating on tick
-  const ledColors = [C.green, C.cyan, C.pink, C.green];
-  for (let row = 0; row < 3; row++) {
+  // Blinking LEDs — 5 rows of 4 LEDs each, alternating on tick, varied colors
+  const ledColors = [C.green, C.cyan, '#F59E0B', C.pink];
+  for (let row = 0; row < 5; row++) {
     for (let col = 0; col < 4; col++) {
-      const on = (tick + row + col) % 3 !== 0;
+      const on = (tick + row * 2 + col) % 3 !== 0;
       const ledX = px + 4 + col * 7;
-      const ledY = py + 4 + row * Math.round(rackH / 3);
+      const ledY = py + 3 + row * Math.round(rackH / 5);
+      const ledColor = ledColors[(col + row) % ledColors.length];
       ctx.fillStyle = on
-        ? hexToRgba(ledColors[col], 0.7)
-        : hexToRgba(ledColors[col], 0.15);
+        ? hexToRgba(ledColor, 0.8)
+        : hexToRgba(ledColor, 0.12);
       ctx.fillRect(ledX, ledY, 3, 2);
+      // LED glow when on
+      if (on) {
+        ctx.fillStyle = hexToRgba(ledColor, 0.12);
+        ctx.fillRect(ledX - 1, ledY - 1, 5, 4);
+      }
     }
   }
 }
@@ -316,6 +415,14 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   const color = agent.color;
   const dormantAlpha = agent.isDormant ? 0.3 : 1.0;
   const isWalking = agent.x !== agent.targetX || agent.y !== agent.targetY;
+
+  // Agent glow for active (non-idle, non-dormant) agents
+  if (agent.state !== 'idle' && !agent.isDormant) {
+    ctx.fillStyle = hexToRgba(agent.color, 0.08);
+    ctx.fillRect(gx(agent.x) - CELL, gy(agent.y) - CELL, CELL * 4, CELL * 4);
+    ctx.fillStyle = hexToRgba(agent.color, 0.04);
+    ctx.fillRect(gx(agent.x) - CELL * 2, gy(agent.y) - CELL * 2, CELL * 6, CELL * 6);
+  }
 
   // Selected agent — pulsing ring
   if (isSelected) {

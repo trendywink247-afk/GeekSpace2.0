@@ -20,34 +20,61 @@ const TABS: { key: ControlTab; icon: string; label: string }[] = [
   { key: 'timeline', icon: '\u23F1', label: 'Timeline' },
 ];
 
+const TAB_ACCENT_COLORS: Record<ControlTab, string> = {
+  tasks: C.cyan,
+  comms: C.green,
+  metrics: C.purple,
+  timeline: '#F59E0B',
+};
+
 export default function ControlRoom({ activeTab, onTabChange, sseEvents, onCreateTask }: Props) {
   return (
     <div className="flex flex-col h-full">
       {/* Tab Bar */}
       <div
         className="flex border-b"
-        style={{ background: C.card, borderColor: 'rgba(0,240,255,0.1)' }}
+        style={{
+          background: 'linear-gradient(to right, #0C0C18, #0E0E1C, #0C0C18)',
+          borderColor: 'rgba(0,240,255,0.12)',
+        }}
       >
         {TABS.map(({ key, icon, label }) => {
           const active = activeTab === key;
+          const accentColor = TAB_ACCENT_COLORS[key];
           return (
             <button
               key={key}
               onClick={() => onTabChange(key)}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium transition-colors"
+              className="relative flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all duration-200"
               style={{
-                color: active ? C.cyan : '#6B7280',
-                borderBottom: active ? `2px solid ${C.cyan}` : '2px solid transparent',
+                color: active ? accentColor : '#6B7280',
+                borderBottom: active ? `2px solid ${accentColor}` : '2px solid transparent',
+                background: active ? `linear-gradient(to bottom, transparent, rgba(${
+                  key === 'tasks' ? '0,240,255' :
+                  key === 'comms' ? '173,255,47' :
+                  key === 'metrics' ? '139,92,246' :
+                  '245,158,11'
+                },0.04))` : 'transparent',
               }}
               onMouseEnter={(e) => {
-                if (!active) (e.currentTarget.style.color = '#8892A4');
+                if (!active) (e.currentTarget.style.color = '#A0AEC0');
               }}
               onMouseLeave={(e) => {
                 if (!active) (e.currentTarget.style.color = '#6B7280');
               }}
             >
-              <span>{icon}</span>
-              <span>{label}</span>
+              <span className="text-base">{icon}</span>
+              <span className="tracking-wide">{label}</span>
+              {/* Active tab glow */}
+              {active && (
+                <span
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[2px] rounded-full"
+                  style={{
+                    background: accentColor,
+                    boxShadow: `0 0 8px ${accentColor}, 0 0 16px ${accentColor}40`,
+                  }}
+                />
+              )}
             </button>
           );
         })}

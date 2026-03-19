@@ -29,12 +29,34 @@ export function DraggableDivider({ onResize }: Props) {
 
   return (
     <div
-      className="h-2 cursor-row-resize flex items-center justify-center group hover:bg-[#00F0FF]/10 transition-colors"
+      className="h-3 cursor-row-resize flex items-center justify-center group transition-all duration-200"
+      style={{ background: 'linear-gradient(to right, transparent 5%, rgba(0,240,255,0.04) 50%, transparent 95%)' }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
     >
-      <div className="w-12 h-1 rounded-full bg-[#00F0FF]/15 group-hover:bg-[#00F0FF]/30 transition-colors" />
+      {/* Full-width neon line */}
+      <div
+        className="absolute left-0 right-0 h-[1px] group-hover:h-[2px] transition-all duration-300"
+        style={{
+          background: 'linear-gradient(to right, transparent 2%, rgba(0,240,255,0.2) 20%, rgba(0,240,255,0.35) 50%, rgba(0,240,255,0.2) 80%, transparent 98%)',
+          boxShadow: '0 0 6px rgba(0,240,255,0.1)',
+        }}
+      />
+      {/* Center grab handle */}
+      <div
+        className="relative z-10 w-16 h-1.5 rounded-full transition-all duration-300 group-hover:w-20 group-hover:h-2 group-hover:shadow-[0_0_12px_rgba(0,240,255,0.3)]"
+        style={{
+          background: 'linear-gradient(to right, rgba(0,240,255,0.15), rgba(0,240,255,0.3), rgba(0,240,255,0.15))',
+        }}
+      >
+        {/* Three grab dots */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-1.5">
+          <div className="w-1 h-1 rounded-full bg-[#00F0FF]/40 group-hover:bg-[#00F0FF]/70" />
+          <div className="w-1 h-1 rounded-full bg-[#00F0FF]/40 group-hover:bg-[#00F0FF]/70" />
+          <div className="w-1 h-1 rounded-full bg-[#00F0FF]/40 group-hover:bg-[#00F0FF]/70" />
+        </div>
+      </div>
     </div>
   );
 }

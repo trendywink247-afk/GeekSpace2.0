@@ -94,27 +94,78 @@ export function OfficePage() {
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] md:h-[calc(100dvh-0px)] pb-24 md:pb-0 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#00F0FF]/10">
-        <div className="flex items-center gap-2">
-          <Monitor className="w-5 h-5 text-[#00F0FF]" />
+      <div
+        className="flex items-center justify-between px-4 py-2.5 border-b-2 border-[#00F0FF]/20"
+        style={{
+          background: 'linear-gradient(to right, #0C0C18, #0A0A16, #0C0C18)',
+          boxShadow: '0 1px 12px rgba(0,240,255,0.06)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Monitor className="w-5 h-5 text-[#00F0FF]" />
+            <div
+              className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[#00F0FF]"
+              style={{ boxShadow: '0 0 4px #00F0FF' }}
+            />
+          </div>
           <h1
-            className="text-lg font-bold text-[#F4F6FF]"
+            className="text-lg font-bold text-[#F4F6FF] tracking-wide"
             style={{ fontFamily: 'Syne, sans-serif' }}
           >
             Agent Mission Control
           </h1>
+          {/* Agent count badge */}
+          <span
+            className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider"
+            style={{
+              background: 'rgba(139,92,246,0.12)',
+              color: '#8B5CF6',
+              border: '1px solid rgba(139,92,246,0.2)',
+            }}
+          >
+            9 AGENTS
+          </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* Agent status indicators */}
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.03)' }}>
+            <span className="text-xs" title="Weebo">&#x2728;</span>
+            <span className="text-xs" title="Edith">&#x1F537;</span>
+            <span className="text-xs" title="Jarvis">&#x1F916;</span>
+          </div>
           {/* Connection badge */}
           <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${
               connectionMode === 'live'
                 ? 'bg-[#ADFF2F]/10 text-[#ADFF2F]'
                 : connectionMode === 'reconnecting'
                   ? 'bg-[#F59E0B]/10 text-[#F59E0B]'
                   : 'bg-[#FF2D78]/10 text-[#FF2D78]'
             }`}
+            style={{
+              boxShadow: connectionMode === 'live'
+                ? '0 0 8px rgba(173,255,47,0.15)'
+                : undefined,
+            }}
           >
+            {/* Pulsing status dot */}
+            <span
+              className="relative flex h-2 w-2"
+            >
+              {connectionMode === 'live' && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ADFF2F] opacity-50" />
+              )}
+              <span
+                className={`relative inline-flex rounded-full h-2 w-2 ${
+                  connectionMode === 'live'
+                    ? 'bg-[#ADFF2F]'
+                    : connectionMode === 'reconnecting'
+                      ? 'bg-[#F59E0B]'
+                      : 'bg-[#FF2D78]'
+                }`}
+              />
+            </span>
             {connectionMode === 'live'
               ? 'LIVE'
               : connectionMode === 'reconnecting'
