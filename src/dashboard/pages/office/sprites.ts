@@ -1016,3 +1016,148 @@ export function getAgentSprites(agentId: string): CharacterSprites {
 export function clearSpriteCache(): void {
   spriteCache.clear();
 }
+
+// ---------------------------------------------------------------------------
+// PNG sprite sheet system — pixel-agents character sprites
+// Source: https://github.com/pablodelucca/pixel-agents (MIT License)
+// Character sprites based on "JIK-A-4, Metro City" character pack
+// ---------------------------------------------------------------------------
+
+interface SpriteSheet {
+  image: HTMLImageElement;
+  frameWidth: number;   // 16px per frame
+  frameHeight: number;  // 24px per frame
+  cols: number;         // 7 columns
+  loaded: boolean;
+}
+
+const SPRITE_SHEETS: Map<string, SpriteSheet> = new Map();
+
+// Agent -> sprite sheet mapping (6 sheets for 9 agents, reuse with hue shift)
+const AGENT_SHEET_MAP: Record<string, { sheet: number; hueShift?: number }> = {
+  weebo:  { sheet: 0 },
+  edith:  { sheet: 1 },
+  jarvis: { sheet: 2 },
+  aria:   { sheet: 3 },
+  forge:  { sheet: 4 },
+  pulse:  { sheet: 5 },
+  echo:   { sheet: 0, hueShift: 120 },  // reuse char_0 with hue shift
+  cal:    { sheet: 2, hueShift: 90 },   // reuse char_2 with hue shift
+  nova:   { sheet: 3, hueShift: 180 },  // reuse char_3 with hue shift
+};
+
+// Pre-rendered hue-shifted canvases for agents that need color variation
+const hueShiftedCache: Map<string, HTMLCanvasElement> = new Map();
+
+/** Apply a hue shift to an image and cache the result */
+function getHueShiftedImage(
+  sheet: SpriteSheet,
+  agentId: string,
+  hueShift: number,
+): HTMLCanvasElement {
+  const cacheKey = `${agentId}_${hueShift}`;
+  if (hueShiftedCache.has(cacheKey)) return hueShiftedCache.get(cacheKey)!;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = sheet.image.naturalWidth;
+  canvas.height = sheet.image.naturalHeight;
+  const ctx = canvas.getContext('2d')!;
+
+  // Draw original, then apply hue-rotate filter
+  ctx.filter = `hue-rotate(${hueShift}deg)`;
+  ctx.drawImage(sheet.image, 0, 0);
+  ctx.filter = 'none';
+
+  hueShiftedCache.set(cacheKey, canvas);
+  return canvas;
+}
+
+/** Load all 6 PNG sprite sheets. Non-fatal on error. */
+export async function loadSpriteSheets(): Promise<void> {
+  const promises: Promise<void>[] = [];
+  for (let i = 0; i < 6; i++) {
+    const img = new Image();
+    const sheet: SpriteSheet = {
+      image: img,
+      frameWidth: 16,
+      frameHeight: 24,
+      cols: 7,
+      loaded: false,
+    };
+    SPRITE_SHEETS.set(`char_${i}`, sheet);
+    promises.push(new Promise<void>((resolve) => {
+      img.onload = () => { sheet.loaded = true; resolve(); };
+      img.onerror = () => resolve(); // non-fatal, fall back to code-generated
+      img.src = `/office/char_${i}.png`;
+    }));
+  }
+  await Promise.all(promises);
+}
+
+/** Whether any sprite sheets have loaded */
+export function areSpriteSheetLoaded(): boolean {
+  for (const sheet of SPRITE_SHEETS.values()) {
+    if (sheet.loaded) return true;
+  }
+  return false;
+}
+
+/**
+ * Draw a specific frame from a PNG sprite sheet.
+ * Returns true if the PNG sprite was drawn, false if fallback is needed.
+ *
+ * frameCol: column in the sprite sheet (0-6)
+ * frameRow: row in the sprite sheet (0-3)
+ * x, y: center position to draw at (in canvas pixels)
+ * scale: render scale factor
+ * mirror: if true, flip horizontally (for left-facing)
+ */
+export function drawSpriteFrame(
+  ctx: CanvasRenderingContext2D,
+  agentId: string,
+  frameCol: number,
+  frameRow: number,
+  x: number,
+  y: number,
+  scale: number,
+  mirror?: boolean,
+): boolean {
+  const mapping = AGENT_SHEET_MAP[agentId];
+  if (!mapping) return false;
+
+  const sheet = SPRITE_SHEETS.get(`char_${mapping.sheet}`);
+  if (!sheet || !sheet.loaded) return false;
+
+  const sx = frameCol * sheet.frameWidth;
+  const sy = frameRow * sheet.frameHeight;
+  const dw = sheet.frameWidth * scale;
+  const dh = sheet.frameHeight * scale;
+
+  // Determine source image — original or hue-shifted
+  const sourceImage: HTMLImageElement | HTMLCanvasElement = mapping.hueShift
+    ? getHueShiftedImage(sheet, agentId, mapping.hueShift)
+    : sheet.image;
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+
+  if (mirror) {
+    // Flip horizontally around the draw center
+    ctx.translate(x, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(
+      sourceImage,
+      sx, sy, sheet.frameWidth, sheet.frameHeight,
+      -dw / 2, y - dh + 4, dw, dh,
+    );
+  } else {
+    ctx.drawImage(
+      sourceImage,
+      sx, sy, sheet.frameWidth, sheet.frameHeight,
+      x - dw / 2, y - dh + 4, dw, dh,
+    );
+  }
+
+  ctx.restore();
+  return true;
+}

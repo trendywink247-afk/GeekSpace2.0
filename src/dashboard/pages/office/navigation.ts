@@ -137,6 +137,52 @@ export function isReachable(fromX: number, fromY: number, toX: number, toY: numb
   return false;
 }
 
+// ── Full BFS path ─────────────────────────────────────────────────────────────
+
+/**
+ * BFS pathfinding: returns the full path from (sx, sy) to (ex, ey).
+ * Returns an empty array if already at target, target is unwalkable, or no path exists.
+ * The returned path does NOT include the start position, only steps to take.
+ */
+export function findFullPath(
+  sx: number, sy: number,
+  ex: number, ey: number,
+): Array<{ x: number; y: number }> {
+  if (sx === ex && sy === ey) return [];
+  if (!isWalkable(ex, ey)) return [];
+
+  const visited = new Map<string, string>(); // key -> parent key
+  const queue: Array<{ x: number; y: number }> = [{ x: sx, y: sy }];
+  const startKey = `${sx},${sy}`;
+  visited.set(startKey, '');
+
+  const dirs: [number, number][] = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    for (const [dx, dy] of dirs) {
+      const nx = cur.x + dx;
+      const ny = cur.y + dy;
+      const key = `${nx},${ny}`;
+      if (visited.has(key) || !isWalkable(nx, ny)) continue;
+      visited.set(key, `${cur.x},${cur.y}`);
+      if (nx === ex && ny === ey) {
+        // Reconstruct path from end to start
+        const path: Array<{ x: number; y: number }> = [];
+        let k = key;
+        while (k && k !== startKey) {
+          const [px, py] = k.split(',').map(Number);
+          path.unshift({ x: px, y: py });
+          k = visited.get(k) || '';
+        }
+        return path;
+      }
+      queue.push({ x: nx, y: ny });
+    }
+  }
+  return []; // no path found
+}
+
 // ── BFS next step ────────────────────────────────────────────────────────────
 
 /**

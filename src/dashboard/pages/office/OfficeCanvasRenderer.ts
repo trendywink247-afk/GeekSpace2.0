@@ -14,7 +14,7 @@ import {
   CELL, COLS, ROWS, CANVAS_W, CANVAS_H,
   C,
 } from './constants';
-import { getAgentSprites } from './sprites';
+import { getAgentSprites, drawSpriteFrame } from './sprites';
 
 // ---------------------------------------------------------------------------
 // Background / Foreground image loading (pixel art office)
@@ -109,19 +109,17 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   const cx = agent.renderX;
   const cy = agent.renderY;
   const color = agent.color;
-  const isWalking = agent.x !== agent.targetX || agent.y !== agent.targetY;
+  const isWalking = agent.path && agent.path.length > 0 && agent.pathIndex < agent.path.length;
 
-  // Sprite dimensions and scaling — 32px tiles need ~2.4x scale for 16px sprites
+  // Sprite dimensions and scaling — 32px tiles need ~2.6x scale for 16px sprites
   const SPRITE_W = 16;
   const SPRITE_H = 24;
-  const scale = (CELL / 16) * 1.2; // ~2.4x on 32px cells
-  const drawW = SPRITE_W * scale;
-  const drawH = SPRITE_H * scale;
+  const pngScale = (CELL / 16) * 1.3; // slightly larger for PNG sheets
+  const codeScale = (CELL / 16) * 1.2; // original scale for code-generated
+  const drawW = SPRITE_W * codeScale;
+  const drawH = SPRITE_H * codeScale;
   const sx = cx - drawW / 2;
   const sy = cy - drawH / 2 - 4; // offset up slightly
-
-  // Get cached sprite set for this agent
-  const sprites = getAgentSprites(agent.id);
 
   // Agent glow for active (non-idle) agents
   if (agent.state !== 'idle') {
@@ -155,36 +153,80 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
     ctx.fillRect(ringX + ringW, ringY + ringH - 2, 1, 3);
   }
 
-  // Pick the correct sprite frame
-  let sprite: HTMLCanvasElement;
-  if (isWalking) {
-    const frame = tick % 4;
-    const dx = agent.targetX - agent.x;
-    const dy = agent.targetY - agent.y;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      sprite = dx > 0 ? sprites.walkRight[frame] : sprites.walkLeft[frame];
+  // --- Try PNG sprite sheet first ---
+  let pngDrawn = false;
+  {
+    let frameCol = 0;
+    let frameRow = 0;
+    let mirror = false;
+
+    if (isWalking && agent.path && agent.pathIndex < agent.path.length) {
+      const frame = tick % 4;
+      const next = agent.path[agent.pathIndex];
+      const dx = next.x - agent.x;
+      const dy = next.y - agent.y;
+      if (Math.abs(dy) >= Math.abs(dx)) {
+        frameRow = dy > 0 ? 0 : 1; // down : up
+      } else {
+        frameRow = 2; // right (mirror for left)
+        if (dx < 0) mirror = true;
+      }
+      frameCol = frame;
+    } else if (agent.state === 'typing' || agent.state === 'responding') {
+      // Typing animation: use row 3 (activity frames), alternate cols
+      frameRow = 3;
+      frameCol = tick % 2;
+    } else if (agent.facing) {
+      // Idle but facing a direction — static frame (col 0)
+      switch (agent.facing) {
+        case 'down': frameRow = 0; break;
+        case 'up': frameRow = 1; break;
+        case 'right': frameRow = 2; break;
+        case 'left': frameRow = 2; mirror = true; break;
+        default: frameRow = 0;
+      }
+      frameCol = 0;
     } else {
-      sprite = dy > 0 ? sprites.walkDown[frame] : sprites.walkUp[frame];
+      // Default idle: front-facing
+      frameRow = 0;
+      frameCol = 0;
     }
-  } else if (agent.state === 'typing' || agent.state === 'responding') {
-    sprite = sprites.typing[tick % 2];
-  } else if (agent.facing) {
-    // Standing still but facing a direction
-    switch (agent.facing) {
-      case 'down': sprite = sprites.walkDown[0]; break;
-      case 'up': sprite = sprites.walkUp[0]; break;
-      case 'right': sprite = sprites.walkRight[0]; break;
-      case 'left': sprite = sprites.walkLeft[0]; break;
-      default: sprite = sprites.idle;
-    }
-  } else {
-    sprite = sprites.idle;
+
+    pngDrawn = drawSpriteFrame(ctx, agent.id, frameCol, frameRow, cx, cy, pngScale, mirror);
   }
 
-  // Draw sprite — crisp pixel art (no smoothing)
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(sprite, sx, sy, drawW, drawH);
-  ctx.imageSmoothingEnabled = true;
+  // --- Fallback to code-generated sprites if PNG didn't draw ---
+  if (!pngDrawn) {
+    const sprites = getAgentSprites(agent.id);
+    let sprite: HTMLCanvasElement;
+
+    if (isWalking) {
+      const frame = tick % 4;
+      const dx = agent.targetX - agent.x;
+      const dy = agent.targetY - agent.y;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        sprite = dx > 0 ? sprites.walkRight[frame] : sprites.walkLeft[frame];
+      } else {
+        sprite = dy > 0 ? sprites.walkDown[frame] : sprites.walkUp[frame];
+      }
+    } else if (agent.state === 'typing' || agent.state === 'responding') {
+      sprite = sprites.typing[tick % 2];
+    } else if (agent.facing) {
+      switch (agent.facing) {
+        case 'down': sprite = sprites.walkDown[0]; break;
+        case 'up': sprite = sprites.walkUp[0]; break;
+        case 'right': sprite = sprites.walkRight[0]; break;
+        case 'left': sprite = sprites.walkLeft[0]; break;
+        default: sprite = sprites.idle;
+      }
+    } else {
+      sprite = sprites.idle;
+    }
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sprite, sx, sy, drawW, drawH);
+    ctx.imageSmoothingEnabled = true;
+  }
 
   // Shadow under feet
   ctx.fillStyle = hexToRgba(color, 0.08);

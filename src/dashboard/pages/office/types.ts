@@ -42,6 +42,8 @@ export interface CanvasAgent {
   lastContent?: string;
   lastTool?: string;
   facing?: 'down' | 'up' | 'left' | 'right';
+  path: Array<{ x: number; y: number }>;  // full BFS path to destination
+  pathIndex: number;   // current step in path
 }
 
 export interface ParticleBeam {

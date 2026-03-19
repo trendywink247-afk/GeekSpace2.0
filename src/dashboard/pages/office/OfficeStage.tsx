@@ -29,16 +29,16 @@ import { renderFrame, loadOfficeAssets } from './OfficeCanvasRenderer';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
 import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors } from './agentBehavior';
 import {
-  isBlocked, nearestWalkable, validateTarget, validateSpawnPosition, bfsNextStep,
+  isBlocked, nearestWalkable, validateTarget, validateSpawnPosition, findFullPath,
 } from './navigation';
+import { loadSpriteSheets } from './sprites';
 
 // ---------------------------------------------------------------------------
-// Tick timing — render at 33ms (30fps) for smooth interpolation,
-// behavior/BFS logic runs every 6th render tick (~200ms effective = ~5fps)
+// rAF game loop timing — behavior/BFS runs at ~5fps via accumulator,
+// rendering and smooth movement interpolation run every frame (60fps)
 // ---------------------------------------------------------------------------
 
-const RENDER_TICK_MS = 33;  // 30fps
-const BEHAVIOR_TICK_DIVISOR = 6;  // behavior at 5fps
+const BEHAVIOR_INTERVAL = 0.2; // 200ms = 5fps for behavior logic
 
 // ---------------------------------------------------------------------------
 // Props
@@ -109,6 +109,8 @@ function buildInitialAgents(): CanvasAgent[] {
       state: 'idle',
       isSpecialist: false,
       isDormant: false,
+      path: [],
+      pathIndex: 0,
     });
   }
 
@@ -134,6 +136,8 @@ function buildInitialAgents(): CanvasAgent[] {
       isSpecialist: true,
       isDormant: false, // All agents always visible
       parentAgent: SPECIALIST_PARENT[id],
+      path: [],
+      pathIndex: 0,
     });
   }
 
@@ -162,10 +166,11 @@ export default function OfficeStage({
 
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ---- Load pixel art office assets on mount ----
+  // ---- Load pixel art office assets + PNG sprite sheets on mount ----
 
   useEffect(() => {
     loadOfficeAssets().catch(() => {}); // non-fatal
+    loadSpriteSheets().catch(() => {}); // non-fatal — falls back to code-generated
   }, []);
 
   // ---- Initialize idle behaviors for all agents on mount ----
@@ -194,6 +199,8 @@ export default function OfficeStage({
             targetY: valid.y,
             renderX: valid.x * CELL + CELL / 2,
             renderY: valid.y * CELL + CELL / 2,
+            path: [],
+            pathIndex: 0,
           };
         }
       }
@@ -233,6 +240,8 @@ export default function OfficeStage({
             if (evt.tool) agent.lastTool = evt.tool;
             // Cancel idle wandering — move agent back to their desk
             cancelIdleBehavior(agentId);
+            agent.path = [];
+            agent.pathIndex = 0;
             {
               const home = agent.isSpecialist
                 ? SPECIALIST_POSITIONS[agent.id as SpecialistId]
@@ -269,6 +278,8 @@ export default function OfficeStage({
               if (specIdx !== -1) {
                 const spec = { ...next[specIdx] };
                 spec.state = 'task_started';
+                spec.path = [];
+                spec.pathIndex = 0;
                 const coreDesk = CORE_DESK_POSITIONS[agentId as CoreAgentId];
                 if (coreDesk) {
                   const coreSeat = getSeatPosition(coreDesk);
@@ -307,7 +318,7 @@ export default function OfficeStage({
               setAgents(p =>
                 p.map(a => {
                   if (a.id !== doneId) return a;
-                  const reset = { ...a, state: 'idle' as AgentStateType };
+                  const reset = { ...a, state: 'idle' as AgentStateType, path: [], pathIndex: 0 };
                   // Walk specialist back to their own desk — validated
                   if (a.isSpecialist) {
                     const homePos = SPECIALIST_POSITIONS[a.id as SpecialistId];
