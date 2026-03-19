@@ -26,8 +26,7 @@ interface Landmark {
   pauseMax: number;     // max ticks to pause here
 }
 
-// All landmark positions verified against COLLISION_MAP — every (x,y) is walkable (false)
-// isWalkable(x,y) check: COLLISION_MAP[y][x] === false
+// All landmark positions verified via navigation.isWalkable() — every (x,y) is walkable
 const LANDMARKS: Landmark[] = [
   // Upper right lounge area
   { name: 'lounge', x: 16, y: 2, radius: 1, type: 'lounge', maxAgents: 3, pauseMin: 30, pauseMax: 80 },
