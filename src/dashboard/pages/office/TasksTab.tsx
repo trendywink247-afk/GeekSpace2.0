@@ -46,10 +46,8 @@ export default function TasksTab({ onCreateTask }: Props) {
   const fetchBoard = async () => {
     try {
       const res = await agentTasksService.board();
-      console.log('[TasksTab] Fetched board:', Object.keys(res.data).map(k => k + ':' + (res.data[k]?.length ?? 0)));
       setBoard(res.data);
     } catch (err) {
-      console.warn('[TasksTab] Fetch error:', err);
     } finally {
       setLoading(false);
     }

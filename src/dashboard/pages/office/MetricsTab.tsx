@@ -39,7 +39,6 @@ export default function MetricsTab() {
         agentTasksService.stats(),
         agentCommsService.stats(),
       ]);
-      console.log('[MetricsTab] Fetched task stats:', tasksRes.data, 'comm stats:', commsRes.data);
       setTaskStats(tasksRes.data);
       setCommStats(commsRes.data);
 
@@ -53,7 +52,6 @@ export default function MetricsTab() {
       });
       setAgentBreakdown(agentCounts);
     } catch (err) {
-      console.warn('[MetricsTab] Fetch error:', err);
     } finally {
       setLoading(false);
     }

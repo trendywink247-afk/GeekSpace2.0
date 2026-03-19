@@ -75,5 +75,5 @@ export function useOfficeSSE() {
     };
   }, []);
 
-  return { events, connectionMode, officeData, clearEvents: () => setEvents([]), debugUrl: 'unified:5s' };
+  return { events, connectionMode, officeData, clearEvents: () => setEvents([]) };
 }

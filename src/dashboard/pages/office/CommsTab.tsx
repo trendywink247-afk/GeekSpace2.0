@@ -38,10 +38,8 @@ export default function CommsTab({ sseEvents }: Props) {
   const fetchRecent = async () => {
     try {
       const res = await agentCommsService.recent(30);
-      console.log('[CommsTab] Fetched:', res.data.length, 'comms');
       setPolled(res.data);
     } catch (err) {
-      console.warn('[CommsTab] Fetch error:', err);
     } finally {
       setLoading(false);
     }
