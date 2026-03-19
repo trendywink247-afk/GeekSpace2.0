@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { SSEEvent, ConnectionMode } from './types';
 
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 
 function getToken(): string | null {
   return localStorage.getItem('gs_token')
@@ -25,7 +25,7 @@ export function useOfficeSSE() {
       return;
     }
 
-    const url = `${API_URL}/api/agent-state/stream?token=${encodeURIComponent(token)}`;
+    const url = `${API_BASE}/agent-state/stream?token=${encodeURIComponent(token)}`;
     const es = new EventSource(url);
     esRef.current = es;
 
