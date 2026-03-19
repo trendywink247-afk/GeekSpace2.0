@@ -1,0 +1,170 @@
+// src/dashboard/pages/office/TimelineTab.tsx
+import { useRef, useEffect, useState, useMemo } from 'react';
+import { AGENT_COLORS, AGENT_META, C, MAX_TIMELINE_EVENTS } from './constants';
+import type { AgentId, AgentStateType, SSEEvent } from './types';
+
+interface Props {
+  events: SSEEvent[];
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('en-IN', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function minuteKey(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+interface BadgeStyle {
+  bg: string;
+  text: string;
+  pulse?: boolean;
+  suffix?: string;
+}
+
+function eventBadge(state: AgentStateType, targetAgent?: string): BadgeStyle {
+  switch (state) {
+    case 'thinking':
+      return { bg: '#3B82F620', text: '#3B82F6', pulse: true };
+    case 'tool_call':
+      return { bg: '#F59E0B20', text: '#F59E0B' };
+    case 'tool_result':
+      return { bg: '#10B98120', text: '#10B981' };
+    case 'delegating':
+      return { bg: '#FFB80020', text: '#FFB800', suffix: targetAgent ? ` -> ${targetAgent}` : undefined };
+    case 'comm_sent':
+      return { bg: '#8B5CF620', text: '#8B5CF6', suffix: targetAgent ? ` -> ${targetAgent}` : undefined };
+    case 'comm_received':
+      return { bg: '#8B5CF620', text: '#8B5CF6' };
+    case 'task_started':
+      return { bg: `${C.cyan}20`, text: C.cyan };
+    case 'task_completed':
+      return { bg: '#10B98120', text: '#10B981' };
+    case 'task_failed':
+      return { bg: '#EF444420', text: '#EF4444' };
+    case 'done':
+      return { bg: `${C.dim}20`, text: C.dim };
+    default:
+      return { bg: 'rgba(0,240,255,0.08)', text: C.muted };
+  }
+}
+
+function stateLabel(state: AgentStateType): string {
+  switch (state) {
+    case 'thinking': return 'Thinking';
+    case 'tool_call': return 'Tool Call';
+    case 'tool_result': return 'Tool Result';
+    case 'delegating': return 'Delegating';
+    case 'comm_sent': return 'Comm Sent';
+    case 'comm_received': return 'Comm Recv';
+    case 'task_started': return 'Task Started';
+    case 'task_completed': return 'Completed';
+    case 'task_failed': return 'Failed';
+    case 'done': return 'Done';
+    case 'typing': return 'Typing';
+    case 'responding': return 'Responding';
+    case 'idle': return 'Idle';
+    default: return state;
+  }
+}
+
+export default function TimelineTab({ events }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState(false);
+
+  // Reverse chronological, capped
+  const sorted = useMemo(() => {
+    return [...events]
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, MAX_TIMELINE_EVENTS);
+  }, [events]);
+
+  // Auto-scroll to top (newest) unless hovered
+  useEffect(() => {
+    if (!hovered && containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [sorted, hovered]);
+
+  if (sorted.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-xs" style={{ color: C.dim }}>No events yet. Waiting for agent activity...</p>
+      </div>
+    );
+  }
+
+  let lastMinute = '';
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="flex flex-col gap-0.5 max-h-[420px] overflow-y-auto p-3"
+    >
+      {sorted.map((ev, i) => {
+        const min = minuteKey(ev.timestamp);
+        const showSeparator = min !== lastMinute && i > 0;
+        lastMinute = min;
+
+        const color = AGENT_COLORS[ev.agentId as AgentId] ?? C.dim;
+        const meta = AGENT_META[ev.agentId as AgentId];
+        const badge = eventBadge(ev.state, ev.targetAgent);
+
+        return (
+          <div key={`${ev.timestamp}-${ev.agentId}-${ev.state}-${i}`}>
+            {showSeparator && (
+              <div className="flex items-center gap-2 py-1.5 my-0.5">
+                <div className="flex-1 h-px" style={{ background: 'rgba(0,240,255,0.06)' }} />
+                <span className="text-[9px] font-mono" style={{ color: C.dim }}>{min}</span>
+                <div className="flex-1 h-px" style={{ background: 'rgba(0,240,255,0.06)' }} />
+              </div>
+            )}
+
+            <div
+              className="flex items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-white/[0.02]"
+            >
+              {/* Timestamp */}
+              <span className="text-[9px] font-mono flex-shrink-0 w-14 text-right" style={{ color: C.dim }}>
+                {formatTime(ev.timestamp)}
+              </span>
+
+              {/* Agent dot */}
+              <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
+
+              {/* Agent name */}
+              <span className="text-[10px] font-medium flex-shrink-0 w-12 truncate" style={{ color }}>
+                {meta?.emoji ?? '?'} {ev.agentName || ev.agentId}
+              </span>
+
+              {/* Event badge */}
+              <span
+                className={`text-[9px] px-1.5 py-0.5 rounded flex-shrink-0 ${badge.pulse ? 'animate-pulse' : ''}`}
+                style={{ background: badge.bg, color: badge.text }}
+              >
+                {stateLabel(ev.state)}
+                {badge.suffix ?? ''}
+                {ev.state === 'task_completed' ? ' \u2713' : ''}
+              </span>
+
+              {/* Content */}
+              {ev.content && (
+                <span className="text-[10px] truncate flex-1 min-w-0" style={{ color: C.muted }}>
+                  {ev.content.length > 80 ? `${ev.content.slice(0, 80)}...` : ev.content}
+                </span>
+              )}
+              {ev.tool && !ev.content && (
+                <span className="text-[10px] font-mono truncate flex-1 min-w-0" style={{ color: C.dim }}>
+                  {ev.tool}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
