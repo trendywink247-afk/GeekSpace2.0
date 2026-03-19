@@ -20,6 +20,7 @@ import {
   AGENT_COLORS, AGENT_META, SPECIALIST_PARENT,
   CORE_AGENTS, SPECIALIST_AGENTS,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
+  COLLISION_MAP,
   MAX_PARTICLE_BEAMS, MAX_SPEECH_BUBBLES,
   PARTICLE_BEAM_TTL, SPEECH_BUBBLE_TTL,
   CLICK_DOUBLE_THRESHOLD_MS,
@@ -64,55 +65,9 @@ const AGENT_SPEEDS: Record<AgentId, number> = {
 };
 
 // ---------------------------------------------------------------------------
-// Collision grid — matches pixel art background (27x25, 32px tiles)
+// Collision grid — image-derived, imported from constants.ts
+// COLLISION_MAP[row][col]: true = blocked, false = walkable
 // ---------------------------------------------------------------------------
-
-function buildCollisionGrid(): boolean[][] {
-  const grid: boolean[][] = Array.from({ length: ROWS }, () =>
-    Array<boolean>(COLS).fill(false),
-  );
-
-  // Top wall rows (rows 0-1 blocked)
-  for (let r = 0; r < 2; r++) {
-    for (let c = 0; c < COLS; c++) {
-      grid[r][c] = true;
-    }
-  }
-
-  // Bottom row blocked (wall)
-  for (let c = 0; c < COLS; c++) {
-    grid[ROWS - 1][c] = true;
-  }
-
-  // Left and right edge walls
-  for (let r = 0; r < ROWS; r++) {
-    grid[r][0] = true;
-    grid[r][COLS - 1] = true;
-  }
-
-  // Desk tile positions (blocked — agents sit adjacent to desks, not on them)
-  // 4 double-desks: each desk is a single tile
-  const deskTiles = [
-    // Desk 1: (3,16) and (3,20)
-    { x: 3, y: 16 }, { x: 3, y: 20 },
-    // Desk 2: (5,16) and (5,20)
-    { x: 5, y: 16 }, { x: 5, y: 20 },
-    // Desk 3: (9,16) and (9,20)
-    { x: 9, y: 16 }, { x: 9, y: 20 },
-    // Desk 4: (11,16) and (11,20)
-    { x: 11, y: 16 }, { x: 11, y: 20 },
-  ];
-
-  for (const dt of deskTiles) {
-    if (dt.y >= 0 && dt.y < ROWS && dt.x >= 0 && dt.x < COLS) {
-      grid[dt.y][dt.x] = true;
-    }
-  }
-
-  return grid;
-}
-
-const COLLISION_GRID = buildCollisionGrid();
 
 // ---------------------------------------------------------------------------
 // BFS pathfinding — returns next step (or null if no path / already there)
@@ -167,9 +122,8 @@ function bfsNextStep(
 // ---------------------------------------------------------------------------
 
 function getSeatPosition(deskPos: { x: number; y: number }): { x: number; y: number } {
-  // Sit one row above the desk if possible, otherwise one row below
-  const seatY = deskPos.y > 2 ? deskPos.y - 1 : deskPos.y + 1;
-  return { x: deskPos.x, y: seatY };
+  // Desk positions are already on walkable tiles — return as-is
+  return { x: deskPos.x, y: deskPos.y };
 }
 
 // ---------------------------------------------------------------------------
@@ -489,7 +443,7 @@ export default function OfficeStage({
 
           // Advance to next BFS cell (only on behavior ticks to control pacing)
           if (isBehaviorTick) {
-            const step = bfsNextStep(COLLISION_GRID, agent.x, agent.y, agent.targetX, agent.targetY);
+            const step = bfsNextStep(COLLISION_MAP, agent.x, agent.y, agent.targetX, agent.targetY);
             if (!step) return agent;
             changed = true;
             return { ...agent, x: step.x, y: step.y };

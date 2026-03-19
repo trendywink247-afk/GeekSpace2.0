@@ -34,22 +34,53 @@ export const SPECIALIST_PARENT: Record<SpecialistId, CoreAgentId> = {
 export const CORE_AGENTS: CoreAgentId[] = ['weebo', 'edith', 'jarvis'];
 export const SPECIALIST_AGENTS: SpecialistId[] = ['aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
 
-// Desk positions matching pixel art background (32px tiles, 27x25 grid)
-// 4 double-desks at fixed tile positions
+// ── Image-derived collision map (27x25, 32px tiles) ─────────────────────────
+// true = blocked (wall/furniture), false = walkable (floor)
+// Derived from pixel analysis of the actual background image.
+// Grid value mapping: 0 in source → blocked (true), 1 in source → walkable (false)
+export const COLLISION_MAP: boolean[][] = [
+  /* Row  0 */ [false,true,false,true,false,false,true,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false],
+  /* Row  1 */ [false,false,false,false,false,true,false,false,false,false,false,true,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true],
+  /* Row  2 */ [false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true],
+  /* Row  3 */ [false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
+  /* Row  4 */ [false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,true,true,true,true,false,true],
+  /* Row  5 */ [false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,true],
+  /* Row  6 */ [false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
+  /* Row  7 */ [false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true],
+  /* Row  8 */ [true,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
+  /* Row  9 */ [true,true,false,false,false,true,false,false,false,false,false,false,false,false,false,true,false,false,false,false,true,true,true,false,false,false,true],
+  /* Row 10 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,true,true,true,false,false,false,true],
+  /* Row 11 */ [true,false,false,false,false,false,false,false,false,true,true,true,false,false,false,true,false,false,false,false,true,true,true,false,false,false,true],
+  /* Row 12 */ [true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,true],
+  /* Row 13 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 14 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,false,true,false,true,true,true,true],
+  /* Row 15 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,false,false,false,false,false,true,true,true],
+  /* Row 16 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,false,false,false,false,false,true,true,true],
+  /* Row 17 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,false,false,false,false,false,true,true,true],
+  /* Row 18 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,false,false,false,false,false,true,true,true],
+  /* Row 19 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true],
+  /* Row 20 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false],
+  /* Row 21 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
+  /* Row 22 */ [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,true,false],
+  /* Row 23 */ [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,true,false,false,false],
+  /* Row 24 */ [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false],
+];
+
+// Desk positions — all on verified walkable tiles (COLLISION_MAP[y][x] === false)
 export const CORE_DESK_POSITIONS: Record<CoreAgentId, { x: number; y: number }> = {
-  weebo: { x: 3, y: 16 },   // Desk 1 left
-  edith: { x: 9, y: 16 },   // Desk 3 center-right
-  jarvis: { x: 5, y: 20 },  // Desk 2 bottom
+  weebo: { x: 3, y: 14 },   // left workspace area
+  edith: { x: 7, y: 14 },   // center workspace
+  jarvis: { x: 11, y: 14 },  // right workspace
 };
 
-// Specialist desk positions — all agents always visible
+// Specialist desk positions — all on verified walkable tiles
 export const SPECIALIST_POSITIONS: Record<SpecialistId, { x: number; y: number }> = {
-  aria: { x: 5, y: 16 },    // Desk 2 top
-  forge: { x: 11, y: 16 },  // Desk 4 top
-  pulse: { x: 3, y: 20 },   // Desk 1 bottom
-  echo: { x: 9, y: 20 },    // Desk 3 bottom
-  cal: { x: 11, y: 20 },    // Desk 4 bottom
-  nova: { x: 7, y: 2 },     // Standing near idle spot (roamer)
+  aria: { x: 3, y: 18 },     // left lower workspace
+  forge: { x: 7, y: 18 },    // center lower workspace
+  pulse: { x: 11, y: 18 },   // right lower workspace
+  echo: { x: 5, y: 10 },     // upper center floor
+  cal: { x: 21, y: 3 },      // right upper lounge area
+  nova: { x: 23, y: 3 },     // right upper lounge area
 };
 
 // Design tokens

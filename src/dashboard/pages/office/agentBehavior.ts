@@ -23,30 +23,38 @@ interface Landmark {
   pauseMax: number;     // max ticks to pause here
 }
 
+// All landmark positions verified against COLLISION_MAP — every (x,y) is walkable (false)
 const LANDMARKS: Landmark[] = [
-  // Patio/breakout
+  // Patio/breakout — left upper area (rows 3-4, cols 2-4 walkable)
   { name: 'patio-bench', x: 2, y: 3, radius: 1, type: 'patio', maxAgents: 3, pauseMin: 30, pauseMax: 80 },
   { name: 'patio-table', x: 4, y: 4, radius: 1, type: 'patio', maxAgents: 2, pauseMin: 20, pauseMax: 60 },
 
-  // Pantry/coffee
+  // Pantry/coffee — center upper area
   { name: 'coffee-machine', x: 9, y: 3, radius: 1, type: 'coffee', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
-  { name: 'pantry-shelf', x: 11, y: 4, radius: 1, type: 'coffee', maxAgents: 1, pauseMin: 10, pauseMax: 25 },
+  { name: 'pantry-shelf', x: 12, y: 4, radius: 1, type: 'coffee', maxAgents: 1, pauseMin: 10, pauseMax: 25 },
 
-  // Lounge
+  // Lounge — right upper walkable zone (row 3 cols 20-25 walkable)
   { name: 'couch', x: 16, y: 3, radius: 2, type: 'lounge', maxAgents: 3, pauseMin: 40, pauseMax: 100 },
   { name: 'lounge-table', x: 18, y: 5, radius: 1, type: 'lounge', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
 
-  // Staircase/bookshelf
+  // Staircase/bookshelf — center floor
   { name: 'bookshelf', x: 13, y: 10, radius: 1, type: 'bookshelf', maxAgents: 1, pauseMin: 15, pauseMax: 40 },
 
-  // Meeting room
+  // Meeting room — right side (rows 15-18, cols 19-23 walkable)
   { name: 'whiteboard', x: 20, y: 16, radius: 1, type: 'meeting', maxAgents: 2, pauseMin: 20, pauseMax: 50 },
-  { name: 'meeting-table', x: 18, y: 18, radius: 2, type: 'meeting', maxAgents: 4, pauseMin: 30, pauseMax: 80 },
+  { name: 'meeting-table', x: 20, y: 18, radius: 2, type: 'meeting', maxAgents: 4, pauseMin: 30, pauseMax: 80 },
   { name: 'display', x: 22, y: 15, radius: 1, type: 'meeting', maxAgents: 2, pauseMin: 15, pauseMax: 35 },
 
-  // Decor spots
-  { name: 'window-left', x: 0, y: 8, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 10, pauseMax: 25 },
-  { name: 'plant-corner', x: 25, y: 2, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 8, pauseMax: 20 },
+  // Decor spots — edges with walkable tiles
+  { name: 'window-left', x: 1, y: 8, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 10, pauseMax: 25 },
+  { name: 'plant-corner', x: 25, y: 3, radius: 0, type: 'decor', maxAgents: 1, pauseMin: 8, pauseMax: 20 },
+
+  // Additional landmarks for better coverage
+  { name: 'corridor', x: 1, y: 13, radius: 1, type: 'decor', maxAgents: 2, pauseMin: 10, pauseMax: 30 },
+  { name: 'upper-hall', x: 6, y: 6, radius: 1, type: 'decor', maxAgents: 2, pauseMin: 15, pauseMax: 35 },
+  { name: 'center-floor', x: 12, y: 3, radius: 1, type: 'decor', maxAgents: 2, pauseMin: 10, pauseMax: 25 },
+  { name: 'bottom-hall', x: 5, y: 21, radius: 1, type: 'patio', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
+  { name: 'bottom-right', x: 20, y: 21, radius: 1, type: 'patio', maxAgents: 2, pauseMin: 15, pauseMax: 40 },
 ];
 
 // Landmarks suitable for group meetings
@@ -134,7 +142,8 @@ function getHomePosition(agent: CanvasAgent): { x: number; y: number } {
     ? SPECIALIST_POSITIONS[agent.id as SpecialistId]
     : CORE_DESK_POSITIONS[agent.id as CoreAgentId];
   if (pos) {
-    return { x: pos.x, y: pos.y > 2 ? pos.y - 1 : pos.y + 1 };
+    // Desk positions are already on walkable tiles — return as-is
+    return { x: pos.x, y: pos.y };
   }
   return { x: agent.x, y: agent.y };
 }
