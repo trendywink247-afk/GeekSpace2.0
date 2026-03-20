@@ -121,11 +121,11 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   const DH = 32 * SCALE; // 64
 
   // Anchor: sprite feet at tile bottom.
-  // Tile bottom = cy + CELL/2 = cy + 16.
-  // Sprite bottom = drawY + DH.
-  // drawY = (cy + 16) - DH = cy + 16 - 64 = cy - 48.
-  const drawX = cx - DW / 2; // centered horizontally
-  const drawY = cy - DH + 16; // feet at tile bottom
+  // Sitting offset: shift sprite down when at furniture (like pixel-agents does)
+  const isSitting = !isWalking && (agent.state === 'idle' || agent.state === 'done') && agent.facing;
+  const SITTING_OFFSET = isSitting ? 6 : 0;
+  const drawX = cx - DW / 2;
+  const drawY = cy - DH + 16 + SITTING_OFFSET;
 
   // Glow for active agents
   if (agent.state !== 'idle') {

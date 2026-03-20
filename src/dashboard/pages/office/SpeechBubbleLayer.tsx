@@ -49,13 +49,13 @@ export function SpeechBubbleLayer({ bubbles, agents, canvasWidth, canvasHeight }
         const pos = pixelToScreen(px, py, canvasWidth, canvasHeight);
         const color = AGENT_COLORS[bubble.agentId] ?? '#00F0FF';
         const truncated =
-          bubble.text.length > 60 ? bubble.text.slice(0, 57) + '...' : bubble.text;
+          bubble.text.length > 30 ? bubble.text.slice(0, 27) + '...' : bubble.text;
         const isMounted = mounted.has(bubble.id);
 
         return (
           <div
             key={bubble.id}
-            className="absolute rounded-xl px-3 py-1.5 text-xs max-w-[180px] bg-black/70 backdrop-blur-sm"
+            className="absolute rounded-lg px-2 py-1 text-[10px] max-w-[120px] leading-tight bg-black/60 backdrop-blur-sm"
             style={{
               left: `${pos.left}px`,
               top: `${pos.top}px`,

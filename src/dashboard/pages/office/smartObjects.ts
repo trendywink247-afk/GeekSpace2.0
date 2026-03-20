@@ -178,7 +178,48 @@ export const SMART_OBJECTS: SmartObject[] = [
     maxOccupants: 2,
   },
 
-  // === STAIRS ===
+  // === LOUNGE EXTRAS ===
+  {
+    id: 'lounge-rug',
+    type: 'seating',
+    room: 'lounge',
+    label: 'Rug & Coffee Table',
+    footprint: [{ x: 18, y: 6 }, { x: 19, y: 6 }],
+    interactionPoints: [
+      { x: 17, y: 7, facing: 'right', behavior: 'chat' },
+      { x: 19, y: 7, facing: 'up', behavior: 'relax' },
+      { x: 21, y: 7, facing: 'left', behavior: 'relax' },
+    ],
+    maxOccupants: 3,
+  },
+  {
+    id: 'lounge-bookshelf',
+    type: 'furniture',
+    room: 'lounge',
+    label: 'Lounge Bookshelf',
+    footprint: [{ x: 22, y: 5 }, { x: 23, y: 5 }, { x: 24, y: 5 }],
+    interactionPoints: [
+      { x: 22, y: 6, facing: 'up', behavior: 'browse' },
+      { x: 24, y: 6, facing: 'up', behavior: 'browse' },
+    ],
+    maxOccupants: 2,
+  },
+
+  // === MEETING ROOM EXTRAS ===
+  {
+    id: 'meeting-tv',
+    type: 'display',
+    room: 'meeting_room',
+    label: 'Presentation TV',
+    footprint: [{ x: 20, y: 12 }, { x: 21, y: 12 }, { x: 22, y: 12 }],
+    interactionPoints: [
+      { x: 20, y: 13, facing: 'up', behavior: 'observe' },
+      { x: 22, y: 13, facing: 'up', behavior: 'observe' },
+    ],
+    maxOccupants: 2,
+  },
+
+  // === STAIRWAY ===
   {
     id: 'bookshelf',
     type: 'furniture',
@@ -189,11 +230,24 @@ export const SMART_OBJECTS: SmartObject[] = [
       { x: 7, y: 10 }, { x: 8, y: 10 }, { x: 9, y: 10 },
     ],
     interactionPoints: [
-      // Rows 11-12 are blocked; nearest walkable is row 13
-      { x: 7, y: 13, facing: 'up', behavior: 'browse' },
-      { x: 9, y: 13, facing: 'up', behavior: 'browse' },
+      { x: 8, y: 8, facing: 'down', behavior: 'browse' },
+      { x: 10, y: 8, facing: 'left', behavior: 'browse' },
     ],
     maxOccupants: 2,
+  },
+
+  // === HALLWAY ===
+  {
+    id: 'corridor-plant',
+    type: 'decoration',
+    room: 'stairs_transition',
+    label: 'Hallway Plant',
+    footprint: [],
+    interactionPoints: [
+      { x: 13, y: 8, facing: 'down', behavior: 'relax' },
+      { x: 6, y: 11, facing: 'right', behavior: 'chat' },
+    ],
+    maxOccupants: 1,
   },
 ];
 

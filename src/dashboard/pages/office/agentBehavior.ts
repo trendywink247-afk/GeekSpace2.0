@@ -184,9 +184,9 @@ function chooseDestination(
     if (coffeePoints.length > 0) return pickRandom(coffeePoints);
   }
 
-  // Rule 6: Default -- pick any available interaction point weighted by distance
-  // Prefer closer points (70%) but allow distant (30%) for exploration
-  if (Math.random() < 0.7 && pts.length > 2) {
+  // Rule 6: Default -- balanced between nearby and distant points
+  // 40% nearest (quick interactions), 60% random (explore the full office)
+  if (Math.random() < 0.4 && pts.length > 2) {
     return pts[0]; // nearest
   }
   return pickRandom(pts);
@@ -460,10 +460,13 @@ export function tickBehaviors(
           bState.fidgetTimer = randomInt(8, 25);
         }
 
-        // Time to wander or socialize? (8-15 seconds = 40-75 ticks)
+        // Sitting at desk: always face down (front-facing) unless actively interacting
+        bState.facing = 'down';
+
+        // Time to wander or socialize?
         if (bState.timer <= 0) {
           const roll = Math.random();
-          if (roll < 0.55) {
+          if (roll < 0.75) {  // 75% chance to explore (was 55%)
             // Wander using perception-driven rules
             const perception = perceive(agent, agents, recentWorkers);
             const dest = chooseDestination(perception);
@@ -475,7 +478,7 @@ export function tickBehaviors(
               bState.mode = 'wandering';
               bState.targetPoint = dest;
               bState.speed = 2.5 + Math.random() * 1.5;
-              bState.timer = randomInt(15, 40); // pause time at destination (3-8s)
+              bState.timer = randomInt(25, 60); // stay 5-12s at furniture
               updated.targetX = validPt.x;
               updated.targetY = validPt.y;
               updated.path = [];
@@ -535,8 +538,8 @@ export function tickBehaviors(
           if (bState.timer <= 0) {
             releasePoint(agent.id);
 
-            // 60% chance to chain to another interaction point (explore the office)
-            if (Math.random() < 0.6) {
+            // 80% chance to chain to another interaction point (explore the full office)
+            if (Math.random() < 0.8) {
               const perception = perceive(agent, agents, recentWorkers);
               const nextDest = chooseDestination(perception);
               if (nextDest) {
