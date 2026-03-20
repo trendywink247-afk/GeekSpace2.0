@@ -78,6 +78,34 @@ officeRouter.get('/state', requireAuth, (req: AuthRequest, res) => {
   const sinceParam = req.query.since ? Number(req.query.since) : Date.now() - 30000;
   const recentEvents = getRecentEvents(userId, sinceParam);
 
+  // Daily usage metrics — fail gracefully if tables are missing or empty
+  const metricsData = (() => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const creditsUsed = db.prepare(
+        `SELECT COALESCE(SUM(cost_usd), 0) as total FROM usage_events WHERE user_id = ? AND created_at LIKE ?`
+      ).get(userId, `${today}%`) as { total: number } | undefined;
+      const messagesToday = db.prepare(
+        `SELECT COUNT(*) as c FROM conversation_log WHERE user_id = ? AND role = 'user' AND created_at LIKE ?`
+      ).get(userId, `${today}%`) as { c: number } | undefined;
+      const toolCallsRow = db.prepare(
+        `SELECT COUNT(*) as c FROM usage_events WHERE user_id = ? AND tool != '' AND created_at LIKE ?`
+      ).get(userId, `${today}%`) as { c: number } | undefined;
+      const providerRows = db.prepare(
+        `SELECT provider, COUNT(*) as c FROM usage_events WHERE user_id = ? AND created_at LIKE ? GROUP BY provider`
+      ).all(userId, `${today}%`) as Array<{ provider: string; c: number }>;
+
+      return {
+        creditsUsedToday: creditsUsed?.total ?? 0,
+        messagesToday: messagesToday?.c ?? 0,
+        toolCallsToday: toolCallsRow?.c ?? taskStats.completedToday ?? 0,
+        providerBreakdown: Object.fromEntries(providerRows.map(r => [r.provider, r.c])),
+      };
+    } catch {
+      return { creditsUsedToday: 0, messagesToday: 0, toolCallsToday: 0, providerBreakdown: {} };
+    }
+  })();
+
   res.json({
     recentEvents,
     agentStates,
@@ -86,5 +114,6 @@ officeRouter.get('/state', requireAuth, (req: AuthRequest, res) => {
     comms,
     commStats,
     timeline,
+    metrics: metricsData,
   });
 });
