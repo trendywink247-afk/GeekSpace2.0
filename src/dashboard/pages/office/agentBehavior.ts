@@ -67,13 +67,27 @@ interface BehaviorState {
   timer: number;           // ticks until next action
   fidgetTimer: number;     // ticks until next fidget
   fidgetType: FidgetType;
-  speed: number;           // pixels per tick (normal=3, fast=6, slow=1.5)
+  speed: number;           // personality speed multiplier (1.0 = normal)
   socialStep: number;      // which step of social interaction (0-5)
   facing: FacingDirection; // direction the agent sprite faces
   groupId: string | null;  // non-null when in a group meeting
+  wanderCount: number;     // interaction points visited before returning home
 }
 
 const behaviorStates = new Map<AgentId, BehaviorState>();
+
+// Per-agent personality speed multipliers (applied to 64px/sec base)
+const AGENT_SPEED: Record<string, number> = {
+  weebo: 1.15,   // energetic
+  edith: 0.85,   // calm, methodical
+  jarvis: 1.0,   // steady, focused
+  aria: 1.1,     // creative energy
+  forge: 0.9,    // deliberate
+  pulse: 1.05,   // data-driven pace
+  echo: 0.95,    // thoughtful
+  cal: 1.0,      // scheduled
+  nova: 1.2,     // researcher, always moving
+};
 
 // Track which agents had a recent tool_call (for lounge weighting)
 const recentWorkers = new Set<AgentId>();
@@ -207,13 +221,14 @@ export function initBehavior(agent: CanvasAgent): void {
     mode: 'sitting',
     targetPoint: null,
     socialTarget: null,
-    timer: randomInt(5, 20) + stagger, // 1-9 seconds (staggered) until first action
+    timer: randomInt(300, 600) + stagger, // 60-120s desk sit time (staggered)
     fidgetTimer: randomInt(5, 15),
     fidgetType: 'none',
-    speed: 3,
+    speed: AGENT_SPEED[agent.id] ?? 1.0,
     socialStep: 0,
     facing: 'down',
     groupId: null,
+    wanderCount: 0,
   });
 }
 
@@ -236,6 +251,7 @@ export function cancelIdleBehavior(agentId: AgentId): void {
   bState.fidgetType = 'none';
   bState.groupId = null;
   bState.facing = 'down';
+  bState.wanderCount = 0;
 }
 
 // ── Group meeting logic ─────────────────────────────────────────────────────
@@ -304,7 +320,7 @@ function tryStartGroupMeeting(idleAgents: CanvasAgent[]): void {
     bs.mode = 'group-meeting';
     bs.targetPoint = null;
     bs.groupId = meetingId;
-    bs.speed = 2.5 + Math.random() * 1.5;
+    bs.speed = AGENT_SPEED[agent.id] ?? 1.0;
     bs.timer = 0;
     bs.socialStep = 0;
   }
@@ -375,7 +391,7 @@ function tickGroupMeeting(
         const home = getHomePosition(agent);
         const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
         targets.set(agent.id, validHome);
-        bs.speed = 1.5 + Math.random();
+        bs.speed = AGENT_SPEED[agent.id] ?? 1.0;
       }
       activeGroupMeeting = null;
       activeGroupId = null;
@@ -477,15 +493,16 @@ export function tickBehaviors(
               reservePoint(validPt.x, validPt.y, agent.id);
               bState.mode = 'wandering';
               bState.targetPoint = dest;
-              bState.speed = 2.5 + Math.random() * 1.5;
-              bState.timer = randomInt(25, 60); // stay 5-12s at furniture
+              bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
+              bState.wanderCount = 0;
+              bState.timer = randomInt(15, 40); // stay 3-8s at furniture
               updated.targetX = validPt.x;
               updated.targetY = validPt.y;
               updated.path = [];
               updated.pathIndex = 0;
               changed = true;
             } else {
-              bState.timer = randomInt(15, 35); // try again in 3-7s
+              bState.timer = randomInt(300, 600); // try again in 60-120s
             }
           } else if (roll < 0.85) {
             // Social visit -- find a nearby non-dormant idle agent
@@ -504,7 +521,7 @@ export function tickBehaviors(
               bState.mode = 'socializing';
               bState.socialTarget = target.id;
               bState.socialStep = 0;
-              bState.speed = 3;
+              bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
               bState.timer = 15;
               updated.targetX = validSocial.x;
               updated.targetY = validSocial.y;
@@ -512,11 +529,11 @@ export function tickBehaviors(
               updated.pathIndex = 0;
               changed = true;
             } else {
-              bState.timer = randomInt(15, 35); // try again in 3-7s
+              bState.timer = randomInt(300, 600); // try again in 60-120s
             }
           } else {
             // Stay sitting a bit longer
-            bState.timer = randomInt(20, 40); // 4-8s
+            bState.timer = randomInt(300, 600); // 60-120s
           }
         }
         break;
@@ -537,9 +554,14 @@ export function tickBehaviors(
           // Linger at destination then chain to another point or return home
           if (bState.timer <= 0) {
             releasePoint(agent.id);
+            bState.wanderCount++;
 
-            // 80% chance to chain to another interaction point (explore the full office)
-            if (Math.random() < 0.8) {
+            // Wander count limit: after 3-5 visits, force return home
+            const wanderLimit = randomInt(3, 5);
+            const canChain = bState.wanderCount < wanderLimit;
+
+            // 80% chance to chain to another interaction point (if under limit)
+            if (canChain && Math.random() < 0.8) {
               const perception = perceive(agent, agents, recentWorkers);
               const nextDest = chooseDestination(perception);
               if (nextDest) {
@@ -547,7 +569,7 @@ export function tickBehaviors(
                 const validPt = validateTarget(nextDest.x, nextDest.y, home.x, home.y);
                 reservePoint(validPt.x, validPt.y, agent.id);
                 bState.targetPoint = nextDest;
-                bState.speed = 2.5 + Math.random() * 1.5;
+                bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
                 bState.timer = randomInt(15, 40);
                 updated.targetX = validPt.x;
                 updated.targetY = validPt.y;
@@ -567,7 +589,7 @@ export function tickBehaviors(
             updated.targetY = validHome.y;
             updated.path = [];
             updated.pathIndex = 0;
-            bState.speed = 1.5 + Math.random();
+            bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
             changed = true;
           }
         } else {
@@ -632,7 +654,7 @@ export function tickBehaviors(
             updated.targetY = validHome.y;
             updated.path = [];
             updated.pathIndex = 0;
-            bState.speed = 2;
+            bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
             bState.socialTarget = null;
             bState.socialStep = 0;
             bState.facing = computeFacing(agent.x, agent.y, validHome.x, validHome.y);
@@ -665,7 +687,7 @@ export function tickBehaviors(
             updated.targetY = validHome.y;
             updated.path = [];
             updated.pathIndex = 0;
-            bState.speed = 1.5 + Math.random();
+            bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
             bState.facing = computeFacing(agent.x, agent.y, validHome.x, validHome.y);
             changed = true;
           }
@@ -679,10 +701,11 @@ export function tickBehaviors(
 
         if (agent.x === agent.targetX && agent.y === agent.targetY) {
           bState.mode = 'sitting';
-          bState.timer = randomInt(15, 35); // 3-7s before next action
+          bState.timer = randomInt(300, 600); // 60-120s desk sit time
           bState.fidgetTimer = randomInt(5, 15);
           bState.targetPoint = null;
           bState.facing = 'down'; // face desk
+          bState.wanderCount = 0;
           changed = true;
         }
         break;

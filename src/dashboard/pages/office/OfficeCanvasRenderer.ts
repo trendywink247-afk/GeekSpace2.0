@@ -18,6 +18,7 @@ import { ROOMS } from './roomZones';
 import { SMART_OBJECTS } from './smartObjects';
 import { isPointOccupied } from './occupancy';
 import { getAgentSprites, drawSpriteFrame } from './sprites';
+import { getAgentBehaviorMode } from './agentBehavior';
 
 // ---------------------------------------------------------------------------
 // Background / Foreground image loading (pixel art office)
@@ -121,11 +122,17 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   const DH = 32 * SCALE; // 64
 
   // Anchor: sprite feet at tile bottom.
-  // Sitting offset: shift sprite down when at furniture (like pixel-agents does)
-  const isSitting = !isWalking && (agent.state === 'idle' || agent.state === 'done') && agent.facing;
-  const SITTING_OFFSET = isSitting ? 6 : 0;
+  // Sitting offset: shift sprite down when at furniture interaction point
+  const behaviorMode = getAgentBehaviorMode(agent.id);
+  const isAtFurniture = !isWalking && (behaviorMode === 'wandering' || behaviorMode === 'socializing' || behaviorMode === 'group-meeting');
+  const SITTING_OFFSET = isAtFurniture ? 6 : 0;
+
+  // Idle bobbing: subtle 1px sine bob when stationary and not at furniture
+  const isIdle = !isWalking && !isAtFurniture;
+  const bobOffset = isIdle ? Math.round(Math.sin(tick * 0.3) * 1) : 0;
+
   const drawX = cx - DW / 2;
-  const drawY = cy - DH + 16 + SITTING_OFFSET;
+  const drawY = cy - DH + 16 + SITTING_OFFSET + bobOffset;
 
   // Glow for active agents
   if (agent.state !== 'idle') {
@@ -169,8 +176,11 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
       frameCol = frame;
     }
   } else if (agent.state === 'typing' || agent.state === 'responding') {
-    frameRow = 0; // use front-facing for typing (no activity row in 3-row sheet)
-    frameCol = tick % 2;
+    // Typing frames: columns 3-4 from sprite sheet, direction row based on facing
+    const f = agent.facing ?? 'down';
+    frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
+    mirror = f === 'left';
+    frameCol = 3 + (tick % 2); // alternate between col 3 and col 4
   } else {
     const f = agent.facing ?? 'down';
     frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;

@@ -51,20 +51,20 @@ interface Props {
 }
 
 // ---------------------------------------------------------------------------
-// Per-agent movement speed (pixels per tick) — personality-driven
+// Per-agent initial speed multiplier — used only for initial spawn.
+// Actual speed multiplier is managed by agentBehavior.ts (AGENT_SPEED map).
+// Base speed: 64 px/sec (2 tiles/sec). Multiplied by agent.speed from behavior.
 // ---------------------------------------------------------------------------
 
-const AGENT_SPEEDS: Record<AgentId, number> = {
-  weebo: 7,   // energetic, fast
-  edith: 5,   // purposeful, medium
-  jarvis: 4,  // dignified, measured
-  aria: 6,    // graceful, quick
-  forge: 4,   // steady, deliberate
-  pulse: 5,   // efficient
-  echo: 6,    // friendly, bouncy
-  cal: 4,     // organized, steady
-  nova: 7,    // curious, darting
-};
+const AGENT_INITIAL_SPEED = 1.0; // default multiplier; behavior system overrides
+
+// ---------------------------------------------------------------------------
+// Easing: smooth start/stop for movement interpolation
+// ---------------------------------------------------------------------------
+
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
 
 // ---------------------------------------------------------------------------
 // Seat position helpers — agent sits adjacent to their desk tile
@@ -104,7 +104,7 @@ function buildInitialAgents(): CanvasAgent[] {
       targetY: spawn.y,
       renderX: spawn.renderX,
       renderY: spawn.renderY,
-      speed: AGENT_SPEEDS[id],
+      speed: AGENT_INITIAL_SPEED,
       state: 'idle',
       isSpecialist: false,
       isDormant: false,
@@ -130,7 +130,7 @@ function buildInitialAgents(): CanvasAgent[] {
       targetY: spawn.y,
       renderX: spawn.renderX,
       renderY: spawn.renderY,
-      speed: AGENT_SPEEDS[id],
+      speed: AGENT_INITIAL_SPEED,
       state: 'idle',
       isSpecialist: true,
       isDormant: false, // All agents always visible
@@ -495,9 +495,9 @@ export default function OfficeStage({
 
           if (agent.path.length > 0 && agent.pathIndex < agent.path.length) {
             // Interpolate toward the current path step
-            const step = agent.path[agent.pathIndex];
-            targetPxX = step.x * CELL + CELL / 2;
-            targetPxY = step.y * CELL + CELL / 2;
+            const pathStep = agent.path[agent.pathIndex];
+            targetPxX = pathStep.x * CELL + CELL / 2;
+            targetPxY = pathStep.y * CELL + CELL / 2;
           } else {
             // No path — interpolate toward current grid cell
             targetPxX = agent.x * CELL + CELL / 2;
@@ -510,15 +510,25 @@ export default function OfficeStage({
 
           if (dist < 0.5) return agent; // close enough — skip update
 
-          // Speed: pixels per second, scaled by dt for frame-rate independence
-          const speed = agent.speed * 32 * dt; // agent.speed * CELL * dt
-          const step = Math.min(speed, dist);
+          // Base speed: 64 px/sec (2 tiles/sec), multiplied by agent personality
+          const BASE_SPEED = 64; // pixels per second
+          let speed = BASE_SPEED * (agent.speed || 1.0) * dt;
+
+          // Arrival deceleration: when within 2 tiles (64px), scale speed down
+          if (dist < 64) {
+            const arrivalT = dist / 64; // 0..1
+            speed *= easeInOutCubic(arrivalT);
+            // Minimum speed to avoid getting stuck
+            speed = Math.max(speed, 0.5 * dt * BASE_SPEED * 0.1);
+          }
+
+          const move = Math.min(speed, dist);
 
           changed = true;
           return {
             ...agent,
-            renderX: agent.renderX + (dx / dist) * step,
-            renderY: agent.renderY + (dy / dist) * step,
+            renderX: agent.renderX + (dx / dist) * move,
+            renderY: agent.renderY + (dy / dist) * move,
           };
         });
         return changed ? next : prev;
