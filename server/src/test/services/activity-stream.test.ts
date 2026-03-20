@@ -203,16 +203,37 @@ describe('ActivityStream', () => {
       expect(state).toBeUndefined();
     });
 
-    it('getAllAgentStates should return states for weebo, edith, jarvis', () => {
+    it('getAllAgentStates should return states for all 9 agents', () => {
       const userId = 'all-states-user';
       emit({ userId, agentId: 'weebo', type: 'responding', channel: 'web', summary: 'Hi' });
 
       const states = getAllAgentStates(userId);
-      expect(states).toHaveLength(3);
+      expect(states).toHaveLength(9);
       const agentIds = states.map(s => s.agentId);
       expect(agentIds).toContain('weebo');
       expect(agentIds).toContain('edith');
       expect(agentIds).toContain('jarvis');
+      expect(agentIds).toContain('aria');
+      expect(agentIds).toContain('forge');
+      expect(agentIds).toContain('pulse');
+      expect(agentIds).toContain('echo');
+      expect(agentIds).toContain('cal');
+      expect(agentIds).toContain('nova');
+    });
+
+    it('getAllAgentStates returns all 9 agent states', () => {
+      const userId = 'test-9-agents-' + Date.now();
+      emit({ userId, agentId: 'weebo', type: 'idle', channel: 'web', summary: 'idle' });
+      emit({ userId, agentId: 'aria', type: 'thinking', channel: 'web', summary: 'thinking' });
+      emit({ userId, agentId: 'nova', type: 'tool_call', channel: 'web', summary: 'searching' });
+
+      const states = getAllAgentStates(userId);
+      const ids = states.map(s => s.agentId);
+      expect(ids).toContain('weebo');
+      expect(ids).toContain('aria');
+      expect(ids).toContain('nova');
+      expect(ids).toContain('forge');
+      expect(states.length).toBe(9);
     });
 
     it('getAllAgentStates should default to idle for unknown agents', () => {

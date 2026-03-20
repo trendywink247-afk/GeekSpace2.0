@@ -121,7 +121,7 @@ export function getAgentLastState(userId: string, agentId: string): ActivityEven
 
 export function getAllAgentStates(userId: string): ActivityEvent[] {
   const states: ActivityEvent[] = [];
-  const agents = ['weebo', 'edith', 'jarvis'];
+  const agents = ['weebo', 'edith', 'jarvis', 'aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
   for (const a of agents) {
     const s = agentLastState.get(`${userId}:${a}`);
     if (s) {
