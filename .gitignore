@@ -51,8 +51,11 @@ playwright/.auth
 .tmp
 .worktrees/
 
-# Claude Code
+# Claude Code & Ruflo runtime
 .claude/
+.claude-flow/
+.swarm/
+.mcp.json
 
 # SQLite databases (local dev and test)
 *.db
