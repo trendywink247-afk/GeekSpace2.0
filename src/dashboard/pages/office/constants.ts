@@ -66,24 +66,23 @@ export const COLLISION_MAP: boolean[][] = [
   [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
 ];
 
-// Desk positions — all on verified walkable tiles (COLLISION_MAP[y][x] === false)
-// Verification: weebo(4,14)=false, edith(8,14)=false, jarvis(12,14)=false
+// Desk positions — spread across rooms for visual variety
+// All verified walkable: COLLISION_MAP[y][x] === false
 export const CORE_DESK_POSITIONS: Record<CoreAgentId, { x: number; y: number }> = {
-  weebo: { x: 4, y: 14 },    // main workspace aisle
-  edith: { x: 8, y: 14 },    // center of workspace
-  jarvis: { x: 12, y: 14 },  // right workspace
+  weebo: { x: 4, y: 14 },    // workspace left
+  edith: { x: 14, y: 14 },   // workspace center-right
+  jarvis: { x: 7, y: 19 },   // lower meeting area
 };
 
-// Specialist desk positions — all on verified walkable tiles
-// Verification: aria(4,15)=false, forge(8,15)=false, pulse(12,15)=false,
-//   echo(8,5)=false, cal(17,3)=false, nova(22,3)=false
+// Specialist desk positions — distributed across different rooms
+// All verified walkable against COLLISION_MAP
 export const SPECIALIST_POSITIONS: Record<SpecialistId, { x: number; y: number }> = {
-  aria: { x: 4, y: 15 },     // workspace row 2
-  forge: { x: 8, y: 15 },    // workspace center row 2
-  pulse: { x: 12, y: 15 },   // workspace right row 2
-  echo: { x: 8, y: 5 },      // upper patio area
-  cal: { x: 17, y: 3 },      // lounge area
-  nova: { x: 22, y: 3 },     // far lounge
+  aria: { x: 20, y: 13 },    // meeting room
+  forge: { x: 2, y: 5 },     // pantry area (upper-left)
+  pulse: { x: 17, y: 13 },   // meeting room entrance
+  echo: { x: 4, y: 3 },      // patio adjacent
+  cal: { x: 24, y: 14 },     // workspace far-right
+  nova: { x: 8, y: 3 },      // upper corridor
 };
 
 // Design tokens

@@ -20,7 +20,6 @@ import {
   AGENT_COLORS, AGENT_META, SPECIALIST_PARENT,
   CORE_AGENTS, SPECIALIST_AGENTS,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
-  COLLISION_MAP,
   MAX_PARTICLE_BEAMS, MAX_SPEECH_BUBBLES,
   PARTICLE_BEAM_TTL, SPEECH_BUBBLE_TTL,
   CLICK_DOUBLE_THRESHOLD_MS,
@@ -537,7 +536,7 @@ export default function OfficeStage({
         beams: beamsRef.current,
         tick: Math.floor(time / 200), // tick counter for sprite animations
         selectedAgentId: selectedRef.current,
-      }, true, COLLISION_MAP);
+      });
 
       rafId = requestAnimationFrame(frame);
     };
@@ -630,22 +629,28 @@ export default function OfficeStage({
   // ---- Render ----
 
   return (
-    <div ref={containerRef} className="relative w-full h-full bg-[#05050A] overflow-hidden">
-      <canvas
-        ref={canvasRef}
-        width={CANVAS_W}
-        height={CANVAS_H}
-        className="w-full h-full"
-        style={{ imageRendering: 'pixelated' }}
-        onClick={handleClick}
-        onDoubleClick={handleDoubleClick}
-      />
-      <SpeechBubbleLayer
-        bubbles={bubbles}
-        agents={agents}
-        canvasWidth={containerSize.w}
-        canvasHeight={containerSize.h}
-      />
+    <div className="relative w-full h-full bg-[#05050A] overflow-hidden flex items-center justify-center">
+      <div
+        ref={containerRef}
+        className="relative max-w-full"
+        style={{ aspectRatio: `${CANVAS_W} / ${CANVAS_H}`, height: '100%' }}
+      >
+        <canvas
+          ref={canvasRef}
+          width={CANVAS_W}
+          height={CANVAS_H}
+          className="absolute inset-0 w-full h-full"
+          style={{ imageRendering: 'pixelated' }}
+          onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
+        />
+        <SpeechBubbleLayer
+          bubbles={bubbles}
+          agents={agents}
+          canvasWidth={containerSize.w}
+          canvasHeight={containerSize.h}
+        />
+      </div>
     </div>
   );
 }

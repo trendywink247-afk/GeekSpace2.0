@@ -610,10 +610,9 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
     drawStateIndicator(ctx, agent, tick);
   }
 
-  // 5. Foreground layer — drawn ON TOP of agents for depth (furniture tops, etc.)
-  if (isBgLoaded()) {
-    drawForeground(ctx);
-  }
+  // 5. Foreground layer disabled — was causing agent head/body clipping
+  // when walking through desk areas. Re-enable once depth masking is refined.
+  // if (isBgLoaded()) { drawForeground(ctx); }
 
   // 6. Time-of-day lighting overlay — LAST layer on top of everything
   drawTimeOfDayOverlay(ctx);
