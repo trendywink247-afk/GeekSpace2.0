@@ -38,32 +38,36 @@ export const SPECIALIST_AGENTS: SpecialistId[] = ['aria', 'forge', 'pulse', 'ech
 // true = blocked (wall/furniture), false = walkable (floor)
 // Object-level masking — each desk, chair, and wall individually mapped.
 // COLLISION_MAP[row][col]: true blocks BFS pathfinding, false allows movement.
+// Collision map revised to match office_bg.webp visual layout.
+// Key fix: rows 8-12 were ALL blocked, cutting upper floor (patio/lounge/pantry)
+// from lower floor (workspace/meeting). Now connected via stairway corridor.
 export const COLLISION_MAP: boolean[][] = [
-  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,true,true,false,true,true,true,true,true,true,true],
-  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,true],
-  [true,false,true,true,false,true,false,true,false,true,false,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true],
-  [true,false,false,true,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,false,true,true,true,true,false,true],
-  [true,false,false,false,false,true,false,false,false,false,false,false,true,true,false,true,true,true,true,true,false,true,true,true,true,false,true],
-  [true,false,false,true,false,true,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  [true,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  [true,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  [true,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,false,false,false,true,true],
-  [true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
-  [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
-  [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,false,false,true],
-  [true,false,false,true,true,true,true,false,false,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,false,false,true],
-  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,false,false,true],
-  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,false,false,false,false,true,true,true,true,false,false,false,true],
-  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true],
-  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
-  [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true],
-  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
-  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],
+// col: 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],  // row 0: top wall
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,true,true,false,true,true,true,true,true,true,true],  // row 1: patio fence + lounge top
+  [true,false,false,true,false,false,true,true,true,true,true,true,true,true,true,false,false,false,false,false,false,true,true,true,true,false,true],  // row 2: patio tables + lounge couch
+  [true,false,false,false,false,false,false,true,true,true,false,false,true,true,true,false,false,false,false,false,false,false,false,false,false,false,true],  // row 3: patio chairs + pantry + lounge floor
+  [true,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,false,false,true,true,false,false,true],  // row 4: patio floor + pantry counter
+  [true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,true,true,false,false,true],  // row 5: patio/pantry floor + lounge rug
+  [true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true],  // row 6: lower patio + pantry
+  [true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true],  // row 7: corridor entry
+  [true,true,true,true,true,true,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true],  // row 8: stairway — OPEN corridor (was all blocked!)
+  [true,true,true,true,true,true,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true],  // row 9: stairway corridor
+  [true,true,true,true,true,true,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true],  // row 10: stairway corridor
+  [true,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true],  // row 11: utility room + corridor
+  [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],  // row 12: open hallway
+  [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],  // row 13: workspace/meeting entry
+  [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true],  // row 14: workspace floor
+  [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,false,false,true],  // row 15: desks start + meeting table
+  [true,false,false,true,true,true,true,false,false,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,false,false,true],  // row 16: desk cluster
+  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,false,false,true],  // row 17: desk cluster
+  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,false,false,false,false,true,true,true,true,false,false,false,true],  // row 18: desk cluster
+  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true],  // row 19: desk cluster bottom
+  [true,false,true,true,true,true,true,false,true,true,true,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true],  // row 20: bottom desks
+  [true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true],  // row 21: bottom corridor
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],  // row 22: bottom wall
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],  // row 23
+  [true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true],  // row 24
 ];
 
 // Desk positions — spread across rooms for visual variety
