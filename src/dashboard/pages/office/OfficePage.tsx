@@ -62,7 +62,7 @@ export function OfficePage() {
   const [splitPercent, setSplitPercent] = useState(() => {
     if (isMobile) return 35;
     const saved = localStorage.getItem('office-split');
-    return saved ? Number(saved) : 50;
+    return saved ? Number(saved) : 60;
   });
 
   // State
