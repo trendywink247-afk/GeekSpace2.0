@@ -231,7 +231,7 @@ describe('Agent State API', () => {
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBe(3);
+    expect(res.body.length).toBe(9);
     for (const state of res.body) {
       expect(state).toHaveProperty('agentId');
       expect(state).toHaveProperty('agentName');
