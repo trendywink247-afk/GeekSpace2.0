@@ -1026,8 +1026,9 @@ export function clearSpriteCache(): void {
 interface SpriteSheet {
   image: HTMLImageElement;
   frameWidth: number;   // 16px per frame
-  frameHeight: number;  // 24px per frame
+  frameHeight: number;  // 32px per frame (NOT 24 — confirmed from pixel-agents source)
   cols: number;         // 7 columns
+  rows: number;         // 3 rows (down, up, right)
   loaded: boolean;
 }
 
@@ -1080,8 +1081,9 @@ export async function loadSpriteSheets(): Promise<void> {
     const sheet: SpriteSheet = {
       image: img,
       frameWidth: 16,
-      frameHeight: 24,
+      frameHeight: 32,
       cols: 7,
+      rows: 3,
       loaded: false,
     };
     SPRITE_SHEETS.set(`char_${i}`, sheet);

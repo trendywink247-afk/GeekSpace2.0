@@ -114,15 +114,16 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   const isWalking = agent.path && agent.path.length > 0 && agent.pathIndex < agent.path.length;
 
   // INTEGER scale only — 2x. Pixel art MUST use integer scale or it breaks.
-  // 16x24 sprite × 2 = 32x48 drawn pixels. Exactly 1 tile wide, 1.5 tiles tall.
+  // 16x32 sprite × 2 = 32x64 drawn pixels. 1 tile wide, 2 tiles tall.
+  // Frame size confirmed from pixel-agents source: 16×32, 3 rows (down/up/right).
   const SCALE = 2;
   const DW = 16 * SCALE; // 32
-  const DH = 24 * SCALE; // 48
+  const DH = 32 * SCALE; // 64
 
-  // Anchor: sprite drawn so feet sit at bottom of agent's tile.
-  // Agent renderX/Y = tile center = (gridX*32+16, gridY*32+16).
-  // Tile bottom = cy + 16. Sprite bottom = drawY + DH.
-  // So drawY = (cy + 16) - DH = cy + 16 - 48 = cy - 32.
+  // Anchor: sprite feet at tile bottom.
+  // Tile bottom = cy + CELL/2 = cy + 16.
+  // Sprite bottom = drawY + DH.
+  // drawY = (cy + 16) - DH = cy + 16 - 64 = cy - 48.
   const drawX = cx - DW / 2; // centered horizontally
   const drawY = cy - DH + 16; // feet at tile bottom
 
@@ -151,29 +152,28 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
     const dx = step.x * CELL + CELL / 2 - agent.renderX;
     const dy = step.y * CELL + CELL / 2 - agent.renderY;
 
-    // PNG sheet layout (verified by pixel inspection):
-    //   Row 0: walk down (front face)
-    //   Row 1: activity/sitting (NOT walk up!)
-    //   Row 2: walk up (back view)
-    //   Row 3: walk side (right, mirror for left)
+    // PNG sheet: 3 rows of 16×32 (confirmed from pixel-agents source)
+    //   Row 0: walk DOWN (front face)
+    //   Row 1: walk UP (back view)
+    //   Row 2: walk RIGHT (side, mirror for left)
     if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
       const f = agent.facing ?? 'down';
-      frameRow = f === 'up' ? 2 : (f === 'left' || f === 'right') ? 3 : 0;
+      frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
       mirror = f === 'left';
     } else if (Math.abs(dy) >= Math.abs(dx)) {
-      frameRow = dy > 0 ? 0 : 2; // down=0, up=2
+      frameRow = dy > 0 ? 0 : 1; // down=0, up=1
       frameCol = frame;
     } else {
-      frameRow = 3; // side
+      frameRow = 2; // right (mirror for left)
       mirror = dx < 0;
       frameCol = frame;
     }
   } else if (agent.state === 'typing' || agent.state === 'responding') {
-    frameRow = 1; // activity row
+    frameRow = 0; // use front-facing for typing (no activity row in 3-row sheet)
     frameCol = tick % 2;
   } else {
     const f = agent.facing ?? 'down';
-    frameRow = f === 'up' ? 2 : (f === 'left' || f === 'right') ? 3 : 0;
+    frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
     mirror = f === 'left';
   }
 
@@ -230,10 +230,9 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
 export function drawStateIndicator(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number): void {
   const cx = agent.renderX;
   const cy = agent.renderY;
-  // Position above sprite (2x scale: sprite is 48px tall, feet at cy+16)
-  const DH = 48;
-  const drawY = cy - DH + 16;
-  const baseY = drawY - 8; // above sprite top with gap
+  // Position above sprite (2x scale: 16×32 sprite = 64px tall, feet at cy+16)
+  const spriteTop = cy - 64 + 16; // = cy - 48
+  const baseY = spriteTop - 6;
   const bobOffset = tick % 4 < 2 ? 0 : -1;
 
   switch (agent.state) {
