@@ -162,6 +162,19 @@ export default function OfficeStage({
   const processedRef = useRef(0);
   const [containerSize, setContainerSize] = useState({ w: CANVAS_W, h: CANVAS_H });
 
+  // ---- Mobile detection ----
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const isMobileRef = useRef(isMobile);
+  useEffect(() => {
+    const onResize = () => {
+      const m = window.innerWidth < 768;
+      isMobileRef.current = m;
+      setIsMobile(m);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const [agents, setAgents] = useState<CanvasAgent[]>(buildInitialAgents);
   const [beams, setBeams] = useState<ParticleBeam[]>([]);
   const [bubbles, setBubbles] = useState<SpeechBubble[]>([]);
@@ -171,6 +184,23 @@ export default function OfficeStage({
   // ---- Animation tier effect state ----
   const effectStateRef = useRef<CanvasEffectState>(createEffectState());
   const thinkingTimers = useRef(new Map<string, number>());
+
+  // ---- Reduce ambient particles on mobile (15 → 5) ----
+
+  useEffect(() => {
+    const target = isMobile ? 5 : 15;
+    const current = effectStateRef.current.particles.length;
+    if (current > target) {
+      effectStateRef.current.particles = effectStateRef.current.particles.slice(0, target);
+    } else if (current < target) {
+      const extra = Array.from({ length: target - current }, () => ({
+        x: Math.random() * 864, y: Math.random() * 800,
+        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+        alpha: Math.random() * 0.05,
+      }));
+      effectStateRef.current.particles = [...effectStateRef.current.particles, ...extra];
+    }
+  }, [isMobile]);
 
   // ---- Load pixel art office assets + PNG sprite sheets on mount ----
 
@@ -253,12 +283,14 @@ export default function OfficeStage({
                   ? (trackToolCall(evt.requestId) - 1) : 0;
                 // Re-track: trackToolCall incremented, undo for read-only peek
                 if (evt.requestId) clearRequest(evt.requestId);
-                const tier = selectAnimationTier({
+                let tier = selectAnimationTier({
                   isFirstVisit: isFirstVisit(),
                   isMultiAgent: !!evt.isMultiAgent,
                   toolCallCount: toolCount,
                   thinkingStartTime: thinkingTimers.current.get(agentId) ?? 0,
                 });
+                // On mobile: skip cinematic zoom (tier 3 → tier 1)
+                if (isMobileRef.current && tier === 3) tier = 1;
                 startTierEffect(
                   effectStateRef.current,
                   tier,
@@ -352,12 +384,15 @@ export default function OfficeStage({
               // Undo the increment — we just want to read the count
               if (evt.requestId) clearRequest(evt.requestId);
 
-              const tier = selectAnimationTier({
+              let tier = selectAnimationTier({
                 isFirstVisit: isFirstVisit(),
                 isMultiAgent: !!evt.isMultiAgent,
                 toolCallCount: toolCount,
                 thinkingStartTime: thinkingTimers.current.get(agentId) ?? 0,
               });
+
+              // On mobile: skip cinematic zoom (tier 3 → tier 1)
+              if (isMobileRef.current && tier === 3) tier = 1;
 
               if (tier === 3 && isFirstVisit()) {
                 markVisited();

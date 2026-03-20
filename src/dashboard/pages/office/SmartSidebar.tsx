@@ -79,12 +79,12 @@ function sseToEntry(ev: SSEEvent, index: number): TimelineEntry {
 }
 
 // ---------------------------------------------------------------------------
-// Tab config
+// Tab config (full label + compact label for mobile)
 // ---------------------------------------------------------------------------
-const TABS: { key: SidebarTab; label: string }[] = [
-  { key: 'timeline', label: 'Timeline' },
-  { key: 'tasks',    label: 'Tasks' },
-  { key: 'metrics',  label: 'Metrics' },
+const TABS: { key: SidebarTab; label: string; shortLabel: string }[] = [
+  { key: 'timeline', label: 'Timeline', shortLabel: 'Feed' },
+  { key: 'tasks',    label: 'Tasks',    shortLabel: 'Tasks' },
+  { key: 'metrics',  label: 'Metrics',  shortLabel: 'Stats' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -161,20 +161,21 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
         className="flex items-center gap-1 px-2 py-2 flex-shrink-0 border-b"
         style={{ borderColor: 'rgba(0,240,255,0.1)' }}
       >
-        {TABS.map(({ key, label }) => {
+        {TABS.map(({ key, label, shortLabel }) => {
           const active = activeTab === key;
           return (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className="px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 min-h-[32px]"
+              className="px-2.5 py-1.5 rounded-full font-medium transition-all duration-150 min-h-[32px] text-[11px] sm:text-xs"
               style={{
                 background: active ? 'rgba(0,240,255,0.1)' : 'transparent',
                 color: active ? '#00F0FF' : '#8892A4',
                 border: active ? '1px solid rgba(0,240,255,0.2)' : '1px solid transparent',
               }}
             >
-              {label}
+              <span className="hidden sm:inline">{label}</span>
+              <span className="sm:hidden">{shortLabel}</span>
             </button>
           );
         })}
@@ -235,7 +236,7 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
 
       {/* ── Chat input (always visible) ───────────────────────────── */}
       <div
-        className="flex items-center gap-2 px-3 py-2 flex-shrink-0 border-t"
+        className="flex items-center gap-2 px-3 py-2 flex-shrink-0 border-t pb-4 md:pb-2"
         style={{ borderColor: 'rgba(0,240,255,0.1)', background: '#0A0A14' }}
       >
         <input

@@ -6,6 +6,7 @@ import OfficeStage from './OfficeStage';
 import { SpotlightHUD } from './SpotlightHUD';
 import { AgentProfileFlyout } from './AgentProfileFlyout';
 import SmartSidebar from './SmartSidebar';
+import { InsightToast } from './InsightToast';
 import { useOfficeData } from './useOfficeData';
 import { agentService, agentTasksService } from '@/services/api';
 import {
@@ -13,7 +14,7 @@ import {
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
   CORE_AGENTS,
 } from './constants';
-import type { CanvasAgent, AgentId, CoreAgentId, SpecialistId } from './types';
+import type { CanvasAgent, AgentId, CoreAgentId, SpecialistId, InsightCard } from './types';
 
 // ---------------------------------------------------------------------------
 // Helper: build a CanvasAgent for SpotlightHUD from an agentId
@@ -59,6 +60,33 @@ export function OfficePage() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [flyoutAgentId, setFlyoutAgentId] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState(0);
+  const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
+
+  // Extract insight cards from timeline entries that contain insight-related keywords
+  const insightCards = useMemo<InsightCard[]>(() => {
+    const timeline = officeData?.timeline ?? [];
+    const insightKeywords = ['insight', 'suggest', 'tip', 'notice', 'pattern', 'trend', 'alert', 'recommendation'];
+    return timeline
+      .filter((item) => {
+        const lower = (item.action + ' ' + (item.details ?? '') + ' ' + (item.icon ?? '')).toLowerCase();
+        return insightKeywords.some(kw => lower.includes(kw));
+      })
+      .filter((item, index) => {
+        // Stable ID based on index + created_at
+        const id = `insight-${index}-${item.created_at}`;
+        return !dismissedInsights.includes(id);
+      })
+      .slice(0, 5)
+      .map((item, index) => ({
+        id: `insight-${index}-${item.created_at}`,
+        agentId: (item as { agentId?: AgentId }).agentId ?? 'weebo',
+        agentName: (item as { agentName?: string }).agentName ?? 'Weebo',
+        text: item.action,
+        category: 'general' as const,
+        timestamp: item.created_at,
+        dismissed: false,
+      }));
+  }, [officeData?.timeline, dismissedInsights]);
 
   // Fetch task count when an agent is selected for spotlight
   useEffect(() => {
@@ -193,6 +221,12 @@ export function OfficePage() {
           selectedAgentId={selectedAgentId}
           onAgentSelect={setSelectedAgentId}
           onAgentDoubleClick={(id) => setFlyoutAgentId(id)}
+        />
+
+        {/* Insight toasts — float at top-center of canvas stage */}
+        <InsightToast
+          insights={insightCards}
+          onDismiss={(id) => setDismissedInsights(prev => [...prev, id])}
         />
 
         {/* Spotlight HUD -- shown when an agent is selected */}
