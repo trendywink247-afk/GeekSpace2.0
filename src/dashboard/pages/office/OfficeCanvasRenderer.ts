@@ -19,6 +19,7 @@ import { SMART_OBJECTS } from './smartObjects';
 import { isPointOccupied } from './occupancy';
 import { getAgentSprites, drawSpriteFrame } from './sprites';
 import { getAgentBehaviorMode } from './agentBehavior';
+import type { CanvasEffectState } from './CanvasEffects';
 
 // ---------------------------------------------------------------------------
 // Background / Foreground image loading (pixel art office)
@@ -583,7 +584,7 @@ export function drawDebugOverlay(ctx: CanvasRenderingContext2D, collisionMap: bo
 // Optional showDebug parameter draws the collision grid overlay.
 // ---------------------------------------------------------------------------
 
-export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, showDebug?: boolean, collisionMap?: boolean[][]): void {
+export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, showDebug?: boolean, collisionMap?: boolean[][], effectState?: CanvasEffectState): void {
   const { agents, beams, tick, selectedAgentId } = state;
 
   // 1. Background (pixel art image or solid fallback)
@@ -597,23 +598,56 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
   // 3. Ambient effects (desk screen flickers, coffee steam)
   drawAmbientEffects(ctx, tick);
 
-  // 4. Agents sorted by renderY for depth — agents lower on screen draw on top
+  // 4. Apply cinematic zoom transform if active (tier 3 effect)
+  const hasZoom = effectState && effectState.zoomScale !== 1 && effectState.zoomTarget;
+  if (hasZoom) {
+    ctx.save();
+    const cx = effectState.zoomTarget!.x;
+    const cy = effectState.zoomTarget!.y;
+    ctx.translate(cx, cy);
+    ctx.scale(effectState.zoomScale, effectState.zoomScale);
+    ctx.translate(-cx, -cy);
+  }
+
+  // 5. Agents sorted by renderY for depth — agents lower on screen draw on top
   const sortedAgents = [...agents].sort((a, b) => a.renderY - b.renderY);
   for (let i = 0; i < sortedAgents.length; i++) {
     const agent = sortedAgents[i];
     const isSelected = agent.id === selectedAgentId;
+
+    // Dim non-spotlight agents when spotlight is active (tier 2/3 effect)
+    if (effectState && effectState.spotlightAgent && agent.id !== effectState.spotlightAgent) {
+      ctx.globalAlpha = effectState.dimOpacity;
+    }
+
     drawAgent(ctx, agent, tick, isSelected);
     drawStateIndicator(ctx, agent, tick);
+
+    // Restore full opacity after each agent
+    ctx.globalAlpha = 1;
   }
 
-  // 5. Foreground layer disabled — was causing agent head/body clipping
+  // 6. Restore zoom transform
+  if (hasZoom) {
+    ctx.restore();
+  }
+
+  // 7. Foreground layer disabled — was causing agent head/body clipping
   // when walking through desk areas. Re-enable once depth masking is refined.
   // if (isBgLoaded()) { drawForeground(ctx); }
 
-  // 6. Time-of-day lighting overlay — LAST layer on top of everything
+  // 8. Draw ambient particles (from CanvasEffects)
+  if (effectState) {
+    for (const p of effectState.particles) {
+      ctx.fillStyle = `rgba(0, 240, 255, ${p.alpha})`;
+      ctx.fillRect(p.x, p.y, 1, 1);
+    }
+  }
+
+  // 9. Time-of-day lighting overlay — LAST layer on top of everything
   drawTimeOfDayOverlay(ctx);
 
-  // 7. Debug overlay — collision grid visualization (only when enabled)
+  // 10. Debug overlay — collision grid visualization (only when enabled)
   if (showDebug && collisionMap) {
     drawDebugOverlay(ctx, collisionMap);
   }

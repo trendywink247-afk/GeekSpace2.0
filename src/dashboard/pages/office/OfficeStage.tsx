@@ -31,6 +31,8 @@ import {
   isBlocked, nearestWalkable, validateTarget, validateSpawnPosition, findFullPath,
 } from './navigation';
 import { loadSpriteSheets } from './sprites';
+import { selectAnimationTier, trackToolCall, clearRequest, isFirstVisit, markVisited } from './AnimationTierSelector';
+import { createEffectState, startTierEffect, clearEffects, tickEffects, type CanvasEffectState } from './CanvasEffects';
 
 // ---------------------------------------------------------------------------
 // rAF game loop timing — behavior/BFS runs at ~5fps via accumulator,
@@ -166,6 +168,10 @@ export default function OfficeStage({
 
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ---- Animation tier effect state ----
+  const effectStateRef = useRef<CanvasEffectState>(createEffectState());
+  const thinkingTimers = useRef(new Map<string, number>());
+
   // ---- Load pixel art office assets + PNG sprite sheets on mount ----
 
   useEffect(() => {
@@ -238,6 +244,32 @@ export default function OfficeStage({
             agent.state = evt.state;
             if (evt.content) agent.lastContent = evt.content;
             if (evt.tool) agent.lastTool = evt.tool;
+            // --- Animation tier tracking ---
+            if (evt.state === 'thinking') {
+              thinkingTimers.current.set(agentId, Date.now());
+              // Compute preliminary tier and start spotlight/zoom
+              {
+                const toolCount = evt.requestId
+                  ? (trackToolCall(evt.requestId) - 1) : 0;
+                // Re-track: trackToolCall incremented, undo for read-only peek
+                if (evt.requestId) clearRequest(evt.requestId);
+                const tier = selectAnimationTier({
+                  isFirstVisit: isFirstVisit(),
+                  isMultiAgent: !!evt.isMultiAgent,
+                  toolCallCount: toolCount,
+                  thinkingStartTime: thinkingTimers.current.get(agentId) ?? 0,
+                });
+                startTierEffect(
+                  effectStateRef.current,
+                  tier,
+                  { x: agent.renderX, y: agent.renderY },
+                  agentId,
+                );
+              }
+            }
+            if (evt.state === 'tool_call') {
+              trackToolCall(evt.requestId);
+            }
             // Cancel idle wandering — move agent back to their desk
             cancelIdleBehavior(agentId);
             agent.path = [];
@@ -312,6 +344,33 @@ export default function OfficeStage({
 
           case 'done': {
             agent.state = 'done';
+
+            // --- Finalize animation tier ---
+            {
+              const toolCount = evt.requestId
+                ? (trackToolCall(evt.requestId) - 1) : 0;
+              // Undo the increment — we just want to read the count
+              if (evt.requestId) clearRequest(evt.requestId);
+
+              const tier = selectAnimationTier({
+                isFirstVisit: isFirstVisit(),
+                isMultiAgent: !!evt.isMultiAgent,
+                toolCallCount: toolCount,
+                thinkingStartTime: thinkingTimers.current.get(agentId) ?? 0,
+              });
+
+              if (tier === 3 && isFirstVisit()) {
+                markVisited();
+              }
+
+              clearRequest(evt.requestId);
+              thinkingTimers.current.delete(agentId);
+
+              // Clear effects after the cinematic plays out
+              const clearDelay = tier === 3 ? 2000 : tier === 2 ? 1000 : 300;
+              setTimeout(() => clearEffects(effectStateRef.current), clearDelay);
+            }
+
             // After 3s, reset to idle and walk back to own desk
             const doneId = agentId;
             setTimeout(() => {
@@ -532,6 +591,10 @@ export default function OfficeStage({
         return changed ? next : prev;
       });
 
+      // ---- Tick animation effects (zoom, spotlight, particles) ----
+      const dtMs = dt * 1000; // tickEffects expects milliseconds
+      tickEffects(effectStateRef.current, dtMs);
+
       // ---- RENDER every frame ----
       const canvas = canvasRef.current;
       if (!canvas) { rafId = requestAnimationFrame(frame); return; }
@@ -544,7 +607,7 @@ export default function OfficeStage({
         beams: beamsRef.current,
         tick: Math.floor(time / 200), // tick counter for sprite animations
         selectedAgentId: selectedRef.current,
-      });
+      }, undefined, undefined, effectStateRef.current);
 
       rafId = requestAnimationFrame(frame);
     };

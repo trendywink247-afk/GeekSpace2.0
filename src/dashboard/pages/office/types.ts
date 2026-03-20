@@ -19,6 +19,8 @@ export interface SSEEvent {
   targetAgent?: string;
   taskId?: string;
   commId?: string;
+  requestId?: string;
+  isMultiAgent?: boolean;
   timestamp: string;
 }
 
