@@ -531,9 +531,31 @@ export function tickBehaviors(
             bState.facing = bState.targetPoint.facing;
           }
 
-          // Linger at destination then return home
+          // Linger at destination then chain to another point or return home
           if (bState.timer <= 0) {
             releasePoint(agent.id);
+
+            // 60% chance to chain to another interaction point (explore the office)
+            if (Math.random() < 0.6) {
+              const perception = perceive(agent, agents, recentWorkers);
+              const nextDest = chooseDestination(perception);
+              if (nextDest) {
+                const home = getHomePosition(agent);
+                const validPt = validateTarget(nextDest.x, nextDest.y, home.x, home.y);
+                reservePoint(validPt.x, validPt.y, agent.id);
+                bState.targetPoint = nextDest;
+                bState.speed = 2.5 + Math.random() * 1.5;
+                bState.timer = randomInt(15, 40);
+                updated.targetX = validPt.x;
+                updated.targetY = validPt.y;
+                updated.path = [];
+                updated.pathIndex = 0;
+                changed = true;
+                break;
+              }
+            }
+
+            // Otherwise return home
             bState.mode = 'returning';
             bState.targetPoint = null;
             const home = getHomePosition(agent);

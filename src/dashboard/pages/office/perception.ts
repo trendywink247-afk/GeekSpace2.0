@@ -41,7 +41,7 @@ export function perceive(
   // Objects in current room
   const nearbyObjects = room ? getObjectsInRoom(room.id) : [];
 
-  // Available interaction points across all objects (within 12 tiles)
+  // Available interaction points across ALL objects (whole office is 27x25, small enough)
   const available: Array<
     InteractionPoint & { objectId: string; distance: number }
   > = [];
@@ -50,9 +50,7 @@ export function perceive(
       if (!isWalkable(ip.x, ip.y)) continue;
       if (isPointOccupied(ip.x, ip.y)) continue;
       const dist = Math.abs(ip.x - agent.x) + Math.abs(ip.y - agent.y);
-      if (dist <= 12) {
-        available.push({ ...ip, objectId: obj.id, distance: dist });
-      }
+      available.push({ ...ip, objectId: obj.id, distance: dist });
     }
   }
   available.sort((a, b) => a.distance - b.distance);
