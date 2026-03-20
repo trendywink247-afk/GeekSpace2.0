@@ -99,9 +99,9 @@ export const SMART_OBJECTS: SmartObject[] = [
       { x: 16, y: 2 }, { x: 17, y: 2 }, { x: 18, y: 2 }, { x: 19, y: 2 }, { x: 20, y: 2 },
     ],
     interactionPoints: [
-      { x: 16, y: 3, facing: 'up', behavior: 'relax' },
-      { x: 18, y: 3, facing: 'up', behavior: 'chat' },
-      { x: 20, y: 3, facing: 'up', behavior: 'relax' },
+      { x: 17, y: 4, facing: 'up', behavior: 'relax' },
+      { x: 19, y: 4, facing: 'up', behavior: 'chat' },
+      { x: 19, y: 5, facing: 'up', behavior: 'relax' },
     ],
     maxOccupants: 3,
   },
@@ -112,8 +112,8 @@ export const SMART_OBJECTS: SmartObject[] = [
     label: 'Round Table',
     footprint: [{ x: 22, y: 4 }, { x: 23, y: 4 }],
     interactionPoints: [
-      { x: 21, y: 3, facing: 'right', behavior: 'chat' },
-      { x: 24, y: 3, facing: 'left', behavior: 'chat' },
+      { x: 21, y: 4, facing: 'up', behavior: 'chat' },
+      { x: 24, y: 4, facing: 'up', behavior: 'chat' },
     ],
     maxOccupants: 2,
   },
