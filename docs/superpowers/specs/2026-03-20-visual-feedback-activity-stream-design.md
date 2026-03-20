@@ -32,7 +32,7 @@ interface ActivityEvent {
   channel: 'telegram' | 'web' | 'automation' | 'proactive';
   summary: string;           // human-readable: "Searching the web~"
   metadata?: Record<string, unknown>;
-  timestamp: number;
+  timestamp: string;           // ISO 8601 format (backward compat with existing AgentStateEvent)
   // Backward-compat fields for AgentStatusStrip (reads state/agentName/content)
   state: ActivityEventType;  // mirrors `type` — AgentStatusStrip reads this
   agentName: string;         // human label: "Weebo", "Edith" — strip reads this
@@ -40,10 +40,10 @@ interface ActivityEvent {
 }
 
 type ActivityEventType =
-  | 'thinking' | 'tool_call' | 'tool_result' | 'responding' | 'done'
+  | 'thinking' | 'typing' | 'tool_call' | 'tool_result' | 'responding' | 'done'
   | 'message_in' | 'message_out'
   | 'task_started' | 'task_completed' | 'task_failed'
-  | 'delegation' | 'comm_sent' | 'comm_received'
+  | 'delegating' | 'comm_sent' | 'comm_received'
   | 'error' | 'idle';
 ```
 
@@ -65,7 +65,7 @@ The `state`, `agentName`, and `content` fields are backward-compat aliases so `A
 7. `server/src/routes/agent-state.ts` — `getRecentEvents`, `addStateClient`, `removeStateClient`
 8. `server/src/routes/office.ts` — `getRecentEvents`
 
-Each switches to `activityStream.emit({ type, channel, ... })`. All call sites must pass a `channel` param ('web', 'telegram', 'automation', or 'proactive').
+Each switches to `emit({ type, channel, ... })`. All call sites must pass a `channel` param ('web', 'telegram', 'automation', or 'proactive').
 
 **Rollback safety:** After migration, `agent-state-bus.ts` is kept as a thin re-export wrapper that delegates to `activity-stream.ts`. This lets us revert individual files without breaking the build. Delete the wrapper only after 1 week of stable production.
 
@@ -277,10 +277,10 @@ While touching these files:
 - `server/src/services/message-router.ts` — emit activity events during Telegram processing, fix reminder/expense/Hinglish bugs
 - `server/src/services/telegram.ts` — typing loop, edit-in-place processing messages, replaceWithFinalResponse
 - `server/src/services/action-executor.ts` — fix reminder time offset calculation, thread expense currency
-- `server/src/services/react-loop.ts` — migrate emitThinking/emitToolCall/etc. to activityStream.emit()
-- `server/src/services/agent-comms.ts` — migrate broadcastAgentState to activityStream.emit()
-- `server/src/services/multi-agent-orchestrator.ts` — migrate emit calls to activityStream.emit()
-- `server/src/services/unified-agent-router.ts` — migrate emit calls to activityStream.emit()
+- `server/src/services/react-loop.ts` — migrate emitThinking/emitToolCall/etc. to emit()
+- `server/src/services/agent-comms.ts` — migrate broadcastAgentState to emit()
+- `server/src/services/multi-agent-orchestrator.ts` — migrate emit calls to emit()
+- `server/src/services/unified-agent-router.ts` — migrate emit calls to emit()
 - `server/src/routes/webhooks.ts` — send processing message, pass messageId through pipeline
 - `server/src/routes/agent-state.ts` — use activity-stream instead of agent-state-bus
 - `server/src/routes/agent.ts` — migrate web chat to activity-stream
