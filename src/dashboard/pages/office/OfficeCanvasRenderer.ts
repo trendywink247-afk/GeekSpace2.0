@@ -178,11 +178,7 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   }
 
   // --- Draw PNG sprite (or fallback) ---
-  // Skip PNG for walk-up (row 2): the PNG back-view sprites have a gap between
-  // body (rows 0-12) and shoes (rows 21-23) — missing legs. Code-generated
-  // fallback has properly connected body+legs for back view.
-  const skipPng = frameRow === 2;
-  let drawn = skipPng ? false : drawSpriteFrame(ctx, agent.id, frameCol, frameRow, drawX, drawY, DW, DH, mirror);
+  let drawn = drawSpriteFrame(ctx, agent.id, frameCol, frameRow, drawX, drawY, DW, DH, mirror);
 
   if (!drawn) {
     const sprites = getAgentSprites(agent.id);
