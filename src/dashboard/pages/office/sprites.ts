@@ -1138,23 +1138,28 @@ export function drawSpriteFrame(
     ? getHueShiftedImage(sheet, agentId, mapping.hueShift)
     : sheet.image;
 
+  // Character feet are at row ~20 of 24. Compensate for empty bottom rows.
+  const FEET_ROW = 20;
+  const feetOffset = Math.round((sheet.frameHeight - FEET_ROW) * scale); // dead space at bottom
+  const destX = Math.round(x - dw / 2);
+  const destY = Math.round(y - dh + feetOffset);
+
   ctx.save();
   ctx.imageSmoothingEnabled = false;
 
   if (mirror) {
-    // Flip horizontally around the draw center
     ctx.translate(x, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(
       sourceImage,
       sx, sy, sheet.frameWidth, sheet.frameHeight,
-      -dw / 2, y - dh + 4, dw, dh,
+      -Math.round(dw / 2), destY, Math.round(dw), Math.round(dh),
     );
   } else {
     ctx.drawImage(
       sourceImage,
       sx, sy, sheet.frameWidth, sheet.frameHeight,
-      x - dw / 2, y - dh + 4, dw, dh,
+      destX, destY, Math.round(dw), Math.round(dh),
     );
   }
 

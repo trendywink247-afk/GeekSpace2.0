@@ -114,15 +114,19 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   const color = agent.color;
   const isWalking = agent.path && agent.path.length > 0 && agent.pathIndex < agent.path.length;
 
-  // Sprite dimensions and scaling — unified scale for PNG and code-generated
+  // Sprite dimensions and scaling
   const SPRITE_W = 16;
   const SPRITE_H = 24;
+  const SPRITE_FEET_ROW = 20; // character's feet end at row 20 of 24 (4 empty rows below)
   const spriteScale = (CELL / 16) * 1.2; // 2.4x — fits well in 32px tiles
   const drawW = SPRITE_W * spriteScale;   // 38.4
   const drawH = SPRITE_H * spriteScale;   // 57.6
-  // Feet-anchored: sprite bottom at cy + 4, head extends upward
-  const sx = cx - drawW / 2;
-  const sy = cy - drawH + 4;
+  // Feet-anchored: character's feet (row 20) align with agent's tile center.
+  // Empty rows below feet: (24 - 20) * scale = 4 * 2.4 = 9.6px of dead space at bottom.
+  // So shift sprite down by that amount to compensate.
+  const feetOffset = Math.round((SPRITE_H - SPRITE_FEET_ROW) * spriteScale); // ~10px
+  const sx = Math.round(cx - drawW / 2);
+  const sy = Math.round(cy - drawH + feetOffset);
 
   // Agent glow for active (non-idle) agents
   if (agent.state !== 'idle') {
@@ -246,7 +250,7 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
     }
 
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(sprite, sx, sy, drawW, drawH);
+    ctx.drawImage(sprite, sx, sy, Math.round(drawW), Math.round(drawH));
     ctx.imageSmoothingEnabled = true;
   }
 
@@ -271,10 +275,11 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
 export function drawStateIndicator(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number): void {
   const cx = agent.renderX;
   const cy = agent.renderY;
-  // Position above the scaled sprite (feet-anchored: top = cy - drawH + 4)
+  // Position above the scaled sprite
   const spriteScale = (CELL / 16) * 1.2;
   const drawH = 24 * spriteScale;
-  const baseY = cy - drawH + 4 - 8; // above sprite top with a gap
+  const feetOffset = Math.round((24 - 20) * spriteScale); // same as drawAgent
+  const baseY = Math.round(cy - drawH + feetOffset - 8); // above sprite top with gap
   const bobOffset = tick % 4 < 2 ? 0 : -1;
 
   switch (agent.state) {
