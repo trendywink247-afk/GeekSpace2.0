@@ -113,3 +113,22 @@ export const PARTICLE_BEAM_TTL = 2000;
 export const SPOTLIGHT_SCALE = 1.5;
 export const CLICK_DOUBLE_THRESHOLD_MS = 250;
 export const MISSION_POLL_INTERVAL_MS = 30_000;
+
+// Animation tiers
+export const TIER_AMBIENT_GLOW_MS = 2000;
+export const TIER_CHAIN_STAGGER_MS = 200;
+export const TIER_CINEMATIC_ZOOM_MS = 800;
+export const TIER_CINEMATIC_HOLD_MS = 500;
+export const TIER_CINEMATIC_PULLBACK_MS = 600;
+
+// Insight toasts
+export const TOAST_DURATION_MS = 8000;
+export const TOAST_FADE_MS = 500;
+export const TOAST_GAP_MS = 3000;
+export const TOAST_MAX_QUEUE = 3;
+export const TOAST_MAX_AGE_MS = 60000;
+
+// Sidebar
+export const SIDEBAR_POLL_INTERVAL_MS = 3000;
+export const SSE_RETRY_INTERVAL_MS = 15000;
+export const TIMELINE_MAX_ITEMS = 50;

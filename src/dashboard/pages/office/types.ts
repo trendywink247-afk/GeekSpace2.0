@@ -74,3 +74,36 @@ export interface DoorState {
 
 export type ConnectionMode = 'live' | 'reconnecting' | 'polling';
 export type ControlTab = 'tasks' | 'comms' | 'metrics' | 'timeline';
+
+export interface TimelineEntry {
+  id: string;
+  type: 'reply' | 'tool_call' | 'insight' | 'reminder' | 'automation' | 'multi_agent' | 'habit' | 'comm';
+  agentId?: AgentId;
+  agentName?: string;
+  agentColor?: string;
+  action: string;
+  details?: string;
+  icon?: string;
+  timestamp: string;
+  actions?: Array<{ label: string; action: string; color: string }>;
+  relatedAgents?: AgentId[];
+}
+
+export interface InsightCard {
+  id: string;
+  agentId: AgentId;
+  agentName: string;
+  text: string;
+  category: 'spending' | 'habits' | 'calendar' | 'general';
+  timestamp: string;
+  dismissed: boolean;
+}
+
+export interface OfficeMetrics {
+  creditsUsedToday: number;
+  messagesToday: number;
+  toolCallsToday: number;
+  providerBreakdown: Record<string, number>;
+}
+
+export type SidebarTab = 'timeline' | 'tasks' | 'metrics';
