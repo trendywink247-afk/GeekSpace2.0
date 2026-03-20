@@ -690,6 +690,18 @@ export function tickBehaviors(
         break;
     }
 
+    // Sync facing direction from behavior state to agent object (renderer reads this)
+    if (bState.facing !== agent.facing) {
+      updated.facing = bState.facing;
+      changed = true;
+    }
+
+    // Sync speed from behavior state
+    if (bState.speed !== agent.speed) {
+      updated.speed = bState.speed;
+      changed = true;
+    }
+
     return updated;
   });
 

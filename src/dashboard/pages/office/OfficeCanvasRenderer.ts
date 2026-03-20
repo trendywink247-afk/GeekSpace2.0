@@ -167,20 +167,27 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
       // Ping-pong walk cycle [0,1,2,1] — frame 3 is activity, not walk
       const WALK_FRAMES = [0, 1, 2, 1];
       const frame = WALK_FRAMES[tick % 4];
-      const next = agent.path[agent.pathIndex];
-      const dx = next.x - agent.x;
-      const dy = next.y - agent.y;
-      if (dx === 0 && dy === 0) {
-        // Arrived at tile — show neutral standing in current facing
-        frameRow = agent.facing === 'up' ? 1 : agent.facing === 'left' || agent.facing === 'right' ? 2 : 0;
-        if (agent.facing === 'left') mirror = true;
+
+      // Use pixel-level direction (renderX/Y → target pixel) for smooth direction detection.
+      // Grid-level dx/dy causes breakup when agent.x advances but renderX is still lerping.
+      const nextStep = agent.path[agent.pathIndex];
+      const targetPx = nextStep.x * CELL + CELL / 2;
+      const targetPy = nextStep.y * CELL + CELL / 2;
+      const pxDx = targetPx - agent.renderX;
+      const pxDy = targetPy - agent.renderY;
+
+      if (Math.abs(pxDx) < 1 && Math.abs(pxDy) < 1) {
+        // At target pixel — use facing direction from behavior system
+        const f = agent.facing ?? 'down';
+        frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
+        mirror = f === 'left';
         frameCol = 0;
-      } else if (Math.abs(dy) >= Math.abs(dx)) {
-        frameRow = dy > 0 ? 0 : 1; // down : up
+      } else if (Math.abs(pxDy) >= Math.abs(pxDx)) {
+        frameRow = pxDy > 0 ? 0 : 1; // down : up
         frameCol = frame;
       } else {
         frameRow = 2; // right (mirror for left)
-        if (dx < 0) mirror = true;
+        mirror = pxDx < 0;
         frameCol = frame;
       }
     } else if (agent.state === 'typing' || agent.state === 'responding') {
@@ -214,12 +221,15 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
     if (isWalking) {
       const WALK_FRAMES_FB = [0, 1, 2, 1]; // ping-pong
       const frame = WALK_FRAMES_FB[tick % 4];
-      const dx = agent.targetX - agent.x;
-      const dy = agent.targetY - agent.y;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        sprite = dx > 0 ? sprites.walkRight[frame] : sprites.walkLeft[frame];
+      // Use pixel-level direction for consistency with PNG path
+      const fbTargetX = agent.targetX * CELL + CELL / 2;
+      const fbTargetY = agent.targetY * CELL + CELL / 2;
+      const fbDx = fbTargetX - agent.renderX;
+      const fbDy = fbTargetY - agent.renderY;
+      if (Math.abs(fbDx) > Math.abs(fbDy)) {
+        sprite = fbDx > 0 ? sprites.walkRight[frame] : sprites.walkLeft[frame];
       } else {
-        sprite = dy > 0 ? sprites.walkDown[frame] : sprites.walkUp[frame];
+        sprite = fbDy > 0 ? sprites.walkDown[frame] : sprites.walkUp[frame];
       }
     } else if (agent.state === 'typing' || agent.state === 'responding') {
       sprite = sprites.typing[tick % 2];
