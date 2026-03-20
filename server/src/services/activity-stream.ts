@@ -48,6 +48,9 @@ export interface ActivityEvent {
   targetAgent?: string;
   taskId?: string;
   commId?: string;
+  // Multi-agent correlation fields
+  requestId?: string;
+  isMultiAgent?: boolean;
 }
 
 // Backward-compat type re-export (consumers that imported from agent-state-bus)
@@ -68,6 +71,9 @@ export interface EmitInput {
   targetAgent?: string;
   taskId?: string;
   commId?: string;
+  // Multi-agent correlation fields
+  requestId?: string;
+  isMultiAgent?: boolean;
 }
 
 // ── Personality name map ──────────────────────────────────────
@@ -163,6 +169,9 @@ function buildEvent(input: EmitInput): ActivityEvent {
     targetAgent: input.targetAgent,
     taskId: input.taskId,
     commId: input.commId,
+    // Multi-agent correlation fields
+    requestId: input.requestId,
+    isMultiAgent: input.isMultiAgent,
   };
 }
 

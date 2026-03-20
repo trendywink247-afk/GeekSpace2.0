@@ -130,6 +130,20 @@ describe('ActivityStream', () => {
       });
       expect(event.agentName).toBe('unknown-bot');
     });
+
+    it('emit propagates requestId and isMultiAgent', () => {
+      const event = emit({
+        userId: 'test-req-id-' + Date.now(),
+        agentId: 'jarvis',
+        type: 'thinking',
+        channel: 'web',
+        summary: 'Processing...',
+        requestId: 'req-abc-123',
+        isMultiAgent: true,
+      });
+      expect(event.requestId).toBe('req-abc-123');
+      expect(event.isMultiAgent).toBe(true);
+    });
   });
 
   // -------------------------------------------------------------------------
