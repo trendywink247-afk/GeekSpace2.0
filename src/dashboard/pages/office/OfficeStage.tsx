@@ -62,9 +62,10 @@ const AGENT_INITIAL_SPEED = 1.0; // default multiplier; behavior system override
 // Easing: smooth start/stop for movement interpolation
 // ---------------------------------------------------------------------------
 
-function easeInOutCubic(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
+// Easing function kept for potential future use
+// function easeInOutCubic(t: number): number {
+//   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+// }
 
 // ---------------------------------------------------------------------------
 // Seat position helpers — agent sits adjacent to their desk tile
@@ -510,16 +511,13 @@ export default function OfficeStage({
 
           if (dist < 0.5) return agent; // close enough — skip update
 
-          // Base speed: 64 px/sec (2 tiles/sec), multiplied by agent personality
-          const BASE_SPEED = 64; // pixels per second
+          // Base speed: 96 px/sec (3 tiles/sec), multiplied by agent personality
+          const BASE_SPEED = 96;
           let speed = BASE_SPEED * (agent.speed || 1.0) * dt;
 
-          // Arrival deceleration: when within 2 tiles (64px), scale speed down
-          if (dist < 64) {
-            const arrivalT = dist / 64; // 0..1
-            speed *= easeInOutCubic(arrivalT);
-            // Minimum speed to avoid getting stuck
-            speed = Math.max(speed, 0.5 * dt * BASE_SPEED * 0.1);
+          // Gentle arrival deceleration in last tile only
+          if (dist < 32) {
+            speed *= 0.5 + 0.5 * (dist / 32);
           }
 
           const move = Math.min(speed, dist);

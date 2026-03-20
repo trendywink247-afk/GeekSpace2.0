@@ -176,15 +176,24 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
       frameCol = frame;
     }
   } else if (agent.state === 'typing' || agent.state === 'responding') {
-    // Typing frames: columns 3-4 from sprite sheet, direction row based on facing
+    // Typing frames: columns 3-4, direction row based on facing
     const f = agent.facing ?? 'down';
     frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
     mirror = f === 'left';
-    frameCol = 3 + (tick % 2); // alternate between col 3 and col 4
+    frameCol = 3 + (tick % 2);
+  } else if (isAtFurniture) {
+    // At furniture: use activity animation (typing frames) to look busy
+    const f = agent.facing ?? 'down';
+    frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
+    mirror = f === 'left';
+    // Alternate between typing frames at a slower pace (every other tick)
+    frameCol = 3 + (Math.floor(tick / 2) % 2);
   } else {
+    // Standing idle: use walk frame 1 (neutral standing pose)
     const f = agent.facing ?? 'down';
     frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
     mirror = f === 'left';
+    frameCol = 1; // frame 1 = standing pose (not 0 which is mid-stride)
   }
 
   // --- Draw PNG sprite (or fallback) ---

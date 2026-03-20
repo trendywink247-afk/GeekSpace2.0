@@ -93,8 +93,8 @@ const AGENT_SPEED: Record<string, number> = {
 const recentWorkers = new Set<AgentId>();
 
 // Module-level timers
-let groupMeetingTimer = randomInt(150, 250); // 30-50 seconds at 200ms/tick
-let socialChatTimer = randomInt(50, 100);    // 10-20 seconds
+let groupMeetingTimer = randomInt(75, 150); // 15-30 seconds — meetings happen more often
+let socialChatTimer = randomInt(25, 50);     // 5-10 seconds — more chatter
 let activeGroupId: string | null = null;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@ export function initBehavior(agent: CanvasAgent): void {
     mode: 'sitting',
     targetPoint: null,
     socialTarget: null,
-    timer: randomInt(300, 600) + stagger, // 60-120s desk sit time (staggered)
+    timer: randomInt(50, 150) + stagger, // 10-30s initial desk time (staggered so agents leave at different times)
     fidgetTimer: randomInt(5, 15),
     fidgetType: 'none',
     speed: AGENT_SPEED[agent.id] ?? 1.0,
@@ -422,12 +422,12 @@ export function tickBehaviors(
   // Trigger group meeting
   if (groupMeetingTimer <= 0) {
     tryStartGroupMeeting(idleAgents);
-    groupMeetingTimer = randomInt(300, 450); // 60-90s
+    groupMeetingTimer = randomInt(100, 200); // 20-40s
   }
 
   // Ambient social chat: a random idle agent says something
   if (socialChatTimer <= 0) {
-    socialChatTimer = randomInt(100, 150); // 20-30s
+    socialChatTimer = randomInt(40, 75); // 8-15s
     const sitters = idleAgents.filter((a) => {
       const bs = behaviorStates.get(a.id);
       return bs && bs.mode === 'sitting';
@@ -502,7 +502,7 @@ export function tickBehaviors(
               updated.pathIndex = 0;
               changed = true;
             } else {
-              bState.timer = randomInt(300, 600); // try again in 60-120s
+              bState.timer = randomInt(100, 200); // try again in 60-120s
             }
           } else if (roll < 0.85) {
             // Social visit -- find a nearby non-dormant idle agent
@@ -529,11 +529,11 @@ export function tickBehaviors(
               updated.pathIndex = 0;
               changed = true;
             } else {
-              bState.timer = randomInt(300, 600); // try again in 60-120s
+              bState.timer = randomInt(100, 200); // try again in 60-120s
             }
           } else {
             // Stay sitting a bit longer
-            bState.timer = randomInt(300, 600); // 60-120s
+            bState.timer = randomInt(100, 200); // 60-120s
           }
         }
         break;
@@ -701,7 +701,7 @@ export function tickBehaviors(
 
         if (agent.x === agent.targetX && agent.y === agent.targetY) {
           bState.mode = 'sitting';
-          bState.timer = randomInt(300, 600); // 60-120s desk sit time
+          bState.timer = randomInt(100, 200); // 60-120s desk sit time
           bState.fidgetTimer = randomInt(5, 15);
           bState.targetPoint = null;
           bState.facing = 'down'; // face desk
