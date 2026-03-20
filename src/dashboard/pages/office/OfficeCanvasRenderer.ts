@@ -151,25 +151,29 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
     const dx = step.x * CELL + CELL / 2 - agent.renderX;
     const dy = step.y * CELL + CELL / 2 - agent.renderY;
 
+    // PNG sheet layout (verified by pixel inspection):
+    //   Row 0: walk down (front face)
+    //   Row 1: activity/sitting (NOT walk up!)
+    //   Row 2: walk up (back view)
+    //   Row 3: walk side (right, mirror for left)
     if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
-      // Arrived — use facing
       const f = agent.facing ?? 'down';
-      frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
+      frameRow = f === 'up' ? 2 : (f === 'left' || f === 'right') ? 3 : 0;
       mirror = f === 'left';
     } else if (Math.abs(dy) >= Math.abs(dx)) {
-      frameRow = dy > 0 ? 0 : 1;
+      frameRow = dy > 0 ? 0 : 2; // down=0, up=2
       frameCol = frame;
     } else {
-      frameRow = 2;
+      frameRow = 3; // side
       mirror = dx < 0;
       frameCol = frame;
     }
   } else if (agent.state === 'typing' || agent.state === 'responding') {
-    frameRow = 3;
+    frameRow = 1; // activity row
     frameCol = tick % 2;
   } else {
     const f = agent.facing ?? 'down';
-    frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
+    frameRow = f === 'up' ? 2 : (f === 'left' || f === 'right') ? 3 : 0;
     mirror = f === 'left';
   }
 
