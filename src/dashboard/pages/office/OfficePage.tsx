@@ -2,19 +2,18 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Monitor } from 'lucide-react';
-import { DraggableDivider } from './DraggableDivider';
 import OfficeStage from './OfficeStage';
 import { SpotlightHUD } from './SpotlightHUD';
 import { AgentProfileFlyout } from './AgentProfileFlyout';
-import ControlRoom from './ControlRoom';
-import { useOfficeSSE } from './useOfficeSSE';
+import SmartSidebar from './SmartSidebar';
+import { useOfficeData } from './useOfficeData';
 import { agentService, agentTasksService } from '@/services/api';
 import {
   CELL, AGENT_META, AGENT_COLORS,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
   CORE_AGENTS,
 } from './constants';
-import type { ControlTab, CanvasAgent, AgentId, CoreAgentId, SpecialistId } from './types';
+import type { CanvasAgent, AgentId, CoreAgentId, SpecialistId } from './types';
 
 // ---------------------------------------------------------------------------
 // Helper: build a CanvasAgent for SpotlightHUD from an agentId
@@ -54,19 +53,9 @@ function getAgentForHUD(id: string): CanvasAgent | null {
 
 export function OfficePage() {
   const navigate = useNavigate();
-  const { events, connectionMode, officeData } = useOfficeSSE();
-
-  // Layout split
-  // On mobile, favor the control room (40% canvas / 60% control); on desktop use saved pref
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const [splitPercent, setSplitPercent] = useState(() => {
-    if (isMobile) return 35;
-    const saved = localStorage.getItem('office-split');
-    return saved ? Number(saved) : 60;
-  });
+  const { sseEvents, officeData, connectionMode, sessionExpired } = useOfficeData();
 
   // State
-  const [activeTab, setActiveTab] = useState<ControlTab>('tasks');
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [flyoutAgentId, setFlyoutAgentId] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState(0);
@@ -100,47 +89,66 @@ export function OfficePage() {
   }, []);
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)] md:h-[calc(100dvh-0px)] pb-24 md:pb-0 overflow-hidden">
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-2.5 border-b-2 border-[#00F0FF]/20"
-        style={{
-          background: 'linear-gradient(to right, #0C0C18, #0A0A16, #0C0C18)',
-          boxShadow: '0 1px 12px rgba(0,240,255,0.06)',
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Monitor className="w-5 h-5 text-[#00F0FF]" />
-            <div
-              className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[#00F0FF]"
-              style={{ boxShadow: '0 0 4px #00F0FF' }}
-            />
+    <div
+      className="relative flex flex-col md:flex-row h-[calc(100dvh-64px)] md:h-dvh overflow-hidden"
+      style={{ background: '#05050A' }}
+    >
+      {/* Session expired banner */}
+      {sessionExpired && (
+        <div
+          className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between gap-3 px-4 py-3"
+          style={{ backgroundColor: '#FF2D7820', borderBottom: '1px solid #FF2D7860' }}
+        >
+          <div className="flex items-center gap-2 text-sm" style={{ color: '#FF2D78' }}>
+            Session expired — live feed paused
           </div>
-          <h1
-            className="text-lg font-bold text-[#F4F6FF] tracking-wide"
-            style={{ fontFamily: 'Syne, sans-serif' }}
-          >
-            Agent Mission Control
-          </h1>
-          {/* Agent count badge */}
-          <span
-            className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider"
-            style={{
-              background: 'rgba(139,92,246,0.12)',
-              color: '#8B5CF6',
-              border: '1px solid rgba(139,92,246,0.2)',
+          <button
+            onClick={() => {
+              localStorage.removeItem('gs_token');
+              localStorage.removeItem('token');
+              navigate('/login');
             }}
+            className="px-3 py-1.5 rounded-md text-xs font-semibold"
+            style={{ backgroundColor: '#FF2D78', color: '#fff' }}
           >
-            9 AGENTS
-          </span>
+            Re-login
+          </button>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Agent status indicators */}
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.03)' }}>
-            <span className="text-xs" title="Weebo">&#x2728;</span>
-            <span className="text-xs" title="Edith">&#x1F537;</span>
-            <span className="text-xs" title="Jarvis">&#x1F916;</span>
+      )}
+
+      {/* Office Stage — 60% desktop, 35vh mobile */}
+      <div className="relative w-full md:w-[60%] h-[35vh] md:h-full flex-shrink-0">
+        {/* Header overlay */}
+        <div
+          className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-2.5"
+          style={{
+            background: 'linear-gradient(to bottom, rgba(5,5,10,0.85) 0%, transparent 100%)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Monitor className="w-5 h-5 text-[#00F0FF]" />
+              <div
+                className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[#00F0FF]"
+                style={{ boxShadow: '0 0 4px #00F0FF' }}
+              />
+            </div>
+            <h1
+              className="text-lg font-bold text-[#F4F6FF] tracking-wide"
+              style={{ fontFamily: 'Syne, sans-serif' }}
+            >
+              Agent Mission Control
+            </h1>
+            <span
+              className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider"
+              style={{
+                background: 'rgba(139,92,246,0.12)',
+                color: '#8B5CF6',
+                border: '1px solid rgba(139,92,246,0.2)',
+              }}
+            >
+              9 AGENTS
+            </span>
           </div>
           {/* Connection badge */}
           <span
@@ -157,10 +165,7 @@ export function OfficePage() {
                 : undefined,
             }}
           >
-            {/* Pulsing status dot */}
-            <span
-              className="relative flex h-2 w-2"
-            >
+            <span className="relative flex h-2 w-2">
               {connectionMode === 'live' && (
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ADFF2F] opacity-50" />
               )}
@@ -181,16 +186,15 @@ export function OfficePage() {
                 : 'POLLING'}
           </span>
         </div>
-      </div>
 
-      {/* Stage (top section) */}
-      <div style={{ height: `${splitPercent}%` }} className="relative overflow-hidden">
+        {/* Canvas */}
         <OfficeStage
-          events={events}
+          events={sseEvents}
           selectedAgentId={selectedAgentId}
           onAgentSelect={setSelectedAgentId}
           onAgentDoubleClick={(id) => setFlyoutAgentId(id)}
         />
+
         {/* Spotlight HUD -- shown when an agent is selected */}
         {spotlightAgent && (
           <SpotlightHUD
@@ -207,7 +211,6 @@ export function OfficePage() {
               if (title && selectedAgentId) {
                 agentTasksService.create({ agent_id: selectedAgentId, title }).catch(() => {});
               } else {
-                setActiveTab('tasks');
                 setSelectedAgentId(null);
               }
             }}
@@ -216,23 +219,15 @@ export function OfficePage() {
         )}
       </div>
 
-      {/* Draggable divider */}
-      <DraggableDivider
-        onResize={(pct) => {
-          setSplitPercent(pct);
-          localStorage.setItem('office-split', String(pct));
-        }}
-      />
-
-      {/* Control Room (bottom section) */}
-      <div style={{ height: `${100 - splitPercent}%` }} className="overflow-hidden">
-        <ControlRoom
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          sseEvents={events}
-          onCreateTask={handleCreateTask}
+      {/* Smart Sidebar — 40% desktop, remaining mobile */}
+      <div
+        className="flex-1 md:w-[40%] border-t md:border-t-0 md:border-l min-h-0 pb-24 md:pb-0"
+        style={{ borderColor: 'rgba(0,240,255,0.15)' }}
+      >
+        <SmartSidebar
           officeData={officeData}
-          activityTimeline={officeData?.timeline}
+          sseEvents={sseEvents}
+          onCreateTask={handleCreateTask}
         />
       </div>
 
