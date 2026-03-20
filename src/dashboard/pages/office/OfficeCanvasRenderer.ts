@@ -114,15 +114,15 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   const color = agent.color;
   const isWalking = agent.path && agent.path.length > 0 && agent.pathIndex < agent.path.length;
 
-  // Sprite dimensions and scaling — 32px tiles need ~2.6x scale for 16px sprites
+  // Sprite dimensions and scaling — unified scale for PNG and code-generated
   const SPRITE_W = 16;
   const SPRITE_H = 24;
-  const pngScale = (CELL / 16) * 1.3; // slightly larger for PNG sheets
-  const codeScale = (CELL / 16) * 1.2; // original scale for code-generated
-  const drawW = SPRITE_W * codeScale;
-  const drawH = SPRITE_H * codeScale;
+  const spriteScale = (CELL / 16) * 1.2; // 2.4x — fits well in 32px tiles
+  const drawW = SPRITE_W * spriteScale;   // 38.4
+  const drawH = SPRITE_H * spriteScale;   // 57.6
+  // Feet-anchored: sprite bottom at cy + 4, head extends upward
   const sx = cx - drawW / 2;
-  const sy = cy - drawH / 2 - 4; // offset up slightly
+  const sy = cy - drawH + 4;
 
   // Agent glow for active (non-idle) agents
   if (agent.state !== 'idle') {
@@ -195,7 +195,7 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
       frameCol = 0;
     }
 
-    pngDrawn = drawSpriteFrame(ctx, agent.id, frameCol, frameRow, cx, cy, pngScale, mirror);
+    pngDrawn = drawSpriteFrame(ctx, agent.id, frameCol, frameRow, cx, cy, spriteScale, mirror);
   }
 
   // --- Fallback to code-generated sprites if PNG didn't draw ---
@@ -252,10 +252,10 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
 export function drawStateIndicator(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number): void {
   const cx = agent.renderX;
   const cy = agent.renderY;
-  // Position above the scaled sprite
+  // Position above the scaled sprite (feet-anchored: top = cy - drawH + 4)
   const spriteScale = (CELL / 16) * 1.2;
   const drawH = 24 * spriteScale;
-  const baseY = cy - drawH / 2 - 4 - 8; // above sprite top with a gap
+  const baseY = cy - drawH + 4 - 8; // above sprite top with a gap
   const bobOffset = tick % 4 < 2 ? 0 : -1;
 
   switch (agent.state) {
