@@ -164,17 +164,25 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
     let mirror = false;
 
     if (isWalking && agent.path && agent.pathIndex < agent.path.length) {
-      const frame = tick % 4;
+      // Ping-pong walk cycle [0,1,2,1] — frame 3 is activity, not walk
+      const WALK_FRAMES = [0, 1, 2, 1];
+      const frame = WALK_FRAMES[tick % 4];
       const next = agent.path[agent.pathIndex];
       const dx = next.x - agent.x;
       const dy = next.y - agent.y;
-      if (Math.abs(dy) >= Math.abs(dx)) {
+      if (dx === 0 && dy === 0) {
+        // Arrived at tile — show neutral standing in current facing
+        frameRow = agent.facing === 'up' ? 1 : agent.facing === 'left' || agent.facing === 'right' ? 2 : 0;
+        if (agent.facing === 'left') mirror = true;
+        frameCol = 0;
+      } else if (Math.abs(dy) >= Math.abs(dx)) {
         frameRow = dy > 0 ? 0 : 1; // down : up
+        frameCol = frame;
       } else {
         frameRow = 2; // right (mirror for left)
         if (dx < 0) mirror = true;
+        frameCol = frame;
       }
-      frameCol = frame;
     } else if (agent.state === 'typing' || agent.state === 'responding') {
       // Typing animation: use row 3 (activity frames), alternate cols
       frameRow = 3;
@@ -204,7 +212,8 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
     let sprite: HTMLCanvasElement;
 
     if (isWalking) {
-      const frame = tick % 4;
+      const WALK_FRAMES_FB = [0, 1, 2, 1]; // ping-pong
+      const frame = WALK_FRAMES_FB[tick % 4];
       const dx = agent.targetX - agent.x;
       const dy = agent.targetY - agent.y;
       if (Math.abs(dx) > Math.abs(dy)) {
