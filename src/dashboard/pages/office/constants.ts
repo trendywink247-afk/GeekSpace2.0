@@ -34,40 +34,36 @@ export const SPECIALIST_PARENT: Record<SpecialistId, CoreAgentId> = {
 export const CORE_AGENTS: CoreAgentId[] = ['weebo', 'edith', 'jarvis'];
 export const SPECIALIST_AGENTS: SpecialistId[] = ['aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
 
-// ── Hand-crafted collision map (27x25, 32px tiles) ──────────────────────────
-// true = blocked (wall/furniture), false = walkable (floor)
-// Object-level masking — each desk, chair, and wall individually mapped.
-// COLLISION_MAP[row][col]: true blocks BFS pathfinding, false allows movement.
-// Collision map matched tile-by-tile to office_bg.webp with grid overlay.
-// T=true(blocked), F=false(walkable). Stairway corridor (cols 6-11, rows 7-11) connects floors.
+// Auto-generated from office_collision.webp — pixel-accurate collision map.
+// Each 32x32 tile sampled from the collision mask image (black=blocked, transparent=walkable).
+// 298 walkable tiles, all in single connected zone.
 const T = true, F = false;
 export const COLLISION_MAP: boolean[][] = [
-// col: 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26
-  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 0: outer wall / trees
-  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, F, F, T, T, T, T, T, T, T, T, T, T],  // 1: patio fence, lounge wall
-  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, F, F, T, T, T, T, T, T, T, T, T, T],  // 2: patio chairs/tables (blocked), lounge couch(blocked)
-  [T, F, T, T, F, T, F, T, T, T, F, F, T, T, T, F, F, F, F, F, F, F, T, T, F, F, T],  // 3: patio floor between tables, pantry counter, lounge floor
-  [T, F, F, T, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, F, F, T, T, F, F, T],  // 4: patio floor, pantry floor
-  [T, F, F, F, F, T, F, F, F, F, F, F, T, T, F, T, T, T, T, T, F, F, T, T, F, F, T],  // 5: patio edge, glass door area, lounge rug
-  [T, F, F, T, F, T, F, F, F, F, F, F, T, T, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 6: patio lower + lounge lower floor
-  [T, F, F, F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 7: stairway + connecting corridor to lounge
-  [T, T, T, T, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 8: stairway + right corridor (all connected)
-  [T, T, T, T, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 9: stairway + right corridor
-  [T, T, T, T, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 10: stairway + right corridor
-  [T, F, F, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 11: utility room + stairway bottom
-  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 12: main hallway (connects ALL areas)
-  [T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 13: main corridor — wide open
-  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 14: workspace floor + meeting room floor
-  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, F, F, T],  // 15: workspace floor + meeting table starts
-  [T, F, F, T, T, T, T, F, F, T, T, T, T, F, F, F, F, F, T, T, T, T, T, T, F, F, T],  // 16: desk clusters + meeting table
-  [T, F, T, T, T, T, T, F, T, T, T, T, T, F, F, F, F, F, T, T, T, T, T, T, F, F, T],  // 17: desk clusters
-  [T, F, T, T, T, T, T, F, T, T, T, T, T, F, F, F, F, F, F, T, T, T, T, F, F, F, T],  // 18: desk clusters
-  [T, F, T, T, T, T, T, F, T, T, T, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 19: desk bottom + meeting room floor
-  [T, F, T, T, T, T, T, F, T, T, T, T, T, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 20: bottom desks, south wall
-  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 21: bottom corridor
-  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 22: south wall
-  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 23: trees
-  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 24: trees
+  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 0
+  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 1
+  [T, T, T, T, T, T, T, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 2
+  [T, F, T, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 3
+  [T, F, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, F, F, F, T, F, F, F, F, T, T],  // 4
+  [T, F, F, F, F, T, T, F, F, F, T, T, F, F, T, F, F, F, F, F, T, F, F, F, F, T, T],  // 5
+  [T, F, F, T, F, T, T, F, F, F, T, T, F, F, F, F, F, T, T, F, T, F, F, F, F, T, T],  // 6
+  [T, F, F, F, F, T, T, F, F, F, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, T, T],  // 7
+  [T, T, T, T, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, T],  // 8
+  [T, T, T, T, T, T, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 9
+  [T, T, T, T, T, T, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 10
+  [T, F, F, F, F, T, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 11
+  [T, T, T, F, F, T, F, F, F, F, F, F, F, F, F, T, T, T, T, T, F, F, F, F, F, T, T],  // 12
+  [T, T, F, F, F, T, F, F, F, F, F, F, F, F, F, T, F, F, F, F, F, F, F, F, F, F, T],  // 13
+  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, F, F, F, F, F, F, F, F, F, F, T],  // 14
+  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, F, F, F, T, T, T, T, T, F, F, T],  // 15
+  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, F, F, F, T, T, T, T, T, F, F, T],  // 16
+  [T, F, T, T, T, T, T, F, T, T, T, T, T, F, F, F, F, F, F, T, T, T, T, T, F, F, T],  // 17
+  [T, F, T, T, T, T, T, F, T, T, T, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 18
+  [T, F, T, T, T, T, T, F, T, T, T, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 19
+  [T, F, T, F, F, F, T, F, T, F, F, F, T, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 20
+  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 21
+  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 22
+  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 23
+  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 24
 ];
 
 // Desk positions — spread across rooms for visual variety
