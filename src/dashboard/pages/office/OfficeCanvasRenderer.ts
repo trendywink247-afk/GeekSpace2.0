@@ -108,163 +108,114 @@ export function drawForeground(ctx: CanvasRenderingContext2D): void {
 // ---------------------------------------------------------------------------
 
 export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number, isSelected: boolean): void {
-  // Use smooth interpolated pixel position for rendering
-  const cx = agent.renderX;
-  const cy = agent.renderY;
+  const cx = Math.round(agent.renderX);
+  const cy = Math.round(agent.renderY);
   const color = agent.color;
   const isWalking = agent.path && agent.path.length > 0 && agent.pathIndex < agent.path.length;
 
-  // Sprite dimensions and scaling
-  const SPRITE_W = 16;
-  const SPRITE_H = 24;
-  const SPRITE_FEET_ROW = 20; // character's feet end at row 20 of 24 (4 empty rows below)
-  const spriteScale = (CELL / 16) * 1.2; // 2.4x — fits well in 32px tiles
-  const drawW = SPRITE_W * spriteScale;   // 38.4
-  const drawH = SPRITE_H * spriteScale;   // 57.6
-  // Feet-anchored: character's feet (row 20) align with agent's tile center.
-  // Empty rows below feet: (24 - 20) * scale = 4 * 2.4 = 9.6px of dead space at bottom.
-  // So shift sprite down by that amount to compensate.
-  const feetOffset = Math.round((SPRITE_H - SPRITE_FEET_ROW) * spriteScale); // ~10px
-  const sx = Math.round(cx - drawW / 2);
-  const sy = Math.round(cy - drawH + feetOffset);
+  // INTEGER scale only — 2x. Pixel art MUST use integer scale or it breaks.
+  // 16x24 sprite × 2 = 32x48 drawn pixels. Exactly 1 tile wide, 1.5 tiles tall.
+  const SCALE = 2;
+  const DW = 16 * SCALE; // 32
+  const DH = 24 * SCALE; // 48
 
-  // Agent glow for active (non-idle) agents
+  // Anchor: sprite drawn so feet sit at bottom of agent's tile.
+  // Agent renderX/Y = tile center = (gridX*32+16, gridY*32+16).
+  // Tile bottom = cy + 16. Sprite bottom = drawY + DH.
+  // So drawY = (cy + 16) - DH = cy + 16 - 48 = cy - 32.
+  const drawX = cx - DW / 2; // centered horizontally
+  const drawY = cy - DH + 16; // feet at tile bottom
+
+  // Glow for active agents
   if (agent.state !== 'idle') {
-    ctx.fillStyle = hexToRgba(agent.color, 0.08);
-    ctx.fillRect(cx - CELL / 2 - CELL, cy - CELL / 2 - CELL, CELL * 4, CELL * 4);
-    ctx.fillStyle = hexToRgba(agent.color, 0.04);
-    ctx.fillRect(cx - CELL / 2 - CELL * 2, cy - CELL / 2 - CELL * 2, CELL * 6, CELL * 6);
+    ctx.fillStyle = hexToRgba(agent.color, 0.06);
+    ctx.fillRect(cx - CELL, cy - CELL, CELL * 2, CELL * 2);
   }
 
-  // Selected agent — pulsing ring
+  // Selection ring
   if (isSelected) {
-    const pulseAlpha = tick % 2 === 0 ? 0.4 : 0.2;
-    ctx.fillStyle = hexToRgba(color, pulseAlpha);
-    const ringPad = 3;
-    const ringX = Math.round(sx) - ringPad;
-    const ringY = Math.round(sy) - ringPad;
-    const ringW = Math.round(drawW) + ringPad * 2;
-    const ringH = Math.round(drawH) + ringPad * 2;
-    ctx.fillRect(ringX, ringY, ringW, 1);            // top
-    ctx.fillRect(ringX, ringY + ringH, ringW, 1);    // bottom
-    ctx.fillRect(ringX, ringY, 1, ringH);             // left
-    ctx.fillRect(ringX + ringW - 1, ringY, 1, ringH); // right
-    // Corner accents
-    ctx.fillRect(ringX - 1, ringY - 1, 3, 1);
-    ctx.fillRect(ringX - 1, ringY - 1, 1, 3);
-    ctx.fillRect(ringX + ringW - 2, ringY - 1, 3, 1);
-    ctx.fillRect(ringX + ringW, ringY - 1, 1, 3);
-    ctx.fillRect(ringX - 1, ringY + ringH, 3, 1);
-    ctx.fillRect(ringX - 1, ringY + ringH - 2, 1, 3);
-    ctx.fillRect(ringX + ringW - 2, ringY + ringH, 3, 1);
-    ctx.fillRect(ringX + ringW, ringY + ringH - 2, 1, 3);
+    const a = tick % 2 === 0 ? 0.4 : 0.2;
+    ctx.strokeStyle = hexToRgba(color, a);
+    ctx.strokeRect(drawX - 2, drawY - 2, DW + 4, DH + 4);
   }
 
-  // --- Try PNG sprite sheet first ---
-  let pngDrawn = false;
-  {
-    let frameCol = 0;
-    let frameRow = 0;
-    let mirror = false;
+  // --- Determine sprite frame ---
+  let frameCol = 0;
+  let frameRow = 0;
+  let mirror = false;
 
-    if (isWalking && agent.path && agent.pathIndex < agent.path.length) {
-      // Ping-pong walk cycle [0,1,2,1] — frame 3 is activity, not walk
-      const WALK_FRAMES = [0, 1, 2, 1];
-      const frame = WALK_FRAMES[tick % 4];
+  if (isWalking && agent.path && agent.pathIndex < agent.path.length) {
+    const WALK = [0, 1, 2, 1]; // ping-pong
+    const frame = WALK[tick % 4];
+    const step = agent.path[agent.pathIndex];
+    const dx = step.x * CELL + CELL / 2 - agent.renderX;
+    const dy = step.y * CELL + CELL / 2 - agent.renderY;
 
-      // Use pixel-level direction (renderX/Y → target pixel) for smooth direction detection.
-      // Grid-level dx/dy causes breakup when agent.x advances but renderX is still lerping.
-      const nextStep = agent.path[agent.pathIndex];
-      const targetPx = nextStep.x * CELL + CELL / 2;
-      const targetPy = nextStep.y * CELL + CELL / 2;
-      const pxDx = targetPx - agent.renderX;
-      const pxDy = targetPy - agent.renderY;
-
-      if (Math.abs(pxDx) < 1 && Math.abs(pxDy) < 1) {
-        // At target pixel — use facing direction from behavior system
-        const f = agent.facing ?? 'down';
-        frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
-        mirror = f === 'left';
-        frameCol = 0;
-      } else if (Math.abs(pxDy) >= Math.abs(pxDx)) {
-        frameRow = pxDy > 0 ? 0 : 1; // down : up
-        frameCol = frame;
-      } else {
-        frameRow = 2; // right (mirror for left)
-        mirror = pxDx < 0;
-        frameCol = frame;
-      }
-    } else if (agent.state === 'typing' || agent.state === 'responding') {
-      // Typing animation: use row 3 (activity frames), alternate cols
-      frameRow = 3;
-      frameCol = tick % 2;
-    } else if (agent.facing) {
-      // Idle but facing a direction — static frame (col 0)
-      switch (agent.facing) {
-        case 'down': frameRow = 0; break;
-        case 'up': frameRow = 1; break;
-        case 'right': frameRow = 2; break;
-        case 'left': frameRow = 2; mirror = true; break;
-        default: frameRow = 0;
-      }
-      frameCol = 0;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
+      // Arrived — use facing
+      const f = agent.facing ?? 'down';
+      frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
+      mirror = f === 'left';
+    } else if (Math.abs(dy) >= Math.abs(dx)) {
+      frameRow = dy > 0 ? 0 : 1;
+      frameCol = frame;
     } else {
-      // Default idle: front-facing
-      frameRow = 0;
-      frameCol = 0;
+      frameRow = 2;
+      mirror = dx < 0;
+      frameCol = frame;
     }
-
-    pngDrawn = drawSpriteFrame(ctx, agent.id, frameCol, frameRow, cx, cy, spriteScale, mirror);
+  } else if (agent.state === 'typing' || agent.state === 'responding') {
+    frameRow = 3;
+    frameCol = tick % 2;
+  } else {
+    const f = agent.facing ?? 'down';
+    frameRow = f === 'up' ? 1 : (f === 'left' || f === 'right') ? 2 : 0;
+    mirror = f === 'left';
   }
 
-  // --- Fallback to code-generated sprites if PNG didn't draw ---
-  if (!pngDrawn) {
+  // --- Draw PNG sprite (or fallback) ---
+  let drawn = drawSpriteFrame(ctx, agent.id, frameCol, frameRow, drawX, drawY, DW, DH, mirror);
+
+  if (!drawn) {
     const sprites = getAgentSprites(agent.id);
     let sprite: HTMLCanvasElement;
 
     if (isWalking) {
-      const WALK_FRAMES_FB = [0, 1, 2, 1]; // ping-pong
-      const frame = WALK_FRAMES_FB[tick % 4];
-      // Use pixel-level direction for consistency with PNG path
-      const fbTargetX = agent.targetX * CELL + CELL / 2;
-      const fbTargetY = agent.targetY * CELL + CELL / 2;
-      const fbDx = fbTargetX - agent.renderX;
-      const fbDy = fbTargetY - agent.renderY;
-      if (Math.abs(fbDx) > Math.abs(fbDy)) {
-        sprite = fbDx > 0 ? sprites.walkRight[frame] : sprites.walkLeft[frame];
+      const frame = [0, 1, 2, 1][tick % 4];
+      const dx = agent.targetX * CELL + CELL / 2 - agent.renderX;
+      const dy = agent.targetY * CELL + CELL / 2 - agent.renderY;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        sprite = dx > 0 ? sprites.walkRight[frame] : sprites.walkLeft[frame];
       } else {
-        sprite = fbDy > 0 ? sprites.walkDown[frame] : sprites.walkUp[frame];
+        sprite = dy > 0 ? sprites.walkDown[frame] : sprites.walkUp[frame];
       }
     } else if (agent.state === 'typing' || agent.state === 'responding') {
       sprite = sprites.typing[tick % 2];
-    } else if (agent.facing) {
-      switch (agent.facing) {
-        case 'down': sprite = sprites.walkDown[0]; break;
+    } else {
+      const f = agent.facing ?? 'down';
+      switch (f) {
         case 'up': sprite = sprites.walkUp[0]; break;
         case 'right': sprite = sprites.walkRight[0]; break;
         case 'left': sprite = sprites.walkLeft[0]; break;
         default: sprite = sprites.idle;
       }
-    } else {
-      sprite = sprites.idle;
     }
 
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(sprite, sx, sy, Math.round(drawW), Math.round(drawH));
+    ctx.drawImage(sprite, drawX, drawY, DW, DH);
     ctx.imageSmoothingEnabled = true;
+    drawn = true;
   }
 
-  // Shadow under feet
-  ctx.fillStyle = hexToRgba(color, 0.08);
-  ctx.fillRect(cx - 8, sy + drawH, 16, 2);
-  ctx.fillStyle = hexToRgba(color, 0.04);
-  ctx.fillRect(cx - 10, sy + drawH + 1, 20, 1);
+  // Shadow
+  ctx.fillStyle = hexToRgba(color, 0.1);
+  ctx.fillRect(cx - 6, drawY + DH, 12, 2);
 
-  // Name label below sprite
+  // Name label
   ctx.font = '9px monospace';
   ctx.textAlign = 'center';
   ctx.fillStyle = hexToRgba(color, 0.7);
-  ctx.fillText(agent.id.slice(0, 5).toUpperCase(), cx, sy + drawH + 13);
+  ctx.fillText(agent.id.slice(0, 5).toUpperCase(), cx, drawY + DH + 11);
 }
 
 // ---------------------------------------------------------------------------
@@ -275,11 +226,10 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
 export function drawStateIndicator(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number): void {
   const cx = agent.renderX;
   const cy = agent.renderY;
-  // Position above the scaled sprite
-  const spriteScale = (CELL / 16) * 1.2;
-  const drawH = 24 * spriteScale;
-  const feetOffset = Math.round((24 - 20) * spriteScale); // same as drawAgent
-  const baseY = Math.round(cy - drawH + feetOffset - 8); // above sprite top with gap
+  // Position above sprite (2x scale: sprite is 48px tall, feet at cy+16)
+  const DH = 48;
+  const drawY = cy - DH + 16;
+  const baseY = drawY - 8; // above sprite top with gap
   const bobOffset = tick % 4 < 2 ? 0 : -1;
 
   switch (agent.state) {

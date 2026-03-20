@@ -1112,14 +1112,22 @@ export function areSpriteSheetLoaded(): boolean {
  * scale: render scale factor
  * mirror: if true, flip horizontally (for left-facing)
  */
+/**
+ * Draw a single sprite frame from a PNG sheet.
+ * @param destX - left edge of destination rectangle (pre-calculated by caller)
+ * @param destY - top edge of destination rectangle (pre-calculated by caller)
+ * @param destW - width of destination rectangle (integer, e.g. 32)
+ * @param destH - height of destination rectangle (integer, e.g. 48)
+ */
 export function drawSpriteFrame(
   ctx: CanvasRenderingContext2D,
   agentId: string,
   frameCol: number,
   frameRow: number,
-  x: number,
-  y: number,
-  scale: number,
+  destX: number,
+  destY: number,
+  destW: number,
+  destH: number,
   mirror?: boolean,
 ): boolean {
   const mapping = AGENT_SHEET_MAP[agentId];
@@ -1128,38 +1136,30 @@ export function drawSpriteFrame(
   const sheet = SPRITE_SHEETS.get(`char_${mapping.sheet}`);
   if (!sheet || !sheet.loaded) return false;
 
-  const sx = frameCol * sheet.frameWidth;
-  const sy = frameRow * sheet.frameHeight;
-  const dw = sheet.frameWidth * scale;
-  const dh = sheet.frameHeight * scale;
+  const srcX = frameCol * sheet.frameWidth;
+  const srcY = frameRow * sheet.frameHeight;
 
-  // Determine source image — original or hue-shifted
   const sourceImage: HTMLImageElement | HTMLCanvasElement = mapping.hueShift
     ? getHueShiftedImage(sheet, agentId, mapping.hueShift)
     : sheet.image;
-
-  // Character feet are at row ~20 of 24. Compensate for empty bottom rows.
-  const FEET_ROW = 20;
-  const feetOffset = Math.round((sheet.frameHeight - FEET_ROW) * scale); // dead space at bottom
-  const destX = Math.round(x - dw / 2);
-  const destY = Math.round(y - dh + feetOffset);
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
 
   if (mirror) {
-    ctx.translate(x, 0);
+    // Flip horizontally: translate to right edge, scale -1
+    ctx.translate(destX + destW, destY);
     ctx.scale(-1, 1);
     ctx.drawImage(
       sourceImage,
-      sx, sy, sheet.frameWidth, sheet.frameHeight,
-      -Math.round(dw / 2), destY, Math.round(dw), Math.round(dh),
+      srcX, srcY, sheet.frameWidth, sheet.frameHeight,
+      0, 0, destW, destH,
     );
   } else {
     ctx.drawImage(
       sourceImage,
-      sx, sy, sheet.frameWidth, sheet.frameHeight,
-      destX, destY, Math.round(dw), Math.round(dh),
+      srcX, srcY, sheet.frameWidth, sheet.frameHeight,
+      destX, destY, destW, destH,
     );
   }
 
