@@ -1,8 +1,30 @@
 # AI Handoff — Beast Mode Sessions 1-7+
-**Date:** 2026-03-20
-**Branch:** main @ 6ff49e6
-**Status:** CI GREEN | Tests: 2518 pass | TS: 0 errors | Health: 12/12 OK
-**Model:** claude-opus-4-6
+**Date:** 2026-03-21
+**Branch:** main @ 7e249b3
+**Status:** 1 test failing | Tests: 2553 pass / 1 fail / 29 skip | TS: 0 errors | Health: 12/12 OK
+**Model:** claude-sonnet-4-6
+
+---
+
+## Post-Session-7 Work (2026-03-21) — Office Overhaul + LLM Routing
+
+### Office Page (33+ commits since 6ff49e6)
+- Unified activity-stream service (replaces agent-state-bus), 12 event types
+- 60/40 horizontal layout: canvas left, SmartSidebar right
+- TimelineCard — live event feed with agent attribution
+- SmartSidebar — contextual info panel
+- Animation tiers: canvas effects module, tier selector
+- Insight toasts, mobile adaptation
+- Smart object behaviors — personality preferences, furniture interactions
+- Day/night mode
+- Agent visual offsets, task labels, meeting glow, thinking bubbles
+- Loading flash fix (show loading state until assets ready)
+- Pixel-accurate collision map from office_collision.webp
+- BFS pathfinding improvements, open stairway corridor
+
+### LLM Routing
+- Switched to Ollama-first with hermes3:8b (better tool calling, no racing)
+- Groq as fallback (was primary before revert)
 
 ---
 
@@ -43,13 +65,20 @@ tool calling (Groq forced), Telegram commands, landing page, 12+ pages polished
 
 ---
 
-## Test Count: 2258 → 2518 (+260)
+## Test Count: 2258 → 2518 → 2553 (1 failing)
 
 ## Active Blockers
 - BLOCKER-001: MOONSHOT_API_KEY
 - BLOCKER-002: FAL_KEY (video gen)
-- BLOCKER-004: Ollama CPU-only
+- BLOCKER-004: Ollama CPU-only (hermes3:8b running but slow)
 - BLOCKER-012: WINDMILL_TOKEN
+
+## Uncommitted Changes (as of 2026-03-21)
+- `.claude/settings.json`
+- `CLAUDE.md`
+- `caddy/Caddyfile`
+- `docker-compose.yml`
+- `.superpowers/brainstorm/` (new dir)
 
 ## Deploy
 ```bash
