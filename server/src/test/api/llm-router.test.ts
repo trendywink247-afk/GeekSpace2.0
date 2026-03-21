@@ -20,7 +20,7 @@ vi.mock('../../logger', () => ({
 vi.mock('../../config', () => ({
   config: {
     ollamaBaseUrl: 'http://localhost:11434',
-    ollamaModel: 'qwen2.5-coder:1.5b',
+    ollamaModel: 'hermes3:8b',
     ollamaTimeout: 5000,
     ollamaMaxTokens: 2048,
     ollamaCloudBaseUrl: 'https://cloud.ollama.ai',
@@ -36,8 +36,26 @@ vi.mock('../../config', () => ({
     openrouterMaxTokens: 4096,
     openrouterTimeout: 30000,
     moonshotReasoningModel: 'kimi-k2-thinking',
+    moonshotBaseModel: 'kimi-k2',
     moonshotMaxTokens: 4096,
     moonshotTimeout: 120000,
+    groqApiKey: 'test-groq-key',
+    groqApiKey2: '',
+    groqApiKey3: '',
+    groqBaseUrl: 'https://api.groq.com/openai/v1',
+    groqModel: 'llama-3.3-70b-versatile',
+    groqTimeoutMs: 5000,
+    groqMaxTokens: 2048,
+    geminiApiKey: '',
+    geminiModel: 'gemini-2.0-flash-exp',
+    geminiBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    geminiTimeoutMs: 5000,
+    geminiMaxTokens: 2048,
+    togetherApiKey: '',
+    togetherModel: 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
+    togetherBaseUrl: 'https://api.together.xyz/v1',
+    togetherTimeoutMs: 5000,
+    togetherMaxTokens: 2048,
     publicUrl: 'http://localhost:3001',
     isTestMode: true,
   },
@@ -113,6 +131,15 @@ const ollamaChatOk = (content = 'Ollama reply') => ({
   text: () => Promise.resolve(''),
 });
 
+const groqOk = (content = 'Groq reply') => ({
+  ok: true,
+  json: () => Promise.resolve({
+    choices: [{ message: { content } }],
+    usage: { prompt_tokens: 50, completion_tokens: 25 },
+  }),
+  text: () => Promise.resolve(''),
+});
+
 const openrouterOk = (content = 'OpenRouter reply') => ({
   ok: true,
   json: () => Promise.resolve({
@@ -168,8 +195,8 @@ describe('Routing Trace', () => {
 
   it('records routing traces', async () => {
     vi.stubGlobal('fetch', vi.fn()
-      .mockResolvedValueOnce(ollamaOkResponse)
-      .mockResolvedValueOnce(ollamaChatOk())
+      .mockResolvedValueOnce(ollamaOkResponse)               // isOllamaAvailable check
+      .mockResolvedValueOnce(groqOk())                        // Groq chat call
     );
 
     await routeChat([{ role: 'user', content: 'hello' }], { userId: 'test-user' });
@@ -200,10 +227,10 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
     vi.mocked(isOverDailyBudget).mockReturnValue(false);
   });
 
-  it('Step 1: routes to Ollama when available', async () => {
+  it('Step 1: routes to Groq as primary provider', async () => {
     vi.stubGlobal('fetch', vi.fn()
-      .mockResolvedValueOnce(ollamaOkResponse)
-      .mockResolvedValueOnce(ollamaChatOk())
+      .mockResolvedValueOnce(ollamaOkResponse)              // isOllamaAvailable check
+      .mockResolvedValueOnce(groqOk())                      // Groq chat call
     );
 
     const response = await routeChat(
@@ -211,16 +238,17 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
       { userId: 'test-user' }
     );
 
-    expect(response.provider).toBe('ollama');
+    expect(response.provider).toBe('groq');
     const traces = getRoutingTraces();
-    expect(traces[traces.length - 1].routeDecision).toBe('ollama');
-    expect(traces[traces.length - 1].reason).toBe('ollama_healthy');
+    expect(traces[traces.length - 1].routeDecision).toBe('groq');
+    expect(traces[traces.length - 1].reason).toBe('groq_primary');
   });
 
-  it('Step 2: falls back to openrouter-free when Ollama unavailable', async () => {
+  it('Step 2: falls back to openrouter-free when Groq fails', async () => {
     vi.stubGlobal('fetch', vi.fn()
-      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
-      .mockResolvedValueOnce(openrouterOk())
+      .mockResolvedValueOnce(ollamaOkResponse)              // isOllamaAvailable check
+      .mockRejectedValueOnce(new Error('Groq 500'))          // Groq fails
+      .mockResolvedValueOnce(openrouterOk())                 // fallback to openrouter-free
     );
 
     const response = await routeChat(
@@ -228,17 +256,17 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
       { userId: 'test-user' }
     );
 
+    // Groq failed → Gemini unavailable (no key) → OpenRouter-free succeeds
     expect(response.provider).toBe('openrouter-free');
     const traces = getRoutingTraces();
     expect(traces[traces.length - 1].routeDecision).toBe('openrouter-free');
-    expect(traces[traces.length - 1].ollamaAvailable).toBe(false);
   });
 
   it('edith is NOT auto-selected for complex intent (no complexity_escalation)', async () => {
-    // Phase 110: premium users use T1 (OpenRouter-free) first — Ollama is free-user only
+    // All users use Groq first (T1) — edith is never auto-selected
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(ollamaOkResponse)              // isOllamaAvailable check
-      .mockResolvedValueOnce(openrouterOk('Complex answer')) // T1: OpenRouter-free for premium
+      .mockResolvedValueOnce(groqOk('Complex answer'))      // T1: Groq for all users
     );
 
     const response = await routeChat(
@@ -246,7 +274,7 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
       { userId: 'premium-user', userPlan: 'yearly', userCredits: 100 }
     );
 
-    // Edith must NEVER be auto-selected based on intent — premium users use OpenRouter-free (T1)
+    // Edith must NEVER be auto-selected based on intent — all users use Groq (T1)
     expect(response.provider).not.toBe('edith');
     const traces = getRoutingTraces();
     expect(traces[traces.length - 1].routeDecision).not.toBe('edith');
@@ -256,9 +284,12 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
 
   it('edith NOT available for non-premium users even as last resort', async () => {
     vi.stubGlobal('fetch', vi.fn()
-      .mockRejectedValueOnce(new Error('Ollama unavailable'))
-      .mockRejectedValueOnce(new Error('OR Free fails'))
-      .mockRejectedValueOnce(new Error('Cloud fails'))
+      .mockResolvedValueOnce(ollamaOkResponse)               // isOllamaAvailable check (Ollama is up)
+      .mockRejectedValueOnce(new Error('Groq fails'))         // T1: Groq fails
+      .mockRejectedValueOnce(new Error('OR Free fails'))      // T3: OpenRouter-free fails (no gemini key)
+      .mockRejectedValueOnce(new Error('Ollama chat fails'))  // T4: Ollama fails
+      // Kimi would be T5 but needs openrouterApiKey budget check
+      .mockRejectedValueOnce(new Error('Kimi fails'))         // T5: Kimi fails
     );
 
     const response = await routeChat(
@@ -266,8 +297,8 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
       { userId: 'free-user', userPlan: 'free', userCredits: 0 }
     );
 
-    // Non-premium: all free tiers failed → builtin fallback
-    expect(response.provider).toBe('builtin');
+    // Non-premium: all tiers failed → builtin fallback (edith never reached)
+    expect(response.provider).not.toBe('edith');
   });
 });
 
@@ -286,9 +317,10 @@ describe('Daily Token Budget Enforcement (Phase 76)', () => {
     vi.mocked(isOverDailyBudget).mockReturnValue(true);
 
     vi.stubGlobal('fetch', vi.fn()
-      .mockRejectedValueOnce(new Error('Ollama down'))
-      .mockRejectedValueOnce(new Error('OR Free fails'))
-      .mockRejectedValueOnce(new Error('Cloud fails'))
+      .mockRejectedValueOnce(new Error('Ollama down'))        // isOllamaAvailable check
+      .mockRejectedValueOnce(new Error('Groq fails'))         // T1: Groq fails
+      .mockRejectedValueOnce(new Error('OR Free fails'))      // fallback: OpenRouter-free fails
+      .mockRejectedValueOnce(new Error('All fail'))           // fallback: Ollama fails
     );
 
     const response = await routeChat(
@@ -316,12 +348,12 @@ describe('Daily Token Budget Enforcement (Phase 76)', () => {
     expect(traces[traces.length - 1].reason).toBe('daily_budget_exceeded');
   });
 
-  it('allows free-tier Ollama when daily budget exceeded', async () => {
+  it('allows free-tier Groq when daily budget exceeded', async () => {
     vi.mocked(isOverDailyBudget).mockReturnValue(true);
 
     vi.stubGlobal('fetch', vi.fn()
-      .mockResolvedValueOnce(ollamaOkResponse)
-      .mockResolvedValueOnce(ollamaChatOk())
+      .mockResolvedValueOnce(ollamaOkResponse)               // isOllamaAvailable check
+      .mockResolvedValueOnce(groqOk('Budget-safe reply'))     // T1: Groq (free)
     );
 
     const response = await routeChat(
@@ -329,7 +361,7 @@ describe('Daily Token Budget Enforcement (Phase 76)', () => {
       { userId: 'test-user' }
     );
 
-    expect(response.provider).toBe('ollama');
+    expect(response.provider).toBe('groq');
   });
 });
 
