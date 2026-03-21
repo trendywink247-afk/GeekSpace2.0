@@ -35,6 +35,13 @@ vi.mock('../../config', () => ({
     openrouterModel: 'anthropic/claude-3-haiku',
     openrouterMaxTokens: 4096,
     openrouterTimeout: 30000,
+    groqApiKey: 'test-groq-key',
+    groqApiKey2: '',
+    groqApiKey3: '',
+    groqBaseUrl: 'https://api.groq.com/openai/v1',
+    groqModel: 'llama-3.3-70b-versatile',
+    groqTimeoutMs: 30000,
+    groqMaxTokens: 2048,
     moonshotReasoningModel: 'kimi-k2-thinking',
     moonshotMaxTokens: 4096,
     moonshotTimeout: 120000,
@@ -217,10 +224,10 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
     expect(traces[traces.length - 1].reason).toBe('ollama_healthy');
   });
 
-  it('Step 2: falls back to openrouter-free when Ollama unavailable', async () => {
+  it('Step 2: falls back to openrouter-free (T1.5) when Ollama unavailable', async () => {
     vi.stubGlobal('fetch', vi.fn()
-      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
-      .mockResolvedValueOnce(openrouterOk())
+      .mockRejectedValueOnce(new Error('ECONNREFUSED')) // Ollama health check fails
+      .mockResolvedValueOnce(openrouterOk())            // T1.5: OpenRouter-free succeeds
     );
 
     const response = await routeChat(

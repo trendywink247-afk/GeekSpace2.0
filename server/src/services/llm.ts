@@ -1,24 +1,26 @@
 // ============================================================
-// GeekSpace LLM Router — Phase 110: Multi-Provider Waterfall
+// GeekSpace LLM Router — Phase 112: Dynamic Free-Tier + Kimi Per-User Cap
 //
-// FREE users:
-//   Tier 1+6: Race(OpenRouter-free, Ollama qwen3:8b) → first wins
-//   Tier 2:   Groq Llama 3.3 70B (free quota)
-//   Tier 3:   Groq Kimi K2 (paid, system $5/mo budget)
-//   Tier 0:   Builtin error
+// Tier 0 (PicoClaw):     simple/code-micro intent → qwen2.5-coder:1.5b (88ms, $0)
+// automation intent:     OpenRouter-free first (Qwen3 235B MoE >> hermes3:8b for tool calling)
 //
-// PAID users:
-//   Tier 1: OpenRouter-free (user's chosen model)
-//   Tier 2: Groq Llama 3.3 70B (free)
-//   Tier 3: Groq Kimi K2 (paid, system budget)
-//   Tier 4: Together AI Maverick (paid)
-//   Tier 5: Edith/Kimi K2.5 (paid, true last resort)
-//   Tier 0: Builtin error
+// ALL users — sequential waterfall:
+//   Tier 1:   Ollama hermes3:8b          ($0, local)
+//   Tier 1.5: OpenRouter-free            ($0, dynamic model rotation — Qwen3 235B, Llama 3.3 70B, etc.)
+//              — Ollama fallback + automation-intent primary
+//   Tier 2:   Groq Llama 3.3 70B        ($0, free quota, 43,200 req/day × 3 keys)
+//   Tier 3:   Together Qwen3.5 9B       ($0.10/$0.15/1M, subject to $2/day system cap)
+//
+// PREMIUM users only (after Tier 2 fails):
+//   Tier 4:   Together Maverick 17B×128E ($0.27/$0.85/1M, 1M ctx)
+//   Tier 5:   Kimi K2                    ($5/mo system cap + 3 calls/user/day cap)
+//   Tier 6:   Edith/Kimi K2.5           (last resort)
 //
 // Budget exceeded (overBudget / overDailyBudget):
-//   → degrade to free providers only (T1+T6 race or T2 Groq)
+//   → degrade to free providers only (Ollama → Groq → builtin)
 //
-// Special: automation intent → PicoClaw sidecar (all users)
+// Together daily budget ($2.00 default, TOGETHER_DAILY_BUDGET_CENTS):
+//   Shared across all users. If exhausted, skip Tier 3/4 for the day.
 // ============================================================
 
 import { createHash } from 'crypto';
@@ -31,8 +33,8 @@ import { cacheGet, cacheSet } from './cache.js';
 
 // ---- Types ----
 
-export type Intent = 'simple' | 'planning' | 'coding' | 'automation' | 'complex';
-export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'groq' | 'kimi' | 'gemini' | 'together' | 'edith' | 'picoclaw' | 'builtin';
+export type Intent = 'simple' | 'code-micro' | 'planning' | 'coding' | 'automation' | 'complex';
+export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'groq' | 'kimi' | 'gemini' | 'together' | 'together-qwen' | 'edith' | 'picoclaw' | 'builtin';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -222,6 +224,10 @@ export function classifyIntent(message: string, userId?: string): Intent {
   else if (planningScore >= 2) intent = 'planning';
   else if (complexScore >= 2 || wordCount > 40) intent = 'complex';
   else intent = 'simple';
+
+  // Downgrade very terse coding tasks to code-micro — PicoClaw handles these well
+  // (e.g. "debug error", "sql query" — 2 keywords, 2 words max; longer = real coding task)
+  if (intent === 'coding' && wordCount <= 2) intent = 'code-micro';
 
   logger.info({ intent, userId, messageLength: message.length }, 'llm:intent_classified');
   return intent;
@@ -445,42 +451,16 @@ async function callGroq(
   throw lastError; // all keys rate-limited → fall to next tier
 }
 
-// ---- Together AI (T4: Llama 4 Maverick, paid) ----
+// ---- Together AI (T3: Qwen3.5 9B cheap fallback / T4: Maverick premium) ----
 
 async function callTogether(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
-  if (!config.togetherApiKey) throw new Error('Together AI API key not configured');
-
-  const response = await fetch(`${config.togetherBaseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.togetherApiKey}`,
-    },
-    body: JSON.stringify({
-      model: config.togetherModel,
-      messages,
-      max_tokens: config.togetherMaxTokens,
-    }),
-    signal: AbortSignal.timeout(config.togetherTimeoutMs),
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`Together AI returned ${response.status}: ${text}`);
-  }
-
-  const data = await response.json() as {
-    choices?: Array<{ message?: { content: string } }>;
-    usage?: { prompt_tokens: number; completion_tokens: number };
-  };
-
-  const content = data.choices?.[0]?.message?.content || '';
-  return {
-    content,
-    tokensIn: data.usage?.prompt_tokens || 0,
-    tokensOut: data.usage?.completion_tokens || 0,
-  };
+  return callTogetherWithModel(messages, config.togetherModel);
 }
+
+async function callTogetherQwen(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+  return callTogetherWithModel(messages, config.togetherQwenModel);
+}
+
 
 // ---- OpenRouter Calls (OpenAI-compatible) ----
 
@@ -668,6 +648,115 @@ async function isKimiWithinBudget(): Promise<boolean> {
   return spend < KIMI_MONTHLY_BUDGET_UNITS;
 }
 
+// Per-user daily Kimi call limit — prevents one power user from exhausting the shared $5/month pool
+const KIMI_USER_DAILY_LIMIT = 3;
+const KIMI_USER_KEY_PREFIX = 'kimi:user:calls:';
+
+async function getKimiUserDailyCount(userId: string): Promise<number> {
+  const key = KIMI_USER_KEY_PREFIX + new Date().toISOString().slice(0, 10) + ':' + userId;
+  try {
+    const val = await cacheGet(key);
+    return val ? parseInt(val, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function recordKimiUserCall(userId: string): Promise<void> {
+  const key = KIMI_USER_KEY_PREFIX + new Date().toISOString().slice(0, 10) + ':' + userId;
+  try {
+    const current = await getKimiUserDailyCount(userId);
+    await cacheSet(key, String(current + 1), 25 * 60 * 60); // 25h TTL
+  } catch {
+    // Non-fatal
+  }
+}
+
+async function isKimiUserWithinDailyLimit(userId: string | undefined): Promise<boolean> {
+  if (!userId) return true; // guest — allow
+  const count = await getKimiUserDailyCount(userId);
+  return count < KIMI_USER_DAILY_LIMIT;
+}
+
+// ---- Together AI Daily Budget (shared across T3 + T4) ----
+// Pricing: Qwen3.5 9B = $0.10/$0.15 per 1M, Maverick = $0.27/$0.85 per 1M
+// Budget in cents. Default $1.00/day (TOGETHER_DAILY_BUDGET_CENTS=100).
+
+const TOGETHER_BUDGET_KEY_PREFIX = 'system:together:spend:';
+
+function computeTogetherSpendCents(model: string, tokensIn: number, tokensOut: number): number {
+  // Cents per token based on model tier
+  if (model.includes('Qwen3.5') || model.includes('Qwen/Qwen3.5')) {
+    // $0.10 in / $0.15 out per 1M → in cents: 0.00001 / 0.000015 per token
+    return Math.ceil((tokensIn * 0.01 + tokensOut * 0.015) / 1000);
+  }
+  // Maverick default: $0.27 in / $0.85 out per 1M
+  return Math.ceil((tokensIn * 0.027 + tokensOut * 0.085) / 1000);
+}
+
+async function getTogetherDailySpendCents(): Promise<number> {
+  const key = TOGETHER_BUDGET_KEY_PREFIX + new Date().toISOString().slice(0, 10);
+  try {
+    const val = await cacheGet(key);
+    return val ? parseInt(val, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function recordTogetherSpend(model: string, tokensIn: number, tokensOut: number): Promise<void> {
+  const cents = computeTogetherSpendCents(model, tokensIn, tokensOut);
+  const key = TOGETHER_BUDGET_KEY_PREFIX + new Date().toISOString().slice(0, 10);
+  try {
+    const current = await getTogetherDailySpendCents();
+    await cacheSet(key, String(current + cents), 25 * 60 * 60); // 25h TTL
+    logger.debug({ cents, total: current + cents, budget: config.togetherDailyBudgetCents }, 'together:spend_recorded');
+  } catch {
+    // Non-fatal
+  }
+}
+
+async function isTogetherWithinDailyBudget(): Promise<boolean> {
+  const spend = await getTogetherDailySpendCents();
+  return spend < config.togetherDailyBudgetCents;
+}
+
+// ---- Together AI Callers ----
+
+async function callTogetherWithModel(messages: ChatMessage[], model: string): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+  if (!config.togetherApiKey) throw new Error('Together AI API key not configured');
+
+  const response = await fetch(`${config.togetherBaseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.togetherApiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      max_tokens: config.togetherMaxTokens,
+    }),
+    signal: AbortSignal.timeout(config.togetherTimeoutMs),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`Together AI returned ${response.status}: ${text}`);
+  }
+
+  const data = await response.json() as {
+    choices?: Array<{ message?: { content: string } }>;
+    usage?: { prompt_tokens: number; completion_tokens: number };
+  };
+
+  return {
+    content: data.choices?.[0]?.message?.content || '',
+    tokensIn: data.usage?.prompt_tokens || 0,
+    tokensOut: data.usage?.completion_tokens || 0,
+  };
+}
+
 // ---- Free Tier Race (T1 + T6 simultaneously) ----
 // Runs OpenRouter-free and Ollama in parallel — returns first successful response.
 
@@ -734,16 +823,38 @@ async function tryFallbackChain(
         case 'kimi': {
           if (!isEdithAvailable()) continue; // same API key / endpoint as Edith
           if (!await isKimiWithinBudget()) {
-            logger.info({ budget: KIMI_MONTHLY_BUDGET_UNITS }, 'kimi:monthly_budget_exhausted — skipping T3');
+            logger.info({ budget: KIMI_MONTHLY_BUDGET_UNITS }, 'kimi:monthly_budget_exhausted — skipping T5');
+            continue;
+          }
+          if (!await isKimiUserWithinDailyLimit(userId)) {
+            logger.info({ userId, limit: KIMI_USER_DAILY_LIMIT }, 'kimi:user_daily_limit — skipping T5');
             continue;
           }
           const r = await callOpenRouterWithModel(fullMessages, KIMI_BASE_MODEL);
           recordKimiSpend(r.tokensIn, r.tokensOut).catch(() => {});
+          recordKimiUserCall(userId || '').catch(() => {});
           return { ...r, provider: 'kimi' };
         }
+        case 'together-qwen': {
+          // T3: cheap fallback for all users — Qwen3.5 9B, subject to daily budget
+          if (!isTogetherAvailable() || overDailyBudget) continue;
+          if (!await isTogetherWithinDailyBudget()) {
+            logger.info({ budget: config.togetherDailyBudgetCents }, 'together:daily_budget_exhausted — skipping T3');
+            continue;
+          }
+          const r = await callTogetherQwen(fullMessages);
+          recordTogetherSpend(config.togetherQwenModel, r.tokensIn, r.tokensOut).catch(() => {});
+          return { ...r, provider: 'together-qwen' };
+        }
         case 'together': {
+          // T4: premium only — Maverick, subject to daily budget
           if (!isPremium || !isTogetherAvailable() || overDailyBudget) continue;
+          if (!await isTogetherWithinDailyBudget()) {
+            logger.info({ budget: config.togetherDailyBudgetCents }, 'together:daily_budget_exhausted — skipping T4');
+            continue;
+          }
           const r = await callTogether(fullMessages);
+          recordTogetherSpend(config.togetherModel, r.tokensIn, r.tokensOut).catch(() => {});
           return { ...r, provider: 'together' };
         }
         case 'edith': {
@@ -772,15 +883,17 @@ const FLAT_CREDIT_COSTS: Partial<Record<Provider, number>> = {
   ollama:            1,
   'openrouter-free': 2,
   groq:              2,
-  'kimi':       5,
+  'kimi':            5,
   picoclaw:          1,
+  'together-qwen':   3,
   builtin:           0,
 };
 
 const TOKEN_CREDIT_RATES: Partial<Record<Provider, number>> = {
-  openrouter: 5,
-  together:   8,
-  edith:      10,
+  openrouter:      5,
+  'together-qwen': 3,
+  together:        8,
+  edith:           10,
 };
 
 const MIN_PREMIUM_CREDITS = 10;
@@ -813,16 +926,17 @@ export function deductSubscriptionCredits(userId: string, credits: number): void
 
 function estimateCost(provider: Provider, tokensIn: number, tokensOut: number): number {
   switch (provider) {
-    case 'ollama':          return 0;
-    case 'openrouter-free': return 0;
-    case 'groq':            return 0;
-    case 'kimi':       return (tokensIn * 0.0000005) + (tokensOut * 0.0000025);
-    case 'together':        return (tokensIn * 0.00000027) + (tokensOut * 0.00000085);
-    case 'openrouter':      return (tokensIn * 0.0000006) + (tokensOut * 0.000002);
-    case 'edith':           return (tokensIn * 0.0000012) + (tokensOut * 0.000004);
-    case 'picoclaw':        return 0;
-    case 'builtin':         return 0;
-    default:                return 0;
+    case 'ollama':           return 0;
+    case 'openrouter-free':  return 0;
+    case 'groq':             return 0;
+    case 'picoclaw':         return 0;
+    case 'builtin':          return 0;
+    case 'kimi':             return (tokensIn * 0.0000005) + (tokensOut * 0.0000025);
+    case 'together-qwen':    return (tokensIn * 0.0000001) + (tokensOut * 0.00000015); // $0.10/$0.15 per 1M
+    case 'together':         return (tokensIn * 0.00000027) + (tokensOut * 0.00000085);
+    case 'openrouter':       return (tokensIn * 0.0000006) + (tokensOut * 0.000002);
+    case 'edith':            return (tokensIn * 0.0000012) + (tokensOut * 0.000004);
+    default:                 return 0;
   }
 }
 
@@ -831,6 +945,7 @@ function getModelForProvider(provider: Provider, userId?: string): string {
     case 'ollama':          return config.ollamaModel;
     case 'groq':            return config.groqModel;
     case 'kimi':            return KIMI_BASE_MODEL;
+    case 'together-qwen':   return config.togetherQwenModel;
     case 'together':        return config.togetherModel;
     case 'openrouter':      return config.openrouterModel;
     case 'edith':           return config.moonshotReasoningModel;
@@ -845,7 +960,7 @@ function getModelForProvider(provider: Provider, userId?: string): string {
 export function getManualOverride(): Provider | null {
   if (!config.isTestMode) return null;
   const envOverride = process.env.FORCE_LLM_PROVIDER as Provider;
-  const allowed: Provider[] = ['ollama', 'openrouter', 'openrouter-free', 'groq', 'kimi', 'together', 'edith', 'picoclaw', 'builtin'];
+  const allowed: Provider[] = ['ollama', 'openrouter', 'openrouter-free', 'groq', 'kimi', 'together-qwen', 'together', 'edith', 'picoclaw', 'builtin'];
   if (envOverride && allowed.includes(envOverride)) {
     return envOverride;
   }
@@ -956,41 +1071,39 @@ export async function routeChat(
       routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'budget_degradation';
     }
 
-  } else if (picoOk && intent === 'automation') {
+  } else if (picoOk && (intent === 'simple' || intent === 'code-micro')) {
+    // Tier 0: PicoClaw — fast lane for simple chat + micro code tasks (88ms on CPU)
     provider = 'picoclaw';
     routingReason = 'ollama_healthy';
 
-  } else if (!isPremium || overBudget || overDailyBudget) {
-    // Free users + budget-exceeded premium: Ollama first, cloud fallback
-    if (ollamaOk) {
-      provider = 'ollama';
-      routingReason = 'ollama_healthy';
-    } else if (isGroqAvailable()) {
-      provider = 'groq';
-      routingReason = 'fallback_chain';
-    } else if (isOpenRouterFreeAvailable()) {
-      provider = 'openrouter-free';
-      routingReason = 'openrouter_free_available';
-    } else {
-      provider = 'builtin';
-      routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'ollama_unreachable';
-    }
+  } else if (intent === 'automation' && isOpenRouterFreeAvailable()) {
+    // Automation intent: OpenRouter-free first — Qwen3 235B MoE >> hermes3:8b for tool calling
+    provider = 'openrouter-free';
+    routingReason = 'openrouter_free_available';
+
+  } else if (ollamaOk) {
+    // Tier 1: Ollama hermes3:8b — local, free, all users
+    provider = 'ollama';
+    routingReason = 'ollama_healthy';
+
+  } else if (isOpenRouterFreeAvailable()) {
+    // Tier 1.5: OpenRouter-free — Ollama fallback, dynamic model rotation (Qwen3 235B, Llama 3.3, etc.)
+    provider = 'openrouter-free';
+    routingReason = 'openrouter_free_available';
+
+  } else if (isGroqAvailable()) {
+    // Tier 2: Groq — free quota cloud fallback (43,200 req/day × 3 keys)
+    provider = 'groq';
+    routingReason = 'fallback_chain';
+
+  } else if (isTogetherAvailable() && !overBudget && !overDailyBudget) {
+    // Tier 3: Together Qwen3.5 9B — paid fallback, all users, subject to $2/day cap
+    provider = 'together-qwen';
+    routingReason = 'fallback_chain';
 
   } else {
-    // Premium users, no budget issues: Ollama → Groq → OpenRouter → paid
-    if (ollamaOk) {
-      provider = 'ollama';
-      routingReason = 'ollama_healthy';
-    } else if (isGroqAvailable()) {
-      provider = 'groq';
-      routingReason = 'fallback_chain';
-    } else if (isOpenRouterFreeAvailable()) {
-      provider = 'openrouter-free';
-      routingReason = 'openrouter_free_available';
-    } else {
-      provider = 'builtin';
-      routingReason = 'ollama_unreachable';
-    }
+    provider = 'builtin';
+    routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'ollama_unreachable';
   }
 
   logger.info({
@@ -1064,12 +1177,21 @@ export async function routeChat(
           reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
           model = KIMI_BASE_MODEL;
           recordKimiSpend(tokensIn, tokensOut).catch(() => {});
+          recordKimiUserCall(opts?.userId || '').catch(() => {});
+          break;
+        }
+        case 'together-qwen': {
+          const result = await callTogetherQwen(fullMessages);
+          reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
+          model = config.togetherQwenModel;
+          recordTogetherSpend(config.togetherQwenModel, tokensIn, tokensOut).catch(() => {});
           break;
         }
         case 'together': {
           const result = await callTogether(fullMessages);
           reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
           model = config.togetherModel;
+          recordTogetherSpend(config.togetherModel, tokensIn, tokensOut).catch(() => {});
           break;
         }
         case 'edith': {
@@ -1102,22 +1224,27 @@ export async function routeChat(
     logger.warn({ error: errorMsg, provider: useRace ? 'race-free' : provider, intent, userId: opts?.userId }, 'llm:provider_failed');
 
     // ---- Fallback chains ----
-    // Free / budget-degraded premium: T2(Groq free) → T3(Kimi, budget check) → error
-    // Premium normal: T2(Groq) → T3(Kimi) → T4(Together) → T5(Edith) → error
-    // (after primary T1 failure, chain starts from T2)
+    // Budget-exceeded:   Ollama → Groq → builtin (free only)
+    // PicoClaw fail:     Ollama → Groq → together-qwen → builtin
+    // All users T1 fail: Groq → together-qwen → builtin
+    // Premium T1 fail:   Groq → together-qwen → together(Maverick) → kimi → edith
 
     let chain: Provider[];
     if (overBudget || overDailyBudget) {
-      // Budget exceeded: free providers only
-      chain = ['groq'];
+      chain = ['ollama', 'groq']; // no paid or OR-free when budget exceeded
+    } else if (provider === 'picoclaw') {
+      // PicoClaw failed: Ollama → OR-free → Groq → Together
+      chain = ['ollama', 'openrouter-free', 'groq', 'together-qwen'];
     } else if (isPremium) {
-      // Premium sequential: start from T2 (T1 just failed)
-      const PAID_CHAIN: Provider[] = ['groq', 'kimi', 'together', 'edith'];
-      const failedIdx = PAID_CHAIN.indexOf(provider);
-      chain = failedIdx >= 0 ? PAID_CHAIN.slice(failedIdx + 1) : PAID_CHAIN;
+      // Premium: full waterfall from next tier after failure
+      const PREMIUM_CHAIN: Provider[] = ['ollama', 'openrouter-free', 'groq', 'together-qwen', 'together', 'kimi', 'edith'];
+      const failedIdx = PREMIUM_CHAIN.indexOf(provider);
+      chain = failedIdx >= 0 ? PREMIUM_CHAIN.slice(failedIdx + 1) : PREMIUM_CHAIN;
     } else {
-      // Free users (race failed): T2 → T3
-      chain = ['groq', 'kimi'];
+      // Free users: Ollama → OR-free → Groq → Together Qwen
+      const FREE_CHAIN: Provider[] = ['ollama', 'openrouter-free', 'groq', 'together-qwen'];
+      const failedIdx = FREE_CHAIN.indexOf(provider);
+      chain = failedIdx >= 0 ? FREE_CHAIN.slice(failedIdx + 1) : FREE_CHAIN;
     }
 
     logger.info({ failedProvider: useRace ? 'race-free' : provider, chain, userId: opts?.userId }, 'llm:starting_fallback_chain');
@@ -1192,10 +1319,10 @@ async function pingOllama(): Promise<void> {
 }
 
 export function startOllamaKeepalive(): void {
-  if (keepaliveInterval) return;
-  pingOllama().catch(() => {});
-  keepaliveInterval = setInterval(() => pingOllama().catch(() => {}), 2 * 60 * 1000);
-  logger.info({ model: config.ollamaModel }, 'Ollama keepalive started (every 2 min, keep_alive=-1)');
+  // Disabled: pinging every 2min defeats OLLAMA_KEEP_ALIVE=5m (model never unloads).
+  // Model loads on first request (~2-3s cold start) and auto-unloads after 5min idle.
+  // This saves ~5.5GB RAM when the LLM is not in active use.
+  logger.info({ model: config.ollamaModel }, 'Ollama keepalive disabled — model loads on demand, unloads after 5m idle');
 }
 
 // ---- Smart Provider Picker (used by chat routes) ----

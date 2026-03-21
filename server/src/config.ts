@@ -215,12 +215,17 @@ export const config = {
   geminiTimeoutMs: optionalInt('GEMINI_TIMEOUT_MS', 30000),
   geminiMaxTokens: optionalInt('GEMINI_MAX_TOKENS', 2048),
 
-  // ---- Together AI (paid primary — Llama 4 Maverick 17B×128E) ----
+  // ---- Together AI ----
+  // T3 (cheap fallback, all users): Qwen3.5 9B — $0.10/$0.15 per 1M, 262K ctx, tool calling
+  // T4 (premium): Llama 4 Maverick 17B×128E — $0.27/$0.85 per 1M, 1M ctx, tool calling
   togetherApiKey: process.env.TOGETHER_API_KEY ?? '',
   togetherModel: optional('TOGETHER_MODEL', 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8'),
+  togetherQwenModel: optional('TOGETHER_QWEN_MODEL', 'Qwen/Qwen3.5-9B'),
   togetherBaseUrl: optional('TOGETHER_BASE_URL', 'https://api.together.xyz/v1'),
   togetherTimeoutMs: optionalInt('TOGETHER_TIMEOUT_MS', 30000),
   togetherMaxTokens: optionalInt('TOGETHER_MAX_TOKENS', 2048),
+  // Daily spend cap across all Together AI calls (in USD cents, default $2.00)
+  togetherDailyBudgetCents: optionalInt('TOGETHER_DAILY_BUDGET_CENTS', 200),
 } as const;
 
 // ---- Startup validation ----

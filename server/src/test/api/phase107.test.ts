@@ -133,7 +133,7 @@ describe('Phase 107 — react-loop: return shape', () => {
       [{ role: 'user', content: 'Say hello in exactly 3 words.' }],
       {
         systemPrompt: 'You are a concise assistant.',
-        userId: 'demo-1',
+        userId: 'guest:test',
       }
     );
     expect(result).toHaveProperty('text');
