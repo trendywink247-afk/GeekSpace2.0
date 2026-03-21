@@ -24,6 +24,22 @@ import {
   PARTICLE_BEAM_TTL, SPEECH_BUBBLE_TTL,
   CLICK_DOUBLE_THRESHOLD_MS,
 } from './constants';
+
+// ---------------------------------------------------------------------------
+// Personality-flavored thinking phrases for speech bubbles
+// ---------------------------------------------------------------------------
+
+const THINKING_PHRASES: Record<string, string[]> = {
+  weebo: ['On it!', 'Let me check...', 'Hmm interesting!'],
+  edith: ['Analyzing.', 'Processing.', 'Let me see.'],
+  jarvis: ['Right away.', 'Looking into it.', 'One moment.'],
+  aria: ['Ooh creative!', 'Let me think...', 'Inspiration incoming!'],
+  forge: ['Compiling...', 'Running checks.', 'Building...'],
+  pulse: ['Checking data.', 'Numbers incoming.', 'Analyzing metrics.'],
+  echo: ['I hear you.', 'Let me help.', 'On it, friend!'],
+  cal: ['Checking schedule.', 'Let me organize.', 'Noted!'],
+  nova: ['Researching...', 'Digging in!', 'Let me explore.'],
+};
 import { renderFrame, loadOfficeAssets } from './OfficeCanvasRenderer';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
 import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors } from './agentBehavior';
@@ -299,6 +315,8 @@ export default function OfficeStage({
                   toolCallCount: toolCount,
                   thinkingStartTime: thinkingTimers.current.get(agentId) ?? 0,
                 });
+                // Ensure at least Tier 2 for non-idle events so spotlight is visible
+                if (tier < 2) tier = 2;
                 // On mobile: skip cinematic zoom (tier 3 → tier 1)
                 if (isMobileRef.current && tier === 3) tier = 1;
                 startTierEffect(
@@ -308,9 +326,37 @@ export default function OfficeStage({
                   agentId,
                 );
               }
+              // Emit a personality-flavored thinking speech bubble
+              {
+                const phrases = THINKING_PHRASES[agentId] || THINKING_PHRASES.weebo;
+                const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+                setBubbles(prev => [...prev.slice(-(MAX_SPEECH_BUBBLES - 1)), {
+                  id: `think-${Date.now()}`,
+                  agentId: agentId as AgentId,
+                  text: phrase,
+                  color: AGENT_COLORS[agentId as AgentId] || '#00F0FF',
+                  createdAt: Date.now(),
+                  expiresAt: Date.now() + SPEECH_BUBBLE_TTL,
+                }]);
+              }
             }
             if (evt.state === 'tool_call') {
-              trackToolCall(evt.requestId);
+              const toolCount = trackToolCall(evt.requestId);
+              // Fire tier effect on tool calls (at least tier 2 for visibility)
+              let tier = selectAnimationTier({
+                isFirstVisit: isFirstVisit(),
+                isMultiAgent: !!evt.isMultiAgent,
+                toolCallCount: toolCount,
+                thinkingStartTime: thinkingTimers.current.get(agentId) ?? 0,
+              });
+              if (tier < 2) tier = 2;
+              if (isMobileRef.current && tier === 3) tier = 1;
+              startTierEffect(
+                effectStateRef.current,
+                tier,
+                { x: agent.renderX, y: agent.renderY },
+                agentId,
+              );
             }
             // Cancel idle wandering — move agent back to their desk
             cancelIdleBehavior(agentId);

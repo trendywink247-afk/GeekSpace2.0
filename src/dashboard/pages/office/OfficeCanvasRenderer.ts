@@ -132,8 +132,18 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   const isIdle = !isWalking && !isAtFurniture;
   const bobOffset = isIdle ? Math.round(Math.sin(tick * 0.3) * 1) : 0;
 
-  const drawX = cx - DW / 2;
-  const drawY = cy - DH + 16 + SITTING_OFFSET + bobOffset;
+  // Visual offset: nudge agent sprite toward furniture when at interaction point
+  // so they appear to be sitting AT the desk instead of standing next to it
+  let furnitureOffsetX = 0, furnitureOffsetY = 0;
+  if (isAtFurniture && agent.facing) {
+    if (agent.facing === 'up') furnitureOffsetY = -6;
+    else if (agent.facing === 'down') furnitureOffsetY = 6;
+    else if (agent.facing === 'left') furnitureOffsetX = -6;
+    else if (agent.facing === 'right') furnitureOffsetX = 6;
+  }
+
+  const drawX = cx - DW / 2 + furnitureOffsetX;
+  const drawY = cy - DH + 16 + SITTING_OFFSET + bobOffset + furnitureOffsetY;
 
   // Glow for active agents
   if (agent.state !== 'idle') {
@@ -245,6 +255,42 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   ctx.fillText(agent.id.slice(0, 6).toUpperCase(), cx, drawY + DH + 11);
   ctx.shadowBlur = 0;
   ctx.restore();
+
+  // Working status label above agent head
+  if (agent.state !== 'idle' && agent.state !== 'done') {
+    const labelText = agent.state === 'thinking' ? 'analyzing...'
+      : agent.state === 'tool_call' ? `using ${agent.lastTool || 'tool'}...`
+      : agent.state === 'responding' ? 'writing...'
+      : agent.state === 'typing' ? 'typing...'
+      : agent.state === 'delegating' ? 'delegating...'
+      : agent.state === 'task_started' ? 'starting...'
+      : '';
+
+    if (labelText) {
+      ctx.save();
+      ctx.font = '8px monospace';
+      const labelX = drawX + DW / 2;
+      const labelY = drawY - 14;
+
+      // Background pill
+      const metrics = ctx.measureText(labelText);
+      const padX = 4, padY = 2;
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.beginPath();
+      const pillW = metrics.width + padX * 2;
+      const pillH = 12 + padY * 2;
+      const pillX = labelX - pillW / 2;
+      const pillY = labelY - pillH / 2;
+      ctx.roundRect(pillX, pillY, pillW, pillH, 4);
+      ctx.fill();
+
+      // Text
+      ctx.textAlign = 'center';
+      ctx.fillStyle = hexToRgba(color, 0.95);
+      ctx.fillText(labelText, labelX, labelY + 3);
+      ctx.restore();
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -716,6 +762,27 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
 
   // 3. Ambient effects (desk screen flickers, coffee steam, monitor glow, grid pulse, server rack)
   drawAmbientEffects(ctx, tick, agents, activeTheme);
+
+  // 3b. Meeting room ambient glow when agents are collaborating
+  {
+    const meetingAgents = agents.filter(a =>
+      a.x >= 16 && a.x <= 25 && a.y >= 12 && a.y <= 19 &&
+      a.state !== 'idle' && a.state !== 'done'
+    );
+    if (meetingAgents.length > 0) {
+      ctx.save();
+      const gradient = ctx.createRadialGradient(
+        21 * CELL, 16 * CELL, 0,
+        21 * CELL, 16 * CELL, 5 * CELL,
+      );
+      const glowColor = meetingAgents.length >= 2 ? '0, 240, 255' : '139, 92, 246';
+      gradient.addColorStop(0, `rgba(${glowColor}, 0.08)`);
+      gradient.addColorStop(1, `rgba(${glowColor}, 0)`);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(16 * CELL, 12 * CELL, 10 * CELL, 8 * CELL);
+      ctx.restore();
+    }
+  }
 
   // 4. Apply cinematic zoom transform if active (tier 3 effect)
   const hasZoom = effectState && effectState.zoomScale !== 1 && effectState.zoomTarget;
