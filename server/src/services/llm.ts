@@ -961,27 +961,32 @@ export async function routeChat(
     routingReason = 'ollama_healthy';
 
   } else if (!isPremium || overBudget || overDailyBudget) {
-    // Free users + budget-exceeded premium: race T1(OpenRouter-free) + T6(Ollama)
-    if (ollamaOk || isOpenRouterFreeAvailable()) {
-      useRace = true;
-      provider = 'openrouter-free'; // trace placeholder
-      routingReason = ollamaOk ? 'race_free_tier' : 'openrouter_free_available';
+    // Free users + budget-exceeded premium: Ollama first, cloud fallback
+    if (ollamaOk) {
+      provider = 'ollama';
+      routingReason = 'ollama_healthy';
     } else if (isGroqAvailable()) {
       provider = 'groq';
       routingReason = 'fallback_chain';
+    } else if (isOpenRouterFreeAvailable()) {
+      provider = 'openrouter-free';
+      routingReason = 'openrouter_free_available';
     } else {
       provider = 'builtin';
       routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'ollama_unreachable';
     }
 
   } else {
-    // Premium users, no budget issues: sequential T1 → T2 → T3 → T4 → T5
-    if (isOpenRouterFreeAvailable()) {
-      provider = 'openrouter-free';
-      routingReason = 'openrouter_free_available';
+    // Premium users, no budget issues: Ollama → Groq → OpenRouter → paid
+    if (ollamaOk) {
+      provider = 'ollama';
+      routingReason = 'ollama_healthy';
     } else if (isGroqAvailable()) {
       provider = 'groq';
       routingReason = 'fallback_chain';
+    } else if (isOpenRouterFreeAvailable()) {
+      provider = 'openrouter-free';
+      routingReason = 'openrouter_free_available';
     } else {
       provider = 'builtin';
       routingReason = 'ollama_unreachable';

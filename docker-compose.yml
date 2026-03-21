@@ -52,7 +52,7 @@ services:
       - REDIS_URL=redis://:${REDIS_PASSWORD:-geekspace-redis-2026}@redis:6379
       # Set to your actual Ollama container name/address
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:7b}
+      - OLLAMA_MODEL=hermes3:8b
       - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://edith-bridge:8787}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
       - PICOCLAW_URL=${PICOCLAW_URL:-http://picoclaw:8080}
