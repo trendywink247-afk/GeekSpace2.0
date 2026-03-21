@@ -52,6 +52,8 @@ function getAgentForHUD(id: string): CanvasAgent | null {
 // OfficePage
 // ---------------------------------------------------------------------------
 
+type OfficeTheme = 'day' | 'night' | 'auto';
+
 export function OfficePage() {
   const navigate = useNavigate();
   const { sseEvents, officeData, connectionMode, sessionExpired } = useOfficeData();
@@ -61,6 +63,16 @@ export function OfficePage() {
   const [flyoutAgentId, setFlyoutAgentId] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState(0);
   const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
+
+  // Day/Night theme
+  const [officeTheme, setOfficeTheme] = useState<OfficeTheme>(() => {
+    return (localStorage.getItem('office_theme') as OfficeTheme) || 'auto';
+  });
+
+  // Resolve 'auto' to actual theme based on timezone
+  const resolvedTheme: 'day' | 'night' = officeTheme === 'auto'
+    ? (new Date().getHours() >= 6 && new Date().getHours() < 18 ? 'day' : 'night')
+    : officeTheme;
 
   // Extract insight cards from timeline entries that contain insight-related keywords
   const insightCards = useMemo<InsightCard[]>(() => {
@@ -178,6 +190,24 @@ export function OfficePage() {
               9 AGENTS
             </span>
           </div>
+          <div className="flex items-center gap-2">
+          {/* Day/Night/Auto toggle */}
+          <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: '#12121F', border: '1px solid rgba(0,240,255,0.1)' }}>
+            {(['day', 'night', 'auto'] as const).map(mode => (
+              <button
+                key={mode}
+                onClick={() => { setOfficeTheme(mode); localStorage.setItem('office_theme', mode); }}
+                className="px-2 py-1 rounded-md text-xs transition-all"
+                style={{
+                  background: officeTheme === mode ? 'rgba(0,240,255,0.15)' : 'transparent',
+                  color: officeTheme === mode ? '#00F0FF' : '#8892A4',
+                }}
+              >
+                {mode === 'day' ? '\u2600\uFE0F' : mode === 'night' ? '\uD83C\uDF19' : '\u26A1'}
+              </button>
+            ))}
+          </div>
+
           {/* Connection badge */}
           <span
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${
@@ -213,6 +243,7 @@ export function OfficePage() {
                 ? 'RECONNECTING'
                 : 'POLLING'}
           </span>
+          </div>
         </div>
 
         {/* Canvas */}
@@ -221,6 +252,7 @@ export function OfficePage() {
           selectedAgentId={selectedAgentId}
           onAgentSelect={setSelectedAgentId}
           onAgentDoubleClick={(id) => setFlyoutAgentId(id)}
+          theme={resolvedTheme}
         />
 
         {/* Insight toasts — float at top-center of canvas stage */}

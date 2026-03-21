@@ -89,6 +89,38 @@ const AGENT_SPEED: Record<string, number> = {
   nova: 1.2,     // researcher, always moving
 };
 
+// ── Personality-driven behavior preferences ──────────────────────────────────
+// Each agent prefers certain smart object types. Weights determine how likely
+// they are to pick that type when wandering. Higher weight = more likely.
+
+type SmartObjectType = 'desk' | 'appliance' | 'seating' | 'table' | 'display' | 'furniture' | 'decoration';
+
+const BEHAVIOR_PREFERENCES: Record<string, Partial<Record<SmartObjectType, number>>> = {
+  weebo: { seating: 3, decoration: 2, table: 2, appliance: 2, desk: 1, furniture: 1, display: 1 },       // prefers lounge, patio, creative areas
+  aria:  { seating: 3, decoration: 3, table: 2, appliance: 2, desk: 1, furniture: 1, display: 1 },       // creative director — lounges, patio
+  edith: { desk: 3, table: 3, display: 2, appliance: 1, seating: 1, furniture: 1, decoration: 1 },       // strategic — desks, meeting room
+  forge: { desk: 3, table: 3, display: 2, furniture: 1, appliance: 1, seating: 1, decoration: 1 },       // tech lead — work-focused
+  jarvis:{ table: 3, display: 3, desk: 2, furniture: 1, appliance: 1, seating: 1, decoration: 1 },       // ops — meeting room, whiteboard
+  cal:   { table: 3, display: 3, desk: 2, appliance: 1, furniture: 1, seating: 1, decoration: 1 },       // scheduler — organized areas
+  pulse: { furniture: 3, display: 3, table: 2, desk: 2, appliance: 1, seating: 1, decoration: 1 },       // data analyst — bookshelf, meeting TV
+  nova:  { furniture: 3, display: 3, table: 2, desk: 1, appliance: 1, seating: 1, decoration: 1 },       // researcher — bookshelf, meeting TV
+  echo:  { seating: 3, table: 2, decoration: 2, appliance: 2, furniture: 1, desk: 1, display: 1 },       // coach — couch, lounge
+};
+
+// ── Behavior-based interaction durations (ticks, 1 tick = 200ms) ─────────────
+// Agents linger longer at meaningful smart objects instead of leaving quickly.
+
+const INTERACTION_DURATION: Record<InteractionPoint['behavior'], { min: number; max: number }> = {
+  coffee:      { min: 40, max: 75 },    // 8-15 seconds at coffee counter
+  relax:       { min: 75, max: 150 },   // 15-30 seconds on couch/lounge
+  chat:        { min: 50, max: 100 },   // 10-20 seconds chatting
+  collaborate: { min: 50, max: 100 },   // 10-20 seconds at meeting table
+  present:     { min: 40, max: 75 },    // 8-15 seconds presenting
+  observe:     { min: 40, max: 75 },    // 8-15 seconds observing
+  browse:      { min: 50, max: 100 },   // 10-20 seconds at bookshelf
+  work:        { min: 40, max: 75 },    // 8-15 seconds at work desk
+};
+
 // Track which agents had a recent tool_call (for lounge weighting)
 const recentWorkers = new Set<AgentId>();
 
@@ -109,19 +141,6 @@ function pick<T>(arr: T[]): T {
 
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function pickNearest(
-  points: Array<InteractionPoint & { objectId: string; distance: number }>,
-  agent: CanvasAgent,
-): InteractionPoint & { objectId: string; distance: number } {
-  let best = points[0];
-  let bestDist = Infinity;
-  for (const p of points) {
-    const d = Math.abs(p.x - agent.x) + Math.abs(p.y - agent.y);
-    if (d < bestDist) { bestDist = d; best = p; }
-  }
-  return best;
 }
 
 function makeBubble(agentId: AgentId, text: string): SpeechBubble {
@@ -157,6 +176,8 @@ function computeFacing(fromX: number, fromY: number, toX: number, toY: number): 
 }
 
 // ── Perception-driven destination selection ──────────────────────────────────
+// Agents ALWAYS pick a smart object interaction point -- never random walkable tiles.
+// Uses personality-weighted selection with contextual overrides.
 
 function chooseDestination(
   p: AgentPerception,
@@ -164,45 +185,50 @@ function chooseDestination(
   const pts = p.availableInteractionPoints;
   if (pts.length === 0) return null;
 
-  // Rule 1: If recently worked, 50% chance pantry/lounge/patio break
-  if (p.recentlyWorked && Math.random() < 0.5) {
+  // Rule 1: If recently worked, 60% chance pantry/lounge/patio break
+  if (p.recentlyWorked && Math.random() < 0.6) {
     const breakPoints = pts.filter(
       (ip) => ip.behavior === 'coffee' || ip.behavior === 'relax' || ip.behavior === 'chat',
     );
     if (breakPoints.length > 0) return pickRandom(breakPoints);
   }
 
-  // Rule 2: If in workspace and idle, prefer work-related or nearby interaction
-  if (p.currentRoom?.id === 'workspace') {
-    const workPoints = pts.filter((ip) => ip.behavior === 'work');
-    if (workPoints.length > 0 && Math.random() < 0.4) return pickNearest(workPoints, p.agent);
-  }
-
-  // Rule 3: If nearby idle agent in lounge/patio, chance to approach and chat
+  // Rule 2: If nearby idle agent in lounge/patio, chance to approach shared object
   if (p.nearbyAgents.some((a) => a.agent.state === 'idle' && a.distance <= 3)) {
-    const chatPoints = pts.filter((ip) => ip.behavior === 'chat');
-    if (chatPoints.length > 0 && Math.random() < 0.3) return pickRandom(chatPoints);
+    const chatPoints = pts.filter((ip) => ip.behavior === 'chat' || ip.behavior === 'relax');
+    if (chatPoints.length > 0 && Math.random() < 0.35) return pickRandom(chatPoints);
   }
 
-  // Rule 4: If in meeting room, prefer whiteboard/perimeter
+  // Rule 3: If in meeting room, prefer whiteboard/perimeter
   if (p.currentRoom?.id === 'meeting_room') {
     const meetPoints = pts.filter(
       (ip) => ip.behavior === 'collaborate' || ip.behavior === 'present' || ip.behavior === 'observe',
     );
-    if (meetPoints.length > 0) return pickRandom(meetPoints);
+    if (meetPoints.length > 0 && Math.random() < 0.6) return pickRandom(meetPoints);
   }
 
-  // Rule 5: If passing pantry area, small coffee stop chance
-  if (p.currentRoom?.id === 'pantry' && Math.random() < 0.2) {
-    const coffeePoints = pts.filter((ip) => ip.behavior === 'coffee');
-    if (coffeePoints.length > 0) return pickRandom(coffeePoints);
+  // Rule 4: Personality-weighted smart object selection (primary path)
+  // Uses BEHAVIOR_PREFERENCES to pick objects this agent gravitates toward.
+  const prefs = BEHAVIOR_PREFERENCES[p.agent.id] ?? {};
+  const weighted: Array<typeof pts[number] & { weight: number }> = [];
+
+  for (const ip of pts) {
+    // Find the smart object this point belongs to so we can check its type
+    const obj = SMART_OBJECTS.find((o) => o.id === ip.objectId);
+    const objType = (obj?.type ?? 'decoration') as SmartObjectType;
+    const weight = prefs[objType] ?? 1;
+    weighted.push({ ...ip, weight });
   }
 
-  // Rule 6: Default -- balanced between nearby and distant points
-  // 40% nearest (quick interactions), 60% random (explore the full office)
-  if (Math.random() < 0.4 && pts.length > 2) {
-    return pts[0]; // nearest
+  // Weighted random selection from available interaction points
+  const totalWeight = weighted.reduce((sum, w) => sum + w.weight, 0);
+  let roll = Math.random() * totalWeight;
+  for (const w of weighted) {
+    roll -= w.weight;
+    if (roll <= 0) return w;
   }
+
+  // Fallback: pick any available interaction point
   return pickRandom(pts);
 }
 
@@ -483,7 +509,7 @@ export function tickBehaviors(
         if (bState.timer <= 0) {
           const roll = Math.random();
           if (roll < 0.55) {  // 55% chance to explore (balanced with desk time)
-            // Wander using perception-driven rules
+            // ALWAYS pick a smart object interaction point -- personality-weighted
             const perception = perceive(agent, agents, recentWorkers);
             const dest = chooseDestination(perception);
             if (dest) {
@@ -495,7 +521,9 @@ export function tickBehaviors(
               bState.targetPoint = dest;
               bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
               bState.wanderCount = 0;
-              bState.timer = randomInt(15, 40); // stay 3-8s at furniture
+              // Use behavior-specific interaction duration
+              const dur = INTERACTION_DURATION[dest.behavior] ?? { min: 25, max: 50 };
+              bState.timer = randomInt(dur.min, dur.max);
               updated.targetX = validPt.x;
               updated.targetY = validPt.y;
               updated.path = [];
@@ -551,6 +579,26 @@ export function tickBehaviors(
             bState.facing = bState.targetPoint.facing;
           }
 
+          // Social interactions at shared smart objects:
+          // If 2+ agents are at the same smart object, emit context-aware speech bubbles
+          if (bState.targetPoint && bState.timer > 0 && bState.timer % 25 === 0) {
+            const objectId = bState.targetPoint.objectId;
+            const colocated = agents.filter((a) => {
+              if (a.id === agent.id) return false;
+              const otherBs = behaviorStates.get(a.id);
+              return otherBs?.targetPoint?.objectId === objectId && otherBs.mode === 'wandering';
+            });
+            if (colocated.length > 0) {
+              const behavior = bState.targetPoint.behavior;
+              const phrases = phrasesForBehavior(behavior);
+              // Agent says something context-appropriate
+              newBubbles.push(makeBubble(agent.id, pick(phrases)));
+              // One colocated agent responds after a brief pause (next tick cycle)
+              const responder = pick(colocated);
+              newBubbles.push(makeBubble(responder.id, pick(phrases)));
+            }
+          }
+
           // Linger at destination then chain to another point or return home
           if (bState.timer <= 0) {
             releasePoint(agent.id);
@@ -560,7 +608,7 @@ export function tickBehaviors(
             const wanderLimit = randomInt(1, 3);
             const canChain = bState.wanderCount < wanderLimit;
 
-            // 60% chance to chain to another interaction point (if under limit)
+            // 60% chance to chain to another smart object (if under limit)
             if (canChain && Math.random() < 0.6) {
               const perception = perceive(agent, agents, recentWorkers);
               const nextDest = chooseDestination(perception);
@@ -570,7 +618,9 @@ export function tickBehaviors(
                 reservePoint(validPt.x, validPt.y, agent.id);
                 bState.targetPoint = nextDest;
                 bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
-                bState.timer = randomInt(15, 40);
+                // Use behavior-specific interaction duration for chained visits too
+                const dur = INTERACTION_DURATION[nextDest.behavior] ?? { min: 25, max: 50 };
+                bState.timer = randomInt(dur.min, dur.max);
                 updated.targetX = validPt.x;
                 updated.targetY = validPt.y;
                 updated.path = [];

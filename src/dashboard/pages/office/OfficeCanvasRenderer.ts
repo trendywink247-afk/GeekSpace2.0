@@ -109,7 +109,7 @@ export function drawForeground(ctx: CanvasRenderingContext2D): void {
 // Uses smooth renderX/renderY for sub-pixel positioning
 // ---------------------------------------------------------------------------
 
-export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number, isSelected: boolean): void {
+export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number, isSelected: boolean, theme?: 'day' | 'night'): void {
   const cx = Math.round(agent.renderX);
   const cy = Math.round(agent.renderY);
   const color = agent.color;
@@ -235,12 +235,12 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   ctx.fillStyle = hexToRgba(color, 0.1);
   ctx.fillRect(cx - 6, drawY + DH, 12, 2);
 
-  // Name label with glow
+  // Name label with glow (reduced glow in day mode for contrast)
   ctx.save();
   ctx.font = '8px monospace';
   ctx.textAlign = 'center';
   ctx.shadowColor = color;
-  ctx.shadowBlur = 6;
+  ctx.shadowBlur = theme === 'day' ? 2 : 6;
   ctx.fillStyle = hexToRgba(color, 0.9);
   ctx.fillText(agent.id.slice(0, 6).toUpperCase(), cx, drawY + DH + 11);
   ctx.shadowBlur = 0;
@@ -480,7 +480,7 @@ export function drawTimeOfDayOverlay(ctx: CanvasRenderingContext2D): void {
 // drawAmbientEffects — subtle desk screen flickers + coffee steam
 // ---------------------------------------------------------------------------
 
-export function drawAmbientEffects(ctx: CanvasRenderingContext2D, tick: number, agents?: CanvasAgent[]): void {
+export function drawAmbientEffects(ctx: CanvasRenderingContext2D, tick: number, agents?: CanvasAgent[], theme?: 'day' | 'night'): void {
   // Screen flickers on desks — every ~120 ticks, a random desk glows briefly (2 frames)
   if (tick % 120 < 2) {
     const deskIdx = Math.floor((tick / 120) % 4); // cycle through 4 desks
@@ -530,18 +530,20 @@ export function drawAmbientEffects(ctx: CanvasRenderingContext2D, tick: number, 
       const monY = desk.y * CELL - 4;
 
       if (isNearDesk) {
-        // Active glow — brighter with breathing
-        const breath = 0.2 + 0.15 * Math.sin(Date.now() / 1000 + desk.x);
+        // Active glow — brighter at night, dimmer in day
+        const nightBoost = theme === 'night' ? 1.3 : 0.7;
+        const breath = (0.2 + 0.15 * Math.sin(Date.now() / 1000 + desk.x)) * nightBoost;
         ctx.save();
-        ctx.fillStyle = hexToRgba(color, breath);
+        ctx.fillStyle = hexToRgba(color, Math.min(breath, 1));
         ctx.shadowColor = color;
-        ctx.shadowBlur = 6;
+        ctx.shadowBlur = theme === 'night' ? 8 : 4;
         ctx.fillRect(monX, monY, 4, 3);
         ctx.shadowBlur = 0;
         ctx.restore();
       } else {
-        // Dim standby glow
-        ctx.fillStyle = hexToRgba(color, 0.05);
+        // Dim standby glow — slightly brighter at night
+        const standbyAlpha = theme === 'night' ? 0.08 : 0.03;
+        ctx.fillStyle = hexToRgba(color, standbyAlpha);
         ctx.fillRect(monX, monY, 4, 3);
       }
     }
@@ -700,8 +702,9 @@ export function drawDebugOverlay(ctx: CanvasRenderingContext2D, collisionMap: bo
 // Optional showDebug parameter draws the collision grid overlay.
 // ---------------------------------------------------------------------------
 
-export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, showDebug?: boolean, collisionMap?: boolean[][], effectState?: CanvasEffectState): void {
+export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, showDebug?: boolean, collisionMap?: boolean[][], effectState?: CanvasEffectState, theme?: 'day' | 'night'): void {
   const { agents, beams, tick, selectedAgentId } = state;
+  const activeTheme = theme ?? 'night';
 
   // 1. Background (pixel art image or solid fallback)
   drawBackground(ctx);
@@ -712,7 +715,7 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
   }
 
   // 3. Ambient effects (desk screen flickers, coffee steam, monitor glow, grid pulse, server rack)
-  drawAmbientEffects(ctx, tick, agents);
+  drawAmbientEffects(ctx, tick, agents, activeTheme);
 
   // 4. Apply cinematic zoom transform if active (tier 3 effect)
   const hasZoom = effectState && effectState.zoomScale !== 1 && effectState.zoomTarget;
@@ -736,7 +739,7 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
       ctx.globalAlpha = effectState.dimOpacity;
     }
 
-    drawAgent(ctx, agent, tick, isSelected);
+    drawAgent(ctx, agent, tick, isSelected, activeTheme);
     drawStateIndicator(ctx, agent, tick);
 
     // Restore full opacity after each agent
@@ -752,16 +755,25 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
   // when walking through desk areas. Re-enable once depth masking is refined.
   // if (isBgLoaded()) { drawForeground(ctx); }
 
-  // 8. Draw ambient particles (from CanvasEffects)
+  // 8. Draw ambient particles (from CanvasEffects) — dimmer in day mode
   if (effectState) {
+    const particleAlphaMultiplier = activeTheme === 'day' ? 0.5 : 1.0;
     for (const p of effectState.particles) {
-      ctx.fillStyle = `rgba(0, 240, 255, ${p.alpha})`;
+      ctx.fillStyle = `rgba(0, 240, 255, ${p.alpha * particleAlphaMultiplier})`;
       ctx.fillRect(p.x, p.y, 1, 1);
     }
   }
 
-  // 9. Time-of-day lighting overlay — LAST layer on top of everything
-  drawTimeOfDayOverlay(ctx);
+  // 9. Theme-based overlay — replaces raw time-of-day overlay
+  if (activeTheme === 'day') {
+    // Warm overlay for day mode
+    ctx.fillStyle = 'rgba(255, 248, 220, 0.08)';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  } else {
+    // Night mode: subtle blue tint overlay
+    ctx.fillStyle = 'rgba(0, 10, 40, 0.15)';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  }
 
   // 10. Debug overlay — collision grid visualization (only when enabled)
   if (showDebug && collisionMap) {
