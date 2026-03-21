@@ -50,6 +50,7 @@ interface Props {
   selectedAgentId: string | null;
   onAgentSelect: (id: string | null) => void;
   onAgentDoubleClick: (id: string) => void;
+  theme?: 'day' | 'night';
 }
 
 // ---------------------------------------------------------------------------
@@ -155,6 +156,7 @@ export default function OfficeStage({
   selectedAgentId,
   onAgentSelect,
   onAgentDoubleClick,
+  theme,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -174,6 +176,9 @@ export default function OfficeStage({
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  const [assetsReady, setAssetsReady] = useState(false);
+  const assetsReadyRef = useRef(false);
 
   const [agents, setAgents] = useState<CanvasAgent[]>(buildInitialAgents);
   const [beams, setBeams] = useState<ParticleBeam[]>([]);
@@ -205,9 +210,14 @@ export default function OfficeStage({
   // ---- Load pixel art office assets + PNG sprite sheets on mount ----
 
   useEffect(() => {
-    loadOfficeAssets().catch(() => {}); // non-fatal
-    loadSpriteSheets().catch(() => {}); // non-fatal — falls back to code-generated
+    Promise.all([
+      loadOfficeAssets(),
+      loadSpriteSheets(),
+    ]).then(() => setAssetsReady(true)).catch(() => setAssetsReady(true)); // show even if assets fail
   }, []);
+
+  // Keep assetsReadyRef in sync so the rAF closure can read it without stale capture
+  useEffect(() => { assetsReadyRef.current = assetsReady; }, [assetsReady]);
 
   // ---- Initialize idle behaviors for all agents on mount ----
 
@@ -482,6 +492,8 @@ export default function OfficeStage({
   beamsRef.current = beams;
   const selectedRef = useRef(selectedAgentId);
   selectedRef.current = selectedAgentId;
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
 
   useEffect(() => {
     let lastTime = 0;
@@ -636,13 +648,25 @@ export default function OfficeStage({
       const ctx = canvas.getContext('2d');
       if (!ctx) { rafId = requestAnimationFrame(frame); return; }
 
+      // Skip full render until assets are loaded — show a loading indicator instead
+      if (!assetsReadyRef.current) {
+        ctx.fillStyle = '#05050A';
+        ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+        ctx.fillStyle = '#00F0FF';
+        ctx.font = '14px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('Initializing agents...', CANVAS_W / 2, CANVAS_H / 2);
+        rafId = requestAnimationFrame(frame);
+        return;
+      }
+
       ctx.imageSmoothingEnabled = false;
       renderFrame(ctx, {
         agents: agentsRef.current,
         beams: beamsRef.current,
         tick: Math.floor(time / 200), // tick counter for sprite animations
         selectedAgentId: selectedRef.current,
-      }, undefined, undefined, effectStateRef.current);
+      }, undefined, undefined, effectStateRef.current, themeRef.current);
 
       rafId = requestAnimationFrame(frame);
     };
@@ -746,7 +770,11 @@ export default function OfficeStage({
           width={CANVAS_W}
           height={CANVAS_H}
           className="absolute inset-0 w-full h-full"
-          style={{ imageRendering: 'pixelated' }}
+          style={{
+            imageRendering: 'pixelated',
+            opacity: assetsReady ? 1 : 0,
+            transition: 'opacity 0.5s ease',
+          }}
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
         />
