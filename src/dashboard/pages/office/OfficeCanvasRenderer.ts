@@ -235,11 +235,16 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   ctx.fillStyle = hexToRgba(color, 0.1);
   ctx.fillRect(cx - 6, drawY + DH, 12, 2);
 
-  // Name label
-  ctx.font = '9px monospace';
+  // Name label with glow
+  ctx.save();
+  ctx.font = '8px monospace';
   ctx.textAlign = 'center';
-  ctx.fillStyle = hexToRgba(color, 0.7);
-  ctx.fillText(agent.id.slice(0, 5).toUpperCase(), cx, drawY + DH + 11);
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 6;
+  ctx.fillStyle = hexToRgba(color, 0.9);
+  ctx.fillText(agent.id.slice(0, 6).toUpperCase(), cx, drawY + DH + 11);
+  ctx.shadowBlur = 0;
+  ctx.restore();
 }
 
 // ---------------------------------------------------------------------------
@@ -265,32 +270,52 @@ export function drawStateIndicator(ctx: CanvasRenderingContext2D, agent: CanvasA
       break;
 
     case 'thinking': {
-      const y = baseY + bobOffset;
-      ctx.fillStyle = '#FBBF24';
-      ctx.fillRect(cx - 1, y, 3, 1);
-      ctx.fillRect(cx + 1, y + 1, 1, 1);
-      ctx.fillRect(cx, y + 2, 1, 1);
-      ctx.fillRect(cx, y + 4, 1, 1);
+      // Pulsing "?" in agent color with glow
+      const pulseAlpha = 0.6 + 0.4 * Math.sin(Date.now() / 300);
+      ctx.save();
+      ctx.fillStyle = hexToRgba(agent.color, pulseAlpha);
+      ctx.shadowColor = agent.color;
+      ctx.shadowBlur = 6;
+      ctx.font = 'bold 12px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('?', cx, baseY + 4 + bobOffset);
+      ctx.shadowBlur = 0;
+      ctx.restore();
       break;
     }
 
     case 'typing':
     case 'responding': {
-      const phase = tick % 3;
-      for (let i = 0; i < 3; i++) {
-        const alpha = i === phase ? 0.9 : 0.25;
-        ctx.fillStyle = hexToRgba(agent.color, alpha);
-        ctx.fillRect(cx - 3 + i * 3, baseY, 2, 2);
-      }
+      // Animated dots "..." with cascading fade
+      const dotCount = 1 + (Math.floor(Date.now() / 400) % 3);
+      const dots = '.'.repeat(dotCount);
+      ctx.save();
+      ctx.fillStyle = hexToRgba(agent.color, 0.9);
+      ctx.shadowColor = agent.color;
+      ctx.shadowBlur = 4;
+      ctx.font = 'bold 10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(dots, cx, baseY + 4);
+      ctx.shadowBlur = 0;
+      ctx.restore();
       break;
     }
 
     case 'tool_call': {
+      // Wrench icon - pixel art style with glow
+      ctx.save();
       ctx.fillStyle = '#F59E0B';
-      ctx.fillRect(cx - 1, baseY, 1, 3);
-      ctx.fillRect(cx - 2, baseY - 1, 3, 1);
-      ctx.fillRect(cx - 2, baseY + 3, 3, 1);
-      ctx.fillRect(cx + 1, baseY, 1, 1);
+      ctx.shadowColor = '#F59E0B';
+      ctx.shadowBlur = 4;
+      // Wrench head
+      ctx.fillRect(cx - 2, baseY - 1, 1, 1);
+      ctx.fillRect(cx + 1, baseY - 1, 1, 1);
+      ctx.fillRect(cx - 2, baseY, 4, 1);
+      // Handle
+      ctx.fillRect(cx, baseY + 1, 1, 3);
+      ctx.fillRect(cx - 1, baseY + 3, 3, 1);
+      ctx.shadowBlur = 0;
+      ctx.restore();
       break;
     }
 
@@ -455,7 +480,7 @@ export function drawTimeOfDayOverlay(ctx: CanvasRenderingContext2D): void {
 // drawAmbientEffects — subtle desk screen flickers + coffee steam
 // ---------------------------------------------------------------------------
 
-export function drawAmbientEffects(ctx: CanvasRenderingContext2D, tick: number): void {
+export function drawAmbientEffects(ctx: CanvasRenderingContext2D, tick: number, agents?: CanvasAgent[]): void {
   // Screen flickers on desks — every ~120 ticks, a random desk glows briefly (2 frames)
   if (tick % 120 < 2) {
     const deskIdx = Math.floor((tick / 120) % 4); // cycle through 4 desks
@@ -474,6 +499,97 @@ export function drawAmbientEffects(ctx: CanvasRenderingContext2D, tick: number):
       ctx.fillStyle = `rgba(200, 200, 200, ${steamAlpha})`;
       ctx.fillRect(steamX - 1, steamY, 3, 2);
       ctx.fillRect(steamX + 2, steamY - 3, 2, 2);
+    }
+  }
+
+  // Desk monitor glow — small colored rectangles at desk positions, glows in agent color
+  // when the agent is nearby (at their desk)
+  if (agents) {
+    const deskAssignments: Array<{ x: number; y: number; agentId: string }> = [
+      { x: 4, y: 14, agentId: 'weebo' },
+      { x: 14, y: 14, agentId: 'edith' },
+      { x: 7, y: 19, agentId: 'jarvis' },
+      { x: 20, y: 13, agentId: 'aria' },
+      { x: 2, y: 5, agentId: 'forge' },
+      { x: 17, y: 13, agentId: 'pulse' },
+      { x: 4, y: 3, agentId: 'echo' },
+      { x: 24, y: 14, agentId: 'cal' },
+      { x: 8, y: 3, agentId: 'nova' },
+    ];
+
+    for (const desk of deskAssignments) {
+      const agent = agents.find(a => a.id === desk.agentId);
+      if (!agent) continue;
+
+      const dist = Math.abs(agent.x - desk.x) + Math.abs(agent.y - desk.y);
+      const isNearDesk = dist <= 2;
+      const color = agent.color;
+
+      // Monitor rectangle (4x3px) at desk
+      const monX = desk.x * CELL + CELL / 2 - 2;
+      const monY = desk.y * CELL - 4;
+
+      if (isNearDesk) {
+        // Active glow — brighter with breathing
+        const breath = 0.2 + 0.15 * Math.sin(Date.now() / 1000 + desk.x);
+        ctx.save();
+        ctx.fillStyle = hexToRgba(color, breath);
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 6;
+        ctx.fillRect(monX, monY, 4, 3);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      } else {
+        // Dim standby glow
+        ctx.fillStyle = hexToRgba(color, 0.05);
+        ctx.fillRect(monX, monY, 4, 3);
+      }
+    }
+  }
+
+  // Ambient floor grid pulse — very subtle breathing grid lines
+  {
+    const gridAlpha = 0.015 + 0.015 * Math.sin(Date.now() / 2000);
+    ctx.strokeStyle = `rgba(0, 240, 255, ${gridAlpha})`;
+    ctx.lineWidth = 0.5;
+    // Only draw every 4th line for subtlety
+    for (let c = 0; c <= COLS; c += 4) {
+      ctx.beginPath();
+      ctx.moveTo(c * CELL, 0);
+      ctx.lineTo(c * CELL, CANVAS_H);
+      ctx.stroke();
+    }
+    for (let r = 0; r <= ROWS; r += 4) {
+      ctx.beginPath();
+      ctx.moveTo(0, r * CELL);
+      ctx.lineTo(CANVAS_W, r * CELL);
+      ctx.stroke();
+    }
+  }
+
+  // Server rack blinking — blink dots when any agent is in tool_call state
+  if (agents) {
+    const anyToolCall = agents.some(a => a.state === 'tool_call');
+    // Server rack area (upper-right blocked zone, approximate position)
+    const rackX = 15 * CELL + 4;
+    const rackY = 9 * CELL + 4;
+
+    if (anyToolCall) {
+      // Active blinking — green/amber dots cycling
+      const phase = Math.floor(Date.now() / 200) % 4;
+      for (let i = 0; i < 3; i++) {
+        const dotColor = ((i + phase) % 2 === 0) ? '#ADFF2F' : '#F59E0B';
+        const dotAlpha = 0.5 + 0.3 * Math.sin(Date.now() / 150 + i);
+        ctx.fillStyle = hexToRgba(dotColor, dotAlpha);
+        ctx.fillRect(rackX, rackY + i * 6, 2, 2);
+        ctx.fillRect(rackX + 4, rackY + i * 6 + 3, 2, 2);
+      }
+    } else {
+      // Idle standby — dim green dots
+      for (let i = 0; i < 3; i++) {
+        ctx.fillStyle = 'rgba(173, 255, 47, 0.08)';
+        ctx.fillRect(rackX, rackY + i * 6, 2, 2);
+      }
     }
   }
 }
@@ -595,8 +711,8 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
     drawParticleBeam(ctx, beams[i], agents);
   }
 
-  // 3. Ambient effects (desk screen flickers, coffee steam)
-  drawAmbientEffects(ctx, tick);
+  // 3. Ambient effects (desk screen flickers, coffee steam, monitor glow, grid pulse, server rack)
+  drawAmbientEffects(ctx, tick, agents);
 
   // 4. Apply cinematic zoom transform if active (tier 3 effect)
   const hasZoom = effectState && effectState.zoomScale !== 1 && effectState.zoomTarget;

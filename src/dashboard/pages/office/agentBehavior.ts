@@ -216,12 +216,12 @@ export function initBehavior(agent: CanvasAgent): void {
   }
 
   // Stagger initial timers so agents don't all move at once
-  const stagger = Math.floor(Math.random() * 25);
+  const stagger = Math.floor(Math.random() * 30);
   behaviorStates.set(agent.id, {
     mode: 'sitting',
     targetPoint: null,
     socialTarget: null,
-    timer: randomInt(50, 150) + stagger, // 10-30s initial desk time (staggered so agents leave at different times)
+    timer: randomInt(75, 200) + stagger, // 15-40s initial desk time (staggered so agents leave at different times)
     fidgetTimer: randomInt(5, 15),
     fidgetType: 'none',
     speed: AGENT_SPEED[agent.id] ?? 1.0,
@@ -482,7 +482,7 @@ export function tickBehaviors(
         // Time to wander or socialize?
         if (bState.timer <= 0) {
           const roll = Math.random();
-          if (roll < 0.75) {  // 75% chance to explore (was 55%)
+          if (roll < 0.55) {  // 55% chance to explore (balanced with desk time)
             // Wander using perception-driven rules
             const perception = perceive(agent, agents, recentWorkers);
             const dest = chooseDestination(perception);
@@ -556,12 +556,12 @@ export function tickBehaviors(
             releasePoint(agent.id);
             bState.wanderCount++;
 
-            // Wander count limit: after 3-5 visits, force return home
-            const wanderLimit = randomInt(3, 5);
+            // Wander count limit: after 1-3 visits, force return home
+            const wanderLimit = randomInt(1, 3);
             const canChain = bState.wanderCount < wanderLimit;
 
-            // 80% chance to chain to another interaction point (if under limit)
-            if (canChain && Math.random() < 0.8) {
+            // 60% chance to chain to another interaction point (if under limit)
+            if (canChain && Math.random() < 0.6) {
               const perception = perceive(agent, agents, recentWorkers);
               const nextDest = chooseDestination(perception);
               if (nextDest) {
@@ -701,7 +701,7 @@ export function tickBehaviors(
 
         if (agent.x === agent.targetX && agent.y === agent.targetY) {
           bState.mode = 'sitting';
-          bState.timer = randomInt(100, 200); // 60-120s desk sit time
+          bState.timer = randomInt(125, 250); // 25-50s desk sit time (more time at desk)
           bState.fidgetTimer = randomInt(5, 15);
           bState.targetPoint = null;
           bState.facing = 'down'; // face desk

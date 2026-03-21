@@ -413,15 +413,15 @@ export default function OfficeStage({
                 p.map(a => {
                   if (a.id !== doneId) return a;
                   const reset = { ...a, state: 'idle' as AgentStateType, path: [], pathIndex: 0 };
-                  // Walk specialist back to their own desk — validated
-                  if (a.isSpecialist) {
-                    const homePos = SPECIALIST_POSITIONS[a.id as SpecialistId];
-                    if (homePos) {
-                      const seat = getSeatPosition(homePos);
-                      const validSeat = validateTarget(seat.x, seat.y, a.x, a.y);
-                      reset.targetX = validSeat.x;
-                      reset.targetY = validSeat.y;
-                    }
+                  // Walk agent back to their own desk — validated (both core and specialist)
+                  const homePos = a.isSpecialist
+                    ? SPECIALIST_POSITIONS[a.id as SpecialistId]
+                    : CORE_DESK_POSITIONS[a.id as CoreAgentId];
+                  if (homePos) {
+                    const seat = getSeatPosition(homePos);
+                    const validSeat = validateTarget(seat.x, seat.y, a.x, a.y);
+                    reset.targetX = validSeat.x;
+                    reset.targetY = validSeat.y;
                   }
                   return reset;
                 }),
