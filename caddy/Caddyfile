@@ -9,7 +9,8 @@
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-		X-XSS-Protection "1; mode=block"
+		X-XSS-Protection "0"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' wss: https:; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests"
 	}
 }
 
@@ -25,11 +26,7 @@ api.geekspace.space {
 	redir https://api.agentin.chat{uri} permanent
 }
 
-dev.geekspace.space {
-	import common_headers
-
-	reverse_proxy openclaw:58049
-}
+# dev.geekspace.space — REMOVED: openclaw container stopped 9 days ago
 
 # ---- Production (agentin.chat) ----
 ai.agentin.chat {
@@ -100,7 +97,7 @@ ai.agentin.chat {
 }
 
 api.agentin.chat {
-	import common_headers
+	# Headers handled by Express (helmet) — no common_headers to avoid duplicates
 
 	reverse_proxy geekspace:3001 {
 		flush_interval -1

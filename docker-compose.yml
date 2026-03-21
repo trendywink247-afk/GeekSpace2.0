@@ -32,6 +32,7 @@ services:
       resources:
         limits:
           memory: 128M
+          cpus: '0.25'
     logging:
       driver: "json-file"
       options:
@@ -51,7 +52,7 @@ services:
       - DB_PATH=/app/data/geekspace.db
       - REDIS_URL=redis://:${REDIS_PASSWORD:-geekspace-redis-2026}@redis:6379
       # Set to your actual Ollama container name/address
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
       - OLLAMA_MODEL=hermes3:8b
       - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://edith-bridge:8787}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
@@ -68,7 +69,8 @@ services:
     volumes:
       - geekspace-data:/app/data
       - apm-data:/app/apminsightdata
-      - /root/GeekSpace2.0:/repo
+      # REMOVED: source code bind mount (security risk in production)
+      # - /root/GeekSpace2.0:/repo
     networks:
       - geekspace-net
       - geekspace-shared
@@ -86,7 +88,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G  # Increased from 512M for AI peak load resilience
+          memory: 1G
+          cpus: '1.0'
     logging:
       driver: "json-file"
       options:
@@ -142,6 +145,7 @@ services:
       resources:
         limits:
           memory: 256M
+          cpus: '0.25'
     logging:
       driver: "json-file"
       options:
@@ -173,6 +177,7 @@ services:
       resources:
         limits:
           memory: 64M
+          cpus: '0.25'
     logging:
       driver: "json-file"
       options:
@@ -207,6 +212,7 @@ services:
       resources:
         limits:
           memory: 512M
+          cpus: '0.5'
 
   # ---- Uptime Kuma (Status Monitoring) ----
   uptime-kuma:
@@ -214,10 +220,9 @@ services:
     container_name: geekspace-uptime-kuma
     restart: unless-stopped
     ports:
-      - "3100:3001"
+      - "127.0.0.1:3100:3001"
     volumes:
       - uptime-kuma-data:/app/data
-    mem_limit: 128m
     networks:
       - geekspace-net
     healthcheck:
@@ -226,6 +231,11 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
 
   # ---- SearXNG (Free Metasearch — replaces Tavily) ----
   searxng:
@@ -247,6 +257,7 @@ services:
       resources:
         limits:
           memory: 256M
+          cpus: '0.25'
     logging:
       driver: "json-file"
       options:
@@ -276,6 +287,7 @@ services:
       resources:
         limits:
           memory: 128M
+          cpus: '0.25'
     logging:
       driver: "json-file"
       options:
@@ -303,6 +315,7 @@ services:
       resources:
         limits:
           memory: 256M
+          cpus: '0.5'
     logging:
       driver: "json-file"
       options:
@@ -330,6 +343,7 @@ services:
       resources:
         limits:
           memory: 1536M
+          cpus: '1.0'
     networks:
       - geekspace-net
     logging:
@@ -360,12 +374,13 @@ services:
       resources:
         limits:
           memory: 2048M
+          cpus: '1.0'
     networks:
       - geekspace-net
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:3000/api/agents", "||", "exit", "1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/agents || exit 1"]
       interval: 30s
-      timeout: 10s
+      timeout: 30s
       start_period: 60s
       retries: 3
     logging:
