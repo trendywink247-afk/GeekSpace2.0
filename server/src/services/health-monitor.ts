@@ -6,6 +6,7 @@
 // the durable scheduler.
 // ============================================================
 
+import { config } from '../config.js';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { sendTelegramNotification } from './telegram.js';
@@ -21,6 +22,7 @@ interface ServiceState {
   lastCheck: string;
   lastError: string | null;
   alertSent: boolean;
+  consecutiveFailures: number;
 }
 
 interface ServiceHealthMap {
@@ -31,18 +33,20 @@ interface ServiceHealthMap {
 // ---- In-Memory State ----
 
 const state: ServiceHealthMap = {
-  ollama: { status: 'unknown', lastCheck: '', lastError: null, alertSent: false },
-  redis:  { status: 'unknown', lastCheck: '', lastError: null, alertSent: false },
+  ollama: { status: 'unknown', lastCheck: '', lastError: null, alertSent: false, consecutiveFailures: 0 },
+  redis:  { status: 'unknown', lastCheck: '', lastError: null, alertSent: false, consecutiveFailures: 0 },
 };
 
-const OLLAMA_URL = 'http://ollama:11434/api/tags';
-const OLLAMA_TIMEOUT_MS = 4000;
+// Use config.ollamaBaseUrl — NOT a hardcoded hostname (container name varies by deploy)
+const OLLAMA_TIMEOUT_MS = 5000;
+// Only alert after 3 consecutive failures (~3 minutes) to avoid transient blips
+const ALERT_THRESHOLD = 3;
 
 // ---- Health Checks ----
 
 async function checkOllama(): Promise<{ ok: boolean; error: string | null }> {
   try {
-    const res = await fetch(OLLAMA_URL, {
+    const res = await fetch(`${config.ollamaBaseUrl}/api/tags`, {
       method: 'GET',
       signal: AbortSignal.timeout(OLLAMA_TIMEOUT_MS),
     });
@@ -123,18 +127,30 @@ async function broadcastTelegram(message: string): Promise<void> {
 // ---- State Transition Handlers ----
 
 async function handleOllamaDown(error: string): Promise<void> {
-  const prev = state.ollama.status;
-  state.ollama.status = 'down';
+  state.ollama.consecutiveFailures++;
   state.ollama.lastError = error;
 
-  logger.warn({ error, prev }, 'health-monitor: Ollama is DOWN');
+  // Don't flip to "down" or alert until we've seen consecutive failures
+  // (transient blips, cold starts after KEEP_ALIVE timeout, brief network hiccups)
+  if (state.ollama.consecutiveFailures < ALERT_THRESHOLD) {
+    logger.debug(
+      { error, failures: state.ollama.consecutiveFailures, threshold: ALERT_THRESHOLD },
+      'health-monitor: Ollama check failed (waiting for threshold before alerting)'
+    );
+    return;
+  }
+
+  const prev = state.ollama.status;
+  state.ollama.status = 'down';
+
+  logger.warn({ error, prev, consecutiveFailures: state.ollama.consecutiveFailures }, 'health-monitor: Ollama is DOWN');
 
   if (!state.ollama.alertSent) {
     state.ollama.alertSent = true;
 
     if (!await isAlertRateLimited('ollama', 'down')) {
       await broadcastTelegram(
-        '⚠️ [Ollama] is [DOWN]: ' + error + '. Auto-switching to cloud AI.'
+        '⚠️ [Ollama] is offline (' + error + '). Chat is using cloud AI — no action needed.'
       );
     }
 
@@ -142,7 +158,7 @@ async function handleOllamaDown(error: string): Promise<void> {
     const recipients = getTelegramRecipients();
     for (const r of recipients) {
       if (r.user_id !== 'admin') {
-        logActivity(r.user_id, 'service_down', 'Ollama went offline, switched to cloud AI', 'warning');
+        logActivity(r.user_id, 'service_down', 'Ollama offline, using cloud AI fallback', 'warning');
       }
     }
   }
@@ -208,6 +224,7 @@ export async function runHealthTick(): Promise<void> {
   state.ollama.lastCheck = now;
 
   if (ollama.ok) {
+    state.ollama.consecutiveFailures = 0;
     if (state.ollama.status === 'down') {
       await handleOllamaRecovery();
     } else {
