@@ -125,17 +125,47 @@ export default function TimelineCard({ entry, onAction }: TimelineCardProps) {
         borderLeft: `2px solid ${borderColor}`,
       }}
     >
-      {/* Header row: icon + agent name + timestamp */}
+      {/* Header row: agent identity + timestamp */}
       <div className="flex items-center justify-between gap-2 mb-1.5">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="text-sm flex-shrink-0">{icon}</span>
-          {agentLabel && (
-            <span
-              className="text-[10px] font-semibold truncate"
-              style={{ color: borderColor }}
-            >
-              {agentLabel}
-            </span>
+          {entry.agentId ? (
+            <>
+              <span className="text-sm flex-shrink-0">
+                {AGENT_META[entry.agentId]?.emoji ?? icon}
+              </span>
+              <span
+                className="text-[11px] font-bold truncate"
+                style={{ color: AGENT_COLORS[entry.agentId] ?? borderColor }}
+              >
+                {entry.agentName ?? entry.agentId}
+              </span>
+              {entry.type === 'comm' && entry.relatedAgents?.[0] && (
+                <>
+                  <span className="text-[10px]" style={{ color: '#4B5563' }}>&rarr;</span>
+                  <span className="text-sm flex-shrink-0">
+                    {AGENT_META[entry.relatedAgents[0]]?.emoji ?? '?'}
+                  </span>
+                  <span
+                    className="text-[11px] font-bold truncate"
+                    style={{ color: AGENT_COLORS[entry.relatedAgents[0]] ?? '#8892A4' }}
+                  >
+                    {entry.relatedAgents[0].charAt(0).toUpperCase() + entry.relatedAgents[0].slice(1)}
+                  </span>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <span className="text-sm flex-shrink-0">{icon}</span>
+              {agentLabel && (
+                <span
+                  className="text-[10px] font-semibold truncate"
+                  style={{ color: borderColor }}
+                >
+                  {agentLabel}
+                </span>
+              )}
+            </>
           )}
         </div>
         <span className="text-[9px] font-mono flex-shrink-0" style={{ color: '#4B5563' }}>

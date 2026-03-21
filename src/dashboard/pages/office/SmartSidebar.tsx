@@ -5,7 +5,7 @@
 import { useState, useRef, useCallback } from 'react';
 import type { SSEEvent, TimelineEntry, SidebarTab, AgentId } from './types';
 import type { OfficeData } from './useOfficeData';
-import { C } from './constants';
+import { C, AGENT_COLORS } from './constants';
 import TimelineCard from './TimelineCard';
 import TasksTab from './TasksTab';
 import MetricsTab from './MetricsTab';
@@ -23,6 +23,25 @@ function getToken(): string | null {
     localStorage.getItem('token') ||
     sessionStorage.getItem('token')
   );
+}
+
+// ---------------------------------------------------------------------------
+// Extract agent identity from action text (e.g. "Jarvis replied", "Weebo → Forge: ...")
+// ---------------------------------------------------------------------------
+function extractAgent(action: string): { agentId?: AgentId; agentName?: string; agentColor?: string } {
+  const agents: AgentId[] = ['weebo', 'edith', 'jarvis', 'aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
+  const lower = action.toLowerCase();
+  for (const id of agents) {
+    const name = id.charAt(0).toUpperCase() + id.slice(1);
+    if (lower.includes(name.toLowerCase())) {
+      return { agentId: id, agentName: name, agentColor: AGENT_COLORS[id] };
+    }
+  }
+  // "Geek replied" maps to default agent Weebo
+  if (lower.includes('geek')) {
+    return { agentId: 'weebo', agentName: 'Weebo', agentColor: AGENT_COLORS.weebo };
+  }
+  return {};
 }
 
 // ---------------------------------------------------------------------------
@@ -47,9 +66,13 @@ function rawToEntry(
   item: { action: string; details: string; icon: string; created_at: string },
   index: number,
 ): TimelineEntry {
+  const agent = extractAgent(item.action);
   return {
     id: `poll-${index}-${item.created_at}`,
     type: iconToEntryType(item.icon),
+    agentId: agent.agentId,
+    agentName: agent.agentName,
+    agentColor: agent.agentColor,
     action: item.action,
     details: item.details ?? undefined,
     icon: item.icon,
@@ -69,8 +92,9 @@ function sseToEntry(ev: SSEEvent, index: number): TimelineEntry {
   return {
     id: `sse-${index}-${ev.timestamp}`,
     type,
-    agentId: ev.agentId as AgentId | undefined,
-    agentName: ev.agentName,
+    agentId: (ev.agentId as AgentId) || undefined,
+    agentName: ev.agentName || undefined,
+    agentColor: ev.agentId ? AGENT_COLORS[ev.agentId as AgentId] : undefined,
     action: ev.content ?? ev.tool ?? ev.state,
     details: ev.tool && ev.content ? ev.tool : undefined,
     timestamp: ev.timestamp,
