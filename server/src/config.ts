@@ -52,7 +52,7 @@ export const config = {
 
   // Ollama (local engine)
   ollamaBaseUrl: optional('OLLAMA_BASE_URL', 'http://localhost:11434'),
-  ollamaModel: optional('OLLAMA_MODEL', 'qwen2.5-coder:1.5b'),
+  ollamaModel: optional('OLLAMA_MODEL', 'hermes3:8b'),
   ollamaTimeout: optionalInt('OLLAMA_TIMEOUT_MS', 45000),
   ollamaMaxTokens: optionalInt('OLLAMA_MAX_TOKENS', 512),
 
