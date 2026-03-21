@@ -1,21 +1,22 @@
 // ============================================================
-// GeekSpace LLM Router — Phase 110+: Multi-Provider Waterfall
+// GeekSpace LLM Router — Phase 110: Multi-Provider Waterfall
 //
-// ALL users (free + budget-exceeded premium):
-//   Tier 1: Groq Llama 3.3 70B (free, fast, reliable tool calling)
-//   Tier 2: Gemini Flash 2.0 (free tier)
-//   Tier 3: OpenRouter-free (free tier)
-//   Tier 4: Ollama local (fallback — only when cloud unavailable)
-//   Tier 5: Kimi K2 (paid last resort, system $5/mo budget)
+// FREE users:
+//   Tier 1+6: Race(OpenRouter-free, Ollama qwen3:8b) → first wins
+//   Tier 2:   Groq Llama 3.3 70B (free quota)
+//   Tier 3:   Groq Kimi K2 (paid, system $5/mo budget)
+//   Tier 0:   Builtin error
+//
+// PAID users:
+//   Tier 1: OpenRouter-free (user's chosen model)
+//   Tier 2: Groq Llama 3.3 70B (free)
+//   Tier 3: Groq Kimi K2 (paid, system budget)
+//   Tier 4: Together AI Maverick (paid)
+//   Tier 5: Edith/Kimi K2.5 (paid, true last resort)
 //   Tier 0: Builtin error
 //
-// PAID users (within budget):
-//   Same as above, plus after Kimi:
-//   Tier 6: Together AI Maverick (paid)
-//   Tier 7: Edith/Kimi K2.5 (paid, true last resort)
-//
 // Budget exceeded (overBudget / overDailyBudget):
-//   → degrade to free providers only (Groq → Gemini → OpenRouter-free → Ollama)
+//   → degrade to free providers only (T1+T6 race or T2 Groq)
 //
 // Special: automation intent → PicoClaw sidecar (all users)
 // ============================================================
@@ -66,8 +67,7 @@ export interface RoutingTrace {
     | 'daily_budget_exceeded'
     | 'manual_override'
     | 'fallback_chain'
-    | 'race_free_tier'
-    | 'groq_primary';
+    | 'race_free_tier';
   latencyMs: number;
   tokensEstimate: number;
   intent: Intent;
@@ -274,10 +274,6 @@ function isTogetherAvailable(): boolean {
   return !!config.togetherApiKey;
 }
 
-function isGeminiAvailable(): boolean {
-  return !!config.geminiApiKey;
-}
-
 function isPremiumPlan(plan?: string): boolean {
   return ['monthly', 'pilot', 'halfyear', 'yearly', 'pro'].includes(plan || '');
 }
@@ -381,7 +377,7 @@ async function callOllama(messages: ChatMessage[]): Promise<{ content: string; t
   };
 }
 
-// ---- Groq (T1 primary: Llama 3.3 70B free) — 3-key round-robin pool ----
+// ---- Groq (T2: Llama 3.3 70B free) — 3-key round-robin pool ----
 // 3 accounts × 14,400 req/day free = ~43,200 req/day total
 
 let groqKeyIndex = 0;
@@ -447,61 +443,6 @@ async function callGroq(
   }
 
   throw lastError; // all keys rate-limited → fall to next tier
-}
-
-// ---- Gemini Flash 2.0 (T2: free tier) ----
-
-async function callGemini(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
-  if (!config.geminiApiKey) throw new Error('Gemini API key not configured');
-
-  // Gemini uses its own REST format: /models/{model}:generateContent
-  const url = `${config.geminiBaseUrl}/models/${config.geminiModel}:generateContent?key=${config.geminiApiKey}`;
-
-  // Convert ChatMessage[] to Gemini contents format
-  const contents = messages
-    .filter(m => m.role !== 'system')
-    .map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
-
-  const systemInstruction = messages.find(m => m.role === 'system');
-
-  const body: Record<string, unknown> = {
-    contents,
-    generationConfig: {
-      maxOutputTokens: config.geminiMaxTokens,
-      temperature: 0.7,
-    },
-  };
-
-  if (systemInstruction) {
-    body.systemInstruction = { parts: [{ text: systemInstruction.content }] };
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(config.geminiTimeoutMs),
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`Gemini returned ${response.status}: ${text}`);
-  }
-
-  const data = await response.json() as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
-  };
-
-  const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return {
-    content,
-    tokensIn: data.usageMetadata?.promptTokenCount || 0,
-    tokensOut: data.usageMetadata?.candidatesTokenCount || 0,
-  };
 }
 
 // ---- Together AI (T4: Llama 4 Maverick, paid) ----
@@ -727,9 +668,8 @@ async function isKimiWithinBudget(): Promise<boolean> {
   return spend < KIMI_MONTHLY_BUDGET_UNITS;
 }
 
-// ---- Free Tier Race (legacy — kept for manual override / test paths) ----
-// Previously raced OpenRouter-free and Ollama in parallel.
-// Now the main waterfall is sequential: Groq → Gemini → OpenRouter-free → Ollama → Kimi.
+// ---- Free Tier Race (T1 + T6 simultaneously) ----
+// Runs OpenRouter-free and Ollama in parallel — returns first successful response.
 
 type CallResult = { content: string; tokensIn: number; tokensOut: number; provider: Provider };
 
@@ -763,7 +703,7 @@ async function raceFreeTier(
   }
 }
 
-// ---- Waterfall Fallback Helper (Groq → Gemini → OpenRouter-free → Ollama → Kimi → ...) ----
+// ---- Waterfall Fallback Helper ----
 
 async function tryFallbackChain(
   providers: Provider[],
@@ -790,11 +730,6 @@ async function tryFallbackChain(
           if (!isGroqAvailable()) continue;
           const r = await callGroq(fullMessages);
           return { ...r, provider: 'groq' };
-        }
-        case 'gemini': {
-          if (!isGeminiAvailable()) continue;
-          const r = await callGemini(fullMessages);
-          return { ...r, provider: 'gemini' };
         }
         case 'kimi': {
           if (!isEdithAvailable()) continue; // same API key / endpoint as Edith
@@ -837,7 +772,6 @@ const FLAT_CREDIT_COSTS: Partial<Record<Provider, number>> = {
   ollama:            1,
   'openrouter-free': 2,
   groq:              2,
-  gemini:            2,
   'kimi':       5,
   picoclaw:          1,
   builtin:           0,
@@ -896,11 +830,9 @@ function getModelForProvider(provider: Provider, userId?: string): string {
   switch (provider) {
     case 'ollama':          return config.ollamaModel;
     case 'groq':            return config.groqModel;
-    case 'gemini':          return config.geminiModel;
     case 'kimi':            return KIMI_BASE_MODEL;
     case 'together':        return config.togetherModel;
     case 'openrouter':      return config.openrouterModel;
-    case 'openrouter-free': return 'openrouter-free-model';
     case 'edith':           return config.moonshotReasoningModel;
     case 'picoclaw':        return 'picoclaw-haiku';
     case 'builtin':         return 'builtin-fallback';
@@ -1007,6 +939,7 @@ export async function routeChat(
 
   // ---- Provider Selection ----
   let provider: Provider = 'builtin';
+  let useRace = false; // race T1+T6 for free users
   let routingReason: RoutingTrace['reason'] = 'ollama_unreachable';
 
   const ollamaOk = await isOllamaAvailable();
@@ -1027,35 +960,43 @@ export async function routeChat(
     provider = 'picoclaw';
     routingReason = 'ollama_healthy';
 
-  } else {
-    // ALL users (free, premium, budget-exceeded): Groq-first sequential waterfall
-    // Groq → Gemini → OpenRouter-free → Ollama → (Kimi via fallback chain)
-    if (isGroqAvailable()) {
+  } else if (!isPremium || overBudget || overDailyBudget) {
+    // Free users + budget-exceeded premium: race T1(OpenRouter-free) + T6(Ollama)
+    if (ollamaOk || isOpenRouterFreeAvailable()) {
+      useRace = true;
+      provider = 'openrouter-free'; // trace placeholder
+      routingReason = ollamaOk ? 'race_free_tier' : 'openrouter_free_available';
+    } else if (isGroqAvailable()) {
       provider = 'groq';
-      routingReason = 'groq_primary';
-    } else if (isGeminiAvailable()) {
-      provider = 'gemini';
       routingReason = 'fallback_chain';
-    } else if (isOpenRouterFreeAvailable()) {
-      provider = 'openrouter-free';
-      routingReason = 'openrouter_free_available';
-    } else if (ollamaOk) {
-      provider = 'ollama';
-      routingReason = 'ollama_healthy';
     } else {
       provider = 'builtin';
       routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'ollama_unreachable';
     }
+
+  } else {
+    // Premium users, no budget issues: sequential T1 → T2 → T3 → T4 → T5
+    if (isOpenRouterFreeAvailable()) {
+      provider = 'openrouter-free';
+      routingReason = 'openrouter_free_available';
+    } else if (isGroqAvailable()) {
+      provider = 'groq';
+      routingReason = 'fallback_chain';
+    } else {
+      provider = 'builtin';
+      routingReason = 'ollama_unreachable';
+    }
   }
 
   logger.info({
-    provider,
+    provider: useRace ? 'race(openrouter-free+ollama)' : provider,
     intent,
     userId: opts?.userId,
     credits: opts?.userCredits,
     isPremium,
     overBudget,
     overDailyBudget,
+    useRace,
     ollamaOk,
     routingReason,
     forced: !!(manualOverride || opts?.forceProvider),
@@ -1075,7 +1016,19 @@ export async function routeChat(
   }
 
   try {
-    {
+    if (useRace) {
+      // ---- Free tier race: T1(OpenRouter-free) + T6(Ollama) ----
+      const raceResult = await raceFreeTier(fullMessages, opts?.userId, ollamaOk);
+      if (!raceResult) throw new Error('Free-tier race: all providers failed');
+
+      reply = raceResult.content;
+      tokensIn = raceResult.tokensIn;
+      tokensOut = raceResult.tokensOut;
+      finalProvider = raceResult.provider;
+      model = finalProvider === 'ollama' ? config.ollamaModel : await getCurrentFreeModel();
+      routingReason = finalProvider === 'ollama' ? 'ollama_healthy' : 'openrouter_free_available';
+
+    } else {
       switch (provider) {
         case 'ollama': {
           const result = await callOllama(fullMessages);
@@ -1099,12 +1052,6 @@ export async function routeChat(
           const result = await callGroq(fullMessages);
           reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
           model = config.groqModel;
-          break;
-        }
-        case 'gemini': {
-          const result = await callGemini(fullMessages);
-          reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
-          model = config.geminiModel;
           break;
         }
         case 'kimi': {
@@ -1147,33 +1094,28 @@ export async function routeChat(
 
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    logger.warn({ error: errorMsg, provider, intent, userId: opts?.userId }, 'llm:provider_failed');
+    logger.warn({ error: errorMsg, provider: useRace ? 'race-free' : provider, intent, userId: opts?.userId }, 'llm:provider_failed');
 
     // ---- Fallback chains ----
-    // All users: Groq → Gemini → OpenRouter-free → Ollama → Kimi
-    // Premium (within budget): + Together → Edith after Kimi
-    // Budget exceeded: free providers only (Groq → Gemini → OpenRouter-free → Ollama)
-    // Chain starts AFTER the failed provider.
+    // Free / budget-degraded premium: T2(Groq free) → T3(Kimi, budget check) → error
+    // Premium normal: T2(Groq) → T3(Kimi) → T4(Together) → T5(Edith) → error
+    // (after primary T1 failure, chain starts from T2)
 
-    const FULL_CHAIN: Provider[] = ['groq', 'gemini', 'openrouter-free', 'ollama', 'kimi'];
     let chain: Provider[];
     if (overBudget || overDailyBudget) {
       // Budget exceeded: free providers only
-      const FREE_CHAIN: Provider[] = ['groq', 'gemini', 'openrouter-free', 'ollama'];
-      const failedIdx = FREE_CHAIN.indexOf(provider);
-      chain = failedIdx >= 0 ? FREE_CHAIN.slice(failedIdx + 1) : FREE_CHAIN;
+      chain = ['groq'];
     } else if (isPremium) {
-      // Premium: full chain + paid providers after Kimi
-      const PAID_CHAIN: Provider[] = ['groq', 'gemini', 'openrouter-free', 'ollama', 'kimi', 'together', 'edith'];
+      // Premium sequential: start from T2 (T1 just failed)
+      const PAID_CHAIN: Provider[] = ['groq', 'kimi', 'together', 'edith'];
       const failedIdx = PAID_CHAIN.indexOf(provider);
       chain = failedIdx >= 0 ? PAID_CHAIN.slice(failedIdx + 1) : PAID_CHAIN;
     } else {
-      // Free users: Groq → Gemini → OpenRouter-free → Ollama → Kimi
-      const failedIdx = FULL_CHAIN.indexOf(provider);
-      chain = failedIdx >= 0 ? FULL_CHAIN.slice(failedIdx + 1) : FULL_CHAIN;
+      // Free users (race failed): T2 → T3
+      chain = ['groq', 'kimi'];
     }
 
-    logger.info({ failedProvider: provider, chain, userId: opts?.userId }, 'llm:starting_fallback_chain');
+    logger.info({ failedProvider: useRace ? 'race-free' : provider, chain, userId: opts?.userId }, 'llm:starting_fallback_chain');
 
     const fallback = await tryFallbackChain(chain, fullMessages, opts?.userId, isPremium, overDailyBudget);
     if (fallback) {

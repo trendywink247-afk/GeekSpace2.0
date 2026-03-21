@@ -127,13 +127,24 @@ async function handleOllamaDown(error: string): Promise<void> {
   state.ollama.status = 'down';
   state.ollama.lastError = error;
 
-  // Ollama is a local fallback (T4), not primary — log but don't send urgent alerts
-  logger.info({ error, prev }, 'health-monitor: Ollama offline — using cloud AI (no impact on service)');
+  logger.warn({ error, prev }, 'health-monitor: Ollama is DOWN');
 
   if (!state.ollama.alertSent) {
     state.ollama.alertSent = true;
-    // No Telegram alert — Ollama is a fallback, not the primary provider.
-    // Cloud providers (Groq, Gemini, OpenRouter-free) handle traffic.
+
+    if (!await isAlertRateLimited('ollama', 'down')) {
+      await broadcastTelegram(
+        '⚠️ [Ollama] is [DOWN]: ' + error + '. Auto-switching to cloud AI.'
+      );
+    }
+
+    // Log activity for any connected users
+    const recipients = getTelegramRecipients();
+    for (const r of recipients) {
+      if (r.user_id !== 'admin') {
+        logActivity(r.user_id, 'service_down', 'Ollama went offline, switched to cloud AI', 'warning');
+      }
+    }
   }
 }
 
@@ -142,11 +153,23 @@ async function handleOllamaRecovery(): Promise<void> {
   state.ollama.status = 'up';
   state.ollama.lastError = null;
 
-  logger.info({ prev }, 'health-monitor: Ollama recovered (local fallback available again)');
+  logger.info({ prev }, 'health-monitor: Ollama RECOVERED');
 
   if (state.ollama.alertSent) {
     state.ollama.alertSent = false;
-    // No Telegram alert for recovery — Ollama is a fallback, not primary
+
+    if (!await isAlertRateLimited('ollama', 'up')) {
+      await broadcastTelegram(
+        '✅ [Ollama] recovered. Back to normal.'
+      );
+    }
+
+    const recipients = getTelegramRecipients();
+    for (const r of recipients) {
+      if (r.user_id !== 'admin') {
+        logActivity(r.user_id, 'service_up', 'Ollama recovered, switching back to local AI', 'info');
+      }
+    }
   }
 }
 
