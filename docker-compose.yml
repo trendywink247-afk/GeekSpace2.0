@@ -54,12 +54,12 @@ services:
       # Set to your actual Ollama container name/address
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
       - OLLAMA_MODEL=hermes3:8b
-      - OLLAMA_TIMEOUT_MS=60000
+      - OLLAMA_TIMEOUT_MS=${OLLAMA_TIMEOUT_MS:-20000}
       - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://edith-bridge:8787}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
       - PICOCLAW_URL=${PICOCLAW_URL:-http://picoclaw:8080}
       - PICOCLAW_ENABLED=${PICOCLAW_ENABLED:-true}
-      - PICOCLAW_TIMEOUT_MS=60000
+      - PICOCLAW_TIMEOUT_MS=${PICOCLAW_TIMEOUT_MS:-5000}
       - BRIDGE_ENABLED=${BRIDGE_ENABLED:-true}
       - BRIDGE_AUTO_ESCALATE=${BRIDGE_AUTO_ESCALATE:-true}
       - BRIDGE_MAX_WORKFLOW_STEPS=${BRIDGE_MAX_WORKFLOW_STEPS:-6}
@@ -163,8 +163,8 @@ services:
     environment:
       - OLLAMA_BASE_URL=${PICOCLAW_OLLAMA_URL:-http://ollama-qtzz-ollama-1:11434}
       - PICOCLAW_PORT=8080
-      - PICOCLAW_MODEL=hermes3:8b
-      - PICOCLAW_TIMEOUT_MS=60000
+      - PICOCLAW_MODEL=${PICOCLAW_MODEL:-qwen2.5-coder:1.5b}
+      - PICOCLAW_TIMEOUT_MS=${PICOCLAW_TIMEOUT_MS:-5000}
     networks:
       - geekspace-net
       - geekspace-shared
