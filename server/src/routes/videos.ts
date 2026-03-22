@@ -361,7 +361,9 @@ videosRouter.post('/director/expand-idea', requireAuth, async (req: AuthRequest,
     const expanded = result.reply?.trim() || idea.trim();
     res.json({ expanded });
   } catch {
-    res.json({ expanded: idea.trim() }); // graceful fallback
+    if (!res.headersSent) {
+      res.json({ expanded: idea.trim() }); // graceful fallback
+    }
   }
 });
 
