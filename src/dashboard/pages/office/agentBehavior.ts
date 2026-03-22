@@ -489,7 +489,7 @@ function tickGroupMeeting(
         } else {
           bs.mode = 'sitting';
           bs.targetPoint = null;
-          bs.timer = randomInt(15, 30);
+          bs.timer = randomInt(5, 15);
           bs.speed = AGENT_SPEED[agent.id] ?? 1.0;
         }
       }
@@ -513,8 +513,8 @@ export function tickBehaviors(
   let changed = false;
   const isNight = theme === 'night';
 
-  // Cap concurrent movers — keeps office calm, prevents chaos
-  const maxMovers = isNight ? 2 : 4;
+  // Cap concurrent movers — keep office lively, agents visually collaborating
+  const maxMovers = isNight ? 3 : 7;
   let activeMovers = agents.filter((a) => {
     const bs = behaviorStates.get(a.id);
     return bs && (bs.mode === 'wandering' || bs.mode === 'socializing' || bs.mode === 'group-meeting');
@@ -531,16 +531,16 @@ export function tickBehaviors(
   // Trigger group meeting (less frequent at night)
   if (groupMeetingTimer <= 0) {
     if (activeMovers < maxMovers) tryStartGroupMeeting(idleAgents);
-    groupMeetingTimer = isNight ? randomInt(250, 450) : randomInt(100, 200);
+    groupMeetingTimer = isNight ? randomInt(150, 300) : randomInt(50, 100);
   }
 
   // Ambient social chat (calmer at night)
   if (socialChatTimer <= 0) {
-    socialChatTimer = isNight ? randomInt(45, 90) : randomInt(20, 45);
-    // Any idle/sitting/wandering agent can chat for more liveliness
+    socialChatTimer = isNight ? randomInt(30, 60) : randomInt(10, 22);
+    // Any idle/sitting/wandering/returning agent can chat for more liveliness
     const chatters = idleAgents.filter((a) => {
       const bs = behaviorStates.get(a.id);
-      return bs && (bs.mode === 'sitting' || bs.mode === 'wandering');
+      return bs && (bs.mode === 'sitting' || bs.mode === 'wandering' || bs.mode === 'returning');
     });
     if (chatters.length > 0) {
       const speaker = pick(chatters);
@@ -593,10 +593,10 @@ export function tickBehaviors(
         if (bState.timer <= 0) {
           // Respect concurrent mover cap
           if (activeMovers >= maxMovers) {
-            bState.timer = randomInt(15, 30);
+            bState.timer = randomInt(5, 15); // short retry — don't idle long
             break;
           }
-          const wanderChance = isNight ? 0.25 : 0.55;
+          const wanderChance = isNight ? 0.50 : 0.88;
           const roll = Math.random();
           if (roll < wanderChance) {
             // ALWAYS pick a smart object interaction point -- personality-weighted
@@ -619,15 +619,13 @@ export function tickBehaviors(
               changed = true;
               activeMovers++;
             } else {
-              bState.timer = randomInt(100, 200); // try again in 60-120s
+              bState.timer = randomInt(10, 25); // try again quickly
             }
-          } else if (roll < 0.85) {
-            // Social visit -- find a nearby non-dormant idle agent
+          } else if (roll < 0.96) {
+            // Social visit -- find any non-dormant agent (office-wide, not proximity-gated)
             const nearby = agents.filter((a) =>
               a.id !== agent.id && !a.isDormant
-              && (a.state === 'idle' || a.state === 'done')
-              && Math.abs(a.x - agent.x) < 15
-              && Math.abs(a.y - agent.y) < 10,
+              && (a.state === 'idle' || a.state === 'done'),
             );
             if (nearby.length > 0) {
               const target = pick(nearby);
@@ -646,11 +644,11 @@ export function tickBehaviors(
               changed = true;
               activeMovers++;
             } else {
-              bState.timer = randomInt(100, 200); // try again in 60-120s
+              bState.timer = randomInt(10, 25); // try again quickly
             }
           } else {
-            // Stay sitting a bit longer
-            bState.timer = randomInt(100, 200); // 60-120s
+            // Stay sitting briefly then get up — agents are autonomous
+            bState.timer = randomInt(15, 40); // 3-8s, not 60-120s
           }
         }
         break;
@@ -739,7 +737,7 @@ export function tickBehaviors(
             updated.targetY = validPt.y;
           } else {
             bState.mode = 'sitting';
-            bState.timer = randomInt(15, 30);
+            bState.timer = randomInt(5, 15);
           }
           updated.path = [];
           updated.pathIndex = 0;
@@ -795,7 +793,7 @@ export function tickBehaviors(
               bState.facing = computeFacing(agent.x, agent.y, validPt.x, validPt.y);
             } else {
               bState.mode = 'sitting';
-              bState.timer = randomInt(15, 30);
+              bState.timer = randomInt(5, 15);
               bState.facing = 'down';
             }
             changed = true;
@@ -834,7 +832,7 @@ export function tickBehaviors(
             } else {
               bState.mode = 'sitting';
               bState.targetPoint = null;
-              bState.timer = randomInt(15, 30);
+              bState.timer = randomInt(5, 15);
             }
             updated.path = [];
             updated.pathIndex = 0;
@@ -864,7 +862,7 @@ export function tickBehaviors(
             updated.pathIndex = 0;
           } else {
             bState.mode = 'sitting';
-            bState.timer = randomInt(15, 30);
+            bState.timer = randomInt(5, 15);
             bState.facing = 'down';
           }
           bState.wanderCount = 0;

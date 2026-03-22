@@ -12,8 +12,36 @@ import { logger } from '../logger.js';
 let picoAvailable: boolean | null = null;
 let picoCheckTime = 0;
 
+// Circuit breaker: track consecutive query timeouts
+let picoConsecutiveFailures = 0;
+let picoCircuitOpenUntil = 0;
+const CIRCUIT_BREAKER_THRESHOLD = 1;   // open after 1 failure (PicoClaw is consistently slow on 2-core VPS)
+const CIRCUIT_BREAKER_COOLDOWN = 300_000; // 5 min cooldown before retrying
+
+export function picoCircuitBreakerTrip(): void {
+  picoConsecutiveFailures++;
+  if (picoConsecutiveFailures >= CIRCUIT_BREAKER_THRESHOLD) {
+    picoCircuitOpenUntil = Date.now() + CIRCUIT_BREAKER_COOLDOWN;
+    logger.info({ failures: picoConsecutiveFailures, cooldownMs: CIRCUIT_BREAKER_COOLDOWN },
+      'PicoClaw circuit breaker OPEN — skipping for 5 min');
+  }
+}
+
+export function picoCircuitBreakerReset(): void {
+  if (picoConsecutiveFailures > 0) {
+    logger.info({ previousFailures: picoConsecutiveFailures }, 'PicoClaw circuit breaker RESET — queries succeeding');
+  }
+  picoConsecutiveFailures = 0;
+  picoCircuitOpenUntil = 0;
+}
+
 export async function isPicoClawAvailable(): Promise<boolean> {
   if (!config.picoClawEnabled) return false;
+
+  // Circuit breaker: if open, skip entirely (no health check, no 3s wasted)
+  if (picoCircuitOpenUntil > Date.now()) {
+    return false;
+  }
 
   // Cache check for 30 seconds
   if (picoAvailable !== null && Date.now() - picoCheckTime < 30_000) {

@@ -16,7 +16,7 @@ import { config } from '../config.js';
 import { deductSubscriptionCredits, type ChatMessage } from './llm.js';
 import { runReactLoop } from './react-loop.js';
 import { bridgeChat, type BridgeRequest } from './pico-kimi-bridge.js';
-import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext } from './memory.js';
+import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext, upsertMemory } from './memory.js';
 import { logActivity } from './activity-log.js';
 import { checkKeywordTriggers } from './automations-engine.js';
 import { sendTelegramMessage, sendTelegramPhoto, sendTelegramVideo, sendTelegramTyping, sendTelegramButtons } from './telegram.js';
@@ -34,9 +34,36 @@ import { addInboxMessage } from './inbox.js';
 import { checkContentSafety } from './content-filter.js';
 import { isLaunchModeRequest, runMultiAgentOrchestration } from './multi-agent-orchestrator.js';
 import { isResearchRequest, runResearchJob } from './research-job.js';
-import { emitThinking, emitDone, emitDelegation, emitCommSent, emitCommReceived } from './agent-state-bus.js';
+import { emitThinking, emitDone, emitDelegation, emitCommSent, emitCommReceived, emitTaskStarted, emitTaskCompleted } from './agent-state-bus.js';
 import { detectDelegationTarget, routeDelegation } from './delegation.js';
 import { cacheDel } from './cache.js';
+
+// ---- Fast-path collaboration events ----
+// Emit delegation + task events so the office canvas shows agents collaborating on user requests,
+// even when messages are handled by fast-paths that bypass the main delegation flow.
+const FASTPATH_AGENT_MAP: Record<string, string> = {
+  research: 'nova',     expense: 'pulse',    reminder: 'cal',
+  focus: 'jarvis',      memory: 'edith',     website: 'forge',
+  briefing: 'edith',    image: 'aria',       screenshot: 'forge',
+  habit: 'echo',        doc: 'edith',        links: 'nova',
+  workflow: 'jarvis',   notification: 'cal',
+};
+
+function emitFastPathCollab(userId: string, fastPath: string, summary: string): void {
+  const specialist = FASTPATH_AGENT_MAP[fastPath] || 'jarvis';
+  const taskId = `fp-${fastPath}-${Date.now()}`;
+  emitThinking(userId, 'weebo', `Routing to ${specialist}...`);
+  emitDelegation(userId, 'weebo', specialist, summary);
+  emitCommSent(userId, 'weebo', specialist, summary, undefined);
+  emitTaskStarted(userId, specialist, taskId, summary);
+  // Schedule completion after visible delay (8s) so office polling (3s) catches collaboration state
+  setTimeout(() => {
+    emitCommReceived(userId, specialist, 'weebo', `Done: ${summary}`, undefined);
+    emitTaskCompleted(userId, specialist, taskId, summary);
+    emitDone(userId, specialist);
+    emitDone(userId, 'weebo');
+  }, 8000);
+}
 
 // ---- Indian Festival Calendar ----
 // Returns a festival greeting if today falls on/near a major Indian festival (approximate fixed dates).
@@ -886,6 +913,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     // Guard: skip website builder if this is a launch mode / multi-agent request
     const isLaunchMsg = /\blaunch\s+mode\b/i.test(msg.text);
     if (!isLaunchMsg && (createWebsitePattern.test(msg.text) || editWebsitePattern.test(msg.text) || hinglishEditPattern.test(msg.text))) {
+      emitFastPathCollab(userId, 'website', `Building: ${msg.text.slice(0, 40)}`);
       try {
         const text = msg.text.toLowerCase();
         // Extract params from message
@@ -1023,6 +1051,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     const deleteAllPattern = /\b(?:cancel|delete|remove|clear|wipe)\b.{0,40}\b(?:all|every).{0,20}\b(?:reminder|reminders|alarm|alarms)\b/i;
     const deleteSinglePattern = /\b(?:cancel|delete|remove)\b.{0,40}\b(?:reminder|alarm)\b/i;
     if (deleteAllPattern.test(msg.text)) {
+      emitFastPathCollab(userId, 'reminder', 'Deleting reminders');
       // Clear FK references in inbox_messages before deleting (no ON DELETE CASCADE)
       db.prepare('UPDATE inbox_messages SET related_reminder_id = NULL WHERE user_id = ? AND related_reminder_id IN (SELECT id FROM reminders WHERE user_id = ? AND completed = 0)').run(userId, userId);
       const { changes } = db.prepare('DELETE FROM reminders WHERE user_id = ? AND completed = 0').run(userId);
@@ -1088,6 +1117,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     const isReminderMsg = /\b(?:remind|reminder|schedule|alarm)\b/i.test(msg.text);
 
     if (!isReminderMsg && (imageVerbNounPattern.test(msg.text) || drawingVerbPattern.test(msg.text))) {
+      emitFastPathCollab(userId, 'image', `Creating image: ${msg.text.slice(0, 40)}`);
       try {
         const { executeAction: execImg } = await import('./action-executor.js');
         const promptMatch = msg.text.match(/\b(?:generate|create|make|draw|render|produce|show me|i want|give me|can you make|can you draw|paint|sketch|imagine|visualize)\b.{0,20}\b(?:image|picture|photo|illustration|artwork|art|drawing|painting|portrait|wallpaper|sketch)\b(?:\s+of\s+|\s+showing\s+|\s+with\s+|\s+)?([\s\S]+)/i)
@@ -1122,6 +1152,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   {
     const screenshotIntent = /\b(?:take|capture|get|show|grab)\s+(?:a\s+)?screenshot\s+(?:of|from)\b|\bscreenshot\s+of\b/i;
     if (screenshotIntent.test(msg.text)) {
+      emitFastPathCollab(userId, 'screenshot', `Screenshot: ${msg.text.slice(0, 40)}`);
       const urlMatch = msg.text.match(/https?:\/\/\S+/) ?? msg.text.match(/\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,})\b/);
       let targetUrl = urlMatch?.[0] ?? '';
       if (targetUrl && !targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`;
@@ -1150,6 +1181,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   {
     const linksIntent = /\b(?:get|extract|list|show|find|give me)\s+(?:all\s+)?(?:the\s+)?links\s+(?:from|on|in|of)\b|\ball links\s+(?:from|on|in|of)\b/i;
     if (linksIntent.test(msg.text)) {
+      emitFastPathCollab(userId, 'links', `Extracting links: ${msg.text.slice(0, 40)}`);
       const urlMatch = msg.text.match(/https?:\/\/\S+/) ?? msg.text.match(/\b([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,})\b/);
       let targetUrl = urlMatch?.[0] ?? '';
       if (targetUrl && !targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`;
@@ -1176,6 +1208,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     // Guard: skip briefing fast-path when user is creating/managing an automation or workflow
     const isAutomationCreate = /\b(create|set\s+up|add|build)\s+(an?\s+)?(automation|workflow)\b/i.test(msg.text);
     if (!isAutomationCreate && briefingPattern.test(msg.text)) {
+      emitFastPathCollab(userId, 'briefing', 'Preparing briefing');
       const isWeekly = /weekly/i.test(msg.text);
       const type = isWeekly ? 'weekly' : 'daily';
       const now = Date.now();
@@ -1220,6 +1253,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   {
     const listWfPattern = /\b(show|list|what)\s+(are\s+)?(my\s+)?(automations?|workflows?)\b/i;
     if (listWfPattern.test(msg.text)) {
+      emitFastPathCollab(userId, 'workflow', 'Listing workflows');
       const rows = db.prepare(`SELECT id, name, trigger, enabled FROM user_workflows WHERE user_id = ? ORDER BY created_at DESC LIMIT 15`).all(userId) as Array<{id:number; name:string; trigger:string; enabled:number}>;
       let reply: string;
       if (rows.length === 0) {
@@ -1247,6 +1281,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     });
     logConversation(userId, 'assistant', "Researching...", requestId, 'builtin', 'research-job');
     runResearchJob({ query: msg.text, chatId: msg.externalId }).catch(() => {});
+    emitFastPathCollab(userId, 'research', `Researching: ${msg.text.slice(0, 50)}`);
     logger.info({ channel: msg.channel, userId, query: msg.text.slice(0, 60) }, 'Research fast-path fired');
     return;
   }
@@ -1256,6 +1291,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     const docCapturePattern = /^(?:\/note|note:|doc:|capture:|save (?:a )?(?:note|doc)s?:?|save to docs?:)\s+(.+)/is;
     const docMatch = msg.text.match(docCapturePattern);
     if (docMatch) {
+      emitFastPathCollab(userId, 'doc', `Saving document`);
       const text = docMatch[1].trim();
       const title = text.split(/[.!?\n]/)[0].slice(0, 60) || 'Quick Note';
 
@@ -1517,6 +1553,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   const multiExpenseMatch = parseMultiExpenseIntent(msg.text);
   if (multiExpenseMatch) {
     logger.info({ count: multiExpenseMatch.length, userId }, 'Multi-expense fast-path triggered');
+    emitFastPathCollab(userId, 'expense', `Logging ${multiExpenseMatch.length} expenses`);
     const loggedExpenses: Array<{ id: number; description: string; amount: number; category: string }> = [];
     for (const exp of multiExpenseMatch) {
       const action = { tool: 'track_expense', params: { amount: exp.amount, description: exp.description, category: exp.category } };
@@ -1545,6 +1582,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   const expenseMatch = parseExpenseIntent(msg.text);
   if (expenseMatch) {
     logger.info({ expenseMatch, userId }, 'Expense fast-path triggered');
+    emitFastPathCollab(userId, 'expense', `Logging expense: ${msg.text.slice(0, 40)}`);
     const action = { tool: 'track_expense', params: { amount: expenseMatch.amount, description: expenseMatch.description, category: expenseMatch.category } };
     const result = await executeAction(userId, action);
     replyText = result.message || `Logged ${expenseMatch.amount} for ${expenseMatch.description || expenseMatch.category || 'expense'}`;
@@ -1571,6 +1609,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   const focusMatch = parseFocusIntent(msg.text);
   if (focusMatch) {
     logger.info({ focusMatch, userId }, 'Focus fast-path triggered');
+    emitFastPathCollab(userId, 'focus', `Focus: ${focusMatch.goal}`);
     const action = { tool: 'start_focus', params: { goal: focusMatch.goal, duration_min: focusMatch.duration_min } };
     const result = await executeAction(userId, action);
     replyText = result.message || `Focus session started: ${focusMatch.goal} (${focusMatch.duration_min} min)`;
@@ -1597,6 +1636,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   const reminderMatch = parseReminderIntent(msg.text);
   if (reminderMatch) {
     logger.info({ reminderMatch, userId }, 'Reminder fast-path triggered');
+    emitFastPathCollab(userId, 'reminder', `Reminder: ${reminderMatch.text.slice(0, 40)}`);
     const action = { tool: 'set_reminder', params: { text: reminderMatch.text, datetime: reminderMatch.datetime, channel: msg.channel === 'telegram' ? 'telegram' : 'push' } };
     const result = await executeAction(userId, action);
     replyText = result.message || `Reminder set: ${reminderMatch.text}`;
@@ -1614,10 +1654,31 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     return;
   }
 
+  // ── Memory fast-path: "remember that X" / "don't forget X" → save immediately ──
+  const memoryMatch = msg.text.match(/^(?:remember|don'?t forget|keep in mind|note down|save|store)\s+(?:that\s+)?(.{5,200}?)(?:\s*[.!?]?\s*)$/i);
+  if (memoryMatch) {
+    const fact = memoryMatch[1].trim();
+    const memKey = fact.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 50);
+    upsertMemory(userId, 'fact', memKey, fact, 0.95, 'explicit');
+    emitFastPathCollab(userId, 'memory', `Saving: ${fact.slice(0, 40)}`);
+    replyText = `Got it, I'll remember that: "${fact}"`;
+    provider = 'fast-path';
+    model = 'memory-parser';
+    tokensIn = 0;
+    tokensOut = 0;
+    creditCost = 0;
+    logConversation(userId, 'assistant', replyText, requestId, 'builtin', 'memory-fast-path');
+    await sendChannelResponse({ channel: msg.channel, externalId: msg.externalId, text: replyText });
+    logger.info({ memoryKey: memKey, userId }, 'Memory fast-path triggered');
+    logger.info({ channel: msg.channel, userId, provider, latencyMs: Date.now() - startTime, creditCost }, 'Channel message processed (memory fast-path)');
+    return;
+  }
+
   // ── Habit fast-path: parse "gym done" / "log meditation" directly, bypass LLM ──
   const habitMatch = parseHabitIntent(msg.text);
   if (habitMatch) {
     logger.info({ habitMatch, userId }, 'Habit fast-path triggered');
+    emitFastPathCollab(userId, 'habit', `Tracking: ${habitMatch.habitName}`);
     const action = { tool: 'track_habit', params: { habitName: habitMatch.habitName, note: habitMatch.note } };
     const result = await executeAction(userId, action);
     replyText = result.message || `Logged: ${habitMatch.habitName}`;
@@ -1644,6 +1705,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   const proactiveTypePattern = /\b(?:turn\s+(?:off|on)|(?:dis|en)able|stop|start)\s+(?:the\s+)?(.+?)\s*(?:notification|alert|reminder|nudge|message)s?\b/i;
   const proactiveTypeMatch = msg.text.match(proactiveTypePattern);
   if (proactiveTypeMatch) {
+    emitFastPathCollab(userId, 'notification', `Updating notification settings`);
     const isEnable = /\b(?:on|enable|start)\b/i.test(msg.text);
     const typeRaw = proactiveTypeMatch[1].toLowerCase().trim();
     const typeMap: Record<string, string> = {

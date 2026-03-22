@@ -257,6 +257,27 @@ const PATTERN_EXTRACTORS: Array<{
     keyFn: () => 'timezone',
     valueFn: (m) => m[1],
   },
+  // Explicit "remember" requests — user directly asks bot to save a fact
+  {
+    pattern: /(?:remember|don'?t forget|keep in mind|note down|save|store)\s+(?:that\s+)?(.{5,200}?)(?:\s*[.!?]?\s*$)/i,
+    category: 'fact',
+    keyFn: (m) => m[1].toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 50),
+    valueFn: (m) => m[1].trim(),
+  },
+  // "I'm allergic to X", "I have X" — personal facts
+  {
+    pattern: /(?:i(?:'m| am) (?:allergic|sensitive|intolerant) to)\s+(.{2,80}?)(?:\.|,|$)/i,
+    category: 'health',
+    keyFn: () => 'allergy',
+    valueFn: (m) => `Allergic to ${m[1].trim()}`,
+  },
+  // "I don't eat/drink X" — dietary preferences
+  {
+    pattern: /(?:i (?:don'?t|never|can'?t) (?:eat|drink|have|consume))\s+(.{2,80}?)(?:\.|,|$)/i,
+    category: 'preference',
+    keyFn: () => 'dietary_restriction',
+    valueFn: (m) => `Doesn't consume ${m[1].trim()}`,
+  },
 ];
 
 export function extractMemories(userId: string, message: string): number {

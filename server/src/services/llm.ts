@@ -26,7 +26,7 @@
 import { createHash } from 'crypto';
 import { config } from '../config.js';
 import { logger } from '../logger.js';
-import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
+import { isPicoClawAvailable, queryPicoClaw, picoCircuitBreakerTrip, picoCircuitBreakerReset } from './picoclaw.js';
 import { getCurrentFreeModel, switchToNextFreeModel, getUserPreferredFreeModel } from './openrouter-models.js';
 import { recordTokenUsage, shouldDegradeRouting, isOverDailyBudget } from './token-budget.js';
 import { cacheGet, cacheSet } from './cache.js';
@@ -1071,25 +1071,20 @@ export async function routeChat(
       routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'budget_degradation';
     }
 
+  } else if (isOpenRouterFreeAvailable()) {
+    // Tier 1: OpenRouter-free — faster than local models on 2-core VPS, all intents
+    provider = 'openrouter-free';
+    routingReason = 'openrouter_free_available';
+
   } else if (picoOk && (intent === 'simple' || intent === 'code-micro')) {
-    // Tier 0: PicoClaw — fast lane for simple chat + micro code tasks (88ms on CPU)
+    // Tier 1.5: PicoClaw — local fallback when cloud unavailable
     provider = 'picoclaw';
     routingReason = 'ollama_healthy';
 
-  } else if (intent === 'automation' && isOpenRouterFreeAvailable()) {
-    // Automation intent: OpenRouter-free first — Qwen3 235B MoE >> hermes3:8b for tool calling
-    provider = 'openrouter-free';
-    routingReason = 'openrouter_free_available';
-
   } else if (ollamaOk) {
-    // Tier 1: Ollama hermes3:8b — local, free, all users
+    // Tier 1.5: Ollama hermes3:8b — local fallback when cloud unavailable
     provider = 'ollama';
     routingReason = 'ollama_healthy';
-
-  } else if (isOpenRouterFreeAvailable()) {
-    // Tier 1.5: OpenRouter-free — Ollama fallback, dynamic model rotation (Qwen3 235B, Llama 3.3, etc.)
-    provider = 'openrouter-free';
-    routingReason = 'openrouter_free_available';
 
   } else if (isGroqAvailable()) {
     // Tier 2: Groq — free quota cloud fallback (43,200 req/day × 3 keys)
@@ -1223,21 +1218,24 @@ export async function routeChat(
     const errorMsg = err instanceof Error ? err.message : String(err);
     logger.warn({ error: errorMsg, provider: useRace ? 'race-free' : provider, intent, userId: opts?.userId }, 'llm:provider_failed');
 
+    // Trip PicoClaw circuit breaker on failure (shared with bridge)
+    if (provider === 'picoclaw') {
+      picoCircuitBreakerTrip();
+    }
+
     // ---- Fallback chains ----
     // Budget-exceeded:   Ollama → Groq → builtin (free only)
-    // PicoClaw fail:     Ollama → Groq → together-qwen → builtin
+    // PicoClaw fail:     OR-free → Groq → Together (skip Ollama — also slow on 2 cores)
     // All users T1 fail: Groq → together-qwen → builtin
     // Premium T1 fail:   Groq → together-qwen → together(Maverick) → kimi → edith
 
     let chain: Provider[];
     if (overBudget || overDailyBudget) {
-      // No paid or OR-free when budget exceeded; skip the provider that just failed
-      const budgetChain: Provider[] = ['ollama', 'groq'];
-      const failedIdx = budgetChain.indexOf(provider);
-      chain = failedIdx >= 0 ? budgetChain.slice(failedIdx + 1) : budgetChain;
+      // Budget exceeded: skip to cloud providers (Ollama is slow on this VPS)
+      chain = ['openrouter-free', 'groq'];
     } else if (provider === 'picoclaw') {
-      // PicoClaw failed: Ollama → OR-free → Groq → Together
-      chain = ['ollama', 'openrouter-free', 'groq', 'together-qwen'];
+      // PicoClaw failed: skip Ollama too (same slow CPU), go straight to cloud
+      chain = ['openrouter-free', 'groq', 'together-qwen'];
     } else if (isPremium) {
       // Premium: full waterfall from next tier after failure
       const PREMIUM_CHAIN: Provider[] = ['ollama', 'openrouter-free', 'groq', 'together-qwen', 'together', 'kimi', 'edith'];

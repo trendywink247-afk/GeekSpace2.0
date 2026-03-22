@@ -25,7 +25,7 @@ import { logger } from '../logger.js';
 import { config } from '../config.js';
 import { routeChat, type ChatMessage, type Provider } from './llm.js';
 import { edithChat } from './edith.js';
-import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
+import { isPicoClawAvailable, queryPicoClaw, picoCircuitBreakerTrip, picoCircuitBreakerReset } from './picoclaw.js';
 import {
   type AgentRole,
   getAgentDefinition,
@@ -293,6 +293,9 @@ export async function bridgeChat(req: BridgeRequest): Promise<BridgeResponse> {
       const picoResult = await queryPicoClaw(message, systemPrompt);
       const latencyMs = Date.now() - start;
 
+      // Query succeeded — reset circuit breaker
+      picoCircuitBreakerReset();
+
       // Log the bridge decision
       logBridgeEvent(userId, 'pico-direct', complexity, ['executor'], latencyMs);
 
@@ -309,6 +312,8 @@ export async function bridgeChat(req: BridgeRequest): Promise<BridgeResponse> {
         creditCost: 1,
       };
     } catch (err) {
+      // Trip circuit breaker — after 2 consecutive failures, skip PicoClaw for 5 min
+      picoCircuitBreakerTrip();
       logger.warn({ error: (err as Error).message }, 'PicoClaw direct handling failed, escalating to Kimi');
       // Fall through to Kimi escalation
     }
