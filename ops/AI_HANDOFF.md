@@ -1,8 +1,59 @@
 # AI Handoff — Beast Mode Sessions 1-7+
-**Date:** 2026-03-21
-**Branch:** main @ 7e249b3
-**Status:** 1 test failing | Tests: 2553 pass / 1 fail / 29 skip | TS: 0 errors | Health: 12/12 OK
-**Model:** claude-sonnet-4-6
+**Date:** 2026-03-22
+**Branch:** main @ 6759c6a
+**Status:** ALL PASS | Tests: 2554 pass / 0 fail / 29 skip | TS: 0 errors | Health: 12/12 OK (prod + staging)
+**Model:** claude-opus-4-6
+
+---
+
+## Session 8 (2026-03-22) — Delegation System + Staging Env + Security Fixes
+
+### Delegation System (NEW)
+- **Auto-delegation**: Weebo detects intent → routes to Cal/Echo/Forge/Aria/Pulse/Nova/Jarvis
+- **Tier limits**: Free=10/day, Intro=50, Monthly/Yearly=200, Pro=500, Team=unlimited
+- **Atomic routing**: TOCTOU race condition fixed with `INSERT ... ON CONFLICT DO UPDATE WHERE count < ?`
+- **Rollback**: `decrementDelegation()` on bridge failure (counter not wasted)
+- **Streaming**: Full delegation support in `/chat/stream` SSE endpoint
+- **Activity events**: emitDelegation + emitCommSent + emitCommReceived on auto-delegation
+- **Canvas**: particle beams + state indicators render delegation/comm events
+- **Metrics panel**: delegation meter (used/limit) with color-coded bar
+- **Council button**: Sparkles button in ChatPage → triggers multi-agent council mode
+- Files: `server/src/services/delegation.ts` (new), `server/src/routes/agent.ts` (6 fixes)
+
+### Staging Environment (NEW)
+- `ai.geekspace.space` → staging container (test site)
+- `api.geekspace.space` → staging container API
+- `staging.agentin.chat` → staging container (alternate test URL)
+- `ai.agentin.chat` → production (unchanged)
+- `api.agentin.chat` → production API (unchanged)
+- Staging: isolated Redis (64MB) + isolated DB volume, 512MB memory, 0.5 CPU
+- Docker: `staging` + `staging-redis` services in docker-compose.yml
+- Caddy: full SSE/API/auth/gate handling for all staging domains
+- **Workflow**: main (dev) → staging.agentin.chat (test) → ai.agentin.chat (prod)
+
+### Security Fixes (6 issues from 9-agent swarm audit)
+1. TOCTOU race in delegation counter → atomic SQL
+2. Bridge failure delegation rollback → decrementDelegation()
+3. SSE compression exclusion (was breaking EventSource)
+4. Field name consistency (`count:` → `used:` in API responses)
+5. Streaming delegation parity with REST endpoint
+6. Focus history non-deterministic sort → `id DESC` tiebreaker
+
+### LLM Routing — Phase 112.1
+- 7-tier waterfall: PicoClaw → Ollama → OpenRouter-free → Groq → Together → Maverick → Kimi → Edith
+- Local-pref users skip PicoClaw + pickProvider DB query (direct Ollama)
+- Budget fallback chain skips already-failed provider (was retrying Ollama twice = 120s)
+- Bridge skips PicoClaw availability check for complex messages (saves 3s)
+
+### Office Improvements
+- Name labels: 8px → bold 9px with dark pill background
+- Speech bubbles: MAX 3→5, social chat interval 8-15s → 4-9s
+- Chat eligibility: sitting + wandering + returning agents (was sitting-only)
+
+### OOM Fix
+- Root cause: crawl4ai + ollama + browser containers unbounded memory
+- Fix: swappiness 60→10, crawl4ai capped at 512MB, GeekOS capped at 0.5 CPU
+- All containers now have explicit CPU + memory limits
 
 ---
 
@@ -22,29 +73,18 @@
 - Pixel-accurate collision map from office_collision.webp
 - BFS pathfinding improvements, open stairway corridor
 
-### LLM Routing
-- Switched to Ollama-first with hermes3:8b (better tool calling, no racing)
-- Groq as fallback (was primary before revert)
-
 ---
 
 ## Session 7 (2026-03-20) — Office Sprite Fix (CRITICAL)
 
 ### Root Cause
-Sprite sheets are **16×32 per frame, 3 rows** (confirmed from pixel-agents source).
-Code had 16×24, 4 rows — slicing through character frames at wrong boundaries.
+Sprite sheets are **16x32 per frame, 3 rows** (confirmed from pixel-agents source).
+Code had 16x24, 4 rows — slicing through character frames at wrong boundaries.
 
 ### Layout (correct)
 - Row 0 (y=0-31): walk DOWN
 - Row 1 (y=32-63): walk UP
 - Row 2 (y=64-95): walk RIGHT (mirror for left)
-
-### Changes
-- sprites.ts: frameHeight 24→32, rows 3
-- OfficeCanvasRenderer: DH 64, integer 2x scale, correct row mapping
-- Facing direction synced from behavior to CanvasAgent
-- Pixel-level walk direction detection
-- Restored original PNG sprite sheets
 
 ---
 
@@ -65,7 +105,7 @@ tool calling (Groq forced), Telegram commands, landing page, 12+ pages polished
 
 ---
 
-## Test Count: 2258 → 2518 → 2553 (1 failing)
+## Test Count: 2258 → 2518 → 2553 → 2554 (0 failing)
 
 ## Active Blockers
 - BLOCKER-001: MOONSHOT_API_KEY
@@ -73,21 +113,28 @@ tool calling (Groq forced), Telegram commands, landing page, 12+ pages polished
 - BLOCKER-004: Ollama CPU-only (hermes3:8b running but slow)
 - BLOCKER-012: WINDMILL_TOKEN
 
-## Uncommitted Changes (as of 2026-03-21)
-- `.claude/settings.json`
-- `CLAUDE.md`
-- `caddy/Caddyfile`
-- `docker-compose.yml`
-- `.superpowers/brainstorm/` (new dir)
+## Environments
+| Domain | Container | Purpose |
+|--------|-----------|---------|
+| ai.agentin.chat | geekspace:3001 | Production |
+| api.agentin.chat | geekspace:3001 | Production API |
+| ai.geekspace.space | staging:3001 | Staging/Test |
+| api.geekspace.space | staging:3001 | Staging API |
+| staging.agentin.chat | staging:3001 | Staging (alt) |
+| status.agentin.chat | uptime-kuma:3001 | Status monitoring |
 
 ## Deploy
 ```bash
+# Production
 cd ~/GeekSpace2.0
 npm run build && cd server && npm run build && cd ..
 find /var/www/geekspace/assets/ -name "index-*" -not -name "*.css" -delete
 cp -r dist/assets/* /var/www/geekspace/assets/
 cp dist/index.html /var/www/geekspace/index.html
-cp public/office/char_*.png /var/www/geekspace/office/
 docker compose up -d --build geekspace
 curl localhost:3001/api/health
+
+# Staging (same image, separate container)
+docker compose up -d --build staging
+curl localhost:3002/api/health
 ```
