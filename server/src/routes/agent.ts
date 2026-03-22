@@ -351,7 +351,11 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
   // Override the global 30s timeout for AI chat — allow up to 120s
   res.setTimeout(120000);
   let { message } = req.body as { message: string; channel?: string; context?: string };
-  const userId = req.userId!;
+  const userId = req.userId;
+  if (!userId) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
   const reqChannel = (req.body as { channel?: string }).channel;
   // Optional: builder sends this when editing an existing project so generate_code updates it
   const reqExistingArtifactId = (req.body as { existingArtifactId?: string }).existingArtifactId;
@@ -686,7 +690,10 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     const msgIsHinglish = !forceRoute && msgWords.filter(w => HINGLISH_SET.has(w)).length >= 2;
     const webChatNeedsGroq = !forceRoute && (msgHasNonLatin || msgIsHinglish);
 
-    if (!forceRoute && config.bridgeEnabled && config.picoClawEnabled && !hasUrl && !webChatNeedsGroq) {
+    // Respect user's model_preference: "local" users want Ollama — skip bridge, go straight to
+    // the Phase 112 waterfall which honours pickProvider() → 'ollama'.
+    const userModelPref = (agentConfig?.model_preference as string) || 'auto';
+    if (!forceRoute && config.bridgeEnabled && config.picoClawEnabled && !hasUrl && !webChatNeedsGroq && userModelPref !== 'local') {
       forceRoute = 'bridge';
     }
 
@@ -868,7 +875,10 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     checkKeywordTriggers(userId, message).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
 
     // ---- Default: local-first router (Ollama → cloud fallback if Ollama down) ----
-    const history = getConversationContext(userId);
+    // Reduce context for Ollama — 4K tokens on CPU is too slow (60s+ prefill).
+    // Cloud models handle 4096 chars fine; Ollama needs ~1500 to stay under 30s.
+    const isLocalRoute = !resolvedProvider || resolvedProvider === 'ollama' || resolvedProvider === 'picoclaw';
+    const history = getConversationContext(userId, isLocalRoute ? 1500 : 4096);
 
     // ---- URL pre-fetch: inject page content so LLM always gets real data ----
     // More reliable than tool-use path: doesn't depend on model format compliance.
@@ -916,10 +926,15 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       userId,
     });
 
+    // Guard: if the 120s HTTP timeout already sent a 503, don't try to send another response
+    if (res.headersSent) {
+      logger.warn({ userId, provider: result.provider }, 'chat: response arrived after HTTP timeout — logging but not sending');
+    }
+
     // Determine tier from actual provider used
     const tier = (result.provider === 'ollama' || result.provider === 'builtin' || result.provider === 'openrouter-free') ? 'local' : 'premium';
 
-    // Log usage
+    // Log usage (always, even if response was already sent)
     db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
       VALUES (?, ?, ?, ?, ?, ?, ?, 'web', 'ai.chat')`).run(
       uuid(), userId, result.provider, result.model,
@@ -1011,7 +1026,9 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     const chatPersonalityId = (agentConfig?.personality as string) || 'jarvis';
     emitDone(String(userId), chatPersonalityId);
 
-    res.json(response);
+    if (!res.headersSent) {
+      res.json(response);
+    }
   } catch (err) {
     logger.error({ err, userId }, 'Chat handler error');
     if (!res.headersSent) {
