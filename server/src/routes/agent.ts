@@ -875,10 +875,6 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     checkKeywordTriggers(userId, message).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
 
     // ---- Default: local-first router (Ollama → cloud fallback if Ollama down) ----
-    // Reduce context for Ollama — 4K tokens on CPU is too slow (60s+ prefill).
-    // Cloud models handle 4096 chars fine; Ollama needs ~1500 to stay under 30s.
-    const isLocalRoute = !resolvedProvider || resolvedProvider === 'ollama' || resolvedProvider === 'picoclaw';
-    const history = getConversationContext(userId, isLocalRoute ? 1500 : 4096);
 
     // ---- URL pre-fetch: inject page content so LLM always gets real data ----
     // More reliable than tool-use path: doesn't depend on model format compliance.
@@ -899,7 +895,6 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       }
     }
 
-    const messages: ChatMessage[] = [...history, { role: 'user', content: augmentedMessage }];
     const intent = classifyIntent(message);
 
     // Resolve forced provider from prefix overrides or smart picker
@@ -917,6 +912,12 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
         resolvedProvider = smartProvider;
       }
     }
+
+    // Reduce context for Ollama — 4K tokens on CPU is too slow (60s+ prefill).
+    // Cloud models handle 4096 chars fine; Ollama needs ~1500 to stay under 30s.
+    const isLocalRoute = !resolvedProvider || resolvedProvider === 'ollama' || resolvedProvider === 'picoclaw';
+    const history = getConversationContext(userId, isLocalRoute ? 1500 : 4096);
+    const messages: ChatMessage[] = [...history, { role: 'user', content: augmentedMessage }];
 
     const result = await runReactLoop(messages, {
       systemPrompt,
