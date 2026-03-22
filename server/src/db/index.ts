@@ -2280,3 +2280,16 @@ try {
     CREATE INDEX IF NOT EXISTS idx_smart_recs_user ON smart_recommendations(user_id, dismissed, score DESC);
   `);
 } catch { /* table/indexes already exist */ }
+
+// Delegation tracking — per-user daily delegation counts for tier enforcement
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS delegation_counts (
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      date TEXT NOT NULL,
+      count INTEGER DEFAULT 0,
+      PRIMARY KEY (user_id, date)
+    );
+    CREATE INDEX IF NOT EXISTS idx_delegation_counts_date ON delegation_counts(user_id, date);
+  `);
+} catch { /* table already exists */ }

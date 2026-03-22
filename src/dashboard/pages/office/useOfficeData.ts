@@ -28,6 +28,13 @@ function getToken(): string | null {
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+export interface DelegationStatus {
+  used: number;
+  limit: number;
+  remaining: number;
+  plan: string;
+}
+
 export interface OfficeData {
   taskBoard: Record<string, unknown[]>;
   taskStats: {
@@ -42,6 +49,7 @@ export interface OfficeData {
   commStats: Record<string, unknown>;
   timeline: Array<{ action: string; details: string; icon: string; created_at: string }>;
   metrics: OfficeMetrics;
+  delegationStatus: DelegationStatus | null;
 }
 
 export interface UseOfficeDataReturn {
@@ -89,11 +97,12 @@ export function useOfficeData(): UseOfficeDataReturn {
 
       const data = (await res.json()) as Record<string, unknown>;
 
+      const metricsRaw = (data.metrics as Record<string, unknown>) ?? {};
       const metrics: OfficeMetrics = {
-        creditsUsedToday: (data.creditsUsedToday as number) ?? 0,
-        messagesToday: (data.messagesToday as number) ?? 0,
-        toolCallsToday: (data.toolCallsToday as number) ?? 0,
-        providerBreakdown: (data.providerBreakdown as Record<string, number>) ?? {},
+        creditsUsedToday: (metricsRaw.creditsUsedToday as number) ?? 0,
+        messagesToday: (metricsRaw.messagesToday as number) ?? 0,
+        toolCallsToday: (metricsRaw.toolCallsToday as number) ?? 0,
+        providerBreakdown: (metricsRaw.providerBreakdown as Record<string, number>) ?? {},
       };
 
       setOfficeData({
@@ -110,6 +119,7 @@ export function useOfficeData(): UseOfficeDataReturn {
         commStats: (data.commStats as Record<string, unknown>) ?? {},
         timeline: (data.timeline as OfficeData['timeline']) ?? [],
         metrics,
+        delegationStatus: (data.delegationStatus as DelegationStatus | undefined) ?? null,
       });
 
       // Also process any buffered SSE events embedded in the poll response

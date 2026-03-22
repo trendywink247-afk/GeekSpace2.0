@@ -64,11 +64,11 @@ function iconToEntryType(icon: string): TimelineEntry['type'] {
 // Convert a raw timeline item (from officeData.timeline) into a TimelineEntry
 function rawToEntry(
   item: { action: string; details: string; icon: string; created_at: string },
-  index: number,
+  _index: number,
 ): TimelineEntry {
   const agent = extractAgent(item.action);
   return {
-    id: `poll-${index}-${item.created_at}`,
+    id: `poll-${item.action.slice(0, 20).replace(/\s+/g, '-')}-${item.created_at}`,
     type: iconToEntryType(item.icon),
     agentId: agent.agentId,
     agentName: agent.agentName,
@@ -81,7 +81,7 @@ function rawToEntry(
 }
 
 // Convert a live SSEEvent into a TimelineEntry for card rendering
-function sseToEntry(ev: SSEEvent, index: number): TimelineEntry {
+function sseToEntry(ev: SSEEvent, _index: number): TimelineEntry {
   let type: TimelineEntry['type'] = 'reply';
   if (ev.state === 'tool_call' || ev.state === 'tool_result') type = 'tool_call';
   else if (ev.state === 'comm_sent' || ev.state === 'comm_received') type = 'comm';
@@ -90,7 +90,7 @@ function sseToEntry(ev: SSEEvent, index: number): TimelineEntry {
   else if (ev.state === 'thinking' || ev.state === 'responding' || ev.state === 'typing' || ev.state === 'done') type = 'reply';
 
   return {
-    id: `sse-${index}-${ev.timestamp}`,
+    id: `sse-${ev.agentId || 'sys'}-${ev.state}-${ev.timestamp}`,
     type,
     agentId: (ev.agentId as AgentId) || undefined,
     agentName: ev.agentName || undefined,
@@ -130,13 +130,35 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Build timeline entries: SSE events first (live, newest at top), then polled
-  const timelineEntries: TimelineEntry[] = [
-    ...sseEvents
-      .slice()
-      .reverse()
-      .map((ev, i) => sseToEntry(ev, i)),
-    ...(officeData?.timeline ?? []).map((item, i) => rawToEntry(item, i)),
-  ];
+  // Cross-dedup: skip polled items that overlap with SSE events (within 5s window)
+  const sseEntries = sseEvents
+    .slice()
+    .reverse()
+    .map((ev, i) => sseToEntry(ev, i));
+
+  // Build a set of SSE fingerprints: agentId + timestamp bucket (5s)
+  const sseFingerprintSet = new Set<string>();
+  for (const ev of sseEvents) {
+    if (ev.agentId && ev.timestamp) {
+      const bucket = Math.floor(new Date(ev.timestamp).getTime() / 5000);
+      sseFingerprintSet.add(`${ev.agentId}:${bucket}`);
+      sseFingerprintSet.add(`${ev.agentId}:${bucket - 1}`); // +-5s tolerance
+      sseFingerprintSet.add(`${ev.agentId}:${bucket + 1}`);
+    }
+  }
+
+  const pollEntries = (officeData?.timeline ?? [])
+    .map((item, i) => rawToEntry(item, i))
+    .filter(entry => {
+      // Skip polled "Agent reply" entries that already appear in SSE
+      if (entry.agentId && entry.timestamp && (entry.type === 'reply' || entry.type === 'tool_call')) {
+        const bucket = Math.floor(new Date(entry.timestamp).getTime() / 5000);
+        if (sseFingerprintSet.has(`${entry.agentId}:${bucket}`)) return false;
+      }
+      return true;
+    });
+
+  const timelineEntries: TimelineEntry[] = [...sseEntries, ...pollEntries];
 
   // Handle card actions (reminder Done/Snooze, habit Log/Skip)
   const handleCardAction = useCallback((entryId: string, action: string) => {
@@ -254,6 +276,7 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
                 byType: Record<string, number>;
               } | undefined
             }
+            delegationStatus={officeData?.delegationStatus}
           />
         )}
       </div>

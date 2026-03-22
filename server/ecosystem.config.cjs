@@ -6,8 +6,8 @@ module.exports = {
     {
       name: 'geekspace',
       script: 'server/dist/index.js',
-      instances: 2,
-      exec_mode: 'cluster',
+      instances: 1,
+      exec_mode: 'fork',
       max_memory_restart: '450M',
       // Graceful shutdown — wait for in-flight requests
       kill_timeout: 5000,

@@ -18,7 +18,7 @@ import { ROOMS } from './roomZones';
 import { SMART_OBJECTS } from './smartObjects';
 import { isPointOccupied } from './occupancy';
 import { getAgentSprites, drawSpriteFrame } from './sprites';
-import { getAgentBehaviorMode } from './agentBehavior';
+import { getAgentBehaviorMode, getAgentPose } from './agentBehavior';
 import type { CanvasEffectState } from './CanvasEffects';
 
 // ---------------------------------------------------------------------------
@@ -126,24 +126,36 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   // Sitting offset: shift sprite down when at furniture interaction point
   const behaviorMode = getAgentBehaviorMode(agent.id);
   const isAtFurniture = !isWalking && (behaviorMode === 'wandering' || behaviorMode === 'socializing' || behaviorMode === 'group-meeting');
-  const SITTING_OFFSET = isAtFurniture ? 6 : 0;
+  const pose = isAtFurniture ? getAgentPose(agent.id) : 'none';
+
+  // Pose-specific visual offsets:
+  // sit  → deep sink into chair (8px down, 8px toward furniture)
+  // lean → slight lean toward counter (3px down, 4px toward)
+  // stand → no offset (standing at whiteboards/displays)
+  let sittingOffset = 0;
+  let furnitureOffsetX = 0, furnitureOffsetY = 0;
+
+  if (pose === 'sit') {
+    sittingOffset = 8;
+    if (agent.facing === 'up') furnitureOffsetY = -8;
+    else if (agent.facing === 'down') furnitureOffsetY = 8;
+    else if (agent.facing === 'left') furnitureOffsetX = -8;
+    else if (agent.facing === 'right') furnitureOffsetX = 8;
+  } else if (pose === 'lean') {
+    sittingOffset = 3;
+    if (agent.facing === 'up') furnitureOffsetY = -4;
+    else if (agent.facing === 'down') furnitureOffsetY = 4;
+    else if (agent.facing === 'left') furnitureOffsetX = -4;
+    else if (agent.facing === 'right') furnitureOffsetX = 4;
+  }
+  // stand / none: no offset — agent stands normally
 
   // Idle bobbing: subtle 1px sine bob when stationary and not at furniture
   const isIdle = !isWalking && !isAtFurniture;
   const bobOffset = isIdle ? Math.round(Math.sin(tick * 0.3) * 1) : 0;
 
-  // Visual offset: nudge agent sprite toward furniture when at interaction point
-  // so they appear to be sitting AT the desk instead of standing next to it
-  let furnitureOffsetX = 0, furnitureOffsetY = 0;
-  if (isAtFurniture && agent.facing) {
-    if (agent.facing === 'up') furnitureOffsetY = -6;
-    else if (agent.facing === 'down') furnitureOffsetY = 6;
-    else if (agent.facing === 'left') furnitureOffsetX = -6;
-    else if (agent.facing === 'right') furnitureOffsetX = 6;
-  }
-
   const drawX = cx - DW / 2 + furnitureOffsetX;
-  const drawY = cy - DH + 16 + SITTING_OFFSET + bobOffset + furnitureOffsetY;
+  const drawY = cy - DH + 16 + sittingOffset + bobOffset + furnitureOffsetY;
 
   // Glow for active agents
   if (agent.state !== 'idle') {

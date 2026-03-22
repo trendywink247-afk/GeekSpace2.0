@@ -196,13 +196,16 @@ export function emit(input: EmitInput): ActivityEvent {
   // Trim excess
   if (buf.length > MAX_BUFFER_PER_USER) buf.splice(0, buf.length - MAX_BUFFER_PER_USER);
 
-  // Local SSE delivery
+  // Local SSE delivery — flush after each write to bypass compression buffering
   const userClients = clients.get(userId);
   if (userClients && userClients.size > 0) {
     const data = `data: ${JSON.stringify(event)}\n\n`;
     for (const res of userClients) {
       try {
         res.write(data);
+        if (typeof (res as unknown as { flush: () => void }).flush === 'function') {
+          (res as unknown as { flush: () => void }).flush();
+        }
       } catch {
         userClients.delete(res);
       }

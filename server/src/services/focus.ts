@@ -147,7 +147,7 @@ export function getActiveFocus(userId: string): FocusSession | null {
 
 export function getFocusHistory(userId: string, limit = 10): FocusSession[] {
   return db.prepare(
-    'SELECT * FROM focus_sessions WHERE user_id = ? ORDER BY started_at DESC LIMIT ?'
+    'SELECT * FROM focus_sessions WHERE user_id = ? ORDER BY started_at DESC, id DESC LIMIT ?'
   ).all(userId, limit) as FocusSession[];
 }
 

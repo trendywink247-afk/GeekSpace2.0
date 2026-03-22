@@ -353,6 +353,79 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ---- Staging Environment (ai.geekspace.space) ----
+  staging:
+    build: .
+    container_name: geekspace-staging
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:3002:3001"
+    environment:
+      - NODE_ENV=staging
+      - PORT=3001
+      - DB_PATH=/app/data/geekspace.db
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-geekspace-redis-2026}@staging-redis:6379
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
+      - OLLAMA_MODEL=hermes3:8b
+      - OLLAMA_TIMEOUT_MS=20000
+      - PICOCLAW_URL=${PICOCLAW_URL:-http://picoclaw:8080}
+      - PICOCLAW_ENABLED=${PICOCLAW_ENABLED:-true}
+      - PICOCLAW_TIMEOUT_MS=5000
+      - BRIDGE_ENABLED=${BRIDGE_ENABLED:-true}
+      - BRIDGE_AUTO_ESCALATE=${BRIDGE_AUTO_ESCALATE:-true}
+      - BRIDGE_MAX_WORKFLOW_STEPS=${BRIDGE_MAX_WORKFLOW_STEPS:-6}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    volumes:
+      - geekspace-staging-data:/app/data
+    networks:
+      - geekspace-net
+      - geekspace-shared
+    depends_on:
+      staging-redis:
+        condition: service_healthy
+      picoclaw:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ---- Staging Redis (isolated from prod) ----
+  staging-redis:
+    image: redis:7-alpine
+    container_name: geekspace-staging-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 64mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-geekspace-redis-2026}
+    volumes:
+      - staging-redis-data:/data
+    networks:
+      - geekspace-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-geekspace-redis-2026}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.1'
+
 #-----geekos-agents-----
   geekos:
     build: ./geekos
@@ -410,6 +483,10 @@ volumes:
   meilisearch-data:
     driver: local
   qdrant-data:
+    driver: local
+  geekspace-staging-data:
+    driver: local
+  staging-redis-data:
     driver: local
 
 networks:

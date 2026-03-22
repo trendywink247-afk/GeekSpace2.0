@@ -276,10 +276,16 @@ export async function bridgeChat(req: BridgeRequest): Promise<BridgeResponse> {
   const { userId, message, systemPrompt, conversationHistory, forceAgent, forceWorkflow, userCredits } = req;
 
   const complexity = classifyComplexity(message);
-  const picoAvailable = await isPicoClawAvailable();
+
+  // Bridge skip optimisation: only check PicoClaw availability when the message
+  // *might* stay local (trivial/simple). For moderate/complex/multi-step the bridge
+  // always escalates, so the availability check is wasted latency (~3s on cold).
+  const mightStayLocal = !forceWorkflow && !forceAgent &&
+    (complexity === 'trivial' || complexity === 'simple');
+  const picoAvailable = mightStayLocal ? await isPicoClawAvailable() : false;
   const escalate = forceWorkflow || forceAgent || shouldEscalateToKimi(message, complexity, picoAvailable);
 
-  logger.info({ userId, complexity, escalate, picoAvailable, forceAgent }, 'Pico-Kimi bridge processing');
+  logger.info({ userId, complexity, escalate, picoAvailable, mightStayLocal, forceAgent }, 'Pico-Kimi bridge processing');
 
   // ---- Path 1: PicoClaw handles directly (trivial/simple) ----
   if (!escalate && picoAvailable) {

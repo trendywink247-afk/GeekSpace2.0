@@ -440,6 +440,7 @@ export function ChatPage() {
   const formRef = useRef<HTMLFormElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [councilMode, setCouncilMode] = useState(false);
   const userScrolledUpRef = useRef(false);
 
   // Streaming
@@ -920,8 +921,11 @@ export function ChatPage() {
     e?.preventDefault();
     const text = input.trim();
     if (!text || isTyping) return;
-    await sendMessage(text);
-  }, [input, isTyping, sendMessage]);
+    // Council mode: prefix triggers multi-agent orchestration
+    const finalText = councilMode ? `agent council: ${text}` : text;
+    if (councilMode) setCouncilMode(false); // auto-off after sending
+    await sendMessage(finalText);
+  }, [input, isTyping, sendMessage, councilMode]);
 
   // ── Message Actions ──
 
@@ -1738,6 +1742,22 @@ export function ChatPage() {
           {voice.error && (
             <p className='text-xs text-red-400 mb-2'>{voice.error}</p>
           )}
+          {/* Council mode banner */}
+          {councilMode && (
+            <div className='flex items-center gap-2 pb-1.5'>
+              <span className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#FF6B9D]/10 border border-[#FF6B9D]/20 text-[#FF6B9D] animate-pulse'>
+                <Sparkles className='w-3 h-3' />
+                Council Mode — all agents will discuss your question
+                <button
+                  type='button'
+                  onClick={() => setCouncilMode(false)}
+                  className='ml-0.5 hover:text-white transition-colors'
+                >
+                  <X className='w-3 h-3' />
+                </button>
+              </span>
+            </div>
+          )}
           {/* Mentioned agent badge */}
           {mentionedAgent && (
             <div className='flex items-center gap-1 pb-1.5'>
@@ -1803,6 +1823,20 @@ export function ChatPage() {
               isSupported={voice.isSupported}
               onClick={voice.startListening}
             />
+            <button
+              type='button'
+              onClick={() => setCouncilMode(!councilMode)}
+              title={councilMode ? 'Council mode ON — all agents will discuss your next message' : 'Council mode — get all agents\' perspectives'}
+              className={[
+                'h-10 px-2.5 min-w-[44px] min-h-[44px] rounded-md transition-all shrink-0 text-xs font-medium',
+                councilMode
+                  ? 'bg-[#FF6B9D]/20 text-[#FF6B9D] border border-[#FF6B9D]/40 ring-1 ring-[#FF6B9D]/30'
+                  : 'bg-[#0C0C18] text-[#4B5563] border border-[#00F0FF]/10 hover:text-[#00F0FF] hover:border-[#00F0FF]/30',
+              ].join(' ')}
+              aria-label='Toggle council mode'
+            >
+              <Sparkles className='w-4 h-4' />
+            </button>
             <Button
               type='submit'
               disabled={!input.trim() || isTyping}
@@ -1814,7 +1848,7 @@ export function ChatPage() {
           </form>
           <div className='flex items-center justify-between mt-1.5 px-0.5'>
             <p className='text-[10px] text-[#4B5563]'>
-              Shift+Enter for new line &middot; @ to mention
+              Shift+Enter for new line &middot; @ to mention &middot; <Sparkles className='w-2.5 h-2.5 inline' /> for council
             </p>
             <p className='text-[10px] text-[#4B5563]'>
               Alt+V for voice

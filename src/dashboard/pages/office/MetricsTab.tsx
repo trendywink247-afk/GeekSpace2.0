@@ -25,7 +25,14 @@ interface CounterCard {
   accent: string;
 }
 
-export default function MetricsTab({ taskStats, commStats }: { taskStats?: TaskStats | null; commStats?: CommStats | null }) {
+interface DelegationStatus {
+  used: number;
+  limit: number;
+  remaining: number;
+  plan: string;
+}
+
+export default function MetricsTab({ taskStats, commStats, delegationStatus }: { taskStats?: TaskStats | null; commStats?: CommStats | null; delegationStatus?: DelegationStatus | null }) {
   // Show loading only if props haven't arrived yet
   if (!taskStats && !commStats) {
     return (
@@ -69,6 +76,47 @@ export default function MetricsTab({ taskStats, commStats }: { taskStats?: TaskS
           </div>
         ))}
       </div>
+
+      {/* Delegation Meter */}
+      {delegationStatus && (
+        <div
+          className="rounded-lg p-3"
+          style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-medium" style={{ color: C.text }}>Delegations Today</h3>
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full capitalize"
+              style={{ background: `${C.cyan}15`, color: C.cyan, border: `1px solid ${C.cyan}30` }}>
+              {delegationStatus.plan}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: C.elevated }}>
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min((delegationStatus.used / delegationStatus.limit) * 100, 100)}%`,
+                  background: delegationStatus.remaining <= 2
+                    ? '#EF4444'
+                    : delegationStatus.remaining <= 5
+                    ? '#F59E0B'
+                    : C.cyan,
+                }}
+              />
+            </div>
+            <span className="text-[10px] font-mono flex-shrink-0" style={{ color: C.muted }}>
+              {delegationStatus.used}/{delegationStatus.limit}
+            </span>
+          </div>
+          {delegationStatus.remaining <= 2 && (
+            <p className="text-[9px] mt-1.5" style={{ color: '#EF4444' }}>
+              {delegationStatus.remaining === 0
+                ? 'Limit reached — upgrade for more delegations'
+                : `Only ${delegationStatus.remaining} left today`}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Activity by Agent -- Bar Chart */}
       <div

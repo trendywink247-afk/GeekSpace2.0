@@ -11,7 +11,7 @@
 
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type {
-  AgentId, CoreAgentId, SpecialistId,
+  AgentId, SpecialistId,
   AgentStateType, CanvasAgent, SSEEvent,
   ParticleBeam, SpeechBubble,
 } from './types';
@@ -24,6 +24,49 @@ import {
   PARTICLE_BEAM_TTL, SPEECH_BUBBLE_TTL,
   CLICK_DOUBLE_THRESHOLD_MS,
 } from './constants';
+
+// ---------------------------------------------------------------------------
+// Corridor entrance spawn points — agents walk in from here on page load
+// These are walkable tiles in the stairway/corridor area
+// ---------------------------------------------------------------------------
+
+const OFFICE_ENTRANCE: Array<{ x: number; y: number }> = [
+  { x: 6, y: 8 },   // corridor left
+  { x: 7, y: 8 },   // corridor
+  { x: 8, y: 8 },   // corridor center
+  { x: 10, y: 8 },  // corridor right
+  { x: 12, y: 8 },  // corridor far
+  { x: 13, y: 8 },  // mid-office
+  { x: 14, y: 8 },  // near workspace
+  { x: 11, y: 8 },  // corridor
+  { x: 9, y: 8 },   // corridor center-right
+];
+
+// ---------------------------------------------------------------------------
+// Personality-flavored greeting phrases on first visit
+// ---------------------------------------------------------------------------
+
+const GREETING_PHRASES: Record<string, string> = {
+  weebo: 'Good morning, team!',
+  edith: 'Systems nominal.',
+  jarvis: 'All stations ready.',
+  aria: 'Feeling creative today!',
+  forge: 'Build pipeline: green.',
+  pulse: 'Data streams active.',
+  echo: 'Ready to help!',
+  cal: 'Schedule locked in.',
+  nova: 'Research mode: ON.',
+};
+
+// ---------------------------------------------------------------------------
+// Agent desk positions lookup — used for work-at-desk on real tasks
+// ---------------------------------------------------------------------------
+
+function getAgentDesk(id: AgentId): { x: number; y: number } {
+  if (id in CORE_DESK_POSITIONS) return CORE_DESK_POSITIONS[id as keyof typeof CORE_DESK_POSITIONS];
+  if (id in SPECIALIST_POSITIONS) return SPECIALIST_POSITIONS[id as keyof typeof SPECIALIST_POSITIONS];
+  return { x: 7, y: 14 }; // fallback
+}
 
 // ---------------------------------------------------------------------------
 // Personality-flavored thinking phrases for speech bubbles
@@ -39,6 +82,30 @@ const THINKING_PHRASES: Record<string, string[]> = {
   echo: ['I hear you.', 'Let me help.', 'On it, friend!'],
   cal: ['Checking schedule.', 'Let me organize.', 'Noted!'],
   nova: ['Researching...', 'Digging in!', 'Let me explore.'],
+};
+
+const COLLAB_SEND_PHRASES: Record<string, string[]> = {
+  weebo: ['Hey, need your help!', 'Passing this to you.', 'Tag team!'],
+  edith: ['Delegating sub-task.', 'Your expertise needed.', 'Routing to you.'],
+  jarvis: ['Over to you.', 'Requesting assist.', 'Your turn.'],
+  aria: ['Collab time!', 'Let\'s create together!', 'Ideas incoming!'],
+  forge: ['Code review needed.', 'Build assist?', 'PR incoming.'],
+  pulse: ['Data handoff.', 'Check these metrics.', 'Stats ready.'],
+  echo: ['Can you help?', 'Teamwork time!', 'Sharing this.'],
+  cal: ['Schedule assist?', 'Calendar sync.', 'Timing check.'],
+  nova: ['Research handoff.', 'Found something!', 'Intel drop.'],
+};
+
+const COLLAB_RECV_PHRASES: Record<string, string[]> = {
+  weebo: ['Got it!', 'On it, boss!', 'Leave it to me!'],
+  edith: ['Acknowledged.', 'Processing.', 'Received.'],
+  jarvis: ['Consider it done.', 'Right away.', 'Understood.'],
+  aria: ['Love it!', 'Ooh yes!', 'Let me add magic!'],
+  forge: ['Building now.', 'Compiling...', 'Running it.'],
+  pulse: ['Crunching numbers.', 'Data received.', 'Analyzing.'],
+  echo: ['Happy to help!', 'I\'m here!', 'On it, friend!'],
+  cal: ['Scheduling...', 'Booking it.', 'Time sorted.'],
+  nova: ['Investigating!', 'Deep diving.', 'Searching...'],
 };
 import { renderFrame, loadOfficeAssets } from './OfficeCanvasRenderer';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
@@ -106,59 +173,58 @@ function getSeatPosition(deskPos: { x: number; y: number }): { x: number; y: num
 
 function buildInitialAgents(): CanvasAgent[] {
   const agents: CanvasAgent[] = [];
+  // Check if this is a fresh page load (agents walk in from corridor)
+  const isArrival = !sessionStorage.getItem('gs_office_arrived');
+  const allIds: AgentId[] = [...CORE_AGENTS, ...SPECIALIST_AGENTS];
 
-  for (const id of CORE_AGENTS) {
-    const pos = CORE_DESK_POSITIONS[id];
+  for (let i = 0; i < allIds.length; i++) {
+    const id = allIds[i];
+    const isCoreAgent = (CORE_AGENTS as readonly string[]).includes(id);
+    const deskPos = isCoreAgent
+      ? CORE_DESK_POSITIONS[id as keyof typeof CORE_DESK_POSITIONS]
+      : SPECIALIST_POSITIONS[id as keyof typeof SPECIALIST_POSITIONS];
     const meta = AGENT_META[id];
-    const seat = getSeatPosition(pos);
-    const spawn = validateSpawnPosition(id, seat.x, seat.y);
+    const seat = getSeatPosition(deskPos);
+
+    // On first visit: spawn at corridor entrance, target = desk (they'll walk in)
+    // On revisit: spawn directly at desk (instant)
+    let startX: number, startY: number;
+    if (isArrival) {
+      const entrance = OFFICE_ENTRANCE[i % OFFICE_ENTRANCE.length];
+      startX = entrance.x;
+      startY = entrance.y;
+    } else {
+      const spawn = validateSpawnPosition(id, seat.x, seat.y);
+      startX = spawn.x;
+      startY = spawn.y;
+    }
+
+    const deskTarget = validateSpawnPosition(id, seat.x, seat.y);
+
     agents.push({
       id,
       name: id.charAt(0).toUpperCase() + id.slice(1),
       color: AGENT_COLORS[id],
       emoji: meta.emoji,
       role: meta.role,
-      x: spawn.x,
-      y: spawn.y,
-      targetX: spawn.x,
-      targetY: spawn.y,
-      renderX: spawn.renderX,
-      renderY: spawn.renderY,
+      x: startX,
+      y: startY,
+      targetX: isArrival ? deskTarget.x : startX,
+      targetY: isArrival ? deskTarget.y : startY,
+      renderX: startX * CELL + CELL / 2,
+      renderY: startY * CELL + CELL / 2,
       speed: AGENT_INITIAL_SPEED,
       state: 'idle',
-      isSpecialist: false,
+      isSpecialist: !isCoreAgent,
       isDormant: false,
+      parentAgent: isCoreAgent ? undefined : SPECIALIST_PARENT[id as keyof typeof SPECIALIST_PARENT],
       path: [],
       pathIndex: 0,
     });
   }
 
-  for (const id of SPECIALIST_AGENTS) {
-    const pos = SPECIALIST_POSITIONS[id];
-    const meta = AGENT_META[id];
-    const seat = getSeatPosition(pos);
-    const spawn = validateSpawnPosition(id, seat.x, seat.y);
-    agents.push({
-      id,
-      name: id.charAt(0).toUpperCase() + id.slice(1),
-      color: AGENT_COLORS[id],
-      emoji: meta.emoji,
-      role: meta.role,
-      x: spawn.x,
-      y: spawn.y,
-      targetX: spawn.x,
-      targetY: spawn.y,
-      renderX: spawn.renderX,
-      renderY: spawn.renderY,
-      speed: AGENT_INITIAL_SPEED,
-      state: 'idle',
-      isSpecialist: true,
-      isDormant: false, // All agents always visible
-      parentAgent: SPECIALIST_PARENT[id],
-      path: [],
-      pathIndex: 0,
-    });
-  }
+  // Mark arrival as done so revisits skip the walk-in
+  if (isArrival) sessionStorage.setItem('gs_office_arrived', '1');
 
   return agents;
 }
@@ -245,7 +311,7 @@ export default function OfficeStage({
     return () => resetAllBehaviors();
   }, []);
 
-  // ---- Validate all agent positions on init ----
+  // ---- Validate all agent positions on init (skip target reset for arrival walk) ----
 
   useEffect(() => {
     setAgents(prev => prev.map(agent => {
@@ -253,12 +319,11 @@ export default function OfficeStage({
         const valid = nearestWalkable(agent.x, agent.y);
         if (valid) {
           console.warn(`[Office] Agent ${agent.id} spawned on blocked tile (${agent.x},${agent.y}), moved to (${valid.x},${valid.y})`);
+          // Preserve targetX/Y so arrival walk-in still works
           return {
             ...agent,
             x: valid.x,
             y: valid.y,
-            targetX: valid.x,
-            targetY: valid.y,
             renderX: valid.x * CELL + CELL / 2,
             renderY: valid.y * CELL + CELL / 2,
             path: [],
@@ -268,6 +333,28 @@ export default function OfficeStage({
       }
       return agent;
     }));
+  }, []);
+
+  // ---- Greeting bubbles on first visit (staggered per agent) ----
+
+  useEffect(() => {
+    if (sessionStorage.getItem('gs_office_greeted')) return;
+    sessionStorage.setItem('gs_office_greeted', '1');
+
+    const allIds: AgentId[] = [...CORE_AGENTS, ...SPECIALIST_AGENTS];
+    allIds.forEach((id, i) => {
+      setTimeout(() => {
+        const phrase = GREETING_PHRASES[id] || 'Hello!';
+        setBubbles(prev => [...prev.slice(-(MAX_SPEECH_BUBBLES - 1)), {
+          id: `greet-${id}-${Date.now()}`,
+          agentId: id,
+          text: phrase,
+          color: AGENT_COLORS[id] || '#00F0FF',
+          createdAt: Date.now(),
+          expiresAt: Date.now() + SPEECH_BUBBLE_TTL + 1000, // slightly longer for greetings
+        }]);
+      }, 1500 + i * 600); // stagger: 1.5s base + 600ms per agent
+    });
   }, []);
 
   // ---- Process new SSE events ----
@@ -358,34 +445,15 @@ export default function OfficeStage({
                 agentId,
               );
             }
-            // Cancel idle wandering — move agent back to their desk
+            // Cancel idle wandering — agent walks to their desk for work
             cancelIdleBehavior(agentId);
-            agent.path = [];
-            agent.pathIndex = 0;
             {
-              const home = agent.isSpecialist
-                ? SPECIALIST_POSITIONS[agent.id as SpecialistId]
-                : CORE_DESK_POSITIONS[agent.id as CoreAgentId];
-              if (home) {
-                const seat = getSeatPosition(home);
-                const validSeat = validateTarget(seat.x, seat.y, agent.x, agent.y);
-                agent.targetX = validSeat.x;
-                agent.targetY = validSeat.y;
-              }
-            }
-            // When a specialist gets work, walk them to their parent core agent's desk
-            if (agent.isSpecialist) {
-              const parentId = SPECIALIST_PARENT[agent.id as SpecialistId];
-              if (parentId) {
-                const parentDesk = CORE_DESK_POSITIONS[parentId];
-                if (parentDesk) {
-                  const parentSeat = getSeatPosition(parentDesk);
-                  // Walk near the parent (offset by 1 to avoid overlap) — validated
-                  const validParent = validateTarget(parentSeat.x + 1, parentSeat.y, parentSeat.x, parentSeat.y);
-                  agent.targetX = validParent.x;
-                  agent.targetY = validParent.y;
-                }
-              }
+              const desk = getAgentDesk(agentId);
+              const deskValid = validateTarget(desk.x, desk.y, agent.x, agent.y);
+              agent.targetX = deskValid.x;
+              agent.targetY = deskValid.y;
+              agent.path = [];
+              agent.pathIndex = 0;
             }
             break;
 
@@ -393,21 +461,22 @@ export default function OfficeStage({
             agent.state = 'delegating';
             const targetId = evt.targetAgent as SpecialistId | undefined;
             if (targetId && SPECIALIST_AGENTS.includes(targetId as SpecialistId)) {
-              // Route specialist toward the delegating core agent's desk
+              // Route specialist toward THEIR DESK for focused work
               const specIdx = next.findIndex(a => a.id === targetId);
               if (specIdx !== -1) {
                 const spec = { ...next[specIdx] };
                 spec.state = 'task_started';
                 spec.path = [];
                 spec.pathIndex = 0;
-                const coreDesk = CORE_DESK_POSITIONS[agentId as CoreAgentId];
-                if (coreDesk) {
-                  const coreSeat = getSeatPosition(coreDesk);
-                  const validTarget = validateTarget(coreSeat.x + 1, coreSeat.y, coreSeat.x, coreSeat.y);
-                  spec.targetX = validTarget.x;
-                  spec.targetY = validTarget.y;
-                }
+                const desk = getAgentDesk(targetId as AgentId);
+                const validTarget = validateTarget(desk.x, desk.y, spec.x, spec.y);
+                spec.targetX = validTarget.x;
+                spec.targetY = validTarget.y;
                 next[specIdx] = spec;
+                // Reaction bubble from the delegated agent
+                const recvPhrases = COLLAB_RECV_PHRASES[targetId] || COLLAB_RECV_PHRASES.weebo;
+                const phrase = recvPhrases[Math.floor(Math.random() * recvPhrases.length)];
+                addBubble(targetId as AgentId, phrase);
               }
             }
             // Create beam from core to specialist
@@ -417,15 +486,32 @@ export default function OfficeStage({
             break;
           }
 
-          case 'comm_sent':
+          case 'comm_sent': {
+            agent.state = evt.state;
+            const sendTarget = evt.targetAgent as AgentId | undefined;
+            if (sendTarget) {
+              addBeam(agentId, sendTarget);
+            }
+            // Personality-flavored send bubble — agents communicate remotely (no walk)
+            {
+              const phrases = COLLAB_SEND_PHRASES[agentId] || COLLAB_SEND_PHRASES.weebo;
+              const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+              addBubble(agentId, phrase);
+            }
+            break;
+          }
+
           case 'comm_received': {
             agent.state = evt.state;
-            const target = evt.targetAgent as AgentId | undefined;
-            if (target) {
-              addBeam(agentId, target);
+            const recvFrom = evt.targetAgent as AgentId | undefined;
+            if (recvFrom) {
+              addBeam(recvFrom, agentId);
             }
-            if (evt.content) {
-              addBubble(agentId, evt.content);
+            // Personality-flavored receive bubble — agents stay at their positions
+            {
+              const phrases = COLLAB_RECV_PHRASES[agentId] || COLLAB_RECV_PHRASES.weebo;
+              const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+              addBubble(agentId, phrase);
             }
             break;
           }
@@ -462,24 +548,13 @@ export default function OfficeStage({
               setTimeout(() => clearEffects(effectStateRef.current), clearDelay);
             }
 
-            // After 3s, reset to idle and walk back to own desk
+            // After 3s, reset to idle — behavior system will pick next destination
             const doneId = agentId;
             setTimeout(() => {
               setAgents(p =>
                 p.map(a => {
                   if (a.id !== doneId) return a;
-                  const reset = { ...a, state: 'idle' as AgentStateType, path: [], pathIndex: 0 };
-                  // Walk agent back to their own desk — validated (both core and specialist)
-                  const homePos = a.isSpecialist
-                    ? SPECIALIST_POSITIONS[a.id as SpecialistId]
-                    : CORE_DESK_POSITIONS[a.id as CoreAgentId];
-                  if (homePos) {
-                    const seat = getSeatPosition(homePos);
-                    const validSeat = validateTarget(seat.x, seat.y, a.x, a.y);
-                    reset.targetX = validSeat.x;
-                    reset.targetY = validSeat.y;
-                  }
-                  return reset;
+                  return { ...a, state: 'idle' as AgentStateType, path: [], pathIndex: 0, targetX: a.x, targetY: a.y };
                 }),
               );
             }, 3000);
@@ -613,7 +688,7 @@ export default function OfficeStage({
 
         // Idle behavior — wandering, socializing, fidgeting
         setAgents(prev => {
-          const { updatedAgents, newBubbles } = tickBehaviors(prev, tickRef.current);
+          const { updatedAgents, newBubbles } = tickBehaviors(prev, tickRef.current, themeRef.current);
           if (newBubbles.length > 0) {
             setBubbles(b => [...b.slice(-(MAX_SPEECH_BUBBLES - newBubbles.length)), ...newBubbles]);
           }

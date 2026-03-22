@@ -82,6 +82,9 @@ agentStateRouter.get('/info', requireAuth, (_req, res) => {
 agentStateRouter.get('/stream', requireAuthSSE, (req: AuthRequest, res) => {
   const userId = req.userId!;
 
+  // Disable compression for this response (belt + suspenders with app-level filter)
+  res.setHeader('Content-Encoding', 'identity');
+
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -89,15 +92,23 @@ agentStateRouter.get('/stream', requireAuthSSE, (req: AuthRequest, res) => {
     'X-Accel-Buffering': 'no',
   });
 
-  // Initial connection confirmation
+  // Force flush headers + initial confirmation immediately
   res.write(':connected\n\n');
+  if (typeof (res as unknown as { flush: () => void }).flush === 'function') {
+    (res as unknown as { flush: () => void }).flush();
+  }
 
   addStateClient(userId, res);
 
-  // Heartbeat every 25 seconds
+  // Heartbeat every 15 seconds (keep connection alive through proxies)
   const heartbeat = setInterval(() => {
-    try { res.write(':ping\n\n'); } catch { clearInterval(heartbeat); }
-  }, 25000);
+    try {
+      res.write(':ping\n\n');
+      if (typeof (res as unknown as { flush: () => void }).flush === 'function') {
+        (res as unknown as { flush: () => void }).flush();
+      }
+    } catch { clearInterval(heartbeat); }
+  }, 15000);
 
   req.on('close', () => {
     clearInterval(heartbeat);

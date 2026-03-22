@@ -162,9 +162,14 @@ export function createApp(): express.Application {
   }));
 
   // ---- 47.8: Response compression (gzip/deflate) ----
-  // Applied before body parsing so all responses (JSON, HTML, SSE) can be compressed.
-  // SSE streams are excluded automatically because they flush headers before compression kicks in.
-  app.use(compression());
+  // Skip SSE streams — compression buffers res.write() which kills real-time delivery.
+  app.use(compression({
+    filter: (req, res) => {
+      if (req.headers.accept === 'text/event-stream') return false;
+      if (res.getHeader('Content-Type') === 'text/event-stream') return false;
+      return compression.filter(req, res);
+    },
+  }));
 
   // 52.3: Security headers — applied early so all responses carry them
   // Referrer-Policy prevents leaking paths in cross-origin navigations

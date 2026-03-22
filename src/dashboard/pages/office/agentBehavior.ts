@@ -5,10 +5,8 @@
 
 import type { CanvasAgent, AgentId, SpeechBubble } from './types';
 import {
-  CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
   AGENT_COLORS,
 } from './constants';
-import type { CoreAgentId, SpecialistId } from './types';
 import {
   isWalkable, validateTarget,
 } from './navigation';
@@ -107,6 +105,37 @@ const BEHAVIOR_PREFERENCES: Record<string, Partial<Record<SmartObjectType, numbe
   echo:  { seating: 3, table: 2, decoration: 2, appliance: 2, furniture: 1, desk: 1, display: 1 },       // coach — couch, lounge
 };
 
+// ── Personality-driven room affinity ─────────────────────────────────────────
+// Agents prefer to roam certain rooms. Higher weight = more likely to visit.
+// Forge hangs around desks/code area, Echo lingers at patio/lounge,
+// Cal stays near meeting room, Nova roams everywhere creatively.
+
+const ROOM_AFFINITY: Record<string, Record<string, number>> = {
+  forge: { workspace: 5, meeting_room: 2, pantry: 1, lounge: 1, patio: 1, stairs_transition: 1, utility_corridor: 1 },
+  echo:  { lounge: 4, patio: 4, pantry: 2, workspace: 1, meeting_room: 1, stairs_transition: 1, utility_corridor: 1 },
+  cal:   { meeting_room: 5, workspace: 2, lounge: 1, pantry: 1, patio: 1, stairs_transition: 1, utility_corridor: 1 },
+  nova:  { patio: 3, lounge: 3, workspace: 2, meeting_room: 2, pantry: 2, stairs_transition: 3, utility_corridor: 2 },
+  weebo: { lounge: 3, patio: 3, workspace: 2, pantry: 2, meeting_room: 1, stairs_transition: 1, utility_corridor: 1 },
+  edith: { workspace: 4, meeting_room: 3, pantry: 1, lounge: 1, patio: 1, stairs_transition: 1, utility_corridor: 1 },
+  jarvis:{ meeting_room: 3, workspace: 3, pantry: 1, lounge: 1, patio: 1, stairs_transition: 1, utility_corridor: 1 },
+  aria:  { lounge: 3, patio: 3, meeting_room: 2, pantry: 2, workspace: 1, stairs_transition: 2, utility_corridor: 1 },
+  pulse: { workspace: 3, meeting_room: 3, lounge: 1, pantry: 1, patio: 1, stairs_transition: 1, utility_corridor: 1 },
+};
+
+// ── Object type → visual pose mapping ────────────────────────────────────────
+// Determines how the sprite is visually offset at furniture.
+// sit = deep into chair, lean = slight tilt at counter, stand = normal at whiteboards
+
+const OBJECT_TYPE_POSE: Record<string, 'sit' | 'lean' | 'stand'> = {
+  desk: 'sit',
+  appliance: 'lean',
+  seating: 'sit',
+  table: 'sit',
+  display: 'stand',
+  furniture: 'stand',
+  decoration: 'stand',
+};
+
 // ── Behavior-based interaction durations (ticks, 1 tick = 200ms) ─────────────
 // Agents linger longer at meaningful smart objects instead of leaving quickly.
 
@@ -120,6 +149,29 @@ const INTERACTION_DURATION: Record<InteractionPoint['behavior'], { min: number; 
   browse:      { min: 50, max: 100 },   // 10-20 seconds at bookshelf
   work:        { min: 40, max: 75 },    // 8-15 seconds at work desk
 };
+
+// ── Personality linger multipliers ────────────────────────────────────────────
+// Some agents linger longer at specific smart objects that match their personality.
+// Multiplier applied on top of INTERACTION_DURATION.
+
+const LINGER_MULTIPLIER: Record<string, Partial<Record<InteractionPoint['behavior'], number>>> = {
+  nova:   { browse: 2.0, observe: 1.5 },        // researcher lingers at bookshelves
+  aria:   { present: 1.8, observe: 1.5 },        // creative director lingers at whiteboard/TV
+  forge:  { work: 2.0, collaborate: 1.3 },        // tech lead lingers at desk/meeting
+  pulse:  { observe: 1.8, browse: 1.5 },         // data analyst studies displays + bookshelf
+  echo:   { relax: 1.8, chat: 1.5 },             // coach lingers on couch + socializing
+  cal:    { collaborate: 1.8, present: 1.3 },     // scheduler lingers in meetings
+  edith:  { work: 1.5, collaborate: 1.5 },        // strategic — desk + meeting
+  weebo:  { coffee: 1.5, relax: 1.3 },           // energetic but loves coffee + couch
+  jarvis: { collaborate: 1.5, observe: 1.3 },    // ops — meeting + whiteboard
+};
+
+function computeLingerDuration(agentId: AgentId, behavior: InteractionPoint['behavior']): number {
+  const dur = INTERACTION_DURATION[behavior] ?? { min: 25, max: 50 };
+  const base = randomInt(dur.min, dur.max);
+  const mult = LINGER_MULTIPLIER[agentId]?.[behavior] ?? 1.0;
+  return Math.round(base * mult);
+}
 
 // Track which agents had a recent tool_call (for lounge weighting)
 const recentWorkers = new Set<AgentId>();
@@ -155,15 +207,8 @@ function makeBubble(agentId: AgentId, text: string): SpeechBubble {
   };
 }
 
-function getHomePosition(agent: CanvasAgent): { x: number; y: number } {
-  const pos = agent.isSpecialist
-    ? SPECIALIST_POSITIONS[agent.id as SpecialistId]
-    : CORE_DESK_POSITIONS[agent.id as CoreAgentId];
-  if (pos) {
-    return { x: pos.x, y: pos.y };
-  }
-  return { x: agent.x, y: agent.y };
-}
+// Home positions no longer used — agents roam freely. Kept for reference.
+// function getHomePosition(agent: CanvasAgent): { x: number; y: number } { ... }
 
 /** Compute facing direction from current position toward a target point */
 function computeFacing(fromX: number, fromY: number, toX: number, toY: number): FacingDirection {
@@ -207,16 +252,19 @@ function chooseDestination(
     if (meetPoints.length > 0 && Math.random() < 0.6) return pickRandom(meetPoints);
   }
 
-  // Rule 4: Personality-weighted smart object selection (primary path)
-  // Uses BEHAVIOR_PREFERENCES to pick objects this agent gravitates toward.
+  // Rule 4: Personality-weighted smart object selection with room affinity.
+  // Uses BEHAVIOR_PREFERENCES × ROOM_AFFINITY for personality-driven roaming.
   const prefs = BEHAVIOR_PREFERENCES[p.agent.id] ?? {};
+  const roomPrefs = ROOM_AFFINITY[p.agent.id] ?? {};
   const weighted: Array<typeof pts[number] & { weight: number }> = [];
 
   for (const ip of pts) {
-    // Find the smart object this point belongs to so we can check its type
+    // Find the smart object this point belongs to so we can check its type and room
     const obj = SMART_OBJECTS.find((o) => o.id === ip.objectId);
     const objType = (obj?.type ?? 'decoration') as SmartObjectType;
-    const weight = prefs[objType] ?? 1;
+    const typeWeight = prefs[objType] ?? 1;
+    const roomWeight = roomPrefs[obj?.room ?? ''] ?? 1;
+    const weight = typeWeight * roomWeight; // personality × room affinity
     weighted.push({ ...ip, weight });
   }
 
@@ -247,7 +295,7 @@ export function initBehavior(agent: CanvasAgent): void {
     mode: 'sitting',
     targetPoint: null,
     socialTarget: null,
-    timer: randomInt(75, 200) + stagger, // 15-40s initial desk time (staggered so agents leave at different times)
+    timer: randomInt(25, 75) + stagger, // 5-15s initial desk time then start roaming
     fidgetTimer: randomInt(5, 15),
     fidgetType: 'none',
     speed: AGENT_SPEED[agent.id] ?? 1.0,
@@ -284,11 +332,12 @@ export function cancelIdleBehavior(agentId: AgentId): void {
 
 interface GroupMeeting {
   id: string;
-  targetPoint: { x: number; y: number };
+  centerPoint: { x: number; y: number };
+  assignedPoints: Map<AgentId, InteractionPoint>;
   agents: AgentId[];
   phase: 'gathering' | 'chatting' | 'dispersing';
-  chatTimer: number;      // ticks remaining in chat phase
-  chatStep: number;       // which exchange we're on
+  chatTimer: number;
+  chatStep: number;
   behavior: InteractionPoint['behavior'] | 'general';
 }
 
@@ -306,7 +355,7 @@ function tryStartGroupMeeting(idleAgents: CanvasAgent[]): void {
   // Pick 2-3 idle agents that aren't currently wandering to a meeting
   const eligible = idleAgents.filter((a) => {
     const bs = behaviorStates.get(a.id);
-    return bs && (bs.mode === 'sitting' || bs.mode === 'returning');
+    return bs && (bs.mode === 'sitting' || bs.mode === 'wandering');
   });
   if (eligible.length < 2) return;
 
@@ -315,30 +364,42 @@ function tryStartGroupMeeting(idleAgents: CanvasAgent[]): void {
   const chosen = shuffled.slice(0, count);
   const meetingId = `meeting-${Date.now()}`;
 
-  // Find a meeting-worthy interaction point
-  const meetingPoints = SMART_OBJECTS
-    .flatMap((o) =>
-      o.interactionPoints
-        .filter((ip) => GROUP_MEETING_BEHAVIORS.includes(ip.behavior))
-        .map((ip) => ({ ...ip, objectId: o.id })),
-    )
-    .filter((ip) => isWalkable(ip.x, ip.y));
+  // Find smart objects with enough interaction points for all meeting agents
+  const suitableObjects = SMART_OBJECTS.filter((o) => {
+    const vp = o.interactionPoints.filter(
+      (ip) => GROUP_MEETING_BEHAVIORS.includes(ip.behavior) && isWalkable(ip.x, ip.y),
+    );
+    return vp.length >= count;
+  });
 
-  if (meetingPoints.length === 0) return;
-  const meetPoint = pickRandom(meetingPoints);
+  if (suitableObjects.length === 0) return;
+  const obj = pickRandom(suitableObjects);
+
+  // Assign each agent a unique interaction point — no overlap
+  const validPts = obj.interactionPoints
+    .filter((ip) => GROUP_MEETING_BEHAVIORS.includes(ip.behavior) && isWalkable(ip.x, ip.y));
+  const shuffledPts = [...validPts].sort(() => Math.random() - 0.5);
+  const assignedPoints = new Map<AgentId, InteractionPoint>();
+  for (let i = 0; i < count; i++) {
+    assignedPoints.set(chosen[i].id, shuffledPts[i]);
+  }
+
+  const cpts = shuffledPts.slice(0, count);
+  const centerX = Math.round(cpts.reduce((s, p) => s + p.x, 0) / count);
+  const centerY = Math.round(cpts.reduce((s, p) => s + p.y, 0) / count);
 
   activeGroupMeeting = {
     id: meetingId,
-    targetPoint: { x: meetPoint.x, y: meetPoint.y },
+    centerPoint: { x: centerX, y: centerY },
+    assignedPoints,
     agents: chosen.map((a) => a.id),
     phase: 'gathering',
-    chatTimer: randomInt(75, 125), // 15-25 seconds
+    chatTimer: randomInt(75, 125),
     chatStep: 0,
-    behavior: meetPoint.behavior,
+    behavior: shuffledPts[0].behavior,
   };
   activeGroupId = meetingId;
 
-  // Send each chosen agent to the meeting point area
   for (const agent of chosen) {
     const bs = behaviorStates.get(agent.id);
     if (!bs) continue;
@@ -368,21 +429,23 @@ function tickGroupMeeting(
       for (const agent of memberAgents) {
         const bs = behaviorStates.get(agent.id);
         if (!bs || bs.mode !== 'group-meeting') continue;
-        const home = getHomePosition(agent);
-        const validPt = validateTarget(gm.targetPoint.x, gm.targetPoint.y, home.x, home.y);
+        const assigned = gm.assignedPoints.get(agent.id);
+        if (!assigned) continue;
+        const validPt = validateTarget(assigned.x, assigned.y, agent.x, agent.y);
         targets.set(agent.id, validPt);
-        const dist = Math.abs(agent.x - gm.targetPoint.x) + Math.abs(agent.y - gm.targetPoint.y);
+        const dist = Math.abs(agent.x - assigned.x) + Math.abs(agent.y - assigned.y);
         if (dist > 2) {
           allArrived = false;
         }
       }
       if (allArrived && memberAgents.length >= 2) {
         gm.phase = 'chatting';
-        // Face each other (face toward meeting center)
+        // Use furniture-defined facing for each agent's assigned seat
         for (const agent of memberAgents) {
           const bs = behaviorStates.get(agent.id);
+          const assigned = gm.assignedPoints.get(agent.id);
           if (bs) {
-            bs.facing = computeFacing(agent.x, agent.y, gm.targetPoint.x, gm.targetPoint.y);
+            bs.facing = assigned?.facing ?? computeFacing(agent.x, agent.y, gm.centerPoint.x, gm.centerPoint.y);
           }
         }
       }
@@ -411,13 +474,24 @@ function tickGroupMeeting(
         const bs = behaviorStates.get(agent.id);
         if (!bs) continue;
         releasePoint(agent.id);
-        bs.mode = 'returning';
+        // After meeting, each agent roams to a different random destination
         bs.groupId = null;
-        bs.targetPoint = null;
-        const home = getHomePosition(agent);
-        const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
-        targets.set(agent.id, validHome);
-        bs.speed = AGENT_SPEED[agent.id] ?? 1.0;
+        const perception = perceive(agent, agents, recentWorkers);
+        const nextDest = chooseDestination(perception);
+        if (nextDest) {
+          bs.mode = 'wandering';
+          const validPt = validateTarget(nextDest.x, nextDest.y, agent.x, agent.y);
+          reservePoint(validPt.x, validPt.y, agent.id);
+          bs.targetPoint = nextDest;
+          bs.speed = AGENT_SPEED[agent.id] ?? 1.0;
+          bs.timer = computeLingerDuration(agent.id, nextDest.behavior);
+          targets.set(agent.id, validPt);
+        } else {
+          bs.mode = 'sitting';
+          bs.targetPoint = null;
+          bs.timer = randomInt(15, 30);
+          bs.speed = AGENT_SPEED[agent.id] ?? 1.0;
+        }
       }
       activeGroupMeeting = null;
       activeGroupId = null;
@@ -433,9 +507,18 @@ function tickGroupMeeting(
 export function tickBehaviors(
   agents: CanvasAgent[],
   _tick: number,
+  theme?: 'day' | 'night',
 ): { updatedAgents: CanvasAgent[]; newBubbles: SpeechBubble[] } {
   const newBubbles: SpeechBubble[] = [];
   let changed = false;
+  const isNight = theme === 'night';
+
+  // Cap concurrent movers — keeps office calm, prevents chaos
+  const maxMovers = isNight ? 2 : 4;
+  let activeMovers = agents.filter((a) => {
+    const bs = behaviorStates.get(a.id);
+    return bs && (bs.mode === 'wandering' || bs.mode === 'socializing' || bs.mode === 'group-meeting');
+  }).length;
 
   const idleAgents = agents.filter(
     (a) => !a.isDormant && (a.state === 'idle' || a.state === 'done'),
@@ -445,19 +528,19 @@ export function tickBehaviors(
   groupMeetingTimer--;
   socialChatTimer--;
 
-  // Trigger group meeting
+  // Trigger group meeting (less frequent at night)
   if (groupMeetingTimer <= 0) {
-    tryStartGroupMeeting(idleAgents);
-    groupMeetingTimer = randomInt(100, 200); // 20-40s
+    if (activeMovers < maxMovers) tryStartGroupMeeting(idleAgents);
+    groupMeetingTimer = isNight ? randomInt(250, 450) : randomInt(100, 200);
   }
 
-  // Ambient social chat: a random idle agent says something
+  // Ambient social chat (calmer at night)
   if (socialChatTimer <= 0) {
-    socialChatTimer = randomInt(20, 45); // 4-9s — more chatter for liveliness
+    socialChatTimer = isNight ? randomInt(45, 90) : randomInt(20, 45);
     // Any idle/sitting/wandering agent can chat for more liveliness
     const chatters = idleAgents.filter((a) => {
       const bs = behaviorStates.get(a.id);
-      return bs && (bs.mode === 'sitting' || bs.mode === 'wandering' || bs.mode === 'returning');
+      return bs && (bs.mode === 'sitting' || bs.mode === 'wandering');
     });
     if (chatters.length > 0) {
       const speaker = pick(chatters);
@@ -508,28 +591,33 @@ export function tickBehaviors(
 
         // Time to wander or socialize?
         if (bState.timer <= 0) {
+          // Respect concurrent mover cap
+          if (activeMovers >= maxMovers) {
+            bState.timer = randomInt(15, 30);
+            break;
+          }
+          const wanderChance = isNight ? 0.25 : 0.55;
           const roll = Math.random();
-          if (roll < 0.55) {  // 55% chance to explore (balanced with desk time)
+          if (roll < wanderChance) {
             // ALWAYS pick a smart object interaction point -- personality-weighted
             const perception = perceive(agent, agents, recentWorkers);
             const dest = chooseDestination(perception);
             if (dest) {
-              const home = getHomePosition(agent);
-              const validPt = validateTarget(dest.x, dest.y, home.x, home.y);
+              const validPt = validateTarget(dest.x, dest.y, agent.x, agent.y);
               // Reserve the interaction point
               reservePoint(validPt.x, validPt.y, agent.id);
               bState.mode = 'wandering';
               bState.targetPoint = dest;
               bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
               bState.wanderCount = 0;
-              // Use behavior-specific interaction duration
-              const dur = INTERACTION_DURATION[dest.behavior] ?? { min: 25, max: 50 };
-              bState.timer = randomInt(dur.min, dur.max);
+              // Use personality-weighted interaction duration
+              bState.timer = computeLingerDuration(agent.id, dest.behavior);
               updated.targetX = validPt.x;
               updated.targetY = validPt.y;
               updated.path = [];
               updated.pathIndex = 0;
               changed = true;
+              activeMovers++;
             } else {
               bState.timer = randomInt(100, 200); // try again in 60-120s
             }
@@ -545,8 +633,7 @@ export function tickBehaviors(
               const target = pick(nearby);
               const socialX = target.x + (agent.x > target.x ? 1 : -1);
               const socialY = target.y;
-              const home = getHomePosition(agent);
-              const validSocial = validateTarget(socialX, socialY, home.x, home.y);
+              const validSocial = validateTarget(socialX, socialY, agent.x, agent.y);
               bState.mode = 'socializing';
               bState.socialTarget = target.id;
               bState.socialStep = 0;
@@ -557,6 +644,7 @@ export function tickBehaviors(
               updated.path = [];
               updated.pathIndex = 0;
               changed = true;
+              activeMovers++;
             } else {
               bState.timer = randomInt(100, 200); // try again in 60-120s
             }
@@ -600,48 +688,28 @@ export function tickBehaviors(
             }
           }
 
-          // Linger at destination then chain to another point or return home
+          // Linger at destination then always move to a new spot — no home desk
           if (bState.timer <= 0) {
             releasePoint(agent.id);
-            bState.wanderCount++;
 
-            // Wander count limit: after 1-3 visits, force return home
-            const wanderLimit = randomInt(1, 3);
-            const canChain = bState.wanderCount < wanderLimit;
-
-            // 60% chance to chain to another smart object (if under limit)
-            if (canChain && Math.random() < 0.6) {
-              const perception = perceive(agent, agents, recentWorkers);
-              const nextDest = chooseDestination(perception);
-              if (nextDest) {
-                const home = getHomePosition(agent);
-                const validPt = validateTarget(nextDest.x, nextDest.y, home.x, home.y);
-                reservePoint(validPt.x, validPt.y, agent.id);
-                bState.targetPoint = nextDest;
-                bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
-                // Use behavior-specific interaction duration for chained visits too
-                const dur = INTERACTION_DURATION[nextDest.behavior] ?? { min: 25, max: 50 };
-                bState.timer = randomInt(dur.min, dur.max);
-                updated.targetX = validPt.x;
-                updated.targetY = validPt.y;
-                updated.path = [];
-                updated.pathIndex = 0;
-                changed = true;
-                break;
-              }
+            // Always pick a new destination — agents roam freely forever
+            const perception = perceive(agent, agents, recentWorkers);
+            const nextDest = chooseDestination(perception);
+            if (nextDest) {
+              const validPt = validateTarget(nextDest.x, nextDest.y, agent.x, agent.y);
+              reservePoint(validPt.x, validPt.y, agent.id);
+              bState.targetPoint = nextDest;
+              bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
+              bState.timer = computeLingerDuration(agent.id, nextDest.behavior);
+              updated.targetX = validPt.x;
+              updated.targetY = validPt.y;
+              updated.path = [];
+              updated.pathIndex = 0;
+              changed = true;
+            } else {
+              // Rare: no available points — linger and retry
+              bState.timer = randomInt(25, 50);
             }
-
-            // Otherwise return home
-            bState.mode = 'returning';
-            bState.targetPoint = null;
-            const home = getHomePosition(agent);
-            const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
-            updated.targetX = validHome.x;
-            updated.targetY = validHome.y;
-            updated.path = [];
-            updated.pathIndex = 0;
-            bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
-            changed = true;
           }
         } else {
           // Update facing while walking toward target
@@ -657,14 +725,24 @@ export function tickBehaviors(
       case 'socializing': {
         const target = agents.find((a) => a.id === bState!.socialTarget);
         if (!target) {
-          bState.mode = 'returning';
-          const home = getHomePosition(agent);
-          const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
-          updated.targetX = validHome.x;
-          updated.targetY = validHome.y;
+          // Target gone — pick a new destination instead of going home
+          bState.socialTarget = null;
+          const perception = perceive(agent, agents, recentWorkers);
+          const nextDest = chooseDestination(perception);
+          if (nextDest) {
+            bState.mode = 'wandering';
+            const validPt = validateTarget(nextDest.x, nextDest.y, agent.x, agent.y);
+            reservePoint(validPt.x, validPt.y, agent.id);
+            bState.targetPoint = nextDest;
+            bState.timer = computeLingerDuration(agent.id, nextDest.behavior);
+            updated.targetX = validPt.x;
+            updated.targetY = validPt.y;
+          } else {
+            bState.mode = 'sitting';
+            bState.timer = randomInt(15, 30);
+          }
           updated.path = [];
           updated.pathIndex = 0;
-          bState.facing = computeFacing(agent.x, agent.y, validHome.x, validHome.y);
           changed = true;
           break;
         }
@@ -698,17 +776,28 @@ export function tickBehaviors(
             newBubbles.push(makeBubble(agent.id, pick(contextPhrases)));
             bState.timer = 8;
           } else if (bState.socialStep >= 3 && bState.timer <= 0) {
-            bState.mode = 'returning';
-            const home = getHomePosition(agent);
-            const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
-            updated.targetX = validHome.x;
-            updated.targetY = validHome.y;
-            updated.path = [];
-            updated.pathIndex = 0;
-            bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
+            // After chat, roam to a new destination — no home desk
             bState.socialTarget = null;
             bState.socialStep = 0;
-            bState.facing = computeFacing(agent.x, agent.y, validHome.x, validHome.y);
+            const perception = perceive(agent, agents, recentWorkers);
+            const nextDest = chooseDestination(perception);
+            if (nextDest) {
+              bState.mode = 'wandering';
+              const validPt = validateTarget(nextDest.x, nextDest.y, agent.x, agent.y);
+              reservePoint(validPt.x, validPt.y, agent.id);
+              bState.targetPoint = nextDest;
+              bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
+              bState.timer = computeLingerDuration(agent.id, nextDest.behavior);
+              updated.targetX = validPt.x;
+              updated.targetY = validPt.y;
+              updated.path = [];
+              updated.pathIndex = 0;
+              bState.facing = computeFacing(agent.x, agent.y, validPt.x, validPt.y);
+            } else {
+              bState.mode = 'sitting';
+              bState.timer = randomInt(15, 30);
+              bState.facing = 'down';
+            }
             changed = true;
           }
         }
@@ -718,28 +807,37 @@ export function tickBehaviors(
       case 'group-meeting': {
         // Movement handled by tickGroupMeeting; just update facing
         if (activeGroupMeeting) {
-          bState.facing = computeFacing(
+          const assigned = activeGroupMeeting.assignedPoints.get(agent.id);
+          bState.facing = assigned?.facing ?? computeFacing(
             agent.x, agent.y,
-            activeGroupMeeting.targetPoint.x, activeGroupMeeting.targetPoint.y,
+            activeGroupMeeting.centerPoint.x, activeGroupMeeting.centerPoint.y,
           );
         }
-        // If group was dispersed but we're still in this mode, return home
+        // If group was dispersed but we're still in this mode, roam freely
         if (!activeGroupId || bState.groupId !== activeGroupId) {
-          const home = getHomePosition(agent);
           if (groupTargets.has(agent.id)) {
             // dispersing phase already set the target
           } else {
             releasePoint(agent.id);
-            bState.mode = 'returning';
             bState.groupId = null;
-            bState.targetPoint = null;
-            const validHome = validateTarget(home.x, home.y, agent.x, agent.y);
-            updated.targetX = validHome.x;
-            updated.targetY = validHome.y;
+            const perception = perceive(agent, agents, recentWorkers);
+            const nextDest = chooseDestination(perception);
+            if (nextDest) {
+              bState.mode = 'wandering';
+              const validPt = validateTarget(nextDest.x, nextDest.y, agent.x, agent.y);
+              reservePoint(validPt.x, validPt.y, agent.id);
+              bState.targetPoint = nextDest;
+              bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
+              bState.timer = computeLingerDuration(agent.id, nextDest.behavior);
+              updated.targetX = validPt.x;
+              updated.targetY = validPt.y;
+            } else {
+              bState.mode = 'sitting';
+              bState.targetPoint = null;
+              bState.timer = randomInt(15, 30);
+            }
             updated.path = [];
             updated.pathIndex = 0;
-            bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
-            bState.facing = computeFacing(agent.x, agent.y, validHome.x, validHome.y);
             changed = true;
           }
         }
@@ -747,15 +845,28 @@ export function tickBehaviors(
       }
 
       case 'returning': {
-        // Update facing while walking home
+        // Legacy fallback: if somehow in returning mode, roam to a new destination
         bState.facing = computeFacing(agent.x, agent.y, agent.targetX, agent.targetY);
 
         if (agent.x === agent.targetX && agent.y === agent.targetY) {
-          bState.mode = 'sitting';
-          bState.timer = randomInt(125, 250); // 25-50s desk sit time (more time at desk)
-          bState.fidgetTimer = randomInt(5, 15);
-          bState.targetPoint = null;
-          bState.facing = 'down'; // face desk
+          const perception = perceive(agent, agents, recentWorkers);
+          const nextDest = chooseDestination(perception);
+          if (nextDest) {
+            bState.mode = 'wandering';
+            const validPt = validateTarget(nextDest.x, nextDest.y, agent.x, agent.y);
+            reservePoint(validPt.x, validPt.y, agent.id);
+            bState.targetPoint = nextDest;
+            bState.speed = AGENT_SPEED[agent.id] ?? 1.0;
+            bState.timer = computeLingerDuration(agent.id, nextDest.behavior);
+            updated.targetX = validPt.x;
+            updated.targetY = validPt.y;
+            updated.path = [];
+            updated.pathIndex = 0;
+          } else {
+            bState.mode = 'sitting';
+            bState.timer = randomInt(15, 30);
+            bState.facing = 'down';
+          }
           bState.wanderCount = 0;
           changed = true;
         }
@@ -797,6 +908,15 @@ export function getAgentBehaviorMode(agentId: AgentId): BehaviorMode {
 
 export function getAgentFacing(agentId: AgentId): FacingDirection {
   return behaviorStates.get(agentId)?.facing ?? 'down';
+}
+
+/** Get the visual pose for an agent at furniture (sit/lean/stand) */
+export function getAgentPose(agentId: AgentId): 'sit' | 'lean' | 'stand' | 'none' {
+  const bs = behaviorStates.get(agentId);
+  if (!bs || !bs.targetPoint) return 'none';
+  const obj = SMART_OBJECTS.find(o => o.id === bs.targetPoint!.objectId);
+  if (!obj) return 'none';
+  return OBJECT_TYPE_POSE[obj.type] ?? 'stand';
 }
 
 // ── Reset all behaviors (e.g., on unmount) ──────────────────────────────────

@@ -18,15 +18,69 @@
 	encode zstd gzip
 }
 
+# ---- Staging / Test (geekspace.space → staging container) ----
 ai.geekspace.space {
-	redir https://ai.agentin.chat{uri} permanent
+	import common_headers
+
+	# SSE streams — no compression
+	handle /api/agent-state/stream* {
+		reverse_proxy staging:3001 {
+			flush_interval -1
+		}
+	}
+	handle /api/activity/stream* {
+		reverse_proxy staging:3001 {
+			flush_interval -1
+		}
+	}
+
+	# API calls
+	handle /api/* {
+		reverse_proxy staging:3001 {
+			flush_interval -1
+		}
+	}
+	handle /preview/* {
+		reverse_proxy staging:3001
+	}
+
+	# Public pages
+	@staging_public path / /privacy /terms /login /explore /gate.html
+	handle @staging_public {
+		root * /srv
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Assets — no long cache for staging (always fresh)
+	handle /assets/* {
+		root * /srv
+		header Cache-Control "no-cache"
+		encode zstd gzip
+		file_server
+	}
+
+	# Authenticated users
+	@geekspace_authed expression `{http.request.cookie.gs_auth} == "geekspace-verified-2026"`
+	handle @geekspace_authed {
+		root * /srv
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Everyone else → gate
+	handle {
+		redir * /gate.html
+	}
 }
 
 api.geekspace.space {
-	redir https://api.agentin.chat{uri} permanent
+	reverse_proxy staging:3001 {
+		flush_interval -1
+	}
 }
-
-# dev.geekspace.space — REMOVED: openclaw container stopped 9 days ago
 
 # ---- Production (agentin.chat) ----
 ai.agentin.chat {
@@ -109,27 +163,53 @@ status.agentin.chat {
 	reverse_proxy uptime-kuma:3001
 }
 
-# ---- Staging Environment ----
+# ---- Staging (staging.agentin.chat → same staging container) ----
 staging.agentin.chat {
 	import common_headers
 
-	# API calls always pass through
-	handle /api/* {
-		reverse_proxy staging-app:3001 {
+	# SSE streams
+	handle /api/agent-state/stream* {
+		reverse_proxy staging:3001 {
+			flush_interval -1
+		}
+	}
+	handle /api/activity/stream* {
+		reverse_proxy staging:3001 {
 			flush_interval -1
 		}
 	}
 
-	# Gate page is always accessible
-	handle /gate.html {
+	# API calls
+	handle /api/* {
+		reverse_proxy staging:3001 {
+			flush_interval -1
+		}
+	}
+
+	# Public pages
+	@staging2_public path / /privacy /terms /login /explore /gate.html
+	handle @staging2_public {
 		root * /srv
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
 		file_server
 	}
 
-	# Authenticated users (cookie set by gate page) get the app
-	@staging_authed expression `{http.request.cookie.gs_auth} == "geekspace-verified-2026"`
-	handle @staging_authed {
-		reverse_proxy staging-app:3001
+	# Assets
+	handle /assets/* {
+		root * /srv
+		header Cache-Control "no-cache"
+		encode zstd gzip
+		file_server
+	}
+
+	# Authenticated users
+	@staging2_authed expression `{http.request.cookie.gs_auth} == "geekspace-verified-2026"`
+	handle @staging2_authed {
+		root * /srv
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
 	}
 
 	# Everyone else → gate

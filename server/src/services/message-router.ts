@@ -34,7 +34,8 @@ import { addInboxMessage } from './inbox.js';
 import { checkContentSafety } from './content-filter.js';
 import { isLaunchModeRequest, runMultiAgentOrchestration } from './multi-agent-orchestrator.js';
 import { isResearchRequest, runResearchJob } from './research-job.js';
-import { emitThinking, emitDone } from './agent-state-bus.js';
+import { emitThinking, emitDone, emitDelegation, emitCommSent, emitCommReceived } from './agent-state-bus.js';
+import { detectDelegationTarget, routeDelegation } from './delegation.js';
 import { cacheDel } from './cache.js';
 
 // ---- Indian Festival Calendar ----
@@ -1323,9 +1324,24 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   // GAP-1 FIX: Use unified agent router for @mention parsing + agent selection
   const { parseMentions, resolveSpecialist, buildAgentMemoryContext } = await import('./unified-agent-router.js');
   const { mentionedAgents } = parseMentions(msg.text);
-  const namedAgent = (msg as unknown as Record<string, unknown>)._overridePersonality as string
+  const explicitAgent = (msg as unknown as Record<string, unknown>)._overridePersonality as string
     || (mentionedAgents.length > 0 ? mentionedAgents[0] : null)
     || detectNamedAgent(msg.text);
+
+  // Intent-based auto-delegation: if no explicit agent mention, detect intent → route to specialist
+  let namedAgent = explicitAgent;
+  let delegationResult: ReturnType<typeof routeDelegation> = null;
+  if (!namedAgent) {
+    const sub = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string } | undefined;
+    const userPlan = sub?.plan || 'free';
+    delegationResult = routeDelegation(userId, userPlan, msg.text);
+    if (delegationResult) {
+      namedAgent = delegationResult.agent;
+      logger.info({ userId, agent: delegationResult.agent, reason: delegationResult.reason },
+        'Intent-based delegation (Telegram/channel)');
+    }
+  }
+
   const effectivePersonalityId = namedAgent || (agentConfig?.personality as string) || 'jarvis';
   const { coreAgent, specialist } = resolveSpecialist(effectivePersonalityId as Parameters<typeof resolveSpecialist>[0]);
   const resolvedAgentName = namedAgent
@@ -1353,10 +1369,12 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   } catch { /* non-fatal — agent memory table may not have namespace column yet */ }
 
   // GAP-5 FIX: Specialist delegation visibility
-  if (specialist) {
-    const { emitDelegation, emitCommSent } = await import('./agent-state-bus.js');
-    emitDelegation(userId, coreAgent, specialist, `Delegating ${getPersonality(specialist).description} capabilities`);
-    // After LLM response, we'll emit comm_sent (see below)
+  // Emit delegation events for both explicit specialist routing AND intent-based delegation
+  if (specialist || delegationResult) {
+    const delegateTo = delegationResult?.agent || specialist;
+    const delegateReason = delegationResult?.reason || `${getPersonality(specialist || coreAgent).description} capabilities`;
+    emitDelegation(userId, coreAgent, delegateTo!, `Delegating: ${delegateReason}`);
+    emitCommSent(userId, coreAgent, delegateTo!, `Handling: "${msg.text.slice(0, 60)}" — ${delegateReason}`, undefined);
   }
 
   // 6a. Semantic memory recall (Qdrant vector search)
@@ -1840,6 +1858,11 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   logActivity(userId, `${resolvedAgentName} replied`, finalReply.slice(0, 80), agentIcon);
   emitDone(userId, effectivePersonalityId, `${resolvedAgentName} finished`);
 
+  // Emit comm_received after delegation completes — shows the specialist reporting back
+  if (delegationResult) {
+    emitCommReceived(userId, delegationResult.agent, coreAgent, `Done: ${finalReply.slice(0, 60)}`, undefined);
+  }
+
   // GAP-4 FIX: Create agent task for complex queries (research, multi-step)
   // GAP-5 FIX: Specialist delegation completion
   // GAP-6 FIX: Invalidate recommendation cache
@@ -1850,13 +1873,13 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       const task = createAgentTask(userId, coreAgent as 'weebo' | 'edith' | 'jarvis', msg.text.slice(0, 100), msg.text, 5, 'chat');
       startTask(task.id);
       completeTask(task.id, finalReply.slice(0, 500));
+      emitThinking(userId, effectivePersonalityId, `${resolvedAgentName} completing task...`);
       const { emitTaskStarted: ets, emitTaskCompleted: etc } = await import('./agent-state-bus.js');
       ets(userId, effectivePersonalityId, task.id, msg.text.slice(0, 60));
       etc(userId, effectivePersonalityId, task.id, 'Complete');
     }
-    if (specialist) {
-      const { emitCommSent: ecs } = await import('./agent-state-bus.js');
-      ecs(userId, specialist, coreAgent, 'Analysis complete', undefined);
+    if (specialist && !delegationResult) {
+      emitCommSent(userId, specialist, coreAgent, 'Analysis complete', undefined);
     }
     // Invalidate recommendation cache
     cacheDel(`recs:${userId}`).catch(() => {});

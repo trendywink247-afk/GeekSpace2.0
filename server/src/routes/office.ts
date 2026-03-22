@@ -5,6 +5,7 @@ import { db } from '../db/index.js';
 import { getAgentTasks, getTaskBoard, getAgentTaskStats } from '../services/agent-task-queue.js';
 import { getRecentComms, getCommStats } from '../services/agent-comms.js';
 import { getAllAgentStates, getRecentEvents } from '../services/agent-state-bus.js';
+import { canDelegate } from '../services/delegation.js';
 
 export const officeRouter = Router();
 
@@ -56,8 +57,13 @@ officeRouter.get('/state', requireAuth, (req: AuthRequest, res) => {
       created_at: r.created_at.endsWith('Z') ? r.created_at : r.created_at + 'Z',
     }));
 
-  // Merge and sort by time
-  const timeline = [...activityRows, ...chatRows]
+  // Merge, dedup, and sort by time
+  // activity_log "X replied" entries are redundant when conversation_log has the actual content.
+  // Drop any activity entry whose action matches a reply/message pattern — conversation_log
+  // always has the richer data (actual message content vs just "Weebo replied").
+  const replyPattern = /replied|agent reply|user message/i;
+  const dedupedActivity = activityRows.filter(a => !replyPattern.test(a.action));
+  const timeline = [...dedupedActivity, ...chatRows]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 50);
 
@@ -106,6 +112,11 @@ officeRouter.get('/state', requireAuth, (req: AuthRequest, res) => {
     }
   })();
 
+  // Delegation status for the metrics panel
+  const sub = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string } | undefined;
+  const userPlan = sub?.plan || 'free';
+  const delegationStatus = { ...canDelegate(userId, userPlan), plan: userPlan };
+
   res.json({
     recentEvents,
     agentStates,
@@ -115,5 +126,6 @@ officeRouter.get('/state', requireAuth, (req: AuthRequest, res) => {
     commStats,
     timeline,
     metrics: metricsData,
+    delegationStatus,
   });
 });

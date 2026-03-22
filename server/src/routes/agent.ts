@@ -29,6 +29,8 @@ import { fetchAndExtract } from '../services/web-research.js';
 import { buildPersonalityInstructions, detectNamedAgent } from '../services/message-router.js';
 import { logActivity } from '../services/activity-log.js';
 import { emitThinking, emitDone } from '../services/agent-state-bus.js';
+import { routeDelegation, canDelegate, decrementDelegation } from '../services/delegation.js';
+import { emitDelegation, emitCommSent, emitCommReceived } from '../services/activity-stream.js';
 
 export const agentRouter = Router();
 
@@ -777,20 +779,42 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     }
 
     // ---- Bridge route: Pico-Kimi orchestration (multi-agent workflows) ----
+    let bridgeFellThrough = false;
+    let delegatedAgent = forceAgent;
+    let delegationInfo: { delegationCount: number; delegationLimit: number; remaining: number } | undefined;
     if (forceRoute === 'bridge') {
       try {
+        // Auto-delegation: detect specialist agent + enforce tier limits
+        if (!forceAgent) {
+          const delegation = routeDelegation(userId, userPlan, message);
+          if (delegation) {
+            delegatedAgent = delegation.agent as AgentRole;
+            delegationInfo = { delegationCount: delegation.delegationCount, delegationLimit: delegation.delegationLimit, remaining: delegation.remaining };
+            // Emit visible delegation event in Office timeline + canvas
+            const currentAgent = (agentConfig?.personality as string) || 'weebo';
+            emitDelegation(userId, currentAgent, delegation.agent, delegation.reason);
+            emitCommSent(userId, currentAgent, delegation.agent, `Handling "${message.slice(0, 60)}…" — ${delegation.reason}`);
+          }
+        }
+
         const history = getConversationContext(userId);
         const bridgeReq: BridgeRequest = {
           userId,
           message,
           systemPrompt,
           conversationHistory: history,
-          forceAgent,
-          forceWorkflow: forceAgent ? false : (message.length > 100),
+          forceAgent: delegatedAgent,
+          forceWorkflow: delegatedAgent ? false : (message.length > 100),
           userCredits,
         };
 
         const bridgeResult = await bridgeChat(bridgeReq);
+
+        // Emit comm_received when specialist responds (specialist reports back to core)
+        if (delegatedAgent && delegationInfo) {
+          const currentAgent = (agentConfig?.personality as string) || 'weebo';
+          emitCommReceived(userId, delegatedAgent, currentAgent, `Done: ${bridgeResult.text.slice(0, 60)}`);
+        }
 
         // Log usage
         db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
@@ -839,6 +863,15 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
           agentsUsed: bridgeResult.agentsUsed,
           workflowId: bridgeResult.workflowId,
         };
+        // Include delegation tracking info so frontend shows remaining count
+        if (delegationInfo) {
+          response.delegation = {
+            agent: delegatedAgent,
+            used: delegationInfo.delegationCount,
+            limit: delegationInfo.delegationLimit,
+            remaining: delegationInfo.remaining,
+          };
+        }
         if (bridgeResult.steps) {
           response.steps = bridgeResult.steps;
         }
@@ -869,11 +902,53 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
         logger.warn({ err, userId }, 'Bridge route failed, falling back to standard router');
         // If the response was already partially sent, don't fall through
         if (res.headersSent) return;
+        // Roll back delegation counter if bridge delegated but failed to complete
+        if (delegationInfo) {
+          decrementDelegation(userId);
+          logger.info({ userId }, 'Rolled back delegation counter after bridge failure');
+        }
+        bridgeFellThrough = true;
       }
     }
 
     // Fire keyword-based automation triggers (non-blocking)
     checkKeywordTriggers(userId, message).catch((e: unknown) => logger.debug({ err: e }, 'background task failed'));
+
+    // ---- Auto-delegation for local route ----
+    // If bridge already fired delegation events + incremented counter, only detect (don't re-increment).
+    // If bridge didn't run or fell through without delegating, do full routeDelegation.
+    let localDelegation: ReturnType<typeof routeDelegation> = null;
+    let effectiveAgentConfig = agentConfig;
+    let effectiveSystemPrompt = systemPrompt;
+    if (!forceAgent) {
+      if (bridgeFellThrough) {
+        // Bridge already called routeDelegation — just re-detect target without incrementing
+        const { detectDelegationTarget, canDelegate: checkCan } = await import('../services/delegation.js');
+        const target = detectDelegationTarget(message);
+        if (target) {
+          const status = checkCan(userId, userPlan);
+          if (status.allowed) {
+            // Bridge already incremented, so just build the result shape
+            localDelegation = { agent: target.agent, reason: target.reason, delegationCount: status.used, delegationLimit: status.limit, remaining: status.remaining };
+            // Don't re-emit delegation/comm_sent — bridge already did that
+          }
+        }
+      } else {
+        localDelegation = routeDelegation(userId, userPlan, message);
+        if (localDelegation) {
+          const currentAgent = (agentConfig?.personality as string) || 'weebo';
+          emitDelegation(userId, currentAgent, localDelegation.agent, localDelegation.reason);
+          emitCommSent(userId, currentAgent, localDelegation.agent, `Handling "${message.slice(0, 60)}…" — ${localDelegation.reason}`);
+        }
+      }
+      // Override personality for delegated agent (both bridge-fallthrough and fresh)
+      if (localDelegation) {
+        const delegatedPersonality = getPersonality(localDelegation.agent);
+        effectiveAgentConfig = { ...(agentConfig || {}), personality: localDelegation.agent, name: delegatedPersonality.name };
+        effectiveSystemPrompt = buildSystemPrompt(effectiveAgentConfig, user, userId, message, reqChannel, userCredits);
+        emitThinking(userId, localDelegation.agent, `${delegatedPersonality.name} is processing...`);
+      }
+    }
 
     // ---- Default: local-first router (Ollama → cloud fallback if Ollama down) ----
 
@@ -907,10 +982,12 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     } else if (webChatNeedsGroq) {
       resolvedProvider = 'groq';
       logger.info({ userId, reason: msgHasNonLatin ? 'non-latin-script' : 'hinglish' }, 'web chat multilingual — routing to Groq');
+    } else if (userModelPref === 'local') {
+      // Bridge skip: local-pref users go straight to Ollama — no pickProvider DB query,
+      // no PicoClaw double-hop (PicoClaw also calls Ollama = 2× timeout on cold start).
+      resolvedProvider = 'ollama';
+      logger.info({ userId, reason: 'local_preference_direct' }, 'Skipping pickProvider — direct Ollama');
     } else {
-      // Always pass pickProvider result as forceProvider.
-      // For 'local' pref this forces 'ollama' directly, skipping PicoClaw fast-lane
-      // (PicoClaw also calls Ollama — doubling timeout on cold start).
       resolvedProvider = await pickProvider(userId, message, userPlan);
     }
 
@@ -921,8 +998,8 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     const messages: ChatMessage[] = [...history, { role: 'user', content: augmentedMessage }];
 
     const result = await runReactLoop(messages, {
-      systemPrompt,
-      agentName: (agentConfig?.name as string) || 'Geek',
+      systemPrompt: effectiveSystemPrompt,
+      agentName: (effectiveAgentConfig?.name as string) || 'Geek',
       userCredits,
       forceProvider: resolvedProvider,
       userId,
@@ -1023,10 +1100,22 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     incrementRateLimitTracker(userId as unknown as number).catch(() => {});
 
     // Push activity for office page live sync
-    const chatAgentName = (agentConfig?.name as string) || 'Geek';
+    const chatAgentName = (effectiveAgentConfig?.name as string) || 'Geek';
     logActivity(String(userId), `${chatAgentName} replied`, (cleanReply || '').slice(0, 80), 'bot');
-    const chatPersonalityId = (agentConfig?.personality as string) || 'jarvis';
+    const chatPersonalityId = (effectiveAgentConfig?.personality as string) || 'jarvis';
     emitDone(String(userId), chatPersonalityId);
+
+    // Emit comm_received when local-route delegation completes
+    if (localDelegation) {
+      const coreAgent = (agentConfig?.personality as string) || 'weebo';
+      emitCommReceived(String(userId), localDelegation.agent, coreAgent, `Done: ${(cleanReply || '').slice(0, 60)}`);
+      response.delegation = {
+        agent: localDelegation.agent,
+        used: localDelegation.delegationCount,
+        limit: localDelegation.delegationLimit,
+        remaining: localDelegation.remaining,
+      };
+    }
 
     if (!res.headersSent) {
       res.json(response);
@@ -1055,6 +1144,15 @@ agentRouter.get('/artifact/:id', requireAuth, (req: AuthRequest, res) => {
     ...artifact,
     previewUrl: `${baseUrl}/preview/${req.userId}/${artifact.id}`,
   });
+});
+
+// ---- Delegation Status ----
+agentRouter.get('/delegation/status', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const sub = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string } | undefined;
+  const userPlan = sub?.plan || 'free';
+  const status = canDelegate(userId, userPlan);
+  res.json({ ...status, plan: userPlan });
 });
 
 // ---- Terminal Commands ----
@@ -1403,9 +1501,11 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
   res.flushHeaders();
 
   let personalityId = 'jarvis';
+  let streamDelegation: ReturnType<typeof routeDelegation> = null;
+  let agentConfig: Record<string, unknown> | undefined;
 
   try {
-    const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
+    agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
     const userCredits = (user?.credits as number) || 0;
     let systemPrompt = buildSystemPrompt(agentConfig, user, userId, undefined, undefined, userCredits);
@@ -1435,9 +1535,24 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
       systemPrompt = buildSystemPrompt(overrideConfig, user, userId, undefined, undefined, userCredits);
     }
 
+    // Auto-delegation for streaming: detect specialist + enforce tier limits
+    if (!namedAgent && !bodyPersonality) {
+      const userPlan = ((db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string } | undefined)?.plan) || 'free';
+      streamDelegation = routeDelegation(userId, userPlan, message);
+      if (streamDelegation) {
+        const currentAgent = (agentConfig?.personality as string) || 'weebo';
+        const delegatedPersonality = getPersonality(streamDelegation.agent);
+        const overrideConfig = { ...(agentConfig || {}), personality: streamDelegation.agent, name: delegatedPersonality.name };
+        systemPrompt = buildSystemPrompt(overrideConfig, user, userId, undefined, undefined, userCredits);
+        personalityId = streamDelegation.agent;
+        emitDelegation(userId, currentAgent, streamDelegation.agent, streamDelegation.reason);
+        emitCommSent(userId, currentAgent, streamDelegation.agent, `Handling "${message.slice(0, 60)}…" — ${streamDelegation.reason}`);
+      }
+    }
+
     // Push activity for office page live sync
     logActivity(String(userId), `${agentName} is thinking`, message.slice(0, 50), streamIcon);
-    personalityId = (agentConfig?.personality as string) || 'jarvis';
+    personalityId = streamDelegation?.agent || (agentConfig?.personality as string) || 'jarvis';
     emitThinking(String(userId), personalityId, `${agentName} is thinking...`);
 
     // Check for launch mode (multi-agent council) FIRST
@@ -1568,6 +1683,12 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
       res.write(`data: ${JSON.stringify({ text: 'Sorry, I had trouble processing that. Please try again.', done: false })}\n\n`);
       res.write(`data: ${JSON.stringify({ text: '', done: true, error: 'Stream failed' })}\n\n`);
     }
+  }
+
+  // Emit delegation completion event if streaming used a delegated agent
+  if (streamDelegation) {
+    const coreAgent = (agentConfig?.personality as string) || 'weebo';
+    emitCommReceived(userId, streamDelegation.agent, coreAgent, 'Task complete');
   }
 
   emitDone(String(userId), personalityId);
