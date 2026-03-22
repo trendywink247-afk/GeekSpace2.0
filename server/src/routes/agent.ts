@@ -85,6 +85,7 @@ function buildSystemPrompt(
   userId: string,
   userMessage?: string,
   channel?: string,
+  credits?: number,
 ): string {
   const personalityId = (agentConfig?.personality as string) || 'jarvis';
   const personality = getPersonality(personalityId);
@@ -165,7 +166,7 @@ ${personalityInstructions ? `\n--- PERSONALITY TUNING ---\n${personalityInstruct
 ${formatContextBlock(picoCtx)}
 
 --- USER SESSION ---
-User: ${userName}. Voice: ${voice}. Mode: ${mode}.
+User: ${userName}. Voice: ${voice}. Mode: ${mode}. Credits: ${credits ?? 0}.
 ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
 ${memoryBlock}
 ${formatMemoryContext(userId)}
@@ -391,8 +392,8 @@ agentRouter.post('/chat', requireAuth, validateBody(chatSchema), async (req: Aut
   try {
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
-    const systemPrompt = buildSystemPrompt(agentConfig, user, userId, message, reqChannel);
     const userCredits = (user?.credits as number) || 0;
+    const systemPrompt = buildSystemPrompt(agentConfig, user, userId, message, reqChannel, userCredits);
 
     // Check subscription credits
     const sub = db.prepare('SELECT plan, credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string; credits_remaining: number; billing_cycle_end: string } | undefined;
@@ -907,10 +908,10 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       resolvedProvider = 'groq';
       logger.info({ userId, reason: msgHasNonLatin ? 'non-latin-script' : 'hinglish' }, 'web chat multilingual — routing to Groq');
     } else {
-      const smartProvider = await pickProvider(userId, message, userPlan);
-      if (smartProvider !== 'ollama') {
-        resolvedProvider = smartProvider;
-      }
+      // Always pass pickProvider result as forceProvider.
+      // For 'local' pref this forces 'ollama' directly, skipping PicoClaw fast-lane
+      // (PicoClaw also calls Ollama — doubling timeout on cold start).
+      resolvedProvider = await pickProvider(userId, message, userPlan);
     }
 
     // Reduce context for Ollama — 4K tokens on CPU is too slow (60s+ prefill).
@@ -1306,7 +1307,7 @@ agentRouter.post('/command', requireAuth, validateBody(commandSchema), async (re
       const result = await routeChat(
         [...termHistory, { role: 'user', content: query }],
         {
-          systemPrompt: buildSystemPrompt(agentConfig, user, userId),
+          systemPrompt: buildSystemPrompt(agentConfig, user, userId, undefined, undefined, (user?.credits as number) || 0),
           agentName: (agentConfig?.name as string) || 'Geek',
           userCredits: (user?.credits as number) || 0,
           userId,
@@ -1406,14 +1407,14 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
   try {
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
-    let systemPrompt = buildSystemPrompt(agentConfig, user, userId);
+    const userCredits = (user?.credits as number) || 0;
+    let systemPrompt = buildSystemPrompt(agentConfig, user, userId, undefined, undefined, userCredits);
 
     // 82.6: Content filter — tag flagged messages (non-blocking)
     checkContent(message, userId);
 
     const history = getConversationContext(userId);
     const intent = classifyIntent(message);
-    const userCredits = (user?.credits as number) || 0;
     const agentName = (agentConfig?.name as string) || 'Geek';
 
     // Named agent detection
@@ -1431,7 +1432,7 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
 
     if (namedAgent || bodyPersonality) {
       const overrideConfig = { ...(agentConfig || {}), personality: effectivePersonality, name: getPersonality(effectivePersonality).name };
-      systemPrompt = buildSystemPrompt(overrideConfig, user, userId);
+      systemPrompt = buildSystemPrompt(overrideConfig, user, userId, undefined, undefined, userCredits);
     }
 
     // Push activity for office page live sync
@@ -1558,7 +1559,7 @@ agentRouter.post('/chat/stream', requireAuth, validateBody(chatSchema), async (r
       const fallbackHistory = getConversationContext(userId);
       const result = await routeChat(
         [...fallbackHistory, { role: 'user', content: message }],
-        { systemPrompt: buildSystemPrompt(agentConfig, user, userId), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0, userId, forceProvider: 'openrouter-free' as Provider },
+        { systemPrompt: buildSystemPrompt(agentConfig, user, userId, undefined, undefined, (user?.credits as number) || 0), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0, userId, forceProvider: 'openrouter-free' as Provider },
       );
       res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
       res.write(`data: ${JSON.stringify({ text: '', done: true, provider: result.provider, model: result.model })}\n\n`);
