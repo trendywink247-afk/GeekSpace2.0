@@ -1054,7 +1054,7 @@ export async function routeChat(
 
   // ---- Provider Selection ----
   let provider: Provider = 'builtin';
-  let useRace = false; // race T1+T6 for free users
+  const useRace = false; // race T1+T6 for free users
   let routingReason: RoutingTrace['reason'] = 'ollama_unreachable';
 
   const ollamaOk = await isOllamaAvailable();
@@ -1304,7 +1304,7 @@ export async function routeChat(
 
 // ---- Ollama Keepalive ----
 
-let keepaliveInterval: ReturnType<typeof setInterval> | null = null;
+const keepaliveInterval: ReturnType<typeof setInterval> | null = null;
 
 async function pingOllama(): Promise<void> {
   try {
