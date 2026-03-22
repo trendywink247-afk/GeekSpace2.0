@@ -245,14 +245,25 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   ctx.fillStyle = hexToRgba(color, 0.1);
   ctx.fillRect(cx - 6, drawY + DH, 12, 2);
 
-  // Name label with glow (reduced glow in day mode for contrast)
+  // Name label with background pill for readability
   ctx.save();
-  ctx.font = '8px monospace';
+  ctx.font = 'bold 9px monospace';
   ctx.textAlign = 'center';
+  const nameText = agent.id.slice(0, 6).toUpperCase();
+  const nameX = cx;
+  const nameY = drawY + DH + 12;
+  const nameMetrics = ctx.measureText(nameText);
+  const namePadX = 3;
+  const namePillW = nameMetrics.width + namePadX * 2;
+  const namePillH = 11;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath();
+  ctx.roundRect(nameX - namePillW / 2, nameY - namePillH + 2, namePillW, namePillH, 3);
+  ctx.fill();
   ctx.shadowColor = color;
-  ctx.shadowBlur = theme === 'day' ? 2 : 6;
-  ctx.fillStyle = hexToRgba(color, 0.9);
-  ctx.fillText(agent.id.slice(0, 6).toUpperCase(), cx, drawY + DH + 11);
+  ctx.shadowBlur = theme === 'day' ? 1 : 4;
+  ctx.fillStyle = hexToRgba(color, 0.95);
+  ctx.fillText(nameText, nameX, nameY);
   ctx.shadowBlur = 0;
   ctx.restore();
 

@@ -453,13 +453,14 @@ export function tickBehaviors(
 
   // Ambient social chat: a random idle agent says something
   if (socialChatTimer <= 0) {
-    socialChatTimer = randomInt(40, 75); // 8-15s
-    const sitters = idleAgents.filter((a) => {
+    socialChatTimer = randomInt(20, 45); // 4-9s — more chatter for liveliness
+    // Any idle/sitting/wandering agent can chat for more liveliness
+    const chatters = idleAgents.filter((a) => {
       const bs = behaviorStates.get(a.id);
-      return bs && bs.mode === 'sitting';
+      return bs && (bs.mode === 'sitting' || bs.mode === 'wandering' || bs.mode === 'returning');
     });
-    if (sitters.length > 0) {
-      const speaker = pick(sitters);
+    if (chatters.length > 0) {
+      const speaker = pick(chatters);
       newBubbles.push(makeBubble(speaker.id, pick(GENERAL_PHRASES)));
     }
   }

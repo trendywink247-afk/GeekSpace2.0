@@ -1231,7 +1231,10 @@ export async function routeChat(
 
     let chain: Provider[];
     if (overBudget || overDailyBudget) {
-      chain = ['ollama', 'groq']; // no paid or OR-free when budget exceeded
+      // No paid or OR-free when budget exceeded; skip the provider that just failed
+      const budgetChain: Provider[] = ['ollama', 'groq'];
+      const failedIdx = budgetChain.indexOf(provider);
+      chain = failedIdx >= 0 ? budgetChain.slice(failedIdx + 1) : budgetChain;
     } else if (provider === 'picoclaw') {
       // PicoClaw failed: Ollama → OR-free → Groq → Together
       chain = ['ollama', 'openrouter-free', 'groq', 'together-qwen'];
