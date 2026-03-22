@@ -427,6 +427,37 @@ services:
           cpus: '0.1'
 
 #-----geekos-agents-----
+  geekos-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: geekspace-geekos-postgres
+    restart: unless-stopped
+    profiles:
+      - geekos
+    environment:
+      - POSTGRES_USER=geekos
+      - POSTGRES_PASSWORD=${GEEKOS_PG_PASSWORD:-geekos-eliza-2026}
+      - POSTGRES_DB=geekos
+    volumes:
+      - geekos-postgres-data:/var/lib/postgresql/data
+    networks:
+      - geekspace-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geekos"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   geekos:
     build: ./geekos
     container_name: geekspace-geekos
@@ -436,12 +467,15 @@ services:
     depends_on:
       geekspace:
         condition: service_healthy
+      geekos-postgres:
+        condition: service_healthy
     environment:
       - OPENAI_API_KEY=agentin-internal-proxy
       - OPENAI_BASE_URL=http://geekspace:3001/api/geekos-llm/v1
       - SMALL_MODEL=agentin-default
       - MEDIUM_MODEL=agentin-default
       - LARGE_MODEL=agentin-default
+      - POSTGRES_URL=postgresql://geekos:${GEEKOS_PG_PASSWORD:-geekos-eliza-2026}@geekos-postgres:5432/geekos
     expose:
       - "3000"
     deploy:
@@ -487,6 +521,8 @@ volumes:
   geekspace-staging-data:
     driver: local
   staging-redis-data:
+    driver: local
+  geekos-postgres-data:
     driver: local
 
 networks:
