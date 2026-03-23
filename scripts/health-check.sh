@@ -5,6 +5,8 @@
 LOG="/var/log/geekspace-health.log"
 API="http://localhost:3001"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+FAILURES=""
+NOTIFY="/root/GeekSpace2.0/scripts/notify-telegram.sh"
 
 log() { echo "[$TIMESTAMP] $*" | tee -a "$LOG"; }
 
@@ -17,6 +19,7 @@ if [ $? -eq 0 ]; then
   echo "$HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); [print(f'  {k}: {v}') for k,v in d.items() if k!='timestamp']" 2>/dev/null | tee -a "$LOG"
 else
   log "API: FAILED — geekspace-app may be down"
+  FAILURES="${FAILURES}\n- API health endpoint unreachable"
 fi
 
 # 2. Docker containers
@@ -39,6 +42,7 @@ if [ "$REDIS_PING" = "PONG" ]; then
   log "Redis: OK"
 else
   log "Redis: FAILED"
+  FAILURES="${FAILURES}\n- Redis not responding"
 fi
 
 # 4. Disk space
@@ -50,3 +54,10 @@ MEM=$(free -m | awk '/^Mem:/{printf "%sMB used / %sMB total", $3, $2}')
 log "Memory: $MEM"
 
 log "=== Check complete ==="
+
+# Telegram alert on failures
+if [ -n "$FAILURES" ]; then
+  log "Sending failure alert via Telegram..."
+  "$NOTIFY" "$(printf '🔴 GeekSpace health check FAILED (%s):\n%b' "$TIMESTAMP" "$FAILURES")" 2>/dev/null \
+    || log "WARN: Telegram notification failed"
+fi

@@ -154,6 +154,11 @@ ai.agentin.chat {
 api.agentin.chat {
 	# Headers handled by Express (helmet) — no common_headers to avoid duplicates
 
+	# Block admin panel on API domain
+	route /admin* {
+		respond 403
+	}
+
 	reverse_proxy geekspace:3001 {
 		flush_interval -1
 	}
