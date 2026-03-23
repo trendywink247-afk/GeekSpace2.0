@@ -13,9 +13,13 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../app.js';
 import { createTestUser, generateTestToken, resetDatabase } from '../setup.js';
+import { config } from '../../config.js';
 import { db } from '../../db/index.js';
 import { v4 as uuid } from 'uuid';
 import { encrypt } from '../../utils/encryption.js';
+
+const ADMIN_TOKEN = 'test-admin-token-phase56';
+config.adminToken = ADMIN_TOKEN;
 
 const app = createApp();
 
@@ -171,9 +175,16 @@ describe('Phase 56', () => {
 
   // ── 56.8: /api/health/detailed ───────────────────────────────
 
-  describe('56.8 — GET /api/health/detailed', () => {
-    it('returns 200 with services object', async () => {
+  describe('56.8 — GET /api/health/detailed (admin-only, H-3)', () => {
+    it('rejects unauthenticated requests', async () => {
       const res = await request(app).get('/api/health/detailed');
+      expect([401, 503]).toContain(res.status);
+    });
+
+    it('returns 200 with services object when admin token provided', async () => {
+      const res = await request(app)
+        .get('/api/health/detailed')
+        .set('Authorization', `Bearer ${ADMIN_TOKEN}`);
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('status');
       expect(res.body).toHaveProperty('services');
@@ -182,18 +193,24 @@ describe('Phase 56', () => {
     });
 
     it('returns probeTimeMs and checkedAt', async () => {
-      const res = await request(app).get('/api/health/detailed');
+      const res = await request(app)
+        .get('/api/health/detailed')
+        .set('Authorization', `Bearer ${ADMIN_TOKEN}`);
       expect(typeof res.body.probeTimeMs).toBe('number');
       expect(typeof res.body.checkedAt).toBe('string');
     });
 
     it('includes redis service', async () => {
-      const res = await request(app).get('/api/health/detailed');
+      const res = await request(app)
+        .get('/api/health/detailed')
+        .set('Authorization', `Bearer ${ADMIN_TOKEN}`);
       expect(res.body.services).toHaveProperty('redis');
     });
 
     it('includes fal service', async () => {
-      const res = await request(app).get('/api/health/detailed');
+      const res = await request(app)
+        .get('/api/health/detailed')
+        .set('Authorization', `Bearer ${ADMIN_TOKEN}`);
       expect(res.body.services).toHaveProperty('fal');
     });
   });

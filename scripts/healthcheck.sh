@@ -32,13 +32,24 @@ fi
 
 # ── 2. Redis ──────────────────────────────
 echo "-- Redis --"
+# Source REDIS_PASSWORD from .env if not already set
+if [ -z "${REDIS_PASSWORD:-}" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    ENV_FILE="${SCRIPT_DIR}/../.env"
+    if [ -f "$ENV_FILE" ]; then
+        REDIS_PASSWORD=$(grep -E '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+    fi
+fi
+REDIS_AUTH_FLAG=()
+[ -n "${REDIS_PASSWORD:-}" ] && REDIS_AUTH_FLAG=(-a "$REDIS_PASSWORD")
+
 if command -v redis-cli &>/dev/null; then
-    if redis-cli ping 2>/dev/null | grep -q PONG; then
+    if redis-cli "${REDIS_AUTH_FLAG[@]}" ping 2>/dev/null | grep -q PONG; then
         pass "Redis (local)"
     else
         fail "Redis — not responding to PING"
     fi
-elif docker exec geekspace-redis redis-cli ping 2>/dev/null | grep -q PONG; then
+elif docker exec geekspace-redis redis-cli "${REDIS_AUTH_FLAG[@]}" ping 2>/dev/null | grep -q PONG; then
     pass "Redis (via Docker)"
 else
     fail "Redis — not reachable"

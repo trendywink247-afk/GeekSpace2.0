@@ -42,6 +42,13 @@ function isDomainBlocked(url) {
 // ── Request handler ──────────────────────────────────────────
 
 async function handleRequest(req, res) {
+  // Health check — unauthenticated (required by Docker/K8s probes)
+  if (req.url === '/health' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', activePages, maxConcurrent: MAX_CONCURRENT }));
+    return;
+  }
+
   // Auth check
   if (SECRET && req.headers['x-browser-secret'] !== SECRET) {
     res.writeHead(403, { 'Content-Type': 'application/json' });

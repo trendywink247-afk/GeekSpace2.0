@@ -6,7 +6,7 @@
 // Gracefully degrades when no Groq key is configured.
 // ============================================================
 
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { readFile, unlink } from 'fs/promises';
 import { createHash } from 'crypto';
@@ -14,7 +14,7 @@ import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { cacheGet, cacheSet } from './cache.js';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 const TELEGRAM_API = `https://api.telegram.org/bot${config.telegramBotToken}`;
 
@@ -142,8 +142,8 @@ export async function textToSpeech(text: string): Promise<Buffer> {
   logger.info({ chars: input.length, voice }, 'voice:tts generating');
 
   try {
-    await execAsync(`"${bin}" --voice "${voice}" --text "${input}" --write-media "${tmpMp3}"`, { timeout: 15000 });
-    await execAsync(`ffmpeg -i "${tmpMp3}" -c:a libopus -b:a 32k "${tmpOgg}" -y 2>/dev/null`, { timeout: 10000 });
+    await execFileAsync(bin, ['--voice', voice, '--text', input, '--write-media', tmpMp3], { timeout: 15000 });
+    await execFileAsync('ffmpeg', ['-i', tmpMp3, '-c:a', 'libopus', '-b:a', '32k', tmpOgg, '-y', '-loglevel', 'quiet'], { timeout: 10000 });
 
     const audio = await readFile(tmpOgg);
     logger.info({ bytes: audio.length }, 'voice:tts complete');

@@ -36,7 +36,7 @@ export const config = {
   jwtSecret: isProduction
     ? required('JWT_SECRET')
     : optional('JWT_SECRET', 'geekspace-dev-secret-CHANGE-IN-PRODUCTION'),
-  jwtExpiresIn: optional('JWT_EXPIRES_IN', '7d'),
+  jwtExpiresIn: optional('JWT_EXPIRES_IN', '15m'),
 
   // CORS — comma-separated origins
   corsOrigins: optional('CORS_ORIGINS', 'http://localhost:5173,http://localhost:4173')
@@ -174,6 +174,10 @@ export const config = {
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   githubClientId: process.env.GITHUB_CLIENT_ID || '',
   githubClientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+
+  // Gate (Caddy access gate — cookie + password verification)
+  gateCookieValue: optional('GATE_COOKIE_VALUE', 'dev-gate-cookie'),
+  gatePasswordHash: optional('GATE_PASSWORD_HASH', ''),
 
   // Demo data
   seedDemoData: !isProduction && optional('SEED_DEMO_DATA', 'true') === 'true',

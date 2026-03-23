@@ -138,9 +138,10 @@ curl localhost:3001/api/health
 - **CRITICAL:** After `docker compose up --build`, run `docker cp geekspace-app:/app/dist/. /var/www/geekspace/` AND ensure `gate.html` is in `/srv`
 
 ### Gate page authentication
-- Cookie `gs_auth == "geekspace-verified-2026"` required; without it → redirect to `/gate.html`
+- Cookie `gs_auth` checked by Caddy; value comes from `GATE_COOKIE_VALUE` env var (never hardcode)
+- Password verification via `POST /api/gate-verify` — Express checks against `GATE_PASSWORD_HASH` env var
 - Host Caddy must replicate: `@authed expression`, `handle @authed`, `handle { redir * /gate.html }`
-- `/gate.html` must exist in host Caddy's root (`/srv`) — copy from `/var/www/geekspace/gate.html`
+- `/gate.html` source is in `public/gate.html` — copy to host Caddy's root (`/srv`)
 
 ## E2E Tests (Post-Phase 75 Lessons)
 

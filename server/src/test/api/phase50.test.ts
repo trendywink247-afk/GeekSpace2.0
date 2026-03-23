@@ -62,33 +62,17 @@ describe('Phase 50', () => {
 
   // ── 50.9: /api/health — DB row counts ─────────────────────────────────────────
 
-  describe('50.9 — /api/health includes db stats', () => {
-    it('should include db field with row counts for expected tables', async () => {
+  describe('50.9 — /api/health does NOT leak db stats (H-3 hardened)', () => {
+    it('public health endpoint returns only status', async () => {
       const res = await request(app)
         .get('/api/health')
         .expect(res => expect([200, 503]).toContain(res.status));
 
-      expect(res.body).toHaveProperty('db');
-      const db = res.body.db as Record<string, number>;
-      expect(typeof db.users).toBe('number');
-      expect(typeof db.reminders).toBe('number');
-      expect(typeof db.automations).toBe('number');
-      expect(typeof db.integrations).toBe('number');
-      expect(typeof db.portfolios).toBe('number');
-      expect(typeof db.activity_log).toBe('number');
-      expect(db.users).toBeGreaterThanOrEqual(0);
-    });
-
-    it('should still include existing health fields alongside db stats', async () => {
-      const res = await request(app)
-        .get('/api/health')
-        .expect(res => expect([200, 503]).toContain(res.status));
-
-      expect(res.body).toHaveProperty('components');
-      expect(res.body).toHaveProperty('metrics');
-      expect(res.body).toHaveProperty('system');
-      expect(res.body).toHaveProperty('ok');
       expect(res.body).toHaveProperty('status');
+      expect(res.body).not.toHaveProperty('db');
+      expect(res.body).not.toHaveProperty('components');
+      expect(res.body).not.toHaveProperty('metrics');
+      expect(res.body).not.toHaveProperty('system');
     });
   });
 

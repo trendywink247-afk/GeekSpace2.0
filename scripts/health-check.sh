@@ -23,8 +23,18 @@ fi
 log "Containers:"
 docker ps --format "  {{.Names}}: {{.Status}}" | grep -E "geekspace|redis|picoclaw" | tee -a "$LOG"
 
-# 3. Redis
-REDIS_PING=$(docker exec geekspace-redis redis-cli ping 2>/dev/null)
+# 3. Redis — pass auth flag if REDIS_PASSWORD is set
+if [ -z "${REDIS_PASSWORD:-}" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  ENV_FILE="${SCRIPT_DIR}/../.env"
+  if [ -f "$ENV_FILE" ]; then
+    REDIS_PASSWORD=$(grep -E '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+  fi
+fi
+REDIS_AUTH=()
+[ -n "${REDIS_PASSWORD:-}" ] && REDIS_AUTH=(-a "$REDIS_PASSWORD")
+
+REDIS_PING=$(docker exec geekspace-redis redis-cli "${REDIS_AUTH[@]}" ping 2>/dev/null)
 if [ "$REDIS_PING" = "PONG" ]; then
   log "Redis: OK"
 else

@@ -62,7 +62,7 @@ ai.geekspace.space {
 	}
 
 	# Authenticated users
-	@geekspace_authed expression `{http.request.cookie.gs_auth} == "geekspace-verified-2026"`
+	@geekspace_authed expression `{http.request.cookie.gs_auth} == "{$GATE_COOKIE_VALUE}"`
 	handle @geekspace_authed {
 		root * /srv
 		header Cache-Control "no-cache"
@@ -87,8 +87,9 @@ ai.agentin.chat {
 	import common_headers
 
 	# Admin is api-domain only — block on frontend domain
-	handle /admin* {
-		respond 404
+	# Use route (not handle) so it evaluates in order before auth handlers
+	route /admin* {
+		respond 403
 	}
 
 	# SSE streams — no compression (breaks EventSource)
@@ -136,7 +137,7 @@ ai.agentin.chat {
 	}
 
 	# Authenticated users get the SPA directly from Caddy (no Express redirect issues)
-	@agentin_authed expression `{http.request.cookie.gs_auth} == "geekspace-verified-2026"`
+	@agentin_authed expression `{http.request.cookie.gs_auth} == "{$GATE_COOKIE_VALUE}"`
 	handle @agentin_authed {
 		root * /srv
 		header Cache-Control "no-cache"
@@ -204,7 +205,7 @@ staging.agentin.chat {
 	}
 
 	# Authenticated users
-	@staging2_authed expression `{http.request.cookie.gs_auth} == "geekspace-verified-2026"`
+	@staging2_authed expression `{http.request.cookie.gs_auth} == "{$GATE_COOKIE_VALUE}"`
 	handle @staging2_authed {
 		root * /srv
 		header Cache-Control "no-cache"

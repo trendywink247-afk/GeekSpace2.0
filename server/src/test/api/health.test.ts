@@ -13,17 +13,22 @@ describe('Health Endpoints', () => {
   });
 
   describe('GET /api/health', () => {
-    it('should return health status', async () => {
+    it('should return minimal health status without architecture details', async () => {
       const response = await request(app)
         .get('/api/health')
         .expect('Content-Type', /json/)
         .expect(200);
 
       expect(response.body).toHaveProperty('status');
-      expect(response.body).toHaveProperty('ok');
-      expect(response.body).toHaveProperty('components');
-      expect(response.body).toHaveProperty('timestamp');
-      expect(response.body).toHaveProperty('version');
+      expect(response.body.status).toBe('ok');
+      // H-3: public endpoint must NOT leak architecture details
+      expect(response.body).not.toHaveProperty('components');
+      expect(response.body).not.toHaveProperty('metrics');
+      expect(response.body).not.toHaveProperty('system');
+      expect(response.body).not.toHaveProperty('db');
+      expect(response.body).not.toHaveProperty('version');
+      expect(response.body).not.toHaveProperty('build');
+      expect(response.body).not.toHaveProperty('serviceHealth');
     });
   });
 

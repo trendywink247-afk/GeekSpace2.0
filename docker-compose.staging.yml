@@ -28,6 +28,8 @@ services:
       - BRIDGE_MAX_WORKFLOW_STEPS=${BRIDGE_MAX_WORKFLOW_STEPS:-6}
       - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://edith-bridge:8787}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
+      - GATE_COOKIE_VALUE=${GATE_COOKIE_VALUE:-}
+      - GATE_PASSWORD_HASH=${GATE_PASSWORD_HASH:-}
     dns:
       - 8.8.8.8
       - 1.1.1.1

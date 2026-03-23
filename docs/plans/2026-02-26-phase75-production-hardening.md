@@ -102,7 +102,7 @@ ai.geekspace.space {
 	}
 
 	# Authenticated users (cookie set by gate page) get the SPA
-	@authed expression `{http.request.cookie.gs_auth} == "geekspace-verified-2026"`
+	@authed expression `{http.request.cookie.gs_auth} == "{$GATE_COOKIE_VALUE}"`
 	handle @authed {
 		root * /var/www/geekspace
 		header Cache-Control "no-cache"

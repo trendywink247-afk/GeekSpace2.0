@@ -72,11 +72,12 @@ describe('Phase 70 — Release Train: version, cap, votes, clusters, soft-delete
     resetDatabase();
   });
 
-  // ── Test 1: GET /api/health returns version 3.1.0 ──────────────────────────
-  describe('70.1 — GET /api/health returns version 3.1.0', () => {
-    it('returns version 3.1.0 in health response', async () => {
+  // ── Test 1: GET /api/health returns minimal status (H-3 hardened) ───────────
+  describe('70.1 — GET /api/health does not leak version (H-3)', () => {
+    it('returns status only, no version field', async () => {
       const res = await request(app).get('/api/health').expect(200);
-      expect(res.body.version).toBe('3.1.0');
+      expect(res.body).toHaveProperty('status', 'ok');
+      expect(res.body).not.toHaveProperty('version');
     });
   });
 

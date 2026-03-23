@@ -7,6 +7,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { getMetricsSnapshot, incrementSSEConnections, decrementSSEConnections } from '../middleware/metrics.js';
+import { requireAdminToken } from '../middleware/auth.js';
 
 import { config } from '../config.js';
 import { db } from '../db/index.js';
@@ -211,7 +212,7 @@ async function probe<T>(fn: () => Promise<T>, timeoutMs = 3000): Promise<{ ok: b
   }
 }
 
-healthRouter.get('/detailed', async (_req: Request, res: Response) => {
+healthRouter.get('/detailed', requireAdminToken, async (_req: Request, res: Response) => {
   const services: Record<string, ServiceDetail> = {};
   const start = Date.now();
 
@@ -289,9 +290,19 @@ healthRouter.get('/detailed', async (_req: Request, res: Response) => {
 const MAX_SSE_CONNECTIONS = 25; // Supports admin dashboard + monitoring tools simultaneously
 let activeSSECount = 0;
 
-// ---- SSE Stream ----
+// ---- SSE Stream (admin-only, accepts token via header OR ?token= query param) ----
 
 healthRouter.get('/stream', (req: Request, res: Response) => {
+  // Inline auth: EventSource can't set headers, so accept ?token= query param too
+  const queryToken = typeof req.query.token === 'string' ? req.query.token : '';
+  const authHeader = req.headers.authorization || '';
+  const headerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  const token = headerToken || queryToken;
+  if (!config.adminToken || token !== config.adminToken) {
+    res.status(401).json({ error: 'Invalid admin token' });
+    return;
+  }
+
   if (activeSSECount >= MAX_SSE_CONNECTIONS) {
     logger.warn({ activeSSECount, limit: MAX_SSE_CONNECTIONS }, 'SSE connection limit reached — rejecting new stream');
     res.status(429).json({ error: 'Too many health stream connections' });

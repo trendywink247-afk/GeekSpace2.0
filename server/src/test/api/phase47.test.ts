@@ -25,33 +25,26 @@ const app = createApp();
 
 // ── 47.1: GET /api/health includes live DB status ──────────────────────────
 
-describe('Phase 47.1 — /api/health includes DB status', () => {
+describe('Phase 47.1 — /api/health returns minimal status (H-3 hardened)', () => {
   beforeAll(() => { resetDatabase(); });
 
-  it('returns 200 with components.database field', async () => {
+  it('returns 200 with status ok when DB is reachable', async () => {
     const res = await request(app)
       .get('/api/health')
       .expect(200);
 
-    expect(res.body).toHaveProperty('components');
-    expect(res.body.components).toHaveProperty('database');
+    expect(res.body).toHaveProperty('status', 'ok');
   });
 
-  it('components.database is "ok" when DB is reachable', async () => {
+  it('does not leak components, metrics, or version (H-3)', async () => {
     const res = await request(app)
       .get('/api/health')
       .expect(200);
 
-    expect(res.body.components.database).toBe('ok');
-  });
-
-  it('returns version field in response', async () => {
-    const res = await request(app)
-      .get('/api/health')
-      .expect(200);
-
-    expect(res.body).toHaveProperty('version');
-    expect(typeof res.body.version).toBe('string');
+    expect(res.body).not.toHaveProperty('components');
+    expect(res.body).not.toHaveProperty('metrics');
+    expect(res.body).not.toHaveProperty('version');
+    expect(res.body).not.toHaveProperty('db');
   });
 });
 

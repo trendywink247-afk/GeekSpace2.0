@@ -11,7 +11,7 @@ import rateLimit, { type Options as RateLimitOptions } from 'express-rate-limit'
 import passport from 'passport';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash, timingSafeEqual } from 'crypto';
 
 import { config } from './config.js';
 import { logger, requestLogger } from './logger.js';
@@ -41,7 +41,7 @@ import { recipesRouter } from './routes/recipes.js';
 import { geekosBridgeRouter } from './routes/geekos-bridge.js';
 import { geekosLlmProxyRouter } from './routes/geekos-llm-proxy.js';
 import { agentStateRouter } from './routes/agent-state.js';
-import { getServiceHealth } from './services/health-monitor.js';
+// H-3: getServiceHealth no longer needed here (detailed info moved to admin-only /api/health/detailed)
 import { artifactsRouter } from './routes/artifacts.js';
 import { templatesRouter } from './routes/templates.js';
 import { imagesRouter } from './routes/images.js';
@@ -68,13 +68,13 @@ import { docsRouter } from './routes/docs.js';
 import { filesRouter } from './routes/files.js';
 import { gateRouter } from './routes/gate.js';
 import { officeRouter } from './routes/office.js';
-import { healthRouter, getCachedComponents } from './routes/health.js';
+import { healthRouter } from './routes/health.js';
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
 import { agentTasksRouter } from './routes/agent-tasks.js';
 import { agentCommsRouter } from './routes/agent-comms.js';
 import { recommendationsRouter } from './routes/recommendations.js';
-import { metricsMiddleware, getMetricsSnapshot } from './middleware/metrics.js';
+import { metricsMiddleware } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
 import {
   generateOutput,
@@ -373,67 +373,17 @@ export function createApp(): express.Application {
     res.status(204).end();
   });
 
-  // ---- Health check ----
+  // ---- Health check (H-3: public endpoint returns only status) ----
   app.get('/api/health', (_req, res) => {
-    // 47.1: Live DB check on every call so db status is always fresh (not just cached probe)
-    let liveDbStatus = 'ok';
+    let dbOk = true;
     try {
       const row = db.prepare('SELECT 1 as ok').get() as { ok: number } | undefined;
-      liveDbStatus = row?.ok === 1 ? 'ok' : 'error';
+      dbOk = row?.ok === 1;
     } catch {
-      liveDbStatus = 'error';
+      dbOk = false;
     }
-    const components = { ...getCachedComponents(), database: liveDbStatus }; // merge live DB over cached
-    const metrics = getMetricsSnapshot();
-    const allOk = components.database === 'ok';
-
-    // Build topEndpoints so the REST fallback gives HealthDashboardPage the same shape as SSE
-    const topEndpoints = Object.entries(metrics.endpoints)
-      .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 10)
-      .map(([path, stats]) => ({
-        path,
-        count: stats.count,
-        errors: stats.errors,
-        avgMs: stats.count > 0 ? Math.round(stats.totalLatencyMs / stats.count) : 0,
-      }));
-
-    // 50.9: Lightweight DB row counts — helps operators assess data volume at a glance
-    const dbStats: Record<string, number> = {};
-    try {
-      for (const t of ['users', 'reminders', 'automations', 'integrations', 'portfolios', 'activity_log'] as const) {
-        const row = db.prepare(`SELECT count(*) as cnt FROM ${t}`).get() as { cnt: number } | undefined;
-        dbStats[t] = row?.cnt ?? 0;
-      }
-    } catch { /* non-fatal — omit if DB is down */ }
-
-    res.status(allOk ? 200 : 503).json({
-      timestamp: new Date().toISOString(),
-      cacheAgeMs: null, // not available in REST context
-      components,
-      metrics: {
-        totalRequests: metrics.totalRequests,
-        totalErrors: metrics.totalErrors,
-        avgLatencyMs: metrics.avgLatencyMs,
-        requestsPerMinute: metrics.requestsPerMinute,
-        activeConnections: metrics.activeConnections,
-      },
-      system: {
-        uptime: metrics.uptime,
-        memoryMb: metrics.memoryMb,
-      },
-      db: dbStats,
-      topEndpoints,
-      ok: allOk,
-      status: allOk ? 'ok' : 'degraded',
-      serviceHealth: getServiceHealth(),
-      version: APP_VERSION,
-      build: {
-        version: process.env.npm_package_version ?? '3.0.0',
-        nodeVersion: process.versions.node,
-        platform: process.platform,
-      },
-    });
+    const status = dbOk ? 'ok' : 'degraded';
+    res.status(dbOk ? 200 : 503).json({ status });
   });
 
   // ---- Public platform stats (landing page social proof) ----
@@ -567,6 +517,36 @@ export function createApp(): express.Application {
   app.use('/api/agent-tasks', agentTasksRouter);
   app.use('/api/agent-comms', agentCommsRouter);
   app.use('/api/recommendations', recommendationsRouter);
+
+  // ---- Gate password verification (sets access cookie server-side) ----
+  app.post('/api/gate-verify', (req, res) => {
+    const { password } = req.body as { password?: string };
+    if (typeof password !== 'string' || !password) {
+      return res.status(400).json({ success: false, error: 'Password required' });
+    }
+    if (!config.gatePasswordHash) {
+      logger.warn('gate-verify called but GATE_PASSWORD_HASH is not configured');
+      return res.status(503).json({ success: false, error: 'Gate not configured' });
+    }
+    // Hash the submitted password with SHA-256 (same algorithm the old client-side check used)
+    const submittedHash = createHash('sha256').update(password).digest('hex');
+    // Timing-safe comparison to prevent timing attacks
+    const expected = Buffer.from(config.gatePasswordHash, 'utf8');
+    const actual = Buffer.from(submittedHash, 'utf8');
+    const match = expected.length === actual.length && timingSafeEqual(expected, actual);
+    if (!match) {
+      return res.status(401).json({ success: false, error: 'Wrong password' });
+    }
+    // Set the gate cookie server-side — value never exposed to client JS
+    res.cookie('gs_auth', config.gateCookieValue, {
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      secure: config.isProduction,
+      sameSite: 'lax',
+      httpOnly: false, // Caddy reads this cookie; httpOnly would still work since Caddy sees all cookies
+    });
+    return res.json({ success: true });
+  });
 
   // ---- Test routes (only in test mode) ----
   if (config.isTestMode) {

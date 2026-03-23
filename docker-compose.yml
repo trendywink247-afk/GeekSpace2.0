@@ -8,9 +8,16 @@ services:
     image: caddy:2
     container_name: geekspace-caddy
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      - GATE_COOKIE_VALUE=${GATE_COOKIE_VALUE:?Set GATE_COOKIE_VALUE in .env}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - /var/www/geekspace:/srv:ro
@@ -43,6 +50,8 @@ services:
     build: .
     container_name: geekspace-app
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     env_file: .env
     ports:
       - "127.0.0.1:${PORT:-3001}:3001"
@@ -50,7 +59,7 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - DB_PATH=/app/data/geekspace.db
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-geekspace-redis-2026}@redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
       # Set to your actual Ollama container name/address
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
       - OLLAMA_MODEL=hermes3:8b
@@ -102,6 +111,8 @@ services:
     build: ./bridge/edith-bridge
     container_name: geekspace-edith-bridge
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     profiles: ["edith"]
     environment:
       # Set to your actual Moonshot container name/address
@@ -130,7 +141,9 @@ services:
     image: redis:7-alpine
     container_name: geekspace-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-geekspace-redis-2026}
+    security_opt:
+      - no-new-privileges:true
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
@@ -138,7 +151,7 @@ services:
     networks:
       - geekspace-net
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-geekspace-redis-2026}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -158,6 +171,8 @@ services:
     build: ./picoclaw
     container_name: geekspace-picoclaw
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "127.0.0.1:8080:8080"
     environment:
@@ -190,9 +205,11 @@ services:
     image: n8nio/n8n:1.78.1
     container_name: geekspace-n8n
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     profiles: ["n8n"]
     ports:
-      - "${N8N_PORT:-5678}:5678"
+      - "127.0.0.1:${N8N_PORT:-5678}:5678"
     environment:
       - N8N_HOST=${N8N_HOST:-localhost}
       - N8N_PORT=5678
@@ -220,6 +237,8 @@ services:
     image: louislam/uptime-kuma:1
     container_name: geekspace-uptime-kuma
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "127.0.0.1:3100:3001"
     volumes:
@@ -240,16 +259,18 @@ services:
 
   # ---- SearXNG (Free Metasearch — replaces Tavily) ----
   searxng:
-    image: searxng/searxng:latest
+    image: searxng/searxng:2026.3.12-3d3a78f3a
     container_name: geekspace-searxng
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     volumes:
       - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
       - searxng-data:/etc/searxng
     networks:
       - geekspace-net
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/healthz || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
       interval: 30s
       timeout: 5s
       start_period: 15s
@@ -270,8 +291,10 @@ services:
     image: getmeili/meilisearch:v1.12
     container_name: geekspace-meilisearch
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     environment:
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-agentin-meili-2026}
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
       - MEILI_ENV=production
       - MEILI_MAX_INDEXING_MEMORY=100Mb
     volumes:
@@ -300,6 +323,8 @@ services:
     image: qdrant/qdrant:v1.13.2
     container_name: geekspace-qdrant
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     environment:
       - QDRANT__SERVICE__GRPC_PORT=6334
     volumes:
@@ -307,7 +332,7 @@ services:
     networks:
       - geekspace-net
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:6333/healthz || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/6333'"]
       interval: 30s
       timeout: 5s
       start_period: 15s
@@ -328,8 +353,10 @@ services:
     build: ./browser-agent
     container_name: geekspace-browser
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     environment:
-      - BROWSER_SECRET=${BROWSER_SECRET:-agentin-browser-2026}
+      - BROWSER_SECRET=${BROWSER_SECRET}
       - MAX_CONCURRENT=2
       - PORT=3010
     expose:
@@ -358,14 +385,16 @@ services:
     build: .
     container_name: geekspace-staging
     restart: unless-stopped
-    env_file: .env
+    security_opt:
+      - no-new-privileges:true
+    env_file: .env.staging
     ports:
       - "127.0.0.1:3002:3001"
     environment:
       - NODE_ENV=staging
       - PORT=3001
       - DB_PATH=/app/data/geekspace.db
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-geekspace-redis-2026}@staging-redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@staging-redis:6379
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
       - OLLAMA_MODEL=hermes3:8b
       - OLLAMA_TIMEOUT_MS=20000
@@ -410,13 +439,15 @@ services:
     image: redis:7-alpine
     container_name: geekspace-staging-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 64mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-geekspace-redis-2026}
+    security_opt:
+      - no-new-privileges:true
+    command: redis-server --appendonly yes --maxmemory 64mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
     volumes:
       - staging-redis-data:/data
     networks:
       - geekspace-net
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-geekspace-redis-2026}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -431,11 +462,13 @@ services:
     image: pgvector/pgvector:pg16
     container_name: geekspace-geekos-postgres
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     profiles:
       - geekos
     environment:
       - POSTGRES_USER=geekos
-      - POSTGRES_PASSWORD=${GEEKOS_PG_PASSWORD:-geekos-eliza-2026}
+      - POSTGRES_PASSWORD=${GEEKOS_PG_PASSWORD}
       - POSTGRES_DB=geekos
     volumes:
       - geekos-postgres-data:/var/lib/postgresql/data
@@ -462,6 +495,8 @@ services:
     build: ./geekos
     container_name: geekspace-geekos
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     profiles:
       - geekos
     depends_on:
@@ -475,7 +510,7 @@ services:
       - SMALL_MODEL=agentin-default
       - MEDIUM_MODEL=agentin-default
       - LARGE_MODEL=agentin-default
-      - POSTGRES_URL=postgresql://geekos:${GEEKOS_PG_PASSWORD:-geekos-eliza-2026}@geekos-postgres:5432/geekos
+      - POSTGRES_URL=postgresql://geekos:${GEEKOS_PG_PASSWORD}@geekos-postgres:5432/geekos
     expose:
       - "3000"
     deploy:

@@ -51,6 +51,13 @@ jobs:
         if: hashFiles('scripts/smoke/package-lock.json') != ''
         run: npm --prefix scripts/smoke ci
 
+      # Security audit (non-blocking — remove || true once advisories are addressed)
+      - name: Audit root dependencies
+        run: npm audit --audit-level=high || true
+
+      - name: Audit server dependencies
+        run: npm --prefix server audit --audit-level=high || true
+
       # Run lint on changed files only
       - name: Run lint on changed files
         run: |
