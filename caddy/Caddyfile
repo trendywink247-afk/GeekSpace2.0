@@ -166,7 +166,7 @@ api.agentin.chat {
 
 # ---- Uptime Kuma (Status Monitoring) ----
 status.agentin.chat {
-	reverse_proxy uptime-kuma:3001
+	reverse_proxy localhost:3100
 }
 
 # ---- Staging (staging.agentin.chat → same staging container) ----
