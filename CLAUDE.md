@@ -62,6 +62,46 @@ npm run lint
 - Always sanitize file paths to prevent directory traversal
 - Run `npx @claude-flow/cli@latest security scan` after security-related changes
 
+### Session 9 Security Hardening — Gotchas
+
+- **Gate cookie**: value lives in `GATE_COOKIE_VALUE` env var, NOT hardcoded. `gate.html` POSTs to `/api/gate-verify`
+- **JWT**: 15m access tokens, 30d refresh tokens. Do not increase access token expiry
+- **Health endpoint**: `/api/health` is public (status only). `/api/health/detailed` requires admin token
+- **TTS**: uses `execFile()` not `exec()`. Never use `exec()` with user input
+- **Docker**: all containers have `no-new-privileges`. Do not remove it
+- **Passwords**: all service passwords in `.env`, NOT in `docker-compose.yml`. Never add defaults
+- **sshd**: keys-only, no password auth. Config at `/etc/ssh/sshd_config` + `/etc/ssh/sshd_config.d/`
+- **n8n**: bound to `127.0.0.1` only — not exposed externally
+- **Caddy**: standalone host process (PID 777), NOT a Docker container. Config at `/etc/caddy/Caddyfile`, repo copy at `caddy/Caddyfile`
+
+## Deploy Workflow
+
+```bash
+# 1. Build
+cd ~/GeekSpace2.0/server && npm run build   # 0 TS errors
+cd ~/GeekSpace2.0 && npm run build           # frontend
+
+# 2. Deploy backend
+docker compose up -d --build geekspace
+
+# 3. Sync static files (Caddy serves from host, not container)
+docker cp geekspace-app:/app/dist/. /var/www/geekspace/
+
+# 4. Caddy config (if Caddyfile changed)
+cp caddy/Caddyfile /etc/caddy/Caddyfile && caddy reload --config /etc/caddy/Caddyfile
+
+# 5. Verify
+curl localhost:3001/api/health               # 12 services
+```
+
+Prefer `./scripts/prod.sh` which handles steps 2-3 automatically.
+
+## Backups
+
+- **Daily**: 3 AM via `/root/geekspace-backup.sh` (SQLite WAL, Postgres dump, Docker volumes, `.env`)
+- **Off-site**: `scripts/offsite-backup.sh` (requires rclone remote configured)
+- **Encrypted**: set `GPG_PASSPHRASE` env var for encrypted backups
+
 ## Concurrency: 1 MESSAGE = ALL RELATED OPERATIONS
 
 - All operations MUST be concurrent/parallel in a single message

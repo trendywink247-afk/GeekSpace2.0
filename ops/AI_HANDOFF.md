@@ -1,8 +1,55 @@
-# AI Handoff — Beast Mode Sessions 1-7+
-**Date:** 2026-03-22
-**Branch:** main @ 6759c6a
-**Status:** ALL PASS | Tests: 2554 pass / 0 fail / 29 skip | TS: 0 errors | Health: 12/12 OK (prod + staging)
+# AI Handoff — Beast Mode Sessions 1-9
+**Date:** 2026-03-23
+**Branch:** main @ f2dd050
+**Status:** ALL PASS | Tests: 2552 pass / 1 fail (pre-existing) / 29 skip | TS: 0 errors | Health: 10/10 OK
 **Model:** claude-opus-4-6
+
+---
+
+## Session 9 (2026-03-23) — Security Hardening + OOM Fix
+
+**Branch:** main @ f2dd050
+**Status:** ALL PASS | Tests: 2552 pass / 1 fail (pre-existing) / 29 skip | TS: 0 errors | Health: 10/10 OK
+
+### OOM Session Kill Fix
+- Root cause: 200 orphan `claude-flow daemon` processes leaked 9.5GB RAM over 2 days
+- `ruflo daemon status` reported STOPPED (PID file mismatch) → SessionStart hook spawned new daemon every session
+- Fix: earlyoom config updated to protect `claude` processes, hook now uses `pgrep` for daemon detection
+- earlyoom config: /etc/default/earlyoom — added `claude` to --avoid list
+
+### 5-Agent Security Audit
+Full audit with security-agent, infra-agent, network-agent, config-agent, gap-agent.
+Found: 3 critical, 7 high, 12 medium, 6 low findings.
+
+### Critical Fixes (3)
+- C-1: 10 hardcoded password defaults removed from docker-compose.yml → .env only
+- C-2: Gate cookie → env-configurable, server-side verification with timingSafeEqual, new gate.html
+- C-3: Off-site backup infrastructure — rclone installed, scripts created
+
+### High Fixes (7)
+- H-1: TTS command injection — exec() → execFile() with array args
+- H-2: JWT access token 7d → 15m (refresh tokens exist at 30d)
+- H-3: Health endpoint split — public returns only {"status":"ok"}, detailed requires admin token
+- H-4: Caddy admin path — handle → route (blocks before SPA)
+- H-5: n8n port bound to 127.0.0.1
+- H-6: Both health check scripts fixed (Redis -a flag + .env sourcing)
+- H-7: Backup overhaul — WAL checkpoint, integrity check, Docker volume backup (Qdrant/Meili/Caddy certs), .env pruning, 7-day rotation, optional GPG
+
+### Medium Fixes (5)
+- M-1: /etc/docker/daemon.json — global log rotation (10m, 3 files)
+- M-3: SearXNG pinned to 2026.3.12-3d3a78f3a
+- M-4: npm audit added to CI workflow
+- M-7: no-new-privileges on all 15 containers
+- M-9: sshd contradictions fixed (PermitRootLogin → prohibit-password, PasswordAuthentication → no)
+
+### Files Changed
+- 21 files, +538/-145 lines
+- New: public/gate.html, scripts/offsite-backup.sh, scripts/setup-offsite-backup.sh
+
+### Manual Actions Required
+- `systemctl restart docker` for log rotation
+- `rclone config` to set up off-site backup remote
+- Existing users re-enter gate password once (old cookie invalid)
 
 ---
 

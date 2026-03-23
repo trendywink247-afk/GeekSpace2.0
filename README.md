@@ -21,7 +21,7 @@
 
 **A self-hosted AI OS — your agent, your dashboard, your portfolio.**
 
-> v3.2.0 · Beast Mode complete · 2429 tests passing · 38 pages polished · Indian-first features · SearXNG + Meilisearch + Qdrant · main = live-production
+> v3.2.0 · Beast Mode Sessions 1-9 complete · 2552 tests passing · 38 pages polished · Indian-first features · 15+ Docker services · Security-hardened · main = live-production
 
 [Live Demo](https://ai.agentin.chat) · [Documentation](docs/) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 
@@ -40,10 +40,13 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 - **Local-first AI** — Ollama runs on your hardware. Cloud is optional fallback, not the default.
 - **One platform, not 10 tools** — Agent, portfolio, reminders, automations, billing, terminal — unified.
 - **9 AI personalities** — Weebo, Edith, Jarvis, Aria, Forge, Pulse, Echo, Cal, Nova — switch mid-message.
+- **Auto-delegation** — Weebo detects intent and routes to the right specialist agent automatically.
+- **Multi-agent council** — Fan-out to parallel specialists for complex queries.
 - **Telegram-native** — Full AI on Telegram: voice notes, inline keyboards, receipt OCR, proactive nudges.
 - **Hinglish-first** — Built for Indian users. "swiggy pe 350 rupay" just works.
 - **Background agents** — Weebo Engine + proactive briefings, habit nudges, expense digests.
 - **Credit economy** — Fair usage with transparent per-call costs and multiple pricing tiers.
+- **Security-hardened** — 28 findings audited and fixed (Session 9). JWT 15m expiry, no hardcoded secrets, `no-new-privileges` on all containers.
 
 ---
 
@@ -56,8 +59,10 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 **AI Agent & Chat**
 - 9 Personalities — Weebo, Edith, Jarvis, Aria, Forge, Pulse, Echo, Cal, Nova
 - Named agent routing: "hey Aria", "@Nova", "Forge:" switches mid-message
-- 6-tier LLM waterfall: Ollama → Groq → Kimi → Together AI → Edith → OpenRouter free
-- Multi-Agent Orchestrator — "launch mode" fan-out to 3 parallel specialists
+- Cloud-first LLM waterfall: OpenRouter-free → PicoClaw → Ollama → Groq → Together → Maverick → Kimi → Edith
+- PicoClaw circuit breaker (1 failure → 5min cooldown)
+- Auto-delegation: Weebo routes to Cal/Echo/Forge/Aria/Pulse/Nova/Jarvis by intent
+- Multi-Agent Council — "launch mode" fan-out to 3 parallel specialists
 - ReAct loop with 17 tools (notes, habits, reminders, expenses, focus, briefings, etc.)
 - Hinglish routing — Indian language patterns + merchant auto-categories
 - Long-term memory — per-user fact store, auto-injected into prompts
@@ -101,10 +106,24 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 - API key management with AES-256-GCM encryption
 - Billing with INR/USD pricing (Free → Yearly plans)
 - PWA — installable on mobile and desktop
-- Google Calendar sync — OAuth integration, schedule-aware briefings
+- Google OAuth — Calendar + Gmail + Sign-in
 - Focus mode, habits tracker, personal analytics
 - Auth session management (view and revoke active sessions)
 - Activity notification log
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+**Office Page**
+- Pixel-perfect agent sprites (16x32, 3-row layout, integer 2x scaling)
+- BFS pathfinding with collision map, room zones, smart objects
+- Activity stream with 12 event types + agent attribution
+- 60/40 layout: canvas left, SmartSidebar right
+- Day/night mode, animation tiers, insight toasts
+- Delegation particle beams + state indicators
+- Agent visual offsets, task labels, meeting glow, thinking bubbles
 
 </td>
 </tr>
@@ -153,28 +172,46 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 
 ```mermaid
 graph TB
-    Internet((Internet)) --> Caddy[Caddy :443<br/>auto-HTTPS]
+    Internet((Internet)) --> Caddy[Caddy :443<br/>auto-HTTPS<br/>standalone]
 
     Caddy -->|ai.agentin.chat| App
     Caddy -->|api.agentin.chat| App
+    Caddy -->|ai.geekspace.space| Staging
+    Caddy -->|status.agentin.chat| UptimeKuma
 
-    subgraph Docker["Docker Compose"]
+    subgraph Docker["Docker Compose — 15+ Services"]
         App["Agentin :3001<br/>Express + React"]
+        Staging["Staging :3002"]
         Redis[(Redis :6379)]
-        Pico["Weebo Engine<br/>automation sidecar"]
+        StagingRedis[(Staging Redis)]
+        Pico["PicoClaw<br/>automation sidecar"]
+        Edith["Edith Bridge<br/>premium LLM"]
+        N8N["n8n<br/>workflow automation"]
+        UptimeKuma["Uptime Kuma<br/>monitoring"]
+        SearXNG["SearXNG<br/>metasearch"]
+        Meili["Meilisearch<br/>instant search"]
+        Qdrant["Qdrant<br/>vector DB"]
+        Browser["Browser<br/>screenshots"]
+        Postgres["PostgreSQL<br/>+ pgvector"]
+
         App <--> Redis
         App <--> Pico
+        App <--> SearXNG
+        App <--> Meili
+        App <--> Qdrant
+        Staging <--> StagingRedis
     end
 
     App --> SQLite[(SQLite<br/>WAL mode)]
     App --> Router{"AI Router"}
 
-    Router -->|"T1 local"| Ollama["Ollama<br/>qwen3:8b"]
-    Router -->|"T2 free"| Groq["Groq<br/>Llama 3.3 70B"]
-    Router -->|"T3 free"| Kimi["Kimi K2<br/>Moonshot"]
-    Router -->|"T4 paid"| Together["Together AI<br/>Llama 4 Maverick"]
-    Router -->|"T5 premium"| Edith["Edith<br/>Premium"]
-    Router -->|"T6 free"| ORFree["OpenRouter<br/>Free Tier"]
+    Router -->|"T1 free"| ORFree["OpenRouter<br/>Free Tier"]
+    Router -->|"T2 sidecar"| PicoClaw["PicoClaw<br/>qwen2.5-coder"]
+    Router -->|"T3 local"| Ollama["Ollama<br/>hermes3:8b"]
+    Router -->|"T4 free"| Groq["Groq<br/>Llama 3.3 70B"]
+    Router -->|"T5 paid"| Together["Together AI"]
+    Router -->|"T6 free"| Kimi["Kimi K2"]
+    Router -->|"T7 premium"| EdithLLM["Edith Premium"]
 
     style App fill:#7B61FF,stroke:#7B61FF,color:#fff
     style Router fill:#FF61DC,stroke:#FF61DC,color:#fff
@@ -184,31 +221,95 @@ graph TB
     style Redis fill:#1A1A2E,stroke:#FF6161,color:#F4F6FF
     style Pico fill:#1A1A2E,stroke:#FFD761,color:#F4F6FF
     style Ollama fill:#1A1A2E,stroke:#61FF7B,color:#F4F6FF
-    style Free fill:#1A1A2E,stroke:#61FF7B,color:#F4F6FF
-    style Cloud fill:#1A1A2E,stroke:#FFD761,color:#F4F6FF
-    style Kimi fill:#1A1A2E,stroke:#FF61DC,color:#F4F6FF
+    style Staging fill:#1A1A2E,stroke:#FFD761,color:#F4F6FF
 ```
 
-### AI Routing
+### Services
 
-| Tier | Backend | Cost | Use Case |
-|------|---------|------|----------|
-| **T1 Local** | Ollama qwen3:8b | 1 credit | Default — fast, private, offline-capable |
-| **T2 Groq** | Llama 3.3 70B | 2 credits | Auto-fallback on Ollama busy |
-| **T3 Kimi** | Kimi K2 (Moonshot) | 3 credits | Complex reasoning |
-| **T4 Together** | Llama 4 Maverick 17B×128E | 5 credits | Paid primary cloud |
-| **T5 Edith** | Premium sidecar | 10 cr / 1K tokens | Specialist sessions, `/premium` |
-| **T6 OpenRouter** | Free tier (25 models) | 2 credits | Free cloud fallback, model rotation |
-| **Multi-Agent** | 3× parallel agents | 6 credits | "launch mode" / parallel brainstorm |
+| Service | Port | Purpose |
+|---------|------|---------|
+| **geekspace** | 3001 | Main application (Express + React) |
+| **staging** | 3002 | Staging environment (isolated DB + Redis) |
+| **redis** | 6379 | Cache, rate limiting, sessions |
+| **staging-redis** | 6380 | Staging cache (64MB cap) |
+| **picoclaw** | -- | Automation sidecar (qwen2.5-coder) |
+| **edith-bridge** | -- | Premium LLM bridge |
+| **n8n** | 5678 | Workflow automation (localhost-bound) |
+| **uptime-kuma** | 3001 | Status monitoring (status.agentin.chat) |
+| **searxng** | 8080 | Self-hosted metasearch |
+| **meilisearch** | 7700 | Instant typo-tolerant search |
+| **qdrant** | 6333 | Vector DB for semantic memory |
+| **browser** | 3000 | Headless browser for screenshots |
+| **geekos-postgres** | 5432 | PostgreSQL + pgvector |
+| **ollama** | 11434 | Local LLM (external, systemd) |
+| **caddy** | 443 | Reverse proxy + auto-HTTPS (standalone) |
+
+### AI Routing (Cloud-First Waterfall)
+
+| Priority | Backend | Cost | Use Case |
+|----------|---------|------|----------|
+| **1** | OpenRouter Free (25 models) | 2 credits | Primary cloud, model rotation |
+| **2** | PicoClaw (qwen2.5-coder) | 1 credit | Fast sidecar, circuit breaker (1 fail = 5min cooldown) |
+| **3** | Ollama (hermes3:8b) | 1 credit | Local fallback, private, 20s timeout |
+| **4** | Groq (Llama 3.3 70B) | 2 credits | Free cloud fallback |
+| **5** | Together AI (Llama 4 Maverick) | 5 credits | Paid cloud |
+| **6** | Kimi K2 (Moonshot) | 3 credits | Complex reasoning |
+| **7** | Edith Premium | 10 cr/1K tokens | Specialist sessions |
+| **Multi-Agent** | 3x parallel agents | 6 credits | Council mode / parallel brainstorm |
+
+Local-pref users bypass the waterfall and route directly to Ollama.
+
+### Auto-Delegation
+
+Weebo detects user intent and auto-routes to the right specialist:
+
+| Agent | Domain |
+|-------|--------|
+| Cal | Calendar, scheduling |
+| Echo | Memory, recall |
+| Forge | Code, technical |
+| Aria | Creative, writing |
+| Pulse | Health, fitness |
+| Nova | Research, analysis |
+| Jarvis | Automation, tasks |
+
+Tier limits: Free=10/day, Intro=50, Monthly/Yearly=200, Pro=500, Team=unlimited.
 
 ### Request Flow
 
 ```
-Chat → classifyIntent() → routeChat() → [provider] → parseActions() → executeActions() → Response
-                                                        ↓
-                                              <<<ACTION blocks>>>
-                                    (portfolio updates, reminders, code gen, email)
+Chat → classifyIntent() → routeChat() → [provider waterfall] → parseActions() → executeActions() → Response
+                ↓                                                       ↓
+       Auto-delegation                                        <<<ACTION blocks>>>
+   (Cal/Echo/Forge/Aria/...)                        (portfolio, reminders, code gen, email)
 ```
+
+---
+
+## OOM Protection
+
+Three-layer memory protection for the 16GB VPS:
+
+| Layer | Mechanism | Details |
+|-------|-----------|---------|
+| **1. earlyoom** | systemd service | Triggers at 8% free RAM / 5% free swap. Prefers killing ollama/crawl4ai/chrome, avoids node/sshd |
+| **2. Kernel** | sysctl tuning | `vm.overcommit_memory=0` (heuristic), `vm.swappiness=5`, `vm.oom_kill_allocating_task=1` |
+| **3. Docker** | Container caps | crawl4ai=512MB, ollama=6GB, browser=1.5GB, app=1GB. All containers CPU-limited |
+
+---
+
+## Environments
+
+| Domain | Container | Purpose |
+|--------|-----------|---------|
+| ai.agentin.chat | geekspace:3001 | Production |
+| api.agentin.chat | geekspace:3001 | Production API |
+| ai.geekspace.space | staging:3002 | Staging / Test |
+| api.geekspace.space | staging:3002 | Staging API |
+| staging.agentin.chat | staging:3002 | Staging (alt URL) |
+| status.agentin.chat | uptime-kuma:3001 | Uptime monitoring |
+
+Staging has isolated Redis (64MB cap) and a separate DB volume.
 
 ---
 
@@ -243,9 +344,36 @@ cd server && npm run dev
 ### Run Tests
 
 ```bash
-cd server && npm test              # Unit tests (Vitest)
+cd server && npm test              # 2552 tests, 0 fail (Vitest)
 npx playwright test                # E2E tests (needs dev servers)
 npm run lint                       # ESLint
+```
+
+### Deploy to Production
+
+```bash
+# 1. Build
+cd ~/GeekSpace2.0/server && npm run build   # 0 TS errors
+cd ~/GeekSpace2.0 && npm run build           # frontend
+
+# 2. Redeploy backend container
+docker compose up -d --build geekspace
+
+# 3. Sync static files (Caddy serves from host, not container)
+docker cp geekspace-app:/app/dist/. /var/www/geekspace/
+
+# 4. Update Caddy config (if Caddyfile changed)
+cp caddy/Caddyfile /etc/caddy/Caddyfile && caddy reload --config /etc/caddy/Caddyfile
+
+# 5. Verify
+curl localhost:3001/api/health               # 12 services
+```
+
+### Deploy to Staging
+
+```bash
+docker compose up -d --build staging
+curl localhost:3002/api/health
 ```
 
 ---
@@ -256,10 +384,12 @@ npm run lint                       # ESLint
 |-------|-------------|
 | **Frontend** | React 19, TypeScript, Vite 7, Tailwind CSS, shadcn/ui, Zustand, Recharts, Lucide Icons |
 | **Backend** | Express 4, TypeScript, SQLite (better-sqlite3, WAL), JWT (HS256), Zod, Pino, Helmet |
-| **AI** | Ollama + Groq + Gemini Flash + Together AI + Kimi K2 |
-| **Infra** | Docker (Node 20 Alpine), Caddy (auto-HTTPS), Redis 7, PM2 (2 cluster workers) |
-| **Testing** | Vitest, Playwright, supertest |
-| **CI/CD** | GitHub Actions (lint, unit, E2E, smoke tests) |
+| **AI** | Ollama + Groq + Together AI + Kimi K2 + OpenRouter Free + PicoClaw + Edith |
+| **Search** | SearXNG (metasearch), Meilisearch (instant), Qdrant (vector/semantic) |
+| **Infra** | Docker (Node 20 Alpine), Caddy (auto-HTTPS, standalone), Redis 7, PostgreSQL + pgvector |
+| **Monitoring** | Uptime Kuma (status.agentin.chat), n8n (workflow automation) |
+| **Testing** | Vitest (2552 tests), Playwright, supertest |
+| **CI/CD** | GitHub Actions (lint, unit, E2E, smoke tests, npm audit) |
 
 ---
 
@@ -271,11 +401,14 @@ Copy `.env.example` → `.env`. See [`docs/ENV_VARS.md`](docs/ENV_VARS.md) for t
 |----------|----------|-------------|
 | `JWT_SECRET` | Yes (prod) | 64-byte hex signing secret |
 | `ENCRYPTION_KEY` | Yes (prod) | 32-byte hex AES key |
+| `GATE_COOKIE_VALUE` | Yes (prod) | Gate page cookie secret (server-verified) |
 | `OLLAMA_BASE_URL` | No | Local AI endpoint |
 | `OPENROUTER_API_KEY` | No | Enables cloud AI routing |
 | `TELEGRAM_BOT_TOKEN` | No | Enables Telegram integration |
 | `REDIS_URL` | No | Cache + rate limiting |
+| `REDIS_PASSWORD` | No | Redis authentication |
 | `ADMIN_TOKEN` | No | Ops dashboard access |
+| `GPG_PASSPHRASE` | No | Encrypted backup archives |
 
 ---
 
@@ -296,7 +429,10 @@ Copy `.env.example` → `.env`. See [`docs/ENV_VARS.md`](docs/ENV_VARS.md) for t
 | `GET` | `/api/portfolio/:username` | — | Public portfolio |
 | `POST` | `/api/pico/tasks/plan` | JWT | Queue background task |
 | `GET` | `/api/billing/plans` | — | List pricing plans |
-| `GET` | `/api/health` | — | System health check |
+| `GET` | `/api/agent/delegation/status` | JWT | Delegation usage + limits |
+| `GET` | `/api/office/state` | JWT | Office page state |
+| `GET` | `/api/health` | — | Public health status |
+| `GET` | `/api/health/detailed` | Admin | Full health with internals |
 | `GET` | `/admin` | Admin | Ops dashboard |
 
 </details>
@@ -305,13 +441,59 @@ Copy `.env.example` → `.env`. See [`docs/ENV_VARS.md`](docs/ENV_VARS.md) for t
 
 ## Security
 
-- JWT with HS256 algorithm pinning + bcrypt (cost 12)
+Full 5-agent security audit (Session 9, 2026-03-23) found 28 findings. All critical and high-severity issues fixed.
+
+**Authentication & Crypto**
+- JWT HS256 with **15-minute access tokens** + 30-day refresh tokens
+- bcrypt (cost 12) for passwords
 - AES-256-GCM + scrypt for stored API keys
+- Gate cookie env-configurable with server-side `timingSafeEqual` verification
+
+**Application Hardening**
 - Helmet with strict CSP + HSTS + X-Frame-Options DENY
 - Zod validation on all mutating endpoints
 - Rate limiting: 200/15min global, 10/15min auth, 30/15min chat
+- TTS uses `execFile()` (no shell injection)
+- Health endpoint split: `/api/health` (public), `/api/health/detailed` (admin-only)
 - OTP-based password reset with rate limiting and audit logging
+
+**Infrastructure**
+- All Docker containers: `no-new-privileges`, memory-capped, CPU-limited, log rotation
 - Non-root Docker user, CORS restricted, Telegram webhook verification
+- n8n bound to localhost only
+- Caddy blocks admin paths (`/admin`, `/n8n`, `/ops`)
+- sshd: keys-only authentication, no password login
+- All service passwords in `.env` only (no hardcoded defaults in compose)
+
+**Backups**
+- Daily 3 AM backup: SQLite WAL checkpoint, Postgres dump, Docker volumes, `.env`
+- Off-site backup via rclone (`scripts/offsite-backup.sh`)
+- GPG encryption support for backup archives
+
+<details>
+<summary><strong>Session 9 audit findings (28 total)</strong></summary>
+
+| ID | Severity | Finding | Fix |
+|----|----------|---------|-----|
+| C-1 | Critical | Hardcoded passwords in compose | Moved to `.env` only |
+| C-2 | Critical | Gate cookie hardcoded | Env-configurable + `timingSafeEqual` |
+| C-3 | Critical | No off-site backups | rclone infrastructure added |
+| H-1 | High | TTS command injection | `exec()` replaced with `execFile()` |
+| H-2 | High | JWT 7-day expiry | Reduced to 15 minutes |
+| H-3 | High | Health endpoint leaks internals | Split public/admin endpoints |
+| H-4 | High | Caddy admin paths exposed | Path-level blocking |
+| H-5 | High | n8n externally accessible | Bound to 127.0.0.1 |
+| H-6 | High | Health check Redis auth failure | Auth credentials fixed |
+| H-7 | High | Backup gaps | WAL, volumes, rotation, encryption |
+| M-1 | Medium | No Docker log rotation | `max-size: 10m, max-file: 3` |
+| M-3 | Medium | SearXNG unpinned image | Pinned to specific tag |
+| M-4 | Medium | No npm audit in CI | Added to pipeline |
+| M-7 | Medium | Missing no-new-privileges | Added to all containers |
+| M-9 | Medium | sshd allows passwords | Keys-only enforced |
+
+Plus 13 additional medium/low findings addressed.
+
+</details>
 
 > See [`SECURITY.md`](SECURITY.md) for reporting vulnerabilities.
 
