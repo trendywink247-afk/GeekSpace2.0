@@ -265,6 +265,10 @@ services:
       - SETUID
       - SETGID
       - DAC_OVERRIDE
+    extra_hosts:
+      - "ai.agentin.chat:host-gateway"
+      - "api.agentin.chat:host-gateway"
+      - "status.agentin.chat:host-gateway"
     ports:
       - "127.0.0.1:3100:3001"
     volumes:
