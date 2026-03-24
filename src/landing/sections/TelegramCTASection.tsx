@@ -91,7 +91,8 @@ export function TelegramCTASection() {
   return (
     <section
       ref={sectionRef}
-      className="relative py-20 md:py-28 lg:py-32 px-4 overflow-hidden"
+      className="relative overflow-hidden"
+      style={{ padding: 'clamp(80px, 12vh, 160px) 0' }}
     >
       {/* Background glow */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -106,24 +107,26 @@ export function TelegramCTASection() {
         />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto">
+      <div className="relative z-10 max-w-6xl mx-auto px-6">
         {/* Section header -- centered */}
         <div
           className={`text-center mb-14 ${fadeIn}`}
           style={fadeInDelay(0)}
         >
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0088cc]/10 border border-[#0088cc]/20 text-sm font-medium text-[#0088cc] mb-4">
-            <MessageCircle className="w-3.5 h-3.5" />
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#0088cc]/70 mb-4 block">
             Telegram Bot
           </span>
           <h2
-            className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
-            style={{ fontFamily: 'Syne, sans-serif' }}
+            className="font-bold mb-4"
+            style={{
+              fontFamily: 'Syne, sans-serif',
+              fontSize: 'clamp(2.25rem, 3vw + 0.5rem, 3.5rem)',
+            }}
           >
             Start in 30 Seconds.{' '}
             <span className="text-gradient">No App Download.</span>
           </h2>
-          <p className="text-lg text-[#8892A4] max-w-2xl mx-auto">
+          <p className="text-lg text-[#94A3B8] max-w-2xl mx-auto">
             Message @Weebo_gs_bot on Telegram. No sign-up needed. Just send
             /start
           </p>
@@ -161,7 +164,7 @@ export function TelegramCTASection() {
                       <feature.icon className="w-4 h-4 text-[#0088cc]" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-[#F4F6FF] mb-0.5">
+                      <div className="text-sm font-semibold text-[#E8E8F0] mb-0.5">
                         <span className="font-mono text-[#0088cc]">
                           {feature.command}
                         </span>{' '}
@@ -181,7 +184,7 @@ export function TelegramCTASection() {
               href="https://t.me/Weebo_gs_bot"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 px-7 py-3.5 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#0088cc]/20 group"
+              className="inline-flex items-center gap-2.5 px-7 py-3.5 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-[0_4px_24px_rgba(0,136,204,0.3)] group"
               style={{
                 background: 'linear-gradient(135deg, #0088cc 0%, #0077b6 100%)',
               }}
@@ -196,7 +199,9 @@ export function TelegramCTASection() {
           <div className={fadeIn} style={fadeInDelay(200)}>
             <div className="mx-auto max-w-[320px]">
               {/* Phone frame */}
-              <div className="rounded-[2.5rem] border-4 border-white/[0.08] bg-[#0C0C18] overflow-hidden shadow-2xl shadow-black/40">
+              <div className="relative rounded-[2.5rem] border-4 border-white/[0.08] bg-[#0C0C18] overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.5)]">
+                {/* Screen glare */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent pointer-events-none rounded-[2.5rem] z-30" />
                 {/* Status bar */}
                 <div className="flex items-center justify-between px-6 pt-3 pb-1">
                   <span className="text-[10px] text-white/40 font-medium">
@@ -210,12 +215,12 @@ export function TelegramCTASection() {
                 </div>
 
                 {/* Chat header */}
-                <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.05] bg-white/[0.02]">
+                <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.06] bg-white/[0.02]">
                   <div className="w-9 h-9 rounded-full bg-[#0088cc] flex items-center justify-center">
                     <MessageCircle className="w-4 h-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-[#F4F6FF]">
+                    <div className="text-sm font-medium text-[#E8E8F0]">
                       Weebo
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -240,18 +245,18 @@ export function TelegramCTASection() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{
                         duration: 0.4,
-                        ease: [0.25, 0.46, 0.45, 0.94],
+                        ease: [0.16, 1, 0.3, 1],
                       }}
                     >
                       {bubble.role === 'user' ? (
                         <div className="flex justify-end">
-                          <div className="max-w-[80%] px-3.5 py-2.5 rounded-2xl rounded-br-sm bg-[#0088cc]/20 text-sm text-white leading-relaxed">
+                          <div className="max-w-[80%] px-3.5 py-2.5 rounded-2xl rounded-br-sm bg-[#0088cc]/25 text-sm text-white leading-relaxed">
                             {bubble.text}
                           </div>
                         </div>
                       ) : (
                         <div className="flex justify-start">
-                          <div className="max-w-[80%] px-3.5 py-2.5 rounded-2xl rounded-bl-sm bg-white/[0.05] text-sm text-[#e5e7eb] leading-relaxed">
+                          <div className="max-w-[80%] px-3.5 py-2.5 rounded-2xl rounded-bl-sm bg-white/[0.05] text-sm text-[#E8E8F0] leading-relaxed">
                             {bubble.text}
                           </div>
                         </div>
@@ -280,8 +285,8 @@ export function TelegramCTASection() {
                 </div>
 
                 {/* Input bar */}
-                <div className="px-4 py-3 border-t border-white/[0.05]">
-                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/[0.05]">
+                <div className="px-4 py-3 border-t border-white/[0.06]">
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/[0.06]">
                     <span className="flex-1 text-sm text-[#6B7280]/50">
                       Message Weebo...
                     </span>

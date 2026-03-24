@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Server, GitBranch, Container, ShieldCheck } from 'lucide-react';
+import { Server, GitBranch, Container, ShieldCheck } from 'lucide-react';
 
 const engineFeatures = [
   {
@@ -50,6 +50,15 @@ interface EngineSectionProps {
 export function EngineSection(_props: EngineSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   // Typewriter state
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
@@ -136,6 +145,14 @@ export function EngineSection(_props: EngineSectionProps) {
   useEffect(() => {
     if (!isVisible) return;
     if (isTypingDone) return;
+
+    // Reduced motion: show all terminal lines at once
+    if (reducedMotion) {
+      setDisplayedLines(terminalLines.map(l => l.text));
+      setIsTypingDone(true);
+      return;
+    }
+
     if (typingStarted.current && currentLineIndex === 0 && currentCharIndex === 0 && displayedLines.length > 0) return;
     typingStarted.current = true;
 
@@ -163,80 +180,66 @@ export function EngineSection(_props: EngineSectionProps) {
 
     const timeout = setTimeout(advanceTypewriter, delay);
     return () => clearTimeout(timeout);
-  }, [isVisible, isTypingDone, currentLineIndex, currentCharIndex, advanceTypewriter, displayedLines.length]);
+  }, [isVisible, isTypingDone, reducedMotion, currentLineIndex, currentCharIndex, advanceTypewriter, displayedLines.length]);
 
-  const featureCardVariants = {
-    hidden: { opacity: 0, x: -30, y: 10 },
-    visible: (i: number) => ({
-      opacity: 1,
-      x: 0,
-      y: 0,
-      transition: {
-        delay: 0.15 * i,
-        duration: 0.5,
-        ease: [0.25, 0.46, 0.45, 0.94] as const,
-      },
-    }),
-  };
+  const featureCardVariants = reducedMotion
+    ? { hidden: { opacity: 1, x: 0, y: 0 }, visible: { opacity: 1, x: 0, y: 0 } }
+    : {
+        hidden: { opacity: 0, x: -30, y: 10 },
+        visible: (i: number) => ({
+          opacity: 1,
+          x: 0,
+          y: 0,
+          transition: {
+            delay: 0.15 * i,
+            duration: 0.5,
+            ease: [0.16, 1, 0.3, 1] as const,
+          },
+        }),
+      };
 
   return (
     <section
       ref={sectionRef}
       id="engine"
-      className="relative min-h-screen flex items-center justify-center py-20 md:py-28 lg:py-32 overflow-hidden"
+      className="relative overflow-hidden"
+      style={{ padding: 'clamp(80px, 12vh, 160px) 0' }}
     >
-      {/* Hexagonal Grid Background */}
-      <div className="absolute inset-0 pointer-events-none opacity-10">
-        <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="hexGrid" width="50" height="43.4" patternUnits="userSpaceOnUse">
-              <polygon
-                points="24.8,22 37.3,29.2 37.3,43.4 24.8,50.6 12.3,43.4 12.3,29.2"
-                fill="none"
-                stroke="rgba(0, 240, 255, 0.3)"
-                strokeWidth="0.5"
-                transform="translate(0, -21.7)"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#hexGrid)" />
-        </svg>
-      </div>
+      {/* Subtle dot grid background */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.03,
+          backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
 
-      {/* Energy Core Glow */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div
-          className={`w-[600px] h-[600px] rounded-full transition-all duration-1000 ${
-            isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-          }`}
-          style={{
-            background: 'radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, transparent 55%)',
-          }}
-        />
-      </div>
-
-      <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 w-full">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 w-full">
         {/* Header */}
         <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 mb-6">
-            <Zap className="w-4 h-4 text-[#00F0FF]" />
-            <span className="text-sm font-mono text-[#00F0FF] tracking-wide">UNDER THE HOOD</span>
-          </div>
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">
+            UNDER THE HOOD
+          </span>
 
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
-            style={{ fontFamily: 'Syne, sans-serif', textWrap: 'balance' }}
+            className="font-bold mb-6"
+            style={{
+              fontFamily: 'Syne, sans-serif',
+              textWrap: 'balance',
+              fontSize: 'clamp(2.25rem, 3vw + 0.5rem, 3.5rem)',
+            }}
           >
             Enterprise-Grade. <span className="text-gradient">Self-Hosted.</span> Yours.
           </h2>
 
-          <p className="text-lg text-[#6B7280] max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-[#94A3B8] max-w-2xl mx-auto leading-relaxed">
             Built for developers who care about ownership, reliability, and performance. No black boxes.
           </p>
         </motion.div>
@@ -252,18 +255,14 @@ export function EngineSection(_props: EngineSectionProps) {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.2 }}
-                whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-                className="group relative p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.15] transition-colors duration-300 backdrop-blur-sm"
+                className="group p-5 rounded-xl bg-[#0e0e1c] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300 hover:-translate-y-0.5"
+                style={{ borderTop: `2px solid ${feature.color}` }}
               >
-                {/* Icon with colored glow circle */}
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110"
-                  style={{
-                    background: `${feature.color}10`,
-                    boxShadow: `0 0 20px ${feature.color}15`,
-                  }}
+                  className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
+                  style={{ background: `${feature.color}1a` }}
                 >
-                  <feature.icon className="w-6 h-6" style={{ color: feature.color }} />
+                  <feature.icon className="w-5 h-5" style={{ color: feature.color }} />
                 </div>
                 <div className="font-semibold text-[#E8E8F0] mb-2 text-[15px]">{feature.label}</div>
                 <div className="text-sm text-[#6B7280] leading-relaxed">{feature.description}</div>
@@ -276,26 +275,15 @@ export function EngineSection(_props: EngineSectionProps) {
             initial={{ opacity: 0, x: 40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] as const }}
           >
-            <div
-              className="rounded-2xl overflow-hidden"
-              style={{
-                background: 'rgba(10, 10, 26, 0.90)',
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-              }}
-            >
-              {/* macOS window chrome */}
-              <div
-                className="flex items-center gap-2 px-4 py-3"
-                style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.06)', background: 'rgba(255, 255, 255, 0.02)' }}
-              >
+            <div className="rounded-2xl bg-[#0a0a14] border border-white/[0.06] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+              {/* Title bar */}
+              <div className="h-10 bg-white/[0.02] border-b border-white/[0.04] flex items-center gap-2 px-4">
                 <div className="flex items-center gap-[7px]">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
+                  <div className="w-2 h-2 rounded-full bg-[#FF5F57] opacity-50" />
+                  <div className="w-2 h-2 rounded-full bg-[#FEBC2E] opacity-50" />
+                  <div className="w-2 h-2 rounded-full bg-[#28C840] opacity-50" />
                 </div>
                 <span className="ml-3 text-[11px] text-[#6B7280] font-mono">
                   terminal — docker

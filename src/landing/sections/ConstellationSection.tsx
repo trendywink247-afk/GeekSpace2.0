@@ -48,6 +48,7 @@ interface ConstellationSectionProps {
 
 export function ConstellationSection({ onBrowseDirectory }: ConstellationSectionProps) {
   const reducedMotion = useReducedMotion();
+  const lastIndex = timelineEntries.length - 1;
 
   const cardVariants = {
     hidden: (direction: number) => ({
@@ -57,16 +58,26 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
     visible: {
       opacity: 1,
       x: 0,
-      transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const },
+      transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
     },
   };
 
   return (
     <section
       id="constellation"
-      className="relative py-20 md:py-28 lg:py-32 overflow-hidden"
+      className="relative overflow-hidden"
+      style={{ padding: 'clamp(80px, 12vh, 160px) 0' }}
     >
-      {/* Subtle gradient background */}
+      {/* Dot grid background */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+
+      {/* Subtle radial glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div
           className="absolute inset-0 opacity-30"
@@ -76,97 +87,115 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
         />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-6">
+      <div className="relative z-10 max-w-6xl mx-auto px-6">
         {/* Header */}
         <motion.div
           className="text-center mb-14 md:mb-20"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          <span className="inline-block px-4 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-sm text-[#00F0FF] font-medium mb-6">
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">
             A Day In Your Life
           </span>
 
           <h2
-            className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
-            style={{ fontFamily: 'Syne, sans-serif' }}
+            className="font-bold mb-4"
+            style={{
+              fontFamily: 'Syne, sans-serif',
+              fontSize: 'clamp(2.25rem, 3vw + 0.5rem, 3.5rem)',
+            }}
           >
             Your Day with <span className="text-gradient">Agentin</span>
           </h2>
 
-          <p className="text-lg text-[#6B7280] max-w-2xl mx-auto">
+          <p className="text-lg text-[#94A3B8] max-w-2xl mx-auto">
             From sunrise to sunset, your AI team handles it all &mdash; so you can focus on what matters.
           </p>
         </motion.div>
 
         {/* Timeline */}
         <div className="relative">
-          {/* Gradient vertical line -- centered on md+, left-aligned on mobile */}
+          {/* Vertical line -- always left-aligned on mobile, centered on md+ */}
           <div
-            className="absolute left-[19px] md:left-1/2 md:-translate-x-1/2 top-0 bottom-0 w-[2px]"
+            className="absolute left-[19px] md:left-1/2 md:-translate-x-1/2 top-0 bottom-0 w-px"
             style={{
               background:
-                'linear-gradient(to bottom, rgba(0,240,255,0.40), rgba(139,92,246,0.30), rgba(255,45,120,0.20))',
+                'linear-gradient(to bottom, transparent 0%, rgba(0,240,255,0.20) 10%, rgba(0,240,255,0.20) 90%, transparent 100%)',
             }}
           />
 
           <div className="flex flex-col gap-8 md:gap-12">
             {timelineEntries.map((entry, i) => {
               const isRight = i % 2 === 1;
-              const slideDirection = isRight ? 30 : -30;
+              const slideDirection = isRight ? 20 : -20;
+              const isLast = i === lastIndex;
 
               return (
                 <div
                   key={entry.time}
                   className="relative flex md:justify-center"
                 >
-                  {/* Timeline dot -- always on the center line (md+) or left (mobile) */}
+                  {/* Timeline dot */}
                   <div
                     className="absolute left-[19px] md:left-1/2 top-5 -translate-x-1/2 z-20"
                   >
                     <div
-                      className="w-4 h-4 rounded-full"
+                      className={`rounded-full bg-[#06060f] ${isLast ? 'w-4 h-4' : 'w-3 h-3'}`}
                       style={{
-                        backgroundColor: entry.color,
-                        border: `2px solid ${entry.color}`,
-                        boxShadow: `0 0 16px ${entry.color}40`,
+                        borderWidth: '2px',
+                        borderStyle: 'solid',
+                        borderColor: entry.color,
+                        boxShadow: `0 0 8px ${entry.color}40`,
                       }}
                     />
+                    {/* Pulsing ring on last node */}
+                    {isLast && (
+                      <div
+                        className="absolute inset-0 -m-1 rounded-full animate-ping"
+                        style={{
+                          borderWidth: '1px',
+                          borderStyle: 'solid',
+                          borderColor: entry.color,
+                          opacity: 0.4,
+                          animationDuration: '2s',
+                        }}
+                      />
+                    )}
                   </div>
 
-                  {/* Card wrapper -- alternating sides on md+, right side on mobile */}
+                  {/* Card wrapper -- right side on mobile, alternating on md+ */}
                   <motion.div
                     className={`
                       ml-10 md:ml-0 md:w-[calc(50%-28px)]
-                      ${isRight ? 'md:ml-auto md:pl-0' : 'md:mr-auto md:pr-0'}
+                      ${isRight ? 'md:ml-auto' : 'md:mr-auto'}
                     `}
                     custom={reducedMotion ? 0 : slideDirection}
                     variants={cardVariants}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true, margin: '-40px' }}
+                    viewport={{ once: true, amount: 0.2 }}
                     transition={{ delay: i * 0.08 }}
                   >
-                    {/* Glass card */}
-                    <div className="bg-white/[0.02] backdrop-blur-sm border border-white/[0.06] rounded-xl p-5 hover:border-white/[0.12] transition-colors duration-300">
-                      <div className="flex items-center gap-3 mb-2.5">
-                        <span className="flex items-center gap-1.5 font-mono text-xs bg-white/[0.05] px-2 py-0.5 rounded text-[#6B7280]">
+                    {/* Card */}
+                    <div className="rounded-xl p-5 bg-[#0e0e1c] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300">
+                      <div className={`flex items-center gap-3 mb-2 ${!isRight ? 'md:justify-end' : ''}`}>
+                        <span className="flex items-center gap-1.5 font-mono text-xs text-[#6B7280]">
                           <Clock className="w-3 h-3" />
                           {entry.time}
                         </span>
                         <span
-                          className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                          className="text-[11px] font-mono px-2 py-0.5 rounded-full"
                           style={{
-                            backgroundColor: `${entry.color}20`,
+                            backgroundColor: `${entry.color}18`,
                             color: entry.color,
                           }}
                         >
                           {entry.agent}
                         </span>
                       </div>
-                      <p className="text-[#E8E8F0] text-sm md:text-[15px] leading-relaxed">
+                      <p className={`text-sm text-[#C8C8D8] leading-relaxed ${!isRight ? 'md:text-right' : ''}`}>
                         &ldquo;{entry.message}&rdquo;
                       </p>
                     </div>

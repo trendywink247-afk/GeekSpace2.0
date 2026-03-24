@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Shield, Lock, Server, Unlink, Fingerprint } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowRight, Lock, Server, Unlink, Fingerprint } from 'lucide-react';
 
 const securityBadges = [
   {
@@ -59,6 +58,15 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
   const [visibleLines, setVisibleLines] = useState(0);
   const [flashIndex, setFlashIndex] = useState<number | null>(null);
   const [shakeResult, setShakeResult] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -82,6 +90,12 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
     if (!isVisible) return;
     if (visibleLines >= scanLines.length) return;
 
+    // Reduced motion: show all scan lines at once
+    if (reducedMotion) {
+      setVisibleLines(scanLines.length);
+      return;
+    }
+
     const delay = visibleLines === 0 ? 500 : 550;
     const timeout = setTimeout(() => {
       const nextLine = visibleLines;
@@ -101,92 +115,64 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
     }, delay);
 
     return () => clearTimeout(timeout);
-  }, [isVisible, visibleLines]);
+  }, [isVisible, visibleLines, reducedMotion]);
 
-  const badgeVariants = {
-    hidden: { opacity: 0, y: 20, scale: 0.95 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        delay: 0.1 * i + 0.3,
-        duration: 0.5,
-        ease: [0.25, 0.46, 0.45, 0.94] as const,
-      },
-    }),
-  };
+  const badgeVariants = reducedMotion
+    ? { hidden: { opacity: 1, y: 0, scale: 1 }, visible: { opacity: 1, y: 0, scale: 1 } }
+    : {
+        hidden: { opacity: 0, y: 20, scale: 0.95 },
+        visible: (i: number) => ({
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          transition: {
+            delay: 0.1 * i + 0.3,
+            duration: 0.5,
+            ease: [0.16, 1, 0.3, 1] as const,
+          },
+        }),
+      };
 
   return (
     <section
       ref={sectionRef}
       id="security"
-      className="relative min-h-screen flex items-center justify-center py-20 md:py-28 lg:py-32 overflow-hidden"
+      className="relative overflow-hidden"
+      style={{ padding: 'clamp(80px, 12vh, 160px) 0' }}
     >
-      {/* Shield Wireframe Background */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div
-          className={`w-[700px] h-[700px] transition-all duration-1000 ${
-            isVisible ? 'opacity-20 scale-100' : 'opacity-0 scale-75'
-          }`}
-        >
-          <svg viewBox="0 0 200 200" className="w-full h-full">
-            <path
-              d="M100 20 L170 50 L170 110 Q170 150 100 180 Q30 150 30 110 L30 50 Z"
-              fill="none"
-              stroke="rgba(0, 240, 255, 0.4)"
-              strokeWidth="0.5"
-            />
-            <path
-              d="M100 35 L155 58 L155 105 Q155 138 100 162 Q45 138 45 105 L45 58 Z"
-              fill="none"
-              stroke="rgba(0, 240, 255, 0.25)"
-              strokeWidth="0.5"
-            />
-            <path
-              d="M100 50 L140 67 L140 100 Q140 125 100 145 Q60 125 60 100 L60 67 Z"
-              fill="none"
-              stroke="rgba(0, 240, 255, 0.15)"
-              strokeWidth="0.5"
-            />
-          </svg>
-        </div>
-      </div>
+      {/* Subtle radial gradient background */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle at 50% 50%, rgba(0,240,255,0.04), transparent 60%)',
+        }}
+      />
 
-      {/* Glow Effect */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div
-          className={`w-[500px] h-[500px] rounded-full transition-all duration-1000 ${
-            isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-          }`}
-          style={{
-            background: 'radial-gradient(circle, rgba(0, 240, 255, 0.1) 0%, transparent 60%)',
-          }}
-        />
-      </div>
-
-      <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 w-full">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 w-full">
         {/* Centered Header */}
         <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 mb-6">
-            <Shield className="w-4 h-4 text-[#00F0FF]" />
-            <span className="text-sm font-mono text-[#00F0FF] tracking-wide">Enterprise-Grade Security</span>
-          </div>
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">
+            ENTERPRISE-GRADE SECURITY
+          </span>
 
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
-            style={{ fontFamily: 'Syne, sans-serif', textWrap: 'balance' }}
+            className="font-bold mb-6"
+            style={{
+              fontFamily: 'Syne, sans-serif',
+              textWrap: 'balance',
+              fontSize: 'clamp(2.25rem, 3vw + 0.5rem, 3.5rem)',
+            }}
           >
             Your Data. Your Server. <span className="text-gradient">Period.</span>
           </h2>
 
-          <p className="text-lg text-[#6B7280] max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-[#94A3B8] max-w-2xl mx-auto leading-relaxed">
             No cloud. No third-party access. Full sovereignty over your AI and your data.
           </p>
         </motion.div>
@@ -197,26 +183,15 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
             initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
           >
-            <div
-              className="rounded-2xl overflow-hidden"
-              style={{
-                background: 'rgba(10, 10, 26, 0.90)',
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-              }}
-            >
-              {/* macOS window chrome */}
-              <div
-                className="flex items-center gap-2 px-4 py-3"
-                style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.06)', background: 'rgba(255, 255, 255, 0.02)' }}
-              >
+            <div className="rounded-2xl bg-[#0a0a14] border border-white/[0.06] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+              {/* Title bar */}
+              <div className="h-10 bg-white/[0.02] border-b border-white/[0.04] flex items-center gap-2 px-4">
                 <div className="flex items-center gap-[7px]">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
+                  <div className="w-2 h-2 rounded-full bg-[#FF5F57] opacity-50" />
+                  <div className="w-2 h-2 rounded-full bg-[#FEBC2E] opacity-50" />
+                  <div className="w-2 h-2 rounded-full bg-[#28C840] opacity-50" />
                 </div>
                 <span className="ml-3 text-[11px] text-[#6B7280] font-mono">
                   security-audit.sh
@@ -241,7 +216,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                       }}
                     >
                       {/* Scan text */}
-                      <span className="text-[#8892A4]">{line.text}</span>
+                      <span className="text-[#94A3B8]">{line.text}</span>
 
                       {/* Result badge */}
                       {isShown && (
@@ -256,7 +231,6 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                               : isFlashing
                                 ? `0 0 16px ${line.resultColor}80`
                                 : 'none',
-                            fontSize: isResultLine ? undefined : undefined,
                             fontWeight: isResultLine ? 800 : undefined,
                           }}
                         >
@@ -301,16 +275,12 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true, amount: 0.2 }}
-                  whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-                  className="group relative p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.15] transition-colors duration-300 backdrop-blur-sm"
+                  className="group p-5 rounded-xl bg-[#0e0e1c] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300 hover:-translate-y-0.5"
+                  style={{ borderLeft: `2px solid ${badge.color}` }}
                 >
-                  {/* Icon with colored glow circle */}
                   <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110"
-                    style={{
-                      background: `${badge.color}10`,
-                      boxShadow: `0 0 20px ${badge.color}15`,
-                    }}
+                    className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
+                    style={{ background: `${badge.color}1a` }}
                   >
                     <badge.icon className="w-5 h-5" style={{ color: badge.color }} />
                   </div>
@@ -327,8 +297,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
               transition={{ delay: 0.6, duration: 0.5 }}
               className="flex justify-center lg:justify-start"
             >
-              <Button
-                size="lg"
+              <button
                 onClick={() => {
                   if (onReviewSecurity) {
                     onReviewSecurity();
@@ -336,11 +305,11 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                     navigate('/docs');
                   }
                 }}
-                className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 motion-safe:hover:scale-105 hover:shadow-xl hover:shadow-[#00F0FF]/30 group"
+                className="bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060f] px-8 py-4 rounded-2xl font-semibold hover:shadow-[0_4px_24px_rgba(0,240,255,0.2)] transition-all duration-300 inline-flex items-center gap-2 group"
               >
                 Review Security
-                <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-              </Button>
+                <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
             </motion.div>
           </div>
         </div>

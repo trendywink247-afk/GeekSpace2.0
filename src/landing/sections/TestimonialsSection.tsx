@@ -42,6 +42,36 @@ const testimonials: Testimonial[] = [
     avatar: 'SR',
     accentColor: '#8B5CF6',
   },
+  {
+    name: 'Vikram Desai',
+    role: 'Startup Founder',
+    location: 'Razorpay Alum',
+    quote:
+      'Replaced our entire AI stack. Jarvis handles code, Aria does comms, and Weebo ties it all together.',
+    rating: 5,
+    avatar: 'VD',
+    accentColor: '#8B5CF6',
+  },
+  {
+    name: 'Sneha Kulkarni',
+    role: 'Content Strategist',
+    location: 'Swiggy',
+    quote:
+      'Echo manages all our social channels now. The delegation system alone saves me 3 hours daily.',
+    rating: 5,
+    avatar: 'SK',
+    accentColor: '#FFB800',
+  },
+  {
+    name: 'Deepak Joshi',
+    role: 'Full-Stack Developer',
+    location: 'Zerodha',
+    quote:
+      'Self-hosted with Ollama support? Deployed it on our VPS in 15 minutes. No data leaves our servers.',
+    rating: 5,
+    avatar: 'DJ',
+    accentColor: '#ADFF2F',
+  },
 ];
 
 const stats = [
@@ -53,12 +83,15 @@ const stats = [
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="group relative w-[380px] shrink-0 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur p-6 hover:border-white/[0.12] transition-all duration-300">
+    <div className="group relative w-[380px] max-w-full shrink-0 bg-[#0e0e1c] border border-white/[0.06] rounded-2xl p-6 hover:border-white/[0.12] transition-all duration-300">
       {/* Quote icon top-right */}
       <Quote className="absolute top-5 right-5 w-7 h-7 text-white/[0.06]" />
 
+      {/* Large quote decoration */}
+      <span className="text-4xl font-serif text-[#00F0FF]/15 leading-none">&ldquo;</span>
+
       {/* Stars */}
-      <div className="flex gap-0.5 mb-4">
+      <div className="flex gap-0.5 mb-4 mt-2">
         {Array.from({ length: t.rating }).map((_, s) => (
           <Star
             key={s}
@@ -69,17 +102,16 @@ function TestimonialCard({ t }: { t: Testimonial }) {
       </div>
 
       {/* Quote text */}
-      <p className="italic text-sm text-[#9CA3AF] leading-relaxed mb-6">
+      <p className="italic text-sm text-[#94A3B8] leading-relaxed mb-6">
         &ldquo;{t.quote}&rdquo;
       </p>
 
       {/* Author */}
-      <div className="flex items-center gap-3 pt-4 border-t border-white/[0.05]">
+      <div className="flex items-center gap-3 pt-4 border-t border-white/[0.06]">
         <div
-          className="w-[44px] h-[44px] rounded-full flex items-center justify-center text-xs font-bold text-[#06060B] border-2"
+          className="w-[44px] h-[44px] rounded-full flex items-center justify-center text-xs font-bold text-[#06060B] ring-2 ring-white/[0.06]"
           style={{
             background: `linear-gradient(135deg, ${t.accentColor}, ${t.accentColor}99)`,
-            borderColor: t.accentColor,
           }}
         >
           {t.avatar}
@@ -141,7 +173,8 @@ export function TestimonialsSection() {
     <section
       ref={sectionRef}
       id="testimonials"
-      className="relative py-20 md:py-28 lg:py-32 px-4 overflow-hidden"
+      className="relative overflow-hidden"
+      style={{ padding: 'clamp(80px, 12vh, 160px) 0' }}
     >
       {/* Inline keyframes for marquee */}
       <style>{`
@@ -151,28 +184,31 @@ export function TestimonialsSection() {
         }
       `}</style>
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className={`text-center mb-14 ${fadeIn}`} style={fadeInDelay(0)}>
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-sm font-medium text-[#00F0FF] mb-4">
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">
             Social Proof
           </span>
           <h2
-            className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
-            style={{ fontFamily: 'Syne, sans-serif' }}
+            className="font-bold mb-4"
+            style={{
+              fontFamily: 'Syne, sans-serif',
+              fontSize: 'clamp(2.25rem, 3vw + 0.5rem, 3.5rem)',
+            }}
           >
             Loved by{' '}
             <span className="text-gradient">Professionals Across India</span>
           </h2>
-          <p className="text-lg text-[#8892A4] max-w-2xl mx-auto">
+          <p className="text-lg text-[#94A3B8] max-w-2xl mx-auto">
             Real people. Real workflows. Real results.
           </p>
         </div>
 
         {/* Marquee or static grid */}
         {reducedMotion ? (
-          /* Reduced motion: static 3-card grid */
-          <div className="grid md:grid-cols-3 gap-6">
+          /* Reduced motion: static grid */
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-6">
             {testimonials.map((t) => (
               <div key={t.name} className="flex justify-center">
                 <TestimonialCard t={t} />
@@ -194,7 +230,7 @@ export function TestimonialsSection() {
             <div
               className="flex gap-6 w-max hover:[animation-play-state:paused]"
               style={{
-                animation: 'marquee-scroll 35s linear infinite',
+                animation: 'marquee-scroll 50s linear infinite',
               }}
             >
               {marqueeItems.map((t, i) => (
@@ -206,13 +242,13 @@ export function TestimonialsSection() {
 
         {/* Stats Row */}
         <div
-          className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-4 mt-14 pt-10 border-t border-white/[0.05] ${fadeIn}`}
+          className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-4 mt-14 pt-10 border-t border-white/[0.06] ${fadeIn}`}
           style={fadeInDelay(500)}
         >
           {stats.map((stat, i) => (
             <div key={stat.label} className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.06]">
-                <span className="text-lg md:text-xl font-bold text-[#F4F6FF]">
+                <span className="text-lg md:text-xl font-bold text-[#E8E8F0]">
                   {stat.value}
                 </span>
                 <span className="text-sm text-[#6B7280]">{stat.label}</span>

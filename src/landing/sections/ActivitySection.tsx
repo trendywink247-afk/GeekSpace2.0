@@ -1,25 +1,25 @@
 import { motion } from 'framer-motion';
-import { MessageSquare, Calendar, Send, CheckCircle, TrendingUp, Clock, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle } from 'lucide-react';
 
 interface Activity {
   id: number;
-  company: string;
+  agent: string;
   action: string;
-  icon: typeof MessageSquare;
   time: string;
   color: string;
+  status?: 'completed' | 'in-progress' | 'failed';
 }
 
 const activities: Activity[] = [
-  { id: 1, company: 'Cal', action: 'Reminder: Team standup in 15 minutes', icon: Calendar, time: 'now', color: '#4ECDC4' },
-  { id: 2, company: 'Weebo', action: 'answered 3 questions about GST filing', icon: MessageSquare, time: '2s ago', color: '#00F0FF' },
-  { id: 3, company: 'Cal', action: 'scheduled meeting with Rahul at 3 PM', icon: Calendar, time: '8s ago', color: '#4ECDC4' },
-  { id: 4, company: 'Aria', action: 'drafting social media banner copy', icon: Send, time: '12s ago', color: '#FF2D78' },
-  { id: 5, company: 'Forge', action: 'deployed REST API endpoint to production', icon: CheckCircle, time: '22s ago', color: '#FFB800' },
-  { id: 6, company: 'Pulse', action: 'analyzing Q1 revenue trends', icon: TrendingUp, time: '31s ago', color: '#00FF88' },
-  { id: 7, company: 'Echo', action: 'summarized 12 unread emails from clients', icon: MessageSquare, time: '45s ago', color: '#FF6B35' },
-  { id: 8, company: 'Jarvis', action: 'fixed TypeScript build error in auth module', icon: CheckCircle, time: '1m ago', color: '#ADFF2F' },
-  { id: 9, company: 'Nova', action: 'generating dashboard wireframes', icon: Clock, time: '2m ago', color: '#E040FB' },
+  { id: 1, agent: 'Cal', action: 'Reminder: Team standup in 15 minutes', time: 'now', color: '#4ECDC4', status: 'in-progress' },
+  { id: 2, agent: 'Weebo', action: 'Answered 3 questions about GST filing', time: '2s ago', color: '#00F0FF', status: 'completed' },
+  { id: 3, agent: 'Cal', action: 'Scheduled meeting with Rahul at 3 PM', time: '8s ago', color: '#4ECDC4', status: 'completed' },
+  { id: 4, agent: 'Aria', action: 'Drafting social media banner copy', time: '12s ago', color: '#FF2D78', status: 'in-progress' },
+  { id: 5, agent: 'Forge', action: 'Deployed REST API endpoint to production', time: '22s ago', color: '#FFB800', status: 'completed' },
+  { id: 6, agent: 'Pulse', action: 'Analyzing Q1 revenue trends', time: '31s ago', color: '#00FF88', status: 'in-progress' },
+  { id: 7, agent: 'Echo', action: 'Summarized 12 unread emails from clients', time: '45s ago', color: '#FF6B35', status: 'completed' },
+  { id: 8, agent: 'Jarvis', action: 'Fixed TypeScript build error in auth module', time: '1m ago', color: '#ADFF2F', status: 'completed' },
+  { id: 9, agent: 'Nova', action: 'Generating dashboard wireframes', time: '2m ago', color: '#E040FB', status: 'in-progress' },
 ];
 
 const containerVariants = {
@@ -32,178 +32,121 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, x: 24 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
+  hidden: { opacity: 0, x: 16 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const } },
+};
+
+const statusCounts = {
+  completed: activities.filter(a => a.status === 'completed').length,
+  inProgress: activities.filter(a => a.status === 'in-progress').length,
+  failed: activities.filter(a => a.status === 'failed').length,
 };
 
 export function ActivitySection() {
   return (
     <section
       id="activity"
-      className="relative py-20 md:py-28 lg:py-32 overflow-hidden"
+      className="relative overflow-hidden"
+      style={{ padding: 'clamp(80px, 12vh, 160px) 0' }}
     >
-      {/* Pulse animation keyframes */}
-      <style>{`
-        @keyframes livePulse {
-          0% { opacity: 1; transform: scale(1); }
-          100% { opacity: 0; transform: scale(2); }
-        }
-      `}</style>
+      {/* Dot grid background */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{
+        backgroundImage: 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
+      }} />
 
-      {/* Data River Background */}
-      <div className="absolute inset-0 pointer-events-none dot-grid" style={{ opacity: 0.05 }} />
-
-      <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6">
-        <div className="grid lg:grid-cols-3 gap-12">
-          {/* Left: Header & Stats */}
-          <motion.div
-            initial={{ opacity: 0, x: -24 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="lg:col-span-1"
+      <div className="relative z-10 max-w-6xl mx-auto px-6">
+        {/* Centered section header */}
+        <div className="text-center mb-14">
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">
+            Real-Time Feed
+          </span>
+          <h2
+            className="text-[clamp(2.25rem,3vw+0.5rem,3.5rem)] font-bold mb-4"
+            style={{ fontFamily: 'Syne, sans-serif' }}
           >
-            {/* Mono badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#00FF88]/5 border border-[#00FF88]/20 mb-6">
-              <span className="font-mono text-[11px] tracking-wider text-[#00FF88]/70 uppercase">Real-Time</span>
-            </div>
+            Your Agents, <span className="text-gradient">Always Working</span>
+          </h2>
+          <p className="text-lg text-[#94A3B8] max-w-2xl mx-auto">
+            While you focus on what matters, your AI team handles everything else — around the clock, in parallel.
+          </p>
+        </div>
 
-            <h2
-              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
-              style={{ fontFamily: 'Syne, sans-serif' }}
-            >
-              Your Agents, <span className="text-gradient">Always Working</span>
-            </h2>
-            <p className="text-lg text-[#6B7280] mb-8">
-              While you focus on what matters, your AI team handles everything else -- around the clock, in parallel.
-            </p>
-
-            {/* Stats as colored badges */}
-            <div className="flex flex-wrap gap-3">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
-                <span className="text-sm font-semibold text-emerald-400">5</span>
-                <span className="text-xs text-emerald-400/70">completed</span>
-              </div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <Clock className="w-4 h-4 text-amber-400" />
-                <span className="text-sm font-semibold text-amber-400">3</span>
-                <span className="text-xs text-amber-400/70">in progress</span>
-              </div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
-                <XCircle className="w-4 h-4 text-red-400" />
-                <span className="text-sm font-semibold text-red-400">0</span>
-                <span className="text-xs text-red-400/70">failed</span>
+        {/* Feed container */}
+        <div className="max-w-3xl mx-auto">
+          <div className="rounded-2xl bg-[#0a0a18] border border-white/[0.06] overflow-hidden">
+            {/* Feed header with live indicator */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
+              <span className="text-sm font-medium text-[#E8E8F0]">Agent Activity</span>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
+                <span className="text-[11px] font-mono text-[#22c55e]/80 uppercase tracking-wider">Live</span>
               </div>
             </div>
-          </motion.div>
 
-          {/* Right: Activity Feed in Glass Container */}
-          <div className="lg:col-span-2">
-            <div
-              className="overflow-hidden"
+            {/* Staggered activity items with top/bottom mask fade */}
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.1 }}
               style={{
-                background: 'rgba(255,255,255,0.02)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '20px',
-                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.04), 0 0 40px rgba(0,0,0,0.3)',
+                maskImage: 'linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)',
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)',
               }}
             >
-              {/* Feed header */}
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5">
-                <span className="text-sm font-medium text-[#F4F6FF]">Agent Activity</span>
-                <div className="flex items-center gap-2">
-                  {/* Live pulse dot */}
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span
-                      className="absolute inset-0 rounded-full bg-[#00FF88]"
-                      style={{ animation: 'livePulse 1.5s ease-out infinite' }}
-                    />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00FF88]" />
-                  </span>
-                  <span className="font-mono text-[11px] tracking-wider text-[#00FF88]/80 uppercase">Live</span>
-                </div>
-              </div>
+              {activities.map((activity) => (
+                <motion.div
+                  key={activity.id}
+                  variants={itemVariants}
+                  className="flex gap-4 items-start px-5 py-4 border-b border-white/[0.04] last:border-b-0 transition-colors duration-200 hover:bg-white/[0.02]"
+                >
+                  {/* Colored dot */}
+                  <div
+                    className="w-2 h-2 rounded-full mt-2 shrink-0"
+                    style={{ backgroundColor: activity.color }}
+                  />
 
-              {/* Staggered activity items */}
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.1 }}
-                className="p-3 space-y-2"
-              >
-                {activities.map((activity) => (
-                  <motion.div
-                    key={activity.id}
-                    variants={itemVariants}
-                    className="relative flex items-center gap-3 p-3 rounded-xl transition-colors duration-200 hover:bg-white/[0.02]"
-                    style={{
-                      background: 'rgba(255,255,255,0.015)',
-                      border: '1px solid rgba(255,255,255,0.04)',
-                      borderLeft: `2px solid ${activity.color}30`,
-                    }}
-                  >
-                    {/* Agent avatar with colored glow */}
-                    <div className="relative flex-shrink-0">
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                        style={{
-                          backgroundColor: `${activity.color}20`,
-                          boxShadow: `0 0 12px ${activity.color}20`,
-                        }}
-                      >
-                        <activity.icon
-                          className="w-4 h-4"
-                          style={{ color: activity.color }}
-                          aria-label={activity.action}
-                        />
-                      </div>
-                    </div>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#C8C8D8]">
+                      <span className="font-medium text-[#E8E8F0]">{activity.agent}</span>
+                      {' '}{activity.action}
+                    </p>
+                    <span className="text-xs text-[#6B7280] mt-1 block">{activity.time}</span>
+                  </div>
 
-                    {/* Activity Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap min-w-0">
-                        <span className="font-medium text-sm text-[#E8E8F0]">{activity.company}</span>
-                        <span className="text-sm text-[#6B7280] truncate">{activity.action}</span>
-                      </div>
-                    </div>
+                  {/* Status badge */}
+                  {activity.status === 'completed' && (
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400/60 mt-1 shrink-0" />
+                  )}
+                  {activity.status === 'in-progress' && (
+                    <Clock className="w-3.5 h-3.5 text-amber-400/60 mt-1 shrink-0 animate-pulse" />
+                  )}
+                  {activity.status === 'failed' && (
+                    <XCircle className="w-3.5 h-3.5 text-red-400/60 mt-1 shrink-0" />
+                  )}
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
 
-                    {/* Time badge */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span
-                        className="font-mono text-[10px] px-2 py-0.5 rounded-full text-[#6B7280]/70"
-                        style={{ background: 'rgba(255,255,255,0.03)' }}
-                      >
-                        {activity.time}
-                      </span>
-                      <div
-                        className="w-1.5 h-1.5 rounded-full motion-safe:animate-pulse"
-                        style={{ backgroundColor: activity.color }}
-                      />
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </div>
-
-            {/* Live Indicator footer */}
-            <div className="mt-5 flex items-center justify-center gap-2 text-sm text-[#6B7280]">
-              <span className="relative flex h-2 w-2">
-                <span
-                  className="absolute inset-0 rounded-full bg-[#00FF88]"
-                  style={{ animation: 'livePulse 1.5s ease-out infinite' }}
-                />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00FF88]" />
+          {/* Status footer pills */}
+          <div className="flex items-center justify-center gap-3 mt-6">
+            <span className="inline-flex items-center gap-1.5 text-xs bg-white/[0.03] border border-white/[0.06] px-3 py-1 rounded-full text-emerald-400/80">
+              <CheckCircle className="w-3 h-3" />
+              {statusCounts.completed} completed
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-xs bg-white/[0.03] border border-white/[0.06] px-3 py-1 rounded-full text-amber-400/80">
+              <Clock className="w-3 h-3" />
+              {statusCounts.inProgress} in progress
+            </span>
+            {statusCounts.failed > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-xs bg-white/[0.03] border border-white/[0.06] px-3 py-1 rounded-full text-red-400/60">
+                <XCircle className="w-3 h-3" />
+                {statusCounts.failed} failed
               </span>
-              <span className="font-mono text-[11px]">LIVE</span>
-              <span className="text-[#6B7280]/30 mx-1">|</span>
-              <span className="font-mono text-[11px]">9 agents online</span>
-              <span className="text-[#6B7280]/30 mx-1">|</span>
-              <span className="font-mono text-[11px]">Your server, your data</span>
-            </div>
+            )}
           </div>
         </div>
       </div>

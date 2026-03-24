@@ -42,9 +42,7 @@ const toolCosts = [
 ];
 
 const glassBase: React.CSSProperties = {
-  background: 'rgba(255, 255, 255, 0.02)',
-  backdropFilter: 'blur(16px) saturate(180%)',
-  WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+  background: '#0e0e1c',
   border: '1px solid rgba(255, 255, 255, 0.06)',
   borderRadius: '24px',
   padding: '40px',
@@ -74,12 +72,12 @@ function useSpringCount(target: number, inView: boolean) {
 
 const cardVariants = {
   hidden: { opacity: 0, y: 32 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const } },
 };
 
 const staggerContainer = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.12 } },
+  visible: { transition: { staggerChildren: 0.07 } },
 };
 
 /* Keyframes injected once via a <style> tag */
@@ -125,7 +123,7 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
   };
 
   return (
-    <section ref={sectionRef} id="pricing" className="relative py-20 md:py-28 lg:py-32 overflow-hidden">
+    <section ref={sectionRef} id="pricing" className="relative overflow-hidden" style={{ padding: 'clamp(80px, 12vh, 160px) 0' }}>
       {/* Inject spin keyframes */}
       <style>{spinKeyframes}</style>
 
@@ -134,14 +132,14 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 40%, rgba(0, 240, 255, 0.06) 0%, transparent 70%)' }} />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 w-full">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 w-full">
         {/* Section Header */}
         <motion.div className="text-center mb-14" {...mv}>
-          <span className="font-mono text-xs tracking-[0.2em] uppercase text-[#00F0FF]/60 mb-4 block">Pricing</span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">Pricing</span>
+          <h2 className="font-bold mb-4" style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(2.25rem, 3vw + 0.5rem, 3.5rem)' }}>
             Simple Pricing. <span className="text-gradient">No Surprises.</span>
           </h2>
-          <p className="text-lg text-[#8892A4] max-w-xl mx-auto">Start free. Upgrade when you need more power.</p>
+          <p className="text-lg text-[#94A3B8] max-w-xl mx-auto">Start free. Upgrade when you need more power.</p>
         </motion.div>
 
         {/* Pricing Cards */}
@@ -152,26 +150,25 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
           {/* ---- Free Card ---- */}
           <motion.div
             variants={reducedMotion ? undefined : cardVariants}
-            className="group relative flex flex-col rounded-3xl transition-all duration-300 hover:border-white/[0.12] hover:shadow-[0_4px_40px_rgba(255,255,255,0.04)]"
-            style={{ ...glassBase, borderStyle: 'dashed' }}
+            className="group relative flex flex-col bg-[#0e0e1c] border border-dashed border-white/[0.06] rounded-2xl p-8 transition-all duration-300 hover:border-white/[0.12] hover:shadow-[0_4px_40px_rgba(255,255,255,0.04)]"
           >
             <span className="inline-flex items-center self-start px-3 py-1 rounded-full bg-[#ADFF2F]/10 border border-[#ADFF2F]/30 text-sm font-medium text-[#ADFF2F] mb-6">Free Forever</span>
             <div className="mb-6">
-              <span className="text-4xl sm:text-5xl font-bold text-white">{'\u20B9'}{freePrice}</span>
-              <span className="text-lg text-[#8892A4] ml-1">forever</span>
+              <span className="text-4xl font-bold text-[#E8E8F0]">{'\u20B9'}{freePrice}</span>
+              <span className="text-lg text-[#94A3B8] ml-1">forever</span>
             </div>
             <ul className="space-y-3 mb-8 flex-1" role="list">
               {freeFeatures.map((f) => (
                 <li key={f} className="flex items-start gap-3 group/item">
                   <Check className="w-5 h-5 text-[#00F0FF] shrink-0 mt-0.5 transition-all duration-200 group-hover/item:drop-shadow-[0_0_4px_rgba(0,240,255,0.5)]" aria-hidden="true" />
-                  <span className="text-[#8892A4] text-sm sm:text-base">{f}</span>
+                  <span className="text-[#94A3B8] text-sm sm:text-base">{f}</span>
                 </li>
               ))}
             </ul>
             <Link
               to="/login"
               onClick={onGetStarted}
-              className="flex items-center justify-center w-full min-h-[48px] border border-[#00F0FF]/30 text-[#E8E8F0] hover:bg-[#00F0FF]/10 hover:border-[#00F0FF]/50 py-3.5 rounded-xl font-medium text-lg transition-all duration-300 group/btn"
+              className="flex items-center justify-center w-full min-h-[48px] bg-white/[0.04] border border-white/[0.08] text-white hover:bg-white/[0.08] py-3.5 rounded-xl font-medium text-lg transition-all duration-300 group/btn"
             >
               Start Free
               <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" />
@@ -203,18 +200,18 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
               />
 
               {/* Card content */}
-              <div className="relative flex flex-col rounded-3xl bg-[#0a0a1a] p-10" style={{ backdropFilter: 'blur(16px) saturate(180%)' }}>
+              <div className="relative flex flex-col rounded-3xl bg-[#0e0e1c] p-10" style={{ backdropFilter: 'blur(16px) saturate(180%)' }}>
                 <span className="inline-flex items-center self-start px-3 py-1 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-sm font-medium text-[#00F0FF] mt-2 mb-6">Pro</span>
                 <div className="mb-2">
-                  <span className="text-4xl sm:text-5xl font-bold text-white">{'\u20B9'}{proPrice}</span>
-                  <span className="text-lg text-[#8892A4] ml-1">/mo</span>
+                  <span className="text-4xl font-bold text-[#E8E8F0]">{'\u20B9'}{proPrice}</span>
+                  <span className="text-lg text-[#94A3B8] ml-1">/mo</span>
                 </div>
                 <p className="text-sm text-[#ADFF2F] mb-6">Save 20% with yearly billing</p>
                 <ul className="space-y-3 mb-8 flex-1" role="list">
                   {proFeatures.map((f) => (
                     <li key={f} className="flex items-start gap-3 group/item">
                       <Check className="w-5 h-5 text-[#00F0FF] shrink-0 mt-0.5 transition-all duration-200 group-hover/item:drop-shadow-[0_0_4px_rgba(0,240,255,0.5)]" aria-hidden="true" />
-                      <span className="text-[#8892A4] text-sm sm:text-base">{f}</span>
+                      <span className="text-[#94A3B8] text-sm sm:text-base">{f}</span>
                     </li>
                   ))}
                 </ul>
@@ -232,29 +229,28 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
           {/* ---- Team Card ---- */}
           <motion.div
             variants={reducedMotion ? undefined : cardVariants}
-            className="group relative flex flex-col rounded-3xl transition-all duration-300 hover:border-white/[0.12] hover:shadow-[0_4px_40px_rgba(139,92,246,0.06)]"
-            style={{ ...glassBase, background: 'rgba(139, 92, 246, 0.03)', border: '1px solid rgba(139, 92, 246, 0.12)' }}
+            className="group relative flex flex-col bg-[#0e0e1c] border border-white/[0.06] rounded-2xl p-8 transition-all duration-300 hover:border-white/[0.12] hover:shadow-[0_4px_40px_rgba(139,92,246,0.06)]"
           >
             <span className="inline-flex items-center gap-1.5 self-start px-3 py-1 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-sm font-medium text-[#8B5CF6] mb-6">
               <Users className="w-3.5 h-3.5" />
               Team
             </span>
             <div className="mb-2">
-              <span className="text-4xl sm:text-5xl font-bold text-white">{'\u20B9'}{teamPrice}</span>
-              <span className="text-lg text-[#8892A4] ml-1">/mo</span>
+              <span className="text-4xl font-bold text-[#E8E8F0]">{'\u20B9'}{teamPrice}</span>
+              <span className="text-lg text-[#94A3B8] ml-1">/mo</span>
             </div>
-            <p className="text-sm text-[#8892A4] mb-6">Per workspace</p>
+            <p className="text-sm text-[#94A3B8] mb-6">Per workspace</p>
             <ul className="space-y-3 mb-8 flex-1" role="list">
               {teamFeatures.map((f) => (
                 <li key={f} className="flex items-start gap-3 group/item">
-                  <Check className="w-5 h-5 text-[#8B5CF6] shrink-0 mt-0.5 transition-all duration-200 group-hover/item:drop-shadow-[0_0_4px_rgba(139,92,246,0.5)]" aria-hidden="true" />
-                  <span className="text-[#8892A4] text-sm sm:text-base">{f}</span>
+                  <Check className="w-5 h-5 text-[#00F0FF] shrink-0 mt-0.5 transition-all duration-200 group-hover/item:drop-shadow-[0_0_4px_rgba(0,240,255,0.5)]" aria-hidden="true" />
+                  <span className="text-[#94A3B8] text-sm sm:text-base">{f}</span>
                 </li>
               ))}
             </ul>
             <Link
               to="/login?plan=team"
-              className="flex items-center justify-center w-full min-h-[48px] border border-[#8B5CF6]/30 text-[#E8E8F0] hover:bg-[#8B5CF6]/10 hover:border-[#8B5CF6]/50 py-3.5 rounded-xl font-medium text-lg transition-all duration-300 group/btn"
+              className="flex items-center justify-center w-full min-h-[48px] bg-white/[0.04] border border-white/[0.08] text-white hover:bg-white/[0.08] py-3.5 rounded-xl font-medium text-lg transition-all duration-300 group/btn"
             >
               Contact Us
               <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" />
@@ -304,7 +300,7 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
             />
             <div className="flex flex-wrap gap-2 mt-3 justify-center">
               {selectedTools.map((tool) => (
-                <span key={tool.name} className="px-2.5 py-1 rounded-lg bg-white/5 text-xs text-[#8892A4] border border-white/10">
+                <span key={tool.name} className="px-2.5 py-1 rounded-lg bg-white/5 text-xs text-[#94A3B8] border border-white/[0.06]">
                   {tool.name} {'\u20B9'}{tool.cost}
                 </span>
               ))}
@@ -314,15 +310,15 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
           {/* Comparison */}
           <div className="grid sm:grid-cols-3 gap-4 text-center">
             <div className="p-4 rounded-xl bg-[#FF2D78]/5 border border-[#FF2D78]/20">
-              <div className="text-sm text-[#8892A4] mb-1">You pay now</div>
+              <div className="text-sm text-[#94A3B8] mb-1">You pay now</div>
               <div className="text-2xl font-bold text-[#FF2D78]">{'\u20B9'}{totalToolCost.toLocaleString('en-IN')}/mo</div>
             </div>
             <div className="p-4 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/20">
-              <div className="text-sm text-[#8892A4] mb-1">Agentin Pro</div>
+              <div className="text-sm text-[#94A3B8] mb-1">Agentin Pro</div>
               <div className="text-2xl font-bold text-[#00F0FF]">{'\u20B9'}499/mo</div>
             </div>
             <div className="p-4 rounded-xl bg-[#ADFF2F]/5 border border-[#ADFF2F]/20">
-              <div className="text-sm text-[#8892A4] mb-1">You save</div>
+              <div className="text-sm text-[#94A3B8] mb-1">You save</div>
               <div className="text-2xl font-bold">
                 {savings > 0 ? (
                   <span className="bg-gradient-to-r from-[#ADFF2F] to-[#00F0FF] bg-clip-text text-transparent">

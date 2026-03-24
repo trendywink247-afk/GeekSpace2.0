@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Hexagon, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
 
 interface NavigationProps {
-  scrollY: number;
   onEnterDashboard?: () => void;
 }
 
@@ -21,7 +20,6 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [ctaHovered, setCtaHovered] = useState(false);
 
   const { scrollY: motionScrollY } = useScroll();
 
@@ -80,13 +78,14 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
       <motion.div
         className="relative rounded-2xl overflow-hidden"
         style={{
-          backdropFilter: 'blur(16px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+          backdropFilter: scrolled ? 'blur(24px) saturate(180%)' : 'blur(4px) saturate(180%)',
+          WebkitBackdropFilter: scrolled ? 'blur(24px) saturate(180%)' : 'blur(4px) saturate(180%)',
+          transition: 'backdrop-filter 0.3s ease, -webkit-backdrop-filter 0.3s ease',
         }}
         animate={{
           backgroundColor: scrolled
-            ? 'rgba(10, 10, 21, 0.85)'
-            : 'rgba(10, 10, 21, 0.6)',
+            ? 'rgba(6, 6, 15, 0.9)'
+            : 'rgba(6, 6, 15, 0.3)',
           borderColor: scrolled
             ? 'rgba(255, 255, 255, 0.1)'
             : 'rgba(255, 255, 255, 0.06)',
@@ -115,12 +114,9 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
               href="#"
               className="flex items-center gap-2.5 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
             >
-              <div className="relative">
-                <Hexagon className="w-7 h-7 text-[#00F0FF] transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(0,255,212,0.5)]" />
-                <div className="absolute inset-0 bg-[#00F0FF]/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              </div>
+              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00F0FF] to-[#00D4B0] flex items-center justify-center text-[#06060f] text-sm font-bold">A</span>
               <span
-                className="hidden sm:inline font-bold text-lg tracking-tight"
+                className="hidden sm:inline text-lg font-bold"
                 style={{ fontFamily: 'Syne, sans-serif' }}
               >
                 <span className="text-[#E8E8F0]">Agent</span>
@@ -136,29 +132,15 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                   <a
                     key={link.label}
                     href={link.href}
-                    className="relative px-3 py-1.5 text-sm font-medium rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
-                    style={{
-                      color: isActive
-                        ? 'rgba(255, 255, 255, 1)'
-                        : 'rgba(255, 255, 255, 0.5)',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) {
-                        (e.currentTarget as HTMLElement).style.color = 'rgba(255, 255, 255, 1)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) {
-                        (e.currentTarget as HTMLElement).style.color = 'rgba(255, 255, 255, 0.5)';
-                      }
-                    }}
+                    className={`relative px-3 pb-1 text-[13px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B] ${
+                      isActive ? 'text-white/90' : 'text-white/60 hover:text-white/90'
+                    }`}
                   >
                     {isActive && (
                       <motion.div
                         layoutId="nav-indicator"
-                        className="absolute inset-0 rounded-lg"
-                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.06)' }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#00F0FF] rounded-full"
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                       />
                     )}
                     <span className="relative z-10">{link.label}</span>
@@ -169,36 +151,12 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
 
             {/* CTA Button + Mobile Menu Button */}
             <div className="flex items-center gap-3">
-              {/* CTA Button — gradient border with shimmer on hover */}
               <div className="hidden md:block">
                 <button
                   onClick={onEnterDashboard}
-                  onMouseEnter={() => setCtaHovered(true)}
-                  onMouseLeave={() => setCtaHovered(false)}
-                  className="relative px-5 py-1.5 text-sm font-semibold rounded-xl overflow-hidden transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
-                  style={{ color: '#E8E8F0' }}
+                  className="bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060f] font-semibold text-[13px] px-5 py-2 rounded-xl hover:shadow-[0_0_20px_rgba(0,240,255,0.2)] hover:scale-[1.02] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
                 >
-                  {/* Gradient border using pseudo-element technique */}
-                  <span
-                    className="absolute inset-0 rounded-xl"
-                    style={{
-                      padding: '1px',
-                      background: 'linear-gradient(135deg, #00F0FF, #ADFF2F, #00F0FF)',
-                      backgroundSize: '200% 200%',
-                      animation: 'shimmer 2s linear infinite',
-                      opacity: ctaHovered ? 1 : 0.3,
-                      transition: 'opacity 0.3s ease',
-                      WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                      WebkitMaskComposite: 'xor',
-                      maskComposite: 'exclude',
-                    }}
-                  />
-                  {/* Inner background */}
-                  <span
-                    className="absolute inset-[1px] rounded-[11px]"
-                    style={{ backgroundColor: 'rgba(10, 10, 21, 0.8)' }}
-                  />
-                  <span className="relative z-10">Get Started</span>
+                  Get Started
                 </button>
               </div>
 
@@ -216,7 +174,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
 
         {/* Scroll Progress Bar — thin, at the very bottom of the nav pill */}
         <div
-          className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-[#00F0FF] to-[#ADFF2F]"
+          className="absolute bottom-0 left-0 h-px bg-gradient-to-r from-[#00F0FF] via-[#8B5CF6] to-[#FF2D78]"
           style={{
             width: `${scrollProgress}%`,
             opacity: scrolled ? 0.8 : 0,
@@ -237,7 +195,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
             >
               <div
                 ref={mobileMenuRef}
-                className="border-t"
+                className="border-t backdrop-blur-xl"
                 style={{ borderColor: 'rgba(255, 255, 255, 0.06)' }}
               >
                 <div className="px-4 py-4 space-y-1">
@@ -248,12 +206,12 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                       initial={{ opacity: 0, x: -12 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05, duration: 0.25 }}
-                      className="block py-2.5 px-3 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
+                      className="flex items-center min-h-[44px] py-3 px-3 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
                       style={{
                         color:
                           activeSection === link.sectionId
-                            ? 'rgba(255, 255, 255, 1)'
-                            : 'rgba(255, 255, 255, 0.5)',
+                            ? 'rgba(255, 255, 255, 0.9)'
+                            : 'rgba(255, 255, 255, 0.6)',
                         backgroundColor:
                           activeSection === link.sectionId
                             ? 'rgba(255, 255, 255, 0.06)'
@@ -274,24 +232,9 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                         setMobileMenuOpen(false);
                         onEnterDashboard?.();
                       }}
-                      className="w-full mt-3 px-5 py-2.5 text-sm font-semibold rounded-xl overflow-hidden relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
-                      style={{ color: '#E8E8F0' }}
+                      className="w-full mt-3 min-h-[44px] bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060f] font-semibold text-[13px] px-5 py-3 rounded-xl hover:shadow-[0_0_20px_rgba(0,240,255,0.2)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
                     >
-                      <span
-                        className="absolute inset-0 rounded-xl"
-                        style={{
-                          padding: '1px',
-                          background: 'linear-gradient(135deg, #00F0FF, #ADFF2F, #00F0FF)',
-                          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                          WebkitMaskComposite: 'xor',
-                          maskComposite: 'exclude',
-                        }}
-                      />
-                      <span
-                        className="absolute inset-[1px] rounded-[11px]"
-                        style={{ backgroundColor: 'rgba(10, 10, 21, 0.8)' }}
-                      />
-                      <span className="relative z-10">Get Started</span>
+                      Get Started
                     </button>
                   </motion.div>
                 </div>
@@ -301,14 +244,6 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
         </AnimatePresence>
       </motion.div>
 
-      {/* Keyframes for CTA shimmer animation */}
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-      `}</style>
     </motion.nav>
   );
 }

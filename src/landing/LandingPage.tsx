@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NeuralBackground } from '@/components/NeuralBackground';
 import { Navigation } from '@/components/Navigation';
@@ -16,31 +15,10 @@ import { SecuritySection } from './sections/SecuritySection';
 import { ContactSection } from './sections/ContactSection';
 import { FooterSection } from './sections/FooterSection';
 
-function WaveDivider({ flip = false, color = '#0a0a1a' }: { flip?: boolean; color?: string }) {
-  return (
-    <div className={`w-full h-8 md:h-12 overflow-hidden ${flip ? 'rotate-180' : ''}`}>
-      <svg viewBox="0 0 1440 48" preserveAspectRatio="none" className="w-full h-full">
-        <path d="M0,24 C240,48 480,0 720,24 C960,48 1200,0 1440,24 L1440,48 L0,48 Z" fill={color} />
-      </svg>
-    </div>
-  );
-}
-
 export function LandingPage() {
   const navigate = useNavigate();
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const onEnterDashboard = () => navigate('/login');
-  const onViewPortfolio = (username: string) => navigate(`/portfolio/${username}`);
-  const onWatchDemo = () => navigate('/login?demo=true');
   const onBrowseDirectory = () => navigate('/login');
   const onDesignAssistant = () => navigate('/login?redirect=design');
   const onBuildWorkflow = () => navigate('/login?redirect=automations');
@@ -64,34 +42,39 @@ export function LandingPage() {
       />
 
       <NeuralBackground />
-      <Navigation scrollY={scrollY} onEnterDashboard={onEnterDashboard} />
+      <Navigation onEnterDashboard={onEnterDashboard} />
 
       <main className="relative z-10">
         {/* 1. Hero */}
-        <HeroSection onEnterDashboard={onEnterDashboard} onWatchDemo={onWatchDemo} />
-        <WaveDivider color="#0a0a1a" />
+        <HeroSection onEnterDashboard={onEnterDashboard} />
         {/* 2. ProblemSolution */}
-        <ProblemSolutionSection />
+        <div className="bg-[#08081a]"><ProblemSolutionSection /></div>
         {/* 3. Persona (agents) */}
         <PersonaSection onDesignAssistant={onDesignAssistant} />
         {/* 4. PromptTemplates (interactive demo + templates) */}
-        <PromptTemplatesSection />
+        <div className="bg-[#08081a]"><PromptTemplatesSection /></div>
         {/* 5. Activity */}
         <ActivitySection />
         {/* 6. Engine */}
-        <EngineSection onBuildWorkflow={onBuildWorkflow} />
+        <div className="bg-[#08081a]"><EngineSection onBuildWorkflow={onBuildWorkflow} /></div>
         {/* 7. Constellation (Day In Your Life) */}
-        <ConstellationSection onViewPortfolio={onViewPortfolio} onBrowseDirectory={onBrowseDirectory} />
+        <ConstellationSection onBrowseDirectory={onBrowseDirectory} />
         {/* 8. Telegram */}
-        <TelegramCTASection />
+        <div className="bg-[#08081a]"><TelegramCTASection /></div>
+
+        {/* Divider before Testimonials */}
+        <div className="max-w-6xl mx-auto px-6"><hr className="border-white/[0.04]" /></div>
+
         {/* 9. Testimonials */}
         <TestimonialsSection />
-        <WaveDivider flip color="#0c0c18" />
-        {/* 10. Pricing */}
+        {/* 10. Security */}
+        <div className="bg-[#08081a]"><SecuritySection onReviewSecurity={onReviewSecurity} /></div>
+        {/* 11. Pricing */}
         <PricingPreviewSection onGetStarted={onGetStarted} />
-        {/* 11. Security */}
-        <SecuritySection onReviewSecurity={onReviewSecurity} />
-        <WaveDivider color="#0a0a1a" />
+
+        {/* Divider before Contact */}
+        <div className="max-w-6xl mx-auto px-6"><hr className="border-white/[0.04]" /></div>
+
         {/* 12. Contact */}
         <ContactSection onEnterDashboard={onEnterDashboard} />
         {/* 13. Footer */}

@@ -60,6 +60,19 @@ module.exports = {
         },
         'bg-deep': '#06060f',
         'bg-elevated': '#0a0a1a',
+        layer: {
+          void: '#030308',
+          base: '#06060f',
+          raised: '#0a0a18',
+          card: '#0e0e1c',
+          overlay: '#121226',
+        },
+      },
+      spacing: {
+        'section': 'var(--space-section)',
+        'block': 'var(--space-block)',
+        'element': 'var(--space-element)',
+        'tight': 'var(--space-tight)',
       },
       borderColor: {
         subtle: 'rgba(255, 255, 255, 0.06)',
