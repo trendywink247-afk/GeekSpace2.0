@@ -125,7 +125,7 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
   };
 
   return (
-    <section ref={sectionRef} id="pricing" className="relative py-20 md:py-28 lg:py-32 overflow-hidden" data-aos="fade-up">
+    <section ref={sectionRef} id="pricing" className="relative py-20 md:py-28 lg:py-32 overflow-hidden">
       {/* Inject spin keyframes */}
       <style>{spinKeyframes}</style>
 
@@ -181,7 +181,7 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
           {/* ---- Pro Card (animated border) ---- */}
           <motion.div variants={reducedMotion ? undefined : cardVariants} className="relative">
             {/* Most Popular badge */}
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 px-4 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-[#00F0FF] to-[#8B5CF6] text-[#050510] shadow-lg shadow-[#00F0FF]/20 flex items-center gap-1.5">
+            <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-[#00F0FF] to-[#8B5CF6] text-[#050510] shadow-lg shadow-[#00F0FF]/20 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
               Most Popular
             </div>
@@ -280,7 +280,7 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
               max={6}
               value={toolCount}
               onChange={(e) => setToolCount(Number(e.target.value))}
-              className="w-full h-1.5 rounded-full appearance-none cursor-pointer outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(0,240,255,0.4)] [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:shadow-[0_0_12px_rgba(0,240,255,0.4)]"
+              className="w-full h-1.5 rounded-full appearance-none cursor-pointer outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_0_14px_rgba(0,240,255,0.5)] [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-[#00F0FF] [&::-webkit-slider-thumb]:to-[#8B5CF6] [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:shadow-[0_0_14px_rgba(0,240,255,0.5)] [&::-moz-range-thumb]:bg-gradient-to-br [&::-moz-range-thumb]:from-[#00F0FF] [&::-moz-range-thumb]:to-[#8B5CF6]"
               style={{
                 background: 'rgba(255,255,255,0.1)',
                 // Thumb gradient applied via Tailwind pseudoclass above doesn't work for bg; use inline

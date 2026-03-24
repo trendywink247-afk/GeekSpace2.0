@@ -91,7 +91,7 @@ export function FooterSection() {
   return (
     <footer
       id="footer"
-      className="relative overflow-hidden bg-[#050510]"
+      className="relative overflow-hidden bg-[#050510] pt-16"
     >
       {/* Top gradient border */}
       <div className="h-px w-full bg-gradient-to-r from-transparent via-[#00F0FF]/30 to-transparent" />

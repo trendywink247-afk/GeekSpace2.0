@@ -31,7 +31,7 @@
     --agentin-cyan: #00F0FF;
     --agentin-magenta: #FF2D78;
     --agentin-violet: #8B5CF6;
-    --agentin-black: #050510;
+    --agentin-black: #06060f;
     --agentin-surface: #0C0C18;
     --agentin-card: #10101E;
     --agentin-lime: #ADFF2F;
@@ -939,4 +939,60 @@ html, body {
 @keyframes gradient-text-flow {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
+}
+
+/* ─── Morph Blob ─── */
+@keyframes morph {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  25% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  50% { border-radius: 50% 60% 30% 60% / 30% 60% 70% 40%; }
+  75% { border-radius: 60% 30% 60% 40% / 60% 40% 30% 70%; }
+}
+
+/* ─── Beam Trace (SVG stroke dash) ─── */
+@keyframes beam-trace {
+  0% { stroke-dashoffset: 600; opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { stroke-dashoffset: -600; opacity: 0; }
+}
+
+/* ─── Blink (cursor) ─── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ─── Glow Card (rotating conic border on hover) ─── */
+.glow-card {
+  position: relative;
+}
+.glow-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--border-angle, 0deg), transparent 40%, #00F0FF 50%, transparent 60%);
+  animation: border-rotate 4s linear infinite;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.glow-card:hover::before {
+  opacity: 1;
+}
+
+/* ─── Wave Section Divider ─── */
+.wave-divider {
+  width: 100%;
+  height: 48px;
+  overflow: hidden;
+  position: relative;
+}
+.wave-divider svg {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
 }

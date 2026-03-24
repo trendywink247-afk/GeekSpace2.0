@@ -53,7 +53,7 @@ const stats = [
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="group relative w-[380px] flex-shrink-0 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur p-6 hover:border-white/[0.12] transition-all duration-300">
+    <div className="group relative w-[380px] shrink-0 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur p-6 hover:border-white/[0.12] transition-all duration-300">
       {/* Quote icon top-right */}
       <Quote className="absolute top-5 right-5 w-7 h-7 text-white/[0.06]" />
 
@@ -142,7 +142,6 @@ export function TestimonialsSection() {
       ref={sectionRef}
       id="testimonials"
       className="relative py-20 md:py-28 lg:py-32 px-4 overflow-hidden"
-      data-aos="fade-right"
     >
       {/* Inline keyframes for marquee */}
       <style>{`
@@ -187,9 +186,9 @@ export function TestimonialsSection() {
             style={{
               ...fadeInDelay(200),
               maskImage:
-                'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
+                'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)',
               WebkitMaskImage:
-                'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
+                'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)',
             }}
           >
             <div

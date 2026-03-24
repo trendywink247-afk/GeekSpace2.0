@@ -105,7 +105,7 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
         <div className="relative">
           {/* Gradient vertical line -- centered on md+, left-aligned on mobile */}
           <div
-            className="absolute left-[18px] md:left-1/2 md:-translate-x-1/2 top-0 bottom-0 w-[2px]"
+            className="absolute left-[19px] md:left-1/2 md:-translate-x-1/2 top-0 bottom-0 w-[2px]"
             style={{
               background:
                 'linear-gradient(to bottom, rgba(0,240,255,0.40), rgba(139,92,246,0.30), rgba(255,45,120,0.20))',
@@ -124,13 +124,14 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
                 >
                   {/* Timeline dot -- always on the center line (md+) or left (mobile) */}
                   <div
-                    className="absolute left-[18px] md:left-1/2 top-5 -translate-x-1/2 z-20"
+                    className="absolute left-[19px] md:left-1/2 top-5 -translate-x-1/2 z-20"
                   >
                     <div
-                      className="w-3 h-3 rounded-full border-[2px] border-white/80"
+                      className="w-4 h-4 rounded-full"
                       style={{
                         backgroundColor: entry.color,
-                        boxShadow: `0 0 12px ${entry.color}4D`,
+                        border: `2px solid ${entry.color}`,
+                        boxShadow: `0 0 16px ${entry.color}40`,
                       }}
                     />
                   </div>

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MessageSquare, Calendar, Send, CheckCircle, TrendingUp, Clock } from 'lucide-react';
+import { MessageSquare, Calendar, Send, CheckCircle, TrendingUp, Clock, XCircle } from 'lucide-react';
 
 interface Activity {
   id: number;
@@ -45,24 +45,13 @@ export function ActivitySection() {
       {/* Pulse animation keyframes */}
       <style>{`
         @keyframes livePulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.4; transform: scale(1.6); }
+          0% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(2); }
         }
       `}</style>
 
       {/* Data River Background */}
-      <div className="absolute inset-0 pointer-events-none opacity-20">
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-full h-px neural-line"
-            style={{
-              top: `${15 + i * 10}%`,
-              animation: `pulse 4s ease-in-out ${i * 0.5}s infinite`,
-            }}
-          />
-        ))}
-      </div>
+      <div className="absolute inset-0 pointer-events-none dot-grid" style={{ opacity: 0.05 }} />
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6">
         <div className="grid lg:grid-cols-3 gap-12">
@@ -102,6 +91,7 @@ export function ActivitySection() {
                 <span className="text-xs text-amber-400/70">in progress</span>
               </div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                <XCircle className="w-4 h-4 text-red-400" />
                 <span className="text-sm font-semibold text-red-400">0</span>
                 <span className="text-xs text-red-400/70">failed</span>
               </div>
@@ -129,7 +119,7 @@ export function ActivitySection() {
                   <span className="relative flex h-2.5 w-2.5">
                     <span
                       className="absolute inset-0 rounded-full bg-[#00FF88]"
-                      style={{ animation: 'livePulse 2s ease-in-out infinite' }}
+                      style={{ animation: 'livePulse 1.5s ease-out infinite' }}
                     />
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00FF88]" />
                   </span>
@@ -204,7 +194,7 @@ export function ActivitySection() {
               <span className="relative flex h-2 w-2">
                 <span
                   className="absolute inset-0 rounded-full bg-[#00FF88]"
-                  style={{ animation: 'livePulse 2s ease-in-out infinite' }}
+                  style={{ animation: 'livePulse 1.5s ease-out infinite' }}
                 />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00FF88]" />
               </span>

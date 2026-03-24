@@ -31,9 +31,9 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
         className="absolute inset-0 pointer-events-none"
         style={{
           background: [
-            'radial-gradient(ellipse 60% 50% at 30% 40%, rgba(0,240,255,0.08) 0%, transparent 70%)',
-            'radial-gradient(ellipse 50% 60% at 70% 60%, rgba(107,81,239,0.07) 0%, transparent 70%)',
-            'radial-gradient(ellipse 80% 40% at 50% 80%, rgba(0,212,176,0.05) 0%, transparent 70%)',
+            'radial-gradient(ellipse 60% 50% at 30% 40%, rgba(0,240,255,0.16) 0%, transparent 70%)',
+            'radial-gradient(ellipse 50% 60% at 70% 60%, rgba(107,81,239,0.14) 0%, transparent 70%)',
+            'radial-gradient(ellipse 80% 40% at 50% 80%, rgba(0,212,176,0.12) 0%, transparent 70%)',
           ].join(', '),
         }}
       />

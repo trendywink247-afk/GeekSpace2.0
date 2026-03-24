@@ -293,11 +293,11 @@ export function EngineSection(_props: EngineSectionProps) {
                 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.06)', background: 'rgba(255, 255, 255, 0.02)' }}
               >
                 <div className="flex items-center gap-[7px]">
-                  <div className="w-[10px] h-[10px] rounded-full bg-[#FF5F57]" />
-                  <div className="w-[10px] h-[10px] rounded-full bg-[#FEBC2E]" />
-                  <div className="w-[10px] h-[10px] rounded-full bg-[#28C840]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
                 </div>
-                <span className="ml-3 text-xs text-[#6B7280]/70 font-mono tracking-wider">
+                <span className="ml-3 text-[11px] text-[#6B7280] font-mono">
                   terminal — docker
                 </span>
               </div>
@@ -337,12 +337,13 @@ export function EngineSection(_props: EngineSectionProps) {
                 {/* Blinking cursor */}
                 {!isTypingDone && (
                   <span
-                    className="inline-block text-[#00F0FF] animate-pulse"
-                    style={{ fontSize: '13px', lineHeight: '1.7' }}
+                    className="inline-block text-[#00F0FF]"
+                    style={{ fontSize: '13px', lineHeight: '1.7', animation: 'blink 1.2s step-end infinite' }}
                   >
                     {'\u2588'}
                   </span>
                 )}
+                <style>{`@keyframes blink { 50% { opacity: 0 } }`}</style>
               </div>
             </div>
           </motion.div>

@@ -56,6 +56,17 @@ const tabContents: Record<string, TabContent> = {
         agentColor: 'bg-[#00F0FF]',
         text: 'The GST filing deadline for GSTR-3B this month is March 20th for regular taxpayers. GSTR-1 was due on March 11th. Want me to set a reminder?',
       },
+      {
+        role: 'user',
+        text: 'Yes, remind me 2 days before.',
+      },
+      {
+        role: 'agent',
+        agentInitial: 'W',
+        agentName: 'Weebo',
+        agentColor: 'bg-[#00F0FF]',
+        text: 'Done! Reminder set for March 18th at 9 AM. I\'ll also ping you on Telegram that morning.',
+      },
     ],
   },
   calendar: {
@@ -71,6 +82,17 @@ const tabContents: Record<string, TabContent> = {
         agentName: 'Cal',
         agentColor: 'bg-pink-500',
         text: 'Meeting scheduled with Rahul tomorrow at 3:00 PM. Duration: 30 minutes. I\'ve sent a calendar invite. Your deep work block (2-4 PM) was adjusted to end at 2:45 PM.',
+      },
+      {
+        role: 'user',
+        text: 'Make it 45 minutes and add a Google Meet link.',
+      },
+      {
+        role: 'agent',
+        agentInitial: 'C',
+        agentName: 'Cal',
+        agentColor: 'bg-pink-500',
+        text: 'Updated to 45 minutes (3:00 - 3:45 PM). Google Meet link added and calendar invite resent to Rahul.',
       },
     ],
   },
@@ -88,6 +110,17 @@ const tabContents: Record<string, TabContent> = {
         agentColor: 'bg-violet-500',
         text: 'Draft ready:\n\nSubject: Following Up — Q1 Partnership Proposal\n\nDear Mr. Sharma,\n\nHope this finds you well. Following up on our Q1 proposal sent on March 5th. Would love to discuss next steps at your convenience.\n\nShall I send it?',
       },
+      {
+        role: 'user',
+        text: 'Add a line about the 10% early-bird discount expiring Friday.',
+      },
+      {
+        role: 'agent',
+        agentInitial: 'A',
+        agentName: 'Aria',
+        agentColor: 'bg-violet-500',
+        text: 'Added: "As a reminder, our 10% early-bird discount expires this Friday. Happy to lock it in if you\'re ready to move forward."\n\nUpdated draft ready to send.',
+      },
     ],
   },
   automate: {
@@ -103,6 +136,17 @@ const tabContents: Record<string, TabContent> = {
         agentName: 'Forge',
         agentColor: 'bg-cyan-500',
         text: 'Workflow deployed:\n\nTrigger: New email from contacts tagged \'client\'\nStep 1: Create task in your board (priority: medium)\nStep 2: Extract key details + attach email\nStep 3: Set 2h reminder with summary\n\nEstimated: ~15 emails/week will trigger this.',
+      },
+      {
+        role: 'user',
+        text: 'Can you also add a Slack notification?',
+      },
+      {
+        role: 'agent',
+        agentInitial: 'F',
+        agentName: 'Forge',
+        agentColor: 'bg-cyan-500',
+        text: 'Done! Added Slack #clients channel alert as Step 4. You\'ll get a threaded message with the task link and email summary.',
       },
     ],
   },
@@ -120,6 +164,17 @@ const tabContents: Record<string, TabContent> = {
         agentColor: 'bg-emerald-500',
         text: 'Found it. Your token verification is using the wrong secret — `ACCESS_SECRET` instead of `JWT_SECRET` from env. Also, the expiry check wasn\'t accounting for clock skew. Fixed both. All tests green.',
       },
+      {
+        role: 'user',
+        text: 'Nice. Can you add a refresh token endpoint too?',
+      },
+      {
+        role: 'agent',
+        agentInitial: 'J',
+        agentName: 'Jarvis',
+        agentColor: 'bg-emerald-500',
+        text: 'Added POST /api/auth/refresh with rotation and 30-day expiry. Old refresh tokens are invalidated on use. Tests added — 14/14 passing.',
+      },
     ],
   },
   analyze: {
@@ -135,6 +190,17 @@ const tabContents: Record<string, TabContent> = {
         agentName: 'Pulse',
         agentColor: 'bg-amber-500',
         text: 'Q1 Revenue: ₹12.4L (+18% YoY)\n\nKey trends:\n- Tier-2 cities grew 34% (fastest segment)\n- SaaS churn spiked 8% in Feb — flagged for review\n- Enterprise pipeline up 22%\n\nDashboard updated with full breakdown.',
+      },
+      {
+        role: 'user',
+        text: 'Dig into that Feb churn spike. What happened?',
+      },
+      {
+        role: 'agent',
+        agentInitial: 'P',
+        agentName: 'Pulse',
+        agentColor: 'bg-amber-500',
+        text: '78% of Feb churns were on the Starter plan after the 14-day trial. Top reasons: pricing (42%), missing integrations (31%). Recommendation: extend trial to 21 days for Starter tier.',
       },
     ],
   },
@@ -310,9 +376,9 @@ export function PromptTemplatesSection() {
             <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/5">
               {/* Traffic light dots */}
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
-                <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
-                <div className="w-3 h-3 rounded-full bg-[#28C840]" />
+                <div className="rounded-full bg-[#FF5F57]" style={{ width: 10, height: 10 }} />
+                <div className="rounded-full bg-[#FEBC2E]" style={{ width: 10, height: 10 }} />
+                <div className="rounded-full bg-[#28C840]" style={{ width: 10, height: 10 }} />
               </div>
               <div className="flex-1 text-center">
                 <span className="text-xs font-medium text-[#6B7280]">{currentContent.title}</span>

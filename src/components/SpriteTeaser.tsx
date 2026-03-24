@@ -113,12 +113,11 @@ export function SpriteTeaser() {
           // Draw name label while still in save/restore scope
           c.restore();
         }
-        c.font = 'bold 10px "Space Grotesk", sans-serif';
+        c.font = 'bold 11px "Space Grotesk", sans-serif';
         c.textAlign = 'center';
+        c.textBaseline = 'middle';
         c.fillStyle = a.color;
-        c.globalAlpha = 0.7;
-        c.fillText(a.name, a.x + DW / 2, DH + 16);
-        c.globalAlpha = 1;
+        c.fillText(a.name, a.x + DW / 2, DH + 14);
       }
     }
 
@@ -169,12 +168,11 @@ export function SpriteTeaser() {
           }
 
           // Name label — no save/restore needed, just reset after
-          c.font = 'bold 10px "Space Grotesk", sans-serif';
+          c.font = 'bold 11px "Space Grotesk", sans-serif';
           c.textAlign = 'center';
+          c.textBaseline = 'middle';
           c.fillStyle = a.color;
-          c.globalAlpha = 0.7;
-          c.fillText(a.name, a.x + DW / 2, DH + 16);
-          c.globalAlpha = 1;
+          c.fillText(a.name, a.x + DW / 2, DH + 14);
         }
 
         rafRef.current = requestAnimationFrame(tick);

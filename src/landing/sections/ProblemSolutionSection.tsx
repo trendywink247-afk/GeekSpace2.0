@@ -82,7 +82,7 @@ export function ProblemSolutionSection() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* The Problem */}
           <motion.div
-            className="relative rounded-[20px] border border-white/[0.06] border-l-2 border-l-[#FF2D78]/40 p-6 md:p-8 transition-all duration-300 hover:border-[#FF2D78]/30 hover:shadow-[0_8px_32px_rgba(255,45,120,0.08)]"
+            className="glow-card relative rounded-[20px] border border-white/[0.06] border-l-2 border-l-[#FF2D78]/40 p-6 md:p-8 transition-all duration-300 hover:border-[#FF2D78]/30 hover:shadow-[0_8px_32px_rgba(255,45,120,0.08)]"
             style={{
               background: 'rgba(255,255,255,0.02)',
               backdropFilter: 'blur(12px)',
@@ -126,7 +126,7 @@ export function ProblemSolutionSection() {
 
           {/* The Solution */}
           <motion.div
-            className="relative rounded-[20px] border border-white/[0.06] border-l-2 border-l-[#00F0FF]/40 p-6 md:p-8 transition-all duration-300 hover:border-[#00F0FF]/30 hover:shadow-[0_8px_32px_rgba(0,240,255,0.08)]"
+            className="glow-card relative rounded-[20px] border border-white/[0.06] border-l-2 border-l-[#00F0FF]/40 p-6 md:p-8 transition-all duration-300 hover:border-[#00F0FF]/30 hover:shadow-[0_8px_32px_rgba(0,240,255,0.08)]"
             style={{
               background: 'rgba(255,255,255,0.02)',
               backdropFilter: 'blur(12px)',
@@ -160,7 +160,7 @@ export function ProblemSolutionSection() {
                         boxShadow: '0 0 16px rgba(0,240,255,0.2)',
                       }}
                     >
-                      <CheckCircle2 className="w-4 h-4 text-[#ADFF2F]" />
+                      <CheckCircle2 className="w-4 h-4 text-[#00F0FF]" />
                     </div>
                     <span className="text-sm text-[#F4F6FF] font-medium">{item.text}</span>
                   </motion.div>

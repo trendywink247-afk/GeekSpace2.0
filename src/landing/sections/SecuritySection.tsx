@@ -214,11 +214,11 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                 style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.06)', background: 'rgba(255, 255, 255, 0.02)' }}
               >
                 <div className="flex items-center gap-[7px]">
-                  <div className="w-[10px] h-[10px] rounded-full bg-[#FF5F57]" />
-                  <div className="w-[10px] h-[10px] rounded-full bg-[#FEBC2E]" />
-                  <div className="w-[10px] h-[10px] rounded-full bg-[#28C840]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
                 </div>
-                <span className="ml-3 text-xs text-[#6B7280]/70 font-mono tracking-wider">
+                <span className="ml-3 text-[11px] text-[#6B7280] font-mono">
                   security-audit.sh
                 </span>
               </div>
@@ -233,7 +233,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                   return (
                     <div
                       key={i}
-                      className={`flex items-center justify-between transition-all duration-300 ${
+                      className={`flex items-baseline justify-between min-h-[1.8em] transition-all duration-300 ${
                         isShown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
                       }`}
                       style={{
@@ -247,12 +247,16 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                       {isShown && (
                         <span
                           className={`font-bold ml-3 shrink-0 transition-all duration-300 ${
-                            isResultLine && shakeResult ? 'animate-[headShake_0.4s_ease-in-out]' : ''
-                          }`}
+                            isResultLine ? 'text-2xl font-bold text-[#00F0FF]' : ''
+                          } ${isResultLine && shakeResult ? 'animate-[headShake_0.4s_ease-in-out]' : ''}`}
                           style={{
-                            color: line.resultColor,
-                            textShadow: isFlashing ? `0 0 16px ${line.resultColor}80` : 'none',
-                            fontSize: isResultLine ? '18px' : undefined,
+                            color: isResultLine ? '#00F0FF' : line.resultColor,
+                            textShadow: isResultLine
+                              ? '0 0 20px rgba(0,240,255,0.5)'
+                              : isFlashing
+                                ? `0 0 16px ${line.resultColor}80`
+                                : 'none',
+                            fontSize: isResultLine ? undefined : undefined,
                             fontWeight: isResultLine ? 800 : undefined,
                           }}
                         >
@@ -266,8 +270,8 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                 {/* Blinking cursor */}
                 {visibleLines < scanLines.length && (
                   <span
-                    className="inline-block text-[#00F0FF] animate-pulse mt-1"
-                    style={{ fontSize: '13px' }}
+                    className="inline-block text-[#00F0FF] mt-1"
+                    style={{ fontSize: '13px', animation: 'blink 1.2s step-end infinite' }}
                   >
                     {'\u2588'}
                   </span>
@@ -342,7 +346,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
         </div>
       </div>
 
-      {/* Keyframe for headShake animation */}
+      {/* Keyframes for animations */}
       <style>{`
         @keyframes headShake {
           0% { transform: translateX(0); }
@@ -353,6 +357,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
           75% { transform: translateX(-1px); }
           100% { transform: translateX(0); }
         }
+        @keyframes blink { 50% { opacity: 0 } }
       `}</style>
     </section>
   );

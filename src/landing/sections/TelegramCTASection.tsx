@@ -194,7 +194,7 @@ export function TelegramCTASection() {
 
           {/* Right: Phone mockup with chat */}
           <div className={fadeIn} style={fadeInDelay(200)}>
-            <div className="mx-auto max-w-[360px]">
+            <div className="mx-auto max-w-[320px]">
               {/* Phone frame */}
               <div className="rounded-[2.5rem] border-4 border-white/[0.08] bg-[#0C0C18] overflow-hidden shadow-2xl shadow-black/40">
                 {/* Status bar */}
@@ -269,10 +269,10 @@ export function TelegramCTASection() {
                         className="flex justify-start"
                       >
                         <div className="px-4 py-2.5 rounded-2xl rounded-bl-sm bg-white/[0.05]">
-                          <div className="flex gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce [animation-delay:0ms]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce [animation-delay:150ms]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce [animation-delay:300ms]" />
+                          <div className="flex gap-1 items-center">
+                            <span className="w-[6px] h-[6px] rounded-full bg-white/30 animate-bounce [animation-delay:0ms]" />
+                            <span className="w-[6px] h-[6px] rounded-full bg-white/30 animate-bounce [animation-delay:150ms]" />
+                            <span className="w-[6px] h-[6px] rounded-full bg-white/30 animate-bounce [animation-delay:300ms]" />
                           </div>
                         </div>
                       </motion.div>

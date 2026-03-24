@@ -16,6 +16,16 @@ import { SecuritySection } from './sections/SecuritySection';
 import { ContactSection } from './sections/ContactSection';
 import { FooterSection } from './sections/FooterSection';
 
+function WaveDivider({ flip = false, color = '#0a0a1a' }: { flip?: boolean; color?: string }) {
+  return (
+    <div className={`w-full h-8 md:h-12 overflow-hidden ${flip ? 'rotate-180' : ''}`}>
+      <svg viewBox="0 0 1440 48" preserveAspectRatio="none" className="w-full h-full">
+        <path d="M0,24 C240,48 480,0 720,24 C960,48 1200,0 1440,24 L1440,48 L0,48 Z" fill={color} />
+      </svg>
+    </div>
+  );
+}
+
 export function LandingPage() {
   const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
@@ -39,9 +49,8 @@ export function LandingPage() {
 
   return (
     <div
-      className="relative min-h-screen"
+      className="relative min-h-screen bg-[#06060f]"
       style={{
-        backgroundColor: '#050510',
         scrollBehavior: 'smooth',
       }}
     >
@@ -60,6 +69,7 @@ export function LandingPage() {
       <main className="relative z-10">
         {/* 1. Hero */}
         <HeroSection onEnterDashboard={onEnterDashboard} onWatchDemo={onWatchDemo} />
+        <WaveDivider color="#0a0a1a" />
         {/* 2. ProblemSolution */}
         <ProblemSolutionSection />
         {/* 3. Persona (agents) */}
@@ -76,10 +86,12 @@ export function LandingPage() {
         <TelegramCTASection />
         {/* 9. Testimonials */}
         <TestimonialsSection />
+        <WaveDivider flip color="#0c0c18" />
         {/* 10. Pricing */}
         <PricingPreviewSection onGetStarted={onGetStarted} />
         {/* 11. Security */}
         <SecuritySection onReviewSecurity={onReviewSecurity} />
+        <WaveDivider color="#0a0a1a" />
         {/* 12. Contact */}
         <ContactSection onEnterDashboard={onEnterDashboard} />
         {/* 13. Footer */}
