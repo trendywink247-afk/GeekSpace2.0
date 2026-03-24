@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Mic, MessageSquare, Image, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SpriteTeaser } from '@/components/SpriteTeaser';
 
 const agents = [
   { name: 'Weebo', description: 'Your everyday AI companion for tasks, chat, and quick answers.', color: '#00F0FF' },
@@ -161,6 +162,9 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
             <p className="text-lg text-[#6B7280] mb-8 leading-relaxed">
               Each agent has its own expertise, personality, and domain knowledge -- all working together as your personal AI team.
             </p>
+
+            {/* Sprite Teaser — live animated agents walking */}
+            <SpriteTeaser />
 
             {/* Agent Grid */}
             <div className="grid grid-cols-3 gap-3 mb-8">
