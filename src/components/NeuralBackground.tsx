@@ -42,7 +42,7 @@ export function NeuralBackground() {
         vx: (Math.random() - 0.5) * 0.4,
         vy: (Math.random() - 0.5) * 0.25,
         radius: Math.random() * 2.5 + 1.5,
-        hue: Math.random() > 0.5 ? 263 : 187, // violet or cyan
+        hue: (() => { const r = Math.random(); return r < 0.6 ? 263 : r < 0.9 ? 160 : 40; })(), // 60% violet, 30% emerald, 10% gold
         life: Math.random() * maxLife,
         maxLife,
       };
@@ -75,24 +75,32 @@ export function NeuralBackground() {
         const connectionDistance = 140;
         const t = timeRef.current;
 
-        // Aurora wave bands
-        const waveY1 = canvas.height * 0.3 + Math.sin(t * 0.5) * 80;
-        const waveY2 = canvas.height * 0.6 + Math.cos(t * 0.3) * 60;
+        // Aurora wave bands — shift more noticeably with time
+        const waveY1 = canvas.height * 0.3 + Math.sin(t * 0.7) * 100;
+        const waveY2 = canvas.height * 0.6 + Math.cos(t * 0.5) * 80;
+        const waveY3 = canvas.height * 0.45 + Math.sin(t * 0.4 + 1.5) * 90;
 
-        // Draw subtle aurora bands
-        const auroraGrad1 = ctx.createLinearGradient(0, waveY1 - 100, 0, waveY1 + 100);
+        // Draw vivid aurora bands
+        const auroraGrad1 = ctx.createLinearGradient(0, waveY1 - 120, 0, waveY1 + 120);
         auroraGrad1.addColorStop(0, 'transparent');
-        auroraGrad1.addColorStop(0.5, 'rgba(139, 92, 246, 0.012)');
+        auroraGrad1.addColorStop(0.5, 'rgba(139, 92, 246, 0.05)');
         auroraGrad1.addColorStop(1, 'transparent');
         ctx.fillStyle = auroraGrad1;
-        ctx.fillRect(0, waveY1 - 100, canvas.width, 200);
+        ctx.fillRect(0, waveY1 - 120, canvas.width, 240);
 
-        const auroraGrad2 = ctx.createLinearGradient(0, waveY2 - 80, 0, waveY2 + 80);
+        const auroraGrad2 = ctx.createLinearGradient(0, waveY2 - 100, 0, waveY2 + 100);
         auroraGrad2.addColorStop(0, 'transparent');
-        auroraGrad2.addColorStop(0.5, 'rgba(34, 211, 238, 0.008)');
+        auroraGrad2.addColorStop(0.5, 'rgba(34, 211, 238, 0.05)');
         auroraGrad2.addColorStop(1, 'transparent');
         ctx.fillStyle = auroraGrad2;
-        ctx.fillRect(0, waveY2 - 80, canvas.width, 160);
+        ctx.fillRect(0, waveY2 - 100, canvas.width, 200);
+
+        const auroraGrad3 = ctx.createLinearGradient(0, waveY3 - 90, 0, waveY3 + 90);
+        auroraGrad3.addColorStop(0, 'transparent');
+        auroraGrad3.addColorStop(0.5, 'rgba(245, 158, 11, 0.03)');
+        auroraGrad3.addColorStop(1, 'transparent');
+        ctx.fillStyle = auroraGrad3;
+        ctx.fillRect(0, waveY3 - 90, canvas.width, 180);
 
         // Update and draw particles
         particles.forEach((p, i) => {
@@ -101,7 +109,7 @@ export function NeuralBackground() {
             p.life = 0;
             p.x = Math.random() * canvas.width;
             p.y = Math.random() * canvas.height;
-            p.hue = Math.random() > 0.5 ? 263 : 187;
+            const r = Math.random(); p.hue = r < 0.6 ? 263 : r < 0.9 ? 160 : 40;
           }
 
           // Mouse repulsion — gentle push within 150px
@@ -134,8 +142,9 @@ export function NeuralBackground() {
 
           // Draw particle with glow
           const isViolet = p.hue === 263;
-          const color = isViolet ? `rgba(139, 92, 246, ${particleAlpha})` : `rgba(34, 211, 238, ${particleAlpha * 0.8})`;
-          const glowColor = isViolet ? `rgba(139, 92, 246, ${particleAlpha * 0.15})` : `rgba(34, 211, 238, ${particleAlpha * 0.1})`;
+          const isGold = p.hue === 40;
+          const color = isViolet ? `rgba(139, 92, 246, ${particleAlpha})` : isGold ? `rgba(245, 158, 11, ${particleAlpha * 0.9})` : `rgba(34, 211, 238, ${particleAlpha * 0.8})`;
+          const glowColor = isViolet ? `rgba(139, 92, 246, ${particleAlpha * 0.15})` : isGold ? `rgba(245, 158, 11, ${particleAlpha * 0.12})` : `rgba(34, 211, 238, ${particleAlpha * 0.1})`;
 
           // Glow
           ctx.beginPath();
@@ -158,14 +167,13 @@ export function NeuralBackground() {
 
               if (distance < connectionDistance) {
                 const lineAlpha = (1 - distance / connectionDistance) * 0.15 * alpha;
-                const mixViolet = p.hue === 263 || particles[j].hue === 263;
-                const mixCyan = p.hue === 187 || particles[j].hue === 187;
+                const hasViolet = p.hue === 263 || particles[j].hue === 263;
+                const hasGold = p.hue === 40 || particles[j].hue === 40;
 
                 let lineColor: string;
-                if (mixViolet && mixCyan) {
-                  // Cross-color connection — violet tint
-                  lineColor = `rgba(139, 92, 246, ${lineAlpha})`;
-                } else if (mixViolet) {
+                if (hasGold) {
+                  lineColor = `rgba(245, 158, 11, ${lineAlpha})`;
+                } else if (hasViolet) {
                   lineColor = `rgba(139, 92, 246, ${lineAlpha})`;
                 } else {
                   lineColor = `rgba(34, 211, 238, ${lineAlpha})`;
@@ -203,10 +211,15 @@ export function NeuralBackground() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 z-0"
-      style={{ background: '#06061a' }}
-    />
+    <div className="absolute inset-0 z-0">
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0"
+        style={{ background: '#06061a' }}
+      />
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: 'radial-gradient(ellipse at 50% 0%, rgba(139, 92, 246, 0.03), transparent 70%)',
+      }} />
+    </div>
   );
 }

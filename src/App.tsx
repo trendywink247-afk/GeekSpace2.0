@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { LandingPage } from './landing/LandingPage';
@@ -15,6 +15,7 @@ import { DocsPage } from './pages/DocsPage';
 import { ConnectPage } from './pages/ConnectPage';
 import { InvitePage } from './pages/InvitePage';
 import OAuthCallbackPage from './onboarding/OAuthCallbackPage';
+const LogoStudioPage = lazy(() => import('./logo-studio/LogoStudioPage').then(m => ({ default: m.LogoStudioPage })));
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -50,6 +51,11 @@ function App() {
           <Route path="/docs" element={<DocsPage />} />
           <Route path="/connect/:token" element={<ConnectPage />} />
           <Route path="/invite" element={<InvitePage />} />
+          <Route path="/logo-studio" element={
+            <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" /></div>}>
+              <LogoStudioPage />
+            </Suspense>
+          } />
           <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
           {/* Onboarding — only show if logged in but not completed */}

@@ -8,7 +8,8 @@ function applyThemeToDOM(mode: ThemeMode) {
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     : mode;
   document.documentElement.classList.remove('dark', 'light');
-  if (effective === 'dark') document.documentElement.classList.add('dark');
+  document.documentElement.classList.add(effective);
+  document.documentElement.setAttribute('data-theme', effective);
 }
 
 interface ThemeStore {

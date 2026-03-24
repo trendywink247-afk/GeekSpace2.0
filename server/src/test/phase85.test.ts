@@ -69,20 +69,7 @@ describe('A3/A5: Root container overflow protection', () => {
 // ─── B1: Landing hero mobile fixes ────────────────────────────────────────
 
 describe('B1: Hero section mobile decorative element visibility', () => {
-  it('spinning dashed ring is hidden on mobile (hidden sm:block)', () => {
-    const content = readSrc('landing/sections/HeroSection.tsx');
-    expect(content).toContain('hidden sm:block');
-  });
-
-  it('orbiting particles are hidden on mobile (hidden sm:block)', () => {
-    const content = readSrc('landing/sections/HeroSection.tsx');
-    // particles div has hidden sm:block
-    const particleMatches = content.match(/hidden sm:block.*absolute w-2 h-2/s);
-    expect(particleMatches || content).toBeTruthy();
-    // At least one hidden sm:block for dashed rings
-    const hiddenCount = (content.match(/hidden sm:block/g) || []).length;
-    expect(hiddenCount).toBeGreaterThanOrEqual(2);
-  });
+  // Tests for 'hidden sm:block' removed — Session 10 redesign removed decorative rings/particles
 
   it('AUTONOMOUS AI PLATFORM badge has relative z-10', () => {
     const content = readSrc('landing/sections/HeroSection.tsx');

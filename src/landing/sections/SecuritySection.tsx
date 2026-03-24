@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Lock, Server, Unlink, Fingerprint } from 'lucide-react';
+import { BlurFade } from '@/components/magicui/blur-fade';
+import { MagicCard } from '@/components/magicui/magic-card';
 
 const securityBadges = [
   {
@@ -150,32 +152,34 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 w-full">
         {/* Centered Header */}
-        <motion.div
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
-        >
-          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#8B5CF6]/70 mb-4 block">
-            ENTERPRISE-GRADE SECURITY
-          </span>
-
-          <h2
-            className="font-bold mb-6"
-            style={{
-              fontFamily: 'Syne, sans-serif',
-              textWrap: 'balance',
-              fontSize: 'clamp(2.25rem, 3vw + 0.5rem, 3.5rem)',
-            }}
+        <BlurFade delay={0.1}>
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
           >
-            Your Data. Your Server. <span className="text-gradient">Period.</span>
-          </h2>
+            <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#8B5CF6]/70 mb-4 block">
+              ENTERPRISE-GRADE SECURITY
+            </span>
 
-          <p className="text-lg text-[#94A3B8] max-w-2xl mx-auto leading-relaxed">
-            No cloud. No third-party access. Full sovereignty over your AI and your data.
-          </p>
-        </motion.div>
+            <h2
+              className="font-bold mb-6"
+              style={{
+                fontFamily: 'Syne, sans-serif',
+                textWrap: 'balance',
+                fontSize: 'clamp(2.25rem, 3vw + 0.5rem, 3.5rem)',
+              }}
+            >
+              Your Data. Your Server. <span className="text-gradient">Period.</span>
+            </h2>
+
+            <p className="text-lg text-[#94A3B8] max-w-2xl mx-auto leading-relaxed">
+              No cloud. No third-party access. Full sovereignty over your AI and your data.
+            </p>
+          </motion.div>
+        </BlurFade>
 
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left: Premium Terminal Audit */}
@@ -266,29 +270,36 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
 
           {/* Right: Security Badges + CTA */}
           <div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-              {securityBadges.map((badge, i) => (
-                <motion.div
-                  key={badge.label}
-                  custom={i}
-                  variants={badgeVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, amount: 0.2 }}
-                  className="group p-5 rounded-xl bg-[#0e0e1c] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300 hover:-translate-y-0.5"
-                  style={{ borderLeft: `2px solid ${badge.color}` }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
-                    style={{ background: `${badge.color}1a` }}
+            <BlurFade delay={0.3}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                {securityBadges.map((badge, i) => (
+                  <motion.div
+                    key={badge.label}
+                    custom={i}
+                    variants={badgeVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.2 }}
                   >
-                    <badge.icon className="w-5 h-5" style={{ color: badge.color }} />
-                  </div>
-                  <div className="font-semibold text-[#F1F5F9] mb-1 text-[15px]">{badge.label}</div>
-                  <div className="text-sm text-[#6B7280] leading-relaxed">{badge.description}</div>
-                </motion.div>
-              ))}
-            </div>
+                    <MagicCard
+                      gradientColor={badge.color}
+                      className="group p-5 rounded-xl bg-[#0e0e1c] hover:border-white/[0.12] transition-all duration-300 hover:-translate-y-0.5"
+                    >
+                      <div style={{ borderLeft: `2px solid ${badge.color}`, paddingLeft: '12px' }}>
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
+                          style={{ background: `${badge.color}1a` }}
+                        >
+                          <badge.icon className="w-5 h-5" style={{ color: badge.color }} />
+                        </div>
+                        <div className="font-semibold text-[#F1F5F9] mb-1 text-[15px]">{badge.label}</div>
+                        <div className="text-sm text-[#6B7280] leading-relaxed">{badge.description}</div>
+                      </div>
+                    </MagicCard>
+                  </motion.div>
+                ))}
+              </div>
+            </BlurFade>
 
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -305,7 +316,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                     navigate('/docs');
                   }
                 }}
-                className="bg-gradient-to-r from-[#8B5CF6] to-[#22D3EE] text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-[0_4px_24px_rgba(139,92,246,0.25)] transition-all duration-300 inline-flex items-center gap-2 group"
+                className="bg-gradient-to-r from-[#8B5CF6] to-[#10B981] text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-[0_4px_24px_rgba(139,92,246,0.25)] transition-all duration-300 inline-flex items-center gap-2 group"
               >
                 Review Security
                 <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />

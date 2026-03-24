@@ -19,7 +19,7 @@ const SCROLL_EXPAND_MAX = 0.05; // scale 1.0 to 1.05
 const PULSE_CYCLE_SECONDS = 9; // slow 8-10s cycle
 
 const COL_INNER = new THREE.Color('#8B5CF6');  // violet — inner particles
-const COL_MID = new THREE.Color('#22D3EE');    // cyan — mid particles
+const COL_MID = new THREE.Color('#10B981');    // emerald — mid particles
 const COL_OUTER = new THREE.Color('#F59E0B');  // gold — outer halo
 
 // Brain surface generator
@@ -358,7 +358,7 @@ const ORBS = [
     radius: 0.05,
   },
   {
-    color: '#22D3EE',
+    color: '#10B981',
     basePosition: [-3, -1, 1] as [number, number, number],
     speed: 0.18,
     amplitude: 0.4,

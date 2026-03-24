@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BlurFade } from '@/components/magicui/blur-fade';
 
 const timelineEntries = [
   {
@@ -18,7 +19,7 @@ const timelineEntries = [
   {
     time: '11:00 AM',
     agent: 'Jarvis',
-    color: '#00F0FF',
+    color: '#10B981',
     message: 'Auth middleware bug fixed. Root cause: expired token not triggering refresh. 0 errors, all tests green.',
   },
   {
@@ -89,6 +90,7 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
 
       <div className="relative z-10 max-w-6xl mx-auto px-6">
         {/* Header */}
+        <BlurFade delay={0.1}>
         <motion.div
           className="text-center mb-14 md:mb-20"
           initial={{ opacity: 0, y: 24 }}
@@ -114,15 +116,17 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
             From sunrise to sunset, your AI team handles it all &mdash; so you can focus on what matters.
           </p>
         </motion.div>
+        </BlurFade>
 
         {/* Timeline */}
+        <BlurFade delay={0.3}>
         <div className="relative">
           {/* Vertical line -- always left-aligned on mobile, centered on md+ */}
           <div
             className="absolute left-[19px] md:left-1/2 md:-translate-x-1/2 top-0 bottom-0 w-px"
             style={{
               background:
-                'linear-gradient(to bottom, transparent 0%, rgba(139,92,246,0.20) 10%, rgba(139,92,246,0.20) 90%, transparent 100%)',
+                'linear-gradient(to bottom, transparent 0%, rgba(139,92,246,0.35) 10%, rgba(139,92,246,0.35) 90%, transparent 100%)',
             }}
           />
 
@@ -179,9 +183,9 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
                     transition={{ delay: i * 0.08 }}
                   >
                     {/* Card */}
-                    <div className="rounded-xl p-5 bg-[#0e0e1c] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300">
+                    <div className="rounded-xl p-6 bg-[#0e0e1c] border border-white/[0.08] hover:border-white/[0.15] transition-all duration-300">
                       <div className={`flex items-center gap-3 mb-2 ${!isRight ? 'md:justify-end' : ''}`}>
-                        <span className="flex items-center gap-1.5 font-mono text-xs text-[#6B7280]">
+                        <span className="flex items-center gap-1.5 font-mono text-xs text-[#94A3B8]">
                           <Clock className="w-3 h-3" />
                           {entry.time}
                         </span>
@@ -205,6 +209,7 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
             })}
           </div>
         </div>
+        </BlurFade>
 
         {/* CTA */}
         <motion.div
@@ -216,7 +221,7 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
         >
           <Button
             onClick={onBrowseDirectory}
-            className="relative bg-gradient-to-r from-[#8B5CF6] to-[#22D3EE] hover:from-[#8B5CF6]/90 hover:to-[#22D3EE]/90 text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[rgba(139,92,246,0.25)] group"
+            className="relative bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] hover:from-[#8B5CF6]/90 hover:to-[#F59E0B]/90 text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-[0_4px_24px_rgba(245,158,11,0.25)] group"
           >
             Start Your Day &mdash; Free Forever
             <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />

@@ -12,7 +12,7 @@ interface Activity {
 
 const activities: Activity[] = [
   { id: 1, agent: 'Cal', action: 'Reminder: Team standup in 15 minutes', time: 'now', color: '#4ECDC4', status: 'in-progress' },
-  { id: 2, agent: 'Weebo', action: 'Answered 3 questions about GST filing', time: '2s ago', color: '#00F0FF', status: 'completed' },
+  { id: 2, agent: 'Weebo', action: 'Answered 3 questions about GST filing', time: '2s ago', color: '#10B981', status: 'completed' },
   { id: 3, agent: 'Cal', action: 'Scheduled meeting with Rahul at 3 PM', time: '8s ago', color: '#4ECDC4', status: 'completed' },
   { id: 4, agent: 'Aria', action: 'Drafting social media banner copy', time: '12s ago', color: '#FF2D78', status: 'in-progress' },
   { id: 5, agent: 'Forge', action: 'Deployed REST API endpoint to production', time: '22s ago', color: '#FFB800', status: 'completed' },

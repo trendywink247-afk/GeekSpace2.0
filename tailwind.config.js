@@ -30,9 +30,13 @@ module.exports = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
           violet: '#8B5CF6',
-          cyan: '#22D3EE',
+          cyan: '#10B981',
           gold: '#F59E0B',
           rose: '#F43F5E',
+        },
+        cta: {
+          from: '#8B5CF6',
+          to: '#F59E0B',
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -53,7 +57,7 @@ module.exports = {
           ring: "hsl(var(--sidebar-ring))",
         },
         agentin: {
-          cyan: '#00F0FF',
+          cyan: '#10B981',
           magenta: '#FF2D78',
           violet: '#8B5CF6',
           black: '#06060f',
@@ -91,11 +95,11 @@ module.exports = {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-        'glow-cyan': '0 0 20px rgba(0, 240, 255, 0.15), 0 0 40px rgba(0, 240, 255, 0.05)',
+        'glow-cyan': '0 0 20px rgba(16, 185, 129, 0.15), 0 0 40px rgba(16, 185, 129, 0.05)',
         'glow-magenta': '0 0 20px rgba(255, 45, 120, 0.15), 0 0 40px rgba(255, 45, 120, 0.05)',
         'glow-dual': '0 0 20px rgba(0, 240, 255, 0.12), 0 0 40px rgba(255, 45, 120, 0.08)',
         'glow-lime': '0 0 20px rgba(173, 255, 47, 0.15), 0 0 40px rgba(173, 255, 47, 0.05)',
-        'glow-gold': '0 0 20px rgba(255, 215, 0, 0.15), 0 0 40px rgba(255, 215, 0, 0.05)',
+        'glow-gold': '0 0 20px rgba(245, 158, 11, 0.15), 0 0 40px rgba(245, 158, 11, 0.05)',
       },
       fontFamily: {
         heading: ['Syne', 'sans-serif'],
@@ -141,8 +145,8 @@ module.exports = {
           "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
         },
         orbit: {
-          from: { transform: "rotate(0deg)" },
-          to: { transform: "rotate(360deg)" },
+          "0%": { transform: "rotate(0deg) translateY(calc(var(--radius, 160px) * -1)) rotate(0deg)" },
+          "100%": { transform: "rotate(360deg) translateY(calc(var(--radius, 160px) * -1)) rotate(-360deg)" },
         },
         "pulse-lime": {
           "0%, 100%": { boxShadow: "0 0 20px rgba(173, 255, 47, 0.2)" },
@@ -154,7 +158,8 @@ module.exports = {
           "100%": { transform: "translateY(0) rotate(0deg)" },
         },
         "border-rotate": {
-          to: { "--border-angle": "360deg" },
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
         },
         "shimmer-sweep": {
           "0%, 100%": { transform: "rotate(25deg) translateX(-100%)" },
@@ -163,6 +168,10 @@ module.exports = {
         "marquee-scroll": {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(-50%)" },
+        },
+        "marquee-scroll-v": {
+          from: { transform: "translateY(0)" },
+          to: { transform: "translateY(-50%)" },
         },
         "aurora-shift": {
           "0%": { backgroundPosition: "0% 50%" },
@@ -210,6 +219,7 @@ module.exports = {
         "border-rotate": "border-rotate 4s linear infinite",
         "shimmer-sweep": "shimmer-sweep 3s ease-in-out infinite",
         "marquee-scroll": "marquee-scroll 40s linear infinite",
+        "marquee-scroll-v": "marquee-scroll-v 40s linear infinite",
         "aurora-shift": "aurora-shift 15s ease-in-out infinite alternate",
         "gradient-text-flow": "gradient-text-flow 6s ease-in-out infinite",
         morph: "morph 8s ease-in-out infinite",

@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Send,
 } from 'lucide-react';
+import { BlurFade } from '@/components/magicui/blur-fade';
 
 interface TabItem {
   id: string;
@@ -271,8 +272,6 @@ export function PromptTemplatesSection() {
       setShowAgent(true);
     }, 300);
     return () => clearTimeout(timer);
-    // Only run on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -287,6 +286,7 @@ export function PromptTemplatesSection() {
 
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
+        <BlurFade delay={0.1}>
         <div className="text-center mb-16">
           <motion.span
             initial={prefersReducedMotion ? undefined : { opacity: 0, y: 24 }}
@@ -303,11 +303,9 @@ export function PromptTemplatesSection() {
             viewport={{ once: true, amount: 0.2 }}
             transition={prefersReducedMotion ? undefined : { delay: 0.1 }}
             className="font-bold mb-4"
-            style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(2.25rem, 3vw + 0.5rem, 3.5rem)', textWrap: 'balance' }}
+            style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(2.25rem, 3vw + 0.5rem, 3.5rem)', textWrap: 'balance' } as React.CSSProperties}
           >
-            <span className="text-gradient">
-              Everything You Need. Nothing You Don't.
-            </span>
+            See Agentin <span className="text-gradient">In Action</span>
           </motion.h2>
 
           <motion.p
@@ -315,12 +313,14 @@ export function PromptTemplatesSection() {
             whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={prefersReducedMotion ? undefined : { delay: 0.2 }}
-            className="text-lg text-[#94A3B8] max-w-2xl mx-auto"
+            className="text-lg text-[#B8C4D4] max-w-2xl mx-auto"
           >
-            From quick conversations to full automation pipelines -- one prompt is all it takes.
+            Watch your AI team handle a real workflow &mdash; from request to completion.
           </motion.p>
         </div>
+        </BlurFade>
 
+        <BlurFade delay={0.3}>
         {/* Tab Pills with layoutId animated indicator */}
         <motion.div
           initial={prefersReducedMotion ? undefined : { opacity: 0, y: 24 }}
@@ -365,11 +365,11 @@ export function PromptTemplatesSection() {
           whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={prefersReducedMotion ? undefined : { delay: 0.4 }}
-          className="max-w-2xl mx-auto relative"
+          className="max-w-4xl mx-auto relative"
         >
           {/* Blurred gradient orb behind chat window */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-[#8B5CF6]/[0.05] blur-[100px] pointer-events-none" />
-          <div className="relative rounded-2xl overflow-hidden bg-[#0a0a24] border border-white/[0.06]">
+          <div className="relative rounded-2xl overflow-hidden bg-[#0a0a24] border border-white/[0.08]">
             {/* macOS-style window header */}
             <div className="flex items-center gap-3 px-5 py-3.5 bg-white/[0.02] border-b border-white/[0.04]">
               {/* Traffic light dots */}
@@ -378,8 +378,12 @@ export function PromptTemplatesSection() {
                 <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E] opacity-60" />
                 <div className="w-2.5 h-2.5 rounded-full bg-[#28C840] opacity-60" />
               </div>
-              <div className="flex-1 text-center">
-                <span className="text-xs font-medium text-[#6B7280]">{currentContent.title}</span>
+              <div className="flex-1 flex items-center justify-center gap-2">
+                <span className="text-xs font-semibold text-[#CBD5E1]">Agentin Chat</span>
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] inline-block" />
+                  <span className="text-[10px] text-[#22C55E]/80 font-medium">Online</span>
+                </span>
               </div>
               <span className="text-[10px] text-[#6B7280]/50 font-mono">just now</span>
             </div>
@@ -471,13 +475,13 @@ export function PromptTemplatesSection() {
           transition={prefersReducedMotion ? undefined : { delay: 0.5 }}
           className="text-center mt-16"
         >
-          <p className="text-[#94A3B8] mb-6">
+          <p className="text-[#B8C4D4] mb-6">
             Ask anything... Or just start typing. Agentin figures out what you need.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <button
               onClick={() => navigate('/login')}
-              className="px-8 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#22D3EE] hover:from-[#8B5CF6]/90 hover:to-[#22D3EE]/90 text-white rounded-full font-semibold transition-all duration-200 shadow-lg shadow-[#8B5CF6]/20 hover:shadow-[#8B5CF6]/30 hover:scale-105"
+              className="px-8 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] hover:from-[#8B5CF6]/90 hover:to-[#F59E0B]/90 text-white rounded-full font-semibold transition-all duration-200 shadow-lg shadow-[#8B5CF6]/20 hover:shadow-[0_4px_24px_rgba(245,158,11,0.25)] hover:scale-105"
             >
               Start Creating
             </button>
@@ -493,6 +497,7 @@ export function PromptTemplatesSection() {
             </button>
           </div>
         </motion.div>
+        </BlurFade>
       </div>
     </section>
   );

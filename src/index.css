@@ -28,7 +28,7 @@
     --radius: 0.75rem;
 
     /* Agentin Brand Tokens */
-    --agentin-cyan: #00F0FF;
+    --agentin-cyan: #10B981;
     --agentin-magenta: #FF2D78;
     --agentin-violet: #8B5CF6;
     --agentin-black: #06060f;
@@ -59,9 +59,13 @@
     --layer-card: #0f0f2a;
     --layer-overlay: #15153a;
 
+    /* CTA Gradient Tokens */
+    --cta-from: #8B5CF6;
+    --cta-to: #F59E0B;
+
     /* Accent Glows */
     --glow-violet: rgba(139, 92, 246, 0.15);
-    --glow-cyan: rgba(0, 240, 255, 0.12);
+    --glow-cyan: rgba(16, 185, 129, 0.12);
     --glow-gold: rgba(245, 158, 11, 0.12);
     --glow-rose: rgba(244, 63, 94, 0.10);
 
@@ -84,6 +88,11 @@
     --border-hover: rgba(255, 255, 255, 0.12);
     --border-active: rgba(255, 255, 255, 0.18);
 
+    /* Glass — Dark Mode */
+    --glass-bg: rgba(0, 0, 0, 0.40);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+
     /* Easing */
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -92,6 +101,71 @@
     --duration-fast: 150ms;
     --duration-normal: 300ms;
     --duration-slow: 600ms;
+
+    /* Landing Page Colors (dark mode defaults) */
+    --lp-bg: #06061a;
+    --lp-bg-raised: #0a0a24;
+    --lp-bg-card: #0f0f2a;
+    --lp-bg-card-hover: #15153a;
+    --lp-text-primary: #F1F5F9;
+    --lp-text-secondary: #B8C4D4;
+    --lp-text-muted: #94A3B8;
+    --lp-text-dim: #6B7280;
+    --lp-border: rgba(255, 255, 255, 0.06);
+    --lp-border-hover: rgba(255, 255, 255, 0.12);
+    --lp-glass-bg: rgba(6, 6, 26, 0.7);
+    --lp-glass-border: rgba(255, 255, 255, 0.06);
+    --lp-card-shadow: none;
+    --lp-dot-grid-opacity: 0.07;
+  }
+
+  .light {
+    /* Depth Layers — Light Mode */
+    --layer-void: #F0F2F8;
+    --layer-base: #F8F9FC;
+    --layer-raised: #FFFFFF;
+    --layer-card: #F1F3F8;
+    --layer-overlay: #E8EBF2;
+
+    /* Accent Glows — Light Mode */
+    --glow-violet: rgba(139, 92, 246, 0.10);
+    --glow-cyan: rgba(16, 185, 129, 0.08);
+    --glow-gold: rgba(245, 158, 11, 0.08);
+    --glow-rose: rgba(244, 63, 94, 0.06);
+
+    /* Text Hierarchy — Light Mode */
+    --text-primary: #1E293B;
+    --text-secondary: #475569;
+    --text-muted: #64748B;
+    --text-dim: #94A3B8;
+
+    /* Surfaces — Light Mode */
+    --surface-1: rgba(0, 0, 0, 0.02);
+    --surface-2: rgba(0, 0, 0, 0.04);
+    --surface-3: rgba(0, 0, 0, 0.06);
+    --surface-4: rgba(0, 0, 0, 0.08);
+    --surface-5: rgba(0, 0, 0, 0.12);
+
+    /* Glass — Light Mode */
+    --glass-bg: rgba(255, 255, 255, 0.70);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+
+    /* Landing Page Colors — Light Mode */
+    --lp-bg: #FAFAF9;
+    --lp-bg-raised: #FFFFFF;
+    --lp-bg-card: #FFFFFF;
+    --lp-bg-card-hover: #F5F5F4;
+    --lp-text-primary: #1a1a2e;
+    --lp-text-secondary: #475569;
+    --lp-text-muted: #64748B;
+    --lp-text-dim: #94A3B8;
+    --lp-border: rgba(0, 0, 0, 0.08);
+    --lp-border-hover: rgba(0, 0, 0, 0.15);
+    --lp-glass-bg: rgba(250, 250, 249, 0.8);
+    --lp-glass-border: rgba(0, 0, 0, 0.06);
+    --lp-card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --lp-dot-grid-opacity: 0.04;
   }
 }
 
@@ -127,9 +201,15 @@
 @layer utilities {
   /* ─── Text Gradients ─── */
   .text-gradient {
-    background: linear-gradient(135deg, #8B5CF6, #22D3EE);
+    background: linear-gradient(135deg, #8B5CF6, #10B981);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+  .cta-gradient {
+    background: linear-gradient(135deg, #8B5CF6 0%, #F59E0B 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   .text-gradient-violet {
     @apply bg-clip-text text-transparent;
@@ -436,6 +516,215 @@
   .safe-area-pr {
     padding-right: env(safe-area-inset-right, 0px);
   }
+}
+
+/* ─── Light Mode — Full Override ─── */
+
+/* shadcn design system overrides for light mode */
+html.light,
+[data-theme="light"] {
+  /* Base */
+  --background: 40 20% 98%;
+  --foreground: 240 10% 10%;
+
+  /* Surfaces */
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 10%;
+
+  /* Primary (violet stays) */
+  --primary: 263 70% 65%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary */
+  --secondary: 240 5% 94%;
+  --secondary-foreground: 240 6% 10%;
+
+  /* Muted */
+  --muted: 240 5% 94%;
+  --muted-foreground: 240 4% 46%;
+
+  /* Borders */
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 263 70% 65%;
+
+  /* Accent */
+  --accent: 240 5% 94%;
+  --accent-foreground: 240 6% 10%;
+}
+
+/* ─── Landing Page Light Mode Overrides ─── */
+
+html.light {
+  background-color: var(--lp-bg);
+}
+
+/* Text gradient — deeper violet/emerald for contrast on white */
+html.light .text-gradient {
+  background: linear-gradient(135deg, #7C3AED 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* CTA gradient stays vibrant in light mode */
+html.light .cta-gradient {
+  background: linear-gradient(135deg, #7C3AED 0%, #D97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Neural / canvas background nearly invisible in light mode */
+html.light canvas {
+  opacity: 0.03 !important;
+}
+
+html.light .neural-bg {
+  opacity: 0.03;
+}
+
+/* Noise texture — barely visible in light mode */
+html.light .noise-overlay::after {
+  opacity: 0.015;
+}
+
+html.light [style*="feTurbulence"] {
+  opacity: 0.015;
+}
+
+/* Inline dark backgrounds → use custom property */
+html.light [style*="background-color: rgb(6, 6, 26)"],
+html.light [style*="backgroundColor"] {
+  background-color: var(--lp-bg) !important;
+}
+
+/* White / light text needs to be dark in light mode */
+html.light .text-white {
+  color: var(--lp-text-primary);
+}
+
+html.light .text-white\/60,
+html.light .text-white\/75 {
+  color: var(--lp-text-muted);
+}
+
+/* Glass nav for light mode */
+html.light .glass-nav {
+  background: var(--lp-glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom-color: var(--lp-glass-border);
+}
+
+/* Glass cards adapt to light mode */
+html.light .glass-card,
+html.light .glass-card-v2,
+html.light .glass-card-v3 {
+  background: var(--lp-glass-bg);
+  border-color: var(--lp-glass-border);
+  box-shadow: var(--lp-card-shadow);
+}
+
+/* Surface cards adapt to light mode */
+html.light .surface-card {
+  background: var(--lp-bg-card);
+  border-color: var(--lp-border);
+  box-shadow: var(--lp-card-shadow);
+}
+
+html.light .surface-card:hover {
+  border-color: var(--lp-border-hover);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.08),
+              0 0 0 1px rgba(139, 92, 246, 0.12);
+}
+
+/* Scrollbar — light mode */
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #F5F5F4;
+}
+
+/* Selection — light mode */
+html.light ::selection {
+  background: rgba(139, 92, 246, 0.2);
+  color: #1a1a2e;
+}
+
+/* Scanlines — hide in light mode */
+html.light .scanlines::before {
+  display: none;
+}
+
+/* Dot grid — reduced opacity in light mode */
+html.light .dot-grid,
+html.light .dot-grid-masked {
+  opacity: var(--lp-dot-grid-opacity);
+}
+
+/* Aurora mesh — subtle in light mode */
+html.light .aurora-mesh,
+html.light .aurora-bg {
+  opacity: 0.3;
+}
+
+/* Section label color — light mode */
+html.light .section-label {
+  color: rgba(16, 185, 129, 0.8);
+}
+
+/* Glow effects — toned down in light mode */
+html.light .glow-accent {
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.08), 0 0 80px rgba(139, 92, 246, 0.03);
+}
+
+html.light .pulse-glow {
+  animation: none;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.06);
+}
+
+/* Neon effects — disabled in light mode */
+html.light .neon-text {
+  animation: none;
+  text-shadow: none;
+}
+
+/* Grid distort — inverted for light mode */
+html.light .grid-distort {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+}
+
+html.light .cyber-grid {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+}
+
+/* ─── Visibility Utilities ─── */
+
+/* Hide in light mode */
+html.light .dark-only {
+  display: none;
+}
+
+/* Show only in light mode */
+.light-only {
+  display: none;
+}
+
+html.light .light-only {
+  display: block;
 }
 
 /* ─── Custom Scrollbar ─── */

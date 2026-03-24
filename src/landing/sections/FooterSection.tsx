@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { BlurFade } from '@/components/magicui/blur-fade';
 
 const productLinks = [
   { label: 'Features', to: '/#templates' },
@@ -60,7 +61,7 @@ function FooterLink({
   children: React.ReactNode;
 }) {
   const cls =
-    'text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none rounded-sm';
+    'text-sm text-[#94A3B8] hover:text-[#F1F5F9] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none rounded-sm';
 
   if (href) {
     return (
@@ -83,13 +84,14 @@ export function FooterSection() {
       id="footer"
       className="bg-[#030308] border-t border-white/[0.04]"
     >
+      <BlurFade delay={0.1}>
       <div className="max-w-6xl mx-auto pt-16 pb-8 px-6">
         {/* 4-column grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 lg:gap-12 mb-12">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2.5 mb-3">
-              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#8B5CF6] to-[#22D3EE] flex items-center justify-center text-white text-sm font-bold">
+              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#8B5CF6] to-[#F59E0B] flex items-center justify-center text-white text-sm font-bold">
                 A
               </span>
               <span
@@ -100,7 +102,7 @@ export function FooterSection() {
                 <span className="text-[#8B5CF6]">in</span>
               </span>
             </div>
-            <p className="text-sm text-[#6B7280] leading-relaxed max-w-[200px]">
+            <p className="text-sm text-[#94A3B8] leading-relaxed max-w-[200px]">
               Your AI, Your Server, Your Rules.
             </p>
           </div>
@@ -162,7 +164,7 @@ export function FooterSection() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={social.label}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-[#6B7280] hover:text-[#8B5CF6] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-[#94A3B8] hover:text-[#F1F5F9] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none"
             >
               {social.icon}
             </a>
@@ -171,11 +173,12 @@ export function FooterSection() {
 
         {/* Bottom bar */}
         <div className="border-t border-white/[0.04] pt-6 mt-8">
-          <p className="text-sm text-[#6B7280] text-center">
-            &copy; 2026 Agentin &middot; Made with love in India
+          <p className="text-sm text-[#94A3B8] text-center">
+            &copy; {new Date().getFullYear()} Agentin &middot; Made with love in India
           </p>
         </div>
       </div>
+      </BlurFade>
     </footer>
   );
 }

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, ArrowRight, Zap, Bell, Users, Send } from 'lucide-react';
+import { BlurFade } from '@/components/magicui/blur-fade';
+import { MagicCard } from '@/components/magicui/magic-card';
 
 const telegramFeatures = [
   {
@@ -109,6 +111,7 @@ export function TelegramCTASection() {
 
       <div className="relative z-10 max-w-6xl mx-auto px-6">
         {/* Section header -- centered */}
+        <BlurFade delay={0.1}>
         <div
           className={`text-center mb-14 ${fadeIn}`}
           style={fadeInDelay(0)}
@@ -126,13 +129,14 @@ export function TelegramCTASection() {
             Start in 30 Seconds.{' '}
             <span className="text-gradient">No App Download.</span>
           </h2>
-          <p className="text-lg text-[#94A3B8] max-w-2xl mx-auto">
+          <p className="text-lg text-[#B8C4D4] max-w-2xl mx-auto">
             Message @Weebo_gs_bot on Telegram. No sign-up needed. Just send
             /start
           </p>
         </div>
+        </BlurFade>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-8 items-center">
           {/* Left: Features + CTA */}
           <div className={fadeIn} style={fadeInDelay(100)}>
             {/* Feature pills */}
@@ -140,24 +144,28 @@ export function TelegramCTASection() {
               {telegramFeatures.map((f) => (
                 <div
                   key={f.command}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.06] backdrop-blur"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.06] backdrop-blur"
                 >
                   <f.icon className="w-3.5 h-3.5 text-[#8B5CF6]" />
                   <span className="text-sm font-mono text-[#8B5CF6]">
                     {f.command}
                   </span>
-                  <span className="text-sm text-[#6B7280]">{f.label}</span>
+                  <span className="text-sm text-[#CBD5E1]">{f.label}</span>
                 </div>
               ))}
             </div>
 
             {/* Feature list */}
+            <BlurFade delay={0.3}>
             <div className="space-y-5 mb-10">
               {telegramFeatures.map((feature, i) => (
                 <div
                   key={feature.command}
                   className={fadeIn}
                   style={fadeInDelay(200 + i * 100)}
+                >
+                <MagicCard
+                  className="bg-transparent border-0 p-0"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded-lg bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -170,23 +178,25 @@ export function TelegramCTASection() {
                         </span>{' '}
                         {feature.label}
                       </div>
-                      <div className="text-sm text-[#6B7280] leading-relaxed">
+                      <div className="text-sm text-[#B8C4D4] leading-relaxed">
                         {feature.description}
                       </div>
                     </div>
                   </div>
+                </MagicCard>
                 </div>
               ))}
             </div>
+            </BlurFade>
 
             {/* CTA button */}
             <a
               href="https://t.me/Weebo_gs_bot"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 px-7 py-3.5 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-[0_4px_24px_rgba(139,92,246,0.25)] group"
+              className="inline-flex items-center gap-2.5 px-7 py-3.5 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-[0_4px_24px_rgba(34,158,217,0.30)] group"
               style={{
-                background: 'linear-gradient(135deg, #8B5CF6 0%, #22D3EE 100%)',
+                background: 'linear-gradient(135deg, #229ED9 0%, #0088CC 100%)',
               }}
             >
               <MessageCircle className="w-5 h-5" />
@@ -197,14 +207,14 @@ export function TelegramCTASection() {
 
           {/* Right: Phone mockup with chat */}
           <div className={fadeIn} style={fadeInDelay(200)}>
-            <div className="mx-auto max-w-[320px]">
+            <div className="mx-auto max-w-[360px]">
               {/* Phone frame */}
               <div className="relative rounded-[2.5rem] border-4 border-white/[0.08] bg-[#0C0C18] overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.5)]">
                 {/* Screen glare */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent pointer-events-none rounded-[2.5rem] z-30" />
                 {/* Status bar */}
                 <div className="flex items-center justify-between px-6 pt-3 pb-1">
-                  <span className="text-[10px] text-white/40 font-medium">
+                  <span className="text-[11px] text-white/40 font-medium">
                     9:41
                   </span>
                   <div className="flex items-center gap-1">
@@ -220,12 +230,12 @@ export function TelegramCTASection() {
                     <MessageCircle className="w-4 h-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-[#F1F5F9]">
+                    <div className="text-[15px] font-medium text-[#F1F5F9]">
                       Weebo
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
-                      <span className="text-[10px] text-[#22c55e]">
+                      <span className="text-[11px] text-[#22c55e]">
                         online
                       </span>
                     </div>
@@ -250,13 +260,13 @@ export function TelegramCTASection() {
                     >
                       {bubble.role === 'user' ? (
                         <div className="flex justify-end">
-                          <div className="max-w-[80%] px-3.5 py-2.5 rounded-2xl rounded-br-sm bg-[#8B5CF6]/25 text-sm text-white leading-relaxed">
+                          <div className="max-w-[80%] px-3.5 py-2.5 rounded-2xl rounded-br-sm bg-[#8B5CF6]/25 text-[14px] text-white leading-relaxed">
                             {bubble.text}
                           </div>
                         </div>
                       ) : (
                         <div className="flex justify-start">
-                          <div className="max-w-[80%] px-3.5 py-2.5 rounded-2xl rounded-bl-sm bg-white/[0.05] text-sm text-[#F1F5F9] leading-relaxed">
+                          <div className="max-w-[80%] px-3.5 py-2.5 rounded-2xl rounded-bl-sm bg-white/[0.05] text-[14px] text-[#F1F5F9] leading-relaxed">
                             {bubble.text}
                           </div>
                         </div>
@@ -287,7 +297,7 @@ export function TelegramCTASection() {
                 {/* Input bar */}
                 <div className="px-4 py-3 border-t border-white/[0.06]">
                   <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/[0.03] border border-white/[0.06]">
-                    <span className="flex-1 text-sm text-[#6B7280]/50">
+                    <span className="flex-1 text-[13px] text-[#6B7280]/50">
                       Message Weebo...
                     </span>
                     <Send className="w-4 h-4 text-[#8B5CF6]/40" />
